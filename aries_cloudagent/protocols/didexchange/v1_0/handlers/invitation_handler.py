@@ -6,7 +6,7 @@ from .....messaging.base_handler import (
     RequestContext,
 )
 
-from .....protocols.outofband.v1_0.messages.invitation import InvitationMessage
+from .....protocols.out_of_band.v1_0.messages.invitation import InvitationMessage
 
 from ..messages.problem_report import ProblemReport, ProblemReportReason
 

@@ -120,7 +120,7 @@ class TestDIDExchangeConnRoutes(AsyncTestCase):
             with self.assertRaises(test_module.web.HTTPBadRequest):
                 await test_module.didx_connections_list(mock_req)
 
-    async def test_connections_retrieve(self):
+    async def test_retrieve_connection(self):
         context = RequestContext(base_context=InjectionContext(enforce_typing=False))
         mock_req = async_mock.MagicMock()
         mock_req.app = {
@@ -137,10 +137,10 @@ class TestDIDExchangeConnRoutes(AsyncTestCase):
         ) as mock_response:
             mock_conn_rec_retrieve_by_id.return_value = mock_conn_rec
 
-            await test_module.didx_retrieve(mock_req)
+            await test_module.didx_retrieve_connection(mock_req)
             mock_response.assert_called_once_with({"hello": "world"})
 
-    async def test_connections_retrieve_not_found(self):
+    async def test_retrieve_connection_not_found(self):
         context = RequestContext(base_context=InjectionContext(enforce_typing=False))
         mock_req = async_mock.MagicMock()
         mock_req.app = {
@@ -154,7 +154,7 @@ class TestDIDExchangeConnRoutes(AsyncTestCase):
             mock_conn_rec_retrieve_by_id.side_effect = StorageNotFoundError()
 
             with self.assertRaises(test_module.web.HTTPNotFound):
-                await test_module.didx_retrieve(mock_req)
+                await test_module.didx_retrieve_connection(mock_req)
 
     async def test_connections_receive_invitation(self):
         context = RequestContext(base_context=InjectionContext(enforce_typing=False))
@@ -231,9 +231,7 @@ class TestDIDExchangeConnRoutes(AsyncTestCase):
             "my_endpoint": "http://endpoint.ca",
         }
 
-        mock_conn_rec = async_mock.MagicMock(
-            save=async_mock.CoroutineMock()
-        )
+        mock_conn_rec = async_mock.MagicMock(save=async_mock.CoroutineMock())
         mock_conn_rec.serialize = async_mock.MagicMock()
 
         with async_mock.patch.object(

@@ -18,7 +18,7 @@ from ......wallet.basic import BasicWallet
 
 from ...handlers import request_handler as test_module
 from ...manager import DIDXManagerError
-from ...messages.request import ConnRequest
+from ...messages.request import DIDXRequest
 from ...messages.problem_report import ProblemReport, ProblemReportReason
 
 TEST_DID = "55GkHamhTU1ZbTbV2ab9DE"
@@ -28,7 +28,7 @@ TEST_ENDPOINT = "http://localhost"
 TEST_IMAGE_URL = "http://aries.ca/images/sample.png"
 
 
-class TestConnRequestHandler(AsyncTestCase):
+class TestDIDXRequestHandler(AsyncTestCase):
     """Class unit testing request handler."""
 
     def did_doc(self):
@@ -65,7 +65,7 @@ class TestConnRequestHandler(AsyncTestCase):
         self.did_doc_attach = AttachDecorator.from_indy_dict(self.did_doc().serialize())
         await self.did_doc_attach.data.sign(self.did_info.verkey, self.wallet)
 
-        self.request = ConnRequest(
+        self.request = DIDXRequest(
             label=TEST_LABEL,
             did=TEST_DID,
             did_doc_attach=self.did_doc_attach,
@@ -74,28 +74,28 @@ class TestConnRequestHandler(AsyncTestCase):
         self.ctx.message_receipt = MessageReceipt()
 
     @async_mock.patch.object(test_module, "DIDXManager")
-    async def test_called(self, mock_conn_mgr):
-        mock_conn_mgr.return_value.receive_request = async_mock.CoroutineMock()
-        self.ctx.message = ConnRequest()
-        handler_inst = test_module.ConnRequestHandler()
+    async def test_called(self, mock_didx_mgr):
+        mock_didx_mgr.return_value.receive_request = async_mock.CoroutineMock()
+        self.ctx.message = DIDXRequest()
+        handler_inst = test_module.DIDXRequestHandler()
         responder = MockResponder()
         await handler_inst.handle(self.ctx, responder)
 
-        mock_conn_mgr.assert_called_once_with(self.ctx)
-        mock_conn_mgr.return_value.receive_request.assert_called_once_with(
+        mock_didx_mgr.assert_called_once_with(self.ctx)
+        mock_didx_mgr.return_value.receive_request.assert_called_once_with(
             self.ctx.message, self.ctx.message_receipt
         )
         assert not responder.messages
 
     @async_mock.patch.object(test_module, "DIDXManager")
-    async def test_problem_report(self, mock_conn_mgr):
-        mock_conn_mgr.return_value.receive_request = async_mock.CoroutineMock(
+    async def test_problem_report(self, mock_didx_mgr):
+        mock_didx_mgr.return_value.receive_request = async_mock.CoroutineMock(
             side_effect=DIDXManagerError(
                 error_code=ProblemReportReason.REQUEST_NOT_ACCEPTED
             )
         )
-        self.ctx.message = ConnRequest()
-        handler_inst = test_module.ConnRequestHandler()
+        self.ctx.message = DIDXRequest()
+        handler_inst = test_module.DIDXRequestHandler()
         responder = MockResponder()
         await handler_inst.handle(self.ctx, responder)
         messages = responder.messages
@@ -109,21 +109,21 @@ class TestConnRequestHandler(AsyncTestCase):
 
     @async_mock.patch.object(test_module, "DIDXManager")
     @async_mock.patch.object(connection_target, "ConnectionTarget")
-    async def test_problem_report_did_doc(self, mock_conn_target, mock_conn_mgr):
-        mock_conn_mgr.return_value.receive_request = async_mock.CoroutineMock(
+    async def test_problem_report_did_doc(self, mock_conn_target, mock_didx_mgr):
+        mock_didx_mgr.return_value.receive_request = async_mock.CoroutineMock(
             side_effect=DIDXManagerError(
                 error_code=ProblemReportReason.REQUEST_NOT_ACCEPTED
             )
         )
-        mock_conn_mgr.return_value.diddoc_connection_targets = async_mock.MagicMock(
+        mock_didx_mgr.return_value.diddoc_connection_targets = async_mock.MagicMock(
             return_value=[mock_conn_target]
         )
-        self.ctx.message = ConnRequest(
+        self.ctx.message = DIDXRequest(
             label=TEST_LABEL,
             did=TEST_DID,
             did_doc_attach=self.did_doc_attach,
         )
-        handler_inst = test_module.ConnRequestHandler()
+        handler_inst = test_module.DIDXRequestHandler()
         responder = MockResponder()
         await handler_inst.handle(self.ctx, responder)
         messages = responder.messages
@@ -140,22 +140,22 @@ class TestConnRequestHandler(AsyncTestCase):
     async def test_problem_report_did_doc_no_conn_target(
         self,
         mock_conn_target,
-        mock_conn_mgr,
+        mock_didx_mgr,
     ):
-        mock_conn_mgr.return_value.receive_request = async_mock.CoroutineMock(
+        mock_didx_mgr.return_value.receive_request = async_mock.CoroutineMock(
             side_effect=DIDXManagerError(
                 error_code=ProblemReportReason.REQUEST_NOT_ACCEPTED
             )
         )
-        mock_conn_mgr.return_value.diddoc_connection_targets = async_mock.MagicMock(
+        mock_didx_mgr.return_value.diddoc_connection_targets = async_mock.MagicMock(
             side_effect=DIDXManagerError("no targets")
         )
-        self.ctx.message = ConnRequest(
+        self.ctx.message = DIDXRequest(
             label=TEST_LABEL,
             did=TEST_DID,
             did_doc_attach=self.did_doc_attach,
         )
-        handler_inst = test_module.ConnRequestHandler()
+        handler_inst = test_module.DIDXRequestHandler()
         responder = MockResponder()
         await handler_inst.handle(self.ctx, responder)
         messages = responder.messages

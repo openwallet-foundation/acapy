@@ -1,6 +1,7 @@
 """An invitation content message."""
 
 from typing import Sequence, Text, Union
+from urllib.parse import parse_qs, urljoin, urlparse
 
 from marshmallow import (
     EXCLUDE,

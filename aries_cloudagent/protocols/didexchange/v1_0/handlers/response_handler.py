@@ -1,4 +1,4 @@
-"""Connection response handler under RFC 23 (DID exchange)."""
+"""DID exchange response handler under RFC 23."""
 
 from .....messaging.base_handler import (
     BaseHandler,
@@ -12,19 +12,19 @@ from ..messages.response import DIDXResponse
 from ..messages.problem_report import ProblemReport
 
 
-class ConnResponseHandler(BaseHandler):
-    """Handler class for connection response message under RFC 23 (DID exchange)."""
+class DIDXResponseHandler(BaseHandler):
+    """Handler class for DID exchange response message under RFC 23."""
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
         """
-        Handle connection response under RFC 23 (DID exchange).
+        Handle DID exchange response under RFC 23.
 
         Args:
             context: Request context
             responder: Responder callback
         """
-        self._logger.debug(f"ConnResponseHandler called with context {context}")
-        assert isinstance(context.message, ConnResponse)
+        self._logger.debug(f"DIDXResponseHandler called with context {context}")
+        assert isinstance(context.message, DIDXResponse)
 
         mgr = DIDXManager(context)
         try:
@@ -32,7 +32,7 @@ class ConnResponseHandler(BaseHandler):
                 context.message, context.message_receipt
             )
         except DIDXManagerError as e:
-            self._logger.exception("Error receiving connection response")
+            self._logger.exception("Error receiving DID exchange response")
             if e.error_code:
                 targets = None
                 if context.message.did_doc_attach:

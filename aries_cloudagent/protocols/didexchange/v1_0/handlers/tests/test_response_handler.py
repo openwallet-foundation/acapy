@@ -19,7 +19,7 @@ from ......wallet.basic import BasicWallet
 
 from ...handlers import response_handler as test_module
 from ...manager import DIDXManagerError
-from ...messages.response import ConnResponse
+from ...messages.response import DIDXResponse
 from ...messages.problem_report import ProblemReport, ProblemReportReason
 
 TEST_DID = "55GkHamhTU1ZbTbV2ab9DE"
@@ -29,7 +29,7 @@ TEST_ENDPOINT = "http://localhost"
 TEST_IMAGE_URL = "http://aries.ca/images/sample.png"
 
 
-class TestConnResponseHandler(AsyncTestCase):
+class TestDIDXResponseHandler(AsyncTestCase):
     def did_doc(self):
         doc = DIDDoc(did=TEST_DID)
         controller = TEST_DID
@@ -64,7 +64,7 @@ class TestConnResponseHandler(AsyncTestCase):
         self.did_doc_attach = AttachDecorator.from_indy_dict(self.did_doc().serialize())
         await self.did_doc_attach.data.sign(self.did_info.verkey, self.wallet)
 
-        self.request = ConnResponse(
+        self.request = DIDXResponse(
             did=TEST_DID,
             did_doc_attach=self.did_doc_attach,
         )
@@ -73,31 +73,31 @@ class TestConnResponseHandler(AsyncTestCase):
 
     @pytest.mark.asyncio
     @async_mock.patch.object(test_module, "DIDXManager")
-    async def test_called(self, mock_conn_mgr):
-        mock_conn_mgr.return_value.accept_response = async_mock.CoroutineMock()
-        self.ctx.message = ConnResponse()
-        handler_inst = test_module.ConnResponseHandler()
+    async def test_called(self, mock_didx_mgr):
+        mock_didx_mgr.return_value.accept_response = async_mock.CoroutineMock()
+        self.ctx.message = DIDXResponse()
+        handler_inst = test_module.DIDXResponseHandler()
         responder = MockResponder()
         await handler_inst.handle(self.ctx, responder)
 
-        mock_conn_mgr.assert_called_once_with(self.ctx)
-        mock_conn_mgr.return_value.accept_response.assert_called_once_with(
+        mock_didx_mgr.assert_called_once_with(self.ctx)
+        mock_didx_mgr.return_value.accept_response.assert_called_once_with(
             self.ctx.message, self.ctx.message_receipt
         )
         assert not responder.messages
 
     @pytest.mark.asyncio
     @async_mock.patch.object(test_module, "DIDXManager")
-    async def test_called_auto_ping(self, mock_conn_mgr):
+    async def test_called_auto_ping(self, mock_didx_mgr):
         self.ctx.update_settings({"auto_ping_connection": True})
-        mock_conn_mgr.return_value.accept_response = async_mock.CoroutineMock()
-        self.ctx.message = ConnResponse()
-        handler_inst = test_module.ConnResponseHandler()
+        mock_didx_mgr.return_value.accept_response = async_mock.CoroutineMock()
+        self.ctx.message = DIDXResponse()
+        handler_inst = test_module.DIDXResponseHandler()
         responder = MockResponder()
         await handler_inst.handle(self.ctx, responder)
 
-        mock_conn_mgr.assert_called_once_with(self.ctx)
-        mock_conn_mgr.return_value.accept_response.assert_called_once_with(
+        mock_didx_mgr.assert_called_once_with(self.ctx)
+        mock_didx_mgr.return_value.accept_response.assert_called_once_with(
             self.ctx.message, self.ctx.message_receipt
         )
         messages = responder.messages
@@ -107,14 +107,14 @@ class TestConnResponseHandler(AsyncTestCase):
 
     @pytest.mark.asyncio
     @async_mock.patch.object(test_module, "DIDXManager")
-    async def test_problem_report(self, mock_conn_mgr):
-        mock_conn_mgr.return_value.accept_response = async_mock.CoroutineMock(
+    async def test_problem_report(self, mock_didx_mgr):
+        mock_didx_mgr.return_value.accept_response = async_mock.CoroutineMock(
             side_effect=DIDXManagerError(
                 error_code=ProblemReportReason.RESPONSE_NOT_ACCEPTED
             )
         )
-        self.ctx.message = ConnResponse()
-        handler_inst = test_module.ConnResponseHandler()
+        self.ctx.message = DIDXResponse()
+        handler_inst = test_module.DIDXResponseHandler()
         responder = MockResponder()
         await handler_inst.handle(self.ctx, responder)
         messages = responder.messages
@@ -132,21 +132,21 @@ class TestConnResponseHandler(AsyncTestCase):
     async def test_problem_report_did_doc(
         self,
         mock_conn_target,
-        mock_conn_mgr,
+        mock_didx_mgr,
     ):
-        mock_conn_mgr.return_value.accept_response = async_mock.CoroutineMock(
+        mock_didx_mgr.return_value.accept_response = async_mock.CoroutineMock(
             side_effect=DIDXManagerError(
                 error_code=ProblemReportReason.RESPONSE_NOT_ACCEPTED
             )
         )
-        mock_conn_mgr.return_value.diddoc_connection_targets = async_mock.MagicMock(
+        mock_didx_mgr.return_value.diddoc_connection_targets = async_mock.MagicMock(
             return_value=[mock_conn_target]
         )
-        self.ctx.message = ConnResponse(
+        self.ctx.message = DIDXResponse(
             did=TEST_DID,
             did_doc_attach=self.did_doc_attach,
         )
-        handler_inst = test_module.ConnResponseHandler()
+        handler_inst = test_module.DIDXResponseHandler()
         responder = MockResponder()
         await handler_inst.handle(self.ctx, responder)
         messages = responder.messages
@@ -164,21 +164,21 @@ class TestConnResponseHandler(AsyncTestCase):
     async def test_problem_report_did_doc_no_conn_target(
         self,
         mock_conn_target,
-        mock_conn_mgr,
+        mock_didx_mgr,
     ):
-        mock_conn_mgr.return_value.accept_response = async_mock.CoroutineMock(
+        mock_didx_mgr.return_value.accept_response = async_mock.CoroutineMock(
             side_effect=DIDXManagerError(
                 error_code=ProblemReportReason.RESPONSE_NOT_ACCEPTED
             )
         )
-        mock_conn_mgr.return_value.diddoc_connection_targets = async_mock.MagicMock(
+        mock_didx_mgr.return_value.diddoc_connection_targets = async_mock.MagicMock(
             side_effect=DIDXManagerError("no target")
         )
-        self.ctx.message = ConnResponse(
+        self.ctx.message = DIDXResponse(
             did=TEST_DID,
             did_doc_attach=self.did_doc_attach,
         )
-        handler_inst = test_module.ConnResponseHandler()
+        handler_inst = test_module.DIDXResponseHandler()
         responder = MockResponder()
         await handler_inst.handle(self.ctx, responder)
         messages = responder.messages

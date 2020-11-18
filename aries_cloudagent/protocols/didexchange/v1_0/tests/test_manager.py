@@ -32,9 +32,9 @@ from ....routing.v1_0.manager import RoutingManager
 
 from .. import manager as test_module
 from ..manager import DIDXManager, DIDXManagerError
-from ..messages.request import ConnRequest
-from ..messages.response import ConnResponse
-from ..messages.complete import ConnComplete
+from ..messages.request import DIDXRequest
+from ..messages.response import DIDXResponse
+from ..messages.complete import DIDXComplete
 
 
 class TestConfig:
@@ -122,12 +122,12 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
             mock_wallet_get_public_did.return_value = DIDInfo(
                 self.test_did, self.test_verkey, None
             )
-            connect_record, connect_invite = await self.manager.create_invitation(
+            conn_rec, didx_invi = await self.manager.create_invitation(
                 public=True, my_endpoint="testendpoint", include_handshake=True
             )
 
-            assert connect_record == None
-            assert connect_invite.service_dids[0].endswith(self.test_did)
+            assert conn_rec == None
+            assert didx_invi.service_dids[0].endswith(self.test_did)
 
     async def test_create_invitation_public_x_no_public_invites(self):
         self.manager.context.update_settings({"public_invites": False})
@@ -161,23 +161,21 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
                 await self.manager.create_invitation(public=True, multi_use=True)
 
     async def test_create_invitation_x_reuse_non_multi_use_invitation(self):
-        connect_record, connect_invite = await self.manager.create_invitation(
-            include_handshake=True
-        )
+        conn_rec, _ = await self.manager.create_invitation(include_handshake=True)
 
-        receipt = MessageReceipt(recipient_verkey=connect_record.invitation_key)
+        receipt = MessageReceipt(recipient_verkey=conn_rec.invitation_key)
         did_doc = self.make_did_doc(self.test_target_did, self.test_target_verkey)
         did_doc_attach = AttachDecorator.from_indy_dict(did_doc.serialize())
         await did_doc_attach.data.sign(self.did_info.verkey, self.wallet)
 
-        requestA = ConnRequest(
+        requestA = DIDXRequest(
             label="SameInviteRequestA",
             did=self.test_target_did,
             did_doc_attach=did_doc_attach,
         )
         await self.manager.receive_request(requestA, receipt)
 
-        requestB = ConnRequest(
+        requestB = DIDXRequest(
             label="SameInviteRequestB",
             did=self.test_target_did,
             did_doc_attach=did_doc_attach,
@@ -188,23 +186,23 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
             await self.manager.receive_request(requestB, receipt)
 
     async def test_create_invitation_multi_use(self):
-        connect_record, connect_invite = await self.manager.create_invitation(
+        conn_rec, _ = await self.manager.create_invitation(
             my_endpoint="testendpoint", multi_use=True, include_handshake=True
         )
 
-        receipt = MessageReceipt(recipient_verkey=connect_record.invitation_key)
+        receipt = MessageReceipt(recipient_verkey=conn_rec.invitation_key)
         did_doc = self.make_did_doc(self.test_target_did, self.test_target_verkey)
         did_doc_attach = AttachDecorator.from_indy_dict(did_doc.serialize())
         await did_doc_attach.data.sign(self.did_info.verkey, self.wallet)
 
-        requestA = ConnRequest(
+        requestA = DIDXRequest(
             label="SameInviteRequestA",
             did=self.test_target_did,
             did_doc_attach=did_doc_attach,
         )
         await self.manager.receive_request(requestA, receipt)
 
-        requestB = ConnRequest(
+        requestB = DIDXRequest(
             label="SameInviteRequestB",
             did=self.test_target_did,
             did_doc_attach=did_doc_attach,
@@ -213,20 +211,20 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
         await self.manager.receive_request(requestB, receipt)
 
     async def test_receive_invitation(self):
-        (_, connect_invite) = await self.manager.create_invitation(
+        (_, didx_invi) = await self.manager.create_invitation(
             my_endpoint="testendpoint"
         )
 
-        invitee_record = await self.manager.receive_invitation(connect_invite)
+        invitee_record = await self.manager.receive_invitation(didx_invi)
         assert invitee_record.state == ConnRecord.State.REQUEST.rfc23
 
     async def test_receive_invitation_no_auto_accept(self):
-        (_, connect_invite) = await self.manager.create_invitation(
+        (_, didx_invi) = await self.manager.create_invitation(
             my_endpoint="testendpoint"
         )
 
         invitee_record = await self.manager.receive_invitation(
-            connect_invite, auto_accept=False
+            didx_invi, auto_accept=False
         )
         assert invitee_record.state == ConnRecord.State.INVITATION.rfc23
 
@@ -248,7 +246,7 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
                 await self.manager.receive_invitation(x_invite)
 
     async def test_create_request(self):
-        conn_req = await self.manager.create_request(
+        didx_req = await self.manager.create_request(
             ConnRecord(
                 my_did=self.did_info.did,
                 their_did=self.test_target_did,
@@ -256,10 +254,10 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
                 state=ConnRecord.State.REQUEST.rfc23,
             )
         )
-        assert conn_req
+        assert didx_req
 
     async def test_create_request_my_endpoint(self):
-        conn_req = await self.manager.create_request(
+        didx_req = await self.manager.create_request(
             ConnRecord(
                 my_did=self.did_info.did,
                 their_did=self.test_target_did,
@@ -271,7 +269,7 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
             ),
             my_endpoint="http://testendpoint.com/endpoint",
         )
-        assert conn_req
+        assert didx_req
 
     async def test_receive_request_public_did(self):
         mock_request = async_mock.MagicMock()
@@ -284,7 +282,6 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
                 ),
             )
         )
-
         receipt = MessageReceipt(recipient_did=self.test_did, recipient_did_public=True)
 
         wallet = await self.context.inject(BaseWallet)
@@ -299,7 +296,7 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
         ) as mock_did_doc, async_mock.patch.object(
             test_module, "AttachDecorator", autospec=True
         ) as mock_attach_deco, async_mock.patch.object(
-            test_module, "ConnResponse", autospec=True
+            test_module, "DIDXResponse", autospec=True
         ) as mock_response, async_mock.patch.object(
             self.manager, "create_did_document", async_mock.CoroutineMock()
         ) as mock_create_did_doc:
@@ -307,6 +304,9 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
                 serialize=async_mock.MagicMock(return_value={})
             )
             mock_conn_rec.State.REQUEST = mock_conn_rec_state_request
+            mock_conn_rec.State.get = async_mock.MagicMock(
+                return_value=mock_conn_rec_state_request
+            )
             mock_conn_rec.retrieve_by_id = async_mock.CoroutineMock(
                 return_value=async_mock.MagicMock(save=async_mock.CoroutineMock())
             )
@@ -427,7 +427,7 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
         ) as mock_conn_rec, async_mock.patch.object(
             test_module, "AttachDecorator", autospec=True
         ) as mock_attach_deco, async_mock.patch.object(
-            test_module, "ConnResponse", autospec=True
+            test_module, "DIDXResponse", autospec=True
         ) as mock_response, async_mock.patch.object(
             self.manager, "create_did_document", async_mock.CoroutineMock()
         ) as mock_create_did_doc, async_mock.patch.object(
@@ -467,7 +467,7 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
         ) as mock_did_doc, async_mock.patch.object(
             test_module, "AttachDecorator", autospec=True
         ) as mock_attach_deco, async_mock.patch.object(
-            test_module, "ConnResponse", autospec=True
+            test_module, "DIDXResponse", autospec=True
         ) as mock_response, async_mock.patch.object(
             self.manager, "create_did_document", async_mock.CoroutineMock()
         ) as mock_create_did_doc:
@@ -503,7 +503,7 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
         ) as mock_did_doc, async_mock.patch.object(
             test_module, "AttachDecorator", autospec=True
         ) as mock_attach_deco, async_mock.patch.object(
-            test_module, "ConnResponse", autospec=True
+            test_module, "DIDXResponse", autospec=True
         ) as mock_response, async_mock.patch.object(
             self.manager, "create_did_document", async_mock.CoroutineMock()
         ) as mock_create_did_doc:
@@ -524,7 +524,7 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
                 ConnRecord(
                     invitation_key=self.test_verkey,
                     their_label="Hello",
-                    their_role="Point of contact",
+                    their_role=ConnRecord.Role.REQUESTER.rfc23,
                     state=ConnRecord.State.ABANDONED.rfc23,
                     alias="Bob",
                 )
@@ -796,7 +796,7 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
             with self.assertRaises(DIDXManagerError):
                 await self.manager.accept_complete(mock_complete, receipt)
 
-    '''
+    """
     async def test_create_static_connection(self):
         with async_mock.patch.object(
             ConnectionRecord, "save", autospec=True
@@ -836,7 +836,7 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
             )
 
             assert conn_rec.state == ConnectionRecord.STATE_ACTIVE
-    '''
+    """
 
     async def test_find_connection_retrieve_by_did(self):
         with async_mock.patch.object(
@@ -902,8 +902,8 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
         # First pass: not yet in cache
         with async_mock.patch.object(
             DIDXManager, "resolve_inbound_connection", async_mock.CoroutineMock()
-        ) as mock_conn_mgr_resolve_conn:
-            mock_conn_mgr_resolve_conn.return_value = mock_conn
+        ) as mock_didx_mgr_resolve_conn:
+            mock_didx_mgr_resolve_conn.return_value = mock_conn
 
             conn_rec = await self.manager.find_inbound_connection(receipt)
             assert conn_rec
@@ -930,9 +930,9 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
             self.manager.context, "inject", async_mock.CoroutineMock()
         ) as mock_ctx_inject, async_mock.patch.object(
             DIDXManager, "resolve_inbound_connection", async_mock.CoroutineMock()
-        ) as mock_conn_mgr_resolve_conn:
+        ) as mock_didx_mgr_resolve_conn:
             mock_ctx_inject.return_value = None
-            mock_conn_mgr_resolve_conn.return_value = mock_conn
+            mock_didx_mgr_resolve_conn.return_value = mock_conn
 
             conn_rec = await self.manager.find_inbound_connection(receipt)
             assert conn_rec
@@ -1217,7 +1217,7 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
 
         targets = await self.manager.get_connection_targets(
             connection_id=None,
-            connection=mock_conn,
+            conn_rec=mock_conn,
         )
         assert len(targets) == 1
         target = targets[0]
@@ -1231,7 +1231,7 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
         # Next pass: exercise cache
         targets = await self.manager.get_connection_targets(
             connection_id=None,
-            connection=mock_conn,
+            conn_rec=mock_conn,
         )
         assert len(targets) == 1
         target = targets[0]
@@ -1268,7 +1268,7 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
             connection_id="dummy",
             state=ConnRecord.State.INVITATION.rfc23,
             their_role=ConnRecord.Role.REQUESTER.rfc23,
-            retrieve_invitation = async_mock.CoroutineMock(return_value=mock_invite),
+            retrieve_invitation=async_mock.CoroutineMock(return_value=mock_invite),
         )
 
         with async_mock.patch.object(
@@ -1280,7 +1280,7 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
             mock_conn_target_ser.return_value = {"serialized": "value"}
             targets = await self.manager.get_connection_targets(
                 connection_id="dummy",
-                connection=None,
+                conn_rec=None,
             )
             assert len(targets) == 1
             target = targets[0]
@@ -1319,12 +1319,12 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
             connection_id="dummy",
             state=ConnRecord.State.INVITATION.rfc23,
             their_role=ConnRecord.Role.REQUESTER.rfc23,
-            retrieve_invitation = async_mock.CoroutineMock(return_value=mock_invite),
+            retrieve_invitation=async_mock.CoroutineMock(return_value=mock_invite),
         )
 
         targets = await self.manager.get_connection_targets(
             connection_id=None,
-            connection=mock_conn,
+            conn_rec=mock_conn,
         )
         assert len(targets) == 1
         target = targets[0]

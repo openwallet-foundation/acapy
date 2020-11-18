@@ -11,14 +11,18 @@ from ...config.injection_context import InjectionContext
 from ...messaging.models.base_record import BaseRecord, BaseRecordSchema
 from ...messaging.valid import INDY_DID, INDY_RAW_PUBLIC_KEY, UUIDFour
 
-from ...protocols.connections.v1_0.message_types import CONNECTION_INVITATION
+from ...protocols.connections.v1_0.message_types import (
+    CONNECTION_INVITATION,
+    CONNECTION_REQUEST,
+)
 from ...protocols.connections.v1_0.messages.connection_invitation import (
     ConnectionInvitation,
 )
 from ...protocols.connections.v1_0.messages.connection_request import ConnectionRequest
 from ...protocols.didcomm_prefix import DIDCommPrefix
+from ...protocols.didexchange.v1_0.messages.request import DIDXRequest
 from ...protocols.out_of_band.v1_0.messages.invitation import (
-    Invitation as OOBInvitation,
+    InvitationMessage as OOBInvitation,
 )
 from ...storage.base import BaseStorage
 from ...storage.record import StorageRecord
@@ -318,7 +322,7 @@ class ConnRecord(BaseRecord):
     async def retrieve_request(
         self,
         context: InjectionContext,
-    ) -> ConnectionRequest:  # will be Union[ConnectionRequest, DIDEx Request]
+    ) -> Union[ConnectionRequest, DIDXRequest]:
         """Retrieve the related connection invitation.
 
         Args:
@@ -329,7 +333,12 @@ class ConnRecord(BaseRecord):
         result = await storage.find_record(
             self.RECORD_TYPE_REQUEST, {"connection_id": self.connection_id}
         )
-        return ConnectionRequest.from_json(result.value)
+        ser = json.loads(result.value)
+        return (
+            ConnectionRequest
+            if DIDCommPrefix.unqualify(ser["@type"]) == CONNECTION_REQUEST
+            else DIDXRequest
+        ).deserialize(ser)
 
     @property
     def is_ready(self) -> str:

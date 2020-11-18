@@ -3,7 +3,7 @@ import pytest
 from ......messaging.base_handler import HandlerException
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
-from ......protocols.outofband.v1_0.messages.invitation import InvitationMessage
+from ......protocols.out_of_band.v1_0.messages.invitation import InvitationMessage
 from ......transport.inbound.receipt import MessageReceipt
 
 from ...handlers.invitation_handler import InvitationHandler
@@ -17,7 +17,7 @@ def request_context() -> RequestContext:
     yield ctx
 
 
-class TestConnInvitationHandler:
+class TestDIDXInvitationHandler:
     @pytest.mark.asyncio
     async def test_problem_report(self, request_context):
         request_context.message = InvitationMessage()

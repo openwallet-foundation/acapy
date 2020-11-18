@@ -1,12 +1,8 @@
 """Represents a DID exchange complete message under RFC 23."""
 
-from marshmallow import EXCLUDE, fields, pre_dump, validates_schema, ValidationError
+from marshmallow import EXCLUDE, pre_dump, ValidationError
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
-from .....messaging.decorators.thread_decorator import (
-    ThreadDecorator,
-    ThreadDecoratorSchema,
-)
 
 from ..message_types import DIDX_COMPLETE, PROTOCOL_PACKAGE
 
@@ -27,9 +23,7 @@ class DIDXComplete(AgentMessage):
         self,
         **kwargs,
     ):
-        """
-        Initialize DID exchange complete message object.
-        """
+        """Initialize DID exchange complete message object."""
         super().__init__(**kwargs)
 
 

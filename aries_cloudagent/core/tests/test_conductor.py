@@ -512,9 +512,7 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             test_module, "OutOfBandManager"
         ) as oob_mgr:
             admin_start.side_effect = KeyError("trouble")
-            oob_mgr.return_value.create_invitation(
-                side_effect=KeyError("more trouble")
-            )
+            oob_mgr.return_value.create_invitation(side_effect=KeyError("more trouble"))
             await conductor.start()
             admin_start.assert_awaited_once_with()
 
@@ -650,6 +648,11 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             {"debug.print_invitation": True, "invite_base_url": "http://localhost"}
         )
         conductor = test_module.Conductor(builder)
+
+        await conductor.setup()
+
+        wallet = await conductor.context.inject(BaseWallet)
+        await wallet.create_public_did()
 
         with async_mock.patch("sys.stdout", new=StringIO()) as captured:
             await conductor.setup()

@@ -8,7 +8,7 @@ from ......messaging.responder import MockResponder
 from ......transport.inbound.receipt import MessageReceipt
 
 from ...manager import DIDXManagerError
-from ...messages.complete import ConnComplete
+from ...messages.complete import DIDXComplete
 from ...messages.problem_report import ProblemReportReason
 
 from .. import complete_handler as test_module
@@ -21,15 +21,15 @@ def request_context() -> RequestContext:
     yield ctx
 
 
-class TestConnCompleteHandler:
+class TestDIDXCompleteHandler:
     """Class unit testing complete handler."""
 
     @pytest.mark.asyncio
     @async_mock.patch.object(test_module, "DIDXManager")
     async def test_called(self, mock_conn_mgr, request_context):
         mock_conn_mgr.return_value.accept_complete = async_mock.CoroutineMock()
-        request_context.message = ConnComplete()
-        handler_inst = test_module.ConnCompleteHandler()
+        request_context.message = DIDXComplete()
+        handler_inst = test_module.DIDXCompleteHandler()
         responder = MockResponder()
         await handler_inst.handle(request_context, None)
 
@@ -49,8 +49,8 @@ class TestConnCompleteHandler:
         mock_conn_mgr.return_value._logger = async_mock.MagicMock(
             exception=async_mock.MagicMock()
         )
-        request_context.message = ConnComplete()
-        handler_inst = test_module.ConnCompleteHandler()
+        request_context.message = DIDXComplete()
+        handler_inst = test_module.DIDXCompleteHandler()
         responder = MockResponder()
         await handler_inst.handle(request_context, responder)
 

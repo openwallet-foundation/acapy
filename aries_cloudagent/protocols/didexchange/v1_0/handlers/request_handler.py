@@ -3,11 +3,11 @@
 from .....messaging.base_handler import BaseHandler, BaseResponder, RequestContext
 
 from ..manager import DIDXManager, DIDXManagerError
-from ..messages.request import ConnRequest
+from ..messages.request import DIDXRequest
 from ..messages.problem_report import ProblemReport
 
 
-class ConnRequestHandler(BaseHandler):
+class DIDXRequestHandler(BaseHandler):
     """Handler class for connection request message under RFC 23 (DID exchange)."""
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
@@ -19,8 +19,8 @@ class ConnRequestHandler(BaseHandler):
             responder: Responder callback
         """
 
-        self._logger.debug(f"ConnRequestHandler called with context {context}")
-        assert isinstance(context.message, ConnRequest)
+        self._logger.debug(f"DIDXRequestHandler called with context {context}")
+        assert isinstance(context.message, DIDXRequest)
 
         mgr = DIDXManager(context)
         try:

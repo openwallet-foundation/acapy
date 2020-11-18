@@ -38,7 +38,7 @@ class ConnectionListSchema(OpenAPISchema):
     """Result schema for connection list."""
 
     results = fields.List(
-        fields.Nested(ConnRecordSchema(), "connection")),
+        fields.Nested(ConnRecordSchema()),
         description="List of connection records",
     )
 
@@ -233,8 +233,8 @@ async def didx_connections_list(request: web.BaseRequest):
 
 @docs(tags=["did-exchange"], summary="Fetch a single connection record")
 @match_info_schema(ConnIdMatchInfoSchema())
-@response_schema(ConnectionResultSchema(), 200)
-async def didx_connections_retrieve(request: web.BaseRequest):
+@response_schema(ConnRecordSchema(), 200)
+async def didx_retrieve_connection(request: web.BaseRequest):
     """
     Request handler for fetching a single connection record.
 
@@ -333,7 +333,7 @@ async def didx_accept_invitation(request: web.BaseRequest):
     except (StorageError, WalletError, DIDXManagerError, BaseModelError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-    await outbound_handler(request, connection_id=connection.connection_id)
+    await outbound_handler(request, connection_id=conn_rec.connection_id)
 
     return web.json_response(result)
 
@@ -448,11 +448,7 @@ async def didx_create_static(request: web.BaseRequest):
 
     didx_mgr = DIDXManager(context)
     try:
-        (
-            my_info,
-            their_info,
-            conn_rec,
-        ) = await didx_mgr.create_static_connection(
+        (my_info, their_info, conn_rec,) = await didx_mgr.create_static_connection(
             my_seed=body.get("my_seed") or None,
             my_did=body.get("my_did") or None,
             their_seed=body.get("their_seed") or None,
@@ -486,8 +482,9 @@ async def register(app: web.Application):
                 didx_connections_list,
                 allow_head=False,
             ),
-            web.get( "/didexchange/connections/{conn_id}",
-                didx_connections_retrieve,
+            web.get(
+                "/didexchange/connections/{conn_id}",
+                didx_retrieve_connection,
                 allow_head=False,
             ),
             web.post("/didexchange/create-static", didx_create_static),
@@ -496,9 +493,7 @@ async def register(app: web.Application):
                 "/didexchange/{conn_id}/accept-invitation",
                 didx_accept_invitation,
             ),
-            web.post(
-                "/didexchange/{conn_id}/accept-request", didx_accept_request
-            ),
+            web.post("/didexchange/{conn_id}/accept-request", didx_accept_request),
             web.post(
                 "/didexchange/{conn_id}/establish-inbound/{ref_id}",
                 didx_establish_inbound,

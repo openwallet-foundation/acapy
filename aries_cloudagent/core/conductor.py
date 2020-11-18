@@ -20,14 +20,10 @@ from ..config.logging import LoggingConfigurator
 from ..config.wallet import wallet_config, BaseWallet
 from ..ledger.error import LedgerConfigError, LedgerTransactionError
 from ..messaging.responder import BaseResponder
-from ..protocols.connections.v1_0.manager import (
-    ConnectionManager,
-    ConnectionManagerError,
-)
+from ..protocols.connections.v1_0.manager import ConnectionManager
 from ..protocols.didexchange.v1_0.manager import DIDXManager, DIDXManagerError
-from ..protocols.out_of_band.v1_0.manager import (
-    OutOfBandManager, OutOfBandManagerError
-)
+from ..protocols.out_of_band.v1_0.manager import OutOfBandManager
+from ..protocols.out_of_band.v1_0.messages.invitation import InvitationMessage
 from ..transport.inbound.manager import InboundTransportManager
 from ..transport.inbound.message import InboundMessage
 from ..transport.outbound.base import OutboundDeliveryError
@@ -216,29 +212,21 @@ class Conductor:
             print(" - Their endpoint:", their_endpoint)
             print()
 
-'''
-    async def create_invitation(
-        self,
-        my_label: str = None,
-        my_endpoint: str = None,
-        use_public_did: bool = False,
-        include_handshake: bool = False,
-        multi_use: bool = False,
-        attachments: list = None,
-    ) -> InvitationRecord:
-'''
         # Print an invitation to the terminal
         if context.settings.get("debug.print_invitation"):
             try:
                 mgr = OutOfBandManager(self.context)
-                #_connection, invitation = await mgr.create_invitation(
+                # _connection, invitation = await mgr.create_invitation(
                 invi_rec = await mgr.create_invitation(
                     my_label=context.settings.get("debug.invite_label"),
+                    use_public_did=context.settings.get("debug.invite_public", False),
                     multi_use=context.settings.get("debug.invite_multi_use", False),
-                    public=context.settings.get("debug.invite_public", False),
+                    include_handshake=True,
                 )
                 base_url = context.settings.get("invite_base_url")
-                invite_url = invitation.to_url(base_url)
+                invite_url = InvitationMessage.deserialize(invi_rec.invitation).to_url(
+                    base_url
+                )
                 print("Invitation URL:")
                 print(invite_url, flush=True)
             except Exception:

@@ -82,52 +82,60 @@ class OutOfBandManager:
         """
 
         didx_mgr = DIDXManager(self.context)
-        (conn_rec, connection_invitation) = await didx_mgr.create_invitation(
+        (conn_rec, invi_msg) = await didx_mgr.create_invitation(
             my_label=my_label,
             my_endpoint=my_endpoint,
             auto_accept=True,
             public=use_public_did,
             multi_use=multi_use,
+            include_handshake=include_handshake,
         )
         # wallet: BaseWallet = await self.context.inject(BaseWallet)
 
+        print('\n\n-- Create-invi: 1')
         if not my_label:
             my_label = self.context.settings.get("default_label")
         # if not my_endpoint:
         #     my_endpoint = self.context.settings.get("default_endpoint")
 
         message_attachments = []
+        print('.. create-invi: 2')
         if attachments:
             for attachment in attachments:
                 attachment_type = attachment.get("type")
+                print(f'.. create-invi: 3.{attachment_type}')
                 if attachment_type == "credential-offer":
                     instance_id = attachment["id"]
-                    model = await V10CredentialExchange.retrieve_by_id(
+                    cred_ex_rec = await V10CredentialExchange.retrieve_by_id(
                         self.context, instance_id
                     )
+                    print(f'.. create-invi: 3.{attachment_type}.x: {json.dumps(cred_ex_rec.credential_offer_dict, indent=4)}')
                     # Wrap as attachment decorators
                     message_attachments.append(
-                        InvitationMessage.wrap_message(model.credential_offer_dict)
+                        InvitationMessage.wrap_message(cred_ex_rec.credential_offer_dict)
                     )
                 elif attachment_type == "present-proof":
                     instance_id = attachment["id"]
-                    model = await V10PresentationExchange.retrieve_by_id(
+                    pres_ex_rec = await V10PresentationExchange.retrieve_by_id(
                         self.context, instance_id
                     )
                     # Wrap as attachment decorators
                     message_attachments.append(
-                        InvitationMessage.wrap_message(model.presentation_request_dict)
+                        InvitationMessage.wrap_message(
+                            pres_ex_rec.presentation_request_dict
+                        )
                     )
                 else:
                     raise OutOfBandManagerError(
                         f"Unknown attachment type: {attachment_type}"
                     )
+        print(f'.. create-invi: 4: message-atchs {message_attachments}')
 
         """  # did-exchange manager does this now
         # We plug into existing connection structure during migration phase
         if use_public_did:
             # service = (await wallet.get_public_did()).did
-            service = connection_invitation.did
+            service = connection_invitation.did  # now invi_msg.did
         else:
             # connection_key = await wallet.create_signing_key()
             # service = ServiceMessage(
@@ -142,13 +150,13 @@ class OutOfBandManager:
                 _type="did-communication",
                 recipient_keys=[
                     naked_to_did_key(key)
-                    for key in connection_invitation.recipient_keys or []
+                    for key in connection_invitation.recipient_keys or []  # invi_msg...
                 ],
                 routing_keys=[
                     naked_to_did_key(key)
-                    for key in connection_invitation.routing_keys or []
+                    for key in connection_invitation.routing_keys or []  # invi_msg...
                 ],
-                service_endpoint=connection_invitation.endpoint,
+                service_endpoint=connection_invitation.endpoint,  # invi_msg...
             ).validate()
 
         handshake_protocols = []
@@ -158,7 +166,6 @@ class OutOfBandManager:
             handshake_protocols.extend(
                 pfx.qualify(HS_PROTO_CONN_INVI) for pfx in DIDCommPrefix
             )
-        """
 
         invitation_message = InvitationMessage(
             label=my_label,
@@ -166,11 +173,12 @@ class OutOfBandManager:
             request_attach=message_attachments,
             handshake_protocols=handshake_protocols,
         ).validate()
+        """
 
         # Create record
         invitation_record = InvitationRecord(
             state=InvitationRecord.STATE_INITIAL,
-            invitation=invitation_message.serialize(),
+            invitation=invi_msg.serialize(),
         )
 
         await invitation_record.save(self.context, reason="Created new invitation")

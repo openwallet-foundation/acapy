@@ -3,7 +3,7 @@
 import json
 import logging
 
-from typing import Coroutine, Sequence, Tuple, Union
+from typing import Coroutine, Sequence, Tuple
 
 from ....cache.base import BaseCache
 from ....connections.models.conn_record import ConnRecord
@@ -31,13 +31,15 @@ from ....wallet.util import bytes_to_b58, naked_to_did_key
 
 from ...didcomm_prefix import DIDCommPrefix
 from ...out_of_band.v1_0.message_types import INVITATION as OOB_INVITATION
-from ...out_of_band.v1_0.messages.invitation import InvitationMessage as OOBInvitation
+from ...out_of_band.v1_0.messages.invitation import (
+    InvitationMessage as OOBInvitationMessage,
+)
 from ...out_of_band.v1_0.messages.service import Service as OOBService
 from ...routing.v1_0.manager import RoutingManager
 
-from .messages.complete import ConnComplete
-from .messages.request import ConnRequest
-from .messages.response import ConnResponse
+from .messages.complete import DIDXComplete
+from .messages.request import DIDXRequest
+from .messages.response import DIDXResponse
 from .messages.problem_report import ProblemReportReason
 
 
@@ -81,7 +83,7 @@ class DIDXManager:
         multi_use: bool = False,
         alias: str = None,
         include_handshake: bool = False,
-    ) -> Tuple[ConnRecord, OOBInvitation]:
+    ) -> Tuple[ConnRecord, OOBInvitationMessage]:
         """
         Generate new connection invitation.
 
@@ -122,7 +124,7 @@ class DIDXManager:
                     "Cannot use public and multi_use at the same time"
                 )
 
-            invitation = OOBInvitation(
+            invitation = OOBInvitationMessage(
                 label=my_label,
                 handshake_protocols=(
                     [DIDCommPrefix.qualify_current(OOB_INVITATION)]
@@ -160,7 +162,7 @@ class DIDXManager:
         # Create connection invitation message
         # Note: Need to split this into two stages to support inbound routing of invites
         # Would want to reuse create_did_document and convert the result
-        invitation = OOBInvitation(
+        invitation = OOBInvitationMessage(
             label=my_label,
             handshake_protocols=(
                 [DIDCommPrefix.qualify_current("didexchange/1.0/invitation")]
@@ -194,7 +196,7 @@ class DIDXManager:
 
     async def receive_invitation(
         self,
-        invitation: OOBInvitation,
+        invitation: OOBInvitationMessage,
         auto_accept: bool = None,
         alias: str = None,
     ) -> ConnRecord:
@@ -256,7 +258,7 @@ class DIDXManager:
             reason="Created new connection record from invitation",
             log_params={
                 "invitation": invitation,
-                "role": ConnRecord.Role.RESPONDER.rfc23,
+                "their_role": ConnRecord.Role.RESPONDER.rfc23,
             },
         )
 
@@ -286,7 +288,7 @@ class DIDXManager:
         conn_rec: ConnRecord,
         my_label: str = None,
         my_endpoint: str = None,
-    ) -> ConnRequest:
+    ) -> DIDXRequest:
         """
         Create a new connection request for a previously-received invitation.
 
@@ -296,7 +298,7 @@ class DIDXManager:
             my_endpoint: My endpoint
 
         Returns:
-            A new `ConnRequest` message to send to the other agent
+            A new `DIDXRequest` message to send to the other agent
 
         """
         wallet: BaseWallet = await self.context.inject(BaseWallet)
@@ -324,7 +326,7 @@ class DIDXManager:
         await attach.data.sign(my_info.verkey, wallet)
         if not my_label:
             my_label = self.context.settings.get("default_label")
-        request = ConnRequest(
+        request = DIDXRequest(
             label=my_label,
             did=conn_rec.my_did,
             did_doc_attach=attach,
@@ -339,13 +341,13 @@ class DIDXManager:
         return request
 
     async def receive_request(
-        self, request: ConnRequest, receipt: MessageReceipt
+        self, request: DIDXRequest, receipt: MessageReceipt
     ) -> ConnRecord:
         """
         Receive and store a connection request.
 
         Args:
-            request: The `ConnRequest` to accept
+            request: The `DIDXRequest` to accept
             receipt: The message receipt
 
         Returns:
@@ -370,7 +372,7 @@ class DIDXManager:
                 conn_rec = await ConnRecord.retrieve_by_invitation_key(
                     context=self.context,
                     invitation_key=connection_key,
-                    my_role=ConnRecord.Role.RESPONDER,
+                    their_role=ConnRecord.Role.REQUESTER.rfc23,
                 )
             except StorageNotFoundError:
                 raise DIDXManagerError("No invitation found for pairwise connection")
@@ -456,18 +458,18 @@ class DIDXManager:
                 await responder.send_reply(
                     response, connection_id=conn_rec.connection_id
                 )
-                conn_req.state = ConnRecord.State.RESPONSE.rfc23
-                await conn_req.save(self.context, reason="Sent connection response")
+                conn_rec.state = ConnRecord.State.RESPONSE.rfc23
+                await conn_rec.save(self.context, reason="Sent connection response")
         else:
-            self._logger.debug("Connection request will await acceptance")
+            self._logger.debug("DID exchange request will await acceptance")
 
-        return conn_req
+        return conn_rec
 
     async def create_response(
         self,
-        conn_req: ConnRecord,
+        conn_rec: ConnRecord,
         my_endpoint: str = None,
-    ) -> ConnResponse:
+    ) -> DIDXResponse:
         """
         Create a connection response for a received connection request.
 
@@ -476,7 +478,7 @@ class DIDXManager:
             my_endpoint: Current agent endpoint
 
         Returns:
-            New `ConnResponse` message
+            New `DIDXResponse` message
 
         """
         ConnRecord.log_state(
@@ -512,7 +514,7 @@ class DIDXManager:
         )
         attach = AttachDecorator.from_indy_dict(did_doc.serialize())
         await attach.data.sign(conn_rec.invitation_key, wallet)
-        response = ConnResponse(did=my_info.did, did_doc_attach=attach)
+        response = DIDXResponse(did=my_info.did, did_doc_attach=attach)
         # Assign thread information
         response.assign_thread_from(request)
         response.assign_trace_from(request)
@@ -534,17 +536,17 @@ class DIDXManager:
 
     async def accept_response(
         self,
-        response: ConnResponse,
+        response: DIDXResponse,
         receipt: MessageReceipt,
     ) -> ConnRecord:
         """
         Accept a connection response under RFC 23 (DID exchange).
 
-        Process a `ConnResponse` message by looking up
+        Process a `DIDXResponse` message by looking up
         the connection request and setting up the pairwise connection.
 
         Args:
-            response: The `ConnResponse` to accept
+            response: The `DIDXResponse` to accept
             receipt: The message receipt
 
         Returns:
@@ -576,7 +578,7 @@ class DIDXManager:
                     context=self.context,
                     their_did=receipt.sender_did,
                     my_did=receipt.recipient_did,
-                    my_role=ConnRecord.Role.REQUESTER.rfc23,
+                    their_role=ConnRecord.Role.RESPONDER.rfc23,
                 )
             except StorageNotFoundError:
                 pass
@@ -610,13 +612,13 @@ class DIDXManager:
         await conn_rec.save(self.context, reason="Accepted connection response")
 
         # create and send connection-complete message
-        complete = ConnComplete()
+        complete = DIDXComplete()
         complete.assign_thread_from(response)
         responder: BaseResponder = await self._context.inject(
             BaseResponder, required=False
         )
         if responder:
-            await responder.send_reply(complete, connection_id=connection.connection_id)
+            await responder.send_reply(complete, connection_id=conn_rec.connection_id)
 
             conn_rec.state = ConnRecord.State.RESPONSE.rfc23
             await conn_rec.save(self.context, reason="Sent connection complete")
@@ -625,17 +627,17 @@ class DIDXManager:
 
     async def accept_complete(
         self,
-        complete: ConnComplete,
+        complete: DIDXComplete,
         receipt: MessageReceipt,
     ) -> ConnRecord:
         """
         Accept a connection complete message under RFC 23 (DID exchange).
 
-        Process a `ConnComplete` message by looking up
+        Process a `DIDXComplete` message by looking up
         the connection record and marking the exchange complete.
 
         Args:
-            complete: The `ConnComplete` to accept
+            complete: The `DIDXComplete` to accept
             receipt: The message receipt
 
         Returns:
@@ -761,16 +763,14 @@ class DIDXManager:
         ):
             conn_rec.state = ConnRecord.State.COMPLETED.rfc23
 
-            await conn_rec.save(
-                self.context, reason="Connection promoted to completed"
-            )
+            await conn_rec.save(self.context, reason="Connection promoted to completed")
 
         if not conn_rec and my_verkey:
             try:
                 conn_rec = await ConnRecord.retrieve_by_invitation_key(
                     context=self.context,
                     invitation_key=my_verkey,
-                    my_role=ConnRecord.Role.REQUESTER.rfc23,
+                    their_role=ConnRecord.Role.RESPONDER.rfc23,
                 )
             except StorageError:
                 self._logger.warning(
@@ -913,9 +913,7 @@ class DIDXManager:
             # look up routing connection information
             router = await ConnRecord.retrieve_by_id(self.context, router_id)
             if ConnRecord.State.get(router.state) is not ConnRecord.State.COMPLETED:
-                raise DIDXManagerError(
-                    f"Router connection not completed: {router_id}"
-                )
+                raise DIDXManagerError(f"Router connection not completed: {router_id}")
             routing_doc, _ = await self.fetch_did_document(router.their_did)
             if not routing_doc.service:
                 raise DIDXManagerError(
@@ -964,9 +962,9 @@ class DIDXManager:
             did: The DID for which to search
         """
         storage: BaseStorage = await self.context.inject(BaseStorage)
-        record = await storage.search_records(
+        record = await storage.find_record(
             DIDXManager.RECORD_TYPE_DID_DOC, {"did": did}
-        ).fetch_single()
+        )
         return (DIDDoc.from_json(record.value), record)
 
     async def store_did_document(self, did_doc: DIDDoc):
@@ -987,7 +985,7 @@ class DIDXManager:
             )
             await storage.add_record(record)
         else:
-            await storage.update_record_value(record, did_doc.to_json())
+            await storage.update_record(record, did_doc.to_json(), {"did": did_doc.did})
         await self.remove_keys_for_did(did_doc.did)
         for key in did_doc.pubkey.values():
             if key.controller == did_doc.did:
@@ -1013,9 +1011,9 @@ class DIDXManager:
             key: The verkey to look up
         """
         storage: BaseStorage = await self.context.inject(BaseStorage)
-        record = await storage.search_records(
+        record = await storage.find_record(
             DIDXManager.RECORD_TYPE_DID_KEY, {"key": key}
-        ).fetch_single()
+        )
         return record.tags["did"]
 
     async def remove_keys_for_did(self, did: str):
@@ -1094,7 +1092,7 @@ class DIDXManager:
         if (
             ConnRecord.State.get(conn_rec.state)
             in (ConnRecord.State.INVITATION, ConnRecord.State.REQUEST)
-            and ConnRecord.Role.get(their_role) is ConnRecord.Role.REQUESTER
+            and ConnRecord.Role.get(conn_rec.their_role) is ConnRecord.Role.REQUESTER
         ):
             invitation = await conn_rec.retrieve_invitation(self.context)
             if invitation.did:
@@ -1103,9 +1101,7 @@ class DIDXManager:
                     BaseLedger, required=False
                 )
                 if not ledger:
-                    raise DIDXManagerError(
-                        "Cannot resolve DID without ledger instance"
-                    )
+                    raise DIDXManagerError("Cannot resolve DID without ledger instance")
                 async with ledger:
                     endpoint = await ledger.get_endpoint_for_did(invitation.did)
                     recipient_keys = [await ledger.get_key_for_did(invitation.did)]
@@ -1150,9 +1146,7 @@ class DIDXManager:
         if not signed_diddoc_bytes:
             raise DIDXManagerError("DID doc attachment is not signed.")
         if not await attached.data.verify(wallet):
-            raise DIDXManagerError(
-                f"DID doc attachment signature failed verification"
-            )
+            raise DIDXManagerError(f"DID doc attachment signature failed verification")
 
         return DIDDoc.deserialize(json.loads(signed_diddoc_bytes.decode()))
 
@@ -1241,10 +1235,7 @@ class DIDXManager:
         return conn_rec.routing_state
 
     async def update_inbound(
-        self,
-        inbound_connection_id: str,
-        recip_verkey: str,
-        routing_state: str
+        self, inbound_connection_id: str, recip_verkey: str, routing_state: str
     ):
         """Activate connections once a route has been established.
 
