@@ -37,7 +37,10 @@ class CredentialDefinitionSendRequestSchema(OpenAPISchema):
         required=False, description="Revocation supported flag"
     )
     revocation_registry_size = fields.Int(
-        description="Revocation registry size", required=False, **INDY_REV_REG_SIZE
+        description="Revocation registry size",
+        required=False,
+        strict=True,
+        **INDY_REV_REG_SIZE,
     )
     tag = fields.Str(
         required=False,
