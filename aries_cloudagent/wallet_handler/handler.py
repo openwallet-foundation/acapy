@@ -115,9 +115,8 @@ class WalletHandler():
         if wallet_name not in instances:
             # wallet is not opened
             # query wallet and open wallet if exist
-            wallet_records = await self.get_wallets({"name": wallet_name})
-            if wallet_records:
-                wallet_record = wallet_records[0]
+            wallet_record = await self.get_wallet(wallet_name=wallet_name)
+            if wallet_record:
                 await self.add_instance(wallet_record.config)
             else:
                 raise WalletNotFoundError('Requested wallet is not exist in storage.')
@@ -176,8 +175,8 @@ class WalletHandler():
 
         # check wallet name is already exist in wallet_record
         wallet_name = config["name"]
-        wallet_records = await self.get_wallets({"name": wallet_name})
-        if wallet_records:
+        wallet_record = await self.get_wallet(wallet_name=wallet_name)
+        if wallet_record:
             raise WalletDuplicateError(f"specified wallet name already exist: {wallet_name}")
 
         wallet_record = WalletRecord(
@@ -203,17 +202,31 @@ class WalletHandler():
         Args:
             query: query
         """
-        return await WalletRecord.query(self.context, post_filter_positive=query)
+        post_filter = {}
+        if query.get("webhook_urls"):
+            post_filter["webhook_urls"] = json.loads(query.pop("webhook_urls"))
 
-    async def get_wallet(self, wallet_id: str):
+        return await WalletRecord.query(self.context, tag_filter=query, post_filter_positive=post_filter)
+
+    async def get_wallet(
+            self,
+            wallet_id: str = None,
+            wallet_name: str = None,
+    ) -> WalletRecord:
         """
         Return a wallet record
 
         Args:
             wallet_id: identifier of wallet
+            wallet_name: name of wallet
         """
         try:
-            wallet_record = await WalletRecord.retrieve_by_id(self.context, record_id=wallet_id)
+            if wallet_id:
+                wallet_record = await WalletRecord.retrieve_by_id(self.context, wallet_id)
+            elif wallet_name:
+                wallet_record = await WalletRecord.retrieve_by_name(self.context, wallet_name)
+            else:
+                wallet_record = None
         except StorageNotFoundError:
             return None
         return wallet_record
@@ -227,23 +240,15 @@ class WalletHandler():
         Remove a wallet
 
         Args:
-            wallet_id: Identifier of the instance to be deleted.
-            wallet_name: name of the instance to be deleted.
+            wallet_id: identifier of wallet
+            wallet_name: name of wallet
         """
-        if wallet_id:
-            wallet_record: WalletRecord = await self.get_wallet(wallet_id)
+        if wallet_id or wallet_name:
+            wallet_record = await self.get_wallet(wallet_id=wallet_id, wallet_name=wallet_name)
             if not wallet_record:
-                raise WalletNotFoundError(f"No record for wallet_id {wallet_id} found.")
-        elif wallet_name:
-            wallet_records = await self.get_wallets({"name": wallet_name})
-            if len(wallet_records) < 1:
-                raise WalletNotFoundError(f"No record for wallet {wallet_name} found.")
-            elif len(wallet_records) > 1:
-                raise WalletNotFoundError(f"Found multiple records for wallet with name {wallet_name}.")
-            else:
-                wallet_record: WalletRecord = wallet_records[0]
+                raise WalletNotFoundError(f"No record for wallet found.")
         else:
-            raise WalletNotFoundError(f"Wallet id or wallet id must be specified.")
+            raise WalletNotFoundError(f"Wallet id or wallet name must be specified.")
 
         wallet_name = wallet_record.name
 
@@ -279,20 +284,12 @@ class WalletHandler():
             image_url: image_url for the new instance.
             webhook_urls: webhook_urls for the new instance.
         """
-        if wallet_id:
-            wallet_record: WalletRecord = await self.get_wallet(wallet_id)
+        if wallet_id or wallet_name:
+            wallet_record = await self.get_wallet(wallet_id=wallet_id, wallet_name=wallet_name)
             if not wallet_record:
-                raise WalletNotFoundError(f"No record for wallet_id {wallet_id} found.")
-        elif wallet_name:
-            wallet_records = await self.get_wallets({"name": wallet_name})
-            if len(wallet_records) < 1:
-                raise WalletNotFoundError(f"No record for wallet {wallet_name} found.")
-            elif len(wallet_records) > 1:
-                raise WalletNotFoundError(f"Found multiple records for wallet with name {wallet_name}.")
-            else:
-                wallet_record: WalletRecord = wallet_records[0]
+                raise WalletNotFoundError(f"No record for wallet found.")
         else:
-            raise WalletNotFoundError(f"Wallet id or wallet id must be specified.")
+            raise WalletNotFoundError(f"Wallet id or wallet name must be specified.")
 
         if label is not None:
             wallet_record.label = label
@@ -402,10 +399,8 @@ class WalletHandler():
             WalletNotFoundError: if given wallet does not exist
         """
         wallet_name = context.settings.get_value("wallet.id")
-        wallet_records = await self.get_wallets({"name": wallet_name})
-        if wallet_records:
-            wallet_record: WalletRecord = wallet_records[0]
-        else:
+        wallet_record = await self.get_wallet(wallet_name=wallet_name)
+        if not wallet_record:
             raise WalletNotFoundError(f"No record for wallet {wallet_name} found.")
 
         return wallet_record.webhook_urls
@@ -422,10 +417,8 @@ class WalletHandler():
 
         """
         wallet_name = context.settings.get_value("wallet.id")
-        wallet_records = await self.get_wallets({"name": wallet_name})
-        if wallet_records:
-            wallet_record: WalletRecord = wallet_records[0]
-        else:
+        wallet_record = await self.get_wallet(wallet_name=wallet_name)
+        if not wallet_record:
             raise WalletNotFoundError(f"No record for wallet {wallet_name} found.")
 
         return wallet_record.label or None
@@ -441,10 +434,8 @@ class WalletHandler():
             WalletNotFoundError: if given wallet does not exist
         """
         wallet_name = context.settings.get_value("wallet.id")
-        wallet_records = await self.get_wallets({"name": wallet_name})
-        if wallet_records:
-            wallet_record: WalletRecord = wallet_records[0]
-        else:
+        wallet_record = await self.get_wallet(wallet_name=wallet_name)
+        if not wallet_record:
             raise WalletNotFoundError(f"No record for wallet {wallet_name} found.")
 
         return wallet_record.image_url or None

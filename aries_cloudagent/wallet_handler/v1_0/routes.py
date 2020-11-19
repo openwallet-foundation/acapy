@@ -132,15 +132,19 @@ async def get_wallets(request: web.BaseRequest):
         raise web.HTTPUnauthorized(reason="Only base wallet allowed.")
 
     wallet_handler: WalletHandler = await context.inject(WalletHandler, required=False)
-    if request.query.get("webhook_id"):
-        wallet_records = [await wallet_handler.get_wallet(request.query.get("webhook_id"))]
+    wallet_records = []
+    if request.query.get("wallet_id") or request.query.get("name"):
+        wallet_record = await wallet_handler.get_wallet(
+            wallet_id=request.query.get("wallet_id"),
+            wallet_name=request.query.get("name"),
+        )
+        if wallet_record:
+            wallet_records.append(wallet_record)
     else:
         query = {}
-        for param_name in ("name", "label", "image_url"):
+        for param_name in ("label", "image_url", "webhook_urls"):
             if param_name in request.query:
                 query[param_name] = request.query[param_name]
-        if "webhook_urls" in request.query:
-            query["webhook_urls"] = json.loads(request.query["webhook_urls"])
 
         wallet_records = await wallet_handler.get_wallets(query)
 
@@ -164,13 +168,9 @@ async def get_my_wallet(request: web.BaseRequest):
     wallet_name = context.settings.get_value("wallet.id")
 
     wallet_handler: WalletHandler = await context.inject(WalletHandler, required=False)
-    query = {"name": wallet_name}
-    wallet_records = await wallet_handler.get_wallets(query)
-    if len(wallet_records) < 1:
+    wallet_record = await wallet_handler.get_wallet(wallet_name=wallet_name)
+    if not wallet_record:
         raise web.HTTPNotFound(reason=f"No record for wallet {wallet_name} found.")
-    elif len(wallet_records) > 1:
-        raise web.HTTPError(reason=f"Found multiple records for wallet with name {wallet_name}.")
-    wallet_record: WalletRecord = wallet_records[0]
 
     return web.json_response(wallet_record.serialize(), status=200)
 
