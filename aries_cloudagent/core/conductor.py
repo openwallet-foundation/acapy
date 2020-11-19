@@ -198,7 +198,6 @@ class Conductor:
                 my_seed=hashlib.sha256(b"aries-protocol-test-subject").digest(),
                 their_seed=hashlib.sha256(b"aries-protocol-test-suite").digest(),
                 their_endpoint=their_endpoint,
-                their_role="tester",
                 alias="test-suite",
             )
             print("Created static connection for test suite")
@@ -212,7 +211,6 @@ class Conductor:
             try:
                 mgr = ConnectionManager(self.context)
                 _connection, invitation = await mgr.create_invitation(
-                    their_role=context.settings.get("debug.invite_role"),
                     my_label=context.settings.get("debug.invite_label"),
                     multi_use=context.settings.get("debug.invite_multi_use", False),
                     public=context.settings.get("debug.invite_public", False),

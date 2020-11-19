@@ -60,7 +60,10 @@ class RevRegCreateRequestSchema(OpenAPISchema):
         description="Credential definition identifier", **INDY_CRED_DEF_ID
     )
     max_cred_num = fields.Int(
-        required=False, description="Revocation registry size", **INDY_REV_REG_SIZE
+        required=False,
+        description="Revocation registry size",
+        strict=True,
+        **INDY_REV_REG_SIZE,
     )
 
 
@@ -162,6 +165,7 @@ class RevRegIssuedResultSchema(OpenAPISchema):
 
     result = fields.Int(
         description="Number of credentials issued against revocation registry",
+        strict=True,
         **WHOLE_NUM,
     )
 

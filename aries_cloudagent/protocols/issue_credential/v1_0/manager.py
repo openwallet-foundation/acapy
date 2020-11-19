@@ -94,12 +94,12 @@ class CredentialManager:
         if auto_remove is None:
             auto_remove = not self.context.settings.get("preserve_exchange_records")
         credential_exchange = V10CredentialExchange(
-            auto_issue=True,
-            auto_remove=auto_remove,
             connection_id=connection_id,
             initiator=V10CredentialExchange.INITIATOR_SELF,
             role=V10CredentialExchange.ROLE_ISSUER,
             credential_proposal_dict=credential_proposal.serialize(),
+            auto_issue=True,
+            auto_remove=auto_remove,
             trace=(credential_proposal._trace is not None),
         )
         (credential_exchange, credential_offer) = await self.create_offer(
@@ -199,6 +199,7 @@ class CredentialManager:
             auto_issue=self.context.settings.get(
                 "debug.auto_respond_credential_request"
             ),
+            auto_remove=not self.context.settings.get("preserve_exchange_records"),
             trace=(credential_proposal_message._trace is not None),
         )
         await cred_ex_record.save(self.context, reason="receive credential proposal")
@@ -328,6 +329,7 @@ class CredentialManager:
                 initiator=V10CredentialExchange.INITIATOR_EXTERNAL,
                 role=V10CredentialExchange.ROLE_HOLDER,
                 credential_proposal_dict=credential_proposal_dict,
+                auto_remove=not self.context.settings.get("preserve_exchange_records"),
                 trace=(credential_offer_message._trace is not None),
             )
 
@@ -750,8 +752,7 @@ class CredentialManager:
         )
 
         if cred_ex_record.auto_remove:
-            # Delete the exchange record since we're done with it
-            await cred_ex_record.delete_record(self.context)
+            await cred_ex_record.delete_record(self.context)  # all done: delete
 
         return (cred_ex_record, credential_ack_message)
 
@@ -776,7 +777,6 @@ class CredentialManager:
         await cred_ex_record.save(self.context, reason="credential acked")
 
         if cred_ex_record.auto_remove:
-            # We're done with the exchange so delete
-            await cred_ex_record.delete_record(self.context)
+            await cred_ex_record.delete_record(self.context)  # all done: delete
 
         return cred_ex_record

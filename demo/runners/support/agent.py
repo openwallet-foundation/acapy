@@ -36,6 +36,8 @@ TRACE_TARGET = os.getenv("TRACE_TARGET")
 TRACE_TAG = os.getenv("TRACE_TAG")
 TRACE_ENABLED = os.getenv("TRACE_ENABLED")
 
+WEBHOOK_TARGET = os.getenv("WEBHOOK_TARGET")
+
 AGENT_ENDPOINT = os.getenv("AGENT_ENDPOINT")
 
 DEFAULT_POSTGRES = bool(os.getenv("POSTGRES"))
@@ -139,6 +141,7 @@ class DemoAgent:
         self.trace_target = TRACE_TARGET
         self.trace_tag = TRACE_TAG
         self.multitenant = multitenant
+        self.external_webhook_target = WEBHOOK_TARGET
 
         self.admin_url = f"http://{self.internal_host}:{admin_port}"
         if AGENT_ENDPOINT:
@@ -260,6 +263,8 @@ class DemoAgent:
             )
         if self.webhook_url:
             result.append(("--webhook-url", self.webhook_url))
+        if self.external_webhook_target:
+            result.append(("--webhook-url", self.external_webhook_target))
         if self.trace_enabled:
             result.extend(
                 [

@@ -5,7 +5,7 @@ from .....cache.base import BaseCache
 from .....cache.basic import BasicCache
 from .....config.base import InjectorError
 from .....config.injection_context import InjectionContext
-from .....connections.models.connection_record import ConnectionRecord
+from .....connections.models.conn_record import ConnRecord
 from .....connections.models.connection_target import ConnectionTarget
 from .....connections.models.diddoc import (
     DIDDoc,
@@ -90,11 +90,11 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         )
 
         self.manager = OutOfBandManager(self.context)
-        self.test_conn_rec = ConnectionRecord(
+        self.test_conn_rec = ConnRecord(
             my_did=TestConfig.test_did,
             their_did=TestConfig.test_target_did,
             their_role=None,
-            state=ConnectionRecord.STATE_ACTIVE,
+            state=ConnRecord.State.COMPLETED.rfc23,
         )
 
     async def test_create_invitation_handshake_succeeds(self):

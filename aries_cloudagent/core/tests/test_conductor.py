@@ -3,11 +3,9 @@ from io import StringIO
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
-from .. import conductor as test_module
 from ...admin.base_server import BaseAdminServer
 from ...config.base_context import ContextBuilder
 from ...config.injection_context import InjectionContext
-from ...connections.models.connection_record import ConnectionRecord
 from ...connections.models.connection_target import ConnectionTarget
 from ...connections.models.diddoc import (
     DIDDoc,
@@ -16,7 +14,6 @@ from ...connections.models.diddoc import (
     Service,
 )
 from ...core.protocol_registry import ProtocolRegistry
-
 from ...protocols.connections.v1_0.manager import ConnectionManager
 from ...storage.base import BaseStorage
 from ...storage.basic import BasicStorage
@@ -31,6 +28,8 @@ from ...transport.pack_format import PackWireFormat
 from ...utils.stats import Collector
 from ...wallet.base import BaseWallet
 from ...wallet.basic import BasicWallet
+
+from .. import conductor as test_module
 
 
 class Config:
@@ -661,6 +660,7 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
 
             await conductor.start()
             await conductor.stop()
+            value = captured.getvalue()
             assert "http://localhost?c_i=" in captured.getvalue()
 
     async def test_webhook_router(self):

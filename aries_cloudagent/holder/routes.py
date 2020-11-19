@@ -15,8 +15,8 @@ from ..messaging.valid import (
     INDY_REV_REG_ID,
     INDY_SCHEMA_ID,
     INDY_WQL,
-    NATURAL_NUM,
-    WHOLE_NUM,
+    NUM_STR_NATURAL,
+    NUM_STR_WHOLE,
     UUIDFour,
 )
 from ..wallet.error import WalletNotFoundError
@@ -57,15 +57,15 @@ class CredBriefListSchema(OpenAPISchema):
 class CredentialsListQueryStringSchema(OpenAPISchema):
     """Parameters and validators for query string in credentials list query."""
 
-    start = fields.Int(
+    start = fields.Str(
         description="Start index",
         required=False,
-        **WHOLE_NUM,
+        **NUM_STR_WHOLE,
     )
-    count = fields.Int(
+    count = fields.Str(
         description="Maximum number to retrieve",
         required=False,
-        **NATURAL_NUM,
+        **NUM_STR_NATURAL,
     )
     wql = fields.Str(
         description="(JSON) WQL query",
@@ -79,6 +79,22 @@ class CredIdMatchInfoSchema(OpenAPISchema):
 
     credential_id = fields.Str(
         description="Credential identifier", required=True, example=UUIDFour.EXAMPLE
+    )
+
+
+class CredRevokedQueryStringSchema(OpenAPISchema):
+    """Path parameters and validators for request seeking cred revocation status."""
+
+    fro = fields.Str(
+        data_key="from",
+        description="Earliest epoch of revocation status interval of interest",
+        required=False,
+        **NUM_STR_WHOLE,
+    )
+    to = fields.Str(
+        description="Latest epoch of revocation status interval of interest",
+        required=False,
+        **NUM_STR_WHOLE,
     )
 
 
@@ -118,6 +134,7 @@ async def credentials_get(request: web.BaseRequest):
 
 @docs(tags=["credentials"], summary="Query credential revocation status by id")
 @match_info_schema(CredIdMatchInfoSchema())
+@querystring_schema(CredRevokedQueryStringSchema())
 @response_schema(CredRevokedResultSchema(), 200)
 async def credentials_revoked(request: web.BaseRequest):
     """
@@ -133,6 +150,8 @@ async def credentials_revoked(request: web.BaseRequest):
     context = request["context"]
 
     credential_id = request.match_info["credential_id"]
+    fro = request.query.get("from")
+    to = request.query.get("to")
 
     ledger: BaseLedger = await context.inject(BaseLedger, required=False)
     if not ledger:
@@ -144,7 +163,12 @@ async def credentials_revoked(request: web.BaseRequest):
     async with ledger:
         try:
             holder: BaseHolder = await context.inject(BaseHolder)
-            revoked = await holder.credential_revoked(credential_id, ledger)
+            revoked = await holder.credential_revoked(
+                credential_id,
+                ledger,
+                int(fro) if fro else None,
+                int(to) if to else None,
+            )
         except WalletNotFoundError as err:
             raise web.HTTPNotFound(reason=err.roll_up) from err
         except LedgerError as err:
