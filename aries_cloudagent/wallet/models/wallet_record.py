@@ -2,6 +2,7 @@
 
 from typing import Any
 
+from aries_cloudagent.config.injection_context import InjectionContext
 from marshmallow import fields
 
 from ...messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
@@ -20,6 +21,7 @@ class WalletRecord(BaseExchangeRecord):
 
     RECORD_TYPE = "wallet_record"
     RECORD_ID_NAME = "wallet_id"
+    TAG_NAMES = {"name", "label", "image_url"}
 
     def __init__(
         self,
@@ -72,6 +74,15 @@ class WalletRecord(BaseExchangeRecord):
     @property
     def type(self) -> str:
         return self.config.get("type")
+
+    @classmethod
+    async def retrieve_by_name(
+        cls,
+        context: InjectionContext,
+        name: str,
+    ) -> "WalletRecord":
+        """Retrieve a wallet record by wallet_name."""
+        return await cls.retrieve_by_tag_filter(context, {"name": name})
 
     def __eq__(self, other: Any) -> bool:
         """Comparison between records."""
