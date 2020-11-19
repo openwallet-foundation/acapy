@@ -20,8 +20,8 @@ import json
 
 from asynctest import TestCase as AsyncTestCase, mock as async_mock
 
-from ..models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
-from ..models.diddoc.util import canon_ref, canon_did
+from .. import DIDDoc, PublicKey, PublicKeyType, Service
+from ..util import canon_did, canon_ref
 
 
 class TestDIDDoc(AsyncTestCase):

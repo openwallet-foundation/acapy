@@ -50,6 +50,7 @@ class TestBaseDecoratorSet(TestCase):
 
         deco_set_copy = deco_set.copy()
         assert type(deco_set_copy) == BaseDecoratorSet
+        assert deco_set_copy == deco_set
         assert not deco_set_copy.fields
         assert deco_set_copy.models == MODELS
         assert deco_set_copy.prefix == DECORATOR_PREFIX

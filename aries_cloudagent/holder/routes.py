@@ -15,8 +15,8 @@ from ..messaging.valid import (
     INDY_REV_REG_ID,
     INDY_SCHEMA_ID,
     INDY_WQL,
-    NATURAL_NUM,
-    WHOLE_NUM,
+    NUM_STR_NATURAL,
+    NUM_STR_WHOLE,
     UUIDFour,
 )
 from ..wallet.error import WalletNotFoundError
@@ -57,17 +57,15 @@ class CredBriefListSchema(OpenAPISchema):
 class CredentialsListQueryStringSchema(OpenAPISchema):
     """Parameters and validators for query string in credentials list query."""
 
-    start = fields.Int(
+    start = fields.Str(
         description="Start index",
         required=False,
-        strict=True,
-        **WHOLE_NUM,
+        **NUM_STR_WHOLE,
     )
-    count = fields.Int(
+    count = fields.Str(
         description="Maximum number to retrieve",
         required=False,
-        strict=True,
-        **NATURAL_NUM,
+        **NUM_STR_NATURAL,
     )
     wql = fields.Str(
         description="(JSON) WQL query",
@@ -87,16 +85,16 @@ class CredIdMatchInfoSchema(OpenAPISchema):
 class CredRevokedQueryStringSchema(OpenAPISchema):
     """Path parameters and validators for request seeking cred revocation status."""
 
-    fro = fields.Int(
+    fro = fields.Str(
         data_key="from",
         description="Earliest epoch of revocation status interval of interest",
         required=False,
-        **WHOLE_NUM,
+        **NUM_STR_WHOLE,
     )
-    to = fields.Int(
+    to = fields.Str(
         description="Latest epoch of revocation status interval of interest",
         required=False,
-        **WHOLE_NUM,
+        **NUM_STR_WHOLE,
     )
 
 
