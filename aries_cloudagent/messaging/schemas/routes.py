@@ -113,7 +113,7 @@ async def schemas_send_schema(request: web.BaseRequest):
         The schema id sent
 
     """
-    context = request.app["request_context"]
+    context = request["context"]
 
     body = await request.json()
 
@@ -159,7 +159,7 @@ async def schemas_created(request: web.BaseRequest):
         The identifiers of matching schemas
 
     """
-    context = request.app["request_context"]
+    context = request["context"]
 
     storage = await context.inject(BaseStorage)
     found = await storage.search_records(
@@ -186,7 +186,7 @@ async def schemas_get_schema(request: web.BaseRequest):
         The schema details.
 
     """
-    context = request.app["request_context"]
+    context = request["context"]
 
     schema_id = request.match_info["schema_id"]
 

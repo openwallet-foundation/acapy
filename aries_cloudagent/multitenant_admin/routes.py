@@ -92,7 +92,7 @@ async def wallet_list(request: web.BaseRequest):
         request: aiohttp request object
     """
 
-    context = request.app["request_context"]
+    context = request["context"]
 
     try:
         records = await WalletRecord.query(context)
@@ -117,7 +117,7 @@ async def wallet_get(request: web.BaseRequest):
 
     """
 
-    context = request.app["request_context"]
+    context = request["context"]
     wallet_id = request.match_info["wallet_id"]
 
     try:
@@ -139,7 +139,7 @@ async def wallet_create(request: web.BaseRequest):
         request: aiohttp request object
     """
 
-    context = request.app["request_context"]
+    context = request["context"]
     body = await request.json()
 
     wallet_name = body.get("wallet_name")
@@ -194,7 +194,7 @@ async def wallet_remove(request: web.BaseRequest):
 
     """
 
-    context = request.app["request_context"]
+    context = request["context"]
     wallet_id = request.match_info["wallet_id"]
 
     try:

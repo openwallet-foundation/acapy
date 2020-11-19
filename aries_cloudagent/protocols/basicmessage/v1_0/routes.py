@@ -39,9 +39,9 @@ async def connections_send_message(request: web.BaseRequest):
         request: aiohttp request object
 
     """
-    context = request.app["request_context"]
+    context = request["context"]
     connection_id = request.match_info["conn_id"]
-    outbound_handler = request.app["outbound_message_router"]
+    outbound_handler = request["outbound_message_router"]
     params = await request.json()
 
     try:

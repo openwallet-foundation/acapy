@@ -249,6 +249,20 @@ class AdminServer(BaseAdminServer):
                 or path.startswith("/static/swagger/")
             )
 
+        @web.middleware
+        async def set_request_context(request, handler):
+            context = self.context.copy()
+
+            # This sets the context and message_router on the request
+            # This allows for different context per request, which
+            # is needed for multitenancy.
+            request["context"] = context
+            request["outbound_message_router"] = self.responder.send
+
+            return await handler(request)
+
+        middlewares.append(set_request_context)
+
         # If admin_api_key is None, then admin_insecure_mode must be set so
         # we can safely enable the admin server with no security
         if self.admin_api_key:
@@ -286,6 +300,10 @@ class AdminServer(BaseAdminServer):
             middlewares.append(collect_stats)
 
         app = web.Application(middlewares=middlewares)
+        # MTODO: remove app context, only use request context
+        # This can have breaking changes for external plugins
+        # Maybe global context should be base wallet, request context
+        # should be sub/base wallet
         app["request_context"] = self.context
         app["outbound_message_router"] = self.responder.send
 
