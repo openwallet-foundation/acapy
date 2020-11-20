@@ -1,11 +1,11 @@
 """Multitenant admin routes."""
 
 from typing import cast
+import jwt
 from marshmallow import fields, Schema, validate, validates_schema, ValidationError
 from aiohttp import web
 from aiohttp_apispec import docs, request_schema, match_info_schema
 
-from .util import get_wallet_jwt
 from ..messaging.valid import UUIDFour
 from ..messaging.models.openapi import OpenAPISchema
 from ..storage.error import StorageNotFoundError
@@ -40,7 +40,7 @@ class CreateWalletRequestSchema(Schema):
     """Request schema for adding a new wallet which will be registered by the agent."""
 
     # MTODO: wallet_name is now also required for 'basic' wallet
-    # to make the CachedProvider setup easier. Should we make it optional?
+    # We should use id, and make wallet_name only required for indy wallets
     wallet_name = fields.Str(
         description="Wallet name", example="MyNewWallet", required=True
     )
@@ -140,6 +140,7 @@ async def wallet_create(request: web.BaseRequest):
     """
 
     context = request["context"]
+    jwt_secret = context.settings.get("multitenant.jwt_secret")
     body = await request.json()
 
     wallet_name = body.get("wallet_name")
@@ -166,11 +167,18 @@ async def wallet_create(request: web.BaseRequest):
     )
     await wallet_record.save(context)
 
-    # create actual wallet
-    wallet_instance = await wallet_record.get_instance(context, {"key": wallet_key})
-    await wallet_instance.close()
+    # this creates the actual wallet
+    await wallet_record.get_instance(context, {"key": wallet_key})
+    # MTODO: if we close the wallet here, it will be closed on next requests
+    # await wallet_instance.close()
 
-    token = get_wallet_jwt(context, wallet_record, wallet_key)
+    # MTODO: move to better place for JWT management
+    jwt_payload = {"wallet_id": wallet_record.wallet_record_id}
+    if wallet_record.key_management_mode == WalletRecord.MODE_UNMANAGED:
+        # MTODO: maybe check if wallet_key is provided?
+        jwt_payload["wallet_key"] = wallet_key
+
+    token = jwt.encode(jwt_payload, jwt_secret).decode()
     result = {
         **format_wallet_record(wallet_record),
         "token": token,
@@ -207,6 +215,7 @@ async def wallet_remove(request: web.BaseRequest):
         # We can't use auto_remove, because the wallet provider does
         #  not support it at the moment.
         wallet_instance = await wallet_record.get_instance(context)
+        await wallet_instance.close()
 
         if wallet_instance.type == "indy":
             indy_wallet = cast(IndyWallet, wallet_instance)
@@ -222,6 +231,7 @@ async def wallet_remove(request: web.BaseRequest):
 # MTODO: add wallet import
 # MTODO: add wallet export
 # MTODO: add rotate wallet key
+# MTODO: add wallet authenticate
 
 
 async def register(app: web.Application):

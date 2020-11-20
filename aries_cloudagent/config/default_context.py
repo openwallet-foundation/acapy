@@ -65,7 +65,7 @@ class DefaultContextBuilder(ContextBuilder):
                 StatsProvider(
                     StorageProvider(), ("add_record", "get_record", "search_records")
                 ),
-                ("wallet.name",),
+                ("wallet.id",),
             ),
         )
         context.injector.bind_provider(
@@ -81,7 +81,7 @@ class DefaultContextBuilder(ContextBuilder):
                         "get_local_did",
                     ),
                 ),
-                ("wallet.name",),
+                ("wallet.id",),
             ),
         )
 
@@ -100,7 +100,7 @@ class DefaultContextBuilder(ContextBuilder):
                 # MTODO: It would be better to not create a separate ledger instance
                 # per wallet (besides the wallet_handle they share everyting)
                 # but only create a ledger instance per wallet.type or something?
-                ("wallet.name",),
+                ("wallet.id",),
             ),
         )
         context.injector.bind_provider(

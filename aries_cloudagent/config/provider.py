@@ -89,11 +89,8 @@ class CachedProvider(BaseProvider):
         """
         # MTODO: how to handle changes in the config?
         instance_vals = {key: config.get(key) for key in self._unique_settings_keys}
-        print("instance_vals", instance_vals)
         instance_key = hashlib.sha256(str(instance_vals).encode()).hexdigest()
-        print("instance_key", instance_key)
         if not self._instances.get(instance_key):
-            print("instance_key_not_present")
             self._instances[instance_key] = await self._provider.provide(
                 config, injector
             )

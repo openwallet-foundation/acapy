@@ -46,18 +46,17 @@ class WalletRecord(BaseRecord):
         self.wallet_name = wallet_name or wallet_config.get("name")
         self.key_management_mode = key_management_mode
 
-    def get_config_as_settings(self, extra_config=None):
+    def get_config_as_settings(self):
         """Get the wallet config as settings dict."""
-        # MTODO: better approach for injecting wallet_key?
-        config = {**self.wallet_config, **(extra_config or {})}
+        config = {**self.wallet_config, "id": self.wallet_record_id}
         # Wallet settings need to be prefixed with `wallet.`
         return {f"wallet.{k}": v for k, v in config.items()}
 
-    async def get_instance(self, context, extra_config=None):
+    async def get_instance(self, context, extra_settings={}):
         """Get instance of wallet using wallet config."""
         wallet_instance: BaseWallet = await context.inject(
             BaseWallet,
-            settings=self.get_config_as_settings(extra_config),
+            settings={**self.get_config_as_settings(), **extra_settings},
         )
         return wallet_instance
 
