@@ -199,7 +199,7 @@ class IndyVerifier(BaseVerifier):
             if not timestamp:
                 continue
 
-            if timestamp > now:
+            if timestamp > now + 300:  # allow 5 min for clock skew
                 raise ValueError(f"Timestamp {timestamp} is in the future")
             if timestamp < rev_reg_defs[rev_reg_id]["txnTime"]:
                 raise ValueError(
