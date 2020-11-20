@@ -19,13 +19,13 @@ class TestJSONLDRoutes(AsyncTestCase):
         self.wallet = self.wallet = BasicWallet()
         self.did_info = await self.wallet.create_local_did()
         self.context.injector.bind_instance(BaseWallet, self.wallet)
-        self.app = {
-            "request_context": self.context,
+        self.request_dict = {
+            "context": self.context,
         }
 
     async def test_verify_credential(self):
         mock_request = async_mock.MagicMock(
-            app=self.app,
+            __getitem__=async_mock.Mock(side_effect=self.request_dict.__getitem__),
             json=async_mock.CoroutineMock(
                 return_value={  # posted json
                     "verkey": (
@@ -82,7 +82,7 @@ class TestJSONLDRoutes(AsyncTestCase):
 
     async def test_sign_credential(self):
         mock_request = async_mock.MagicMock(
-            app=self.app,
+            __getitem__=async_mock.Mock(side_effect=self.request_dict.__getitem__),
             json=async_mock.CoroutineMock(
                 return_value={  # posted json
                     "verkey": self.did_info.verkey,

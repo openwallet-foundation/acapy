@@ -1,12 +1,9 @@
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
-from aiohttp import web as aio_web
-
 from ....config.injection_context import InjectionContext
 from ....issuer.base import BaseIssuer
 from ....ledger.base import BaseLedger
-from ....messaging.request_context import RequestContext
 from ....storage.base import BaseStorage
 from ....tails.base import BaseTailsServer
 
@@ -44,13 +41,13 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
         )
         self.context.injector.bind_instance(BaseStorage, self.storage)
 
-        self.app = {
-            "request_context": self.context,
+        self.request_dict = {
+            "context": self.context,
         }
 
     async def test_send_credential_definition(self):
         mock_request = async_mock.MagicMock(
-            app=self.app,
+            __getitem__=async_mock.Mock(side_effect=self.request_dict.__getitem__),
             json=async_mock.CoroutineMock(
                 return_value={
                     "schema_id": "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0",
@@ -73,7 +70,7 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
 
     async def test_send_credential_definition_revoc(self):
         mock_request = async_mock.MagicMock(
-            app=self.app,
+            __getitem__=async_mock.Mock(side_effect=self.request_dict.__getitem__),
             json=async_mock.CoroutineMock(
                 return_value={
                     "schema_id": "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0",
@@ -115,7 +112,7 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
 
     async def test_send_credential_definition_revoc_no_tails_server_x(self):
         mock_request = async_mock.MagicMock(
-            app=self.app,
+            __getitem__=async_mock.Mock(side_effect=self.request_dict.__getitem__),
             json=async_mock.CoroutineMock(
                 return_value={
                     "schema_id": "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0",
@@ -132,7 +129,7 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
 
     async def test_send_credential_definition_revoc_no_support_x(self):
         mock_request = async_mock.MagicMock(
-            app=self.app,
+            __getitem__=async_mock.Mock(side_effect=self.request_dict.__getitem__),
             json=async_mock.CoroutineMock(
                 return_value={
                     "schema_id": "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0",
@@ -158,7 +155,7 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
 
     async def test_send_credential_definition_revoc_upload_x(self):
         mock_request = async_mock.MagicMock(
-            app=self.app,
+            __getitem__=async_mock.Mock(side_effect=self.request_dict.__getitem__),
             json=async_mock.CoroutineMock(
                 return_value={
                     "schema_id": "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0",
@@ -197,7 +194,7 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
 
     async def test_send_credential_definition_revoc_init_issuer_rev_reg_x(self):
         mock_request = async_mock.MagicMock(
-            app=self.app,
+            __getitem__=async_mock.Mock(side_effect=self.request_dict.__getitem__),
             json=async_mock.CoroutineMock(
                 return_value={
                     "schema_id": "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0",
@@ -236,7 +233,7 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
 
     async def test_send_credential_definition_no_ledger(self):
         mock_request = async_mock.MagicMock(
-            app=self.app,
+            __getitem__=async_mock.Mock(side_effect=self.request_dict.__getitem__),
             json=async_mock.CoroutineMock(
                 return_value={
                     "schema_id": "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0",
@@ -254,7 +251,7 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
 
     async def test_send_credential_definition_ledger_x(self):
         mock_request = async_mock.MagicMock(
-            app=self.app,
+            __getitem__=async_mock.Mock(side_effect=self.request_dict.__getitem__),
             json=async_mock.CoroutineMock(
                 return_value={
                     "schema_id": "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0",
@@ -277,7 +274,7 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
 
     async def test_created(self):
         mock_request = async_mock.MagicMock(
-            app=self.app,
+            __getitem__=async_mock.Mock(side_effect=self.request_dict.__getitem__),
             match_info={"cred_def_id": CRED_DEF_ID},
         )
 
@@ -290,7 +287,7 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
 
     async def test_get_credential_definition(self):
         mock_request = async_mock.MagicMock(
-            app=self.app,
+            __getitem__=async_mock.Mock(side_effect=self.request_dict.__getitem__),
             match_info={"cred_def_id": CRED_DEF_ID},
         )
 
@@ -305,7 +302,7 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
 
     async def test_get_credential_definition_no_ledger(self):
         mock_request = async_mock.MagicMock(
-            app=self.app,
+            __getitem__=async_mock.Mock(side_effect=self.request_dict.__getitem__),
             match_info={"cred_def_id": CRED_DEF_ID},
         )
 
