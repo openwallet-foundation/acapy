@@ -9,14 +9,13 @@ skinparam monochrome true
 
 skinparam componentStyle uml2
 
-cloud "The Internet" {
-    package "DID Method Network" as SN {
-        component "Distributed\nLedger" as DL
-    }
-    component "Other Agents" as others
+cloud "The Internet\n" {
+
+    component "Distributed\nLedger" as DL
+    component "Other\nAgents" as others
 }
 
-package "Aries Cloud Agent" as vx {
+package "Aries Cloud Agent - Python" as vx {
     package Core as core {
         component "Transport Plugins" as tp
         package  "Conductor" as cond {
@@ -31,12 +30,12 @@ package "Aries Cloud Agent" as vx {
     }
     component "Controller\nREST API" as rest
     package "Handler Plugins" as inthand {
-        component "Storage Manager\nWallet Manager\nIndy Node Pool Manager\n.\n.\n." as intmgrs
+        component "VDR Manager\nStorage Manager\n.\n.\n." as intmgrs
     }
-    package "DID Method SDK" as is {
-        database "Secure Storage" as wallet
+    package "Storage Implementation" as is {
+        database "Secure Storage" as storage
     }
-    intmgrs --> wallet
+    intmgrs --> storage
 
 }
 
