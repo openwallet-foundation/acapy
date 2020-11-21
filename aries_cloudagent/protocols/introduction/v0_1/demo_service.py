@@ -3,7 +3,7 @@
 import json
 import logging
 
-from ....connections.models.connection_record import ConnectionRecord
+from ....connections.models.conn_record import ConnRecord
 from ....storage.base import (
     BaseStorage,
     StorageRecord,
@@ -41,7 +41,7 @@ class DemoIntroductionService(BaseIntroductionService):
         """
 
         try:
-            init_connection = await ConnectionRecord.retrieve_by_id(
+            init_connection = await ConnRecord.retrieve_by_id(
                 self._context, init_connection_id
             )
         except StorageNotFoundError:
@@ -49,13 +49,16 @@ class DemoIntroductionService(BaseIntroductionService):
                 f"Initiator connection {init_connection_id} not found"
             )
 
-        if init_connection.state != "active":
+        if (
+            ConnRecord.State.get(init_connection.state)
+            is not ConnRecord.State.COMPLETED
+        ):
             raise IntroductionError(
                 f"Initiator connection {init_connection_id} not active"
             )
 
         try:
-            target_connection = await ConnectionRecord.retrieve_by_id(
+            target_connection = await ConnRecord.retrieve_by_id(
                 self._context, target_connection_id
             )
         except StorageNotFoundError:
@@ -63,7 +66,10 @@ class DemoIntroductionService(BaseIntroductionService):
                 "Target connection {target_connection_id} not found"
             )
 
-        if target_connection.state != "active":
+        if (
+            ConnRecord.State.get(target_connection.state)
+            is not ConnRecord.State.COMPLETED
+        ):
             raise IntroductionError(
                 "Target connection {target_connection_id} not active"
             )
@@ -115,7 +121,7 @@ class DemoIntroductionService(BaseIntroductionService):
                 msg.assign_trace_from(invitation)
 
                 value["state"] = "complete"
-                await storage.update_record_value(row, json.dumps(value))
+                await storage.update_record(row, json.dumps(value), row.tags)
 
                 init_connection_id = row.tags["init_connection_id"]
                 await outbound_handler(msg, connection_id=init_connection_id)

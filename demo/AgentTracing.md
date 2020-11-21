@@ -95,4 +95,10 @@ DOCKER_NET=efk-stack_efk_net TRACE_TARGET_URL=fluentd:8088 ./run_demo faber --tr
 DOCKER_NET=efk-stack_efk_net TRACE_TARGET_URL=fluentd:8088 ./run_demo alice --trace-http
 ```
 
+## Hooking into event messaging
 
+ACA-PY supports sending events to web hooks, which allows the demo agents to display them in the CLI. To also send them to another end point, use the `--webhook-url` option, which requires the `WEBHOOK_URL` environment variable. Configure an end point running on the docker host system, port *8888*, use the following:
+
+```bash
+WEBHOOK_URL=host.docker.internal:8888 ./run_demo faber --webhook-url
+```

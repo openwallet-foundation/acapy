@@ -18,9 +18,9 @@ class TestProofRoutes(AsyncTestCase):
 
     async def test_validate_non_revoked(self):
         non_revo = test_module.IndyProofReqNonRevokedSchema()
-        non_revo.validate_fields({"from": 1234567890})
+        non_revo.validate_fields({"fro": 1234567890})
         non_revo.validate_fields({"to": 1234567890})
-        non_revo.validate_fields({"from": 1234567890, "to": 1234567890})
+        non_revo.validate_fields({"fro": 1234567890, "to": 1234567890})
         with self.assertRaises(test_module.ValidationError):
             non_revo.validate_fields({})
 
@@ -338,7 +338,7 @@ class TestProofRoutes(AsyncTestCase):
         }
 
         with async_mock.patch(
-            "aries_cloudagent.connections.models.connection_record.ConnectionRecord",
+            "aries_cloudagent.connections.models.conn_record.ConnRecord",
             autospec=True,
         ) as mock_connection_record, async_mock.patch(
             "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
@@ -375,7 +375,7 @@ class TestProofRoutes(AsyncTestCase):
         }
 
         with async_mock.patch(
-            "aries_cloudagent.connections.models.connection_record.ConnectionRecord",
+            "aries_cloudagent.connections.models.conn_record.ConnRecord",
             autospec=True,
         ) as mock_connection_record:
 
@@ -399,7 +399,7 @@ class TestProofRoutes(AsyncTestCase):
         }
 
         with async_mock.patch(
-            "aries_cloudagent.connections.models.connection_record.ConnectionRecord",
+            "aries_cloudagent.connections.models.conn_record.ConnRecord",
             autospec=True,
         ) as mock_connection_record, async_mock.patch(
             "aries_cloudagent.protocols.present_proof.v1_0.messages.inner.presentation_preview.PresentationPreview",
@@ -427,7 +427,7 @@ class TestProofRoutes(AsyncTestCase):
         }
 
         with async_mock.patch(
-            "aries_cloudagent.connections.models.connection_record.ConnectionRecord",
+            "aries_cloudagent.connections.models.conn_record.ConnRecord",
             autospec=True,
         ) as mock_connection_record, async_mock.patch(
             "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
@@ -565,7 +565,7 @@ class TestProofRoutes(AsyncTestCase):
         }
 
         with async_mock.patch(
-            "aries_cloudagent.connections.models.connection_record.ConnectionRecord",
+            "aries_cloudagent.connections.models.conn_record.ConnRecord",
             autospec=True,
         ) as mock_connection_record, async_mock.patch(
             "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
@@ -624,7 +624,7 @@ class TestProofRoutes(AsyncTestCase):
         }
 
         with async_mock.patch(
-            "aries_cloudagent.connections.models.connection_record.ConnectionRecord",
+            "aries_cloudagent.connections.models.conn_record.ConnRecord",
             autospec=True,
         ) as mock_connection_record:
 
@@ -648,7 +648,7 @@ class TestProofRoutes(AsyncTestCase):
         }
 
         with async_mock.patch(
-            "aries_cloudagent.connections.models.connection_record.ConnectionRecord",
+            "aries_cloudagent.connections.models.conn_record.ConnRecord",
             autospec=True,
         ) as mock_connection_record:
 
@@ -678,7 +678,7 @@ class TestProofRoutes(AsyncTestCase):
         }
 
         with async_mock.patch(
-            "aries_cloudagent.connections.models.connection_record.ConnectionRecord",
+            "aries_cloudagent.connections.models.conn_record.ConnRecord",
             autospec=True,
         ) as mock_connection_record, async_mock.patch(
             "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
@@ -748,7 +748,7 @@ class TestProofRoutes(AsyncTestCase):
         }
 
         with async_mock.patch(
-            "aries_cloudagent.connections.models.connection_record.ConnectionRecord",
+            "aries_cloudagent.connections.models.conn_record.ConnRecord",
             autospec=True,
         ) as mock_connection_record, async_mock.patch(
             "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
@@ -817,7 +817,7 @@ class TestProofRoutes(AsyncTestCase):
         }
 
         with async_mock.patch(
-            "aries_cloudagent.connections.models.connection_record.ConnectionRecord",
+            "aries_cloudagent.connections.models.conn_record.ConnRecord",
             autospec=True,
         ) as mock_connection_record, async_mock.patch(
             "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
@@ -869,7 +869,7 @@ class TestProofRoutes(AsyncTestCase):
         }
 
         with async_mock.patch(
-            "aries_cloudagent.connections.models.connection_record.ConnectionRecord",
+            "aries_cloudagent.connections.models.conn_record.ConnRecord",
             autospec=True,
         ) as mock_connection_record, async_mock.patch(
             "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
@@ -954,7 +954,7 @@ class TestProofRoutes(AsyncTestCase):
         }
 
         with async_mock.patch(
-            "aries_cloudagent.connections.models.connection_record.ConnectionRecord",
+            "aries_cloudagent.connections.models.conn_record.ConnRecord",
             autospec=True,
         ) as mock_connection_record, async_mock.patch(
             "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
@@ -1028,7 +1028,7 @@ class TestProofRoutes(AsyncTestCase):
         }
 
         with async_mock.patch(
-            "aries_cloudagent.connections.models.connection_record.ConnectionRecord",
+            "aries_cloudagent.connections.models.conn_record.ConnRecord",
             autospec=True,
         ) as mock_connection_record, async_mock.patch(
             "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
@@ -1084,7 +1084,7 @@ class TestProofRoutes(AsyncTestCase):
         }
 
         with async_mock.patch(
-            "aries_cloudagent.connections.models.connection_record.ConnectionRecord",
+            "aries_cloudagent.connections.models.conn_record.ConnRecord",
             autospec=True,
         ) as mock_connection_record, async_mock.patch(
             "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
@@ -1131,7 +1131,7 @@ class TestProofRoutes(AsyncTestCase):
         }
 
         with async_mock.patch(
-            "aries_cloudagent.connections.models.connection_record.ConnectionRecord",
+            "aries_cloudagent.connections.models.conn_record.ConnRecord",
             autospec=True,
         ) as mock_connection_record, async_mock.patch(
             "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
@@ -1211,7 +1211,7 @@ class TestProofRoutes(AsyncTestCase):
         }
 
         with async_mock.patch(
-            "aries_cloudagent.connections.models.connection_record.ConnectionRecord",
+            "aries_cloudagent.connections.models.conn_record.ConnRecord",
             autospec=True,
         ) as mock_connection_record, async_mock.patch(
             "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
@@ -1269,7 +1269,7 @@ class TestProofRoutes(AsyncTestCase):
         }
 
         with async_mock.patch(
-            "aries_cloudagent.connections.models.connection_record.ConnectionRecord",
+            "aries_cloudagent.connections.models.conn_record.ConnRecord",
             autospec=True,
         ) as mock_connection_record, async_mock.patch(
             "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
@@ -1337,7 +1337,7 @@ class TestProofRoutes(AsyncTestCase):
         }
 
         with async_mock.patch(
-            "aries_cloudagent.connections.models.connection_record.ConnectionRecord",
+            "aries_cloudagent.connections.models.conn_record.ConnRecord",
             autospec=True,
         ) as mock_connection_record, async_mock.patch(
             "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
@@ -1373,7 +1373,7 @@ class TestProofRoutes(AsyncTestCase):
         }
 
         with async_mock.patch(
-            "aries_cloudagent.connections.models.connection_record.ConnectionRecord",
+            "aries_cloudagent.connections.models.conn_record.ConnRecord",
             autospec=True,
         ) as mock_connection_record, async_mock.patch(
             "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
@@ -1443,7 +1443,7 @@ class TestProofRoutes(AsyncTestCase):
         }
 
         with async_mock.patch(
-            "aries_cloudagent.connections.models.connection_record.ConnectionRecord",
+            "aries_cloudagent.connections.models.conn_record.ConnRecord",
             autospec=True,
         ) as mock_connection_record, async_mock.patch(
             "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",

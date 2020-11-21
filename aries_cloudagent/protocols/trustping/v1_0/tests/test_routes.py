@@ -24,7 +24,7 @@ class TestHolderRoutes(AsyncTestCase):
         )
 
         with async_mock.patch.object(
-            test_module.ConnectionRecord, "retrieve_by_id", async_mock.CoroutineMock()
+            test_module.ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
         ) as mock_retrieve, async_mock.patch.object(
             test_module, "Ping", async_mock.MagicMock()
         ) as mock_ping, async_mock.patch.object(
@@ -44,7 +44,7 @@ class TestHolderRoutes(AsyncTestCase):
         )
 
         with async_mock.patch.object(
-            test_module.ConnectionRecord, "retrieve_by_id", async_mock.CoroutineMock()
+            test_module.ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
         ) as mock_retrieve, async_mock.patch.object(
             test_module.web, "json_response", async_mock.MagicMock()
         ) as json_response:
@@ -60,7 +60,7 @@ class TestHolderRoutes(AsyncTestCase):
         )
 
         with async_mock.patch.object(
-            test_module.ConnectionRecord, "retrieve_by_id", async_mock.CoroutineMock()
+            test_module.ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
         ) as mock_retrieve, async_mock.patch.object(
             test_module.web, "json_response", async_mock.MagicMock()
         ) as json_response:
