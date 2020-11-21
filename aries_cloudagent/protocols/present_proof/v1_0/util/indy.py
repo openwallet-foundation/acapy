@@ -36,7 +36,7 @@ async def indy_proof_req_preview2indy_requested_creds(
         )
         if not credentials:
             raise ValueError(
-                f"Could not automatically construct presentation for "
+                "Could not automatically construct presentation for "
                 + f"presentation request {indy_proof_request['name']}"
                 + f":{indy_proof_request['version']} because referent "
                 + f"{referent} did not produce any credentials."
@@ -61,11 +61,11 @@ async def indy_proof_req_preview2indy_requested_creds(
                     break
             else:
                 raise ValueError(
-                    f"Could not automatically construct presentation for "
+                    "Could not automatically construct presentation for "
                     + f"presentation request {indy_proof_request['name']}"
                     + f":{indy_proof_request['version']} because referent "
                     + f"{referent} did not produce any credentials matching "
-                    + f"proposed preview."
+                    + "proposed preview."
                 )
         else:
             cred_match = min(credentials, key=lambda c: c["cred_info"]["referent"])
@@ -89,7 +89,7 @@ async def indy_proof_req_preview2indy_requested_creds(
         )
         if not credentials:
             raise ValueError(
-                f"Could not automatically construct presentation for "
+                "Could not automatically construct presentation for "
                 + f"presentation request {indy_proof_request['name']}"
                 + f":{indy_proof_request['version']} because predicate "
                 + f"referent {referent} did not produce any credentials."

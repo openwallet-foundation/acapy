@@ -286,7 +286,7 @@ async def wallet_set_public_did(request: web.BaseRequest):
     try:
         ledger = await context.inject(BaseLedger, required=False)
         if not ledger:
-            reason = f"No ledger available"
+            reason = "No ledger available"
             if not context.settings.get_value("wallet.type"):
                 reason += ": missing wallet-type?"
             raise web.HTTPForbidden(reason=reason)

@@ -207,7 +207,7 @@ class IndySdkHolder(IndyHolder):
             CHUNK = min(IndyHolder.CHUNK, limit or IndyHolder.CHUNK)
 
             with IndyErrorHandler(
-                f"Error fetching credentials from wallet for presentation request",
+                "Error fetching credentials from wallet for presentation request",
                 IndyHolderError,
             ):
                 while not limit or len(creds) < limit:
