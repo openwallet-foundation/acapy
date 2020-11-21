@@ -88,7 +88,7 @@ def stub_askar() -> Stub:
     return Stub(mock.patch.dict(sys.modules, modules))
 
 
-def stub_credx() -> Stub:
+def stub_indy_credx() -> Stub:
     # detect indy-credx library
     try:
         from indy_credx.bindings import get_library
@@ -109,7 +109,7 @@ def stub_credx() -> Stub:
     return Stub(mock.patch.dict(sys.modules, modules))
 
 
-def stub_vdr() -> Stub:
+def stub_indy_vdr() -> Stub:
     # detect indy-vdr library
     try:
         from indy_vdr.bindings import get_library
@@ -138,9 +138,9 @@ def pytest_sessionstart(session):
     STUBS.update(
         {
             "askar": stub_askar(),
-            "credx": stub_credx(),
             "indy": stub_indy(),
-            "vdr": stub_vdr(),
+            "indy_credx": stub_indy_credx(),
+            "indy_vdr": stub_indy_vdr(),
         }
     )
     for stub in STUBS.values():
@@ -161,14 +161,14 @@ def pytest_runtest_setup(item: pytest.Item):
     if tuple(item.iter_markers(name="askar")) and not STUBS["askar"].found:
         pytest.skip("test requires Askar support")
 
-    if tuple(item.iter_markers(name="credx")) and not STUBS["credx"].found:
-        pytest.skip("test requires Indy-Credx support")
-
     if tuple(item.iter_markers(name="indy")) and not STUBS["indy"].found:
         pytest.skip("test requires Indy support")
 
+    if tuple(item.iter_markers(name="indy_credx")) and not STUBS["indy_credx"].found:
+        pytest.skip("test requires Indy-Credx support")
+
+    if tuple(item.iter_markers(name="indy_vdr")) and not STUBS["indy_vdr"].found:
+        pytest.skip("test requires Indy-VDR support")
+
     if tuple(item.iter_markers(name="postgres")) and not POSTGRES_URL:
         pytest.skip("test requires Postgres support")
-
-    if tuple(item.iter_markers(name="vdr")) and not STUBS["vdr"].found:
-        pytest.skip("test requires Indy-VDR support")
