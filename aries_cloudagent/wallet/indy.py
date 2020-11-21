@@ -12,7 +12,7 @@ import indy.wallet
 
 from indy.error import IndyError, ErrorCode
 
-from ..indy.error import IndyErrorHandler
+from ..indy.sdk.error import IndyErrorHandler
 from ..ledger.base import BaseLedger
 from ..ledger.endpoint_type import EndpointType
 from ..ledger.error import LedgerConfigError

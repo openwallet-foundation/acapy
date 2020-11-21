@@ -5,7 +5,7 @@ import re
 from abc import ABC, abstractmethod, ABCMeta
 from typing import Tuple, Sequence
 
-from ..issuer.base import BaseIssuer
+from ..indy.issuer import IndyIssuer
 
 from .endpoint_type import EndpointType
 
@@ -128,7 +128,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
     @abstractmethod
     async def create_and_send_schema(
         self,
-        issuer: BaseIssuer,
+        issuer: IndyIssuer,
         schema_name: str,
         schema_version: str,
         attribute_names: Sequence[str],
@@ -165,7 +165,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
     @abstractmethod
     async def create_and_send_credential_definition(
         self,
-        issuer: BaseIssuer,
+        issuer: IndyIssuer,
         schema_id: str,
         signature_type: str = None,
         tag: str = None,

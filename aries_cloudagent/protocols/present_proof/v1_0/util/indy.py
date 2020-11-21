@@ -1,12 +1,12 @@
 """Utilities for dealing with indy conventions."""
 
-from .....holder.base import BaseHolder
+from .....indy.holder import IndyHolder
 
 from ..messages.inner.presentation_preview import PresentationPreview
 
 
 async def indy_proof_req_preview2indy_requested_creds(
-    indy_proof_request: dict, preview: PresentationPreview = None, *, holder: BaseHolder
+    indy_proof_request: dict, preview: PresentationPreview = None, *, holder: IndyHolder
 ):
     """
     Build indy requested-credentials structure.
