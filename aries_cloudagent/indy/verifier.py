@@ -24,10 +24,6 @@ class IndyVerifier(ABC, metaclass=ABCMeta):
         return "<{}>".format(self.__class__.__name__)
 
     @abstractmethod
-    async def generate_proof_request_nonce() -> str:
-        """Generate a nonce for a proof request."""
-
-    @abstractmethod
     def verify_presentation(
         self,
         presentation_request,
