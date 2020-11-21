@@ -4,7 +4,7 @@ from asynctest import mock as async_mock
 from aiohttp import web as aio_web
 
 from ....config.injection_context import InjectionContext
-from ....issuer.base import BaseIssuer
+from ....indy.issuer import IndyIssuer
 from ....ledger.base import BaseLedger
 from ....storage.base import BaseStorage
 from ....messaging.request_context import RequestContext
@@ -29,8 +29,8 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
         )
         self.context.injector.bind_instance(BaseLedger, self.ledger)
 
-        self.issuer = async_mock.create_autospec(BaseIssuer)
-        self.context.injector.bind_instance(BaseIssuer, self.issuer)
+        self.issuer = async_mock.create_autospec(IndyIssuer)
+        self.context.injector.bind_instance(IndyIssuer, self.issuer)
 
         self.storage = async_mock.create_autospec(BaseStorage)
         self.storage.search_records = async_mock.MagicMock(
