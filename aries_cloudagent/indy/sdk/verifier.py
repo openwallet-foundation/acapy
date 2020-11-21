@@ -26,10 +26,6 @@ class IndySdkVerifier(IndyVerifier):
         """
         self.ledger = ledger
 
-    async def generate_proof_request_nonce() -> str:
-        """Generate a nonce for a proof request."""
-        return await indy.anoncreds.generate_nonce()
-
     async def verify_presentation(
         self,
         presentation_request,
