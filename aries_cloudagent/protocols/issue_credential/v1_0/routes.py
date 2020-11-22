@@ -339,7 +339,7 @@ async def credential_exchange_list(request: web.BaseRequest):
         The connection list response
 
     """
-    context = request.app["request_context"]
+    context = request["context"]
     tag_filter = {}
     if "thread_id" in request.query and request.query["thread_id"] != "":
         tag_filter["thread_id"] = request.query["thread_id"]
@@ -376,8 +376,8 @@ async def credential_exchange_retrieve(request: web.BaseRequest):
         The credential exchange record
 
     """
-    context = request.app["request_context"]
-    outbound_handler = request.app["outbound_message_router"]
+    context = request["context"]
+    outbound_handler = request["outbound_message_router"]
 
     credential_exchange_id = request.match_info["cred_ex_id"]
     cred_ex_record = None
@@ -417,7 +417,7 @@ async def credential_exchange_create(request: web.BaseRequest):
     """
     r_time = get_timer()
 
-    context = request.app["request_context"]
+    context = request["context"]
 
     body = await request.json()
 
@@ -493,8 +493,8 @@ async def credential_exchange_send(request: web.BaseRequest):
     """
     r_time = get_timer()
 
-    context = request.app["request_context"]
-    outbound_handler = request.app["outbound_message_router"]
+    context = request["context"]
+    outbound_handler = request["outbound_message_router"]
 
     body = await request.json()
 
@@ -578,8 +578,8 @@ async def credential_exchange_send_proposal(request: web.BaseRequest):
     """
     r_time = get_timer()
 
-    context = request.app["request_context"]
-    outbound_handler = request.app["outbound_message_router"]
+    context = request["context"]
+    outbound_handler = request["outbound_message_router"]
 
     body = await request.json()
 
@@ -701,8 +701,8 @@ async def credential_exchange_create_free_offer(request: web.BaseRequest):
     """
     r_time = get_timer()
 
-    context = request.app["request_context"]
-    outbound_handler = request.app["outbound_message_router"]
+    context = request["context"]
+    outbound_handler = request["outbound_message_router"]
 
     body = await request.json()
 
@@ -798,8 +798,8 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
     """
     r_time = get_timer()
 
-    context = request.app["request_context"]
-    outbound_handler = request.app["outbound_message_router"]
+    context = request["context"]
+    outbound_handler = request["outbound_message_router"]
 
     body = await request.json()
 
@@ -884,8 +884,8 @@ async def credential_exchange_send_bound_offer(request: web.BaseRequest):
     """
     r_time = get_timer()
 
-    context = request.app["request_context"]
-    outbound_handler = request.app["outbound_message_router"]
+    context = request["context"]
+    outbound_handler = request["outbound_message_router"]
 
     credential_exchange_id = request.match_info["cred_ex_id"]
     try:
@@ -954,8 +954,8 @@ async def credential_exchange_send_request(request: web.BaseRequest):
     """
     r_time = get_timer()
 
-    context = request.app["request_context"]
-    outbound_handler = request.app["outbound_message_router"]
+    context = request["context"]
+    outbound_handler = request["outbound_message_router"]
 
     credential_exchange_id = request.match_info["cred_ex_id"]
     try:
@@ -1018,8 +1018,8 @@ async def credential_exchange_issue(request: web.BaseRequest):
     """
     r_time = get_timer()
 
-    context = request.app["request_context"]
-    outbound_handler = request.app["outbound_message_router"]
+    context = request["context"]
+    outbound_handler = request["outbound_message_router"]
 
     body = await request.json()
     comment = body.get("comment")
@@ -1083,8 +1083,8 @@ async def credential_exchange_store(request: web.BaseRequest):
     """
     r_time = get_timer()
 
-    context = request.app["request_context"]
-    outbound_handler = request.app["outbound_message_router"]
+    context = request["context"]
+    outbound_handler = request["outbound_message_router"]
 
     try:
         body = await request.json() or {}
@@ -1146,8 +1146,8 @@ async def credential_exchange_remove(request: web.BaseRequest):
         request: aiohttp request object
 
     """
-    context = request.app["request_context"]
-    outbound_handler = request.app["outbound_message_router"]
+    context = request["context"]
+    outbound_handler = request["outbound_message_router"]
 
     credential_exchange_id = request.match_info["cred_ex_id"]
     cred_ex_record = None
@@ -1179,8 +1179,8 @@ async def credential_exchange_problem_report(request: web.BaseRequest):
     """
     r_time = get_timer()
 
-    context = request.app["request_context"]
-    outbound_handler = request.app["outbound_message_router"]
+    context = request["context"]
+    outbound_handler = request["outbound_message_router"]
 
     credential_exchange_id = request.match_info["cred_ex_id"]
     body = await request.json()

@@ -127,7 +127,7 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
         The credential definition identifier
 
     """
-    context = request.app["request_context"]
+    context = request["context"]
 
     body = await request.json()
 
@@ -230,7 +230,7 @@ async def credential_definitions_created(request: web.BaseRequest):
         The identifiers of matching credential definitions.
 
     """
-    context = request.app["request_context"]
+    context = request["context"]
 
     storage = await context.inject(BaseStorage)
     found = await storage.search_records(
@@ -262,7 +262,7 @@ async def credential_definitions_get_credential_definition(request: web.BaseRequ
         The credential definition details.
 
     """
-    context = request.app["request_context"]
+    context = request["context"]
 
     cred_def_id = request.match_info["cred_def_id"]
 

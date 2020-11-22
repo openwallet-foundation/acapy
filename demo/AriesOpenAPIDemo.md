@@ -478,7 +478,7 @@ For these items set the values as follows:
 
 The `revoc_reg_id` being `null` means that we won't be using a revocation registry and therefore can't revoke the credentials we issue. 
 
-By setting `auto-remove` to true, ACA-Py will automatically remove the credential exchange record after the protocol completes. When implementing a controller, this is the likely setting to use to reduce agent storage usage, but implies if a record of the issuance of the credential is needed, the controller must save it somewhere else. For example, Faber College might extend their Student Information System, where they track all their students, to record when credentials are issued to students, and the Ids of the issued credentials.
+By setting `auto_remove` to true, ACA-Py will automatically remove the credential exchange record after the protocol completes. When implementing a controller, this is the likely setting to use to reduce agent storage usage, but implies if a record of the issuance of the credential is needed, the controller must save it somewhere else. For example, Faber College might extend their Student Information System, where they track all their students, to record when credentials are issued to students, and the Ids of the issued credentials.
 
 ### Faber - Issuing the Credential
 

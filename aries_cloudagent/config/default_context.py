@@ -64,7 +64,8 @@ class DefaultContextBuilder(ContextBuilder):
             CachedProvider(
                 StatsProvider(
                     StorageProvider(), ("add_record", "get_record", "search_records")
-                )
+                ),
+                ("wallet.id",),
             ),
         )
         context.injector.bind_provider(
@@ -79,7 +80,8 @@ class DefaultContextBuilder(ContextBuilder):
                         # "unpack_message",
                         "get_local_did",
                     ),
-                )
+                ),
+                ("wallet.id",),
             ),
         )
 
@@ -94,7 +96,11 @@ class DefaultContextBuilder(ContextBuilder):
                         "get_credential_definition",
                         "get_schema",
                     ),
-                )
+                ),
+                # MTODO: It would be better to not create a separate ledger instance
+                # per wallet (besides the wallet_handle they share everyting)
+                # but only create a ledger instance per wallet.type or something?
+                ("wallet.id",),
             ),
         )
         context.injector.bind_provider(
@@ -170,6 +176,9 @@ class DefaultContextBuilder(ContextBuilder):
         plugin_registry.register_plugin("aries_cloudagent.messaging.schemas")
         plugin_registry.register_plugin("aries_cloudagent.revocation")
         plugin_registry.register_plugin("aries_cloudagent.wallet")
+
+        if context.settings.get("multitenant.admin_enabled"):
+            plugin_registry.register_plugin("aries_cloudagent.multitenant_admin")
 
         # Register external plugins
         for plugin_path in self.settings.get("external_plugins", []):
