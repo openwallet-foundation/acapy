@@ -7,14 +7,17 @@ from .. import routes as test_module
 
 
 class TestActionMenuRoutes(AsyncTestCase):
-    async def test_actionmenu_close(self):
-        mock_request = async_mock.MagicMock()
-        mock_request.json = async_mock.CoroutineMock()
-
-        mock_request.app = {
+    def setUp(self):
+        self.request_dict = {
             "outbound_message_router": async_mock.CoroutineMock(),
-            "request_context": "context",
+            "context": "context",
         }
+
+    async def test_actionmenu_close(self):
+        mock_request = async_mock.MagicMock(
+            __getitem__=async_mock.Mock(side_effect=self.request_dict.__getitem__),
+        )
+        mock_request.json = async_mock.CoroutineMock()
 
         test_module.retrieve_connection_menu = async_mock.CoroutineMock()
         test_module.save_connection_menu = async_mock.CoroutineMock()
@@ -24,13 +27,10 @@ class TestActionMenuRoutes(AsyncTestCase):
             mock_response.assert_called_once_with({})
 
     async def test_actionmenu_close_x(self):
-        mock_request = async_mock.MagicMock()
+        mock_request = async_mock.MagicMock(
+            __getitem__=async_mock.Mock(side_effect=self.request_dict.__getitem__),
+        )
         mock_request.json = async_mock.CoroutineMock()
-
-        mock_request.app = {
-            "outbound_message_router": async_mock.CoroutineMock(),
-            "request_context": "context",
-        }
 
         test_module.retrieve_connection_menu = async_mock.CoroutineMock()
         test_module.save_connection_menu = async_mock.CoroutineMock(
@@ -41,13 +41,10 @@ class TestActionMenuRoutes(AsyncTestCase):
             await test_module.actionmenu_close(mock_request)
 
     async def test_actionmenu_close_not_found(self):
-        mock_request = async_mock.MagicMock()
+        mock_request = async_mock.MagicMock(
+            __getitem__=async_mock.Mock(side_effect=self.request_dict.__getitem__),
+        )
         mock_request.json = async_mock.CoroutineMock()
-
-        mock_request.app = {
-            "outbound_message_router": async_mock.CoroutineMock(),
-            "request_context": "context",
-        }
 
         test_module.retrieve_connection_menu = async_mock.CoroutineMock(
             return_value=None
@@ -56,13 +53,10 @@ class TestActionMenuRoutes(AsyncTestCase):
             await test_module.actionmenu_close(mock_request)
 
     async def test_actionmenu_fetch(self):
-        mock_request = async_mock.MagicMock()
+        mock_request = async_mock.MagicMock(
+            __getitem__=async_mock.Mock(side_effect=self.request_dict.__getitem__),
+        )
         mock_request.json = async_mock.CoroutineMock()
-
-        mock_request.app = {
-            "outbound_message_router": async_mock.CoroutineMock(),
-            "request_context": "context",
-        }
 
         test_module.retrieve_connection_menu = async_mock.CoroutineMock(
             return_value=None
@@ -73,13 +67,11 @@ class TestActionMenuRoutes(AsyncTestCase):
             mock_response.assert_called_once_with({"result": None})
 
     async def test_actionmenu_perform(self):
-        mock_request = async_mock.MagicMock(match_info={"conn_id": "dummy"})
+        mock_request = async_mock.MagicMock(
+            match_info={"conn_id": "dummy"},
+            __getitem__=async_mock.Mock(side_effect=self.request_dict.__getitem__),
+        )
         mock_request.json = async_mock.CoroutineMock()
-
-        mock_request.app = {
-            "outbound_message_router": async_mock.CoroutineMock(),
-            "request_context": "context",
-        }
 
         with async_mock.patch.object(
             test_module, "ConnRecord", autospec=True
@@ -93,19 +85,16 @@ class TestActionMenuRoutes(AsyncTestCase):
 
             res = await test_module.actionmenu_perform(mock_request)
             mock_response.assert_called_once_with({})
-            mock_request.app["outbound_message_router"].assert_called_once_with(
+            mock_request["outbound_message_router"].assert_called_once_with(
                 mock_perform.return_value,
                 connection_id=mock_request.match_info["conn_id"],
             )
 
     async def test_actionmenu_perform_no_conn_record(self):
-        mock_request = async_mock.MagicMock()
+        mock_request = async_mock.MagicMock(
+            __getitem__=async_mock.Mock(side_effect=self.request_dict.__getitem__),
+        )
         mock_request.json = async_mock.CoroutineMock()
-
-        mock_request.app = {
-            "outbound_message_router": async_mock.CoroutineMock(),
-            "request_context": "context",
-        }
 
         with async_mock.patch.object(
             test_module, "ConnRecord", autospec=True
@@ -122,13 +111,10 @@ class TestActionMenuRoutes(AsyncTestCase):
                 await test_module.actionmenu_perform(mock_request)
 
     async def test_actionmenu_perform_conn_not_ready(self):
-        mock_request = async_mock.MagicMock()
+        mock_request = async_mock.MagicMock(
+            __getitem__=async_mock.Mock(side_effect=self.request_dict.__getitem__),
+        )
         mock_request.json = async_mock.CoroutineMock()
-
-        mock_request.app = {
-            "outbound_message_router": async_mock.CoroutineMock(),
-            "request_context": "context",
-        }
 
         with async_mock.patch.object(
             test_module, "ConnRecord", autospec=True
@@ -144,13 +130,11 @@ class TestActionMenuRoutes(AsyncTestCase):
                 await test_module.actionmenu_perform(mock_request)
 
     async def test_actionmenu_request(self):
-        mock_request = async_mock.MagicMock(match_info={"conn_id": "dummy"})
+        mock_request = async_mock.MagicMock(
+            match_info={"conn_id": "dummy"},
+            __getitem__=async_mock.Mock(side_effect=self.request_dict.__getitem__),
+        )
         mock_request.json = async_mock.CoroutineMock()
-
-        mock_request.app = {
-            "outbound_message_router": async_mock.CoroutineMock(),
-            "request_context": "context",
-        }
 
         with async_mock.patch.object(
             test_module, "ConnRecord", autospec=True
@@ -164,19 +148,16 @@ class TestActionMenuRoutes(AsyncTestCase):
 
             res = await test_module.actionmenu_request(mock_request)
             mock_response.assert_called_once_with({})
-            mock_request.app["outbound_message_router"].assert_called_once_with(
+            mock_request["outbound_message_router"].assert_called_once_with(
                 menu_request.return_value,
                 connection_id=mock_request.match_info["conn_id"],
             )
 
     async def test_actionmenu_request_no_conn_record(self):
-        mock_request = async_mock.MagicMock()
+        mock_request = async_mock.MagicMock(
+            __getitem__=async_mock.Mock(side_effect=self.request_dict.__getitem__),
+        )
         mock_request.json = async_mock.CoroutineMock()
-
-        mock_request.app = {
-            "outbound_message_router": async_mock.CoroutineMock(),
-            "request_context": "context",
-        }
 
         with async_mock.patch.object(
             test_module, "ConnRecord", autospec=True
@@ -193,13 +174,10 @@ class TestActionMenuRoutes(AsyncTestCase):
                 await test_module.actionmenu_request(mock_request)
 
     async def test_actionmenu_request_conn_not_ready(self):
-        mock_request = async_mock.MagicMock()
+        mock_request = async_mock.MagicMock(
+            __getitem__=async_mock.Mock(side_effect=self.request_dict.__getitem__),
+        )
         mock_request.json = async_mock.CoroutineMock()
-
-        mock_request.app = {
-            "outbound_message_router": async_mock.CoroutineMock(),
-            "request_context": "context",
-        }
 
         with async_mock.patch.object(
             test_module, "ConnRecord", autospec=True
@@ -215,13 +193,11 @@ class TestActionMenuRoutes(AsyncTestCase):
                 await test_module.actionmenu_request(mock_request)
 
     async def test_actionmenu_send(self):
-        mock_request = async_mock.MagicMock(match_info={"conn_id": "dummy"})
+        mock_request = async_mock.MagicMock(
+            match_info={"conn_id": "dummy"},
+            __getitem__=async_mock.Mock(side_effect=self.request_dict.__getitem__),
+        )
         mock_request.json = async_mock.CoroutineMock()
-
-        mock_request.app = {
-            "outbound_message_router": async_mock.CoroutineMock(),
-            "request_context": "context",
-        }
 
         with async_mock.patch.object(
             test_module, "ConnRecord", autospec=True
@@ -236,19 +212,16 @@ class TestActionMenuRoutes(AsyncTestCase):
 
             res = await test_module.actionmenu_send(mock_request)
             mock_response.assert_called_once_with({})
-            mock_request.app["outbound_message_router"].assert_called_once_with(
+            mock_request["outbound_message_router"].assert_called_once_with(
                 mock_menu.deserialize.return_value,
                 connection_id=mock_request.match_info["conn_id"],
             )
 
     async def test_actionmenu_send_deserialize_x(self):
-        mock_request = async_mock.MagicMock()
+        mock_request = async_mock.MagicMock(
+            __getitem__=async_mock.Mock(side_effect=self.request_dict.__getitem__),
+        )
         mock_request.json = async_mock.CoroutineMock()
-
-        mock_request.app = {
-            "outbound_message_router": async_mock.CoroutineMock(),
-            "request_context": "context",
-        }
 
         with async_mock.patch.object(
             test_module, "ConnRecord", autospec=True
@@ -265,13 +238,10 @@ class TestActionMenuRoutes(AsyncTestCase):
                 await test_module.actionmenu_send(mock_request)
 
     async def test_actionmenu_send_no_conn_record(self):
-        mock_request = async_mock.MagicMock()
+        mock_request = async_mock.MagicMock(
+            __getitem__=async_mock.Mock(side_effect=self.request_dict.__getitem__),
+        )
         mock_request.json = async_mock.CoroutineMock()
-
-        mock_request.app = {
-            "outbound_message_router": async_mock.CoroutineMock(),
-            "request_context": "context",
-        }
 
         with async_mock.patch.object(
             test_module, "ConnRecord", autospec=True
@@ -290,13 +260,10 @@ class TestActionMenuRoutes(AsyncTestCase):
                 await test_module.actionmenu_send(mock_request)
 
     async def test_actionmenu_send_conn_not_ready(self):
-        mock_request = async_mock.MagicMock()
+        mock_request = async_mock.MagicMock(
+            __getitem__=async_mock.Mock(side_effect=self.request_dict.__getitem__),
+        )
         mock_request.json = async_mock.CoroutineMock()
-
-        mock_request.app = {
-            "outbound_message_router": async_mock.CoroutineMock(),
-            "request_context": "context",
-        }
 
         with async_mock.patch.object(
             test_module, "ConnRecord", autospec=True

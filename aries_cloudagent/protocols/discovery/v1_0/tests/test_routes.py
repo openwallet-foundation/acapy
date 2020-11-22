@@ -8,19 +8,22 @@ from .. import routes as test_module
 
 class TestBasicMessageRoutes(AsyncTestCase):
     async def test_query_features(self):
-        mock_request = async_mock.MagicMock(query=async_mock.MagicMock())
-        mock_request.json = async_mock.CoroutineMock()
-
         mock_context = async_mock.MagicMock()
         mock_context.inject = async_mock.CoroutineMock()
         mock_context.inject.return_value = async_mock.MagicMock()
         mock_query = async_mock.MagicMock(return_value=["abc", "def", "ghi"])
         mock_context.inject.return_value.protocols_matching_query = mock_query
 
-        mock_request.app = {
-            "outbound_message_router": async_mock.CoroutineMock(),
-            "request_context": mock_context,
-        }
+        mock_request = async_mock.MagicMock(
+            query=async_mock.MagicMock(),
+            __getitem__=async_mock.Mock(
+                side_effect={
+                    "outbound_message_router": async_mock.CoroutineMock(),
+                    "context": mock_context,
+                }.__getitem__
+            ),
+        )
+        mock_request.json = async_mock.CoroutineMock()
 
         with async_mock.patch.object(test_module.web, "json_response") as mock_response:
 

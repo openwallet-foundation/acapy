@@ -7,7 +7,6 @@ from ....config.injection_context import InjectionContext
 from ....issuer.base import BaseIssuer
 from ....ledger.base import BaseLedger
 from ....storage.base import BaseStorage
-from ....messaging.request_context import RequestContext
 
 from .. import routes as test_module
 
@@ -42,13 +41,13 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
         )
         self.context.injector.bind_instance(BaseStorage, self.storage)
 
-        self.app = {
-            "request_context": self.context,
+        self.request_dict = {
+            "context": self.context,
         }
 
     async def test_send_schema(self):
         mock_request = async_mock.MagicMock(
-            app=self.app,
+            __getitem__=async_mock.Mock(side_effect=self.request_dict.__getitem__),
             json=async_mock.CoroutineMock(
                 return_value={
                     "schema_name": "schema_name",
@@ -67,7 +66,7 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
 
     async def test_send_schema_no_ledger(self):
         mock_request = async_mock.MagicMock(
-            app=self.app,
+            __getitem__=async_mock.Mock(side_effect=self.request_dict.__getitem__),
             json=async_mock.CoroutineMock(
                 return_value={
                     "schema_name": "schema_name",
@@ -83,7 +82,7 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
 
     async def test_send_schema_x_ledger(self):
         mock_request = async_mock.MagicMock(
-            app=self.app,
+            __getitem__=async_mock.Mock(side_effect=self.request_dict.__getitem__),
             json=async_mock.CoroutineMock(
                 return_value={
                     "schema_name": "schema_name",
@@ -101,7 +100,7 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
 
     async def test_created(self):
         mock_request = async_mock.MagicMock(
-            app=self.app,
+            __getitem__=async_mock.Mock(side_effect=self.request_dict.__getitem__),
             match_info={"schema_id": SCHEMA_ID},
         )
 
@@ -112,7 +111,7 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
 
     async def test_get_schema(self):
         mock_request = async_mock.MagicMock(
-            app=self.app,
+            __getitem__=async_mock.Mock(side_effect=self.request_dict.__getitem__),
             match_info={"schema_id": SCHEMA_ID},
         )
 
@@ -123,7 +122,7 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
 
     async def test_get_schema_on_seq_no(self):
         mock_request = async_mock.MagicMock(
-            app=self.app,
+            __getitem__=async_mock.Mock(side_effect=self.request_dict.__getitem__),
             match_info={"schema_id": "12345"},
         )
 
@@ -134,7 +133,7 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
 
     async def test_get_schema_no_ledger(self):
         mock_request = async_mock.MagicMock(
-            app=self.app,
+            __getitem__=async_mock.Mock(side_effect=self.request_dict.__getitem__),
             match_info={"schema_id": SCHEMA_ID},
         )
         self.ledger.get_schema = async_mock.CoroutineMock(
@@ -147,7 +146,7 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
 
     async def test_get_schema_x_ledger(self):
         mock_request = async_mock.MagicMock(
-            app=self.app,
+            __getitem__=async_mock.Mock(side_effect=self.request_dict.__getitem__),
             match_info={"schema_id": SCHEMA_ID},
         )
         self.ledger.get_schema = async_mock.CoroutineMock(

@@ -446,7 +446,7 @@ async def presentation_exchange_list(request: web.BaseRequest):
         The presentation exchange list response
 
     """
-    context = request.app["request_context"]
+    context = request["context"]
     tag_filter = {}
     if "thread_id" in request.query and request.query["thread_id"] != "":
         tag_filter["thread_id"] = request.query["thread_id"]
@@ -483,8 +483,8 @@ async def presentation_exchange_retrieve(request: web.BaseRequest):
         The presentation exchange record response
 
     """
-    context = request.app["request_context"]
-    outbound_handler = request.app["outbound_message_router"]
+    context = request["context"]
+    outbound_handler = request["outbound_message_router"]
 
     presentation_exchange_id = request.match_info["pres_ex_id"]
     pres_ex_record = None
@@ -518,8 +518,8 @@ async def presentation_exchange_credentials_list(request: web.BaseRequest):
         The credential list response
 
     """
-    context = request.app["request_context"]
-    outbound_handler = request.app["outbound_message_router"]
+    context = request["context"]
+    outbound_handler = request["outbound_message_router"]
 
     presentation_exchange_id = request.match_info["pres_ex_id"]
     referents = request.query.get("referent")
@@ -586,8 +586,8 @@ async def presentation_exchange_send_proposal(request: web.BaseRequest):
     """
     r_time = get_timer()
 
-    context = request.app["request_context"]
-    outbound_handler = request.app["outbound_message_router"]
+    context = request["context"]
+    outbound_handler = request["outbound_message_router"]
 
     body = await request.json()
 
@@ -673,8 +673,8 @@ async def presentation_exchange_create_request(request: web.BaseRequest):
     """
     r_time = get_timer()
 
-    context = request.app["request_context"]
-    outbound_handler = request.app["outbound_message_router"]
+    context = request["context"]
+    outbound_handler = request["outbound_message_router"]
 
     body = await request.json()
 
@@ -740,8 +740,8 @@ async def presentation_exchange_send_free_request(request: web.BaseRequest):
     """
     r_time = get_timer()
 
-    context = request.app["request_context"]
-    outbound_handler = request.app["outbound_message_router"]
+    context = request["context"]
+    outbound_handler = request["outbound_message_router"]
 
     body = await request.json()
 
@@ -822,8 +822,8 @@ async def presentation_exchange_send_bound_request(request: web.BaseRequest):
     """
     r_time = get_timer()
 
-    context = request.app["request_context"]
-    outbound_handler = request.app["outbound_message_router"]
+    context = request["context"]
+    outbound_handler = request["outbound_message_router"]
 
     presentation_exchange_id = request.match_info["pres_ex_id"]
     pres_ex_record = await V10PresentationExchange.retrieve_by_id(
@@ -897,8 +897,8 @@ async def presentation_exchange_send_presentation(request: web.BaseRequest):
     """
     r_time = get_timer()
 
-    context = request.app["request_context"]
-    outbound_handler = request.app["outbound_message_router"]
+    context = request["context"]
+    outbound_handler = request["outbound_message_router"]
     presentation_exchange_id = request.match_info["pres_ex_id"]
     pres_ex_record = await V10PresentationExchange.retrieve_by_id(
         context, presentation_exchange_id
@@ -985,8 +985,8 @@ async def presentation_exchange_verify_presentation(request: web.BaseRequest):
     """
     r_time = get_timer()
 
-    context = request.app["request_context"]
-    outbound_handler = request.app["outbound_message_router"]
+    context = request["context"]
+    outbound_handler = request["outbound_message_router"]
 
     presentation_exchange_id = request.match_info["pres_ex_id"]
 
@@ -1039,8 +1039,8 @@ async def presentation_exchange_remove(request: web.BaseRequest):
         request: aiohttp request object
 
     """
-    context = request.app["request_context"]
-    outbound_handler = request.app["outbound_message_router"]
+    context = request["context"]
+    outbound_handler = request["outbound_message_router"]
 
     presentation_exchange_id = request.match_info["pres_ex_id"]
     pres_ex_record = None

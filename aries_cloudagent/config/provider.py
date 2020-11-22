@@ -1,5 +1,7 @@
 """Service provider implementations."""
 
+import hashlib
+
 from typing import Sequence, Union
 
 from ..utils.classloader import ClassLoader
@@ -70,18 +72,30 @@ class ClassProvider(BaseProvider):
 class CachedProvider(BaseProvider):
     """Cache the result of another provider."""
 
-    def __init__(self, provider: BaseProvider):
+    def __init__(self, provider: BaseProvider, unique_settings_keys: tuple = ()):
         """Initialize the cached provider instance."""
         if not provider:
             raise ValueError("Cache provider input must not be empty.")
-        self._instance = None
+        self._instances = {}
         self._provider = provider
+        self._unique_settings_keys = unique_settings_keys
 
     async def provide(self, config: BaseSettings, injector: BaseInjector):
-        """Provide the object instance given a config and injector."""
-        if not self._instance:
-            self._instance = await self._provider.provide(config, injector)
-        return self._instance
+        """
+        Provide the object instance given a config and injector.
+
+        Instances are cached keyed on a SHA256 digest of the relevant subset
+        of settings.
+        """
+        # MTODO: how to handle changes in the config?
+        instance_vals = {key: config.get(key) for key in self._unique_settings_keys}
+        instance_key = hashlib.sha256(str(instance_vals).encode()).hexdigest()
+        if not self._instances.get(instance_key):
+            self._instances[instance_key] = await self._provider.provide(
+                config, injector
+            )
+
+        return self._instances[instance_key]
 
 
 class StatsProvider(BaseProvider):
