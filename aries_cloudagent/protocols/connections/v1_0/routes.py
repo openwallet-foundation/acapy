@@ -141,16 +141,15 @@ class ConnectionsListQueryStringSchema(OpenAPISchema):
         required=False,
         example="Point of contact",
     )
-
     tx_my_role = fields.Str(
         description=" A list of my assigned connection role (AUTHOR/ENDORSER)",
         required=False,
-        example="Point of contact",
+        example="AUTHOR",
     )
     tx_their_role = fields.Str(
         description="A list of their assigned connection role (AUTHOR/ENDORSER)",
         required=False,
-        example="Point of contact",
+        example="ENDORSER",
     )
 
 
@@ -172,11 +171,13 @@ class CreateInvitationQueryStringSchema(OpenAPISchema):
     multi_use = fields.Boolean(
         description="Create invitation for multiple use (default false)", required=False
     )
-    """ Changes By Harsh Multani"""
-    #my_role = fields.str(
-    #	description="The role I play in the connection",
-#	required=True
- #   )
+    my_role = fields.Str(
+        description="Role",
+        required=False,
+        validate=validate.OneOf(
+            [r.name for r in Role if isinstance(r.value[0], int)] + ["reset"]
+        ),
+    )
 
 
 
@@ -192,6 +193,13 @@ class ReceiveInvitationQueryStringSchema(OpenAPISchema):
         description="Auto-accept connection (defaults to configuration)",
         required=False,
     )
+    my_role = fields.Str(
+        description="Role",
+        required=False,
+        validate=validate.OneOf(
+            [r.name for r in Role if isinstance(r.value[0], int)] + ["reset"]
+        ),
+    )
 
 
 class AcceptInvitationQueryStringSchema(OpenAPISchema):
@@ -201,7 +209,6 @@ class AcceptInvitationQueryStringSchema(OpenAPISchema):
     my_label = fields.Str(
         description="Label for connection", required=False, example="Broker"
     )
-
     my_role = fields.Str(
         description="Role",
         required=False,
@@ -215,7 +222,6 @@ class AcceptRequestQueryStringSchema(OpenAPISchema):
     """Parameters and validators for accept conn-request web-request query string."""
 
     my_endpoint = fields.Str(description="My URL endpoint", required=False, **ENDPOINT)
-
     my_role = fields.Str(
         description="Role",
         required=False,
@@ -356,6 +362,8 @@ async def connections_create_invitation(request: web.BaseRequest):
     public = json.loads(request.query.get("public", "false"))
     multi_use = json.loads(request.query.get("multi_use", "false"))
 
+    tx_my_role = request.query.get("my_role")
+
     if public and not context.settings.get("public_invites"):
         raise web.HTTPForbidden(
             reason="Configuration does not include public invitations"
@@ -365,7 +373,7 @@ async def connections_create_invitation(request: web.BaseRequest):
     connection_mgr = ConnectionManager(context)
     try:
         (connection, invitation) = await connection_mgr.create_invitation(
-            auto_accept=auto_accept, public=public, multi_use=multi_use, alias=alias
+            auto_accept=auto_accept, public=public, multi_use=multi_use, alias=alias, tx_my_role=tx_my_role
         )
 
         result = {
@@ -378,6 +386,7 @@ async def connections_create_invitation(request: web.BaseRequest):
 
     if connection and connection.alias:
         result["alias"] = connection.alias
+
 
     return web.json_response(result)
 
@@ -407,17 +416,19 @@ async def connections_receive_invitation(request: web.BaseRequest):
         )
     connection_mgr = ConnectionManager(context)
     invitation_json = await request.json()
+    tx_my_role = request.query.get("my_role")
 
     try:
         invitation = ConnectionInvitation.deserialize(invitation_json)
         auto_accept = json.loads(request.query.get("auto_accept", "null"))
         alias = request.query.get("alias")
         connection = await connection_mgr.receive_invitation(
-            invitation, auto_accept=auto_accept, alias=alias
+            invitation, auto_accept=auto_accept, alias=alias, tx_my_role=tx_my_role,
         )
         result = connection.serialize()
     except (ConnectionManagerError, StorageError, BaseModelError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
+
 
     return web.json_response(result)
 
@@ -449,7 +460,6 @@ async def connections_accept_invitation(request: web.BaseRequest):
         connection_mgr = ConnectionManager(context)
         my_label = request.query.get("my_label") or None
         my_endpoint = request.query.get("my_endpoint") or None
-
         my_role = request.query.get("my_role")
         request = await connection_mgr.create_request(connection, my_label, my_endpoint, my_role)
         result = connection.serialize()
@@ -488,7 +498,6 @@ async def connections_accept_request(request: web.BaseRequest):
         connection = await ConnectionRecord.retrieve_by_id(context, connection_id)
         connection_mgr = ConnectionManager(context)
         my_endpoint = request.query.get("my_endpoint") or None
-
         my_role = request.query.get("my_role")
         response = await connection_mgr.create_response(connection, my_endpoint, my_role)
         result = connection.serialize()       
