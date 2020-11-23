@@ -61,6 +61,14 @@ aca-py provision --help
 aca-py start --help
 ```
 
+If you get an error about a missing module `indy` (e.g. `ModuleNotFoundError: No module named 'indy'`) when running `aca-py`, you will need to install the Indy libraries from the command line:
+
+```bash
+pip install python3_indy
+```
+
+Once that completes successfully, you should be able to run `aca-py --version` and the other examples above.
+
 ### About ACA-Py Command Line Parameters
 
 ACA-Py invocations are separated into two types - initially provisioning an agent (`provision`) and starting a new agent process (`start`). This separation enables not having to pass in some encryption-related parameters required for provisioning when starting an agent instance. This improves security in production deployments.
