@@ -3,7 +3,7 @@
 from abc import ABC, abstractmethod
 
 from ....config.injection_context import InjectionContext
-from ....connections.models.connection_record import ConnectionRecord
+from ....connections.models.conn_record import ConnRecord
 from ....messaging.agent_message import AgentMessage
 
 from .messages.menu import Menu
@@ -28,7 +28,7 @@ class BaseMenuService(ABC):
 
     @abstractmethod
     async def get_active_menu(
-        self, connection: ConnectionRecord = None, thread_id: str = None
+        self, connection: ConnRecord = None, thread_id: str = None
     ) -> Menu:
         """
         Render the current menu.
@@ -43,7 +43,7 @@ class BaseMenuService(ABC):
         self,
         action_name: str,
         action_params: dict,
-        connection: ConnectionRecord = None,
+        connection: ConnRecord = None,
         thread_id: str = None,
     ) -> AgentMessage:
         """

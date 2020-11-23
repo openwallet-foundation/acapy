@@ -67,9 +67,9 @@ class RoutingManager:
         """
         storage: BaseStorage = await self._context.inject(BaseStorage)
         try:
-            record = await storage.search_records(
+            record = await storage.find_record(
                 RoutingManager.RECORD_TYPE, {"recipient_key": recip_verkey}
-            ).fetch_single()
+            )
         except StorageDuplicateError:
             raise RouteNotFoundError(
                 "Duplicate routes found for verkey: %s", recip_verkey

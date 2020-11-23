@@ -1,6 +1,6 @@
 """Handler for incoming route-update-response messages."""
 
-from .....connections.models.connection_record import ConnectionRecord
+from .....connections.models.conn_record import ConnRecord
 from .....messaging.base_handler import (
     BaseHandler,
     BaseResponder,
@@ -36,9 +36,9 @@ class RouteUpdateResponseHandler(BaseHandler):
                     RouteUpdated.RESULT_NO_CHANGE,
                     RouteUpdated.RESULT_SUCCESS,
                 ):
-                    routing_state = ConnectionRecord.ROUTING_STATE_ACTIVE
+                    routing_state = ConnRecord.ROUTING_STATE_ACTIVE
                 else:
-                    routing_state = ConnectionRecord.ROUTING_STATE_ERROR
+                    routing_state = ConnRecord.ROUTING_STATE_ERROR
                     self._logger.warning(
                         f"Unexpected result from inbound route update ({update.action})"
                     )
