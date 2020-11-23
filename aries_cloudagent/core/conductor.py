@@ -219,7 +219,7 @@ class Conductor:
                 # _connection, invitation = await mgr.create_invitation(
                 invi_rec = await mgr.create_invitation(
                     my_label=context.settings.get("debug.invite_label"),
-                    use_public_did=context.settings.get("debug.invite_public", False),
+                    public=context.settings.get("debug.invite_public", False),
                     multi_use=context.settings.get("debug.invite_multi_use", False),
                     include_handshake=True,
                 )

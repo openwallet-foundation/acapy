@@ -13,7 +13,7 @@ from .. import routes as test_module
 
 
 class TestDIDExchangeConnRoutes(AsyncTestCase):
-    async def test_connections_list(self):
+    async def test_didx_list(self):
         context = RequestContext(base_context=InjectionContext(enforce_typing=False))
         context.default_endpoint = "http://1.2.3.4:8081"  # for coverage
         assert context.default_endpoint == "http://1.2.3.4:8081"  # for coverage
@@ -91,7 +91,7 @@ class TestDIDExchangeConnRoutes(AsyncTestCase):
                     }  # sorted
                 )
 
-    async def test_connections_list_x(self):
+    async def test_didx_list_x(self):
         context = RequestContext(base_context=InjectionContext(enforce_typing=False))
         mock_req = async_mock.MagicMock()
         mock_req.app = {
@@ -140,7 +140,7 @@ class TestDIDExchangeConnRoutes(AsyncTestCase):
             await test_module.didx_retrieve_connection(mock_req)
             mock_response.assert_called_once_with({"hello": "world"})
 
-    async def test_retrieve_connection_not_found(self):
+    async def test_retrieve_connection_not_found_x(self):
         context = RequestContext(base_context=InjectionContext(enforce_typing=False))
         mock_req = async_mock.MagicMock()
         mock_req.app = {
@@ -156,7 +156,25 @@ class TestDIDExchangeConnRoutes(AsyncTestCase):
             with self.assertRaises(test_module.web.HTTPNotFound):
                 await test_module.didx_retrieve_connection(mock_req)
 
-    async def test_connections_receive_invitation(self):
+    async def test_retrieve_connection_base_model_x(self):
+        context = RequestContext(base_context=InjectionContext(enforce_typing=False))
+        mock_req = async_mock.MagicMock()
+        mock_req.app = {
+            "request_context": context,
+        }
+        mock_req.match_info = {"conn_id": "dummy"}
+
+        with async_mock.patch.object(
+            test_module.ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
+        ) as mock_conn_rec_retrieve_by_id:
+            mock_conn_rec_retrieve_by_id.return_value = async_mock.MagicMock(
+                serialize=async_mock.MagicMock(side_effect=test_module.BaseModelError())
+            )
+
+            with self.assertRaises(test_module.web.HTTPBadRequest):
+                await test_module.didx_retrieve_connection(mock_req)
+
+    async def test_didx_receive_invitation(self):
         context = RequestContext(base_context=InjectionContext(enforce_typing=False))
         mock_req = async_mock.MagicMock()
         mock_req.app = {
@@ -185,7 +203,7 @@ class TestDIDExchangeConnRoutes(AsyncTestCase):
             await test_module.didx_receive_invitation(mock_req)
             mock_response.assert_called_once_with(mock_conn_rec.serialize.return_value)
 
-    async def test_connections_receive_invitation_bad(self):
+    async def test_didx_receive_invitation_bad(self):
         context = RequestContext(base_context=InjectionContext(enforce_typing=False))
         mock_req = async_mock.MagicMock()
         mock_req.app = {
@@ -210,7 +228,7 @@ class TestDIDExchangeConnRoutes(AsyncTestCase):
             with self.assertRaises(test_module.web.HTTPBadRequest):
                 await test_module.didx_receive_invitation(mock_req)
 
-    async def test_connections_receive_invitation_forbidden(self):
+    async def test_didx_receive_invitation_forbidden(self):
         context = RequestContext(base_context=InjectionContext(enforce_typing=False))
         context.update_settings({"admin.no_receive_invites": True})
         mock_req = async_mock.MagicMock()
@@ -218,7 +236,7 @@ class TestDIDExchangeConnRoutes(AsyncTestCase):
         with self.assertRaises(test_module.web.HTTPForbidden):
             await test_module.didx_receive_invitation(mock_req)
 
-    async def test_connections_accept_invitation(self):
+    async def test_didx_accept_invitation(self):
         context = RequestContext(base_context=InjectionContext(enforce_typing=False))
         mock_req = async_mock.MagicMock()
         mock_req.app = {
@@ -248,7 +266,7 @@ class TestDIDExchangeConnRoutes(AsyncTestCase):
             await test_module.didx_accept_invitation(mock_req)
             mock_response.assert_called_once_with(mock_conn_rec.serialize.return_value)
 
-    async def test_connections_accept_invitation_not_found(self):
+    async def test_didx_accept_invitation_not_found(self):
         context = RequestContext(base_context=InjectionContext(enforce_typing=False))
         mock_req = async_mock.MagicMock()
         mock_req.app = {
@@ -265,7 +283,7 @@ class TestDIDExchangeConnRoutes(AsyncTestCase):
             with self.assertRaises(test_module.web.HTTPNotFound):
                 await test_module.didx_accept_invitation(mock_req)
 
-    async def test_connections_accept_invitation_x(self):
+    async def test_didx_accept_invitation_x(self):
         context = RequestContext(base_context=InjectionContext(enforce_typing=False))
         mock_req = async_mock.MagicMock()
         mock_req.app = {
@@ -286,7 +304,7 @@ class TestDIDExchangeConnRoutes(AsyncTestCase):
             with self.assertRaises(test_module.web.HTTPBadRequest):
                 await test_module.didx_accept_invitation(mock_req)
 
-    async def test_connections_accept_request(self):
+    async def test_didx_accept_request(self):
         context = RequestContext(base_context=InjectionContext(enforce_typing=False))
         mock_req = async_mock.MagicMock()
         mock_req.app = {
@@ -314,7 +332,7 @@ class TestDIDExchangeConnRoutes(AsyncTestCase):
             await test_module.didx_accept_request(mock_req)
             mock_response.assert_called_once_with(mock_conn_rec.serialize.return_value)
 
-    async def test_connections_accept_request_not_found(self):
+    async def test_didx_accept_request_not_found(self):
         context = RequestContext(base_context=InjectionContext(enforce_typing=False))
         mock_req = async_mock.MagicMock()
         mock_req.app = {
@@ -331,7 +349,7 @@ class TestDIDExchangeConnRoutes(AsyncTestCase):
             with self.assertRaises(test_module.web.HTTPNotFound):
                 await test_module.didx_accept_request(mock_req)
 
-    async def test_connections_accept_request_x(self):
+    async def test_didx_accept_request_x(self):
         context = RequestContext(base_context=InjectionContext(enforce_typing=False))
         mock_req = async_mock.MagicMock()
         mock_req.app = {
@@ -354,7 +372,7 @@ class TestDIDExchangeConnRoutes(AsyncTestCase):
             with self.assertRaises(test_module.web.HTTPBadRequest):
                 await test_module.didx_accept_request(mock_req)
 
-    async def test_connections_establish_inbound(self):
+    async def test_didx_establish_inbound(self):
         context = RequestContext(base_context=InjectionContext(enforce_typing=False))
         mock_req = async_mock.MagicMock()
         mock_req.app = {
@@ -380,7 +398,7 @@ class TestDIDExchangeConnRoutes(AsyncTestCase):
             await test_module.didx_establish_inbound(mock_req)
             mock_response.assert_called_once_with({})
 
-    async def test_connections_establish_inbound_not_found(self):
+    async def test_didx_establish_inbound_not_found(self):
         context = RequestContext(base_context=InjectionContext(enforce_typing=False))
         mock_req = async_mock.MagicMock()
         mock_req.app = {
@@ -397,7 +415,7 @@ class TestDIDExchangeConnRoutes(AsyncTestCase):
             with self.assertRaises(test_module.web.HTTPNotFound):
                 await test_module.didx_establish_inbound(mock_req)
 
-    async def test_connections_establish_inbound_x(self):
+    async def test_didx_establish_inbound_x(self):
         context = RequestContext(base_context=InjectionContext(enforce_typing=False))
         mock_req = async_mock.MagicMock()
         mock_req.app = {
@@ -422,7 +440,7 @@ class TestDIDExchangeConnRoutes(AsyncTestCase):
             with self.assertRaises(test_module.web.HTTPBadRequest):
                 await test_module.didx_establish_inbound(mock_req)
 
-    async def test_connections_remove(self):
+    async def test_didx_remove(self):
         context = RequestContext(base_context=InjectionContext(enforce_typing=False))
         mock_req = async_mock.MagicMock()
         mock_req.app = {
@@ -442,7 +460,7 @@ class TestDIDExchangeConnRoutes(AsyncTestCase):
             await test_module.didx_remove_connection(mock_req)
             mock_response.assert_called_once_with({})
 
-    async def test_connections_remove_not_found(self):
+    async def test_didx_remove_not_found(self):
         context = RequestContext(base_context=InjectionContext(enforce_typing=False))
         mock_req = async_mock.MagicMock()
         mock_req.app = {
@@ -460,7 +478,7 @@ class TestDIDExchangeConnRoutes(AsyncTestCase):
             with self.assertRaises(test_module.web.HTTPNotFound):
                 await test_module.didx_remove_connection(mock_req)
 
-    async def test_connections_remove_x(self):
+    async def test_didx_remove_x(self):
         context = RequestContext(base_context=InjectionContext(enforce_typing=False))
         mock_req = async_mock.MagicMock()
         mock_req.app = {
@@ -480,6 +498,105 @@ class TestDIDExchangeConnRoutes(AsyncTestCase):
 
             with self.assertRaises(test_module.web.HTTPBadRequest):
                 await test_module.didx_remove_connection(mock_req)
+
+    async def test_didx_create_static(self):
+        context = RequestContext(base_context=InjectionContext(enforce_typing=False))
+        mock_req = async_mock.MagicMock()
+        mock_req.app = {
+            "request_context": context,
+        }
+        mock_req.json = async_mock.CoroutineMock(
+            return_value={
+                "my_seed": "my_seed",
+                "my_did": "my_did",
+                "their_seed": "their_seed",
+                "their_did": "their_did",
+                "their_verkey": "their_verkey",
+                "their_endpoint": "their_endpoint",
+                "their_label": "Clafouti Quasar",
+                "alias": "alias",
+            }
+        )
+        mock_req.query = {
+            "auto_accept": "true",
+            "alias": "alias",
+        }
+        mock_req.match_info = {"conn_id": "dummy"}
+
+        mock_conn_rec = async_mock.MagicMock()
+        mock_conn_rec.serialize = async_mock.MagicMock()
+        mock_my_info = async_mock.MagicMock()
+        mock_my_info.did = "my_did"
+        mock_my_info.verkey = "my_verkey"
+        mock_their_info = async_mock.MagicMock()
+        mock_their_info.did = "their_did"
+        mock_their_info.verkey = "their_verkey"
+
+        with async_mock.patch.object(
+            test_module, "DIDXManager", autospec=True
+        ) as mock_didx_mgr, async_mock.patch.object(
+            test_module.web, "json_response"
+        ) as mock_response:
+            mock_didx_mgr.return_value.create_static_connection = (
+                async_mock.CoroutineMock(
+                    return_value=(mock_my_info, mock_their_info, mock_conn_rec)
+                )
+            )
+
+            await test_module.didx_create_static(mock_req)
+            mock_response.assert_called_once_with(
+                {
+                    "my_did": mock_my_info.did,
+                    "my_verkey": mock_my_info.verkey,
+                    "my_endpoint": context.settings.get("default_endpoint"),
+                    "their_did": mock_their_info.did,
+                    "their_verkey": mock_their_info.verkey,
+                    "record": mock_conn_rec.serialize.return_value,
+                }
+            )
+
+    async def test_didx_create_static_x(self):
+        context = RequestContext(base_context=InjectionContext(enforce_typing=False))
+        mock_req = async_mock.MagicMock()
+        mock_req.app = {
+            "request_context": context,
+        }
+        mock_req.json = async_mock.CoroutineMock(
+            return_value={
+                "my_seed": "my_seed",
+                "my_did": "my_did",
+                "their_seed": "their_seed",
+                "their_did": "their_did",
+                "their_verkey": "their_verkey",
+                "their_endpoint": "their_endpoint",
+                "their_label": "Clafouti Quasar",
+                "alias": "alias",
+            }
+        )
+        mock_req.query = {
+            "auto_accept": "true",
+            "alias": "alias",
+        }
+        mock_req.match_info = {"conn_id": "dummy"}
+
+        mock_conn_rec = async_mock.MagicMock()
+        mock_conn_rec.serialize = async_mock.MagicMock()
+        mock_my_info = async_mock.MagicMock()
+        mock_my_info.did = "my_did"
+        mock_my_info.verkey = "my_verkey"
+        mock_their_info = async_mock.MagicMock()
+        mock_their_info.did = "their_did"
+        mock_their_info.verkey = "their_verkey"
+
+        with async_mock.patch.object(
+            test_module, "DIDXManager", autospec=True
+        ) as mock_didx_mgr:
+            mock_didx_mgr.return_value.create_static_connection = (
+                async_mock.CoroutineMock(side_effect=test_module.WalletError())
+            )
+
+            with self.assertRaises(test_module.web.HTTPBadRequest):
+                await test_module.didx_create_static(mock_req)
 
     async def test_register(self):
         mock_app = async_mock.MagicMock()

@@ -205,7 +205,7 @@ async def input_invitation(agent):
                 log_msg("Invalid invitation:", str(e))
 
     with log_timer("Connect duration:"):
-        connection = await agent.admin_POST("/connections/receive-invitation", details)
+        connection = await agent.admin_POST("/didexchange/receive-invitation", details)
         agent.connection_id = connection["connection_id"]
         log_json(connection, label="Invitation response:")
 

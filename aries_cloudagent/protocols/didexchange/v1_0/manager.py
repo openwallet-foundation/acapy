@@ -27,14 +27,11 @@ from ....transport.inbound.receipt import MessageReceipt
 from ....wallet.base import BaseWallet, DIDInfo
 from ....wallet.crypto import create_keypair, seed_to_did
 from ....wallet.error import WalletNotFoundError
-from ....wallet.util import bytes_to_b58, naked_to_did_key
+from ....wallet.util import bytes_to_b58
 
-from ...didcomm_prefix import DIDCommPrefix
-from ...out_of_band.v1_0.message_types import INVITATION as OOB_INVITATION
 from ...out_of_band.v1_0.messages.invitation import (
     InvitationMessage as OOBInvitationMessage,
 )
-from ...out_of_band.v1_0.messages.service import Service as OOBService
 from ...routing.v1_0.manager import RoutingManager
 
 from .messages.complete import DIDXComplete
@@ -74,6 +71,7 @@ class DIDXManager:
         """
         return self._context
 
+    '''
     async def create_invitation(
         self,
         my_label: str = None,
@@ -83,6 +81,7 @@ class DIDXManager:
         multi_use: bool = False,
         alias: str = None,
         include_handshake: bool = False,
+        attachments: Sequence[Mapping] = None,
     ) -> Tuple[ConnRecord, OOBInvitationMessage]:
         """
         Generate new connection invitation.
@@ -100,6 +99,7 @@ class DIDXManager:
             multi_use: set to True to create an invitation for multiple use
             alias: optional alias to apply to connection for later use
             include_handshake: whether to include handshake protocols
+            attachments: list of dicts in form of {"id": ..., "type": ...}
 
         Returns:
             A tuple of the new `ConnRecord` and invitation instance
@@ -108,6 +108,32 @@ class DIDXManager:
         if not my_label:
             my_label = self.context.settings.get("default_label")
         wallet: BaseWallet = await self.context.inject(BaseWallet)
+
+        message_attachments = []
+        for atch in attachments or []:
+            a_type = atch.get("type")
+            a_id = atch.get("id")
+
+            if a_type == "credential-offer":
+                cred_ex_rec = await V10CredentialExchange.retrieve_by_id(
+                    self.context,
+                    a_id,
+                )
+                message_attachments.append(
+                    OOBInvitationMessage.wrap_message(cred_ex_rec.credential_offer_dict)
+                )
+            elif a_type == "present-proof":
+                pres_ex_rec = await V10PresentationExchange.retrieve_by_id(
+                    self.context,
+                    a_id,
+                )
+                message_attachments.append(
+                    OOBInvitationMessage.wrap_message(
+                        pres_ex_rec.presentation_request_dict
+                    )
+                )
+            else:
+                raise DIDXManagerError(f"Unknown attachment type: {a_type}")
 
         if public:
             if not self.context.settings.get("public_invites"):
@@ -131,6 +157,7 @@ class DIDXManager:
                     if include_handshake
                     else None
                 ),
+                request_attach=message_attachments,
                 service=[f"did:sov:{public_did.did}"],
             )
 
@@ -169,6 +196,7 @@ class DIDXManager:
                 if include_handshake
                 else None
             ),
+            request_attach=message_attachments,
             service=[
                 OOBService(
                     _id="#inline",
@@ -193,6 +221,7 @@ class DIDXManager:
         await conn_rec.attach_invitation(self.context, invitation)
 
         return (conn_rec, invitation)
+    '''
 
     async def receive_invitation(
         self,

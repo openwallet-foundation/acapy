@@ -57,7 +57,7 @@ async def invitation_create(request: web.BaseRequest):
     """
     context = request.app["request_context"]
 
-    body = await request.json()
+    body = await request.json() if request.body_exists else {}
 
     attachments = body.get("attachments")
     include_handshake = body.get("include_handshake")
@@ -70,7 +70,7 @@ async def invitation_create(request: web.BaseRequest):
             multi_use=multi_use,
             attachments=attachments,
             include_handshake=include_handshake,
-            use_public_did=use_public_did,
+            public=use_public_did,
         )
     except (StorageNotFoundError, ValidationError, OutOfBandManagerError) as e:
         raise web.HTTPBadRequest(reason=str(e))

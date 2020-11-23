@@ -512,7 +512,9 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             test_module, "OutOfBandManager"
         ) as oob_mgr:
             admin_start.side_effect = KeyError("trouble")
-            oob_mgr.return_value.create_invitation(side_effect=KeyError("more trouble"))
+            oob_mgr.return_value.create_invitation = async_mock.CoroutineMock(
+                side_effect=KeyError("more trouble")
+            )
             await conductor.start()
             admin_start.assert_awaited_once_with()
 

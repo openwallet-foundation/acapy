@@ -91,7 +91,7 @@ class InvitationMessage(AgentMessage):
         """
         c_json = self.to_json()
         c_i = bytes_to_b64(c_json.encode("ascii"), urlsafe=True)
-        result = urljoin(base_url or self.endpoint or "", "?c_i={}".format(c_i))
+        result = urljoin(base_url or "", "?c_i={}".format(c_i))
         return result
 
     @classmethod
@@ -162,6 +162,7 @@ class InvitationMessageSchema(AgentMessageSchema):
     @pre_load
     def pre_load(self, data, **kwargs):
         """Pre load hook."""
+        print(f'\n\n** ** INVITATION message pre-load, data: {data}')
         data["service_dids"] = []
         data["service_blocks"] = []
 

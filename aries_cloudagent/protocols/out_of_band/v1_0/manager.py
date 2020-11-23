@@ -2,22 +2,25 @@
 
 import logging
 
+from typing import Mapping, Sequence
+
 from ....connections.models.conn_record import ConnRecord
 from ....config.injection_context import InjectionContext
 from ....core.error import BaseError
 from ....ledger.base import BaseLedger
+from ....wallet.base import BaseWallet
 from ....wallet.util import did_key_to_naked, naked_to_did_key
 
 from ...didexchange.v1_0.manager import DIDXManager
 from ...didcomm_prefix import DIDCommPrefix
 from ...issue_credential.v1_0.models.credential_exchange import V10CredentialExchange
+from ...present_proof.v1_0.message_types import PRESENTATION_REQUEST
 from ...present_proof.v1_0.models.presentation_exchange import V10PresentationExchange
 
-from .models.invitation import InvitationRecord
+from .message_types import INVITATION
 from .messages.invitation import InvitationMessage
 from .messages.service import Service as ServiceMessage
-
-HS_PROTO_CONN_INVI = "didexchange/1.0/invitation"
+from .models.invitation import InvitationRecord
 
 
 class OutOfBandManagerError(BaseError):
@@ -56,163 +59,171 @@ class OutOfBandManager:
         self,
         my_label: str = None,
         my_endpoint: str = None,
-        use_public_did: bool = False,
+        auto_accept: bool = None,
+        public: bool = False,
         include_handshake: bool = False,
         multi_use: bool = False,
-        attachments: list = None,
+        alias: str = None,
+        attachments: Sequence[Mapping] = None,
     ) -> InvitationRecord:
         """
-        Generate new out of band invitation.
+        Generate new connection invitation.
 
-        This interaction represents an out-of-band communication channel. The resulting
-        message is expected to be used to bootstrap the secure peer-to-peer
-        communication channel.
+        This interaction represents an out-of-band communication channel. In the future
+        and in practice, these sort of invitations will be received over any number of
+        channels such as SMS, Email, QR Code, NFC, etc.
 
         Args:
             my_label: label for this connection
             my_endpoint: endpoint where other party can reach me
+            auto_accept: auto-accept a corresponding connection request
+                (None to use config)
             public: set to create an invitation from the public DID
             multi_use: set to True to create an invitation for multiple use
-            attachments: list of dicts in the form of
-                {"id": "jh5k23j5gh2123", "type": "credential-offer"}
+            alias: optional alias to apply to connection for later use
+            include_handshake: whether to include handshake protocols
+            attachments: list of dicts in form of {"id": ..., "type": ...}
 
         Returns:
             Invitation record
 
         """
-
-        didx_mgr = DIDXManager(self.context)
-        (conn_rec, invi_msg) = await didx_mgr.create_invitation(
-            my_label=my_label,
-            my_endpoint=my_endpoint,
-            auto_accept=True,
-            public=use_public_did,
-            multi_use=multi_use,
-            include_handshake=include_handshake,
-        )
-        # wallet: BaseWallet = await self.context.inject(BaseWallet)
-
-        print('\n\n-- Create-invi: 1')
-        if not my_label:
-            my_label = self.context.settings.get("default_label")
-        # if not my_endpoint:
-        #     my_endpoint = self.context.settings.get("default_endpoint")
+        wallet: BaseWallet = await self.context.inject(BaseWallet)
 
         message_attachments = []
-        print('.. create-invi: 2')
-        if attachments:
-            for attachment in attachments:
-                attachment_type = attachment.get("type")
-                print(f'.. create-invi: 3.{attachment_type}')
-                if attachment_type == "credential-offer":
-                    instance_id = attachment["id"]
-                    cred_ex_rec = await V10CredentialExchange.retrieve_by_id(
-                        self.context, instance_id
-                    )
-                    print(f'.. create-invi: 3.{attachment_type}.x: {json.dumps(cred_ex_rec.credential_offer_dict, indent=4)}')
-                    # Wrap as attachment decorators
-                    message_attachments.append(
-                        InvitationMessage.wrap_message(cred_ex_rec.credential_offer_dict)
-                    )
-                elif attachment_type == "present-proof":
-                    instance_id = attachment["id"]
-                    pres_ex_rec = await V10PresentationExchange.retrieve_by_id(
-                        self.context, instance_id
-                    )
-                    # Wrap as attachment decorators
-                    message_attachments.append(
-                        InvitationMessage.wrap_message(
-                            pres_ex_rec.presentation_request_dict
-                        )
-                    )
-                else:
-                    raise OutOfBandManagerError(
-                        f"Unknown attachment type: {attachment_type}"
-                    )
-        print(f'.. create-invi: 4: message-atchs {message_attachments}')
+        for atch in attachments or []:
+            a_type = atch.get("type")
+            a_id = atch.get("id")
 
-        """  # did-exchange manager does this now
-        # We plug into existing connection structure during migration phase
-        if use_public_did:
-            # service = (await wallet.get_public_did()).did
-            service = connection_invitation.did  # now invi_msg.did
-        else:
-            # connection_key = await wallet.create_signing_key()
-            # service = ServiceMessage(
-            #     id="#inline",
-            #     type="did-communication",
-            #     recipient_keys=[connection_key.verkey],
-            #     routing_keys=[],
-            #     service_endpoint=my_endpoint,
-            # )
-            service = ServiceMessage(
-                _id="#inline",
-                _type="did-communication",
-                recipient_keys=[
-                    naked_to_did_key(key)
-                    for key in connection_invitation.recipient_keys or []  # invi_msg...
-                ],
-                routing_keys=[
-                    naked_to_did_key(key)
-                    for key in connection_invitation.routing_keys or []  # invi_msg...
-                ],
-                service_endpoint=connection_invitation.endpoint,  # invi_msg...
-            ).validate()
+            if a_type == "credential-offer":
+                cred_ex_rec = await V10CredentialExchange.retrieve_by_id(
+                    self.context,
+                    a_id,
+                )
+                message_attachments.append(
+                    InvitationMessage.wrap_message(cred_ex_rec.credential_offer_dict)
+                )
+            elif a_type == "present-proof":
+                pres_ex_rec = await V10PresentationExchange.retrieve_by_id(
+                    self.context,
+                    a_id,
+                )
+                message_attachments.append(
+                    InvitationMessage.wrap_message(
+                        pres_ex_rec.presentation_request_dict
+                    )
+                )
+            else:
+                raise OutOfBandManagerError(f"Unknown attachment type: {a_type}")
 
-        handshake_protocols = []
-        if include_handshake:
-            # handshake_protocols.append("https://didcomm.org/connections/1.0")
-            # handshake_protocols.append("https://didcomm.org/didexchange/1.0")
-            handshake_protocols.extend(
-                pfx.qualify(HS_PROTO_CONN_INVI) for pfx in DIDCommPrefix
+        if public:
+            if not self.context.settings.get("public_invites"):
+                raise OutOfBandManagerError("Public invitations are not enabled")
+
+            public_did = await wallet.get_public_did()
+            if not public_did:
+                raise OutOfBandManagerError(
+                    "Cannot create public invitation with no public DID"
+                )
+
+            if multi_use:
+                raise OutOfBandManagerError(
+                    "Cannot use public and multi_use at the same time"
+                )
+
+            invi_msg = InvitationMessage(
+                label=my_label or self.context.settings.get("default_label"),
+                handshake_protocols=(
+                    [DIDCommPrefix.qualify_current(INVITATION)]
+                    if include_handshake
+                    else None
+                ),
+                request_attach=message_attachments,
+                service=[f"did:sov:{public_did.did}"],
             )
 
-        invitation_message = InvitationMessage(
-            label=my_label,
-            service=[service],
-            request_attach=message_attachments,
-            handshake_protocols=handshake_protocols,
-        ).validate()
-        """
+        else:
+            invitation_mode = (
+                ConnRecord.INVITATION_MODE_MULTI
+                if multi_use
+                else ConnRecord.INVITATION_MODE_ONCE
+            )
 
-        # Create record
-        invitation_record = InvitationRecord(
+            if not my_endpoint:
+                my_endpoint = self.context.settings.get("default_endpoint")
+            accept = (
+                ConnRecord.ACCEPT_AUTO
+                if (
+                    auto_accept
+                    or (
+                        auto_accept is None
+                        and self.context.settings.get("debug.auto_accept_requests")
+                    )
+                )
+                else ConnRecord.ACCEPT_MANUAL
+            )
+
+            # Create and store new invitation key
+            connection_key = await wallet.create_signing_key()
+
+            # Create connection invitation message
+            # Note: Need to split this into two stages to support inbound routing
+            # of invitations
+            # Would want to reuse create_did_document and convert the result
+            invi_msg = InvitationMessage(
+                label=my_label or self.context.settings.get("default_label"),
+                handshake_protocols=(
+                    [DIDCommPrefix.qualify_current(INVITATION)]
+                    if include_handshake
+                    else None
+                ),
+                request_attach=message_attachments,
+                service=[
+                    ServiceMessage(
+                        _id="#inline",
+                        _type="did-communication",
+                        recipient_keys=[naked_to_did_key(connection_key.verkey)],
+                        service_endpoint=my_endpoint,
+                    )
+                ],
+            )
+
+            # Create connection record
+            conn_rec = ConnRecord(
+                invitation_key=connection_key.verkey,
+                their_role=ConnRecord.Role.REQUESTER.rfc23,
+                state=ConnRecord.State.INVITATION.rfc23,
+                accept=accept,
+                invitation_mode=invitation_mode,
+                alias=alias,
+            )
+            await conn_rec.save(self.context, reason="Created new invitation")
+            await conn_rec.attach_invitation(self.context, invi_msg)
+
+        # Create invitation record
+        invi_rec = InvitationRecord(
             state=InvitationRecord.STATE_INITIAL,
             invitation=invi_msg.serialize(),
         )
+        await invi_rec.save(self.context, reason="Created new invitation")
+        return invi_rec
 
-        await invitation_record.save(self.context, reason="Created new invitation")
-
-        return invitation_record
-
-    async def receive_invitation(self, invitation: InvitationMessage) -> ConnRecord:
+    async def receive_invitation(self, invi_msg: InvitationMessage) -> ConnRecord:
         """Receive an out of band invitation message."""
 
         ledger: BaseLedger = await self.context.inject(BaseLedger)
 
-        # New message format
-        invitation_message = InvitationMessage.deserialize(invitation)
-
-        """ # TODO Remove this
-        # Convert to old format and pass to relevant manager
-        # The following logic adheres to Aries RFC 0496
-        """
-
         # There must be exactly 1 service entry
-        if (
-            len(invitation_message.service_blocks)
-            + len(invitation_message.service_dids)
-            != 1
-        ):
+        if len(invi_msg.service_blocks) + len(invi_msg.service_dids) != 1:
             raise OutOfBandManagerError("service array must have exactly one element")
 
         # Get the single service item
-        if invitation_message.service_blocks:
-            service = invitation_message.service_blocks[0]
+        if invi_msg.service_blocks:
+            service = invi_msg.service_blocks[0]
 
         else:
             # If it's in the did format, we need to convert to a full service block
-            service_did = invitation_message.service_dids[0]
+            service_did = invi_msg.service_dids[0]
             async with ledger:
                 verkey = await ledger.get_key_for_did(service_did)
                 did_key = naked_to_did_key(verkey)
@@ -228,12 +239,10 @@ class OutOfBandManager:
             )
 
         unq_handshake_protos = {
-            DIDCommPrefix.unqualify(proto)
-            for proto in invitation_message.handshake_protocols
+            DIDCommPrefix.unqualify(proto) for proto in invi_msg.handshake_protocols
         }
-        # If we are dealing with an invitation
-        if unq_handshake_protos == {HS_PROTO_CONN_INVI}:
-            if len(invitation_message.request_attach) != 0:
+        if unq_handshake_protos == {INVITATION}:
+            if len(invi_msg.request_attach) != 0:
                 raise OutOfBandManagerError(
                     "request block must be empty for invitation message type."
                 )
@@ -246,31 +255,16 @@ class OutOfBandManager:
                 did_key_to_naked(key) for key in service.routing_keys
             ] or []
 
-            """  # did-exchange manager uses new format now
-            # Convert to the old message format
-            connection_invitation = ConnectionInvitation.deserialize(
-                {
-                    "@id": invitation_message._id,
-                    "@type": DIDCommPrefix.qualify_current(HS_PROTO_CONN_INVI),
-                    "label": invitation_message.label,
-                    "recipientKeys": service.recipient_keys,
-                    "serviceEndpoint": service.service_endpoint,
-                    "routingKeys": service.routing_keys,
-                }
-            )
-            """
-
             didx_mgr = DIDXManager(self.context)
-            conn_rec = await didx_mgr.receive_invitation(invitation, auto_accept=True)
+            conn_rec = await didx_mgr.receive_invitation(invi_msg, auto_accept=True)
 
-        elif len(
-            invitation_message.request_attach
-        ) == 1 and invitation_message.request_attach[0].data.json["@type"] in [
-            pfx.qualify("present-proof/1.0/request-presentation")
-            for pfx in DIDCommPrefix
-        ]:
+        elif (
+            len(invi_msg.request_attach) == 1
+            and DIDCommPrefix.unqualify(invi_msg.request_attach[0].data.json["@type"])
+            == PRESENTATION_REQUEST
+        ):
             raise OutOfBandManagerNotImplementedError(
-                f"{invitation_message.request_attach[0].data.json['@type']} "
+                f"{invi_msg.request_attach[0].data.json['@type']} "
                 "request type not implemented."
             )
         else:

@@ -11,7 +11,7 @@ from aiohttp_apispec import (
     response_schema,
 )
 
-from marshmallow import fields, validate, validates_schema
+from marshmallow import fields, pre_load, validate, validates_schema
 
 from ....connections.models.conn_record import ConnRecord, ConnRecordSchema
 from ....messaging.models.base import BaseModelError
@@ -34,7 +34,7 @@ from .manager import DIDXManager, DIDXManagerError
 from .message_types import SPEC_URI
 
 
-class ConnectionListSchema(OpenAPISchema):
+class DIDXConnListSchema(OpenAPISchema):
     """Result schema for connection list."""
 
     results = fields.List(
@@ -43,15 +43,21 @@ class ConnectionListSchema(OpenAPISchema):
     )
 
 
-class ReceiveInvitationRequestSchema(OOBInvitationSchema):
+class DIDXReceiveInvitationRequestSchema(OOBInvitationSchema):
     """Request schema for receive invitation request."""
+
+    @pre_load
+    def pre_load(self, data, **kwargs):
+        """Bypass middleware field adjustment: marshmallow has no data yet."""
+        print(f'\n\n ## ## recv-invi req: pre-loading {data}')
 
     @validates_schema
     def validate_fields(self, data, **kwargs):
-        """Bypass middleware field validation for OpenAPI display."""
+        """Bypass middleware field validation: marshmallow has no data yet."""
+        print(f'\n\n ## ## recv-invi req: validating {data}')
 
 
-class ConnectionStaticRequestSchema(OpenAPISchema):
+class DIDXConnStaticRequestSchema(OpenAPISchema):
     """Request schema for a new static connection."""
 
     my_seed = fields.Str(description="Seed to use for the local DID", required=False)
@@ -70,7 +76,7 @@ class ConnectionStaticRequestSchema(OpenAPISchema):
     alias = fields.Str(description="Alias to assign to this connection", required=False)
 
 
-class ConnectionStaticResultSchema(OpenAPISchema):
+class DIDXConnStaticResultSchema(OpenAPISchema):
     """Result schema for new static connection."""
 
     my_did = fields.Str(description="Local DID", required=True, **INDY_DID)
@@ -85,7 +91,7 @@ class ConnectionStaticResultSchema(OpenAPISchema):
     record = fields.Nested(ConnRecordSchema, required=True)
 
 
-class ConnectionsListQueryStringSchema(OpenAPISchema):
+class DIDXConnsListQueryStringSchema(OpenAPISchema):
     """Parameters and validators for connections list request query string."""
 
     alias = fields.Str(
@@ -115,7 +121,7 @@ class ConnectionsListQueryStringSchema(OpenAPISchema):
     )
 
 
-class ReceiveInvitationQueryStringSchema(OpenAPISchema):
+class DIDXReceiveInvitationQueryStringSchema(OpenAPISchema):
     """Parameters and validators for receive invitation request query string."""
 
     alias = fields.Str(
@@ -129,7 +135,7 @@ class ReceiveInvitationQueryStringSchema(OpenAPISchema):
     )
 
 
-class AcceptInvitationQueryStringSchema(OpenAPISchema):
+class DIDXAcceptInvitationQueryStringSchema(OpenAPISchema):
     """Parameters and validators for accept invitation request query string."""
 
     my_endpoint = fields.Str(description="My URL endpoint", required=False, **ENDPOINT)
@@ -138,13 +144,13 @@ class AcceptInvitationQueryStringSchema(OpenAPISchema):
     )
 
 
-class AcceptRequestQueryStringSchema(OpenAPISchema):
+class DIDXAcceptRequestQueryStringSchema(OpenAPISchema):
     """Parameters and validators for accept conn-request web-request query string."""
 
     my_endpoint = fields.Str(description="My URL endpoint", required=False, **ENDPOINT)
 
 
-class ConnIdMatchInfoSchema(OpenAPISchema):
+class DIDXConnIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking connection id."""
 
     conn_id = fields.Str(
@@ -152,7 +158,7 @@ class ConnIdMatchInfoSchema(OpenAPISchema):
     )
 
 
-class ConnIdRefIdMatchInfoSchema(OpenAPISchema):
+class DIDXConnIdRefIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking connection and ref ids."""
 
     conn_id = fields.Str(
@@ -185,8 +191,8 @@ def connection_sort_key(conn):
     tags=["did-exchange"],
     summary="Query agent-to-agent connections",
 )
-@querystring_schema(ConnectionsListQueryStringSchema())
-@response_schema(ConnectionListSchema(), 200)
+@querystring_schema(DIDXConnsListQueryStringSchema())
+@response_schema(DIDXConnListSchema(), 200)
 async def didx_connections_list(request: web.BaseRequest):
     """
     Request handler for searching DID exchange connection records.
@@ -232,7 +238,7 @@ async def didx_connections_list(request: web.BaseRequest):
 
 
 @docs(tags=["did-exchange"], summary="Fetch a single connection record")
-@match_info_schema(ConnIdMatchInfoSchema())
+@match_info_schema(DIDXConnIdMatchInfoSchema())
 @response_schema(ConnRecordSchema(), 200)
 async def didx_retrieve_connection(request: web.BaseRequest):
     """
@@ -263,8 +269,8 @@ async def didx_retrieve_connection(request: web.BaseRequest):
     tags=["did-exchange"],
     summary="Receive a new connection invitation",
 )
-@querystring_schema(ReceiveInvitationQueryStringSchema())
-@request_schema(ReceiveInvitationRequestSchema())
+@querystring_schema(DIDXReceiveInvitationQueryStringSchema())
+@request_schema(DIDXReceiveInvitationRequestSchema())
 @response_schema(ConnRecordSchema(), 200)
 async def didx_receive_invitation(request: web.BaseRequest):
     """
@@ -277,6 +283,7 @@ async def didx_receive_invitation(request: web.BaseRequest):
         The resulting connection record details
 
     """
+    print(f'\n\n-- -- DIDX routes #1')
     context = request.app["request_context"]
     if context.settings.get("admin.no_receive_invites"):
         raise web.HTTPForbidden(
@@ -286,7 +293,9 @@ async def didx_receive_invitation(request: web.BaseRequest):
     invitation_json = await request.json()
 
     try:
+        print(f'.. DIDX routes; i-json: {json.dumps(invitation_json(), indent=4)}')
         invitation = OOBInvitation.deserialize(invitation_json)
+        print(f'.. DIDX routes; recv-invi: {json.dumps(invitation.serialize(), indent=4)}')
         auto_accept = json.loads(request.query.get("auto_accept", "null"))
         alias = request.query.get("alias")
         conn_rec = await didx_mgr.receive_invitation(
@@ -303,8 +312,8 @@ async def didx_receive_invitation(request: web.BaseRequest):
     tags=["did-exchange"],
     summary="Accept a stored connection invitation",
 )
-@match_info_schema(ConnIdMatchInfoSchema())
-@querystring_schema(AcceptInvitationQueryStringSchema())
+@match_info_schema(DIDXConnIdMatchInfoSchema())
+@querystring_schema(DIDXAcceptInvitationQueryStringSchema())
 @response_schema(ConnRecordSchema(), 200)
 async def didx_accept_invitation(request: web.BaseRequest):
     """
@@ -342,8 +351,8 @@ async def didx_accept_invitation(request: web.BaseRequest):
     tags=["did-exchange"],
     summary="Accept a stored connection request",
 )
-@match_info_schema(ConnIdMatchInfoSchema())
-@querystring_schema(AcceptRequestQueryStringSchema())
+@match_info_schema(DIDXConnIdMatchInfoSchema())
+@querystring_schema(DIDXAcceptRequestQueryStringSchema())
 @response_schema(ConnRecordSchema(), 200)
 async def didx_accept_request(request: web.BaseRequest):
     """
@@ -379,7 +388,7 @@ async def didx_accept_request(request: web.BaseRequest):
 @docs(
     tags=["did-exchange"], summary="Assign another connection as the inbound connection"
 )
-@match_info_schema(ConnIdRefIdMatchInfoSchema())
+@match_info_schema(DIDXConnIdRefIdMatchInfoSchema())
 async def didx_establish_inbound(request: web.BaseRequest):
     """
     Request handler for setting the inbound connection on a connection record.
@@ -407,7 +416,7 @@ async def didx_establish_inbound(request: web.BaseRequest):
 
 
 @docs(tags=["did-exchange"], summary="Remove an existing connection record")
-@match_info_schema(ConnIdMatchInfoSchema())
+@match_info_schema(DIDXConnIdMatchInfoSchema())
 async def didx_remove_connection(request: web.BaseRequest):
     """
     Request handler for removing a connection record.
@@ -430,8 +439,8 @@ async def didx_remove_connection(request: web.BaseRequest):
 
 
 @docs(tags=["did-exchange"], summary="Create a new static connection")
-@request_schema(ConnectionStaticRequestSchema())
-@response_schema(ConnectionStaticResultSchema(), 200)
+@request_schema(DIDXConnStaticRequestSchema())
+@response_schema(DIDXConnStaticResultSchema(), 200)
 async def didx_create_static(request: web.BaseRequest):
     """
     Request handler for creating a new static connection.
