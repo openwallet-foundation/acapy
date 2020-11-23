@@ -8,11 +8,11 @@ SPEC_URI = (
 )
 
 # Message types
-CREDENTIAL_PROPOSAL = f"issue-credential/1.0/propose-credential"
-CREDENTIAL_OFFER = f"issue-credential/1.0/offer-credential"
-CREDENTIAL_REQUEST = f"issue-credential/1.0/request-credential"
-CREDENTIAL_ISSUE = f"issue-credential/1.0/issue-credential"
-CREDENTIAL_ACK = f"issue-credential/1.0/ack"
+CREDENTIAL_PROPOSAL = "issue-credential/1.0/propose-credential"
+CREDENTIAL_OFFER = "issue-credential/1.0/offer-credential"
+CREDENTIAL_REQUEST = "issue-credential/1.0/request-credential"
+CREDENTIAL_ISSUE = "issue-credential/1.0/issue-credential"
+CREDENTIAL_ACK = "issue-credential/1.0/ack"
 
 PROTOCOL_PACKAGE = "aries_cloudagent.protocols.issue_credential.v1_0"
 
@@ -35,7 +35,7 @@ MESSAGE_TYPES = DIDCommPrefix.qualify_all(
 )
 
 # Inner object types
-CREDENTIAL_PREVIEW = f"issue-credential/1.0/credential-preview"
+CREDENTIAL_PREVIEW = "issue-credential/1.0/credential-preview"
 
 # Identifiers to use in attachment decorators
 ATTACH_DECO_IDS = {

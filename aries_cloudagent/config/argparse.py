@@ -533,7 +533,9 @@ class LedgerGroup(ArgumentGroup):
     def get_settings(self, args: Namespace) -> dict:
         """Extract ledger settings."""
         settings = {}
-        if not args.no_ledger:
+        if args.no_ledger:
+            settings["ledger.disabled"] = True
+        else:
             if args.genesis_url:
                 settings["ledger.genesis_url"] = args.genesis_url
             elif args.genesis_file:

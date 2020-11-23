@@ -8,7 +8,7 @@ SPEC_URI = (
 )
 
 # Message types
-BASIC_MESSAGE = f"basicmessage/1.0/message"
+BASIC_MESSAGE = "basicmessage/1.0/message"
 
 PROTOCOL_PACKAGE = "aries_cloudagent.protocols.basicmessage.v1_0"
 

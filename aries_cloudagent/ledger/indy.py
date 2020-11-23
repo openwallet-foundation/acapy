@@ -17,8 +17,8 @@ import indy.pool
 from indy.error import IndyError, ErrorCode
 
 from ..cache.base import BaseCache
-from ..issuer.base import BaseIssuer, IssuerError, DEFAULT_CRED_DEF_TAG
-from ..indy.error import IndyErrorHandler
+from ..indy.issuer import IndyIssuer, IndyIssuerError, DEFAULT_CRED_DEF_TAG
+from ..indy.sdk.error import IndyErrorHandler
 from ..messaging.credential_definitions.util import CRED_DEF_SENT_RECORD_TYPE
 from ..messaging.schemas.util import SCHEMA_SENT_RECORD_TYPE
 from ..storage.base import StorageRecord
@@ -336,7 +336,7 @@ class IndyLedger(BaseLedger):
 
     async def create_and_send_schema(
         self,
-        issuer: BaseIssuer,
+        issuer: IndyIssuer,
         schema_name: str,
         schema_version: str,
         attribute_names: Sequence[str],
@@ -375,7 +375,7 @@ class IndyLedger(BaseLedger):
                     schema_version,
                     attribute_names,
                 )
-            except IssuerError as err:
+            except IndyIssuerError as err:
                 raise LedgerError(err.message) from err
             schema_def = json.loads(schema_json)
 
@@ -543,7 +543,7 @@ class IndyLedger(BaseLedger):
 
     async def create_and_send_credential_definition(
         self,
-        issuer: BaseIssuer,
+        issuer: IndyIssuer,
         schema_id: str,
         signature_type: str = None,
         tag: str = None,
@@ -599,7 +599,7 @@ class IndyLedger(BaseLedger):
                             f"ledger {self.pool_name} but not in wallet "
                             f"{self.wallet.name}"
                         )
-                except IssuerError as err:
+                except IndyIssuerError as err:
                     raise LedgerError(err.message) from err
                 credential_definition_json = json.dumps(ledger_cred_def)
                 break
@@ -612,7 +612,7 @@ class IndyLedger(BaseLedger):
                         f"Credential definition {credential_definition_id} is in "
                         f"wallet {self.wallet.name} but not on ledger {self.pool_name}"
                     )
-            except IssuerError as err:
+            except IndyIssuerError as err:
                 raise LedgerError(err.message) from err
 
             # Cred def is neither on ledger nor in wallet: create and send it
@@ -628,7 +628,7 @@ class IndyLedger(BaseLedger):
                     tag,
                     support_revocation,
                 )
-            except IssuerError as err:
+            except IndyIssuerError as err:
                 raise LedgerError(err.message) from err
 
             if self.read_only:

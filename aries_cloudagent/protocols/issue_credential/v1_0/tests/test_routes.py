@@ -4,7 +4,7 @@ from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
 from .....config.injection_context import InjectionContext
-from .....holder.base import BaseHolder
+from .....indy.holder import IndyHolder
 from .....messaging.request_context import RequestContext
 from .....wallet.base import DIDInfo
 
@@ -1459,7 +1459,7 @@ class TestCredentialRoutes(AsyncTestCase):
             mock_conn_rec.retrieve_by_id.return_value.is_ready = True
 
             mock_issue_cred = async_mock.CoroutineMock(
-                side_effect=test_module.IssuerError()
+                side_effect=test_module.IndyIssuerError()
             )
             mock_credential_manager.return_value.issue_credential = mock_issue_cred
 

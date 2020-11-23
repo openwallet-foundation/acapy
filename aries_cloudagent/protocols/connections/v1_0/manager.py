@@ -567,8 +567,8 @@ class ConnectionManager:
             ConnRecord.State.RESPONSE,
         ):
             raise ConnectionManagerError(
-                f"Cannot accept connection response for connection"
-                " in state: {connection.state}"
+                "Cannot accept connection response for connection"
+                f" in state: {connection.state}"
             )
 
         their_did = response.connection.did

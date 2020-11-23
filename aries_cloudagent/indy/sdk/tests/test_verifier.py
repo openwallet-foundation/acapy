@@ -8,7 +8,9 @@ from asynctest import mock as async_mock
 
 from indy.error import IndyError
 
-from ..indy import IndyVerifier, PreVerifyResult
+from ...verifier import PreVerifyResult
+
+from ..verifier import IndySdkVerifier
 
 
 INDY_PROOF_REQ_NAME = {
@@ -282,7 +284,7 @@ INDY_PROOF_PRED_NAMES = {
 
 
 @pytest.mark.indy
-class TestIndyVerifier(AsyncTestCase):
+class TestIndySdkVerifier(AsyncTestCase):
     def setUp(self):
         mock_ledger = async_mock.MagicMock(
             get_credential_definition=async_mock.CoroutineMock(
@@ -306,8 +308,8 @@ class TestIndyVerifier(AsyncTestCase):
                 }
             )
         )
-        self.verifier = IndyVerifier(mock_ledger)
-        assert repr(self.verifier) == "<IndyVerifier>"
+        self.verifier = IndySdkVerifier(mock_ledger)
+        assert repr(self.verifier) == "<IndySdkVerifier>"
 
     @async_mock.patch("indy.anoncreds.verifier_verify_proof")
     async def test_verify_presentation(self, mock_verify):

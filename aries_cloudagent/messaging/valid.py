@@ -54,7 +54,7 @@ class NumericStrWhole(Regexp):
     """Validate value against whole number numeric string."""
 
     EXAMPLE = "0"
-    PATTERN = rf"^[0-9]*$"
+    PATTERN = r"^[0-9]*$"
 
     def __init__(self):
         """Initializer."""
@@ -87,7 +87,7 @@ class NumericStrNatural(Regexp):
     """Validate value against natural number numeric string."""
 
     EXAMPLE = "1"
-    PATTERN = rf"^[1-9][0-9]*$"
+    PATTERN = r"^[1-9][0-9]*$"
 
     def __init__(self):
         """Initializer."""
@@ -245,7 +245,7 @@ class IndyVersion(Regexp):
     """Validate value against indy version specification."""
 
     EXAMPLE = "1.0"
-    PATTERN = rf"^[0-9.]+$"
+    PATTERN = r"^[0-9.]+$"
 
     def __init__(self):
         """Initializer."""
@@ -295,7 +295,7 @@ class IndyCredRevId(Regexp):
     """Validate value against indy credential revocation identifier specification."""
 
     EXAMPLE = "12345"
-    PATTERN = rf"^[1-9][0-9]*$"
+    PATTERN = r"^[1-9][0-9]*$"
 
     def __init__(self):
         """Initializer."""
