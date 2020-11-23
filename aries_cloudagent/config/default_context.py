@@ -101,7 +101,7 @@ class DefaultContextBuilder(ContextBuilder):
             IndyIssuer,
             StatsProvider(
                 ClassProvider(
-                    "aries_cloudagent.issuer.indy.sdk.IndySdkIssuer",
+                    "aries_cloudagent.indy.sdk.issuer.IndySdkIssuer",
                     ClassProvider.Inject(BaseWallet),
                 ),
                 ("create_credential_offer", "create_credential"),
@@ -111,7 +111,7 @@ class DefaultContextBuilder(ContextBuilder):
             IndyHolder,
             StatsProvider(
                 ClassProvider(
-                    "aries_cloudagent.holder.indy.sdk.IndySdkHolder",
+                    "aries_cloudagent.indy.sdk.holder.IndySdkHolder",
                     ClassProvider.Inject(BaseWallet),
                 ),
                 ("get_credential", "store_credential", "create_credential_request"),
@@ -120,7 +120,7 @@ class DefaultContextBuilder(ContextBuilder):
         context.injector.bind_provider(
             IndyVerifier,
             ClassProvider(
-                "aries_cloudagent.verifier.indy.sdk.IndySdkVerifier",
+                "aries_cloudagent.indy.sdk.verifier.IndySdkVerifier",
                 ClassProvider.Inject(BaseLedger),
             ),
         )
