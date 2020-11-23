@@ -75,6 +75,7 @@ class ConnectionManager:
         public: bool = False,
         multi_use: bool = False,
         alias: str = None,
+        tx_my_role: str = None,
     ) -> Tuple[ConnectionRecord, ConnectionInvitation]:
         """
         Generate new connection invitation.
@@ -116,6 +117,7 @@ class ConnectionManager:
             public: set to create an invitation from the public DID
             multi_use: set to True to create an invitation for multiple use
             alias: optional alias to apply to connection for later use
+            tx_my_role : optional role to add to connection for use by endorsement protocol
 
         Returns:
             A tuple of the new `ConnectionRecord` and `ConnectionInvitation` instances
@@ -178,15 +180,18 @@ class ConnectionManager:
             alias=alias,
         )
 
+
         await connection.save(self.context, reason="Created new invitation")
 
         # Create connection invitation message
         # Note: Need to split this into two stages to support inbound routing of invites
         # Would want to reuse create_did_document and convert the result
+
         invitation = ConnectionInvitation(
-            label=my_label, recipient_keys=[connection_key.verkey], endpoint=my_endpoint
+            label=my_label, recipient_keys=[connection_key.verkey], endpoint=my_endpoint, tx_my_role=tx_my_role
         )
         await connection.attach_invitation(self.context, invitation)
+
 
         return connection, invitation
 
@@ -196,6 +201,7 @@ class ConnectionManager:
         their_role: str = None,
         auto_accept: bool = None,
         alias: str = None,
+        tx_my_role: str = None,
     ) -> ConnectionRecord:
         """
         Create a new connection record to track a received invitation.
@@ -210,6 +216,7 @@ class ConnectionManager:
             The new `ConnectionRecord` instance
 
         """
+
         if not invitation.did:
             if not invitation.recipient_keys:
                 raise ConnectionManagerError("Invitation must contain recipient key(s)")
@@ -239,17 +246,26 @@ class ConnectionManager:
             alias=alias,
         )
 
+
+
         await connection.save(
             self.context,
             reason="Created new connection record from invitation",
             log_params={"invitation": invitation, "role": their_role},
         )
 
+
+
         # Save the invitation for later processing
         await connection.attach_invitation(self.context, invitation)
 
+
         if connection.accept == ConnectionRecord.ACCEPT_AUTO:
-            request = await self.create_request(connection)
+
+            if tx_my_role != None:
+                request = await self.create_request(connection, my_role=tx_my_role, their_role=invitation.tx_my_role)
+            else:
+                request = await self.create_request(connection)
             responder: BaseResponder = await self._context.inject(
                 BaseResponder, required=False
             )
@@ -262,7 +278,9 @@ class ConnectionManager:
         else:
             self._logger.debug("Connection invitation will await acceptance")
 
+
         return connection
+
 
     async def create_request(
         self,
@@ -270,6 +288,7 @@ class ConnectionManager:
         my_label: str = None,
         my_endpoint: str = None,
         my_role: str = None,
+        their_role: str = None,
     ) -> ConnectionRequest:
         """
         Create a new connection request for a previously-received invitation.
@@ -283,6 +302,7 @@ class ConnectionManager:
             A new `ConnectionRequest` message to send to the other agent
 
         """
+
         wallet: BaseWallet = await self.context.inject(BaseWallet)
         if connection.my_did:
             my_info = await wallet.get_local_did(connection.my_did)
@@ -291,6 +311,8 @@ class ConnectionManager:
             my_info = await wallet.create_local_did()
             connection.my_did = my_info.did
             
+        connection.tx_my_role.clear()
+        if my_role != None:
             connection.tx_my_role.append(my_role)
 
 
@@ -311,7 +333,8 @@ class ConnectionManager:
         request = ConnectionRequest(
             label=my_label,
             connection=ConnectionDetail(did=connection.my_did, did_doc=did_doc),
-            role=my_role,
+            my_role=my_role,
+            their_role=their_role
         )
 
 
@@ -403,8 +426,8 @@ class ConnectionManager:
         if connection:
             connection.their_label = request.label
             connection.their_did = request.connection.did
-
-            connection.tx_their_role.append(request.role)
+            if request.my_role != None:
+                connection.tx_their_role.append(request.my_role)
             connection.state = ConnectionRecord.STATE_REQUEST
             await connection.save(
                 self.context, reason="Received connection request from invitation"
@@ -432,7 +455,7 @@ class ConnectionManager:
         await connection.attach_request(self.context, request)
 
         if connection.accept == ConnectionRecord.ACCEPT_AUTO:
-            response = await self.create_response(connection)
+            response = await self.create_response(connection, my_role=request.their_role, their_role=request.my_role)
             responder: BaseResponder = await self._context.inject(
                 BaseResponder, required=False
             )
@@ -451,7 +474,7 @@ class ConnectionManager:
         return connection
 
     async def create_response(
-        self, connection: ConnectionRecord, my_endpoint: str = None, my_role: str = None,
+        self, connection: ConnectionRecord, my_endpoint: str = None, my_role: str = None, their_role:str = None
     ) -> ConnectionResponse:
         """
         Create a connection response for a received connection request.
@@ -486,6 +509,7 @@ class ConnectionManager:
             my_info = await wallet.create_local_did()
             connection.my_did = my_info.did
             
+        if my_role != None:
             connection.tx_my_role.append(my_role)
 
         
@@ -503,7 +527,8 @@ class ConnectionManager:
         )
         response = ConnectionResponse(
             connection=ConnectionDetail(did=my_info.did, did_doc=did_doc),
-            role = my_role,
+            my_role = my_role,
+            their_role = their_role
         )
         # Assign thread information
         response.assign_thread_from(request)
@@ -593,10 +618,9 @@ class ConnectionManager:
         await self.store_did_document(conn_did_doc)
 
         connection.their_did = their_did
-
-        connection.tx_their_role.append(response.role)
+        if response.my_role != None:
+            connection.tx_their_role.append(response.my_role)
         connection.state = ConnectionRecord.STATE_RESPONSE
-
 
         await connection.save(self.context, reason="Accepted connection response")
 
@@ -980,7 +1004,7 @@ class ConnectionManager:
         Args:
             connection_id: The connection ID to search for
             connection: The connection record itself, if already available
-        """
+        """        
         if not connection_id:
             connection_id = connection.connection_id
         cache: BaseCache = await self.context.inject(BaseCache, required=False)
@@ -1020,12 +1044,14 @@ class ConnectionManager:
         my_info = await wallet.get_local_did(connection.my_did)
         results = None
 
+
         if (
             connection.state
             in (ConnectionRecord.STATE_INVITATION, ConnectionRecord.STATE_REQUEST)
             and connection.initiator == ConnectionRecord.INITIATOR_EXTERNAL
         ):
             invitation = await connection.retrieve_invitation(self.context)
+
             if invitation.did:
                 # populate recipient keys and endpoint from the ledger
                 ledger: BaseLedger = await self.context.inject(
@@ -1044,6 +1070,7 @@ class ConnectionManager:
                 recipient_keys = invitation.recipient_keys
                 routing_keys = invitation.routing_keys
 
+
             results = [
                 ConnectionTarget(
                     did=connection.their_did,
@@ -1054,6 +1081,7 @@ class ConnectionManager:
                     sender_key=my_info.verkey,
                 )
             ]
+
         else:
             if not connection.their_did:
                 self._logger.debug("No target DID associated with connection")

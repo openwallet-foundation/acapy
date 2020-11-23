@@ -83,10 +83,10 @@ class ConnectionRecord(BaseRecord):  # lgtm[py/missing-equals]
     ):
         """Initialize a new ConnectionRecord."""
         super().__init__(connection_id, state or self.STATE_INIT, **kwargs)
+
         self.my_did = my_did
         self.their_did = their_did
         self.their_label = their_label
-
         self.tx_my_role = tx_my_role
         self.tx_their_role = tx_their_role
         self.their_role = their_role
@@ -99,6 +99,7 @@ class ConnectionRecord(BaseRecord):  # lgtm[py/missing-equals]
         self.accept = accept or self.ACCEPT_MANUAL
         self.invitation_mode = invitation_mode or self.INVITATION_MODE_ONCE
         self.alias = alias
+
 
     @property
     def connection_id(self) -> str:
@@ -289,7 +290,6 @@ class ConnectionRecordSchema(BaseRecordSchema):
     their_label = fields.Str(
         required=False, description="Their label for connection", example="Bob"
     )
-    #CHANGES BY HARSH MULTANI
     tx_my_role = fields.List(
         fields.Str(),required=False, description="A List of my transaction related roles (AUTHOR/ENDORSER)"
     )
@@ -347,3 +347,4 @@ class ConnectionRecordSchema(BaseRecordSchema):
         description="Optional alias to apply to connection for later use",
         example="Bob, providing quotes",
     )
+
