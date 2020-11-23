@@ -82,14 +82,14 @@ class TestActionMenuRoutes(AsyncTestCase):
         }
 
         with async_mock.patch.object(
-            test_module, "ConnectionRecord", autospec=True
-        ) as mock_connection_record, async_mock.patch.object(
+            test_module, "ConnRecord", autospec=True
+        ) as mock_conn_record, async_mock.patch.object(
             test_module, "Perform", autospec=True
         ) as mock_perform, async_mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
 
-            mock_connection_record.retrieve_by_id = async_mock.CoroutineMock()
+            mock_conn_record.retrieve_by_id = async_mock.CoroutineMock()
 
             res = await test_module.actionmenu_perform(mock_request)
             mock_response.assert_called_once_with({})
@@ -108,13 +108,13 @@ class TestActionMenuRoutes(AsyncTestCase):
         }
 
         with async_mock.patch.object(
-            test_module, "ConnectionRecord", autospec=True
-        ) as mock_connection_record, async_mock.patch.object(
+            test_module, "ConnRecord", autospec=True
+        ) as mock_conn_record, async_mock.patch.object(
             test_module, "Perform", autospec=True
         ) as mock_perform:
 
             # Emulate storage not found (bad connection id)
-            mock_connection_record.retrieve_by_id = async_mock.CoroutineMock(
+            mock_conn_record.retrieve_by_id = async_mock.CoroutineMock(
                 side_effect=StorageNotFoundError
             )
 
@@ -131,14 +131,14 @@ class TestActionMenuRoutes(AsyncTestCase):
         }
 
         with async_mock.patch.object(
-            test_module, "ConnectionRecord", autospec=True
-        ) as mock_connection_record, async_mock.patch.object(
+            test_module, "ConnRecord", autospec=True
+        ) as mock_conn_record, async_mock.patch.object(
             test_module, "Perform", autospec=True
         ) as mock_perform:
 
             # Emulate connection not ready
-            mock_connection_record.retrieve_by_id = async_mock.CoroutineMock()
-            mock_connection_record.retrieve_by_id.return_value.is_ready = False
+            mock_conn_record.retrieve_by_id = async_mock.CoroutineMock()
+            mock_conn_record.retrieve_by_id.return_value.is_ready = False
 
             with self.assertRaises(test_module.web.HTTPForbidden):
                 await test_module.actionmenu_perform(mock_request)
@@ -153,14 +153,14 @@ class TestActionMenuRoutes(AsyncTestCase):
         }
 
         with async_mock.patch.object(
-            test_module, "ConnectionRecord", autospec=True
-        ) as mock_connection_record, async_mock.patch.object(
+            test_module, "ConnRecord", autospec=True
+        ) as mock_conn_record, async_mock.patch.object(
             test_module, "MenuRequest", autospec=True
         ) as menu_request, async_mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
 
-            mock_connection_record.retrieve_by_id = async_mock.CoroutineMock()
+            mock_conn_record.retrieve_by_id = async_mock.CoroutineMock()
 
             res = await test_module.actionmenu_request(mock_request)
             mock_response.assert_called_once_with({})
@@ -179,13 +179,13 @@ class TestActionMenuRoutes(AsyncTestCase):
         }
 
         with async_mock.patch.object(
-            test_module, "ConnectionRecord", autospec=True
-        ) as mock_connection_record, async_mock.patch.object(
+            test_module, "ConnRecord", autospec=True
+        ) as mock_conn_record, async_mock.patch.object(
             test_module, "Perform", autospec=True
         ) as mock_perform:
 
             # Emulate storage not found (bad connection id)
-            mock_connection_record.retrieve_by_id = async_mock.CoroutineMock(
+            mock_conn_record.retrieve_by_id = async_mock.CoroutineMock(
                 side_effect=StorageNotFoundError
             )
 
@@ -202,14 +202,14 @@ class TestActionMenuRoutes(AsyncTestCase):
         }
 
         with async_mock.patch.object(
-            test_module, "ConnectionRecord", autospec=True
-        ) as mock_connection_record, async_mock.patch.object(
+            test_module, "ConnRecord", autospec=True
+        ) as mock_conn_record, async_mock.patch.object(
             test_module, "Perform", autospec=True
         ) as mock_perform:
 
             # Emulate connection not ready
-            mock_connection_record.retrieve_by_id = async_mock.CoroutineMock()
-            mock_connection_record.retrieve_by_id.return_value.is_ready = False
+            mock_conn_record.retrieve_by_id = async_mock.CoroutineMock()
+            mock_conn_record.retrieve_by_id.return_value.is_ready = False
 
             with self.assertRaises(test_module.web.HTTPForbidden):
                 await test_module.actionmenu_request(mock_request)
@@ -224,14 +224,14 @@ class TestActionMenuRoutes(AsyncTestCase):
         }
 
         with async_mock.patch.object(
-            test_module, "ConnectionRecord", autospec=True
-        ) as mock_connection_record, async_mock.patch.object(
+            test_module, "ConnRecord", autospec=True
+        ) as mock_conn_record, async_mock.patch.object(
             test_module, "Menu", autospec=True
         ) as mock_menu, async_mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
 
-            mock_connection_record.retrieve_by_id = async_mock.CoroutineMock()
+            mock_conn_record.retrieve_by_id = async_mock.CoroutineMock()
             mock_menu.deserialize = async_mock.MagicMock()
 
             res = await test_module.actionmenu_send(mock_request)
@@ -251,12 +251,12 @@ class TestActionMenuRoutes(AsyncTestCase):
         }
 
         with async_mock.patch.object(
-            test_module, "ConnectionRecord", autospec=True
-        ) as mock_connection_record, async_mock.patch.object(
+            test_module, "ConnRecord", autospec=True
+        ) as mock_conn_record, async_mock.patch.object(
             test_module, "Menu", autospec=True
         ) as mock_menu:
 
-            mock_connection_record.retrieve_by_id = async_mock.CoroutineMock()
+            mock_conn_record.retrieve_by_id = async_mock.CoroutineMock()
             mock_menu.deserialize = async_mock.MagicMock(
                 side_effect=test_module.BaseModelError("cannot deserialize")
             )
@@ -274,15 +274,15 @@ class TestActionMenuRoutes(AsyncTestCase):
         }
 
         with async_mock.patch.object(
-            test_module, "ConnectionRecord", autospec=True
-        ) as mock_connection_record, async_mock.patch.object(
+            test_module, "ConnRecord", autospec=True
+        ) as mock_conn_record, async_mock.patch.object(
             test_module, "Menu", autospec=True
         ) as mock_menu:
 
             mock_menu.deserialize = async_mock.MagicMock()
 
             # Emulate storage not found (bad connection id)
-            mock_connection_record.retrieve_by_id = async_mock.CoroutineMock(
+            mock_conn_record.retrieve_by_id = async_mock.CoroutineMock(
                 side_effect=StorageNotFoundError
             )
 
@@ -299,16 +299,16 @@ class TestActionMenuRoutes(AsyncTestCase):
         }
 
         with async_mock.patch.object(
-            test_module, "ConnectionRecord", autospec=True
-        ) as mock_connection_record, async_mock.patch.object(
+            test_module, "ConnRecord", autospec=True
+        ) as mock_conn_record, async_mock.patch.object(
             test_module, "Menu", autospec=True
         ) as mock_menu:
 
             mock_menu.deserialize = async_mock.MagicMock()
 
             # Emulate connection not ready
-            mock_connection_record.retrieve_by_id = async_mock.CoroutineMock()
-            mock_connection_record.retrieve_by_id.return_value.is_ready = False
+            mock_conn_record.retrieve_by_id = async_mock.CoroutineMock()
+            mock_conn_record.retrieve_by_id.return_value.is_ready = False
 
             with self.assertRaises(test_module.web.HTTPForbidden):
                 await test_module.actionmenu_send(mock_request)
