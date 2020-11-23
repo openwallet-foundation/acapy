@@ -368,16 +368,19 @@ class TestIndyVerifier(AsyncTestCase):
         assert "predates rev reg" in str(context.exception)
 
         # timestamp otherwise outside non-revocation interval: log and continue
+        proof_req_x = deepcopy(INDY_PROOF_REQ_NAME)
+        proof_req_x["non_revoked"] = {"from": 1600000000, "to": 1600001000}
         proof_x["identifiers"][0]["timestamp"] = 1579890000
         with async_mock.patch.object(
             test_module, "LOGGER", async_mock.MagicMock()
         ) as mock_logger:
+            pre_logger_calls = mock_logger.info.call_count
             self.verifier.check_timestamps(
                 proof_req_x,
                 proof_x,
                 REV_REG_DEFS,
             )
-            mock_logger.info.assert_called_once()
+            assert mock_logger.info.call_count == pre_logger_calls + 1
 
         # superfluous timestamp
         proof_req_x = deepcopy(INDY_PROOF_REQ_NAME)
