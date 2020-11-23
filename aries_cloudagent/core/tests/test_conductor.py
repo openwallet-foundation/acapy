@@ -506,15 +506,15 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
         await wallet.create_public_did()
 
         with async_mock.patch.object(
-            admin, "start", auto_spec=True
+            admin, "start", autospec=True
         ) as admin_start, async_mock.patch.object(
             admin, "stop", autospec=True
         ) as admin_stop, async_mock.patch.object(
-            test_module, "ConnectionManager", auto_spec=True
+            test_module, "ConnectionManager", autospec=True
         ) as conn_mgr:
             admin_start.side_effect = KeyError("trouble")
-            conn_mgr.return_value.create_invitation(
-                side_effect=KeyError("more trouble")
+            conn_mgr.return_value.create_invitation.side_effect = KeyError(
+                "more trouble"
             )
             await conductor.start()
             admin_start.assert_awaited_once_with()
