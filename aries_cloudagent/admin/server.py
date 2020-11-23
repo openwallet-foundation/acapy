@@ -2,8 +2,9 @@
 
 import asyncio
 import logging
-from typing import Callable, Coroutine, Sequence, Set
+from typing import Callable, Coroutine, Sequence, Set, cast
 import uuid
+import jwt
 
 from aiohttp import web
 from aiohttp_apispec import (
@@ -25,6 +26,7 @@ from ..transport.outbound.message import OutboundMessage
 from ..utils.stats import Collector
 from ..utils.task_queue import TaskQueue
 from ..version import __version__
+from ..wallet.models.wallet_record import WalletRecord
 
 from .base_server import BaseAdminServer
 from .error import AdminSetupError
@@ -249,6 +251,20 @@ class AdminServer(BaseAdminServer):
                 or path.startswith("/static/swagger/")
             )
 
+        @web.middleware
+        async def set_request_context(request, handler):
+            context = self.context.copy()
+
+            # This sets the context and message_router on the request
+            # This allows for different context per request, which
+            # is needed for multitenancy.
+            request["context"] = context
+            request["outbound_message_router"] = self.responder.send
+
+            return await handler(request)
+
+        middlewares.append(set_request_context)
+
         # If admin_api_key is None, then admin_insecure_mode must be set so
         # we can safely enable the admin server with no security
         if self.admin_api_key:
@@ -285,7 +301,58 @@ class AdminServer(BaseAdminServer):
 
             middlewares.append(collect_stats)
 
+        if self.context.settings.get("multitenant.enabled"):
+
+            @web.middleware
+            async def set_multitenant_wallet(request, handler):
+                authorization_header = request.headers.get("Authorization")
+
+                # MTODO better auth. Now if no authorization header  is present everything
+                # can be done on base wallet. We want to limit this to only subwallet
+                # So we need to check if it's a multitenancy api path and otherwise reject
+                if is_unprotected_path(request.path) or not authorization_header:
+                    return await handler(request)
+
+                context = request["context"]
+                jwt_secret = context.settings.get("multitenant.jwt_secret")
+
+                # Extract token and check if Bearer is present
+                bearer, _, token = authorization_header.partition(" ")
+                if bearer != "Bearer":
+                    raise web.HTTPUnauthorized(reason="Invalid header structure")
+
+                try:
+                    token_body = jwt.decode(token, jwt_secret)
+
+                    # Get the wallet associated with the subwallet
+                    wallet_id = token_body["wallet_id"]
+                    wallet_record = cast(
+                        WalletRecord,
+                        await WalletRecord.retrieve_by_id(context, wallet_id),
+                    )
+
+                    context.settings = context.settings.extend(
+                        wallet_record.get_config_as_settings()
+                    )
+
+                    if wallet_record.key_management_mode == WalletRecord.MODE_UNMANAGED:
+                        context.settings["wallet.key"] = token_body["wallet_key"]
+                # MTODO: catch specific exceptions
+                except Exception:
+                    raise web.HTTPUnauthorized()
+
+                # set the updated request context
+                request["context"] = context
+
+                return await handler(request)
+
+            middlewares.append(set_multitenant_wallet)
+
         app = web.Application(middlewares=middlewares)
+        # MTODO: remove app context, only use request context
+        # This can have breaking changes for external plugins
+        # Maybe global context should be base wallet, request context
+        # should be sub/base wallet
         app["request_context"] = self.context
         app["outbound_message_router"] = self.responder.send
 
