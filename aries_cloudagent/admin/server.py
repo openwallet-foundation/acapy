@@ -185,7 +185,7 @@ async def debug_middleware(request: web.BaseRequest, handler: Coroutine):
         try:
             jj = await request.json()
             print(f".. {jj}")
-        except:
+        except Exception:
             print('(nevermind)')
 
     return await handler(request)

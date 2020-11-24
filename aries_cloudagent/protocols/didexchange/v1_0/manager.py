@@ -1175,7 +1175,7 @@ class DIDXManager:
         if not signed_diddoc_bytes:
             raise DIDXManagerError("DID doc attachment is not signed.")
         if not await attached.data.verify(wallet):
-            raise DIDXManagerError(f"DID doc attachment signature failed verification")
+            raise DIDXManagerError("DID doc attachment signature failed verification")
 
         return DIDDoc.deserialize(json.loads(signed_diddoc_bytes.decode()))
 

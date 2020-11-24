@@ -8,10 +8,10 @@ SPEC_URI = (
 )
 
 # Message types
-DIDX_REQUEST = f"didexchange/1.0/request"
-DIDX_RESPONSE = f"didexchange/1.0/response"
-DIDX_COMPLETE = f"didexchange/1.0/complete"
-PROBLEM_REPORT = f"didexchange/1.0/problem_report"
+DIDX_REQUEST = "didexchange/1.0/request"
+DIDX_RESPONSE = "didexchange/1.0/response"
+DIDX_COMPLETE = "didexchange/1.0/complete"
+PROBLEM_REPORT = "didexchange/1.0/problem_report"
 
 PROTOCOL_PACKAGE = "aries_cloudagent.protocols.didexchange.v1_0"
 

@@ -147,7 +147,7 @@ class TestProofRoutes(AsyncTestCase):
                     return_value=async_mock.MagicMock(
                         get_credentials_for_presentation_request_by_referent=(
                             async_mock.CoroutineMock(
-                                side_effect=test_module.HolderError()
+                                side_effect=test_module.IndyHolderError()
                             )
                         )
                     )

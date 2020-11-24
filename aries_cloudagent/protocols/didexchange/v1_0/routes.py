@@ -283,7 +283,7 @@ async def didx_receive_invitation(request: web.BaseRequest):
         The resulting connection record details
 
     """
-    print(f'\n\n-- -- DIDX routes #1')
+    print('\n\n-- -- DIDX routes recv-invi #1')
     context = request.app["request_context"]
     if context.settings.get("admin.no_receive_invites"):
         raise web.HTTPForbidden(
@@ -293,9 +293,7 @@ async def didx_receive_invitation(request: web.BaseRequest):
     invitation_json = await request.json()
 
     try:
-        print(f'.. DIDX routes; i-json: {json.dumps(invitation_json(), indent=4)}')
         invitation = OOBInvitation.deserialize(invitation_json)
-        print(f'.. DIDX routes; recv-invi: {json.dumps(invitation.serialize(), indent=4)}')
         auto_accept = json.loads(request.query.get("auto_accept", "null"))
         alias = request.query.get("alias")
         conn_rec = await didx_mgr.receive_invitation(

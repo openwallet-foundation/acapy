@@ -505,7 +505,7 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
         await wallet.create_public_did()
 
         with async_mock.patch.object(
-            admin, "start", async_mock.CoroutineMock()
+            admin, "start", autospec=True
         ) as admin_start, async_mock.patch.object(
             admin, "stop", autospec=True
         ) as admin_stop, async_mock.patch.object(
