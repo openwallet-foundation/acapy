@@ -137,7 +137,8 @@ class ConnRecord(BaseRecord):
         their_label: str = None,
         tx_my_role:list = [],
         tx_their_role:list = [],
-        their_role: str = None,
+        # CHANGE BY ME
+        #their_role: str = None,
         initiator: str = None,
         their_role: Union[str, "ConnRecord.Role"] = None,
         invitation_key: str = None,
