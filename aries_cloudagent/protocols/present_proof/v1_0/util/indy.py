@@ -114,8 +114,14 @@ def indy_proof_req2non_revoc_intervals(indy_proof_req: dict):
     non_revoc_intervals = {}
     for req_item_type in ("requested_attributes", "requested_predicates"):
         for (reft, req_item) in indy_proof_req[req_item_type].items():
-            non_revoc_intervals[reft] = req_item.get(
+            interval = req_item.get(
                 "non_revoked",
                 indy_proof_req.get("non_revoked"),
             )
+            if interval:
+                fro = interval.get("from")
+                to = interval.get("to")
+                if (to is not None) and fro == to:
+                    interval["from"] = 0  # accommodate indy-sdk verify=False if fro=to
+            non_revoc_intervals[reft] = interval
     return non_revoc_intervals
