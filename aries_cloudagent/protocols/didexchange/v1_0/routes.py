@@ -49,12 +49,12 @@ class DIDXReceiveInvitationRequestSchema(OOBInvitationSchema):
     @pre_load
     def pre_load(self, data, **kwargs):
         """Bypass middleware field adjustment: marshmallow has no data yet."""
-        print(f'\n\n ## ## recv-invi req: pre-loading {data}')
+        print(f"\n\n ## ## recv-invi req: pre-loading {data}")
 
     @validates_schema
     def validate_fields(self, data, **kwargs):
         """Bypass middleware field validation: marshmallow has no data yet."""
-        print(f'\n\n ## ## recv-invi req: validating {data}')
+        print(f"\n\n ## ## recv-invi req: validating {data}")
 
 
 class DIDXConnStaticRequestSchema(OpenAPISchema):
@@ -283,7 +283,7 @@ async def didx_receive_invitation(request: web.BaseRequest):
         The resulting connection record details
 
     """
-    print('\n\n-- -- DIDX routes recv-invi #1')
+    print("\n\n-- -- DIDX routes recv-invi #1")
     context = request.app["request_context"]
     if context.settings.get("admin.no_receive_invites"):
         raise web.HTTPForbidden(

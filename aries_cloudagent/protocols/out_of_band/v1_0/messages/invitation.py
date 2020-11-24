@@ -162,7 +162,7 @@ class InvitationMessageSchema(AgentMessageSchema):
     @pre_load
     def pre_load(self, data, **kwargs):
         """Pre load hook."""
-        print(f'\n\n** ** INVITATION message pre-load, data: {data}')
+        print(f"\n\n** ** INVITATION message pre-load, data: {data}")
         data["service_dids"] = []
         data["service_blocks"] = []
 

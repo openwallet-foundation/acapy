@@ -160,7 +160,8 @@ async def ready_middleware(request: web.BaseRequest, handler: Coroutine):
             # some other error?
             LOGGER.error("Handler error with exception: %s", str(e))
             import traceback
-            print('\n=================')
+
+            print("\n=================")
             traceback.print_exc()
             raise
 
@@ -186,7 +187,7 @@ async def debug_middleware(request: web.BaseRequest, handler: Coroutine):
             jj = await request.json()
             print(f".. {jj}")
         except Exception:
-            print('(nevermind)')
+            print("(nevermind)")
 
     return await handler(request)
 

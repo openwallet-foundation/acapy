@@ -76,7 +76,7 @@ class FaberAgent(DemoAgent):
                     self._connection_ready.set_result(True)
 
     async def handle_oob_invitation(self, message):
-        print(f'\n\n!! !! HANDLING OOB-INVI MSG: {json.dumps(message, indent=4)}')
+        print(f"\n\n!! !! HANDLING OOB-INVI MSG: {json.dumps(message, indent=4)}")
 
     async def handle_issue_credential(self, message):
         state = message["state"]
