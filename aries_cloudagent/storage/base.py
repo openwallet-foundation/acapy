@@ -11,6 +11,7 @@ DEFAULT_PAGE_SIZE = 100
 
 
 def validate_record(record: StorageRecord, *, delete=False):
+    """Ensure that a record is ready to be saved/updated/deleted."""
     if not record:
         raise StorageError("No record provided")
     if not record.id:
@@ -161,6 +162,8 @@ class BaseStorageRecordSearch(ABC):
 
 
 class IterSearch:
+    """A generic record search async iterator."""
+
     def __init__(self, search: BaseStorageRecordSearch, page_size: int = None):
         """Instantiate a new `IterSearch` instance."""
         self._buffer = None
