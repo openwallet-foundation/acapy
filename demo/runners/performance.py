@@ -454,8 +454,8 @@ async def main(
         if revocation and faber.revocations:
             (rev_reg_id, cred_rev_id) = next(iter(faber.revocations))
             print(
-                "Revoking and publishing cred rev id {cred_rev_id} "
-                "from rev reg id {rev_reg_id}"
+                f"Revoking and publishing cred rev id {cred_rev_id} "
+                f"from rev reg id {rev_reg_id}"
             )
 
         if show_timing:

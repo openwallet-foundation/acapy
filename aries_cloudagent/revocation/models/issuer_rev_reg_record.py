@@ -16,7 +16,7 @@ from marshmallow import fields, validate
 from ...tails.base import BaseTailsServer
 from ...config.injection_context import InjectionContext
 from ...indy.util import indy_client_dir
-from ...issuer.base import BaseIssuer, IssuerError
+from ...indy.issuer import IndyIssuer, IndyIssuerError
 from ...messaging.models.base_record import BaseRecord, BaseRecordSchema
 from ...messaging.valid import (
     BASE58_SHA256_HASH,
@@ -146,7 +146,7 @@ class IssuerRevRegRecord(BaseRecord):
                 )
             )
 
-        issuer: BaseIssuer = await context.inject(BaseIssuer)
+        issuer: IndyIssuer = await context.inject(IndyIssuer)
         tails_hopper_dir = indy_client_dir(join("tails", ".hopper"), create=True)
 
         LOGGER.debug("create revocation registry with size:", self.max_cred_num)
@@ -164,7 +164,7 @@ class IssuerRevRegRecord(BaseRecord):
                 self.max_cred_num,
                 tails_hopper_dir,
             )
-        except IssuerError as err:
+        except IndyIssuerError as err:
             raise RevocationError() from err
 
         self.revoc_reg_id = revoc_reg_id

@@ -8,8 +8,8 @@ SPEC_URI = (
 )
 
 # Message types
-PING = f"trust_ping/1.0/ping"
-PING_RESPONSE = f"trust_ping/1.0/ping_response"
+PING = "trust_ping/1.0/ping"
+PING_RESPONSE = "trust_ping/1.0/ping_response"
 
 PROTOCOL_PACKAGE = "aries_cloudagent.protocols.trustping.v1_0"
 

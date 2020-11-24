@@ -4,7 +4,7 @@ from typing import Type
 
 from indy.error import IndyError
 
-from ..core.error import BaseError
+from ...core.error import BaseError
 
 
 class IndyErrorHandler:

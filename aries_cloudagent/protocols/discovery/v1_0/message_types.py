@@ -8,8 +8,8 @@ SPEC_URI = (
 )
 
 # Message types
-DISCLOSE = f"discover-features/1.0/disclose"
-QUERY = f"discover-features/1.0/query"
+DISCLOSE = "discover-features/1.0/disclose"
+QUERY = "discover-features/1.0/query"
 
 PROTOCOL_PACKAGE = "aries_cloudagent.protocols.discovery.v1_0"
 
