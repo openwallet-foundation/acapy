@@ -16,9 +16,8 @@ from .models.credential_exchange import V10CredentialExchange
 from ....cache.base import BaseCache
 from ....config.injection_context import InjectionContext
 from ....core.error import BaseError
-from ....holder.base import BaseHolder, HolderError
-from ....issuer.base import BaseIssuer
-from ....issuer.indy import IssuerRevocationRegistryFullError
+from ....indy.holder import IndyHolder, IndyHolderError
+from ....indy.issuer import IndyIssuer, IndyIssuerRevocationRegistryFullError
 from ....ledger.base import BaseLedger
 from ....messaging.credential_definitions.util import (
     CRED_DEF_TAGS,
@@ -222,7 +221,7 @@ class CredentialManager:
         """
 
         async def _create(cred_def_id):
-            issuer: BaseIssuer = await self.context.inject(BaseIssuer)
+            issuer: IndyIssuer = await self.context.inject(IndyIssuer)
             offer_json = await issuer.create_credential_offer(cred_def_id)
             return json.loads(offer_json)
 
@@ -374,7 +373,7 @@ class CredentialManager:
                     credential_definition_id
                 )
 
-            holder: BaseHolder = await self.context.inject(BaseHolder)
+            holder: IndyHolder = await self.context.inject(IndyHolder)
             request_json, metadata_json = await holder.create_credential_request(
                 credential_offer, credential_definition, holder_did
             )
@@ -566,7 +565,7 @@ class CredentialManager:
             credential_values = CredentialProposal.deserialize(
                 cred_ex_record.credential_proposal_dict
             ).credential_proposal.attr_dict(decode=False)
-            issuer: BaseIssuer = await self.context.inject(BaseIssuer)
+            issuer: IndyIssuer = await self.context.inject(IndyIssuer)
             try:
                 (
                     credential_json,
@@ -600,7 +599,7 @@ class CredentialManager:
                         )
                     )
 
-            except IssuerRevocationRegistryFullError:
+            except IndyIssuerRevocationRegistryFullError:
                 # unlucky: duelling instance issued last cred near same time as us
                 await active_rev_reg_rec.set_state(
                     self.context,
@@ -705,7 +704,7 @@ class CredentialManager:
                     raw_credential["rev_reg_id"]
                 )
 
-        holder: BaseHolder = await self.context.inject(BaseHolder)
+        holder: IndyHolder = await self.context.inject(IndyHolder)
         if (
             cred_ex_record.credential_proposal_dict
             and "credential_proposal" in cred_ex_record.credential_proposal_dict
@@ -728,7 +727,7 @@ class CredentialManager:
                 credential_id=credential_id,
                 rev_reg_def=revoc_reg_def,
             )
-        except HolderError as e:
+        except IndyHolderError as e:
             LOGGER.error(f"Error storing credential. {e.error_code}: {e.message}")
             raise e
 
