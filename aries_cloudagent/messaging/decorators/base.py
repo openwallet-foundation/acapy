@@ -37,6 +37,15 @@ class BaseDecoratorSet(OrderedDict):
         result._prefix = self._prefix
         return result
 
+    def __eq__(self, other: "BaseDecoratorSet") -> bool:
+        """Comparison between base decorator sets."""
+        return (
+            self._fields == other._fields
+            and self._models == other._models
+            and self._prefix == other._prefix
+            and super().__eq__(other)
+        )
+
     def _init_field(self) -> "BaseDecoratorSet":
         """Create a nested decorator set for a named field."""
         return self.__class__(self._models)

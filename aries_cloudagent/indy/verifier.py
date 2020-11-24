@@ -1,40 +1,49 @@
-"""Indy verifier implementation."""
+"""Base Indy Verifier class."""
 
-from enum import Enum
-import json
 import logging
 
-import indy.anoncreds
-from indy.error import IndyError
+from abc import ABC, ABCMeta, abstractmethod
+from enum import Enum
 
 from ..messaging.util import canon, encode
-from ..ledger.base import BaseLedger
-
-from .base import BaseVerifier
 
 LOGGER = logging.getLogger(__name__)
 
 
-class PreVerifyResult(Enum):
-    """Represent the result of IndyVerifier.pre_verify."""
+class IndyVerifier(ABC, metaclass=ABCMeta):
+    """Base class for Indy Verifier."""
 
-    OK = "ok"
-    INCOMPLETE = "missing essential components"
-    ENCODING_MISMATCH = "demonstrates tampering with raw values"
-
-
-class IndyVerifier(BaseVerifier):
-    """Indy verifier class."""
-
-    def __init__(self, ledger: BaseLedger):
+    def __repr__(self) -> str:
         """
-        Initialize an IndyVerifier instance.
+        Return a human readable representation of this class.
+
+        Returns:
+            A human readable string for this class
+
+        """
+        return "<{}>".format(self.__class__.__name__)
+
+    @abstractmethod
+    def verify_presentation(
+        self,
+        presentation_request,
+        presentation,
+        schemas,
+        credential_definitions,
+        rev_reg_defs,
+        rev_reg_entries,
+    ):
+        """
+        Verify a presentation.
 
         Args:
-            ledger: ledger instance
-
+            presentation_request: Presentation request data
+            presentation: Presentation data
+            schemas: Schema data
+            credential_definitions: credential definition data
+            rev_reg_defs: revocation registry definitions
+            rev_reg_entries: revocation registry entries
         """
-        self.ledger = ledger
 
     def non_revoc_intervals(self, pres_req: dict, pres: dict):
         """
@@ -81,7 +90,7 @@ class IndyVerifier(BaseVerifier):
                 pres_req["nonce"],
             )
 
-    async def pre_verify(self, pres_req: dict, pres: dict) -> (PreVerifyResult, str):
+    async def pre_verify(self, pres_req: dict, pres: dict) -> ("PreVerifyResult", str):
         """
         Check for essential components and tampering in presentation.
 
@@ -217,51 +226,10 @@ class IndyVerifier(BaseVerifier):
 
         return (PreVerifyResult.OK, None)
 
-    async def verify_presentation(
-        self,
-        presentation_request,
-        presentation,
-        schemas,
-        credential_definitions,
-        rev_reg_defs,
-        rev_reg_entries,
-    ) -> bool:
-        """
-        Verify a presentation.
 
-        Args:
-            presentation_request: Presentation request data
-            presentation: Presentation data
-            schemas: Schema data
-            credential_definitions: credential definition data
-            rev_reg_defs: revocation registry definitions
-            rev_reg_entries: revocation registry entries
-        """
+class PreVerifyResult(Enum):
+    """Represent the result of IndyVerifier.pre_verify."""
 
-        self.non_revoc_intervals(presentation_request, presentation)
-
-        (pv_result, pv_msg) = await self.pre_verify(presentation_request, presentation)
-        if pv_result != PreVerifyResult.OK:
-            LOGGER.error(
-                f"Presentation on nonce={presentation_request['nonce']} "
-                f"cannot be validated: {pv_result.value} [{pv_msg}]"
-            )
-            return False
-
-        try:
-            verified = await indy.anoncreds.verifier_verify_proof(
-                json.dumps(presentation_request),
-                json.dumps(presentation),
-                json.dumps(schemas),
-                json.dumps(credential_definitions),
-                json.dumps(rev_reg_defs),
-                json.dumps(rev_reg_entries),
-            )
-        except IndyError:
-            LOGGER.exception(
-                f"Validation of presentation on nonce={presentation_request['nonce']} "
-                "failed with error"
-            )
-            verified = False
-
-        return verified
+    OK = "ok"
+    INCOMPLETE = "missing essential components"
+    ENCODING_MISMATCH = "demonstrates tampering with raw values"

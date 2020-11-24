@@ -13,8 +13,8 @@ from aiohttp_apispec import (
 from marshmallow import fields, validate, validates_schema
 from marshmallow.exceptions import ValidationError
 
-from ....connections.models.connection_record import ConnectionRecord
-from ....holder.base import BaseHolder, HolderError
+from ....connections.models.conn_record import ConnRecord
+from ....indy.holder import IndyHolder, IndyHolderError
 from ....indy.util import generate_pr_nonce
 from ....ledger.error import LedgerError
 from ....messaging.decorators.attach_decorator import AttachDecorator
@@ -457,7 +457,11 @@ async def presentation_exchange_list(request: web.BaseRequest):
     }
 
     try:
-        records = await V10PresentationExchange.query(context, tag_filter, post_filter)
+        records = await V10PresentationExchange.query(
+            context=context,
+            tag_filter=tag_filter,
+            post_filter_positive=post_filter,
+        )
         results = [record.serialize() for record in records]
     except (StorageError, BaseModelError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
@@ -541,7 +545,7 @@ async def presentation_exchange_credentials_list(request: web.BaseRequest):
     start = int(start) if isinstance(start, str) else 0
     count = int(count) if isinstance(count, str) else 10
 
-    holder: BaseHolder = await context.inject(BaseHolder)
+    holder: IndyHolder = await context.inject(IndyHolder)
     try:
         credentials = await holder.get_credentials_for_presentation_request_by_referent(
             pres_ex_record.presentation_request,
@@ -550,7 +554,7 @@ async def presentation_exchange_credentials_list(request: web.BaseRequest):
             count,
             extra_query,
         )
-    except HolderError as err:
+    except IndyHolderError as err:
         await internal_error(err, web.HTTPBadRequest, pres_ex_record, outbound_handler)
 
     pres_ex_record.log_state(
@@ -594,9 +598,7 @@ async def presentation_exchange_send_proposal(request: web.BaseRequest):
     presentation_preview = body.get("presentation_proposal")
     connection_record = None
     try:
-        connection_record = await ConnectionRecord.retrieve_by_id(
-            context, connection_id
-        )
+        connection_record = await ConnRecord.retrieve_by_id(context, connection_id)
         presentation_proposal_message = PresentationProposal(
             comment=comment,
             presentation_proposal=PresentationPreview.deserialize(presentation_preview),
@@ -745,9 +747,7 @@ async def presentation_exchange_send_free_request(request: web.BaseRequest):
 
     connection_id = body.get("connection_id")
     try:
-        connection_record = await ConnectionRecord.retrieve_by_id(
-            context, connection_id
-        )
+        connection_record = await ConnRecord.retrieve_by_id(context, connection_id)
     except StorageNotFoundError as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
@@ -841,9 +841,7 @@ async def presentation_exchange_send_bound_request(request: web.BaseRequest):
 
     connection_id = body.get("connection_id")
     try:
-        connection_record = await ConnectionRecord.retrieve_by_id(
-            context, connection_id
-        )
+        connection_record = await ConnRecord.retrieve_by_id(context, connection_id)
     except StorageError as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
@@ -918,9 +916,7 @@ async def presentation_exchange_send_presentation(request: web.BaseRequest):
 
     connection_id = pres_ex_record.connection_id
     try:
-        connection_record = await ConnectionRecord.retrieve_by_id(
-            context, connection_id
-        )
+        connection_record = await ConnRecord.retrieve_by_id(context, connection_id)
     except StorageNotFoundError as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
@@ -944,7 +940,7 @@ async def presentation_exchange_send_presentation(request: web.BaseRequest):
         result = pres_ex_record.serialize()
     except (
         BaseModelError,
-        HolderError,
+        IndyHolderError,
         LedgerError,
         StorageError,
         WalletNotFoundError,
@@ -1009,9 +1005,7 @@ async def presentation_exchange_verify_presentation(request: web.BaseRequest):
     connection_id = pres_ex_record.connection_id
 
     try:
-        connection_record = await ConnectionRecord.retrieve_by_id(
-            context, connection_id
-        )
+        connection_record = await ConnRecord.retrieve_by_id(context, connection_id)
     except StorageError as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 

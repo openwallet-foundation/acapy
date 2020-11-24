@@ -18,6 +18,10 @@ class LedgerProvider(BaseProvider):
     async def provide(self, settings: BaseSettings, injector: BaseInjector):
         """Create and open the ledger instance."""
 
+        if settings.get("ledger.disabled"):
+            LOGGER.info("Ledger support is disabled")
+            return
+
         pool_name = settings.get("ledger.pool_name", "default")
         keepalive = int(settings.get("ledger.keepalive", 5))
         read_only = bool(settings.get("ledger.read_only", False))

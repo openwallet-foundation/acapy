@@ -26,9 +26,7 @@ class ForwardInvitationHandler(BaseHandler):
 
         # Store invitation
         connection_mgr = ConnectionManager(context)
-        connection = await connection_mgr.receive_invitation(
-            context.message.invitation, their_role=None
-        )
+        connection = await connection_mgr.receive_invitation(context.message.invitation)
 
         # Auto-accept
         if context.settings.get("accept_invites"):

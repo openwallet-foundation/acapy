@@ -5,9 +5,9 @@ from os.path import join
 from asynctest import TestCase as AsyncTestCase, mock as async_mock
 
 from ....config.injection_context import InjectionContext
+from ....indy.issuer import IndyIssuer, IndyIssuerError
+from ....indy.sdk.issuer import IndySdkIssuer
 from ....indy.util import indy_client_dir
-from ....issuer.base import BaseIssuer, IssuerError
-from ....issuer.indy import IndyIssuer
 from ....ledger.base import BaseLedger
 from ....storage.base import BaseStorage
 from ....storage.basic import BasicStorage
@@ -65,13 +65,13 @@ class TestRecord(AsyncTestCase):
             cred_def_id=CRED_DEF_ID,
             revoc_reg_id=REV_REG_ID,
         )
-        issuer = async_mock.MagicMock(BaseIssuer)
-        self.context.injector.bind_instance(BaseIssuer, issuer)
+        issuer = async_mock.MagicMock(IndyIssuer)
+        self.context.injector.bind_instance(IndyIssuer, issuer)
 
         with async_mock.patch.object(
             issuer, "create_and_store_revocation_registry", async_mock.CoroutineMock()
         ) as mock_create_store_rr:
-            mock_create_store_rr.side_effect = IssuerError("Not this time")
+            mock_create_store_rr.side_effect = IndyIssuerError("Not this time")
 
             with self.assertRaises(RevocationError):
                 await rec.generate_registry(self.context)
@@ -195,7 +195,7 @@ class TestRecord(AsyncTestCase):
             await rec.set_tails_file_public_uri(self.context, "dummy")
 
     async def test_stage_pending_registry(self):
-        issuer = async_mock.MagicMock(BaseIssuer)
+        issuer = async_mock.MagicMock(IndyIssuer)
         issuer.create_and_store_revocation_registry = async_mock.CoroutineMock(
             return_value=(
                 REV_REG_ID,
@@ -210,7 +210,7 @@ class TestRecord(AsyncTestCase):
                 json.dumps({"revoc_reg_entry": "dummy-entry"}),
             )
         )
-        self.context.injector.bind_instance(BaseIssuer, issuer)
+        self.context.injector.bind_instance(IndyIssuer, issuer)
         rec = IssuerRevRegRecord(
             issuer_did=TEST_DID,
             revoc_reg_id=REV_REG_ID,
