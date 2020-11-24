@@ -14,7 +14,7 @@ from marshmallow import fields, validate, validates_schema
 from marshmallow.exceptions import ValidationError
 
 from ....connections.models.conn_record import ConnRecord
-from ....holder.base import BaseHolder, HolderError
+from ....indy.holder import IndyHolder, IndyHolderError
 from ....indy.util import generate_pr_nonce
 from ....ledger.error import LedgerError
 from ....messaging.decorators.attach_decorator import AttachDecorator
@@ -545,7 +545,7 @@ async def presentation_exchange_credentials_list(request: web.BaseRequest):
     start = int(start) if isinstance(start, str) else 0
     count = int(count) if isinstance(count, str) else 10
 
-    holder: BaseHolder = await context.inject(BaseHolder)
+    holder: IndyHolder = await context.inject(IndyHolder)
     try:
         credentials = await holder.get_credentials_for_presentation_request_by_referent(
             pres_ex_record.presentation_request,
@@ -554,7 +554,7 @@ async def presentation_exchange_credentials_list(request: web.BaseRequest):
             count,
             extra_query,
         )
-    except HolderError as err:
+    except IndyHolderError as err:
         await internal_error(err, web.HTTPBadRequest, pres_ex_record, outbound_handler)
 
     pres_ex_record.log_state(
@@ -940,7 +940,7 @@ async def presentation_exchange_send_presentation(request: web.BaseRequest):
         result = pres_ex_record.serialize()
     except (
         BaseModelError,
-        HolderError,
+        IndyHolderError,
         LedgerError,
         StorageError,
         WalletNotFoundError,

@@ -8,13 +8,13 @@ from ..cache.base import BaseCache
 from ..cache.basic import BasicCache
 from ..core.plugin_registry import PluginRegistry
 from ..core.protocol_registry import ProtocolRegistry
+from ..indy.holder import IndyHolder
+from ..indy.issuer import IndyIssuer
+from ..indy.verifier import IndyVerifier
 from ..ledger.base import BaseLedger
 from ..ledger.pool.base import BaseLedgerPool
 from ..ledger.provider import LedgerProvider
 from ..ledger.pool.provider import LedgerPoolProvider
-from ..issuer.base import BaseIssuer
-from ..holder.base import BaseHolder
-from ..verifier.base import BaseVerifier
 from ..tails.base import BaseTailsServer
 
 from ..protocols.actionmenu.v1_0.base_service import BaseMenuService
@@ -111,29 +111,29 @@ class DefaultContextBuilder(ContextBuilder):
             ),
         )
         context.injector.bind_provider(
-            BaseIssuer,
+            IndyIssuer,
             StatsProvider(
                 ClassProvider(
-                    "aries_cloudagent.issuer.indy.IndyIssuer",
+                    "aries_cloudagent.indy.sdk.issuer.IndySdkIssuer",
                     ClassProvider.Inject(BaseWallet),
                 ),
                 ("create_credential_offer", "create_credential"),
             ),
         )
         context.injector.bind_provider(
-            BaseHolder,
+            IndyHolder,
             StatsProvider(
                 ClassProvider(
-                    "aries_cloudagent.holder.indy.IndyHolder",
+                    "aries_cloudagent.indy.sdk.holder.IndySdkHolder",
                     ClassProvider.Inject(BaseWallet),
                 ),
                 ("get_credential", "store_credential", "create_credential_request"),
             ),
         )
         context.injector.bind_provider(
-            BaseVerifier,
+            IndyVerifier,
             ClassProvider(
-                "aries_cloudagent.verifier.indy.IndyVerifier",
+                "aries_cloudagent.indy.sdk.verifier.IndySdkVerifier",
                 ClassProvider.Inject(BaseLedger),
             ),
         )

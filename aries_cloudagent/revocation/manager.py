@@ -6,7 +6,7 @@ from typing import Mapping, Sequence, Text
 
 from ..config.injection_context import InjectionContext
 from ..core.error import BaseError
-from ..issuer.base import BaseIssuer
+from ..indy.issuer import IndyIssuer
 from ..storage.error import StorageNotFoundError
 
 from .indy import IndyRevocation
@@ -88,7 +88,7 @@ class RevocationManager:
                 along with any revocations pending against it
 
         """
-        issuer: BaseIssuer = await self.context.inject(BaseIssuer)
+        issuer: IndyIssuer = await self.context.inject(IndyIssuer)
 
         revoc = IndyRevocation(self.context)
         issuer_rr_rec = await revoc.get_issuer_rev_reg_record(rev_reg_id)
@@ -141,7 +141,7 @@ class RevocationManager:
         Returns: mapping from each revocation registry id to its cred rev ids published.
         """
         result = {}
-        issuer: BaseIssuer = await self.context.inject(BaseIssuer)
+        issuer: IndyIssuer = await self.context.inject(IndyIssuer)
 
         issuer_rr_recs = await IssuerRevRegRecord.query_by_pending(self.context)
         for issuer_rr_rec in issuer_rr_recs:

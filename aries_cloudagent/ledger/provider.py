@@ -19,6 +19,10 @@ class LedgerProvider(BaseProvider):
     async def provide(self, settings: BaseSettings, injector: BaseInjector):
         """Create the ledger instance."""
 
+        if settings.get("ledger.disabled"):
+            LOGGER.info("Ledger support is disabled")
+            return
+
         read_only = bool(settings.get("ledger.read_only", False))
         if read_only:
             LOGGER.error("Note: setting ledger to read-only mode")
