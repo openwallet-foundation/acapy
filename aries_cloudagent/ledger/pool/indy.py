@@ -8,7 +8,7 @@ import tempfile
 
 from indy.error import IndyError
 from aries_cloudagent.ledger.error import LedgerConfigError, LedgerError
-from aries_cloudagent.indy.error import IndyErrorHandler
+from ...indy.sdk.error import IndyErrorHandler
 
 import indy.pool
 
