@@ -1,6 +1,8 @@
 """Indy implementation of BaseStorage interface."""
 
+import asyncio
 import json
+import logging
 from typing import Mapping, Sequence
 
 from indy import non_secrets
@@ -20,6 +22,8 @@ from .error import (
 )
 from .record import StorageRecord
 from ..wallet.indy import IndyWallet
+
+LOGGER = logging.getLogger(__name__)
 
 
 class IndyStorage(BaseStorage):
@@ -295,4 +299,17 @@ class IndyStorageRecordSearch(BaseStorageRecordSearch):
     def __del__(self):
         """Ensure the search is closed."""
         if self._handle:
-            raise StorageSearchError("Search query was not closed")
+
+            async def cleanup(handle):
+                LOGGER.warning("Indy wallet search was not closed manually")
+                try:
+                    await non_secrets.close_wallet_search(handle)
+                except Exception:
+                    LOGGER.exception("Exception when auto-closing Indy wallet search")
+
+            loop = asyncio.get_event_loop()
+            task = loop.create_task(cleanup(self._handle))
+            if not loop.is_running():
+                print("not running")
+                loop.run_until_complete(task)
+            print(task)
