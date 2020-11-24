@@ -188,7 +188,7 @@ class TestHolderRoutes(AsyncTestCase):
         self.mock_request["context"].inject = async_mock.CoroutineMock(
             return_value=async_mock.MagicMock(
                 get_credentials=async_mock.CoroutineMock(
-                    side_effect=test_module.HolderError()
+                    side_effect=test_module.IndyHolderError()
                 )
             )
         )

@@ -9,8 +9,8 @@ from time import time
 from .....config.injection_context import InjectionContext
 from .....cache.base import BaseCache
 from .....cache.basic import BasicCache
-from .....holder.base import BaseHolder
-from .....issuer.base import BaseIssuer
+from .....indy.holder import IndyHolder
+from .....indy.issuer import IndyIssuer
 from .....messaging.credential_definitions.util import CRED_DEF_SENT_RECORD_TYPE
 from .....messaging.request_context import RequestContext
 from .....ledger.base import BaseLedger
@@ -337,11 +337,11 @@ class TestCredentialManager(AsyncTestCase):
 
             cred_offer = {"cred_def_id": CRED_DEF_ID, "schema_id": SCHEMA_ID}
 
-            issuer = async_mock.MagicMock(BaseIssuer, autospec=True)
+            issuer = async_mock.MagicMock(IndyIssuer, autospec=True)
             issuer.create_credential_offer = async_mock.CoroutineMock(
                 return_value=json.dumps(cred_offer)
             )
-            self.context.injector.bind_instance(BaseIssuer, issuer)
+            self.context.injector.bind_instance(IndyIssuer, issuer)
 
             self.storage = BasicStorage()
             self.context.injector.bind_instance(BaseStorage, self.storage)
@@ -412,11 +412,11 @@ class TestCredentialManager(AsyncTestCase):
 
             cred_offer = {"cred_def_id": CRED_DEF_ID, "schema_id": SCHEMA_ID}
 
-            issuer = async_mock.MagicMock(BaseIssuer, autospec=True)
+            issuer = async_mock.MagicMock(IndyIssuer, autospec=True)
             issuer.create_credential_offer = async_mock.CoroutineMock(
                 return_value=json.dumps(cred_offer)
             )
-            self.context.injector.bind_instance(BaseIssuer, issuer)
+            self.context.injector.bind_instance(IndyIssuer, issuer)
 
             self.storage = BasicStorage()
             self.context.injector.bind_instance(BaseStorage, self.storage)
@@ -470,11 +470,11 @@ class TestCredentialManager(AsyncTestCase):
         ) as set_cached_key:
             get_cached_key.return_value = None
             cred_offer = {"cred_def_id": CRED_DEF_ID, "schema_id": SCHEMA_ID}
-            issuer = async_mock.MagicMock(BaseIssuer, autospec=True)
+            issuer = async_mock.MagicMock(IndyIssuer, autospec=True)
             issuer.create_credential_offer = async_mock.CoroutineMock(
                 return_value=json.dumps(cred_offer)
             )
-            self.context.injector.bind_instance(BaseIssuer, issuer)
+            self.context.injector.bind_instance(IndyIssuer, issuer)
 
             self.storage = BasicStorage()
             self.context.injector.bind_instance(BaseStorage, self.storage)
@@ -545,7 +545,7 @@ class TestCredentialManager(AsyncTestCase):
             issuer.create_credential_offer = async_mock.CoroutineMock(
                 return_value=cred_offer
             )
-            self.context.injector.bind_instance(BaseIssuer, issuer)
+            self.context.injector.bind_instance(IndyIssuer, issuer)
 
             self.storage = BasicStorage()
             self.context.injector.bind_instance(BaseStorage, self.storage)
@@ -687,7 +687,7 @@ class TestCredentialManager(AsyncTestCase):
             holder.create_credential_request = async_mock.CoroutineMock(
                 return_value=(json.dumps(indy_cred_req), json.dumps(cred_req_meta))
             )
-            self.context.injector.bind_instance(BaseHolder, holder)
+            self.context.injector.bind_instance(IndyHolder, holder)
 
             ret_exchange, ret_request = await self.manager.create_request(
                 stored_exchange, holder_did
@@ -754,7 +754,7 @@ class TestCredentialManager(AsyncTestCase):
             holder.create_credential_request = async_mock.CoroutineMock(
                 return_value=(json.dumps(indy_cred_req), json.dumps(cred_req_meta))
             )
-            self.context.injector.bind_instance(BaseHolder, holder)
+            self.context.injector.bind_instance(IndyHolder, holder)
 
             ret_exchange, ret_request = await self.manager.create_request(
                 stored_exchange, holder_did
@@ -881,7 +881,7 @@ class TestCredentialManager(AsyncTestCase):
         issuer.create_credential = async_mock.CoroutineMock(
             return_value=(json.dumps(cred), cred_rev_id)
         )
-        self.context.injector.bind_instance(BaseIssuer, issuer)
+        self.context.injector.bind_instance(IndyIssuer, issuer)
 
         with async_mock.patch.object(
             test_module, "IndyRevocation", autospec=True
@@ -968,7 +968,7 @@ class TestCredentialManager(AsyncTestCase):
         issuer.create_credential = async_mock.CoroutineMock(
             return_value=(json.dumps(cred), None)
         )
-        self.context.injector.bind_instance(BaseIssuer, issuer)
+        self.context.injector.bind_instance(IndyIssuer, issuer)
 
         Ledger = async_mock.MagicMock()
         self.ledger = Ledger()
@@ -1037,7 +1037,7 @@ class TestCredentialManager(AsyncTestCase):
         issuer.create_credential = async_mock.CoroutineMock(
             return_value=(json.dumps(cred), stored_exchange.revocation_id)
         )
-        self.context.injector.bind_instance(BaseIssuer, issuer)
+        self.context.injector.bind_instance(IndyIssuer, issuer)
 
         with async_mock.patch.object(
             test_module, "IndyRevocation", autospec=True
@@ -1144,7 +1144,7 @@ class TestCredentialManager(AsyncTestCase):
         issuer.create_credential = async_mock.CoroutineMock(
             return_value=(json.dumps(cred), cred_rev_id)
         )
-        self.context.injector.bind_instance(BaseIssuer, issuer)
+        self.context.injector.bind_instance(IndyIssuer, issuer)
 
         with async_mock.patch.object(
             test_module, "IssuerRevRegRecord", autospec=True
@@ -1203,7 +1203,7 @@ class TestCredentialManager(AsyncTestCase):
         issuer.create_credential = async_mock.CoroutineMock(
             return_value=(json.dumps(cred), cred_rev_id)
         )
-        self.context.injector.bind_instance(BaseIssuer, issuer)
+        self.context.injector.bind_instance(IndyIssuer, issuer)
 
         with async_mock.patch.object(
             test_module, "IssuerRevRegRecord", autospec=True
@@ -1263,9 +1263,9 @@ class TestCredentialManager(AsyncTestCase):
         issuer = async_mock.MagicMock()
         cred = {"indy": "credential"}
         issuer.create_credential = async_mock.CoroutineMock(
-            side_effect=test_module.IssuerRevocationRegistryFullError("Nope")
+            side_effect=test_module.IndyIssuerRevocationRegistryFullError("Nope")
         )
-        self.context.injector.bind_instance(BaseIssuer, issuer)
+        self.context.injector.bind_instance(IndyIssuer, issuer)
 
         with async_mock.patch.object(
             test_module, "IndyRevocation", autospec=True
@@ -1287,7 +1287,7 @@ class TestCredentialManager(AsyncTestCase):
                 )
             )
 
-            with self.assertRaises(test_module.IssuerRevocationRegistryFullError):
+            with self.assertRaises(test_module.IndyIssuerRevocationRegistryFullError):
                 await self.manager.issue_credential(
                     stored_exchange, comment=comment, retries=1
                 )
@@ -1354,7 +1354,7 @@ class TestCredentialManager(AsyncTestCase):
         holder.get_credential = async_mock.CoroutineMock(
             return_value=json.dumps(stored_cred)
         )
-        self.context.injector.bind_instance(BaseHolder, holder)
+        self.context.injector.bind_instance(IndyHolder, holder)
 
         with async_mock.patch.object(
             test_module, "RevocationRegistry", autospec=True
@@ -1449,7 +1449,7 @@ class TestCredentialManager(AsyncTestCase):
         holder.get_credential = async_mock.CoroutineMock(
             return_value=json.dumps(stored_cred)
         )
-        self.context.injector.bind_instance(BaseHolder, holder)
+        self.context.injector.bind_instance(IndyHolder, holder)
 
         with async_mock.patch.object(
             V10CredentialExchange, "save", autospec=True
@@ -1507,11 +1507,11 @@ class TestCredentialManager(AsyncTestCase):
         cred_id = "cred-id"
         holder = async_mock.MagicMock()
         holder.store_credential = async_mock.CoroutineMock(
-            side_effect=test_module.HolderError("Problem", {"message": "Nope"})
+            side_effect=test_module.IndyHolderError("Problem", {"message": "Nope"})
         )
-        self.context.injector.bind_instance(BaseHolder, holder)
+        self.context.injector.bind_instance(IndyHolder, holder)
 
-        with self.assertRaises(test_module.HolderError):
+        with self.assertRaises(test_module.IndyHolderError):
             await self.manager.store_credential(
                 cred_ex_record=stored_exchange, credential_id=cred_id
             )

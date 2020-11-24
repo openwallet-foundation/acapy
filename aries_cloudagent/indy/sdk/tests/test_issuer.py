@@ -11,10 +11,10 @@ from indy.error import (
     WalletItemNotFound,
 )
 
-from ...wallet.indy import IndyWallet
+from ....wallet.indy import IndyWallet
+from ...issuer import IndyIssuerRevocationRegistryFullError
 
-from .. import indy as test_module
-from ..base import IssuerRevocationRegistryFullError
+from .. import issuer as test_module
 
 
 TEST_DID = "55GkHamhTU1ZbTbV2ab9DE"
@@ -31,7 +31,7 @@ TEST_RR_DELTA = {
 
 
 @pytest.mark.indy
-class TestIndyIssuer(AsyncTestCase):
+class TestIndySdkIssuer(AsyncTestCase):
     async def setUp(self):
         self.wallet = IndyWallet(
             {
@@ -42,7 +42,7 @@ class TestIndyIssuer(AsyncTestCase):
                 "name": "test",
             }
         )
-        self.issuer = test_module.IndyIssuer(self.wallet)
+        self.issuer = test_module.IndySdkIssuer(self.wallet)
         assert self.issuer.wallet is self.wallet
         await self.wallet.open()
 
@@ -50,7 +50,7 @@ class TestIndyIssuer(AsyncTestCase):
         await self.wallet.close()
 
     async def test_repr(self):
-        assert "IndyIssuer" in str(self.issuer)  # cover __repr__
+        assert "IndySdkIssuer" in str(self.issuer)  # cover __repr__
 
     @async_mock.patch("indy.anoncreds.issuer_create_and_store_credential_def")
     async def test_schema_cred_def(self, mock_indy_cred_def):
@@ -109,7 +109,7 @@ class TestIndyIssuer(AsyncTestCase):
         mock_indy_create_offer.side_effect = IndyError(
             error_code=ErrorCode.WalletInvalidHandle
         )
-        with self.assertRaises(test_module.IssuerError):
+        with self.assertRaises(test_module.IndyIssuerError):
             await self.issuer.credential_definition_in_wallet(CRED_DEF_ID)
 
     @async_mock.patch("indy.anoncreds.issuer_create_credential_offer")
@@ -118,13 +118,13 @@ class TestIndyIssuer(AsyncTestCase):
         test_cred_def_id = "test-cred-def-id"
         mock_create_offer.return_value = json.dumps(test_offer)
         mock_wallet = async_mock.MagicMock()
-        issuer = test_module.IndyIssuer(mock_wallet)
+        issuer = test_module.IndySdkIssuer(mock_wallet)
         offer_json = await issuer.create_credential_offer(test_cred_def_id)
         assert json.loads(offer_json) == test_offer
         mock_create_offer.assert_called_once_with(mock_wallet.handle, test_cred_def_id)
 
     @async_mock.patch("indy.anoncreds.issuer_create_credential")
-    @async_mock.patch("aries_cloudagent.issuer.indy.create_tails_reader")
+    @async_mock.patch.object(test_module, "create_tails_reader", autospec=True)
     @async_mock.patch("indy.anoncreds.issuer_revoke_credential")
     @async_mock.patch("indy.anoncreds.issuer_merge_revocation_registry_deltas")
     async def test_create_revoke_credentials(
@@ -174,7 +174,7 @@ class TestIndyIssuer(AsyncTestCase):
                 )
             )
 
-            with self.assertRaises(test_module.IssuerError):  # missing attribute
+            with self.assertRaises(test_module.IndyIssuerError):  # missing attribute
                 cred_json, revoc_id = await self.issuer.create_credential(
                     test_schema,
                     test_offer,
@@ -218,7 +218,7 @@ class TestIndyIssuer(AsyncTestCase):
             mock_indy_merge_rr_deltas.assert_called_once()
 
     @async_mock.patch("indy.anoncreds.issuer_create_credential")
-    @async_mock.patch("aries_cloudagent.issuer.indy.create_tails_reader")
+    @async_mock.patch.object(test_module, "create_tails_reader", autospec=True)
     @async_mock.patch("indy.anoncreds.issuer_revoke_credential")
     @async_mock.patch("indy.anoncreds.issuer_merge_revocation_registry_deltas")
     async def test_create_revoke_credentials_x(
@@ -258,7 +258,7 @@ class TestIndyIssuer(AsyncTestCase):
             for cr_id in test_cred_rev_ids
         ]
 
-        with self.assertRaises(test_module.IssuerError):  # missing attribute
+        with self.assertRaises(test_module.IndyIssuerError):  # missing attribute
             cred_json, revoc_id = await self.issuer.create_credential(
                 test_schema,
                 test_offer,
@@ -330,7 +330,7 @@ class TestIndyIssuer(AsyncTestCase):
             mock_indy_merge_rr_deltas.assert_not_called()
 
     @async_mock.patch("indy.anoncreds.issuer_create_credential")
-    @async_mock.patch("aries_cloudagent.issuer.indy.create_tails_reader")
+    @async_mock.patch.object(test_module, "create_tails_reader", autospec=True)
     async def test_create_credential_rr_full(
         self,
         mock_tails_reader,
@@ -362,7 +362,7 @@ class TestIndyIssuer(AsyncTestCase):
                 )
             )
 
-            with self.assertRaises(IssuerRevocationRegistryFullError):
+            with self.assertRaises(IndyIssuerRevocationRegistryFullError):
                 await self.issuer.create_credential(
                     test_schema,
                     test_offer,
@@ -372,7 +372,7 @@ class TestIndyIssuer(AsyncTestCase):
                 )
 
     @async_mock.patch("indy.anoncreds.issuer_create_credential")
-    @async_mock.patch("aries_cloudagent.issuer.indy.create_tails_reader")
+    @async_mock.patch.object(test_module, "create_tails_reader", autospec=True)
     async def test_create_credential_x_indy(
         self,
         mock_tails_reader,
@@ -405,7 +405,7 @@ class TestIndyIssuer(AsyncTestCase):
                 )
             )
 
-            with self.assertRaises(test_module.IssuerError):
+            with self.assertRaises(test_module.IndyIssuerError):
                 await self.issuer.create_credential(
                     test_schema,
                     test_offer,
@@ -415,7 +415,7 @@ class TestIndyIssuer(AsyncTestCase):
                 )
 
     @async_mock.patch("indy.anoncreds.issuer_create_and_store_revoc_reg")
-    @async_mock.patch("aries_cloudagent.issuer.indy.create_tails_writer")
+    @async_mock.patch.object(test_module, "create_tails_writer", autospec=True)
     async def test_create_and_store_revocation_registry(
         self, mock_indy_tails_writer, mock_indy_rr
     ):

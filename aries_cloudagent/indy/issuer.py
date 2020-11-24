@@ -1,4 +1,4 @@
-"""Ledger issuer class."""
+"""Base Indy Issuer class."""
 
 from abc import ABC, ABCMeta, abstractmethod
 from typing import Sequence, Tuple
@@ -10,16 +10,16 @@ DEFAULT_CRED_DEF_TAG = "default"
 DEFAULT_SIGNATURE_TYPE = "CL"
 
 
-class IssuerError(BaseError):
+class IndyIssuerError(BaseError):
     """Generic issuer error."""
 
 
-class IssuerRevocationRegistryFullError(IssuerError):
+class IndyIssuerRevocationRegistryFullError(IndyIssuerError):
     """Revocation registry is full when issuing a new credential."""
 
 
-class BaseIssuer(ABC, metaclass=ABCMeta):
-    """Base class for issuer."""
+class IndyIssuer(ABC, metaclass=ABCMeta):
+    """Base class for Indy Issuer."""
 
     def __repr__(self) -> str:
         """
@@ -31,11 +31,11 @@ class BaseIssuer(ABC, metaclass=ABCMeta):
         """
         return "<{}>".format(self.__class__.__name__)
 
-    @abstractmethod
     def make_schema_id(
         self, origin_did: str, schema_name: str, schema_version: str
     ) -> str:
         """Derive the ID for a schema."""
+        return f"{origin_did}:2:{schema_name}:{schema_version}"
 
     @abstractmethod
     async def create_schema(
@@ -59,11 +59,13 @@ class BaseIssuer(ABC, metaclass=ABCMeta):
 
         """
 
-    @abstractmethod
     def make_credential_definition_id(
         self, origin_did: str, schema: dict, signature_type: str = None, tag: str = None
     ) -> str:
         """Derive the ID for a credential definition."""
+        signature_type = signature_type or DEFAULT_SIGNATURE_TYPE
+        tag = tag or DEFAULT_CRED_DEF_TAG
+        return f"{origin_did}:3:{signature_type}:{str(schema['seqNo'])}:{tag}"
 
     @abstractmethod
     async def credential_definition_in_wallet(

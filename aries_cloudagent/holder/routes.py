@@ -6,6 +6,7 @@ from aiohttp import web
 from aiohttp_apispec import docs, match_info_schema, querystring_schema, response_schema
 from marshmallow import fields
 
+from ..indy.holder import IndyHolder, IndyHolderError
 from ..ledger.base import BaseLedger
 from ..ledger.error import LedgerError
 from ..messaging.models.openapi import OpenAPISchema
@@ -20,7 +21,6 @@ from ..messaging.valid import (
     UUIDFour,
 )
 from ..wallet.error import WalletNotFoundError
-from .base import BaseHolder, HolderError
 
 
 class AttributeMimeTypesResultSchema(OpenAPISchema):
@@ -122,7 +122,7 @@ async def credentials_get(request: web.BaseRequest):
 
     credential_id = request.match_info["credential_id"]
 
-    holder: BaseHolder = await context.inject(BaseHolder)
+    holder: IndyHolder = await context.inject(IndyHolder)
     try:
         credential = await holder.get_credential(credential_id)
     except WalletNotFoundError as err:
@@ -162,7 +162,7 @@ async def credentials_revoked(request: web.BaseRequest):
 
     async with ledger:
         try:
-            holder: BaseHolder = await context.inject(BaseHolder)
+            holder: IndyHolder = await context.inject(IndyHolder)
             revoked = await holder.credential_revoked(
                 credential_id,
                 ledger,
@@ -193,7 +193,7 @@ async def credentials_attr_mime_types_get(request: web.BaseRequest):
     """
     context = request["context"]
     credential_id = request.match_info["credential_id"]
-    holder: BaseHolder = await context.inject(BaseHolder)
+    holder: IndyHolder = await context.inject(IndyHolder)
 
     return web.json_response(await holder.get_mime_type(credential_id))
 
@@ -215,7 +215,7 @@ async def credentials_remove(request: web.BaseRequest):
 
     credential_id = request.match_info["credential_id"]
 
-    holder: BaseHolder = await context.inject(BaseHolder)
+    holder: IndyHolder = await context.inject(IndyHolder)
     try:
         await holder.delete_credential(credential_id)
     except WalletNotFoundError as err:
@@ -254,10 +254,10 @@ async def credentials_list(request: web.BaseRequest):
     start = int(start) if isinstance(start, str) else 0
     count = int(count) if isinstance(count, str) else 10
 
-    holder: BaseHolder = await context.inject(BaseHolder)
+    holder: IndyHolder = await context.inject(IndyHolder)
     try:
         credentials = await holder.get_credentials(start, count, wql)
-    except HolderError as err:
+    except IndyHolderError as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     return web.json_response({"results": credentials})

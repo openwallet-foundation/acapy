@@ -14,7 +14,7 @@ from aiohttp_apispec import (
 from marshmallow import fields
 from marshmallow.validate import Regexp
 
-from ...issuer.base import BaseIssuer, IssuerError
+from ...indy.issuer import IndyIssuer, IndyIssuerError
 from ...ledger.base import BaseLedger
 from ...ledger.error import LedgerError
 from ...storage.base import BaseStorage
@@ -128,7 +128,7 @@ async def schemas_send_schema(request: web.BaseRequest):
             reason += ": missing wallet-type?"
         raise web.HTTPForbidden(reason=reason)
 
-    issuer: BaseIssuer = await context.inject(BaseIssuer)
+    issuer: IndyIssuer = await context.inject(IndyIssuer)
     async with ledger:
         try:
             schema_id, schema_def = await shield(
@@ -136,7 +136,7 @@ async def schemas_send_schema(request: web.BaseRequest):
                     issuer, schema_name, schema_version, attributes
                 )
             )
-        except (IssuerError, LedgerError) as err:
+        except (IndyIssuerError, LedgerError) as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     return web.json_response({"schema_id": schema_id, "schema": schema_def})
