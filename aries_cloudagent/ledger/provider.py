@@ -6,6 +6,7 @@ from ..cache.base import BaseCache
 from ..config.base import BaseProvider, BaseInjector, BaseSettings
 from ..utils.classloader import ClassLoader
 from ..wallet.base import BaseWallet
+from .pool.base import BaseLedgerPool
 
 LOGGER = logging.getLogger(__name__)
 
@@ -16,28 +17,18 @@ class LedgerProvider(BaseProvider):
     LEDGER_CLASSES = {"indy": "aries_cloudagent.ledger.indy.IndyLedger"}
 
     async def provide(self, settings: BaseSettings, injector: BaseInjector):
-        """Create and open the ledger instance."""
+        """Create the ledger instance."""
 
-        pool_name = settings.get("ledger.pool_name", "default")
-        keepalive = int(settings.get("ledger.keepalive", 5))
         read_only = bool(settings.get("ledger.read_only", False))
         if read_only:
             LOGGER.error("Note: setting ledger to read-only mode")
         wallet = await injector.inject(BaseWallet)
+        pool = await injector.inject(BaseLedgerPool, required=False)
         ledger = None
 
-        if wallet.type == "indy":
+        if pool and wallet.type == "indy":
             IndyLedger = ClassLoader.load_class(self.LEDGER_CLASSES["indy"])
             cache = await injector.inject(BaseCache, required=False)
-            ledger = IndyLedger(
-                pool_name, wallet, keepalive=keepalive, cache=cache, read_only=read_only
-            )
-
-            genesis_transactions = settings.get("ledger.genesis_transactions")
-            if genesis_transactions:
-                await ledger.create_pool_config(genesis_transactions, True)
-            elif not await ledger.check_pool_config():
-                LOGGER.info("Ledger pool configuration has not been created")
-                ledger = None
+            ledger = IndyLedger(pool, wallet, cache=cache, read_only=read_only)
 
         return ledger

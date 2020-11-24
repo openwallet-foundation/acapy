@@ -9,7 +9,9 @@ from ..cache.basic import BasicCache
 from ..core.plugin_registry import PluginRegistry
 from ..core.protocol_registry import ProtocolRegistry
 from ..ledger.base import BaseLedger
+from ..ledger.pool.base import BaseLedgerPool
 from ..ledger.provider import LedgerProvider
+from ..ledger.pool.provider import LedgerPoolProvider
 from ..issuer.base import BaseIssuer
 from ..holder.base import BaseHolder
 from ..verifier.base import BaseVerifier
@@ -97,10 +99,15 @@ class DefaultContextBuilder(ContextBuilder):
                         "get_schema",
                     ),
                 ),
-                # MTODO: It would be better to not create a separate ledger instance
-                # per wallet (besides the wallet_handle they share everyting)
-                # but only create a ledger instance per wallet.type or something?
                 ("wallet.id",),
+            ),
+        )
+        context.injector.bind_provider(
+            BaseLedgerPool,
+            CachedProvider(
+                LedgerPoolProvider(),
+                # MTODO: Invalidate cache when genesis_transactions changes
+                ("ledger.pool_name",),
             ),
         )
         context.injector.bind_provider(

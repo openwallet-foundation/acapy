@@ -1,14 +1,11 @@
 """Indy ledger implementation."""
 
-import asyncio
 import json
 import logging
-import tempfile
 
 from datetime import datetime, date
 from enum import Enum
 from hashlib import sha256
-from os import path
 from time import time
 from typing import Sequence, Tuple, Union
 
@@ -16,6 +13,7 @@ import indy.ledger
 import indy.pool
 from indy.error import IndyError, ErrorCode
 
+from .pool.indy import IndyLegderPool
 from ..cache.base import BaseCache
 from ..issuer.base import BaseIssuer, IssuerError, DEFAULT_CRED_DEF_TAG
 from ..indy.error import IndyErrorHandler
@@ -40,11 +38,6 @@ from .error import (
 from .util import TAA_ACCEPTED_RECORD_TYPE
 
 LOGGER = logging.getLogger(__name__)
-
-GENESIS_TRANSACTION_PATH = tempfile.gettempdir()
-GENESIS_TRANSACTION_PATH = path.join(
-    GENESIS_TRANSACTION_PATH, "indy_genesis_transactions.txt"
-)
 
 
 class Role(Enum):
@@ -101,10 +94,9 @@ class IndyLedger(BaseLedger):
 
     def __init__(
         self,
-        pool_name: str,
+        pool: IndyLegderPool,
         wallet: BaseWallet,
         *,
-        keepalive: int = 0,
         cache: BaseCache = None,
         cache_duration: int = 600,
         read_only: bool = False,
@@ -119,16 +111,11 @@ class IndyLedger(BaseLedger):
             cache: The cache instance to use
             cache_duration: The TTL for ledger cache entries
         """
-        self.opened = False
-        self.ref_count = 0
-        self.ref_lock = asyncio.Lock()
-        self.keepalive = keepalive
-        self.close_task: asyncio.Future = None
+
         self.cache = cache
         self.cache_duration = cache_duration
         self.wallet = wallet
-        self.pool_handle = None
-        self.pool_name = pool_name
+        self.pool = pool
         self.taa_acceptance = None
         self.taa_cache = None
         self.read_only = read_only
@@ -140,123 +127,6 @@ class IndyLedger(BaseLedger):
     def type(self) -> str:
         """Accessor for the ledger type."""
         return IndyLedger.LEDGER_TYPE
-
-    async def create_pool_config(
-        self, genesis_transactions: str, recreate: bool = False
-    ):
-        """Create the pool ledger configuration."""
-
-        # indy-sdk requires a file but it's only used once to bootstrap
-        # the connection so we take a string instead of create a tmp file
-        txn_path = GENESIS_TRANSACTION_PATH
-        with open(txn_path, "w") as genesis_file:
-            genesis_file.write(genesis_transactions)
-        pool_config = json.dumps({"genesis_txn": txn_path})
-
-        if await self.check_pool_config():
-            if recreate:
-                LOGGER.debug("Removing existing ledger config")
-                await indy.pool.delete_pool_ledger_config(self.pool_name)
-            else:
-                raise LedgerConfigError(
-                    "Ledger pool configuration already exists: %s", self.pool_name
-                )
-
-        LOGGER.debug("Creating pool ledger config")
-        with IndyErrorHandler(
-            "Exception creating pool ledger config", LedgerConfigError
-        ):
-            await indy.pool.create_pool_ledger_config(self.pool_name, pool_config)
-
-    async def check_pool_config(self) -> bool:
-        """Check if a pool config has been created."""
-        pool_names = {cfg["pool"] for cfg in await indy.pool.list_pools()}
-        return self.pool_name in pool_names
-
-    async def open(self):
-        """Open the pool ledger, creating it if necessary."""
-        # We only support proto ver 2
-        with IndyErrorHandler(
-            "Exception setting ledger protocol version", LedgerConfigError
-        ):
-            await indy.pool.set_protocol_version(2)
-
-        with IndyErrorHandler(
-            f"Exception opening pool ledger {self.pool_name}", LedgerConfigError
-        ):
-            self.pool_handle = await indy.pool.open_pool_ledger(self.pool_name, "{}")
-        self.opened = True
-
-    async def close(self):
-        """Close the pool ledger."""
-        if self.opened:
-            exc = None
-            for attempt in range(3):
-                try:
-                    await indy.pool.close_pool_ledger(self.pool_handle)
-                except IndyError as err:
-                    await asyncio.sleep(0.01)
-                    exc = err
-                    continue
-
-                self.pool_handle = None
-                self.opened = False
-                exc = None
-                break
-
-            if exc:
-                LOGGER.error("Exception closing pool ledger")
-                self.ref_count += 1  # if we are here, we should have self.ref_lock
-                self.close_task = None
-                raise IndyErrorHandler.wrap_error(
-                    exc, "Exception closing pool ledger", LedgerError
-                )
-
-    async def _context_open(self):
-        """Open the ledger if necessary and increase the number of active references."""
-        async with self.ref_lock:
-            if self.close_task:
-                self.close_task.cancel()
-            if not self.opened:
-                LOGGER.debug("Opening the pool ledger")
-                await self.open()
-            self.ref_count += 1
-
-    async def _context_close(self):
-        """Release the reference and schedule closing of the pool ledger."""
-
-        async def closer(timeout: int):
-            """Close the pool ledger after a timeout."""
-            await asyncio.sleep(timeout)
-            async with self.ref_lock:
-                if not self.ref_count:
-                    LOGGER.debug("Closing pool ledger after timeout")
-                    await self.close()
-
-        async with self.ref_lock:
-            self.ref_count -= 1
-            if not self.ref_count:
-                if self.keepalive:
-                    self.close_task = asyncio.ensure_future(closer(self.keepalive))
-                else:
-                    await self.close()
-
-    async def __aenter__(self) -> "IndyLedger":
-        """
-        Context manager entry.
-
-        Returns:
-            The current instance
-
-        """
-        await super().__aenter__()
-        await self._context_open()
-        return self
-
-    async def __aexit__(self, exc_type, exc, tb):
-        """Context manager exit."""
-        await self._context_close()
-        await super().__aexit__(exc_type, exc, tb)
 
     async def _submit(
         self,
@@ -276,11 +146,6 @@ class IndyLedger(BaseLedger):
 
         """
 
-        if not self.pool_handle:
-            raise ClosedPoolError(
-                f"Cannot sign and submit request to closed pool '{self.pool_name}'"
-            )
-
         if sign is None or sign:
             if sign_did is sentinel:
                 sign_did = await self.wallet.get_public_did()
@@ -290,49 +155,57 @@ class IndyLedger(BaseLedger):
         if taa_accept is None and sign:
             taa_accept = True
 
-        if sign:
-            if not sign_did:
-                raise BadLedgerRequestError("Cannot sign request without a public DID")
-            if taa_accept:
-                acceptance = await self.get_latest_txn_author_acceptance()
-                if acceptance:
-                    request_json = await (
-                        indy.ledger.append_txn_author_agreement_acceptance_to_request(
-                            request_json,
-                            acceptance["text"],
-                            acceptance["version"],
-                            acceptance["digest"],
-                            acceptance["mechanism"],
-                            acceptance["time"],
-                        )
+        async with self.pool:
+            if not self.pool.opened:
+                raise ClosedPoolError(
+                    f"Cannot sign and submit request to closed pool '{self.pool.name}'"
+                )
+
+            if sign:
+                if not sign_did:
+                    raise BadLedgerRequestError(
+                        "Cannot sign request without a public DID"
                     )
-            submit_op = indy.ledger.sign_and_submit_request(
-                self.pool_handle, self.wallet.handle, sign_did.did, request_json
-            )
-        else:
-            submit_op = indy.ledger.submit_request(self.pool_handle, request_json)
+                if taa_accept:
+                    acceptance = await self.get_latest_txn_author_acceptance()
+                    if acceptance:
+                        request_json = await (
+                            indy.ledger.append_txn_author_agreement_acceptance_to_request(
+                                request_json,
+                                acceptance["text"],
+                                acceptance["version"],
+                                acceptance["digest"],
+                                acceptance["mechanism"],
+                                acceptance["time"],
+                            )
+                        )
+                submit_op = indy.ledger.sign_and_submit_request(
+                    self.pool.handle, self.wallet.handle, sign_did.did, request_json
+                )
+            else:
+                submit_op = indy.ledger.submit_request(self.pool.handle, request_json)
 
-        with IndyErrorHandler(
-            "Exception raised by ledger transaction", LedgerTransactionError
-        ):
-            request_result_json = await submit_op
+            with IndyErrorHandler(
+                "Exception raised by ledger transaction", LedgerTransactionError
+            ):
+                request_result_json = await submit_op
 
-        request_result = json.loads(request_result_json)
+            request_result = json.loads(request_result_json)
 
-        operation = request_result.get("op", "")
+            operation = request_result.get("op", "")
 
-        if operation in ("REQNACK", "REJECT"):
-            raise LedgerTransactionError(
-                f"Ledger rejected transaction request: {request_result['reason']}"
-            )
+            if operation in ("REQNACK", "REJECT"):
+                raise LedgerTransactionError(
+                    f"Ledger rejected transaction request: {request_result['reason']}"
+                )
 
-        elif operation == "REPLY":
-            return request_result_json
+            elif operation == "REPLY":
+                return request_result_json
 
-        else:
-            raise LedgerTransactionError(
-                f"Unexpected operation code from ledger: {operation}"
-            )
+            else:
+                raise LedgerTransactionError(
+                    f"Unexpected operation code from ledger: {operation}"
+                )
 
     async def create_and_send_schema(
         self,
@@ -571,7 +444,7 @@ class IndyLedger(BaseLedger):
 
         schema = await self.get_schema(schema_id)
         if not schema:
-            raise LedgerError(f"Ledger {self.pool_name} has no schema {schema_id}")
+            raise LedgerError(f"Ledger {self.pool.name} has no schema {schema_id}")
 
         novel = False
 
@@ -587,7 +460,7 @@ class IndyLedger(BaseLedger):
                 LOGGER.warning(
                     "Credential definition %s already exists on ledger %s",
                     credential_definition_id,
-                    self.pool_name,
+                    self.pool.name,
                 )
 
                 try:
@@ -596,7 +469,7 @@ class IndyLedger(BaseLedger):
                     ):
                         raise LedgerError(
                             f"Credential definition {credential_definition_id} is on "
-                            f"ledger {self.pool_name} but not in wallet "
+                            f"ledger {self.pool.name} but not in wallet "
                             f"{self.wallet.name}"
                         )
                 except IssuerError as err:
@@ -610,7 +483,7 @@ class IndyLedger(BaseLedger):
                 ):
                     raise LedgerError(
                         f"Credential definition {credential_definition_id} is in "
-                        f"wallet {self.wallet.name} but not on ledger {self.pool_name}"
+                        f"wallet {self.wallet.name} but not on ledger {self.pool.name}"
                     )
             except IssuerError as err:
                 raise LedgerError(err.message) from err
@@ -1015,21 +888,21 @@ class IndyLedger(BaseLedger):
         record = StorageRecord(
             TAA_ACCEPTED_RECORD_TYPE,
             json.dumps(acceptance),
-            {"pool_name": self.pool_name},
+            {"pool_name": self.pool.name},
         )
         storage = self.get_indy_storage()
         await storage.add_record(record)
         if self.cache:
-            cache_key = TAA_ACCEPTED_RECORD_TYPE + "::" + self.pool_name
+            cache_key = TAA_ACCEPTED_RECORD_TYPE + "::" + self.pool.name
             await self.cache.set(cache_key, acceptance, self.cache_duration)
 
     async def get_latest_txn_author_acceptance(self) -> dict:
         """Look up the latest TAA acceptance."""
-        cache_key = TAA_ACCEPTED_RECORD_TYPE + "::" + self.pool_name
+        cache_key = TAA_ACCEPTED_RECORD_TYPE + "::" + self.pool.name
         acceptance = self.cache and await self.cache.get(cache_key)
         if not acceptance:
             storage = self.get_indy_storage()
-            tag_filter = {"pool_name": self.pool_name}
+            tag_filter = {"pool_name": self.pool.name}
             found = await storage.search_records(
                 TAA_ACCEPTED_RECORD_TYPE, tag_filter
             ).fetch_all()
