@@ -8,13 +8,13 @@ import indy.did
 import indy.wallet
 import pytest
 from aries_cloudagent.ledger.endpoint_type import EndpointType
-from aries_cloudagent.wallet.basic import BasicWallet
+from aries_cloudagent.wallet.in_memory import InMemoryWallet
 from aries_cloudagent.wallet.indy import IndyWallet
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
 from .. import indy as test_module
-from . import test_basic_wallet
+from . import test_in_memory_wallet
 
 
 @pytest.fixture()

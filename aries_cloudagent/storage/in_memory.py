@@ -1,7 +1,8 @@
 """Basic in-memory storage implementation (non-wallet)."""
 
-from collections import OrderedDict
 from typing import Mapping, Sequence
+
+from ..in_memory.profile import InMemoryProfile
 
 from .base import (
     DEFAULT_PAGE_SIZE,
@@ -15,21 +16,19 @@ from .error import (
     StorageSearchError,
 )
 from .record import StorageRecord
-from ..wallet.base import BaseWallet
 
 
-class BasicStorage(BaseStorage):
+class InMemoryStorage(BaseStorage):
     """Basic in-memory storage class."""
 
-    def __init__(self, _wallet: BaseWallet = None):
+    def __init__(self, profile: InMemoryProfile):
         """
-        Initialize a `BasicStorage` instance.
+        Initialize a `InMemoryStorage` instance.
 
         Args:
-            _wallet: The wallet implementation to use
+            profile: The in-memory profile instance
 
         """
-        self._records = OrderedDict()
 
     async def add_record(self, record: StorageRecord):
         """
@@ -44,9 +43,9 @@ class BasicStorage(BaseStorage):
 
         """
         validate_record(record)
-        if record.id in self._records:
+        if record.id in self.profile.records:
             raise StorageDuplicateError("Duplicate record")
-        self._records[record.id] = record
+        self.profile.records[record.id] = record
 
     async def get_record(
         self, record_type: str, record_id: str, options: Mapping = None
@@ -66,7 +65,7 @@ class BasicStorage(BaseStorage):
             StorageNotFoundError: If the record is not found
 
         """
-        row = self._records.get(record_id)
+        row = self.profile.records.get(record_id)
         if row and row.type == record_type:
             return row
         if not row:
@@ -86,10 +85,10 @@ class BasicStorage(BaseStorage):
 
         """
         validate_record(record)
-        oldrec = self._records.get(record.id)
+        oldrec = self.profile.records.get(record.id)
         if not oldrec:
             raise StorageNotFoundError("Record not found: {}".format(record.id))
-        self._records[record.id] = oldrec._replace(value=value, tags=tags)
+        self.profile.records[record.id] = oldrec._replace(value=value, tags=tags)
 
     async def delete_record(self, record: StorageRecord):
         """
@@ -103,9 +102,9 @@ class BasicStorage(BaseStorage):
 
         """
         validate_record(record, delete=True)
-        if record.id not in self._records:
+        if record.id not in self.profile.records:
             raise StorageNotFoundError("Record not found: {}".format(record.id))
-        del self._records[record.id]
+        del self.profile.records[record.id]
 
     def search_records(
         self,
@@ -113,7 +112,7 @@ class BasicStorage(BaseStorage):
         tag_query: Mapping = None,
         page_size: int = None,
         options: Mapping = None,
-    ) -> "BasicStorageRecordSearch":
+    ) -> "InMemoryStorageRecordSearch":
         """
         Search stored records.
 
@@ -127,7 +126,7 @@ class BasicStorage(BaseStorage):
             An instance of `BaseStorageRecordSearch`
 
         """
-        return BasicStorageRecordSearch(
+        return InMemoryStorageRecordSearch(
             self, type_filter, tag_query, page_size, options
         )
 
@@ -201,19 +200,19 @@ def basic_tag_query_match(tags: dict, tag_query: dict) -> bool:
     return result
 
 
-class BasicStorageRecordSearch(BaseStorageRecordSearch):
+class InMemoryStorageRecordSearch(BaseStorageRecordSearch):
     """Represent an active stored records search."""
 
     def __init__(
         self,
-        store: BasicStorage,
+        profile: InMemoryProfile,
         type_filter: str,
         tag_query: Mapping,
         page_size: int = None,
         options: Mapping = None,
     ):
         """
-        Initialize a `BasicStorageRecordSearch` instance.
+        Initialize a `InMemoryStorageRecordSearch` instance.
 
         Args:
             store: `BaseStorage` to search
@@ -223,7 +222,7 @@ class BasicStorageRecordSearch(BaseStorageRecordSearch):
             options: Dictionary of backend-specific options
 
         """
-        self._cache = store._records.copy()
+        self._cache = profile.records.copy()
         self._iter = iter(self._cache)
         self.page_size = page_size or DEFAULT_PAGE_SIZE
         self.tag_query = tag_query

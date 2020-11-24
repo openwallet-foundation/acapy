@@ -8,9 +8,6 @@ from ..cache.base import BaseCache
 from ..cache.basic import BasicCache
 from ..core.plugin_registry import PluginRegistry
 from ..core.protocol_registry import ProtocolRegistry
-from ..indy.holder import IndyHolder
-from ..indy.issuer import IndyIssuer
-from ..indy.verifier import IndyVerifier
 from ..ledger.base import BaseLedger
 from ..ledger.provider import LedgerProvider
 from ..tails.base import BaseTailsServer
@@ -21,12 +18,8 @@ from ..protocols.didcomm_prefix import DIDCommPrefix
 from ..protocols.introduction.v0_1.base_service import BaseIntroductionService
 from ..protocols.introduction.v0_1.demo_service import DemoIntroductionService
 
-from ..storage.base import BaseStorage
-from ..storage.provider import StorageProvider
 from ..transport.wire_format import BaseWireFormat
 from ..utils.stats import Collector
-from ..wallet.base import BaseWallet
-from ..wallet.provider import WalletProvider
 
 
 class DefaultContextBuilder(ContextBuilder):
@@ -60,30 +53,6 @@ class DefaultContextBuilder(ContextBuilder):
         """Bind various class providers."""
 
         context.injector.bind_provider(
-            BaseStorage,
-            CachedProvider(
-                StatsProvider(
-                    StorageProvider(), ("add_record", "get_record", "search_records")
-                )
-            ),
-        )
-        context.injector.bind_provider(
-            BaseWallet,
-            CachedProvider(
-                StatsProvider(
-                    WalletProvider(),
-                    (
-                        "sign_message",
-                        "verify_message",
-                        # "pack_message",
-                        # "unpack_message",
-                        "get_local_did",
-                    ),
-                )
-            ),
-        )
-
-        context.injector.bind_provider(
             BaseLedger,
             CachedProvider(
                 StatsProvider(
@@ -97,33 +66,7 @@ class DefaultContextBuilder(ContextBuilder):
                 )
             ),
         )
-        context.injector.bind_provider(
-            IndyIssuer,
-            StatsProvider(
-                ClassProvider(
-                    "aries_cloudagent.indy.sdk.issuer.IndySdkIssuer",
-                    ClassProvider.Inject(BaseWallet),
-                ),
-                ("create_credential_offer", "create_credential"),
-            ),
-        )
-        context.injector.bind_provider(
-            IndyHolder,
-            StatsProvider(
-                ClassProvider(
-                    "aries_cloudagent.indy.sdk.holder.IndySdkHolder",
-                    ClassProvider.Inject(BaseWallet),
-                ),
-                ("get_credential", "store_credential", "create_credential_request"),
-            ),
-        )
-        context.injector.bind_provider(
-            IndyVerifier,
-            ClassProvider(
-                "aries_cloudagent.indy.sdk.verifier.IndySdkVerifier",
-                ClassProvider.Inject(BaseLedger),
-            ),
-        )
+
         context.injector.bind_provider(
             BaseTailsServer,
             ClassProvider(

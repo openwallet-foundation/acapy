@@ -21,7 +21,7 @@ from .error import (
     StorageSearchError,
 )
 from .record import StorageRecord
-from ..wallet.indy import IndyWallet
+from ..indy.sdk.wallet_setup import IndyOpenWallet
 
 LOGGER = logging.getLogger(__name__)
 
@@ -29,7 +29,7 @@ LOGGER = logging.getLogger(__name__)
 class IndyStorage(BaseStorage):
     """Indy Non-Secrets interface."""
 
-    def __init__(self, wallet: IndyWallet):
+    def __init__(self, wallet: IndyOpenWallet):
         """
         Initialize an `IndyStorage` instance.
 
@@ -40,8 +40,8 @@ class IndyStorage(BaseStorage):
         self._wallet = wallet
 
     @property
-    def wallet(self) -> IndyWallet:
-        """Accessor for IndyWallet instance."""
+    def wallet(self) -> IndyOpenWallet:
+        """Accessor for IndyOpenWallet instance."""
         return self._wallet
 
     async def add_record(self, record: StorageRecord):

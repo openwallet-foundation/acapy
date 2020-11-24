@@ -47,6 +47,14 @@ class BaseError(Exception):
         return f"{line.strip()}."
 
 
+class ProfileError(BaseError):
+    """Base error for profile operations."""
+
+
+class ProfileNotFoundError(ProfileError):
+    """Requested profile was not found."""
+
+
 class StartupError(BaseError):
     """Error raised when there is a problem starting the conductor."""
 
