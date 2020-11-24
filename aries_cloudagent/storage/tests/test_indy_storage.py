@@ -1,3 +1,4 @@
+import asyncio
 import json
 import pytest
 import os
@@ -280,6 +281,49 @@ class TestIndyStorage(test_basic_storage.TestBasicStorage):
                 search = storage.search_records("connection")
                 with pytest.raises(StorageSearchError):
                     await search.fetch_all()
+
+    @pytest.mark.asyncio
+    async def test_storage_del_close(self):
+        with async_mock.patch.object(
+            indy.wallet, "create_wallet", async_mock.CoroutineMock()
+        ) as mock_create, async_mock.patch.object(
+            indy.wallet, "open_wallet", async_mock.CoroutineMock()
+        ) as mock_open, async_mock.patch.object(
+            indy.anoncreds, "prover_create_master_secret", async_mock.CoroutineMock()
+        ) as mock_master, async_mock.patch.object(
+            indy.wallet, "close_wallet", async_mock.CoroutineMock()
+        ) as mock_close, async_mock.patch.object(
+            indy.wallet, "delete_wallet", async_mock.CoroutineMock()
+        ) as mock_delete:
+            fake_wallet = IndyWallet(
+                {
+                    "auto_create": True,
+                    "auto_remove": True,
+                    "name": "test_indy_wallet",
+                    "key": await IndyWallet.generate_wallet_key(),
+                    "key_derivation_method": "RAW",
+                }
+            )
+            await fake_wallet.open()
+            storage = IndyStorage(fake_wallet)
+
+            with async_mock.patch.object(
+                indy.non_secrets, "open_wallet_search", async_mock.CoroutineMock()
+            ) as mock_indy_open_search, async_mock.patch.object(
+                indy.non_secrets, "close_wallet_search", async_mock.CoroutineMock()
+            ) as mock_indy_close_search:
+                mock_indy_open_search.return_value = 1
+                search = storage.search_records("connection")
+                mock_indy_open_search.assert_not_awaited()
+                await search._open()
+                mock_indy_open_search.assert_awaited_once()
+                del search
+                c = 0
+                # give the pending cleanup task time to be scheduled
+                while not mock_indy_close_search.await_count and c < 10:
+                    await asyncio.sleep(0.1)
+                    c += 1
+                mock_indy_close_search.assert_awaited_once_with(1)
 
     # TODO get these to run in docker ci/cd
     @pytest.mark.asyncio
