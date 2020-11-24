@@ -159,7 +159,7 @@ def basic_tag_value_match(value: str, match: dict) -> bool:
             chk = float(value) <= float(cmp_val)
         # elif op == "$like":  NYI
         else:
-            raise StorageSearchError("Unsupported match operator: ".format(op))
+            raise StorageSearchError(f"Unsupported match operator: {op}")
     return chk
 
 
