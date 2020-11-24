@@ -3,11 +3,22 @@
 from abc import ABC, abstractmethod
 from typing import Mapping, Sequence
 
-from .error import StorageDuplicateError, StorageNotFoundError
+from .error import StorageError, StorageDuplicateError, StorageNotFoundError
 from .record import StorageRecord
 
 
 DEFAULT_PAGE_SIZE = 100
+
+
+def validate_record(record: StorageRecord, *, delete=False):
+    if not record:
+        raise StorageError("No record provided")
+    if not record.id:
+        raise StorageError("Record has no ID")
+    if not record.type:
+        raise StorageError("Record has no type")
+    if not record.value and not delete:
+        raise StorageError("Record must have a non-empty value")
 
 
 class BaseStorage(ABC):
@@ -73,8 +84,9 @@ class BaseStorage(ABC):
             tag_query: Tags to query
             options: Dictionary of backend-specific options
         """
-        async with self.search_records(type_filter, tag_query, options) as scan:
-            results = await scan.fetch(2)
+        scan = self.search_records(type_filter, tag_query, options)
+        results = await scan.fetch(2)
+        await scan.close()
         if not results:
             raise StorageNotFoundError("Record not found")
         if len(results) > 1:
@@ -111,169 +123,55 @@ class BaseStorage(ABC):
 class BaseStorageRecordSearch(ABC):
     """Represent an active stored records search."""
 
-    def __init__(
-        self,
-        store: BaseStorage,
-        type_filter: str,
-        tag_query: Mapping,
-        page_size: int = None,
-        options: Mapping = None,
-    ):
-        """
-        Initialize a `BaseStorageRecordSearch` instance.
-
-        Args:
-            store: `BaseStorage` to search
-            type_filter: Filter string
-            tag_query: Tags to search
-            page_size: Size of page to return
-            options: Dictionary of backend-specific options
-
-        """
-        self._buffer = None
-        self._page_size = page_size
-        self._store = store
-        self._tag_query = tag_query
-        self._type_filter = type_filter
-        self._options = options or {}
-
-    @property
-    def handle(self):
-        """Handle a search request."""
-        return None
-
-    @property
     @abstractmethod
-    def opened(self) -> bool:
-        """
-        Accessor for open state.
-
-        Returns:
-            True if opened, else False
-
-        """
-        return False
-
-    @property
-    def page_size(self) -> int:
-        """
-        Accessor for page size.
-
-        Returns:
-            The page size
-
-        """
-        return self._page_size or DEFAULT_PAGE_SIZE
-
-    @property
-    def store(self) -> BaseStorage:
-        """
-        `BaseStorage` backend for this implementation.
-
-        Returns:
-            The `BaseStorage` implementation being used
-
-        """
-        return self._store
-
-    @property
-    def tag_query(self) -> Mapping:
-        """
-        Accessor for tag query.
-
-        Returns:
-            The tag query
-
-        """
-        return self._tag_query
-
-    @property
-    def type_filter(self) -> str:
-        """
-        Accessor for type filter.
-
-        Returns:
-            The type filter
-
-        """
-        return self._type_filter
-
-    @property
-    def options(self) -> Mapping:
-        """
-        Accessor for the search options.
-
-        Returns:
-            The search options
-
-        """
-        return self._options
-
-    def option(self, name: str, default=None):
-        """
-        Fetch a named search option, if defined.
-
-        Return:
-            The option value or default
-
-        """
-        return self._options.get(name, default)
-
-    @abstractmethod
-    async def fetch(self, max_count: int) -> Sequence[StorageRecord]:
+    async def fetch(self, max_count: int = None) -> Sequence[StorageRecord]:
         """
         Fetch the next list of results from the store.
 
         Args:
-            max_count: Max number of records to return
+            max_count: Max number of records to return. If not provided,
+              defaults to the backend's preferred page size
 
         Returns:
-            A list of `StorageRecord`
+            A list of `StorageRecord` instances
 
         """
 
     async def fetch_all(self) -> Sequence[StorageRecord]:
         """Fetch all records from the query."""
         results = []
-        async for record in self:
-            results.append(record)
+        while True:
+            buf = await self.fetch()
+            if buf:
+                results.extend(buf)
+            else:
+                break
         return results
 
-    @abstractmethod
-    async def open(self):
-        """Start the search query."""
-
-    @abstractmethod
     async def close(self):
         """Dispose of the search query."""
 
-    async def __aenter__(self):
-        """Context manager enter."""
-        await self.open()
-        return self
-
-    async def __aexit__(self, exc_type, exc, tb):
-        """Context manager exit."""
-        await self.close()
-
     def __aiter__(self):
         """Async iterator magic method."""
-        return self
-
-    async def __anext__(self):
-        """Async iterator magic method."""
-        if not self.opened:
-            await self.open()
-        if not self._buffer:
-            self._buffer = await self.fetch(self.page_size)
-            if not self._buffer:
-                await self.close()
-                raise StopAsyncIteration
-        try:
-            return self._buffer.pop(0)
-        except IndexError:
-            raise StopAsyncIteration
+        return IterSearch(self)
 
     def __repr__(self) -> str:
         """Human readable representation of `BaseStorageRecordSearch`."""
         return "<{}>".format(self.__class__.__name__)
+
+
+class IterSearch:
+    def __init__(self, search: BaseStorageRecordSearch, page_size: int = None):
+        """Instantiate a new `IterSearch` instance."""
+        self._buffer = None
+        self._page_size = page_size
+        self._search = search
+
+    async def __anext__(self):
+        """Async iterator magic method."""
+        if not self._buffer:
+            self._buffer = await self._search.fetch(self._page_size) or []
+        try:
+            return self._buffer.pop(0)
+        except IndexError:
+            raise StopAsyncIteration
