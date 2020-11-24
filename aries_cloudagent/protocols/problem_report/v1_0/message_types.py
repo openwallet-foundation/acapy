@@ -8,7 +8,7 @@ SPEC_URI = (
 )
 
 # Message types
-PROBLEM_REPORT = f"notification/1.0/problem-report"
+PROBLEM_REPORT = "notification/1.0/problem-report"
 
 PROTOCOL_PACKAGE = "aries_cloudagent.protocols.problem_report.v1_0"
 

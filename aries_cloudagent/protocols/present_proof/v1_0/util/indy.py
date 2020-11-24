@@ -1,12 +1,12 @@
 """Utilities for dealing with indy conventions."""
 
-from .....holder.base import BaseHolder
+from .....indy.holder import IndyHolder
 
 from ..messages.inner.presentation_preview import PresentationPreview
 
 
 async def indy_proof_req_preview2indy_requested_creds(
-    indy_proof_req: dict, preview: PresentationPreview = None, *, holder: BaseHolder
+    indy_proof_req: dict, preview: PresentationPreview = None, *, holder: IndyHolder
 ):
     """
     Build indy requested-credentials structure.
@@ -36,7 +36,7 @@ async def indy_proof_req_preview2indy_requested_creds(
         )
         if not credentials:
             raise ValueError(
-                f"Could not automatically construct presentation for "
+                "Could not automatically construct presentation for "
                 + f"presentation request {indy_proof_req['name']}"
                 + f":{indy_proof_req['version']} because referent "
                 + f"{referent} did not produce any credentials."
@@ -61,11 +61,11 @@ async def indy_proof_req_preview2indy_requested_creds(
                     break
             else:
                 raise ValueError(
-                    f"Could not automatically construct presentation for "
+                    "Could not automatically construct presentation for "
                     + f"presentation request {indy_proof_req['name']}"
                     + f":{indy_proof_req['version']} because referent "
                     + f"{referent} did not produce any credentials matching "
-                    + f"proposed preview."
+                    + "proposed preview."
                 )
         else:
             cred_match = credentials[0]  # holder sorts
@@ -89,7 +89,7 @@ async def indy_proof_req_preview2indy_requested_creds(
         )
         if not credentials:
             raise ValueError(
-                f"Could not automatically construct presentation for "
+                "Could not automatically construct presentation for "
                 + f"presentation request {indy_proof_req['name']}"
                 + f":{indy_proof_req['version']} because predicate "
                 + f"referent {referent} did not produce any credentials."

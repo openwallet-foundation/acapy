@@ -5,8 +5,8 @@ from aiohttp import web as aio_web
 
 from aries_cloudagent.config.injection_context import InjectionContext
 from aries_cloudagent.connections.models.conn_record import ConnRecord
+from aries_cloudagent.indy.holder import IndyHolder
 from aries_cloudagent.storage.error import StorageNotFoundError
-from aries_cloudagent.holder.base import BaseHolder
 from aries_cloudagent.messaging.request_context import RequestContext
 
 from .. import routes as test_module

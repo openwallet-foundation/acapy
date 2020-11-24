@@ -8,10 +8,10 @@ SPEC_URI = (
 )
 
 # Message types
-CONNECTION_INVITATION = f"connections/1.0/invitation"
-CONNECTION_REQUEST = f"connections/1.0/request"
-CONNECTION_RESPONSE = f"connections/1.0/response"
-PROBLEM_REPORT = f"connections/1.0/problem_report"
+CONNECTION_INVITATION = "connections/1.0/invitation"
+CONNECTION_REQUEST = "connections/1.0/request"
+CONNECTION_RESPONSE = "connections/1.0/response"
+PROBLEM_REPORT = "connections/1.0/problem_report"
 
 PROTOCOL_PACKAGE = "aries_cloudagent.protocols.connections.v1_0"
 

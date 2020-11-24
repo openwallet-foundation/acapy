@@ -1,4 +1,4 @@
-"""Indy holder implementation."""
+"""Indy SDK holder implementation."""
 
 import json
 import logging
@@ -9,24 +9,24 @@ from typing import Sequence, Tuple, Union
 import indy.anoncreds
 from indy.error import ErrorCode, IndyError
 
-from ..indy import create_tails_reader
-from ..indy.error import IndyErrorHandler
-from ..ledger.base import BaseLedger
-from ..protocols.present_proof.v1_0.util.indy import indy_proof_req2non_revoc_intervals
-from ..storage.indy import IndyStorage
-from ..storage.error import StorageError, StorageNotFoundError
-from ..storage.record import StorageRecord
-from ..wallet.base import BaseWallet
-from ..wallet.error import WalletNotFoundError
+from ...ledger.base import BaseLedger
+from ...protocols.present_proof.v1_0.util.indy import indy_proof_req2non_revoc_intervals
+from ...storage.indy import IndyStorage
+from ...storage.error import StorageError, StorageNotFoundError
+from ...storage.record import StorageRecord
+from ...wallet.base import BaseWallet
+from ...wallet.error import WalletNotFoundError
 
-from .base import BaseHolder, HolderError
+from ..holder import IndyHolder, IndyHolderError
+
+from .error import IndyErrorHandler
+from .util import create_tails_reader
+
+LOGGER = logging.getLogger(__name__)
 
 
-class IndyHolder(BaseHolder):
+class IndySdkHolder(IndyHolder):
     """Indy holder class."""
-
-    RECORD_TYPE_MIME_TYPES = "attribute-mime-types"
-    CHUNK = 256
 
     def __init__(self, wallet: BaseWallet):
         """
@@ -36,7 +36,6 @@ class IndyHolder(BaseHolder):
             wallet: IndyWallet instance
 
         """
-        self.logger = logging.getLogger(__name__)
         self.wallet = wallet
 
     async def create_credential_request(
@@ -55,7 +54,9 @@ class IndyHolder(BaseHolder):
 
         """
 
-        with IndyErrorHandler("Error when creating credential request", HolderError):
+        with IndyErrorHandler(
+            "Error when creating credential request", IndyHolderError
+        ):
             (
                 credential_request_json,
                 credential_request_metadata_json,
@@ -67,7 +68,7 @@ class IndyHolder(BaseHolder):
                 self.wallet.master_secret_id,
             )
 
-        self.logger.debug(
+        LOGGER.debug(
             "Created credential request. "
             "credential_request_json=%s credential_request_metadata_json=%s",
             credential_request_json,
@@ -102,7 +103,9 @@ class IndyHolder(BaseHolder):
             the ID of the stored credential
 
         """
-        with IndyErrorHandler("Error when storing credential in wallet", HolderError):
+        with IndyErrorHandler(
+            "Error when storing credential in wallet", IndyHolderError
+        ):
             credential_id = await indy.anoncreds.prover_store_credential(
                 wallet_handle=self.wallet.handle,
                 cred_id=credential_id,
@@ -148,7 +151,7 @@ class IndyHolder(BaseHolder):
             cardinality = min(limit or record_count, record_count)
 
             with IndyErrorHandler(
-                "Error fetching credentials from wallet", HolderError
+                "Error fetching credentials from wallet", IndyHolderError
             ):
                 while len(creds) < cardinality:
                     batch = json.loads(
@@ -162,7 +165,7 @@ class IndyHolder(BaseHolder):
             return creds
 
         with IndyErrorHandler(
-            "Error when constructing wallet credential query", HolderError
+            "Error when constructing wallet credential query", IndyHolderError
         ):
             (
                 search_handle,
@@ -206,8 +209,8 @@ class IndyHolder(BaseHolder):
             CHUNK = min(IndyHolder.CHUNK, limit or IndyHolder.CHUNK)
 
             with IndyErrorHandler(
-                f"Error fetching credentials from wallet for presentation request",
-                HolderError,
+                "Error fetching credentials from wallet for presentation request",
+                IndyHolderError,
             ):
                 while not limit or len(creds) < limit:
                     batch = json.loads(
@@ -227,7 +230,7 @@ class IndyHolder(BaseHolder):
         non_revoc_intervals = indy_proof_req2non_revoc_intervals(presentation_request)
 
         with IndyErrorHandler(
-            "Error when constructing wallet credential query", HolderError
+            "Error when constructing wallet credential query", IndyHolderError
         ):
             search_handle = await (
                 indy.anoncreds.prover_search_credentials_for_proof_req(
@@ -307,7 +310,9 @@ class IndyHolder(BaseHolder):
                 )
             else:
                 raise IndyErrorHandler.wrap_error(
-                    err, f"Error when fetching credential {credential_id}", HolderError
+                    err,
+                    f"Error when fetching credential {credential_id}",
+                    IndyHolderError,
                 ) from err
 
         return credential_json
@@ -368,7 +373,7 @@ class IndyHolder(BaseHolder):
                 )
             else:
                 raise IndyErrorHandler.wrap_error(
-                    err, "Error when deleting credential", HolderError
+                    err, "Error when deleting credential", IndyHolderError
                 ) from err
 
     async def get_mime_type(
@@ -415,7 +420,7 @@ class IndyHolder(BaseHolder):
 
         """
 
-        with IndyErrorHandler("Error when constructing proof", HolderError):
+        with IndyErrorHandler("Error when constructing proof", IndyHolderError):
             presentation_json = await indy.anoncreds.prover_create_proof(
                 self.wallet.handle,
                 json.dumps(presentation_request),
@@ -450,7 +455,9 @@ class IndyHolder(BaseHolder):
 
         """
 
-        with IndyErrorHandler("Error when constructing revocation state", HolderError):
+        with IndyErrorHandler(
+            "Error when constructing revocation state", IndyHolderError
+        ):
             tails_file_reader = await create_tails_reader(tails_file_path)
             rev_state_json = await indy.anoncreds.create_revocation_state(
                 tails_file_reader,
