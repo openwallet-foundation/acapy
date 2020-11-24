@@ -3,9 +3,9 @@
 from ...didcomm_prefix import DIDCommPrefix
 
 # Message types
-MENU = f"action-menu/1.0/menu"
-MENU_REQUEST = f"action-menu/1.0/menu-request"
-PERFORM = f"action-menu/1.0/perform"
+MENU = "action-menu/1.0/menu"
+MENU_REQUEST = "action-menu/1.0/menu-request"
+PERFORM = "action-menu/1.0/perform"
 
 PROTOCOL_PACKAGE = "aries_cloudagent.protocols.actionmenu.v1_0"
 

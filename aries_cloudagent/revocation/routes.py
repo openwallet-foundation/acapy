@@ -17,7 +17,7 @@ from marshmallow import fields, validate, validates_schema
 from marshmallow.exceptions import ValidationError
 
 from ..indy.util import tails_path
-from ..issuer.base import IssuerError
+from ..indy.issuer import IndyIssuerError
 from ..ledger.error import LedgerError
 from ..messaging.credential_definitions.util import CRED_DEF_SENT_RECORD_TYPE
 from ..messaging.models.openapi import OpenAPISchema
@@ -283,7 +283,7 @@ async def revoke(request: web.BaseRequest):
         RevocationManagerError,
         RevocationError,
         StorageError,
-        IssuerError,
+        IndyIssuerError,
         LedgerError,
     ) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
@@ -313,7 +313,7 @@ async def publish_revocations(request: web.BaseRequest):
 
     try:
         results = await rev_manager.publish_pending_revocations(rrid2crid)
-    except (RevocationError, StorageError, IssuerError, LedgerError) as err:
+    except (RevocationError, StorageError, IndyIssuerError, LedgerError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
     return web.json_response({"rrid2crid": results})
 

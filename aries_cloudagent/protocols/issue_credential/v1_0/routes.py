@@ -12,7 +12,7 @@ from json.decoder import JSONDecodeError
 from marshmallow import fields, validate
 
 from ....connections.models.conn_record import ConnRecord
-from ....issuer.base import IssuerError
+from ....indy.issuer import IndyIssuerError
 from ....ledger.error import LedgerError
 from ....messaging.credential_definitions.util import CRED_DEF_TAGS
 from ....messaging.models.base import BaseModelError, OpenAPISchema
@@ -1046,7 +1046,12 @@ async def credential_exchange_issue(request: web.BaseRequest):
         ) = await credential_manager.issue_credential(cred_ex_record, comment=comment)
 
         result = cred_ex_record.serialize()
-    except (BaseModelError, CredentialManagerError, IssuerError, StorageError) as err:
+    except (
+        BaseModelError,
+        CredentialManagerError,
+        IndyIssuerError,
+        StorageError,
+    ) as err:
         await internal_error(
             err,
             web.HTTPBadRequest,

@@ -146,7 +146,7 @@ class TestPresentationRequestHandler(AsyncTestCase):
         ) as mock_pres_mgr, async_mock.patch.object(
             handler, "V10PresentationExchange", autospec=True
         ) as mock_pres_ex_rec, async_mock.patch.object(
-            handler, "BaseHolder", autospec=True
+            handler, "IndyHolder", autospec=True
         ) as mock_holder:
 
             mock_holder.get_credentials_for_presentation_request_by_referent = (
@@ -222,7 +222,7 @@ class TestPresentationRequestHandler(AsyncTestCase):
         ) as mock_pres_mgr, async_mock.patch.object(
             handler, "V10PresentationExchange", autospec=True
         ) as mock_pres_ex_rec, async_mock.patch.object(
-            handler, "BaseHolder", autospec=True
+            handler, "IndyHolder", autospec=True
         ) as mock_holder:
 
             mock_holder.get_credentials_for_presentation_request_by_referent = (
@@ -295,7 +295,7 @@ class TestPresentationRequestHandler(AsyncTestCase):
         ) as mock_pres_mgr, async_mock.patch.object(
             handler, "V10PresentationExchange", autospec=True
         ) as mock_pres_ex_rec, async_mock.patch.object(
-            handler, "BaseHolder", autospec=True
+            handler, "IndyHolder", autospec=True
         ) as mock_holder:
 
             mock_holder.get_credentials_for_presentation_request_by_referent = (
@@ -359,7 +359,7 @@ class TestPresentationRequestHandler(AsyncTestCase):
         ) as mock_pres_mgr, async_mock.patch.object(
             handler, "V10PresentationExchange", autospec=True
         ) as mock_pres_ex_rec, async_mock.patch.object(
-            handler, "BaseHolder", autospec=True
+            handler, "IndyHolder", autospec=True
         ) as mock_holder:
 
             mock_holder.get_credentials_for_presentation_request_by_referent = (
@@ -429,7 +429,7 @@ class TestPresentationRequestHandler(AsyncTestCase):
         ) as mock_pres_mgr, async_mock.patch.object(
             handler, "V10PresentationExchange", autospec=True
         ) as mock_pres_ex_rec, async_mock.patch.object(
-            handler, "BaseHolder", autospec=True
+            handler, "IndyHolder", autospec=True
         ) as mock_holder:
 
             mock_holder.get_credentials_for_presentation_request_by_referent = (
@@ -522,7 +522,7 @@ class TestPresentationRequestHandler(AsyncTestCase):
         ) as mock_pres_mgr, async_mock.patch.object(
             handler, "V10PresentationExchange", autospec=True
         ) as mock_pres_ex_rec, async_mock.patch.object(
-            handler, "BaseHolder", autospec=True
+            handler, "IndyHolder", autospec=True
         ) as mock_holder:
 
             mock_holder.get_credentials_for_presentation_request_by_referent = (
@@ -637,7 +637,7 @@ class TestPresentationRequestHandler(AsyncTestCase):
         ) as mock_pres_mgr, async_mock.patch.object(
             handler, "V10PresentationExchange", autospec=True
         ) as mock_pres_ex_rec, async_mock.patch.object(
-            handler, "BaseHolder", autospec=True
+            handler, "IndyHolder", autospec=True
         ) as mock_holder:
 
             by_reft = async_mock.CoroutineMock(
