@@ -23,7 +23,6 @@ class ConnectionResponse(AgentMessage):
         schema_class = "ConnectionResponseSchema"
         message_type = CONNECTION_RESPONSE
 
-    # CHANGES 2 BY HARSH MULTANi
     def __init__(self, *, connection: ConnectionDetail = None, my_role: str = None, their_role:str = None, **kwargs):
         """
         Initialize connection response object.

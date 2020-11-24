@@ -164,7 +164,7 @@ class CreateInvitationQueryStringSchema(OpenAPISchema):
 
     alias = fields.Str(
         description="Alias",
-        required=True,
+        required=False,
         example="Barry",
     )
     auto_accept = fields.Boolean(
