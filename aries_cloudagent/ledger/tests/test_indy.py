@@ -15,14 +15,12 @@ from ...ledger.indy import (
     IndyErrorHandler,
     IndyError,
     IndyLedger,
-    GENESIS_TRANSACTION_PATH,
     LedgerConfigError,
     LedgerError,
     LedgerTransactionError,
     Role,
     TAA_ACCEPTED_RECORD_TYPE,
 )
-from ...storage.indy import IndyStorage
 from ...storage.record import StorageRecord
 from ...wallet.base import DIDInfo
 
@@ -65,180 +63,45 @@ class TestIndyLedger(AsyncTestCase):
     )
     test_verkey = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
 
-    @async_mock.patch("indy.pool.create_pool_ledger_config")
-    @async_mock.patch("builtins.open")
-    async def test_init(self, mock_open, mock_create_config):
-        mock_open.return_value = async_mock.MagicMock()
-
+    async def test_init(self):
         mock_wallet = async_mock.MagicMock()
         mock_wallet.type = "indy"
-        ledger = IndyLedger("name", mock_wallet)
+        mock_pool = async_mock.MagicMock()
+        ledger = IndyLedger(mock_pool, mock_wallet)
 
-        assert ledger.pool_name == "name"
-        assert ledger.wallet is mock_wallet
-
-        await ledger.create_pool_config("genesis_transactions")
-
-        mock_open.assert_called_once_with(GENESIS_TRANSACTION_PATH, "w")
-        mock_open.return_value.__enter__.return_value.write.assert_called_once_with(
-            "genesis_transactions"
-        )
-        mock_create_config.assert_called_once_with(
-            "name", json.dumps({"genesis_txn": GENESIS_TRANSACTION_PATH})
-        )
-        assert ledger.did_to_nym(ledger.nym_to_did(self.test_did)) == self.test_did
-
-    @async_mock.patch("indy.pool.list_pools")
-    @async_mock.patch("builtins.open")
-    async def test_init_do_not_recreate(self, mock_open, mock_list_pools):
-        mock_open.return_value = async_mock.MagicMock()
-        mock_list_pools.return_value = [{"pool": "name"}, {"pool": "another"}]
-
-        mock_wallet = async_mock.MagicMock()
-        mock_wallet.type = "indy"
-        ledger = IndyLedger("name", mock_wallet)
         assert ledger.type == "indy"
-
-        assert ledger.pool_name == "name"
-        assert ledger.wallet is mock_wallet
-
-        with self.assertRaises(LedgerConfigError):
-            await ledger.create_pool_config("genesis_transactions", recreate=False)
-
-        mock_open.assert_called_once_with(GENESIS_TRANSACTION_PATH, "w")
-
-    @async_mock.patch("indy.pool.create_pool_ledger_config")
-    @async_mock.patch("indy.pool.delete_pool_ledger_config")
-    @async_mock.patch("indy.pool.list_pools")
-    @async_mock.patch("builtins.open")
-    async def test_init_recreate(
-        self, mock_open, mock_list_pools, mock_delete_config, mock_create_config
-    ):
-        mock_open.return_value = async_mock.MagicMock()
-        mock_list_pools.return_value = [{"pool": "name"}, {"pool": "another"}]
-        mock_delete_config.return_value = None
-
-        mock_wallet = async_mock.MagicMock()
-        mock_wallet.type = "indy"
-        ledger = IndyLedger("name", mock_wallet)
-
-        assert ledger.pool_name == "name"
-        assert ledger.wallet is mock_wallet
-
-        await ledger.create_pool_config("genesis_transactions", recreate=True)
-
-        mock_open.assert_called_once_with(GENESIS_TRANSACTION_PATH, "w")
-        mock_delete_config.assert_called_once_with("name")
-        mock_create_config.assert_called_once_with(
-            "name", json.dumps({"genesis_txn": GENESIS_TRANSACTION_PATH})
-        )
+        assert ledger.did_to_nym(ledger.nym_to_did(self.test_did)) == self.test_did
 
     async def test_init_non_indy(self):
         mock_wallet = async_mock.MagicMock()
         mock_wallet.type = "non-indy"
         with self.assertRaises(LedgerConfigError):
-            IndyLedger("name", mock_wallet)
+            mock_pool = async_mock.MagicMock()
+            mock_pool.name = "name"
+            IndyLedger(mock_pool, mock_wallet)
 
-    @async_mock.patch("indy.pool.set_protocol_version")
-    @async_mock.patch("indy.pool.open_pool_ledger")
-    @async_mock.patch("indy.pool.close_pool_ledger")
-    async def test_aenter_aexit(
-        self, mock_close_pool, mock_open_ledger, mock_set_proto
-    ):
+    async def test_submit_pool_closed(self):
         mock_wallet = async_mock.MagicMock()
         mock_wallet.type = "indy"
-        ledger = IndyLedger("name", mock_wallet)
-
-        async with ledger as led:
-            mock_set_proto.assert_called_once_with(2)
-            mock_open_ledger.assert_called_once_with("name", "{}")
-            assert led == ledger
-            mock_close_pool.assert_not_called()
-            assert led.pool_handle == mock_open_ledger.return_value
-
-        mock_close_pool.assert_called_once()
-        assert ledger.pool_handle == None
-
-    @async_mock.patch("indy.pool.set_protocol_version")
-    @async_mock.patch("indy.pool.open_pool_ledger")
-    @async_mock.patch("indy.pool.close_pool_ledger")
-    async def test_aenter_aexit_nested_keepalive(
-        self, mock_close_pool, mock_open_ledger, mock_set_proto
-    ):
-        mock_wallet = async_mock.MagicMock()
-        mock_wallet.type = "indy"
-        ledger = IndyLedger("name", mock_wallet, keepalive=1)
-
-        async with ledger as led0:
-            mock_set_proto.assert_called_once_with(2)
-            mock_open_ledger.assert_called_once_with("name", "{}")
-            assert led0 == ledger
-            mock_close_pool.assert_not_called()
-            assert led0.pool_handle == mock_open_ledger.return_value
-
-        async with ledger as led1:
-            assert ledger.ref_count == 1
-
-        mock_close_pool.assert_not_called()  # it's a future
-        assert ledger.pool_handle
-
-        await asyncio.sleep(1.01)
-        mock_close_pool.assert_called_once()
-        assert ledger.pool_handle == None
-
-    @async_mock.patch("indy.pool.set_protocol_version")
-    @async_mock.patch("indy.pool.open_pool_ledger")
-    @async_mock.patch("indy.pool.close_pool_ledger")
-    async def test_aenter_aexit_close_x(
-        self, mock_close_pool, mock_open_ledger, mock_set_proto
-    ):
-        mock_wallet = async_mock.MagicMock()
-        mock_wallet.type = "indy"
-        mock_close_pool.side_effect = IndyError(ErrorCode.PoolLedgerTimeout)
-        ledger = IndyLedger("name", mock_wallet)
-
-        with self.assertRaises(LedgerError):
-            async with ledger as led:
-                assert led.pool_handle == mock_open_ledger.return_value
-
-        assert ledger.pool_handle == mock_open_ledger.return_value
-        assert ledger.ref_count == 1
-
-    @async_mock.patch("indy.pool.set_protocol_version")
-    @async_mock.patch("indy.pool.create_pool_ledger_config")
-    @async_mock.patch("indy.pool.open_pool_ledger")
-    @async_mock.patch("indy.pool.close_pool_ledger")
-    async def test_submit_pool_closed(
-        self, mock_close_pool, mock_open_ledger, mock_create_config, mock_set_proto
-    ):
-        mock_wallet = async_mock.MagicMock()
-        mock_wallet.type = "indy"
-        ledger = IndyLedger("name", mock_wallet)
+        mock_pool = async_mock.MagicMock()
+        mock_pool.__aenter__ = async_mock.CoroutineMock(return_value=mock_pool)
+        mock_pool.opened = False
+        ledger = IndyLedger(mock_pool, mock_wallet)
 
         with self.assertRaises(ClosedPoolError) as context:
-            await ledger._submit("{}")
+            await ledger._submit("{}", False)
         assert "sign and submit request to closed pool" in str(context.exception)
 
-    @async_mock.patch("indy.pool.set_protocol_version")
-    @async_mock.patch("indy.pool.create_pool_ledger_config")
-    @async_mock.patch("indy.pool.open_pool_ledger")
-    @async_mock.patch("indy.pool.close_pool_ledger")
     @async_mock.patch("indy.ledger.sign_and_submit_request")
-    async def test_submit_signed(
-        self,
-        mock_sign_submit,
-        mock_close_pool,
-        mock_open_ledger,
-        mock_create_config,
-        mock_set_proto,
-    ):
-
+    async def test_submit_signed(self, mock_sign_submit):
         mock_sign_submit.return_value = '{"op": "REPLY"}'
 
         mock_wallet = async_mock.MagicMock()
         mock_wallet.type = "indy"
+        mock_pool = async_mock.MagicMock()
+        mock_pool.opened = True
 
-        ledger = IndyLedger("name", mock_wallet)
+        ledger = IndyLedger(mock_pool, mock_wallet)
 
         async with ledger:
             mock_wallet.get_public_did = async_mock.CoroutineMock()
@@ -256,23 +119,15 @@ class TestIndyLedger(AsyncTestCase):
             mock_wallet.get_public_did.assert_called_once_with()
 
             mock_sign_submit.assert_called_once_with(
-                ledger.pool_handle, mock_wallet.handle, mock_did.did, "{}"
+                mock_pool.handle, mock_wallet.handle, mock_did.did, "{}"
             )
 
-    @async_mock.patch("indy.pool.set_protocol_version")
-    @async_mock.patch("indy.pool.create_pool_ledger_config")
-    @async_mock.patch("indy.pool.open_pool_ledger")
-    @async_mock.patch("indy.pool.close_pool_ledger")
     @async_mock.patch("indy.ledger.sign_and_submit_request")
     @async_mock.patch("indy.ledger.append_txn_author_agreement_acceptance_to_request")
     async def test_submit_signed_taa_accept(
         self,
         mock_append_taa,
         mock_sign_submit,
-        mock_close_pool,
-        mock_open_ledger,
-        mock_create_config,
-        mock_set_proto,
     ):
 
         mock_append_taa.return_value = "{}"
@@ -281,7 +136,9 @@ class TestIndyLedger(AsyncTestCase):
         mock_wallet = async_mock.MagicMock()
         mock_wallet.type = "indy"
 
-        ledger = IndyLedger("name", mock_wallet)
+        mock_pool = async_mock.MagicMock()
+
+        ledger = IndyLedger(mock_pool, mock_wallet)
         ledger.get_latest_txn_author_acceptance = async_mock.CoroutineMock(
             return_value={
                 "text": "sample",
@@ -309,21 +166,13 @@ class TestIndyLedger(AsyncTestCase):
                 "{}", "sample", "0.0", "digest", "dummy", "now"
             )
             mock_sign_submit.assert_called_once_with(
-                ledger.pool_handle, ledger.wallet.handle, self.test_did, "{}"
+                ledger.pool.handle, ledger.wallet.handle, self.test_did, "{}"
             )
 
-    @async_mock.patch("indy.pool.set_protocol_version")
-    @async_mock.patch("indy.pool.create_pool_ledger_config")
-    @async_mock.patch("indy.pool.open_pool_ledger")
-    @async_mock.patch("indy.pool.close_pool_ledger")
     @async_mock.patch("indy.ledger.submit_request")
     async def test_submit_unsigned(
         self,
         mock_submit,
-        mock_close_pool,
-        mock_open_ledger,
-        mock_create_config,
-        mock_set_proto,
     ):
 
         mock_did = async_mock.MagicMock()
@@ -337,27 +186,21 @@ class TestIndyLedger(AsyncTestCase):
         mock_wallet.type = "indy"
         mock_wallet.get_public_did.return_value = future
 
-        ledger = IndyLedger("name", mock_wallet)
+        mock_pool = async_mock.MagicMock()
+
+        ledger = IndyLedger(mock_pool, mock_wallet)
 
         async with ledger:
             await ledger._submit("{}", False)
 
             mock_wallet.get_public_did.assert_not_called()
 
-            mock_submit.assert_called_once_with(ledger.pool_handle, "{}")
+            mock_submit.assert_called_once_with(ledger.pool.handle, "{}")
 
-    @async_mock.patch("indy.pool.set_protocol_version")
-    @async_mock.patch("indy.pool.create_pool_ledger_config")
-    @async_mock.patch("indy.pool.open_pool_ledger")
-    @async_mock.patch("indy.pool.close_pool_ledger")
     @async_mock.patch("indy.ledger.submit_request")
     async def test_submit_unsigned_ledger_transaction_error(
         self,
         mock_submit,
-        mock_close_pool,
-        mock_open_ledger,
-        mock_create_config,
-        mock_set_proto,
     ):
 
         mock_did = async_mock.MagicMock()
@@ -371,7 +214,9 @@ class TestIndyLedger(AsyncTestCase):
         mock_wallet.type = "indy"
         mock_wallet.get_public_did.return_value = future
 
-        ledger = IndyLedger("name", mock_wallet)
+        mock_pool = async_mock.MagicMock()
+
+        ledger = IndyLedger(mock_pool, mock_wallet)
 
         async with ledger:
             with self.assertRaises(LedgerTransactionError):
@@ -379,20 +224,12 @@ class TestIndyLedger(AsyncTestCase):
 
             mock_wallet.get_public_did.assert_not_called()
 
-            mock_submit.assert_called_once_with(ledger.pool_handle, "{}")
+            mock_submit.assert_called_once_with(ledger.pool.handle, "{}")
 
-    @async_mock.patch("indy.pool.set_protocol_version")
-    @async_mock.patch("indy.pool.create_pool_ledger_config")
-    @async_mock.patch("indy.pool.open_pool_ledger")
-    @async_mock.patch("indy.pool.close_pool_ledger")
     @async_mock.patch("indy.ledger.submit_request")
     async def test_submit_rejected(
         self,
         mock_submit,
-        mock_close_pool,
-        mock_open_ledger,
-        mock_create_config,
-        mock_set_proto,
     ):
 
         mock_did = async_mock.MagicMock()
@@ -406,7 +243,8 @@ class TestIndyLedger(AsyncTestCase):
         mock_wallet.type = "indy"
         mock_wallet.get_public_did.return_value = future
 
-        ledger = IndyLedger("name", mock_wallet)
+        mock_pool = async_mock.MagicMock()
+        ledger = IndyLedger(mock_pool, mock_wallet)
 
         async with ledger:
             with self.assertRaises(LedgerTransactionError) as context:
@@ -419,15 +257,14 @@ class TestIndyLedger(AsyncTestCase):
         mock_wallet.type = "indy"
         mock_wallet.get_public_did.return_value = future
 
-        ledger = IndyLedger("name", mock_wallet)
+        mock_pool = async_mock.MagicMock()
+        ledger = IndyLedger(mock_pool, mock_wallet)
 
         async with ledger:
             with self.assertRaises(LedgerTransactionError) as context:
                 await ledger._submit("{}", False)
             assert "Ledger rejected transaction request" in str(context.exception)
 
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._submit")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger.fetch_schema_by_id")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger.fetch_schema_by_seq_no")
@@ -440,14 +277,13 @@ class TestIndyLedger(AsyncTestCase):
         mock_fetch_schema_by_seq_no,
         mock_fetch_schema_by_id,
         mock_submit,
-        mock_close,
-        mock_open,
     ):
         mock_wallet = async_mock.MagicMock()
         mock_wallet.type = "indy"
 
         issuer = async_mock.MagicMock(IndyIssuer)
-        ledger = IndyLedger("name", mock_wallet)
+        mock_pool = async_mock.MagicMock()
+        ledger = IndyLedger(mock_pool, mock_wallet)
 
         issuer.create_schema.return_value = ("schema_issuer_did:name:1.0", "{}")
         mock_fetch_schema_by_id.return_value = None
@@ -491,10 +327,6 @@ class TestIndyLedger(AsyncTestCase):
 
             assert schema_id == issuer.create_schema.return_value[0]
 
-    @async_mock.patch("indy.pool.set_protocol_version")
-    @async_mock.patch("indy.pool.create_pool_ledger_config")
-    @async_mock.patch("indy.pool.open_pool_ledger")
-    @async_mock.patch("indy.pool.close_pool_ledger")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger.check_existing_schema")
     @async_mock.patch("aries_cloudagent.storage.indy.IndyStorage.add_record")
     @async_mock.patch("indy.ledger.build_schema_request")
@@ -503,10 +335,6 @@ class TestIndyLedger(AsyncTestCase):
         mock_build_schema_req,
         mock_add_record,
         mock_check_existing,
-        mock_close_pool,
-        mock_open_ledger,
-        mock_create_config,
-        mock_set_proto,
     ):
         # mock_did = async_mock.CoroutineMock()
 
@@ -523,7 +351,8 @@ class TestIndyLedger(AsyncTestCase):
 
         issuer = async_mock.MagicMock(IndyIssuer)
         issuer.create_schema.return_value = ("1", "{}")
-        ledger = IndyLedger("name", mock_wallet)
+        mock_pool = async_mock.MagicMock()
+        ledger = IndyLedger(mock_pool, mock_wallet)
 
         with async_mock.patch.object(
             ledger, "get_indy_storage", async_mock.MagicMock()
@@ -542,10 +371,6 @@ class TestIndyLedger(AsyncTestCase):
 
             mock_add_record.assert_not_called()
 
-    @async_mock.patch("indy.pool.set_protocol_version")
-    @async_mock.patch("indy.pool.create_pool_ledger_config")
-    @async_mock.patch("indy.pool.open_pool_ledger")
-    @async_mock.patch("indy.pool.close_pool_ledger")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger.check_existing_schema")
     @async_mock.patch("aries_cloudagent.storage.indy.IndyStorage.add_record")
     @async_mock.patch("indy.ledger.build_schema_request")
@@ -554,10 +379,6 @@ class TestIndyLedger(AsyncTestCase):
         mock_build_schema_req,
         mock_add_record,
         mock_check_existing,
-        mock_close_pool,
-        mock_open_ledger,
-        mock_create_config,
-        mock_set_proto,
     ):
 
         mock_wallet = async_mock.MagicMock()
@@ -573,7 +394,8 @@ class TestIndyLedger(AsyncTestCase):
 
         issuer = async_mock.MagicMock(IndyIssuer)
         issuer.create_schema.return_value = ("1", "{}")
-        ledger = IndyLedger("name", mock_wallet)
+        mock_pool = async_mock.MagicMock()
+        ledger = IndyLedger(mock_pool, mock_wallet)
         ledger._submit = async_mock.CoroutineMock(
             side_effect=LedgerTransactionError("UnauthorizedClientRequest")
         )
@@ -584,18 +406,10 @@ class TestIndyLedger(AsyncTestCase):
             )
             assert schema_id == fetch_schema_id
 
-    @async_mock.patch("indy.pool.set_protocol_version")
-    @async_mock.patch("indy.pool.create_pool_ledger_config")
-    @async_mock.patch("indy.pool.open_pool_ledger")
-    @async_mock.patch("indy.pool.close_pool_ledger")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger.check_existing_schema")
     async def test_send_schema_ledger_read_only(
         self,
         mock_check_existing,
-        mock_close_pool,
-        mock_open_ledger,
-        mock_create_config,
-        mock_set_proto,
     ):
 
         mock_wallet = async_mock.MagicMock()
@@ -611,7 +425,9 @@ class TestIndyLedger(AsyncTestCase):
 
         issuer = async_mock.MagicMock(IndyIssuer)
         issuer.create_schema.return_value = ("1", "{}")
-        ledger = IndyLedger("name", mock_wallet, read_only=True)
+        mock_pool = async_mock.MagicMock()
+        mock_pool.name = "name"
+        ledger = IndyLedger(mock_pool, mock_wallet, read_only=True)
 
         async with ledger:
             with self.assertRaises(LedgerError) as context:
@@ -620,18 +436,10 @@ class TestIndyLedger(AsyncTestCase):
                 )
             assert "read only" in str(context.exception)
 
-    @async_mock.patch("indy.pool.set_protocol_version")
-    @async_mock.patch("indy.pool.create_pool_ledger_config")
-    @async_mock.patch("indy.pool.open_pool_ledger")
-    @async_mock.patch("indy.pool.close_pool_ledger")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger.check_existing_schema")
     async def test_send_schema_issuer_error(
         self,
         mock_check_existing,
-        mock_close_pool,
-        mock_open_ledger,
-        mock_create_config,
-        mock_set_proto,
     ):
 
         mock_wallet = async_mock.MagicMock()
@@ -649,7 +457,8 @@ class TestIndyLedger(AsyncTestCase):
         issuer.create_schema = async_mock.CoroutineMock(
             side_effect=IndyIssuerError("dummy error")
         )
-        ledger = IndyLedger("name", mock_wallet)
+        mock_pool = async_mock.MagicMock()
+        ledger = IndyLedger(mock_pool, mock_wallet)
 
         async with ledger:
             with self.assertRaises(LedgerError) as context:
@@ -658,10 +467,6 @@ class TestIndyLedger(AsyncTestCase):
                 )
             assert "dummy error" in str(context.exception)
 
-    @async_mock.patch("indy.pool.set_protocol_version")
-    @async_mock.patch("indy.pool.create_pool_ledger_config")
-    @async_mock.patch("indy.pool.open_pool_ledger")
-    @async_mock.patch("indy.pool.close_pool_ledger")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger.check_existing_schema")
     @async_mock.patch("aries_cloudagent.storage.indy.IndyStorage.add_record")
     @async_mock.patch("indy.ledger.build_schema_request")
@@ -670,10 +475,6 @@ class TestIndyLedger(AsyncTestCase):
         mock_build_schema_req,
         mock_add_record,
         mock_check_existing,
-        mock_close_pool,
-        mock_open_ledger,
-        mock_create_config,
-        mock_set_proto,
     ):
 
         mock_wallet = async_mock.MagicMock()
@@ -689,7 +490,8 @@ class TestIndyLedger(AsyncTestCase):
 
         issuer = async_mock.MagicMock(IndyIssuer)
         issuer.create_schema.return_value = ("1", "{}")
-        ledger = IndyLedger("name", mock_wallet)
+        mock_pool = async_mock.MagicMock()
+        ledger = IndyLedger(mock_pool, mock_wallet)
         ledger._submit = async_mock.CoroutineMock(
             side_effect=LedgerTransactionError("Some other error message")
         )
@@ -700,8 +502,6 @@ class TestIndyLedger(AsyncTestCase):
                     issuer, "schema_name", "schema_version", [1, 2, 3]
                 )
 
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._submit")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger.fetch_schema_by_id")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger.fetch_schema_by_seq_no")
@@ -714,14 +514,13 @@ class TestIndyLedger(AsyncTestCase):
         mock_fetch_schema_by_seq_no,
         mock_fetch_schema_by_id,
         mock_submit,
-        mock_close,
-        mock_open,
     ):
         mock_wallet = async_mock.MagicMock()
         mock_wallet.type = "indy"
 
         issuer = async_mock.MagicMock(IndyIssuer)
-        ledger = IndyLedger("name", mock_wallet)
+        mock_pool = async_mock.MagicMock()
+        ledger = IndyLedger(mock_pool, mock_wallet)
 
         issuer.create_schema.return_value = ("schema_issuer_did:name:1.0", "{}")
         mock_fetch_schema_by_id.return_value = None
@@ -742,14 +541,10 @@ class TestIndyLedger(AsyncTestCase):
                 )
             assert "schema sequence number" in str(context.exception)
 
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger.fetch_schema_by_id")
     async def test_check_existing_schema(
         self,
         mock_fetch_schema_by_id,
-        mock_close,
-        mock_open,
     ):
         mock_wallet = async_mock.MagicMock()
         mock_wallet.type = "indy"
@@ -759,7 +554,8 @@ class TestIndyLedger(AsyncTestCase):
 
         mock_fetch_schema_by_id.return_value = {"attrNames": ["a", "b", "c"]}
 
-        ledger = IndyLedger("name", mock_wallet)
+        mock_pool = async_mock.MagicMock()
+        ledger = IndyLedger(mock_pool, mock_wallet)
         async with ledger:
             schema_id, schema_def = await ledger.check_existing_schema(
                 public_did=self.test_did,
@@ -777,8 +573,6 @@ class TestIndyLedger(AsyncTestCase):
                     attribute_names=["a", "b", "c", "d"],
                 )
 
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._submit")
     @async_mock.patch("indy.ledger.build_get_schema_request")
     @async_mock.patch("indy.ledger.parse_get_schema_response")
@@ -787,8 +581,6 @@ class TestIndyLedger(AsyncTestCase):
         mock_parse_get_schema_resp,
         mock_build_get_schema_req,
         mock_submit,
-        mock_close,
-        mock_open,
     ):
         mock_wallet = async_mock.MagicMock()
         mock_wallet.type = "indy"
@@ -800,7 +592,9 @@ class TestIndyLedger(AsyncTestCase):
 
         mock_submit.return_value = '{"result":{"seqNo":1}}'
 
-        ledger = IndyLedger("name", mock_wallet, cache=BasicCache())
+        mock_pool = async_mock.MagicMock()
+        mock_pool.name = "name"
+        ledger = IndyLedger(mock_pool, mock_wallet, cache=BasicCache())
 
         async with ledger:
             response = await ledger.get_schema("schema_id")
@@ -817,16 +611,12 @@ class TestIndyLedger(AsyncTestCase):
             response == await ledger.get_schema("schema_id")  # cover get-from-cache
             assert response == json.loads(mock_parse_get_schema_resp.return_value[1])
 
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._submit")
     @async_mock.patch("indy.ledger.build_get_schema_request")
     async def test_get_schema_not_found(
         self,
         mock_build_get_schema_req,
         mock_submit,
-        mock_close,
-        mock_open,
     ):
         mock_wallet = async_mock.MagicMock()
         mock_wallet.type = "indy"
@@ -836,7 +626,9 @@ class TestIndyLedger(AsyncTestCase):
 
         mock_submit.return_value = json.dumps({"result": {"seqNo": None}})
 
-        ledger = IndyLedger("name", mock_wallet, cache=BasicCache())
+        mock_pool = async_mock.MagicMock()
+        mock_pool.name = "name"
+        ledger = IndyLedger(mock_pool, mock_wallet, cache=BasicCache())
 
         async with ledger:
             response = await ledger.get_schema("schema_id")
@@ -849,8 +641,6 @@ class TestIndyLedger(AsyncTestCase):
 
             assert response is None
 
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._submit")
     @async_mock.patch("indy.ledger.build_get_txn_request")
     @async_mock.patch("indy.ledger.build_get_schema_request")
@@ -861,8 +651,6 @@ class TestIndyLedger(AsyncTestCase):
         mock_build_get_schema_req,
         mock_build_get_txn_req,
         mock_submit,
-        mock_close,
-        mock_open,
     ):
         mock_wallet = async_mock.MagicMock()
         mock_wallet.type = "indy"
@@ -894,7 +682,8 @@ class TestIndyLedger(AsyncTestCase):
             sub for sub in submissions
         ]  # becomes list iterator, unsubscriptable, in mock object
 
-        ledger = IndyLedger("name", mock_wallet)
+        mock_pool = async_mock.MagicMock()
+        ledger = IndyLedger(mock_pool, mock_wallet)
 
         async with ledger:
             response = await ledger.get_schema("999")
@@ -916,8 +705,6 @@ class TestIndyLedger(AsyncTestCase):
 
             assert response == json.loads(mock_parse_get_schema_resp.return_value[1])
 
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._submit")
     @async_mock.patch("indy.ledger.build_get_txn_request")
     @async_mock.patch("indy.ledger.build_get_schema_request")
@@ -928,8 +715,6 @@ class TestIndyLedger(AsyncTestCase):
         mock_build_get_schema_req,
         mock_build_get_txn_req,
         mock_submit,
-        mock_close,
-        mock_open,
     ):
         mock_wallet = async_mock.MagicMock()
         mock_wallet.type = "indy"
@@ -957,15 +742,14 @@ class TestIndyLedger(AsyncTestCase):
             sub for sub in submissions
         ]  # becomes list iterator, unsubscriptable, in mock object
 
-        ledger = IndyLedger("name", mock_wallet)
+        mock_pool = async_mock.MagicMock()
+        ledger = IndyLedger(mock_pool, mock_wallet)
 
         async with ledger:
             with self.assertRaises(LedgerTransactionError):
                 await ledger.get_schema("999")
 
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger.get_schema")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
     @async_mock.patch(
         "aries_cloudagent.ledger.indy.IndyLedger.fetch_credential_definition"
     )
@@ -980,8 +764,6 @@ class TestIndyLedger(AsyncTestCase):
         mock_search_records,
         mock_submit,
         mock_fetch_cred_def,
-        mock_close,
-        mock_open,
         mock_get_schema,
     ):
         mock_wallet = async_mock.MagicMock()
@@ -1015,7 +797,8 @@ class TestIndyLedger(AsyncTestCase):
             cred_def_json,
         )
         issuer.credential_definition_in_wallet.return_value = False
-        ledger = IndyLedger("name", mock_wallet)
+        mock_pool = async_mock.MagicMock()
+        ledger = IndyLedger(mock_pool, mock_wallet)
 
         schema_id = "schema_issuer_did:name:1.0"
         tag = "default"
@@ -1051,8 +834,6 @@ class TestIndyLedger(AsyncTestCase):
             mock_build_cred_def.assert_called_once_with(mock_did.did, cred_def_json)
 
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger.get_schema")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
     @async_mock.patch(
         "aries_cloudagent.ledger.indy.IndyLedger.fetch_credential_definition"
     )
@@ -1067,8 +848,6 @@ class TestIndyLedger(AsyncTestCase):
         mock_search_records,
         mock_submit,
         mock_fetch_cred_def,
-        mock_close,
-        mock_open,
         mock_get_schema,
     ):
         mock_wallet = async_mock.MagicMock()
@@ -1102,7 +881,8 @@ class TestIndyLedger(AsyncTestCase):
             cred_def_json,
         )
         issuer.credential_definition_in_wallet.return_value = True
-        ledger = IndyLedger("name", mock_wallet)
+        mock_pool = async_mock.MagicMock()
+        ledger = IndyLedger(mock_pool, mock_wallet)
 
         schema_id = "schema_issuer_did:name:1.0"
         tag = "default"
@@ -1138,12 +918,8 @@ class TestIndyLedger(AsyncTestCase):
                 mock_get_storage.assert_not_called()
 
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger.get_schema")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
     async def test_send_credential_definition_no_such_schema(
         self,
-        mock_close,
-        mock_open,
         mock_get_schema,
     ):
         mock_wallet = async_mock.MagicMock()
@@ -1152,7 +928,8 @@ class TestIndyLedger(AsyncTestCase):
         mock_get_schema.return_value = {}
 
         issuer = async_mock.MagicMock(IndyIssuer)
-        ledger = IndyLedger("name", mock_wallet)
+        mock_pool = async_mock.MagicMock()
+        ledger = IndyLedger(mock_pool, mock_wallet)
 
         schema_id = "schema_issuer_did:name:1.0"
         tag = "default"
@@ -1166,8 +943,6 @@ class TestIndyLedger(AsyncTestCase):
                 )
 
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger.get_schema")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
     @async_mock.patch(
         "aries_cloudagent.ledger.indy.IndyLedger.fetch_credential_definition"
     )
@@ -1182,8 +957,6 @@ class TestIndyLedger(AsyncTestCase):
         mock_search_records,
         mock_submit,
         mock_fetch_cred_def,
-        mock_close,
-        mock_open,
         mock_get_schema,
     ):
         mock_wallet = async_mock.MagicMock()
@@ -1199,7 +972,8 @@ class TestIndyLedger(AsyncTestCase):
         issuer.credential_definition_in_wallet.side_effect = IndyIssuerError(
             "common IO error"
         )
-        ledger = IndyLedger("name", mock_wallet)
+        mock_pool = async_mock.MagicMock()
+        ledger = IndyLedger(mock_pool, mock_wallet)
 
         schema_id = "schema_issuer_did:name:1.0"
         tag = "default"
@@ -1213,16 +987,12 @@ class TestIndyLedger(AsyncTestCase):
                 )
 
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger.get_schema")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
     @async_mock.patch(
         "aries_cloudagent.ledger.indy.IndyLedger.fetch_credential_definition"
     )
     async def test_send_credential_definition_cred_def_in_wallet_not_ledger(
         self,
         mock_fetch_cred_def,
-        mock_close,
-        mock_open,
         mock_get_schema,
     ):
         mock_wallet = async_mock.MagicMock()
@@ -1246,7 +1016,8 @@ class TestIndyLedger(AsyncTestCase):
         mock_fetch_cred_def.return_value = {}
 
         issuer = async_mock.MagicMock(IndyIssuer)
-        ledger = IndyLedger("name", mock_wallet)
+        mock_pool = async_mock.MagicMock()
+        ledger = IndyLedger(mock_pool, mock_wallet)
 
         schema_id = "schema_issuer_did:name:1.0"
         tag = "default"
@@ -1260,16 +1031,12 @@ class TestIndyLedger(AsyncTestCase):
                 )
 
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger.get_schema")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
     @async_mock.patch(
         "aries_cloudagent.ledger.indy.IndyLedger.fetch_credential_definition"
     )
     async def test_send_credential_definition_cred_def_not_on_ledger_wallet_check_x(
         self,
         mock_fetch_cred_def,
-        mock_close,
-        mock_open,
         mock_get_schema,
     ):
         mock_wallet = async_mock.MagicMock()
@@ -1296,7 +1063,8 @@ class TestIndyLedger(AsyncTestCase):
         issuer.credential_definition_in_wallet = async_mock.CoroutineMock(
             side_effect=IndyIssuerError("dummy error")
         )
-        ledger = IndyLedger("name", mock_wallet)
+        mock_pool = async_mock.MagicMock()
+        ledger = IndyLedger(mock_pool, mock_wallet)
 
         schema_id = "schema_issuer_did:name:1.0"
         tag = "default"
@@ -1311,16 +1079,12 @@ class TestIndyLedger(AsyncTestCase):
             assert "dummy error" in str(context.exception)
 
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger.get_schema")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
     @async_mock.patch(
         "aries_cloudagent.ledger.indy.IndyLedger.fetch_credential_definition"
     )
     async def test_send_credential_definition_cred_def_not_on_ledger_nor_wallet_send_x(
         self,
         mock_fetch_cred_def,
-        mock_close,
-        mock_open,
         mock_get_schema,
     ):
         mock_wallet = async_mock.MagicMock()
@@ -1350,7 +1114,8 @@ class TestIndyLedger(AsyncTestCase):
         issuer.create_and_store_credential_definition = async_mock.CoroutineMock(
             side_effect=IndyIssuerError("dummy error")
         )
-        ledger = IndyLedger("name", mock_wallet)
+        mock_pool = async_mock.MagicMock()
+        ledger = IndyLedger(mock_pool, mock_wallet)
 
         schema_id = "schema_issuer_did:name:1.0"
         tag = "default"
@@ -1365,16 +1130,12 @@ class TestIndyLedger(AsyncTestCase):
             assert "dummy error" in str(context.exception)
 
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger.get_schema")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
     @async_mock.patch(
         "aries_cloudagent.ledger.indy.IndyLedger.fetch_credential_definition"
     )
     async def test_send_credential_definition_read_only(
         self,
         mock_fetch_cred_def,
-        mock_close,
-        mock_open,
         mock_get_schema,
     ):
         mock_wallet = async_mock.MagicMock()
@@ -1404,7 +1165,9 @@ class TestIndyLedger(AsyncTestCase):
         issuer.create_and_store_credential_definition = async_mock.CoroutineMock(
             return_value=("cred-def-id", "cred-def-json")
         )
-        ledger = IndyLedger("name", mock_wallet, read_only=True)
+        mock_pool = async_mock.MagicMock()
+        mock_pool.name = "name"
+        ledger = IndyLedger(mock_pool, mock_wallet, read_only=True)
 
         schema_id = "schema_issuer_did:name:1.0"
         tag = "default"
@@ -1419,16 +1182,12 @@ class TestIndyLedger(AsyncTestCase):
             assert "read only" in str(context.exception)
 
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger.get_schema")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
     @async_mock.patch(
         "aries_cloudagent.ledger.indy.IndyLedger.fetch_credential_definition"
     )
     async def test_send_credential_definition_cred_def_on_ledger_not_in_wallet(
         self,
         mock_fetch_cred_def,
-        mock_close,
-        mock_open,
         mock_get_schema,
     ):
         mock_wallet = async_mock.MagicMock()
@@ -1455,7 +1214,8 @@ class TestIndyLedger(AsyncTestCase):
         issuer.credential_definition_in_wallet = async_mock.CoroutineMock(
             return_value=False
         )
-        ledger = IndyLedger("name", mock_wallet)
+        mock_pool = async_mock.MagicMock()
+        ledger = IndyLedger(mock_pool, mock_wallet)
 
         schema_id = "schema_issuer_did:name:1.0"
         tag = "default"
@@ -1469,8 +1229,6 @@ class TestIndyLedger(AsyncTestCase):
                 )
 
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger.get_schema")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
     @async_mock.patch(
         "aries_cloudagent.ledger.indy.IndyLedger.fetch_credential_definition"
     )
@@ -1485,8 +1243,6 @@ class TestIndyLedger(AsyncTestCase):
         mock_search_records,
         mock_submit,
         mock_fetch_cred_def,
-        mock_close,
-        mock_open,
         mock_get_schema,
     ):
         mock_wallet = async_mock.MagicMock()
@@ -1519,7 +1275,8 @@ class TestIndyLedger(AsyncTestCase):
             cred_def_id,
             cred_def_json,
         )
-        ledger = IndyLedger("name", mock_wallet)
+        mock_pool = async_mock.MagicMock()
+        ledger = IndyLedger(mock_pool, mock_wallet)
 
         schema_id = "schema_issuer_did:name:1.0"
         tag = "default"
@@ -1554,8 +1311,6 @@ class TestIndyLedger(AsyncTestCase):
             mock_build_cred_def.assert_not_called()
 
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger.get_schema")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
     @async_mock.patch(
         "aries_cloudagent.ledger.indy.IndyLedger.fetch_credential_definition"
     )
@@ -1570,8 +1325,6 @@ class TestIndyLedger(AsyncTestCase):
         mock_search_records,
         mock_submit,
         mock_fetch_cred_def,
-        mock_close,
-        mock_open,
         mock_get_schema,
     ):
         mock_wallet = async_mock.MagicMock()
@@ -1602,7 +1355,8 @@ class TestIndyLedger(AsyncTestCase):
         issuer.create_and_store_credential_definition.side_effect = IndyIssuerError(
             "invalid structure"
         )
-        ledger = IndyLedger("name", mock_wallet)
+        mock_pool = async_mock.MagicMock()
+        ledger = IndyLedger(mock_pool, mock_wallet)
 
         schema_id = "schema_issuer_did:name:1.0"
         tag = "default"
@@ -1618,8 +1372,6 @@ class TestIndyLedger(AsyncTestCase):
                     issuer, schema_id, None, tag
                 )
 
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._submit")
     @async_mock.patch("indy.ledger.build_get_cred_def_request")
     @async_mock.patch("indy.ledger.parse_get_cred_def_response")
@@ -1628,8 +1380,6 @@ class TestIndyLedger(AsyncTestCase):
         mock_parse_get_cred_def_resp,
         mock_build_get_cred_def_req,
         mock_submit,
-        mock_close,
-        mock_open,
     ):
         mock_wallet = async_mock.MagicMock()
         mock_wallet.type = "indy"
@@ -1641,7 +1391,9 @@ class TestIndyLedger(AsyncTestCase):
             json.dumps({"result": {"seqNo": 1}}),
         )
 
-        ledger = IndyLedger("name", mock_wallet, cache=BasicCache())
+        mock_pool = async_mock.MagicMock()
+        mock_pool.name = "name"
+        ledger = IndyLedger(mock_pool, mock_wallet, cache=BasicCache())
 
         async with ledger:
             response = await ledger.get_credential_definition("cred_def_id")
@@ -1664,8 +1416,6 @@ class TestIndyLedger(AsyncTestCase):
             )
             assert response == json.loads(mock_parse_get_cred_def_resp.return_value[1])
 
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._submit")
     @async_mock.patch("indy.ledger.build_get_cred_def_request")
     @async_mock.patch("indy.ledger.parse_get_cred_def_response")
@@ -1674,8 +1424,6 @@ class TestIndyLedger(AsyncTestCase):
         mock_parse_get_cred_def_resp,
         mock_build_get_cred_def_req,
         mock_submit,
-        mock_close,
-        mock_open,
     ):
         mock_wallet = async_mock.MagicMock()
         mock_wallet.type = "indy"
@@ -1686,7 +1434,8 @@ class TestIndyLedger(AsyncTestCase):
             error_code=ErrorCode.LedgerNotFound, error_details={"message": "not today"}
         )
 
-        ledger = IndyLedger("name", mock_wallet)
+        mock_pool = async_mock.MagicMock()
+        ledger = IndyLedger(mock_pool, mock_wallet)
 
         async with ledger:
             response = await ledger.get_credential_definition("cred_def_id")
@@ -1704,8 +1453,6 @@ class TestIndyLedger(AsyncTestCase):
 
             assert response is None
 
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._submit")
     @async_mock.patch("indy.ledger.build_get_cred_def_request")
     @async_mock.patch("indy.ledger.parse_get_cred_def_response")
@@ -1714,8 +1461,6 @@ class TestIndyLedger(AsyncTestCase):
         mock_parse_get_cred_def_resp,
         mock_build_get_cred_def_req,
         mock_submit,
-        mock_close,
-        mock_open,
     ):
         mock_wallet = async_mock.MagicMock()
         mock_wallet.type = "indy"
@@ -1727,19 +1472,20 @@ class TestIndyLedger(AsyncTestCase):
             error_details={"message": "not today"},
         )
 
-        ledger = IndyLedger("name", mock_wallet)
+        mock_pool = async_mock.MagicMock()
+        ledger = IndyLedger(mock_pool, mock_wallet)
 
         async with ledger:
             with self.assertRaises(LedgerError) as context:
                 await ledger.fetch_credential_definition("cred_def_id")
             assert "not today" in str(context.exception)
 
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
     @async_mock.patch("indy.ledger.build_get_nym_request")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._submit")
     async def test_get_key_for_did(
-        self, mock_submit, mock_build_get_nym_req, mock_close, mock_open
+        self,
+        mock_submit,
+        mock_build_get_nym_req,
     ):
         mock_wallet = async_mock.MagicMock()
         mock_wallet.type = "indy"
@@ -1747,7 +1493,8 @@ class TestIndyLedger(AsyncTestCase):
         mock_submit.return_value = json.dumps(
             {"result": {"data": json.dumps({"verkey": self.test_verkey})}}
         )
-        ledger = IndyLedger("name", mock_wallet)
+        mock_pool = async_mock.MagicMock()
+        ledger = IndyLedger(mock_pool, mock_wallet)
 
         async with ledger:
             mock_wallet.get_public_did = async_mock.CoroutineMock(
@@ -1764,12 +1511,12 @@ class TestIndyLedger(AsyncTestCase):
             )
             assert response == self.test_verkey
 
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
     @async_mock.patch("indy.ledger.build_get_attrib_request")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._submit")
     async def test_get_endpoint_for_did(
-        self, mock_submit, mock_build_get_attrib_req, mock_close, mock_open
+        self,
+        mock_submit,
+        mock_build_get_attrib_req,
     ):
         mock_wallet = async_mock.MagicMock()
         mock_wallet.type = "indy"
@@ -1778,7 +1525,8 @@ class TestIndyLedger(AsyncTestCase):
         mock_submit.return_value = json.dumps(
             {"result": {"data": json.dumps({"endpoint": {"endpoint": endpoint}})}}
         )
-        ledger = IndyLedger("name", mock_wallet)
+        mock_pool = async_mock.MagicMock()
+        ledger = IndyLedger(mock_pool, mock_wallet)
 
         async with ledger:
             mock_wallet.get_public_did = async_mock.CoroutineMock(
@@ -1795,12 +1543,12 @@ class TestIndyLedger(AsyncTestCase):
             )
             assert response == endpoint
 
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
     @async_mock.patch("indy.ledger.build_get_attrib_request")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._submit")
     async def test_get_endpoint_of_type_profile_for_did(
-        self, mock_submit, mock_build_get_attrib_req, mock_close, mock_open
+        self,
+        mock_submit,
+        mock_build_get_attrib_req,
     ):
         mock_wallet = async_mock.MagicMock()
         mock_wallet.type = "indy"
@@ -1816,7 +1564,8 @@ class TestIndyLedger(AsyncTestCase):
                 }
             }
         )
-        ledger = IndyLedger("name", mock_wallet)
+        mock_pool = async_mock.MagicMock()
+        ledger = IndyLedger(mock_pool, mock_wallet)
 
         async with ledger:
             mock_wallet.get_public_did = async_mock.CoroutineMock(
@@ -1833,12 +1582,12 @@ class TestIndyLedger(AsyncTestCase):
             )
             assert response == endpoint
 
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
     @async_mock.patch("indy.ledger.build_get_attrib_request")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._submit")
     async def test_get_all_endpoints_for_did(
-        self, mock_submit, mock_build_get_attrib_req, mock_close, mock_open
+        self,
+        mock_submit,
+        mock_build_get_attrib_req,
     ):
         mock_wallet = async_mock.MagicMock()
         mock_wallet.type = "indy"
@@ -1849,7 +1598,8 @@ class TestIndyLedger(AsyncTestCase):
             {"endpoint": {"endpoint": default_endpoint, "profile": profile_endpoint}}
         )
         mock_submit.return_value = json.dumps({"result": {"data": data_json}})
-        ledger = IndyLedger("name", mock_wallet)
+        mock_pool = async_mock.MagicMock()
+        ledger = IndyLedger(mock_pool, mock_wallet)
 
         async with ledger:
             mock_wallet.get_public_did = async_mock.CoroutineMock(
@@ -1866,12 +1616,12 @@ class TestIndyLedger(AsyncTestCase):
             )
             assert response == json.loads(data_json).get("endpoint")
 
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
     @async_mock.patch("indy.ledger.build_get_attrib_request")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._submit")
     async def test_get_all_endpoints_for_did_none(
-        self, mock_submit, mock_build_get_attrib_req, mock_close, mock_open
+        self,
+        mock_submit,
+        mock_build_get_attrib_req,
     ):
         mock_wallet = async_mock.MagicMock()
         mock_wallet.type = "indy"
@@ -1879,7 +1629,8 @@ class TestIndyLedger(AsyncTestCase):
         profile_endpoint = "http://company.com/masterdata"
         default_endpoint = "http://agent.company.com"
         mock_submit.return_value = json.dumps({"result": {"data": None}})
-        ledger = IndyLedger("name", mock_wallet)
+        mock_pool = async_mock.MagicMock()
+        ledger = IndyLedger(mock_pool, mock_wallet)
 
         async with ledger:
             mock_wallet.get_public_did = async_mock.CoroutineMock(
@@ -1896,12 +1647,12 @@ class TestIndyLedger(AsyncTestCase):
             )
             assert response is None
 
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
     @async_mock.patch("indy.ledger.build_get_attrib_request")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._submit")
     async def test_get_endpoint_for_did_address_none(
-        self, mock_submit, mock_build_get_attrib_req, mock_close, mock_open
+        self,
+        mock_submit,
+        mock_build_get_attrib_req,
     ):
         mock_wallet = async_mock.MagicMock()
         mock_wallet.type = "indy"
@@ -1909,7 +1660,8 @@ class TestIndyLedger(AsyncTestCase):
         mock_submit.return_value = json.dumps(
             {"result": {"data": json.dumps({"endpoint": None})}}
         )
-        ledger = IndyLedger("name", mock_wallet)
+        mock_pool = async_mock.MagicMock()
+        ledger = IndyLedger(mock_pool, mock_wallet)
 
         async with ledger:
             mock_wallet.get_public_did = async_mock.CoroutineMock(
@@ -1926,18 +1678,19 @@ class TestIndyLedger(AsyncTestCase):
             )
             assert response is None
 
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
     @async_mock.patch("indy.ledger.build_get_attrib_request")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._submit")
     async def test_get_endpoint_for_did_no_endpoint(
-        self, mock_submit, mock_build_get_attrib_req, mock_close, mock_open
+        self,
+        mock_submit,
+        mock_build_get_attrib_req,
     ):
         mock_wallet = async_mock.MagicMock()
         mock_wallet.type = "indy"
 
         mock_submit.return_value = json.dumps({"result": {"data": None}})
-        ledger = IndyLedger("name", mock_wallet)
+        mock_pool = async_mock.MagicMock()
+        ledger = IndyLedger(mock_pool, mock_wallet)
 
         async with ledger:
             mock_wallet.get_public_did = async_mock.CoroutineMock(
@@ -1954,8 +1707,6 @@ class TestIndyLedger(AsyncTestCase):
             )
             assert response is None
 
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
     @async_mock.patch("indy.ledger.build_get_attrib_request")
     @async_mock.patch("indy.ledger.build_attrib_request")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._submit")
@@ -1964,8 +1715,6 @@ class TestIndyLedger(AsyncTestCase):
         mock_submit,
         mock_build_attrib_req,
         mock_build_get_attrib_req,
-        mock_close,
-        mock_open,
     ):
         mock_wallet = async_mock.MagicMock()
         mock_wallet.type = "indy"
@@ -1981,7 +1730,8 @@ class TestIndyLedger(AsyncTestCase):
             )
             for i in range(len(endpoint))
         ]
-        ledger = IndyLedger("name", mock_wallet)
+        mock_pool = async_mock.MagicMock()
+        ledger = IndyLedger(mock_pool, mock_wallet)
 
         async with ledger:
             mock_wallet.get_public_did = async_mock.CoroutineMock(
@@ -2003,8 +1753,6 @@ class TestIndyLedger(AsyncTestCase):
             )
             assert response
 
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
     @async_mock.patch("indy.ledger.build_get_attrib_request")
     @async_mock.patch("indy.ledger.build_attrib_request")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._submit")
@@ -2013,14 +1761,13 @@ class TestIndyLedger(AsyncTestCase):
         mock_submit,
         mock_build_attrib_req,
         mock_build_get_attrib_req,
-        mock_close,
-        mock_open,
     ):
         mock_wallet = async_mock.MagicMock()
         mock_wallet.type = "indy"
 
         endpoint = "http://new.aries.ca"
-        ledger = IndyLedger("name", mock_wallet)
+        mock_pool = async_mock.MagicMock()
+        ledger = IndyLedger(mock_pool, mock_wallet)
 
         async with ledger:
             with async_mock.patch.object(
@@ -2046,8 +1793,6 @@ class TestIndyLedger(AsyncTestCase):
                 )
                 assert response
 
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
     @async_mock.patch("indy.ledger.build_get_attrib_request")
     @async_mock.patch("indy.ledger.build_attrib_request")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._submit")
@@ -2056,8 +1801,6 @@ class TestIndyLedger(AsyncTestCase):
         mock_submit,
         mock_build_attrib_req,
         mock_build_get_attrib_req,
-        mock_close,
-        mock_open,
     ):
         mock_wallet = async_mock.MagicMock()
         mock_wallet.type = "indy"
@@ -2076,7 +1819,8 @@ class TestIndyLedger(AsyncTestCase):
             )
             for i in range(len(endpoint))
         ]
-        ledger = IndyLedger("name", mock_wallet)
+        mock_pool = async_mock.MagicMock()
+        ledger = IndyLedger(mock_pool, mock_wallet)
 
         async with ledger:
             mock_wallet.get_public_did = async_mock.CoroutineMock(
@@ -2100,12 +1844,12 @@ class TestIndyLedger(AsyncTestCase):
             )
             assert response
 
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
     @async_mock.patch("indy.ledger.build_get_attrib_request")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._submit")
     async def test_update_endpoint_for_did_duplicate(
-        self, mock_submit, mock_build_get_attrib_req, mock_close, mock_open
+        self,
+        mock_submit,
+        mock_build_get_attrib_req,
     ):
         mock_wallet = async_mock.MagicMock()
         mock_wallet.type = "indy"
@@ -2114,7 +1858,8 @@ class TestIndyLedger(AsyncTestCase):
         mock_submit.return_value = json.dumps(
             {"result": {"data": json.dumps({"endpoint": {"endpoint": endpoint}})}}
         )
-        ledger = IndyLedger("name", mock_wallet)
+        mock_pool = async_mock.MagicMock()
+        ledger = IndyLedger(mock_pool, mock_wallet)
 
         async with ledger:
             mock_wallet.get_public_did = async_mock.CoroutineMock(
@@ -2131,12 +1876,12 @@ class TestIndyLedger(AsyncTestCase):
             )
             assert not response
 
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
     @async_mock.patch("indy.ledger.build_get_attrib_request")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._submit")
     async def test_update_endpoint_for_did_read_only(
-        self, mock_submit, mock_build_get_attrib_req, mock_close, mock_open
+        self,
+        mock_submit,
+        mock_build_get_attrib_req,
     ):
         mock_wallet = async_mock.MagicMock()
         mock_wallet.type = "indy"
@@ -2145,7 +1890,9 @@ class TestIndyLedger(AsyncTestCase):
         mock_submit.return_value = json.dumps(
             {"result": {"data": json.dumps({"endpoint": {"endpoint": endpoint}})}}
         )
-        ledger = IndyLedger("name", mock_wallet, read_only=True)
+        mock_pool = async_mock.MagicMock()
+        mock_pool.name = "name"
+        ledger = IndyLedger(mock_pool, mock_wallet, read_only=True)
 
         async with ledger:
             mock_wallet.get_public_did = async_mock.CoroutineMock(
@@ -2155,12 +1902,12 @@ class TestIndyLedger(AsyncTestCase):
                 await ledger.update_endpoint_for_did(self.test_did, "distinct endpoint")
             assert "read only" in str(context.exception)
 
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
     @async_mock.patch("indy.ledger.build_nym_request")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._submit")
     async def test_register_nym(
-        self, mock_submit, mock_build_nym_req, mock_close, mock_open
+        self,
+        mock_submit,
+        mock_build_nym_req,
     ):
         mock_wallet = async_mock.MagicMock(
             type="indy",
@@ -2168,7 +1915,8 @@ class TestIndyLedger(AsyncTestCase):
             replace_local_did_metadata=async_mock.CoroutineMock(),
         )
 
-        ledger = IndyLedger("name", mock_wallet)
+        mock_pool = async_mock.MagicMock()
+        ledger = IndyLedger(mock_pool, mock_wallet)
 
         async with ledger:
             mock_wallet.get_public_did = async_mock.CoroutineMock(
@@ -2186,12 +1934,12 @@ class TestIndyLedger(AsyncTestCase):
                 sign_did=mock_wallet.get_public_did.return_value,
             )
 
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
     @async_mock.patch("indy.ledger.build_nym_request")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._submit")
     async def test_register_nym_ledger_x(
-        self, mock_submit, mock_build_nym_req, mock_close, mock_open
+        self,
+        mock_submit,
+        mock_build_nym_req,
     ):
         mock_wallet = async_mock.MagicMock()
         mock_wallet.type = "indy"
@@ -2201,7 +1949,8 @@ class TestIndyLedger(AsyncTestCase):
             error_details={"message": "not today"},
         )
 
-        ledger = IndyLedger("name", mock_wallet)
+        mock_pool = async_mock.MagicMock()
+        ledger = IndyLedger(mock_pool, mock_wallet)
 
         async with ledger:
             mock_wallet.get_public_did = async_mock.CoroutineMock(
@@ -2212,17 +1961,19 @@ class TestIndyLedger(AsyncTestCase):
                     self.test_did, self.test_verkey, "alias", None
                 )
 
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
     @async_mock.patch("indy.ledger.build_nym_request")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._submit")
     async def test_register_nym_read_only(
-        self, mock_submit, mock_build_nym_req, mock_close, mock_open
+        self,
+        mock_submit,
+        mock_build_nym_req,
     ):
         mock_wallet = async_mock.MagicMock()
         mock_wallet.type = "indy"
 
-        ledger = IndyLedger("name", mock_wallet, read_only=True)
+        mock_pool = async_mock.MagicMock()
+        mock_pool.name = "name"
+        ledger = IndyLedger(mock_pool, mock_wallet, read_only=True)
 
         async with ledger:
             mock_wallet.get_public_did = async_mock.CoroutineMock(
@@ -2234,12 +1985,12 @@ class TestIndyLedger(AsyncTestCase):
                 )
             assert "read only" in str(context.exception)
 
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
     @async_mock.patch("indy.ledger.build_get_nym_request")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._submit")
     async def test_get_nym_role(
-        self, mock_submit, mock_build_get_nym_req, mock_close, mock_open
+        self,
+        mock_submit,
+        mock_build_get_nym_req,
     ):
         mock_wallet = async_mock.MagicMock()
         mock_wallet.type = "indy"
@@ -2283,7 +2034,8 @@ class TestIndyLedger(AsyncTestCase):
             }
         )
 
-        ledger = IndyLedger("name", mock_wallet)
+        mock_pool = async_mock.MagicMock()
+        ledger = IndyLedger(mock_pool, mock_wallet)
 
         async with ledger:
             mock_wallet.get_public_did = async_mock.CoroutineMock(
@@ -2294,11 +2046,10 @@ class TestIndyLedger(AsyncTestCase):
             assert mock_build_get_nym_req.called_once_with(self.test_did, self.test_did)
             assert mock_submit.called_once_with(mock_build_get_nym_req.return_value)
 
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
     @async_mock.patch("indy.ledger.build_get_nym_request")
     async def test_get_nym_role_indy_x(
-        self, mock_build_get_nym_req, mock_close, mock_open
+        self,
+        mock_build_get_nym_req,
     ):
         mock_wallet = async_mock.MagicMock()
         mock_wallet.type = "indy"
@@ -2307,7 +2058,8 @@ class TestIndyLedger(AsyncTestCase):
             error_code=ErrorCode.CommonInvalidParam1,
             error_details={"message": "not today"},
         )
-        ledger = IndyLedger("name", mock_wallet)
+        mock_pool = async_mock.MagicMock()
+        ledger = IndyLedger(mock_pool, mock_wallet)
 
         async with ledger:
             mock_wallet.get_public_did = async_mock.CoroutineMock(
@@ -2318,12 +2070,12 @@ class TestIndyLedger(AsyncTestCase):
                 await ledger.get_nym_role(self.test_did)
             assert "not today" in context.exception.message
 
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
     @async_mock.patch("indy.ledger.build_get_nym_request")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._submit")
     async def test_get_nym_role_did_not_public_x(
-        self, mock_submit, mock_build_get_nym_req, mock_close, mock_open
+        self,
+        mock_submit,
+        mock_build_get_nym_req,
     ):
         mock_wallet = async_mock.MagicMock()
         mock_wallet.type = "indy"
@@ -2358,7 +2110,8 @@ class TestIndyLedger(AsyncTestCase):
             }
         )
 
-        ledger = IndyLedger("name", mock_wallet)
+        mock_pool = async_mock.MagicMock()
+        ledger = IndyLedger(mock_pool, mock_wallet)
 
         async with ledger:
             mock_wallet.get_public_did = async_mock.CoroutineMock(
@@ -2367,8 +2120,6 @@ class TestIndyLedger(AsyncTestCase):
             with self.assertRaises(BadLedgerRequestError):
                 await ledger.get_nym_role(self.test_did)
 
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
     @async_mock.patch("indy.ledger.build_get_nym_request")
     @async_mock.patch("indy.ledger.build_get_txn_request")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger.register_nym")
@@ -2379,8 +2130,6 @@ class TestIndyLedger(AsyncTestCase):
         mock_register_nym,
         mock_build_get_txn_request,
         mock_build_get_nym_request,
-        mock_close,
-        mock_open,
     ):
         mock_wallet = async_mock.MagicMock(
             get_public_did=async_mock.CoroutineMock(return_value=self.test_did_info),
@@ -2401,16 +2150,17 @@ class TestIndyLedger(AsyncTestCase):
             ),
         ]
 
-        ledger = IndyLedger("name", mock_wallet)
+        mock_pool = async_mock.MagicMock()
+        ledger = IndyLedger(mock_pool, mock_wallet)
         async with ledger:
             await ledger.rotate_public_did_keypair()
 
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
     @async_mock.patch("indy.ledger.build_get_nym_request")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._submit")
     async def test_rotate_public_did_keypair_no_nym(
-        self, mock_submit, mock_build_get_nym_request, mock_close, mock_open
+        self,
+        mock_submit,
+        mock_build_get_nym_request,
     ):
         mock_wallet = async_mock.MagicMock(
             get_public_did=async_mock.CoroutineMock(return_value=self.test_did_info),
@@ -2422,13 +2172,12 @@ class TestIndyLedger(AsyncTestCase):
         mock_wallet.type = "indy"
         mock_submit.return_value = json.dumps({"result": {"data": json.dumps(None)}})
 
-        ledger = IndyLedger("name", mock_wallet)
+        mock_pool = async_mock.MagicMock()
+        ledger = IndyLedger(mock_pool, mock_wallet)
         async with ledger:
             with self.assertRaises(BadLedgerRequestError):
                 await ledger.rotate_public_did_keypair()
 
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
     @async_mock.patch("indy.ledger.build_get_nym_request")
     @async_mock.patch("indy.ledger.build_get_txn_request")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger.register_nym")
@@ -2439,8 +2188,6 @@ class TestIndyLedger(AsyncTestCase):
         mock_register_nym,
         mock_build_get_txn_request,
         mock_build_get_nym_request,
-        mock_close,
-        mock_open,
     ):
         mock_wallet = async_mock.MagicMock(
             get_public_did=async_mock.CoroutineMock(return_value=self.test_did_info),
@@ -2455,13 +2202,12 @@ class TestIndyLedger(AsyncTestCase):
             json.dumps({"result": {"data": None}}),
         ]
 
-        ledger = IndyLedger("name", mock_wallet)
+        mock_pool = async_mock.MagicMock()
+        ledger = IndyLedger(mock_pool, mock_wallet)
         async with ledger:
             with self.assertRaises(BadLedgerRequestError):
                 await ledger.rotate_public_did_keypair()
 
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._submit")
     @async_mock.patch("indy.ledger.build_get_revoc_reg_def_request")
     @async_mock.patch("indy.ledger.parse_get_revoc_reg_def_response")
@@ -2470,14 +2216,14 @@ class TestIndyLedger(AsyncTestCase):
         mock_indy_parse_get_rrdef_resp,
         mock_indy_build_get_rrdef_req,
         mock_submit,
-        mock_close,
-        mock_open,
     ):
         mock_wallet = async_mock.MagicMock()
         mock_wallet.type = "indy"
         mock_indy_parse_get_rrdef_resp.return_value = ("rr-id", '{"hello": "world"}')
 
-        ledger = IndyLedger("name", mock_wallet, read_only=True)
+        mock_pool = async_mock.MagicMock()
+        mock_pool.name = "name"
+        ledger = IndyLedger(mock_pool, mock_wallet, read_only=True)
 
         async with ledger:
             mock_wallet.get_public_did = async_mock.CoroutineMock(
@@ -2487,12 +2233,12 @@ class TestIndyLedger(AsyncTestCase):
             result = await ledger.get_revoc_reg_def("rr-id")
             assert result == {"hello": "world"}
 
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._submit")
     @async_mock.patch("indy.ledger.build_get_revoc_reg_def_request")
     async def test_get_revoc_reg_def_indy_x(
-        self, mock_indy_build_get_rrdef_req, mock_submit, mock_close, mock_open
+        self,
+        mock_indy_build_get_rrdef_req,
+        mock_submit,
     ):
         mock_wallet = async_mock.MagicMock()
         mock_wallet.type = "indy"
@@ -2501,7 +2247,9 @@ class TestIndyLedger(AsyncTestCase):
             error_details={"message": "not today"},
         )
 
-        ledger = IndyLedger("name", mock_wallet, read_only=True)
+        mock_pool = async_mock.MagicMock()
+        mock_pool.name = "name"
+        ledger = IndyLedger(mock_pool, mock_wallet, read_only=True)
 
         async with ledger:
             mock_wallet.get_public_did = async_mock.CoroutineMock(
@@ -2512,8 +2260,6 @@ class TestIndyLedger(AsyncTestCase):
                 await ledger.get_revoc_reg_def("rr-id")
             assert "not today" in context.exception.message
 
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._submit")
     @async_mock.patch("indy.ledger.build_get_revoc_reg_request")
     @async_mock.patch("indy.ledger.parse_get_revoc_reg_response")
@@ -2522,8 +2268,6 @@ class TestIndyLedger(AsyncTestCase):
         mock_indy_parse_get_rr_resp,
         mock_indy_build_get_rr_req,
         mock_submit,
-        mock_close,
-        mock_open,
     ):
         mock_wallet = async_mock.MagicMock()
         mock_wallet.type = "indy"
@@ -2536,14 +2280,14 @@ class TestIndyLedger(AsyncTestCase):
             1234567890,
         )
 
-        ledger = IndyLedger("name", mock_wallet, read_only=True)
+        mock_pool = async_mock.MagicMock()
+        mock_pool.name = "name"
+        ledger = IndyLedger(mock_pool, mock_wallet, read_only=True)
 
         async with ledger:
             (result, _) = await ledger.get_revoc_reg_entry("rr-id", 1234567890)
             assert result == {"hello": "world"}
 
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._submit")
     @async_mock.patch("indy.ledger.build_get_revoc_reg_request")
     @async_mock.patch("indy.ledger.parse_get_revoc_reg_response")
@@ -2552,8 +2296,6 @@ class TestIndyLedger(AsyncTestCase):
         mock_indy_parse_get_rr_resp,
         mock_indy_build_get_rr_req,
         mock_submit,
-        mock_close,
-        mock_open,
     ):
         mock_wallet = async_mock.MagicMock()
         mock_wallet.type = "indy"
@@ -2564,14 +2306,14 @@ class TestIndyLedger(AsyncTestCase):
             error_code=ErrorCode.PoolLedgerTimeout,
             error_details={"message": "bye"},
         )
-        ledger = IndyLedger("name", mock_wallet, read_only=True)
+        mock_pool = async_mock.MagicMock()
+        mock_pool.name = "name"
+        ledger = IndyLedger(mock_pool, mock_wallet, read_only=True)
 
         with self.assertRaises(LedgerError):
             async with ledger:
                 await ledger.get_revoc_reg_entry("rr-id", 1234567890)
 
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._submit")
     @async_mock.patch("indy.ledger.build_get_revoc_reg_delta_request")
     @async_mock.patch("indy.ledger.parse_get_revoc_reg_delta_response")
@@ -2580,8 +2322,6 @@ class TestIndyLedger(AsyncTestCase):
         mock_indy_parse_get_rrd_resp,
         mock_indy_build_get_rrd_req,
         mock_submit,
-        mock_close,
-        mock_open,
     ):
         mock_wallet = async_mock.MagicMock()
         mock_wallet.type = "indy"
@@ -2591,7 +2331,9 @@ class TestIndyLedger(AsyncTestCase):
             1234567890,
         )
 
-        ledger = IndyLedger("name", mock_wallet, read_only=True)
+        mock_pool = async_mock.MagicMock()
+        mock_pool.name = "name"
+        ledger = IndyLedger(mock_pool, mock_wallet, read_only=True)
 
         async with ledger:
             mock_wallet.get_public_did = async_mock.CoroutineMock(
@@ -2601,18 +2343,20 @@ class TestIndyLedger(AsyncTestCase):
             (result, _) = await ledger.get_revoc_reg_delta("rr-id")
             assert result == {"hello": "world"}
 
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._submit")
     @async_mock.patch("indy.ledger.build_revoc_reg_def_request")
     async def test_send_revoc_reg_def_public_did(
-        self, mock_indy_build_rrdef_req, mock_submit, mock_close, mock_open
+        self,
+        mock_indy_build_rrdef_req,
+        mock_submit,
     ):
         mock_wallet = async_mock.MagicMock()
         mock_wallet.type = "indy"
         mock_indy_build_rrdef_req.return_value = '{"hello": "world"}'
 
-        ledger = IndyLedger("name", mock_wallet, read_only=True)
+        mock_pool = async_mock.MagicMock()
+        mock_pool.name = "name"
+        ledger = IndyLedger(mock_pool, mock_wallet, read_only=True)
 
         async with ledger:
             mock_wallet.get_public_did = async_mock.CoroutineMock(
@@ -2625,18 +2369,20 @@ class TestIndyLedger(AsyncTestCase):
                 mock_indy_build_rrdef_req.return_value, True, True, self.test_did_info
             )
 
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._submit")
     @async_mock.patch("indy.ledger.build_revoc_reg_def_request")
     async def test_send_revoc_reg_def_local_did(
-        self, mock_indy_build_rrdef_req, mock_submit, mock_close, mock_open
+        self,
+        mock_indy_build_rrdef_req,
+        mock_submit,
     ):
         mock_wallet = async_mock.MagicMock()
         mock_wallet.type = "indy"
         mock_indy_build_rrdef_req.return_value = '{"hello": "world"}'
 
-        ledger = IndyLedger("name", mock_wallet, read_only=True)
+        mock_pool = async_mock.MagicMock()
+        mock_pool.name = "name"
+        ledger = IndyLedger(mock_pool, mock_wallet, read_only=True)
 
         async with ledger:
             mock_wallet.get_local_did = async_mock.CoroutineMock(
@@ -2649,18 +2395,20 @@ class TestIndyLedger(AsyncTestCase):
                 mock_indy_build_rrdef_req.return_value, True, True, self.test_did_info
             )
 
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._submit")
     @async_mock.patch("indy.ledger.build_revoc_reg_def_request")
     async def test_send_revoc_reg_def_x_no_did(
-        self, mock_indy_build_rrdef_req, mock_submit, mock_close, mock_open
+        self,
+        mock_indy_build_rrdef_req,
+        mock_submit,
     ):
         mock_wallet = async_mock.MagicMock()
         mock_wallet.type = "indy"
         mock_indy_build_rrdef_req.return_value = '{"hello": "world"}'
 
-        ledger = IndyLedger("name", mock_wallet, read_only=True)
+        mock_pool = async_mock.MagicMock()
+        mock_pool.name = "name"
+        ledger = IndyLedger(mock_pool, mock_wallet, read_only=True)
 
         async with ledger:
             mock_wallet.get_local_did = async_mock.CoroutineMock(return_value=None)
@@ -2670,18 +2418,20 @@ class TestIndyLedger(AsyncTestCase):
                 context.exception
             )
 
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._submit")
     @async_mock.patch("indy.ledger.build_revoc_reg_entry_request")
     async def test_send_revoc_reg_entry_public_did(
-        self, mock_indy_build_rre_req, mock_submit, mock_close, mock_open
+        self,
+        mock_indy_build_rre_req,
+        mock_submit,
     ):
         mock_wallet = async_mock.MagicMock()
         mock_wallet.type = "indy"
         mock_indy_build_rre_req.return_value = '{"hello": "world"}'
 
-        ledger = IndyLedger("name", mock_wallet, read_only=True)
+        mock_pool = async_mock.MagicMock()
+        mock_pool.name = "name"
+        ledger = IndyLedger(mock_pool, mock_wallet, read_only=True)
 
         async with ledger:
             mock_wallet.get_public_did = async_mock.CoroutineMock(
@@ -2696,18 +2446,20 @@ class TestIndyLedger(AsyncTestCase):
                 mock_indy_build_rre_req.return_value, True, True, self.test_did_info
             )
 
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._submit")
     @async_mock.patch("indy.ledger.build_revoc_reg_entry_request")
     async def test_send_revoc_reg_entry_local_did(
-        self, mock_indy_build_rre_req, mock_submit, mock_close, mock_open
+        self,
+        mock_indy_build_rre_req,
+        mock_submit,
     ):
         mock_wallet = async_mock.MagicMock()
         mock_wallet.type = "indy"
         mock_indy_build_rre_req.return_value = '{"hello": "world"}'
 
-        ledger = IndyLedger("name", mock_wallet, read_only=True)
+        mock_pool = async_mock.MagicMock()
+        mock_pool.name = "name"
+        ledger = IndyLedger(mock_pool, mock_wallet, read_only=True)
 
         async with ledger:
             mock_wallet.get_local_did = async_mock.CoroutineMock(
@@ -2722,18 +2474,20 @@ class TestIndyLedger(AsyncTestCase):
                 mock_indy_build_rre_req.return_value, True, True, self.test_did_info
             )
 
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._submit")
     @async_mock.patch("indy.ledger.build_revoc_reg_entry_request")
     async def test_send_revoc_reg_entry_x_no_did(
-        self, mock_indy_build_rre_req, mock_submit, mock_close, mock_open
+        self,
+        mock_indy_build_rre_req,
+        mock_submit,
     ):
         mock_wallet = async_mock.MagicMock()
         mock_wallet.type = "indy"
         mock_indy_build_rre_req.return_value = '{"hello": "world"}'
 
-        ledger = IndyLedger("name", mock_wallet, read_only=True)
+        mock_pool = async_mock.MagicMock()
+        mock_pool.name = "name"
+        ledger = IndyLedger(mock_pool, mock_wallet, read_only=True)
 
         async with ledger:
             mock_wallet.get_local_did = async_mock.CoroutineMock(return_value=None)
@@ -2745,17 +2499,14 @@ class TestIndyLedger(AsyncTestCase):
                 context.exception
             )
 
-    @async_mock.patch("indy.pool.open_pool_ledger")
-    @async_mock.patch("indy.pool.close_pool_ledger")
     async def test_taa_digest_bad_value(
         self,
-        mock_close_pool,
-        mock_open_ledger,
     ):
         mock_wallet = async_mock.MagicMock()
         mock_wallet.type = "indy"
 
-        ledger = IndyLedger("name", mock_wallet)
+        mock_pool = async_mock.MagicMock()
+        ledger = IndyLedger(mock_pool, mock_wallet)
 
         async with ledger:
             mock_wallet.get_public_did = async_mock.CoroutineMock(
@@ -2765,8 +2516,6 @@ class TestIndyLedger(AsyncTestCase):
             with self.assertRaises(ValueError):
                 await ledger.taa_digest(None, None)
 
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
     @async_mock.patch("indy.ledger.build_get_acceptance_mechanisms_request")
     @async_mock.patch("indy.ledger.build_get_txn_author_agreement_request")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._submit")
@@ -2775,8 +2524,6 @@ class TestIndyLedger(AsyncTestCase):
         mock_submit,
         mock_build_get_taa_req,
         mock_build_get_acc_mech_req,
-        mock_close,
-        mock_open,
     ):
         mock_wallet = async_mock.MagicMock()
         mock_wallet.type = "indy"
@@ -2786,7 +2533,8 @@ class TestIndyLedger(AsyncTestCase):
             json.dumps({"result": {"data": txn_result_data}}) for i in range(2)
         ]
 
-        ledger = IndyLedger("name", mock_wallet)
+        mock_pool = async_mock.MagicMock()
+        ledger = IndyLedger(mock_pool, mock_wallet)
 
         async with ledger:
             mock_wallet.get_public_did = async_mock.CoroutineMock(
@@ -2821,17 +2569,19 @@ class TestIndyLedger(AsyncTestCase):
                 "taa_required": True,
             }
 
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
     @async_mock.patch("aries_cloudagent.storage.indy.IndyStorage.add_record")
     @async_mock.patch("aries_cloudagent.storage.indy.IndyStorage.search_records")
     async def test_accept_and_get_latest_txn_author_agreement(
-        self, mock_search_records, mock_add_record, mock_close, mock_open
+        self,
+        mock_search_records,
+        mock_add_record,
     ):
         mock_wallet = async_mock.MagicMock()
         mock_wallet.type = "indy"
+        mock_pool = async_mock.MagicMock()
+        mock_pool.name = "name"
 
-        ledger = IndyLedger("name", mock_wallet, cache=BasicCache())
+        ledger = IndyLedger(mock_pool, mock_wallet, cache=BasicCache())
 
         accept_time = ledger.taa_rough_timestamp()
         taa_record = {
@@ -2852,7 +2602,7 @@ class TestIndyLedger(AsyncTestCase):
                 StorageRecord(
                     TAA_ACCEPTED_RECORD_TYPE,
                     json.dumps(acceptance),
-                    {"pool_name": ledger.pool_name},
+                    {"pool_name": ledger.pool.name},
                 )
             ]
         )
@@ -2862,36 +2612,36 @@ class TestIndyLedger(AsyncTestCase):
                 taa_record=taa_record, mechanism="dummy", accept_time=None
             )
 
-            await ledger.cache.clear(f"{TAA_ACCEPTED_RECORD_TYPE}::{ledger.pool_name}")
+            await ledger.cache.clear(f"{TAA_ACCEPTED_RECORD_TYPE}::{ledger.pool.name}")
             for i in range(2):  # populate, then get from, cache
                 response = await ledger.get_latest_txn_author_acceptance()
                 assert response == acceptance
 
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
     @async_mock.patch("aries_cloudagent.storage.indy.IndyStorage.search_records")
     async def test_get_latest_txn_author_agreement_none(
-        self, mock_search_records, mock_close, mock_open
+        self,
+        mock_search_records,
     ):
         mock_wallet = async_mock.MagicMock()
         mock_wallet.type = "indy"
 
-        ledger = IndyLedger("name", mock_wallet, cache=BasicCache())
+        mock_pool = async_mock.MagicMock()
+        mock_pool.name = "name"
+        ledger = IndyLedger(mock_pool, mock_wallet, cache=BasicCache())
 
         mock_search_records.return_value.fetch_all = async_mock.CoroutineMock(
             return_value=[]
         )
 
         async with ledger:
-            await ledger.cache.clear(f"{TAA_ACCEPTED_RECORD_TYPE}::{ledger.pool_name}")
+            await ledger.cache.clear(f"{TAA_ACCEPTED_RECORD_TYPE}::{ledger.pool.name}")
             response = await ledger.get_latest_txn_author_acceptance()
             assert response == {}
 
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger.get_schema")
     async def test_credential_definition_id2schema_id(
-        self, mock_get_schema, mock_close, mock_open
+        self,
+        mock_get_schema,
     ):
         mock_wallet = async_mock.MagicMock()
         mock_wallet.type = "indy"
@@ -2900,7 +2650,9 @@ class TestIndyLedger(AsyncTestCase):
         SEQ_NO = "9999"
         mock_get_schema.return_value = {"id": S_ID}
 
-        ledger = IndyLedger("name", mock_wallet, cache=BasicCache())
+        mock_pool = async_mock.MagicMock()
+        mock_pool.name = "name"
+        ledger = IndyLedger(mock_pool, mock_wallet, cache=BasicCache())
 
         async with ledger:
             s_id_short = await ledger.credential_definition_id2schema_id(

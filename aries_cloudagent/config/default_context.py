@@ -12,7 +12,9 @@ from ..indy.holder import IndyHolder
 from ..indy.issuer import IndyIssuer
 from ..indy.verifier import IndyVerifier
 from ..ledger.base import BaseLedger
+from ..ledger.pool.base import BaseLedgerPool
 from ..ledger.provider import LedgerProvider
+from ..ledger.pool.provider import LedgerPoolProvider
 from ..tails.base import BaseTailsServer
 
 from ..protocols.actionmenu.v1_0.base_service import BaseMenuService
@@ -97,10 +99,15 @@ class DefaultContextBuilder(ContextBuilder):
                         "get_schema",
                     ),
                 ),
-                # MTODO: It would be better to not create a separate ledger instance
-                # per wallet (besides the wallet_handle they share everyting)
-                # but only create a ledger instance per wallet.type or something?
                 ("wallet.id",),
+            ),
+        )
+        context.injector.bind_provider(
+            BaseLedgerPool,
+            CachedProvider(
+                LedgerPoolProvider(),
+                # MTODO: Invalidate cache when genesis_transactions changes
+                ("ledger.pool_name",),
             ),
         )
         context.injector.bind_provider(
