@@ -34,7 +34,6 @@ class WalletRecord(BaseRecord):
         self,
         *,
         wallet_record_id: str = None,
-        wallet_name: str = None,
         wallet_config: dict = None,
         key_management_mode: str = None,
         **kwargs,
@@ -43,7 +42,9 @@ class WalletRecord(BaseRecord):
         super().__init__(wallet_record_id, **kwargs)
         self._id = wallet_record_id
         self.wallet_config = wallet_config
-        self.wallet_name = wallet_name or wallet_config.get("name")
+        # MTODO: how can I make this a tag without creating the wallet.name property
+        # As it is already in the wallet_config
+        self.wallet_name = wallet_config.get("name")
         self.key_management_mode = key_management_mode
 
     def get_config_as_settings(self):

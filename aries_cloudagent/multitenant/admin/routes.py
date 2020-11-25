@@ -39,17 +39,13 @@ class WalletIdMatchInfoSchema(OpenAPISchema):
 class CreateWalletRequestSchema(Schema):
     """Request schema for adding a new wallet which will be registered by the agent."""
 
-    # MTODO: wallet_name is now also required for 'basic' wallet
-    # We should use id, and make wallet_name only required for indy wallets
-    wallet_name = fields.Str(
-        description="Wallet name", example="MyNewWallet", required=True
-    )
+    wallet_name = fields.Str(description="Wallet name", example="MyNewWallet")
 
     wallet_key = fields.Str(
         description="Master key used for key derivation.", example="MySecretKey123"
     )
 
-    # MTODO: SEED
+    # MTODO: add seed
     # seed = fields.Str(
     #     description="Seed used for did derivation - 32 bytes.",
     #     example="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
@@ -78,12 +74,13 @@ class CreateWalletRequestSchema(Schema):
         """
 
         if data.get("wallet_type") == "indy":
-            if "wallet_key" not in data:
-                raise ValidationError("Missing required field", "wallet_key")
+            for field in ("wallet_key", "wallet_name"):
+                if field not in data:
+                    raise ValidationError("Missing required field", field)
 
 
 @docs(tags=["multitenancy"], summary="List all subwallets")
-# MTODO: response schema
+# MTODO: wallet_list response schema
 async def wallet_list(request: web.BaseRequest):
     """
     Request handler for listing all internal subwallets.
@@ -104,7 +101,7 @@ async def wallet_list(request: web.BaseRequest):
 
 @docs(tags=["multitenancy"], summary="Get a single subwallet")
 @match_info_schema(WalletIdMatchInfoSchema())
-# TODO: response schema
+# MTODO: wallet_get response schema
 async def wallet_get(request: web.BaseRequest):
     """
     Request handler for getting a single subwallet.
@@ -130,7 +127,7 @@ async def wallet_get(request: web.BaseRequest):
 
 @docs(tags=["multitenancy"], summary="Create a subwallet")
 @request_schema(CreateWalletRequestSchema)
-# MTODO: Response schema
+# MTODO: wallet_create Response schema
 async def wallet_create(request: web.BaseRequest):
     """
     Request handler for adding a new subwallet for handling by the agent.
@@ -191,7 +188,7 @@ async def wallet_create(request: web.BaseRequest):
     summary="Remove a subwallet",
 )
 @match_info_schema(WalletIdMatchInfoSchema())
-# MTODO: response schema
+# MTODO: wallet_remove response schema
 # MTODO: For non-managed wallets we will need the key to unlock the wallet
 async def wallet_remove(request: web.BaseRequest):
     """
@@ -228,10 +225,10 @@ async def wallet_remove(request: web.BaseRequest):
     return web.json_response({})
 
 
-# MTODO: add wallet import
-# MTODO: add wallet export
-# MTODO: add rotate wallet key
-# MTODO: add wallet authenticate
+# MTODO: add wallet import route
+# MTODO: add wallet export route
+# MTODO: add rotate wallet key route
+# MTODO: add wallet authenticate route
 
 
 async def register(app: web.Application):
