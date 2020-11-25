@@ -63,8 +63,6 @@ class BaseRecord(BaseModel):
     RECORD_TYPE = None
     WEBHOOK_TOPIC = None
     LOG_STATE_FLAG = None
-    CACHE_TTL = 60
-    CACHE_ENABLED = False
     TAG_NAMES = {"state"}
 
     def __init__(
@@ -144,19 +142,6 @@ class BaseRecord(BaseModel):
         return tags
 
     @classmethod
-    def cache_key(cls, record_id: str, record_type: str = None):
-        """Assemble a cache key.
-
-        Args:
-            record_id: The record identifier
-            record_type The cache type identifier, defaulting to RECORD_TYPE
-        """
-        if not record_type:
-            record_type = cls.RECORD_TYPE
-        if record_id:
-            return f"{record_type}::{record_id}"
-
-    @classmethod
     async def get_cached_key(cls, context: InjectionContext, cache_key: str):
         """Shortcut method to fetch a cached key value.
 
@@ -166,7 +151,7 @@ class BaseRecord(BaseModel):
         """
         if not cache_key:
             return
-        cache: BaseCache = await context.inject(BaseCache, required=False)
+        cache: BaseCache = context.inject(BaseCache, required=False)
         if cache:
             return await cache.get(cache_key)
 
@@ -184,7 +169,7 @@ class BaseRecord(BaseModel):
         """
         if not cache_key:
             return
-        cache: BaseCache = await context.inject(BaseCache, required=False)
+        cache: BaseCache = context.inject(BaseCache, required=False)
         if cache:
             await cache.set(cache_key, value, ttl or cls.CACHE_TTL)
 
@@ -198,39 +183,28 @@ class BaseRecord(BaseModel):
         """
         if not cache_key:
             return
-        cache: BaseCache = await context.inject(BaseCache, required=False)
+        cache: BaseCache = context.inject(BaseCache, required=False)
         if cache:
             await cache.clear(cache_key)
 
-    async def clear_cached(self, context: InjectionContext):
-        """Clear the cached value of this record, if any."""
-        await self.clear_cached_key(context, self.cache_key(self._id))
-
     @classmethod
     async def retrieve_by_id(
-        cls, context: InjectionContext, record_id: str, cached: bool = True
+        cls, context: InjectionContext, record_id: str
     ) -> "BaseRecord":
         """Retrieve a stored record by ID.
 
         Args:
             context: The injection context to use
             record_id: The ID of the record to find
-            cached: Whether to check the cache for this record
         """
-        cache_key = cls.cache_key(record_id)
         vals = None
 
-        if cls.CACHE_ENABLED and cached:
-            vals = await cls.get_cached_key(context, cache_key)
-
         if not vals:
-            storage: BaseStorage = await context.inject(BaseStorage)
+            storage: BaseStorage = context.inject(BaseStorage)
             result = await storage.get_record(
                 cls.RECORD_TYPE, record_id, {"retrieveTags": False}
             )
             vals = json.loads(result.value)
-            if cls.CACHE_ENABLED:
-                await cls.set_cached_key(context, cache_key, vals)
 
         return cls.from_storage(record_id, vals)
 
@@ -246,7 +220,7 @@ class BaseRecord(BaseModel):
             post_filter: Additional value filters to apply matching positively,
                 with sequence values specifying alternatives to match (hit any)
         """
-        storage: BaseStorage = await context.inject(BaseStorage)
+        storage: BaseStorage = context.inject(BaseStorage)
         query = storage.search_records(
             cls.RECORD_TYPE,
             cls.prefix_tag_filter(tag_filter),
@@ -294,7 +268,7 @@ class BaseRecord(BaseModel):
             alt: set to match any (positive=True) value or miss all (positive=False)
                 values in post_filter
         """
-        storage: BaseStorage = await context.inject(BaseStorage)
+        storage: BaseStorage = context.inject(BaseStorage)
         query = storage.search_records(
             cls.RECORD_TYPE,
             cls.prefix_tag_filter(tag_filter),
@@ -339,7 +313,7 @@ class BaseRecord(BaseModel):
         log_reason = reason or ("Updated record" if self._id else "Created record")
         try:
             self.updated_at = time_now()
-            storage: BaseStorage = await context.inject(BaseStorage)
+            storage: BaseStorage = context.inject(BaseStorage)
             if self._id:
                 record = self.storage_record
                 await storage.update_record(record, record.value, record.tags)
@@ -377,8 +351,6 @@ class BaseRecord(BaseModel):
             last_state: The previous state value
             webhook: Adjust whether the webhook is called
         """
-        await self.clear_cached(context)
-
         webhook_topic = self.webhook_topic
         if webhook is None:
             webhook = bool(webhook_topic) and (new_record or (last_state != self.state))
@@ -394,7 +366,7 @@ class BaseRecord(BaseModel):
             context: The injection context to use
         """
         if self._id:
-            storage: BaseStorage = await context.inject(BaseStorage)
+            storage: BaseStorage = context.inject(BaseStorage)
             await storage.delete_record(self.storage_record)
         # FIXME - update state and send webhook?
 
@@ -424,7 +396,7 @@ class BaseRecord(BaseModel):
             topic = self.webhook_topic
             if not topic:
                 return
-        responder: BaseResponder = await context.inject(BaseResponder, required=False)
+        responder: BaseResponder = context.inject(BaseResponder, required=False)
         if responder:
             await responder.send_webhook(topic, payload)
 

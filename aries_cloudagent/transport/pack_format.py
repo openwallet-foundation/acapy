@@ -5,7 +5,7 @@ import logging
 from typing import Sequence, Tuple, Union
 
 from ..config.base import InjectorError
-from ..config.injection_context import InjectionContext
+from ..core.profile import ProfileSession
 
 from ..protocols.routing.v1_0.messages.forward import Forward
 
@@ -31,14 +31,14 @@ class PackWireFormat(BaseWireFormat):
 
     async def parse_message(
         self,
-        context: InjectionContext,
+        session: ProfileSession,
         message_body: Union[str, bytes],
     ) -> Tuple[dict, MessageReceipt]:
         """
         Deserialize an incoming message and further populate the request context.
 
         Args:
-            context: The injection context for settings and services
+            session: The profile session for providing wallet access
             message_body: The body of the message
 
         Returns:
@@ -71,7 +71,7 @@ class PackWireFormat(BaseWireFormat):
         if "@type" not in message_dict:
 
             try:
-                unpack = self.unpack(context, message_body, receipt)
+                unpack = self.unpack(session, message_body, receipt)
                 message_json = await (
                     self.task_queue and self.task_queue.run(unpack) or unpack
                 )
@@ -103,15 +103,15 @@ class PackWireFormat(BaseWireFormat):
 
     async def unpack(
         self,
-        context: InjectionContext,
+        session: ProfileSession,
         message_body: Union[str, bytes],
         receipt: MessageReceipt,
     ):
         """Look up the wallet instance and perform the message unpack."""
         try:
-            wallet: BaseWallet = await context.inject(BaseWallet)
+            wallet: BaseWallet = session.get_interface(BaseWallet)
         except InjectorError:
-            raise MessageParseError("Wallet not defined in request context")
+            raise MessageParseError("Wallet not defined in profile session")
 
         try:
             unpacked = await wallet.unpack_message(message_body)
@@ -126,7 +126,7 @@ class PackWireFormat(BaseWireFormat):
 
     async def encode_message(
         self,
-        context: InjectionContext,
+        session: ProfileSession,
         message_json: Union[str, bytes],
         recipient_keys: Sequence[str],
         routing_keys: Sequence[str],
@@ -136,7 +136,7 @@ class PackWireFormat(BaseWireFormat):
         Encode an outgoing message for transport.
 
         Args:
-            context: The injection context for settings and services
+            session: The profile session for providing wallet access
             message_json: The message body to serialize
             recipient_keys: A sequence of recipient verkeys
             routing_keys: A sequence of routing verkeys
@@ -152,7 +152,7 @@ class PackWireFormat(BaseWireFormat):
 
         if sender_key and recipient_keys:
             pack = self.pack(
-                context, message_json, recipient_keys, routing_keys, sender_key
+                session, message_json, recipient_keys, routing_keys, sender_key
             )
             message = await (self.task_queue and self.task_queue.run(pack) or pack)
         else:
@@ -161,7 +161,7 @@ class PackWireFormat(BaseWireFormat):
 
     async def pack(
         self,
-        context: InjectionContext,
+        session: ProfileSession,
         message_json: Union[str, bytes],
         recipient_keys: Sequence[str],
         routing_keys: Sequence[str],
@@ -171,7 +171,7 @@ class PackWireFormat(BaseWireFormat):
         if not sender_key or not recipient_keys:
             raise MessageEncodeError("Cannot pack message without associated keys")
 
-        wallet: BaseWallet = await context.inject(BaseWallet, required=False)
+        wallet: BaseWallet = session.get_interface(BaseWallet, required=False)
         if not wallet:
             raise MessageEncodeError("No wallet instance")
 

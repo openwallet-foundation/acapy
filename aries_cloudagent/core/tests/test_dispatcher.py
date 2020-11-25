@@ -89,7 +89,7 @@ class TestDispatcher(AsyncTestCase):
     async def test_dispatch(self):
         context = make_context()
         context.enforce_typing = False
-        registry = await context.inject(ProtocolRegistry)
+        registry = context.inject(ProtocolRegistry)
         registry.register_message_types(
             {
                 pfx.qualify(StubAgentMessage.Meta.message_type): StubAgentMessage
@@ -124,7 +124,7 @@ class TestDispatcher(AsyncTestCase):
     async def test_dispatch_versioned_message(self):
         context = make_context()
         context.enforce_typing = False
-        registry = await context.inject(ProtocolRegistry)
+        registry = context.inject(ProtocolRegistry)
         registry.register_message_types(
             {
                 DIDCommPrefix.qualify_current(
@@ -159,7 +159,7 @@ class TestDispatcher(AsyncTestCase):
     async def test_dispatch_versioned_message_no_message_class(self):
         context = make_context()
         context.enforce_typing = False
-        registry = await context.inject(ProtocolRegistry)
+        registry = context.inject(ProtocolRegistry)
         registry.register_message_types(
             {
                 DIDCommPrefix.qualify_current(
@@ -192,7 +192,7 @@ class TestDispatcher(AsyncTestCase):
     async def test_dispatch_versioned_message_message_class_deserialize_x(self):
         context = make_context()
         context.enforce_typing = False
-        registry = await context.inject(ProtocolRegistry)
+        registry = context.inject(ProtocolRegistry)
         registry.register_message_types(
             {
                 DIDCommPrefix.qualify_current(
@@ -232,7 +232,7 @@ class TestDispatcher(AsyncTestCase):
     async def test_dispatch_versioned_message_handle_greater_succeeds(self):
         context = make_context()
         context.enforce_typing = False
-        registry = await context.inject(ProtocolRegistry)
+        registry = context.inject(ProtocolRegistry)
         registry.register_message_types(
             {
                 DIDCommPrefix.qualify_current(
@@ -269,7 +269,7 @@ class TestDispatcher(AsyncTestCase):
     async def test_dispatch_versioned_message_fail(self):
         context = make_context()
         context.enforce_typing = False
-        registry = await context.inject(ProtocolRegistry)
+        registry = context.inject(ProtocolRegistry)
         registry.register_message_types(
             {
                 DIDCommPrefix.qualify_current(
@@ -317,7 +317,7 @@ class TestDispatcher(AsyncTestCase):
     async def test_dispatch_log(self):
         context = make_context()
         context.enforce_typing = False
-        registry = await context.inject(ProtocolRegistry)
+        registry = context.inject(ProtocolRegistry)
         registry.register_message_types(
             {
                 DIDCommPrefix.qualify_current(

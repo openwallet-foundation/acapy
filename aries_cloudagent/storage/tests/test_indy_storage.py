@@ -17,7 +17,7 @@ from aries_cloudagent.storage.indy import IndyStorage
 from aries_cloudagent.storage.record import StorageRecord
 
 from .. import indy as test_module
-from . import test_basic_storage
+from . import test_in_memory_storage
 
 
 @pytest.fixture()
@@ -38,7 +38,7 @@ async def store():
 
 
 @pytest.mark.indy
-class TestIndyStorage(test_basic_storage.TestBasicStorage):
+class TestIndyStorage(test_in_memory_storage.TestInMemoryStorage):
     """Tests for indy storage."""
 
     @pytest.mark.asyncio

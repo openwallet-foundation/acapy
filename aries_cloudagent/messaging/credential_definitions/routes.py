@@ -136,14 +136,14 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
     tag = body.get("tag")
     rev_reg_size = body.get("revocation_registry_size")
 
-    ledger: BaseLedger = await context.inject(BaseLedger, required=False)
+    ledger: BaseLedger = context.inject(BaseLedger, required=False)
     if not ledger:
         reason = "No ledger available"
         if not context.settings.get_value("wallet.type"):
             reason += ": missing wallet-type?"
         raise web.HTTPForbidden(reason=reason)
 
-    issuer: IndyIssuer = await context.inject(IndyIssuer)
+    issuer: IndyIssuer = context.inject(IndyIssuer)
     try:  # even if in wallet, send it and raise if erroneously so
         async with ledger:
             (cred_def_id, cred_def, novel) = await shield(
@@ -190,7 +190,7 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
                 pending_registry_record.stage_pending_registry(context, max_attempts=16)
             )
 
-            tails_server: BaseTailsServer = await context.inject(BaseTailsServer)
+            tails_server: BaseTailsServer = context.inject(BaseTailsServer)
             (upload_success, reason) = await tails_server.upload_tails_file(
                 context,
                 registry_record.revoc_reg_id,
@@ -232,7 +232,7 @@ async def credential_definitions_created(request: web.BaseRequest):
     """
     context = request.app["request_context"]
 
-    storage = await context.inject(BaseStorage)
+    storage = context.inject(BaseStorage)
     found = await storage.search_records(
         type_filter=CRED_DEF_SENT_RECORD_TYPE,
         tag_query={
@@ -266,7 +266,7 @@ async def credential_definitions_get_credential_definition(request: web.BaseRequ
 
     cred_def_id = request.match_info["cred_def_id"]
 
-    ledger: BaseLedger = await context.inject(BaseLedger, required=False)
+    ledger: BaseLedger = context.inject(BaseLedger, required=False)
     if not ledger:
         reason = "No ledger available"
         if not context.settings.get_value("wallet.type"):

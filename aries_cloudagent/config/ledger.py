@@ -55,7 +55,7 @@ async def ledger_config(
             except IOError as e:
                 raise ConfigError("Error reading genesis transactions") from e
 
-    ledger: BaseLedger = await context.inject(BaseLedger, required=False)
+    ledger: BaseLedger = context.inject(BaseLedger, required=False)
     if not ledger:
         LOGGER.info("Ledger instance not provided")
         return False
@@ -81,7 +81,7 @@ async def ledger_config(
         # Publish endpoints if necessary - skipped if TAA is required but not accepted
         endpoint = context.settings.get("default_endpoint")
         if public_did:
-            wallet: BaseWallet = await context.inject(BaseWallet)
+            wallet: BaseWallet = context.inject(BaseWallet)
             if wallet.type != "indy":
                 raise ConfigError("Cannot provision a non-Indy wallet type")
             try:

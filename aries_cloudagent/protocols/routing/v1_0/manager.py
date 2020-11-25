@@ -65,7 +65,7 @@ class RoutingManager:
             The `RouteRecord` associated with this verkey
 
         """
-        storage: BaseStorage = await self._context.inject(BaseStorage)
+        storage: BaseStorage = self._context.inject(BaseStorage)
         try:
             record = await storage.find_record(
                 RoutingManager.RECORD_TYPE, {"recipient_key": recip_verkey}
@@ -117,7 +117,7 @@ class RoutingManager:
                     )
 
         results = []
-        storage: BaseStorage = await self._context.inject(BaseStorage)
+        storage: BaseStorage = self._context.inject(BaseStorage)
         async for record in storage.search_records(RoutingManager.RECORD_TYPE, filters):
             value = json.loads(record.value)
             value.update(record.tags)
@@ -148,7 +148,7 @@ class RoutingManager:
             json.dumps(value),
             {"connection_id": client_connection_id, "recipient_key": recipient_key},
         )
-        storage: BaseStorage = await self._context.inject(BaseStorage)
+        storage: BaseStorage = self._context.inject(BaseStorage)
         await storage.add_record(record)
         result = RouteRecord(
             record_id=record.id,
@@ -162,7 +162,7 @@ class RoutingManager:
     async def delete_route_record(self, route: RouteRecord):
         """Remove an existing route record."""
         if route and route.record_id:
-            storage: BaseStorage = await self._context.inject(BaseStorage)
+            storage: BaseStorage = self._context.inject(BaseStorage)
             await storage.delete_record(
                 StorageRecord(RoutingManager.RECORD_TYPE, None, None, route.record_id)
             )

@@ -49,7 +49,7 @@ class Dispatcher:
 
     async def setup(self):
         """Perform async instance setup."""
-        self.collector = await self.context.inject(Collector, required=False)
+        self.collector = self.context.inject(Collector, required=False)
         max_active = int(os.getenv("DISPATCHER_MAX_ACTIVE", 50))
         self.task_queue = TaskQueue(
             max_active=max_active, timed=bool(self.collector), trace_fn=self.log_task
@@ -205,7 +205,7 @@ class Dispatcher:
 
         """
 
-        registry: ProtocolRegistry = await self.context.inject(ProtocolRegistry)
+        registry: ProtocolRegistry = self.context.inject(ProtocolRegistry)
         message_type = parsed_msg.get("@type")
 
         if not message_type:

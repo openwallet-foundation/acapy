@@ -367,7 +367,7 @@ async def create_rev_reg(request: web.BaseRequest):
     max_cred_num = body.get("max_cred_num")
 
     # check we published this cred def
-    storage = await context.inject(BaseStorage)
+    storage = context.inject(BaseStorage)
 
     found = await storage.search_records(
         type_filter=CRED_DEF_SENT_RECORD_TYPE,
@@ -600,7 +600,7 @@ async def upload_tails_file(request: web.BaseRequest):
 
     rev_reg_id = request.match_info["rev_reg_id"]
 
-    tails_server: BaseTailsServer = await context.inject(
+    tails_server: BaseTailsServer = context.inject(
         BaseTailsServer,
         required=False,
     )

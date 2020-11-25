@@ -73,7 +73,7 @@ class Conductor:
         self.dispatcher = Dispatcher(context)
         await self.dispatcher.setup()
 
-        wire_format = await context.inject(BaseWireFormat, required=False)
+        wire_format = context.inject(BaseWireFormat, required=False)
         if wire_format and hasattr(wire_format, "task_queue"):
             wire_format.task_queue = self.dispatcher.task_queue
 
@@ -123,7 +123,7 @@ class Conductor:
                 raise
 
         # Fetch stats collector, if any
-        collector = await context.inject(Collector, required=False)
+        collector = context.inject(Collector, required=False)
         if collector:
             # add stats to our own methods
             collector.wrap(
@@ -178,7 +178,7 @@ class Conductor:
         default_label = context.settings.get("default_label")
 
         # Get public did
-        wallet: BaseWallet = await context.inject(BaseWallet)
+        wallet: BaseWallet = context.inject(BaseWallet)
         public_did = await wallet.get_public_did()
 
         # Show some details about the configuration to the user

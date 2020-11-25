@@ -22,7 +22,7 @@ class InvitationHandler(BaseHandler):
         if not context.connection_ready:
             raise HandlerException("No connection established for invitation message")
 
-        service: BaseIntroductionService = await context.inject(
+        service: BaseIntroductionService = context.inject(
             BaseIntroductionService, required=False
         )
         if service:

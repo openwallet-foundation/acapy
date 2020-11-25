@@ -3,6 +3,8 @@
 import asyncio
 from typing import Sequence
 
+from ..in_memory.profile import InMemoryProfile
+
 from .base import BaseWallet, KeyInfo, DIDInfo
 from .crypto import (
     create_keypair,
@@ -17,60 +19,18 @@ from .error import WalletError, WalletDuplicateError, WalletNotFoundError
 from .util import b58_to_bytes, bytes_to_b58
 
 
-class BasicWallet(BaseWallet):
+class InMemoryWallet(BaseWallet):
     """In-memory wallet implementation."""
 
-    WALLET_TYPE = "basic"
-
-    def __init__(self, config: dict = None):
+    def __init__(self, profile: InMemoryProfile):
         """
-        Initialize a `BasicWallet` instance.
+        Initialize an `InMemoryWallet` instance.
 
         Args:
-            config: {name, key, seed, did, auto-create, auto-remove}
+            profile: The in-memory profile used to store state
 
         """
-        if not config:
-            config = {}
-        super().__init__(config)
-        self._name = config.get("name")
-        self._keys = {}
-        self._local_dids = {}
-        self._pair_dids = {}
-
-    @property
-    def name(self) -> str:
-        """Accessor for the wallet name."""
-        return self._name
-
-    @property
-    def type(self) -> str:
-        """Accessor for the wallet type."""
-        return BasicWallet.WALLET_TYPE
-
-    @property
-    def created(self) -> bool:
-        """Check whether the wallet was created on the last open call."""
-        return True
-
-    @property
-    def opened(self) -> bool:
-        """
-        Check whether wallet is currently open.
-
-        Returns:
-            True
-
-        """
-        return True
-
-    async def open(self):
-        """Not applicable to in-memory wallet."""
-        pass
-
-    async def close(self):
-        """Not applicable to in-memory wallet."""
-        pass
+        self.profile = profile
 
     async def create_signing_key(
         self, seed: str = None, metadata: dict = None

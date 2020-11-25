@@ -1,13 +1,12 @@
 from asynctest import TestCase as AsyncTestCase
 
-from ....config.injection_context import InjectionContext
+from ....in_memory.profile import InMemoryProfile
 from ....protocols.connections.v1_0.messages.connection_invitation import (
     ConnectionInvitation,
 )
 from ....protocols.connections.v1_0.messages.connection_request import ConnectionRequest
 from ....protocols.connections.v1_0.models.connection_detail import ConnectionDetail
 from ....storage.base import BaseStorage
-from ....storage.basic import BasicStorage
 from ....storage.error import StorageNotFoundError
 
 from ..conn_record import ConnRecord
@@ -16,9 +15,7 @@ from ..diddoc.diddoc import DIDDoc
 
 class TestConnRecord(AsyncTestCase):
     def setUp(self):
-        self.storage = BasicStorage()
-        self.context = InjectionContext()
-        self.context.injector.bind_instance(BaseStorage, self.storage)
+        self.session = InMemoryProfile.test_session()
 
         self.test_seed = "testseed000000000000000000000001"
         self.test_did = "55GkHamhTU1ZbTbV2ab9DE"
@@ -59,8 +56,8 @@ class TestConnRecord(AsyncTestCase):
 
     async def test_save_retrieve_compare(self):
         record = ConnRecord(my_did=self.test_did)
-        connection_id = await record.save(self.context)
-        fetched = await ConnRecord.retrieve_by_id(self.context, connection_id)
+        connection_id = await record.save(self.session)
+        fetched = await ConnRecord.retrieve_by_id(self.session, connection_id)
         assert fetched and fetched == record
 
         bad_record = ConnRecord(my_did=None)
@@ -74,8 +71,8 @@ class TestConnRecord(AsyncTestCase):
             my_did=self.test_did,
             their_role=ConnRecord.Role.REQUESTER,  # exercise init Role by enum
         )
-        connection_id = await record.save(self.context)
-        fetched = await ConnRecord.retrieve_by_id(self.context, connection_id)
+        connection_id = await record.save(self.session)
+        fetched = await ConnRecord.retrieve_by_id(self.session, connection_id)
         assert fetched and fetched == record
         assert fetched.state is ConnRecord.State.INIT.rfc160
         assert ConnRecord.State.get(fetched.state) is ConnRecord.State.INIT
@@ -99,9 +96,9 @@ class TestConnRecord(AsyncTestCase):
             their_role=ConnRecord.Role.RESPONDER.rfc23,
             state=ConnRecord.State.COMPLETED.rfc23,
         )
-        rec_id = await record.save(self.context)
+        rec_id = await record.save(self.session)
         result = await ConnRecord.retrieve_by_did(
-            context=self.context,
+            session=self.session,
             my_did=self.test_did,
             their_did=self.test_target_did,
             their_role=ConnRecord.Role.RESPONDER.rfc160,
@@ -116,16 +113,16 @@ class TestConnRecord(AsyncTestCase):
             state=ConnRecord.State.INVITATION.rfc23,
             invitation_key="dummy",
         )
-        await record.save(self.context)
+        await record.save(self.session)
         result = await ConnRecord.retrieve_by_invitation_key(
-            context=self.context,
+            session=self.session,
             invitation_key="dummy",
             their_role=ConnRecord.Role.RESPONDER.rfc23,
         )
         assert result == record
         with self.assertRaises(StorageNotFoundError):
             await ConnRecord.retrieve_by_invitation_key(
-                context=self.context,
+                session=self.session,
                 invitation_key="dummy",
                 their_role=ConnRecord.Role.REQUESTER.rfc23,
             )
@@ -138,30 +135,30 @@ class TestConnRecord(AsyncTestCase):
             state=ConnRecord.State.COMPLETED.rfc23,
             request_id="abc123",
         )
-        await record.save(self.context)
+        await record.save(self.session)
         result = await ConnRecord.retrieve_by_request_id(
-            context=self.context, request_id="abc123"
+            session=self.session, request_id="abc123"
         )
         assert result == record
 
     async def test_completed_is_ready(self):
         record = ConnRecord(my_did=self.test_did, state=ConnRecord.State.COMPLETED)
-        connection_id = await record.save(self.context)
-        fetched = await ConnRecord.retrieve_by_id(self.context, connection_id)
+        connection_id = await record.save(self.session)
+        fetched = await ConnRecord.retrieve_by_id(self.session, connection_id)
 
         assert fetched.is_ready == True
 
     async def test_response_is_ready(self):
         record = ConnRecord(my_did=self.test_did, state=ConnRecord.State.RESPONSE)
-        connection_id = await record.save(self.context)
-        fetched = await ConnRecord.retrieve_by_id(self.context, connection_id)
+        connection_id = await record.save(self.session)
+        fetched = await ConnRecord.retrieve_by_id(self.session, connection_id)
 
         assert fetched.is_ready is True
 
     async def test_request_is_not_ready(self):
         record = ConnRecord(my_did=self.test_did, state=ConnRecord.State.REQUEST)
-        connection_id = await record.save(self.context)
-        fetched = await ConnRecord.retrieve_by_id(self.context, connection_id)
+        connection_id = await record.save(self.session)
+        fetched = await ConnRecord.retrieve_by_id(self.session, connection_id)
 
         assert fetched.is_ready is False
 
@@ -171,8 +168,8 @@ class TestConnRecord(AsyncTestCase):
             state=ConnRecord.State.INVITATION.rfc23,
             invitation_mode=ConnRecord.INVITATION_MODE_ONCE,
         )
-        connection_id = await record.save(self.context)
-        fetched = await ConnRecord.retrieve_by_id(self.context, connection_id)
+        connection_id = await record.save(self.session)
+        fetched = await ConnRecord.retrieve_by_id(self.session, connection_id)
 
         assert fetched.is_multiuse_invitation is False
 
@@ -182,8 +179,8 @@ class TestConnRecord(AsyncTestCase):
             state=ConnRecord.State.INVITATION.rfc23,
             invitation_mode=ConnRecord.INVITATION_MODE_MULTI,
         )
-        connection_id = await record.save(self.context)
-        fetched = await ConnRecord.retrieve_by_id(self.context, connection_id)
+        connection_id = await record.save(self.session)
+        fetched = await ConnRecord.retrieve_by_id(self.session, connection_id)
 
         assert fetched.is_multiuse_invitation is True
 
@@ -192,15 +189,15 @@ class TestConnRecord(AsyncTestCase):
             my_did=self.test_did,
             state=ConnRecord.State.INVITATION.rfc23,
         )
-        connection_id = await record.save(self.context)
+        connection_id = await record.save(self.session)
 
         invi = ConnectionInvitation(
             label="abc123",
             recipient_keys=[self.test_verkey],
             endpoint="http://localhost:8999",
         )
-        await record.attach_invitation(self.context, invi)
-        retrieved = await record.retrieve_invitation(self.context)
+        await record.attach_invitation(self.session, invi)
+        retrieved = await record.retrieve_invitation(self.session)
         assert isinstance(retrieved, ConnectionInvitation)
 
     async def test_attach_retrieve_request(self):
@@ -208,7 +205,7 @@ class TestConnRecord(AsyncTestCase):
             my_did=self.test_did,
             state=ConnRecord.State.INVITATION.rfc23,
         )
-        connection_id = await record.save(self.context)
+        connection_id = await record.save(self.session)
 
         req = ConnectionRequest(
             connection=ConnectionDetail(
@@ -216,8 +213,8 @@ class TestConnRecord(AsyncTestCase):
             ),
             label="abc123",
         )
-        await record.attach_request(self.context, req)
-        retrieved = await record.retrieve_request(self.context)
+        await record.attach_request(self.session, req)
+        retrieved = await record.retrieve_request(self.session)
         assert isinstance(retrieved, ConnectionRequest)
 
     async def test_deser_old_style_record(self):

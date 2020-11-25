@@ -1,23 +1,36 @@
 """Classes for managing profile information within a request context."""
 
 from abc import abstractmethod
-from typing import Optional, Type, TypeVar
+from typing import Mapping, Optional, Type
 
-InjectType = TypeVar("Inject")
+from ..config.injection_context import InjectionContext, InjectType
 
 
 class Profile:
     """Base abstraction for handling identity-related state."""
 
-    @property
-    @abstractmethod
-    def backend(self) -> str:
-        """Accessor for the backend implementation name."""
+    BACKEND_NAME = None
+    DEFAULT_NAME = "default"
+
+    def __init__(self, *, context: InjectionContext = None, name: str = None):
+        """Initialize a base profile."""
+        self._context = context or InjectionContext()
+        self._name = name or Profile.DEFAULT_NAME
 
     @property
-    @abstractmethod
+    def backend(self) -> str:
+        """Accessor for the backend implementation name."""
+        return self.__class__.BACKEND_NAME
+
+    @property
+    def context(self) -> InjectionContext:
+        """Accessor for the injection context."""
+        return self._context
+
+    @property
     def name(self) -> str:
         """Accessor for the profile name."""
+        return self._name
 
     @abstractmethod
     async def start_session(self) -> "ProfileSession":
@@ -32,6 +45,26 @@ class Profile:
         and rollback operations of the session will not have any effect.
         """
 
+    def inject(
+        self,
+        base_cls: Type[InjectType],
+        settings: Mapping[str, object] = None,
+        *,
+        required: bool = True
+    ) -> Optional[InjectType]:
+        """
+        Get the provided instance of a given class identifier.
+
+        Args:
+            cls: The base class to retrieve an instance of
+            settings: An optional mapping providing configuration to the provider
+
+        Returns:
+            An instance of the base class, or None
+
+        """
+        return self._context.inject(base_cls, settings, required=required)
+
     def __repr__(self) -> str:
         """Get a human readable string."""
         return "<{}(backend={}, name={})>".format(
@@ -41,6 +74,21 @@ class Profile:
 
 class ProfileSession:
     """An active connection to the profile management backend."""
+
+    def __init__(self, *, profile: Profile, context: InjectionContext = None):
+        """Initialize a base profile session."""
+        self._context = context or profile.context
+        self._profile = profile
+
+    @property
+    def context(self) -> InjectionContext:
+        """Accessor for the associated injection context."""
+        return self._context
+
+    @property
+    def profile(self) -> Profile:
+        """Accessor for the associated profile instance."""
+        return self._profile
 
     @property
     def handle(self):
@@ -66,11 +114,25 @@ class ProfileSession:
         If the current session is not a transaction, then nothing is performed.
         """
 
-    @abstractmethod
     def inject(
-        self, base_cls: Type[InjectType], required: bool = True
+        self,
+        base_cls: Type[InjectType],
+        settings: Mapping[str, object] = None,
+        *,
+        required: bool = True
     ) -> Optional[InjectType]:
-        """Get an instance of a defined interface base class tied to this session."""
+        """
+        Get the provided instance of a given class identifier.
+
+        Args:
+            cls: The base class to retrieve an instance of
+            settings: An optional mapping providing configuration to the provider
+
+        Returns:
+            An instance of the base class, or None
+
+        """
+        return self._context.inject(base_cls, settings, required=required)
 
     def __repr__(self) -> str:
         """Get a human readable string."""

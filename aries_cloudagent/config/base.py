@@ -1,9 +1,11 @@
 """Configuration base classes."""
 
 from abc import ABC, abstractmethod
-from typing import Mapping
+from typing import Mapping, Type, TypeVar
 
 from ..core.error import BaseError
+
+InjectType = TypeVar("Inject")
 
 
 class ConfigError(BaseError):
@@ -108,11 +110,11 @@ class BaseInjector(ABC):
     @abstractmethod
     async def inject(
         self,
-        base_cls: type,
+        base_cls: Type[InjectType],
         settings: Mapping[str, object] = None,
         *,
         required: bool = True,
-    ) -> object:
+    ) -> InjectType:
         """
         Get the provided instance of a given class identifier.
 

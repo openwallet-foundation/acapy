@@ -1,33 +1,18 @@
 """Manage Indy-SDK profile interaction."""
 
-from typing import Optional, Type
-
-from ...config.error import InjectorError
-from ...core.profile import Profile, ProfileSession, InjectType
+from ...config.provider import ClassProvider
+from ...core.profile import Profile, ProfileSession
 from ...storage.base import BaseStorage
-from ...storage.indy import IndyStorage
 from ...wallet.base import BaseWallet
-from ...wallet.indy import IndyWallet
 
 from ..holder import IndyHolder
 from ..issuer import IndyIssuer
 from ..verifier import IndyVerifier
 
-from .issuer import IndySdkIssuer
-from .holder import IndySdkHolder
-from .verifier import IndySdkVerifier
 from .wallet_setup import IndyOpenWallet
 
-TYPE_MAP = {
-    BaseStorage: IndyStorage,
-    BaseWallet: IndyWallet,
-    IndyHolder: IndySdkHolder,
-    IndyIssuer: IndySdkIssuer,
-    IndyVerifier: IndySdkVerifier,
-}
 
-
-class IndyProfile(Profile):
+class IndySdkProfile(Profile):
     """Provide access to Indy profile interaction methods."""
 
     def __init__(self, wallet: IndyOpenWallet):
@@ -46,7 +31,7 @@ class IndyProfile(Profile):
 
     async def start_session(self) -> "ProfileSession":
         """Start a new interactive session with no transaction support requested."""
-        return IndyProfileSession(self.wallet)
+        return IndySdkProfileSession(self)
 
     async def start_transaction(self) -> "ProfileSession":
         """
@@ -55,23 +40,39 @@ class IndyProfile(Profile):
         If the current backend does not support transactions, then commit
         and rollback operations of the session will not have any effect.
         """
-        return IndyProfileSession(self.wallet)
+        return IndySdkProfileSession(self)
 
 
-class IndyProfileSession(ProfileSession):
+class IndySdkProfileSession(ProfileSession):
     """An active connection to the profile management backend."""
 
-    def __init__(self, wallet: IndyOpenWallet):
-        """Create a new IndyProfileSession instance."""
-        self.wallet = wallet
-
-    def inject(
-        self, base_cls: Type[InjectType], required: bool = True
-    ) -> Optional[InjectType]:
-        """Get an instance of a defined interface base class tied to this session."""
-        if base_cls in TYPE_MAP:
-            return TYPE_MAP[base_cls](self.wallet)
-        if required:
-            raise InjectorError(
-                "No instance provided for class: {}".format(base_cls.__name__)
-            )
+    def __init__(self, profile: IndySdkProfile):
+        """Create a new IndySdkProfileSession instance."""
+        context = profile.context.start_scope("session")
+        context.injector.bind_provider(
+            BaseStorage,
+            ClassProvider("aries_cloudagent.storage.indy.IndyStorage", self.wallet),
+        )
+        context.injector.bind_provider(
+            BaseWallet,
+            ClassProvider("aries_cloudagent.wallet.indy.IndyWallet", self.wallet),
+        )
+        context.injector.bind_provider(
+            IndyHolder,
+            ClassProvider(
+                "aries_cloudagent.indy.sdk.holder.IndySdkHolder", self.wallet
+            ),
+        )
+        context.injector.bind_provider(
+            IndyIssuer,
+            ClassProvider(
+                "aries_cloudagent.indy.sdk.issuer.IndySdkIssuer", self.wallet
+            ),
+        )
+        context.injector.bind_provider(
+            IndyVerifier,
+            ClassProvider(
+                "aries_cloudagent.indy.sdk.verifier.IndySdkVerifier", self.wallet
+            ),
+        )
+        super().__init__(profile=profile, context=context)

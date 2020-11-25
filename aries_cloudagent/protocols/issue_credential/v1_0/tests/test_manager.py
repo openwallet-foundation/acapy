@@ -358,7 +358,7 @@ class TestCredentialManager(AsyncTestCase):
                     "epoch": str(int(time())),
                 },
             )
-            storage: BaseStorage = await self.context.inject(BaseStorage)
+            storage: BaseStorage =  self.context.inject(BaseStorage)
             await storage.add_record(cred_def_record)
 
             (ret_exchange, ret_offer) = await self.manager.create_offer(
@@ -433,7 +433,7 @@ class TestCredentialManager(AsyncTestCase):
                     "epoch": str(int(time())),
                 },
             )
-            storage: BaseStorage = await self.context.inject(BaseStorage)
+            storage: BaseStorage =  self.context.inject(BaseStorage)
             await storage.add_record(cred_def_record)
 
             with self.assertRaises(CredentialManagerError):
@@ -491,7 +491,7 @@ class TestCredentialManager(AsyncTestCase):
                     "epoch": str(int(time())),
                 },
             )
-            storage: BaseStorage = await self.context.inject(BaseStorage)
+            storage: BaseStorage =  self.context.inject(BaseStorage)
             await storage.add_record(cred_def_record)
 
             (ret_exchange, ret_offer) = await self.manager.create_offer(
@@ -1555,7 +1555,7 @@ class TestCredentialManager(AsyncTestCase):
 
         self.storage = BasicStorage()
         self.context.injector.bind_instance(BaseStorage, self.storage)
-        storage: BaseStorage = await self.context.inject(BaseStorage)
+        storage: BaseStorage =  self.context.inject(BaseStorage)
         for index in range(2):
             exchange_record = V10CredentialExchange(
                 connection_id=str(index),

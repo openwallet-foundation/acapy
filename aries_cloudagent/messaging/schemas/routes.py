@@ -121,14 +121,14 @@ async def schemas_send_schema(request: web.BaseRequest):
     schema_version = body.get("schema_version")
     attributes = body.get("attributes")
 
-    ledger: BaseLedger = await context.inject(BaseLedger, required=False)
+    ledger: BaseLedger = context.inject(BaseLedger, required=False)
     if not ledger:
         reason = "No ledger available"
         if not context.settings.get_value("wallet.type"):
             reason += ": missing wallet-type?"
         raise web.HTTPForbidden(reason=reason)
 
-    issuer: IndyIssuer = await context.inject(IndyIssuer)
+    issuer: IndyIssuer = context.inject(IndyIssuer)
     async with ledger:
         try:
             schema_id, schema_def = await shield(
@@ -161,7 +161,7 @@ async def schemas_created(request: web.BaseRequest):
     """
     context = request.app["request_context"]
 
-    storage = await context.inject(BaseStorage)
+    storage = context.inject(BaseStorage)
     found = await storage.search_records(
         type_filter=SCHEMA_SENT_RECORD_TYPE,
         tag_query={
@@ -190,7 +190,7 @@ async def schemas_get_schema(request: web.BaseRequest):
 
     schema_id = request.match_info["schema_id"]
 
-    ledger: BaseLedger = await context.inject(BaseLedger, required=False)
+    ledger: BaseLedger = context.inject(BaseLedger, required=False)
     if not ledger:
         reason = "No ledger available"
         if not context.settings.get_value("wallet.type"):

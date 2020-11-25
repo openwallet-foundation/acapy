@@ -313,7 +313,7 @@ class TestPresentationManager(AsyncTestCase):
             name=PROOF_REQ_NAME,
             version=PROOF_REQ_VERSION,
             nonce=PROOF_REQ_NONCE,
-            ledger=await self.context.inject(BaseLedger, required=False),
+            ledger=self.context.inject(BaseLedger, required=False),
         )
 
         exchange_in.presentation_request = indy_proof_req
@@ -362,7 +362,7 @@ class TestPresentationManager(AsyncTestCase):
             name=PROOF_REQ_NAME,
             version=PROOF_REQ_VERSION,
             nonce=PROOF_REQ_NONCE,
-            ledger=await self.context.inject(BaseLedger, required=False),
+            ledger=self.context.inject(BaseLedger, required=False),
         )
         indy_proof_req["non_revoked"] = None  # simulate interop with indy-vcx
 
@@ -430,7 +430,7 @@ class TestPresentationManager(AsyncTestCase):
             name=PROOF_REQ_NAME,
             version=PROOF_REQ_VERSION,
             nonce=PROOF_REQ_NONCE,
-            ledger=await self.context.inject(BaseLedger, required=False),
+            ledger=self.context.inject(BaseLedger, required=False),
         )
 
         exchange_in.presentation_request = indy_proof_req
@@ -490,7 +490,7 @@ class TestPresentationManager(AsyncTestCase):
             name=PROOF_REQ_NAME,
             version=PROOF_REQ_VERSION,
             nonce=PROOF_REQ_NONCE,
-            ledger=await self.context.inject(BaseLedger, required=False),
+            ledger=self.context.inject(BaseLedger, required=False),
         )
 
         exchange_in.presentation_request = indy_proof_req
@@ -557,7 +557,7 @@ class TestPresentationManager(AsyncTestCase):
             name=PROOF_REQ_NAME,
             version=PROOF_REQ_VERSION,
             nonce=PROOF_REQ_NONCE,
-            ledger=await self.context.inject(BaseLedger, required=False),
+            ledger=self.context.inject(BaseLedger, required=False),
         )
 
         exchange_in.presentation_request = indy_proof_req
@@ -633,7 +633,7 @@ class TestPresentationManager(AsyncTestCase):
             name=PROOF_REQ_NAME,
             version=PROOF_REQ_VERSION,
             nonce=PROOF_REQ_NONCE,
-            ledger=await self.context.inject(BaseLedger, required=False),
+            ledger=self.context.inject(BaseLedger, required=False),
         )
 
         exchange_in.presentation_request = indy_proof_req
@@ -731,7 +731,7 @@ class TestPresentationManager(AsyncTestCase):
             name=PROOF_REQ_NAME,
             version=PROOF_REQ_VERSION,
             nonce=PROOF_REQ_NONCE,
-            ledger=await self.context.inject(BaseLedger, required=False),
+            ledger=self.context.inject(BaseLedger, required=False),
         )
         get_creds = async_mock.CoroutineMock(return_value=())
         self.holder.get_credentials_for_presentation_request_by_referent = get_creds

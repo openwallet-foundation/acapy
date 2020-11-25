@@ -1,4 +1,4 @@
-"""Indy implementation of BaseWallet interface."""
+"""Indy-SDK wallet setup and configuration."""
 
 import json
 import logging

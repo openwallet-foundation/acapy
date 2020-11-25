@@ -37,7 +37,7 @@ async def sign(request: web.BaseRequest):
     response = {}
     try:
         context = request.app["request_context"]
-        wallet: BaseWallet = await context.inject(BaseWallet)
+        wallet: BaseWallet = context.inject(BaseWallet)
         if not wallet:
             raise web.HTTPForbidden()
 
@@ -85,7 +85,7 @@ async def verify(request: web.BaseRequest):
     response = {"valid": False}
     try:
         context = request.app["request_context"]
-        wallet: BaseWallet = await context.inject(BaseWallet)
+        wallet: BaseWallet = context.inject(BaseWallet)
         if not wallet:
             raise web.HTTPForbidden()
 

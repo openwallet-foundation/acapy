@@ -27,12 +27,12 @@ class LedgerProvider(BaseProvider):
         read_only = bool(settings.get("ledger.read_only", False))
         if read_only:
             LOGGER.error("Note: setting ledger to read-only mode")
-        wallet = await injector.inject(BaseWallet)
+        wallet = injector.inject(BaseWallet)
         ledger = None
 
         if wallet.type == "indy":
             IndyLedger = ClassLoader.load_class(self.LEDGER_CLASSES["indy"])
-            cache = await injector.inject(BaseCache, required=False)
+            cache = injector.inject(BaseCache, required=False)
             ledger = IndyLedger(
                 pool_name, wallet, keepalive=keepalive, cache=cache, read_only=read_only
             )

@@ -28,7 +28,7 @@ class IndyRevocation:
         tag: str = None,
     ) -> "IssuerRevRegRecord":
         """Create a new revocation registry record for a credential definition."""
-        ledger: BaseLedger = await self._context.inject(BaseLedger)
+        ledger: BaseLedger = self._context.inject(BaseLedger)
         async with ledger:
             cred_def = await ledger.get_credential_definition(cred_def_id)
         if not cred_def:
@@ -94,7 +94,7 @@ class IndyRevocation:
         if revoc_reg_id in IndyRevocation.REV_REG_CACHE:
             return IndyRevocation.REV_REG_CACHE[revoc_reg_id]
 
-        ledger: BaseLedger = await self._context.inject(BaseLedger)
+        ledger: BaseLedger = self._context.inject(BaseLedger)
         async with ledger:
             rev_reg = RevocationRegistry.from_definition(
                 await ledger.get_revoc_reg_def(revoc_reg_id), True

@@ -203,7 +203,7 @@ class PluginRegistry:
         version_definition: dict = None,
     ):
         """Load a particular protocol version."""
-        registry = await context.inject(ProtocolRegistry)
+        registry = context.inject(ProtocolRegistry)
 
         if hasattr(mod, "MESSAGE_TYPES"):
             registry.register_message_types(

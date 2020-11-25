@@ -142,7 +142,7 @@ class PresentationManager:
             name=name,
             version=version,
             nonce=nonce,
-            ledger=await self.context.inject(BaseLedger),
+            ledger=self.context.inject(BaseLedger),
         )
         presentation_request_message = PresentationRequest(
             comment=comment,
@@ -265,7 +265,7 @@ class PresentationManager:
         """
 
         # Get all credentials for this presentation
-        holder: IndyHolder = await self.context.inject(IndyHolder)
+        holder: IndyHolder = self.context.inject(IndyHolder)
         credentials = {}
 
         # extract credential ids and non_revoked
@@ -300,7 +300,7 @@ class PresentationManager:
                 )
 
         # Get all schema, credential definition, and revocation registry in use
-        ledger: BaseLedger = await self.context.inject(BaseLedger)
+        ledger: BaseLedger = self.context.inject(BaseLedger)
         schemas = {}
         credential_definitions = {}
         revocation_registries = {}
@@ -529,7 +529,7 @@ class PresentationManager:
         rev_reg_entries = {}
 
         identifiers = indy_proof["identifiers"]
-        ledger: BaseLedger = await self.context.inject(BaseLedger)
+        ledger: BaseLedger = self.context.inject(BaseLedger)
         async with ledger:
             for identifier in identifiers:
                 schema_ids.append(identifier["schema_id"])
@@ -571,7 +571,7 @@ class PresentationManager:
                                 identifier["timestamp"]
                             ] = found_rev_reg_entry
 
-        verifier: IndyVerifier = await self.context.inject(IndyVerifier)
+        verifier: IndyVerifier = self.context.inject(IndyVerifier)
         presentation_exchange_record.verified = json.dumps(  # tag: needs string value
             await verifier.verify_presentation(
                 indy_proof_request,
@@ -601,7 +601,7 @@ class PresentationManager:
             presentation_exchange_record: presentation exchange record with thread id
 
         """
-        responder = await self.context.inject(BaseResponder, required=False)
+        responder = self.context.inject(BaseResponder, required=False)
 
         if responder:
             presentation_ack_message = PresentationAck()

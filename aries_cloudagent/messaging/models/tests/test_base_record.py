@@ -19,7 +19,6 @@ class BaseRecordImpl(BaseRecord):
         schema_class = "BaseRecordImplSchema"
 
     RECORD_TYPE = "record"
-    CACHE_ENABLED = True
 
 
 class BaseRecordImplSchema(BaseRecordSchema):
@@ -33,7 +32,6 @@ class ARecordImpl(BaseRecord):
         schema_class = "ARecordImplSchema"
 
     RECORD_TYPE = "a-record"
-    CACHE_ENABLED = False
     RECORD_ID_NAME = "ident"
     TAG_NAMES = {"code"}
 
@@ -128,26 +126,6 @@ class TestBaseRecord(AsyncTestCase):
         await record.clear_cached_key(context, cache_key)
         mock_cache.clear.assert_awaited_once_with(cache_key)
 
-    async def test_retrieve_cached_id(self):
-        context = InjectionContext(enforce_typing=False)
-        mock_storage = async_mock.MagicMock(BaseStorage, autospec=True)
-        context.injector.bind_instance(BaseStorage, mock_storage)
-        record_id = "record_id"
-        stored = {"created_at": time_now(), "updated_at": time_now()}
-        with async_mock.patch.object(
-            BaseRecordImpl, "get_cached_key"
-        ) as get_cached_key, async_mock.patch.object(
-            BaseRecordImpl, "cache_key"
-        ) as cache_key:
-            get_cached_key.return_value = stored
-            result = await BaseRecordImpl.retrieve_by_id(context, record_id, True)
-            cache_key.assert_called_once_with(record_id)
-            get_cached_key.assert_awaited_once_with(context, cache_key.return_value)
-            mock_storage.get_record.assert_not_called()
-            assert isinstance(result, BaseRecordImpl)
-            assert result._id == record_id
-            assert result.value == stored
-
     async def test_retrieve_by_tag_filter_multi_x_delete(self):
         context = InjectionContext(enforce_typing=False)
         basic_storage = BasicStorage()
@@ -180,32 +158,6 @@ class TestBaseRecord(AsyncTestCase):
         a_rec = ARecordImpl(a="1", b="0", code="one")
         b_rec = BaseRecordImpl()
         assert a_rec != b_rec
-
-    async def test_retrieve_uncached_id(self):
-        context = InjectionContext(enforce_typing=False)
-        mock_storage = async_mock.MagicMock(BaseStorage, autospec=True)
-        context.injector.bind_instance(BaseStorage, mock_storage)
-        record_id = "record_id"
-        record_value = {"created_at": time_now(), "updated_at": time_now()}
-        stored = StorageRecord(
-            BaseRecordImpl.RECORD_TYPE, json.dumps(record_value), {}, record_id
-        )
-        with async_mock.patch.object(
-            BaseRecordImpl, "set_cached_key"
-        ) as set_cached_key, async_mock.patch.object(
-            BaseRecordImpl, "cache_key"
-        ) as cache_key:
-            mock_storage.get_record.return_value = stored
-            result = await BaseRecordImpl.retrieve_by_id(context, record_id, False)
-            mock_storage.get_record.assert_awaited_once_with(
-                BaseRecordImpl.RECORD_TYPE, record_id, {"retrieveTags": False}
-            )
-            set_cached_key.assert_awaited_once_with(
-                context, cache_key.return_value, record_value
-            )
-            assert isinstance(result, BaseRecordImpl)
-            assert result._id == record_id
-            assert result.value == record_value
 
     async def test_query(self):
         context = InjectionContext(enforce_typing=False)

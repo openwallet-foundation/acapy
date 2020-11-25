@@ -7,7 +7,7 @@ from asynctest import mock as async_mock
 
 from ...config.injection_context import InjectionContext
 from ...storage.base import BaseStorage
-from ...storage.basic import BasicStorage
+from ...storage.in_memory import InMemoryStorage
 from ...tails.base import BaseTailsServer
 
 from .. import routes as test_module

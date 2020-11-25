@@ -2,24 +2,25 @@ import pytest
 
 from asynctest import mock as async_mock
 
+from aries_cloudagent.in_memory.profile import InMemoryProfile
 from aries_cloudagent.storage.error import (
     StorageDuplicateError,
     StorageError,
     StorageNotFoundError,
     StorageSearchError,
 )
-
-from aries_cloudagent.storage.basic import (
-    BasicStorage,
-    basic_tag_value_match,
-    basic_tag_query_match,
+from aries_cloudagent.storage.in_memory import (
+    InMemoryStorage,
+    tag_value_match,
+    tag_query_match,
 )
 from aries_cloudagent.storage.record import StorageRecord
 
 
 @pytest.fixture()
 def store():
-    yield BasicStorage()
+    profile = InMemoryProfile("test-profile")
+    yield InMemoryStorage(profile)
 
 
 def test_record(tags={}):
@@ -30,7 +31,7 @@ def test_missing_record(tags={}):
     return StorageRecord(type="__MISSING__", value="000000000")
 
 
-class TestBasicStorage:
+class TestInMemoryStorage:
     def test_repr(self, store):
         assert store.__class__.__name__ in str(store)
 
@@ -170,61 +171,59 @@ class TestBasicStorage:
             await search.fetch(100)
 
     @pytest.mark.asyncio
-    async def test_basic_tag_value_match(self, store):
+    async def test_tag_value_match(self, store):
         TAGS = {"a": "aardvark", "b": "bear", "z": "0"}
         record = test_record(TAGS)
         await store.add_record(record)
 
-        assert not basic_tag_value_match(None, {"$neq": "octopus"})
-        assert not basic_tag_value_match(TAGS["a"], {"$in": ["cat", "dog"]})
-        assert basic_tag_value_match(TAGS["a"], {"$neq": "octopus"})
-        assert basic_tag_value_match(TAGS["z"], {"$gt": "-0.5"})
-        assert basic_tag_value_match(TAGS["z"], {"$gte": "0"})
-        assert basic_tag_value_match(TAGS["z"], {"$lt": "1"})
-        assert basic_tag_value_match(TAGS["z"], {"$lte": "0"})
+        assert not tag_value_match(None, {"$neq": "octopus"})
+        assert not tag_value_match(TAGS["a"], {"$in": ["cat", "dog"]})
+        assert tag_value_match(TAGS["a"], {"$neq": "octopus"})
+        assert tag_value_match(TAGS["z"], {"$gt": "-0.5"})
+        assert tag_value_match(TAGS["z"], {"$gte": "0"})
+        assert tag_value_match(TAGS["z"], {"$lt": "1"})
+        assert tag_value_match(TAGS["z"], {"$lte": "0"})
 
         with pytest.raises(StorageSearchError) as excinfo:
-            basic_tag_value_match(TAGS["z"], {"$gt": "-1", "$lt": "1"})
+            tag_value_match(TAGS["z"], {"$gt": "-1", "$lt": "1"})
         assert "Unsupported subquery" in str(excinfo.value)
 
         with pytest.raises(StorageSearchError) as excinfo:
-            basic_tag_value_match(TAGS["a"], {"$in": "aardvark"})
+            tag_value_match(TAGS["a"], {"$in": "aardvark"})
         assert "Expected list" in str(excinfo.value)
 
         with pytest.raises(StorageSearchError) as excinfo:
-            basic_tag_value_match(TAGS["z"], {"$gte": -1})
+            tag_value_match(TAGS["z"], {"$gte": -1})
         assert "Expected string" in str(excinfo.value)
 
         with pytest.raises(StorageSearchError) as excinfo:
-            basic_tag_value_match(TAGS["z"], {"$near": "-1"})
+            tag_value_match(TAGS["z"], {"$near": "-1"})
         assert "Unsupported match operator" in str(excinfo.value)
 
     @pytest.mark.asyncio
-    async def test_basic_tag_query_match(self, store):
+    async def test_tag_query_match(self, store):
         TAGS = {"a": "aardvark", "b": "bear", "z": "0"}
         record = test_record(TAGS)
         await store.add_record(record)
 
-        assert basic_tag_query_match(None, None)
-        assert not basic_tag_query_match(None, {"a": "aardvark"})
-        assert basic_tag_query_match(
-            TAGS, {"$or": [{"a": "aardvark"}, {"a": "alligator"}]}
-        )
-        assert basic_tag_query_match(TAGS, {"$not": {"a": "alligator"}})
-        assert basic_tag_query_match(TAGS, {"z": {"$gt": "-1"}})
+        assert tag_query_match(None, None)
+        assert not tag_query_match(None, {"a": "aardvark"})
+        assert tag_query_match(TAGS, {"$or": [{"a": "aardvark"}, {"a": "alligator"}]})
+        assert tag_query_match(TAGS, {"$not": {"a": "alligator"}})
+        assert tag_query_match(TAGS, {"z": {"$gt": "-1"}})
 
         with pytest.raises(StorageSearchError) as excinfo:
-            basic_tag_query_match(TAGS, {"$or": "-1"})
+            tag_query_match(TAGS, {"$or": "-1"})
         assert "Expected list" in str(excinfo.value)
 
         with pytest.raises(StorageSearchError) as excinfo:
-            basic_tag_query_match(TAGS, {"$not": [{"z": "-1"}, {"z": "1"}]})
+            tag_query_match(TAGS, {"$not": [{"z": "-1"}, {"z": "1"}]})
         assert "Expected dict for $not filter value" in str(excinfo.value)
 
         with pytest.raises(StorageSearchError) as excinfo:
-            basic_tag_query_match(TAGS, {"$near": {"z": "-1"}})
+            tag_query_match(TAGS, {"$near": {"z": "-1"}})
         assert "Unexpected filter operator" in str(excinfo.value)
 
         with pytest.raises(StorageSearchError) as excinfo:
-            basic_tag_query_match(TAGS, {"a": -1})
+            tag_query_match(TAGS, {"a": -1})
         assert "Expected string or dict for filter value" in str(excinfo.value)

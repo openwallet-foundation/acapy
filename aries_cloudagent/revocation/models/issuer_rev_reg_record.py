@@ -49,7 +49,6 @@ class IssuerRevRegRecord(BaseRecord):
     RECORD_TYPE = "issuer_rev_reg"
     WEBHOOK_TOPIC = "revocation_registry"
     LOG_STATE_FLAG = "debug.revocation"
-    CACHE_ENABLED = False
     TAG_NAMES = {
         "cred_def_id",
         "issuer_did",
@@ -146,7 +145,7 @@ class IssuerRevRegRecord(BaseRecord):
                 )
             )
 
-        issuer: IndyIssuer = await context.inject(IndyIssuer)
+        issuer: IndyIssuer = context.inject(IndyIssuer)
         tails_hopper_dir = indy_client_dir(join("tails", ".hopper"), create=True)
 
         LOGGER.debug("Creating revocation registry with size: %d", self.max_cred_num)
@@ -209,7 +208,7 @@ class IssuerRevRegRecord(BaseRecord):
         await self.send_def(context)
         await self.send_entry(context)
 
-        tails_server: BaseTailsServer = await context.inject(BaseTailsServer)
+        tails_server: BaseTailsServer = context.inject(BaseTailsServer)
         (upload_success, reason) = await tails_server.upload_tails_file(
             context,
             self.revoc_reg_id,
@@ -241,7 +240,7 @@ class IssuerRevRegRecord(BaseRecord):
                 )
             )
 
-        ledger: BaseLedger = await context.inject(BaseLedger)
+        ledger: BaseLedger = context.inject(BaseLedger)
         async with ledger:
             await ledger.send_revoc_reg_def(self.revoc_reg_def, self.issuer_did)
 
@@ -271,7 +270,7 @@ class IssuerRevRegRecord(BaseRecord):
                 )
             )
 
-        ledger: BaseLedger = await context.inject(BaseLedger)
+        ledger: BaseLedger = context.inject(BaseLedger)
         async with ledger:
             await ledger.send_revoc_reg_entry(
                 self.revoc_reg_id,

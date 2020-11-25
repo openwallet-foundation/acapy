@@ -1,45 +1,48 @@
 """Manage in-memory profile interaction."""
 
 from collections import OrderedDict
-from typing import Optional, Type
 
-from ...config.error import InjectorError
-from ...core.profile import Profile, ProfileSession, InjectType
-from ...storage.base import BaseStorage
-from ...storage.in_memory import InMemoryStorage
-from ...wallet.base import BaseWallet
-from ...wallet.in_memory import InMemoryWallet
+from ..config.injection_context import InjectionContext
+from ..core.profile import Profile, ProfileSession
+from ..storage.base import BaseStorage
+from ..utils.classloader import ClassLoader
+from ..wallet.base import BaseWallet
 
-TYPE_MAP = {
-    BaseStorage: InMemoryStorage,
-    BaseWallet: InMemoryWallet,
-}
+STORAGE_CLASS = None
+WALLET_CLASS = None
 
 
 class InMemoryProfile(Profile):
-    """Provide access to in-memory profile interaction methods."""
+    """
+    Provide access to in-memory profile management.
 
-    def __init__(self, name: str):
+    Used primarily for testing.
+    """
+
+    BACKEND_NAME = "in_memory"
+    TEST_NAME = "test-profile"
+
+    def __init__(self, *, context: InjectionContext = None, name: str = None):
         """Create a new InMemoryProfile instance."""
-        self.name = name
+        global STORAGE_CLASS, WALLET_CLASS
+        super().__init__(context=context, name=name)
         self.keys = {}
         self.local_dids = {}
         self.pair_dids = {}
         self.records = OrderedDict()
 
-    @property
-    def backend(self) -> str:
-        """Accessor for the backend implementation name."""
-        return "in_memory"
-
-    @property
-    def name(self) -> str:
-        """Accessor for the profile name."""
-        return self._name
+        if not STORAGE_CLASS:
+            STORAGE_CLASS = ClassLoader.load_class(
+                "aries_cloudagent.storage.in_memory.InMemoryStorage"
+            )
+            WALLET_CLASS = ClassLoader.load_class(
+                "aries_cloudagent.wallet.in_memory.InMemoryWallet"
+            )
 
     async def start_session(self) -> "ProfileSession":
         """Start a new interactive session with no transaction support requested."""
-        return InMemoryProfileSession(self)
+        context = self.context.start_scope("session")
+        return InMemoryProfileSession(self, context)
 
     async def start_transaction(self) -> "ProfileSession":
         """
@@ -50,21 +53,33 @@ class InMemoryProfile(Profile):
         """
         return InMemoryProfileSession(self)
 
+    @classmethod
+    def test_instance(cls) -> "InMemoryProfile":
+        """Used in tests to create a standard InMemoryProfile."""
+        return InMemoryProfile(name=InMemoryProfile.TEST_NAME)
+
+    @classmethod
+    def test_session(cls) -> "InMemoryProfileSession":
+        """Used in tests to quickly create InMemoryProfileSession."""
+        return InMemoryProfileSession(cls.test_instance())
+
 
 class InMemoryProfileSession(ProfileSession):
     """An active connection to the profile management backend."""
 
-    def __init__(self, profile: InMemoryProfile):
+    def __init__(self, profile: Profile):
         """Create a new InMemoryProfileSession instance."""
-        self.profile = profile
+        context = profile.context.start_scope("session")
+        context.injector.bind_instance(BaseStorage, STORAGE_CLASS(self))
+        context.injector.bind_provider(BaseWallet, WALLET_CLASS(self))
+        super().__init__(profile=profile, context=context)
 
-    def inject(
-        self, base_cls: Type[InjectType], required: bool = True
-    ) -> Optional[InjectType]:
-        """Get an instance of a defined interface base class tied to this session."""
-        if base_cls in TYPE_MAP:
-            return TYPE_MAP[base_cls](self.profile)
-        if required:
-            raise InjectorError(
-                "No instance provided for class: {}".format(base_cls.__name__)
-            )
+    @property
+    def storage(self) -> BaseStorage:
+        """Get the `BaseStorage` implementation (specific to in-memory profile)."""
+        return self._context.inject(BaseStorage)
+
+    @property
+    def wallet(self) -> BaseWallet:
+        """Get the `BaseWallet` implementation (specific to in-memory profile)."""
+        return self._context.inject(BaseWallet)

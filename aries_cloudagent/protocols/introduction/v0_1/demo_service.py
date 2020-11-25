@@ -87,7 +87,7 @@ class DemoIntroductionService(BaseIntroductionService):
                 "target_connection_id": target_connection_id,
             },
         )
-        storage: BaseStorage = await self._context.inject(BaseStorage)
+        storage: BaseStorage = self._context.inject(BaseStorage)
         await storage.add_record(record)
 
         await outbound_handler(msg, connection_id=target_connection_id)
@@ -107,7 +107,7 @@ class DemoIntroductionService(BaseIntroductionService):
         thread_id = invitation._thread_id
 
         tag_filter = {"target_connection_id": target_connection_id}
-        storage: BaseStorage = await self._context.inject(BaseStorage)
+        storage: BaseStorage = self._context.inject(BaseStorage)
         records = await storage.search_records(
             DemoIntroductionService.RECORD_TYPE,
             tag_filter,

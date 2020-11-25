@@ -212,7 +212,7 @@ class OutOfBandManager:
     async def receive_invitation(self, invi_msg: InvitationMessage) -> ConnRecord:
         """Receive an out of band invitation message."""
 
-        ledger: BaseLedger = await self.context.inject(BaseLedger)
+        ledger: BaseLedger = self.context.inject(BaseLedger)
 
         # There must be exactly 1 service entry
         if len(invi_msg.service_blocks) + len(invi_msg.service_dids) != 1:

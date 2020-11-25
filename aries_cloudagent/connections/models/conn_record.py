@@ -7,7 +7,7 @@ from typing import Any, Union
 
 from marshmallow import fields, validate
 
-from ...config.injection_context import InjectionContext
+from ...core.profile import ProfileSession
 from ...messaging.models.base_record import BaseRecord, BaseRecordSchema
 from ...messaging.valid import INDY_DID, INDY_RAW_PUBLIC_KEY, UUIDFour
 
@@ -113,7 +113,6 @@ class ConnRecord(BaseRecord):
     RECORD_ID_NAME = "connection_id"
     WEBHOOK_TOPIC = "connections"
     LOG_STATE_FLAG = "debug.connections"
-    CACHE_ENABLED = True
     TAG_NAMES = {"my_did", "their_did", "request_id", "invitation_key"}
 
     RECORD_TYPE = "connection"
@@ -202,7 +201,7 @@ class ConnRecord(BaseRecord):
     @classmethod
     async def retrieve_by_did(
         cls,
-        context: InjectionContext,
+        session: ProfileSession,
         their_did: str = None,
         my_did: str = None,
         their_role: str = None,
@@ -210,7 +209,7 @@ class ConnRecord(BaseRecord):
         """Retrieve a connection record by target DID.
 
         Args:
-            context: The injection context to use
+            session: The active profile session
             their_did: The target DID to filter by
             my_did: One of our DIDs to filter by
             my_role: Filter connections by their role
@@ -225,16 +224,16 @@ class ConnRecord(BaseRecord):
         if their_role:
             post_filter["their_role"] = cls.Role.get(their_role).rfc160
 
-        return await cls.retrieve_by_tag_filter(context, tag_filter, post_filter)
+        return await cls.retrieve_by_tag_filter(session, tag_filter, post_filter)
 
     @classmethod
     async def retrieve_by_invitation_key(
-        cls, context: InjectionContext, invitation_key: str, their_role: str = None
+        cls, session: ProfileSession, invitation_key: str, their_role: str = None
     ) -> "ConnRecord":
         """Retrieve a connection record by invitation key.
 
         Args:
-            context: The injection context to use
+            session: The active profile session
             invitation_key: The key on the originating invitation
             initiator: Filter by the initiator value
         """
@@ -244,30 +243,30 @@ class ConnRecord(BaseRecord):
         if their_role:
             post_filter["their_role"] = cls.Role.get(their_role).rfc160
 
-        return await cls.retrieve_by_tag_filter(context, tag_filter, post_filter)
+        return await cls.retrieve_by_tag_filter(session, tag_filter, post_filter)
 
     @classmethod
     async def retrieve_by_request_id(
-        cls, context: InjectionContext, request_id: str
+        cls, session: ProfileSession, request_id: str
     ) -> "ConnRecord":
         """Retrieve a connection record from our previous request ID.
 
         Args:
-            context: The injection context to use
+            session: The active profile session
             request_id: The ID of the originating connection request
         """
         tag_filter = {"request_id": request_id}
-        return await cls.retrieve_by_tag_filter(context, tag_filter)
+        return await cls.retrieve_by_tag_filter(session, tag_filter)
 
     async def attach_invitation(
         self,
-        context: InjectionContext,
+        session: ProfileSession,
         invitation: Union[ConnectionInvitation, OOBInvitation],
     ):
         """Persist the related connection invitation to storage.
 
         Args:
-            context: The injection context to use
+            session: The active profile session
             invitation: The invitation to relate to this connection record
         """
         assert self.connection_id
@@ -276,19 +275,19 @@ class ConnRecord(BaseRecord):
             invitation.to_json(),
             {"connection_id": self.connection_id},
         )
-        storage: BaseStorage = await context.inject(BaseStorage)
+        storage: BaseStorage = session.get_interface(BaseStorage)
         await storage.add_record(record)
 
     async def retrieve_invitation(
-        self, context: InjectionContext
+        self, session: ProfileSession
     ) -> Union[ConnectionInvitation, OOBInvitation]:
         """Retrieve the related connection invitation.
 
         Args:
-            context: The injection context to use
+            session: The active profile session
         """
         assert self.connection_id
-        storage: BaseStorage = await context.inject(BaseStorage)
+        storage: BaseStorage = session.get_interface(BaseStorage)
         result = await storage.find_record(
             self.RECORD_TYPE_INVITATION, {"connection_id": self.connection_id}
         )
@@ -301,13 +300,13 @@ class ConnRecord(BaseRecord):
 
     async def attach_request(
         self,
-        context: InjectionContext,
+        session: ProfileSession,
         request: ConnectionRequest,  # will be Union[ConnectionRequest, DIDEx Request]
     ):
         """Persist the related connection request to storage.
 
         Args:
-            context: The injection context to use
+            session: The active profile session
             request: The request to relate to this connection record
         """
         assert self.connection_id
@@ -316,20 +315,20 @@ class ConnRecord(BaseRecord):
             request.to_json(),
             {"connection_id": self.connection_id},
         )
-        storage: BaseStorage = await context.inject(BaseStorage)
+        storage: BaseStorage = session.get_interface(BaseStorage)
         await storage.add_record(record)
 
     async def retrieve_request(
         self,
-        context: InjectionContext,
+        session: ProfileSession,
     ) -> Union[ConnectionRequest, DIDXRequest]:
         """Retrieve the related connection invitation.
 
         Args:
-            context: The injection context to use
+            session: The active profile session
         """
         assert self.connection_id
-        storage: BaseStorage = await context.inject(BaseStorage)
+        storage: BaseStorage = session.get_interface(BaseStorage)
         result = await storage.find_record(
             self.RECORD_TYPE_REQUEST, {"connection_id": self.connection_id}
         )
@@ -353,17 +352,17 @@ class ConnRecord(BaseRecord):
         """Accessor for multi use invitation mode."""
         return self.invitation_mode == self.INVITATION_MODE_MULTI
 
-    async def post_save(self, context: InjectionContext, *args, **kwargs):
+    async def post_save(self, session: ProfileSession, *args, **kwargs):
         """Perform post-save actions.
 
         Args:
-            context: The injection context to use
+            session: The active profile session
         """
-        await super().post_save(context, *args, **kwargs)
+        await super().post_save(session, *args, **kwargs)
 
         # clear cache key set by connection manager
-        cache_key = self.cache_key(self.connection_id, "connection_target")
-        await self.clear_cached_key(context, cache_key)
+        cache_key = f"connection_target::{self.connection_id}"
+        await self.clear_cached_key(session, cache_key)
 
     def __eq__(self, other: Any) -> bool:
         """Comparison between records."""

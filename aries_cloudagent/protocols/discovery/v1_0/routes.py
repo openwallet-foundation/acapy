@@ -44,7 +44,7 @@ async def query_features(request: web.BaseRequest):
 
     """
     context = request.app["request_context"]
-    registry: ProtocolRegistry = await context.inject(ProtocolRegistry)
+    registry: ProtocolRegistry = context.inject(ProtocolRegistry)
     results = registry.protocols_matching_query(request.query.get("query", "*"))
 
     return web.json_response({"results": {k: {} for k in results}})

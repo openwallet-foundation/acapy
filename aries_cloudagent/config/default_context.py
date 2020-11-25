@@ -5,7 +5,7 @@ from .injection_context import InjectionContext
 from .provider import CachedProvider, ClassProvider, StatsProvider
 
 from ..cache.base import BaseCache
-from ..cache.basic import BasicCache
+from ..cache.in_memory import InMemoryCache
 from ..core.plugin_registry import PluginRegistry
 from ..core.protocol_registry import ProtocolRegistry
 from ..ledger.base import BaseLedger
@@ -36,7 +36,7 @@ class DefaultContextBuilder(ContextBuilder):
             context.injector.bind_instance(Collector, collector)
 
         # Shared in-memory cache
-        context.injector.bind_instance(BaseCache, BasicCache())
+        context.injector.bind_instance(BaseCache, InMemoryCache())
 
         # Global protocol registry
         context.injector.bind_instance(ProtocolRegistry, ProtocolRegistry())

@@ -2,10 +2,10 @@
 
 from collections import namedtuple
 import copy
-from typing import Mapping
+from typing import Mapping, Optional, Type
 
 from .base import BaseInjector, InjectorError
-from .injector import Injector
+from .injector import Injector, InjectType
 from .settings import Settings
 
 Scope = namedtuple("Scope", "name injector")
@@ -78,7 +78,7 @@ class InjectionContext(BaseInjector):
         """
         if not scope_name:
             raise InjectionContextError("Scope name must be non-empty")
-        if self.scope_name == scope_name:
+        if self._scope_name == scope_name:
             raise InjectionContextError("Cannot re-enter scope: {}".format(scope_name))
         for scope in self._scopes:
             if scope.name == scope_name:
@@ -87,7 +87,7 @@ class InjectionContext(BaseInjector):
                 )
         result = self.copy()
         result._scopes.append(Scope(name=self.scope_name, injector=self.injector))
-        result.scope_name = scope_name
+        result._scope_name = scope_name
         if settings:
             result.update_settings(settings)
         return result
@@ -105,13 +105,13 @@ class InjectionContext(BaseInjector):
                 return scope.injector
         return None
 
-    async def inject(
+    def inject(
         self,
-        base_cls: type,
+        base_cls: Type[InjectType],
         settings: Mapping[str, object] = None,
         *,
         required: bool = True
-    ) -> object:
+    ) -> Optional[InjectType]:
         """
         Get the provided instance of a given class identifier.
 
@@ -123,7 +123,7 @@ class InjectionContext(BaseInjector):
             An instance of the base class, or None
 
         """
-        return await self.injector.inject(base_cls, settings, required=required)
+        return self.injector.inject(base_cls, settings, required=required)
 
     def copy(self) -> "InjectionContext":
         """Produce a copy of the injector instance."""

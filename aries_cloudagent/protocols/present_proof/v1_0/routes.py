@@ -597,7 +597,7 @@ async def presentation_exchange_credentials_list(request: web.BaseRequest):
     start = int(start) if isinstance(start, str) else 0
     count = int(count) if isinstance(count, str) else 10
 
-    holder: IndyHolder = await context.inject(IndyHolder)
+    holder: IndyHolder = context.inject(IndyHolder)
     try:
         credentials = await holder.get_credentials_for_presentation_request_by_referent(
             pres_ex_record.presentation_request,

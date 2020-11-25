@@ -25,7 +25,7 @@ class TestDefaultContext(AsyncTestCase):
             BaseWallet,
             BaseStorage,
         ):
-            assert isinstance(await result.inject(cls), cls)
+            assert isinstance(result.inject(cls), cls)
 
         builder = DefaultContextBuilder(
             settings={

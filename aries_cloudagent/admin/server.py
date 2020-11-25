@@ -269,7 +269,7 @@ class AdminServer(BaseAdminServer):
 
             middlewares.append(check_token)
 
-        collector: Collector = await self.context.inject(Collector, required=False)
+        collector: Collector = self.context.inject(Collector, required=False)
 
         if self.task_queue:
 
@@ -306,7 +306,7 @@ class AdminServer(BaseAdminServer):
             ]
         )
 
-        plugin_registry: PluginRegistry = await self.context.inject(
+        plugin_registry: PluginRegistry = self.context.inject(
             PluginRegistry, required=False
         )
         if plugin_registry:
@@ -360,7 +360,7 @@ class AdminServer(BaseAdminServer):
         runner = web.AppRunner(self.app)
         await runner.setup()
 
-        plugin_registry: PluginRegistry = await self.context.inject(
+        plugin_registry: PluginRegistry = self.context.inject(
             PluginRegistry, required=False
         )
         if plugin_registry:
@@ -425,9 +425,7 @@ class AdminServer(BaseAdminServer):
             The module list response
 
         """
-        registry: PluginRegistry = await self.context.inject(
-            PluginRegistry, required=False
-        )
+        registry: PluginRegistry = self.context.inject(PluginRegistry, required=False)
         plugins = registry and sorted(registry.plugin_names) or []
         return web.json_response({"result": plugins})
 
@@ -446,7 +444,7 @@ class AdminServer(BaseAdminServer):
         """
         status = {"version": __version__}
         status["label"] = self.context.settings.get("default_label")
-        collector: Collector = await self.context.inject(Collector, required=False)
+        collector: Collector = self.context.inject(Collector, required=False)
         if collector:
             status["timing"] = collector.results
         if self.conductor_stats:
@@ -466,7 +464,7 @@ class AdminServer(BaseAdminServer):
             The web response
 
         """
-        collector: Collector = await self.context.inject(Collector, required=False)
+        collector: Collector = self.context.inject(Collector, required=False)
         if collector:
             collector.reset()
         return web.json_response({})

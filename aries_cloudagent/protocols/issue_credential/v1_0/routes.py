@@ -722,7 +722,7 @@ async def credential_exchange_create_free_offer(request: web.BaseRequest):
     connection_id = body.get("connection_id")
     trace_msg = body.get("trace")
 
-    wallet: BaseWallet = await context.inject(BaseWallet)
+    wallet: BaseWallet = context.inject(BaseWallet)
     if connection_id:
         try:
             connection_record = await ConnRecord.retrieve_by_id(context, connection_id)

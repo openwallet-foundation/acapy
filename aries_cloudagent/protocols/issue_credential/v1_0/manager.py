@@ -62,7 +62,7 @@ class CredentialManager:
     async def _match_sent_cred_def_id(self, tag_query: Mapping[str, str]) -> str:
         """Return most recent matching id of cred def that agent sent to ledger."""
 
-        storage: BaseStorage = await self.context.inject(BaseStorage)
+        storage: BaseStorage = self.context.inject(BaseStorage)
         found = await storage.search_records(
             type_filter=CRED_DEF_SENT_RECORD_TYPE, tag_query=tag_query
         ).fetch_all()
@@ -221,7 +221,7 @@ class CredentialManager:
         """
 
         async def _create(cred_def_id):
-            issuer: IndyIssuer = await self.context.inject(IndyIssuer)
+            issuer: IndyIssuer = self.context.inject(IndyIssuer)
             offer_json = await issuer.create_credential_offer(cred_def_id)
             return json.loads(offer_json)
 
@@ -241,7 +241,7 @@ class CredentialManager:
         cred_preview = credential_proposal_message.credential_proposal
 
         # vet attributes
-        ledger: BaseLedger = await self.context.inject(BaseLedger)
+        ledger: BaseLedger = self.context.inject(BaseLedger)
         async with ledger:
             schema_id = await ledger.credential_definition_id2schema_id(cred_def_id)
             schema = await ledger.get_schema(schema_id)
@@ -255,7 +255,7 @@ class CredentialManager:
 
         credential_offer = None
         cache_key = f"credential_offer::{cred_def_id}"
-        cache: BaseCache = await self.context.inject(BaseCache, required=False)
+        cache: BaseCache = self.context.inject(BaseCache, required=False)
         if cache:
             async with cache.acquire(cache_key) as entry:
                 if entry.result:
@@ -367,13 +367,13 @@ class CredentialManager:
         credential_offer = cred_ex_record.credential_offer
 
         async def _create():
-            ledger: BaseLedger = await self.context.inject(BaseLedger)
+            ledger: BaseLedger = self.context.inject(BaseLedger)
             async with ledger:
                 credential_definition = await ledger.get_credential_definition(
                     credential_definition_id
                 )
 
-            holder: IndyHolder = await self.context.inject(IndyHolder)
+            holder: IndyHolder = self.context.inject(IndyHolder)
             request_json, metadata_json = await holder.create_credential_request(
                 credential_offer, credential_definition, holder_did
             )
@@ -395,7 +395,7 @@ class CredentialManager:
                 f"credential_request::{credential_definition_id}::{holder_did}::{nonce}"
             )
             cred_req_result = None
-            cache: BaseCache = await self.context.inject(BaseCache, required=False)
+            cache: BaseCache = self.context.inject(BaseCache, required=False)
             if cache:
                 async with cache.acquire(cache_key) as entry:
                     if entry.result:
@@ -496,7 +496,7 @@ class CredentialManager:
             credential_offer = cred_ex_record.credential_offer
             credential_request = cred_ex_record.credential_request
 
-            ledger: BaseLedger = await self.context.inject(BaseLedger)
+            ledger: BaseLedger = self.context.inject(BaseLedger)
             async with ledger:
                 schema = await ledger.get_schema(schema_id)
                 credential_definition = await ledger.get_credential_definition(
@@ -565,7 +565,7 @@ class CredentialManager:
             credential_values = CredentialProposal.deserialize(
                 cred_ex_record.credential_proposal_dict
             ).credential_proposal.attr_dict(decode=False)
-            issuer: IndyIssuer = await self.context.inject(IndyIssuer)
+            issuer: IndyIssuer = self.context.inject(IndyIssuer)
             try:
                 (
                     credential_json,
@@ -691,7 +691,7 @@ class CredentialManager:
 
         raw_credential = cred_ex_record.raw_credential
         revoc_reg_def = None
-        ledger: BaseLedger = await self.context.inject(BaseLedger)
+        ledger: BaseLedger = self.context.inject(BaseLedger)
         async with ledger:
             credential_definition = await ledger.get_credential_definition(
                 raw_credential["cred_def_id"]
@@ -704,7 +704,7 @@ class CredentialManager:
                     raw_credential["rev_reg_id"]
                 )
 
-        holder: IndyHolder = await self.context.inject(IndyHolder)
+        holder: IndyHolder = self.context.inject(IndyHolder)
         if (
             cred_ex_record.credential_proposal_dict
             and "credential_proposal" in cred_ex_record.credential_proposal_dict

@@ -131,7 +131,7 @@ class InMemoryStorage(BaseStorage):
         )
 
 
-def basic_tag_value_match(value: str, match: dict) -> bool:
+def tag_value_match(value: str, match: dict) -> bool:
     """Match a single tag against a tag subquery.
 
     TODO: What type coercion is needed? (support int or float values?)
@@ -165,7 +165,7 @@ def basic_tag_value_match(value: str, match: dict) -> bool:
     return chk
 
 
-def basic_tag_query_match(tags: dict, tag_query: dict) -> bool:
+def tag_query_match(tags: dict, tag_query: dict) -> bool:
     """Match simple tag filters (string values)."""
     result = True
     if not tags:
@@ -177,19 +177,19 @@ def basic_tag_query_match(tags: dict, tag_query: dict) -> bool:
                     raise StorageSearchError("Expected list for $or filter value")
                 chk = False
                 for opt in v:
-                    if basic_tag_query_match(tags, opt):
+                    if tag_query_match(tags, opt):
                         chk = True
                         break
             elif k == "$not":
                 if not isinstance(v, dict):
                     raise StorageSearchError("Expected dict for $not filter value")
-                chk = not basic_tag_query_match(tags, v)
+                chk = not tag_query_match(tags, v)
             elif k[0] == "$":
                 raise StorageSearchError("Unexpected filter operator: {}".format(k))
             elif isinstance(v, str):
                 chk = tags.get(k) == v
             elif isinstance(v, dict):
-                chk = basic_tag_value_match(tags.get(k), v)
+                chk = tag_value_match(tags.get(k), v)
             else:
                 raise StorageSearchError(
                     "Expected string or dict for filter value, got {}".format(v)
@@ -256,7 +256,7 @@ class InMemoryStorageRecordSearch(BaseStorageRecordSearch):
             except StopIteration:
                 break
             record = self._cache[id]
-            if record.type == check_type and basic_tag_query_match(
+            if record.type == check_type and tag_query_match(
                 record.tags, self.tag_query
             ):
                 ret.append(record)

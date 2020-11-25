@@ -2,10 +2,9 @@ import json
 
 from asynctest import TestCase as AsyncTestCase, mock as async_mock
 
-from ....config.injection_context import InjectionContext
-from ....storage.base import BaseStorage, StorageNotFoundError
-from ....storage.basic import BasicStorage
-from ....wallet.base import BaseWallet, DIDInfo
+from ....in_memory.profile import InMemoryProfile
+from ....storage.base import StorageNotFoundError
+from ....wallet.base import DIDInfo
 
 from .. import issuer_cred_rev_record as test_module
 from ..issuer_cred_rev_record import IssuerCredRevRecord
@@ -17,14 +16,8 @@ REV_REG_ID = f"{TEST_DID}:4:{CRED_DEF_ID}:CL_ACCUM:0"
 
 class TestRecord(AsyncTestCase):
     def setUp(self):
-        self.context = InjectionContext(enforce_typing=False)
-
-        self.wallet = async_mock.MagicMock()
-        self.wallet.type = "indy"
-        self.context.injector.bind_instance(BaseWallet, self.wallet)
-
-        self.storage = BasicStorage()
-        self.context.injector.bind_instance(BaseStorage, self.storage)
+        self.session = InMemoryProfile.test_session()
+        # self.wallet.type = "indy"
 
     async def test_serde(self):
         rec = IssuerCredRevRecord(

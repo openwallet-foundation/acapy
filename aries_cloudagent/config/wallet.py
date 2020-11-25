@@ -13,7 +13,7 @@ LOGGER = logging.getLogger(__name__)
 
 async def wallet_config(context: InjectionContext, provision: bool = False):
     """Initialize the wallet."""
-    wallet: BaseWallet = await context.inject(BaseWallet)
+    wallet: BaseWallet = context.inject(BaseWallet)
     if provision:
         if wallet.type != "indy":
             raise ConfigError("Cannot provision a non-Indy wallet type")

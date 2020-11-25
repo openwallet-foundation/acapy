@@ -2,13 +2,10 @@ from tempfile import NamedTemporaryFile
 
 from asynctest import TestCase as AsyncTestCase, mock as async_mock
 
-from ...storage.provider import StorageProvider
 from ...utils.stats import Collector
-from ...wallet.base import BaseWallet
-from ...wallet.basic import BasicWallet
 
 from ..injection_context import InjectionContext
-from ..provider import StatsProvider
+from ..provider import BaseProvider, StatsProvider
 from ..settings import Settings
 
 
@@ -23,14 +20,11 @@ class TestProvider(AsyncTestCase):
 
         timing_log = NamedTemporaryFile().name
         settings = {"timing.enabled": True, "timing.log.file": timing_log}
-        stats_provider = StatsProvider(
-            StorageProvider(), ("add_record", "get_record", "search_records")
-        )
+        mock_provider = async_mock.MagicMock(BaseProvider, autospec=True)
+        stats_provider = StatsProvider(mock_provider, ("mock_method"))
         collector = Collector(log_path=timing_log)
 
-        wallet = BasicWallet()
         context = InjectionContext(settings=settings, enforce_typing=False)
         context.injector.bind_instance(Collector, collector)
-        context.injector.bind_instance(BaseWallet, wallet)
 
         await stats_provider.provide(Settings(settings), context.injector)

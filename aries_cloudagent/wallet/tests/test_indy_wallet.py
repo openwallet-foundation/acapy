@@ -7,6 +7,7 @@ import indy.crypto
 import indy.did
 import indy.wallet
 import pytest
+from aries_cloudagent.in_memory.profile import InMemoryProfile
 from aries_cloudagent.ledger.endpoint_type import EndpointType
 from aries_cloudagent.wallet.in_memory import InMemoryWallet
 from aries_cloudagent.wallet.indy import IndyWallet
@@ -18,11 +19,10 @@ from . import test_in_memory_wallet
 
 
 @pytest.fixture()
-async def basic_wallet():
-    wallet = BasicWallet()
-    await wallet.open()
+async def in_memory_wallet():
+    profile = InMemoryProfile("test-profile")
+    wallet = InMemoryWallet(profile)
     yield wallet
-    await wallet.close()
 
 
 @pytest.fixture()
@@ -43,21 +43,8 @@ async def wallet():
 
 
 @pytest.mark.indy
-class TestIndyWallet(test_basic_wallet.TestBasicWallet):
-    """Apply all BasicWallet tests against IndyWallet"""
-
-    @pytest.mark.asyncio
-    async def test_properties(self, wallet):
-        assert wallet.name
-        assert wallet.type == "indy"
-        assert wallet.handle
-        none_wallet = IndyWallet()
-        assert none_wallet.name == IndyWallet.DEFAULT_NAME
-
-        assert "IndyWallet" in str(wallet)
-        assert wallet.created
-        assert wallet.master_secret_id == wallet.name
-        assert wallet._wallet_config
+class TestIndyWallet(test_in_memory_wallet.TestInMemoryWallet):
+    """Apply all InMemoryWallet tests against IndyWallet"""
 
     @pytest.mark.asyncio
     async def test_rotate_did_keypair_x(self, wallet):
@@ -212,12 +199,12 @@ class TestWalletCompat:
     test_message = "test message"
 
     @pytest.mark.asyncio
-    async def test_compare_pack_unpack(self, basic_wallet, wallet):
+    async def test_compare_pack_unpack(self, in_memory_wallet, wallet):
         """
         Ensure that python-based pack/unpack is compatible with indy-sdk implementation
         """
-        await basic_wallet.create_local_did(self.test_seed)
-        py_packed = await basic_wallet.pack_message(
+        await in_memory_wallet.create_local_did(self.test_seed)
+        py_packed = await in_memory_wallet.pack_message(
             self.test_message, [self.test_verkey], self.test_verkey
         )
 
@@ -226,7 +213,7 @@ class TestWalletCompat:
             self.test_message, [self.test_verkey], self.test_verkey
         )
 
-        py_unpacked, from_vk, to_vk = await basic_wallet.unpack_message(packed)
+        py_unpacked, from_vk, to_vk = await in_memory_wallet.unpack_message(packed)
         assert self.test_message == py_unpacked
 
         unpacked, from_vk, to_vk = await wallet.unpack_message(py_packed)

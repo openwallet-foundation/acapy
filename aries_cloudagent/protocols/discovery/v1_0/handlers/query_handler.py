@@ -19,7 +19,7 @@ class QueryHandler(BaseHandler):
         self._logger.debug("QueryHandler called with context %s", context)
         assert isinstance(context.message, Query)
 
-        registry: ProtocolRegistry = await context.inject(ProtocolRegistry)
+        registry: ProtocolRegistry = context.inject(ProtocolRegistry)
         protocols = registry.protocols_matching_query(context.message.query)
         result = await registry.prepare_disclosed(context, protocols)
         reply = Disclose(protocols=result)
