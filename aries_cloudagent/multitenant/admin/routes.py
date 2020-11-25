@@ -1,6 +1,5 @@
 """Multitenant admin routes."""
 
-from typing import cast
 import jwt
 from marshmallow import fields, Schema, validate, validates_schema, ValidationError
 from aiohttp import web
@@ -10,8 +9,10 @@ from ...messaging.valid import UUIDFour
 from ...messaging.models.openapi import OpenAPISchema
 from ...storage.error import StorageNotFoundError
 from ...wallet.provider import WalletProvider
-from ...wallet.indy import IndyWallet
 from ...wallet.models.wallet_record import WalletRecord
+
+from ..manager import MultitenantManager
+from ..error import WalletKeyMissingError
 
 
 def format_wallet_record(wallet_record: WalletRecord):
@@ -77,6 +78,14 @@ class CreateWalletRequestSchema(Schema):
             for field in ("wallet_key", "wallet_name"):
                 if field not in data:
                     raise ValidationError("Missing required field", field)
+
+
+class RemoveWalletRequestSchema(Schema):
+    """Request schema for removing a wallet."""
+
+    wallet_key = fields.Str(
+        description="Master key used for key derivation.", example="MySecretKey123"
+    )
 
 
 @docs(tags=["multitenancy"], summary="List all subwallets")
@@ -188,8 +197,8 @@ async def wallet_create(request: web.BaseRequest):
     summary="Remove a subwallet",
 )
 @match_info_schema(WalletIdMatchInfoSchema())
+@request_schema(RemoveWalletRequestSchema)
 # MTODO: wallet_remove response schema
-# MTODO: For non-managed wallets we will need the key to unlock the wallet
 async def wallet_remove(request: web.BaseRequest):
     """
     Request handler to remove a subwallet from agent and storage.
@@ -201,26 +210,19 @@ async def wallet_remove(request: web.BaseRequest):
 
     context = request["context"]
     wallet_id = request.match_info["wallet_id"]
+    wallet_key = None
+
+    if request.has_body:
+        body = await request.json()
+        wallet_key = body.get("wallet_key")
 
     try:
-        # MTODO: Should be possible without cast
-        wallet_record = cast(
-            WalletRecord, await WalletRecord.retrieve_by_id(context, wallet_id)
-        )
-
-        # MTODO: We need to remove all instances from cache
-        # We can't use auto_remove, because the wallet provider does
-        #  not support it at the moment.
-        wallet_instance = await wallet_record.get_instance(context)
-        await wallet_instance.close()
-
-        if wallet_instance.type == "indy":
-            indy_wallet = cast(IndyWallet, wallet_instance)
-            await indy_wallet.remove()
-
-        await wallet_record.delete_record(context)
+        multitenant_manager = MultitenantManager(context)
+        await multitenant_manager.remove_wallet(wallet_id, wallet_key)
     except StorageNotFoundError:
         raise web.HTTPNotFound()
+    except WalletKeyMissingError as e:
+        raise web.HTTPUnauthorized(e.message)
 
     return web.json_response({})
 
@@ -237,9 +239,9 @@ async def register(app: web.Application):
     app.add_routes(
         [
             web.get("/multitenancy/wallets", wallet_list, allow_head=False),
-            web.get("/multitenancy/wallet/{wallet_id}", wallet_get, allow_head=False),
             web.post("/multitenancy/wallet", wallet_create),
-            web.delete("/multitenancy/wallet/{wallet_id}", wallet_remove),
+            web.get("/multitenancy/wallet/{wallet_id}", wallet_get, allow_head=False),
+            web.post("/multitenancy/wallet/{wallet_id}/remove", wallet_remove),
         ]
     )
 

@@ -1,6 +1,6 @@
 """Wallet record."""
 
-from typing import Any
+from typing import Any, Optional
 
 from marshmallow import fields
 from marshmallow import validate
@@ -36,15 +36,15 @@ class WalletRecord(BaseRecord):
         wallet_record_id: str = None,
         wallet_config: dict = None,
         key_management_mode: str = None,
+        # MTODO: how to make this a tag without making it
+        # a constructor param
+        wallet_name: str = None,
         **kwargs,
     ):
         """Initialize a new WalletRecord."""
         super().__init__(wallet_record_id, **kwargs)
         self._id = wallet_record_id
         self.wallet_config = wallet_config
-        # MTODO: how can I make this a tag without creating the wallet.name property
-        # As it is already in the wallet_config
-        self.wallet_name = wallet_config.get("name")
         self.key_management_mode = key_management_mode
 
     def get_config_as_settings(self):
@@ -67,11 +67,24 @@ class WalletRecord(BaseRecord):
         return self._id
 
     @property
+    def wallet_name(self) -> Optional[str]:
+        """Accessor for the name of the wallet"""
+        return self.wallet_config.get("name")
+
+    @property
+    def wallet_type(self) -> str:
+        """Accessor for the type of the wallet"""
+        return self.wallet_config.get("type")
+
+    @property
     def record_value(self) -> dict:
         """Accessor for the JSON record value generated for this record."""
         return {
             prop: getattr(self, prop)
-            for prop in ("wallet_config", "wallet_name", "key_management_mode")
+            for prop in (
+                "wallet_config",
+                "key_management_mode",
+            )
         }
 
     def __eq__(self, other: Any) -> bool:
