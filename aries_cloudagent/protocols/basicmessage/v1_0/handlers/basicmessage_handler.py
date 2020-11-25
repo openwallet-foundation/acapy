@@ -39,6 +39,7 @@ class BasicMessageHandler(BaseHandler):
             {
                 "connection_id": context.connection_record.connection_id,
                 "message_id": context.message._id,
+                "thread_id": context.message._thread_id,
                 "content": body,
                 "state": "received",
             },
