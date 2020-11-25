@@ -164,7 +164,7 @@ class RoutingManager:
         if route and route.record_id:
             storage: BaseStorage = await self._context.inject(BaseStorage)
             await storage.delete_record(
-                StorageRecord(None, None, None, route.record_id)
+                StorageRecord(RoutingManager.RECORD_TYPE, None, None, route.record_id)
             )
 
     async def update_routes(
