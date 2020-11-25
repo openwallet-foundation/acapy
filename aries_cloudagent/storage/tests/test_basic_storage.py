@@ -9,7 +9,6 @@ from aries_cloudagent.storage.error import (
     StorageSearchError,
 )
 
-from aries_cloudagent.storage.indy import IndyStorageRecordSearch
 from aries_cloudagent.storage.basic import (
     BasicStorage,
     basic_tag_value_match,
@@ -109,9 +108,6 @@ class TestBasicStorage:
         # search
         search = store.search_records(record.type, {}, None)
         assert search.__class__.__name__ in str(search)
-        assert search.handle is None or isinstance(search, IndyStorageRecordSearch)
-        assert not search.options
-        await search.open()
         rows = await search.fetch(100)
         assert len(rows) == 1
         found = rows[0]
@@ -124,7 +120,6 @@ class TestBasicStorage:
 
         # search again with fetch-all
         search = store.search_records(record.type, {}, None)
-        await search.open()
         rows = await search.fetch_all()
         assert len(rows) == 1
 
@@ -136,8 +131,8 @@ class TestBasicStorage:
             mock_fetch.return_value = async_mock.MagicMock(
                 pop=async_mock.MagicMock(side_effect=IndexError())
             )
-            with pytest.raises(StopAsyncIteration):
-                await search.__anext__()
+            async for row in search:
+                pytest.fail("Should not arrive here")
 
         # search with find_record
         row = await store.find_record(record.type, {}, None)
@@ -170,6 +165,7 @@ class TestBasicStorage:
     @pytest.mark.asyncio
     async def test_closed_search(self, store):
         search = store.search_records("TYPE", {}, None)
+        _rows = await search.fetch_all()
         with pytest.raises(StorageSearchError):
             await search.fetch(100)
 
