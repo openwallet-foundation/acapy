@@ -185,7 +185,7 @@ class DefaultContextBuilder(ContextBuilder):
         plugin_registry.register_plugin("aries_cloudagent.wallet")
 
         if context.settings.get("multitenant.admin_enabled"):
-            plugin_registry.register_plugin("aries_cloudagent.multitenant_admin")
+            plugin_registry.register_plugin("aries_cloudagent.multitenant.admin")
 
         # Register external plugins
         for plugin_path in self.settings.get("external_plugins", []):

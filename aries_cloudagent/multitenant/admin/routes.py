@@ -6,12 +6,12 @@ from marshmallow import fields, Schema, validate, validates_schema, ValidationEr
 from aiohttp import web
 from aiohttp_apispec import docs, request_schema, match_info_schema
 
-from ..messaging.valid import UUIDFour
-from ..messaging.models.openapi import OpenAPISchema
-from ..storage.error import StorageNotFoundError
-from ..wallet.provider import WalletProvider
-from ..wallet.indy import IndyWallet
-from ..wallet.models.wallet_record import WalletRecord
+from ...messaging.valid import UUIDFour
+from ...messaging.models.openapi import OpenAPISchema
+from ...storage.error import StorageNotFoundError
+from ...wallet.provider import WalletProvider
+from ...wallet.indy import IndyWallet
+from ...wallet.models.wallet_record import WalletRecord
 
 
 def format_wallet_record(wallet_record: WalletRecord):
