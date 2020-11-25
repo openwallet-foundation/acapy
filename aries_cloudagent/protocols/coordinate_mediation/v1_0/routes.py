@@ -25,6 +25,8 @@ from .models.mediation_schemas import (CONNECTION_ID_SCHEMA,
                                        # ENDPOINT_SCHEMA,
                                        # ROUTING_KEYS_SCHEMA
                                        )
+
+from ....messaging.responder import BaseResponder
 from .messages.mediate_request import MediationRequest, MediationRequestSchema
 from .messages.mediate_grant import MediationGrantSchema
 from .messages.mediate_deny import MediationDenySchema
@@ -45,11 +47,27 @@ from .manager import MediationManager, MediationManagerError
 from ...routing.v1_0.models.route_record import RouteRecord, RouteRecordSchema
 from .messages.keylist_update_response import KeylistUpdateResponseSchema
 from ...connections.v1_0.routes import connections_create_invitation
-from aries_cloudagent.connections.models.conn_record import ConnRecord as ConnectionRecord
+from aries_cloudagent.connections.models.conn_record import ConnRecord, ConnRecord
 import asyncio
-from aries_cloudagent.wallet.base import BaseWallet
+from aries_cloudagent.wallet.base import BaseWallet, DIDInfo
 import json
 from aries_cloudagent.protocols.connections.v1_0.manager import ConnectionManager, ConnectionManagerError
+from aries_cloudagent.protocols.connections.v1_0.routes import (AcceptInvitationQueryStringSchema,
+ConnRecord,
+ConnRecordSchema,
+ReceiveInvitationRequestSchema)
+from aries_cloudagent.protocols.connections.v1_0.messages.connection_invitation import ConnectionInvitation
+from aries_cloudagent.storage.base import BaseStorage
+from aries_cloudagent.connections.models.diddoc.diddoc import (DIDDoc,
+    PublicKey,
+    PublicKeyType,
+    Service,
+)
+from aries_cloudagent.protocols.connections.v1_0.models.connection_detail import ConnectionDetail
+from aries_cloudagent.connections.models.conn_record import ConnRecord
+from aries_cloudagent.protocols.connections.v1_0.messages.connection_request import ConnectionRequest
+from aries_cloudagent.protocols.routing.v1_0.manager import RoutingManagerError
+from aries_cloudagent.wallet.error import WalletError
 
 class CreateMediationInvitationQueryStringSchema(OpenAPISchema):
     """Parameters and validators for create invitation request query string."""
@@ -286,7 +304,7 @@ async def mediation_record_create(request: web.BaseRequest):
     (r_time, context, conn_id, mediator_terms,
      recipient_terms, role) = itemgetter(*args)(await _prepare_handler(request))
     try:
-        connection_record = await ConnectionRecord.retrieve_by_id(
+        connection_record = await ConnRecord.retrieve_by_id(
             context, conn_id
         )
         if not connection_record.is_ready:
@@ -326,7 +344,7 @@ async def mediation_record_send_create(request: web.BaseRequest):
     (r_time, context, outbound_handler, conn_id, mediator_terms,
      recipient_terms) = itemgetter(*args)(await _prepare_handler(request))
     try:
-        connection_record = await ConnectionRecord.retrieve_by_id(
+        connection_record = await ConnRecord.retrieve_by_id(
             context, conn_id
         )
         if not connection_record.is_ready:
@@ -384,7 +402,7 @@ async def mediation_record_send(request: web.BaseRequest):
 @match_info_schema(MediationIdMatchInfoSchema())
 @querystring_schema(CreateMediationInvitationQueryStringSchema())
 @response_schema(InvitationResultSchema(), 200)
-async def mediation_invitation(request: web.BaseRequest):
+async def create_invitation(request: web.BaseRequest):
     """
     Request handler for creating a new connection invitation.
 
@@ -431,6 +449,274 @@ async def mediation_invitation(request: web.BaseRequest):
         result["alias"] = connection.alias
 
     return web.json_response(result)
+
+
+# TODO: move this logic into connections
+
+async def mediation_did_document(
+        context,
+        did_info: DIDInfo,
+        connection: ConnRecord = None,
+        mediation_record: MediationRecord = None
+    ) -> DIDDoc:
+        """Create DID document for connection request.
+
+        Args:
+
+        Returns:
+            The prepared `DIDDoc` instance
+
+        """
+        recip_keys = []
+        route_keys = []
+        did_doc = DIDDoc(did=did_info.did)
+        did_controller = did_info.did
+        did_key = did_info.verkey
+        # storage: BaseStorage = await context.inject(BaseStorage)
+        wallet: BaseWallet = await context.inject(BaseWallet)
+        for recipient_key in mediation_record.recipient_keys:
+            # get did record for verkey.
+            # record = await storage.find_record(ConnectionManager.RECORD_TYPE_DID_DOC, {"verkey": recipient_key})
+            did_info = await wallet.get_local_did_for_verkey(recipient_key)# TODO wrap in try/except
+            recip_key = PublicKey(
+                did_info.did,
+                "1",# TODO: why one?
+                did_info.verkey,
+                PublicKeyType.ED25519_SIG_2018,
+                did_info.did,
+                True,
+            )
+            recip_keys.append(recip_key)
+
+        for routing_key in mediation_record.routing_keys:
+            # TODO: resolve did_dock for provided verkey
+            route_key = PublicKey(
+                did = "55GkHamhTU1ZbTbV2ab9DE", # fake! TODO: this is never provided from mediator
+                ident = "1", # f"routing-{connection.id}",
+                value = routing_key,
+                pk_type = PublicKeyType.ED25519_SIG_2018,
+                controller = "55GkHamhTU1ZbTbV2ab9DE", # fake! TODO: this is never provided
+                authn = False,
+            )
+            route_keys.append(route_key)
+        
+        endpoint_ident = "indy"
+        service = Service(
+            did = did_info.did,
+            ident = endpoint_ident,
+            typ = "IndyAgent",
+            recip_keys = recip_keys,
+            routing_keys = route_keys,
+            endpoint = mediation_record.endpoint,
+        )
+        did_doc.set(service)
+
+        return did_doc
+
+
+# TODO: put into constructor?
+async def connection_from_invitation(
+        context,
+        invitation: ConnectionInvitation,
+        mediation_record: MediationRecord,
+        alias: str = None
+    ) -> ConnRecord:
+        """
+        Create a new connection record to track a received invitation.
+
+        Args:
+            context:
+            invitation: The `ConnectionInvitation` to store
+            mediation_record:
+            alias: optional alias to set on the record
+
+        Returns:
+            The new `ConnRecord` instance
+
+        """
+        if not invitation.did:
+            if not invitation.recipient_keys:
+                raise ConnectionManagerError("Invitation must contain recipient key(s)")
+            if not invitation.endpoint:
+                raise ConnectionManagerError("Invitation must contain an endpoint")
+
+        # Create connection record
+        connection = ConnRecord(
+            invitation_key=invitation.recipient_keys and invitation.recipient_keys[0],
+            their_label=invitation.label,
+            their_role=ConnRecord.Role.RESPONDER.rfc160,
+            state=ConnRecord.State.INVITATION.rfc160,
+            accept=True,# hardcoded auto accept, other checks will prevent getting here if settings conflict
+            alias=alias,
+        )
+
+        await connection.save(
+            context,
+            reason="Created new connection record from invitation",
+            log_params={"invitation": invitation, "their_label": invitation.label},
+        )
+
+        # Save the invitation for later processing
+        await connection.attach_invitation(context, invitation)
+
+        return connection
+    
+    
+async def create_request(
+        context,
+        connection: ConnRecord,
+        invitation: ConnectionInvitation,
+        mediation_record: MediationRecord
+    ) -> ConnectionRequest:
+        """
+        Create a new connection request for a previously-received invitation.
+
+        Args:
+            connection: The `ConnRecord` representing the invitation to accept
+            invitation:
+            mediation_record:
+            label: My label
+            
+        Returns:
+            A new `ConnectionRequest` message to send to the other agent
+
+        """
+        wallet: BaseWallet = await context.inject(BaseWallet)
+        my_info = await wallet.get_local_did_for_verkey(
+            mediation_record.recipient_keys[0]
+        )# TODO wrap in try/except
+        connection.my_did = my_info.did
+        # Create connection request message
+        did_doc = await mediation_did_document(
+            context, my_info, connection, mediation_record)
+        label = context.settings.get("default_label")
+        request = ConnectionRequest(
+            label=label,
+            connection=ConnectionDetail(did=my_info.did, did_doc=did_doc),
+        )
+
+        # Update connection state
+        connection.request_id = request._id
+        connection.state = ConnRecord.State.REQUEST.rfc160
+
+        await connection.save(context, reason="Created connection request")
+
+        return request
+    
+
+@docs(tags=["mediation"], summary="accept connection invitation with mediator.")
+@match_info_schema(MediationIdMatchInfoSchema())
+@querystring_schema(AcceptInvitationQueryStringSchema())
+@response_schema(ConnRecordSchema(), 200)
+async def mediation_accept_invitation(request: web.BaseRequest):
+    """
+    Request handler for accepting a new connection invitation over a mediator.
+    
+    Args:
+        request: aiohttp request object
+
+    Returns:
+        The connection invitation details
+
+    """
+    context = request.app["request_context"]
+    if context.settings.get("admin.no_receive_invites"):
+        raise web.HTTPForbidden(
+            reason="Configuration does not allow receipt of invitations"
+        )
+    invitation_json = await request.json()
+    auto_accept = json.loads(request.query.get("auto_accept", "null"))
+    alias = request.query.get("alias")
+    args = ['context', 'outbound_handler', 'conn_id',
+        'mediation_id']
+    (context, outbound_handler,
+        conn_id, _id) = itemgetter(*args)(await _prepare_handler(request))
+    connection_mgr = ConnectionManager(context)
+    try:
+        mediation_record = await MediationRecord.retrieve_by_id(
+            context, _id
+        )
+        connection = await ConnRecord.retrieve_by_id(context, conn_id)
+        connection_mgr = ConnectionManager(context)
+        my_label = request.query.get("my_label") or None
+        my_endpoint = mediation_record.endpoint or None
+        storage: BaseStorage = await context.inject(BaseStorage)
+        result = await storage.find_record(
+            connection_mgr.RECORD_TYPE_INVITATION, {"connection_id": conn_id}
+        )
+        ser = json.loads(result.value)
+        invitation = ConnectionInvitation.deserialize(ser)
+        request = await create_request(
+            context,
+            connection,
+            invitation,
+            mediation_record
+        )
+        await outbound_handler(request, connection_id=connection.connection_id)
+        result = connection.serialize()
+    except StorageNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
+    except (StorageError, WalletError, ConnectionManagerError, BaseModelError) as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
+    return web.json_response(result,200)
+
+
+@docs(
+    tags=["mediation"],
+    summary="Receive invitation with a mediator."
+    )
+@match_info_schema(MediationIdMatchInfoSchema())
+@request_schema(ReceiveInvitationRequestSchema())
+@response_schema(ConnRecordSchema(), 201)
+async def mediation_receive_invitation(request: web.BaseRequest):
+    """
+    Request handler for automatically receiving a new connection invitation with a mediator.
+    
+    Args:
+        request: aiohttp request object
+
+    Returns:
+        The connection invitation details
+
+    """
+    context = request.app["request_context"]
+    if context.settings.get("admin.no_receive_invites"):
+        raise web.HTTPForbidden(
+            reason="Configuration does not allow receipt of invitations"
+        )
+    invitation_json = await request.json()
+    alias = request.query.get("alias")
+    
+    args = ['outbound_handler',
+        'mediation_id']
+    (outbound_handler
+        ,_id) = itemgetter(*args)(await _prepare_handler(request))
+    try:
+        mediation_record = await MediationRecord.retrieve_by_id(
+            context, _id
+        )
+        invitation = ConnectionInvitation.deserialize(invitation_json)
+        connection = await connection_from_invitation(
+            context,
+            invitation,
+            mediation_record,
+            alias=alias,
+        )
+        connection_request = await create_request(
+            context,
+            connection,
+            invitation,
+            mediation_record
+        )
+        await outbound_handler(
+            connection_request, connection_id=connection.connection_id
+        )
+        result = connection.serialize()
+
+    except (ConnectionManagerError, BaseModelError) as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+    return web.json_response(result, status=201)
 
 
 @docs(tags=["mediation"], summary="grant received mediation")
@@ -723,8 +1009,16 @@ async def register(app: web.Application):
                 mediation_record_send_create
             ),
             web.post(
-                "/mediation/requests/client/{mediation_id}/generate-invitation",
-                mediation_invitation
+                "/mediation/requests/client/{mediation_id}/create-invitation",
+                create_invitation
+            ),
+            web.post(
+                "/mediation/requests/client/{mediation_id}/receive-invitation",
+                mediation_receive_invitation
+            ),
+                web.post(
+                "/mediation/requests/client/{mediation_id}/accept-invitation",
+                mediation_accept_invitation
             ),
             web.post(
                 "/mediation/requests/client/{mediation_id}/send",
