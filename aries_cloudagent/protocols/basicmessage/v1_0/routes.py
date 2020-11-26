@@ -53,12 +53,7 @@ async def connections_send_message(request: web.BaseRequest):
         msg = BasicMessage(content=params["content"])
         await outbound_handler(msg, connection_id=connection_id)
 
-    return web.json_response(
-        {
-            "message_id": msg._id,
-            "thread_id": msg._thread_id
-        }
-    )
+    return web.json_response({"message_id": msg._id, "thread_id": msg._thread_id})
 
 
 async def register(app: web.Application):
