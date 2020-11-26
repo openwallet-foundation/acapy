@@ -46,15 +46,7 @@ class DIDXConnListSchema(OpenAPISchema):
 class DIDXReceiveInvitationRequestSchema(OOBInvitationSchema):
     """Request schema for receive invitation request."""
 
-    @pre_load
-    def pre_load(self, data, **kwargs):
-        """Bypass middleware field adjustment: marshmallow has no data yet."""
-        print(f"\n\n ## ## recv-invi req: pre-loading {data}")
-
-    @validates_schema
-    def validate_fields(self, data, **kwargs):
-        """Bypass middleware field validation: marshmallow has no data yet."""
-        print(f"\n\n ## ## recv-invi req: validating {data}")
+    service = fields.Field()
 
 
 class DIDXConnStaticRequestSchema(OpenAPISchema):
@@ -283,7 +275,6 @@ async def didx_receive_invitation(request: web.BaseRequest):
         The resulting connection record details
 
     """
-    print("\n\n-- -- DIDX routes recv-invi #1")
     context = request.app["request_context"]
     if context.settings.get("admin.no_receive_invites"):
         raise web.HTTPForbidden(
@@ -519,7 +510,7 @@ def post_process_routes(app: web.Application):
     app._state["swagger_dict"]["tags"].append(
         {
             "name": "did-exchange",
-            "description": "Connection management via DID exchange standard",
+            "description": "Connection management via DID exchange",
             "externalDocs": {"description": "Specification", "url": SPEC_URI},
         }
     )

@@ -55,8 +55,11 @@ class AliceAgent(DemoAgent):
         return self._connection_ready.done() and self._connection_ready.result()
 
     async def handle_connections(self, message):
-        if message["connection_id"] == self.connection_id:
-            if message["state"] == "active" and not self._connection_ready.done():
+        if (
+            message["connection_id"] == self.connection_id
+            and message["state"] == "active"
+            and not self._connection_ready.done()
+        ):
                 self.log("Connected")
                 self._connection_ready.set_result(True)
 
@@ -199,7 +202,7 @@ async def input_invitation(agent):
 
         if details:
             try:
-                json.loads(details)
+                details = json.loads(details)
                 break
             except json.JSONDecodeError as e:
                 log_msg("Invalid invitation:", str(e))

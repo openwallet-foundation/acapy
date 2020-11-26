@@ -350,7 +350,14 @@ class DIDXManager:
         did_doc = await self.create_did_document(
             my_info, conn_rec.inbound_connection_id, my_endpoints
         )
-        pthid = did_doc.service[[s for s in did_doc.service][0]].id
+        invitation = await conn_rec.retrieve_invitation(self.context)
+        if invitation.service_blocks:
+            pthid = invitation._id  # explicit
+        else:
+            '''  # early try
+            pthid = did_doc.service[[s for s in did_doc.service][0]].id
+            '''
+            pthid = invitation.service_dids[0]  # should look like did:sov:abc...123
         attach = AttachDecorator.from_indy_dict(did_doc.serialize())
         await attach.data.sign(my_info.verkey, wallet)
         if not my_label:
@@ -453,6 +460,7 @@ class DIDXManager:
             conn_rec.their_label = request.label
             conn_rec.their_did = request.did
             conn_rec.state = ConnRecord.State.REQUEST.rfc23
+            conn_rec.request_id = request._id
             await conn_rec.save(
                 self.context, reason="Received connection request from invitation"
             )
@@ -470,6 +478,7 @@ class DIDXManager:
             )
             if self.context.settings.get("debug.auto_accept_requests"):
                 conn_rec.accept = ConnRecord.ACCEPT_AUTO
+            conn_rec.request_id = request._id
 
             await conn_rec.save(
                 self.context, reason="Received connection request from public DID"
@@ -1057,113 +1066,6 @@ class DIDXManager:
         ).fetch_all()
         for record in keys:
             await storage.delete_record(record)
-
-    async def get_connection_targets(
-        self,
-        *,
-        connection_id: str = None,
-        conn_rec: ConnRecord = None,
-    ):
-        """Create a connection target from a `ConnRecord`.
-
-        Args:
-            connection_id: The connection ID to search for
-            conn_rec: The connection record itself, if already available
-        """
-        if not connection_id:
-            connection_id = conn_rec.connection_id
-        cache: BaseCache = await self.context.inject(BaseCache, required=False)
-        cache_key = f"connection_target::{connection_id}"
-        if cache:
-            async with cache.acquire(cache_key) as entry:
-                if entry.result:
-                    targets = [
-                        ConnectionTarget.deserialize(row) for row in entry.result
-                    ]
-                else:
-                    if not conn_rec:
-                        conn_rec = await ConnRecord.retrieve_by_id(
-                            self.context, connection_id
-                        )
-                    targets = await self.fetch_connection_targets(conn_rec)
-                    await entry.set_result([row.serialize() for row in targets], 3600)
-        else:
-            targets = await self.fetch_connection_targets(conn_rec)
-        return targets
-
-    async def fetch_connection_targets(
-        self,
-        conn_rec: ConnRecord,
-    ) -> Sequence[ConnectionTarget]:
-        """Get a list of connection targets from a `ConnRecord`.
-
-        Args:
-            conn_rec: The connection record (with associated `DIDDoc`)
-                used to generate the connection target
-        """
-
-        if not conn_rec.my_did:
-            self._logger.debug("No local DID associated with connection")
-            return None
-
-        wallet: BaseWallet = await self.context.inject(BaseWallet)
-        my_info = await wallet.get_local_did(conn_rec.my_did)
-        results = None
-
-        """ was (for RFC 160)
-            # KEEP THIS COMMENT AROUND until certain the logic maps OK to RFC 23
-        if (
-            connection.state
-            in (ConnectionRecord.STATE_INVITATION, ConnectionRecord.STATE_REQUEST)
-            and connection.initiator == ConnectionRecord.INITIATOR_EXTERNAL
-        ):
-        """
-        if (
-            ConnRecord.State.get(conn_rec.state)
-            in (ConnRecord.State.INVITATION, ConnRecord.State.REQUEST)
-            and ConnRecord.Role.get(conn_rec.their_role) is ConnRecord.Role.REQUESTER
-        ):
-            invitation = await conn_rec.retrieve_invitation(self.context)
-            if invitation.did:
-                # populate recipient keys and endpoint from the ledger
-                ledger: BaseLedger = await self.context.inject(
-                    BaseLedger, required=False
-                )
-                if not ledger:
-                    raise DIDXManagerError("Cannot resolve DID without ledger instance")
-                async with ledger:
-                    endpoint = await ledger.get_endpoint_for_did(invitation.did)
-                    recipient_keys = [await ledger.get_key_for_did(invitation.did)]
-                    routing_keys = []
-            else:
-                endpoint = invitation.endpoint
-                recipient_keys = invitation.recipient_keys
-                routing_keys = invitation.routing_keys
-
-            results = [
-                ConnectionTarget(
-                    did=conn_rec.their_did,
-                    endpoint=endpoint,
-                    label=invitation.label,
-                    recipient_keys=recipient_keys,
-                    routing_keys=routing_keys,
-                    sender_key=my_info.verkey,
-                )
-            ]
-        else:
-            if not conn_rec.their_did:
-                self._logger.debug(
-                    "No target DID associated with connection %s",
-                    conn_rec.connection_id,
-                )
-                return None
-
-            did_doc, _ = await self.fetch_did_document(conn_rec.their_did)
-            results = self.diddoc_connection_targets(
-                did_doc, my_info.verkey, conn_rec.their_label
-            )
-
-        return results
 
     async def verify_diddoc(
         self,

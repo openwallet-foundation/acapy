@@ -25,7 +25,7 @@ from ....transport.inbound.receipt import MessageReceipt
 from ....wallet.base import BaseWallet, DIDInfo
 from ....wallet.crypto import create_keypair, seed_to_did
 from ....wallet.error import WalletNotFoundError
-from ....wallet.util import bytes_to_b58
+from ....wallet.util import bytes_to_b58, did_key_to_naked
 from ....protocols.routing.v1_0.manager import RoutingManager
 
 from .messages.connection_invitation import ConnectionInvitation
@@ -996,23 +996,52 @@ class ConnectionManager:
             and ConnRecord.Role.get(connection.their_role) is ConnRecord.Role.RESPONDER
         ):
             invitation = await connection.retrieve_invitation(self.context)
-            if invitation.did:
-                # populate recipient keys and endpoint from the ledger
-                ledger: BaseLedger = await self.context.inject(
-                    BaseLedger, required=False
-                )
-                if not ledger:
-                    raise ConnectionManagerError(
-                        "Cannot resolve DID without ledger instance"
+            if isinstance(invitation, ConnectionInvitation):  # conn protocol invitation
+                if invitation.did:
+                    # populate recipient keys and endpoint from the ledger
+                    ledger: BaseLedger = await self.context.inject(
+                        BaseLedger, required=False
                     )
-                async with ledger:
-                    endpoint = await ledger.get_endpoint_for_did(invitation.did)
-                    recipient_keys = [await ledger.get_key_for_did(invitation.did)]
-                    routing_keys = []
-            else:
-                endpoint = invitation.endpoint
-                recipient_keys = invitation.recipient_keys
-                routing_keys = invitation.routing_keys
+                    if not ledger:
+                        raise ConnectionManagerError(
+                            "Cannot resolve DID without ledger instance"
+                        )
+                    async with ledger:
+                        endpoint = await ledger.get_endpoint_for_did(invitation.did)
+                        recipient_keys = [await ledger.get_key_for_did(invitation.did)]
+                        routing_keys = []
+                else:
+                    endpoint = invitation.endpoint
+                    recipient_keys = invitation.recipient_keys
+                    routing_keys = invitation.routing_keys
+            else:  # out-of-band invitation
+                if invitation.service_dids:
+                    # populate recipient keys and endpoint from the ledger
+                    ledger: BaseLedger = await self.context.inject(
+                        BaseLedger, required=False
+                    )
+                    if not ledger:
+                        raise ConnectionManagerError(
+                            "Cannot resolve DID without ledger instance"
+                        )
+                    async with ledger:
+                        endpoint = await ledger.get_endpoint_for_did(
+                            invitation.service_dids[0]
+                        )
+                        recipient_keys = [
+                            await ledger.get_key_for_did(invitation.service_dids[0])
+                        ]
+                        routing_keys = []
+                else:
+                    endpoint = invitation.service_blocks[0].service_endpoint
+                    recipient_keys = [
+                        did_key_to_naked(k)
+                        for k in invitation.service_blocks[0].recipient_keys
+                    ]
+                    routing_keys = [
+                        did_key_to_naked(k)
+                        for k in invitation.service_blocks[0].routing_keys
+                ]
 
             results = [
                 ConnectionTarget(

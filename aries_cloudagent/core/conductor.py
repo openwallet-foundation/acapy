@@ -9,6 +9,7 @@ wallet.
 """
 
 import hashlib
+import json
 import logging
 
 from ..admin.base_server import BaseAdminServer
@@ -20,7 +21,10 @@ from ..config.logging import LoggingConfigurator
 from ..config.wallet import wallet_config, BaseWallet
 from ..ledger.error import LedgerConfigError, LedgerTransactionError
 from ..messaging.responder import BaseResponder
-from ..protocols.connections.v1_0.manager import ConnectionManager
+from ..protocols.connections.v1_0.manager import (
+    ConnectionManager,
+    ConnectionManagerError,
+)
 from ..protocols.didexchange.v1_0.manager import DIDXManager, DIDXManagerError
 from ..protocols.out_of_band.v1_0.manager import OutOfBandManager
 from ..protocols.out_of_band.v1_0.messages.invitation import InvitationMessage
@@ -135,14 +139,6 @@ class Conductor:
             # at the class level (!) should not be performed multiple times
             collector.wrap(
                 ConnectionManager,
-                (
-                    # "get_connection_targets",
-                    "fetch_did_document",
-                    "find_inbound_connection",
-                ),
-            )
-            collector.wrap(
-                DIDXManager,
                 (
                     # "get_connection_targets",
                     "fetch_did_document",
@@ -372,12 +368,15 @@ class Conductor:
         # populate connection target(s)
         if not outbound.target and not outbound.target_list and outbound.connection_id:
             # using provided request context
-            mgr = DIDXManager(context)
+            conn_mgr = ConnectionManager(context)
+
             try:
                 outbound.target_list = await self.dispatcher.run_task(
-                    mgr.get_connection_targets(connection_id=outbound.connection_id)
+                    conn_mgr.get_connection_targets(
+                        connection_id=outbound.connection_id
+                    )
                 )
-            except DIDXManagerError:
+            except ConnectionManagerError:
                 LOGGER.exception("Error preparing outbound message for transmission")
                 return
             except (LedgerConfigError, LedgerTransactionError) as e:

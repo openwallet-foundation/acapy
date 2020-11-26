@@ -64,19 +64,17 @@ class FaberAgent(DemoAgent):
     def connection_ready(self):
         return self._connection_ready.done() and self._connection_ready.result()
 
+    async def handle_oob_invitation(self, message):
+        pass
+
     async def handle_connections(self, message):
         conn_id = message["connection_id"]
         if not self.connection_id and message["state"] == "invitation":
             self.connection_id = conn_id
         if conn_id == self.connection_id:
-            if message["state"] in ["active", "response"]:
+            if message["state"] == "active" and not self._connection_ready.done():
                 self.log("Connected")
                 self._connection_ready.set_result(True)
-                if not self._connection_ready.done():
-                    self._connection_ready.set_result(True)
-
-    async def handle_oob_invitation(self, message):
-        print(f"\n\n!! !! HANDLING OOB-INVI MSG: {json.dumps(message, indent=4)}")
 
     async def handle_issue_credential(self, message):
         state = message["state"]
@@ -211,8 +209,6 @@ async def main(
                 "/out-of-band/create-invitation",
                 {"include_handshake": True},
             )
-
-        # agent.connection_id = connection["connection_id"]
 
         qr = QRCode()
         qr.add_data(invi_msg["invitation"]["service"][0]["serviceEndpoint"])

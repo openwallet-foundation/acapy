@@ -197,6 +197,8 @@ class OutOfBandManager:
                 invitation_mode=invitation_mode,
                 alias=alias,
             )
+            import json
+            print(f'\n\noo oo OOB mgr created conn rec {json.dumps(conn_rec.serialize(), indent=4)}')
             await conn_rec.save(self.context, reason="Created new invitation")
             await conn_rec.attach_invitation(self.context, invi_msg)
 
