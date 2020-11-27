@@ -1,3 +1,5 @@
+"""Multitenant error classes."""
+
 from ..core.error import BaseError
 
 

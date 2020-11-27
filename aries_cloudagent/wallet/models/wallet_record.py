@@ -68,12 +68,12 @@ class WalletRecord(BaseRecord):
 
     @property
     def wallet_name(self) -> Optional[str]:
-        """Accessor for the name of the wallet"""
+        """Accessor for the name of the wallet."""
         return self.wallet_config.get("name")
 
     @property
     def wallet_type(self) -> str:
-        """Accessor for the type of the wallet"""
+        """Accessor for the type of the wallet."""
         return self.wallet_config.get("type")
 
     @property
