@@ -87,6 +87,14 @@ class RemoveWalletRequestSchema(Schema):
     )
 
 
+class CreateWalletTokenRequestSchema(Schema):
+    """Request schema for creating a wallet token."""
+
+    wallet_key = fields.Str(
+        description="Master key used for key derivation.", example="MySecretKey123"
+    )
+
+
 @docs(tags=["multitenancy"], summary="List all subwallets")
 # MTODO: wallet_list response schema
 async def wallet_list(request: web.BaseRequest):
@@ -177,6 +185,38 @@ async def wallet_create(request: web.BaseRequest):
     return web.json_response(result)
 
 
+@docs(tags=["multitenancy"], summary="Get auth token for a subwallet")
+@request_schema(CreateWalletTokenRequestSchema)
+# MTODO: wallet_create_token Response schema
+async def wallet_create_token(request: web.BaseRequest):
+    """
+    Request handler for creating an authorization token for a specific subwallet.
+
+    Args:
+        request: aiohttp request object
+    """
+
+    context = request["context"]
+    wallet_id = request.match_info["wallet_id"]
+    wallet_key = None
+
+    if request.has_body:
+        body = await request.json()
+        wallet_key = body.get("wallet_key")
+
+    try:
+        multitenant_manager = MultitenantManager(context)
+        wallet_record = await WalletRecord.retrieve_by_id(context, wallet_id)
+
+        token = await multitenant_manager.create_auth_token(wallet_record, wallet_key)
+    except StorageNotFoundError:
+        raise web.HTTPNotFound()
+    except WalletKeyMissingError as e:
+        raise web.HTTPUnauthorized(e.roll_up) from e
+
+    return web.json_response({"token": token})
+
+
 @docs(
     tags=["multitenancy"],
     summary="Remove a subwallet",
@@ -215,7 +255,6 @@ async def wallet_remove(request: web.BaseRequest):
 # MTODO: add wallet import route
 # MTODO: add wallet export route
 # MTODO: add rotate wallet key route
-# MTODO: add wallet authenticate route
 
 
 async def register(app: web.Application):
@@ -226,6 +265,7 @@ async def register(app: web.Application):
             web.get("/multitenancy/wallets", wallet_list, allow_head=False),
             web.post("/multitenancy/wallet", wallet_create),
             web.get("/multitenancy/wallet/{wallet_id}", wallet_get, allow_head=False),
+            web.post("/multitenancy/wallet/{wallet_id}/token", wallet_create_token),
             web.post("/multitenancy/wallet/{wallet_id}/remove", wallet_remove),
         ]
     )
