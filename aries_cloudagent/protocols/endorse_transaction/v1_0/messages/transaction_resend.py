@@ -1,3 +1,4 @@
+"""Represents a transaction resend message."""
 
 from marshmallow import EXCLUDE, fields
 
@@ -12,8 +13,10 @@ HANDLER_CLASS = (
 
 
 class TransactionResend(AgentMessage):
+    """Class representing a transaction resend message."""
 
     class Meta:
+        """Metadata for a transaction resend message."""
 
         handler_class = HANDLER_CLASS
         message_type = TRANSACTION_RESEND
@@ -22,10 +25,17 @@ class TransactionResend(AgentMessage):
     def __init__(
         self,
         *,
-        state:str = None,
-        thread_id:str = None,
+        state: str = None,
+        thread_id: str = None,
         **kwargs,
     ):
+        """
+        Initialize a transaction resend object.
+
+        Args:
+            state: State of the transaction record
+            thread_id: Thread id of transaction record
+        """
         super().__init__(**kwargs)
 
         self.state = state
@@ -33,8 +43,10 @@ class TransactionResend(AgentMessage):
 
 
 class TransactionResendSchema(AgentMessageSchema):
+    """Transaction resend schema class."""
 
     class Meta:
+        """Transaction resend schema metadata."""
 
         model_class = TransactionResend
         unknown = EXCLUDE
@@ -44,6 +56,4 @@ class TransactionResendSchema(AgentMessageSchema):
         description="The State of the transaction Record",
         example="ENDORSER",
     )
-    thread_id = fields.Str(
-        required=False
-    ) 
+    thread_id = fields.Str(required=False)

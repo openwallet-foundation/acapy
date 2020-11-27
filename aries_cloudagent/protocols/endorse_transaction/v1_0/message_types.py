@@ -1,4 +1,3 @@
-
 """Message type identifiers for Transactions."""
 
 from ...didcomm_prefix import DIDCommPrefix
@@ -22,7 +21,7 @@ MESSAGE_TYPES = DIDCommPrefix.qualify_all(
         ENDORSED_TRANSACTION_RESPONSE: (
             f"{PROTOCOL_PACKAGE}.messages.endorsed_transaction_response.EndorsedTransactionResponse"
         ),
-        REFUSED_TRANSACTION_RESPONSE:(
+        REFUSED_TRANSACTION_RESPONSE: (
             f"{PROTOCOL_PACKAGE}.messages.refused_transaction_response.RefusedTransactionResponse"
         ),
         CANCEL_TRANSACTION: (
@@ -30,6 +29,6 @@ MESSAGE_TYPES = DIDCommPrefix.qualify_all(
         ),
         TRANSACTION_RESEND: (
             f"{PROTOCOL_PACKAGE}.messages.transaction_resend.TransactionResend"
-        )
+        ),
     }
 )

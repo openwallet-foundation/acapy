@@ -176,7 +176,6 @@ class ConnRecord(BaseRecord):
         self.invitation_mode = invitation_mode or self.INVITATION_MODE_ONCE
         self.alias = alias
 
-
     @property
     def connection_id(self) -> str:
         """Accessor for the ID associated with this connection."""
@@ -389,10 +388,14 @@ class ConnRecordSchema(BaseRecordSchema):
         required=False, description="Their label for connection", example="Bob"
     )
     tx_my_role = fields.List(
-        fields.Str(),required=False, description="A List of my transaction related roles (AUTHOR/ENDORSER)"
+        fields.Str(),
+        required=False,
+        description="A List of my transaction related roles (AUTHOR/ENDORSER)",
     )
     tx_their_role = fields.List(
-        fields.Str(),required=False, description="A List of their transaction related roles (AUTHOR/ENDORSER)"
+        fields.Str(),
+        required=False,
+        description="A List of their transaction related roles (AUTHOR/ENDORSER)",
     )
     their_role = fields.Str(
         required=False,
@@ -461,4 +464,3 @@ class ConnRecordSchema(BaseRecordSchema):
         description="Optional alias to apply to connection for later use",
         example="Bob, providing quotes",
     )
-

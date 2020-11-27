@@ -134,8 +134,8 @@ class ConnectionInvitationSchema(AgentMessageSchema):
     )
     tx_my_role = fields.Str(
         required=False,
-        description="Optional role in connection to be used in Endorsement Protocol - useful when auto-accepting connection",
-        example="AUTHOR/ENDORSER"
+        description="Optional role in connection to be used in Endorsement Protocol",
+        example="AUTHOR/ENDORSER",
     )
 
     @validates_schema

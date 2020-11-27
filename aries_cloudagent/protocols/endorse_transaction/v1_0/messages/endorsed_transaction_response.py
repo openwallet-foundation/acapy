@@ -1,3 +1,4 @@
+"""Represents an endorsed transaction message."""
 
 from marshmallow import EXCLUDE, fields
 
@@ -10,9 +11,12 @@ HANDLER_CLASS = (
     ".endorsed_transaction_response_handler.EndorsedTransactionResponseHandler"
 )
 
+
 class EndorsedTransactionResponse(AgentMessage):
+    """Class representing an endorsed transaction response message."""
 
     class Meta:
+        """Metadata for an endorsed transaction response message."""
 
         handler_class = HANDLER_CLASS
         message_type = ENDORSED_TRANSACTION_RESPONSE
@@ -21,13 +25,23 @@ class EndorsedTransactionResponse(AgentMessage):
     def __init__(
         self,
         *,
-        transaction_id:str = None,
-        thread_id:str = None,
-        signature_response:dict = None,
-        state:str = None,
-        endorser_did:str = None,
+        transaction_id: str = None,
+        thread_id: str = None,
+        signature_response: dict = None,
+        state: str = None,
+        endorser_did: str = None,
         **kwargs,
     ):
+        """
+        Initialize an endorsed transaction response object.
+
+        Args:
+            transaction_id: The id of the transaction record
+            thread_id: The thread id of the transaction record
+            signature_response: The response created to endorse the transaction
+            state: The state of the transaction record
+            endorser_did: The public did of the endorser who endorses the transaction
+        """
         super().__init__(**kwargs)
 
         self.transaction_id = transaction_id
@@ -38,19 +52,21 @@ class EndorsedTransactionResponse(AgentMessage):
 
 
 class EndorsedTransactionResponseSchema(AgentMessageSchema):
+    """Endorsed transaction response schema class."""
 
     class Meta:
+        """Endorsed transaction response schema metadata."""
 
         model_class = EndorsedTransactionResponse
         unknown = EXCLUDE
 
     transaction_id = fields.Str(
         required=False,
-        description="The transaction id of the agent who this response is sent to"
+        description="The transaction id of the agent who this response is sent to",
     )
     thread_id = fields.Str(
         required=False,
-        description="The transaction id of the agent who this response is sent from"
+        description="The transaction id of the agent who this response is sent from",
     )
     signature_response = fields.Dict(
         required=False,
@@ -61,6 +77,5 @@ class EndorsedTransactionResponseSchema(AgentMessageSchema):
         example="ENDORSER",
     )
     endorser_did = fields.Str(
-        required=False,
-        description="The public did of the endorser"
+        required=False, description="The public did of the endorser"
     )
