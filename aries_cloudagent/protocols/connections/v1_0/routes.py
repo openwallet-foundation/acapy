@@ -164,7 +164,7 @@ class CreateInvitationQueryStringSchema(OpenAPISchema):
 
     alias = fields.Str(
         description="Alias",
-        required=False,
+        required=True,
         example="Barry",
     )
     auto_accept = fields.Boolean(
@@ -184,7 +184,6 @@ class CreateInvitationQueryStringSchema(OpenAPISchema):
             [r.name for r in Role if isinstance(r.value[0], int)] + ["reset"]
         ),
     )
-
 
 
 class ReceiveInvitationQueryStringSchema(OpenAPISchema):
@@ -380,7 +379,6 @@ async def connections_create_invitation(request: web.BaseRequest):
     body = await request.json() if request.body_exists else {}
     recipient_keys = body.get("recipient_keys")
     service_endpoint = body.get("service_endpoint")
-    routing_keys = body.get("routing_keys")
 
     tx_my_role = request.query.get("my_role")
 
@@ -397,10 +395,8 @@ async def connections_create_invitation(request: web.BaseRequest):
             public=public,
             multi_use=multi_use,
             alias=alias,
-            recipient_keys=recipient_keys,
             my_endpoint=service_endpoint,
-            routing_keys=routing_keys,
-            tx_my_role=tx_my_role
+            tx_my_role=tx_my_role,
         )
 
         result = {
@@ -413,7 +409,6 @@ async def connections_create_invitation(request: web.BaseRequest):
 
     if connection and connection.alias:
         result["alias"] = connection.alias
-
 
     return web.json_response(result)
 
@@ -450,12 +445,14 @@ async def connections_receive_invitation(request: web.BaseRequest):
         auto_accept = json.loads(request.query.get("auto_accept", "null"))
         alias = request.query.get("alias")
         connection = await connection_mgr.receive_invitation(
-            invitation, auto_accept=auto_accept, alias=alias, tx_my_role=tx_my_role,
+            invitation,
+            auto_accept=auto_accept,
+            alias=alias,
+            tx_my_role=tx_my_role,
         )
         result = connection.serialize()
     except (ConnectionManagerError, StorageError, BaseModelError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
-
 
     return web.json_response(result)
 
@@ -488,7 +485,9 @@ async def connections_accept_invitation(request: web.BaseRequest):
         my_label = request.query.get("my_label") or None
         my_endpoint = request.query.get("my_endpoint") or None
         my_role = request.query.get("my_role")
-        request = await connection_mgr.create_request(connection, my_label, my_endpoint, my_role)
+        request = await connection_mgr.create_request(
+            connection, my_label, my_endpoint, my_role
+        )
         result = connection.serialize()
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
@@ -526,8 +525,10 @@ async def connections_accept_request(request: web.BaseRequest):
         connection_mgr = ConnectionManager(context)
         my_endpoint = request.query.get("my_endpoint") or None
         my_role = request.query.get("my_role")
-        response = await connection_mgr.create_response(connection, my_endpoint, my_role)
-        result = connection.serialize()       
+        response = await connection_mgr.create_response(
+            connection, my_endpoint, my_role
+        )
+        result = connection.serialize()
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
     except (StorageError, WalletError, ConnectionManagerError, BaseModelError) as err:

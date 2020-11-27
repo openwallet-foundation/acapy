@@ -30,7 +30,7 @@ class ConnectionRequest(AgentMessage):
         label: str = None,
         image_url: str = None,
         my_role: str = None,
-        their_role:str = None,
+        their_role: str = None,
         **kwargs,
     ):
         """
@@ -70,7 +70,7 @@ class ConnectionRequestSchema(AgentMessageSchema):
     )
     their_role = fields.Str(
         required=False,
-        description="Their Role that needs to be passed - useful when opting for auto-accepting connection",
+        description="Their Role that needs to be passed",
         example="ENDORSER",
     )
     image_url = fields.Str(

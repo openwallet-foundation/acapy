@@ -1,23 +1,28 @@
+"""Handle transaction information interface."""
 
 from marshmallow import fields
 
-from ....messaging.models.base_record import BaseRecord, BaseRecordSchema, BaseExchangeRecord, BaseExchangeSchema
+from ....messaging.models.base_record import (
+    BaseExchangeRecord,
+    BaseExchangeSchema,
+)
 
 from ....config.injection_context import InjectionContext
 
 
 class TransactionRecord(BaseExchangeRecord):
+    """Represents a single transaction record."""
 
     class Meta:
+        """Transaction Record metadata."""
 
         schema_class = "TransactionRecordSchema"
-    
+
     RECORD_ID_NAME = "transaction_id"
-    TAG_NAMES = {"comment1", "comment2", "state", "thread_id", "connection_id"}    
+    TAG_NAMES = {"comment1", "comment2", "state", "thread_id", "connection_id"}
     RECORD_TYPE = "transaction"
     STATE_INIT = "init"
 
-    
     def __init__(
         self,
         *,
@@ -31,11 +36,12 @@ class TransactionRecord(BaseExchangeRecord):
         timing: dict = {},
         formats: list = [],
         messages_attach: list = [],
-        thread_id:str = None,
-        connection_id:str = None,
+        thread_id: str = None,
+        connection_id: str = None,
         state: str = None,
         **kwargs,
     ):
+        """Initialize a new TransactionRecord."""
 
         super().__init__(transaction_id, state or self.STATE_INIT, **kwargs)
         self.comment1 = comment1
@@ -49,8 +55,7 @@ class TransactionRecord(BaseExchangeRecord):
         self.messages_attach = messages_attach
         self.thread_id = thread_id
         self.connection_id = connection_id
-    
-    
+
     @classmethod
     async def retrieve_by_connection_and_thread(
         cls, context: InjectionContext, connection_id: str, thread_id: str
@@ -71,8 +76,10 @@ class TransactionRecord(BaseExchangeRecord):
 
 
 class TransactionRecordSchema(BaseExchangeSchema):
+    """Schema to allow serialization/deserialization of transaction records."""
 
     class Meta:
+        """TransactionRecordSchema metadata."""
 
         model_class = "TransactionRecord"
 
@@ -90,32 +97,20 @@ class TransactionRecordSchema(BaseExchangeSchema):
         example="Some Comment",
     )
     _type = fields.Str(
-        required=False, description="Transaction type", example="The type of transaction"
+        required=False,
+        description="Transaction type",
+        example="The type of transaction",
     )
     signature_request = fields.List(
         fields.Dict(),
         required=False,
     )
-    signature_response = fields.List(
-        fields.Dict(),
-        required = False
-    )
-    timing = fields.Dict(
-        required=False
-    )
-    formats = fields.List(
-        fields.Dict(),
-        required=False
-    )
-    messages_attach = fields.List(
-        fields.Dict(),
-        required=False
-    )
-    thread_id = fields.Str(
-        required=False,
-        description="Thread Identifier"
-    )
+    signature_response = fields.List(fields.Dict(), required=False)
+    timing = fields.Dict(required=False)
+    formats = fields.List(fields.Dict(), required=False)
+    messages_attach = fields.List(fields.Dict(), required=False)
+    thread_id = fields.Str(required=False, description="Thread Identifier")
     connection_id = fields.Str(
         required=False,
-        description="The connection identifier for thie particular transaction record"
+        description="The connection identifier for thie particular transaction record",
     )

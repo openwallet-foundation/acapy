@@ -390,7 +390,6 @@ class BaseRecord(BaseModel):
                 context, self.webhook_payload, topic=self.webhook_topic
             )
 
-
     async def delete_record(self, context: InjectionContext):
         """Remove the stored record.
 
