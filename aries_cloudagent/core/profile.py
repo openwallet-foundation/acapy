@@ -1,12 +1,23 @@
 """Classes for managing profile information within a request context."""
 
-from abc import abstractmethod
-from typing import Mapping, Optional, Type
+import logging
 
-from ..config.injection_context import InjectionContext, InjectType
+from abc import ABC, abstractmethod
+from typing import Any, Mapping, Optional, Type
+
+from ..config.base import ProviderError
+from ..config.injector import BaseInjector, InjectType
+from ..config.injection_context import InjectionContext
+from ..config.provider import BaseProvider
+from ..config.settings import BaseSettings
+from ..utils.classloader import ClassLoader, ClassNotFoundError
+
+from .error import ProfileSessionInactiveError
+
+LOGGER = logging.getLogger(__name__)
 
 
-class Profile:
+class Profile(ABC):
     """Base abstraction for handling identity-related state."""
 
     BACKEND_NAME = None
@@ -33,11 +44,11 @@ class Profile:
         return self._name
 
     @abstractmethod
-    async def start_session(self) -> "ProfileSession":
+    def session(self) -> "ProfileSession":
         """Start a new interactive session with no transaction support requested."""
 
     @abstractmethod
-    async def start_transaction(self) -> "ProfileSession":
+    def transaction(self) -> "ProfileSession":
         """
         Start a new interactive session with commit and rollback support.
 
@@ -50,7 +61,7 @@ class Profile:
         base_cls: Type[InjectType],
         settings: Mapping[str, object] = None,
         *,
-        required: bool = True
+        required: bool = True,
     ) -> Optional[InjectType]:
         """
         Get the provided instance of a given class identifier.
@@ -72,23 +83,74 @@ class Profile:
         )
 
 
-class ProfileSession:
+class ProfileManager(ABC):
+    """Handle provision and open for profile instances."""
+
+    def __init__(self, context: InjectionContext):
+        """Initialize the profile manager."""
+
+    @abstractmethod
+    async def provision(self, config: Mapping[str, Any] = None) -> Profile:
+        """Provision a new instance of a profile."""
+
+    @abstractmethod
+    async def open(self, config: Mapping[str, Any] = None) -> Profile:
+        """Open an instance of an existing profile."""
+
+
+class ProfileSession(ABC):
     """An active connection to the profile management backend."""
 
-    def __init__(self, *, profile: Profile, context: InjectionContext = None):
+    def __init__(
+        self,
+        profile: Profile,
+        *,
+        context: InjectionContext = None,
+        settings: Mapping[str, Any] = None,
+    ):
         """Initialize a base profile session."""
-        self._context = context or profile.context
+        self._active = False
+        self._context = context or profile.context.start_scope("session", settings)
         self._profile = profile
+
+    def _setup(self):
+        """Create the session or transaction connection, if needed."""
+        self._active = True
+
+    def _teardown(self, commit: bool = None):
+        """Dispose of the session or transaction connection, if needed."""
+        self._active = False
+
+    def __await__(self):
+        """
+        Coroutine magic method.
+
+        A session must be awaited or used as an async context manager.
+        """
+        if not self._active:
+            return self._setup().__await__()
+        return self
+
+    async def __aenter__(self):
+        """Async context manager entry."""
+        if not self._active:
+            await self._setup()
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        """Async context manager exit."""
+        if self._active:
+            await self._teardown()
+
+    @property
+    def active(self) -> bool:
+        """Accessor for the session active state."""
+        return self._active
 
     @property
     def context(self) -> InjectionContext:
         """Accessor for the associated injection context."""
         return self._context
-
-    @property
-    def profile(self) -> Profile:
-        """Accessor for the associated profile instance."""
-        return self._profile
 
     @property
     def handle(self):
@@ -100,26 +162,37 @@ class ProfileSession:
         """Check if the session supports commit and rollback operations."""
         return False
 
-    def commit(self):
+    @property
+    def profile(self) -> Profile:
+        """Accessor for the associated profile instance."""
+        return self._profile
+
+    async def commit(self):
         """
         Commit any updates performed within the transaction.
 
         If the current session is not a transaction, then nothing is performed.
         """
+        if not self._active:
+            raise ProfileSessionInactiveError()
+        await self._teardown(commit=True)
 
-    def rollback(self):
+    async def rollback(self):
         """
         Roll back any updates performed within the transaction.
 
         If the current session is not a transaction, then nothing is performed.
         """
+        if not self._active:
+            raise ProfileSessionInactiveError()
+        await self._teardown(commit=False)
 
     def inject(
         self,
         base_cls: Type[InjectType],
         settings: Mapping[str, object] = None,
         *,
-        required: bool = True
+        required: bool = True,
     ) -> Optional[InjectType]:
         """
         Get the provided instance of a given class identifier.
@@ -132,10 +205,44 @@ class ProfileSession:
             An instance of the base class, or None
 
         """
+        if not self._active:
+            raise ProfileSessionInactiveError()
         return self._context.inject(base_cls, settings, required=required)
 
     def __repr__(self) -> str:
         """Get a human readable string."""
-        return "<{}(is_transaction={})>".format(
-            self.__class__.__name__, self.is_transaction
+        return "<{}(active={}, is_transaction={})>".format(
+            self.__class__.__name__, self._active, self.is_transaction
         )
+
+
+class ProfileManagerProvider(BaseProvider):
+    MANAGER_TYPES = {
+        "in_memory": "aries_cloudagent.core.in_memory.InMemoryProfileManager",
+        "indy": "aries_cloudagent.indy.sdk.profile.IndySdkProfileManager",
+    }
+
+    def __init__(self, context: InjectionContext):
+        """Initialize the profile manager provider."""
+        self._context = context
+        self._inst = {}
+
+    def provide(self, settings: BaseSettings, injector: BaseInjector):
+        """Create the profile manager instance."""
+
+        mgr_type = settings.get_value("wallet.type", default="in_memory").lower()
+        if mgr_type == "basic":
+            # map previous value
+            mgr_type = "in_memory"
+
+        # mgr_type may be a fully qualified class name
+        mgr_class = self.MANAGER_TYPES.get(mgr_type, mgr_type)
+
+        if mgr_class not in self._inst:
+            LOGGER.info("Create profile manager: %s", mgr_type)
+            try:
+                self._inst[mgr_class] = ClassLoader.load_class(mgr_class)(self._context)
+            except ClassNotFoundError as err:
+                raise ProviderError(f"Unknown profile manager: {mgr_type}") from err
+
+        return self._inst[mgr_class]

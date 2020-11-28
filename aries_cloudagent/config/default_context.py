@@ -7,6 +7,7 @@ from .provider import CachedProvider, ClassProvider, StatsProvider
 from ..cache.base import BaseCache
 from ..cache.in_memory import InMemoryCache
 from ..core.plugin_registry import PluginRegistry
+from ..core.profile import ProfileManager, ProfileManagerProvider
 from ..core.protocol_registry import ProtocolRegistry
 from ..ledger.base import BaseLedger
 from ..ledger.provider import LedgerProvider
@@ -25,8 +26,8 @@ from ..utils.stats import Collector
 class DefaultContextBuilder(ContextBuilder):
     """Default context builder."""
 
-    async def build(self) -> InjectionContext:
-        """Build the new injection context; set DIDComm prefix to emit."""
+    async def build_context(self) -> InjectionContext:
+        """Build the base injection context; set DIDComm prefix to emit."""
         context = InjectionContext(settings=self.settings)
         context.settings.set_default("default_label", "Aries Cloud Agent")
 
@@ -51,6 +52,8 @@ class DefaultContextBuilder(ContextBuilder):
 
     async def bind_providers(self, context: InjectionContext):
         """Bind various class providers."""
+
+        context.injector.bind_provider(ProfileManager, ProfileManagerProvider(context))
 
         context.injector.bind_provider(
             BaseLedger,
@@ -78,14 +81,12 @@ class DefaultContextBuilder(ContextBuilder):
         context.injector.bind_provider(
             BaseWireFormat,
             CachedProvider(
-                StatsProvider(
-                    ClassProvider(
-                        "aries_cloudagent.transport.pack_format.PackWireFormat"
-                    ),
-                    (
-                        # "encode_message", "parse_message"
-                    ),
-                )
+                # StatsProvider(
+                ClassProvider("aries_cloudagent.transport.pack_format.PackWireFormat"),
+                #    (
+                #        "encode_message", "parse_message"
+                #    ),
+                # )
             ),
         )
 

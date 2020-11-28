@@ -2,24 +2,24 @@ import pytest
 
 from asynctest import mock as async_mock
 
-from aries_cloudagent.in_memory.profile import InMemoryProfile
-from aries_cloudagent.storage.error import (
+from ...core.in_memory import InMemoryProfile
+from ...storage.error import (
     StorageDuplicateError,
     StorageError,
     StorageNotFoundError,
     StorageSearchError,
 )
-from aries_cloudagent.storage.in_memory import (
+from ...storage.in_memory import (
     InMemoryStorage,
     tag_value_match,
     tag_query_match,
 )
-from aries_cloudagent.storage.record import StorageRecord
+from ...storage.record import StorageRecord
 
 
 @pytest.fixture()
 def store():
-    profile = InMemoryProfile("test-profile")
+    profile = InMemoryProfile.test_profile()
     yield InMemoryStorage(profile)
 
 

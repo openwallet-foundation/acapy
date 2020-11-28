@@ -101,7 +101,7 @@ class TestInjector(AsyncTestCase):
             and instance.__class__.__name__ == "Settings"
         )
 
-     def test_inject_class_dependency(self):
+    def test_inject_class_dependency(self):
         """Test a provider class injection with a dependency."""
         test_str = "TEST"
         test_int = 1

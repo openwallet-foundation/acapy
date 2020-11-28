@@ -4,7 +4,7 @@ from os.path import join
 
 from asynctest import TestCase as AsyncTestCase, mock as async_mock
 
-from ....in_memory.profile import InMemoryProfile
+from ....core.in_memory import InMemoryProfile
 from ....indy.issuer import IndyIssuer, IndyIssuerError
 from ....indy.util import indy_client_dir
 from ....ledger.base import BaseLedger

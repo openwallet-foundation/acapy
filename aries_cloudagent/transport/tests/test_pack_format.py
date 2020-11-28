@@ -2,7 +2,7 @@ import json
 
 from asynctest import TestCase as AsyncTestCase, mock as async_mock
 
-from ...in_memory.profile import InMemoryProfile
+from ...core.in_memory import InMemoryProfile
 from ...protocols.routing.v1_0.message_types import FORWARD
 from ...protocols.didcomm_prefix import DIDCommPrefix
 from ...wallet.base import BaseWallet

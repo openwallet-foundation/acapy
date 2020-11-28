@@ -5,35 +5,34 @@ A request context provides everything required by handlers and other parts
 of the system to process a message.
 """
 
-from typing import Mapping
+from typing import Mapping, Optional, Type
 
-from ..config.injection_context import InjectionContext
+from ..core.profile import Profile
+from ..config.injection_context import InjectionContext, InjectType
+from ..config.settings import Settings
 from ..connections.models.conn_record import ConnRecord
 from ..transport.inbound.receipt import MessageReceipt
 
 from .agent_message import AgentMessage
 
 
-class RequestContext(InjectionContext):
+class RequestContext:
     """Context established by the Conductor and passed into message handlers."""
 
     def __init__(
         self,
+        profile: Profile,
         *,
-        base_context: InjectionContext = None,
+        context: InjectionContext = None,
         settings: Mapping[str, object] = None
     ):
         """Initialize an instance of RequestContext."""
-        super().__init__(settings=settings)
-        if base_context:
-            self._injector = base_context._injector
-            self._scope_name = base_context.scope_name
-            self._scopes = base_context._scopes
-            self.start_scope("request")
         self._connection_ready = False
         self._connection_record = None
+        self._context = context or profile.context.start_scope("request", settings)
         self._message = None
         self._message_receipt = None
+        self._profile = profile
 
     @property
     def connection_ready(self) -> bool:
@@ -80,7 +79,7 @@ class RequestContext(InjectionContext):
             The default agent endpoint
 
         """
-        return self.settings.get("default_endpoint")
+        return self._context.settings.get("default_endpoint")
 
     @default_endpoint.setter
     def default_endpoint(self, endpoint: str):
@@ -91,7 +90,7 @@ class RequestContext(InjectionContext):
             endpoint: The new default endpoint
 
         """
-        self.settings["default_endpoint"] = endpoint
+        self._context.settings["default_endpoint"] = endpoint
 
     @property
     def default_label(self) -> str:
@@ -102,7 +101,7 @@ class RequestContext(InjectionContext):
             The default label
 
         """
-        return self.settings["default_label"]
+        return self._context.settings["default_label"]
 
     @default_label.setter
     def default_label(self, label: str):
@@ -113,7 +112,7 @@ class RequestContext(InjectionContext):
             label: The new default label
 
         """
-        self.settings["default_label"] = label
+        self._context.settings["default_label"] = label
 
     @property
     def message(self) -> AgentMessage:
@@ -157,6 +156,40 @@ class RequestContext(InjectionContext):
         """
         self._message_receipt = receipt
 
+    @property
+    def profile(self) -> Profile:
+        """
+        Accessor for the associated `Profile` instance.
+        """
+        return self._profile
+
+    @property
+    def settings(self) -> Settings:
+        """
+        Accessor for the context settings.
+        """
+        return self._context.settings
+
+    def inject(
+        self,
+        base_cls: Type[InjectType],
+        settings: Mapping[str, object] = None,
+        *,
+        required: bool = True
+    ) -> Optional[InjectType]:
+        """
+        Get the provided instance of a given class identifier.
+
+        Args:
+            cls: The base class to retrieve an instance of
+            settings: An optional mapping providing configuration to the provider
+
+        Returns:
+            An instance of the base class, or None
+
+        """
+        return self._context.inject(base_cls, settings, required=required)
+
     def __repr__(self) -> str:
         """
         Provide a human readable representation of this object.
@@ -172,7 +205,3 @@ class RequestContext(InjectionContext):
             if k not in skip
         )
         return "<{}({})>".format(self.__class__.__name__, ", ".join(items))
-
-    def copy(self) -> "RequestContext":
-        """Produce a copy of the request context instance."""
-        return super().copy()

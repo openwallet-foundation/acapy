@@ -7,15 +7,15 @@ from copy import deepcopy
 from time import time
 
 from .....config.injection_context import InjectionContext
+from .....core.in_memory import InMemoryProfile
 from .....cache.base import BaseCache
-from .....cache.basic import BasicCache
+from .....cache.in_memory import InMemoryCache
 from .....indy.holder import IndyHolder
 from .....indy.issuer import IndyIssuer
 from .....messaging.credential_definitions.util import CRED_DEF_SENT_RECORD_TYPE
 from .....messaging.request_context import RequestContext
 from .....ledger.base import BaseLedger
 from .....storage.base import BaseStorage, StorageRecord
-from .....storage.basic import BasicStorage
 from .....storage.error import StorageNotFoundError
 
 from ..manager import CredentialManager, CredentialManagerError
@@ -100,9 +100,8 @@ REV_REG_DEF = {
 
 class TestCredentialManager(AsyncTestCase):
     async def setUp(self):
-        self.context = RequestContext(
-            base_context=InjectionContext(enforce_typing=False)
-        )
+        self.session = InMemoryProfile.test_session()
+        self.context = self.session.context
 
         Ledger = async_mock.MagicMock()
         self.ledger = Ledger()
@@ -331,8 +330,7 @@ class TestCredentialManager(AsyncTestCase):
         with async_mock.patch.object(
             V10CredentialExchange, "save", autospec=True
         ) as save_ex:
-
-            self.cache = BasicCache()
+            self.cache = InMemoryCache()
             self.context.injector.bind_instance(BaseCache, self.cache)
 
             cred_offer = {"cred_def_id": CRED_DEF_ID, "schema_id": SCHEMA_ID}
@@ -358,7 +356,7 @@ class TestCredentialManager(AsyncTestCase):
                     "epoch": str(int(time())),
                 },
             )
-            storage: BaseStorage =  self.context.inject(BaseStorage)
+            storage: BaseStorage = self.context.inject(BaseStorage)
             await storage.add_record(cred_def_record)
 
             (ret_exchange, ret_offer) = await self.manager.create_offer(
@@ -407,7 +405,7 @@ class TestCredentialManager(AsyncTestCase):
         with async_mock.patch.object(
             V10CredentialExchange, "save", autospec=True
         ) as save_ex:
-            self.cache = BasicCache()
+            self.cache = InMemoryCache()
             self.context.injector.bind_instance(BaseCache, self.cache)
 
             cred_offer = {"cred_def_id": CRED_DEF_ID, "schema_id": SCHEMA_ID}
@@ -433,7 +431,7 @@ class TestCredentialManager(AsyncTestCase):
                     "epoch": str(int(time())),
                 },
             )
-            storage: BaseStorage =  self.context.inject(BaseStorage)
+            storage: BaseStorage = self.context.inject(BaseStorage)
             await storage.add_record(cred_def_record)
 
             with self.assertRaises(CredentialManagerError):
@@ -491,7 +489,7 @@ class TestCredentialManager(AsyncTestCase):
                     "epoch": str(int(time())),
                 },
             )
-            storage: BaseStorage =  self.context.inject(BaseStorage)
+            storage: BaseStorage = self.context.inject(BaseStorage)
             await storage.add_record(cred_def_record)
 
             (ret_exchange, ret_offer) = await self.manager.create_offer(
@@ -671,7 +669,7 @@ class TestCredentialManager(AsyncTestCase):
             thread_id=thread_id,
         )
 
-        self.cache = BasicCache()
+        self.cache = InMemoryCache()
         self.context.injector.bind_instance(BaseCache, self.cache)
 
         with async_mock.patch.object(
@@ -1550,12 +1548,12 @@ class TestCredentialManager(AsyncTestCase):
             delete_ex.assert_called_once()
 
     async def test_retrieve_records(self):
-        self.cache = BasicCache()
+        self.cache = InMemoryCache()
         self.context.injector.bind_instance(BaseCache, self.cache)
 
         self.storage = BasicStorage()
         self.context.injector.bind_instance(BaseStorage, self.storage)
-        storage: BaseStorage =  self.context.inject(BaseStorage)
+        storage: BaseStorage = self.context.inject(BaseStorage)
         for index in range(2):
             exchange_record = V10CredentialExchange(
                 connection_id=str(index),

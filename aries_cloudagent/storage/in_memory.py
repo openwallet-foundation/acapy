@@ -2,7 +2,7 @@
 
 from typing import Mapping, Sequence
 
-from ..in_memory.profile import InMemoryProfile
+from ..core.in_memory import InMemoryProfile
 
 from .base import (
     DEFAULT_PAGE_SIZE,
@@ -29,6 +29,7 @@ class InMemoryStorage(BaseStorage):
             profile: The in-memory profile instance
 
         """
+        self.profile = profile
 
     async def add_record(self, record: StorageRecord):
         """
@@ -127,7 +128,7 @@ class InMemoryStorage(BaseStorage):
 
         """
         return InMemoryStorageRecordSearch(
-            self, type_filter, tag_query, page_size, options
+            self.profile, type_filter, tag_query, page_size, options
         )
 
 

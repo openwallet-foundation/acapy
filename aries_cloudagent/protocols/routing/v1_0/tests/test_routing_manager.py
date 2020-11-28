@@ -1,16 +1,15 @@
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
-from aries_cloudagent.config.injection_context import InjectionContext
-from aries_cloudagent.messaging.request_context import RequestContext
-from aries_cloudagent.storage.base import BaseStorage
-from aries_cloudagent.storage.basic import BasicStorage
-from aries_cloudagent.storage.error import (
+from .....core.in_memory import InMemoryProfile
+from .....messaging.request_context import RequestContext
+from .....storage.error import (
     StorageDuplicateError,
     StorageError,
     StorageNotFoundError,
 )
-from aries_cloudagent.transport.inbound.receipt import MessageReceipt
+from .....storage.in_memory import InMemoryStorage
+from .....transport.inbound.receipt import MessageReceipt
 
 from ..manager import RoutingManager, RoutingManagerError, RouteNotFoundError
 from ..models.route_record import RouteRecord
@@ -24,12 +23,9 @@ TEST_ROUTE_VERKEY = "9WCgWKUaAJj3VWxxtzvvMQN3AoFxoBtBDo9ntwJnVVCC"
 
 class TestRoutingManager(AsyncTestCase):
     async def setUp(self):
-        self.context = RequestContext(
-            base_context=InjectionContext(enforce_typing=False)
-        )
+        self.profile = InMemoryProfile.test_profile()
+        self.context = RequestContext(self.profile)
         self.context.message_receipt = MessageReceipt(sender_verkey=TEST_VERKEY)
-        self.storage = BasicStorage()
-        self.context.injector.bind_instance(BaseStorage, self.storage)
         self.manager = RoutingManager(self.context)
         assert self.manager.context
 
@@ -72,7 +68,7 @@ class TestRoutingManager(AsyncTestCase):
 
     async def test_get_recipient_duplicate_routes(self):
         with async_mock.patch.object(
-            self.storage, "find_record", autospec=True
+            InMemoryStorage, "find_record", autospec=True
         ) as mock_search:
             mock_search.side_effect = StorageDuplicateError
             with self.assertRaises(RouteNotFoundError):
@@ -80,7 +76,7 @@ class TestRoutingManager(AsyncTestCase):
 
     async def test_get_recipient_no_routes(self):
         with async_mock.patch.object(
-            self.storage, "find_record", autospec=True
+            InMemoryStorage, "find_record", autospec=True
         ) as mock_search:
             mock_search.side_effect = StorageNotFoundError
             with self.assertRaises(RouteNotFoundError):

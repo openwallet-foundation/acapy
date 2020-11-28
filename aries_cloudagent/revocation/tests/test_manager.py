@@ -5,7 +5,7 @@ from asynctest import TestCase as AsyncTestCase
 from copy import deepcopy
 from time import time
 
-from ...in_memory.profile import InMemoryProfile
+from ...core.in_memory import InMemoryProfile
 from ...indy.holder import IndyHolder
 from ...indy.issuer import IndyIssuer
 from ...messaging.credential_definitions.util import CRED_DEF_SENT_RECORD_TYPE

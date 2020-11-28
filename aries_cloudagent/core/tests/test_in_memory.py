@@ -1,12 +1,12 @@
 import pytest
 import time
 
-from ..profile import InMemoryProfile
+from ..in_memory import InMemoryProfile
 
 
 @pytest.fixture()
 async def profile():
-    yield InMemoryProfile("test-profile")
+    yield InMemoryProfile.test_profile()
 
 
 class TestInMemoryWallet:

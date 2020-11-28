@@ -34,7 +34,7 @@ class TestProvider(AsyncTestCase):
         mock_wallet.type = "indy"
         context.injector.bind_instance(BaseWallet, mock_wallet)
 
-        result = await provider.provide(
+        result = provider.provide(
             settings={
                 "ledger.pool_name": "name",
                 "ledger.genesis_transactions": "dummy",
@@ -58,7 +58,7 @@ class TestProvider(AsyncTestCase):
         mock_wallet.type = "indy"
         context.injector.bind_instance(BaseWallet, mock_wallet)
 
-        result = await provider.provide(
+        result = provider.provide(
             settings={
                 "ledger.pool_name": "name",
             },

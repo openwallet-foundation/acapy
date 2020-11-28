@@ -15,7 +15,8 @@ from ...connections.models.diddoc import (
 )
 from ...core.protocol_registry import ProtocolRegistry
 from ...storage.base import BaseStorage
-from ...storage.basic import BasicStorage
+
+# from ...storage.basic import BasicStorage
 from ...transport.inbound.base import InboundTransportConfiguration
 from ...transport.inbound.message import InboundMessage
 from ...transport.inbound.receipt import MessageReceipt
@@ -26,7 +27,8 @@ from ...transport.wire_format import BaseWireFormat
 from ...transport.pack_format import PackWireFormat
 from ...utils.stats import Collector
 from ...wallet.base import BaseWallet
-from ...wallet.basic import BasicWallet
+
+# from ...wallet.basic import BasicWallet
 
 from .. import conductor as test_module
 
@@ -72,7 +74,7 @@ class StubContextBuilder(ContextBuilder):
         super().__init__(settings)
         self.wire_format = async_mock.create_autospec(PackWireFormat())
 
-    async def build(self) -> InjectionContext:
+    async def build_context(self) -> InjectionContext:
         context = InjectionContext(settings=self.settings)
         context.injector.enforce_typing = False
         context.injector.bind_instance(BaseStorage, BasicStorage())
@@ -83,8 +85,8 @@ class StubContextBuilder(ContextBuilder):
 
 
 class StubCollectorContextBuilder(StubContextBuilder):
-    async def build(self) -> InjectionContext:
-        context = await super().build()
+    async def build_context(self) -> InjectionContext:
+        context = await super().build_context()
         context.injector.bind_instance(Collector, Collector())
         return context
 

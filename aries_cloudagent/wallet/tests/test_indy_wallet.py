@@ -7,20 +7,23 @@ import indy.crypto
 import indy.did
 import indy.wallet
 import pytest
-from aries_cloudagent.in_memory.profile import InMemoryProfile
-from aries_cloudagent.ledger.endpoint_type import EndpointType
-from aries_cloudagent.wallet.in_memory import InMemoryWallet
-from aries_cloudagent.wallet.indy import IndyWallet
+
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
+from ...core.in_memory import InMemoryProfile
+from ...ledger.endpoint_type import EndpointType
+
+from ..in_memory import InMemoryWallet
+from ..indy import IndyWallet
 from .. import indy as test_module
+
 from . import test_in_memory_wallet
 
 
 @pytest.fixture()
 async def in_memory_wallet():
-    profile = InMemoryProfile("test-profile")
+    profile = InMemoryProfile.test_profile()
     wallet = InMemoryWallet(profile)
     yield wallet
 

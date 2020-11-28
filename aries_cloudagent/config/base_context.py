@@ -21,8 +21,8 @@ class ContextBuilder(ABC):
         self.settings = Settings(settings)
 
     @abstractmethod
-    async def build(self) -> InjectionContext:
-        """Build the new injection context."""
+    async def build_context(self) -> InjectionContext:
+        """Build the base injection context."""
 
     def update_settings(self, settings: Mapping[str, object]):
         """Update the context builder with additional settings."""

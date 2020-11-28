@@ -5,7 +5,7 @@ import pytest
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
-from ...cache.basic import BasicCache
+from ...cache.in_memory import InMemoryCache
 from ...indy.issuer import IndyIssuer, IndyIssuerError
 from ...ledger.endpoint_type import EndpointType
 from ...ledger.indy import (
@@ -800,7 +800,7 @@ class TestIndyLedger(AsyncTestCase):
 
         mock_submit.return_value = '{"result":{"seqNo":1}}'
 
-        ledger = IndyLedger("name", mock_wallet, cache=BasicCache())
+        ledger = IndyLedger("name", mock_wallet, cache=InMemoryCache())
 
         async with ledger:
             response = await ledger.get_schema("schema_id")
@@ -836,7 +836,7 @@ class TestIndyLedger(AsyncTestCase):
 
         mock_submit.return_value = json.dumps({"result": {"seqNo": None}})
 
-        ledger = IndyLedger("name", mock_wallet, cache=BasicCache())
+        ledger = IndyLedger("name", mock_wallet, cache=InMemoryCache())
 
         async with ledger:
             response = await ledger.get_schema("schema_id")
@@ -1641,7 +1641,7 @@ class TestIndyLedger(AsyncTestCase):
             json.dumps({"result": {"seqNo": 1}}),
         )
 
-        ledger = IndyLedger("name", mock_wallet, cache=BasicCache())
+        ledger = IndyLedger("name", mock_wallet, cache=InMemoryCache())
 
         async with ledger:
             response = await ledger.get_credential_definition("cred_def_id")
@@ -2831,7 +2831,7 @@ class TestIndyLedger(AsyncTestCase):
         mock_wallet = async_mock.MagicMock()
         mock_wallet.type = "indy"
 
-        ledger = IndyLedger("name", mock_wallet, cache=BasicCache())
+        ledger = IndyLedger("name", mock_wallet, cache=InMemoryCache())
 
         accept_time = ledger.taa_rough_timestamp()
         taa_record = {
@@ -2876,7 +2876,7 @@ class TestIndyLedger(AsyncTestCase):
         mock_wallet = async_mock.MagicMock()
         mock_wallet.type = "indy"
 
-        ledger = IndyLedger("name", mock_wallet, cache=BasicCache())
+        ledger = IndyLedger("name", mock_wallet, cache=InMemoryCache())
 
         mock_search_records.return_value.fetch_all = async_mock.CoroutineMock(
             return_value=[]
@@ -2900,7 +2900,7 @@ class TestIndyLedger(AsyncTestCase):
         SEQ_NO = "9999"
         mock_get_schema.return_value = {"id": S_ID}
 
-        ledger = IndyLedger("name", mock_wallet, cache=BasicCache())
+        ledger = IndyLedger("name", mock_wallet, cache=InMemoryCache())
 
         async with ledger:
             s_id_short = await ledger.credential_definition_id2schema_id(

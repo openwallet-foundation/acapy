@@ -2,7 +2,7 @@ import json
 
 from asynctest import TestCase as AsyncTestCase, mock as async_mock
 
-from ....in_memory.profile import InMemoryProfile
+from ....core.in_memory import InMemoryProfile
 from ....storage.base import StorageNotFoundError
 from ....wallet.base import DIDInfo
 

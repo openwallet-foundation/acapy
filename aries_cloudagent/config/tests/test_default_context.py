@@ -16,7 +16,7 @@ class TestDefaultContext(AsyncTestCase):
         """Test context init."""
 
         builder = DefaultContextBuilder()
-        result = await builder.build()
+        result = await builder.build_context()
         assert isinstance(result, InjectionContext)
 
         for cls in (
@@ -33,5 +33,5 @@ class TestDefaultContext(AsyncTestCase):
                 "timing.log.file": NamedTemporaryFile().name,
             }
         )
-        result = await builder.build()
+        result = await builder.build_context()
         assert isinstance(result, InjectionContext)

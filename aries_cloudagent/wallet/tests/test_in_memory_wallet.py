@@ -1,20 +1,19 @@
 import pytest
 import time
 
-from aries_cloudagent.in_memory.profile import InMemoryProfile
-from aries_cloudagent.wallet.in_memory import InMemoryWallet
-from aries_cloudagent.wallet.error import (
+from ...core.in_memory import InMemoryProfile
+from ...messaging.decorators.signature_decorator import SignatureDecorator
+from ...wallet.in_memory import InMemoryWallet
+from ...wallet.error import (
     WalletError,
     WalletDuplicateError,
     WalletNotFoundError,
 )
 
-from aries_cloudagent.messaging.decorators.signature_decorator import SignatureDecorator
-
 
 @pytest.fixture()
 async def wallet():
-    profile = InMemoryProfile("test-profile")
+    profile = InMemoryProfile.test_profile()
     wallet = InMemoryWallet(profile)
     yield wallet
 

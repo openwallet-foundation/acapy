@@ -13,17 +13,18 @@ from .....connections.models.diddoc import (
     PublicKeyType,
     Service,
 )
+from .....core.in_memory import InMemoryProfile
 from .....ledger.base import BaseLedger
 from .....messaging.responder import BaseResponder, MockResponder
 from .....protocols.routing.v1_0.manager import RoutingManager
 from .....storage.base import BaseStorage
-from .....storage.basic import BasicStorage
 from .....storage.error import StorageNotFoundError
 from .....transport.inbound.receipt import MessageReceipt
 from .....wallet.base import BaseWallet, DIDInfo
-from .....wallet.basic import BasicWallet
 from .....wallet.error import WalletNotFoundError
 from .....wallet.util import naked_to_did_key
+
+from ....routing.v1_0.manager import RoutingManager
 
 from ..manager import ConnectionManager, ConnectionManagerError
 from ..messages.connection_invitation import ConnectionInvitation
@@ -59,18 +60,10 @@ class TestConnectionManager(AsyncTestCase):
         self.test_target_did = "GbuDUYXaUZRfHD2jeDuQuP"
         self.test_target_verkey = "9WCgWKUaAJj3VWxxtzvvMQN3AoFxoBtBDo9ntwJnVVCC"
 
-        self.storage = BasicStorage()
-        self.cache = BasicCache()
-        self.wallet = BasicWallet()
         self.responder = MockResponder()
         self.responder.send = async_mock.CoroutineMock()
 
-        self.context = InjectionContext(enforce_typing=False)
-        self.context.injector.bind_instance(BaseStorage, self.storage)
-        self.context.injector.bind_instance(BaseWallet, self.wallet)
-        self.context.injector.bind_instance(BaseResponder, self.responder)
-        self.context.injector.bind_instance(BaseCache, self.cache)
-        self.context.update_settings(
+        self.session = InMemoryProfile.test_session(
             {
                 "default_endpoint": "http://aries.ca/endpoint",
                 "default_label": "This guy",
@@ -79,11 +72,13 @@ class TestConnectionManager(AsyncTestCase):
                 "debug.auto_accept_requests": True,
             }
         )
+        self.context = self.session.context
+        self.context.injector.bind_instance(BaseResponder, self.responder)
 
-        self.manager = ConnectionManager(self.context)
+        self.manager = ConnectionManager(self.session)
 
     async def test_create_invitation_public_and_multi_use_fails(self):
-        self.manager.context.update_settings({"public_invites": True})
+        self.context.update_settings({"public_invites": True})
         with async_mock.patch.object(
             BaseWallet, "get_public_did", autospec=True
         ) as mock_wallet_get_public_did:
@@ -123,7 +118,7 @@ class TestConnectionManager(AsyncTestCase):
         await self.assertAsyncRaises(ConnectionManagerError, rr_awaitable)
 
     async def test_create_invitation_public(self):
-        self.manager.context.update_settings({"public_invites": True})
+        self.context.update_settings({"public_invites": True})
 
         with async_mock.patch.object(
             BaseWallet, "get_public_did", autospec=True
@@ -139,7 +134,7 @@ class TestConnectionManager(AsyncTestCase):
             assert connect_invite.did.endswith(self.test_did)
 
     async def test_create_invitation_public_no_public_invites(self):
-        self.manager.context.update_settings({"public_invites": False})
+        self.context.update_settings({"public_invites": False})
 
         with self.assertRaises(ConnectionManagerError):
             await self.manager.create_invitation(
@@ -147,7 +142,7 @@ class TestConnectionManager(AsyncTestCase):
             )
 
     async def test_create_invitation_public_no_public_did(self):
-        self.manager.context.update_settings({"public_invites": True})
+        self.context.update_settings({"public_invites": True})
 
         with async_mock.patch.object(
             BaseWallet, "get_public_did", autospec=True
@@ -291,7 +286,7 @@ class TestConnectionManager(AsyncTestCase):
         wallet = self.context.inject(BaseWallet)
         await wallet.create_local_did(seed=None, did=self.test_did)
 
-        self.manager.context.update_settings({"public_invites": True})
+        self.context.update_settings({"public_invites": True})
         with async_mock.patch.object(
             ConnRecord, "save", autospec=True
         ) as mock_conn_rec_save, async_mock.patch.object(
@@ -321,7 +316,7 @@ class TestConnectionManager(AsyncTestCase):
         wallet = self.context.inject(BaseWallet)
         await wallet.create_local_did(seed=None, did=self.test_did)
 
-        self.manager.context.update_settings({"public_invites": True})
+        self.context.update_settings({"public_invites": True})
         with async_mock.patch.object(
             ConnRecord, "save", autospec=True
         ) as mock_conn_rec_save, async_mock.patch.object(
@@ -346,7 +341,7 @@ class TestConnectionManager(AsyncTestCase):
         wallet = self.context.inject(BaseWallet)
         await wallet.create_local_did(seed=None, did=self.test_did)
 
-        self.manager.context.update_settings({"public_invites": True})
+        self.context.update_settings({"public_invites": True})
         with async_mock.patch.object(
             ConnRecord, "save", autospec=True
         ) as mock_conn_rec_save, async_mock.patch.object(
@@ -371,7 +366,7 @@ class TestConnectionManager(AsyncTestCase):
         wallet = self.context.inject(BaseWallet)
         await wallet.create_local_did(seed=None, did=self.test_did)
 
-        self.manager.context.update_settings({"public_invites": False})
+        self.context.update_settings({"public_invites": False})
         with async_mock.patch.object(
             ConnRecord, "save", autospec=True
         ) as mock_conn_rec_save, async_mock.patch.object(
@@ -396,7 +391,7 @@ class TestConnectionManager(AsyncTestCase):
         wallet = self.context.inject(BaseWallet)
         await wallet.create_local_did(seed=None, did=self.test_did)
 
-        self.manager.context.update_settings(
+        self.context.update_settings(
             {"public_invites": True, "debug.auto_accept_requests": False}
         )
         with async_mock.patch.object(
@@ -717,7 +712,7 @@ class TestConnectionManager(AsyncTestCase):
         mock_conn.connection_id = "dummy"
 
         with async_mock.patch.object(
-            self.manager.context, "inject", async_mock.CoroutineMock()
+            self.context, "inject", async_mock.CoroutineMock()
         ) as mock_ctx_inject, async_mock.patch.object(
             ConnectionManager, "resolve_inbound_connection", async_mock.CoroutineMock()
         ) as mock_conn_mgr_resolve_conn:

@@ -68,7 +68,7 @@ class Conductor:
     async def setup(self):
         """Initialize the global request context."""
 
-        context = await self.context_builder.build()
+        context = await self.context_builder.build_context()
 
         self.dispatcher = Dispatcher(context)
         await self.dispatcher.setup()

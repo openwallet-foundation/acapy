@@ -3,7 +3,7 @@
 import asyncio
 from typing import Sequence
 
-from ..in_memory.profile import InMemoryProfile
+from ..core.in_memory import InMemoryProfile
 
 from .base import BaseWallet, KeyInfo, DIDInfo
 from .crypto import (
@@ -52,15 +52,15 @@ class InMemoryWallet(BaseWallet):
         seed = validate_seed(seed) or random_seed()
         verkey, secret = create_keypair(seed)
         verkey_enc = bytes_to_b58(verkey)
-        if verkey_enc in self._keys:
+        if verkey_enc in self.profile.keys:
             raise WalletDuplicateError("Verification key already present in wallet")
-        self._keys[verkey_enc] = {
+        self.profile.keys[verkey_enc] = {
             "seed": seed,
             "secret": secret,
             "verkey": verkey_enc,
             "metadata": metadata.copy() if metadata else {},
         }
-        return KeyInfo(verkey_enc, self._keys[verkey_enc]["metadata"].copy())
+        return KeyInfo(verkey_enc, self.profile.keys[verkey_enc]["metadata"].copy())
 
     async def get_signing_key(self, verkey: str) -> KeyInfo:
         """
@@ -76,9 +76,9 @@ class InMemoryWallet(BaseWallet):
             WalletNotFoundError: if no keypair is associated with the verification key
 
         """
-        if verkey not in self._keys:
+        if verkey not in self.profile.keys:
             raise WalletNotFoundError("Key not found: {}".format(verkey))
-        key = self._keys[verkey]
+        key = self.profile.keys[verkey]
         return KeyInfo(key["verkey"], key["metadata"].copy())
 
     async def replace_signing_key_metadata(self, verkey: str, metadata: dict):
@@ -93,9 +93,9 @@ class InMemoryWallet(BaseWallet):
             WalletNotFoundError: if no keypair is associated with the verification key
 
         """
-        if verkey not in self._keys:
+        if verkey not in self.profile.keys:
             raise WalletNotFoundError("Key not found: {}".format(verkey))
-        self._keys[verkey]["metadata"] = metadata.copy() if metadata else {}
+        self.profile.keys[verkey]["metadata"] = metadata.copy() if metadata else {}
 
     async def rotate_did_keypair_start(self, did: str, next_seed: str = None) -> str:
         """
@@ -112,7 +112,7 @@ class InMemoryWallet(BaseWallet):
             WalletNotFoundError: if wallet does not own DID
 
         """
-        if did not in self._local_dids:
+        if did not in self.profile.local_dids:
             raise WalletNotFoundError("Wallet owns no such DID: {}".format(did))
 
         key_info = await self.create_signing_key(next_seed, {"did": did})
@@ -130,24 +130,26 @@ class InMemoryWallet(BaseWallet):
             WalletError: if wallet has not started key rotation
 
         """
-        if did not in self._local_dids:
+        if did not in self.profile.local_dids:
             raise WalletNotFoundError("Wallet owns no such DID: {}".format(did))
         temp_keys = [
-            k for k in self._keys if self._keys[k]["metadata"].get("did") == did
+            k
+            for k in self.profile.keys
+            if self.profile.keys[k]["metadata"].get("did") == did
         ]
         if not temp_keys:
             raise WalletError("Key rotation not in progress for DID: {}".format(did))
         verkey_enc = temp_keys[0]
 
-        self._local_dids[did].update(
+        self.profile.local_dids[did].update(
             {
-                "seed": self._keys[verkey_enc]["seed"],
-                "secret": self._keys[verkey_enc]["secret"],
+                "seed": self.profile.keys[verkey_enc]["seed"],
+                "secret": self.profile.keys[verkey_enc]["secret"],
                 "verkey": verkey_enc,
             }
         )
-        self._keys.pop(verkey_enc)
-        return DIDInfo(did, verkey_enc, self._local_dids[did]["metadata"].copy())
+        self.profile.keys.pop(verkey_enc)
+        return DIDInfo(did, verkey_enc, self.profile.local_dids[did]["metadata"].copy())
 
     async def create_local_did(
         self, seed: str = None, did: str = None, metadata: dict = None
@@ -172,15 +174,18 @@ class InMemoryWallet(BaseWallet):
         verkey_enc = bytes_to_b58(verkey)
         if not did:
             did = bytes_to_b58(verkey[:16])
-        if did in self._local_dids and self._local_dids[did]["verkey"] != verkey_enc:
+        if (
+            did in self.profile.local_dids
+            and self.profile.local_dids[did]["verkey"] != verkey_enc
+        ):
             raise WalletDuplicateError("DID already exists in wallet")
-        self._local_dids[did] = {
+        self.profile.local_dids[did] = {
             "seed": seed,
             "secret": secret,
             "verkey": verkey_enc,
             "metadata": metadata.copy() if metadata else {},
         }
-        return DIDInfo(did, verkey_enc, self._local_dids[did]["metadata"].copy())
+        return DIDInfo(did, verkey_enc, self.profile.local_dids[did]["metadata"].copy())
 
     def _get_did_info(self, did: str) -> DIDInfo:
         """
@@ -193,7 +198,7 @@ class InMemoryWallet(BaseWallet):
             A `DIDInfo` instance for the DID
 
         """
-        info = self._local_dids[did]
+        info = self.profile.local_dids[did]
         return DIDInfo(did=did, verkey=info["verkey"], metadata=info["metadata"].copy())
 
     async def get_local_dids(self) -> Sequence[DIDInfo]:
@@ -204,7 +209,7 @@ class InMemoryWallet(BaseWallet):
             A list of locally stored DIDs as `DIDInfo` instances
 
         """
-        ret = [self._get_did_info(did) for did in self._local_dids]
+        ret = [self._get_did_info(did) for did in self.profile.local_dids]
         return ret
 
     async def get_local_did(self, did: str) -> DIDInfo:
@@ -221,7 +226,7 @@ class InMemoryWallet(BaseWallet):
             WalletNotFoundError: If the DID is not found
 
         """
-        if did not in self._local_dids:
+        if did not in self.profile.local_dids:
             raise WalletNotFoundError("DID not found: {}".format(did))
         return self._get_did_info(did)
 
@@ -239,7 +244,7 @@ class InMemoryWallet(BaseWallet):
             WalletNotFoundError: If the verkey is not found
 
         """
-        for did, info in self._local_dids.items():
+        for did, info in self.profile.local_dids.items():
             if info["verkey"] == verkey:
                 return self._get_did_info(did)
         raise WalletNotFoundError("Verkey not found: {}".format(verkey))
@@ -256,9 +261,9 @@ class InMemoryWallet(BaseWallet):
             WalletNotFoundError: If the DID doesn't exist
 
         """
-        if did not in self._local_dids:
+        if did not in self.profile.local_dids:
             raise WalletNotFoundError("Unknown DID: {}".format(did))
-        self._local_dids[did]["metadata"] = metadata.copy() if metadata else {}
+        self.profile.local_dids[did]["metadata"] = metadata.copy() if metadata else {}
 
     def _get_private_key(self, verkey: str) -> bytes:
         """
@@ -275,7 +280,9 @@ class InMemoryWallet(BaseWallet):
 
         """
 
-        keys_and_dids = list(self._local_dids.values()) + list(self._keys.values())
+        keys_and_dids = list(self.profile.local_dids.values()) + list(
+            self.profile.keys.values()
+        )
         for info in keys_and_dids:
             if info["verkey"] == verkey:
                 return info["secret"]

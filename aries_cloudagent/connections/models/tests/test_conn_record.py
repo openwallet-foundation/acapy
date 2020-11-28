@@ -1,6 +1,6 @@
 from asynctest import TestCase as AsyncTestCase
 
-from ....in_memory.profile import InMemoryProfile
+from ....core.in_memory import InMemoryProfile
 from ....protocols.connections.v1_0.messages.connection_invitation import (
     ConnectionInvitation,
 )

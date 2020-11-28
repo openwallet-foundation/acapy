@@ -15,6 +15,8 @@ from .wallet_setup import IndyOpenWallet
 class IndySdkProfile(Profile):
     """Provide access to Indy profile interaction methods."""
 
+    BACKEND_NAME = "indy"
+
     def __init__(self, wallet: IndyOpenWallet):
         """Create a new IndyProfile instance."""
         self.wallet = wallet
@@ -29,11 +31,11 @@ class IndySdkProfile(Profile):
         """Accessor for the profile name."""
         return self.wallet.name
 
-    async def start_session(self) -> "ProfileSession":
+    def session(self) -> "ProfileSession":
         """Start a new interactive session with no transaction support requested."""
         return IndySdkProfileSession(self)
 
-    async def start_transaction(self) -> "ProfileSession":
+    def transaction(self) -> "ProfileSession":
         """
         Start a new interactive session with commit and rollback support.
 
@@ -48,31 +50,35 @@ class IndySdkProfileSession(ProfileSession):
 
     def __init__(self, profile: IndySdkProfile):
         """Create a new IndySdkProfileSession instance."""
-        context = profile.context.start_scope("session")
-        context.injector.bind_provider(
+        super().__init__(profile=profile)
+
+    def _setup(self):
+        """Create the session or transaction connection, if needed."""
+        super()._setup()
+        injector = self._context.injector
+        injector.bind_provider(
             BaseStorage,
             ClassProvider("aries_cloudagent.storage.indy.IndyStorage", self.wallet),
         )
-        context.injector.bind_provider(
+        injector.bind_provider(
             BaseWallet,
             ClassProvider("aries_cloudagent.wallet.indy.IndyWallet", self.wallet),
         )
-        context.injector.bind_provider(
+        injector.bind_provider(
             IndyHolder,
             ClassProvider(
                 "aries_cloudagent.indy.sdk.holder.IndySdkHolder", self.wallet
             ),
         )
-        context.injector.bind_provider(
+        injector.bind_provider(
             IndyIssuer,
             ClassProvider(
                 "aries_cloudagent.indy.sdk.issuer.IndySdkIssuer", self.wallet
             ),
         )
-        context.injector.bind_provider(
+        injector.bind_provider(
             IndyVerifier,
             ClassProvider(
                 "aries_cloudagent.indy.sdk.verifier.IndySdkVerifier", self.wallet
             ),
         )
-        super().__init__(profile=profile, context=context)

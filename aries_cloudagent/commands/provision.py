@@ -26,7 +26,7 @@ def init_argument_parser(parser: ArgumentParser):
 async def provision(settings: dict):
     """Perform provisioning."""
     context_builder = DefaultContextBuilder(settings)
-    context = await context_builder.build()
+    context = await context_builder.build_context()
 
     try:
         public_did = await wallet_config(context, True)

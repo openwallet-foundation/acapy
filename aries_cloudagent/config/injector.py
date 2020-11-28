@@ -72,7 +72,11 @@ class Injector(BaseInjector):
         if not base_cls:
             raise InjectorError("No base class provided for lookup")
         provider = self._providers.get(base_cls)
-        ext_settings = self.settings.extend(settings) if settings else self.settings
+        if settings:
+            ext_settings = self.settings.copy()
+            ext_settings.extend(settings)
+        else:
+            ext_settings = self.settings
         if provider:
             result = provider.provide(ext_settings, self)
         else:

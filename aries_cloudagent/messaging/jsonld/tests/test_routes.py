@@ -1,11 +1,8 @@
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
-from aries_cloudagent.config.injection_context import InjectionContext
-from aries_cloudagent.wallet.base import BaseWallet
-from aries_cloudagent.wallet.basic import BasicWallet
-
-from ....storage.base import BaseStorage
+from ....core.in_memory import InMemoryProfile
+from ....messaging.request_context import RequestContext
 
 from .. import routes as test_module
 
@@ -13,12 +10,9 @@ from .. import routes as test_module
 # TODO: Add tests
 class TestJSONLDRoutes(AsyncTestCase):
     async def setUp(self):
-        self.context = InjectionContext(enforce_typing=False)
-        self.storage = async_mock.create_autospec(BaseStorage)
-        self.context.injector.bind_instance(BaseStorage, self.storage)
-        self.wallet = self.wallet = BasicWallet()
-        self.did_info = await self.wallet.create_local_did()
-        self.context.injector.bind_instance(BaseWallet, self.wallet)
+        self.session = InMemoryProfile.test_session()
+        self.did_info = await self.session.wallet.create_local_did()
+        self.context = RequestContext(self.session.profile)
         self.app = {
             "request_context": self.context,
         }
