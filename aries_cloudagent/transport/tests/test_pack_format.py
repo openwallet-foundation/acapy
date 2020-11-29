@@ -70,7 +70,7 @@ class TestPackWireFormat(AsyncTestCase):
 
         with self.assertRaises(MessageParseError):
             await serializer.unpack(
-                InMemoryProfile.test_session({BaseWallet: None}), "...", None
+                InMemoryProfile.test_session(bind={BaseWallet: None}), "...", None
             )
 
     async def test_pack_x(self):
@@ -81,7 +81,7 @@ class TestPackWireFormat(AsyncTestCase):
 
         with self.assertRaises(MessageEncodeError):
             await serializer.pack(
-                InMemoryProfile.test_session({BaseWallet: None}),
+                InMemoryProfile.test_session(bind={BaseWallet: None}),
                 None,
                 ["key"],
                 None,
@@ -91,7 +91,7 @@ class TestPackWireFormat(AsyncTestCase):
         mock_wallet = async_mock.MagicMock(
             pack_message=async_mock.CoroutineMock(side_effect=WalletError())
         )
-        session = InMemoryProfile.test_session({BaseWallet: mock_wallet})
+        session = InMemoryProfile.test_session(bind={BaseWallet: mock_wallet})
         with self.assertRaises(MessageEncodeError):
             await serializer.pack(session, None, ["key"], None, ["key"])
 
@@ -100,7 +100,7 @@ class TestPackWireFormat(AsyncTestCase):
                 side_effect=[json.dumps("message").encode("utf-8"), WalletError()]
             )
         )
-        session = InMemoryProfile.test_session({BaseWallet: mock_wallet})
+        session = InMemoryProfile.test_session(bind={BaseWallet: mock_wallet})
         with async_mock.patch.object(
             test_module, "Forward", async_mock.MagicMock()
         ) as mock_forward:

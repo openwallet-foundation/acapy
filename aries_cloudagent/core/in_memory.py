@@ -1,7 +1,7 @@
 """Manage in-memory profile interaction."""
 
 from collections import OrderedDict
-from typing import Any, Mapping
+from typing import Any, Mapping, Type
 
 from ..config.injection_context import InjectionContext
 from ..storage.base import BaseStorage
@@ -33,18 +33,18 @@ class InMemoryProfile(Profile):
         self.pair_dids = {}
         self.records = OrderedDict()
 
-    def session(self) -> "ProfileSession":
+    def session(self, context: InjectionContext = None) -> "ProfileSession":
         """Start a new interactive session with no transaction support requested."""
-        return InMemoryProfileSession(self)
+        return InMemoryProfileSession(self, context=context)
 
-    def transaction(self) -> "ProfileSession":
+    def transaction(self, context: InjectionContext = None) -> "ProfileSession":
         """
         Start a new interactive session with commit and rollback support.
 
         If the current backend does not support transactions, then commit
         and rollback operations of the session will not have any effect.
         """
-        return InMemoryProfileSession(self)
+        return InMemoryProfileSession(self, context=context)
 
     @classmethod
     def test_profile(cls) -> "InMemoryProfile":
@@ -56,21 +56,33 @@ class InMemoryProfile(Profile):
 
     @classmethod
     def test_session(
-        cls, settings: Mapping[str, Any] = None
+        cls, settings: Mapping[str, Any] = None, bind: Mapping[Type, Any] = None
     ) -> "InMemoryProfileSession":
         """Used in tests to quickly create InMemoryProfileSession."""
-        session = InMemoryProfileSession(cls.test_profile())
+        session = InMemoryProfileSession(cls.test_profile(), settings=settings)
         session._active = True
         session._init_context()
+        if bind:
+            for k, v in bind.items():
+                if v:
+                    session.context.injector.bind_instance(k, v)
+                else:
+                    session.context.injector.clear_binding(k)
         return session
 
 
 class InMemoryProfileSession(ProfileSession):
     """An active connection to the profile management backend."""
 
-    def __init__(self, profile: Profile, *, settings: Mapping[str, Any] = None):
+    def __init__(
+        self,
+        profile: Profile,
+        *,
+        context: InjectionContext = None,
+        settings: Mapping[str, Any] = None
+    ):
         """Create a new InMemoryProfileSession instance."""
-        super().__init__(profile=profile, settings=settings)
+        super().__init__(profile=profile, context=context, settings=settings)
 
     async def _setup(self):
         """Create the session or transaction connection, if needed."""
@@ -80,7 +92,7 @@ class InMemoryProfileSession(ProfileSession):
     def _init_context(self):
         """Initialize the session context."""
         self._context.injector.bind_instance(BaseStorage, STORAGE_CLASS(self.profile))
-        self._context.injector.bind_provider(BaseWallet, WALLET_CLASS(self.profile))
+        self._context.injector.bind_instance(BaseWallet, WALLET_CLASS(self.profile))
 
     @property
     def storage(self) -> BaseStorage:

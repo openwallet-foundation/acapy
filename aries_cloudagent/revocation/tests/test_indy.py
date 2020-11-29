@@ -26,15 +26,14 @@ from ..models.revocation_registry import RevocationRegistry
 @pytest.mark.indy
 class TestIndyRevocation(AsyncTestCase):
     def setUp(self):
-        self.session = InMemoryProfile.test_session()
-
         Ledger = async_mock.MagicMock(BaseLedger, autospec=True)
         self.ledger = Ledger()
         self.ledger.get_credential_definition = async_mock.CoroutineMock(
             return_value={"value": {"revocation": True}}
         )
         self.ledger.get_revoc_reg_def = async_mock.CoroutineMock()
-        self.session.context.injector.bind_instance(BaseLedger, self.ledger)
+
+        self.session = InMemoryProfile.test_session(bind={BaseLedger: self.ledger})
 
         self.revoc = IndyRevocation(self.session)
         assert self.revoc.session is self.session

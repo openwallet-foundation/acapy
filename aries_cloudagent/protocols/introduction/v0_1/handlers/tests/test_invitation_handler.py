@@ -1,7 +1,6 @@
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
-from ......core.in_memory import InMemoryProfile
 from ......messaging.base_handler import HandlerException
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
@@ -25,9 +24,7 @@ TEST_IMAGE_URL = "http://aries.ca/images/sample.png"
 
 class TestInvitationHandler(AsyncTestCase):
     async def setUp(self):
-        self.profile = InMemoryProfile.test_profile()
-        self.context = RequestContext(self.profile)
-
+        self.context = RequestContext.test_context()
         self.context.connection_ready = True
         self.context.message = Invitation(
             invitation=ConnectionInvitation(

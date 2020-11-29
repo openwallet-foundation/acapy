@@ -7,14 +7,17 @@ of the system to process a message.
 
 from typing import Mapping, Optional, Type
 
-from ..core.profile import Profile
+from ..core.profile import Profile, ProfileSession
 from ..config.injector import Injector, InjectType
 from ..config.injection_context import InjectionContext
 from ..config.settings import Settings
 from ..connections.models.conn_record import ConnRecord
 from ..transport.inbound.receipt import MessageReceipt
+from ..utils.classloader import DeferLoad
 
 from .agent_message import AgentMessage
+
+IN_MEM = DeferLoad("aries_cloudagent.core.in_memory.InMemoryProfile")
 
 
 class RequestContext:
@@ -178,6 +181,19 @@ class RequestContext:
         """
         return self._context.settings
 
+    def session(self) -> ProfileSession:
+        """Start a new interactive session with no transaction support requested."""
+        return self.profile.session(self._context)
+
+    def transaction(self) -> ProfileSession:
+        """
+        Start a new interactive session with commit and rollback support.
+
+        If the current backend does not support transactions, then commit
+        and rollback operations of the session will not have any effect.
+        """
+        return self.profile.transaction(self._context)
+
     def inject(
         self,
         base_cls: Type[InjectType],
@@ -201,6 +217,11 @@ class RequestContext:
     def update_settings(self, settings: Mapping[str, object]):
         """Update the scope with additional settings."""
         self._context.update_settings(settings)
+
+    @classmethod
+    def test_context(cls) -> "RequestContext":
+        """Quickly set up a new request context for tests."""
+        return RequestContext(IN_MEM.resolved.test_profile())
 
     def __repr__(self) -> str:
         """

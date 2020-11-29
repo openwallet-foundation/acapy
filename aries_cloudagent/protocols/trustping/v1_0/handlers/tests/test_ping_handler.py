@@ -12,7 +12,7 @@ from ...messages.ping_response import PingResponse
 
 @pytest.fixture()
 def request_context() -> RequestContext:
-    ctx = RequestContext()
+    ctx = RequestContext.test_context()
     yield ctx
 
 

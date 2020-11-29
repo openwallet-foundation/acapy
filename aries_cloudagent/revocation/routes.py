@@ -265,6 +265,7 @@ async def revoke(request: web.BaseRequest):
 
     """
     context = request.app["request_context"]
+    session = await context.session()
 
     body = await request.json()
 
@@ -273,7 +274,7 @@ async def revoke(request: web.BaseRequest):
     cred_ex_id = body.get("cred_ex_id")
     publish = body.get("publish")
 
-    rev_manager = RevocationManager(context)
+    rev_manager = RevocationManager(session)
     try:
         if cred_ex_id:
             await rev_manager.revoke_credential_by_cred_ex_id(cred_ex_id, publish)
@@ -306,10 +307,11 @@ async def publish_revocations(request: web.BaseRequest):
 
     """
     context = request.app["request_context"]
+    session = await context.session()
     body = await request.json()
     rrid2crid = body.get("rrid2crid")
 
-    rev_manager = RevocationManager(context)
+    rev_manager = RevocationManager(session)
 
     try:
         results = await rev_manager.publish_pending_revocations(rrid2crid)
@@ -333,10 +335,11 @@ async def clear_pending_revocations(request: web.BaseRequest):
 
     """
     context = request.app["request_context"]
+    session = await context.session()
     body = await request.json()
     purge = body.get("purge")
 
-    rev_manager = RevocationManager(context)
+    rev_manager = RevocationManager(session)
 
     try:
         results = await rev_manager.clear_pending_revocations(purge)
@@ -360,6 +363,7 @@ async def create_rev_reg(request: web.BaseRequest):
 
     """
     context = request.app["request_context"]
+    session = await context.session()
 
     body = await request.json()
 
@@ -367,7 +371,7 @@ async def create_rev_reg(request: web.BaseRequest):
     max_cred_num = body.get("max_cred_num")
 
     # check we published this cred def
-    storage = context.inject(BaseStorage)
+    storage = session.inject(BaseStorage)
 
     found = await storage.search_records(
         type_filter=CRED_DEF_SENT_RECORD_TYPE,
@@ -379,14 +383,14 @@ async def create_rev_reg(request: web.BaseRequest):
         )
 
     try:
-        revoc = IndyRevocation(context)
+        revoc = IndyRevocation(session)
         issuer_rev_reg_rec = await revoc.init_issuer_registry(
             credential_definition_id,
             max_cred_num=max_cred_num,
         )
     except RevocationNotSupportedError as e:
         raise web.HTTPBadRequest(reason=e.message) from e
-    await shield(issuer_rev_reg_rec.generate_registry(context))
+    await shield(issuer_rev_reg_rec.generate_registry(session))
 
     return web.json_response({"result": issuer_rev_reg_rec.serialize()})
 
@@ -409,6 +413,7 @@ async def rev_regs_created(request: web.BaseRequest):
 
     """
     context = request.app["request_context"]
+    session = await context.session()
 
     search_tags = [
         tag for tag in vars(RevRegsCreatedQueryStringSchema)["_declared_fields"]
@@ -416,7 +421,7 @@ async def rev_regs_created(request: web.BaseRequest):
     tag_filter = {
         tag: request.query[tag] for tag in search_tags if tag in request.query
     }
-    found = await IssuerRevRegRecord.query(context, tag_filter)
+    found = await IssuerRevRegRecord.query(session, tag_filter)
 
     return web.json_response({"rev_reg_ids": [record.revoc_reg_id for record in found]})
 
@@ -439,11 +444,12 @@ async def get_rev_reg(request: web.BaseRequest):
 
     """
     context = request.app["request_context"]
+    session = await context.session()
 
     rev_reg_id = request.match_info["rev_reg_id"]
 
     try:
-        revoc = IndyRevocation(context)
+        revoc = IndyRevocation(session)
         rev_reg = await revoc.get_issuer_rev_reg_record(rev_reg_id)
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
@@ -469,18 +475,19 @@ async def get_rev_reg_issued(request: web.BaseRequest):
 
     """
     context = request.app["request_context"]
+    session = await context.session()
 
     rev_reg_id = request.match_info["rev_reg_id"]
 
     try:
-        await IssuerRevRegRecord.retrieve_by_revoc_reg_id(context, rev_reg_id)
+        await IssuerRevRegRecord.retrieve_by_revoc_reg_id(session, rev_reg_id)
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
 
     return web.json_response(
         {
             "result": len(
-                await IssuerCredRevRecord.query_by_ids(context, rev_reg_id=rev_reg_id)
+                await IssuerCredRevRecord.query_by_ids(session, rev_reg_id=rev_reg_id)
             )
         }
     )
@@ -504,6 +511,7 @@ async def get_cred_rev_record(request: web.BaseRequest):
 
     """
     context = request.app["request_context"]
+    session = await context.session()
 
     rev_reg_id = request.query.get("rev_reg_id")
     cred_rev_id = request.query.get("cred_rev_id")  # numeric string
@@ -512,10 +520,10 @@ async def get_cred_rev_record(request: web.BaseRequest):
     try:
         if rev_reg_id and cred_rev_id:
             rec = await IssuerCredRevRecord.retrieve_by_ids(
-                context, rev_reg_id, cred_rev_id
+                session, rev_reg_id, cred_rev_id
             )
         else:
-            rec = await IssuerCredRevRecord.retrieve_by_cred_ex_id(context, cred_ex_id)
+            rec = await IssuerCredRevRecord.retrieve_by_cred_ex_id(session, cred_ex_id)
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
 
@@ -540,11 +548,12 @@ async def get_active_rev_reg(request: web.BaseRequest):
 
     """
     context = request.app["request_context"]
+    session = await context.session()
 
     cred_def_id = request.match_info["cred_def_id"]
 
     try:
-        revoc = IndyRevocation(context)
+        revoc = IndyRevocation(session)
         rev_reg = await revoc.get_active_issuer_rev_reg_record(cred_def_id)
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
@@ -571,11 +580,12 @@ async def get_tails_file(request: web.BaseRequest) -> web.FileResponse:
 
     """
     context = request.app["request_context"]
+    session = await context.session()
 
     rev_reg_id = request.match_info["rev_reg_id"]
 
     try:
-        revoc = IndyRevocation(context)
+        revoc = IndyRevocation(session)
         rev_reg = await revoc.get_issuer_rev_reg_record(rev_reg_id)
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
@@ -642,13 +652,14 @@ async def send_rev_reg_def(request: web.BaseRequest):
 
     """
     context = request.app["request_context"]
+    session = await context.session()
     rev_reg_id = request.match_info["rev_reg_id"]
 
     try:
-        revoc = IndyRevocation(context)
+        revoc = IndyRevocation(session)
         rev_reg = await revoc.get_issuer_rev_reg_record(rev_reg_id)
 
-        await rev_reg.send_def(context)
+        await rev_reg.send_def(session)
         LOGGER.debug("published rev reg definition: %s", rev_reg_id)
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
@@ -676,12 +687,13 @@ async def send_rev_reg_entry(request: web.BaseRequest):
 
     """
     context = request.app["request_context"]
+    session = await context.session()
     rev_reg_id = request.match_info["rev_reg_id"]
 
     try:
-        revoc = IndyRevocation(context)
+        revoc = IndyRevocation(session)
         rev_reg = await revoc.get_issuer_rev_reg_record(rev_reg_id)
-        await rev_reg.send_entry(context)
+        await rev_reg.send_entry(session)
         LOGGER.debug("published registry entry: %s", rev_reg_id)
 
     except StorageNotFoundError as err:
@@ -712,6 +724,7 @@ async def update_rev_reg(request: web.BaseRequest):
 
     """
     context = request.app["request_context"]
+    session = await context.session()
 
     body = await request.json()
     tails_public_uri = body.get("tails_public_uri")
@@ -719,9 +732,9 @@ async def update_rev_reg(request: web.BaseRequest):
     rev_reg_id = request.match_info["rev_reg_id"]
 
     try:
-        revoc = IndyRevocation(context)
+        revoc = IndyRevocation(session)
         rev_reg = await revoc.get_issuer_rev_reg_record(rev_reg_id)
-        await rev_reg.set_tails_file_public_uri(context, tails_public_uri)
+        await rev_reg.set_tails_file_public_uri(session, tails_public_uri)
 
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
@@ -747,13 +760,14 @@ async def set_rev_reg_state(request: web.BaseRequest):
 
     """
     context = request.app["request_context"]
+    session = await context.session()
     rev_reg_id = request.match_info["rev_reg_id"]
     state = request.query.get("state")
 
     try:
-        revoc = IndyRevocation(context)
+        revoc = IndyRevocation(session)
         rev_reg = await revoc.get_issuer_rev_reg_record(rev_reg_id)
-        await rev_reg.set_state(context, state)
+        await rev_reg.set_state(session, state)
 
         LOGGER.debug("set registry %s state: %s", rev_reg_id, state)
 

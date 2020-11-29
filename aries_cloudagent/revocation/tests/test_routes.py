@@ -5,7 +5,7 @@ from aiohttp.web import HTTPBadRequest, HTTPForbidden, HTTPNotFound
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
-from ...config.injection_context import InjectionContext
+from ...messaging.request_context import RequestContext
 from ...storage.base import BaseStorage
 from ...storage.in_memory import InMemoryStorage
 from ...tails.base import BaseTailsServer
@@ -15,9 +15,7 @@ from .. import routes as test_module
 
 class TestRevocationRoutes(AsyncTestCase):
     def setUp(self):
-        self.context = InjectionContext(enforce_typing=False)
-        self.storage = BasicStorage()
-        self.context.injector.bind_instance(BaseStorage, self.storage)
+        self.context = RequestContext.test_context()
 
         TailsServer = async_mock.MagicMock(BaseTailsServer, autospec=True)
         self.tails_server = TailsServer()
@@ -79,12 +77,7 @@ class TestRevocationRoutes(AsyncTestCase):
 
     async def test_revoke(self):
         request = async_mock.MagicMock()
-        request.app = {
-            "request_context": async_mock.patch.object(
-                aio_web, "BaseRequest", autospec=True
-            ),
-        }
-        request.app["request_context"].settings = {}
+        request.app = {"request_context": self.context}
         request.json = async_mock.CoroutineMock(
             return_value={
                 "rev_reg_id": "rr_id",
@@ -107,12 +100,7 @@ class TestRevocationRoutes(AsyncTestCase):
 
     async def test_revoke_by_cred_ex_id(self):
         request = async_mock.MagicMock()
-        request.app = {
-            "request_context": async_mock.patch.object(
-                aio_web, "BaseRequest", autospec=True
-            ),
-        }
-        request.app["request_context"].settings = {}
+        request.app = {"request_context": self.context}
         request.json = async_mock.CoroutineMock(
             return_value={
                 "cred_ex_id": "dummy-cxid",
@@ -134,12 +122,7 @@ class TestRevocationRoutes(AsyncTestCase):
 
     async def test_revoke_not_found(self):
         request = async_mock.MagicMock()
-        request.app = {
-            "request_context": async_mock.patch.object(
-                aio_web, "BaseRequest", autospec=True
-            ),
-        }
-        request.app["request_context"].settings = {}
+        request.app = {"request_context": self.context}
         request.json = async_mock.CoroutineMock(
             return_value={
                 "rev_reg_id": "rr_id",
@@ -163,12 +146,7 @@ class TestRevocationRoutes(AsyncTestCase):
 
     async def test_publish_revocations(self):
         request = async_mock.MagicMock()
-        request.app = {
-            "request_context": async_mock.patch.object(
-                aio_web, "BaseRequest", autospec=True
-            ),
-        }
-        request.app["request_context"].settings = {}
+        request.app = {"request_context": self.context}
         request.json = async_mock.CoroutineMock()
 
         with async_mock.patch.object(
@@ -187,12 +165,7 @@ class TestRevocationRoutes(AsyncTestCase):
 
     async def test_publish_revocations_x(self):
         request = async_mock.MagicMock()
-        request.app = {
-            "request_context": async_mock.patch.object(
-                aio_web, "BaseRequest", autospec=True
-            ),
-        }
-        request.app["request_context"].settings = {}
+        request.app = {"request_context": self.context}
         request.json = async_mock.CoroutineMock()
 
         with async_mock.patch.object(
@@ -208,12 +181,7 @@ class TestRevocationRoutes(AsyncTestCase):
 
     async def test_clear_pending_revocations(self):
         request = async_mock.MagicMock()
-        request.app = {
-            "request_context": async_mock.patch.object(
-                aio_web, "BaseRequest", autospec=True
-            ),
-        }
-        request.app["request_context"].settings = {}
+        request.app = {"request_context": self.context}
         request.json = async_mock.CoroutineMock()
 
         with async_mock.patch.object(
@@ -232,12 +200,7 @@ class TestRevocationRoutes(AsyncTestCase):
 
     async def test_clear_pending_revocations_x(self):
         request = async_mock.MagicMock()
-        request.app = {
-            "request_context": async_mock.patch.object(
-                aio_web, "BaseRequest", autospec=True
-            ),
-        }
-        request.app["request_context"].settings = {}
+        request.app = {"request_context": self.context}
         request.json = async_mock.CoroutineMock()
 
         with async_mock.patch.object(
@@ -265,7 +228,7 @@ class TestRevocationRoutes(AsyncTestCase):
         )
 
         with async_mock.patch.object(
-            self.storage, "search_records", autospec=True
+            InMemoryStorage, "search_records", autospec=True
         ) as mock_search, async_mock.patch.object(
             test_module, "IndyRevocation", autospec=True
         ) as mock_indy_revoc, async_mock.patch.object(
@@ -299,7 +262,7 @@ class TestRevocationRoutes(AsyncTestCase):
         )
 
         with async_mock.patch.object(
-            self.storage, "search_records", autospec=True
+            InMemoryStorage, "search_records", autospec=True
         ) as mock_search, async_mock.patch.object(
             test_module.web, "json_response", async_mock.Mock()
         ) as mock_json_response:
@@ -323,7 +286,7 @@ class TestRevocationRoutes(AsyncTestCase):
         )
 
         with async_mock.patch.object(
-            self.storage, "search_records", autospec=True
+            InMemoryStorage, "search_records", autospec=True
         ) as mock_search, async_mock.patch.object(
             test_module, "IndyRevocation", autospec=True
         ) as mock_indy_revoc, async_mock.patch.object(

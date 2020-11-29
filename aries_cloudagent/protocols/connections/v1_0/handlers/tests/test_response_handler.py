@@ -1,20 +1,20 @@
 import pytest
 from asynctest import mock as async_mock
 
-from aries_cloudagent.connections.models import connection_target
-from aries_cloudagent.connections.models.diddoc import (
+from ......connections.models import connection_target
+from ......connections.models.diddoc import (
     DIDDoc,
     PublicKey,
     PublicKeyType,
     Service,
 )
-from aries_cloudagent.messaging.base_handler import HandlerException
-from aries_cloudagent.messaging.request_context import RequestContext
-from aries_cloudagent.messaging.responder import MockResponder
+from ......messaging.base_handler import HandlerException
+from ......messaging.request_context import RequestContext
+from ......messaging.responder import MockResponder
 
-from aries_cloudagent.protocols.trustping.v1_0.messages.ping import Ping
+from ......protocols.trustping.v1_0.messages.ping import Ping
 
-from aries_cloudagent.transport.inbound.receipt import MessageReceipt
+from ......transport.inbound.receipt import MessageReceipt
 
 from ...handlers import connection_response_handler as handler
 from ...manager import ConnectionManagerError
@@ -25,7 +25,7 @@ from ...models.connection_detail import ConnectionDetail
 
 @pytest.fixture()
 def request_context() -> RequestContext:
-    ctx = RequestContext()
+    ctx = RequestContext.test_context()
     ctx.message_receipt = MessageReceipt()
     yield ctx
 

@@ -14,7 +14,7 @@ from .. import credential_ack_handler as handler
 
 class TestCredentialAckHandler(AsyncTestCase):
     async def test_called(self):
-        request_context = RequestContext()
+        request_context = RequestContext.test_context()
         request_context.message_receipt = MessageReceipt()
 
         with async_mock.patch.object(
@@ -34,7 +34,7 @@ class TestCredentialAckHandler(AsyncTestCase):
         assert not responder.messages
 
     async def test_called_not_ready(self):
-        request_context = RequestContext()
+        request_context = RequestContext.test_context()
         request_context.message_receipt = MessageReceipt()
 
         with async_mock.patch.object(

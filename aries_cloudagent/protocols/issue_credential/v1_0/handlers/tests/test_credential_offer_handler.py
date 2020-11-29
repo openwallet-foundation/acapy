@@ -14,7 +14,7 @@ from .. import credential_offer_handler as handler
 
 class TestCredentialOfferHandler(AsyncTestCase):
     async def test_called(self):
-        request_context = RequestContext()
+        request_context = RequestContext.test_context()
         request_context.message_receipt = MessageReceipt()
         request_context.settings["debug.auto_respond_credential_offer"] = False
 
@@ -33,7 +33,7 @@ class TestCredentialOfferHandler(AsyncTestCase):
         assert not responder.messages
 
     async def test_called_auto_request(self):
-        request_context = RequestContext()
+        request_context = RequestContext.test_context()
         request_context.message_receipt = MessageReceipt()
         request_context.settings["debug.auto_respond_credential_offer"] = True
         request_context.connection_record = async_mock.MagicMock()
@@ -61,7 +61,7 @@ class TestCredentialOfferHandler(AsyncTestCase):
         assert target == {}
 
     async def test_called_not_ready(self):
-        request_context = RequestContext()
+        request_context = RequestContext.test_context()
         request_context.message_receipt = MessageReceipt()
 
         with async_mock.patch.object(

@@ -34,18 +34,18 @@ class IndySdkProfile(Profile):
         """Accessor for the profile name."""
         return self.opened.name
 
-    def session(self) -> "ProfileSession":
+    def session(self, context: InjectionContext = None) -> "ProfileSession":
         """Start a new interactive session with no transaction support requested."""
-        return IndySdkProfileSession(self)
+        return IndySdkProfileSession(self, context=context)
 
-    def transaction(self) -> "ProfileSession":
+    def transaction(self, context: InjectionContext = None) -> "ProfileSession":
         """
         Start a new interactive session with commit and rollback support.
 
         If the current backend does not support transactions, then commit
         and rollback operations of the session will not have any effect.
         """
-        return IndySdkProfileSession(self)
+        return IndySdkProfileSession(self, context=context)
 
     async def close(self):
         """Close the profile instance."""
@@ -57,9 +57,15 @@ class IndySdkProfile(Profile):
 class IndySdkProfileSession(ProfileSession):
     """An active connection to the profile management backend."""
 
-    def __init__(self, profile: IndySdkProfile):
+    def __init__(
+        self,
+        profile: Profile,
+        *,
+        context: InjectionContext = None,
+        settings: Mapping[str, Any] = None
+    ):
         """Create a new IndySdkProfileSession instance."""
-        super().__init__(profile=profile)
+        super().__init__(profile=profile, context=context, settings=settings)
 
     async def _setup(self):
         """Create the session or transaction connection, if needed."""

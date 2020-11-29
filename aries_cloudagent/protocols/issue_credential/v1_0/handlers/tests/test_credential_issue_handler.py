@@ -14,7 +14,7 @@ from .. import credential_issue_handler as handler
 
 class TestCredentialIssueHandler(AsyncTestCase):
     async def test_called(self):
-        request_context = RequestContext()
+        request_context = RequestContext.test_context()
         request_context.message_receipt = MessageReceipt()
         request_context.settings["debug.auto_store_credential"] = False
 
@@ -33,7 +33,7 @@ class TestCredentialIssueHandler(AsyncTestCase):
         assert not responder.messages
 
     async def test_called_auto_store(self):
-        request_context = RequestContext()
+        request_context = RequestContext.test_context()
         request_context.message_receipt = MessageReceipt()
         request_context.settings["debug.auto_store_credential"] = True
         request_context.connection_record = async_mock.MagicMock()
@@ -60,7 +60,7 @@ class TestCredentialIssueHandler(AsyncTestCase):
         assert target == {}
 
     async def test_called_not_ready(self):
-        request_context = RequestContext()
+        request_context = RequestContext.test_context()
         request_context.message_receipt = MessageReceipt()
 
         with async_mock.patch.object(

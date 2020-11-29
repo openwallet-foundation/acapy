@@ -1,7 +1,6 @@
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
-from .....core.in_memory import InMemoryProfile
 from .....messaging.request_context import RequestContext
 from .....storage.error import (
     StorageDuplicateError,
@@ -23,11 +22,11 @@ TEST_ROUTE_VERKEY = "9WCgWKUaAJj3VWxxtzvvMQN3AoFxoBtBDo9ntwJnVVCC"
 
 class TestRoutingManager(AsyncTestCase):
     async def setUp(self):
-        self.profile = InMemoryProfile.test_profile()
-        self.context = RequestContext(self.profile)
+        self.context = RequestContext.test_context()
         self.context.message_receipt = MessageReceipt(sender_verkey=TEST_VERKEY)
-        self.manager = RoutingManager(self.context)
-        assert self.manager.context
+        self.session = await self.context.session()
+        self.manager = RoutingManager(self.session)
+        assert self.manager.session
 
     async def test_create_manager_no_context(self):
         with self.assertRaises(RoutingManagerError):

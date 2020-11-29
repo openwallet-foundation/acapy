@@ -3,7 +3,6 @@ from asynctest import mock as async_mock
 import json
 
 from ......connections.models.connection_target import ConnectionTarget
-from ......core.in_memory import InMemoryProfile
 from ......messaging.base_handler import HandlerException
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
@@ -21,8 +20,7 @@ TEST_ROUTE_VERKEY = "9WCgWKUaAJj3VWxxtzvvMQN3AoFxoBtBDo9ntwJnVVCC"
 
 class TestForwardHandler(AsyncTestCase):
     async def setUp(self):
-        self.profile = InMemoryProfile.test_profile()
-        self.context = RequestContext(self.profile)
+        self.context = RequestContext.test_context()
         self.context.connection_ready = True
         self.context.message = Forward(to="sample-did", msg={"msg": "sample-message"})
 

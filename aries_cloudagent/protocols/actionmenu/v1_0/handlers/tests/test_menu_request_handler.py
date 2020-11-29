@@ -4,23 +4,20 @@ from asynctest import (
     TestCase as AsyncTestCase,
 )
 
-from ......core.in_memory import InMemoryProfile
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
 
 from .. import menu_request_handler as handler
 
 
-class TestHandler(AsyncTestCase):
+class TestMenuRequestHandler(AsyncTestCase):
     async def setUp(self):
-        self.session = InMemoryProfile.test_session()
-        self.context = RequestContext(self.session.profile)
+        self.context = RequestContext.test_context()
 
     async def test_called(self):
         MenuService = async_mock.MagicMock(handler.BaseMenuService, autospec=True)
         self.menu_service = MenuService()
         self.context.injector.bind_instance(handler.BaseMenuService, self.menu_service)
-        self.context.inject = async_mock.CoroutineMock(return_value=self.menu_service)
 
         self.context.connection_record = async_mock.MagicMock()
         self.context.connection_record.connection_id = "dummy"
@@ -44,7 +41,6 @@ class TestHandler(AsyncTestCase):
         MenuService = async_mock.MagicMock(handler.BaseMenuService, autospec=True)
         self.menu_service = MenuService()
         self.context.injector.bind_instance(handler.BaseMenuService, self.menu_service)
-        self.context.inject = async_mock.CoroutineMock(return_value=self.menu_service)
 
         self.context.connection_record = async_mock.MagicMock()
         self.context.connection_record.connection_id = "dummy"

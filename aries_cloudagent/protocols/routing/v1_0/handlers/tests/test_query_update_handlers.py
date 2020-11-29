@@ -2,7 +2,6 @@ from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
 from ......connections.models.conn_record import ConnRecord
-from ......core.in_memory import InMemoryProfile
 from ......messaging.base_handler import HandlerException
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
@@ -28,8 +27,7 @@ TEST_ROUTE_VERKEY = "9WCgWKUaAJj3VWxxtzvvMQN3AoFxoBtBDo9ntwJnVVCC"
 
 class TestQueryUpdateHandlers(AsyncTestCase):
     async def setUp(self):
-        self.profile = InMemoryProfile.test_profile()
-        self.context = RequestContext(self.profile)
+        self.context = RequestContext.test_context()
         self.context.connection_ready = True
         self.context.connection_record = ConnRecord(connection_id="conn-id")
         self.context.message_receipt = MessageReceipt(sender_verkey=TEST_VERKEY)

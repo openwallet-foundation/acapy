@@ -21,7 +21,7 @@ CD_ID = f"NcYxiDXkpYi6ov5FcYDi1e:3:CL:{S_ID}:tag1"
 
 class TestPresentationRequestHandler(AsyncTestCase):
     async def test_called(self):
-        request_context = RequestContext()
+        request_context = RequestContext.test_context()
         request_context.connection_record = async_mock.MagicMock()
         request_context.connection_record.connection_id = "dummy"
         request_context.message_receipt = MessageReceipt()
@@ -57,7 +57,7 @@ class TestPresentationRequestHandler(AsyncTestCase):
         assert not responder.messages
 
     async def test_called_not_found(self):
-        request_context = RequestContext()
+        request_context = RequestContext.test_context()
         request_context.connection_record = async_mock.MagicMock()
         request_context.connection_record.connection_id = "dummy"
         request_context.message_receipt = MessageReceipt()
@@ -94,7 +94,7 @@ class TestPresentationRequestHandler(AsyncTestCase):
         assert not responder.messages
 
     async def test_called_auto_present(self):
-        request_context = RequestContext()
+        request_context = RequestContext.test_context()
         request_context.connection_record = async_mock.MagicMock()
         request_context.connection_record.connection_id = "dummy"
         request_context.message = PresentationRequest()
@@ -184,7 +184,7 @@ class TestPresentationRequestHandler(AsyncTestCase):
         assert target == {}
 
     async def test_called_auto_present_no_preview(self):
-        request_context = RequestContext()
+        request_context = RequestContext.test_context()
         request_context.connection_record = async_mock.MagicMock()
         request_context.connection_record.connection_id = "dummy"
         request_context.message = PresentationRequest()
@@ -263,7 +263,7 @@ class TestPresentationRequestHandler(AsyncTestCase):
         assert target == {}
 
     async def test_called_auto_present_pred_no_match(self):
-        request_context = RequestContext()
+        request_context = RequestContext.test_context()
         request_context.connection_record = async_mock.MagicMock()
         request_context.connection_record.connection_id = "dummy"
         request_context.message = PresentationRequest()
@@ -327,7 +327,7 @@ class TestPresentationRequestHandler(AsyncTestCase):
         assert not responder.messages
 
     async def test_called_auto_present_pred_single_match(self):
-        request_context = RequestContext()
+        request_context = RequestContext.test_context()
         request_context.connection_record = async_mock.MagicMock()
         request_context.connection_record.connection_id = "dummy"
         request_context.message = PresentationRequest()
@@ -397,7 +397,7 @@ class TestPresentationRequestHandler(AsyncTestCase):
         assert target == {}
 
     async def test_called_auto_present_pred_multi_match(self):
-        request_context = RequestContext()
+        request_context = RequestContext.test_context()
         request_context.connection_record = async_mock.MagicMock()
         request_context.connection_record.connection_id = "dummy"
         request_context.message = PresentationRequest()
@@ -470,7 +470,7 @@ class TestPresentationRequestHandler(AsyncTestCase):
         assert target == {}
 
     async def test_called_auto_present_multi_cred_match_reft(self):
-        request_context = RequestContext()
+        request_context = RequestContext.test_context()
         request_context.connection_record = async_mock.MagicMock()
         request_context.connection_record.connection_id = "dummy"
         request_context.message = PresentationRequest()
@@ -594,7 +594,7 @@ class TestPresentationRequestHandler(AsyncTestCase):
         assert target == {}
 
     async def test_called_auto_present_bait_and_switch(self):
-        request_context = RequestContext()
+        request_context = RequestContext.test_context()
         request_context.connection_record = async_mock.MagicMock()
         request_context.connection_record.connection_id = "dummy"
         request_context.message = PresentationRequest()
@@ -696,7 +696,7 @@ class TestPresentationRequestHandler(AsyncTestCase):
         assert not responder.messages
 
     async def test_called_not_ready(self):
-        request_context = RequestContext()
+        request_context = RequestContext.test_context()
         request_context.message_receipt = MessageReceipt()
 
         with async_mock.patch.object(

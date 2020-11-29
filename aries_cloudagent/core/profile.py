@@ -44,11 +44,11 @@ class Profile(ABC):
         return self._name
 
     @abstractmethod
-    def session(self) -> "ProfileSession":
+    def session(self, context: InjectionContext = None) -> "ProfileSession":
         """Start a new interactive session with no transaction support requested."""
 
     @abstractmethod
-    def transaction(self) -> "ProfileSession":
+    def transaction(self, context: InjectionContext = None) -> "ProfileSession":
         """
         Start a new interactive session with commit and rollback support.
 
@@ -159,6 +159,11 @@ class ProfileSession(ABC):
     def context(self) -> InjectionContext:
         """Accessor for the associated injection context."""
         return self._context
+
+    @property
+    def settings(self) -> BaseSettings:
+        """Accessor for scope-specific settings."""
+        return self._context.settings
 
     @property
     def handle(self):

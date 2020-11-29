@@ -310,6 +310,4 @@ class IndyStorageRecordSearch(BaseStorageRecordSearch):
             loop = asyncio.get_event_loop()
             task = loop.create_task(cleanup(self._handle))
             if not loop.is_running():
-                print("not running")
                 loop.run_until_complete(task)
-            print(task)

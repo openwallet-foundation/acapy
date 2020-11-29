@@ -14,7 +14,7 @@ from .. import presentation_handler as handler
 
 class TestPresentationHandler(AsyncTestCase):
     async def test_called(self):
-        request_context = RequestContext()
+        request_context = RequestContext.test_context()
         request_context.message_receipt = MessageReceipt()
         request_context.settings["debug.auto_verify_presentation"] = False
 
@@ -33,7 +33,7 @@ class TestPresentationHandler(AsyncTestCase):
         assert not responder.messages
 
     async def test_called_auto_verify(self):
-        request_context = RequestContext()
+        request_context = RequestContext.test_context()
         request_context.message_receipt = MessageReceipt()
         request_context.settings["debug.auto_verify_presentation"] = True
 

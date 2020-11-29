@@ -2,7 +2,7 @@
 
 from typing import Sequence
 
-from ..config.injection_context import InjectionContext
+from ..core.profile import ProfileSession
 from ..ledger.base import BaseLedger
 from ..storage.base import StorageNotFoundError
 
@@ -16,9 +16,14 @@ class IndyRevocation:
 
     REV_REG_CACHE = {}
 
-    def __init__(self, context: InjectionContext):
+    def __init__(self, session: ProfileSession):
         """Initialize the IndyRevocation instance."""
-        self._context = context
+        self._session = session
+
+    @property
+    def session(self) -> ProfileSession:
+        """Accessor for the current profile session."""
+        return self._session
 
     async def init_issuer_registry(
         self,
@@ -28,7 +33,7 @@ class IndyRevocation:
         tag: str = None,
     ) -> "IssuerRevRegRecord":
         """Create a new revocation registry record for a credential definition."""
-        ledger: BaseLedger = self._context.inject(BaseLedger)
+        ledger = self._session.inject(BaseLedger)
         async with ledger:
             cred_def = await ledger.get_credential_definition(cred_def_id)
         if not cred_def:
@@ -51,7 +56,7 @@ class IndyRevocation:
             revoc_def_type=revoc_def_type,
             tag=tag,
         )
-        await record.save(self._context, reason="Init revocation registry")
+        await record.save(self._session, reason="Init revocation registry")
         return record
 
     async def get_active_issuer_rev_reg_record(
@@ -64,7 +69,7 @@ class IndyRevocation:
         """
         current = sorted(
             await IssuerRevRegRecord.query_by_cred_def_id(
-                self._context, cred_def_id, IssuerRevRegRecord.STATE_ACTIVE
+                self._session, cred_def_id, IssuerRevRegRecord.STATE_ACTIVE
             )
         )
         if current:
@@ -82,19 +87,19 @@ class IndyRevocation:
             revoc_reg_id: ID of the revocation registry
         """
         return await IssuerRevRegRecord.retrieve_by_revoc_reg_id(
-            self._context, revoc_reg_id
+            self._session, revoc_reg_id
         )
 
     async def list_issuer_registries(self) -> Sequence["IssuerRevRegRecord"]:
         """List the issuer's current revocation registries."""
-        return await IssuerRevRegRecord.query(self._context)
+        return await IssuerRevRegRecord.query(self._session)
 
     async def get_ledger_registry(self, revoc_reg_id: str) -> "RevocationRegistry":
         """Get a revocation registry from the ledger, fetching as necessary."""
         if revoc_reg_id in IndyRevocation.REV_REG_CACHE:
             return IndyRevocation.REV_REG_CACHE[revoc_reg_id]
 
-        ledger: BaseLedger = self._context.inject(BaseLedger)
+        ledger = self._session.inject(BaseLedger)
         async with ledger:
             rev_reg = RevocationRegistry.from_definition(
                 await ledger.get_revoc_reg_def(revoc_reg_id), True
