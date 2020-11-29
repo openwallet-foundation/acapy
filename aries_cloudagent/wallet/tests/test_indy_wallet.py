@@ -12,8 +12,10 @@ from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
 from ...core.in_memory import InMemoryProfile
+from ...indy.sdk.profile import IndySdkProfileManager
 from ...ledger.endpoint_type import EndpointType
 
+from ..base import BaseWallet
 from ..in_memory import InMemoryWallet
 from ..indy import IndyWallet
 from .. import indy as test_module
@@ -31,18 +33,17 @@ async def in_memory_wallet():
 @pytest.fixture()
 async def wallet():
     key = await IndyWallet.generate_wallet_key()
-    wallet = IndyWallet(
+    profile = await IndySdkProfileManager().provision(
         {
-            "auto_create": True,
             "auto_remove": True,
             "name": "test-wallet",
             "key": key,
             "key_derivation_method": "RAW",  # much slower tests with argon-hashed keys
         }
     )
-    await wallet.open()
-    yield wallet
-    await wallet.close()
+    async with profile.session() as session:
+        yield session.inject(BaseWallet)
+    await profile.close()
 
 
 @pytest.mark.indy

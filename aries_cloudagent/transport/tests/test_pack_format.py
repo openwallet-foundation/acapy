@@ -30,7 +30,7 @@ class TestPackWireFormat(AsyncTestCase):
 
     def setUp(self):
         self.session = InMemoryProfile.test_session()
-        self.wallet = self.session.get_interface(BaseWallet)
+        self.wallet = self.session.inject(BaseWallet)
 
     async def test_errors(self):
         serializer = PackWireFormat()

@@ -100,9 +100,6 @@ class TestRevocationManager(AsyncTestCase):
             issuer = async_mock.MagicMock(IndyIssuer, autospec=True)
             self.context.injector.bind_instance(IndyIssuer, issuer)
 
-            self.storage = BasicStorage()
-            self.context.injector.bind_instance(BaseStorage, self.storage)
-
             with self.assertRaises(RevocationManagerError):
                 await self.manager.revoke_credential_by_cred_ex_id(CRED_EX_ID)
 
@@ -371,9 +368,7 @@ class TestRevocationManager(AsyncTestCase):
             }
 
     async def test_retrieve_records(self):
-        self.storage = BasicStorage()
-        self.context.injector.bind_instance(BaseStorage, self.storage)
-        storage: BaseStorage = self.context.inject(BaseStorage)
+        storage = self.context.inject(BaseStorage)
         for index in range(2):
             exchange_record = V10CredentialExchange(
                 connection_id=str(index),

@@ -97,6 +97,7 @@ class Injector(BaseInjector):
     def copy(self) -> BaseInjector:
         """Produce a copy of the injector instance."""
         result = Injector(self.settings)
+        result.enforce_typing = self.enforce_typing
         result._providers = self._providers.copy()
         return result
 

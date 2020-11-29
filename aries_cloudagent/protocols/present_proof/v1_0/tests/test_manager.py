@@ -5,7 +5,7 @@ from time import time
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
-from .....config.injection_context import InjectionContext
+from .....core.in_memory import InMemoryProfile
 from .....indy.holder import IndyHolder
 from .....indy.sdk.holder import IndySdkHolder
 from .....indy.issuer import IndyIssuer
@@ -82,9 +82,8 @@ NOW = int(time())
 
 class TestPresentationManager(AsyncTestCase):
     async def setUp(self):
-        self.context = RequestContext(
-            base_context=InjectionContext(enforce_typing=False)
-        )
+        self.session = InMemoryProfile.test_session()
+        self.context = RequestContext(self.session.profile)
 
         Ledger = async_mock.MagicMock(BaseLedger, autospec=True)
         self.ledger = Ledger()

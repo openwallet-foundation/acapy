@@ -49,14 +49,20 @@ class InMemoryProfile(Profile):
     @classmethod
     def test_profile(cls) -> "InMemoryProfile":
         """Used in tests to create a standard InMemoryProfile."""
-        return InMemoryProfile(name=InMemoryProfile.TEST_PROFILE_NAME)
+        return InMemoryProfile(
+            context=InjectionContext(enforce_typing=False),
+            name=InMemoryProfile.TEST_PROFILE_NAME,
+        )
 
     @classmethod
     def test_session(
         cls, settings: Mapping[str, Any] = None
     ) -> "InMemoryProfileSession":
         """Used in tests to quickly create InMemoryProfileSession."""
-        return InMemoryProfileSession(cls.test_profile())
+        session = InMemoryProfileSession(cls.test_profile())
+        session._active = True
+        session._init_context()
+        return session
 
 
 class InMemoryProfileSession(ProfileSession):
@@ -66,11 +72,15 @@ class InMemoryProfileSession(ProfileSession):
         """Create a new InMemoryProfileSession instance."""
         super().__init__(profile=profile, settings=settings)
 
-    def _setup(self):
+    async def _setup(self):
         """Create the session or transaction connection, if needed."""
-        super()._setup()
-        self._context.injector.bind_instance(BaseStorage, STORAGE_CLASS(self))
-        self._context.injector.bind_provider(BaseWallet, WALLET_CLASS(self))
+        await super()._setup()
+        self._init_context()
+
+    def _init_context(self):
+        """Initialize the session context."""
+        self._context.injector.bind_instance(BaseStorage, STORAGE_CLASS(self.profile))
+        self._context.injector.bind_provider(BaseWallet, WALLET_CLASS(self.profile))
 
     @property
     def storage(self) -> BaseStorage:
@@ -85,11 +95,6 @@ class InMemoryProfileSession(ProfileSession):
 
 class InMemoryProfileManager(ProfileManager):
     """Manager for producing in-memory wallet/storage implementation."""
-
-    def __init__(self, context: InjectionContext):
-        """Initialize the profile manager."""
-        self._context = context
-        self._instances = {}
 
     async def provision(self, config: Mapping[str, Any] = None) -> Profile:
         """Provision a new instance of a profile."""

@@ -4,18 +4,19 @@ from asynctest import (
     TestCase as AsyncTestCase,
 )
 
-from aries_cloudagent.config.injection_context import InjectionContext
-from aries_cloudagent.messaging.request_context import RequestContext
-from aries_cloudagent.messaging.responder import MockResponder
+from ......core.in_memory import InMemoryProfile
+from ......messaging.request_context import RequestContext
+from ......messaging.responder import MockResponder
 
 from .. import perform_handler as handler
 
 
 class TestHandler(AsyncTestCase):
+    async def setUp(self):
+        self.session = InMemoryProfile.test_session()
+        self.context = RequestContext(self.session.profile)
+
     async def test_called(self):
-        self.context = RequestContext(
-            base_context=InjectionContext(enforce_typing=False)
-        )
         MenuService = async_mock.MagicMock(handler.BaseMenuService, autospec=True)
         self.menu_service = MenuService()
         self.context.injector.bind_instance(handler.BaseMenuService, self.menu_service)
@@ -40,9 +41,6 @@ class TestHandler(AsyncTestCase):
         assert target == {}
 
     async def test_called_no_active_menu(self):
-        self.context = RequestContext(
-            base_context=InjectionContext(enforce_typing=False)
-        )
         MenuService = async_mock.MagicMock(handler.BaseMenuService, autospec=True)
         self.menu_service = MenuService()
         self.context.injector.bind_instance(handler.BaseMenuService, self.menu_service)

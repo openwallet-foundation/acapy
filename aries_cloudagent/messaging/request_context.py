@@ -8,7 +8,8 @@ of the system to process a message.
 from typing import Mapping, Optional, Type
 
 from ..core.profile import Profile
-from ..config.injection_context import InjectionContext, InjectType
+from ..config.injector import Injector, InjectType
+from ..config.injection_context import InjectionContext
 from ..config.settings import Settings
 from ..connections.models.conn_record import ConnRecord
 from ..transport.inbound.receipt import MessageReceipt
@@ -157,6 +158,13 @@ class RequestContext:
         self._message_receipt = receipt
 
     @property
+    def injector(self) -> Injector:
+        """
+        Accessor for the associated `Injector` instance.
+        """
+        return self._context.injector
+
+    @property
     def profile(self) -> Profile:
         """
         Accessor for the associated `Profile` instance.
@@ -189,6 +197,10 @@ class RequestContext:
 
         """
         return self._context.inject(base_cls, settings, required=required)
+
+    def update_settings(self, settings: Mapping[str, object]):
+        """Update the scope with additional settings."""
+        self._context.update_settings(settings)
 
     def __repr__(self) -> str:
         """

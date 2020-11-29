@@ -1,11 +1,11 @@
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
-from aries_cloudagent.config.injection_context import InjectionContext
-from aries_cloudagent.messaging.base_handler import HandlerException
-from aries_cloudagent.messaging.request_context import RequestContext
-from aries_cloudagent.messaging.responder import MockResponder
-from aries_cloudagent.protocols.connections.v1_0.messages.connection_invitation import (
+from ......core.in_memory import InMemoryProfile
+from ......messaging.base_handler import HandlerException
+from ......messaging.request_context import RequestContext
+from ......messaging.responder import MockResponder
+from ......protocols.connections.v1_0.messages.connection_invitation import (
     ConnectionInvitation,
 )
 
@@ -24,9 +24,8 @@ TEST_IMAGE_URL = "http://aries.ca/images/sample.png"
 
 class TestInvitationRequestHandler(AsyncTestCase):
     async def setUp(self):
-        self.context = RequestContext(
-            base_context=InjectionContext(enforce_typing=False)
-        )
+        self.session = InMemoryProfile.test_session()
+        self.context = RequestContext(self.session.profile)
 
         self.context.connection_ready = True
         self.context.message = InvitationRequest(

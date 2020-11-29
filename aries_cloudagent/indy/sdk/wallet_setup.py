@@ -3,6 +3,8 @@
 import json
 import logging
 
+from typing import Any, Mapping
+
 import indy.anoncreds
 import indy.did
 import indy.crypto
@@ -11,6 +13,7 @@ import indy.wallet
 from indy.error import IndyError, ErrorCode
 
 from ...core.error import ProfileError, ProfileNotFoundError
+from ...core.profile import Profile
 
 from .error import IndyErrorHandler
 from .wallet_plugin import load_postgres_plugin
@@ -18,164 +21,85 @@ from .wallet_plugin import load_postgres_plugin
 LOGGER = logging.getLogger(__name__)
 
 
-class IndyWalletManager:
-    """Manage Indy wallet configuration."""
-
+class IndyWalletConfig:
     DEFAULT_FRESHNESS = 0
     DEFAULT_KEY = ""
-    DEFAULT_KEY_DERIVIATION = "ARGON2I_MOD"
-    DEFAULT_NAME = "default"
+    DEFAULT_KEY_DERIVATION = "ARGON2I_MOD"
     DEFAULT_STORAGE_TYPE = None
 
     KEY_DERIVATION_RAW = "RAW"
     KEY_DERIVATION_ARGON2I_INT = "ARGON2I_INT"
     KEY_DERIVATION_ARGON2I_MOD = "ARGON2I_MOD"
 
-    def __init__(self, config: dict = None):
-        """
-        Initialize a `IndyWalletManager` instance.
+    def __init__(self, config: Mapping[str, Any] = None):
+        """Initialize an `IndySdkWalletConfig` instance.
 
         Args:
             config: {name, key, seed, did, auto-create, auto-remove,
                      storage_type, storage_config, storage_creds}
 
         """
-        if not config:
-            config = {}
-        self._auto_create = config.get("auto_create", True)
-        self._auto_remove = config.get("auto_remove", False)
-        self._created = False
-        self._freshness_time = config.get("freshness_time", False)
-        self._instance: IndyOpenWallet = None
-        self._key = config.get("key") or self.DEFAULT_KEY
-        self._key_derivation_method = (
-            config.get("key_derivation_method") or self.DEFAULT_KEY_DERIVIATION
+
+        config = config or {}
+        # self.auto_create = config.get("auto_create", True)
+        self.auto_remove = config.get("auto_remove", False)
+        self.freshness_time = config.get("freshness_time", False)
+        self.key = config.get("key") or self.DEFAULT_KEY
+        self.key_derivation_method = (
+            config.get("key_derivation_method") or self.DEFAULT_KEY_DERIVATION
         )
-        self._rekey = config.get("rekey")
-        self._rekey_derivation_method = config.get("key_derivation_method")
-        self._name = config.get("name") or self.DEFAULT_NAME
-        self._storage_type = config.get("storage_type") or self.DEFAULT_STORAGE_TYPE
-        self._storage_config = config.get("storage_config", None)
-        self._storage_creds = config.get("storage_creds", None)
-        self._master_secret_id = None
+        # self.rekey = config.get("rekey")
+        # self.rekey_derivation_method = config.get("key_derivation_method")
+        self.name = config.get("name") or Profile.DEFAULT_NAME
+        self.storage_type = config.get("storage_type") or self.DEFAULT_STORAGE_TYPE
+        self.storage_config = config.get("storage_config", None)
+        self.storage_creds = config.get("storage_creds", None)
 
-        if self._storage_type == "postgres_storage":
-            load_postgres_plugin(self._storage_config, self._storage_creds)
-
-    @property
-    def instance(self) -> "IndyOpenWallet":
-        """
-        Get internal wallet reference.
-
-        Returns:
-            A handle to the wallet
-
-        """
-        return self._instance
+        if self.storage_type == "postgres_storage":
+            load_postgres_plugin(self.storage_config, self.storage_creds)
 
     @property
-    def created(self) -> bool:
-        """Check whether the wallet was created on the last open call."""
-        return self._instance and self._instance.created
-
-    @property
-    def opened(self) -> bool:
-        """
-        Check whether wallet is currently open.
-
-        Returns:
-            True if open, else False
-
-        """
-        return bool(self._instance)
-
-    @property
-    def name(self) -> str:
-        """
-        Accessor for the wallet name.
-
-        Returns:
-            The wallet name
-
-        """
-        return self._name
-
-    @property
-    def master_secret_id(self) -> str:
-        """
-        Accessor for the master secret id.
-
-        Returns:
-            The master secret id
-
-        """
-        return self._master_secret_id
-
-    @property
-    def _wallet_config(self) -> dict:
-        """
-        Accessor for the wallet config.
-
-        Returns:
-            The wallet config
-
-        """
+    def wallet_config(self) -> dict:
+        """Accessor for the Indy wallet config."""
         ret = {
-            "id": self._name,
-            "freshness_time": self._freshness_time,
-            "storage_type": self._storage_type,
-            # storage_config
+            "id": self.name,
+            "freshness_time": self.freshness_time,
+            "storage_type": self.storage_type,
         }
-        if self._storage_config is not None:
-            ret["storage_config"] = json.loads(self._storage_config)
+        if self.storage_config is not None:
+            ret["storage_config"] = json.loads(self.storage_config)
         return ret
 
     @property
-    def _wallet_access(self) -> dict:
-        """
-        Accessor for the wallet access.
-
-        Returns:
-            The wallet access
-
-        """
-        ret = {
-            "key": self._key,
-            "key_derivation_method": self._key_derivation_method,
-            # rekey
-            # rekey_derivation_method
-            # storage_credentials
-        }
-        if self._rekey:
-            ret["rekey"] = self._rekey
-        if self._rekey_derivation_method:
-            ret["rekey_derivation_method"] = self._rekey_derivation_method
-        if self._storage_creds is not None:
-            ret["storage_credentials"] = json.loads(self._storage_creds)
-
+    def wallet_access(self) -> dict:
+        """Accessor the Indy wallet access info."""
+        ret = {"key": self.key, "key_derivation_method": self.key_derivation_method}
+        # if self.rekey:
+        #     ret["rekey"] = self.rekey
+        # if self.rekey_derivation_method:
+        #     ret["rekey_derivation_method"] = self.rekey_derivation_method
+        if self.storage_creds is not None:
+            ret["storage_credentials"] = json.loads(self.storage_creds)
         return ret
 
-    async def create(self, replace: bool = False):
+    async def create_wallet(self) -> "IndyOpenWallet":
         """
         Create a new wallet.
-
-        Args:
-            replace: Removes the old wallet if True
 
         Raises:
             ProfileError: If there was a problem removing the wallet
             ProfileError: IF there was a libindy error
 
         """
-        if replace:
+        if self.auto_remove:
             try:
-                await self.remove()
+                await self.remove_wallet()
             except ProfileNotFoundError:
                 pass
         try:
             await indy.wallet.create_wallet(
-                config=json.dumps(self._wallet_config),
-                credentials=json.dumps(self._wallet_access),
+                config=json.dumps(self.wallet_config),
+                credentials=json.dumps(self.wallet_access),
             )
         except IndyError as x_indy:
             raise IndyErrorHandler.wrap_error(
@@ -186,19 +110,24 @@ class IndyWalletManager:
                 ProfileError,
             ) from x_indy
 
-    async def remove(self):
+        try:
+            return await self.open_wallet()
+        except ProfileNotFoundError as err:
+            raise ProfileError(f"Wallet {self.name} not found after creation") from err
+
+    async def remove_wallet(self):
         """
         Remove an existing wallet.
 
         Raises:
-            WalletNotFoundError: If the wallet could not be found
-            WalletError: If there was an libindy error
+            ProfileNotFoundError: If the wallet could not be found
+            ProfileError: If there was an libindy error
 
         """
         try:
             await indy.wallet.delete_wallet(
-                config=json.dumps(self._wallet_config),
-                credentials=json.dumps(self._wallet_access),
+                config=json.dumps(self.wallet_config),
+                credentials=json.dumps(self.wallet_access),
             )
         except IndyError as x_indy:
             if x_indy.error_code == ErrorCode.WalletNotFoundError:
@@ -211,51 +140,35 @@ class IndyWalletManager:
                 x_indy, "Wallet error", ProfileError
             ) from x_indy
 
-    async def open(self):
+    async def open_wallet(self) -> "IndyOpenWallet":
         """
         Open wallet, removing and/or creating it if so configured.
 
         Raises:
-            WalletError: If wallet not found after creation
-            WalletNotFoundError: If the wallet is not found
-            WalletError: If the wallet is already open
-            WalletError: If there is a libindy error
+            ProfileError: If wallet not found after creation
+            ProfileNotFoundError: If the wallet is not found
+            ProfileError: If the wallet is already open
+            ProfileError: If there is a libindy error
 
         """
-        if self.opened:
-            return
-
-        created = False
         handle = None
 
         while True:
             try:
                 handle = await indy.wallet.open_wallet(
-                    config=json.dumps(self._wallet_config),
-                    credentials=json.dumps(self._wallet_access),
+                    config=json.dumps(self.wallet_config),
+                    credentials=json.dumps(self.wallet_access),
                 )
-                if self._rekey:
-                    self._key = self._rekey
-                    self._rekey = None
-                if self._rekey_derivation_method:
-                    self._key_derivation_method = self._rekey_derivation_method
-                    self._rekey_derivation_method = None
+                # if self.rekey:
+                #     self.key = self.rekey
+                #     self.rekey = None
+                # if self.rekey_derivation_method:
+                #     self.key_derivation_method = self.rekey_derivation_method
+                #     self.rekey_derivation_method = None
                 break
             except IndyError as x_indy:
                 if x_indy.error_code == ErrorCode.WalletNotFoundError:
-                    if created:
-                        raise IndyErrorHandler.wrap_error(
-                            x_indy,
-                            "Wallet {} not found after creation".format(self.name),
-                            ProfileError,
-                        ) from x_indy
-                    if self._auto_create:
-                        await self.create(self._auto_remove)
-                        created = True
-                    else:
-                        raise ProfileNotFoundError(
-                            "Wallet {} not found".format(self.name)
-                        )
+                    raise ProfileNotFoundError("Wallet {} not found".format(self.name))
                 elif x_indy.error_code == ErrorCode.WalletAlreadyOpenedError:
                     raise ProfileError("Wallet {} is already open".format(self.name))
                 else:
@@ -277,23 +190,29 @@ class IndyWalletManager:
                     x_indy, "Wallet {} error".format(self.name), ProfileError
                 ) from x_indy
 
-        self._instance = IndyOpenWallet(handle, self.name, created, master_secret_id)
-
-    async def close(self):
-        """Close previously-opened wallet, removing it if so configured."""
-        if self._instance:
-            await indy.wallet.close_wallet(self._instance.handle)
-            self._instance = None
-            if self._auto_remove:
-                await self.remove()
+        return IndyOpenWallet(self, handle, self.name, master_secret_id)
 
 
 class IndyOpenWallet:
     """Handle and metadata for an opened Indy wallet."""
 
-    def __init__(self, handle, name: str, created: bool, master_secret_id: str):
+    def __init__(
+        self,
+        config: IndyWalletConfig,
+        handle,
+        name: str,
+        master_secret_id: str,
+    ):
         """Create a new IndyOpenWallet instance."""
-        self.created = created
+        self.config = config
         self.handle = handle
         self.name = name
         self.master_secret_id = master_secret_id
+
+    async def close(self):
+        """Close previously-opened wallet, removing it if so configured."""
+        if self.handle:
+            await indy.wallet.close_wallet(self.handle)
+            self.handle = None
+            if self.config.auto_remove:
+                await self.config.remove_wallet()

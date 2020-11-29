@@ -76,6 +76,9 @@ class Profile(ABC):
         """
         return self._context.inject(base_cls, settings, required=required)
 
+    async def close(self):
+        """Close the profile instance."""
+
     def __repr__(self) -> str:
         """Get a human readable string."""
         return "<{}(backend={}, name={})>".format(
@@ -86,8 +89,9 @@ class Profile(ABC):
 class ProfileManager(ABC):
     """Handle provision and open for profile instances."""
 
-    def __init__(self, context: InjectionContext):
+    def __init__(self, context: InjectionContext = None):
         """Initialize the profile manager."""
+        self.context = context or InjectionContext()
 
     @abstractmethod
     async def provision(self, config: Mapping[str, Any] = None) -> Profile:
@@ -113,11 +117,11 @@ class ProfileSession(ABC):
         self._context = context or profile.context.start_scope("session", settings)
         self._profile = profile
 
-    def _setup(self):
+    async def _setup(self):
         """Create the session or transaction connection, if needed."""
         self._active = True
 
-    def _teardown(self, commit: bool = None):
+    async def _teardown(self, commit: bool = None):
         """Dispose of the session or transaction connection, if needed."""
         self._active = False
 
@@ -127,9 +131,13 @@ class ProfileSession(ABC):
 
         A session must be awaited or used as an async context manager.
         """
-        if not self._active:
-            return self._setup().__await__()
-        return self
+
+        async def init():
+            if not self._active:
+                await self._setup()
+            return self
+
+        return init().__await__()
 
     async def __aenter__(self):
         """Async context manager entry."""

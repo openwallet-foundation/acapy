@@ -26,9 +26,9 @@ from .util import bytes_to_b64
 class IndyWallet(BaseWallet):
     """Indy identity wallet implementation."""
 
-    def __init__(self, wallet: IndyOpenWallet):
+    def __init__(self, opened: IndyOpenWallet):
         """Create a new IndyWallet instance."""
-        self.wallet = wallet
+        self.opened = opened
 
     async def create_signing_key(
         self, seed: str = None, metadata: dict = None
@@ -52,12 +52,12 @@ class IndyWallet(BaseWallet):
         if seed:
             args["seed"] = bytes_to_b64(validate_seed(seed))
         try:
-            verkey = await indy.crypto.create_key(self.wallet.handle, json.dumps(args))
+            verkey = await indy.crypto.create_key(self.opened.handle, json.dumps(args))
         except IndyError as x_indy:
             if x_indy.error_code == ErrorCode.WalletItemAlreadyExists:
                 raise WalletDuplicateError("Verification key already present in wallet")
             raise IndyErrorHandler.wrap_error(
-                x_indy, "Wallet {} error".format(self.name), WalletError
+                x_indy, "Wallet {} error".format(self.opened.name), WalletError
             ) from x_indy
 
         # must save metadata to allow identity check
@@ -65,7 +65,7 @@ class IndyWallet(BaseWallet):
         if metadata is None:
             metadata = {}
         await indy.crypto.set_key_metadata(
-            self.wallet.handle, verkey, json.dumps(metadata)
+            self.opened.handle, verkey, json.dumps(metadata)
         )
         return KeyInfo(verkey, metadata)
 
@@ -85,13 +85,13 @@ class IndyWallet(BaseWallet):
 
         """
         try:
-            metadata = await indy.crypto.get_key_metadata(self.wallet.handle, verkey)
+            metadata = await indy.crypto.get_key_metadata(self.opened.handle, verkey)
         except IndyError as x_indy:
             if x_indy.error_code == ErrorCode.WalletItemNotFound:
                 raise WalletNotFoundError("Unknown key: {}".format(verkey))
             else:
                 raise IndyErrorHandler.wrap_error(
-                    x_indy, "Wallet {} error".format(self.name), WalletError
+                    x_indy, "Wallet {} error".format(self.opened.name), WalletError
                 ) from x_indy
         return KeyInfo(verkey, json.loads(metadata) if metadata else {})
 
@@ -109,7 +109,7 @@ class IndyWallet(BaseWallet):
         """
         meta_json = json.dumps(metadata or {})
         await self.get_signing_key(verkey)  # throw exception if key is undefined
-        await indy.crypto.set_key_metadata(self.wallet.handle, verkey, meta_json)
+        await indy.crypto.set_key_metadata(self.opened.handle, verkey, meta_json)
 
     async def rotate_did_keypair_start(self, did: str, next_seed: str = None) -> str:
         """
@@ -125,7 +125,7 @@ class IndyWallet(BaseWallet):
         """
         try:
             verkey = await indy.did.replace_keys_start(
-                self.wallet.handle,
+                self.opened.handle,
                 did,
                 json.dumps(
                     {"seed": bytes_to_b64(validate_seed(next_seed))}
@@ -137,7 +137,7 @@ class IndyWallet(BaseWallet):
             if x_indy.error_code == ErrorCode.WalletItemNotFound:
                 raise WalletNotFoundError("Wallet owns no such DID: {}".format(did))
             raise IndyErrorHandler.wrap_error(
-                x_indy, "Wallet {} error".format(self.name), WalletError
+                x_indy, "Wallet {} error".format(self.opened.name), WalletError
             ) from x_indy
 
         return verkey
@@ -154,12 +154,12 @@ class IndyWallet(BaseWallet):
 
         """
         try:
-            await indy.did.replace_keys_apply(self.wallet.handle, did)
+            await indy.did.replace_keys_apply(self.opened.handle, did)
         except IndyError as x_indy:
             if x_indy.error_code == ErrorCode.WalletItemNotFound:
                 raise WalletNotFoundError("Wallet owns no such DID: {}".format(did))
             raise IndyErrorHandler.wrap_error(
-                x_indy, "Wallet {} error".format(self.name), WalletError
+                x_indy, "Wallet {} error".format(self.opened.name), WalletError
             ) from x_indy
 
     async def create_local_did(
@@ -190,13 +190,13 @@ class IndyWallet(BaseWallet):
         # crypto_type, cid - optional parameters skipped
         try:
             did, verkey = await indy.did.create_and_store_my_did(
-                self.wallet.handle, did_json
+                self.opened.handle, did_json
             )
         except IndyError as x_indy:
             if x_indy.error_code == ErrorCode.DidAlreadyExistsError:
                 raise WalletDuplicateError("DID already present in wallet")
             raise IndyErrorHandler.wrap_error(
-                x_indy, "Wallet {} error".format(self.name), WalletError
+                x_indy, "Wallet {} error".format(self.opened.name), WalletError
             ) from x_indy
         if metadata:
             await self.replace_local_did_metadata(did, metadata)
@@ -212,7 +212,7 @@ class IndyWallet(BaseWallet):
             A list of locally stored DIDs as `DIDInfo` instances
 
         """
-        info_json = await indy.did.list_my_dids_with_meta(self.wallet.handle)
+        info_json = await indy.did.list_my_dids_with_meta(self.opened.handle)
         info = json.loads(info_json)
         ret = []
         for did in info:
@@ -242,12 +242,12 @@ class IndyWallet(BaseWallet):
         """
 
         try:
-            info_json = await indy.did.get_my_did_with_meta(self.wallet.handle, did)
+            info_json = await indy.did.get_my_did_with_meta(self.opened.handle, did)
         except IndyError as x_indy:
             if x_indy.error_code == ErrorCode.WalletItemNotFound:
                 raise WalletNotFoundError("Unknown DID: {}".format(did))
             raise IndyErrorHandler.wrap_error(
-                x_indy, "Wallet {} error".format(self.name), WalletError
+                x_indy, "Wallet {} error".format(self.opened.name), WalletError
             ) from x_indy
         info = json.loads(info_json)
         return DIDInfo(
@@ -288,7 +288,7 @@ class IndyWallet(BaseWallet):
         """
         meta_json = json.dumps(metadata or {})
         await self.get_local_did(did)  # throw exception if undefined
-        await indy.did.set_did_metadata(self.wallet.handle, did, meta_json)
+        await indy.did.set_did_metadata(self.opened.handle, did, meta_json)
 
     async def set_did_endpoint(
         self,
@@ -353,7 +353,7 @@ class IndyWallet(BaseWallet):
             raise WalletError("Verkey not provided")
         try:
             result = await indy.crypto.crypto_sign(
-                self.wallet.handle, from_verkey, message
+                self.opened.handle, from_verkey, message
             )
         except IndyError:
             raise WalletError("Exception when signing message")
@@ -393,7 +393,7 @@ class IndyWallet(BaseWallet):
                 result = False
             else:
                 raise IndyErrorHandler.wrap_error(
-                    x_indy, "Wallet {} error".format(self.name), WalletError
+                    x_indy, "Wallet {} error".format(self.opened.name), WalletError
                 ) from x_indy
         return result
 
@@ -420,7 +420,7 @@ class IndyWallet(BaseWallet):
             raise WalletError("Message not provided")
         try:
             result = await indy.crypto.pack_message(
-                self.wallet.handle, message, to_verkeys, from_verkey
+                self.opened.handle, message, to_verkeys, from_verkey
             )
         except IndyError as x_indy:
             raise IndyErrorHandler.wrap_error(
@@ -448,7 +448,7 @@ class IndyWallet(BaseWallet):
             raise WalletError("Message not provided")
         try:
             unpacked_json = await indy.crypto.unpack_message(
-                self.wallet.handle, enc_message
+                self.opened.handle, enc_message
             )
         except IndyError:
             raise WalletError("Exception when unpacking message")

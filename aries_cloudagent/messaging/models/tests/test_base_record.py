@@ -127,8 +127,6 @@ class TestBaseRecord(AsyncTestCase):
 
     async def test_retrieve_by_tag_filter_multi_x_delete(self):
         session = InMemoryProfile.test_session()
-        basic_storage = BasicStorage()
-        session.context.injector.bind_instance(BaseStorage, basic_storage)
         records = []
         for i in range(3):
             records.append(ARecordImpl(a="1", b=str(i), code="one"))
@@ -141,8 +139,6 @@ class TestBaseRecord(AsyncTestCase):
 
     async def test_save_x(self):
         session = InMemoryProfile.test_session()
-        basic_storage = BasicStorage()
-        session.context.injector.bind_instance(BaseStorage, basic_storage)
         rec = ARecordImpl(a="1", b="0", code="one")
         with async_mock.patch.object(
             session, "inject", async_mock.CoroutineMock()

@@ -3,18 +3,23 @@ from asynctest import mock as async_mock
 
 from aiohttp import web as aio_web
 
-from .....config.injection_context import InjectionContext
+from .....core.in_memory import InMemoryProfile
 from .....messaging.request_context import RequestContext
 
 from .. import routes as test_module
 
 
 class TestIntroductionRoutes(AsyncTestCase):
-    async def test_introduction_start_no_service(self):
-        context = RequestContext(base_context=InjectionContext(enforce_typing=False))
+    async def setUp(self):
+        self.session = InMemoryProfile.test_session()
+        self.context = RequestContext(self.session.profile)
 
+    async def test_introduction_start_no_service(self):
         mock_req = async_mock.MagicMock()
-        mock_req.app = {"request_context": context, "outbound_message_router": None}
+        mock_req.app = {
+            "request_context": self.context,
+            "outbound_message_router": None,
+        }
         mock_req.json = async_mock.CoroutineMock(
             return_value={
                 "my_seed": "my_seed",
@@ -37,10 +42,11 @@ class TestIntroductionRoutes(AsyncTestCase):
             await test_module.introduction_start(mock_req)
 
     async def test_introduction_start(self):
-        context = RequestContext(base_context=InjectionContext(enforce_typing=False))
-
         mock_req = async_mock.MagicMock()
-        mock_req.app = {"request_context": context, "outbound_message_router": None}
+        mock_req.app = {
+            "request_context": self.context,
+            "outbound_message_router": None,
+        }
         mock_req.json = async_mock.CoroutineMock(
             return_value={
                 "my_seed": "my_seed",
@@ -62,7 +68,7 @@ class TestIntroductionRoutes(AsyncTestCase):
         mock_conn_rec.serialize = async_mock.MagicMock()
 
         with async_mock.patch.object(
-            context, "inject", async_mock.CoroutineMock()
+            self.context, "inject", async_mock.CoroutineMock()
         ) as mock_ctx_inject, async_mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
@@ -80,10 +86,11 @@ class TestIntroductionRoutes(AsyncTestCase):
             mock_response.assert_called_once_with({})
 
     async def test_introduction_start_x(self):
-        context = RequestContext(base_context=InjectionContext(enforce_typing=False))
-
         mock_req = async_mock.MagicMock()
-        mock_req.app = {"request_context": context, "outbound_message_router": None}
+        mock_req.app = {
+            "request_context": self.context,
+            "outbound_message_router": None,
+        }
         mock_req.json = async_mock.CoroutineMock(
             return_value={
                 "my_seed": "my_seed",
@@ -105,7 +112,7 @@ class TestIntroductionRoutes(AsyncTestCase):
         mock_conn_rec.serialize = async_mock.MagicMock()
 
         with async_mock.patch.object(
-            context, "inject", async_mock.CoroutineMock()
+            self.context, "inject", async_mock.CoroutineMock()
         ) as mock_ctx_inject:
             mock_ctx_inject.return_value = async_mock.MagicMock(
                 start_introduction=async_mock.CoroutineMock(
