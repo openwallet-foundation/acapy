@@ -462,6 +462,13 @@ class GeneralGroup(ArgumentGroup):
             env_var="ACAPY_TAILS_SERVER_BASE_URL",
             help="Sets the base url of the tails server in use.",
         )
+        parser.add_argument(
+            "--tails-server-upload-url",
+            type=str,
+            metavar="<tails-server-upload-url>",
+            env_var="ACAPY_TAILS_SERVER_UPLOAD_URL",
+            help="Sets the upload url of the tails server.",
+        )
 
     def get_settings(self, args: Namespace) -> dict:
         """Extract general settings."""
@@ -483,6 +490,8 @@ class GeneralGroup(ArgumentGroup):
             settings["read_only_ledger"] = True
         if args.tails_server_base_url:
             settings["tails_server_base_url"] = args.tails_server_base_url
+        if args.tails_server_upload_url:
+            settings["tails_server_upload_url"] = args.tails_server_upload_url
         return settings
 
 
