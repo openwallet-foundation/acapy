@@ -175,17 +175,6 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
             await registry_record.set_tails_file_public_uri(
                 context, f"{tails_base_url}/{registry_record.revoc_reg_id}"
             )
-            await registry_record.send_def(context)
-            await registry_record.send_entry(context)
-
-            # stage pending registry independent of whether tails server is OK
-            pending_registry_record = await revoc.init_issuer_registry(
-                registry_record.cred_def_id,
-                max_cred_num=registry_record.max_cred_num,
-            )
-            ensure_future(
-                pending_registry_record.stage_pending_registry(context, max_attempts=16)
-            )
 
             tails_server: BaseTailsServer = await context.inject(BaseTailsServer)
             (upload_success, reason) = await tails_server.upload_tails_file(
