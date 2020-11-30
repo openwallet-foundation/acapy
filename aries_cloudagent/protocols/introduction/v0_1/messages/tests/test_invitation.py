@@ -5,7 +5,7 @@ from unittest import mock, TestCase
 from ......wallet.util import naked_to_did_key
 from .....out_of_band.v1_0.message_types import INVITATION as OOB_INVITATION
 from .....out_of_band.v1_0.messages.invitation import (
-    InvitationMessage as OOBInvitationMessage
+    InvitationMessage as OOBInvitationMessage,
 )
 from .....out_of_band.v1_0.messages.service import Service as OOBService
 from .....didcomm_prefix import DIDCommPrefix

@@ -13,7 +13,7 @@ from .....wallet.util import naked_to_did_key
 from ....didcomm_prefix import DIDCommPrefix
 from ....out_of_band.v1_0.message_types import INVITATION as OOB_INVITATION
 from ....out_of_band.v1_0.messages.invitation import (
-    InvitationMessage as OOBInvitationMessage
+    InvitationMessage as OOBInvitationMessage,
 )
 from ....out_of_band.v1_0.messages.service import Service as OOBService
 
@@ -32,7 +32,7 @@ class TestIntroductionRoutes(AsyncTestCase):
         self.context = InjectionContext(enforce_typing=False)
         self.context.injector.bind_instance(BaseStorage, self.storage)
         self.oob_invi_msg = OOBInvitationMessage(
-            label=TEST_LABEL, 
+            label=TEST_LABEL,
             handshake_protocols=[DIDCommPrefix.qualify_current(OOB_INVITATION)],
             service=[
                 OOBService(
@@ -45,7 +45,6 @@ class TestIntroductionRoutes(AsyncTestCase):
                 )
             ],
         )
-
 
     async def test_service_start_introduction_no_init_conn_rec(self):
         service = await demo_service.DemoIntroductionService.service_handler()(

@@ -1017,7 +1017,7 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
             with self.assertRaises(DIDXManagerError):
                 await self.manager.accept_complete(mock_complete, receipt)
 
-    '''
+    """
     async def test_create_static_connection(self):
         with async_mock.patch.object(
             ConnRecord, "save", autospec=True
@@ -1058,9 +1058,9 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
             )
 
             assert ConnRecord.State.get(conn_rec.state) is ConnRecord.State.COMPLETED
-    '''
+    """
 
-    '''
+    """
     async def test_find_connection_retrieve_by_did(self):
         with async_mock.patch.object(
             ConnRecord, "retrieve_by_did", async_mock.CoroutineMock()
@@ -1218,7 +1218,7 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
             mock_mgr_find_conn.return_value = mock_conn
 
             assert await self.manager.resolve_inbound_connection(receipt)
-    '''
+    """
 
     async def test_create_did_document(self):
         did_info = DIDInfo(
@@ -1410,7 +1410,7 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
         assert did == TestConfig.test_target_did
         await self.manager.remove_keys_for_did(TestConfig.test_target_did)
 
-    '''
+    """
     async def test_get_connection_targets_invitation_no_did(self):
         wallet: BaseWallet = await self.context.inject(BaseWallet)
         await wallet.create_local_did(
@@ -1685,7 +1685,7 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
             target.sender_key
             == (await wallet.get_local_did(TestConfig.test_did)).verkey
         )
-    '''
+    """
 
     """
     async def test_fetch_connection_targets_conn_initiator_multi_no_their_did(self):
@@ -1747,7 +1747,7 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
         with self.assertRaises(DIDXManagerError):
             self.manager.diddoc_connection_targets(x_did_doc, TestConfig.test_verkey)
 
-    '''
+    """
     async def test_establish_inbound(self):
         wallet: BaseWallet = await self.context.inject(BaseWallet)
         await wallet.create_local_did(
@@ -1877,4 +1877,4 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
             mock_conn_rec_query.return_value[1].save.assert_called_once_with(
                 self.context
             )
-    '''
+    """

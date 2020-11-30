@@ -13,7 +13,7 @@ from .. import routes as test_module
 
 
 class TestDIDExchangeConnRoutes(AsyncTestCase):
-    '''
+    """
     async def test_didx_list(self):
         context = RequestContext(base_context=InjectionContext(enforce_typing=False))
         context.default_endpoint = "http://1.2.3.4:8081"  # for coverage
@@ -174,7 +174,7 @@ class TestDIDExchangeConnRoutes(AsyncTestCase):
 
             with self.assertRaises(test_module.web.HTTPBadRequest):
                 await test_module.didx_retrieve_connection(mock_req)
-    '''
+    """
 
     async def test_didx_receive_invitation(self):
         context = RequestContext(base_context=InjectionContext(enforce_typing=False))
@@ -374,7 +374,7 @@ class TestDIDExchangeConnRoutes(AsyncTestCase):
             with self.assertRaises(test_module.web.HTTPBadRequest):
                 await test_module.didx_accept_request(mock_req)
 
-    '''
+    """
     async def test_didx_establish_inbound(self):
         context = RequestContext(base_context=InjectionContext(enforce_typing=False))
         mock_req = async_mock.MagicMock()
@@ -442,9 +442,9 @@ class TestDIDExchangeConnRoutes(AsyncTestCase):
             )
             with self.assertRaises(test_module.web.HTTPBadRequest):
                 await test_module.didx_establish_inbound(mock_req)
-    '''
+    """
 
-    '''
+    """
     async def test_didx_remove(self):
         context = RequestContext(base_context=InjectionContext(enforce_typing=False))
         mock_req = async_mock.MagicMock()
@@ -503,9 +503,9 @@ class TestDIDExchangeConnRoutes(AsyncTestCase):
 
             with self.assertRaises(test_module.web.HTTPBadRequest):
                 await test_module.didx_remove_connection(mock_req)
-    '''
+    """
 
-    '''
+    """
     async def test_didx_create_static(self):
         context = RequestContext(base_context=InjectionContext(enforce_typing=False))
         mock_req = async_mock.MagicMock()
@@ -604,7 +604,7 @@ class TestDIDExchangeConnRoutes(AsyncTestCase):
 
             with self.assertRaises(test_module.web.HTTPBadRequest):
                 await test_module.didx_create_static(mock_req)
-    '''
+    """
 
     async def test_register(self):
         mock_app = async_mock.MagicMock()
