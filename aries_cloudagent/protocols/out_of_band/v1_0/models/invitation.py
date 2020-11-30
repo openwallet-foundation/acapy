@@ -19,6 +19,7 @@ class InvitationRecord(BaseExchangeRecord):
     RECORD_TYPE = "oob-invitation"
     RECORD_ID_NAME = "invitation_id"
     WEBHOOK_TOPIC = "oob-invitation"
+    TAG_NAMES = {"invi_msg_id"}
 
     STATE_INITIAL = "initial"
     STATE_AWAIT_RESPONSE = "await_response"
@@ -29,16 +30,22 @@ class InvitationRecord(BaseExchangeRecord):
         *,
         invitation_id: str = None,
         state: str = None,
+        invi_msg_id: str = None,
         invitation: dict = None,
         trace: bool = False,
+        auto_accept: bool = False,
+        multi_use: bool = False,
         **kwargs,
     ):
         """Initialize a new InvitationRecord."""
         super().__init__(invitation_id, state, trace=trace, **kwargs)
         self._id = invitation_id
-        self.invitation = invitation
         self.state = state
+        self.invi_msg_id = invi_msg_id
+        self.invitation = invitation
         self.trace = trace
+        self.auto_accept = auto_accept
+        self.multi_use = multi_use
 
     def __eq__(self, other: Any) -> bool:
         """Comparison between records."""
@@ -54,7 +61,13 @@ class InvitationRecord(BaseExchangeRecord):
         """Accessor for the JSON record value generated for this invitation."""
         return {
             prop: getattr(self, prop)
-            for prop in ("invitation_id", "invitation", "state", "trace")
+            for prop in (
+                "invitation",
+                "state",
+                "trace",
+                "auto_accept",
+                "multi_use",
+            )
         }
 
 
@@ -68,7 +81,7 @@ class InvitationRecordSchema(BaseExchangeSchema):
 
     invitation_id = fields.Str(
         required=False,
-        description="Invitation identifier",
+        description="Invitation record identifier",
         example=UUIDFour.EXAMPLE,
     )
     state = fields.Str(
@@ -76,7 +89,20 @@ class InvitationRecordSchema(BaseExchangeSchema):
         description="Out of band message exchange state",
         example=InvitationRecord.STATE_AWAIT_RESPONSE,
     )
+    invi_msg_id = fields.Str(
+        required=False,
+        description="Invitation message identifier",
+        example=UUIDFour.EXAMPLE,
+    )
     invitation = fields.Dict(
         required=False,
         description="Out of band invitation object",
+    )
+    auto_accept = fields.Bool(
+        required=False,
+        description="Whether to auto-accept connection request",
+    )
+    multi_use = fields.Bool(
+        required=False,
+        description="Whether invitation is for multiple use",
     )

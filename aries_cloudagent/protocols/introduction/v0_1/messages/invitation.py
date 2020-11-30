@@ -3,7 +3,7 @@
 from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
-from ...out_of_band.v1_0.messages.invitation import (
+from ....out_of_band.v1_0.messages.invitation import (
     InvitationMessage as OOBInvitationMessage,
     InvitationMessageSchema as OOBInvitationMessageSchema,
 )

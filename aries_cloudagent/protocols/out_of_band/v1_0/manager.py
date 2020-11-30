@@ -90,6 +90,14 @@ class OutOfBandManager:
         """
         wallet: BaseWallet = await self.context.inject(BaseWallet)
 
+        accept = bool(
+            auto_accept
+            or (
+                auto_accept is None
+                and self.context.settings.get("debug.auto_accept_requests")
+            )
+        )
+
         message_attachments = []
         for atch in attachments or []:
             a_type = atch.get("type")
@@ -151,17 +159,6 @@ class OutOfBandManager:
 
             if not my_endpoint:
                 my_endpoint = self.context.settings.get("default_endpoint")
-            accept = (
-                ConnRecord.ACCEPT_AUTO
-                if (
-                    auto_accept
-                    or (
-                        auto_accept is None
-                        and self.context.settings.get("debug.auto_accept_requests")
-                    )
-                )
-                else ConnRecord.ACCEPT_MANUAL
-            )
 
             # Create and store new invitation key
             connection_key = await wallet.create_signing_key()
@@ -193,19 +190,21 @@ class OutOfBandManager:
                 invitation_key=connection_key.verkey,
                 their_role=ConnRecord.Role.REQUESTER.rfc23,
                 state=ConnRecord.State.INVITATION.rfc23,
-                accept=accept,
+                accept=ConnRecord.ACCEPT_AUTO if accept else ConnRecord.ACCEPT_MANUAL,
                 invitation_mode=invitation_mode,
                 alias=alias,
             )
             import json
-            print(f'\n\noo oo OOB mgr created conn rec {json.dumps(conn_rec.serialize(), indent=4)}')
             await conn_rec.save(self.context, reason="Created new invitation")
             await conn_rec.attach_invitation(self.context, invi_msg)
 
         # Create invitation record
         invi_rec = InvitationRecord(
             state=InvitationRecord.STATE_INITIAL,
+            invi_msg_id=invi_msg._id,
             invitation=invi_msg.serialize(),
+            auto_accept=accept,
+            multi_use=multi_use,
         )
         await invi_rec.save(self.context, reason="Created new invitation")
         return invi_rec

@@ -49,6 +49,7 @@ class DIDXReceiveInvitationRequestSchema(OOBInvitationSchema):
     service = fields.Field()
 
 
+'''
 class DIDXConnStaticRequestSchema(OpenAPISchema):
     """Request schema for a new static connection."""
 
@@ -81,6 +82,7 @@ class DIDXConnStaticResultSchema(OpenAPISchema):
         description="Remote verification key", required=True, **INDY_RAW_PUBLIC_KEY
     )
     record = fields.Nested(ConnRecordSchema, required=True)
+'''
 
 
 class DIDXConnsListQueryStringSchema(OpenAPISchema):
@@ -288,7 +290,9 @@ async def didx_receive_invitation(request: web.BaseRequest):
         auto_accept = json.loads(request.query.get("auto_accept", "null"))
         alias = request.query.get("alias")
         conn_rec = await didx_mgr.receive_invitation(
-            invitation, auto_accept=auto_accept, alias=alias
+            invitation,
+            auto_accept=auto_accept,
+            alias=alias,
         )
         result = conn_rec.serialize()
     except (DIDXManagerError, StorageError, BaseModelError) as err:
@@ -374,6 +378,7 @@ async def didx_accept_request(request: web.BaseRequest):
     return web.json_response(result)
 
 
+'''
 @docs(
     tags=["did-exchange"], summary="Assign another connection as the inbound connection"
 )
@@ -402,6 +407,7 @@ async def didx_establish_inbound(request: web.BaseRequest):
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     return web.json_response({})
+'''
 
 
 @docs(tags=["did-exchange"], summary="Remove an existing connection record")
@@ -427,6 +433,7 @@ async def didx_remove_connection(request: web.BaseRequest):
     return web.json_response({})
 
 
+'''
 @docs(tags=["did-exchange"], summary="Create a new static connection")
 @request_schema(DIDXConnStaticRequestSchema())
 @response_schema(DIDXConnStaticResultSchema(), 200)
@@ -468,7 +475,7 @@ async def didx_create_static(request: web.BaseRequest):
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     return web.json_response(response)
-
+'''
 
 async def register(app: web.Application):
     """Register routes."""
@@ -485,17 +492,17 @@ async def register(app: web.Application):
                 didx_retrieve_connection,
                 allow_head=False,
             ),
-            web.post("/didexchange/create-static", didx_create_static),
+            # web.post("/didexchange/create-static", didx_create_static),
             web.post("/didexchange/receive-invitation", didx_receive_invitation),
             web.post(
                 "/didexchange/{conn_id}/accept-invitation",
                 didx_accept_invitation,
             ),
             web.post("/didexchange/{conn_id}/accept-request", didx_accept_request),
-            web.post(
-                "/didexchange/{conn_id}/establish-inbound/{ref_id}",
-                didx_establish_inbound,
-            ),
+            # web.post(
+            #     "/didexchange/{conn_id}/establish-inbound/{ref_id}",
+            #     didx_establish_inbound,
+            # ),
             web.post("/didexchange/{conn_id}/remove", didx_remove_connection),
         ]
     )

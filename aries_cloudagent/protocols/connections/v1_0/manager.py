@@ -107,8 +107,6 @@ class ConnectionManager:
                 "routing_keys": ["9EH5gYEeNc3z7PYXmd53d5x6qAfCNrqQqEB4nS7Zfu6K"],
             }
 
-        Currently, only peer DID is supported.
-
         Args:
             my_label: label for this connection
             my_endpoint: endpoint where other party can reach me

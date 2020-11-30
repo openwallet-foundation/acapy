@@ -178,17 +178,6 @@ async def debug_middleware(request: web.BaseRequest, handler: Coroutine):
         body = await request.text() if request.body_exists else None
         LOGGER.debug(f"Body: {body}")
 
-    print(f"\n\n>> Incoming request: {request.method} {request.path_qs}")
-    print(f"  >> Match info: {request.match_info}")
-    body = await request.text() if request.body_exists else None
-    if body:
-        print(f"  >> Body: {type(body)}: len {len(body)}")
-        try:
-            jj = await request.json()
-            print(f".. {jj}")
-        except Exception:
-            print("(nevermind)")
-
     return await handler(request)
 
 

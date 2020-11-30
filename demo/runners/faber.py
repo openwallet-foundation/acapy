@@ -24,9 +24,7 @@ from runners.support.utils import (
 
 CRED_PREVIEW_TYPE = "https://didcomm.org/issue-credential/1.0/credential-preview"
 SELF_ATTESTED = os.getenv("SELF_ATTESTED")
-
 LOGGER = logging.getLogger(__name__)
-
 TAILS_FILE_COUNT = int(os.getenv("TAILS_FILE_COUNT", 100))
 
 
@@ -69,7 +67,7 @@ class FaberAgent(DemoAgent):
 
     async def handle_connections(self, message):
         conn_id = message["connection_id"]
-        if not self.connection_id and message["state"] == "invitation":
+        if (not self.connection_id) and (message["state"] == "invitation"):
             self.connection_id = conn_id
         if conn_id == self.connection_id:
             if message["state"] == "active" and not self._connection_ready.done():

@@ -60,8 +60,8 @@ class AliceAgent(DemoAgent):
             and message["state"] == "active"
             and not self._connection_ready.done()
         ):
-                self.log("Connected")
-                self._connection_ready.set_result(True)
+            self.log("Connected")
+            self._connection_ready.set_result(True)
 
     async def handle_issue_credential(self, message):
         state = message["state"]
@@ -320,7 +320,8 @@ if __name__ == "__main__":
             import pydevd_pycharm
 
             print(
-                f"Alice remote debugging to {PYDEVD_PYCHARM_HOST}:{PYDEVD_PYCHARM_CONTROLLER_PORT}"
+                "Alice remote debugging to "
+                f"{PYDEVD_PYCHARM_HOST}:{PYDEVD_PYCHARM_CONTROLLER_PORT}"
             )
             pydevd_pycharm.settrace(
                 host=PYDEVD_PYCHARM_HOST,

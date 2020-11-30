@@ -4,7 +4,7 @@ import json
 import logging
 
 from aiohttp import web
-from aiohttp_apispec import docs, request_schema
+from aiohttp_apispec import docs, querystring_schema, request_schema
 from marshmallow import fields
 from marshmallow.exceptions import ValidationError
 
@@ -39,10 +39,23 @@ class InvitationReceiveRequestSchema(InvitationMessageSchema):
     service = fields.Field()
 
 
+class InvitationCreateQueryStringSchema(OpenAPISchema):
+    """Parameters and validators for create invitation request query string."""
+
+    auto_accept = fields.Boolean(
+        description="Auto-accept connection (default as per configuration)",
+        required=False,
+    )
+    multi_use = fields.Boolean(
+        description="Create invitation for multiple use (default false)",
+        required=False,
+    )
+
 @docs(
     tags=["out-of-band"],
     summary="Create a new connection invitation",
 )
+@querystring_schema(InvitationCreateQueryStringSchema())
 @request_schema(InvitationCreateRequestSchema())
 async def invitation_create(request: web.BaseRequest):
     """
@@ -58,19 +71,21 @@ async def invitation_create(request: web.BaseRequest):
     context = request.app["request_context"]
 
     body = await request.json() if request.body_exists else {}
-
     attachments = body.get("attachments")
     include_handshake = body.get("include_handshake")
     use_public_did = body.get("use_public_did")
-    multi_use = json.loads(request.query.get("multi_use", "false"))
-    oob_mgr = OutOfBandManager(context)
 
+    multi_use = json.loads(request.query.get("multi_use", "false"))
+    auto_accept = json.loads(request.query.get("auto_accept", "null"))
+
+    oob_mgr = OutOfBandManager(context)
     try:
         invitation = await oob_mgr.create_invitation(
+            auto_accept=auto_accept,
+            public=use_public_did,
+            include_handshake=include_handshake,
             multi_use=multi_use,
             attachments=attachments,
-            include_handshake=include_handshake,
-            public=use_public_did,
         )
     except (StorageNotFoundError, ValidationError, OutOfBandManagerError) as e:
         raise web.HTTPBadRequest(reason=str(e))

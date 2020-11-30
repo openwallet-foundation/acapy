@@ -32,6 +32,9 @@ from ....wallet.util import bytes_to_b58
 from ...out_of_band.v1_0.messages.invitation import (
     InvitationMessage as OOBInvitationMessage,
 )
+from ...out_of_band.v1_0.models.invitation import (
+    InvitationRecord as OOBInvitationRecord,
+)
 from ...routing.v1_0.manager import RoutingManager
 
 from .messages.complete import DIDXComplete
@@ -354,7 +357,7 @@ class DIDXManager:
         if invitation.service_blocks:
             pthid = invitation._id  # explicit
         else:
-            '''  # early try
+            '''  # early try: keep around until logic in code is proven sound
             pthid = did_doc.service[[s for s in did_doc.service][0]].id
             '''
             pthid = invitation.service_dids[0]  # should look like did:sov:abc...123
@@ -487,7 +490,17 @@ class DIDXManager:
         # Attach the connection request so it can be found and responded to
         await conn_rec.attach_request(self.context, request)
 
-        if conn_rec.accept == ConnRecord.ACCEPT_AUTO:
+        try:
+            invi_rec = await OOBInvitationRecord.retrieve_by_tag_filter(
+                self.context,
+                tag_filter={"invi_msg_id": request._thread.pthid},
+            )
+        except StorageNotFoundError:
+            raise DIDXManagerError(
+                f"No record of invitation {request._thread.pthid} "
+                f"for request {request._id}"
+            )
+        if invi_rec.auto_accept:
             response = await self.create_response(conn_rec)
             responder: BaseResponder = await self._context.inject(
                 BaseResponder, required=False
@@ -1121,6 +1134,7 @@ class DIDXManager:
                 )
         return targets
 
+    '''
     async def establish_inbound(
         self,
         conn_rec: ConnRecord,
@@ -1186,3 +1200,4 @@ class DIDXManager:
             if conn_info.verkey == recip_verkey:
                 conn_rec.routing_state = routing_state
                 await conn_rec.save(self.context)
+    '''

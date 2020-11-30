@@ -25,7 +25,6 @@ from ..protocols.connections.v1_0.manager import (
     ConnectionManager,
     ConnectionManagerError,
 )
-from ..protocols.didexchange.v1_0.manager import DIDXManager, DIDXManagerError
 from ..protocols.out_of_band.v1_0.manager import OutOfBandManager
 from ..protocols.out_of_band.v1_0.messages.invitation import InvitationMessage
 from ..transport.inbound.manager import InboundTransportManager
@@ -194,7 +193,7 @@ class Conductor:
 
         # Create a static connection for use by the test-suite
         if context.settings.get("debug.test_suite_endpoint"):
-            mgr = DIDXManager(self.context)
+            mgr = ConnectionManager(self.context)
             their_endpoint = context.settings["debug.test_suite_endpoint"]
             test_conn = await mgr.create_static_connection(
                 my_seed=hashlib.sha256(b"aries-protocol-test-subject").digest(),
