@@ -49,7 +49,7 @@ class AcmeAgent(DemoAgent):
 
     async def handle_connections(self, message):
         conn_id = message["connection_id"]
-        if not self.connection_id and message["state"] == "invitation":
+        if (not self.connection_id) and message["state"] == "invitation":
             self.connection_id = conn_id
         if conn_id == self.connection_id:
             if message["state"] == "active" and not self._connection_ready.done():
@@ -148,9 +148,9 @@ async def main(start_port: int, show_timing: bool = False):
                 {"include_handshake": True},
             )
 
-        log_json(connection, label="Invitation response:")
-        log_msg("*****************")
-        log_msg(json.dumps(connection["invitation"]), label="Invitation:", color=None)
+        log_msg(
+            json.dumps(invi_msg["invitation"]), label="Invitation Data:", color=None
+        )
         log_msg("*****************")
 
         log_msg("Waiting for connection...")
