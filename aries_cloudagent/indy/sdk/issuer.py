@@ -8,12 +8,10 @@ import indy.anoncreds
 import indy.blob_storage
 from indy.error import AnoncredsRevocationRegistryFullError, IndyError, ErrorCode
 
-from ...config.injection_context import InjectionContext
+from ...indy.sdk.profile import IndySdkProfile
 from ...messaging.util import encode
 from ...revocation.models.issuer_cred_rev_record import IssuerCredRevRecord
-from ...storage.base import BaseStorage
 from ...storage.error import StorageError
-from ...storage.indy import IndyStorage
 
 from ..issuer import (
     IndyIssuer,
@@ -32,17 +30,15 @@ LOGGER = logging.getLogger(__name__)
 class IndySdkIssuer(IndyIssuer):
     """Indy issuer class."""
 
-    def __init__(self, wallet):
+    def __init__(self, profile: IndySdkProfile):
         """
         Initialize an IndyIssuer instance.
 
         Args:
-            wallet: IndyWallet instance
+            wallet: IndySdkProfile instance
 
         """
-        self.wallet = wallet
-        self.context = InjectionContext(enforce_typing=False)
-        self.context.injector.bind_instance(BaseStorage, IndyStorage(self.wallet))
+        self.profile = profile
 
     async def create_schema(
         self,
@@ -85,7 +81,7 @@ class IndySdkIssuer(IndyIssuer):
         """
         try:
             await indy.anoncreds.issuer_create_credential_offer(
-                self.wallet.handle, credential_definition_id
+                self.profile.wallet.handle, credential_definition_id
             )
             return True
         except IndyError as err:
@@ -131,7 +127,7 @@ class IndySdkIssuer(IndyIssuer):
                 credential_definition_id,
                 credential_definition_json,
             ) = await indy.anoncreds.issuer_create_and_store_credential_def(
-                self.wallet.handle,
+                self.profile.wallet.handle,
                 origin_did,
                 json.dumps(schema),
                 tag or DEFAULT_CRED_DEF_TAG,
@@ -155,7 +151,7 @@ class IndySdkIssuer(IndyIssuer):
             "Exception when creating credential offer", IndyIssuerError
         ):
             credential_offer_json = await indy.anoncreds.issuer_create_credential_offer(
-                self.wallet.handle, credential_definition_id
+                self.profile.wallet.handle, credential_definition_id
             )
 
         return credential_offer_json
@@ -211,12 +207,13 @@ class IndySdkIssuer(IndyIssuer):
         )
 
         try:
+            session = await self.profile.session()
             (
                 credential_json,
                 cred_rev_id,
                 _,  # rev_reg_delta_json only for ISSUANCE_ON_DEMAND, excluded by design
             ) = await indy.anoncreds.issuer_create_credential(
-                self.wallet.handle,
+                self.profile.wallet.handle,
                 json.dumps(credential_offer),
                 json.dumps(credential_request),
                 json.dumps(encoded_values),
@@ -232,7 +229,7 @@ class IndySdkIssuer(IndyIssuer):
                     cred_rev_id=cred_rev_id,
                 )
                 await issuer_cr_rec.save(
-                    self.context,
+                    session,
                     reason=(
                         "Created issuer cred rev record for "
                         f"rev reg id {rev_reg_id}, {cred_rev_id}"
@@ -288,19 +285,20 @@ class IndySdkIssuer(IndyIssuer):
                 "Exception when revoking credential", IndyIssuerError
             ):
                 try:
+                    session = await self.profile.session()
                     delta_json = await indy.anoncreds.issuer_revoke_credential(
-                        self.wallet.handle,
+                        self.profile.wallet.handle,
                         tails_reader_handle,
                         rev_reg_id,
                         cred_rev_id,
                     )
                     issuer_cr_rec = await IssuerCredRevRecord.retrieve_by_ids(
-                        self.context,
+                        session,
                         rev_reg_id,
                         cred_rev_id,
                     )
                     await issuer_cr_rec.set_state(
-                        self.context, IssuerCredRevRecord.STATE_REVOKED
+                        session, IssuerCredRevRecord.STATE_REVOKED
                     )
 
                 except IndyError as err:
@@ -397,7 +395,7 @@ class IndySdkIssuer(IndyIssuer):
                 rev_reg_def_json,
                 rev_reg_entry_json,
             ) = await indy.anoncreds.issuer_create_and_store_revoc_reg(
-                self.wallet.handle,
+                self.profile.wallet.handle,
                 origin_did,
                 revoc_def_type,
                 tag,

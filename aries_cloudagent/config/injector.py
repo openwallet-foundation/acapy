@@ -11,7 +11,7 @@ class Injector(BaseInjector):
     """Injector implementation with static and dynamic bindings."""
 
     def __init__(
-        self, settings: Mapping[str, object] = None, enforce_typing: bool = True
+        self, settings: Mapping[str, object] = None, *, enforce_typing: bool = True
     ):
         """Initialize an `Injector`."""
         self.enforce_typing = enforce_typing

@@ -35,6 +35,10 @@ class IndySdkProfile(Profile):
         """Accessor for the profile name."""
         return self.opened.name
 
+    @property
+    def wallet(self) -> IndyOpenWallet:
+        return self.opened
+
     def session(self, context: InjectionContext = None) -> "ProfileSession":
         """Start a new interactive session with no transaction support requested."""
         return IndySdkProfileSession(self, context=context)
@@ -93,12 +97,8 @@ class IndySdkProfileSession(ProfileSession):
         injector.bind_provider(
             IndyIssuer,
             ClassProvider(
-                "aries_cloudagent.indy.sdk.issuer.IndySdkIssuer", self.profile.opened
+                "aries_cloudagent.indy.sdk.issuer.IndySdkIssuer", self.profile
             ),
-        )
-        injector.bind_provider(
-            BaseLedger,
-            ClassProvider("aries_cloudagent.ledger.provider.LedgerProvider"),
         )
         injector.bind_provider(
             IndyVerifier,
@@ -106,6 +106,10 @@ class IndySdkProfileSession(ProfileSession):
                 "aries_cloudagent.indy.sdk.verifier.IndySdkVerifier",
                 self.profile.opened,
             ),
+        )
+        injector.bind_provider(
+            BaseLedger,
+            ClassProvider("aries_cloudagent.ledger.provider.LedgerProvider"),
         )
 
 

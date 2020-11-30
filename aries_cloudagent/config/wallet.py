@@ -37,8 +37,8 @@ async def wallet_config(
         root_profile = await mgr.open(profile_cfg)
 
     if provision:
-        # if root_profile.backend != "indy":
-        #     raise ConfigError("Cannot provision a non-Indy wallet type")
+        if root_profile.backend != "indy":
+            raise ConfigError("Cannot provision a non-Indy wallet type")
         if root_profile.created:
             print("Created new profile")
         else:
@@ -56,7 +56,9 @@ async def wallet_config(
 
     if public_did_info:
         public_did = public_did_info.did
+        print(public_did, seed_to_did(wallet_seed), bool(wallet_seed), wallet_seed)
         if wallet_seed and seed_to_did(wallet_seed) != public_did:
+            print(context.settings.get("wallet.replace_public_did"))
             if context.settings.get("wallet.replace_public_did"):
                 replace_did_info = await wallet.create_local_did(wallet_seed)
                 public_did = replace_did_info.did

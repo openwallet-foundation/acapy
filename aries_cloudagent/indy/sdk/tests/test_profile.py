@@ -9,7 +9,7 @@ async def profile():
     yield IndySdkProfile("test-profile")
 
 
-class TestInMemoryWallet:
+class TestIndySdkProfile:
     @pytest.mark.asyncio
     async def test_properties(self, profile):
         assert profile.name
@@ -20,3 +20,5 @@ class TestInMemoryWallet:
         assert profile.wallet.created
         assert profile.wallet.master_secret_id == profile.wallet.name
         assert profile.wallet._wallet_config
+
+    # FIXME needs more coverage

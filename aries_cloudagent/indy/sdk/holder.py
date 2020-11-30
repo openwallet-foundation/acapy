@@ -9,6 +9,7 @@ from typing import Sequence, Tuple, Union
 import indy.anoncreds
 from indy.error import ErrorCode, IndyError
 
+from ...indy.sdk.wallet_setup import IndyOpenWallet
 from ...ledger.base import BaseLedger
 from ...storage.indy import IndyStorage
 from ...storage.error import StorageError, StorageNotFoundError
@@ -26,12 +27,12 @@ LOGGER = logging.getLogger(__name__)
 class IndySdkHolder(IndyHolder):
     """Indy holder class."""
 
-    def __init__(self, wallet):
+    def __init__(self, wallet: IndyOpenWallet):
         """
         Initialize an IndyHolder instance.
 
         Args:
-            wallet: IndyWallet instance
+            wallet: IndyOpenWallet instance
 
         """
         self.wallet = wallet

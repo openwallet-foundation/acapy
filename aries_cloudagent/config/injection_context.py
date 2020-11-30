@@ -61,7 +61,7 @@ class InjectionContext(BaseInjector):
     def update_settings(self, settings: Mapping[str, object]):
         """Update the scope with additional settings."""
         if settings:
-            self.injector.settings = self.injector.settings.extend(settings)
+            self.injector.settings.update(settings)
 
     def start_scope(
         self, scope_name: str, settings: Mapping[str, object] = None

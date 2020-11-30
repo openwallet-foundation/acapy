@@ -6,9 +6,13 @@ from asynctest import mock as async_mock
 
 from aiohttp.web import HTTPForbidden
 
+from ...config.injector import Injector
 from ...config.injection_context import InjectionContext
+from ...core.profile import Profile, ProfileSession
+from ...indy.holder import IndyHolder
 from ...ledger.base import BaseLedger
 from ...ledger.error import LedgerError
+from ...messaging.request_context import RequestContext
 from ...wallet.base import BaseWallet
 
 from .. import routes as test_module
@@ -16,10 +20,17 @@ from .. import routes as test_module
 
 class TestHolderRoutes(AsyncTestCase):
     def setUp(self):
-        self.context = InjectionContext(enforce_typing=False)
+        self.profile = async_mock.MagicMock(Profile)()
+        self.session = async_mock.MagicMock(ProfileSession)()
+        self.profile.session = async_mock.CoroutineMock(return_value=self.session)
+        self.injector = Injector(enforce_typing=False)
 
-        self.wallet = async_mock.create_autospec(BaseWallet)
-        self.context.injector.bind_instance(BaseWallet, self.wallet)
+        def inject(cls, required=True):
+            return self.injector.inject(cls, required=required)
+
+        self.session.inject = inject
+
+        self.context = RequestContext(self.profile)
 
         self.app = {
             "request_context": self.context,
@@ -30,12 +41,13 @@ class TestHolderRoutes(AsyncTestCase):
             app=self.app, match_info={"credential_id": "dummy"}
         )
 
-        request.app["request_context"].inject = async_mock.CoroutineMock(
-            return_value=async_mock.MagicMock(
+        self.injector.bind_instance(
+            IndyHolder,
+            async_mock.MagicMock(
                 get_credential=async_mock.CoroutineMock(
                     return_value=json.dumps({"hello": "world"})
                 )
-            )
+            ),
         )
 
         with async_mock.patch.object(
@@ -49,12 +61,13 @@ class TestHolderRoutes(AsyncTestCase):
         request = async_mock.MagicMock(
             app=self.app, match_info={"credential_id": "dummy"}
         )
-        request.app["request_context"].inject = async_mock.CoroutineMock(
-            return_value=async_mock.MagicMock(
+        self.injector.bind_instance(
+            IndyHolder,
+            async_mock.MagicMock(
                 get_credential=async_mock.CoroutineMock(
                     side_effect=test_module.WalletNotFoundError()
                 )
-            )
+            ),
         )
         with self.assertRaises(test_module.web.HTTPNotFound):
             await test_module.credentials_get(request)
@@ -67,14 +80,12 @@ class TestHolderRoutes(AsyncTestCase):
         )
 
         ledger = async_mock.create_autospec(BaseLedger)
-
-        request.app["request_context"].inject = async_mock.CoroutineMock(
-            side_effect=[
-                ledger,
-                async_mock.MagicMock(
-                    credential_revoked=async_mock.CoroutineMock(return_value=False)
-                ),
-            ]
+        self.injector.bind_instance(BaseLedger, ledger)
+        self.injector.bind_instance(
+            IndyHolder,
+            async_mock.MagicMock(
+                credential_revoked=async_mock.CoroutineMock(return_value=False)
+            ),
         )
 
         with async_mock.patch.object(
@@ -91,10 +102,6 @@ class TestHolderRoutes(AsyncTestCase):
             query={},
         )
 
-        request.app["request_context"].inject = async_mock.CoroutineMock(
-            return_value=None
-        )
-
         with self.assertRaises(test_module.web.HTTPForbidden):
             await test_module.credentials_revoked(request)
 
@@ -103,16 +110,14 @@ class TestHolderRoutes(AsyncTestCase):
             app=self.app, match_info={"credential_id": "dummy"}
         )
         ledger = async_mock.create_autospec(BaseLedger)
-
-        request.app["request_context"].inject = async_mock.CoroutineMock(
-            side_effect=[
-                ledger,
-                async_mock.MagicMock(
-                    credential_revoked=async_mock.CoroutineMock(
-                        side_effect=test_module.WalletNotFoundError("no such cred")
-                    )
-                ),
-            ]
+        self.injector.bind_instance(BaseLedger, ledger)
+        self.injector.bind_instance(
+            IndyHolder,
+            async_mock.MagicMock(
+                credential_revoked=async_mock.CoroutineMock(
+                    side_effect=test_module.WalletNotFoundError("no such cred")
+                )
+            ),
         )
 
         with self.assertRaises(test_module.web.HTTPNotFound):
@@ -123,16 +128,14 @@ class TestHolderRoutes(AsyncTestCase):
             app=self.app, match_info={"credential_id": "dummy"}
         )
         ledger = async_mock.create_autospec(BaseLedger)
-
-        request.app["request_context"].inject = async_mock.CoroutineMock(
-            side_effect=[
-                ledger,
-                async_mock.MagicMock(
-                    credential_revoked=async_mock.CoroutineMock(
-                        side_effect=test_module.LedgerError("down for maintenance")
-                    )
-                ),
-            ]
+        self.injector.bind_instance(BaseLedger, ledger)
+        self.injector.bind_instance(
+            IndyHolder,
+            async_mock.MagicMock(
+                credential_revoked=async_mock.CoroutineMock(
+                    side_effect=test_module.LedgerError("down for maintenance")
+                )
+            ),
         )
 
         with self.assertRaises(test_module.web.HTTPBadRequest):
@@ -143,10 +146,11 @@ class TestHolderRoutes(AsyncTestCase):
             app=self.app, match_info={"credential_id": "dummy"}
         )
 
-        request.app["request_context"].inject = async_mock.CoroutineMock(
-            return_value=async_mock.MagicMock(
+        self.injector.bind_instance(
+            IndyHolder,
+            async_mock.MagicMock(
                 get_mime_type=async_mock.CoroutineMock(return_value=None)
-            )
+            ),
         )
 
         with async_mock.patch.object(test_module.web, "json_response") as mock_response:
@@ -158,10 +162,11 @@ class TestHolderRoutes(AsyncTestCase):
             app=self.app, match_info={"credential_id": "dummy"}
         )
 
-        request.app["request_context"].inject = async_mock.CoroutineMock(
-            return_value=async_mock.MagicMock(
+        self.injector.bind_instance(
+            IndyHolder,
+            async_mock.MagicMock(
                 delete_credential=async_mock.CoroutineMock(return_value=None)
-            )
+            ),
         )
 
         with async_mock.patch.object(
@@ -175,12 +180,14 @@ class TestHolderRoutes(AsyncTestCase):
         request = async_mock.MagicMock(
             app=self.app, match_info={"credential_id": "dummy"}
         )
-        request.app["request_context"].inject = async_mock.CoroutineMock(
-            return_value=async_mock.MagicMock(
+
+        self.injector.bind_instance(
+            IndyHolder,
+            async_mock.MagicMock(
                 delete_credential=async_mock.CoroutineMock(
                     side_effect=test_module.WalletNotFoundError()
                 )
-            )
+            ),
         )
         with self.assertRaises(test_module.web.HTTPNotFound):
             await test_module.credentials_remove(request)
@@ -190,12 +197,13 @@ class TestHolderRoutes(AsyncTestCase):
             app=self.app, query={"start": "0", "count": "10"}
         )
 
-        request.app["request_context"].inject = async_mock.CoroutineMock(
-            return_value=async_mock.MagicMock(
+        self.injector.bind_instance(
+            IndyHolder,
+            async_mock.MagicMock(
                 get_credentials=async_mock.CoroutineMock(
                     return_value={"hello": "world"}
                 )
-            )
+            ),
         )
 
         with async_mock.patch.object(
@@ -210,12 +218,13 @@ class TestHolderRoutes(AsyncTestCase):
             app=self.app, query={"start": "0", "count": "10"}
         )
 
-        request.app["request_context"].inject = async_mock.CoroutineMock(
-            return_value=async_mock.MagicMock(
+        self.injector.bind_instance(
+            IndyHolder,
+            async_mock.MagicMock(
                 get_credentials=async_mock.CoroutineMock(
                     side_effect=test_module.IndyHolderError()
                 )
-            )
+            ),
         )
 
         with self.assertRaises(test_module.web.HTTPBadRequest):
