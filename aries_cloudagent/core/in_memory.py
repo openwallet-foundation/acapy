@@ -110,7 +110,7 @@ class InMemoryProfileManager(ProfileManager):
 
     async def provision(self, config: Mapping[str, Any] = None) -> Profile:
         """Provision a new instance of a profile."""
-        return InMemoryProfile(self._context, (config or {}).get("name"))
+        return InMemoryProfile(context=self.context, name=(config or {}).get("name"))
 
     async def open(self, config: Mapping[str, Any] = None) -> Profile:
         """Open an instance of an existing profile."""

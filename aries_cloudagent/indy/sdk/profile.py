@@ -7,6 +7,7 @@ from typing import Any, Mapping
 from ...config.injection_context import InjectionContext
 from ...config.provider import ClassProvider
 from ...core.profile import Profile, ProfileManager, ProfileSession
+from ...ledger.base import BaseLedger
 from ...storage.base import BaseStorage
 from ...wallet.base import BaseWallet
 
@@ -94,6 +95,10 @@ class IndySdkProfileSession(ProfileSession):
             ClassProvider(
                 "aries_cloudagent.indy.sdk.issuer.IndySdkIssuer", self.profile.opened
             ),
+        )
+        injector.bind_provider(
+            BaseLedger,
+            ClassProvider("aries_cloudagent.ledger.provider.LedgerProvider"),
         )
         injector.bind_provider(
             IndyVerifier,

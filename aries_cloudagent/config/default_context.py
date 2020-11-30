@@ -2,15 +2,13 @@
 
 from .base_context import ContextBuilder
 from .injection_context import InjectionContext
-from .provider import CachedProvider, ClassProvider, StatsProvider
+from .provider import CachedProvider, ClassProvider
 
 from ..cache.base import BaseCache
 from ..cache.in_memory import InMemoryCache
 from ..core.plugin_registry import PluginRegistry
 from ..core.profile import ProfileManager, ProfileManagerProvider
 from ..core.protocol_registry import ProtocolRegistry
-from ..ledger.base import BaseLedger
-from ..ledger.provider import LedgerProvider
 from ..tails.base import BaseTailsServer
 
 from ..protocols.actionmenu.v1_0.base_service import BaseMenuService
@@ -54,21 +52,6 @@ class DefaultContextBuilder(ContextBuilder):
         """Bind various class providers."""
 
         context.injector.bind_provider(ProfileManager, ProfileManagerProvider(context))
-
-        context.injector.bind_provider(
-            BaseLedger,
-            CachedProvider(
-                StatsProvider(
-                    LedgerProvider(),
-                    (
-                        "create_and_send_credential_definition",
-                        "create_and_send_schema",
-                        "get_credential_definition",
-                        "get_schema",
-                    ),
-                )
-            ),
-        )
 
         context.injector.bind_provider(
             BaseTailsServer,

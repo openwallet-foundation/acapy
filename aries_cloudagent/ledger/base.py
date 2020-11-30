@@ -3,7 +3,8 @@
 import re
 
 from abc import ABC, abstractmethod, ABCMeta
-from typing import Tuple, Sequence
+from enum import Enum
+from typing import Sequence, Tuple, Union
 
 from ..indy.issuer import IndyIssuer
 
@@ -215,3 +216,50 @@ class BaseLedger(ABC, metaclass=ABCMeta):
     @abstractmethod
     async def get_revoc_reg_entry(self, revoc_reg_id: str, timestamp: int):
         """Get revocation registry entry by revocation registry ID and timestamp."""
+
+
+class Role(Enum):
+    """Enum for indy roles."""
+
+    STEWARD = (2,)
+    TRUSTEE = (0,)
+    ENDORSER = (101,)
+    NETWORK_MONITOR = (201,)
+    USER = (None, "")  # in case reading from file, default empty "" or None for USER
+    ROLE_REMOVE = ("",)  # but indy-sdk uses "" to identify a role in reset
+
+    @staticmethod
+    def get(token: Union[str, int] = None) -> "Role":
+        """
+        Return enum instance corresponding to input token.
+
+        Args:
+            token: token identifying role to indy-sdk:
+                "STEWARD", "TRUSTEE", "ENDORSER", "" or None
+        """
+        if token is None:
+            return Role.USER
+
+        for role in Role:
+            if role == Role.ROLE_REMOVE:
+                continue  # not a sensible role to parse from any configuration
+            if isinstance(token, int) and token in role.value:
+                return role
+            if str(token).upper() == role.name or token in (str(v) for v in role.value):
+                return role
+
+        return None
+
+    def to_indy_num_str(self) -> str:
+        """
+        Return (typically, numeric) string value that indy-sdk associates with role.
+
+        Recall that None signifies USER and "" signifies a role undergoing reset.
+        """
+
+        return str(self.value[0]) if isinstance(self.value[0], int) else self.value[0]
+
+    def token(self) -> str:
+        """Return token identifying role to indy-sdk."""
+
+        return self.value[0] if self in (Role.USER, Role.ROLE_REMOVE) else self.name

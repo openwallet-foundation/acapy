@@ -43,6 +43,11 @@ class Profile(ABC):
         """Accessor for the profile name."""
         return self._name
 
+    @property
+    def settings(self) -> BaseSettings:
+        """Accessor for scope-specific settings."""
+        return self._context.settings
+
     @abstractmethod
     def session(self, context: InjectionContext = None) -> "ProfileSession":
         """Start a new interactive session with no transaction support requested."""

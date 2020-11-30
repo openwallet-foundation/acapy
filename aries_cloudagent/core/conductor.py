@@ -17,7 +17,8 @@ from ..config.default_context import ContextBuilder
 from ..config.injection_context import InjectionContext
 from ..config.ledger import ledger_config
 from ..config.logging import LoggingConfigurator
-from ..config.wallet import wallet_config, BaseWallet
+from ..config.wallet import wallet_config
+from ..core.profile import Profile
 from ..ledger.error import LedgerConfigError, LedgerTransactionError
 from ..messaging.responder import BaseResponder
 from ..protocols.connections.v1_0.manager import (
@@ -59,23 +60,30 @@ class Conductor:
 
         """
         self.admin_server = None
-        self.context: InjectionContext = None
         self.context_builder = context_builder
         self.dispatcher: Dispatcher = None
         self.inbound_transport_manager: InboundTransportManager = None
         self.outbound_transport_manager: OutboundTransportManager = None
+        self.root_profile: Profile = None
+        self.setup_public_did: str = None
+
+    @property
+    def context(self) -> InjectionContext:
+        """Accessor for the injection context."""
+        return self.root_profile.context
 
     async def setup(self):
         """Initialize the global request context."""
 
         context = await self.context_builder.build_context()
 
-        self.dispatcher = Dispatcher(context)
-        await self.dispatcher.setup()
+        # Configure the root profile
+        self.root_profile, self.setup_public_did = await wallet_config(context)
+        context = self.root_profile.context
 
-        wire_format = context.inject(BaseWireFormat, required=False)
-        if wire_format and hasattr(wire_format, "task_queue"):
-            wire_format.task_queue = self.dispatcher.task_queue
+        # Configure the ledger
+        if not await ledger_config(self.root_profile, self.setup_public_did):
+            LOGGER.warning("No ledger configured")
 
         # Register all inbound transports
         self.inbound_transport_manager = InboundTransportManager(
@@ -89,12 +97,13 @@ class Conductor:
         )
         await self.outbound_transport_manager.setup()
 
-        # Configure the wallet
-        public_did = await wallet_config(context)
+        # Initialize dispatcher
+        self.dispatcher = Dispatcher(self.root_profile)
+        await self.dispatcher.setup()
 
-        # Configure the ledger
-        if not await ledger_config(context, public_did):
-            LOGGER.warning("No ledger configured")
+        wire_format = context.inject(BaseWireFormat, required=False)
+        if wire_format and hasattr(wire_format, "task_queue"):
+            wire_format.task_queue = self.dispatcher.task_queue
 
         # Admin API
         if context.settings.get("admin.enabled"):
@@ -144,12 +153,10 @@ class Conductor:
                 ),
             )
 
-        self.context = context
-
     async def start(self) -> None:
         """Start the agent."""
 
-        context = self.context
+        context = self.root_profile.context
 
         # Start up transports
         try:
@@ -177,22 +184,19 @@ class Conductor:
         # Get agent label
         default_label = context.settings.get("default_label")
 
-        # Get public did
-        wallet: BaseWallet = context.inject(BaseWallet)
-        public_did = await wallet.get_public_did()
-
         # Show some details about the configuration to the user
         LoggingConfigurator.print_banner(
             default_label,
             self.inbound_transport_manager.registered_transports,
             self.outbound_transport_manager.registered_transports,
-            public_did.did if public_did else None,
+            self.setup_public_did and self.setup_public_did.did,
             self.admin_server,
         )
 
         # Create a static connection for use by the test-suite
         if context.settings.get("debug.test_suite_endpoint"):
-            mgr = ConnectionManager(self.context)
+            session = await self.root_profile.session()
+            mgr = ConnectionManager(session)
             their_endpoint = context.settings["debug.test_suite_endpoint"]
             test_conn = await mgr.create_static_connection(
                 my_seed=hashlib.sha256(b"aries-protocol-test-subject").digest(),
@@ -209,8 +213,8 @@ class Conductor:
         # Print an invitation to the terminal
         if context.settings.get("debug.print_invitation"):
             try:
-                mgr = OutOfBandManager(self.context)
-                # _connection, invitation = await mgr.create_invitation(
+                session = await self.root_profile.session()
+                mgr = OutOfBandManager(session)
                 invi_rec = await mgr.create_invitation(
                     my_label=context.settings.get("debug.invite_label"),
                     public=context.settings.get("debug.invite_public", False),

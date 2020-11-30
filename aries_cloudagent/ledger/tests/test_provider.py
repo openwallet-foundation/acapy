@@ -6,6 +6,7 @@ import pytest
 
 from ...config.injection_context import InjectionContext
 from ...ledger.base import BaseLedger
+from ...ledger.error import LedgerError
 from ...ledger.indy import GENESIS_TRANSACTION_PATH, IndyLedger
 from ...wallet.base import BaseWallet
 
@@ -15,7 +16,7 @@ from aries_cloudagent.ledger.indy import IndyLedger
 
 
 @pytest.mark.indy
-class TestProvider(AsyncTestCase):
+class TestLedgerProvider(AsyncTestCase):
     test_did = "55GkHamhTU1ZbTbV2ab9DE"
     test_verkey = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
 
@@ -64,4 +65,6 @@ class TestProvider(AsyncTestCase):
             },
             injector=context.injector,
         )
-        assert result is None
+        with self.assertRaises(LedgerError):
+            async with result:
+                pass

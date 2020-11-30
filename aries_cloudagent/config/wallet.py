@@ -2,6 +2,7 @@
 
 import logging
 
+from ..core.profile import Profile, ProfileManager
 from ..wallet.base import BaseWallet
 from ..wallet.crypto import seed_to_did
 
@@ -10,22 +11,46 @@ from .injection_context import InjectionContext
 
 LOGGER = logging.getLogger(__name__)
 
+CFG_MAP = {"key", "rekey", "name", "storage_config", "storage_creds", "storage_type"}
 
-async def wallet_config(context: InjectionContext, provision: bool = False):
-    """Initialize the wallet."""
-    wallet: BaseWallet = context.inject(BaseWallet)
+
+async def wallet_config(
+    context: InjectionContext, provision: bool = None
+) -> (Profile, str):
+    """Initialize the root profile."""
+
+    mgr = context.inject(ProfileManager)
+
+    settings = context.settings
+    profile_cfg = {}
+    for k in CFG_MAP:
+        pk = f"wallet.{k}"
+        if pk in settings:
+            profile_cfg[k] = settings[pk]
+
+    if provision is None:
+        provision = settings.get("wallet.auto_provision", False)
+
     if provision:
-        if wallet.type != "indy":
-            raise ConfigError("Cannot provision a non-Indy wallet type")
-        if wallet.created:
-            print("Created new wallet")
+        root_profile = await mgr.provision(profile_cfg)
+    else:
+        root_profile = await mgr.open(profile_cfg)
+
+    if provision:
+        # if root_profile.backend != "indy":
+        #     raise ConfigError("Cannot provision a non-Indy wallet type")
+        if root_profile.created:
+            print("Created new profile")
         else:
-            print("Opened existing wallet")
-        print("Wallet type:", wallet.type)
-        print("Wallet name:", wallet.name)
+            print("Opened existing profile")
+        print("Profile backend:", root_profile.backend)
+        print("Profile name:", root_profile.name)
 
     wallet_seed = context.settings.get("wallet.seed")
     wallet_local_did = context.settings.get("wallet.local_did")
+    txn = await root_profile.transaction()
+    wallet = txn.inject(BaseWallet)
+
     public_did_info = await wallet.get_public_did()
     public_did = None
 
@@ -79,4 +104,6 @@ async def wallet_config(context: InjectionContext, provision: bool = False):
             seed=test_seed, metadata={"endpoint": "1.2.3.4:8021"}
         )
 
-    return public_did
+    await txn.commit()
+
+    return (root_profile, public_did)

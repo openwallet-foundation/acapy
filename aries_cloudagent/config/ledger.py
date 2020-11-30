@@ -10,6 +10,7 @@ import prompt_toolkit
 from prompt_toolkit.eventloop.defaults import use_asyncio_event_loop
 from prompt_toolkit.formatted_text import HTML
 
+from ..core.profile import Profile
 from ..ledger.base import BaseLedger
 from ..ledger.endpoint_type import EndpointType
 from ..ledger.error import LedgerError
@@ -17,7 +18,6 @@ from ..utils.http import fetch, FetchError
 from ..wallet.base import BaseWallet
 
 from .base import ConfigError
-from .injection_context import InjectionContext
 
 LOGGER = logging.getLogger(__name__)
 
@@ -34,28 +34,30 @@ async def fetch_genesis_transactions(genesis_url: str) -> str:
 
 
 async def ledger_config(
-    context: InjectionContext, public_did: str, provision: bool = False
+    profile: Profile, public_did: str, provision: bool = False
 ) -> bool:
     """Perform Indy ledger configuration."""
 
     # Fetch genesis transactions if necessary
-    if not context.settings.get("ledger.genesis_transactions"):
-        if context.settings.get("ledger.genesis_url"):
-            context.settings[
+    if not profile.settings.get("ledger.genesis_transactions"):
+        if profile.settings.get("ledger.genesis_url"):
+            profile.settings[
                 "ledger.genesis_transactions"
-            ] = await fetch_genesis_transactions(context.settings["ledger.genesis_url"])
-        elif context.settings.get("ledger.genesis_file"):
+            ] = await fetch_genesis_transactions(profile.settings["ledger.genesis_url"])
+        elif profile.settings.get("ledger.genesis_file"):
             try:
-                genesis_path = context.settings["ledger.genesis_file"]
+                genesis_path = profile.settings["ledger.genesis_file"]
                 LOGGER.info("Reading genesis transactions from: %s", genesis_path)
                 with open(genesis_path, "r") as genesis_file:
-                    context.settings["ledger.genesis_transactions"] = genesis_file.read(
+                    profile.settings["ledger.genesis_transactions"] = genesis_file.read(
                         -1
                     )
             except IOError as e:
                 raise ConfigError("Error reading genesis transactions") from e
 
-    ledger: BaseLedger = context.inject(BaseLedger, required=False)
+    session = await profile.session()
+
+    ledger = session.inject(BaseLedger, required=False)
     if not ledger:
         LOGGER.info("Ledger instance not provided")
         return False
@@ -64,7 +66,7 @@ async def ledger_config(
         return False
 
     async with ledger:
-        read_only_ledger = context.settings.get("read_only_ledger")
+        read_only_ledger = session.settings.get("read_only_ledger")
 
         # Check transaction author agreement acceptance
         if not read_only_ledger:
@@ -79,9 +81,9 @@ async def ledger_config(
                         return False
 
         # Publish endpoints if necessary - skipped if TAA is required but not accepted
-        endpoint = context.settings.get("default_endpoint")
+        endpoint = session.settings.get("default_endpoint")
         if public_did:
-            wallet: BaseWallet = context.inject(BaseWallet)
+            wallet = session.inject(BaseWallet)
             if wallet.type != "indy":
                 raise ConfigError("Cannot provision a non-Indy wallet type")
             try:
@@ -90,7 +92,7 @@ async def ledger_config(
                 raise ConfigError(x_ledger.message) from x_ledger  # e.g., read-only
 
             # Publish profile endpoint if ledger is NOT read-only
-            profile_endpoint = context.settings.get("profile_endpoint")
+            profile_endpoint = session.settings.get("profile_endpoint")
             if profile_endpoint and not read_only_ledger:
                 await ledger.update_endpoint_for_did(
                     public_did, profile_endpoint, EndpointType.PROFILE

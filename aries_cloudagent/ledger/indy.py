@@ -6,11 +6,10 @@ import logging
 import tempfile
 
 from datetime import datetime, date
-from enum import Enum
 from hashlib import sha256
 from os import path
 from time import time
-from typing import Sequence, Tuple, Union
+from typing import Sequence, Tuple
 
 import indy.ledger
 import indy.pool
@@ -28,7 +27,7 @@ from ..wallet.base import BaseWallet, DIDInfo
 from ..wallet.util import full_verkey
 from ..wallet.did_posture import DIDPosture
 
-from .base import BaseLedger
+from .base import BaseLedger, Role
 from .endpoint_type import EndpointType
 from .error import (
     BadLedgerRequestError,
@@ -47,53 +46,6 @@ GENESIS_TRANSACTION_PATH = path.join(
 )
 
 
-class Role(Enum):
-    """Enum for indy roles."""
-
-    STEWARD = (2,)
-    TRUSTEE = (0,)
-    ENDORSER = (101,)
-    NETWORK_MONITOR = (201,)
-    USER = (None, "")  # in case reading from file, default empty "" or None for USER
-    ROLE_REMOVE = ("",)  # but indy-sdk uses "" to identify a role in reset
-
-    @staticmethod
-    def get(token: Union[str, int] = None) -> "Role":
-        """
-        Return enum instance corresponding to input token.
-
-        Args:
-            token: token identifying role to indy-sdk:
-                "STEWARD", "TRUSTEE", "ENDORSER", "" or None
-        """
-        if token is None:
-            return Role.USER
-
-        for role in Role:
-            if role == Role.ROLE_REMOVE:
-                continue  # not a sensible role to parse from any configuration
-            if isinstance(token, int) and token in role.value:
-                return role
-            if str(token).upper() == role.name or token in (str(v) for v in role.value):
-                return role
-
-        return None
-
-    def to_indy_num_str(self) -> str:
-        """
-        Return (typically, numeric) string value that indy-sdk associates with role.
-
-        Recall that None signifies USER and "" signifies a role undergoing reset.
-        """
-
-        return str(self.value[0]) if isinstance(self.value[0], int) else self.value[0]
-
-    def token(self) -> str:
-        """Return token identifying role to indy-sdk."""
-
-        return self.value[0] if self in (Role.USER, Role.ROLE_REMOVE) else self.name
-
-
 class IndyLedger(BaseLedger):
     """Indy ledger class."""
 
@@ -107,6 +59,7 @@ class IndyLedger(BaseLedger):
         keepalive: int = 0,
         cache: BaseCache = None,
         cache_duration: int = 600,
+        genesis_transactions: str = None,
         read_only: bool = False,
     ):
         """
@@ -118,6 +71,8 @@ class IndyLedger(BaseLedger):
             keepalive: How many seconds to keep the ledger open
             cache: The cache instance to use
             cache_duration: The TTL for ledger cache entries
+            genesis_transactions: The ledger genesis transaction as a string
+            read_only: Prevent any ledger write operations
         """
         self.opened = False
         self.ref_count = 0
@@ -126,6 +81,7 @@ class IndyLedger(BaseLedger):
         self.close_task: asyncio.Future = None
         self.cache = cache
         self.cache_duration = cache_duration
+        self.genesis_transactions = genesis_transactions
         self.wallet = wallet
         self.pool_handle = None
         self.pool_name = pool_name
@@ -175,6 +131,13 @@ class IndyLedger(BaseLedger):
 
     async def open(self):
         """Open the pool ledger, creating it if necessary."""
+
+        if self.genesis_transactions:
+            await self.create_pool_config(self.genesis_transactions, True)
+            self.genesis_transactions = None
+        elif not await self.check_pool_config():
+            raise LedgerError("Ledger pool configuration has not been created")
+
         # We only support proto ver 2
         with IndyErrorHandler(
             "Exception setting ledger protocol version", LedgerConfigError

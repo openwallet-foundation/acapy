@@ -13,10 +13,11 @@ from ...connections.models.diddoc import (
     PublicKeyType,
     Service,
 )
+from ...core.in_memory import InMemoryProfileManager
+from ...core.profile import ProfileManager
 from ...core.protocol_registry import ProtocolRegistry
 from ...storage.base import BaseStorage
 
-# from ...storage.basic import BasicStorage
 from ...transport.inbound.base import InboundTransportConfiguration
 from ...transport.inbound.message import InboundMessage
 from ...transport.inbound.receipt import MessageReceipt
@@ -27,8 +28,6 @@ from ...transport.wire_format import BaseWireFormat
 from ...transport.pack_format import PackWireFormat
 from ...utils.stats import Collector
 from ...wallet.base import BaseWallet
-
-# from ...wallet.basic import BasicWallet
 
 from .. import conductor as test_module
 
@@ -75,10 +74,8 @@ class StubContextBuilder(ContextBuilder):
         self.wire_format = async_mock.create_autospec(PackWireFormat())
 
     async def build_context(self) -> InjectionContext:
-        context = InjectionContext(settings=self.settings)
-        context.injector.enforce_typing = False
-        context.injector.bind_instance(BaseStorage, BasicStorage())
-        context.injector.bind_instance(BaseWallet, BasicWallet())
+        context = InjectionContext(settings=self.settings, enforce_typing=False)
+        context.injector.bind_instance(ProfileManager, InMemoryProfileManager(context))
         context.injector.bind_instance(ProtocolRegistry, ProtocolRegistry())
         context.injector.bind_instance(BaseWireFormat, self.wire_format)
         return context
@@ -106,7 +103,9 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
 
             await conductor.setup()
 
-            wallet = conductor.context.inject(BaseWallet)
+            session = await conductor.root_profile.session()
+
+            wallet = session.inject(BaseWallet)
             await wallet.create_public_did()
 
             mock_inbound_mgr.return_value.setup.assert_awaited_once()
@@ -480,7 +479,8 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
         admin = conductor.context.inject(BaseAdminServer)
         assert admin is conductor.admin_server
 
-        wallet = conductor.context.inject(BaseWallet)
+        session = await conductor.root_profile.session()
+        wallet = session.inject(BaseWallet)
         await wallet.create_public_did()
 
         with async_mock.patch.object(
@@ -503,7 +503,8 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
         admin = conductor.context.inject(BaseAdminServer)
         assert admin is conductor.admin_server
 
-        wallet = conductor.context.inject(BaseWallet)
+        session = await conductor.root_profile.session()
+        wallet = session.inject(BaseWallet)
         await wallet.create_public_did()
 
         with async_mock.patch.object(
@@ -545,7 +546,8 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
         with async_mock.patch.object(test_module, "ConnectionManager") as mock_mgr:
             await conductor.setup()
 
-            wallet = conductor.context.inject(BaseWallet)
+            session = await conductor.root_profile.session()
+            wallet = session.inject(BaseWallet)
             await wallet.create_public_did()
 
             mock_mgr.return_value.create_static_connection = async_mock.CoroutineMock()
@@ -661,7 +663,8 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
         with async_mock.patch("sys.stdout", new=StringIO()) as captured:
             await conductor.setup()
 
-            wallet = conductor.context.inject(BaseWallet)
+            session = await conductor.root_profile.session()
+            wallet = session.inject(BaseWallet)
             await wallet.create_public_did()
 
             await conductor.start()
