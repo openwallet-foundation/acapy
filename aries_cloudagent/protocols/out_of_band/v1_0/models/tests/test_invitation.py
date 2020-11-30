@@ -8,17 +8,17 @@ from ..invitation import InvitationRecord, InvitationRecordSchema
 class TestInvitationRecord(AsyncTestCase):
     def test_invitation_record(self):
         """Test invitation record."""
-        invi = InvitationRecord(invitation_id="0")
+        invi = InvitationRecord(invi_msg_id="12345")
         assert isinstance(invi, InvitationRecord)
-        assert invi.invitation_id == "0"
         assert invi.record_value == {
-            "invitation_id": "0",
             "invitation": None,
             "state": None,
             "trace": False,
+            "auto_accept": False,
+            "multi_use": False,
         }
 
-        another = InvitationRecord(invitation_id="1")
+        another = InvitationRecord(invi_msg_id="99999")
         assert invi != another
 
 

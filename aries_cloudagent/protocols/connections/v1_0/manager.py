@@ -2,7 +2,7 @@
 
 import logging
 
-from typing import Sequence, Tuple
+from typing import Coroutine, Sequence, Tuple
 
 from ....cache.base import BaseCache
 from ....connections.models.conn_record import ConnRecord
@@ -1039,7 +1039,7 @@ class ConnectionManager:
                     routing_keys = [
                         did_key_to_naked(k)
                         for k in invitation.service_blocks[0].routing_keys
-                ]
+                    ]
 
             results = [
                 ConnectionTarget(
@@ -1101,7 +1101,10 @@ class ConnectionManager:
         return targets
 
     async def establish_inbound(
-        self, connection: ConnRecord, inbound_connection_id: str, outbound_handler
+        self,
+        connection: ConnRecord,
+        inbound_connection_id: str,
+        outbound_handler: Coroutine,
     ) -> str:
         """Assign the inbound routing connection for a connection record.
 

@@ -3,9 +3,8 @@
 import json
 import logging
 
-from typing import Coroutine, Sequence, Tuple
+from typing import Sequence, Tuple
 
-from ....cache.base import BaseCache
 from ....connections.models.conn_record import ConnRecord
 from ....connections.models.connection_target import ConnectionTarget
 from ....connections.models.diddoc import (
@@ -14,20 +13,15 @@ from ....connections.models.diddoc import (
     PublicKeyType,
     Service,
 )
-from ....config.base import InjectorError
 from ....config.injection_context import InjectionContext
 from ....core.error import BaseError
-from ....ledger.base import BaseLedger
 from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....messaging.responder import BaseResponder
 from ....storage.base import BaseStorage
-from ....storage.error import StorageError, StorageNotFoundError
+from ....storage.error import StorageNotFoundError
 from ....storage.record import StorageRecord
 from ....transport.inbound.receipt import MessageReceipt
 from ....wallet.base import BaseWallet, DIDInfo
-from ....wallet.crypto import create_keypair, seed_to_did
-from ....wallet.error import WalletNotFoundError
-from ....wallet.util import bytes_to_b58
 
 from ...out_of_band.v1_0.messages.invitation import (
     InvitationMessage as OOBInvitationMessage,
@@ -35,7 +29,6 @@ from ...out_of_band.v1_0.messages.invitation import (
 from ...out_of_band.v1_0.models.invitation import (
     InvitationRecord as OOBInvitationRecord,
 )
-from ...routing.v1_0.manager import RoutingManager
 
 from .messages.complete import DIDXComplete
 from .messages.request import DIDXRequest
@@ -357,9 +350,9 @@ class DIDXManager:
         if invitation.service_blocks:
             pthid = invitation._id  # explicit
         else:
-            '''  # early try: keep around until logic in code is proven sound
+            """# early try: keep around until logic in code is proven sound
             pthid = did_doc.service[[s for s in did_doc.service][0]].id
-            '''
+            """
             pthid = invitation.service_dids[0]  # should look like did:sov:abc...123
         attach = AttachDecorator.from_indy_dict(did_doc.serialize())
         await attach.data.sign(my_info.verkey, wallet)
@@ -398,8 +391,20 @@ class DIDXManager:
         )
 
         conn_rec = None
+        invi_rec = None
         connection_key = None
         wallet: BaseWallet = await self.context.inject(BaseWallet)
+
+        try:
+            invi_rec = await OOBInvitationRecord.retrieve_by_tag_filter(
+                self.context,
+                tag_filter={"invi_msg_id": request._thread.pthid},
+            )
+        except StorageNotFoundError:
+            raise DIDXManagerError(
+                f"No record of invitation {request._thread.pthid} "
+                f"for request {request._id}"
+            )
 
         # Determine what key will need to sign the response
         if receipt.recipient_did_public:
@@ -416,14 +421,8 @@ class DIDXManager:
             except StorageNotFoundError:
                 raise DIDXManagerError("No invitation found for pairwise connection")
 
-        invitation = None
         if conn_rec:
-            invitation = await conn_rec.retrieve_invitation(self.context)
             connection_key = conn_rec.invitation_key
-            ConnRecord.log_state(
-                self.context, "Found invitation", {"invitation": invitation}
-            )
-
             if conn_rec.is_multiuse_invitation:
                 wallet: BaseWallet = await self.context.inject(BaseWallet)
                 my_info = await wallet.create_local_did()
@@ -467,39 +466,32 @@ class DIDXManager:
             await conn_rec.save(
                 self.context, reason="Received connection request from invitation"
             )
-        elif not self.context.settings.get("public_invites"):
-            raise DIDXManagerError("Public invitations are not enabled")
-        else:
+        elif self.context.settings.get("public_invites"):
             my_info = await wallet.create_local_did()
             conn_rec = ConnRecord(
-                invitation_key=connection_key,
                 my_did=my_info.did,
                 their_did=request.did,
                 their_label=request.label,
                 their_role=ConnRecord.Role.REQUESTER.rfc23,
+                invitation_key=connection_key,
+                request_id=request._id,
                 state=ConnRecord.State.REQUEST.rfc23,
+                accept=(
+                    ConnRecord.ACCEPT_AUTO
+                    if invi_rec.auto_accept
+                    else ConnRecord.ACCEPT_MANUAL
+                ),  # oob manager calculates (including config) at conn record creation
             )
-            if self.context.settings.get("debug.auto_accept_requests"):
-                conn_rec.accept = ConnRecord.ACCEPT_AUTO
-            conn_rec.request_id = request._id
 
             await conn_rec.save(
                 self.context, reason="Received connection request from public DID"
             )
+        else:
+            raise DIDXManagerError("Public invitations are not enabled")
 
         # Attach the connection request so it can be found and responded to
         await conn_rec.attach_request(self.context, request)
 
-        try:
-            invi_rec = await OOBInvitationRecord.retrieve_by_tag_filter(
-                self.context,
-                tag_filter={"invi_msg_id": request._thread.pthid},
-            )
-        except StorageNotFoundError:
-            raise DIDXManagerError(
-                f"No record of invitation {request._thread.pthid} "
-                f"for request {request._id}"
-            )
         if invi_rec.auto_accept:
             response = await self.create_response(conn_rec)
             responder: BaseResponder = await self._context.inject(
@@ -717,6 +709,7 @@ class DIDXManager:
 
         return conn_rec
 
+    '''
     async def create_static_connection(
         self,
         my_did: str = None,
@@ -777,7 +770,9 @@ class DIDXManager:
         await self.store_did_document(did_doc)
 
         return my_info, their_info, conn_rec
+    '''
 
+    '''
     async def find_connection(
         self,
         their_did: str,
@@ -925,6 +920,7 @@ class DIDXManager:
         return await self.find_connection(
             receipt.sender_did, receipt.recipient_did, receipt.recipient_verkey, True
         )
+    '''
 
     async def create_did_document(
         self,
@@ -1133,71 +1129,3 @@ class DIDXManager:
                     )
                 )
         return targets
-
-    '''
-    async def establish_inbound(
-        self,
-        conn_rec: ConnRecord,
-        inbound_connection_id: str,
-        outbound_handler: Coroutine,
-    ) -> str:
-        """Assign the inbound routing connection for a connection record.
-
-        Returns: the current routing state ("request")
-        """
-
-        # The connection must have a verkey, but in the case of a received
-        # invitation we might not have created one yet
-        wallet: BaseWallet = await self.context.inject(BaseWallet)
-        if conn_rec.my_did:
-            my_info = await wallet.get_local_did(conn_rec.my_did)
-        else:
-            # Create new DID for connection
-            my_info = await wallet.create_local_did()
-            conn_rec.my_did = my_info.did
-
-        try:
-            router = await ConnRecord.retrieve_by_id(
-                self.context, inbound_connection_id
-            )
-        except StorageNotFoundError:
-            raise DIDXManagerError(
-                f"Routing connection not found: {inbound_connection_id}"
-            )
-        if not router.is_ready:
-            raise DIDXManagerError(
-                f"Routing connection is not ready: {inbound_connection_id}"
-            )
-        conn_rec.inbound_connection_id = inbound_connection_id
-
-        route_mgr = RoutingManager(self.context)
-
-        await route_mgr.send_create_route(
-            inbound_connection_id, my_info.verkey, outbound_handler
-        )
-        conn_rec.routing_state = ConnRecord.ROUTING_STATE_REQUEST
-        await conn_rec.save(self.context)
-        return conn_rec.routing_state
-
-    async def update_inbound(
-        self, inbound_connection_id: str, recip_verkey: str, routing_state: str
-    ):
-        """Activate connections once a route has been established.
-
-        Looks up pending connections associated with the inbound routing
-        connection and marks the routing as complete.
-        """
-        conn_recs = await ConnRecord.query(
-            self.context, {"inbound_connection_id": inbound_connection_id}
-        )
-        wallet: BaseWallet = await self.context.inject(BaseWallet)
-
-        for conn_rec in conn_recs:
-            # check the recipient key
-            if not conn_rec.my_did:
-                continue
-            conn_info = await wallet.get_local_did(conn_rec.my_did)
-            if conn_info.verkey == recip_verkey:
-                conn_rec.routing_state = routing_state
-                await conn_rec.save(self.context)
-    '''

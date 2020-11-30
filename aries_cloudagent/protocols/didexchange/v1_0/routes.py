@@ -11,17 +11,12 @@ from aiohttp_apispec import (
     response_schema,
 )
 
-from marshmallow import fields, pre_load, validate, validates_schema
+from marshmallow import fields
 
 from ....connections.models.conn_record import ConnRecord, ConnRecordSchema
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
-from ....messaging.valid import (
-    ENDPOINT,
-    INDY_DID,
-    INDY_RAW_PUBLIC_KEY,
-    UUIDFour,
-)
+from ....messaging.valid import ENDPOINT, UUIDFour
 from ....storage.error import StorageError, StorageNotFoundError
 from ....wallet.error import WalletError
 
@@ -34,6 +29,7 @@ from .manager import DIDXManager, DIDXManagerError
 from .message_types import SPEC_URI
 
 
+'''
 class DIDXConnListSchema(OpenAPISchema):
     """Result schema for connection list."""
 
@@ -41,6 +37,7 @@ class DIDXConnListSchema(OpenAPISchema):
         fields.Nested(ConnRecordSchema()),
         description="List of connection records",
     )
+'''
 
 
 class DIDXReceiveInvitationRequestSchema(OOBInvitationSchema):
@@ -85,6 +82,7 @@ class DIDXConnStaticResultSchema(OpenAPISchema):
 '''
 
 
+'''
 class DIDXConnsListQueryStringSchema(OpenAPISchema):
     """Parameters and validators for connections list request query string."""
 
@@ -113,6 +111,7 @@ class DIDXConnsListQueryStringSchema(OpenAPISchema):
         ),
         example=ConnRecord.Role.REQUESTER.rfc23,
     )
+'''
 
 
 class DIDXReceiveInvitationQueryStringSchema(OpenAPISchema):
@@ -181,6 +180,7 @@ def connection_sort_key(conn):
     return pfx + conn["created_at"]
 
 
+'''
 @docs(
     tags=["did-exchange"],
     summary="Query agent-to-agent connections",
@@ -257,6 +257,7 @@ async def didx_retrieve_connection(request: web.BaseRequest):
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     return web.json_response(result)
+'''
 
 
 @docs(
@@ -410,6 +411,7 @@ async def didx_establish_inbound(request: web.BaseRequest):
 '''
 
 
+'''
 @docs(tags=["did-exchange"], summary="Remove an existing connection record")
 @match_info_schema(DIDXConnIdMatchInfoSchema())
 async def didx_remove_connection(request: web.BaseRequest):
@@ -431,6 +433,7 @@ async def didx_remove_connection(request: web.BaseRequest):
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     return web.json_response({})
+'''
 
 
 '''
@@ -477,21 +480,22 @@ async def didx_create_static(request: web.BaseRequest):
     return web.json_response(response)
 '''
 
+
 async def register(app: web.Application):
     """Register routes."""
 
     app.add_routes(
         [
-            web.get(
-                "/didexchange/connections",
-                didx_connections_list,
-                allow_head=False,
-            ),
-            web.get(
-                "/didexchange/connections/{conn_id}",
-                didx_retrieve_connection,
-                allow_head=False,
-            ),
+            # web.get(
+            #     "/didexchange/connections",
+            #     didx_connections_list,
+            #     allow_head=False,
+            # ),
+            # web.get(
+            #     "/didexchange/connections/{conn_id}",
+            #     didx_retrieve_connection,
+            #     allow_head=False,
+            # ),
             # web.post("/didexchange/create-static", didx_create_static),
             web.post("/didexchange/receive-invitation", didx_receive_invitation),
             web.post(
@@ -503,7 +507,7 @@ async def register(app: web.Application):
             #     "/didexchange/{conn_id}/establish-inbound/{ref_id}",
             #     didx_establish_inbound,
             # ),
-            web.post("/didexchange/{conn_id}/remove", didx_remove_connection),
+            # web.post("/didexchange/{conn_id}/remove", didx_remove_connection),
         ]
     )
 

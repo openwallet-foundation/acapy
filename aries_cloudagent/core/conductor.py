@@ -9,7 +9,6 @@ wallet.
 """
 
 import hashlib
-import json
 import logging
 
 from ..admin.base_server import BaseAdminServer

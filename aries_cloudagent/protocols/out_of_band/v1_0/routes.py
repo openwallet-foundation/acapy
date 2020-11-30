@@ -51,6 +51,7 @@ class InvitationCreateQueryStringSchema(OpenAPISchema):
         required=False,
     )
 
+
 @docs(
     tags=["out-of-band"],
     summary="Create a new connection invitation",

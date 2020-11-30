@@ -978,7 +978,7 @@ class TestConnectionManager(AsyncTestCase):
         assert did == self.test_target_did
         await self.manager.remove_keys_for_did(self.test_target_did)
 
-    async def test_get_connection_targets_invitation_no_did(self):
+    async def test_get_connection_targets_conn_invitation_no_did(self):
         wallet: BaseWallet = await self.context.inject(BaseWallet)
         await wallet.create_local_did(
             seed=self.test_seed, did=self.test_did, metadata=None
@@ -990,7 +990,7 @@ class TestConnectionManager(AsyncTestCase):
         await self.manager.store_did_document(did_doc)
 
         # First pass: not yet in cache
-        mock_invite = async_mock.MagicMock(
+        conn_invite = ConnectionInvitation(
             did=None,
             endpoint=self.test_endpoint,
             recipient_keys=[self.test_target_verkey],
@@ -1003,7 +1003,7 @@ class TestConnectionManager(AsyncTestCase):
             connection_id="dummy",
             their_role=ConnRecord.Role.RESPONDER.rfc23,
             state=ConnRecord.State.INVITATION.rfc23,
-            retrieve_invitation=async_mock.CoroutineMock(return_value=mock_invite),
+            retrieve_invitation=async_mock.CoroutineMock(return_value=conn_invite),
         )
 
         targets = await self.manager.get_connection_targets(
@@ -1013,10 +1013,10 @@ class TestConnectionManager(AsyncTestCase):
         assert len(targets) == 1
         target = targets[0]
         assert target.did == mock_conn.their_did
-        assert target.endpoint == mock_invite.endpoint
-        assert target.label == mock_invite.label
-        assert target.recipient_keys == mock_invite.recipient_keys
-        assert target.routing_keys == mock_invite.routing_keys
+        assert target.endpoint == conn_invite.endpoint
+        assert target.label == conn_invite.label
+        assert target.recipient_keys == conn_invite.recipient_keys
+        assert target.routing_keys == conn_invite.routing_keys
         assert target.sender_key == (await wallet.get_local_did(self.test_did)).verkey
 
         # Next pass: exercise cache
@@ -1027,10 +1027,10 @@ class TestConnectionManager(AsyncTestCase):
         assert len(targets) == 1
         target = targets[0]
         assert target.did == mock_conn.their_did
-        assert target.endpoint == mock_invite.endpoint
-        assert target.label == mock_invite.label
-        assert target.recipient_keys == mock_invite.recipient_keys
-        assert target.routing_keys == mock_invite.routing_keys
+        assert target.endpoint == conn_invite.endpoint
+        assert target.label == conn_invite.label
+        assert target.recipient_keys == conn_invite.recipient_keys
+        assert target.routing_keys == conn_invite.routing_keys
         assert target.sender_key == (await wallet.get_local_did(self.test_did)).verkey
 
     async def test_get_connection_targets_retrieve_connection(self):
@@ -1045,7 +1045,7 @@ class TestConnectionManager(AsyncTestCase):
         await self.manager.store_did_document(did_doc)
 
         # Connection target not in cache
-        mock_invite = async_mock.MagicMock(
+        conn_invite = ConnectionInvitation(
             did=None,
             endpoint=self.test_endpoint,
             recipient_keys=[self.test_target_verkey],
@@ -1058,7 +1058,7 @@ class TestConnectionManager(AsyncTestCase):
             connection_id="dummy",
             their_role=ConnRecord.Role.RESPONDER.rfc23,
             state=ConnRecord.State.INVITATION.rfc23,
-            retrieve_invitation=async_mock.CoroutineMock(return_value=mock_invite),
+            retrieve_invitation=async_mock.CoroutineMock(return_value=conn_invite),
         )
 
         with async_mock.patch.object(
@@ -1075,15 +1075,15 @@ class TestConnectionManager(AsyncTestCase):
             assert len(targets) == 1
             target = targets[0]
             assert target.did == mock_conn.their_did
-            assert target.endpoint == mock_invite.endpoint
-            assert target.label == mock_invite.label
-            assert target.recipient_keys == mock_invite.recipient_keys
-            assert target.routing_keys == mock_invite.routing_keys
+            assert target.endpoint == conn_invite.endpoint
+            assert target.label == conn_invite.label
+            assert target.recipient_keys == conn_invite.recipient_keys
+            assert target.routing_keys == conn_invite.routing_keys
             assert (
                 target.sender_key == (await wallet.get_local_did(self.test_did)).verkey
             )
 
-    async def test_get_connection_targets_no_cache(self):
+    async def test_get_conn_targets_conn_invitation_no_cache(self):
         self.context.injector.clear_binding(BaseCache)
         wallet: BaseWallet = await self.context.inject(BaseWallet)
         await wallet.create_local_did(
@@ -1095,7 +1095,7 @@ class TestConnectionManager(AsyncTestCase):
         )
         await self.manager.store_did_document(did_doc)
 
-        mock_invite = async_mock.MagicMock(
+        conn_invite = ConnectionInvitation(
             did=None,
             endpoint=self.test_endpoint,
             recipient_keys=[self.test_target_verkey],
@@ -1108,7 +1108,7 @@ class TestConnectionManager(AsyncTestCase):
             connection_id="dummy",
             their_role=ConnRecord.Role.RESPONDER.rfc23,
             state=ConnRecord.State.INVITATION.rfc23,
-            retrieve_invitation=async_mock.CoroutineMock(return_value=mock_invite),
+            retrieve_invitation=async_mock.CoroutineMock(return_value=conn_invite),
         )
 
         targets = await self.manager.get_connection_targets(
@@ -1118,10 +1118,10 @@ class TestConnectionManager(AsyncTestCase):
         assert len(targets) == 1
         target = targets[0]
         assert target.did == mock_conn.their_did
-        assert target.endpoint == mock_invite.endpoint
-        assert target.label == mock_invite.label
-        assert target.recipient_keys == mock_invite.recipient_keys
-        assert target.routing_keys == mock_invite.routing_keys
+        assert target.endpoint == conn_invite.endpoint
+        assert target.label == conn_invite.label
+        assert target.recipient_keys == conn_invite.recipient_keys
+        assert target.routing_keys == conn_invite.routing_keys
         assert target.sender_key == (await wallet.get_local_did(self.test_did)).verkey
 
     async def test_fetch_connection_targets_no_my_did(self):
@@ -1129,13 +1129,13 @@ class TestConnectionManager(AsyncTestCase):
         mock_conn.my_did = None
         assert await self.manager.fetch_connection_targets(mock_conn) is None
 
-    async def test_fetch_connection_targets_invitation_did_no_ledger(self):
+    async def test_fetch_connection_targets_conn_invitation_did_no_ledger(self):
         wallet: BaseWallet = await self.context.inject(BaseWallet)
         await wallet.create_local_did(
             seed=self.test_seed, did=self.test_did, metadata=None
         )
 
-        mock_invite = async_mock.MagicMock(
+        conn_invite = ConnectionInvitation(
             did=self.test_target_did,
             endpoint=self.test_endpoint,
             recipient_keys=[self.test_target_verkey],
@@ -1148,13 +1148,13 @@ class TestConnectionManager(AsyncTestCase):
             connection_id="dummy",
             their_role=ConnRecord.Role.RESPONDER.rfc23,
             state=ConnRecord.State.INVITATION.rfc23,
-            retrieve_invitation=async_mock.CoroutineMock(return_value=mock_invite),
+            retrieve_invitation=async_mock.CoroutineMock(return_value=conn_invite),
         )
 
         with self.assertRaises(ConnectionManagerError):
             await self.manager.fetch_connection_targets(mock_conn)
 
-    async def test_fetch_connection_targets_invitation_did_ledger(self):
+    async def test_fetch_connection_targets_conn_invitation_did_ledger(self):
         self.ledger = async_mock.MagicMock()
         self.ledger.get_endpoint_for_did = async_mock.CoroutineMock(
             return_value=self.test_endpoint
@@ -1169,7 +1169,7 @@ class TestConnectionManager(AsyncTestCase):
             seed=self.test_seed, did=self.test_did, metadata=None
         )
 
-        mock_invite = async_mock.MagicMock(
+        conn_invite = ConnectionInvitation(
             did=self.test_target_did,
             endpoint=self.test_endpoint,
             recipient_keys=[self.test_target_verkey],
@@ -1182,16 +1182,16 @@ class TestConnectionManager(AsyncTestCase):
             connection_id="dummy",
             their_role=ConnRecord.Role.RESPONDER.rfc23,
             state=ConnRecord.State.INVITATION.rfc23,
-            retrieve_invitation=async_mock.CoroutineMock(return_value=mock_invite),
+            retrieve_invitation=async_mock.CoroutineMock(return_value=conn_invite),
         )
 
         targets = await self.manager.fetch_connection_targets(mock_conn)
         assert len(targets) == 1
         target = targets[0]
         assert target.did == mock_conn.their_did
-        assert target.endpoint == mock_invite.endpoint
-        assert target.label == mock_invite.label
-        assert target.recipient_keys == mock_invite.recipient_keys
+        assert target.endpoint == conn_invite.endpoint
+        assert target.label == conn_invite.label
+        assert target.recipient_keys == conn_invite.recipient_keys
         assert target.routing_keys == []
         assert target.sender_key == (await wallet.get_local_did(self.test_did)).verkey
 
