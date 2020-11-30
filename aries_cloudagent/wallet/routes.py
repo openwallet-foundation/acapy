@@ -191,7 +191,7 @@ async def wallet_did_list(request: web.BaseRequest):
         if info and (
             filter_posture is None
             or (
-                filter_posture is DIDPosture.WALLET_ONLY
+                filter_posture is DID_POSTURE.WALLET_ONLY
                 and not info.metadata.get("posted")
             )
         ):

@@ -531,7 +531,7 @@ class TestRevocationRoutes(AsyncTestCase):
             with self.assertRaises(test_module.web.HTTPNotFound):
                 await test_module.get_cred_rev_record(request)
 
-    async def test_get_active_registry(self):
+    async def test_get_active_rev_reg(self):
         CRED_DEF_ID = f"{self.test_did}:3:CL:1234:default"
         request = async_mock.MagicMock()
         request.app = self.app
@@ -786,7 +786,6 @@ class TestRevocationRoutes(AsyncTestCase):
                     )
                 )
             )
-
             result = await test_module.send_rev_reg_entry(request)
             mock_json_response.assert_called_once_with({"result": "dummy"})
             assert result is mock_json_response.return_value

@@ -168,6 +168,8 @@ class ConnRecord(BaseRecord):
             else their_role.rfc160
         )
         self.invitation_key = invitation_key
+        self.tx_my_role = tx_my_role
+        self.tx_their_role = tx_their_role
         self.request_id = request_id
         self.error_msg = error_msg
         self.inbound_connection_id = inbound_connection_id
@@ -365,7 +367,6 @@ class ConnRecord(BaseRecord):
     def __eq__(self, other: Any) -> bool:
         """Comparison between records."""
         return super().__eq__(other)
-
 
 class ConnRecordSchema(BaseRecordSchema):
     """Schema to allow serialization/deserialization of connection records."""

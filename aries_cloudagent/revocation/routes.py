@@ -524,7 +524,7 @@ async def get_cred_rev_record(request: web.BaseRequest):
 
 @docs(
     tags=["revocation"],
-    summary="Get an active revocation registry by credential definition id",
+    summary="Get current active revocation registry by credential definition id",
 )
 @match_info_schema(CredDefIdMatchInfoSchema())
 @response_schema(RevRegResultSchema(), 200)
