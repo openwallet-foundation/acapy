@@ -23,11 +23,11 @@ from .error import WalletError, WalletDuplicateError, WalletNotFoundError
 from .util import bytes_to_b64
 
 
-class IndyWallet(BaseWallet):
+class IndySdkWallet(BaseWallet):
     """Indy identity wallet implementation."""
 
     def __init__(self, opened: IndyOpenWallet):
-        """Create a new IndyWallet instance."""
+        """Create a new IndySdkWallet instance."""
         self.opened = opened
 
     async def create_signing_key(

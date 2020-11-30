@@ -14,7 +14,7 @@ from .endpoint_type import EndpointType
 class BaseLedger(ABC, metaclass=ABCMeta):
     """Base class for ledger."""
 
-    LEDGER_TYPE = None
+    BACKEND_NAME = None
 
     async def __aenter__(self) -> "BaseLedger":
         """
@@ -30,9 +30,10 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         """Context manager exit."""
 
     @property
-    @abstractmethod
-    def type(self) -> str:
-        """Accessor for the ledger type."""
+    @classmethod
+    def backend(cls) -> str:
+        """Accessor for the ledger backend name."""
+        return cls.BACKEND_NAME
 
     @abstractmethod
     async def get_key_for_did(self, did: str) -> str:

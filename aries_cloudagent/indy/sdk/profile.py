@@ -4,12 +4,15 @@ import logging
 
 from typing import Any, Mapping
 
+from ...cache.base import BaseCache
 from ...config.injection_context import InjectionContext
 from ...config.provider import ClassProvider
 from ...core.profile import Profile, ProfileManager, ProfileSession
 from ...ledger.base import BaseLedger
+from ...ledger.indy import IndySdkLedger, IndySdkLedgerPool
 from ...storage.base import BaseStorage
 from ...wallet.base import BaseWallet
+from ...wallet.indy import IndySdkWallet
 
 from ..holder import IndyHolder
 from ..issuer import IndyIssuer
@@ -29,6 +32,8 @@ class IndySdkProfile(Profile):
         """Create a new IndyProfile instance."""
         super().__init__(context=context, name=opened.name)
         self.opened = opened
+        self.pool: IndySdkLedgerPool = None
+        self.init_ledger_pool()
 
     @property
     def name(self) -> str:
@@ -37,7 +42,29 @@ class IndySdkProfile(Profile):
 
     @property
     def wallet(self) -> IndyOpenWallet:
+        """Accessor for the opened wallet instance."""
         return self.opened
+
+    def init_ledger_pool(self):
+        """Initialize the ledger pool."""
+        if self.settings.get("ledger.disabled"):
+            LOGGER.info("Ledger support is disabled")
+            return
+
+        pool_name = self.settings.get("ledger.pool_name", "default")
+        keepalive = int(self.settings.get("ledger.keepalive", 5))
+        read_only = bool(self.settings.get("ledger.read_only", False))
+        if read_only:
+            LOGGER.error("Note: setting ledger to read-only mode")
+        genesis_transactions = self.settings.get("ledger.genesis_transactions")
+        cache = self.context.injector.inject(BaseCache, required=False)
+        self.pool = IndySdkLedgerPool(
+            pool_name,
+            keepalive=keepalive,
+            cache=cache,
+            genesis_transactions=genesis_transactions,
+            read_only=read_only,
+        )
 
     def session(self, context: InjectionContext = None) -> "ProfileSession":
         """Start a new interactive session with no transaction support requested."""
@@ -71,21 +98,24 @@ class IndySdkProfileSession(ProfileSession):
     ):
         """Create a new IndySdkProfileSession instance."""
         super().__init__(profile=profile, context=context, settings=settings)
+        self.wallet = IndySdkWallet(self.profile.opened)
+        if self.profile.pool:
+            self.ledger = IndySdkLedger(self.profile.pool, self.wallet)
+        else:
+            self.ledger = None
 
     async def _setup(self):
         """Create the session or transaction connection, if needed."""
         await super()._setup()
         injector = self._context.injector
+        injector.bind_instance(
+            BaseWallet,
+            self.wallet,
+        )
         injector.bind_provider(
             BaseStorage,
             ClassProvider(
-                "aries_cloudagent.storage.indy.IndyStorage", self.profile.opened
-            ),
-        )
-        injector.bind_provider(
-            BaseWallet,
-            ClassProvider(
-                "aries_cloudagent.wallet.indy.IndyWallet", self.profile.opened
+                "aries_cloudagent.storage.indy.IndySdkStorage", self.profile.opened
             ),
         )
         injector.bind_provider(
@@ -100,17 +130,19 @@ class IndySdkProfileSession(ProfileSession):
                 "aries_cloudagent.indy.sdk.issuer.IndySdkIssuer", self.profile
             ),
         )
-        injector.bind_provider(
-            IndyVerifier,
-            ClassProvider(
-                "aries_cloudagent.indy.sdk.verifier.IndySdkVerifier",
-                self.profile.opened,
-            ),
-        )
-        injector.bind_provider(
-            BaseLedger,
-            ClassProvider("aries_cloudagent.ledger.provider.LedgerProvider"),
-        )
+
+        if self.ledger:
+            injector.bind_instance(
+                BaseLedger,
+                self.ledger,
+            )
+            injector.bind_provider(
+                IndyVerifier,
+                ClassProvider(
+                    "aries_cloudagent.indy.sdk.verifier.IndySdkVerifier",
+                    self.ledger,
+                ),
+            )
 
 
 class IndySdkProfileManager(ProfileManager):

@@ -26,12 +26,12 @@ from ..indy.sdk.wallet_setup import IndyOpenWallet
 LOGGER = logging.getLogger(__name__)
 
 
-class IndyStorage(BaseStorage):
+class IndySdkStorage(BaseStorage):
     """Indy Non-Secrets interface."""
 
     def __init__(self, wallet: IndyOpenWallet):
         """
-        Initialize an `IndyStorage` instance.
+        Initialize an `IndySdkStorage` instance.
 
         Args:
             wallet: The indy wallet instance to use
@@ -173,7 +173,7 @@ class IndyStorage(BaseStorage):
         tag_query: Mapping = None,
         page_size: int = None,
         options: Mapping = None,
-    ) -> "IndyStorageRecordSearch":
+    ) -> "IndySdkStorageSearch":
         """
         Search stored records.
 
@@ -184,25 +184,25 @@ class IndyStorage(BaseStorage):
             options: Dictionary of backend-specific options
 
         Returns:
-            An instance of `IndyStorageRecordSearch`
+            An instance of `IndySdkStorageSearch`
 
         """
-        return IndyStorageRecordSearch(self, type_filter, tag_query, page_size, options)
+        return IndySdkStorageSearch(self, type_filter, tag_query, page_size, options)
 
 
-class IndyStorageRecordSearch(BaseStorageRecordSearch):
+class IndySdkStorageSearch(BaseStorageRecordSearch):
     """Represent an active stored records search."""
 
     def __init__(
         self,
-        store: IndyStorage,
+        store: IndySdkStorage,
         type_filter: str,
         tag_query: Mapping,
         page_size: int = None,
         options: Mapping = None,
     ):
         """
-        Initialize a `IndyStorageRecordSearch` instance.
+        Initialize a `IndySdkStorageSearch` instance.
 
         Args:
             store: `BaseStorage` to search

@@ -14,10 +14,10 @@ from asynctest import mock as async_mock
 from ...indy.sdk.profile import IndySdkProfileManager
 from ...storage.base import BaseStorage
 from ...storage.error import StorageError, StorageSearchError
-from ...storage.indy import IndyStorage
+from ...storage.indy import IndySdkStorage
 from ...storage.record import StorageRecord
 from ...wallet import indy as test_wallet
-from ...wallet.indy import IndyWallet
+from ...wallet.indy import IndySdkWallet
 
 from .. import indy as test_module
 from . import test_in_memory_storage
@@ -25,7 +25,7 @@ from . import test_in_memory_storage
 
 @pytest.fixture()
 async def store():
-    key = await IndyWallet.generate_wallet_key()
+    key = await IndySdkWallet.generate_wallet_key()
     profile = await IndySdkProfileManager().provision(
         {
             "auto_remove": True,
@@ -40,7 +40,7 @@ async def store():
 
 
 @pytest.mark.indy
-class TestIndyStorage(test_in_memory_storage.TestInMemoryStorage):
+class TestIndySdkStorage(test_in_memory_storage.TestInMemoryStorage):
     """Tests for indy storage."""
 
     @pytest.mark.asyncio
@@ -63,7 +63,7 @@ class TestIndyStorage(test_in_memory_storage.TestInMemoryStorage):
                 {
                     "auto_remove": True,
                     "name": "test-wallet",
-                    "key": await IndyWallet.generate_wallet_key(),
+                    "key": await IndySdkWallet.generate_wallet_key(),
                     "key_derivation_method": "RAW",
                     "storage_type": "postgres_storage",
                     "storage_config": json.dumps({"url": "dummy"}),
@@ -227,7 +227,7 @@ class TestIndyStorage(test_in_memory_storage.TestInMemoryStorage):
                 {
                     "auto_remove": True,
                     "name": "test_pg_wallet",
-                    "key": await IndyWallet.generate_wallet_key(),
+                    "key": await IndySdkWallet.generate_wallet_key(),
                     "key_derivation_method": "RAW",
                     "storage_type": "postgres_storage",
                     "storage_config": json.dumps({"url": "dummy"}),
@@ -301,7 +301,7 @@ class TestIndyStorage(test_in_memory_storage.TestInMemoryStorage):
                 {
                     "auto_remove": True,
                     "name": "test_indy_wallet",
-                    "key": await IndyWallet.generate_wallet_key(),
+                    "key": await IndySdkWallet.generate_wallet_key(),
                     "key_derivation_method": "RAW",
                 }
             )
@@ -337,8 +337,8 @@ class TestIndyStorage(test_in_memory_storage.TestInMemoryStorage):
         if not postgres_url:
             pytest.fail("POSTGRES_URL not configured")
 
-        wallet_key = await IndyWallet.generate_wallet_key()
-        postgres_wallet = IndyWallet(
+        wallet_key = await IndySdkWallet.generate_wallet_key()
+        postgres_wallet = IndySdkWallet(
             {
                 "auto_create": False,
                 "auto_remove": False,
@@ -353,7 +353,7 @@ class TestIndyStorage(test_in_memory_storage.TestInMemoryStorage):
         await postgres_wallet.create()
         await postgres_wallet.open()
 
-        storage = IndyStorage(postgres_wallet)
+        storage = IndySdkStorage(postgres_wallet)
 
         # add and then fetch a record
         record = StorageRecord(

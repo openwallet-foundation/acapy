@@ -13,7 +13,7 @@ from indy.error import (
 
 from ....indy.sdk.profile import IndySdkProfile
 from ....indy.sdk.wallet_setup import IndyWalletConfig
-from ....wallet.indy import IndyWallet
+from ....wallet.indy import IndySdkWallet
 from ...issuer import IndyIssuerRevocationRegistryFullError
 
 from .. import issuer as test_module
@@ -38,7 +38,7 @@ class TestIndySdkIssuer(AsyncTestCase):
         self.wallet = await IndyWalletConfig(
             {
                 "auto_remove": True,
-                "key": await IndyWallet.generate_wallet_key(),
+                "key": await IndySdkWallet.generate_wallet_key(),
                 "key_derivation_method": "RAW",
                 "name": "test-wallet",
             }
