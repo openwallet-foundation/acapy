@@ -30,12 +30,14 @@ class RouteRecord(BaseRecord):
         recipient_key: str = None,
         **kwargs
     ):
-        """
-        Initialize a RouteRecord instance.
+        """Initialize route record.
 
         Args:
-            recipient_key: The recipient verkey of the route
-
+            record_id (str): record_id optionally specify record id manually
+            role (str): role of agent, client or server
+            connection_id (str): connection_id associated with record
+            recipient_key (str): recipient_key associated with record
+            kwargs: additional args for BaseRecord
         """
         super().__init__(record_id, None, **kwargs)
         self.role = role or self.ROLE_SERVER
@@ -50,19 +52,33 @@ class RouteRecord(BaseRecord):
     @classmethod
     async def retrieve_by_recipient_key(
         cls, context: InjectionContext, recipient_key: str
-    ):
-        """Retrieve a route record by recipient key."""
+    ) -> "RouteRecord":
+        """Retrieve a route record by recipient key.
+
+        Args:
+            context (InjectionContext): context
+            recipient_key (str): key to look up
+
+        Returns:
+            RouteRecord: retrieved route record
+        """
         tag_filter = {"recipient_key": recipient_key}
-        # TODO post filter out our mediation requests?
         return await cls.retrieve_by_tag_filter(context, tag_filter)
 
     @classmethod
     async def retrieve_by_connection_id(
         cls, context: InjectionContext, connection_id: str
-    ):
-        """Retrieve a route record by recipient key."""
+    ) -> "RouteRecord":
+        """Retrieve a route record by connection ID.
+
+        Args:
+            context (InjectionContext): context
+            connection_id (str): ID to look up
+
+        Returns:
+            RouteRecord: retrieved route record
+        """
         tag_filter = {"connection_id": connection_id}
-        # TODO post filter out our mediation requests?
         return await cls.retrieve_by_tag_filter(context, tag_filter)
 
 
