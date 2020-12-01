@@ -139,7 +139,6 @@ def pytest_sessionstart(session):
             import ptvsd
 
             ptvsd.enable_attach(address=("0.0.0.0", 5678))
-            
             print("ptvsd is running")
             print("=== Waiting for debugger to attach ===")
             # To pause execution until the debugger is attached:
