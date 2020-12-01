@@ -12,7 +12,7 @@ import indy.wallet
 
 from indy.error import IndyError, ErrorCode
 
-from ...core.error import ProfileError, ProfileNotFoundError
+from ...core.error import ProfileError, ProfileDuplicateError, ProfileNotFoundError
 from ...core.profile import Profile
 
 from .error import IndyErrorHandler
@@ -35,13 +35,13 @@ class IndyWalletConfig:
         """Initialize an `IndySdkWalletConfig` instance.
 
         Args:
-            config: {name, key, seed, did, auto-create, auto-remove,
+            config: {name, key, seed, did, auto_recreate, auto_remove,
                      storage_type, storage_config, storage_creds}
 
         """
 
         config = config or {}
-        # self.auto_create = config.get("auto_create", True)
+        self.auto_recreate = config.get("auto_recreate", False)
         self.auto_remove = config.get("auto_remove", False)
         self.freshness_time = config.get("freshness_time", False)
         self.key = config.get("key") or self.DEFAULT_KEY
@@ -87,11 +87,12 @@ class IndyWalletConfig:
         Create a new wallet.
 
         Raises:
+            ProfileDuplicateError: If there was an existing wallet with the same name
             ProfileError: If there was a problem removing the wallet
-            ProfileError: IF there was a libindy error
+            ProfileError: If there was another libindy error
 
         """
-        if self.auto_remove:
+        if self.auto_recreate:
             try:
                 await self.remove_wallet()
             except ProfileNotFoundError:
@@ -102,18 +103,24 @@ class IndyWalletConfig:
                 credentials=json.dumps(self.wallet_access),
             )
         except IndyError as x_indy:
+            if x_indy.error_code == ErrorCode.WalletAlreadyExistsError:
+                raise IndyErrorHandler.wrap_error(
+                    x_indy,
+                    f"Cannot create wallet '{self.name}', already exists",
+                    ProfileDuplicateError,
+                ) from x_indy
             raise IndyErrorHandler.wrap_error(
                 x_indy,
-                "Wallet was not removed by SDK, {} may still be open".format(self.name)
-                if x_indy.error_code == ErrorCode.WalletAlreadyExistsError
-                else None,
+                f"Error creating wallet '{self.name}'",
                 ProfileError,
             ) from x_indy
 
         try:
-            return await self.open_wallet()
+            return await self.open_wallet(created=True)
         except ProfileNotFoundError as err:
-            raise ProfileError(f"Wallet {self.name} not found after creation") from err
+            raise ProfileError(
+                f"Wallet '{self.name}' not found after creation"
+            ) from err
 
     async def remove_wallet(self):
         """
@@ -133,14 +140,14 @@ class IndyWalletConfig:
             if x_indy.error_code == ErrorCode.WalletNotFoundError:
                 raise IndyErrorHandler.wrap_error(
                     x_indy,
-                    "Wallet {} not found".format(self.name),
+                    f"Wallet '{self.name}' not found",
                     ProfileNotFoundError,
                 ) from x_indy
             raise IndyErrorHandler.wrap_error(
-                x_indy, "Wallet error", ProfileError
+                x_indy, f"Error removing wallet '{self.name}'", ProfileError
             ) from x_indy
 
-    async def open_wallet(self) -> "IndyOpenWallet":
+    async def open_wallet(self, created: bool = False) -> "IndyOpenWallet":
         """
         Open wallet, removing and/or creating it if so configured.
 
@@ -168,12 +175,16 @@ class IndyWalletConfig:
                 break
             except IndyError as x_indy:
                 if x_indy.error_code == ErrorCode.WalletNotFoundError:
-                    raise ProfileNotFoundError("Wallet {} not found".format(self.name))
+                    raise IndyErrorHandler.wrap_error(
+                        x_indy, f"Wallet '{self.name}' not found", ProfileNotFoundError
+                    ) from x_indy
                 elif x_indy.error_code == ErrorCode.WalletAlreadyOpenedError:
-                    raise ProfileError("Wallet {} is already open".format(self.name))
+                    raise IndyErrorHandler.wrap_error(
+                        x_indy, f"Wallet '{self.name}' is already open", ProfileError
+                    ) from x_indy
                 else:
                     raise IndyErrorHandler.wrap_error(
-                        x_indy, "Wallet {} error".format(self.name), ProfileError
+                        x_indy, f"Error opening wallet '{self.name}'", ProfileError
                     ) from x_indy
 
         LOGGER.info("Creating master secret...")
@@ -190,7 +201,7 @@ class IndyWalletConfig:
                     x_indy, "Wallet {} error".format(self.name), ProfileError
                 ) from x_indy
 
-        return IndyOpenWallet(self, handle, self.name, master_secret_id)
+        return IndyOpenWallet(self, created, handle, self.name, master_secret_id)
 
 
 class IndyOpenWallet:
@@ -199,12 +210,14 @@ class IndyOpenWallet:
     def __init__(
         self,
         config: IndyWalletConfig,
+        created,
         handle,
         name: str,
         master_secret_id: str,
     ):
         """Create a new IndyOpenWallet instance."""
         self.config = config
+        self.created = created
         self.handle = handle
         self.name = name
         self.master_secret_id = master_secret_id

@@ -227,6 +227,11 @@ class IndySdkLedger(BaseLedger):
         """Accessor for the ledger pool name."""
         return self.pool.name
 
+    @property
+    def read_only(self) -> bool:
+        """Accessor for the ledger read-only flag."""
+        return self.pool.read_only
+
     async def __aenter__(self) -> "IndySdkLedger":
         """
         Context manager entry.

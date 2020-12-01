@@ -30,7 +30,7 @@ class IndySdkProfile(Profile):
 
     def __init__(self, opened: IndyOpenWallet, context: InjectionContext = None):
         """Create a new IndyProfile instance."""
-        super().__init__(context=context, name=opened.name)
+        super().__init__(context=context, name=opened.name, created=opened.created)
         self.opened = opened
         self.pool: IndySdkLedgerPool = None
         self.init_ledger_pool()

@@ -28,6 +28,7 @@ async def store():
     key = await IndySdkWallet.generate_wallet_key()
     profile = await IndySdkProfileManager().provision(
         {
+            "auto_recreate": True,
             "auto_remove": True,
             "name": "test-wallet",
             "key": key,
@@ -61,6 +62,7 @@ class TestIndySdkStorage(test_in_memory_storage.TestInMemoryStorage):
         ) as mock_delete:
             fake_profile = await IndySdkProfileManager().provision(
                 {
+                    "auto_recreate": True,
                     "auto_remove": True,
                     "name": "test-wallet",
                     "key": await IndySdkWallet.generate_wallet_key(),
@@ -225,6 +227,7 @@ class TestIndySdkStorage(test_in_memory_storage.TestInMemoryStorage):
         ) as mock_delete:
             fake_profile = await IndySdkProfileManager().provision(
                 {
+                    "auto_recreate": True,
                     "auto_remove": True,
                     "name": "test_pg_wallet",
                     "key": await IndySdkWallet.generate_wallet_key(),
@@ -299,6 +302,7 @@ class TestIndySdkStorage(test_in_memory_storage.TestInMemoryStorage):
         ) as mock_delete:
             fake_profile = await IndySdkProfileManager().provision(
                 {
+                    "auto_recreate": True,
                     "auto_remove": True,
                     "name": "test_indy_wallet",
                     "key": await IndySdkWallet.generate_wallet_key(),
@@ -340,8 +344,8 @@ class TestIndySdkStorage(test_in_memory_storage.TestInMemoryStorage):
         wallet_key = await IndySdkWallet.generate_wallet_key()
         postgres_wallet = IndySdkWallet(
             {
-                "auto_create": False,
-                "auto_remove": False,
+                "auto_recreate": True,
+                "auto_remove": True,
                 "name": "test_pg_wallet",
                 "key": wallet_key,
                 "key_derivation_method": "RAW",

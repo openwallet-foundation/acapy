@@ -15,7 +15,7 @@ from ..admin.base_server import BaseAdminServer
 from ..admin.server import AdminServer
 from ..config.default_context import ContextBuilder
 from ..config.injection_context import InjectionContext
-from ..config.ledger import ledger_config
+from ..config.ledger import get_genesis_transactions, ledger_config
 from ..config.logging import LoggingConfigurator
 from ..config.wallet import wallet_config
 from ..core.profile import Profile
@@ -76,6 +76,9 @@ class Conductor:
         """Initialize the global request context."""
 
         context = await self.context_builder.build_context()
+
+        # Fetch genesis transactions if necessary
+        await get_genesis_transactions(context.settings)
 
         # Configure the root profile
         self.root_profile, self.setup_public_did = await wallet_config(context)
@@ -242,6 +245,9 @@ class Conductor:
         if self.outbound_transport_manager:
             shutdown.run(self.outbound_transport_manager.stop())
         await shutdown.complete(timeout)
+        if self.root_profile:
+            await self.root_profile.close()
+            self.root_profile = None
 
     def inbound_message_router(
         self, message: InboundMessage, can_respond: bool = False

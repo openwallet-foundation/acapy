@@ -4,6 +4,7 @@ import pytest
 
 from ...config.base import ConfigError
 from ...config.error import ArgsParseError
+from ...core.profile import Profile
 from .. import provision as test_module
 
 
@@ -31,12 +32,16 @@ class TestProvision(AsyncTestCase):
                 "--no-ledger",
                 "--endpoint",
                 "test_endpoint",
+                "--recreate-wallet",
             ]
         )
 
     async def test_provision_ledger_configured(self):
+        profile = async_mock.MagicMock(close=async_mock.CoroutineMock())
         with async_mock.patch.object(
-            test_module, "wallet_config", async_mock.CoroutineMock()
+            test_module,
+            "wallet_config",
+            async_mock.CoroutineMock(return_value=(profile, "public DID")),
         ) as mock_wallet_config, async_mock.patch.object(
             test_module, "ledger_config", async_mock.CoroutineMock(return_value=True)
         ) as mock_ledger_config:

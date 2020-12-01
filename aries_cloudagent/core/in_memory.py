@@ -27,7 +27,7 @@ class InMemoryProfile(Profile):
     def __init__(self, *, context: InjectionContext = None, name: str = None):
         """Create a new InMemoryProfile instance."""
         global STORAGE_CLASS, WALLET_CLASS
-        super().__init__(context=context, name=name)
+        super().__init__(context=context, name=name, created=True)
         self.keys = {}
         self.local_dids = {}
         self.pair_dids = {}

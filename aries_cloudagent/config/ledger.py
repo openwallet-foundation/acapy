@@ -10,6 +10,7 @@ import prompt_toolkit
 from prompt_toolkit.eventloop.defaults import use_asyncio_event_loop
 from prompt_toolkit.formatted_text import HTML
 
+from ..config.settings import Settings
 from ..core.profile import Profile
 from ..ledger.base import BaseLedger
 from ..ledger.endpoint_type import EndpointType
@@ -33,27 +34,32 @@ async def fetch_genesis_transactions(genesis_url: str) -> str:
         raise ConfigError("Error retrieving ledger genesis transactions") from e
 
 
+async def get_genesis_transactions(settings: Settings) -> str:
+    """Fetch genesis transactions if necessary."""
+
+    txns = settings.get("ledger.genesis_transactions")
+    if not txns:
+        if settings.get("ledger.genesis_url"):
+            txns = await fetch_genesis_transactions(settings["ledger.genesis_url"])
+        elif settings.get("ledger.genesis_file"):
+            try:
+                genesis_path = settings["ledger.genesis_file"]
+                LOGGER.info(
+                    "Reading ledger genesis transactions from: %s", genesis_path
+                )
+                with open(genesis_path, "r") as genesis_file:
+                    txns = genesis_file.read()
+            except IOError as e:
+                raise ConfigError("Error reading ledger genesis transactions") from e
+        if txns:
+            settings["ledger.genesis_transactions"] = txns
+    return txns
+
+
 async def ledger_config(
     profile: Profile, public_did: str, provision: bool = False
 ) -> bool:
     """Perform Indy ledger configuration."""
-
-    # Fetch genesis transactions if necessary
-    if not profile.settings.get("ledger.genesis_transactions"):
-        if profile.settings.get("ledger.genesis_url"):
-            profile.settings[
-                "ledger.genesis_transactions"
-            ] = await fetch_genesis_transactions(profile.settings["ledger.genesis_url"])
-        elif profile.settings.get("ledger.genesis_file"):
-            try:
-                genesis_path = profile.settings["ledger.genesis_file"]
-                LOGGER.info("Reading genesis transactions from: %s", genesis_path)
-                with open(genesis_path, "r") as genesis_file:
-                    profile.settings["ledger.genesis_transactions"] = genesis_file.read(
-                        -1
-                    )
-            except IOError as e:
-                raise ConfigError("Error reading genesis transactions") from e
 
     session = await profile.session()
 
@@ -61,15 +67,10 @@ async def ledger_config(
     if not ledger:
         LOGGER.info("Ledger instance not provided")
         return False
-    elif ledger.type != "indy":
-        LOGGER.info("Non-indy ledger provided")
-        return False
 
     async with ledger:
-        read_only_ledger = session.settings.get("read_only_ledger")
-
         # Check transaction author agreement acceptance
-        if not read_only_ledger:
+        if not ledger.read_only:
             taa_info = await ledger.get_txn_author_agreement()
             if taa_info["taa_required"] and public_did:
                 taa_accepted = await ledger.get_latest_txn_author_acceptance()
@@ -84,8 +85,6 @@ async def ledger_config(
         endpoint = session.settings.get("default_endpoint")
         if public_did:
             wallet = session.inject(BaseWallet)
-            if wallet.type != "indy":
-                raise ConfigError("Cannot provision a non-Indy wallet type")
             try:
                 await wallet.set_did_endpoint(public_did, endpoint, ledger)
             except LedgerError as x_ledger:
@@ -93,7 +92,7 @@ async def ledger_config(
 
             # Publish profile endpoint if ledger is NOT read-only
             profile_endpoint = session.settings.get("profile_endpoint")
-            if profile_endpoint and not read_only_ledger:
+            if profile_endpoint and not ledger.read_only:
                 await ledger.update_endpoint_for_did(
                     public_did, profile_endpoint, EndpointType.PROFILE
                 )
@@ -115,14 +114,14 @@ async def accept_taa(ledger: BaseLedger, taa_info, provision: bool = False) -> b
                 "wallet_agreement",
                 (
                     "Accept the transaction author agreement and store the "
-                    + "acceptance in the wallet"
+                    "acceptance in the wallet"
                 ),
             ),
             (
                 "on_file",
                 (
                     "Acceptance of the transaction author agreement is on file "
-                    + "in my organization"
+                    "in my organization"
                 ),
             ),
         ]
@@ -130,7 +129,7 @@ async def accept_taa(ledger: BaseLedger, taa_info, provision: bool = False) -> b
     if not provision:
         allow_opts["for_session"] = (
             "Accept the transaction author agreement for the duration of "
-            + "the current session"
+            "the current session"
         )
 
     found = []

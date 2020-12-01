@@ -12,7 +12,7 @@ from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
 from ...core.in_memory import InMemoryProfile
-from ...core.error import ProfileError
+from ...core.error import ProfileError, ProfileDuplicateError, ProfileNotFoundError
 from ...indy.sdk import wallet_setup as test_setup_module
 from ...indy.sdk.profile import IndySdkProfileManager
 from ...indy.sdk.wallet_setup import IndyWalletConfig
@@ -38,6 +38,7 @@ async def wallet():
     key = await IndySdkWallet.generate_wallet_key()
     profile = await IndySdkProfileManager().provision(
         {
+            "auto_recreate": True,
             "auto_remove": True,
             "name": "test-wallet",
             "key": key,
@@ -258,6 +259,7 @@ class TestWalletCompat:
         ) as mock_delete:
             fake_wallet = IndyWalletConfig(
                 {
+                    "auto_recreate": True,
                     "auto_remove": False,
                     "name": "test_pg_wallet",
                     "key": wallet_key,
@@ -308,7 +310,6 @@ class TestWalletCompat:
             )
             fake_wallet = IndyWalletConfig(
                 {
-                    "auto_remove": True,
                     "name": "test_pg_wallet",
                     "key": wallet_key,
                     "key_derivation_method": "RAW",
@@ -317,9 +318,8 @@ class TestWalletCompat:
                     "storage_creds": storage_creds_json,
                 }
             )
-            with pytest.raises(ProfileError) as excinfo:
+            with pytest.raises(ProfileDuplicateError) as excinfo:
                 await fake_wallet.create_wallet()
-            assert "Wallet was not removed by SDK" in str(excinfo.value)
 
     @pytest.mark.asyncio
     async def test_mock_coverage_wallet_create_x(self):
@@ -356,6 +356,7 @@ class TestWalletCompat:
             )
             fake_wallet = IndyWalletConfig(
                 {
+                    "auto_recreate": True,
                     "auto_remove": True,
                     "name": "test_pg_wallet",
                     "key": wallet_key,
@@ -404,6 +405,7 @@ class TestWalletCompat:
             )
             fake_wallet = IndyWalletConfig(
                 {
+                    "auto_recreate": False,
                     "auto_remove": False,
                     "name": "test_pg_wallet",
                     "key": wallet_key,
@@ -456,6 +458,7 @@ class TestWalletCompat:
             )
             fake_wallet = IndyWalletConfig(
                 {
+                    "auto_recreate": True,
                     "auto_remove": True,
                     "name": "test_pg_wallet",
                     "key": wallet_key,
@@ -505,7 +508,6 @@ class TestWalletCompat:
             )
             fake_wallet = IndyWalletConfig(
                 {
-                    "auto_remove": True,
                     "name": "test_pg_wallet",
                     "key": wallet_key,
                     "key_derivation_method": "RAW",
@@ -515,9 +517,9 @@ class TestWalletCompat:
                 }
             )
             mock_load.assert_called_once_with(storage_config_json, storage_creds_json)
-            with pytest.raises(ProfileError) as excinfo:
-                await fake_wallet.create_wallet()
-            assert "Wallet test_pg_wallet not found" in str(excinfo.value)
+            with pytest.raises(ProfileNotFoundError) as excinfo:
+                await fake_wallet.open_wallet()
+            assert "outlier" in str(excinfo.value)
 
     @pytest.mark.asyncio
     async def test_mock_coverage_open_indy_already_open_x(self):
@@ -554,7 +556,6 @@ class TestWalletCompat:
             )
             fake_wallet = IndyWalletConfig(
                 {
-                    "auto_remove": True,
                     "name": "test_pg_wallet",
                     "key": wallet_key,
                     "key_derivation_method": "RAW",
@@ -565,8 +566,8 @@ class TestWalletCompat:
             )
             mock_load.assert_called_once_with(storage_config_json, storage_creds_json)
             with pytest.raises(ProfileError) as excinfo:
-                await fake_wallet.create_wallet()
-            assert "Wallet test_pg_wallet is already open" in str(excinfo.value)
+                await fake_wallet.open_wallet()
+            assert "outlier" in str(excinfo.value)
 
     @pytest.mark.asyncio
     async def test_mock_coverage_open_x(self):
@@ -603,7 +604,6 @@ class TestWalletCompat:
             )
             fake_wallet = IndyWalletConfig(
                 {
-                    "auto_remove": True,
                     "name": "test_pg_wallet",
                     "key": wallet_key,
                     "key_derivation_method": "RAW",
@@ -614,7 +614,7 @@ class TestWalletCompat:
             )
             mock_load.assert_called_once_with(storage_config_json, storage_creds_json)
             with pytest.raises(ProfileError) as excinfo:
-                await fake_wallet.create_wallet()
+                await fake_wallet.open_wallet()
             assert "outlier" in str(excinfo.value)
 
     @pytest.mark.asyncio
@@ -652,6 +652,7 @@ class TestWalletCompat:
             )
             fake_wallet = IndyWalletConfig(
                 {
+                    "auto_recreate": True,
                     "auto_remove": True,
                     "name": "test_pg_wallet",
                     "key": wallet_key,
@@ -701,7 +702,8 @@ class TestWalletCompat:
             )
             fake_wallet = IndyWalletConfig(
                 {
-                    "auto_remove": False,
+                    "auto_recreate": True,
+                    "auto_remove": True,
                     "name": "test_pg_wallet",
                     "key": wallet_key,
                     "key_derivation_method": "RAW",
@@ -731,7 +733,8 @@ class TestWalletCompat:
         wallet_key = await IndySdkWallet.generate_wallet_key()
         postgres_wallet = IndyWalletConfig(
             {
-                "auto_remove": False,
+                "auto_recreate": True,
+                "auto_remove": True,
                 "name": "test_pg_wallet",
                 "key": wallet_key,
                 "key_derivation_method": "RAW",
@@ -766,7 +769,8 @@ class TestWalletCompat:
         wallet_key = await IndySdkWallet.generate_wallet_key()
         postgres_wallet = IndyWalletConfig(
             {
-                "auto_remove": False,
+                "auto_recreate": True,
+                "auto_remove": True,
                 "name": "test_pg_wallet",
                 "key": wallet_key,
                 "key_derivation_method": "RAW",
@@ -807,7 +811,8 @@ class TestWalletCompat:
         wallet_key = await IndySdkWallet.generate_wallet_key()
         postgres_wallet = IndyWalletConfig(
             {
-                "auto_remove": False,
+                "auto_recreate": True,
+                "auto_remove": True,
                 "name": "test_pg_wallet",
                 "key": wallet_key,
                 "key_derivation_method": "RAW",

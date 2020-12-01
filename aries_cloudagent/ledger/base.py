@@ -34,6 +34,11 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         """Accessor for the ledger backend name."""
         return self.__class__.BACKEND_NAME
 
+    @property
+    @abstractmethod
+    def read_only(self) -> bool:
+        """Accessor for the ledger read-only flag."""
+
     @abstractmethod
     async def get_key_for_did(self, did: str) -> str:
         """Fetch the verkey for a ledger DID.

@@ -2,6 +2,7 @@
 
 import logging
 
+from ..core.error import ProfileNotFoundError
 from ..core.profile import Profile, ProfileManager
 from ..wallet.base import BaseWallet
 from ..wallet.crypto import seed_to_did
@@ -15,7 +16,7 @@ CFG_MAP = {"key", "rekey", "name", "storage_config", "storage_creds", "storage_t
 
 
 async def wallet_config(
-    context: InjectionContext, provision: bool = None
+    context: InjectionContext, provision: bool = False
 ) -> (Profile, str):
     """Initialize the root profile."""
 
@@ -28,17 +29,22 @@ async def wallet_config(
         if pk in settings:
             profile_cfg[k] = settings[pk]
 
-    if provision is None:
-        provision = settings.get("wallet.auto_provision", False)
+    # may be set by `aca-py provision --recreate`
+    if settings.get("wallet.recreate"):
+        profile_cfg["auto_recreate"] = True
 
     if provision:
         root_profile = await mgr.provision(profile_cfg)
     else:
-        root_profile = await mgr.open(profile_cfg)
+        try:
+            root_profile = await mgr.open(profile_cfg)
+        except ProfileNotFoundError:
+            if settings.get("auto_provision", False):
+                root_profile = await mgr.provision(profile_cfg)
+            else:
+                raise
 
     if provision:
-        if root_profile.backend != "indy":
-            raise ConfigError("Cannot provision a non-Indy wallet type")
         if root_profile.created:
             print("Created new profile")
         else:

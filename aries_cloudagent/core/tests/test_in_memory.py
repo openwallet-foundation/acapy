@@ -16,4 +16,4 @@ class TestInMemoryWallet:
         assert profile.backend == "in_memory"
 
         assert "InMemoryProfile" in str(profile)
-        # assert profile.created
+        assert profile.created

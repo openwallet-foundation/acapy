@@ -37,6 +37,7 @@ class TestIndySdkIssuer(AsyncTestCase):
     async def setUp(self):
         self.wallet = await IndyWalletConfig(
             {
+                "auto_recreate": True,
                 "auto_remove": True,
                 "key": await IndySdkWallet.generate_wallet_key(),
                 "key_derivation_method": "RAW",

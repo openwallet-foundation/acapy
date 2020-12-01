@@ -51,6 +51,10 @@ class ProfileError(BaseError):
     """Base error for profile operations."""
 
 
+class ProfileDuplicateError(ProfileError):
+    """Profile with the given name already exists."""
+
+
 class ProfileNotFoundError(ProfileError):
     """Requested profile was not found."""
 

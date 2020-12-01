@@ -9,8 +9,9 @@ from ..wallet_setup import IndyWalletConfig, IndyOpenWallet
 async def profile():
     yield IndySdkProfile(
         IndyOpenWallet(
-            IndyWalletConfig({"name": "test-profile"}),
-            1,
+            config=IndyWalletConfig({"name": "test-profile"}),
+            created=True,
+            handle=1,
             name="test-profile",
             master_secret_id="master-secret",
         )
@@ -25,7 +26,8 @@ class TestIndySdkProfile:
         assert profile.wallet and profile.wallet.handle == 1
 
         assert "IndySdkProfile" in str(profile)
-        # assert profile.wallet.created
+        assert profile.created
+        assert profile.wallet.created
         assert profile.wallet.master_secret_id == "master-secret"
 
     # FIXME needs more coverage

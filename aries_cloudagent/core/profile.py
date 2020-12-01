@@ -23,9 +23,16 @@ class Profile(ABC):
     BACKEND_NAME = None
     DEFAULT_NAME = "default"
 
-    def __init__(self, *, context: InjectionContext = None, name: str = None):
+    def __init__(
+        self,
+        *,
+        context: InjectionContext = None,
+        name: str = None,
+        created: bool = False,
+    ):
         """Initialize a base profile."""
         self._context = context or InjectionContext()
+        self._created = created
         self._name = name or Profile.DEFAULT_NAME
 
     @property
@@ -37,6 +44,11 @@ class Profile(ABC):
     def context(self) -> InjectionContext:
         """Accessor for the injection context."""
         return self._context
+
+    @property
+    def created(self) -> bool:
+        """Accessor for the created flag indicating a new profile."""
+        return self._created
 
     @property
     def name(self) -> str:

@@ -7,7 +7,7 @@ from typing import Sequence
 from ..config import argparse as arg
 from ..config.default_context import DefaultContextBuilder
 from ..config.base import BaseError
-from ..config.ledger import ledger_config
+from ..config.ledger import get_genesis_transactions, ledger_config
 from ..config.util import common_config
 from ..config.wallet import wallet_config
 
@@ -29,12 +29,16 @@ async def provision(settings: dict):
     context = await context_builder.build_context()
 
     try:
-        public_did = await wallet_config(context, True)
+        await get_genesis_transactions(context.settings)
 
-        if await ledger_config(context, public_did, True):
+        root_profile, public_did = await wallet_config(context, provision=True)
+
+        if await ledger_config(root_profile, public_did, True):
             print("Ledger configured")
         else:
             print("Ledger not configured")
+
+        await root_profile.close()
     except BaseError as e:
         raise ProvisionError("Error during provisioning") from e
 
