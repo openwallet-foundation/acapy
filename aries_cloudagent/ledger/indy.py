@@ -39,6 +39,7 @@ from .error import (
     LedgerTransactionError,
 )
 from .util import TAA_ACCEPTED_RECORD_TYPE
+from ..wallet_handler import WalletHandler
 
 LOGGER = logging.getLogger(__name__)
 
@@ -869,8 +870,20 @@ class IndyLedger(BaseLedger):
                 "Error cannot register nym when ledger is in read only mode"
             )
 
-        # use the wallet of requester to register nym
+        # wallet: the wallet of requester to register nym
+        # target_wallet: the wallet of did's owner
         wallet: BaseWallet = self.wallet
+        target_wallet: BaseWallet = self.wallet
+
+        # Multitenancy: if wallet_name is given, use wallet_name's wallet as target_wallet
+        ext_plugins = context.settings.get_value("external_plugins")
+        if wallet_name and ext_plugins and 'aries_cloudagent.wallet_handler' in ext_plugins:
+            _context = context.copy()
+            wallet_handler: WalletHandler = await _context.inject(WalletHandler)
+            # prevent getting wallet without opening wallet
+            await wallet_handler.set_instance(wallet_name, _context)
+            target_wallet = await _context.inject(BaseWallet)
+
         public_info = await wallet.get_public_did()
         public_did = public_info.did if public_info else None
         with IndyErrorHandler("Exception building nym request", LedgerError):
@@ -880,17 +893,9 @@ class IndyLedger(BaseLedger):
 
         await self._submit(request_json)
 
-        # Multitenancy: if wallet_name is given, use the wallet of wallet_name
-        ext_plugins = context.settings.get_value("external_plugins")
-        if ext_plugins and 'aries_cloudagent.wallet_handler' in ext_plugins:
-            if wallet_name:
-                _context = context.copy()
-                _context.settings.set_value("wallet.id", wallet_name)
-                wallet = await _context.inject(BaseWallet)
-
-        did_info = await wallet.get_local_did(did)
+        did_info = await target_wallet.get_local_did(did)
         metadata = {**did_info.metadata, **DIDPosture.POSTED.metadata}
-        await wallet.replace_local_did_metadata(did, metadata)
+        await target_wallet.replace_local_did_metadata(did, metadata)
 
     async def get_nym_role(self, did: str) -> Role:
         """
