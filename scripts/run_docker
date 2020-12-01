@@ -32,5 +32,5 @@ else
   DOCKER="docker"
 fi
 
-RAND_NAME=$(cat /dev/urandom | env LC_CTYPE=C tr -dc 'a-zA-Z0-9' | fold -w 16 | head -n 1)
+RAND_NAME=$(od -vAn -N4 -tu < /dev/urandom | xargs)
 $DOCKER run --rm -ti --name "aries-cloudagent-runner_${RAND_NAME}" $ARGS aries-cloudagent-run "$@"
