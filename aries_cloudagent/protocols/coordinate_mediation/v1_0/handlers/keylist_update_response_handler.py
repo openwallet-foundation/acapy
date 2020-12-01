@@ -1,5 +1,7 @@
 """Handler for incoming medation grant messages."""
 
+from typing import List
+
 from .....messaging.base_handler import (
     BaseHandler,
     BaseResponder,
@@ -29,8 +31,11 @@ class KeylistUpdateResponseHandler(BaseHandler):
         if not context.connection_ready:
             raise HandlerException("Invalid mediation request: no active connection")
 
+        to_save: List[RouteRecord] = []
+        to_remove: List[RouteRecord] = []
         for updated in context.message.updated:
             if updated.result != KeylistUpdated.RESULT_SUCCESS:
+                # TODO better handle different results?
                 continue
             if updated.action == KeylistUpdateRule.RULE_ADD:
                 record = RouteRecord(
@@ -38,7 +43,7 @@ class KeylistUpdateResponseHandler(BaseHandler):
                     recipient_key=updated.recipient_key,
                     connection_id=context.connection_record.connection_id
                 )
-                await record.save(context, reason="Route successfully added.")
+                to_save.append(record)
             if updated.action == KeylistUpdateRule.RULE_REMOVE:
                 try:
                     records = await RouteRecord.query(
@@ -56,4 +61,9 @@ class KeylistUpdateResponseHandler(BaseHandler):
                     raise HandlerException('More than one route record found.')
 
                 record = records[0]
-                await record.delete_record(context)
+                to_remove.append(record)
+
+        for record_for_saving in to_save:
+            await record_for_saving.save(context, reason="Route successfully added.")
+        for record_for_removal in to_remove:
+            await record_for_removal.delete_record(context)
