@@ -1,6 +1,7 @@
-"""A credential content message."""
+"""An invitation content message."""
 
 from typing import Sequence, Text, Union
+from urllib.parse import parse_qs, urljoin, urlparse
 
 from marshmallow import (
     EXCLUDE,
@@ -16,22 +17,20 @@ from .....messaging.decorators.attach_decorator import (
     AttachDecorator,
     AttachDecoratorSchema,
 )
+from .....wallet.util import bytes_to_b64, b64_to_bytes
 
 from .service import Service, ServiceSchema
 
-from ..message_types import PROTOCOL_PACKAGE, INVITATION
-
-HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.invitation_handler.InvitationHandler"
+from ..message_types import INVITATION
 
 
-class Invitation(AgentMessage):
+class InvitationMessage(AgentMessage):
     """Class representing an out of band invitation message."""
 
     class Meta:
-        """Invitation metadata."""
+        """InvitationMessage metadata."""
 
-        handler_class = HANDLER_CLASS
-        schema_class = "InvitationSchema"
+        schema_class = "InvitationMessageSchema"
         message_type = INVITATION
 
     def __init__(
@@ -49,7 +48,7 @@ class Invitation(AgentMessage):
         **kwargs,
     ):
         """
-        Initialize invitation object.
+        Initialize invitation message object.
 
         Args:
             request_attach: request attachments
@@ -82,14 +81,46 @@ class Invitation(AgentMessage):
         """Convert an aries message to an attachment decorator."""
         return AttachDecorator.from_aries_msg(message=message, ident="request-0")
 
+    def to_url(self, base_url: str = None) -> str:
+        """
+        Convert an invitation message to URL format for sharing.
 
-class InvitationSchema(AgentMessageSchema):
-    """Invitation schema."""
+        Returns:
+            An invite url
+
+        """
+        c_json = self.to_json()
+        c_i = bytes_to_b64(c_json.encode("ascii"), urlsafe=True)
+        result = urljoin(base_url or "", "?c_i={}".format(c_i))
+        return result
+
+    @classmethod
+    def from_url(cls, url: str) -> "InvitationMessage":
+        """
+        Parse a URL-encoded invitation into an `InvitationMessage` instance.
+
+        Args:
+            url: Url to decode
+
+        Returns:
+            An `InvitationMessage` object.
+
+        """
+        parts = urlparse(url)
+        query = parse_qs(parts.query)
+        if "c_i" in query:
+            c_i = b64_to_bytes(query["c_i"][0], urlsafe=True)
+            return cls.from_json(c_i)
+        return None
+
+
+class InvitationMessageSchema(AgentMessageSchema):
+    """InvitationMessage schema."""
 
     class Meta:
-        """Invitation schema metadata."""
+        """InvitationMessage schema metadata."""
 
-        model_class = Invitation
+        model_class = InvitationMessage
         unknown = EXCLUDE
 
     label = fields.Str(required=False, description="Optional label", example="Bob")
@@ -119,7 +150,7 @@ class InvitationSchema(AgentMessageSchema):
         ):
             raise ValidationError(
                 "Model must include non-empty "
-                + "handshake_protocols or request_attach or both"
+                "handshake_protocols or request_attach or both"
             )
 
         # service = data.get("service")

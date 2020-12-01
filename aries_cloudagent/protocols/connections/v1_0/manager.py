@@ -2,7 +2,7 @@
 
 import logging
 
-from typing import Sequence, Tuple
+from typing import Coroutine, Sequence, Tuple
 
 from ....cache.base import BaseCache
 from ....connections.models.conn_record import ConnRecord
@@ -25,7 +25,7 @@ from ....transport.inbound.receipt import MessageReceipt
 from ....wallet.base import BaseWallet, DIDInfo
 from ....wallet.crypto import create_keypair, seed_to_did
 from ....wallet.error import WalletNotFoundError
-from ....wallet.util import bytes_to_b58
+from ....wallet.util import bytes_to_b58, did_key_to_naked
 from ....protocols.routing.v1_0.manager import RoutingManager
 
 from .messages.connection_invitation import ConnectionInvitation
@@ -106,8 +106,6 @@ class ConnectionManager:
                 "service_endpoint": "https://example.com/endpoint"
                 "routing_keys": ["9EH5gYEeNc3z7PYXmd53d5x6qAfCNrqQqEB4nS7Zfu6K"],
             }
-
-        Currently, only peer DID is supported.
 
         Args:
             my_label: label for this connection
@@ -612,7 +610,7 @@ class ConnectionManager:
             alias: an alias for this connection record
 
         Returns:
-            The new `ConnRecord` instance
+            Tuple: my DIDInfo, their DIDInfo, new `ConnRecord` instance
 
         """
         wallet: BaseWallet = await self.context.inject(BaseWallet)
@@ -637,7 +635,6 @@ class ConnectionManager:
             invitation_mode=ConnRecord.INVITATION_MODE_STATIC,
             my_did=my_info.did,
             their_did=their_info.did,
-            their_role=ConnRecord.Role.REQUESTER.rfc160,
             their_label=their_label,
             state=ConnRecord.State.COMPLETED.rfc160,
             alias=alias,
@@ -799,7 +796,7 @@ class ConnectionManager:
         self,
         did_info: DIDInfo,
         inbound_connection_id: str = None,
-        svc_endpoints: Sequence[str] = [],
+        svc_endpoints: Sequence[str] = None,
     ) -> DIDDoc:
         """Create our DID document for a given DID.
 
@@ -863,7 +860,7 @@ class ConnectionManager:
                 break
             router_id = router.inbound_connection_id
 
-        for endpoint_index, svc_endpoint in enumerate(svc_endpoints):
+        for endpoint_index, svc_endpoint in enumerate(svc_endpoints or []):
             endpoint_ident = "indy" if endpoint_index == 0 else f"indy{endpoint_index}"
             service = Service(
                 did_info.did,
@@ -997,23 +994,52 @@ class ConnectionManager:
             and ConnRecord.Role.get(connection.their_role) is ConnRecord.Role.RESPONDER
         ):
             invitation = await connection.retrieve_invitation(self.context)
-            if invitation.did:
-                # populate recipient keys and endpoint from the ledger
-                ledger: BaseLedger = await self.context.inject(
-                    BaseLedger, required=False
-                )
-                if not ledger:
-                    raise ConnectionManagerError(
-                        "Cannot resolve DID without ledger instance"
+            if isinstance(invitation, ConnectionInvitation):  # conn protocol invitation
+                if invitation.did:
+                    # populate recipient keys and endpoint from the ledger
+                    ledger: BaseLedger = await self.context.inject(
+                        BaseLedger, required=False
                     )
-                async with ledger:
-                    endpoint = await ledger.get_endpoint_for_did(invitation.did)
-                    recipient_keys = [await ledger.get_key_for_did(invitation.did)]
-                    routing_keys = []
-            else:
-                endpoint = invitation.endpoint
-                recipient_keys = invitation.recipient_keys
-                routing_keys = invitation.routing_keys
+                    if not ledger:
+                        raise ConnectionManagerError(
+                            "Cannot resolve DID without ledger instance"
+                        )
+                    async with ledger:
+                        endpoint = await ledger.get_endpoint_for_did(invitation.did)
+                        recipient_keys = [await ledger.get_key_for_did(invitation.did)]
+                        routing_keys = []
+                else:
+                    endpoint = invitation.endpoint
+                    recipient_keys = invitation.recipient_keys
+                    routing_keys = invitation.routing_keys
+            else:  # out-of-band invitation
+                if invitation.service_dids:
+                    # populate recipient keys and endpoint from the ledger
+                    ledger: BaseLedger = await self.context.inject(
+                        BaseLedger, required=False
+                    )
+                    if not ledger:
+                        raise ConnectionManagerError(
+                            "Cannot resolve DID without ledger instance"
+                        )
+                    async with ledger:
+                        endpoint = await ledger.get_endpoint_for_did(
+                            invitation.service_dids[0]
+                        )
+                        recipient_keys = [
+                            await ledger.get_key_for_did(invitation.service_dids[0])
+                        ]
+                        routing_keys = []
+                else:
+                    endpoint = invitation.service_blocks[0].service_endpoint
+                    recipient_keys = [
+                        did_key_to_naked(k)
+                        for k in invitation.service_blocks[0].recipient_keys
+                    ]
+                    routing_keys = [
+                        did_key_to_naked(k)
+                        for k in invitation.service_blocks[0].routing_keys
+                    ]
 
             results = [
                 ConnectionTarget(
@@ -1075,7 +1101,10 @@ class ConnectionManager:
         return targets
 
     async def establish_inbound(
-        self, connection: ConnRecord, inbound_connection_id: str, outbound_handler
+        self,
+        connection: ConnRecord,
+        inbound_connection_id: str,
+        outbound_handler: Coroutine,
     ) -> str:
         """Assign the inbound routing connection for a connection record.
 

@@ -14,7 +14,6 @@ from ...connections.models.diddoc import (
     Service,
 )
 from ...core.protocol_registry import ProtocolRegistry
-from ...protocols.connections.v1_0.manager import ConnectionManager
 from ...storage.base import BaseStorage
 from ...storage.basic import BasicStorage
 from ...transport.inbound.base import InboundTransportConfiguration
@@ -510,11 +509,11 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
         ) as admin_start, async_mock.patch.object(
             admin, "stop", autospec=True
         ) as admin_stop, async_mock.patch.object(
-            test_module, "ConnectionManager", autospec=True
-        ) as conn_mgr:
+            test_module, "OutOfBandManager"
+        ) as oob_mgr:
             admin_start.side_effect = KeyError("trouble")
-            conn_mgr.return_value.create_invitation.side_effect = KeyError(
-                "more trouble"
+            oob_mgr.return_value.create_invitation = async_mock.CoroutineMock(
+                side_effect=KeyError("more trouble")
             )
             await conductor.start()
             admin_start.assert_awaited_once_with()
@@ -651,6 +650,11 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             {"debug.print_invitation": True, "invite_base_url": "http://localhost"}
         )
         conductor = test_module.Conductor(builder)
+
+        await conductor.setup()
+
+        wallet = await conductor.context.inject(BaseWallet)
+        await wallet.create_public_did()
 
         with async_mock.patch("sys.stdout", new=StringIO()) as captured:
             await conductor.setup()
