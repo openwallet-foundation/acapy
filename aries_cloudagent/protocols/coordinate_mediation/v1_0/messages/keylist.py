@@ -1,4 +1,4 @@
-"""A mediation keylist query response message."""
+"""Response to keylist-query message."""
 
 from typing import Sequence
 
@@ -21,7 +21,7 @@ HANDLER_CLASS = (
 
 
 class Keylist(AgentMessage):
-    """Class representing a keylist query response message."""
+    """Class representing a keylist-query response."""
 
     class Meta:
         """Metadata for a keylist query response."""
@@ -44,7 +44,7 @@ class Keylist(AgentMessage):
             keys: Found keys by requested query
             pagination: Pagination rules
         """
-        super(Keylist, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.keys = list(keys) if keys else []
         self.pagination = pagination
 

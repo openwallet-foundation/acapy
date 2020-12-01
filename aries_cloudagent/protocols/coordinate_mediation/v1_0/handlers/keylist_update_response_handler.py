@@ -1,28 +1,22 @@
-"""Handler for incoming medation grant messages."""
+"""Handler for keylist-update-response message."""
 
 from typing import List
 
 from .....messaging.base_handler import (
-    BaseHandler,
-    BaseResponder,
-    HandlerException,
-    RequestContext,
+    BaseHandler, BaseResponder, HandlerException, RequestContext
 )
-
-from ..models.mediation_record import MediationRecord
-from ..manager import MediationManager
-from ..messages.keylist_update_response import KeylistUpdateResponse
-from ..messages.inner.keylist_updated import KeylistUpdated
-from ..messages.inner.keylist_update_rule import KeylistUpdateRule
-from ....routing.v1_0.models.route_record import RouteRecord
 from .....storage.base import StorageNotFoundError
+from ....routing.v1_0.models.route_record import RouteRecord
+from ..messages.inner.keylist_update_rule import KeylistUpdateRule
+from ..messages.inner.keylist_updated import KeylistUpdated
+from ..messages.keylist_update_response import KeylistUpdateResponse
 
 
 class KeylistUpdateResponseHandler(BaseHandler):
-    """Handler for incoming keylist update response messages."""
+    """Handler for keylist-update-response message."""
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
-        """Message handler implementation."""
+        """Handle keylist-update-response message."""
         self._logger.debug(
             "%s called with context %s", self.__class__.__name__, context
         )

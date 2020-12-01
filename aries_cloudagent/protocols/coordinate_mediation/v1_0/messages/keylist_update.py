@@ -1,4 +1,4 @@
-"""A mediation keylist update content message."""
+"""keylist-update message used to notify mediator of keylist changes."""
 
 from typing import Sequence
 

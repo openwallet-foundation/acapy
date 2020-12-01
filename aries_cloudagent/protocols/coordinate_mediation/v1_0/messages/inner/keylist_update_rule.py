@@ -1,4 +1,7 @@
-"""A keylist update rule inner object."""
+"""
+Inner structure of keylist-update message. Represents single item of
+keylist-update.updates.
+"""
 
 
 from marshmallow import fields

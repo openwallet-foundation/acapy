@@ -1,22 +1,18 @@
-"""Handler for incoming medation grant messages."""
+"""Handler for mediate-grant message."""
 
 from .....messaging.base_handler import (
-    BaseHandler,
-    BaseResponder,
-    HandlerException,
-    RequestContext,
+    BaseHandler, BaseResponder, HandlerException, RequestContext
 )
-
-from ..models.mediation_record import MediationRecord
 from ..manager import MediationManager
 from ..messages.mediate_grant import MediationGrant
+from ..models.mediation_record import MediationRecord
 
 
 class MediationGrantHandler(BaseHandler):
-    """Handler for incoming mediation grant messages."""
+    """Handler for mediate-grant message."""
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
-        """Message handler implementation."""
+        """Handle mediate-grant message."""
         self._logger.debug(
             "%s called with context %s", self.__class__.__name__, context
         )

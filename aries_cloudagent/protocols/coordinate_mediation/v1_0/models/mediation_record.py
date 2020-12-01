@@ -11,12 +11,7 @@ from .....storage.base import StorageNotFoundError, StorageDuplicateError
 
 
 class MediationRecord(BaseRecord):
-    """Class representing stored route information.
-
-    Args:
-        connection id:
-        terms:
-    """
+    """Class representing stored mediation information."""
 
     class Meta:
         """RouteRecord metadata."""
@@ -45,15 +40,6 @@ class MediationRecord(BaseRecord):
         recipient_terms: Sequence[str] = None,
         **kwargs
     ):
-        """
-        Initialize a MediationRecord instance.
-
-        Args:
-            mediation_id:
-            state:
-            connection_id:
-            terms:
-        """
         super().__init__(
             mediation_id, state or self.STATE_REQUEST_RECEIVED, **kwargs
         )
@@ -70,8 +56,16 @@ class MediationRecord(BaseRecord):
     @classmethod
     async def retrieve_by_connection_id(
         cls, context: InjectionContext, connection_id: str
-    ):
-        """Retrieve a route record by recipient key."""
+    ) -> "MediationRecord":
+        """Retrieve a mediation record by connection ID.
+
+        Args:
+            context (InjectionContext): context
+            connection_id (str): connection_id
+
+        Returns:
+            MediationRecord: retrieved record
+        """
         tag_filter = {"connection_id": connection_id}
         return await cls.retrieve_by_tag_filter(context, tag_filter)
 
@@ -79,7 +73,15 @@ class MediationRecord(BaseRecord):
     async def exists_for_connection_id(
         cls, context: InjectionContext, connection_id: str
     ) -> bool:
-        """Return whether a mediation record exists for the given connection."""
+        """Return whether a mediation record exists for the given connection.
+
+        Args:
+            context (InjectionContext): context
+            connection_id (str): connection_id
+
+        Returns:
+            bool: whether record exists
+        """
         tag_filter = {"connection_id": connection_id}
         try:
             record = await cls.retrieve_by_tag_filter(context, tag_filter)

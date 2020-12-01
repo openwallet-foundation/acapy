@@ -1,4 +1,4 @@
-"""A keylist query paginate field inner object."""
+"""Inner structure of KeylistQuery. Represents KeylistQuery.paginate."""
 
 from marshmallow import fields
 

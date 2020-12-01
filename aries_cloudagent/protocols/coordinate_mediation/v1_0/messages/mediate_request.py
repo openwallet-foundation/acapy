@@ -1,4 +1,4 @@
-"""Mediation request message."""
+"""mediate-request message used to request mediation from a mediator."""
 
 from typing import Sequence
 

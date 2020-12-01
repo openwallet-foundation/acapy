@@ -1,4 +1,4 @@
-"""Mediation deny message."""
+"""mediate-deny message used to notify mediation client of a denied mediation request."""
 
 from typing import Sequence
 

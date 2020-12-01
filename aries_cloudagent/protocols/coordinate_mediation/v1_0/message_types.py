@@ -1,4 +1,4 @@
-"""Message type identifiers for Routing."""
+"""Message type identifiers for Coordinate Mediation protocol."""
 
 from ...didcomm_prefix import DIDCommPrefix
 

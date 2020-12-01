@@ -1,27 +1,27 @@
-"""Handler for keylist-update messages."""
+"""Handler for keylist-query message."""
 
 from .....messaging.base_handler import (
     BaseHandler, BaseResponder, HandlerException, RequestContext
 )
 from .....storage.error import StorageNotFoundError
 from ....problem_report.v1_0.message import ProblemReport
-from ..manager import MediationManager
-from ..messages.keylist_update import KeylistUpdate
+from ..manager import MediationManager as Manager
+from ..messages.keylist_query import KeylistQuery
 from ..models.mediation_record import MediationRecord
 
 
-class KeylistUpdateHandler(BaseHandler):
-    """Handler for keylist-update messages."""
+class KeylistQueryHandler(BaseHandler):
+    """Handler for keylist-query message."""
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
-        """Handle keylist-update messages."""
+        """Handle keylist-query message."""
         self._logger.debug(
             "%s called with context %s", self.__class__.__name__, context
         )
-        assert isinstance(context.message, KeylistUpdate)
+        assert isinstance(context.message, KeylistQuery)
 
         if not context.connection_ready:
-            raise HandlerException("Cannot update routes: no active connection")
+            raise HandlerException("Invalid keylist query: no active connection")
 
         try:
             record = await MediationRecord.retrieve_by_connection_id(
@@ -35,11 +35,10 @@ class KeylistUpdateHandler(BaseHandler):
             await self.reject(responder)
             return
 
-        mgr = MediationManager(context)
-        response = await mgr.update_keylist(
-            record, updates=context.message.updates
-        )
-        await responder.send_reply(response)
+        mgr = Manager(context)
+        keylist = await mgr.get_keylist(record)
+        keylist_response = mgr.create_keylist_query_response(keylist)
+        await responder.send_reply(keylist_response)
 
     async def reject(self, responder: BaseResponder):
         """Send problem report."""

@@ -1,22 +1,18 @@
-"""Handler for incoming mediation request messages."""
+"""Handler for mediate-request message."""
 
 from .....messaging.base_handler import (
-    BaseHandler,
-    BaseResponder,
-    HandlerException,
-    RequestContext,
+    BaseHandler, BaseResponder, HandlerException, RequestContext
 )
-
+from ....problem_report.v1_0.message import ProblemReport
 from ..manager import MediationManager, MediationManagerError
 from ..messages.mediate_request import MediationRequest
-from ....problem_report.v1_0.message import ProblemReport
 
 
 class MediationRequestHandler(BaseHandler):
-    """Handler for incoming route-update-request messages."""
+    """Handler for mediate-request message."""
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
-        """Message handler implementation."""
+        """Handle mediate-request message."""
         self._logger.debug(
             "%s called with context %s", self.__class__.__name__, context
         )

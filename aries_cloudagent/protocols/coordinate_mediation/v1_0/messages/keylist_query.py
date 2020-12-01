@@ -1,4 +1,4 @@
-"""A mediation keylist query content message."""
+"""keylist-query message used to request list of keys handled by mediator."""
 
 from marshmallow import fields
 
@@ -13,7 +13,7 @@ from .inner.keylist_query_paginate import (
 
 HANDLER_CLASS = (
     f"{PROTOCOL_PACKAGE}.handlers"
-    ".keylist_query_request_handler.KeylistQueryRequestHandler"
+    ".keylist_query_handler.KeylistQueryHandler"
 )
 
 

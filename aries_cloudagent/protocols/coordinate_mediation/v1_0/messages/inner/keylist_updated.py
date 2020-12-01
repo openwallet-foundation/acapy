@@ -1,4 +1,7 @@
-"""An object for containing updated route information."""
+"""
+Inner structure of keylist-update-response. Represents single item in
+keylist-update-response.updated list.
+"""
 
 from marshmallow import EXCLUDE, fields
 

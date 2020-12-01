@@ -1,4 +1,7 @@
-"""Mediation grant message."""
+"""
+mediate-grant message used to notify mediation client of a granted mediation
+request.
+"""
 
 from typing import Sequence
 

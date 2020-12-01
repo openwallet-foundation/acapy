@@ -1,4 +1,4 @@
-"""An object for containing updated route information."""
+"""Inner structure of keylist message. Represents a single item in keylist.keys."""
 
 from marshmallow import EXCLUDE, fields
 
