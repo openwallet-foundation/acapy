@@ -352,6 +352,8 @@ class DebugGroup(ArgumentGroup):
             settings["debug.invite_multi_use"] = True
         if args.invite_public:
             settings["debug.invite_public"] = True
+        if args.test_suite_endpoint:
+            settings["debug.test_suite_endpoint"] = args.test_suite_endpoint
 
         if args.auto_respond_credential_proposal:
             settings["debug.auto_respond_credential_proposal"] = True
