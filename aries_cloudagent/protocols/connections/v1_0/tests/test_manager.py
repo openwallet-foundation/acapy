@@ -1,29 +1,29 @@
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
-from aries_cloudagent.cache.base import BaseCache
-from aries_cloudagent.cache.basic import BasicCache
-from aries_cloudagent.config.base import InjectorError
-from aries_cloudagent.config.injection_context import InjectionContext
-from aries_cloudagent.connections.models.conn_record import ConnRecord
-from aries_cloudagent.connections.models.connection_target import ConnectionTarget
-from aries_cloudagent.connections.models.diddoc import (
+from .....cache.base import BaseCache
+from .....cache.basic import BasicCache
+from .....config.base import InjectorError
+from .....config.injection_context import InjectionContext
+from .....connections.models.conn_record import ConnRecord
+from .....connections.models.connection_target import ConnectionTarget
+from .....connections.models.diddoc import (
     DIDDoc,
     PublicKey,
     PublicKeyType,
     Service,
 )
-from aries_cloudagent.ledger.base import BaseLedger
-from aries_cloudagent.messaging.responder import BaseResponder, MockResponder
-from aries_cloudagent.storage.base import BaseStorage
-from aries_cloudagent.storage.basic import BasicStorage
-from aries_cloudagent.storage.error import StorageNotFoundError
-from aries_cloudagent.transport.inbound.receipt import MessageReceipt
-from aries_cloudagent.wallet.base import BaseWallet, DIDInfo
-from aries_cloudagent.wallet.basic import BasicWallet
-from aries_cloudagent.wallet.error import WalletNotFoundError
-
-from aries_cloudagent.protocols.routing.v1_0.manager import RoutingManager
+from .....ledger.base import BaseLedger
+from .....messaging.responder import BaseResponder, MockResponder
+from .....protocols.routing.v1_0.manager import RoutingManager
+from .....storage.base import BaseStorage
+from .....storage.basic import BasicStorage
+from .....storage.error import StorageNotFoundError
+from .....transport.inbound.receipt import MessageReceipt
+from .....wallet.base import BaseWallet, DIDInfo
+from .....wallet.basic import BasicWallet
+from .....wallet.error import WalletNotFoundError
+from .....wallet.util import naked_to_did_key
 
 from ..manager import ConnectionManager, ConnectionManagerError
 from ..messages.connection_invitation import ConnectionInvitation
@@ -1192,6 +1192,109 @@ class TestConnectionManager(AsyncTestCase):
         assert target.endpoint == conn_invite.endpoint
         assert target.label == conn_invite.label
         assert target.recipient_keys == conn_invite.recipient_keys
+        assert target.routing_keys == []
+        assert target.sender_key == (await wallet.get_local_did(self.test_did)).verkey
+
+    async def test_fetch_connection_targets_oob_invitation_svc_did_no_ledger(self):
+        wallet: BaseWallet = await self.context.inject(BaseWallet)
+        await wallet.create_local_did(
+            seed=self.test_seed, did=self.test_did, metadata=None
+        )
+
+        mock_oob_invite = async_mock.MagicMock(service_dids=["dummy"])
+
+        mock_conn = async_mock.MagicMock(
+            my_did=self.test_did,
+            retrieve_invitation=async_mock.CoroutineMock(return_value=mock_oob_invite),
+            state=ConnRecord.State.INVITATION.rfc23,
+            their_role=ConnRecord.Role.RESPONDER.rfc23,
+        )
+
+        with self.assertRaises(ConnectionManagerError):
+            await self.manager.fetch_connection_targets(mock_conn)
+
+    async def test_fetch_connection_targets_oob_invitation_svc_did_ledger(self):
+        self.ledger = async_mock.MagicMock()
+        self.ledger.get_endpoint_for_did = async_mock.CoroutineMock(
+            return_value=self.test_endpoint
+        )
+        self.ledger.get_key_for_did = async_mock.CoroutineMock(
+            return_value=self.test_target_verkey
+        )
+        self.context.injector.bind_instance(BaseLedger, self.ledger)
+
+        wallet: BaseWallet = await self.context.inject(BaseWallet)
+        await wallet.create_local_did(
+            seed=self.test_seed, did=self.test_did, metadata=None
+        )
+
+        mock_oob_invite = async_mock.MagicMock(
+            label="a label",
+            their_did=self.test_target_did,
+            service_dids=["dummy"],
+        )
+        mock_conn = async_mock.MagicMock(
+            my_did=self.test_did,
+            their_did=self.test_target_did,
+            connection_id="dummy",
+            their_role=ConnRecord.Role.RESPONDER.rfc23,
+            state=ConnRecord.State.INVITATION.rfc23,
+            retrieve_invitation=async_mock.CoroutineMock(return_value=mock_oob_invite),
+        )
+
+        targets = await self.manager.fetch_connection_targets(mock_conn)
+        assert len(targets) == 1
+        target = targets[0]
+        assert target.did == mock_conn.their_did
+        assert target.endpoint == self.test_endpoint
+        assert target.label == mock_oob_invite.label
+        assert target.recipient_keys == [self.test_target_verkey]
+        assert target.routing_keys == []
+        assert target.sender_key == (await wallet.get_local_did(self.test_did)).verkey
+
+    async def test_fetch_connection_targets_oob_invitation_svc_block_ledger(self):
+        self.ledger = async_mock.MagicMock()
+        self.ledger.get_endpoint_for_did = async_mock.CoroutineMock(
+            return_value=self.test_endpoint
+        )
+        self.ledger.get_key_for_did = async_mock.CoroutineMock(
+            return_value=self.test_target_verkey
+        )
+        self.context.injector.bind_instance(BaseLedger, self.ledger)
+
+        wallet: BaseWallet = await self.context.inject(BaseWallet)
+        await wallet.create_local_did(
+            seed=self.test_seed, did=self.test_did, metadata=None
+        )
+
+        mock_oob_invite = async_mock.MagicMock(
+            label="a label",
+            their_did=self.test_target_did,
+            service_dids=None,
+            service_blocks=[
+                async_mock.MagicMock(
+                    service_endpoint=self.test_endpoint,
+                    recipient_keys=[naked_to_did_key(self.test_target_verkey)],
+                    routing_keys=[],
+                )
+            ],
+        )
+        mock_conn = async_mock.MagicMock(
+            my_did=self.test_did,
+            their_did=self.test_target_did,
+            connection_id="dummy",
+            their_role=ConnRecord.Role.RESPONDER.rfc23,
+            state=ConnRecord.State.INVITATION.rfc23,
+            retrieve_invitation=async_mock.CoroutineMock(return_value=mock_oob_invite),
+        )
+
+        targets = await self.manager.fetch_connection_targets(mock_conn)
+        assert len(targets) == 1
+        target = targets[0]
+        assert target.did == mock_conn.their_did
+        assert target.endpoint == self.test_endpoint
+        assert target.label == mock_oob_invite.label
+        assert target.recipient_keys == [self.test_target_verkey]
         assert target.routing_keys == []
         assert target.sender_key == (await wallet.get_local_did(self.test_did)).verkey
 

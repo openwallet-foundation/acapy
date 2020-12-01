@@ -165,6 +165,7 @@ class DIDXConnIdRefIdMatchInfoSchema(OpenAPISchema):
     )
 
 
+'''
 def connection_sort_key(conn):
     """Get the sorting key for a particular connection."""
     conn_state = ConnRecord.State.get(conn["state"])
@@ -178,6 +179,7 @@ def connection_sort_key(conn):
     else:
         pfx = "0"
     return pfx + conn["created_at"]
+'''
 
 
 '''
