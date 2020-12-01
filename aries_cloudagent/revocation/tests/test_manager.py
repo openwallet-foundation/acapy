@@ -1,8 +1,7 @@
-import asyncio
 import json
 
-from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
+from asynctest import TestCase as AsyncTestCase
 from copy import deepcopy
 from time import time
 

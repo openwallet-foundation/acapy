@@ -19,7 +19,7 @@ from ..wallet.base import BaseWallet
 
 from .decorators.base import BaseDecoratorSet
 from .decorators.default import DecoratorSet
-from .decorators.signature_decorator import SignatureDecorator
+from .decorators.signature_decorator import SignatureDecorator  # TODO deprecated
 from .decorators.thread_decorator import ThreadDecorator
 from .decorators.trace_decorator import (
     TraceDecorator,
@@ -168,7 +168,7 @@ class AgentMessage(BaseModel):
         """
         self._decorators.field(field_name)["sig"] = signature
 
-    async def sign_field(
+    async def sign_field(  # TODO migrate to signed-attachment per RFC 17
         self, field_name: str, signer_verkey: str, wallet: BaseWallet, timestamp=None
     ) -> SignatureDecorator:
         """
@@ -198,7 +198,7 @@ class AgentMessage(BaseModel):
         self.set_signature(field_name, sig)
         return sig
 
-    async def verify_signed_field(
+    async def verify_signed_field(  # TODO migrate to signed-attachment per RFC 17
         self, field_name: str, wallet: BaseWallet, signer_verkey: str = None
     ) -> str:
         """

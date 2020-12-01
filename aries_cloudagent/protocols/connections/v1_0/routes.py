@@ -47,7 +47,7 @@ class ReceiveInvitationRequestSchema(ConnectionInvitationSchema):
 
     @validates_schema
     def validate_fields(self, data, **kwargs):
-        """Bypass middleware field validation."""
+        """Bypass middleware field validation: marshmallow has no data yet."""
 
 
 class InvitationConnectionTargetRequestSchema(OpenAPISchema):
