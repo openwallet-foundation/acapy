@@ -95,7 +95,8 @@ class RoutingManager:
             A sequence of route records found by the query
 
         """
-        filters = {}
+        # Routing protocol acts only as Server, filter out all client records
+        filters = {"role": RouteRecord.ROLE_SERVER}
         if client_connection_id:
             filters["connection_id"] = client_connection_id
         if tag_filter:
