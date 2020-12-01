@@ -115,7 +115,7 @@ async def invitation_receive(request: web.BaseRequest):
 
     oob_mgr = OutOfBandManager(context)
 
-    invitation = await oob_mgr.receive_invitation(invitation=body)
+    invitation = await oob_mgr.receive_invitation(invi_msg=body)
 
     return web.json_response(invitation.serialize())
 
