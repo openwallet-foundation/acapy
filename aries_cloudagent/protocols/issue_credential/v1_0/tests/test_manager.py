@@ -118,7 +118,7 @@ class TestCredentialManager(AsyncTestCase):
         )
         self.context.injector.bind_instance(BaseLedger, self.ledger)
 
-        self.manager = CredentialManager(self.context)
+        self.manager = CredentialManager(self.session)
 
     async def test_record_eq(self):
         same = [
@@ -272,8 +272,6 @@ class TestCredentialManager(AsyncTestCase):
                 CredAttrSpec(name="incorporationDate", value="value"),
             )
         )
-        self.context.connection_record = async_mock.MagicMock()
-        self.context.connection_record.connection_id = connection_id
 
         with async_mock.patch.object(
             V10CredentialExchange, "save", autospec=True
@@ -281,9 +279,8 @@ class TestCredentialManager(AsyncTestCase):
             proposal = CredentialProposal(
                 credential_proposal=preview, cred_def_id=CRED_DEF_ID, schema_id=None
             )
-            self.context.message = proposal
 
-            exchange = await self.manager.receive_proposal()
+            exchange = await self.manager.receive_proposal(proposal, connection_id)
             save_ex.assert_called_once()
 
             assert exchange.connection_id == connection_id
@@ -302,7 +299,9 @@ class TestCredentialManager(AsyncTestCase):
             self.context.message = CredentialProposal(
                 credential_proposal=preview, cred_def_id=None, schema_id=None
             )
-            await self.manager.receive_proposal()  # OK to leave open until offer
+            await self.manager.receive_proposal(
+                proposal, connection_id
+            )  # OK to leave open until offer
 
     async def test_create_free_offer(self):
         connection_id = "test_conn_id"
@@ -564,10 +563,6 @@ class TestCredentialManager(AsyncTestCase):
         )
         offer.assign_thread_id(thread_id)
 
-        self.context.message = offer
-        self.context.connection_record = async_mock.MagicMock()
-        self.context.connection_record.connection_id = connection_id
-
         stored_exchange = V10CredentialExchange(
             credential_exchange_id="dummy-cxid",
             connection_id=connection_id,
@@ -586,7 +581,7 @@ class TestCredentialManager(AsyncTestCase):
             "retrieve_by_connection_and_thread",
             async_mock.CoroutineMock(return_value=stored_exchange),
         ) as retrieve_ex:
-            exchange = await self.manager.receive_offer()
+            exchange = await self.manager.receive_offer(offer, connection_id)
 
             assert exchange.connection_id == connection_id
             assert exchange.credential_definition_id == CRED_DEF_ID
@@ -625,7 +620,7 @@ class TestCredentialManager(AsyncTestCase):
             "retrieve_by_connection_and_thread",
             async_mock.CoroutineMock(side_effect=StorageNotFoundError),
         ) as retrieve_ex:
-            exchange = await self.manager.receive_offer()
+            exchange = await self.manager.receive_offer(offer, connection_id)
 
             assert exchange.connection_id == connection_id
             assert exchange.credential_definition_id == CRED_DEF_ID
@@ -816,9 +811,6 @@ class TestCredentialManager(AsyncTestCase):
         request = CredentialRequest(
             requests_attach=[CredentialRequest.wrap_indy_cred_req(indy_cred_req)]
         )
-        self.context.message = request
-        self.context.connection_record = async_mock.MagicMock()
-        self.context.connection_record.connection_id = connection_id
 
         with async_mock.patch.object(
             V10CredentialExchange, "save", autospec=True
@@ -827,10 +819,10 @@ class TestCredentialManager(AsyncTestCase):
             "retrieve_by_connection_and_thread",
             async_mock.CoroutineMock(return_value=stored_exchange),
         ) as retrieve_ex:
-            exchange = await self.manager.receive_request()
+            exchange = await self.manager.receive_request(request, connection_id)
 
             retrieve_ex.assert_called_once_with(
-                self.context, connection_id, request._thread_id
+                self.session, connection_id, request._thread_id
             )
             save_ex.assert_called_once()
 
@@ -1295,9 +1287,6 @@ class TestCredentialManager(AsyncTestCase):
         issue = CredentialIssue(
             credentials_attach=[CredentialIssue.wrap_indy_credential(indy_cred)]
         )
-        self.context.message = issue
-        self.context.connection_record = async_mock.MagicMock()
-        self.context.connection_record.connection_id = connection_id
 
         with async_mock.patch.object(
             V10CredentialExchange, "save", autospec=True
@@ -1306,10 +1295,10 @@ class TestCredentialManager(AsyncTestCase):
             "retrieve_by_connection_and_thread",
             async_mock.CoroutineMock(return_value=stored_exchange),
         ) as retrieve_ex:
-            exchange = await self.manager.receive_credential()
+            exchange = await self.manager.receive_credential(issue, connection_id)
 
             retrieve_ex.assert_called_once_with(
-                self.context, connection_id, issue._thread_id
+                self.session, connection_id, issue._thread_id
             )
             save_ex.assert_called_once()
 
@@ -1515,9 +1504,6 @@ class TestCredentialManager(AsyncTestCase):
         )
 
         ack = CredentialAck()
-        self.context.message = ack
-        self.context.connection_record = async_mock.MagicMock()
-        self.context.connection_record.connection_id = connection_id
 
         with async_mock.patch.object(
             V10CredentialExchange, "save", autospec=True
@@ -1528,10 +1514,10 @@ class TestCredentialManager(AsyncTestCase):
             "retrieve_by_connection_and_thread",
             async_mock.CoroutineMock(return_value=stored_exchange),
         ) as retrieve_ex:
-            ret_exchange = await self.manager.receive_credential_ack()
+            ret_exchange = await self.manager.receive_credential_ack(ack, connection_id)
 
             retrieve_ex.assert_called_once_with(
-                self.context, connection_id, ack._thread_id
+                self.session, connection_id, ack._thread_id
             )
             save_ex.assert_called_once()
 

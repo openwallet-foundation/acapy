@@ -16,6 +16,11 @@ class TestCredentialRoutes(AsyncTestCase):
         self.session = InMemoryProfile.test_session()
         self.context = RequestContext(self.session.profile)
 
+        async def _get_session():
+            return self.session
+
+        setattr(self.context, "session", _get_session)
+
     async def test_credential_exchange_list(self):
         mock = async_mock.MagicMock()
         mock.query = {
@@ -498,10 +503,10 @@ class TestCredentialRoutes(AsyncTestCase):
             "outbound_message_router": async_mock.CoroutineMock(),
             "request_context": self.context,
         }
-        self.context.update_settings(
+        self.session._context.update_settings(
             {"default_endpoint": "http://1.2.3.4:8081"}
         )
-        self.context.injector.bind_instance(
+        self.session._context.injector.bind_instance(
             BaseWallet,
             async_mock.MagicMock(
                 get_local_did=async_mock.CoroutineMock(
@@ -586,7 +591,7 @@ class TestCredentialRoutes(AsyncTestCase):
             "outbound_message_router": async_mock.CoroutineMock(),
             "request_context": self.context,
         }
-        self.context.injector.bind_instance(
+        self.session._context.injector.bind_instance(
             BaseWallet,
             async_mock.MagicMock(
                 get_local_did=async_mock.CoroutineMock(
@@ -617,10 +622,10 @@ class TestCredentialRoutes(AsyncTestCase):
             "outbound_message_router": async_mock.CoroutineMock(),
             "request_context": self.context,
         }
-        self.context.update_settings(
+        self.session._context.update_settings(
             {"default_endpoint": "http://1.2.3.4:8081"}
         )
-        self.context.injector.bind_instance(
+        self.session._context.injector.bind_instance(
             BaseWallet,
             async_mock.MagicMock(
                 get_public_did=async_mock.CoroutineMock(
@@ -680,10 +685,10 @@ class TestCredentialRoutes(AsyncTestCase):
             "outbound_message_router": async_mock.CoroutineMock(),
             "request_context": self.context,
         }
-        self.context.update_settings(
+        self.session._context.update_settings(
             {"default_endpoint": "http://1.2.3.4:8081"}
         )
-        self.context.injector.bind_instance(
+        self.session._context.injector.bind_instance(
             BaseWallet,
             async_mock.MagicMock(
                 get_public_did=async_mock.CoroutineMock(return_value=None),
@@ -709,7 +714,7 @@ class TestCredentialRoutes(AsyncTestCase):
             "outbound_message_router": async_mock.CoroutineMock(),
             "request_context": self.context,
         }
-        self.context.injector.bind_instance(
+        self.session._context.injector.bind_instance(
             BaseWallet,
             async_mock.MagicMock(
                 get_public_did=async_mock.CoroutineMock(
@@ -738,10 +743,10 @@ class TestCredentialRoutes(AsyncTestCase):
             "outbound_message_router": async_mock.CoroutineMock(),
             "request_context": self.context,
         }
-        self.context.update_settings(
+        self.session._context.update_settings(
             {"default_endpoint": "http://1.2.3.4:8081"}
         )
-        self.context.injector.bind_instance(
+        self.session._context.injector.bind_instance(
             BaseWallet,
             async_mock.MagicMock(
                 get_local_did=async_mock.CoroutineMock(

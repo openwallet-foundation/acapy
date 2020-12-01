@@ -16,10 +16,13 @@ class TestCredentialAckHandler(AsyncTestCase):
     async def test_called(self):
         request_context = RequestContext.test_context()
         request_context.message_receipt = MessageReceipt()
+        request_context.connection_record = async_mock.MagicMock()
 
         with async_mock.patch.object(
             handler, "CredentialManager", autospec=True
-        ) as mock_cred_mgr:
+        ) as mock_cred_mgr, async_mock.patch.object(
+            request_context, "session", async_mock.CoroutineMock()
+        ) as mock_session:
             mock_cred_mgr.return_value.receive_credential_ack = (
                 async_mock.CoroutineMock()
             )
@@ -29,13 +32,16 @@ class TestCredentialAckHandler(AsyncTestCase):
             responder = MockResponder()
             await handler_inst.handle(request_context, responder)
 
-        mock_cred_mgr.assert_called_once_with(request_context)
-        mock_cred_mgr.return_value.receive_credential_ack.assert_called_once_with()
+        mock_cred_mgr.assert_called_once_with(mock_session.return_value)
+        mock_cred_mgr.return_value.receive_credential_ack.assert_called_once_with(
+            request_context.message, request_context.connection_record.connection_id
+        )
         assert not responder.messages
 
     async def test_called_not_ready(self):
         request_context = RequestContext.test_context()
         request_context.message_receipt = MessageReceipt()
+        request_context.connection_record = async_mock.MagicMock()
 
         with async_mock.patch.object(
             handler, "CredentialManager", autospec=True
