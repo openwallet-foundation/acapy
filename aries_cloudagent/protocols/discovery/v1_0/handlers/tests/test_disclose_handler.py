@@ -17,11 +17,10 @@ TEST_MESSAGE_TYPE = TEST_MESSAGE_FAMILY + "/MESSAGE"
 @pytest.fixture()
 def request_context() -> RequestContext:
     ctx = RequestContext.test_context()
-    ctx.message_receipt = MessageReceipt()
     yield ctx
 
 
-class TestQueryHandler:
+class TestDiscloseHandler:
     @pytest.mark.asyncio
     async def test_disclose(self, request_context):
         registry = ProtocolRegistry()

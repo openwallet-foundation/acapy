@@ -4,7 +4,9 @@ from aiohttp import web as aio_web
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
-from .....config.injection_context import InjectionContext
+from .....indy.holder import IndyHolder
+from .....indy.verifier import IndyVerifier
+from .....ledger.base import BaseLedger
 from .....messaging.request_context import RequestContext
 from .....storage.error import StorageNotFoundError
 
@@ -13,8 +15,7 @@ from .. import routes as test_module
 
 class TestProofRoutes(AsyncTestCase):
     def setUp(self):
-        self.mock_context = async_mock.MagicMock()
-        self.test_instance = test_module.PresentationManager(self.mock_context)
+        self.mock_context = RequestContext.test_context()
 
     async def test_validate_non_revoked(self):
         non_revo = test_module.IndyProofReqNonRevokedSchema()
@@ -57,7 +58,7 @@ class TestProofRoutes(AsyncTestCase):
         }
         mock.app = {
             "outbound_message_router": async_mock.CoroutineMock(),
-            "request_context": "context",
+            "request_context": self.mock_context,
         }
 
         with async_mock.patch(
@@ -93,7 +94,7 @@ class TestProofRoutes(AsyncTestCase):
         }
         mock.app = {
             "outbound_message_router": async_mock.CoroutineMock(),
-            "request_context": "context",
+            "request_context": self.mock_context,
         }
 
         with async_mock.patch(
@@ -116,7 +117,7 @@ class TestProofRoutes(AsyncTestCase):
         mock.match_info = {"pres_ex_id": "dummy"}
         mock.app = {
             "outbound_message_router": async_mock.CoroutineMock(),
-            "request_context": "context",
+            "request_context": self.mock_context,
         }
 
         with async_mock.patch(
@@ -142,18 +143,16 @@ class TestProofRoutes(AsyncTestCase):
         returned_credentials = [{"name": "Credential1"}, {"name": "Credential2"}]
         mock.app = {
             "outbound_message_router": async_mock.CoroutineMock(),
-            "request_context": async_mock.MagicMock(
-                inject=async_mock.CoroutineMock(
-                    return_value=async_mock.MagicMock(
-                        get_credentials_for_presentation_request_by_referent=(
-                            async_mock.CoroutineMock(
-                                side_effect=test_module.IndyHolderError()
-                            )
-                        )
-                    )
+            "request_context": self.mock_context,
+        }
+        self.mock_context._context.injector.bind_instance(
+            IndyHolder,
+            async_mock.MagicMock(
+                get_credentials_for_presentation_request_by_referent=(
+                    async_mock.CoroutineMock(side_effect=test_module.IndyHolderError())
                 )
             ),
-        }
+        )
 
         with async_mock.patch(
             "aries_cloudagent.protocols.present_proof.v1_0.models.presentation_exchange.V10PresentationExchange",
@@ -178,16 +177,16 @@ class TestProofRoutes(AsyncTestCase):
         returned_credentials = [{"name": "Credential1"}, {"name": "Credential2"}]
         mock.app = {
             "outbound_message_router": async_mock.CoroutineMock(),
-            "request_context": async_mock.MagicMock(
-                inject=async_mock.CoroutineMock(
-                    return_value=async_mock.MagicMock(
-                        get_credentials_for_presentation_request_by_referent=(
-                            async_mock.CoroutineMock(return_value=returned_credentials)
-                        )
-                    )
+            "request_context": self.mock_context,
+        }
+        self.mock_context._context.injector.bind_instance(
+            IndyHolder,
+            async_mock.MagicMock(
+                get_credentials_for_presentation_request_by_referent=async_mock.CoroutineMock(
+                    return_value=returned_credentials
                 )
             ),
-        }
+        )
 
         with async_mock.patch(
             "aries_cloudagent.protocols.present_proof.v1_0.models.presentation_exchange.V10PresentationExchange",
@@ -218,16 +217,16 @@ class TestProofRoutes(AsyncTestCase):
         returned_credentials = [{"name": "Credential1"}, {"name": "Credential2"}]
         mock.app = {
             "outbound_message_router": async_mock.CoroutineMock(),
-            "request_context": async_mock.MagicMock(
-                inject=async_mock.CoroutineMock(
-                    return_value=async_mock.MagicMock(
-                        get_credentials_for_presentation_request_by_referent=(
-                            async_mock.CoroutineMock(return_value=returned_credentials)
-                        )
-                    )
+            "request_context": self.mock_context,
+        }
+        self.mock_context._context.injector.bind_instance(
+            IndyHolder,
+            async_mock.MagicMock(
+                get_credentials_for_presentation_request_by_referent=async_mock.CoroutineMock(
+                    return_value=returned_credentials
                 )
             ),
-        }
+        )
 
         with async_mock.patch(
             "aries_cloudagent.protocols.present_proof.v1_0.models.presentation_exchange.V10PresentationExchange",
@@ -252,7 +251,7 @@ class TestProofRoutes(AsyncTestCase):
         mock.match_info = {"pres_ex_id": "dummy"}
         mock.app = {
             "outbound_message_router": async_mock.CoroutineMock(),
-            "request_context": "context",
+            "request_context": self.mock_context,
         }
 
         with async_mock.patch(
@@ -281,7 +280,7 @@ class TestProofRoutes(AsyncTestCase):
         mock.match_info = {"pres_ex_id": "dummy"}
         mock.app = {
             "outbound_message_router": async_mock.CoroutineMock(),
-            "request_context": "context",
+            "request_context": self.mock_context,
         }
 
         with async_mock.patch(
@@ -305,7 +304,7 @@ class TestProofRoutes(AsyncTestCase):
         mock.match_info = {"pres_ex_id": "dummy"}
         mock.app = {
             "outbound_message_router": async_mock.CoroutineMock(),
-            "request_context": "context",
+            "request_context": self.mock_context,
         }
 
         mock_pres_ex_rec = async_mock.MagicMock(
@@ -736,16 +735,22 @@ class TestProofRoutes(AsyncTestCase):
         mock.match_info = {"pres_ex_id": "dummy"}
         mock.app = {
             "outbound_message_router": async_mock.CoroutineMock(),
-            "request_context": async_mock.CoroutineMock(
-                inject=async_mock.CoroutineMock(
-                    return_value=async_mock.CoroutineMock(
-                        __aenter__=async_mock.CoroutineMock(),
-                        __aexit__=async_mock.CoroutineMock(),
-                        verify_presentation=async_mock.CoroutineMock(),
-                    )
-                )
-            ),
+            "request_context": self.mock_context,
         }
+
+        self.mock_context._context.injector.bind_instance(
+            BaseLedger,
+            async_mock.MagicMock(
+                __aenter__=async_mock.CoroutineMock(),
+                __aexit__=async_mock.CoroutineMock(),
+            ),
+        )
+        self.mock_context._context.injector.bind_instance(
+            IndyVerifier,
+            async_mock.MagicMock(
+                verify_presentation=async_mock.CoroutineMock(),
+            ),
+        )
 
         with async_mock.patch(
             "aries_cloudagent.connections.models.conn_record.ConnRecord",
@@ -1016,16 +1021,21 @@ class TestProofRoutes(AsyncTestCase):
         mock.match_info = {"pres_ex_id": "dummy"}
         mock.app = {
             "outbound_message_router": async_mock.CoroutineMock(),
-            "request_context": async_mock.CoroutineMock(
-                inject=async_mock.CoroutineMock(
-                    return_value=async_mock.CoroutineMock(
-                        __aenter__=async_mock.CoroutineMock(),
-                        __aexit__=async_mock.CoroutineMock(),
-                        verify_presentation=async_mock.CoroutineMock(),
-                    )
-                )
-            ),
+            "request_context": self.mock_context,
         }
+        self.mock_context._context.injector.bind_instance(
+            BaseLedger,
+            async_mock.MagicMock(
+                __aenter__=async_mock.CoroutineMock(),
+                __aexit__=async_mock.CoroutineMock(),
+            ),
+        )
+        self.mock_context._context.injector.bind_instance(
+            IndyVerifier,
+            async_mock.MagicMock(
+                verify_presentation=async_mock.CoroutineMock(),
+            ),
+        )
 
         with async_mock.patch(
             "aries_cloudagent.connections.models.conn_record.ConnRecord",
@@ -1265,7 +1275,7 @@ class TestProofRoutes(AsyncTestCase):
         mock.match_info = {"pres_ex_id": "dummy"}
         mock.app = {
             "outbound_message_router": async_mock.CoroutineMock(),
-            "request_context": async_mock.MagicMock(settings={}),
+            "request_context": self.mock_context,
         }
 
         with async_mock.patch(
@@ -1325,16 +1335,21 @@ class TestProofRoutes(AsyncTestCase):
         mock.match_info = {"pres_ex_id": "dummy"}
         mock.app = {
             "outbound_message_router": async_mock.CoroutineMock(),
-            "request_context": async_mock.CoroutineMock(
-                inject=async_mock.CoroutineMock(
-                    return_value=async_mock.CoroutineMock(
-                        __aenter__=async_mock.CoroutineMock(),
-                        __aexit__=async_mock.CoroutineMock(),
-                        verify_presentation=async_mock.CoroutineMock(),
-                    )
-                )
-            ),
+            "request_context": self.mock_context,
         }
+        self.mock_context._context.injector.bind_instance(
+            BaseLedger,
+            async_mock.MagicMock(
+                __aenter__=async_mock.CoroutineMock(),
+                __aexit__=async_mock.CoroutineMock(),
+            ),
+        )
+        self.mock_context._context.injector.bind_instance(
+            IndyVerifier,
+            async_mock.MagicMock(
+                verify_presentation=async_mock.CoroutineMock(),
+            ),
+        )
 
         with async_mock.patch(
             "aries_cloudagent.connections.models.conn_record.ConnRecord",
@@ -1369,7 +1384,7 @@ class TestProofRoutes(AsyncTestCase):
         mock.match_info = {"pres_ex_id": "dummy"}
         mock.app = {
             "outbound_message_router": async_mock.CoroutineMock(),
-            "request_context": "context",
+            "request_context": self.mock_context,
         }
 
         with async_mock.patch(
@@ -1431,16 +1446,21 @@ class TestProofRoutes(AsyncTestCase):
         mock.match_info = {"pres_ex_id": "dummy"}
         mock.app = {
             "outbound_message_router": async_mock.CoroutineMock(),
-            "request_context": async_mock.CoroutineMock(
-                inject=async_mock.CoroutineMock(
-                    return_value=async_mock.CoroutineMock(
-                        __aenter__=async_mock.CoroutineMock(),
-                        __aexit__=async_mock.CoroutineMock(),
-                        verify_presentation=async_mock.CoroutineMock(),
-                    )
-                )
-            ),
+            "request_context": self.mock_context,
         }
+        self.mock_context._context.injector.bind_instance(
+            BaseLedger,
+            async_mock.MagicMock(
+                __aenter__=async_mock.CoroutineMock(),
+                __aexit__=async_mock.CoroutineMock(),
+            ),
+        )
+        self.mock_context._context.injector.bind_instance(
+            IndyVerifier,
+            async_mock.MagicMock(
+                verify_presentation=async_mock.CoroutineMock(),
+            ),
+        )
 
         with async_mock.patch(
             "aries_cloudagent.connections.models.conn_record.ConnRecord",
@@ -1486,7 +1506,7 @@ class TestProofRoutes(AsyncTestCase):
         mock.match_info = {"pres_ex_id": "dummy"}
         mock.app = {
             "outbound_message_router": async_mock.CoroutineMock(),
-            "request_context": "context",
+            "request_context": self.mock_context,
         }
 
         with async_mock.patch(
@@ -1517,7 +1537,7 @@ class TestProofRoutes(AsyncTestCase):
 
         mock.app = {
             "outbound_message_router": async_mock.CoroutineMock(),
-            "request_context": "context",
+            "request_context": self.mock_context,
         }
 
         with async_mock.patch(
@@ -1541,7 +1561,7 @@ class TestProofRoutes(AsyncTestCase):
         mock.match_info = {"pres_ex_id": "dummy"}
         mock.app = {
             "outbound_message_router": async_mock.CoroutineMock(),
-            "request_context": "context",
+            "request_context": self.mock_context,
         }
 
         with async_mock.patch(

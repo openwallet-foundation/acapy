@@ -22,7 +22,7 @@ CRED_DEF_ID = f"{TEST_DID}:3:CL:1234:default"
 REV_REG_ID = f"{TEST_DID}:4:{CRED_DEF_ID}:CL_ACCUM:0"
 
 
-class TestRecord(AsyncTestCase):
+class TestIssuerRevRegRecord(AsyncTestCase):
     def setUp(self):
         self.session = InMemoryProfile.test_session(
             settings={"tails_server_base_url": "http://1.2.3.4:8088"},
@@ -102,7 +102,7 @@ class TestRecord(AsyncTestCase):
 
         await rec.send_entry(self.session)
         assert rec.state == IssuerRevRegRecord.STATE_ACTIVE
-        ledger.send_revoc_reg_entry.assert_called_once()
+        self.ledger.send_revoc_reg_entry.assert_called_once()
 
         rev_reg = await rec.get_registry()
         assert type(rev_reg) == RevocationRegistry

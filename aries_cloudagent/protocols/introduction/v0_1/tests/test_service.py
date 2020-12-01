@@ -26,7 +26,7 @@ TEST_LABEL = "Label"
 TEST_ENDPOINT = "http://localhost"
 
 
-class TestIntroductionRoutes(AsyncTestCase):
+class TestIntroductionService(AsyncTestCase):
     def setUp(self):
         self.profile = InMemoryProfile.test_profile()
         self.context = RequestContext(self.profile)

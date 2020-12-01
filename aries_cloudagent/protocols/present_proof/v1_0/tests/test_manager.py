@@ -83,7 +83,7 @@ NOW = int(time())
 class TestPresentationManager(AsyncTestCase):
     async def setUp(self):
         self.session = InMemoryProfile.test_session()
-        self.context = RequestContext(self.session.profile)
+        injector = self.session.context.injector
 
         Ledger = async_mock.MagicMock(BaseLedger, autospec=True)
         self.ledger = Ledger()
@@ -127,7 +127,7 @@ class TestPresentationManager(AsyncTestCase):
                 NOW,
             )
         )
-        self.context.injector.bind_instance(BaseLedger, self.ledger)
+        injector.bind_instance(BaseLedger, self.ledger)
 
         Holder = async_mock.MagicMock(IndyHolder, autospec=True)
         self.holder = Holder()
@@ -166,16 +166,16 @@ class TestPresentationManager(AsyncTestCase):
                 }
             )
         )
-        self.context.injector.bind_instance(IndyHolder, self.holder)
+        injector.bind_instance(IndyHolder, self.holder)
 
         Verifier = async_mock.MagicMock(IndyVerifier, autospec=True)
         self.verifier = Verifier()
         self.verifier.verify_presentation = async_mock.CoroutineMock(
             return_value="true"
         )
-        self.context.injector.bind_instance(IndyVerifier, self.verifier)
+        injector.bind_instance(IndyVerifier, self.verifier)
 
-        self.manager = PresentationManager(self.context)
+        self.manager = PresentationManager(self.session)
 
     async def test_record_eq(self):
         same = [
@@ -211,11 +211,7 @@ class TestPresentationManager(AsyncTestCase):
                 assert diff[i] == diff[j] if i == j else diff[i] != diff[j]
 
     async def test_create_exchange_for_proposal(self):
-        self.context.connection_record = async_mock.MagicMock()
-        self.context.connection_record.connection_id = CONN_ID
-
         proposal = PresentationProposal()
-        self.context.message = proposal
 
         with async_mock.patch.object(
             V10PresentationExchange, "save", autospec=True
@@ -233,16 +229,13 @@ class TestPresentationManager(AsyncTestCase):
             assert exchange.state == V10PresentationExchange.STATE_PROPOSAL_SENT
 
     async def test_receive_proposal(self):
-        self.context.connection_record = async_mock.MagicMock()
-        self.context.connection_record.connection_id = CONN_ID
-
+        connection_record = async_mock.MagicMock(connection_id=CONN_ID)
         proposal = PresentationProposal()
-        self.context.message = proposal
 
         with async_mock.patch.object(
             V10PresentationExchange, "save", autospec=True
         ) as save_ex:
-            exchange = await self.manager.receive_proposal()
+            exchange = await self.manager.receive_proposal(proposal, connection_record)
             save_ex.assert_called_once()
 
             assert exchange.state == V10PresentationExchange.STATE_PROPOSAL_RECEIVED
@@ -267,13 +260,9 @@ class TestPresentationManager(AsyncTestCase):
         exchange.save.assert_called_once()
 
     async def test_create_exchange_for_request(self):
-        self.context.connection_record = async_mock.MagicMock()
-        self.context.connection_record.connection_id = CONN_ID
-
         request = async_mock.MagicMock()
         request.indy_proof_request = async_mock.MagicMock()
         request._thread_id = "dummy"
-        self.context.message = request
 
         with async_mock.patch.object(
             V10PresentationExchange, "save", autospec=True
@@ -287,12 +276,6 @@ class TestPresentationManager(AsyncTestCase):
             assert exchange.state == V10PresentationExchange.STATE_REQUEST_SENT
 
     async def test_receive_request(self):
-        self.context.connection_record = async_mock.MagicMock()
-        self.context.connection_record.connection_id = CONN_ID
-
-        request = PresentationRequest()
-        self.context.message = request
-
         exchange_in = V10PresentationExchange()
 
         with async_mock.patch.object(
@@ -304,22 +287,15 @@ class TestPresentationManager(AsyncTestCase):
             assert exchange_out.state == V10PresentationExchange.STATE_REQUEST_RECEIVED
 
     async def test_create_presentation(self):
-        self.context.connection_record = async_mock.MagicMock()
-        self.context.connection_record.connection_id = CONN_ID
-
         exchange_in = V10PresentationExchange()
         indy_proof_req = await PRES_PREVIEW.indy_proof_request(
             name=PROOF_REQ_NAME,
             version=PROOF_REQ_VERSION,
             nonce=PROOF_REQ_NONCE,
-            ledger=self.context.inject(BaseLedger, required=False),
+            ledger=self.ledger,
         )
 
         exchange_in.presentation_request = indy_proof_req
-        request = async_mock.MagicMock()
-        request.indy_proof_request = async_mock.MagicMock()
-        request._thread_id = "dummy"
-        self.context.message = request
 
         more_magic_rr = async_mock.MagicMock(
             get_or_fetch_local_tails_path=async_mock.CoroutineMock(
@@ -353,23 +329,16 @@ class TestPresentationManager(AsyncTestCase):
             assert exchange_out.state == V10PresentationExchange.STATE_PRESENTATION_SENT
 
     async def test_create_presentation_proof_req_non_revoc_interval_none(self):
-        self.context.connection_record = async_mock.MagicMock()
-        self.context.connection_record.connection_id = CONN_ID
-
         exchange_in = V10PresentationExchange()
         indy_proof_req = await PRES_PREVIEW.indy_proof_request(
             name=PROOF_REQ_NAME,
             version=PROOF_REQ_VERSION,
             nonce=PROOF_REQ_NONCE,
-            ledger=self.context.inject(BaseLedger, required=False),
+            ledger=self.ledger,
         )
         indy_proof_req["non_revoked"] = None  # simulate interop with indy-vcx
 
         exchange_in.presentation_request = indy_proof_req
-        request = async_mock.MagicMock()
-        request.indy_proof_request = async_mock.MagicMock()
-        request._thread_id = "dummy"
-        self.context.message = request
 
         more_magic_rr = async_mock.MagicMock(
             get_or_fetch_local_tails_path=async_mock.CoroutineMock(
@@ -403,8 +372,6 @@ class TestPresentationManager(AsyncTestCase):
             assert exchange_out.state == V10PresentationExchange.STATE_PRESENTATION_SENT
 
     async def test_create_presentation_self_asserted(self):
-        self.context.connection_record = async_mock.MagicMock()
-        self.context.connection_record.connection_id = CONN_ID
         PRES_PREVIEW_SELFIE = PresentationPreview(
             attributes=[
                 PresAttrSpec(name="player", value="Richie Knucklez"),
@@ -429,14 +396,10 @@ class TestPresentationManager(AsyncTestCase):
             name=PROOF_REQ_NAME,
             version=PROOF_REQ_VERSION,
             nonce=PROOF_REQ_NONCE,
-            ledger=self.context.inject(BaseLedger, required=False),
+            ledger=self.ledger,
         )
 
         exchange_in.presentation_request = indy_proof_req
-        request = async_mock.MagicMock()
-        request.indy_proof_request = async_mock.MagicMock()
-        request._thread_id = "dummy"
-        self.context.message = request
 
         more_magic_rr = async_mock.MagicMock(
             get_or_fetch_local_tails_path=async_mock.CoroutineMock(
@@ -470,9 +433,6 @@ class TestPresentationManager(AsyncTestCase):
             assert exchange_out.state == V10PresentationExchange.STATE_PRESENTATION_SENT
 
     async def test_create_presentation_no_revocation(self):
-        self.context.connection_record = async_mock.MagicMock()
-        self.context.connection_record.connection_id = CONN_ID
-
         Ledger = async_mock.MagicMock(BaseLedger, autospec=True)
         self.ledger = Ledger()
         self.ledger.get_schema = async_mock.CoroutineMock(
@@ -481,22 +441,17 @@ class TestPresentationManager(AsyncTestCase):
         self.ledger.get_credential_definition = async_mock.CoroutineMock(
             return_value={"value": {"revocation": None}}
         )
-        self.context.injector.clear_binding(BaseLedger)
-        self.context.injector.bind_instance(BaseLedger, self.ledger)
+        self.session.context.injector.bind_instance(BaseLedger, self.ledger)
 
         exchange_in = V10PresentationExchange()
         indy_proof_req = await PRES_PREVIEW.indy_proof_request(
             name=PROOF_REQ_NAME,
             version=PROOF_REQ_VERSION,
             nonce=PROOF_REQ_NONCE,
-            ledger=self.context.inject(BaseLedger, required=False),
+            ledger=self.ledger,
         )
 
         exchange_in.presentation_request = indy_proof_req
-        request = async_mock.MagicMock()
-        request.indy_proof_request = async_mock.MagicMock()
-        request._thread_id = "dummy"
-        self.context.message = request
 
         Holder = async_mock.MagicMock(IndyHolder, autospec=True)
         self.holder = Holder()
@@ -524,8 +479,7 @@ class TestPresentationManager(AsyncTestCase):
             )
         )
         self.holder.create_presentation = async_mock.CoroutineMock(return_value="{}")
-        self.context.injector.clear_binding(IndyHolder)
-        self.context.injector.bind_instance(IndyHolder, self.holder)
+        self.session.context.injector.bind_instance(IndyHolder, self.holder)
 
         with async_mock.patch.object(
             V10PresentationExchange, "save", autospec=True
@@ -548,22 +502,15 @@ class TestPresentationManager(AsyncTestCase):
             assert exchange_out.state == V10PresentationExchange.STATE_PRESENTATION_SENT
 
     async def test_create_presentation_bad_revoc_state(self):
-        self.context.connection_record = async_mock.MagicMock()
-        self.context.connection_record.connection_id = CONN_ID
-
         exchange_in = V10PresentationExchange()
         indy_proof_req = await PRES_PREVIEW.indy_proof_request(
             name=PROOF_REQ_NAME,
             version=PROOF_REQ_VERSION,
             nonce=PROOF_REQ_NONCE,
-            ledger=self.context.inject(BaseLedger, required=False),
+            ledger=self.ledger,
         )
 
         exchange_in.presentation_request = indy_proof_req
-        request = async_mock.MagicMock()
-        request.indy_proof_request = async_mock.MagicMock()
-        request._thread_id = "dummy"
-        self.context.message = request
 
         Holder = async_mock.MagicMock(IndyHolder, autospec=True)
         self.holder = Holder()
@@ -595,8 +542,7 @@ class TestPresentationManager(AsyncTestCase):
         self.holder.create_revocation_state = async_mock.CoroutineMock(
             side_effect=test_module.IndyHolderError("Problem", {"message": "Nope"})
         )
-        self.context.injector.clear_binding(IndyHolder)
-        self.context.injector.bind_instance(IndyHolder, self.holder)
+        self.session.context.injector.bind_instance(IndyHolder, self.holder)
 
         more_magic_rr = async_mock.MagicMock(
             get_or_fetch_local_tails_path=async_mock.CoroutineMock(
@@ -624,22 +570,15 @@ class TestPresentationManager(AsyncTestCase):
                 await self.manager.create_presentation(exchange_in, req_creds)
 
     async def test_create_presentation_multi_matching_proposal_creds_names(self):
-        self.context.connection_record = async_mock.MagicMock()
-        self.context.connection_record.connection_id = CONN_ID
-
         exchange_in = V10PresentationExchange()
         indy_proof_req = await PRES_PREVIEW_NAMES.indy_proof_request(
             name=PROOF_REQ_NAME,
             version=PROOF_REQ_VERSION,
             nonce=PROOF_REQ_NONCE,
-            ledger=self.context.inject(BaseLedger, required=False),
+            ledger=self.ledger,
         )
 
         exchange_in.presentation_request = indy_proof_req
-        request = async_mock.MagicMock()
-        request.indy_proof_request = async_mock.MagicMock()
-        request._thread_id = "dummy"
-        self.context.message = request
 
         Holder = async_mock.MagicMock(IndyHolder, autospec=True)
         self.holder = Holder()
@@ -690,8 +629,7 @@ class TestPresentationManager(AsyncTestCase):
                 }
             )
         )
-        self.context.injector.clear_binding(IndyHolder)
-        self.context.injector.bind_instance(IndyHolder, self.holder)
+        self.session.context.injector.bind_instance(IndyHolder, self.holder)
 
         more_magic_rr = async_mock.MagicMock(
             get_or_fetch_local_tails_path=async_mock.CoroutineMock(
@@ -730,7 +668,7 @@ class TestPresentationManager(AsyncTestCase):
             name=PROOF_REQ_NAME,
             version=PROOF_REQ_VERSION,
             nonce=PROOF_REQ_NONCE,
-            ledger=self.context.inject(BaseLedger, required=False),
+            ledger=self.ledger,
         )
         get_creds = async_mock.CoroutineMock(return_value=())
         self.holder.get_credentials_for_presentation_request_by_referent = get_creds
@@ -755,8 +693,7 @@ class TestPresentationManager(AsyncTestCase):
         self.holder.get_credentials_for_presentation_request_by_referent = get_creds
 
     async def test_receive_presentation(self):
-        self.context.connection_record = async_mock.MagicMock()
-        self.context.connection_record.connection_id = CONN_ID
+        connection_record = async_mock.MagicMock(connection_id=CONN_ID)
 
         exchange_dummy = V10PresentationExchange(
             presentation_proposal_dict={
@@ -823,7 +760,7 @@ class TestPresentationManager(AsyncTestCase):
                 ],
             },
         )
-        self.context.message = async_mock.MagicMock()
+        message = async_mock.MagicMock()
 
         with async_mock.patch.object(
             V10PresentationExchange, "save", autospec=True
@@ -831,11 +768,13 @@ class TestPresentationManager(AsyncTestCase):
             V10PresentationExchange, "retrieve_by_tag_filter", autospec=True
         ) as retrieve_ex:
             retrieve_ex.return_value = exchange_dummy
-            exchange_out = await self.manager.receive_presentation()
+            exchange_out = await self.manager.receive_presentation(
+                message, connection_record
+            )
             retrieve_ex.assert_called_once_with(
-                self.context,
-                {"thread_id": self.context.message._thread_id},
-                {"connection_id": self.context.connection_record.connection_id},
+                self.session,
+                {"thread_id": message._thread_id},
+                {"connection_id": CONN_ID},
             )
             save_ex.assert_called_once()
 
@@ -844,8 +783,7 @@ class TestPresentationManager(AsyncTestCase):
             )
 
     async def test_receive_presentation_bait_and_switch(self):
-        self.context.connection_record = async_mock.MagicMock()
-        self.context.connection_record.connection_id = CONN_ID
+        connection_record = async_mock.MagicMock(connection_id=CONN_ID)
 
         exchange_dummy = V10PresentationExchange(
             presentation_proposal_dict={
@@ -880,42 +818,43 @@ class TestPresentationManager(AsyncTestCase):
                 },
             },
         )
-        self.context.message = async_mock.MagicMock()
-        self.context.message.indy_proof = async_mock.MagicMock(
-            return_value={
-                "proof": {"proofs": []},
-                "requested_proof": {
-                    "revealed_attrs": {
-                        "0_favourite_uuid": {
-                            "sub_proof_index": 0,
-                            "raw": "potato",
-                            "encoded": "12345678901234567890",
+        message = async_mock.MagicMock(
+            indy_proof=async_mock.MagicMock(
+                return_value={
+                    "proof": {"proofs": []},
+                    "requested_proof": {
+                        "revealed_attrs": {
+                            "0_favourite_uuid": {
+                                "sub_proof_index": 0,
+                                "raw": "potato",
+                                "encoded": "12345678901234567890",
+                            },
+                            "1_icon_uuid": {
+                                "sub_proof_index": 1,
+                                "raw": "cG90YXRv",
+                                "encoded": "23456789012345678901",
+                            },
                         },
-                        "1_icon_uuid": {
-                            "sub_proof_index": 1,
-                            "raw": "cG90YXRv",
-                            "encoded": "23456789012345678901",
+                        "self_attested_attrs": {},
+                        "unrevealed_attrs": {},
+                        "predicates": {},
+                    },
+                    "identifiers": [
+                        {
+                            "schema_id": S_ID,
+                            "cred_def_id": CD_ID,
+                            "rev_reg_id": None,
+                            "timestamp": None,
                         },
-                    },
-                    "self_attested_attrs": {},
-                    "unrevealed_attrs": {},
-                    "predicates": {},
-                },
-                "identifiers": [
-                    {
-                        "schema_id": S_ID,
-                        "cred_def_id": CD_ID,
-                        "rev_reg_id": None,
-                        "timestamp": None,
-                    },
-                    {
-                        "schema_id": S_ID,
-                        "cred_def_id": CD_ID,
-                        "rev_reg_id": None,
-                        "timestamp": None,
-                    },
-                ],
-            }
+                        {
+                            "schema_id": S_ID,
+                            "cred_def_id": CD_ID,
+                            "rev_reg_id": None,
+                            "timestamp": None,
+                        },
+                    ],
+                }
+            )
         )
 
         with async_mock.patch.object(
@@ -925,11 +864,11 @@ class TestPresentationManager(AsyncTestCase):
         ) as retrieve_ex:
             retrieve_ex.return_value = exchange_dummy
             with self.assertRaises(PresentationManagerError):
-                await self.manager.receive_presentation()
+                await self.manager.receive_presentation(message, connection_record)
 
     async def test_receive_presentation_connection_less(self):
         exchange_dummy = V10PresentationExchange()
-        self.context.message = async_mock.MagicMock()
+        message = async_mock.MagicMock()
 
         with async_mock.patch.object(
             V10PresentationExchange, "save", autospec=True
@@ -937,9 +876,9 @@ class TestPresentationManager(AsyncTestCase):
             V10PresentationExchange, "retrieve_by_tag_filter", autospec=True
         ) as retrieve_ex:
             retrieve_ex.return_value = exchange_dummy
-            exchange_out = await self.manager.receive_presentation()
+            exchange_out = await self.manager.receive_presentation(message, None)
             retrieve_ex.assert_called_once_with(
-                self.context, {"thread_id": self.context.message._thread_id}, None
+                self.session, {"thread_id": message._thread_id}, None
             )
             save_ex.assert_called_once()
 
@@ -990,11 +929,9 @@ class TestPresentationManager(AsyncTestCase):
 
     async def test_send_presentation_ack(self):
         exchange = V10PresentationExchange()
-        proposal = PresentationProposal()
-        self.context.message = proposal
 
         responder = MockResponder()
-        self.context.injector.bind_instance(BaseResponder, responder)
+        self.session.context.injector.bind_instance(BaseResponder, responder)
 
         await self.manager.send_presentation_ack(exchange)
         messages = responder.messages
@@ -1002,18 +939,15 @@ class TestPresentationManager(AsyncTestCase):
 
     async def test_send_presentation_ack_no_responder(self):
         exchange = V10PresentationExchange()
-        proposal = PresentationProposal()
-        self.context.message = proposal
 
-        self.context.injector.clear_binding(BaseResponder)
+        self.session.context.injector.clear_binding(BaseResponder)
         await self.manager.send_presentation_ack(exchange)
 
     async def test_receive_presentation_ack(self):
-        self.context.connection_record = async_mock.MagicMock()
-        self.context.connection_record.connection_id = CONN_ID
+        connection_record = async_mock.MagicMock(connection_id=CONN_ID)
 
         exchange_dummy = V10PresentationExchange()
-        self.context.message = async_mock.MagicMock()
+        message = async_mock.MagicMock()
 
         with async_mock.patch.object(
             V10PresentationExchange, "save", autospec=True
@@ -1021,7 +955,9 @@ class TestPresentationManager(AsyncTestCase):
             V10PresentationExchange, "retrieve_by_tag_filter", autospec=True
         ) as retrieve_ex:
             retrieve_ex.return_value = exchange_dummy
-            exchange_out = await self.manager.receive_presentation_ack()
+            exchange_out = await self.manager.receive_presentation_ack(
+                message, connection_record
+            )
             save_ex.assert_called_once()
 
             assert exchange_out.state == (

@@ -20,7 +20,7 @@ class TestPingResponseHandler:
     async def test_ping_response(self, request_context):
         request_context.message_receipt = MessageReceipt()
         request_context.message = PingResponse()
-        request_context.settings = {"debug.monitor_ping": True}
+        request_context.settings["debug.monitor_ping"] = True
         request_context.connection_ready = True
         handler = PingResponseHandler()
         responder = MockResponder()

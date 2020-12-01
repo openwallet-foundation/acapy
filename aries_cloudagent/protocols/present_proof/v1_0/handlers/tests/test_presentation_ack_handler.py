@@ -19,18 +19,23 @@ class TestPresentationAckHandler(AsyncTestCase):
 
         with async_mock.patch.object(
             handler, "PresentationManager", autospec=True
-        ) as mock_pres_mgr:
+        ) as mock_pres_mgr, async_mock.patch.object(
+            request_context, "session", async_mock.CoroutineMock()
+        ) as mock_session:
             mock_pres_mgr.return_value.receive_presentation_ack = (
                 async_mock.CoroutineMock()
             )
             request_context.message = PresentationAck()
             request_context.connection_ready = True
+            request_context.connection_record = async_mock.MagicMock()
             handler_inst = handler.PresentationAckHandler()
             responder = MockResponder()
             await handler_inst.handle(request_context, responder)
 
-        mock_pres_mgr.assert_called_once_with(request_context)
-        mock_pres_mgr.return_value.receive_presentation_ack.assert_called_once_with()
+        mock_pres_mgr.assert_called_once_with(mock_session.return_value)
+        mock_pres_mgr.return_value.receive_presentation_ack.assert_called_once_with(
+            request_context.message, request_context.connection_record
+        )
         assert not responder.messages
 
     async def test_called_not_ready(self):

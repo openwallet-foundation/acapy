@@ -21,10 +21,11 @@ class TestProvider(AsyncTestCase):
         timing_log = NamedTemporaryFile().name
         settings = {"timing.enabled": True, "timing.log.file": timing_log}
         mock_provider = async_mock.MagicMock(BaseProvider, autospec=True)
-        stats_provider = StatsProvider(mock_provider, ("mock_method"))
+        mock_provider.provide.return_value.mock_method = lambda: ()
+        stats_provider = StatsProvider(mock_provider, ("mock_method",))
         collector = Collector(log_path=timing_log)
 
         context = InjectionContext(settings=settings, enforce_typing=False)
         context.injector.bind_instance(Collector, collector)
 
-        await stats_provider.provide(Settings(settings), context.injector)
+        stats_provider.provide(Settings(settings), context.injector)

@@ -30,10 +30,9 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         """Context manager exit."""
 
     @property
-    @classmethod
-    def backend(cls) -> str:
+    def backend(self) -> str:
         """Accessor for the ledger backend name."""
-        return cls.BACKEND_NAME
+        return self.__class__.BACKEND_NAME
 
     @abstractmethod
     async def get_key_for_did(self, did: str) -> str:

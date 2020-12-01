@@ -37,7 +37,6 @@ class TestLedger(AsyncTestCase):
             "profile_endpoint": "http://agent.ca",
         }
         mock_ledger = async_mock.MagicMock(
-            type="indy",
             get_txn_author_agreement=async_mock.CoroutineMock(
                 return_value={
                     "taa_required": True,
@@ -51,9 +50,7 @@ class TestLedger(AsyncTestCase):
             ),
             update_endpoint_for_did=async_mock.CoroutineMock(),
         )
-        mock_wallet = async_mock.MagicMock(
-            type="indy", set_did_endpoint=async_mock.CoroutineMock()
-        )
+        mock_wallet = async_mock.MagicMock(set_did_endpoint=async_mock.CoroutineMock())
 
         context = InjectionContext(settings=settings, enforce_typing=False)
         context.injector.bind_instance(BaseLedger, mock_ledger)

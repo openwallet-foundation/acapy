@@ -81,7 +81,7 @@ class TestBaseRecord(AsyncTestCase):
         session = InMemoryProfile.test_session()
         mock_storage = async_mock.MagicMock()
         mock_storage.add_record = async_mock.CoroutineMock()
-        session.injector.bind_instance(BaseStorage, mock_storage)
+        session.context.injector.bind_instance(BaseStorage, mock_storage)
         record = BaseRecordImpl()
         with async_mock.patch.object(
             record, "post_save", async_mock.CoroutineMock()
@@ -120,7 +120,9 @@ class TestBaseRecord(AsyncTestCase):
         assert cache_result is mock_cache.get.return_value
 
         await record.set_cached_key(session, cache_key, record)
-        mock_cache.set.assert_awaited_once_with(cache_key, record, record.CACHE_TTL)
+        mock_cache.set.assert_awaited_once_with(
+            cache_key, record, record.DEFAULT_CACHE_TTL
+        )
 
         await record.clear_cached_key(session, cache_key)
         mock_cache.clear.assert_awaited_once_with(cache_key)
@@ -141,7 +143,7 @@ class TestBaseRecord(AsyncTestCase):
         session = InMemoryProfile.test_session()
         rec = ARecordImpl(a="1", b="0", code="one")
         with async_mock.patch.object(
-            session, "inject", async_mock.CoroutineMock()
+            session, "inject", async_mock.MagicMock()
         ) as mock_inject:
             mock_inject.return_value = async_mock.MagicMock(
                 add_record=async_mock.CoroutineMock(side_effect=ZeroDivisionError())

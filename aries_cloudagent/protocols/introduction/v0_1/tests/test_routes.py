@@ -68,7 +68,7 @@ class TestIntroductionRoutes(AsyncTestCase):
         mock_conn_rec.serialize = async_mock.MagicMock()
 
         with async_mock.patch.object(
-            self.context, "inject", async_mock.CoroutineMock()
+            self.context, "inject", async_mock.MagicMock()
         ) as mock_ctx_inject, async_mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
@@ -112,7 +112,7 @@ class TestIntroductionRoutes(AsyncTestCase):
         mock_conn_rec.serialize = async_mock.MagicMock()
 
         with async_mock.patch.object(
-            self.context, "inject", async_mock.CoroutineMock()
+            self.context, "inject", async_mock.MagicMock()
         ) as mock_ctx_inject:
             mock_ctx_inject.return_value = async_mock.MagicMock(
                 start_introduction=async_mock.CoroutineMock(

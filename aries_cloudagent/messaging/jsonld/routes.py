@@ -5,8 +5,11 @@ from aiohttp_apispec import docs, request_schema, response_schema
 
 from marshmallow import fields
 
+from ...messaging.request_context import RequestContext
 from ...wallet.base import BaseWallet
+
 from ..models.openapi import OpenAPISchema
+
 from .credential import sign_credential, verify_credential
 
 
@@ -36,8 +39,9 @@ async def sign(request: web.BaseRequest):
     """
     response = {}
     try:
-        context = request.app["request_context"]
-        wallet: BaseWallet = context.inject(BaseWallet)
+        context: RequestContext = request.app["request_context"]
+        session = await context.session()
+        wallet = session.inject(BaseWallet, required=False)
         if not wallet:
             raise web.HTTPForbidden()
 
@@ -84,8 +88,9 @@ async def verify(request: web.BaseRequest):
     """
     response = {"valid": False}
     try:
-        context = request.app["request_context"]
-        wallet: BaseWallet = context.inject(BaseWallet)
+        context: RequestContext = request.app["request_context"]
+        session = await context.session()
+        wallet = session.inject(BaseWallet, required=False)
         if not wallet:
             raise web.HTTPForbidden()
 

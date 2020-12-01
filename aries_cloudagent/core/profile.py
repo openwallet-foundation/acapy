@@ -29,10 +29,9 @@ class Profile(ABC):
         self._name = name or Profile.DEFAULT_NAME
 
     @property
-    @classmethod
-    def backend(cls) -> str:
+    def backend(self) -> str:
         """Accessor for the backend implementation name."""
-        return cls.BACKEND_NAME
+        return self.__class__.BACKEND_NAME
 
     @property
     def context(self) -> InjectionContext:

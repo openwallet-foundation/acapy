@@ -19,7 +19,8 @@ from .....protocols.routing.v1_0.manager import RoutingManager
 from .....storage.base import BaseStorage
 from .....storage.error import StorageNotFoundError
 from .....transport.inbound.receipt import MessageReceipt
-from .....wallet.base import BaseWallet, DIDInfo
+from .....wallet.base import DIDInfo
+from .....wallet.in_memory import InMemoryWallet
 from .....wallet.error import WalletNotFoundError
 
 from ....didcomm_prefix import DIDCommPrefix
@@ -91,7 +92,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
     async def test_create_invitation_handshake_succeeds(self):
         self.manager.session.context.update_settings({"public_invites": True})
         with async_mock.patch.object(
-            BaseWallet, "get_public_did", autospec=True
+            InMemoryWallet, "get_public_did", autospec=True
         ) as mock_wallet_get_public_did:
             mock_wallet_get_public_did.return_value = DIDInfo(
                 TestConfig.test_did, TestConfig.test_verkey, None
@@ -117,7 +118,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
     async def test_create_invitation_attachment_cred_offer(self):
         self.manager.session.context.update_settings({"public_invites": True})
         with async_mock.patch.object(
-            BaseWallet, "get_public_did", autospec=True
+            InMemoryWallet, "get_public_did", autospec=True
         ) as mock_wallet_get_public_did, async_mock.patch.object(
             test_module.V10CredentialExchange,
             "retrieve_by_id",
@@ -141,9 +142,9 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             mock_retrieve_cxid.assert_called_once_with(self.manager.session, "dummy-id")
 
     async def test_create_invitation_attachment_present_proof(self):
-        self.manager.context.update_settings({"public_invites": True})
+        self.session.context.update_settings({"public_invites": True})
         with async_mock.patch.object(
-            BaseWallet, "get_public_did", autospec=True
+            InMemoryWallet, "get_public_did", autospec=True
         ) as mock_wallet_get_public_did, async_mock.patch.object(
             test_module.V10PresentationExchange,
             "retrieve_by_id",
@@ -204,7 +205,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
     async def test_create_invitation_attachment_x(self):
         self.manager.session.context.update_settings({"public_invites": True})
         with async_mock.patch.object(
-            BaseWallet, "get_public_did", autospec=True
+            InMemoryWallet, "get_public_did", autospec=True
         ) as mock_wallet_get_public_did:
             mock_wallet_get_public_did.return_value = DIDInfo(
                 TestConfig.test_did, TestConfig.test_verkey, None

@@ -154,7 +154,7 @@ class TestPresentationRequestHandler(AsyncTestCase):
                     return_value=[{"cred_info": {"referent": "dummy"}}]
                 )
             )
-            request_context.inject = async_mock.CoroutineMock(return_value=mock_holder)
+            request_context.inject = async_mock.MagicMock(return_value=mock_holder)
 
             mock_pres_ex_rec.return_value = px_rec_instance
             mock_pres_ex_rec.retrieve_by_tag_filter = async_mock.CoroutineMock(
@@ -233,7 +233,7 @@ class TestPresentationRequestHandler(AsyncTestCase):
                     ]
                 )
             )
-            request_context.inject = async_mock.CoroutineMock(return_value=mock_holder)
+            request_context.inject = async_mock.MagicMock(return_value=mock_holder)
 
             mock_pres_ex_rec.return_value = px_rec_instance
             mock_pres_ex_rec.retrieve_by_tag_filter = async_mock.CoroutineMock(
@@ -301,7 +301,7 @@ class TestPresentationRequestHandler(AsyncTestCase):
             mock_holder.get_credentials_for_presentation_request_by_referent = (
                 async_mock.CoroutineMock(return_value=[])
             )
-            request_context.inject = async_mock.CoroutineMock(return_value=mock_holder)
+            request_context.inject = async_mock.MagicMock(return_value=mock_holder)
 
             mock_pres_ex_rec.return_value = px_rec_instance
             mock_pres_ex_rec.retrieve_by_tag_filter = async_mock.CoroutineMock(
@@ -367,7 +367,7 @@ class TestPresentationRequestHandler(AsyncTestCase):
                     return_value=[{"cred_info": {"referent": "dummy-0"}}]
                 )
             )
-            request_context.inject = async_mock.CoroutineMock(return_value=mock_holder)
+            request_context.inject = async_mock.MagicMock(return_value=mock_holder)
 
             mock_pres_ex_rec.return_value = px_rec_instance
             mock_pres_ex_rec.retrieve_by_tag_filter = async_mock.CoroutineMock(
@@ -440,7 +440,7 @@ class TestPresentationRequestHandler(AsyncTestCase):
                     ]
                 )
             )
-            request_context.inject = async_mock.CoroutineMock(return_value=mock_holder)
+            request_context.inject = async_mock.MagicMock(return_value=mock_holder)
 
             mock_pres_ex_rec.return_value = px_rec_instance
             mock_pres_ex_rec.retrieve_by_tag_filter = async_mock.CoroutineMock(
@@ -564,7 +564,7 @@ class TestPresentationRequestHandler(AsyncTestCase):
                     ]
                 )
             )
-            request_context.inject = async_mock.CoroutineMock(return_value=mock_holder)
+            request_context.inject = async_mock.MagicMock(return_value=mock_holder)
 
             mock_pres_ex_rec.return_value = px_rec_instance
             mock_pres_ex_rec.retrieve_by_tag_filter = async_mock.CoroutineMock(
@@ -669,7 +669,7 @@ class TestPresentationRequestHandler(AsyncTestCase):
                 ]
             )
             mock_holder.get_credentials_for_presentation_request_by_referent = by_reft
-            request_context.inject = async_mock.CoroutineMock(return_value=mock_holder)
+            request_context.inject = async_mock.MagicMock(return_value=mock_holder)
 
             mock_pres_ex_rec.return_value = px_rec_instance
             mock_pres_ex_rec.retrieve_by_tag_filter = async_mock.CoroutineMock(

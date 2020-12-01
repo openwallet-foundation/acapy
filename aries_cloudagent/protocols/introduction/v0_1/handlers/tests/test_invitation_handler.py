@@ -46,7 +46,7 @@ class TestInvitationHandler(AsyncTestCase):
 
         responder = MockResponder()
         with async_mock.patch.object(
-            self.context, "inject", async_mock.CoroutineMock()
+            self.context, "inject", async_mock.MagicMock()
         ) as mock_ctx_inject:
             mock_ctx_inject.return_value = async_mock.MagicMock(
                 return_invitation=async_mock.CoroutineMock()

@@ -59,6 +59,7 @@ class BaseRecord(BaseModel):
     class Meta:
         """BaseRecord metadata."""
 
+    DEFAULT_CACHE_TTL = 60
     RECORD_ID_NAME = "id"
     RECORD_TYPE = None
     WEBHOOK_TOPIC = None
@@ -171,7 +172,7 @@ class BaseRecord(BaseModel):
             return
         cache = session.inject(BaseCache, required=False)
         if cache:
-            await cache.set(cache_key, value, ttl or cls.CACHE_TTL)
+            await cache.set(cache_key, value, ttl or cls.DEFAULT_CACHE_TTL)
 
     @classmethod
     async def clear_cached_key(cls, session: ProfileSession, cache_key: str):
