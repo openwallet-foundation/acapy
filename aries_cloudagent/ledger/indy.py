@@ -298,7 +298,7 @@ class IndySdkLedger(BaseLedger):
                         )
                     )
             submit_op = indy.ledger.sign_and_submit_request(
-                self.pool.handle, self.wallet.handle, sign_did.did, request_json
+                self.pool.handle, self.wallet.opened.handle, sign_did.did, request_json
             )
         else:
             submit_op = indy.ledger.submit_request(self.pool.handle, request_json)
@@ -975,7 +975,7 @@ class IndySdkLedger(BaseLedger):
 
     def get_indy_storage(self) -> IndySdkStorage:
         """Get an IndySdkStorage instance for the current wallet."""
-        return IndySdkStorage(self.wallet)
+        return IndySdkStorage(self.wallet.opened)
 
     def taa_rough_timestamp(self) -> int:
         """Get a timestamp accurate to the day.

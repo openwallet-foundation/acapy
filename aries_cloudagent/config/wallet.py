@@ -4,7 +4,7 @@ import logging
 
 from ..core.error import ProfileNotFoundError
 from ..core.profile import Profile, ProfileManager
-from ..wallet.base import BaseWallet
+from ..wallet.base import BaseWallet, DIDInfo
 from ..wallet.crypto import seed_to_did
 
 from .base import ConfigError
@@ -17,7 +17,7 @@ CFG_MAP = {"key", "rekey", "name", "storage_config", "storage_creds", "storage_t
 
 async def wallet_config(
     context: InjectionContext, provision: bool = False
-) -> (Profile, str):
+) -> (Profile, DIDInfo):
     """Initialize the root profile."""
 
     mgr = context.inject(ProfileManager)
@@ -62,9 +62,7 @@ async def wallet_config(
 
     if public_did_info:
         public_did = public_did_info.did
-        print(public_did, seed_to_did(wallet_seed), bool(wallet_seed), wallet_seed)
         if wallet_seed and seed_to_did(wallet_seed) != public_did:
-            print(context.settings.get("wallet.replace_public_did"))
             if context.settings.get("wallet.replace_public_did"):
                 replace_did_info = await wallet.create_local_did(wallet_seed)
                 public_did = replace_did_info.did
@@ -114,4 +112,4 @@ async def wallet_config(
 
     await txn.commit()
 
-    return (root_profile, public_did)
+    return (root_profile, public_did_info)

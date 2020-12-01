@@ -136,14 +136,15 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
     tag = body.get("tag")
     rev_reg_size = body.get("revocation_registry_size")
 
-    ledger: BaseLedger = context.inject(BaseLedger, required=False)
+    session = await context.session()
+    ledger = session.inject(BaseLedger, required=False)
     if not ledger:
         reason = "No ledger available"
-        if not context.settings.get_value("wallet.type"):
+        if not session.settings.get_value("wallet.type"):
             reason += ": missing wallet-type?"
         raise web.HTTPForbidden(reason=reason)
 
-    issuer: IndyIssuer = context.inject(IndyIssuer)
+    issuer = session.inject(IndyIssuer)
     try:  # even if in wallet, send it and raise if erroneously so
         async with ledger:
             (cred_def_id, cred_def, novel) = await shield(
@@ -160,12 +161,12 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
 
     # If revocation is requested and cred def is novel, create revocation registry
     if support_revocation and novel:
-        tails_base_url = context.settings.get("tails_server_base_url")
+        tails_base_url = session.settings.get("tails_server_base_url")
         if not tails_base_url:
             raise web.HTTPBadRequest(reason="tails_server_base_url not configured")
         try:
             # Create registry
-            revoc = IndyRevocation(context)
+            revoc = IndyRevocation(session)
             registry_record = await revoc.init_issuer_registry(
                 cred_def_id,
                 max_cred_num=rev_reg_size,
@@ -173,13 +174,13 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
 
         except RevocationNotSupportedError as e:
             raise web.HTTPBadRequest(reason=e.message) from e
-        await shield(registry_record.generate_registry(context))
+        await shield(registry_record.generate_registry(session))
         try:
             await registry_record.set_tails_file_public_uri(
-                context, f"{tails_base_url}/{registry_record.revoc_reg_id}"
+                session, f"{tails_base_url}/{registry_record.revoc_reg_id}"
             )
-            await registry_record.send_def(context)
-            await registry_record.send_entry(context)
+            await registry_record.send_def(session)
+            await registry_record.send_entry(session)
 
             # stage pending registry independent of whether tails server is OK
             pending_registry_record = await revoc.init_issuer_registry(
@@ -187,12 +188,12 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
                 max_cred_num=registry_record.max_cred_num,
             )
             ensure_future(
-                pending_registry_record.stage_pending_registry(context, max_attempts=16)
+                pending_registry_record.stage_pending_registry(session, max_attempts=16)
             )
 
-            tails_server: BaseTailsServer = context.inject(BaseTailsServer)
+            tails_server = session.inject(BaseTailsServer)
             (upload_success, reason) = await tails_server.upload_tails_file(
-                context,
+                session,
                 registry_record.revoc_reg_id,
                 registry_record.tails_local_path,
                 interval=0.8,
@@ -232,7 +233,8 @@ async def credential_definitions_created(request: web.BaseRequest):
     """
     context = request.app["request_context"]
 
-    storage = context.inject(BaseStorage)
+    session = await context.session()
+    storage = session.inject(BaseStorage)
     found = await storage.search_records(
         type_filter=CRED_DEF_SENT_RECORD_TYPE,
         tag_query={
@@ -266,10 +268,11 @@ async def credential_definitions_get_credential_definition(request: web.BaseRequ
 
     cred_def_id = request.match_info["cred_def_id"]
 
-    ledger: BaseLedger = context.inject(BaseLedger, required=False)
+    session = await context.session()
+    ledger = session.inject(BaseLedger, required=False)
     if not ledger:
         reason = "No ledger available"
-        if not context.settings.get_value("wallet.type"):
+        if not session.settings.get_value("wallet.type"):
             reason += ": missing wallet-type?"
         raise web.HTTPForbidden(reason=reason)
 

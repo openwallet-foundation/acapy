@@ -3,7 +3,8 @@ from asynctest import mock as async_mock
 
 from aiohttp import web as aio_web
 
-from ....config.injection_context import InjectionContext
+from ....config.injector import Injector
+from ....config.settings import Settings
 from ....indy.issuer import IndyIssuer
 from ....ledger.base import BaseLedger
 from ....storage.base import BaseStorage
@@ -15,9 +16,21 @@ from .. import routes as test_module
 SCHEMA_ID = "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0"
 
 
-class TestCredentialDefinitionRoutes(AsyncTestCase):
+class TestSchemaRoutes(AsyncTestCase):
     def setUp(self):
-        self.context = InjectionContext(enforce_typing=False)
+        self.context = RequestContext.test_context()
+        self.injector = Injector(enforce_typing=False)
+        self.settings = Settings()
+
+        def _inject(cls, required=True):
+            return self.injector.inject(cls, required=required)
+
+        self.session = async_mock.MagicMock(inject=_inject, settings=self.settings)
+        setattr(
+            self.context,
+            "session",
+            async_mock.CoroutineMock(return_value=self.session),
+        )
 
         self.ledger = async_mock.create_autospec(BaseLedger)
         self.ledger.__aenter__ = async_mock.CoroutineMock(return_value=self.ledger)
@@ -27,10 +40,10 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
         self.ledger.get_schema = async_mock.CoroutineMock(
             return_value={"schema": "def"}
         )
-        self.context.injector.bind_instance(BaseLedger, self.ledger)
+        self.injector.bind_instance(BaseLedger, self.ledger)
 
         self.issuer = async_mock.create_autospec(IndyIssuer)
-        self.context.injector.bind_instance(IndyIssuer, self.issuer)
+        self.injector.bind_instance(IndyIssuer, self.issuer)
 
         self.storage = async_mock.create_autospec(BaseStorage)
         self.storage.search_records = async_mock.MagicMock(
@@ -40,7 +53,7 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
                 )
             )
         )
-        self.context.injector.bind_instance(BaseStorage, self.storage)
+        self.injector.bind_instance(BaseStorage, self.storage)
 
         self.app = {
             "request_context": self.context,
@@ -77,7 +90,7 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
             ),
         )
 
-        self.context.injector.clear_binding(BaseLedger)
+        self.injector.clear_binding(BaseLedger)
         with self.assertRaises(test_module.web.HTTPForbidden):
             await test_module.schemas_send_schema(mock_request)
 
@@ -141,7 +154,7 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
             side_effect=test_module.LedgerError("Down for routine maintenance")
         )
 
-        self.context.injector.clear_binding(BaseLedger)
+        self.injector.clear_binding(BaseLedger)
         with self.assertRaises(test_module.web.HTTPForbidden):
             await test_module.schemas_get_schema(mock_request)
 

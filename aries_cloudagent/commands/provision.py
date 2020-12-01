@@ -33,7 +33,7 @@ async def provision(settings: dict):
 
         root_profile, public_did = await wallet_config(context, provision=True)
 
-        if await ledger_config(root_profile, public_did, True):
+        if await ledger_config(root_profile, public_did and public_did.did, True):
             print("Ledger configured")
         else:
             print("Ledger not configured")

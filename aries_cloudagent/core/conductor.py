@@ -33,6 +33,7 @@ from ..transport.outbound.base import OutboundDeliveryError
 from ..transport.outbound.manager import OutboundTransportManager, QueuedOutboundMessage
 from ..transport.outbound.message import OutboundMessage
 from ..transport.wire_format import BaseWireFormat
+from ..wallet.base import DIDInfo
 from ..utils.task_queue import CompletedTask, TaskQueue
 from ..utils.stats import Collector
 
@@ -65,7 +66,7 @@ class Conductor:
         self.inbound_transport_manager: InboundTransportManager = None
         self.outbound_transport_manager: OutboundTransportManager = None
         self.root_profile: Profile = None
-        self.setup_public_did: str = None
+        self.setup_public_did: DIDInfo = None
 
     @property
     def context(self) -> InjectionContext:
@@ -85,7 +86,9 @@ class Conductor:
         context = self.root_profile.context
 
         # Configure the ledger
-        if not await ledger_config(self.root_profile, self.setup_public_did):
+        if not await ledger_config(
+            self.root_profile, self.setup_public_did and self.setup_public_did.did
+        ):
             LOGGER.warning("No ledger configured")
 
         # Register all inbound transports

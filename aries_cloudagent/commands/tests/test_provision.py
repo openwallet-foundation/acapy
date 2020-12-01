@@ -41,7 +41,12 @@ class TestProvision(AsyncTestCase):
         with async_mock.patch.object(
             test_module,
             "wallet_config",
-            async_mock.CoroutineMock(return_value=(profile, "public DID")),
+            async_mock.CoroutineMock(
+                return_value=(
+                    profile,
+                    async_mock.CoroutineMock(did="public DID", verkey="verkey"),
+                )
+            ),
         ) as mock_wallet_config, async_mock.patch.object(
             test_module, "ledger_config", async_mock.CoroutineMock(return_value=True)
         ) as mock_ledger_config:

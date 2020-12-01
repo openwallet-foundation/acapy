@@ -246,7 +246,7 @@ class TestIndySdkLedger(AsyncTestCase):
             mock_wallet.get_public_did.assert_called_once_with()
 
             mock_sign_submit.assert_called_once_with(
-                ledger.pool_handle, mock_wallet.handle, mock_did.did, "{}"
+                ledger.pool_handle, mock_wallet.opened.handle, mock_did.did, "{}"
             )
 
     @async_mock.patch("indy.pool.set_protocol_version")
@@ -298,7 +298,7 @@ class TestIndySdkLedger(AsyncTestCase):
                 "{}", "sample", "0.0", "digest", "dummy", "now"
             )
             mock_sign_submit.assert_called_once_with(
-                ledger.pool_handle, ledger.wallet.handle, self.test_did, "{}"
+                ledger.pool_handle, ledger.wallet.opened.handle, self.test_did, "{}"
             )
 
     @async_mock.patch("indy.pool.set_protocol_version")
