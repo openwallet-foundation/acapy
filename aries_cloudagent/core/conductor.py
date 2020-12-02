@@ -120,6 +120,7 @@ class Conductor:
                     admin_host,
                     admin_port,
                     context,
+                    self.root_profile,
                     self.outbound_message_router,
                     self.webhook_router,
                     self.stop,

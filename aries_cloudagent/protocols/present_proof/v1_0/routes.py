@@ -13,6 +13,7 @@ from aiohttp_apispec import (
 from marshmallow import fields, validate, validates_schema
 from marshmallow.exceptions import ValidationError
 
+from ....admin.request_context import AdminRequestContext
 from ....connections.models.conn_record import ConnRecord
 from ....indy.holder import IndyHolder, IndyHolderError
 from ....indy.util import generate_pr_nonce
@@ -20,7 +21,6 @@ from ....ledger.error import LedgerError
 from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
-from ....messaging.request_context import RequestContext
 from ....messaging.valid import (
     INDY_CRED_DEF_ID,
     INDY_CRED_REV_ID,
@@ -498,7 +498,7 @@ async def presentation_exchange_list(request: web.BaseRequest):
         The presentation exchange list response
 
     """
-    context: RequestContext = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
     session = await context.session()
 
     tag_filter = {}
@@ -537,7 +537,7 @@ async def presentation_exchange_retrieve(request: web.BaseRequest):
         The presentation exchange record response
 
     """
-    context: RequestContext = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
     outbound_handler = request.app["outbound_message_router"]
     session = await context.session()
 
@@ -574,7 +574,7 @@ async def presentation_exchange_credentials_list(request: web.BaseRequest):
         The credential list response
 
     """
-    context: RequestContext = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
     outbound_handler = request.app["outbound_message_router"]
     session = await context.session()
 
@@ -643,7 +643,7 @@ async def presentation_exchange_send_proposal(request: web.BaseRequest):
     """
     r_time = get_timer()
 
-    context: RequestContext = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
     outbound_handler = request.app["outbound_message_router"]
     session = await context.session()
 
@@ -731,7 +731,7 @@ async def presentation_exchange_create_request(request: web.BaseRequest):
     """
     r_time = get_timer()
 
-    context: RequestContext = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
     outbound_handler = request.app["outbound_message_router"]
     session = await context.session()
 
@@ -799,7 +799,7 @@ async def presentation_exchange_send_free_request(request: web.BaseRequest):
     """
     r_time = get_timer()
 
-    context: RequestContext = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
     outbound_handler = request.app["outbound_message_router"]
     session = await context.session()
 
@@ -882,7 +882,7 @@ async def presentation_exchange_send_bound_request(request: web.BaseRequest):
     """
     r_time = get_timer()
 
-    context: RequestContext = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
     outbound_handler = request.app["outbound_message_router"]
     session = await context.session()
 
@@ -958,7 +958,7 @@ async def presentation_exchange_send_presentation(request: web.BaseRequest):
     """
     r_time = get_timer()
 
-    context: RequestContext = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
     outbound_handler = request.app["outbound_message_router"]
     presentation_exchange_id = request.match_info["pres_ex_id"]
     session = await context.session()
@@ -1048,7 +1048,7 @@ async def presentation_exchange_verify_presentation(request: web.BaseRequest):
     """
     r_time = get_timer()
 
-    context: RequestContext = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
     outbound_handler = request.app["outbound_message_router"]
     session = await context.session()
 
@@ -1103,7 +1103,7 @@ async def presentation_exchange_remove(request: web.BaseRequest):
         request: aiohttp request object
 
     """
-    context: RequestContext = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
     outbound_handler = request.app["outbound_message_router"]
     session = await context.session()
 

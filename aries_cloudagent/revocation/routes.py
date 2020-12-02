@@ -16,6 +16,7 @@ from aiohttp_apispec import (
 from marshmallow import fields, validate, validates_schema
 from marshmallow.exceptions import ValidationError
 
+from ..admin.request_context import AdminRequestContext
 from ..indy.util import tails_path
 from ..indy.issuer import IndyIssuerError
 from ..ledger.error import LedgerError
@@ -264,7 +265,7 @@ async def revoke(request: web.BaseRequest):
         The credential request details.
 
     """
-    context = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
     session = await context.session()
 
     body = await request.json()
@@ -306,7 +307,7 @@ async def publish_revocations(request: web.BaseRequest):
         Credential revocation ids published as revoked by revocation registry id.
 
     """
-    context = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
     session = await context.session()
     body = await request.json()
     rrid2crid = body.get("rrid2crid")
@@ -334,7 +335,7 @@ async def clear_pending_revocations(request: web.BaseRequest):
         Credential revocation ids still pending revocation by revocation registry id.
 
     """
-    context = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
     session = await context.session()
     body = await request.json()
     purge = body.get("purge")
@@ -362,7 +363,7 @@ async def create_rev_reg(request: web.BaseRequest):
         The issuer revocation registry record
 
     """
-    context = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
     session = await context.session()
 
     body = await request.json()
@@ -412,7 +413,7 @@ async def rev_regs_created(request: web.BaseRequest):
         List of identifiers of matching revocation registries.
 
     """
-    context = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
     session = await context.session()
 
     search_tags = [
@@ -443,7 +444,7 @@ async def get_rev_reg(request: web.BaseRequest):
         The revocation registry
 
     """
-    context = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
     session = await context.session()
 
     rev_reg_id = request.match_info["rev_reg_id"]
@@ -474,7 +475,7 @@ async def get_rev_reg_issued(request: web.BaseRequest):
         Number of credentials issued against revocation registry
 
     """
-    context = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
     session = await context.session()
 
     rev_reg_id = request.match_info["rev_reg_id"]
@@ -510,7 +511,7 @@ async def get_cred_rev_record(request: web.BaseRequest):
         The issuer credential revocation record
 
     """
-    context = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
     session = await context.session()
 
     rev_reg_id = request.query.get("rev_reg_id")
@@ -547,7 +548,7 @@ async def get_active_rev_reg(request: web.BaseRequest):
         The revocation registry identifier
 
     """
-    context = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
     session = await context.session()
 
     cred_def_id = request.match_info["cred_def_id"]
@@ -579,7 +580,7 @@ async def get_tails_file(request: web.BaseRequest) -> web.FileResponse:
         The tails file in FileResponse
 
     """
-    context = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
     session = await context.session()
 
     rev_reg_id = request.match_info["rev_reg_id"]
@@ -606,7 +607,7 @@ async def upload_tails_file(request: web.BaseRequest):
         request: aiohttp request object
 
     """
-    context = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
 
     rev_reg_id = request.match_info["rev_reg_id"]
 
@@ -651,7 +652,7 @@ async def send_rev_reg_def(request: web.BaseRequest):
         The issuer revocation registry record
 
     """
-    context = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
     session = await context.session()
     rev_reg_id = request.match_info["rev_reg_id"]
 
@@ -686,7 +687,7 @@ async def send_rev_reg_entry(request: web.BaseRequest):
         The revocation registry record
 
     """
-    context = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
     session = await context.session()
     rev_reg_id = request.match_info["rev_reg_id"]
 
@@ -723,7 +724,7 @@ async def update_rev_reg(request: web.BaseRequest):
         The revocation registry record
 
     """
-    context = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
     session = await context.session()
 
     body = await request.json()
@@ -759,7 +760,7 @@ async def set_rev_reg_state(request: web.BaseRequest):
         The revocation registry record, updated
 
     """
-    context = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
     session = await context.session()
     rev_reg_id = request.match_info["rev_reg_id"]
     state = request.query.get("state")

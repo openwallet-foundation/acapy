@@ -5,8 +5,8 @@ from aiohttp_apispec import docs, querystring_schema, request_schema, response_s
 
 from marshmallow import fields, validate
 
+from ..admin.request_context import AdminRequestContext
 from ..messaging.models.openapi import OpenAPISchema
-from ..messaging.request_context import RequestContext
 from ..messaging.valid import ENDPOINT_TYPE, INDY_DID, INDY_RAW_PUBLIC_KEY, INT_EPOCH
 from ..storage.error import StorageError
 from ..wallet.error import WalletError
@@ -119,7 +119,7 @@ async def register_ledger_nym(request: web.BaseRequest):
     Args:
         request: aiohttp request object
     """
-    context: RequestContext = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
     session = await context.session()
     ledger = session.inject(BaseLedger, required=False)
     if not ledger:
@@ -172,7 +172,7 @@ async def get_nym_role(request: web.BaseRequest):
     Args:
         request: aiohttp request object
     """
-    context: RequestContext = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
     session = await context.session()
     ledger = session.inject(BaseLedger, required=False)
     if not ledger:
@@ -205,7 +205,7 @@ async def rotate_public_did_keypair(request: web.BaseRequest):
     Args:
         request: aiohttp request object
     """
-    context: RequestContext = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
     session = await context.session()
     ledger = session.inject(BaseLedger, required=False)
     if not ledger:
@@ -234,7 +234,7 @@ async def get_did_verkey(request: web.BaseRequest):
     Args:
         request: aiohttp request object
     """
-    context: RequestContext = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
     session = await context.session()
     ledger = session.inject(BaseLedger, required=False)
     if not ledger:
@@ -270,7 +270,7 @@ async def get_did_endpoint(request: web.BaseRequest):
     Args:
         request: aiohttp request object
     """
-    context: RequestContext = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
     session = await context.session()
     ledger = session.inject(BaseLedger, required=False)
     if not ledger:
@@ -309,7 +309,7 @@ async def ledger_get_taa(request: web.BaseRequest):
         The TAA information including the AML
 
     """
-    context: RequestContext = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
     session = await context.session()
     ledger = session.inject(BaseLedger, required=False)
     if not ledger:
@@ -349,7 +349,7 @@ async def ledger_accept_taa(request: web.BaseRequest):
         The DID list response
 
     """
-    context: RequestContext = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
     session = await context.session()
     ledger = session.inject(BaseLedger, required=False)
     if not ledger:

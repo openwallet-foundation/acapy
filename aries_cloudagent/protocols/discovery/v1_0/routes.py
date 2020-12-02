@@ -4,6 +4,7 @@ from aiohttp import web
 from aiohttp_apispec import docs, querystring_schema, response_schema
 from marshmallow import fields
 
+from ....admin.request_context import AdminRequestContext
 from ....core.protocol_registry import ProtocolRegistry
 from ....messaging.models.openapi import OpenAPISchema
 
@@ -43,7 +44,7 @@ async def query_features(request: web.BaseRequest):
         The diclosed protocols response
 
     """
-    context = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
     registry: ProtocolRegistry = context.inject(ProtocolRegistry)
     results = registry.protocols_matching_query(request.query.get("query", "*"))
 

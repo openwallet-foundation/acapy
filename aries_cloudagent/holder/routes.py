@@ -6,11 +6,11 @@ from aiohttp import web
 from aiohttp_apispec import docs, match_info_schema, querystring_schema, response_schema
 from marshmallow import fields
 
+from ..admin.request_context import AdminRequestContext
 from ..indy.holder import IndyHolder, IndyHolderError
 from ..ledger.base import BaseLedger
 from ..ledger.error import LedgerError
 from ..messaging.models.openapi import OpenAPISchema
-from ..messaging.request_context import RequestContext
 from ..messaging.valid import (
     INDY_CRED_DEF_ID,
     INDY_CRED_REV_ID,
@@ -119,7 +119,7 @@ async def credentials_get(request: web.BaseRequest):
         The credential response
 
     """
-    context: RequestContext = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
 
     credential_id = request.match_info["credential_id"]
 
@@ -149,7 +149,7 @@ async def credentials_revoked(request: web.BaseRequest):
         The credential response
 
     """
-    context: RequestContext = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
     session = await context.session()
 
     credential_id = request.match_info["credential_id"]
@@ -194,7 +194,7 @@ async def credentials_attr_mime_types_get(request: web.BaseRequest):
         The MIME types response
 
     """
-    context: RequestContext = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
     session = await context.session()
     credential_id = request.match_info["credential_id"]
     holder = session.inject(IndyHolder)
@@ -215,7 +215,7 @@ async def credentials_remove(request: web.BaseRequest):
         The connection list response
 
     """
-    context: RequestContext = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
 
     credential_id = request.match_info["credential_id"]
 
@@ -246,7 +246,7 @@ async def credentials_list(request: web.BaseRequest):
         The credential list response
 
     """
-    context: RequestContext = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
     session = await context.session()
 
     start = request.query.get("start")

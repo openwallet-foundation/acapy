@@ -14,6 +14,7 @@ from aiohttp_apispec import (
 from marshmallow import fields
 from marshmallow.validate import Regexp
 
+from ...admin.request_context import AdminRequestContext
 from ...indy.issuer import IndyIssuer, IndyIssuerError
 from ...ledger.base import BaseLedger
 from ...ledger.error import LedgerError
@@ -113,7 +114,7 @@ async def schemas_send_schema(request: web.BaseRequest):
         The schema id sent
 
     """
-    context = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
 
     body = await request.json()
 
@@ -160,7 +161,7 @@ async def schemas_created(request: web.BaseRequest):
         The identifiers of matching schemas
 
     """
-    context = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
 
     session = await context.session()
     storage = session.inject(BaseStorage)
@@ -188,7 +189,7 @@ async def schemas_get_schema(request: web.BaseRequest):
         The schema details.
 
     """
-    context = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
 
     schema_id = request.match_info["schema_id"]
 

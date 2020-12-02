@@ -13,6 +13,7 @@ from aiohttp_apispec import (
 
 from marshmallow import fields
 
+from ...admin.request_context import AdminRequestContext
 from ...indy.issuer import IndyIssuer
 from ...ledger.base import BaseLedger
 from ...storage.base import BaseStorage
@@ -127,7 +128,7 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
         The credential definition identifier
 
     """
-    context = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
 
     body = await request.json()
 
@@ -231,7 +232,7 @@ async def credential_definitions_created(request: web.BaseRequest):
         The identifiers of matching credential definitions.
 
     """
-    context = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
 
     session = await context.session()
     storage = session.inject(BaseStorage)
@@ -264,7 +265,7 @@ async def credential_definitions_get_credential_definition(request: web.BaseRequ
         The credential definition details.
 
     """
-    context = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
 
     cred_def_id = request.match_info["cred_def_id"]
 
