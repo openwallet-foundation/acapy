@@ -183,11 +183,6 @@ class ProfileSession(ABC):
         return self._context.settings
 
     @property
-    def handle(self):
-        """Get the internal session reference if supported by the backend."""
-        return None
-
-    @property
     def is_transaction(self) -> bool:
         """Check if the session supports commit and rollback operations."""
         return False
