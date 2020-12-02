@@ -79,8 +79,8 @@ async def invitation_create(request: web.BaseRequest):
 
     multi_use = json.loads(request.query.get("multi_use", "false"))
     auto_accept = json.loads(request.query.get("auto_accept", "null"))
-
-    oob_mgr = OutOfBandManager(context)
+    session = await context.session()
+    oob_mgr = OutOfBandManager(session)
     try:
         invitation = await oob_mgr.create_invitation(
             auto_accept=auto_accept,
@@ -114,7 +114,8 @@ async def invitation_receive(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     body = await request.json()
 
-    oob_mgr = OutOfBandManager(context)
+    session = await context.session()
+    oob_mgr = OutOfBandManager(session)
 
     invitation = await oob_mgr.receive_invitation(invi_msg=body)
 

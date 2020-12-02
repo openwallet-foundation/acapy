@@ -1,4 +1,3 @@
-import asyncio
 from io import StringIO
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
@@ -16,9 +15,6 @@ from ...connections.models.diddoc import (
 from ...core.in_memory import InMemoryProfileManager
 from ...core.profile import ProfileManager
 from ...core.protocol_registry import ProtocolRegistry
-from ...storage.base import BaseStorage
-
-from ...transport.inbound.base import InboundTransportConfiguration
 from ...transport.inbound.message import InboundMessage
 from ...transport.inbound.receipt import MessageReceipt
 from ...transport.outbound.base import OutboundDeliveryError
@@ -327,7 +323,6 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
 
             await conductor.outbound_message_router(conductor.context, message)
 
-            conn_mgr.assert_called_once_with(conductor.context)
             conn_mgr.return_value.get_connection_targets.assert_awaited_once_with(
                 connection_id=connection_id
             )

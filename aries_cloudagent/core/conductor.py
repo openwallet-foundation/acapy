@@ -379,9 +379,9 @@ class Conductor:
         """
         # populate connection target(s)
         if not outbound.target and not outbound.target_list and outbound.connection_id:
-            # using provided request context
-            conn_mgr = ConnectionManager(context)
-
+            # FIXME may need a context-specific profile, not the root profile
+            session = await self.root_profile.session()
+            conn_mgr = ConnectionManager(session)
             try:
                 outbound.target_list = await self.dispatcher.run_task(
                     conn_mgr.get_connection_targets(

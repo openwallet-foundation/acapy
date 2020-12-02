@@ -1,4 +1,3 @@
-import pytest
 from asynctest import (
     mock as async_mock,
     TestCase as AsyncTestCase,
@@ -50,7 +49,6 @@ class TestPresentationRequestHandler(AsyncTestCase):
             responder = MockResponder()
             await handler_inst.handle(request_context, responder)
 
-        mock_pres_mgr.assert_called_once_with(request_context)
         mock_pres_mgr.return_value.receive_request.assert_called_once_with(
             mock_pres_ex_rec
         )
@@ -87,7 +85,6 @@ class TestPresentationRequestHandler(AsyncTestCase):
             responder = MockResponder()
             await handler_inst.handle(request_context, responder)
 
-        mock_pres_mgr.assert_called_once_with(request_context)
         mock_pres_mgr.return_value.receive_request.assert_called_once_with(
             mock_pres_ex_rec
         )
@@ -173,7 +170,6 @@ class TestPresentationRequestHandler(AsyncTestCase):
             await handler_inst.handle(request_context, responder)
             mock_pres_mgr.return_value.create_presentation.assert_called_once()
 
-        mock_pres_mgr.assert_called_once_with(request_context)
         mock_pres_mgr.return_value.receive_request.assert_called_once_with(
             px_rec_instance
         )
@@ -252,7 +248,6 @@ class TestPresentationRequestHandler(AsyncTestCase):
             await handler_inst.handle(request_context, responder)
             mock_pres_mgr.return_value.create_presentation.assert_called_once()
 
-        mock_pres_mgr.assert_called_once_with(request_context)
         mock_pres_mgr.return_value.receive_request.assert_called_once_with(
             px_rec_instance
         )
@@ -320,7 +315,6 @@ class TestPresentationRequestHandler(AsyncTestCase):
             await handler_inst.handle(request_context, responder)
             mock_pres_mgr.return_value.create_presentation.assert_not_called()
 
-        mock_pres_mgr.assert_called_once_with(request_context)
         mock_pres_mgr.return_value.receive_request.assert_called_once_with(
             px_rec_instance
         )
@@ -386,7 +380,6 @@ class TestPresentationRequestHandler(AsyncTestCase):
             await handler_inst.handle(request_context, responder)
             mock_pres_mgr.return_value.create_presentation.assert_called_once()
 
-        mock_pres_mgr.assert_called_once_with(request_context)
         mock_pres_mgr.return_value.receive_request.assert_called_once_with(
             px_rec_instance
         )
@@ -459,7 +452,6 @@ class TestPresentationRequestHandler(AsyncTestCase):
             await handler_inst.handle(request_context, responder)
             mock_pres_mgr.return_value.create_presentation.assert_called_once()
 
-        mock_pres_mgr.assert_called_once_with(request_context)
         mock_pres_mgr.return_value.receive_request.assert_called_once_with(
             px_rec_instance
         )
@@ -583,7 +575,6 @@ class TestPresentationRequestHandler(AsyncTestCase):
             await handler_inst.handle(request_context, responder)
             mock_pres_mgr.return_value.create_presentation.assert_called_once()
 
-        mock_pres_mgr.assert_called_once_with(request_context)
         mock_pres_mgr.return_value.receive_request.assert_called_once_with(
             px_rec_instance
         )
@@ -689,7 +680,6 @@ class TestPresentationRequestHandler(AsyncTestCase):
             await handler_inst.handle(request_context, responder)
             mock_pres_mgr.return_value.create_presentation.assert_not_called()
 
-        mock_pres_mgr.assert_called_once_with(request_context)
         mock_pres_mgr.return_value.receive_request.assert_called_once_with(
             px_rec_instance
         )

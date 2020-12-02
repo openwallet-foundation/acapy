@@ -42,7 +42,8 @@ class PresentationRequestHandler(BaseHandler):
         if not context.connection_ready:
             raise HandlerException("No connection established for presentation request")
 
-        presentation_manager = PresentationManager(context)
+        session = await context.session()
+        presentation_manager = PresentationManager(session)
 
         indy_proof_request = context.message.indy_proof_request(0)
 
