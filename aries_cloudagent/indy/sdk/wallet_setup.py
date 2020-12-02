@@ -22,6 +22,8 @@ LOGGER = logging.getLogger(__name__)
 
 
 class IndyWalletConfig:
+    """A helper class for handling Indy-SDK wallet configuration."""
+
     DEFAULT_FRESHNESS = 0
     DEFAULT_KEY = ""
     DEFAULT_KEY_DERIVATION = "ARGON2I_MOD"

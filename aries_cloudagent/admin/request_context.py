@@ -31,23 +31,17 @@ class AdminRequestContext:
 
     @property
     def injector(self) -> Injector:
-        """
-        Accessor for the associated `Injector` instance.
-        """
+        """Accessor for the associated `Injector` instance."""
         return self._context.injector
 
     @property
     def profile(self) -> Profile:
-        """
-        Accessor for the associated `Profile` instance.
-        """
+        """Accessor for the associated `Profile` instance."""
         return self._profile
 
     @property
     def settings(self) -> Settings:
-        """
-        Accessor for the context settings.
-        """
+        """Accessor for the context settings."""
         return self._context.settings
 
     def session(self) -> ProfileSession:

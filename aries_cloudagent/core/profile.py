@@ -242,6 +242,8 @@ class ProfileSession(ABC):
 
 
 class ProfileManagerProvider(BaseProvider):
+    """The standard profile manager provider which keys off the selected wallet type."""
+
     MANAGER_TYPES = {
         "in_memory": "aries_cloudagent.core.in_memory.InMemoryProfileManager",
         "indy": "aries_cloudagent.indy.sdk.profile.IndySdkProfileManager",
