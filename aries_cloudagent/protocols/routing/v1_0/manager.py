@@ -65,10 +65,9 @@ class RoutingManager:
             The `RouteRecord` associated with this verkey
 
         """
-        storage: BaseStorage = await self._context.inject(BaseStorage)
         try:
-            record = await storage.find_record(
-                RoutingManager.RECORD_TYPE, {"recipient_key": recip_verkey}
+            record = await RouteRecord.retrieve_by_recipient_key(
+                self.context, recip_verkey
             )
         except StorageDuplicateError:
             raise RouteNotFoundError(
@@ -76,14 +75,8 @@ class RoutingManager:
             )
         except StorageNotFoundError:
             raise RouteNotFoundError("No route defined for verkey: %s", recip_verkey)
-        value = json.loads(record.value)
-        return RouteRecord(
-            record_id=record.id,
-            connection_id=record.tags["connection_id"],
-            recipient_key=record.tags["recipient_key"],
-            created_at=value.get("created_at"),
-            updated_at=value.get("updated_at"),
-        )
+
+        return record
 
     async def get_routes(
         self, client_connection_id: str = None, tag_filter: dict = None
@@ -125,7 +118,10 @@ class RoutingManager:
         return results
 
     async def create_route_record(
-        self, client_connection_id: str = None, recipient_key: str = None
+        self,
+        client_connection_id: str = None,
+        recipient_key: str = None,
+        internal_wallet_id: str = None,
     ) -> RouteRecord:
         """
         Create and store a new RouteRecord.
@@ -133,31 +129,25 @@ class RoutingManager:
         Args:
             client_connection_id: The ID of the connection record
             recipient_key: The recipient verkey of the route
+            internal_wallet_id: The ID of the multitenant wallet_record. Used for internal routing
 
         Returns:
             The new routing record
 
         """
-        if not client_connection_id:
-            raise RoutingManagerError("Missing client_connection_id")
+        if not (client_connection_id or internal_wallet_id):
+            raise RoutingManagerError(
+                "Either client_connection_id or internal_wallet_id is required"
+            )
         if not recipient_key:
             raise RoutingManagerError("Missing recipient_key")
-        value = {"created_at": time_now(), "updated_at": time_now()}
-        record = StorageRecord(
-            RoutingManager.RECORD_TYPE,
-            json.dumps(value),
-            {"connection_id": client_connection_id, "recipient_key": recipient_key},
-        )
-        storage: BaseStorage = await self._context.inject(BaseStorage)
-        await storage.add_record(record)
-        result = RouteRecord(
-            record_id=record.id,
+        route_record = RouteRecord(
             connection_id=client_connection_id,
+            wallet_id=internal_wallet_id,
             recipient_key=recipient_key,
-            created_at=value["created_at"],
-            updated_at=value["updated_at"],
         )
-        return result
+        await route_record.save(self.context)
+        return route_record
 
     async def delete_route_record(self, route: RouteRecord):
         """Remove an existing route record."""

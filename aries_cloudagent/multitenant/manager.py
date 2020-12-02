@@ -1,10 +1,17 @@
 """Manager for multitenancy."""
 
+from aries_cloudagent.storage.error import StorageNotFoundError
+from aries_cloudagent.protocols.routing.v1_0.models.route_record import RouteRecord
+import json
 import jwt
+from typing import List
+
+from ..utils.jwe import get_recipient_keys
 from ..wallet.models.wallet_record import WalletRecord
 from ..config.injection_context import InjectionContext
 from ..core.error import BaseError
 from ..wallet.indy import IndyWallet
+from ..protocols.routing.v1_0.manager import RouteNotFoundError, RoutingManager
 
 from .error import WalletKeyMissingError
 
@@ -122,13 +129,30 @@ class MultitenantManager:
         wallet_instance = await wallet_record.get_instance(
             self.context, {"wallet.key": wallet_key} if wallet_key else {}
         )
-        wallet_instance.close()
+        await wallet_instance.close()
 
         # Remove the actual wallet
         if wallet_instance.type == IndyWallet.type:
             await wallet_instance.remove()
 
         await wallet_record.delete_record(self.context)
+
+    async def add_wallet_route(
+        self, wallet_id: str, recipient_key: str
+    ) -> List[WalletRecord]:
+        """
+        Add a wallet route to map incoming messages to specific subwallets.
+
+        Args:
+            wallet_id: The wallet id the key corresponds to
+            recipient_key: The recipient key belonging to the wallet
+        """
+
+        routing_mgr = RoutingManager(self.context)
+
+        await routing_mgr.create_route_record(
+            recipient_key=recipient_key, internal_wallet_id=wallet_id
+        )
 
     async def create_auth_token(
         self, wallet_record: WalletRecord, wallet_key: str = None
@@ -160,3 +184,35 @@ class MultitenantManager:
         token = jwt.encode(jwt_payload, jwt_secret).decode()
 
         return token
+
+    async def get_wallets_for_msg(self, body: bytes) -> List[WalletRecord]:
+        """
+        Parses an inbound message for recipient keys and returns the wallet records
+        associated with these keys.
+
+        Args:
+            body: Inbound raw message
+        Returns:
+            list of wallet records associated with the recipient keys
+        """
+
+        jwe = json.loads(body)
+        recipient_keys = get_recipient_keys(jwe)
+        routing_mgr = RoutingManager(self.context)
+
+        wallet_records = []
+
+        for recipient_key in recipient_keys:
+            try:
+                routing_record = await routing_mgr.get_recipient(recipient_key)
+
+                # MTODO: Should not be possible that wallet_id is None here
+                if routing_record.wallet_id:
+                    wallet_record = await WalletRecord.retrieve_by_id(
+                        self.context, routing_record.wallet_id
+                    )
+                    wallet_records.append(wallet_record)
+            except (RouteNotFoundError):
+                pass
+
+        return wallet_records

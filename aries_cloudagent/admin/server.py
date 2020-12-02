@@ -220,14 +220,9 @@ class AdminServer(BaseAdminServer):
         self.webhook_targets = {}
         self.websocket_queues = {}
         self.site = None
+        self.outbound_message_router = outbound_message_router
 
         self.context = context.start_scope("admin")
-        self.responder = AdminResponder(
-            self.context,
-            outbound_message_router,
-            self.send_webhook,
-        )
-        self.context.injector.bind_instance(BaseResponder, self.responder)
 
     async def make_application(self) -> web.Application:
         """Get the aiohttp application instance."""
@@ -255,11 +250,21 @@ class AdminServer(BaseAdminServer):
         async def set_request_context(request, handler):
             context = self.context.copy()
 
-            # This sets the context and message_router on the request
+            # Create a responder with the request specific context
+            responder = AdminResponder(
+                context,
+                self.outbound_message_router,
+                self.send_webhook,
+            )
+
+            # Bind responder instance
+            context.injector.bind_instance(BaseResponder, responder)
+
+            # Set context and message_router on the request
             # This allows for different context per request, which
             # is needed for multitenancy.
             request["context"] = context
-            request["outbound_message_router"] = self.responder.send
+            request["outbound_message_router"] = responder.send
 
             return await handler(request)
 
@@ -331,6 +336,10 @@ class AdminServer(BaseAdminServer):
                         await WalletRecord.retrieve_by_id(context, wallet_id),
                     )
 
+                    LOGGER.debug(
+                        f"Authorization provided for subwallet {wallet_record.wallet_record_id}, switching context"
+                    )
+
                     context.settings = context.settings.extend(
                         wallet_record.get_config_as_settings()
                     )
@@ -341,9 +350,6 @@ class AdminServer(BaseAdminServer):
                 except Exception:
                     raise web.HTTPUnauthorized()
 
-                # set the updated request context
-                request["context"] = context
-
                 return await handler(request)
 
             middlewares.append(set_multitenant_wallet)
@@ -352,9 +358,9 @@ class AdminServer(BaseAdminServer):
         # MTODO: remove app context, only use request context
         # This can have breaking changes for external plugins
         # Maybe global context should be base wallet, request context
-        # should be sub/base wallet
+        # should be sub/base wallet. But for now this is used when creating
+        # a connection for a subwallet and adding a routing record to the base wallet
         app["request_context"] = self.context
-        app["outbound_message_router"] = self.responder.send
 
         app.add_routes(
             [

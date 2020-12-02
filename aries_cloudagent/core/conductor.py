@@ -12,7 +12,7 @@ import hashlib
 import logging
 
 from ..admin.base_server import BaseAdminServer
-from ..admin.server import AdminServer
+from ..admin.server import AdminResponder, AdminServer
 from ..config.default_context import ContextBuilder
 from ..config.injection_context import InjectionContext
 from ..config.ledger import ledger_config
@@ -170,7 +170,12 @@ class Conductor:
             # Make admin responder available during message parsing
             # This allows webhooks to be called when a connection is marked active,
             # for example
-            context.injector.bind_instance(BaseResponder, self.admin_server.responder)
+            responder = AdminResponder(
+                context,
+                self.admin_server.outbound_message_router,
+                self.admin_server.send_webhook,
+            )
+            context.injector.bind_instance(BaseResponder, responder)
 
         # Get agent label
         default_label = context.settings.get("default_label")
@@ -234,12 +239,16 @@ class Conductor:
         await shutdown.complete(timeout)
 
     def inbound_message_router(
-        self, message: InboundMessage, can_respond: bool = False
+        self,
+        context: InjectionContext,
+        message: InboundMessage,
+        can_respond: bool = False,
     ):
         """
         Route inbound messages.
 
         Args:
+            context: The context associated with the inbound message
             message: The inbound message instance
             can_respond: If the session supports return routing
 
@@ -256,6 +265,7 @@ class Conductor:
 
         try:
             self.dispatcher.queue_message(
+                context,
                 message,
                 self.outbound_message_router,
                 self.admin_server and self.admin_server.send_webhook,

@@ -183,7 +183,7 @@ class InboundSession:
     def receive_inbound(self, message: InboundMessage):
         """Deliver the inbound message to the conductor."""
         self.process_inbound(message)
-        self.inbound_handler(message, can_respond=self.can_respond)
+        self.inbound_handler(self.context, message, can_respond=self.can_respond)
 
     def select_outbound(self, message: OutboundMessage) -> bool:
         """Determine if an outbound message should be sent to this session.

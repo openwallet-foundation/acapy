@@ -26,6 +26,7 @@ from ....wallet.base import BaseWallet, DIDInfo
 from ....wallet.crypto import create_keypair, seed_to_did
 from ....wallet.error import WalletNotFoundError
 from ....wallet.util import bytes_to_b58
+from ....multitenant.manager import MultitenantManager
 from ....protocols.routing.v1_0.manager import RoutingManager
 
 from .messages.connection_invitation import ConnectionInvitation
@@ -196,6 +197,14 @@ class ConnectionManager:
         )
         await connection.attach_invitation(self.context, invitation)
 
+        # Multitenancy: add routing for key to handle inbound messages using relay
+        if self.context.settings.get("multitenant.enabled"):
+            multitenant_mgr = await self.context.inject(MultitenantManager)
+            await multitenant_mgr.add_wallet_route(
+                wallet_id=self.context.settings.get("wallet.id"),
+                recipient_key=invitation_key,
+            )
+
         return connection, invitation
 
     async def receive_invitation(
@@ -320,6 +329,15 @@ class ConnectionManager:
 
         await connection.save(self.context, reason="Created connection request")
 
+        # Multitenancy: add routing for key to handle inbound messages using relay
+        # MTODO: Key could already be registered.
+        if self.context.settings.get("multitenant.enabled"):
+            multitenant_mgr = await self.context.inject(MultitenantManager)
+            await multitenant_mgr.add_wallet_route(
+                wallet_id=self.context.settings.get("wallet.id"),
+                recipient_key=my_info.verkey,
+            )
+
         return request
 
     async def receive_request(
@@ -342,6 +360,7 @@ class ConnectionManager:
 
         connection = None
         connection_key = None
+        my_info = None
 
         # Determine what key will need to sign the response
         if receipt.recipient_did_public:
@@ -427,6 +446,15 @@ class ConnectionManager:
         # Attach the connection request so it can be found and responded to
         await connection.attach_request(self.context, request)
 
+        # Multitenancy: add routing for key to handle inbound messages using relay
+        # MTODO: Key could already be registered.
+        if my_info and self.context.settings.get("multitenant.enabled"):
+            multitenant_mgr = await self.context.inject(MultitenantManager)
+            await multitenant_mgr.add_wallet_route(
+                wallet_id=self.context.settings.get("wallet.id"),
+                recipient_key=my_info.verkey,
+            )
+
         if connection.accept == ConnRecord.ACCEPT_AUTO:
             response = await self.create_response(connection)
             responder: BaseResponder = await self._context.inject(
@@ -511,6 +539,16 @@ class ConnectionManager:
             reason="Created connection response",
             log_params={"response": response},
         )
+
+        # Multitenancy: add routing for key to handle inbound messages using relay
+        # MTODO: Key could already be registered.
+        if self.context.settings.get("multitenant.enabled"):
+            multitenant_mgr = await self.context.inject(MultitenantManager)
+            await multitenant_mgr.add_wallet_route(
+                wallet_id=self.context.settings.get("wallet.id"),
+                recipient_key=my_info.verkey,
+            )
+
         return response
 
     async def accept_response(

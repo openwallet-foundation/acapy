@@ -1,5 +1,10 @@
 """Http Transport classes and functions."""
 
+from aries_cloudagent.wallet.models.wallet_record import WalletRecord
+from aries_cloudagent.multitenant.manager import (
+    MultitenantManager,
+    MultitenantManagerError,
+)
 import logging
 
 from aiohttp import web
@@ -87,6 +92,36 @@ class HttpTransport(BaseInboundTransport):
         session = await self.create_session(
             accept_undelivered=True, can_respond=True, client_info=client_info
         )
+
+        # MTODO: move to better place (relay class or something)
+        # Simple relay functionality
+        if session.context.settings.get("multitenant.enabled"):
+            LOGGER.info(f"Searching for wallet associated with incoming message")
+            try:
+                # try to find subwallet
+                multitenant_mgr = MultitenantManager(session.context)
+                wallet_records = await multitenant_mgr.get_wallets_for_msg(body)
+
+                print("a")
+
+                # MTODO: what to do with multiple recipients?
+                wallet_record = wallet_records[0]
+
+                # MTODO: unamanged mode
+                if wallet_record.key_management_mode == WalletRecord.MODE_MANAGED:
+                    LOGGER.info(
+                        f"Routing record found for subwallet {wallet_record.wallet_record_id}, switching context"
+                    )
+                    session.context = session.context.copy()
+                    session.context.settings = session.context.settings.extend(
+                        wallet_record.get_config_as_settings()
+                    )
+            except IndexError:
+                # No wallet found. We'll use the normal session context
+                pass
+            except MultitenantManagerError:
+                # MTODO: What does this mean?
+                raise web.HTTPBadRequest()
 
         async with session:
             try:
