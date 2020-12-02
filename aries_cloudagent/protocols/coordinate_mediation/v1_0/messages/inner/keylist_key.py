@@ -3,6 +3,7 @@
 from marshmallow import EXCLUDE, fields
 
 from ......messaging.models.base import BaseModel, BaseModelSchema
+from ......messaging.valid import INDY_RAW_PUBLIC_KEY
 
 
 class KeylistKey(BaseModel):
@@ -43,4 +44,7 @@ class KeylistKeySchema(BaseModelSchema):
         model_class = KeylistKey
         unknown = EXCLUDE
 
-    recipient_key = fields.Str(required=True)
+    recipient_key = fields.Str(
+        required=True,
+        **INDY_RAW_PUBLIC_KEY
+    )

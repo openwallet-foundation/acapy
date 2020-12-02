@@ -1,6 +1,6 @@
-"""
-Inner structure of keylist-update message. Represents single item of
-keylist-update.updates.
+"""Inner structure of keylist-update message.
+
+Represents single item of keylist-update.updates.
 """
 
 

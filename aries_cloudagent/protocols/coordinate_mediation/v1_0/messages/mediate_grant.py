@@ -1,6 +1,6 @@
-"""
-mediate-grant message used to notify mediation client of a granted mediation
-request.
+"""mediate-grant message.
+
+Used to notify mediation client of a granted mediation request.
 """
 
 from typing import Sequence
