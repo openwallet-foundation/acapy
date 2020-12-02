@@ -1,10 +1,8 @@
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
-from .....config.base import InjectorError
 from .....core.in_memory import InMemoryProfile
 from .....connections.models.conn_record import ConnRecord
-from .....connections.models.connection_target import ConnectionTarget
 from .....connections.models.diddoc import (
     DIDDoc,
     PublicKey,
@@ -15,13 +13,8 @@ from .....ledger.base import BaseLedger
 from .....messaging.responder import BaseResponder, MockResponder
 from .....protocols.didexchange.v1_0.manager import DIDXManager
 from .....protocols.present_proof.v1_0.message_types import PRESENTATION_REQUEST
-from .....protocols.routing.v1_0.manager import RoutingManager
-from .....storage.base import BaseStorage
-from .....storage.error import StorageNotFoundError
-from .....transport.inbound.receipt import MessageReceipt
 from .....wallet.base import DIDInfo
 from .....wallet.in_memory import InMemoryWallet
-from .....wallet.error import WalletNotFoundError
 
 from ....didcomm_prefix import DIDCommPrefix
 
@@ -31,7 +24,6 @@ from ..manager import (
     OutOfBandManagerError,
     OutOfBandManagerNotImplementedError,
 )
-from ..messages.service import Service as ServiceMessage
 from ..message_types import INVITATION
 
 
@@ -168,7 +160,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             mock_retrieve_pxid.assert_called_once_with(self.manager.session, "dummy-id")
 
     async def test_create_invitation_public_x_no_public_invites(self):
-        self.manager.context.update_settings({"public_invites": False})
+        self.session.context.update_settings({"public_invites": False})
 
         with self.assertRaises(OutOfBandManagerError):
             await self.manager.create_invitation(
@@ -178,10 +170,10 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             )
 
     async def test_create_invitation_public_x_no_public_did(self):
-        self.manager.context.update_settings({"public_invites": True})
+        self.session.context.update_settings({"public_invites": True})
 
         with async_mock.patch.object(
-            BaseWallet, "get_public_did", autospec=True
+            InMemoryWallet, "get_public_did", autospec=True
         ) as mock_wallet_get_public_did:
             mock_wallet_get_public_did.return_value = None
             with self.assertRaises(OutOfBandManagerError):
@@ -192,9 +184,9 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 )
 
     async def tests_create_invitation_x_public_multi_use(self):
-        self.manager.context.update_settings({"public_invites": True})
+        self.session.context.update_settings({"public_invites": True})
         with async_mock.patch.object(
-            BaseWallet, "get_public_did", autospec=True
+            InMemoryWallet, "get_public_did", autospec=True
         ) as mock_wallet_get_public_did:
             mock_wallet_get_public_did.return_value = DIDInfo(
                 TestConfig.test_did, TestConfig.test_verkey, None

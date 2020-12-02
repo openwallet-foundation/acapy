@@ -6,16 +6,14 @@ from asynctest import mock as async_mock
 from copy import deepcopy
 from time import time
 
-from .....config.injection_context import InjectionContext
 from .....core.in_memory import InMemoryProfile
 from .....cache.base import BaseCache
 from .....cache.in_memory import InMemoryCache
 from .....indy.holder import IndyHolder
 from .....indy.issuer import IndyIssuer
 from .....messaging.credential_definitions.util import CRED_DEF_SENT_RECORD_TYPE
-from .....messaging.request_context import RequestContext
 from .....ledger.base import BaseLedger
-from .....storage.base import BaseStorage, StorageRecord
+from .....storage.base import StorageRecord
 from .....storage.error import StorageNotFoundError
 
 from ..manager import CredentialManager, CredentialManagerError
@@ -181,8 +179,8 @@ class TestCredentialManager(AsyncTestCase):
             arg_exchange = create_offer.call_args[1]["cred_ex_record"]
             assert arg_exchange.auto_issue
             assert arg_exchange.connection_id == connection_id
-            assert arg_exchange.schema_id == None
-            assert arg_exchange.credential_definition_id == None
+            assert arg_exchange.schema_id is None
+            assert arg_exchange.credential_definition_id is None
             assert arg_exchange.role == V10CredentialExchange.ROLE_ISSUER
             assert arg_exchange.credential_proposal_dict == proposal.serialize()
 
@@ -284,10 +282,10 @@ class TestCredentialManager(AsyncTestCase):
             save_ex.assert_called_once()
 
             assert exchange.connection_id == connection_id
-            assert exchange.credential_definition_id == None
+            assert exchange.credential_definition_id is None
             assert exchange.role == V10CredentialExchange.ROLE_ISSUER
             assert exchange.state == V10CredentialExchange.STATE_PROPOSAL_RECEIVED
-            assert exchange.schema_id == None
+            assert exchange.schema_id is None
             assert exchange.thread_id == proposal._thread_id
 
             ret_proposal: CredentialProposal = CredentialProposal.deserialize(
@@ -353,8 +351,7 @@ class TestCredentialManager(AsyncTestCase):
                     "epoch": str(int(time())),
                 },
             )
-            storage = self.context.inject(BaseStorage)
-            await storage.add_record(cred_def_record)
+            await self.session.storage.add_record(cred_def_record)
 
             (ret_exchange, ret_offer) = await self.manager.create_offer(
                 cred_ex_record=exchange, comment=comment
@@ -426,8 +423,7 @@ class TestCredentialManager(AsyncTestCase):
                     "epoch": str(int(time())),
                 },
             )
-            storage = self.context.inject(BaseStorage)
-            await storage.add_record(cred_def_record)
+            await self.session.storage.add_record(cred_def_record)
 
             with self.assertRaises(CredentialManagerError):
                 await self.manager.create_offer(
@@ -482,8 +478,7 @@ class TestCredentialManager(AsyncTestCase):
                     "epoch": str(int(time())),
                 },
             )
-            storage = self.context.inject(BaseStorage)
-            await storage.add_record(cred_def_record)
+            await self.session.storage.add_record(cred_def_record)
 
             (ret_exchange, ret_offer) = await self.manager.create_offer(
                 cred_ex_record=exchange, comment=comment

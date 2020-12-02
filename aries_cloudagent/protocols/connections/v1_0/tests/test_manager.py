@@ -4,7 +4,6 @@ from asynctest import mock as async_mock
 from .....cache.base import BaseCache
 from .....cache.in_memory import InMemoryCache
 from .....config.base import InjectorError
-from .....config.injection_context import InjectionContext
 from .....connections.models.conn_record import ConnRecord
 from .....connections.models.connection_target import ConnectionTarget
 from .....connections.models.diddoc import (
@@ -17,15 +16,12 @@ from .....core.in_memory import InMemoryProfile
 from .....ledger.base import BaseLedger
 from .....messaging.responder import BaseResponder, MockResponder
 from .....protocols.routing.v1_0.manager import RoutingManager
-from .....storage.base import BaseStorage
 from .....storage.error import StorageNotFoundError
 from .....transport.inbound.receipt import MessageReceipt
-from .....wallet.base import BaseWallet, DIDInfo
+from .....wallet.base import DIDInfo
 from .....wallet.in_memory import InMemoryWallet
 from .....wallet.error import WalletNotFoundError
 from .....wallet.util import naked_to_did_key
-
-from ....routing.v1_0.manager import RoutingManager
 
 from ..manager import ConnectionManager, ConnectionManagerError
 from ..messages.connection_invitation import ConnectionInvitation
@@ -131,7 +127,7 @@ class TestConnectionManager(AsyncTestCase):
                 public=True, my_endpoint="testendpoint"
             )
 
-            assert connect_record == None
+            assert connect_record is None
             assert connect_invite.did.endswith(self.test_did)
 
     async def test_create_invitation_public_no_public_invites(self):
@@ -184,8 +180,7 @@ class TestConnectionManager(AsyncTestCase):
         await self.manager.receive_request(requestB, receipt)
 
     async def test_create_invitation_recipient_routing_endpoint(self):
-        wallet = self.context.inject(BaseWallet)
-        await wallet.create_local_did(
+        await self.session.wallet.create_local_did(
             seed=self.test_seed, did=self.test_did, metadata=None
         )
         connect_record, connect_invite = await self.manager.create_invitation(
@@ -262,8 +257,7 @@ class TestConnectionManager(AsyncTestCase):
         assert conn_req
 
     async def test_create_request_my_did(self):
-        wallet = self.context.inject(BaseWallet)
-        await wallet.create_local_did(seed=None, did=self.test_did)
+        await self.session.wallet.create_local_did(seed=None, did=self.test_did)
         conn_req = await self.manager.create_request(
             ConnRecord(
                 invitation_key=self.test_verkey,
@@ -284,8 +278,7 @@ class TestConnectionManager(AsyncTestCase):
 
         receipt = MessageReceipt(recipient_did=self.test_did, recipient_did_public=True)
 
-        wallet = self.context.inject(BaseWallet)
-        await wallet.create_local_did(seed=None, did=self.test_did)
+        await self.session.wallet.create_local_did(seed=None, did=self.test_did)
 
         self.context.update_settings({"public_invites": True})
         with async_mock.patch.object(
@@ -314,8 +307,7 @@ class TestConnectionManager(AsyncTestCase):
 
         receipt = MessageReceipt(recipient_did=self.test_did, recipient_did_public=True)
 
-        wallet = self.context.inject(BaseWallet)
-        await wallet.create_local_did(seed=None, did=self.test_did)
+        await self.session.wallet.create_local_did(seed=None, did=self.test_did)
 
         self.context.update_settings({"public_invites": True})
         with async_mock.patch.object(
@@ -339,8 +331,7 @@ class TestConnectionManager(AsyncTestCase):
 
         receipt = MessageReceipt(recipient_did=self.test_did, recipient_did_public=True)
 
-        wallet = self.context.inject(BaseWallet)
-        await wallet.create_local_did(seed=None, did=self.test_did)
+        await self.session.wallet.create_local_did(seed=None, did=self.test_did)
 
         self.context.update_settings({"public_invites": True})
         with async_mock.patch.object(
@@ -364,8 +355,7 @@ class TestConnectionManager(AsyncTestCase):
 
         receipt = MessageReceipt(recipient_did=self.test_did, recipient_did_public=True)
 
-        wallet = self.context.inject(BaseWallet)
-        await wallet.create_local_did(seed=None, did=self.test_did)
+        await self.session.wallet.create_local_did(seed=None, did=self.test_did)
 
         self.context.update_settings({"public_invites": False})
         with async_mock.patch.object(
@@ -389,8 +379,7 @@ class TestConnectionManager(AsyncTestCase):
 
         receipt = MessageReceipt(recipient_did=self.test_did, recipient_did_public=True)
 
-        wallet = self.context.inject(BaseWallet)
-        await wallet.create_local_did(seed=None, did=self.test_did)
+        await self.session.wallet.create_local_did(seed=None, did=self.test_did)
 
         self.context.update_settings(
             {"public_invites": True, "debug.auto_accept_requests": False}
@@ -973,8 +962,7 @@ class TestConnectionManager(AsyncTestCase):
         await self.manager.remove_keys_for_did(self.test_target_did)
 
     async def test_get_connection_targets_conn_invitation_no_did(self):
-        wallet = self.context.inject(BaseWallet)
-        await wallet.create_local_did(
+        local_did = await self.session.wallet.create_local_did(
             seed=self.test_seed, did=self.test_did, metadata=None
         )
 
@@ -1011,7 +999,7 @@ class TestConnectionManager(AsyncTestCase):
         assert target.label == conn_invite.label
         assert target.recipient_keys == conn_invite.recipient_keys
         assert target.routing_keys == conn_invite.routing_keys
-        assert target.sender_key == (await wallet.get_local_did(self.test_did)).verkey
+        assert target.sender_key == local_did.verkey
 
         # Next pass: exercise cache
         targets = await self.manager.get_connection_targets(
@@ -1025,11 +1013,10 @@ class TestConnectionManager(AsyncTestCase):
         assert target.label == conn_invite.label
         assert target.recipient_keys == conn_invite.recipient_keys
         assert target.routing_keys == conn_invite.routing_keys
-        assert target.sender_key == (await wallet.get_local_did(self.test_did)).verkey
+        assert target.sender_key == local_did.verkey
 
     async def test_get_connection_targets_retrieve_connection(self):
-        wallet = self.context.inject(BaseWallet)
-        await wallet.create_local_did(
+        local_did = await self.session.wallet.create_local_did(
             seed=self.test_seed, did=self.test_did, metadata=None
         )
 
@@ -1073,14 +1060,11 @@ class TestConnectionManager(AsyncTestCase):
             assert target.label == conn_invite.label
             assert target.recipient_keys == conn_invite.recipient_keys
             assert target.routing_keys == conn_invite.routing_keys
-            assert (
-                target.sender_key == (await wallet.get_local_did(self.test_did)).verkey
-            )
+            assert target.sender_key == local_did.verkey
 
     async def test_get_conn_targets_conn_invitation_no_cache(self):
         self.context.injector.clear_binding(BaseCache)
-        wallet = self.context.inject(BaseWallet)
-        await wallet.create_local_did(
+        local_did = await self.session.wallet.create_local_did(
             seed=self.test_seed, did=self.test_did, metadata=None
         )
 
@@ -1116,7 +1100,7 @@ class TestConnectionManager(AsyncTestCase):
         assert target.label == conn_invite.label
         assert target.recipient_keys == conn_invite.recipient_keys
         assert target.routing_keys == conn_invite.routing_keys
-        assert target.sender_key == (await wallet.get_local_did(self.test_did)).verkey
+        assert target.sender_key == local_did.verkey
 
     async def test_fetch_connection_targets_no_my_did(self):
         mock_conn = async_mock.MagicMock()
@@ -1124,8 +1108,7 @@ class TestConnectionManager(AsyncTestCase):
         assert await self.manager.fetch_connection_targets(mock_conn) is None
 
     async def test_fetch_connection_targets_conn_invitation_did_no_ledger(self):
-        wallet = self.context.inject(BaseWallet)
-        await wallet.create_local_did(
+        await self.session.wallet.create_local_did(
             seed=self.test_seed, did=self.test_did, metadata=None
         )
 
@@ -1158,8 +1141,7 @@ class TestConnectionManager(AsyncTestCase):
         )
         self.context.injector.bind_instance(BaseLedger, self.ledger)
 
-        wallet = self.context.inject(BaseWallet)
-        await wallet.create_local_did(
+        local_did = await self.session.wallet.create_local_did(
             seed=self.test_seed, did=self.test_did, metadata=None
         )
 
@@ -1187,11 +1169,10 @@ class TestConnectionManager(AsyncTestCase):
         assert target.label == conn_invite.label
         assert target.recipient_keys == conn_invite.recipient_keys
         assert target.routing_keys == []
-        assert target.sender_key == (await wallet.get_local_did(self.test_did)).verkey
+        assert target.sender_key == local_did.verkey
 
     async def test_fetch_connection_targets_oob_invitation_svc_did_no_ledger(self):
-        wallet: BaseWallet = self.context.inject(BaseWallet)
-        await wallet.create_local_did(
+        await self.session.wallet.create_local_did(
             seed=self.test_seed, did=self.test_did, metadata=None
         )
 
@@ -1217,8 +1198,7 @@ class TestConnectionManager(AsyncTestCase):
         )
         self.context.injector.bind_instance(BaseLedger, self.ledger)
 
-        wallet: BaseWallet = self.context.inject(BaseWallet)
-        await wallet.create_local_did(
+        local_did = await self.session.wallet.create_local_did(
             seed=self.test_seed, did=self.test_did, metadata=None
         )
 
@@ -1244,7 +1224,7 @@ class TestConnectionManager(AsyncTestCase):
         assert target.label == mock_oob_invite.label
         assert target.recipient_keys == [self.test_target_verkey]
         assert target.routing_keys == []
-        assert target.sender_key == (await wallet.get_local_did(self.test_did)).verkey
+        assert target.sender_key == local_did.verkey
 
     async def test_fetch_connection_targets_oob_invitation_svc_block_ledger(self):
         self.ledger = async_mock.MagicMock()
@@ -1256,8 +1236,7 @@ class TestConnectionManager(AsyncTestCase):
         )
         self.context.injector.bind_instance(BaseLedger, self.ledger)
 
-        wallet: BaseWallet = self.context.inject(BaseWallet)
-        await wallet.create_local_did(
+        local_did = await self.session.wallet.create_local_did(
             seed=self.test_seed, did=self.test_did, metadata=None
         )
 
@@ -1290,11 +1269,10 @@ class TestConnectionManager(AsyncTestCase):
         assert target.label == mock_oob_invite.label
         assert target.recipient_keys == [self.test_target_verkey]
         assert target.routing_keys == []
-        assert target.sender_key == (await wallet.get_local_did(self.test_did)).verkey
+        assert target.sender_key == local_did.verkey
 
     async def test_fetch_connection_targets_conn_initiator_completed_no_their_did(self):
-        wallet = self.context.inject(BaseWallet)
-        await wallet.create_local_did(
+        await self.session.wallet.create_local_did(
             seed=self.test_seed, did=self.test_did, metadata=None
         )
 
@@ -1306,8 +1284,7 @@ class TestConnectionManager(AsyncTestCase):
         assert await self.manager.fetch_connection_targets(mock_conn) is None
 
     async def test_fetch_connection_targets_conn_completed_their_did(self):
-        wallet = self.context.inject(BaseWallet)
-        await wallet.create_local_did(
+        local_did = await self.session.wallet.create_local_did(
             seed=self.test_seed, did=self.test_did, metadata=None
         )
 
@@ -1330,7 +1307,7 @@ class TestConnectionManager(AsyncTestCase):
         assert target.label == mock_conn.their_label
         assert target.recipient_keys == [self.test_verkey]
         assert target.routing_keys == []
-        assert target.sender_key == (await wallet.get_local_did(self.test_did)).verkey
+        assert target.sender_key == local_did.verkey
 
     async def test_diddoc_connection_targets_diddoc_underspecified(self):
         with self.assertRaises(ConnectionManagerError):
@@ -1348,8 +1325,7 @@ class TestConnectionManager(AsyncTestCase):
             self.manager.diddoc_connection_targets(x_did_doc, self.test_verkey)
 
     async def test_establish_inbound(self):
-        wallet = self.context.inject(BaseWallet)
-        await wallet.create_local_did(
+        await self.session.wallet.create_local_did(
             seed=self.test_seed, did=self.test_did, metadata=None
         )
 
@@ -1374,8 +1350,7 @@ class TestConnectionManager(AsyncTestCase):
             assert routing_state == ConnRecord.ROUTING_STATE_REQUEST
 
     async def test_establish_inbound_conn_rec_no_my_did(self):
-        wallet = self.context.inject(BaseWallet)
-        await wallet.create_local_did(
+        await self.session.wallet.create_local_did(
             seed=self.test_seed, did=self.test_did, metadata=None
         )
 
@@ -1399,8 +1374,7 @@ class TestConnectionManager(AsyncTestCase):
             assert routing_state == ConnRecord.ROUTING_STATE_REQUEST
 
     async def test_establish_inbound_no_conn_record(self):
-        wallet = self.context.inject(BaseWallet)
-        await wallet.create_local_did(
+        await self.session.wallet.create_local_did(
             seed=self.test_seed, did=self.test_did, metadata=None
         )
 
@@ -1422,8 +1396,7 @@ class TestConnectionManager(AsyncTestCase):
                 await self.manager.establish_inbound(mock_conn, inbound_conn_id, None)
 
     async def test_establish_inbound_router_not_ready(self):
-        wallet = self.context.inject(BaseWallet)
-        await wallet.create_local_did(
+        await self.session.wallet.create_local_did(
             seed=self.test_seed, did=self.test_did, metadata=None
         )
 

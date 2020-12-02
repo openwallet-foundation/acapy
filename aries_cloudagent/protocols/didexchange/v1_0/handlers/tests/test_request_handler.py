@@ -1,4 +1,3 @@
-import pytest
 from asynctest import mock as async_mock
 from asynctest import TestCase as AsyncTestCase
 
@@ -9,12 +8,10 @@ from ......connections.models.diddoc import (
     PublicKeyType,
     Service,
 )
-from ......messaging.base_handler import HandlerException
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
 from ......transport.inbound.receipt import MessageReceipt
-from ......wallet.basic import BasicWallet
 
 from ...handlers import request_handler as test_module
 from ...manager import DIDXManagerError
@@ -59,19 +56,20 @@ class TestDIDXRequestHandler(AsyncTestCase):
         return doc
 
     async def setUp(self):
-        self.wallet = BasicWallet()
-        self.did_info = await self.wallet.create_local_did()
+        self.ctx = RequestContext.test_context()
+        self.ctx.message_receipt = MessageReceipt()
+
+        wallet = (await self.ctx.session()).wallet
+        self.did_info = await wallet.create_local_did()
 
         self.did_doc_attach = AttachDecorator.from_indy_dict(self.did_doc().serialize())
-        await self.did_doc_attach.data.sign(self.did_info.verkey, self.wallet)
+        await self.did_doc_attach.data.sign(self.did_info.verkey, wallet)
 
         self.request = DIDXRequest(
             label=TEST_LABEL,
             did=TEST_DID,
             did_doc_attach=self.did_doc_attach,
         )
-        self.ctx = RequestContext()
-        self.ctx.message_receipt = MessageReceipt()
 
     @async_mock.patch.object(test_module, "DIDXManager")
     async def test_called(self, mock_didx_mgr):
@@ -81,7 +79,6 @@ class TestDIDXRequestHandler(AsyncTestCase):
         responder = MockResponder()
         await handler_inst.handle(self.ctx, responder)
 
-        mock_didx_mgr.assert_called_once_with(self.ctx)
         mock_didx_mgr.return_value.receive_request.assert_called_once_with(
             self.ctx.message, self.ctx.message_receipt
         )

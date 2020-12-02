@@ -1,13 +1,9 @@
 from asynctest import TestCase as AsyncTestCase
-from asynctest import mock as async_mock
 
-from .....config.injection_context import InjectionContext
 from .....connections.models.conn_record import ConnRecord
+from .....core.in_memory import InMemoryProfile
 from .....messaging.request_context import RequestContext
 from .....messaging.responder import MockResponder
-from .....storage.base import BaseStorage
-from .....storage.basic import BasicStorage
-from .....storage.error import StorageNotFoundError
 from .....wallet.util import naked_to_did_key
 
 from ....didcomm_prefix import DIDCommPrefix

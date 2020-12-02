@@ -13,6 +13,7 @@ from aiohttp_apispec import (
 
 from marshmallow import fields
 
+from ....admin.request_context import AdminRequestContext
 from ....connections.models.conn_record import ConnRecord, ConnRecordSchema
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
@@ -104,12 +105,13 @@ async def didx_receive_invitation(request: web.BaseRequest):
         The resulting connection record details
 
     """
-    context = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
     if context.settings.get("admin.no_receive_invites"):
         raise web.HTTPForbidden(
             reason="Configuration does not allow receipt of invitations"
         )
-    didx_mgr = DIDXManager(context)
+    session = await context.session()
+    didx_mgr = DIDXManager(session)
     invitation_json = await request.json()
 
     try:
@@ -146,13 +148,14 @@ async def didx_accept_invitation(request: web.BaseRequest):
         The resulting connection record details
 
     """
-    context = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
     outbound_handler = request.app["outbound_message_router"]
     connection_id = request.match_info["conn_id"]
+    session = await context.session()
 
     try:
-        conn_rec = await ConnRecord.retrieve_by_id(context, connection_id)
-        didx_mgr = DIDXManager(context)
+        conn_rec = await ConnRecord.retrieve_by_id(session, connection_id)
+        didx_mgr = DIDXManager(session)
         my_label = request.query.get("my_label") or None
         my_endpoint = request.query.get("my_endpoint") or None
         request = await didx_mgr.create_request(conn_rec, my_label, my_endpoint)
@@ -185,13 +188,14 @@ async def didx_accept_request(request: web.BaseRequest):
         The resulting connection record details
 
     """
-    context = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
     outbound_handler = request.app["outbound_message_router"]
     connection_id = request.match_info["conn_id"]
+    session = await context.session()
 
     try:
-        conn_rec = await ConnRecord.retrieve_by_id(context, connection_id)
-        didx_mgr = DIDXManager(context)
+        conn_rec = await ConnRecord.retrieve_by_id(session, connection_id)
+        didx_mgr = DIDXManager(session)
         my_endpoint = request.query.get("my_endpoint") or None
         response = await didx_mgr.create_response(conn_rec, my_endpoint)
         result = conn_rec.serialize()

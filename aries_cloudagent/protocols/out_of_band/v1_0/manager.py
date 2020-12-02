@@ -88,13 +88,13 @@ class OutOfBandManager:
             Invitation record
 
         """
-        wallet = self.context.inject(BaseWallet)
+        wallet = self._session.inject(BaseWallet)
 
         accept = bool(
             auto_accept
             or (
                 auto_accept is None
-                and self.context.settings.get("debug.auto_accept_requests")
+                and self._session.settings.get("debug.auto_accept_requests")
             )
         )
 
@@ -125,7 +125,7 @@ class OutOfBandManager:
                 raise OutOfBandManagerError(f"Unknown attachment type: {a_type}")
 
         if public:
-            if not self.context.settings.get("public_invites"):
+            if not self._session.settings.get("public_invites"):
                 raise OutOfBandManagerError("Public invitations are not enabled")
 
             public_did = await wallet.get_public_did()
@@ -140,7 +140,7 @@ class OutOfBandManager:
                 )
 
             invi_msg = InvitationMessage(
-                label=my_label or self.context.settings.get("default_label"),
+                label=my_label or self._session.settings.get("default_label"),
                 handshake_protocols=(
                     [DIDCommPrefix.qualify_current(INVITATION)]
                     if include_handshake
@@ -158,7 +158,7 @@ class OutOfBandManager:
             )
 
             if not my_endpoint:
-                my_endpoint = self.context.settings.get("default_endpoint")
+                my_endpoint = self._session.settings.get("default_endpoint")
 
             # Create and store new invitation key
             connection_key = await wallet.create_signing_key()
@@ -168,7 +168,7 @@ class OutOfBandManager:
             # of invitations
             # Would want to reuse create_did_document and convert the result
             invi_msg = InvitationMessage(
-                label=my_label or self.context.settings.get("default_label"),
+                label=my_label or self._session.settings.get("default_label"),
                 handshake_protocols=(
                     [DIDCommPrefix.qualify_current(INVITATION)]
                     if include_handshake

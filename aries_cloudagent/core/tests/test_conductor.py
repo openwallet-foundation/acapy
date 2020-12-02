@@ -652,9 +652,6 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
 
         await conductor.setup()
 
-        wallet = await conductor.context.inject(BaseWallet)
-        await wallet.create_public_did()
-
         with async_mock.patch("sys.stdout", new=StringIO()) as captured:
             await conductor.setup()
 
