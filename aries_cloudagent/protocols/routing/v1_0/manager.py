@@ -5,7 +5,6 @@ from typing import Sequence
 
 from ....config.injection_context import InjectionContext
 from ....core.error import BaseError
-from ....messaging.util import time_now
 from ....storage.base import BaseStorage, StorageRecord
 from ....storage.error import (
     StorageError,
@@ -129,7 +128,7 @@ class RoutingManager:
         Args:
             client_connection_id: The ID of the connection record
             recipient_key: The recipient verkey of the route
-            internal_wallet_id: The ID of the multitenant wallet_record. Used for internal routing
+            internal_wallet_id: The ID of the wallet record. Used for internal routing
 
         Returns:
             The new routing record

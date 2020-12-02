@@ -231,7 +231,9 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             receipt = MessageReceipt(direct_response_mode="snail mail")
             message = InboundMessage(message_body, receipt)
 
-            conductor.inbound_message_router(message, can_respond=False)
+            conductor.inbound_message_router(
+                conductor.context, message, can_respond=False
+            )
 
             mock_dispatch_q.assert_called_once()
             assert mock_dispatch_q.call_args[0][0] is message
@@ -257,7 +259,9 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             message = InboundMessage(message_body, receipt)
 
             with self.assertRaises(test_module.LedgerConfigError):
-                conductor.inbound_message_router(message, can_respond=False)
+                conductor.inbound_message_router(
+                    conductor.context, message, can_respond=False
+                )
 
             mock_dispatch_q.assert_called_once()
             mock_notify.assert_called_once()

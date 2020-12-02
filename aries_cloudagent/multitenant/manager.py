@@ -1,7 +1,5 @@
 """Manager for multitenancy."""
 
-from aries_cloudagent.storage.error import StorageNotFoundError
-from aries_cloudagent.protocols.routing.v1_0.models.route_record import RouteRecord
 import json
 import jwt
 from typing import List
@@ -186,9 +184,7 @@ class MultitenantManager:
         return token
 
     async def get_wallets_for_msg(self, body: bytes) -> List[WalletRecord]:
-        """
-        Parses an inbound message for recipient keys and returns the wallet records
-        associated with these keys.
+        """Get wallet records associated with recipient keys in message.
 
         Args:
             body: Inbound raw message

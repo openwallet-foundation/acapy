@@ -337,7 +337,8 @@ class AdminServer(BaseAdminServer):
                     )
 
                     LOGGER.debug(
-                        f"Authorization provided for subwallet {wallet_record.wallet_record_id}, switching context"
+                        "token provided for subwallet %s, switching context",
+                        wallet_record.wallet_record_id,
                     )
 
                     context.settings = context.settings.extend(
