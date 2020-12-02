@@ -7,7 +7,7 @@ A request context provided by the admin server to admin route handlers.
 from typing import Mapping, Optional, Type
 
 from ..core.profile import Profile, ProfileSession
-from ..config.injector import Injector, InjectType
+from ..config.injector import Injector, InjectorError, InjectType
 from ..config.injection_context import InjectionContext
 from ..config.settings import Settings
 from ..utils.classloader import DeferLoad
@@ -84,13 +84,34 @@ class AdminRequestContext:
         return self._context.inject(base_cls, settings, required=required)
 
     def update_settings(self, settings: Mapping[str, object]):
-        """Update the scope with additional settings."""
+        """Update the current scope with additional settings."""
         self._context.update_settings(settings)
 
     @classmethod
-    def test_context(cls) -> "AdminRequestContext":
+    def test_context(cls, session_inject: dict = None) -> "AdminRequestContext":
         """Quickly set up a new admin request context for tests."""
-        return AdminRequestContext(IN_MEM.resolved.test_profile())
+        ctx = AdminRequestContext(IN_MEM.resolved.test_profile())
+        setattr(
+            ctx, "session_inject", dict() if session_inject is None else session_inject
+        )
+        setattr(ctx, "session", ctx._test_session)
+        return ctx
+
+    def _test_session(self) -> ProfileSession:
+        session = self.profile.session(self._context)
+
+        def _inject(base_cls, required=True):
+            if session._active and base_cls in self.session_inject:
+                ret = self.session_inject[base_cls]
+                if ret is None and required:
+                    raise InjectorError(
+                        "No instance provided for class: {}".format(base_cls.__name__)
+                    )
+                return ret
+            return session._context.injector.inject(base_cls, required=required)
+
+        setattr(session, "inject", _inject)
+        return session
 
     def __repr__(self) -> str:
         """
@@ -100,7 +121,7 @@ class AdminRequestContext:
             A human readable representation of this object
 
         """
-        skip = ()
+        skip = ("session",)
         items = (
             "{}={}".format(k, repr(v))
             for k, v in self.__dict__.items()

@@ -611,10 +611,7 @@ async def upload_tails_file(request: web.BaseRequest):
 
     rev_reg_id = request.match_info["rev_reg_id"]
 
-    tails_server: BaseTailsServer = context.inject(
-        BaseTailsServer,
-        required=False,
-    )
+    tails_server = context.inject(BaseTailsServer, required=False)
     if not tails_server:
         raise web.HTTPForbidden(reason="No tails server configured")
 

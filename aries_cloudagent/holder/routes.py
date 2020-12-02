@@ -123,6 +123,7 @@ async def credentials_get(request: web.BaseRequest):
 
     credential_id = request.match_info["credential_id"]
 
+    print(context.session)
     session = await context.session()
     holder = session.inject(IndyHolder)
     try:

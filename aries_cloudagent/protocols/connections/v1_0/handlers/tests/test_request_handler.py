@@ -8,7 +8,6 @@ from ......connections.models.diddoc import (
     PublicKeyType,
     Service,
 )
-from ......messaging.base_handler import HandlerException
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
 from ......transport.inbound.receipt import MessageReceipt
@@ -72,8 +71,6 @@ class TestRequestHandler:
         handler_inst = handler.ConnectionRequestHandler()
         responder = MockResponder()
         await handler_inst.handle(request_context, responder)
-
-        mock_conn_mgr.assert_called_once_with(request_context)
         mock_conn_mgr.return_value.receive_request.assert_called_once_with(
             request_context.message, request_context.message_receipt
         )
