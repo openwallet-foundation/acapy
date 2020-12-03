@@ -143,6 +143,18 @@ To run the ACA-Py test suite, use the following script:
 ./scripts/run_tests
 ```
 
+To run the ACA-Py test suite with ptvsd debugger enabled:
+
+```bash
+./scripts/run_tests --debug
+```
+
+To run specific tests pass parameters as defined by [pytest](https://docs.pytest.org/en/stable/usage.html#specifying-tests-selecting-tests):
+
+```bash
+./scripts/run_tests aries_cloudagent/protocols/connections
+```
+
 To run the tests including [Indy SDK](https://github.com/hyperledger/indy-sdk) and related dependencies, run the script:
 
 ```bash
