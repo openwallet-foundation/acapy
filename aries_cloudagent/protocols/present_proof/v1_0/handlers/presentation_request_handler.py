@@ -63,6 +63,7 @@ class PresentationRequestHandler(BaseHandler):
                 initiator=V10PresentationExchange.INITIATOR_EXTERNAL,
                 role=V10PresentationExchange.ROLE_PROVER,
                 presentation_request=indy_proof_request,
+                presentation_request_dict=context.message.serialize(),
                 auto_present=context.settings.get(
                     "debug.auto_respond_presentation_request"
                 ),
