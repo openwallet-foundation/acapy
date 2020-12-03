@@ -96,12 +96,12 @@ async def invitation_create(request: web.BaseRequest):
 
 @docs(
     tags=["out-of-band"],
-    summary="Create a new connection invitation",
+    summary="Receive a new connection invitation",
 )
 @request_schema(InvitationReceiveRequestSchema())
 async def invitation_receive(request: web.BaseRequest):
     """
-    Request handler for creating a new connection invitation.
+    Request handler for receiving a new connection invitation.
 
     Args:
         request: aiohttp request object

@@ -196,7 +196,9 @@ class ConnectionManager:
         await connection.attach_invitation(self.context, invitation)
 
         # Multitenancy: add routing for key to handle inbound messages using relay
-        if self.context.settings.get("multitenant.enabled"):
+        if self.context.settings.get(
+            "multitenant.enabled"
+        ) and self.context.settings.get("wallet.id"):
             multitenant_mgr = await self.context.inject(MultitenantManager)
             await multitenant_mgr.add_wallet_route(
                 wallet_id=self.context.settings.get("wallet.id"),
@@ -329,7 +331,9 @@ class ConnectionManager:
 
         # Multitenancy: add routing for key to handle inbound messages using relay
         # MTODO: Key could already be registered.
-        if self.context.settings.get("multitenant.enabled"):
+        if self.context.settings.get(
+            "multitenant.enabled"
+        ) and self.context.settings.get("wallet.id"):
             multitenant_mgr = await self.context.inject(MultitenantManager)
             await multitenant_mgr.add_wallet_route(
                 wallet_id=self.context.settings.get("wallet.id"),
@@ -446,7 +450,11 @@ class ConnectionManager:
 
         # Multitenancy: add routing for key to handle inbound messages using relay
         # MTODO: Key could already be registered.
-        if my_info and self.context.settings.get("multitenant.enabled"):
+        if (
+            my_info
+            and self.context.settings.get("multitenant.enabled")
+            and self.context.settings.get("wallet.id")
+        ):
             multitenant_mgr = await self.context.inject(MultitenantManager)
             await multitenant_mgr.add_wallet_route(
                 wallet_id=self.context.settings.get("wallet.id"),
@@ -540,7 +548,9 @@ class ConnectionManager:
 
         # Multitenancy: add routing for key to handle inbound messages using relay
         # MTODO: Key could already be registered.
-        if self.context.settings.get("multitenant.enabled"):
+        if self.context.settings.get(
+            "multitenant.enabled"
+        ) and self.context.settings.get("wallet.id"):
             multitenant_mgr = await self.context.inject(MultitenantManager)
             await multitenant_mgr.add_wallet_route(
                 wallet_id=self.context.settings.get("wallet.id"),

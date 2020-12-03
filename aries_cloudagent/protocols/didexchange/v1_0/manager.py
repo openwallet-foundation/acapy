@@ -1,5 +1,6 @@
 """Classes to manage connection establishment under RFC 23 (DID exchange)."""
 
+from aries_cloudagent.multitenant.manager import MultitenantManager
 import json
 import logging
 
@@ -218,6 +219,17 @@ class DIDXManager:
         conn_rec.state = ConnRecord.State.REQUEST.rfc23
         await conn_rec.save(self.context, reason="Created connection request")
 
+        # Multitenancy: add routing for key to handle inbound messages using relay
+        # MTODO: Key could already be registered.
+        if self.context.settings.get(
+            "multitenant.enabled"
+        ) and self.context.settings.get("wallet.id"):
+            multitenant_mgr = await self.context.inject(MultitenantManager)
+            await multitenant_mgr.add_wallet_route(
+                wallet_id=self.context.settings.get("wallet.id"),
+                recipient_key=my_info.verkey,
+            )
+
         return request
 
     async def receive_request(
@@ -241,6 +253,7 @@ class DIDXManager:
         conn_rec = None
         invi_rec = None
         connection_key = None
+        my_info = None
         wallet: BaseWallet = await self.context.inject(BaseWallet)
 
         try:
@@ -340,6 +353,19 @@ class DIDXManager:
         # Attach the connection request so it can be found and responded to
         await conn_rec.attach_request(self.context, request)
 
+        # Multitenancy: add routing for key to handle inbound messages using relay
+        # MTODO: Key could already be registered.
+        if (
+            my_info
+            and self.context.settings.get("multitenant.enabled")
+            and self.context.settings.get("wallet.id")
+        ):
+            multitenant_mgr = await self.context.inject(MultitenantManager)
+            await multitenant_mgr.add_wallet_route(
+                wallet_id=self.context.settings.get("wallet.id"),
+                recipient_key=my_info.verkey,
+            )
+
         if invi_rec.auto_accept:
             response = await self.create_response(conn_rec)
             responder: BaseResponder = await self._context.inject(
@@ -422,6 +448,17 @@ class DIDXManager:
             reason="Created connection response",
             log_params={"response": response},
         )
+
+        # Multitenancy: add routing for key to handle inbound messages using relay
+        # MTODO: Key could already be registered.
+        if self.context.settings.get(
+            "multitenant.enabled"
+        ) and self.context.settings.get("wallet.id"):
+            multitenant_mgr = await self.context.inject(MultitenantManager)
+            await multitenant_mgr.add_wallet_route(
+                wallet_id=self.context.settings.get("wallet.id"),
+                recipient_key=my_info.verkey,
+            )
 
         return response
 
