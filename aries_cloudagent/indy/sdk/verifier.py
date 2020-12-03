@@ -317,6 +317,7 @@ class IndySdkVerifier(IndyVerifier):
         """
 
         try:
+            self.non_revoc_intervals(pres_req, pres)
             await self.check_timestamps(pres_req, pres, rev_reg_defs)
             await self.pre_verify(pres_req, pres)
         except ValueError as err:
@@ -325,8 +326,6 @@ class IndySdkVerifier(IndyVerifier):
                 f"cannot be validated: {str(err)}"
             )
             return False
-
-        self.non_revoc_intervals(pres_req, pres)
 
         try:
             verified = await indy.anoncreds.verifier_verify_proof(
