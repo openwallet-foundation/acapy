@@ -104,7 +104,7 @@ async def didx_receive_invitation(request: web.BaseRequest):
         The resulting connection record details
 
     """
-    context = request.app["request_context"]
+    context = request["context"]
     if context.settings.get("admin.no_receive_invites"):
         raise web.HTTPForbidden(
             reason="Configuration does not allow receipt of invitations"
@@ -146,8 +146,8 @@ async def didx_accept_invitation(request: web.BaseRequest):
         The resulting connection record details
 
     """
-    context = request.app["request_context"]
-    outbound_handler = request.app["outbound_message_router"]
+    context = request["context"]
+    outbound_handler = request["outbound_message_router"]
     connection_id = request.match_info["conn_id"]
 
     try:
@@ -185,8 +185,8 @@ async def didx_accept_request(request: web.BaseRequest):
         The resulting connection record details
 
     """
-    context = request.app["request_context"]
-    outbound_handler = request.app["outbound_message_router"]
+    context = request["context"]
+    outbound_handler = request["outbound_message_router"]
     connection_id = request.match_info["conn_id"]
 
     try:
