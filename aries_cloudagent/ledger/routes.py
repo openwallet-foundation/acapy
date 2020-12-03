@@ -16,6 +16,10 @@ from .error import BadLedgerRequestError, LedgerError, LedgerTransactionError
 from .indy import Role
 
 
+class LedgerModulesResultSchema(OpenAPISchema):
+    """Schema for the modules endpoint."""
+
+
 class AMLRecordSchema(OpenAPISchema):
     """Ledger AML record."""
 
@@ -111,6 +115,7 @@ class QueryStringEndpointSchema(OpenAPISchema):
     summary="Send a NYM registration to the ledger.",
 )
 @querystring_schema(RegisterLedgerNymQueryStringSchema())
+@response_schema(LedgerModulesResultSchema(), 200, description="")
 async def register_ledger_nym(request: web.BaseRequest):
     """
     Request handler for registering a NYM with the ledger.
@@ -163,6 +168,7 @@ async def register_ledger_nym(request: web.BaseRequest):
     summary="Get the role from the NYM registration of a public DID.",
 )
 @querystring_schema(QueryStringDIDSchema)
+@response_schema(LedgerModulesResultSchema(), 200, description="")
 async def get_nym_role(request: web.BaseRequest):
     """
     Request handler for getting the role from the NYM registration of a public DID.
@@ -195,6 +201,7 @@ async def get_nym_role(request: web.BaseRequest):
 
 
 @docs(tags=["ledger"], summary="Rotate key pair for public DID.")
+@response_schema(LedgerModulesResultSchema(), 200, description="")
 async def rotate_public_did_keypair(request: web.BaseRequest):
     """
     Request handler for rotating key pair associated with public DID.
@@ -223,6 +230,7 @@ async def rotate_public_did_keypair(request: web.BaseRequest):
     summary="Get the verkey for a DID from the ledger.",
 )
 @querystring_schema(QueryStringDIDSchema())
+@response_schema(LedgerModulesResultSchema(), 200, description="")
 async def get_did_verkey(request: web.BaseRequest):
     """
     Request handler for getting a verkey for a DID from the ledger.
@@ -258,6 +266,7 @@ async def get_did_verkey(request: web.BaseRequest):
     summary="Get the endpoint for a DID from the ledger.",
 )
 @querystring_schema(QueryStringEndpointSchema())
+@response_schema(LedgerModulesResultSchema(), 200, description="")
 async def get_did_endpoint(request: web.BaseRequest):
     """
     Request handler for getting a verkey for a DID from the ledger.
@@ -291,7 +300,7 @@ async def get_did_endpoint(request: web.BaseRequest):
 
 
 @docs(tags=["ledger"], summary="Fetch the current transaction author agreement, if any")
-@response_schema(TAAResultSchema, 200)
+@response_schema(TAAResultSchema, 200, description="")
 async def ledger_get_taa(request: web.BaseRequest):
     """
     Request handler for fetching the transaction author agreement.
@@ -331,6 +340,7 @@ async def ledger_get_taa(request: web.BaseRequest):
 
 @docs(tags=["ledger"], summary="Accept the transaction author agreement")
 @request_schema(TAAAcceptSchema)
+@response_schema(LedgerModulesResultSchema(), 200, description="")
 async def ledger_accept_taa(request: web.BaseRequest):
     """
     Request handler for accepting the current transaction author agreement.

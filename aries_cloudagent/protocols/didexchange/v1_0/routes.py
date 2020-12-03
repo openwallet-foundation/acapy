@@ -92,7 +92,7 @@ class DIDXConnIdRefIdMatchInfoSchema(OpenAPISchema):
 )
 @querystring_schema(DIDXReceiveInvitationQueryStringSchema())
 @request_schema(DIDXReceiveInvitationRequestSchema())
-@response_schema(ConnRecordSchema(), 200)
+@response_schema(ConnRecordSchema(), 200, description="")
 async def didx_receive_invitation(request: web.BaseRequest):
     """
     Request handler for receiving a new connection invitation.
@@ -134,7 +134,7 @@ async def didx_receive_invitation(request: web.BaseRequest):
 )
 @match_info_schema(DIDXConnIdMatchInfoSchema())
 @querystring_schema(DIDXAcceptInvitationQueryStringSchema())
-@response_schema(ConnRecordSchema(), 200)
+@response_schema(ConnRecordSchema(), 200, description="")
 async def didx_accept_invitation(request: web.BaseRequest):
     """
     Request handler for accepting a stored connection invitation.
@@ -173,7 +173,7 @@ async def didx_accept_invitation(request: web.BaseRequest):
 )
 @match_info_schema(DIDXConnIdMatchInfoSchema())
 @querystring_schema(DIDXAcceptRequestQueryStringSchema())
-@response_schema(ConnRecordSchema(), 200)
+@response_schema(ConnRecordSchema(), 200, description="")
 async def didx_accept_request(request: web.BaseRequest):
     """
     Request handler for accepting a stored connection request.

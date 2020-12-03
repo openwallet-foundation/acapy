@@ -29,6 +29,10 @@ from .did_posture import DIDPosture
 from .error import WalletError, WalletNotFoundError
 
 
+class WalletModuleResponseSchema(OpenAPISchema):
+    """Response schema for Wallet Module."""
+
+
 class DIDSchema(OpenAPISchema):
     """Result schema for a DID."""
 
@@ -128,7 +132,7 @@ def format_did_info(info: DIDInfo):
 
 @docs(tags=["wallet"], summary="List wallet DIDs")
 @querystring_schema(DIDListQueryStringSchema())
-@response_schema(DIDListSchema, 200)
+@response_schema(DIDListSchema, 200, description="")
 async def wallet_did_list(request: web.BaseRequest):
     """
     Request handler for searching wallet DIDs.
@@ -212,7 +216,7 @@ async def wallet_did_list(request: web.BaseRequest):
 
 
 @docs(tags=["wallet"], summary="Create a local DID")
-@response_schema(DIDResultSchema, 200)
+@response_schema(DIDResultSchema, 200, description="")
 async def wallet_create_did(request: web.BaseRequest):
     """
     Request handler for creating a new local DID in the wallet.
@@ -237,7 +241,7 @@ async def wallet_create_did(request: web.BaseRequest):
 
 
 @docs(tags=["wallet"], summary="Fetch the current public DID")
-@response_schema(DIDResultSchema, 200)
+@response_schema(DIDResultSchema, 200, description="")
 async def wallet_get_public_did(request: web.BaseRequest):
     """
     Request handler for fetching the current public DID.
@@ -263,7 +267,7 @@ async def wallet_get_public_did(request: web.BaseRequest):
 
 @docs(tags=["wallet"], summary="Assign the current public DID")
 @querystring_schema(DIDQueryStringSchema())
-@response_schema(DIDResultSchema, 200)
+@response_schema(DIDResultSchema, 200, description="")
 async def wallet_set_public_did(request: web.BaseRequest):
     """
     Request handler for setting the current public DID.
@@ -316,6 +320,7 @@ async def wallet_set_public_did(request: web.BaseRequest):
     tags=["wallet"], summary="Update endpoint in wallet and on ledger if posted to it"
 )
 @request_schema(DIDEndpointWithTypeSchema)
+@response_schema(WalletModuleResponseSchema(), description="")
 async def wallet_set_did_endpoint(request: web.BaseRequest):
     """
     Request handler for setting an endpoint for a DID.
@@ -350,7 +355,7 @@ async def wallet_set_did_endpoint(request: web.BaseRequest):
 
 @docs(tags=["wallet"], summary="Query DID endpoint in wallet")
 @querystring_schema(DIDQueryStringSchema())
-@response_schema(DIDEndpointSchema, 200)
+@response_schema(DIDEndpointSchema, 200, description="")
 async def wallet_get_did_endpoint(request: web.BaseRequest):
     """
     Request handler for getting the current DID endpoint from the wallet.
@@ -382,6 +387,7 @@ async def wallet_get_did_endpoint(request: web.BaseRequest):
 
 @docs(tags=["wallet"], summary="Rotate keypair for a DID not posted to the ledger")
 @querystring_schema(DIDQueryStringSchema())
+@response_schema(WalletModuleResponseSchema(), description="")
 async def wallet_rotate_did_keypair(request: web.BaseRequest):
     """
     Request handler for rotating local DID keypair.

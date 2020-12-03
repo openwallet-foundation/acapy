@@ -3,7 +3,7 @@
 import logging
 
 from aiohttp import web
-from aiohttp_apispec import docs, match_info_schema, querystring_schema
+from aiohttp_apispec import docs, match_info_schema, querystring_schema, response_schema
 
 from marshmallow import fields
 
@@ -14,6 +14,10 @@ from ....storage.error import StorageError
 from .base_service import BaseIntroductionService, IntroductionError
 
 LOGGER = logging.getLogger(__name__)
+
+
+class IntroModuleResponseSchema(OpenAPISchema):
+    """Response schema for Introduction Module."""
 
 
 class IntroStartQueryStringSchema(OpenAPISchema):
@@ -43,6 +47,7 @@ class ConnIdMatchInfoSchema(OpenAPISchema):
 )
 @match_info_schema(ConnIdMatchInfoSchema())
 @querystring_schema(IntroStartQueryStringSchema())
+@response_schema(IntroModuleResponseSchema, description="")
 async def introduction_start(request: web.BaseRequest):
     """
     Request handler for starting an introduction.

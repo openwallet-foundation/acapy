@@ -3,7 +3,7 @@
 import logging
 
 from aiohttp import web
-from aiohttp_apispec import docs, match_info_schema, request_schema
+from aiohttp_apispec import docs, match_info_schema, request_schema, response_schema
 
 from marshmallow import fields
 
@@ -20,6 +20,10 @@ from .models.menu_option import MenuOptionSchema
 from .util import MENU_RECORD_TYPE, retrieve_connection_menu, save_connection_menu
 
 LOGGER = logging.getLogger(__name__)
+
+
+class ActionMenuModulesResultSchema(OpenAPISchema):
+    """Schema for the modules endpoint."""
 
 
 class PerformRequestSchema(OpenAPISchema):
@@ -81,6 +85,7 @@ class ConnIdMatchInfoSchema(OpenAPISchema):
     tags=["action-menu"], summary="Close the active menu associated with a connection"
 )
 @match_info_schema(ConnIdMatchInfoSchema())
+@response_schema(ActionMenuModulesResultSchema(), 200, description="")
 async def actionmenu_close(request: web.BaseRequest):
     """
     Request handler for closing the menu associated with a connection.
@@ -108,6 +113,7 @@ async def actionmenu_close(request: web.BaseRequest):
 
 @docs(tags=["action-menu"], summary="Fetch the active menu")
 @match_info_schema(ConnIdMatchInfoSchema())
+@response_schema(ActionMenuModulesResultSchema(), 200, description="")
 async def actionmenu_fetch(request: web.BaseRequest):
     """
     Request handler for fetching the previously-received menu for a connection.
@@ -127,6 +133,7 @@ async def actionmenu_fetch(request: web.BaseRequest):
 @docs(tags=["action-menu"], summary="Perform an action associated with the active menu")
 @match_info_schema(ConnIdMatchInfoSchema())
 @request_schema(PerformRequestSchema())
+@response_schema(ActionMenuModulesResultSchema(), 200, description="")
 async def actionmenu_perform(request: web.BaseRequest):
     """
     Request handler for performing a menu action.
@@ -155,6 +162,7 @@ async def actionmenu_perform(request: web.BaseRequest):
 
 @docs(tags=["action-menu"], summary="Request the active menu")
 @match_info_schema(ConnIdMatchInfoSchema())
+@response_schema(ActionMenuModulesResultSchema(), 200, description="")
 async def actionmenu_request(request: web.BaseRequest):
     """
     Request handler for requesting a menu from the connection target.
@@ -184,6 +192,7 @@ async def actionmenu_request(request: web.BaseRequest):
 @docs(tags=["action-menu"], summary="Send an action menu to a connection")
 @match_info_schema(ConnIdMatchInfoSchema())
 @request_schema(SendMenuSchema())
+@response_schema(ActionMenuModulesResultSchema(), 200, description="")
 async def actionmenu_send(request: web.BaseRequest):
     """
     Request handler for requesting a menu from the connection target.

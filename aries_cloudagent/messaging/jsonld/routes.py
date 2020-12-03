@@ -25,7 +25,7 @@ class SignResponseSchema(OpenAPISchema):
 
 @docs(tags=["jsonld"], summary="Sign a JSON-LD structure and return it")
 @request_schema(SignRequestSchema())
-@response_schema(SignResponseSchema(), 200)
+@response_schema(SignResponseSchema(), 200, description="")
 async def sign(request: web.BaseRequest):
     """
     Request handler for signing a jsonld doc.
@@ -73,7 +73,7 @@ class VerifyResponseSchema(OpenAPISchema):
 
 @docs(tags=["jsonld"], summary="Verify a JSON-LD structure.")
 @request_schema(VerifyRequestSchema())
-@response_schema(VerifyResponseSchema(), 200)
+@response_schema(VerifyResponseSchema(), 200, description="")
 async def verify(request: web.BaseRequest):
     """
     Request handler for signing a jsonld doc.
