@@ -218,72 +218,7 @@ class TestIndySdkHolder(AsyncTestCase):
     @async_mock.patch("indy.anoncreds.prover_search_credentials_for_proof_req")
     @async_mock.patch("indy.anoncreds.prover_fetch_credentials_for_proof_req")
     @async_mock.patch("indy.anoncreds.prover_close_credentials_search_for_proof_req")
-    async def test_get_credentials_for_presentation_request_by_referent(
-        self,
-        mock_prover_close_credentials_search_for_proof_req,
-        mock_prover_fetch_credentials_for_proof_req,
-        mock_prover_search_credentials_for_proof_req,
-    ):
-        SIZE = 300
-        SKIP = 50
-        mock_prover_search_credentials_for_proof_req.return_value = "search_handle"
-        mock_prover_fetch_credentials_for_proof_req.side_effect = [
-            json.dumps(
-                [
-                    {"cred_info": {"referent": f"skip-{i}", "rev_reg_id": None}}
-                    for i in range(SKIP)
-                ]
-            ),
-            json.dumps(
-                [
-                    {"cred_info": {"referent": f"reft-{i}", "rev_reg_id": None}}
-                    for i in range(test_module.IndyHolder.CHUNK)
-                ]
-            ),
-            json.dumps(
-                [
-                    {
-                        "cred_info": {
-                            "referent": f"reft-{test_module.IndyHolder.CHUNK + i}",
-                            "rev_reg_id": None,
-                        }
-                    }
-                    for i in range(SIZE % test_module.IndySdkHolder.CHUNK)
-                ]
-            ),
-        ]
-
-        PROOF_REQ = {
-            "requested_attributes": {"attr_0_uuid": {"...": "..."}},
-            "requested_predicates": {"pred_0_uuid": {"...": "..."}},
-        }
-        credentials = (
-            await self.holder.get_credentials_for_presentation_request_by_referent(
-                PROOF_REQ,
-                ("asdb",),
-                50,
-                SIZE,
-                {"extra": "query"},
-            )
-        )
-        mock_prover_search_credentials_for_proof_req.assert_called_once_with(
-            self.wallet.handle,
-            json.dumps(PROOF_REQ),
-            json.dumps({"extra": "query"}),
-        )
-
-        assert mock_prover_fetch_credentials_for_proof_req.call_count == 3
-        mock_prover_close_credentials_search_for_proof_req.assert_called_once_with(
-            "search_handle"
-        )
-
-        assert len(credentials) == SIZE
-        assert all("reft-" in cred["cred_info"]["referent"] for cred in credentials)
-
-    @async_mock.patch("indy.anoncreds.prover_search_credentials_for_proof_req")
-    @async_mock.patch("indy.anoncreds.prover_fetch_credentials_for_proof_req")
-    @async_mock.patch("indy.anoncreds.prover_close_credentials_search_for_proof_req")
-    async def test_get_credentials_for_presentation_request_by_reft_filter_revocable(
+    async def test_get_credentials_for_presentation_request_by_reft(
         self,
         mock_prover_close_credentials_search_for_proof_req,
         mock_prover_fetch_credentials_for_proof_req,
@@ -348,9 +283,17 @@ class TestIndySdkHolder(AsyncTestCase):
             "search_handle"
         )
 
-        assert len(credentials) == SIZE - (test_module.IndyHolder.CHUNK / 2)
-        assert all(cred["cred_info"]["rev_reg_id"] is None for cred in credentials)
-        assert all("reft-" in cred["cred_info"]["referent"] for cred in credentials)
+        assert len(credentials) == SIZE
+        assert all(
+            not c["cred_info"]["rev_reg_id"]
+            for c in credentials[
+                0 : len(credentials) - (test_module.IndyHolder.CHUNK // 2)
+            ]
+        )  # irrevocable first
+        assert all(
+            c["cred_info"]["rev_reg_id"]
+            for c in credentials[-test_module.IndyHolder.CHUNK // 2 :]
+        )  # revocable last
 
     @async_mock.patch("indy.anoncreds.prover_search_credentials_for_proof_req")
     @async_mock.patch("indy.anoncreds.prover_fetch_credentials_for_proof_req")

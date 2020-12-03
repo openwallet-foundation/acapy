@@ -10,7 +10,6 @@ import indy.anoncreds
 from indy.error import ErrorCode, IndyError
 
 from ...ledger.base import BaseLedger
-from ...protocols.present_proof.v1_0.util.indy import indy_proof_req2non_revoc_intervals
 from ...storage.indy import IndyStorage
 from ...storage.error import StorageError, StorageNotFoundError
 from ...storage.record import StorageRecord
@@ -218,16 +217,10 @@ class IndySdkHolder(IndyHolder):
                             search_handle, reft, CHUNK
                         )
                     )
-                    creds.extend(
-                        batch
-                        if non_revoc_intervals.get(reft)
-                        else [c for c in batch if c["cred_info"]["rev_reg_id"] is None]
-                    )
+                    creds.extend(batch)
                     if len(batch) < CHUNK:
                         break
             return creds
-
-        non_revoc_intervals = indy_proof_req2non_revoc_intervals(presentation_request)
 
         with IndyErrorHandler(
             "Error when constructing wallet credential query", IndyHolderError
@@ -281,12 +274,11 @@ class IndySdkHolder(IndyHolder):
                         c["cred_info"]["rev_reg_id"] or "",  # irrevocable 1st
                         c["cred_info"][
                             "referent"
-                        ],  # should be 0-timestamp if we had it
+                        ],  # should be descending by timestamp if we had it
                     ),
                 )
             ]
         )[:count]
-        # return tuple(creds_dict.values())[:count]
         return creds_ordered
 
     async def get_credential(self, credential_id: str) -> str:

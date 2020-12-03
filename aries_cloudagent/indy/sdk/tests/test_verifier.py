@@ -319,7 +319,7 @@ class TestIndySdkVerifier(AsyncTestCase):
 
     async def test_check_timestamps(self):
         # all clear, with timestamps
-        self.verifier.check_timestamps(
+        await self.verifier.check_timestamps(
             INDY_PROOF_REQ_NAME,
             INDY_PROOF_NAME,
             REV_REG_DEFS,
@@ -329,18 +329,36 @@ class TestIndySdkVerifier(AsyncTestCase):
         proof_x = deepcopy(INDY_PROOF_NAME)
         proof_x["identifiers"][0]["timestamp"] = None
         with self.assertRaises(ValueError) as context:
-            self.verifier.check_timestamps(
+            await self.verifier.check_timestamps(
                 INDY_PROOF_REQ_NAME,
                 proof_x,
                 REV_REG_DEFS,
             )
         assert "both timestamp and rev reg id or neither" in str(context.exception)
 
+        # timestamp for irrevocable credential
+        with async_mock.patch.object(
+            self.verifier.ledger,
+            "get_credential_definition",
+            async_mock.CoroutineMock(),
+        ) as mock_get_cred_def:
+            mock_get_cred_def.return_value = {
+                "...": "...",
+                "value": {"no": "revocation"},
+            }
+            with self.assertRaises(ValueError) as context:
+                await self.verifier.check_timestamps(
+                    INDY_PROOF_REQ_NAME,
+                    INDY_PROOF_NAME,
+                    REV_REG_DEFS,
+                )
+            assert "Timestamp in presentation identifier #" in str(context.exception)
+
         # all clear, no timestamps
         proof_req_x = deepcopy(INDY_PROOF_REQ_NAME)
         proof_x["identifiers"][0]["rev_reg_id"] = None
         proof_req_x.pop("non_revoked")
-        self.verifier.check_timestamps(
+        await self.verifier.check_timestamps(
             proof_req_x,
             proof_x,
             REV_REG_DEFS,
@@ -351,7 +369,7 @@ class TestIndySdkVerifier(AsyncTestCase):
         proof_x = deepcopy(INDY_PROOF_NAME)
         proof_x["identifiers"][0]["timestamp"] = int(time()) + 3600
         with self.assertRaises(ValueError) as context:
-            self.verifier.check_timestamps(
+            await self.verifier.check_timestamps(
                 proof_req_x,
                 proof_x,
                 REV_REG_DEFS,
@@ -361,7 +379,7 @@ class TestIndySdkVerifier(AsyncTestCase):
         # timestamp in the distant past
         proof_x["identifiers"][0]["timestamp"] = 1234567890
         with self.assertRaises(ValueError) as context:
-            self.verifier.check_timestamps(
+            await self.verifier.check_timestamps(
                 proof_req_x,
                 proof_x,
                 REV_REG_DEFS,
@@ -376,7 +394,7 @@ class TestIndySdkVerifier(AsyncTestCase):
             test_module, "LOGGER", async_mock.MagicMock()
         ) as mock_logger:
             pre_logger_calls = mock_logger.info.call_count
-            self.verifier.check_timestamps(
+            await self.verifier.check_timestamps(
                 proof_req_x,
                 proof_x,
                 REV_REG_DEFS,
@@ -388,7 +406,7 @@ class TestIndySdkVerifier(AsyncTestCase):
         proof_x = deepcopy(INDY_PROOF_NAME)
         proof_req_x.pop("non_revoked")
         with self.assertRaises(ValueError) as context:
-            self.verifier.check_timestamps(
+            await self.verifier.check_timestamps(
                 proof_req_x,
                 proof_x,
                 REV_REG_DEFS,
@@ -400,7 +418,7 @@ class TestIndySdkVerifier(AsyncTestCase):
         proof_x = deepcopy(INDY_PROOF_NAME)
         proof_x["requested_proof"]["revealed_attrs"] = {}
         with self.assertRaises(ValueError) as context:
-            self.verifier.check_timestamps(
+            await self.verifier.check_timestamps(
                 proof_req_x,
                 proof_x,
                 REV_REG_DEFS,
@@ -408,7 +426,7 @@ class TestIndySdkVerifier(AsyncTestCase):
         assert "Presentation attributes mismatch requested" in str(context.exception)
 
         # all clear, attribute group ('names')
-        self.verifier.check_timestamps(
+        await self.verifier.check_timestamps(
             INDY_PROOF_REQ_PRED_NAMES,
             INDY_PROOF_PRED_NAMES,
             REV_REG_DEFS,
@@ -418,7 +436,7 @@ class TestIndySdkVerifier(AsyncTestCase):
         proof_x = deepcopy(INDY_PROOF_PRED_NAMES)
         proof_x["requested_proof"].pop("revealed_attr_groups")
         with self.assertRaises(ValueError) as context:
-            self.verifier.check_timestamps(
+            await self.verifier.check_timestamps(
                 INDY_PROOF_REQ_PRED_NAMES,
                 proof_x,
                 REV_REG_DEFS,
@@ -432,7 +450,7 @@ class TestIndySdkVerifier(AsyncTestCase):
         proof_req_x["requested_predicates"]["18_id_GE_uuid"].pop("non_revoked")
         proof_req_x["requested_predicates"]["18_busid_GE_uuid"].pop("non_revoked")
         with self.assertRaises(ValueError) as context:
-            self.verifier.check_timestamps(
+            await self.verifier.check_timestamps(
                 proof_req_x,
                 proof_x,
                 REV_REG_DEFS,
@@ -445,7 +463,7 @@ class TestIndySdkVerifier(AsyncTestCase):
         proof_req_x["requested_predicates"]["18_id_GE_uuid"].pop("non_revoked")
         proof_req_x["requested_predicates"]["18_busid_GE_uuid"].pop("non_revoked")
         with self.assertRaises(ValueError) as context:
-            self.verifier.check_timestamps(
+            await self.verifier.check_timestamps(
                 proof_req_x,
                 proof_x,
                 REV_REG_DEFS,
@@ -904,30 +922,6 @@ class TestIndySdkVerifier(AsyncTestCase):
 
         verified = await self.verifier.verify_presentation(
             INDY_PROOF_REQ_PRED_NAMES,
-            INDY_PROOF_X,
-            "schemas",
-            "credential_definitions",
-            REV_REG_DEFS,
-            "rev_reg_entries",
-        )
-
-        mock_verify.assert_not_called()
-
-        assert verified == False
-
-    @async_mock.patch("indy.anoncreds.verifier_verify_proof")
-    async def test_check_pred_names_bypass_timestamp(self, mock_verify):
-        INDY_PROOF_REQ_X = deepcopy(INDY_PROOF_REQ_PRED_NAMES)
-        INDY_PROOF_REQ_X["requested_attributes"]["18_uuid"].pop("non_revoked")
-        INDY_PROOF_REQ_X["requested_predicates"]["18_id_GE_uuid"].pop("non_revoked")
-        INDY_PROOF_REQ_X["requested_predicates"]["18_busid_GE_uuid"].pop("non_revoked")
-
-        INDY_PROOF_X = deepcopy(INDY_PROOF_PRED_NAMES)
-        INDY_PROOF_X["identifiers"][0]["timestamp"] = None
-        INDY_PROOF_X["identifiers"][0]["rev_reg_id"] = None
-
-        verified = await self.verifier.verify_presentation(
-            INDY_PROOF_REQ_X,
             INDY_PROOF_X,
             "schemas",
             "credential_definitions",

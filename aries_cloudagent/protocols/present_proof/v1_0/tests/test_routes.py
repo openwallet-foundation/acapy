@@ -16,14 +16,6 @@ class TestProofRoutes(AsyncTestCase):
         self.mock_context = async_mock.MagicMock()
         self.test_instance = test_module.PresentationManager(self.mock_context)
 
-    async def test_validate_non_revoked(self):
-        non_revo = test_module.IndyProofReqNonRevokedSchema()
-        non_revo.validate_fields({"fro": 1234567890})
-        non_revo.validate_fields({"to": 1234567890})
-        non_revo.validate_fields({"fro": 1234567890, "to": 1234567890})
-        with self.assertRaises(test_module.ValidationError):
-            non_revo.validate_fields({})
-
     async def test_validate_proof_req_attr_spec(self):
         aspec = test_module.IndyProofReqAttrSpecSchema()
         aspec.validate_fields({"name": "attr0"})
