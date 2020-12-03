@@ -94,14 +94,18 @@ class HttpTransport(BaseInboundTransport):
         )
 
         # MTODO: move to better place (relay class or something)
-        # MTODO: does only work for wiremessage format. Not plain JSON (should always go to base)
         # Simple relay functionality
-        if session.context.settings.get("multitenant.enabled"):
+        recipient_keys = self.wire_format.get_recipient_keys(body)
+        if len(recipient_keys) > 0 and session.context.settings.get(
+            "multitenant.enabled"
+        ):
             LOGGER.info("searching for wallet associated with incoming message")
             try:
                 # try to find subwallet
                 multitenant_mgr = MultitenantManager(session.context)
-                wallet_records = await multitenant_mgr.get_wallets_for_msg(body)
+                wallet_records = await multitenant_mgr.get_wallets_by_recipient_keys(
+                    recipient_keys
+                )
 
                 # MTODO: what to do with multiple recipients?
                 wallet_record = wallet_records[0]

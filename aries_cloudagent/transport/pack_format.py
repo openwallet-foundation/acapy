@@ -1,8 +1,9 @@
 """Standard packed message format classes."""
 
+from base64 import b64decode
 import json
 import logging
-from typing import Sequence, Tuple, Union
+from typing import List, Sequence, Tuple, Union
 
 from ..config.base import InjectorError
 from ..config.injection_context import InjectionContext
@@ -14,7 +15,7 @@ from ..utils.task_queue import TaskQueue
 from ..wallet.base import BaseWallet
 from ..wallet.error import WalletError
 
-from .error import MessageParseError, MessageEncodeError
+from .error import MessageParseError, MessageEncodeError, RecipientKeysError
 from .inbound.receipt import MessageReceipt
 from .wire_format import BaseWireFormat
 
@@ -194,3 +195,31 @@ class PackWireFormat(BaseWireFormat):
                 except WalletError as e:
                     raise MessageEncodeError("Forward message pack failed") from e
         return message
+
+    def get_recipient_keys(self, message_body: Union[str, bytes]) -> List[str]:
+        """
+        Get all recipient keys from a wire message.
+
+        Args:
+            message_body: The body of the message
+
+        Returns:
+            List of recipient keys from the message body
+
+        Raises:
+            RecipientKeysError: If the recipient keys could not be extracted
+
+        """
+
+        try:
+            message_dict = json.loads(message_body)
+            protected = json.loads(b64decode(message_dict["protected"]))
+            recipients = protected["recipients"]
+
+            recipient_keys = [recipient["header"]["kid"] for recipient in recipients]
+        except Exception as e:
+            raise RecipientKeysError(
+                "Error trying to extract recipient keys from JWE", e
+            )
+
+        return recipient_keys

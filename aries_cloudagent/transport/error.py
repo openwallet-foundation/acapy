@@ -21,3 +21,6 @@ class MessageEncodeError(WireFormatError):
     """Message encoding error."""
 
     error_code = "message_encode_error"
+
+class RecipientKeysError(WireFormatError):
+    """Extract recipient keys error."""

@@ -1,10 +1,8 @@
 """Manager for multitenancy."""
 
-import json
 import jwt
 from typing import List
 
-from ..utils.jwe import get_recipient_keys
 from ..wallet.models.wallet_record import WalletRecord
 from ..config.injection_context import InjectionContext
 from ..core.error import BaseError
@@ -183,19 +181,18 @@ class MultitenantManager:
 
         return token
 
-    async def get_wallets_for_msg(self, body: bytes) -> List[WalletRecord]:
-        """Get wallet records associated with recipient keys in message.
+    async def get_wallets_by_recipient_keys(
+        self, recipient_keys: List[str]
+    ) -> List[WalletRecord]:
+        """Get wallet records associated with recipient keys.
 
         Args:
-            body: Inbound raw message
+            recipient_keys: List of recipient keys
         Returns:
             list of wallet records associated with the recipient keys
         """
 
-        jwe = json.loads(body)
-        recipient_keys = get_recipient_keys(jwe)
         routing_mgr = RoutingManager(self.context)
-
         wallet_records = []
 
         for recipient_key in recipient_keys:
