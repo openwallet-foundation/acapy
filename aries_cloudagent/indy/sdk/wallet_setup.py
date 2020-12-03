@@ -224,6 +224,7 @@ class IndyOpenWallet:
 
     @property
     def name(self) -> str:
+        """Accessor for the opened wallet name."""
         return self.config.name
 
     async def close(self):
