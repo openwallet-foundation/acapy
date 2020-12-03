@@ -235,10 +235,11 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             )
 
             mock_dispatch_q.assert_called_once()
-            assert mock_dispatch_q.call_args[0][0] is message
-            assert mock_dispatch_q.call_args[0][1] == conductor.outbound_message_router
-            assert mock_dispatch_q.call_args[0][2] is None  # admin webhook router
-            assert callable(mock_dispatch_q.call_args[0][3])
+            assert mock_dispatch_q.call_args[0][0] is conductor.context
+            assert mock_dispatch_q.call_args[0][1] is message
+            assert mock_dispatch_q.call_args[0][2] == conductor.outbound_message_router
+            assert mock_dispatch_q.call_args[0][3] is None  # admin webhook router
+            assert callable(mock_dispatch_q.call_args[0][4])
 
     async def test_inbound_message_handler_ledger_x(self):
         builder: ContextBuilder = StubContextBuilder(self.test_settings_admin)
