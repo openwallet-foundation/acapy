@@ -24,9 +24,7 @@ from runners.support.utils import (
 
 CRED_PREVIEW_TYPE = "https://didcomm.org/issue-credential/1.0/credential-preview"
 SELF_ATTESTED = os.getenv("SELF_ATTESTED")
-
 LOGGER = logging.getLogger(__name__)
-
 TAILS_FILE_COUNT = int(os.getenv("TAILS_FILE_COUNT", 100))
 
 
@@ -65,13 +63,17 @@ class FaberAgent(DemoAgent):
     def connection_ready(self):
         return self._connection_ready.done() and self._connection_ready.result()
 
+    async def handle_oob_invitation(self, message):
+        pass
+
     async def handle_connections(self, message):
-        if message["connection_id"] == self.connection_id:
-            if message["state"] in ["active", "response"]:
+        conn_id = message["connection_id"]
+        if (not self.connection_id) and (message["state"] == "invitation"):
+            self.connection_id = conn_id
+        if conn_id == self.connection_id:
+            if message["state"] == "active" and not self._connection_ready.done():
                 self.log("Connected")
                 self._connection_ready.set_result(True)
-                if not self._connection_ready.done():
-                    self._connection_ready.set_result(True)
 
     async def handle_issue_credential(self, message):
         state = message["state"]
@@ -144,22 +146,18 @@ async def generate_invitation(agent):
     agent._connection_ready = asyncio.Future()
     with log_timer("Generate invitation duration:"):
         # Generate an invitation
-        log_status(
-            "#7 Create a connection to alice and print out the invite details"
+        log_status("#7 Create a connection to alice and print out the invite details")
+        invi_msg = await agent.admin_POST(
+            "/out-of-band/create-invitation", {"include_handshake": True}
         )
-        connection = await agent.admin_POST("/connections/create-invitation")
-
-    agent.connection_id = connection["connection_id"]
 
     qr = QRCode()
-    qr.add_data(connection["invitation_url"])
+    qr.add_data(invi_msg["invitation"]["service"][0]["serviceEndpoint"])
     log_msg(
         "Use the following JSON to accept the invite from another demo agent."
         " Or use the QR code to connect from a mobile agent."
     )
-    log_msg(
-        json.dumps(connection["invitation"]), label="Invitation Data:", color=None
-    )
+    log_msg(json.dumps(invi_msg["invitation"]), label="Invitation Data:", color=None)
     qr.print_ascii(invert=True)
 
     log_msg("Waiting for connection...")
@@ -263,12 +261,16 @@ async def main(
 
             elif option in "wW" and multitenant:
                 target_wallet_name = await prompt("Enter wallet name: ")
-                created = await agent.register_or_switch_wallet(target_wallet_name, public_did=True)
+                created = await agent.register_or_switch_wallet(
+                    target_wallet_name, public_did=True
+                )
                 # create a schema and cred def for the new wallet
                 # TODO check first in case we are switching between existing wallets
                 if created:
                     # TODO this fails because the new wallet doesn't get a public DID
-                    credential_definition_id = await create_schema_and_cred_def(agent, revocation)
+                    credential_definition_id = await create_schema_and_cred_def(
+                        agent, revocation
+                    )
 
             elif option in "tT":
                 exchange_tracing = not exchange_tracing
@@ -311,8 +313,14 @@ async def main(
             elif option == "2":
                 log_status("#20 Request proof of degree from alice")
                 req_attrs = [
-                    {"name": "name", "restrictions": [{"schema_name": "degree schema"}]},
-                    {"name": "date", "restrictions": [{"schema_name": "degree schema"}]},
+                    {
+                        "name": "name",
+                        "restrictions": [{"schema_name": "degree schema"}],
+                    },
+                    {
+                        "name": "date",
+                        "restrictions": [{"schema_name": "degree schema"}],
+                    },
                 ]
                 if revocation:
                     req_attrs.append(
@@ -324,7 +332,10 @@ async def main(
                     )
                 else:
                     req_attrs.append(
-                        {"name": "degree", "restrictions": [{"schema_name": "degree schema"}]}
+                        {
+                            "name": "degree",
+                            "restrictions": [{"schema_name": "degree schema"}],
+                        }
                     )
                 if SELF_ATTESTED:
                     # test self-attested claims
@@ -370,7 +381,9 @@ async def main(
                 )
 
             elif option == "4":
-                log_msg("Creating a new invitation, please Receive and Accept this invitation using Alice agent")
+                log_msg(
+                    "Creating a new invitation, please Receive and Accept this invitation using Alice agent"
+                )
                 await generate_invitation(agent)
 
             elif option == "5" and revocation:

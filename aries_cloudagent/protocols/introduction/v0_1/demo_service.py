@@ -12,8 +12,8 @@ from ....storage.base import (
 
 from .base_service import BaseIntroductionService, IntroductionError
 from .messages.forward_invitation import ForwardInvitation
-from .messages.invitation import Invitation
-from .messages.invitation_request import InvitationRequest
+from .messages.invitation import Invitation as IntroInvitation
+from .messages.invitation_request import InvitationRequest as IntroInvitationRequest
 
 LOGGER = logging.getLogger(__name__)
 
@@ -74,7 +74,10 @@ class DemoIntroductionService(BaseIntroductionService):
                 "Target connection {target_connection_id} not active"
             )
 
-        msg = InvitationRequest(responder=init_connection.their_label, message=message)
+        msg = IntroInvitationRequest(
+            responder=init_connection.their_label,
+            message=message,
+        )
 
         record = StorageRecord(
             type=DemoIntroductionService.RECORD_TYPE,
@@ -90,7 +93,7 @@ class DemoIntroductionService(BaseIntroductionService):
         await outbound_handler(msg, connection_id=target_connection_id)
 
     async def return_invitation(
-        self, target_connection_id: str, invitation: Invitation, outbound_handler
+        self, target_connection_id: str, invitation: IntroInvitation, outbound_handler
     ):
         """
         Handle the forwarding of an invitation to the responder.

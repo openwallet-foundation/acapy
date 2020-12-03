@@ -161,6 +161,10 @@ async def ready_middleware(request: web.BaseRequest, handler: Coroutine):
         except Exception as e:
             # some other error?
             LOGGER.error("Handler error with exception: %s", str(e))
+            import traceback
+
+            print("\n=================")
+            traceback.print_exc()
             raise
 
     raise web.HTTPServiceUnavailable(reason="Shutdown in progress")
@@ -173,7 +177,7 @@ async def debug_middleware(request: web.BaseRequest, handler: Coroutine):
     if LOGGER.isEnabledFor(logging.DEBUG):
         LOGGER.debug(f"Incoming request: {request.method} {request.path_qs}")
         LOGGER.debug(f"Match info: {request.match_info}")
-        body = await request.text()
+        body = await request.text() if request.body_exists else None
         LOGGER.debug(f"Body: {body}")
 
     return await handler(request)

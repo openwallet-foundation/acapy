@@ -263,7 +263,9 @@ class BaseModelSchema(Schema):
             The modified data
 
         """
-        # not sure why this is necessary, seems like a bug
+        if not data:
+            return data
+
         to_remove = {
             field_obj.data_key or field_name
             for field_name, field_obj in self.fields.items()
