@@ -1,10 +1,10 @@
 from asynctest import TestCase as AsyncTestCase, mock as async_mock
 
-from ...config.injector import Injector
-from ...config.injection_context import InjectionContext
 from ...core.profile import Profile, ProfileManager, ProfileSession
 from ...wallet.base import BaseWallet
 
+from ..injector import Injector
+from ..injection_context import InjectionContext
 from .. import wallet as test_module
 
 TEST_DID = "55GkHamhTU1ZbTbV2ab9DE"

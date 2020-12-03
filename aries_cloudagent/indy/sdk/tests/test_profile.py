@@ -12,7 +12,6 @@ async def profile():
             config=IndyWalletConfig({"name": "test-profile"}),
             created=True,
             handle=1,
-            name="test-profile",
             master_secret_id="master-secret",
         )
     )

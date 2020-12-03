@@ -24,7 +24,7 @@ LOGGER = logging.getLogger(__name__)
 class IndyWalletConfig:
     """A helper class for handling Indy-SDK wallet configuration."""
 
-    DEFAULT_FRESHNESS = 0
+    DEFAULT_FRESHNESS = False
     DEFAULT_KEY = ""
     DEFAULT_KEY_DERIVATION = "ARGON2I_MOD"
     DEFAULT_STORAGE_TYPE = None
@@ -45,13 +45,13 @@ class IndyWalletConfig:
         config = config or {}
         self.auto_recreate = config.get("auto_recreate", False)
         self.auto_remove = config.get("auto_remove", False)
-        self.freshness_time = config.get("freshness_time", False)
-        self.key = config.get("key") or self.DEFAULT_KEY
+        self.freshness_time = config.get("freshness_time", self.DEFAULT_FRESHNESS)
+        self.key = config.get("key", self.DEFAULT_KEY)
         self.key_derivation_method = (
             config.get("key_derivation_method") or self.DEFAULT_KEY_DERIVATION
         )
         # self.rekey = config.get("rekey")
-        # self.rekey_derivation_method = config.get("key_derivation_method")
+        # self.rekey_derivation_method = config.get("rekey_derivation_method")
         self.name = config.get("name") or Profile.DEFAULT_NAME
         self.storage_type = config.get("storage_type") or self.DEFAULT_STORAGE_TYPE
         self.storage_config = config.get("storage_config", None)
@@ -130,7 +130,7 @@ class IndyWalletConfig:
 
         Raises:
             ProfileNotFoundError: If the wallet could not be found
-            ProfileError: If there was an libindy error
+            ProfileError: If there was another libindy error
 
         """
         try:
@@ -157,7 +157,7 @@ class IndyWalletConfig:
             ProfileError: If wallet not found after creation
             ProfileNotFoundError: If the wallet is not found
             ProfileError: If the wallet is already open
-            ProfileError: If there is a libindy error
+            ProfileError: If there is another libindy error
 
         """
         handle = None
@@ -200,10 +200,10 @@ class IndyWalletConfig:
                 master_secret_id = self.name
             else:
                 raise IndyErrorHandler.wrap_error(
-                    x_indy, "Wallet {} error".format(self.name), ProfileError
+                    x_indy, f"Wallet '{self.name}' error", ProfileError
                 ) from x_indy
 
-        return IndyOpenWallet(self, created, handle, self.name, master_secret_id)
+        return IndyOpenWallet(self, created, handle, master_secret_id)
 
 
 class IndyOpenWallet:
@@ -214,15 +214,17 @@ class IndyOpenWallet:
         config: IndyWalletConfig,
         created,
         handle,
-        name: str,
         master_secret_id: str,
     ):
         """Create a new IndyOpenWallet instance."""
         self.config = config
         self.created = created
         self.handle = handle
-        self.name = name
         self.master_secret_id = master_secret_id
+
+    @property
+    def name(self) -> str:
+        return self.config.name
 
     async def close(self):
         """Close previously-opened wallet, removing it if so configured."""
