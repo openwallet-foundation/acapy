@@ -121,7 +121,7 @@ class DIDDoc:
                 "Cannot add item {} to DIDDoc on DID {}".format(item, self.did)
             )
 
-    def serialize(self) -> str:
+    def serialize(self) -> dict:
         """
         Dump current object to a JSON-compatible dictionary.
 

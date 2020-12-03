@@ -98,7 +98,7 @@ class BaseRecord(BaseModel):
         """
         record_id_name = cls.RECORD_ID_NAME
         if record_id_name in record:
-            raise ValueError(f"Duplicate {record_id_name} inputs")
+            raise ValueError(f"Duplicate {record_id_name} inputs; {record}")
         params = dict(**record)
         params[record_id_name] = record_id
         return cls(**params)

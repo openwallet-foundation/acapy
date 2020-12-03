@@ -8,7 +8,6 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # 
 
 from runners.support.agent import DemoAgent, default_genesis_txns
 from runners.support.utils import (
-    log_json,
     log_msg,
     log_status,
     log_timer,
@@ -44,8 +43,14 @@ class AcmeAgent(DemoAgent):
     def connection_ready(self):
         return self._connection_ready.done() and self._connection_ready.result()
 
+    async def handle_oob_invitation(self, message):
+        pass
+
     async def handle_connections(self, message):
-        if message["connection_id"] == self.connection_id:
+        conn_id = message["connection_id"]
+        if (not self.connection_id) and message["state"] == "invitation":
+            self.connection_id = conn_id
+        if conn_id == self.connection_id:
             if message["state"] == "active" and not self._connection_ready.done():
                 self.log("Connected")
                 self._connection_ready.set_result(True)
@@ -137,12 +142,14 @@ async def main(start_port: int, show_timing: bool = False):
             log_status(
                 "#5 Create a connection to alice and print out the invite details"
             )
-            connection = await agent.admin_POST("/connections/create-invitation")
+            invi_msg = await agent.admin_POST(
+                "/out-of-band/create-invitation",
+                {"include_handshake": True},
+            )
 
-        agent.connection_id = connection["connection_id"]
-        log_json(connection, label="Invitation response:")
-        log_msg("*****************")
-        log_msg(json.dumps(connection["invitation"]), label="Invitation:", color=None)
+        log_msg(
+            json.dumps(invi_msg["invitation"]), label="Invitation Data:", color=None
+        )
         log_msg("*****************")
 
         log_msg("Waiting for connection...")

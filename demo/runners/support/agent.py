@@ -401,7 +401,7 @@ class DemoAgent:
         await self.webhook_site.start()
 
     async def _receive_webhook(self, request: ClientRequest):
-        topic = request.match_info["topic"]
+        topic = request.match_info["topic"].replace("-", "_")
         payload = await request.json()
         await self.handle_webhook(topic, payload)
         return web.Response(status=200)
