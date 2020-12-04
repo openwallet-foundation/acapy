@@ -68,7 +68,7 @@ class FaberAgent(DemoAgent):
 
     async def handle_connections(self, message):
         conn_id = message["connection_id"]
-        if (not self.connection_id) and (message["state"] == "invitation"):
+        if message["state"] == "invitation":
             self.connection_id = conn_id
         if conn_id == self.connection_id:
             if message["state"] == "active" and not self._connection_ready.done():
@@ -247,6 +247,8 @@ async def main(
         )
         if revocation:
             options += "    (5) Revoke Credential\n" "    (6) Publish Revocations\n"
+        if multitenant:
+            options += "    (W) Create and/or Enable Wallet\n"
         options += "    (T) Toggle tracing on credential/proof exchange\n"
         options += "    (X) Exit?\n[1/2/3/4/{}{}T/X] ".format(
             "5/6/" if revocation else "",
