@@ -163,7 +163,7 @@ class InboundTransportManager:
         if self.session_limit:
             await self.session_limit
         if not wire_format:
-            wire_format = await self.context.inject(BaseWireFormat)
+            wire_format = self.context.inject(BaseWireFormat)
         session = InboundSession(
             context=self.context,
             accept_undelivered=accept_undelivered,

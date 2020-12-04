@@ -757,6 +757,30 @@ class ProtocolGroup(ArgumentGroup):
 
 
 @group(CAT_START)
+class StartupGroup(ArgumentGroup):
+    """Startup settings."""
+
+    GROUP_NAME = "Start-up"
+
+    def add_arguments(self, parser: ArgumentParser):
+        """Add startup-specific command line arguments to the parser."""
+        parser.add_argument(
+            "--auto-provision",
+            action="store_true",
+            env_var="ACAPY_AUTO_PROVISION",
+            help="If the requested profile does not exist, initialize it with\
+            the given parameters.",
+        )
+
+    def get_settings(self, args: Namespace):
+        """Extract startup settings."""
+        settings = {}
+        if args.auto_provision:
+            settings["auto_provision"] = True
+        return settings
+
+
+@group(CAT_START)
 class TransportGroup(ArgumentGroup):
     """Transport settings."""
 
@@ -955,6 +979,13 @@ class WalletGroup(ArgumentGroup):
             and the '--seed' parameter specifies a new DID, the agent will use\
             the new DID in place of the existing DID. Default: false.",
         )
+        parser.add_argument(
+            "--recreate-wallet",
+            action="store_true",
+            env_var="ACAPY_RECREATE_WALLET",
+            help="If an existing wallet exists with the same name, remove and\
+            recreate it during provisioning.",
+        )
 
     def get_settings(self, args: Namespace) -> dict:
         """Extract wallet settings."""
@@ -979,6 +1010,8 @@ class WalletGroup(ArgumentGroup):
             settings["wallet.storage_creds"] = args.wallet_storage_creds
         if args.replace_public_did:
             settings["wallet.replace_public_did"] = True
+        if args.recreate_wallet:
+            settings["wallet.recreate"] = True
         # check required settings for 'indy' wallets
         if settings["wallet.type"] == "indy":
             # requires name, key

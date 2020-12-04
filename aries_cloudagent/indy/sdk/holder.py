@@ -9,8 +9,9 @@ from typing import Sequence, Tuple, Union
 import indy.anoncreds
 from indy.error import ErrorCode, IndyError
 
+from ...indy.sdk.wallet_setup import IndyOpenWallet
 from ...ledger.base import BaseLedger
-from ...storage.indy import IndyStorage
+from ...storage.indy import IndySdkStorage
 from ...storage.error import StorageError, StorageNotFoundError
 from ...storage.record import StorageRecord
 from ...wallet.error import WalletNotFoundError
@@ -26,12 +27,12 @@ LOGGER = logging.getLogger(__name__)
 class IndySdkHolder(IndyHolder):
     """Indy holder class."""
 
-    def __init__(self, wallet):
+    def __init__(self, wallet: IndyOpenWallet):
         """
         Initialize an IndyHolder instance.
 
         Args:
-            wallet: IndyWallet instance
+            wallet: IndyOpenWallet instance
 
         """
         self.wallet = wallet
@@ -126,7 +127,7 @@ class IndySdkHolder(IndyHolder):
                     tags=mime_types,
                     id=f"{IndyHolder.RECORD_TYPE_MIME_TYPES}::{credential_id}",
                 )
-                indy_stor = IndyStorage(self.wallet)
+                indy_stor = IndySdkStorage(self.wallet)
                 await indy_stor.add_record(record)
 
         return credential_id
@@ -324,7 +325,7 @@ class IndySdkHolder(IndyHolder):
 
         """
         try:
-            indy_stor = IndyStorage(self.wallet)
+            indy_stor = IndySdkStorage(self.wallet)
             mime_types_record = await indy_stor.get_record(
                 IndyHolder.RECORD_TYPE_MIME_TYPES,
                 f"{IndyHolder.RECORD_TYPE_MIME_TYPES}::{credential_id}",
@@ -364,7 +365,7 @@ class IndySdkHolder(IndyHolder):
 
         """
         try:
-            mime_types_record = await IndyStorage(self.wallet).get_record(
+            mime_types_record = await IndySdkStorage(self.wallet).get_record(
                 IndyHolder.RECORD_TYPE_MIME_TYPES,
                 f"{IndyHolder.RECORD_TYPE_MIME_TYPES}::{credential_id}",
             )

@@ -1,15 +1,12 @@
-import json
-
 from aiohttp import ClientSession, DummyCookieJar, TCPConnector, web
 from aiohttp.test_utils import unused_port
 
 from asynctest import TestCase as AsyncTestCase
-from asynctest import create_autospec, mock as async_mock
+from asynctest import mock as async_mock
 
 from ...config.default_context import DefaultContextBuilder
 from ...config.injection_context import InjectionContext
-from ...config.provider import ClassProvider
-from ...core.plugin_registry import PluginRegistry
+from ...core.in_memory import InMemoryProfile
 from ...core.protocol_registry import ProtocolRegistry
 from ...transport.outbound.message import OutboundMessage
 from ...utils.stats import Collector
@@ -120,11 +117,14 @@ class TestAdminServer(AsyncTestCase):
         collector = Collector()
         context.injector.bind_instance(test_module.Collector, collector)
 
+        profile = InMemoryProfile.test_profile()
+
         self.port = unused_port()
         return AdminServer(
             "0.0.0.0",
             self.port,
             context,
+            profile,
             self.outbound_message_router,
             self.webhook_router,
             conductor_stop=async_mock.CoroutineMock(),

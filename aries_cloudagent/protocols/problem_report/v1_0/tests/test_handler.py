@@ -11,8 +11,7 @@ from ..message import ProblemReport
 
 @pytest.fixture()
 def request_context() -> RequestContext:
-    ctx = RequestContext()
-    yield ctx
+    yield RequestContext.test_context()
 
 
 class TestPingHandler:

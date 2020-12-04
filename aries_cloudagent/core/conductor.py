@@ -15,9 +15,10 @@ from ..admin.base_server import BaseAdminServer
 from ..admin.server import AdminServer
 from ..config.default_context import ContextBuilder
 from ..config.injection_context import InjectionContext
-from ..config.ledger import ledger_config
+from ..config.ledger import get_genesis_transactions, ledger_config
 from ..config.logging import LoggingConfigurator
-from ..config.wallet import wallet_config, BaseWallet
+from ..config.wallet import wallet_config
+from ..core.profile import Profile
 from ..ledger.error import LedgerConfigError, LedgerTransactionError
 from ..messaging.responder import BaseResponder
 from ..protocols.connections.v1_0.manager import (
@@ -32,6 +33,7 @@ from ..transport.outbound.base import OutboundDeliveryError
 from ..transport.outbound.manager import OutboundTransportManager, QueuedOutboundMessage
 from ..transport.outbound.message import OutboundMessage
 from ..transport.wire_format import BaseWireFormat
+from ..wallet.base import DIDInfo
 from ..utils.task_queue import CompletedTask, TaskQueue
 from ..utils.stats import Collector
 
@@ -59,23 +61,35 @@ class Conductor:
 
         """
         self.admin_server = None
-        self.context: InjectionContext = None
         self.context_builder = context_builder
         self.dispatcher: Dispatcher = None
         self.inbound_transport_manager: InboundTransportManager = None
         self.outbound_transport_manager: OutboundTransportManager = None
+        self.root_profile: Profile = None
+        self.setup_public_did: DIDInfo = None
+
+    @property
+    def context(self) -> InjectionContext:
+        """Accessor for the injection context."""
+        return self.root_profile.context
 
     async def setup(self):
         """Initialize the global request context."""
 
-        context = await self.context_builder.build()
+        context = await self.context_builder.build_context()
 
-        self.dispatcher = Dispatcher(context)
-        await self.dispatcher.setup()
+        # Fetch genesis transactions if necessary
+        await get_genesis_transactions(context.settings)
 
-        wire_format = await context.inject(BaseWireFormat, required=False)
-        if wire_format and hasattr(wire_format, "task_queue"):
-            wire_format.task_queue = self.dispatcher.task_queue
+        # Configure the root profile
+        self.root_profile, self.setup_public_did = await wallet_config(context)
+        context = self.root_profile.context
+
+        # Configure the ledger
+        if not await ledger_config(
+            self.root_profile, self.setup_public_did and self.setup_public_did.did
+        ):
+            LOGGER.warning("No ledger configured")
 
         # Register all inbound transports
         self.inbound_transport_manager = InboundTransportManager(
@@ -89,12 +103,13 @@ class Conductor:
         )
         await self.outbound_transport_manager.setup()
 
-        # Configure the wallet
-        public_did = await wallet_config(context)
+        # Initialize dispatcher
+        self.dispatcher = Dispatcher(self.root_profile)
+        await self.dispatcher.setup()
 
-        # Configure the ledger
-        if not await ledger_config(context, public_did):
-            LOGGER.warning("No ledger configured")
+        wire_format = context.inject(BaseWireFormat, required=False)
+        if wire_format and hasattr(wire_format, "task_queue"):
+            wire_format.task_queue = self.dispatcher.task_queue
 
         # Admin API
         if context.settings.get("admin.enabled"):
@@ -105,6 +120,7 @@ class Conductor:
                     admin_host,
                     admin_port,
                     context,
+                    self.root_profile,
                     self.outbound_message_router,
                     self.webhook_router,
                     self.stop,
@@ -123,7 +139,7 @@ class Conductor:
                 raise
 
         # Fetch stats collector, if any
-        collector = await context.inject(Collector, required=False)
+        collector = context.inject(Collector, required=False)
         if collector:
             # add stats to our own methods
             collector.wrap(
@@ -144,12 +160,10 @@ class Conductor:
                 ),
             )
 
-        self.context = context
-
     async def start(self) -> None:
         """Start the agent."""
 
-        context = self.context
+        context = self.root_profile.context
 
         # Start up transports
         try:
@@ -177,22 +191,19 @@ class Conductor:
         # Get agent label
         default_label = context.settings.get("default_label")
 
-        # Get public did
-        wallet: BaseWallet = await context.inject(BaseWallet)
-        public_did = await wallet.get_public_did()
-
         # Show some details about the configuration to the user
         LoggingConfigurator.print_banner(
             default_label,
             self.inbound_transport_manager.registered_transports,
             self.outbound_transport_manager.registered_transports,
-            public_did.did if public_did else None,
+            self.setup_public_did and self.setup_public_did.did,
             self.admin_server,
         )
 
         # Create a static connection for use by the test-suite
         if context.settings.get("debug.test_suite_endpoint"):
-            mgr = ConnectionManager(self.context)
+            session = await self.root_profile.session()
+            mgr = ConnectionManager(session)
             their_endpoint = context.settings["debug.test_suite_endpoint"]
             test_conn = await mgr.create_static_connection(
                 my_seed=hashlib.sha256(b"aries-protocol-test-subject").digest(),
@@ -209,8 +220,8 @@ class Conductor:
         # Print an invitation to the terminal
         if context.settings.get("debug.print_invitation"):
             try:
-                mgr = OutOfBandManager(self.context)
-                # _connection, invitation = await mgr.create_invitation(
+                session = await self.root_profile.session()
+                mgr = OutOfBandManager(session)
                 invi_rec = await mgr.create_invitation(
                     my_label=context.settings.get("debug.invite_label"),
                     public=context.settings.get("debug.invite_public", False),
@@ -238,6 +249,9 @@ class Conductor:
         if self.outbound_transport_manager:
             shutdown.run(self.outbound_transport_manager.stop())
         await shutdown.complete(timeout)
+        if self.root_profile:
+            await self.root_profile.close()
+            self.root_profile = None
 
     def inbound_message_router(
         self, message: InboundMessage, can_respond: bool = False
@@ -365,9 +379,9 @@ class Conductor:
         """
         # populate connection target(s)
         if not outbound.target and not outbound.target_list and outbound.connection_id:
-            # using provided request context
-            conn_mgr = ConnectionManager(context)
-
+            # FIXME may need a context-specific profile, not the root profile
+            session = await self.root_profile.session()
+            conn_mgr = ConnectionManager(session)
             try:
                 outbound.target_list = await self.dispatcher.run_task(
                     conn_mgr.get_connection_targets(

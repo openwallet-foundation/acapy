@@ -2,7 +2,9 @@
 
 import logging
 
-from ..wallet.base import BaseWallet
+from ..core.error import ProfileNotFoundError
+from ..core.profile import Profile, ProfileManager
+from ..wallet.base import BaseWallet, DIDInfo
 from ..wallet.crypto import seed_to_did
 
 from .base import ConfigError
@@ -10,22 +12,51 @@ from .injection_context import InjectionContext
 
 LOGGER = logging.getLogger(__name__)
 
+CFG_MAP = {"key", "rekey", "name", "storage_config", "storage_creds", "storage_type"}
 
-async def wallet_config(context: InjectionContext, provision: bool = False):
-    """Initialize the wallet."""
-    wallet: BaseWallet = await context.inject(BaseWallet)
+
+async def wallet_config(
+    context: InjectionContext, provision: bool = False
+) -> (Profile, DIDInfo):
+    """Initialize the root profile."""
+
+    mgr = context.inject(ProfileManager)
+
+    settings = context.settings
+    profile_cfg = {}
+    for k in CFG_MAP:
+        pk = f"wallet.{k}"
+        if pk in settings:
+            profile_cfg[k] = settings[pk]
+
+    # may be set by `aca-py provision --recreate`
+    if settings.get("wallet.recreate"):
+        profile_cfg["auto_recreate"] = True
+
     if provision:
-        if wallet.type != "indy":
-            raise ConfigError("Cannot provision a non-Indy wallet type")
-        if wallet.created:
-            print("Created new wallet")
+        root_profile = await mgr.provision(profile_cfg)
+    else:
+        try:
+            root_profile = await mgr.open(profile_cfg)
+        except ProfileNotFoundError:
+            if settings.get("auto_provision", False):
+                root_profile = await mgr.provision(profile_cfg)
+            else:
+                raise
+
+    if provision:
+        if root_profile.created:
+            print("Created new profile")
         else:
-            print("Opened existing wallet")
-        print("Wallet type:", wallet.type)
-        print("Wallet name:", wallet.name)
+            print("Opened existing profile")
+        print("Profile backend:", root_profile.backend)
+        print("Profile name:", root_profile.name)
 
     wallet_seed = context.settings.get("wallet.seed")
     wallet_local_did = context.settings.get("wallet.local_did")
+    txn = await root_profile.transaction()
+    wallet = txn.inject(BaseWallet)
+
     public_did_info = await wallet.get_public_did()
     public_did = None
 
@@ -79,4 +110,6 @@ async def wallet_config(context: InjectionContext, provision: bool = False):
             seed=test_seed, metadata={"endpoint": "1.2.3.4:8021"}
         )
 
-    return public_did
+    await txn.commit()
+
+    return (root_profile, public_did_info)

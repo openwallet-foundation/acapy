@@ -13,8 +13,8 @@ from ....connections.models.diddoc import (
     PublicKeyType,
     Service,
 )
-from ....config.injection_context import InjectionContext
 from ....core.error import BaseError
+from ....core.profile import ProfileSession
 from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....messaging.responder import BaseResponder
 from ....storage.base import BaseStorage
@@ -46,26 +46,26 @@ class DIDXManager:
     RECORD_TYPE_DID_DOC = "did_doc"
     RECORD_TYPE_DID_KEY = "did_key"
 
-    def __init__(self, context: InjectionContext):
+    def __init__(self, session: ProfileSession):
         """
         Initialize a DIDXManager.
 
         Args:
-            context: The context for this connection manager
+            session: The profile session for this did exchange manager
         """
-        self._context = context
+        self._session = session
         self._logger = logging.getLogger(__name__)
 
     @property
-    def context(self) -> InjectionContext:
+    def session(self) -> ProfileSession:
         """
-        Accessor for the current injection context.
+        Accessor for the current profile session.
 
         Returns:
-            The injection context for this connection manager
+            The profile session for this did exchange manager
 
         """
-        return self._context
+        return self._session
 
     async def receive_invitation(
         self,
@@ -106,7 +106,7 @@ class DIDXManager:
                 auto_accept
                 or (
                     auto_accept is None
-                    and self.context.settings.get("debug.auto_accept_invites")
+                    and self._session.settings.get("debug.auto_accept_invites")
                 )
             )
             else ConnRecord.ACCEPT_MANUAL
@@ -127,7 +127,7 @@ class DIDXManager:
         )
 
         await conn_rec.save(
-            self.context,
+            self._session,
             reason="Created new connection record from invitation",
             log_params={
                 "invitation": invitation,
@@ -136,13 +136,11 @@ class DIDXManager:
         )
 
         # Save the invitation for later processing
-        await conn_rec.attach_invitation(self.context, invitation)
+        await conn_rec.attach_invitation(self._session, invitation)
 
         if conn_rec.accept == ConnRecord.ACCEPT_AUTO:
             request = await self.create_request(conn_rec)
-            responder: BaseResponder = await self._context.inject(
-                BaseResponder, required=False
-            )
+            responder = self._session.inject(BaseResponder, required=False)
             if responder:
                 await responder.send_reply(
                     request,
@@ -150,7 +148,7 @@ class DIDXManager:
                 )
 
                 conn_rec.state = ConnRecord.State.REQUEST.rfc23
-                await conn_rec.save(self.context, reason="Sent connection request")
+                await conn_rec.save(self._session, reason="Sent connection request")
         else:
             self._logger.debug("Connection invitation will await acceptance")
 
@@ -174,7 +172,7 @@ class DIDXManager:
             A new `DIDXRequest` message to send to the other agent
 
         """
-        wallet: BaseWallet = await self.context.inject(BaseWallet)
+        wallet = self._session.inject(BaseWallet)
         if conn_rec.my_did:
             my_info = await wallet.get_local_did(conn_rec.my_did)
         else:
@@ -187,14 +185,14 @@ class DIDXManager:
             my_endpoints = [my_endpoint]
         else:
             my_endpoints = []
-            default_endpoint = self.context.settings.get("default_endpoint")
+            default_endpoint = self._session.settings.get("default_endpoint")
             if default_endpoint:
                 my_endpoints.append(default_endpoint)
-            my_endpoints.extend(self.context.settings.get("additional_endpoints", []))
+            my_endpoints.extend(self._session.settings.get("additional_endpoints", []))
         did_doc = await self.create_did_document(
             my_info, conn_rec.inbound_connection_id, my_endpoints
         )
-        invitation = await conn_rec.retrieve_invitation(self.context)
+        invitation = await conn_rec.retrieve_invitation(self._session)
         if invitation.service_blocks:
             pthid = invitation._id  # explicit
         else:
@@ -205,7 +203,7 @@ class DIDXManager:
         attach = AttachDecorator.from_indy_dict(did_doc.serialize())
         await attach.data.sign(my_info.verkey, wallet)
         if not my_label:
-            my_label = self.context.settings.get("default_label")
+            my_label = self._session.settings.get("default_label")
         request = DIDXRequest(
             label=my_label,
             did=conn_rec.my_did,
@@ -216,7 +214,7 @@ class DIDXManager:
         # Update connection state
         conn_rec.request_id = request._id
         conn_rec.state = ConnRecord.State.REQUEST.rfc23
-        await conn_rec.save(self.context, reason="Created connection request")
+        await conn_rec.save(self._session, reason="Created connection request")
 
         return request
 
@@ -235,17 +233,17 @@ class DIDXManager:
 
         """
         ConnRecord.log_state(
-            self.context, "Receiving connection request", {"request": request}
+            self._session, "Receiving connection request", {"request": request}
         )
 
         conn_rec = None
         invi_rec = None
         connection_key = None
-        wallet: BaseWallet = await self.context.inject(BaseWallet)
+        wallet = self._session.inject(BaseWallet)
 
         try:
             invi_rec = await OOBInvitationRecord.retrieve_by_tag_filter(
-                self.context,
+                self._session,
                 tag_filter={"invi_msg_id": request._thread.pthid},
             )
         except StorageNotFoundError:
@@ -262,7 +260,7 @@ class DIDXManager:
             connection_key = receipt.recipient_verkey
             try:
                 conn_rec = await ConnRecord.retrieve_by_invitation_key(
-                    context=self.context,
+                    session=self._session,
                     invitation_key=connection_key,
                     their_role=ConnRecord.Role.REQUESTER.rfc23,
                 )
@@ -272,7 +270,7 @@ class DIDXManager:
         if conn_rec:
             connection_key = conn_rec.invitation_key
             if conn_rec.is_multiuse_invitation:
-                wallet: BaseWallet = await self.context.inject(BaseWallet)
+                wallet = self._session.inject(BaseWallet)
                 my_info = await wallet.create_local_did()
                 new_conn_rec = ConnRecord(
                     invitation_key=connection_key,
@@ -283,7 +281,7 @@ class DIDXManager:
                 )
 
                 await new_conn_rec.save(
-                    self.context,
+                    self._session,
                     reason="Received connection request from multi-use invitation DID",
                 )
                 conn_rec = new_conn_rec
@@ -312,9 +310,9 @@ class DIDXManager:
             conn_rec.state = ConnRecord.State.REQUEST.rfc23
             conn_rec.request_id = request._id
             await conn_rec.save(
-                self.context, reason="Received connection request from invitation"
+                self._session, reason="Received connection request from invitation"
             )
-        elif self.context.settings.get("public_invites"):
+        elif self._session.settings.get("public_invites"):
             my_info = await wallet.create_local_did()
             conn_rec = ConnRecord(
                 my_did=my_info.did,
@@ -332,25 +330,23 @@ class DIDXManager:
             )
 
             await conn_rec.save(
-                self.context, reason="Received connection request from public DID"
+                self._session, reason="Received connection request from public DID"
             )
         else:
             raise DIDXManagerError("Public invitations are not enabled")
 
         # Attach the connection request so it can be found and responded to
-        await conn_rec.attach_request(self.context, request)
+        await conn_rec.attach_request(self._session, request)
 
         if invi_rec.auto_accept:
             response = await self.create_response(conn_rec)
-            responder: BaseResponder = await self._context.inject(
-                BaseResponder, required=False
-            )
+            responder = self._session.inject(BaseResponder, required=False)
             if responder:
                 await responder.send_reply(
                     response, connection_id=conn_rec.connection_id
                 )
                 conn_rec.state = ConnRecord.State.RESPONSE.rfc23
-                await conn_rec.save(self.context, reason="Sent connection response")
+                await conn_rec.save(self._session, reason="Sent connection response")
         else:
             self._logger.debug("DID exchange request will await acceptance")
 
@@ -373,7 +369,7 @@ class DIDXManager:
 
         """
         ConnRecord.log_state(
-            self.context,
+            self._session,
             "Creating connection response",
             {"connection_id": conn_rec.connection_id},
         )
@@ -383,8 +379,8 @@ class DIDXManager:
                 f"Connection not in state {ConnRecord.State.REQUEST.rfc23}"
             )
 
-        request = await conn_rec.retrieve_request(self.context)
-        wallet: BaseWallet = await self.context.inject(BaseWallet)
+        request = await conn_rec.retrieve_request(self._session)
+        wallet = self._session.inject(BaseWallet)
         if conn_rec.my_did:
             my_info = await wallet.get_local_did(conn_rec.my_did)
         else:
@@ -396,10 +392,10 @@ class DIDXManager:
             my_endpoints = [my_endpoint]
         else:
             my_endpoints = []
-            default_endpoint = self.context.settings.get("default_endpoint")
+            default_endpoint = self._session.settings.get("default_endpoint")
             if default_endpoint:
                 my_endpoints.append(default_endpoint)
-            my_endpoints.extend(self.context.settings.get("additional_endpoints", []))
+            my_endpoints.extend(self._session.settings.get("additional_endpoints", []))
         did_doc = await self.create_did_document(
             my_info, conn_rec.inbound_connection_id, my_endpoints
         )
@@ -411,14 +407,14 @@ class DIDXManager:
         response.assign_trace_from(request)
         """  # TODO - re-evaluate what code signs? With what key?
         # Sign connection field using the invitation key
-        wallet: BaseWallet = await self.context.inject(BaseWallet)
+        wallet = self._session.inject(BaseWallet)
         await response.sign_field("connection", connection.invitation_key, wallet)
         """
 
         # Update connection state
         conn_rec.state = ConnRecord.State.RESPONSE.rfc23
         await conn_rec.save(
-            self.context,
+            self._session,
             reason="Created connection response",
             log_params={"response": response},
         )
@@ -450,14 +446,14 @@ class DIDXManager:
                 in the request-sent state
 
         """
-        wallet: BaseWallet = await self.context.inject(BaseWallet)
+        wallet = self._session.inject(BaseWallet)
 
         conn_rec = None
         if response._thread:
             # identify the request by the thread ID
             try:
                 conn_rec = await ConnRecord.retrieve_by_request_id(
-                    self.context, response._thread_id
+                    self._session, response._thread_id
                 )
             except StorageNotFoundError:
                 pass
@@ -466,7 +462,7 @@ class DIDXManager:
             # identify connection by the DID they used for us
             try:
                 conn_rec = await ConnRecord.retrieve_by_did(
-                    context=self.context,
+                    session=self._session,
                     their_did=receipt.sender_did,
                     my_did=receipt.recipient_did,
                     their_role=ConnRecord.Role.RESPONDER.rfc23,
@@ -500,19 +496,17 @@ class DIDXManager:
 
         conn_rec.their_did = their_did
         conn_rec.state = ConnRecord.State.RESPONSE.rfc23
-        await conn_rec.save(self.context, reason="Accepted connection response")
+        await conn_rec.save(self._session, reason="Accepted connection response")
 
         # create and send connection-complete message
         complete = DIDXComplete()
         complete.assign_thread_from(response)
-        responder: BaseResponder = await self._context.inject(
-            BaseResponder, required=False
-        )
+        responder = self._session.inject(BaseResponder, required=False)
         if responder:
             await responder.send_reply(complete, connection_id=conn_rec.connection_id)
 
             conn_rec.state = ConnRecord.State.RESPONSE.rfc23
-            await conn_rec.save(self.context, reason="Sent connection complete")
+            await conn_rec.save(self._session, reason="Sent connection complete")
 
         return conn_rec
 
@@ -544,7 +538,7 @@ class DIDXManager:
         # identify the request by the thread ID
         try:
             conn_rec = await ConnRecord.retrieve_by_request_id(
-                self.context, complete._thread_id
+                self._session, complete._thread_id
             )
         except StorageNotFoundError:
             raise DIDXManagerError(
@@ -553,7 +547,7 @@ class DIDXManager:
             )
 
         conn_rec.state = ConnRecord.State.COMPLETED.rfc23
-        await conn_rec.save(self.context, reason="Received connection complete")
+        await conn_rec.save(self._session, reason="Received connection complete")
 
         return conn_rec
 
@@ -593,7 +587,7 @@ class DIDXManager:
         router_idx = 1
         while router_id:
             # look up routing connection information
-            router = await ConnRecord.retrieve_by_id(self.context, router_id)
+            router = await ConnRecord.retrieve_by_id(self._session, router_id)
             if ConnRecord.State.get(router.state) is not ConnRecord.State.COMPLETED:
                 raise DIDXManagerError(f"Router connection not completed: {router_id}")
             routing_doc, _ = await self.fetch_did_document(router.their_did)
@@ -643,7 +637,7 @@ class DIDXManager:
         Args:
             did: The DID for which to search
         """
-        storage: BaseStorage = await self.context.inject(BaseStorage)
+        storage = self._session.inject(BaseStorage)
         record = await storage.find_record(
             DIDXManager.RECORD_TYPE_DID_DOC, {"did": did}
         )
@@ -656,7 +650,7 @@ class DIDXManager:
             did_doc: The `DIDDoc` instance to persist
         """
         assert did_doc.did
-        storage: BaseStorage = await self.context.inject(BaseStorage)
+        storage: BaseStorage = self._session.inject(BaseStorage)
         try:
             stored_doc, record = await self.fetch_did_document(did_doc.did)
         except StorageNotFoundError:
@@ -683,7 +677,7 @@ class DIDXManager:
         record = StorageRecord(
             DIDXManager.RECORD_TYPE_DID_KEY, key, {"did": did, "key": key}
         )
-        storage: BaseStorage = await self.context.inject(BaseStorage)
+        storage = self._session.inject(BaseStorage)
         await storage.add_record(record)
 
     async def find_did_for_key(self, key: str) -> str:
@@ -692,7 +686,7 @@ class DIDXManager:
         Args:
             key: The verkey to look up
         """
-        storage: BaseStorage = await self.context.inject(BaseStorage)
+        storage = self._session.inject(BaseStorage)
         record = await storage.find_record(
             DIDXManager.RECORD_TYPE_DID_KEY, {"key": key}
         )
@@ -704,7 +698,7 @@ class DIDXManager:
         Args:
             did: The DID for which to remove keys
         """
-        storage: BaseStorage = await self.context.inject(BaseStorage)
+        storage = self._session.inject(BaseStorage)
         keys = await storage.search_records(
             DIDXManager.RECORD_TYPE_DID_KEY, {"did": did}
         ).fetch_all()

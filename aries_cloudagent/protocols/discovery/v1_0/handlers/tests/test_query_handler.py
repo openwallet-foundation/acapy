@@ -1,9 +1,9 @@
 import pytest
 
-from aries_cloudagent.core.protocol_registry import ProtocolRegistry
-from aries_cloudagent.messaging.base_handler import HandlerException
-from aries_cloudagent.messaging.request_context import RequestContext
-from aries_cloudagent.messaging.responder import MockResponder
+from ......core.protocol_registry import ProtocolRegistry
+from ......messaging.base_handler import HandlerException
+from ......messaging.request_context import RequestContext
+from ......messaging.responder import MockResponder
 
 from ...handlers.query_handler import QueryHandler
 from ...messages.disclose import Disclose
@@ -15,7 +15,7 @@ TEST_MESSAGE_TYPE = TEST_MESSAGE_FAMILY + "/MESSAGE"
 
 @pytest.fixture()
 def request_context() -> RequestContext:
-    ctx = RequestContext()
+    ctx = RequestContext.test_context()
     registry = ProtocolRegistry()
     registry.register_message_types({TEST_MESSAGE_TYPE: object()})
     ctx.injector.bind_instance(ProtocolRegistry, registry)
