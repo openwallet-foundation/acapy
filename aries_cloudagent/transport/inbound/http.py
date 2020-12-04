@@ -5,8 +5,14 @@ import logging
 from aiohttp import web
 
 from ...messaging.error import MessageParseError
+from ..wire_format import BaseWireFormat
 
 from .base import BaseInboundTransport, InboundTransportSetupError
+from ...wallet.models.wallet_record import WalletRecord
+from ...multitenant.manager import (
+    MultitenantManager,
+    MultitenantManagerError,
+)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -87,6 +93,41 @@ class HttpTransport(BaseInboundTransport):
         session = await self.create_session(
             accept_undelivered=True, can_respond=True, client_info=client_info
         )
+
+        # MTODO: move to better place (relay class or something)
+        # Simple relay functionality
+        wire_format = self.wire_format or await session.context.inject(BaseWireFormat)
+        recipient_keys = wire_format.get_recipient_keys(body) if wire_format else []
+        if len(recipient_keys) > 0 and session.context.settings.get(
+            "multitenant.enabled"
+        ):
+            LOGGER.info("searching for wallet associated with incoming message")
+            try:
+                # try to find subwallet
+                multitenant_mgr = MultitenantManager(session.context)
+                wallet_records = await multitenant_mgr.get_wallets_by_recipient_keys(
+                    recipient_keys
+                )
+
+                # MTODO: what to do with multiple recipients?
+                wallet_record = wallet_records[0]
+
+                # MTODO: unamanged mode
+                if wallet_record.key_management_mode == WalletRecord.MODE_MANAGED:
+                    LOGGER.info(
+                        "routing record found for subwallet %s, switching context",
+                        wallet_record.wallet_record_id,
+                    )
+                    session.context = session.context.copy()
+                    session.context.settings = session.context.settings.extend(
+                        wallet_record.get_config_as_settings()
+                    )
+            except IndexError:
+                # No wallet found. We'll use the normal session context
+                pass
+            except MultitenantManagerError:
+                # MTODO: What does this mean?
+                raise web.HTTPBadRequest()
 
         async with session:
             try:

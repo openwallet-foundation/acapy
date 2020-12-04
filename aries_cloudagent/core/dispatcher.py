@@ -85,6 +85,7 @@ class Dispatcher:
 
     def queue_message(
         self,
+        context: InjectionContext,
         inbound_message: InboundMessage,
         send_outbound: Coroutine,
         send_webhook: Coroutine = None,
@@ -94,6 +95,7 @@ class Dispatcher:
         Add a message to the processing queue for handling.
 
         Args:
+            context: The context associated with the inbound message
             inbound_message: The inbound message instance
             send_outbound: Async function to send outbound messages
             send_webhook: Async function to dispatch a webhook
@@ -104,11 +106,13 @@ class Dispatcher:
 
         """
         return self.put_task(
-            self.handle_message(inbound_message, send_outbound, send_webhook), complete
+            self.handle_message(context, inbound_message, send_outbound, send_webhook),
+            complete,
         )
 
     async def handle_message(
         self,
+        context: InjectionContext,
         inbound_message: InboundMessage,
         send_outbound: Coroutine,
         send_webhook: Coroutine = None,
@@ -117,6 +121,7 @@ class Dispatcher:
         Configure responder and message context and invoke the message handler.
 
         Args:
+            context: The context associated with the inbound message
             inbound_message: The inbound message instance
             send_outbound: Async function to send outbound messages
             send_webhook: Async function to dispatch a webhook
@@ -127,7 +132,7 @@ class Dispatcher:
         """
         r_time = get_timer()
 
-        connection_mgr = ConnectionManager(self.context)
+        connection_mgr = ConnectionManager(context)
         connection = await connection_mgr.find_inbound_connection(
             inbound_message.receipt
         )
@@ -145,12 +150,12 @@ class Dispatcher:
             message = None
 
         trace_event(
-            self.context.settings,
+            context.settings,
             message,
             outcome="Dispatcher.handle_message.START",
         )
 
-        context = RequestContext(base_context=self.context)
+        context = RequestContext(base_context=context)
         context.message = message
         context.message_receipt = inbound_message.receipt
         context.connection_ready = connection and connection.is_ready
@@ -179,7 +184,7 @@ class Dispatcher:
         await handler(context, responder)
 
         trace_event(
-            self.context.settings,
+            context.settings,
             context.message,
             outcome="Dispatcher.handle_message.END",
             perf_counter=r_time,

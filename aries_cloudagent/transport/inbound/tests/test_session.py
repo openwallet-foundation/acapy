@@ -51,7 +51,9 @@ class TestInboundSession(TestCase):
         with async_mock.patch.object(sess, "process_inbound") as process:
             sess.receive_inbound(test_msg)
             process.assert_called_once_with(test_msg)
-            test_inbound.assert_called_once_with(test_msg, can_respond=False)
+            test_inbound.assert_called_once_with(
+                sess.context, test_msg, can_respond=False
+            )
 
         sess.close()
         test_close.assert_called_once()

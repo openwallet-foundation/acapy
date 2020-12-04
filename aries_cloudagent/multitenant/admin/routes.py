@@ -1,17 +1,17 @@
 """Multitenant admin routes."""
 
-from typing import cast
-import jwt
 from marshmallow import fields, Schema, validate, validates_schema, ValidationError
 from aiohttp import web
 from aiohttp_apispec import docs, request_schema, match_info_schema
 
-from ..messaging.valid import UUIDFour
-from ..messaging.models.openapi import OpenAPISchema
-from ..storage.error import StorageNotFoundError
-from ..wallet.provider import WalletProvider
-from ..wallet.indy import IndyWallet
-from ..wallet.models.wallet_record import WalletRecord
+from ...messaging.valid import UUIDFour
+from ...messaging.models.openapi import OpenAPISchema
+from ...storage.error import StorageNotFoundError
+from ...wallet.provider import WalletProvider
+from ...wallet.models.wallet_record import WalletRecord
+from ...core.error import BaseError
+from ..manager import MultitenantManager
+from ..error import WalletKeyMissingError
 
 
 def format_wallet_record(wallet_record: WalletRecord):
@@ -39,17 +39,13 @@ class WalletIdMatchInfoSchema(OpenAPISchema):
 class CreateWalletRequestSchema(Schema):
     """Request schema for adding a new wallet which will be registered by the agent."""
 
-    # MTODO: wallet_name is now also required for 'basic' wallet
-    # We should use id, and make wallet_name only required for indy wallets
-    wallet_name = fields.Str(
-        description="Wallet name", example="MyNewWallet", required=True
-    )
+    wallet_name = fields.Str(description="Wallet name", example="MyNewWallet")
 
     wallet_key = fields.Str(
         description="Master key used for key derivation.", example="MySecretKey123"
     )
 
-    # MTODO: SEED
+    # MTODO: add seed
     # seed = fields.Str(
     #     description="Seed used for did derivation - 32 bytes.",
     #     example="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
@@ -78,12 +74,29 @@ class CreateWalletRequestSchema(Schema):
         """
 
         if data.get("wallet_type") == "indy":
-            if "wallet_key" not in data:
-                raise ValidationError("Missing required field", "wallet_key")
+            for field in ("wallet_key", "wallet_name"):
+                if field not in data:
+                    raise ValidationError("Missing required field", field)
+
+
+class RemoveWalletRequestSchema(Schema):
+    """Request schema for removing a wallet."""
+
+    wallet_key = fields.Str(
+        description="Master key used for key derivation.", example="MySecretKey123"
+    )
+
+
+class CreateWalletTokenRequestSchema(Schema):
+    """Request schema for creating a wallet token."""
+
+    wallet_key = fields.Str(
+        description="Master key used for key derivation.", example="MySecretKey123"
+    )
 
 
 @docs(tags=["multitenancy"], summary="List all subwallets")
-# MTODO: response schema
+# MTODO: wallet_list response schema
 async def wallet_list(request: web.BaseRequest):
     """
     Request handler for listing all internal subwallets.
@@ -104,7 +117,7 @@ async def wallet_list(request: web.BaseRequest):
 
 @docs(tags=["multitenancy"], summary="Get a single subwallet")
 @match_info_schema(WalletIdMatchInfoSchema())
-# TODO: response schema
+# MTODO: wallet_get response schema
 async def wallet_get(request: web.BaseRequest):
     """
     Request handler for getting a single subwallet.
@@ -130,7 +143,7 @@ async def wallet_get(request: web.BaseRequest):
 
 @docs(tags=["multitenancy"], summary="Create a subwallet")
 @request_schema(CreateWalletRequestSchema)
-# MTODO: Response schema
+# MTODO: wallet_create Response schema
 async def wallet_create(request: web.BaseRequest):
     """
     Request handler for adding a new subwallet for handling by the agent.
@@ -140,45 +153,31 @@ async def wallet_create(request: web.BaseRequest):
     """
 
     context = request["context"]
-    jwt_secret = context.settings.get("multitenant.jwt_secret")
     body = await request.json()
 
-    wallet_name = body.get("wallet_name")
-    wallet_key = body.get("wallet_key")
-    wallet_type = body.get("wallet_type")
     # MTODO: make mode variable. Either trough setting or body parameter
     key_management_mode = WalletRecord.MODE_MANAGED  # body.get("key_management_mode")
+    wallet_name = body.get("wallet_name")
+    wallet_key = body.get("wallet_key")
 
-    wallet_config = {"type": wallet_type, "name": wallet_name}
-    if key_management_mode == WalletRecord.MODE_MANAGED:
-        wallet_config["key"] = wallet_key
+    wallet_config = {
+        "type": body.get("wallet_type"),
+        "name": wallet_name,
+        "key": wallet_key,
+    }
 
-    # MTODO: This only checks if we have a record. Not if the wallet actually exists
-    # MTODO: we need to check the wallet_name is not the same as the base wallet
-    # MTODO: optionally remove wallet_name input and use wallet_record_id instead
-    wallet_records = await WalletRecord.query(context, {"wallet_name": wallet_name})
-    if len(wallet_records) > 0:
-        raise web.HTTPConflict(reason=f"Wallet with name {wallet_name} already exists")
+    try:
+        multitenant_manager = MultitenantManager(context)
 
-    # create wallet record
-    wallet_record = WalletRecord(
-        wallet_config=wallet_config,
-        key_management_mode=key_management_mode,
-    )
-    await wallet_record.save(context)
+        wallet_record = await multitenant_manager.create_wallet(
+            wallet_config,
+            key_management_mode,
+        )
 
-    # this creates the actual wallet
-    await wallet_record.get_instance(context, {"key": wallet_key})
-    # MTODO: if we close the wallet here, it will be closed on next requests
-    # await wallet_instance.close()
+        token = await multitenant_manager.create_auth_token(wallet_record, wallet_key)
+    except BaseError as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-    # MTODO: move to better place for JWT management
-    jwt_payload = {"wallet_id": wallet_record.wallet_record_id}
-    if wallet_record.key_management_mode == WalletRecord.MODE_UNMANAGED:
-        # MTODO: maybe check if wallet_key is provided?
-        jwt_payload["wallet_key"] = wallet_key
-
-    token = jwt.encode(jwt_payload, jwt_secret).decode()
     result = {
         **format_wallet_record(wallet_record),
         "token": token,
@@ -186,13 +185,45 @@ async def wallet_create(request: web.BaseRequest):
     return web.json_response(result)
 
 
+@docs(tags=["multitenancy"], summary="Get auth token for a subwallet")
+@request_schema(CreateWalletTokenRequestSchema)
+# MTODO: wallet_create_token Response schema
+async def wallet_create_token(request: web.BaseRequest):
+    """
+    Request handler for creating an authorization token for a specific subwallet.
+
+    Args:
+        request: aiohttp request object
+    """
+
+    context = request["context"]
+    wallet_id = request.match_info["wallet_id"]
+    wallet_key = None
+
+    if request.has_body:
+        body = await request.json()
+        wallet_key = body.get("wallet_key")
+
+    try:
+        multitenant_manager = MultitenantManager(context)
+        wallet_record = await WalletRecord.retrieve_by_id(context, wallet_id)
+
+        token = await multitenant_manager.create_auth_token(wallet_record, wallet_key)
+    except StorageNotFoundError:
+        raise web.HTTPNotFound()
+    except WalletKeyMissingError as e:
+        raise web.HTTPUnauthorized(e.roll_up) from e
+
+    return web.json_response({"token": token})
+
+
 @docs(
     tags=["multitenancy"],
     summary="Remove a subwallet",
 )
 @match_info_schema(WalletIdMatchInfoSchema())
-# MTODO: response schema
-# MTODO: For non-managed wallets we will need the key to unlock the wallet
+@request_schema(RemoveWalletRequestSchema)
+# MTODO: wallet_remove response schema
 async def wallet_remove(request: web.BaseRequest):
     """
     Request handler to remove a subwallet from agent and storage.
@@ -204,34 +235,26 @@ async def wallet_remove(request: web.BaseRequest):
 
     context = request["context"]
     wallet_id = request.match_info["wallet_id"]
+    wallet_key = None
+
+    if request.has_body:
+        body = await request.json()
+        wallet_key = body.get("wallet_key")
 
     try:
-        # MTODO: Should be possible without cast
-        wallet_record = cast(
-            WalletRecord, await WalletRecord.retrieve_by_id(context, wallet_id)
-        )
-
-        # MTODO: We need to remove all instances from cache
-        # We can't use auto_remove, because the wallet provider does
-        #  not support it at the moment.
-        wallet_instance = await wallet_record.get_instance(context)
-        await wallet_instance.close()
-
-        if wallet_instance.type == "indy":
-            indy_wallet = cast(IndyWallet, wallet_instance)
-            await indy_wallet.remove()
-
-        await wallet_record.delete_record(context)
+        multitenant_manager = MultitenantManager(context)
+        await multitenant_manager.remove_wallet(wallet_id, wallet_key)
     except StorageNotFoundError:
         raise web.HTTPNotFound()
+    except WalletKeyMissingError as e:
+        raise web.HTTPUnauthorized(e.message)
 
     return web.json_response({})
 
 
-# MTODO: add wallet import
-# MTODO: add wallet export
-# MTODO: add rotate wallet key
-# MTODO: add wallet authenticate
+# MTODO: add wallet import route
+# MTODO: add wallet export route
+# MTODO: add rotate wallet key route
 
 
 async def register(app: web.Application):
@@ -240,9 +263,10 @@ async def register(app: web.Application):
     app.add_routes(
         [
             web.get("/multitenancy/wallets", wallet_list, allow_head=False),
-            web.get("/multitenancy/wallet/{wallet_id}", wallet_get, allow_head=False),
             web.post("/multitenancy/wallet", wallet_create),
-            web.delete("/multitenancy/wallet/{wallet_id}", wallet_remove),
+            web.get("/multitenancy/wallet/{wallet_id}", wallet_get, allow_head=False),
+            web.post("/multitenancy/wallet/{wallet_id}/token", wallet_create_token),
+            web.post("/multitenancy/wallet/{wallet_id}/remove", wallet_remove),
         ]
     )
 

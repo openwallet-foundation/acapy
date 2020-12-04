@@ -1,5 +1,6 @@
 """Classes for configuring the default injection context."""
 
+from aries_cloudagent.multitenant.manager import MultitenantManager
 from .base_context import ContextBuilder
 from .injection_context import InjectionContext
 from .provider import CachedProvider, ClassProvider, StatsProvider
@@ -165,6 +166,13 @@ class DefaultContextBuilder(ContextBuilder):
             BaseIntroductionService, DemoIntroductionService(context)
         )
 
+        # Allow to use multitenant manager (with base wallet context) while
+        # in subwallet context
+        if context.settings.get("multitenant.enabled"):
+            context.injector.bind_instance(
+                MultitenantManager, MultitenantManager(context)
+            )
+
     async def load_plugins(self, context: InjectionContext):
         """Set up plugin registry and load plugins."""
 
@@ -185,7 +193,7 @@ class DefaultContextBuilder(ContextBuilder):
         plugin_registry.register_plugin("aries_cloudagent.wallet")
 
         if context.settings.get("multitenant.admin_enabled"):
-            plugin_registry.register_plugin("aries_cloudagent.multitenant_admin")
+            plugin_registry.register_plugin("aries_cloudagent.multitenant.admin")
 
         # Register external plugins
         for plugin_path in self.settings.get("external_plugins", []):

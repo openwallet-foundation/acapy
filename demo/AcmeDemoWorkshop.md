@@ -216,7 +216,7 @@ First though we need to register a schema and credential definition.  Find this 
             )
 ```
 
-For option (a) we want to replace the ```# TODO``` comment here:
+For option (1) we want to replace the ```# TODO``` comment here:
 
 ```
             elif option == "1":

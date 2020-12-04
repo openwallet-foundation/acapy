@@ -113,7 +113,9 @@ class TestDispatcher(AsyncTestCase):
                     return_value=async_mock.MagicMock(connection_id="dummy")
                 )
             )
-            await dispatcher.queue_message(make_inbound(message), rcv.send)
+            await dispatcher.queue_message(
+                dispatcher.context, make_inbound(message), rcv.send
+            )
             await dispatcher.task_queue
             handler_mock.assert_awaited_once()
             assert isinstance(handler_mock.call_args[0][1].message, StubAgentMessage)
@@ -148,7 +150,9 @@ class TestDispatcher(AsyncTestCase):
         with async_mock.patch.object(
             StubAgentMessageHandler, "handle", autospec=True
         ) as handler_mock:
-            await dispatcher.queue_message(make_inbound(message), rcv.send)
+            await dispatcher.queue_message(
+                dispatcher.context, make_inbound(message), rcv.send
+            )
             await dispatcher.task_queue
             handler_mock.assert_awaited_once()
             assert isinstance(handler_mock.call_args[0][1].message, StubAgentMessage)
@@ -181,7 +185,9 @@ class TestDispatcher(AsyncTestCase):
         with async_mock.patch.object(
             StubAgentMessageHandler, "handle", autospec=True
         ) as handler_mock:
-            await dispatcher.queue_message(make_inbound(message), rcv.send)
+            await dispatcher.queue_message(
+                dispatcher.context, make_inbound(message), rcv.send
+            )
             await dispatcher.task_queue
             assert rcv.messages and isinstance(rcv.messages[0][1], OutboundMessage)
             payload = json.loads(rcv.messages[0][1].payload)
@@ -221,7 +227,9 @@ class TestDispatcher(AsyncTestCase):
                     side_effect=test_module.BaseModelError()
                 )
             )
-            await dispatcher.queue_message(make_inbound(message), rcv.send)
+            await dispatcher.queue_message(
+                dispatcher.context, make_inbound(message), rcv.send
+            )
             await dispatcher.task_queue
             assert rcv.messages and isinstance(rcv.messages[0][1], OutboundMessage)
             payload = json.loads(rcv.messages[0][1].payload)
@@ -258,7 +266,9 @@ class TestDispatcher(AsyncTestCase):
         with async_mock.patch.object(
             StubAgentMessageHandler, "handle", autospec=True
         ) as handler_mock:
-            await dispatcher.queue_message(make_inbound(message), rcv.send)
+            await dispatcher.queue_message(
+                dispatcher.context, make_inbound(message), rcv.send
+            )
             await dispatcher.task_queue
             handler_mock.assert_awaited_once()
             assert isinstance(handler_mock.call_args[0][1].message, StubAgentMessage)
@@ -293,7 +303,9 @@ class TestDispatcher(AsyncTestCase):
         with async_mock.patch.object(
             StubAgentMessageHandler, "handle", autospec=True
         ) as handler_mock:
-            await dispatcher.queue_message(make_inbound(message), rcv.send)
+            await dispatcher.queue_message(
+                dispatcher.context, make_inbound(message), rcv.send
+            )
             await dispatcher.task_queue
             assert rcv.messages and isinstance(rcv.messages[0][1], OutboundMessage)
             payload = json.loads(rcv.messages[0][1].payload)
@@ -306,7 +318,9 @@ class TestDispatcher(AsyncTestCase):
         await dispatcher.setup()
         rcv = Receiver()
         bad_message = {"bad": "message"}
-        await dispatcher.queue_message(make_inbound(bad_message), rcv.send)
+        await dispatcher.queue_message(
+            dispatcher.context, make_inbound(bad_message), rcv.send
+        )
         await dispatcher.task_queue
         assert rcv.messages and isinstance(rcv.messages[0][1], OutboundMessage)
         payload = json.loads(rcv.messages[0][1].payload)

@@ -3,11 +3,11 @@ import pytest
 import json
 
 from aiohttp.test_utils import AioHTTPTestCase, unittest_run_loop, unused_port
-from aiohttp import web
 from asynctest import mock as async_mock
 
 from ...outbound.message import OutboundMessage
-from ...wire_format import BaseWireFormat, JsonWireFormat
+from ...wire_format import JsonWireFormat
+from ....config.injection_context import InjectionContext
 
 from ..http import HttpTransport
 from ..message import InboundMessage
@@ -35,7 +35,7 @@ class TestHttpTransport(AioHTTPTestCase):
         client_info,
         wire_format,
         can_respond: bool = False,
-        **kwargs
+        **kwargs,
     ):
         if not self.session:
             session = InboundSession(
@@ -52,7 +52,12 @@ class TestHttpTransport(AioHTTPTestCase):
         result.set_result(self.session)
         return result
 
-    def receive_message(self, message: InboundMessage, can_respond: bool = False):
+    def receive_message(
+        self,
+        context: InjectionContext,
+        message: InboundMessage,
+        can_respond: bool = False,
+    ):
         self.message_results.append((message.payload, message.receipt, can_respond))
         if self.result_event:
             self.result_event.set()

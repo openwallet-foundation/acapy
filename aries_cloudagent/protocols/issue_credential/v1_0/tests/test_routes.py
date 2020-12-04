@@ -4,7 +4,6 @@ from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
 from .....config.injection_context import InjectionContext
-from .....indy.holder import IndyHolder
 from .....messaging.request_context import RequestContext
 from .....wallet.base import DIDInfo
 

@@ -8,7 +8,7 @@ from .....messaging.base_handler import (
 )
 
 from ..base_service import BaseIntroductionService
-from ..messages.invitation import Invitation
+from ..messages.invitation import Invitation as IntroInvitation
 
 
 class InvitationHandler(BaseHandler):
@@ -17,7 +17,7 @@ class InvitationHandler(BaseHandler):
     async def handle(self, context: RequestContext, responder: BaseResponder):
         """Message handler implementation."""
         self._logger.debug("InvitationHandler called with context %s", context)
-        assert isinstance(context.message, Invitation)
+        assert isinstance(context.message, IntroInvitation)
 
         if not context.connection_ready:
             raise HandlerException("No connection established for invitation message")

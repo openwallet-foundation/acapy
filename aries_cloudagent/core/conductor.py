@@ -12,7 +12,7 @@ import hashlib
 import logging
 
 from ..admin.base_server import BaseAdminServer
-from ..admin.server import AdminServer
+from ..admin.server import AdminResponder, AdminServer
 from ..config.default_context import ContextBuilder
 from ..config.injection_context import InjectionContext
 from ..config.ledger import ledger_config
@@ -24,6 +24,8 @@ from ..protocols.connections.v1_0.manager import (
     ConnectionManager,
     ConnectionManagerError,
 )
+from ..protocols.out_of_band.v1_0.manager import OutOfBandManager
+from ..protocols.out_of_band.v1_0.messages.invitation import InvitationMessage
 from ..transport.inbound.manager import InboundTransportManager
 from ..transport.inbound.message import InboundMessage
 from ..transport.outbound.base import OutboundDeliveryError
@@ -170,7 +172,12 @@ class Conductor:
             # Make admin responder available during message parsing
             # This allows webhooks to be called when a connection is marked active,
             # for example
-            context.injector.bind_instance(BaseResponder, self.admin_server.responder)
+            responder = AdminResponder(
+                context,
+                self.admin_server.outbound_message_router,
+                self.admin_server.send_webhook,
+            )
+            context.injector.bind_instance(BaseResponder, responder)
 
         # Get agent label
         default_label = context.settings.get("default_label")
@@ -207,14 +214,18 @@ class Conductor:
         # Print an invitation to the terminal
         if context.settings.get("debug.print_invitation"):
             try:
-                mgr = ConnectionManager(self.context)
-                _connection, invitation = await mgr.create_invitation(
+                mgr = OutOfBandManager(self.context)
+                # _connection, invitation = await mgr.create_invitation(
+                invi_rec = await mgr.create_invitation(
                     my_label=context.settings.get("debug.invite_label"),
-                    multi_use=context.settings.get("debug.invite_multi_use", False),
                     public=context.settings.get("debug.invite_public", False),
+                    multi_use=context.settings.get("debug.invite_multi_use", False),
+                    include_handshake=True,
                 )
                 base_url = context.settings.get("invite_base_url")
-                invite_url = invitation.to_url(base_url)
+                invite_url = InvitationMessage.deserialize(invi_rec.invitation).to_url(
+                    base_url
+                )
                 print("Invitation URL:")
                 print(invite_url, flush=True)
             except Exception:
@@ -234,12 +245,16 @@ class Conductor:
         await shutdown.complete(timeout)
 
     def inbound_message_router(
-        self, message: InboundMessage, can_respond: bool = False
+        self,
+        context: InjectionContext,
+        message: InboundMessage,
+        can_respond: bool = False,
     ):
         """
         Route inbound messages.
 
         Args:
+            context: The context associated with the inbound message
             message: The inbound message instance
             can_respond: If the session supports return routing
 
@@ -256,6 +271,7 @@ class Conductor:
 
         try:
             self.dispatcher.queue_message(
+                context,
                 message,
                 self.outbound_message_router,
                 self.admin_server and self.admin_server.send_webhook,
@@ -360,10 +376,13 @@ class Conductor:
         # populate connection target(s)
         if not outbound.target and not outbound.target_list and outbound.connection_id:
             # using provided request context
-            mgr = ConnectionManager(context)
+            conn_mgr = ConnectionManager(context)
+
             try:
                 outbound.target_list = await self.dispatcher.run_task(
-                    mgr.get_connection_targets(connection_id=outbound.connection_id)
+                    conn_mgr.get_connection_targets(
+                        connection_id=outbound.connection_id
+                    )
                 )
             except ConnectionManagerError:
                 LOGGER.exception("Error preparing outbound message for transmission")

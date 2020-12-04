@@ -14,7 +14,6 @@ from ...connections.models.diddoc import (
     Service,
 )
 from ...core.protocol_registry import ProtocolRegistry
-from ...protocols.connections.v1_0.manager import ConnectionManager
 from ...storage.base import BaseStorage
 from ...storage.basic import BasicStorage
 from ...transport.inbound.base import InboundTransportConfiguration
@@ -231,13 +230,16 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             receipt = MessageReceipt(direct_response_mode="snail mail")
             message = InboundMessage(message_body, receipt)
 
-            conductor.inbound_message_router(message, can_respond=False)
+            conductor.inbound_message_router(
+                conductor.context, message, can_respond=False
+            )
 
             mock_dispatch_q.assert_called_once()
-            assert mock_dispatch_q.call_args[0][0] is message
-            assert mock_dispatch_q.call_args[0][1] == conductor.outbound_message_router
-            assert mock_dispatch_q.call_args[0][2] is None  # admin webhook router
-            assert callable(mock_dispatch_q.call_args[0][3])
+            assert mock_dispatch_q.call_args[0][0] is conductor.context
+            assert mock_dispatch_q.call_args[0][1] is message
+            assert mock_dispatch_q.call_args[0][2] == conductor.outbound_message_router
+            assert mock_dispatch_q.call_args[0][3] is None  # admin webhook router
+            assert callable(mock_dispatch_q.call_args[0][4])
 
     async def test_inbound_message_handler_ledger_x(self):
         builder: ContextBuilder = StubContextBuilder(self.test_settings_admin)
@@ -257,7 +259,9 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             message = InboundMessage(message_body, receipt)
 
             with self.assertRaises(test_module.LedgerConfigError):
-                conductor.inbound_message_router(message, can_respond=False)
+                conductor.inbound_message_router(
+                    conductor.context, message, can_respond=False
+                )
 
             mock_dispatch_q.assert_called_once()
             mock_notify.assert_called_once()
@@ -510,11 +514,11 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
         ) as admin_start, async_mock.patch.object(
             admin, "stop", autospec=True
         ) as admin_stop, async_mock.patch.object(
-            test_module, "ConnectionManager", autospec=True
-        ) as conn_mgr:
+            test_module, "OutOfBandManager"
+        ) as oob_mgr:
             admin_start.side_effect = KeyError("trouble")
-            conn_mgr.return_value.create_invitation.side_effect = KeyError(
-                "more trouble"
+            oob_mgr.return_value.create_invitation = async_mock.CoroutineMock(
+                side_effect=KeyError("more trouble")
             )
             await conductor.start()
             admin_start.assert_awaited_once_with()
@@ -651,6 +655,11 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             {"debug.print_invitation": True, "invite_base_url": "http://localhost"}
         )
         conductor = test_module.Conductor(builder)
+
+        await conductor.setup()
+
+        wallet = await conductor.context.inject(BaseWallet)
+        await wallet.create_public_did()
 
         with async_mock.patch("sys.stdout", new=StringIO()) as captured:
             await conductor.setup()
