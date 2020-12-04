@@ -5,9 +5,9 @@ from typing import Sequence
 from marshmallow import EXCLUDE, fields
 
 from .....config.injection_context import InjectionContext
-
 from .....messaging.models.base_record import BaseRecord, BaseRecordSchema
-from .....storage.base import StorageNotFoundError, StorageDuplicateError
+from .....messaging.valid import INDY_RAW_PUBLIC_KEY
+from .....storage.base import StorageDuplicateError, StorageNotFoundError
 
 
 class MediationRecord(BaseRecord):
@@ -38,6 +38,8 @@ class MediationRecord(BaseRecord):
         connection_id: str = None,
         mediator_terms: Sequence[str] = None,
         recipient_terms: Sequence[str] = None,
+        endpoint: str = None,
+        routing_keys: Sequence[str] = None,
         **kwargs
     ):
         """__init__.
@@ -59,6 +61,8 @@ class MediationRecord(BaseRecord):
         self.connection_id = connection_id
         self.mediator_terms = list(mediator_terms) if mediator_terms else []
         self.recipient_terms = list(recipient_terms) if recipient_terms else []
+        self.endpoint = endpoint
+        self.routing_keys = list(routing_keys) if routing_keys else []
 
     @property
     def mediation_id(self) -> str:
@@ -121,3 +125,10 @@ class MediationRecordSchema(BaseRecordSchema):
     connection_id = fields.Str(required=True)
     mediator_terms = fields.List(fields.Str(), required=False)
     recipient_terms = fields.List(fields.Str(), required=False)
+    endpoint = fields.Str(required=False)
+    routing_keys = fields.List(
+        fields.Str(
+            **INDY_RAW_PUBLIC_KEY
+        ),
+        required=False
+    )

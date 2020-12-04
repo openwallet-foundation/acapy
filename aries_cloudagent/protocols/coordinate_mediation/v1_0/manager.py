@@ -1,6 +1,6 @@
 """Manager for Mediation coordination."""
 import json
-from typing import Optional, Sequence
+from typing import Optional, Sequence, Tuple
 
 from ....config.injection_context import InjectionContext
 from ....core.error import BaseError
@@ -15,6 +15,7 @@ from ...routing.v1_0.models.route_updated import RouteUpdated
 from .messages.inner.keylist_key import KeylistKey
 from .messages.inner.keylist_update_rule import KeylistUpdateRule
 from .messages.inner.keylist_updated import KeylistUpdated
+from .messages.inner.keylist_query_paginate import KeylistQueryPaginate
 from .messages.keylist import Keylist
 from .messages.keylist_query import KeylistQuery
 from .messages.keylist_update import KeylistUpdate
@@ -245,7 +246,7 @@ class MediationManager:
         connection_id: str,
         mediator_terms: Sequence[str] = None,
         recipient_terms: Sequence[str] = None
-    ) -> MediationRequest:
+    ) -> Tuple[MediationRecord, MediationRequest]:
         """Prepare a MediationRequest Message, saving a new mediation record.
 
         Args:
@@ -264,14 +265,16 @@ class MediationManager:
             recipient_terms=recipient_terms
         )
         await record.save(self.context, reason="Creating new mediation request.")
-        return MediationRequest(
+        request = MediationRequest(
             mediator_terms=mediator_terms,
             recipient_terms=recipient_terms
         )
+        return record, request
 
     async def request_granted(
         self,
-        record: MediationRecord
+        record: MediationRecord,
+        grant: MediationGrant
     ):
         """Process mediation grant message.
 
@@ -280,12 +283,14 @@ class MediationManager:
 
         """
         record.state = MediationRecord.STATE_GRANTED
+        record.endpoint = grant.endpoint
+        record.routing_keys = grant.routing_keys
         await record.save(self.context, reason="Mediation request granted.")
-        # TODO Store endpoint and routing key for later use.
 
     async def request_denied(
         self,
-        record: MediationRecord
+        record: MediationRecord,
+        deny: MediationDeny
     ):
         """Process mediation denied message.
 
@@ -294,8 +299,10 @@ class MediationManager:
 
         """
         record.state = MediationRecord.STATE_DENIED
+        # TODO Record terms elsewhere?
+        record.mediator_terms = deny.mediator_terms
+        record.recipient_terms = deny.recipient_terms
         await record.save(self.context, reason="Mediation request denied.")
-        # TODO Remove endpoint and routing key.
 
     async def prepare_keylist_query(
         self,
@@ -314,12 +321,10 @@ class MediationManager:
             KeylistQuery: message to send to mediator
 
         """
-        # TODO Handle creation of rather than delegating to caller?
+        # TODO Handle creation of filter rather than delegating to caller?
         message = KeylistQuery(
             filter=filter_,
-            paginate={
-                'limit': paginate_limit, 'offset': paginate_offset
-            }
+            paginate=KeylistQueryPaginate(paginate_limit, paginate_offset)
         )
         return message
 
