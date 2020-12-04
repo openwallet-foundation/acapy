@@ -1,17 +1,18 @@
 """Http Transport classes and functions."""
 
-from aries_cloudagent.wallet.models.wallet_record import WalletRecord
-from aries_cloudagent.multitenant.manager import (
-    MultitenantManager,
-    MultitenantManagerError,
-)
 import logging
 
 from aiohttp import web
 
 from ...messaging.error import MessageParseError
+from ..wire_format import BaseWireFormat
 
 from .base import BaseInboundTransport, InboundTransportSetupError
+from ...wallet.models.wallet_record import WalletRecord
+from ...multitenant.manager import (
+    MultitenantManager,
+    MultitenantManagerError,
+)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -95,7 +96,8 @@ class HttpTransport(BaseInboundTransport):
 
         # MTODO: move to better place (relay class or something)
         # Simple relay functionality
-        recipient_keys = self.wire_format.get_recipient_keys(body)
+        wire_format = self.wire_format or await session.context.inject(BaseWireFormat)
+        recipient_keys = wire_format.get_recipient_keys(body) if wire_format else []
         if len(recipient_keys) > 0 and session.context.settings.get(
             "multitenant.enabled"
         ):

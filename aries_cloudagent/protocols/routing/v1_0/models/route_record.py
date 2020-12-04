@@ -1,5 +1,6 @@
 """An object for containing information on an individual route."""
 
+from typing import Any
 from marshmallow import EXCLUDE, fields, validates_schema, ValidationError
 
 from .....config.injection_context import InjectionContext
@@ -77,6 +78,10 @@ class RouteRecord(BaseRecord):
         tag_filter = {"connection_id": connection_id}
         # TODO post filter out our mediation requests?
         return await cls.retrieve_by_tag_filter(context, tag_filter)
+
+    def __eq__(self, other: Any) -> bool:
+        """Comparison between records."""
+        return super().__eq__(other)
 
 
 class RouteRecordSchema(BaseRecordSchema):
