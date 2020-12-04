@@ -1,12 +1,12 @@
 import os
 import sys
 from unittest import mock
-
 import pytest
 
 STUBS = {}
 
 POSTGRES_URL = None
+ENABLE_PTVSD = None
 
 
 class Stub:
@@ -131,7 +131,20 @@ def stub_indy_vdr() -> Stub:
 
 
 def pytest_sessionstart(session):
-    global STUBS, POSTGRES_URL
+    global STUBS, POSTGRES_URL, ENABLE_PTVSD
+    ENABLE_PTVSD = os.getenv("ENABLE_PTVSD", False)
+    # --debug-vs to use microsoft's visual studio remote debugger
+    if ENABLE_PTVSD or "--debug" in sys.argv:
+        try:
+            import ptvsd
+
+            ptvsd.enable_attach(address=("0.0.0.0", 5678))
+            print("ptvsd is running")
+            print("=== Waiting for debugger to attach ===")
+            # To pause execution until the debugger is attached:
+            ptvsd.wait_for_attach()
+        except ImportError:
+            print("ptvsd library was not found")
 
     POSTGRES_URL = os.getenv("POSTGRES_URL")
 

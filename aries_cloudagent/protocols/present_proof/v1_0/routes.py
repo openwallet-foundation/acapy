@@ -753,7 +753,7 @@ async def presentation_exchange_create_request(request: web.BaseRequest):
     presentation_manager = PresentationManager(context)
     pres_ex_record = None
     try:
-        (pres_ex_record) = await presentation_manager.create_exchange_for_request(
+        pres_ex_record = await presentation_manager.create_exchange_for_request(
             connection_id=None,
             presentation_request_message=presentation_request_message,
         )
