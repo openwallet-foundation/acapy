@@ -40,6 +40,18 @@ class MediationRecord(BaseRecord):
         recipient_terms: Sequence[str] = None,
         **kwargs
     ):
+        """__init__.
+
+        Args:
+            mediation_id (str): (Optional) manually set record ID
+            state (str): state, defaults to 'request_received'
+            role (str): role in mediation, defaults to 'server'
+            connection_id (str): ID of connection requesting or managing mediation
+            mediator_terms (Sequence[str]): mediator_terms
+            recipient_terms (Sequence[str]): recipient_terms
+            kwargs: Pass arguments through to BaseRecord.__init__
+
+        """
         super().__init__(
             mediation_id, state or self.STATE_REQUEST_RECEIVED, **kwargs
         )
@@ -65,6 +77,7 @@ class MediationRecord(BaseRecord):
 
         Returns:
             MediationRecord: retrieved record
+
         """
         tag_filter = {"connection_id": connection_id}
         return await cls.retrieve_by_tag_filter(context, tag_filter)
@@ -81,6 +94,7 @@ class MediationRecord(BaseRecord):
 
         Returns:
             bool: whether record exists
+
         """
         tag_filter = {"connection_id": connection_id}
         try:

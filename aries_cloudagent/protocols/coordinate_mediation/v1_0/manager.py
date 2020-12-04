@@ -56,6 +56,7 @@ class MediationManager:
 
         Returns:
             Optional[DIDInfo]: retrieved DID info or None if not found
+
         """
         storage: BaseStorage = await self.context.inject(BaseStorage)
         try:
@@ -74,6 +75,7 @@ class MediationManager:
 
         Returns:
             DIDInfo: created routing DID info
+
         """
         wallet: BaseWallet = await self.context.inject(BaseWallet)
         storage: BaseStorage = await self.context.inject(BaseStorage)
@@ -95,6 +97,7 @@ class MediationManager:
 
         Returns:
             MediationRecord: record created during receipt of request.
+
         """
         if await MediationRecord.exists_for_connection_id(
             self.context, self.context.connection_record.connection_id
@@ -118,6 +121,7 @@ class MediationManager:
 
         Returns:
             MediationGrant: message to return to grantee
+
         """
         routing_did: DIDInfo = await self._retrieve_routing_did()
         if not routing_did:
@@ -149,6 +153,7 @@ class MediationManager:
 
         Returns:
             MediationDeny: message to return to denied client.
+
         """
         mediation.state = MediationRecord.STATE_DENIED
         await mediation.save(self.context, reason="Mediation request denied")
@@ -169,6 +174,7 @@ class MediationManager:
 
         Returns:
             KeylistUpdateResponse: message to return to client
+
         """
         # TODO: Don't borrow logic from RoutingManager
         # Bidirectional mapping of KeylistUpdateRules to RouteUpdate actions
@@ -208,6 +214,7 @@ class MediationManager:
 
         Returns:
             Sequence[RouteRecord]: sequence of routes (the keylist)
+
         """
         route_mgr = RoutingManager(self.context)
         return await route_mgr.get_routes(record.connection_id)
@@ -222,6 +229,7 @@ class MediationManager:
 
         Returns:
             Keylist: message to return to client
+
         """
         keys = list(map(
             lambda key: KeylistKey(recipient_key=key.recipient_key), keylist
@@ -247,6 +255,7 @@ class MediationManager:
 
         Returns:
             MediationRequest: message to send to mediator
+
         """
         record = MediationRecord(
             role=MediationRecord.ROLE_CLIENT,
@@ -268,6 +277,7 @@ class MediationManager:
 
         Args:
             record (MediationRecord): record representing the granted mediation request
+
         """
         record.state = MediationRecord.STATE_GRANTED
         await record.save(self.context, reason="Mediation request granted.")
@@ -281,6 +291,7 @@ class MediationManager:
 
         Args:
             record (MediationRecord): record representing the denied mediation request
+
         """
         record.state = MediationRecord.STATE_DENIED
         await record.save(self.context, reason="Mediation request denied.")
@@ -301,6 +312,7 @@ class MediationManager:
 
         Returns:
             KeylistQuery: message to send to mediator
+
         """
         # TODO Handle creation of rather than delegating to caller?
         message = KeylistQuery(
@@ -324,6 +336,7 @@ class MediationManager:
 
         Returns:
             KeylistUpdate: Message to send to mediator to notify of key addition.
+
         """
         message = message or KeylistUpdate()
         message.updates.append(
@@ -344,6 +357,7 @@ class MediationManager:
 
         Returns:
             KeylistUpdate: Message to send to mediator to notify of key removal.
+
         """
         message = message or KeylistUpdate()
         message.updates.append(
@@ -362,6 +376,7 @@ class MediationManager:
 
         Returns:
             Sequence[RouteRecord]: list of routes (the keylist)
+
         """
         # TODO use mediation record id instead of connection id?
         tag_filter = {'connection_id': connection_id} if connection_id else {}
