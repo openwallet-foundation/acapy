@@ -1,8 +1,11 @@
+import pytest
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
 from aries_cloudagent.config.injection_context import InjectionContext
-from aries_cloudagent.connections.models.connection_record import ConnectionRecord
+from aries_cloudagent.connections.models.connection_record import (
+    ConnectionRecord
+)
 from aries_cloudagent.messaging.request_context import RequestContext
 from aries_cloudagent.storage.base import BaseStorage
 from aries_cloudagent.storage.basic import BasicStorage
@@ -11,12 +14,11 @@ from aries_cloudagent.wallet.base import BaseWallet
 from aries_cloudagent.wallet.basic import BasicWallet
 
 from ....routing.v1_0.manager import RoutingManager
-
-from ..models.mediation_record import MediationRecord
 from ..manager import MediationManager, MediationManagerError
-from ..messages.mediate_request import MediationRequest
 from ..messages.inner.keylist_update_rule import KeylistUpdateRule
 from ..messages.inner.keylist_updated import KeylistUpdated
+from ..messages.mediate_request import MediationRequest
+from ..models.mediation_record import MediationRecord
 
 TEST_CONN_ID = "conn-id"
 TEST_VERKEY = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
@@ -49,10 +51,16 @@ class TestMediationManager(AsyncTestCase):
     async def test_retrieve_did_when_absent(self):
         assert await self.manager._retrieve_routing_did() is None
 
-    async def test_receive_request(self):
+    async def test_receive_request_no_terms(self):
         request = MediationRequest()
         record = await self.manager.receive_request(request)
         assert record.connection_id == TEST_CONN_ID
+
+    @pytest.mark.skip(
+        reason='mediator and recipient terms are only loosely defined in RFC 0211'
+    )
+    async def test_receive_request_unacceptable_terms(self):
+        pass
 
     async def test_grant_request(self):
         request = MediationRequest()
@@ -119,7 +127,7 @@ class TestMediationManager(AsyncTestCase):
         assert results[0].action == KeylistUpdateRule.RULE_ADD
         assert results[0].result == KeylistUpdated.RESULT_NO_CHANGE
 
-    async def test_get_routes_connection_id(self):
+    async def test_get_keylist(self):
         routing_mgr = RoutingManager(self.context)
         await routing_mgr.create_route_record(
             TEST_CONN_ID, TEST_ROUTE_VERKEY
@@ -138,3 +146,5 @@ class TestMediationManager(AsyncTestCase):
         response = await self.manager.create_keylist_query_response(results)
         assert len(response.keys) == 1
         assert response.keys[0].recipient_key
+        response = await self.manager.create_keylist_query_response([])
+        assert not response.keys
