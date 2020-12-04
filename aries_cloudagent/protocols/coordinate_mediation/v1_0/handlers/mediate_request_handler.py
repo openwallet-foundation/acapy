@@ -4,7 +4,7 @@ from .....messaging.base_handler import (
     BaseHandler, BaseResponder, HandlerException, RequestContext
 )
 from ....problem_report.v1_0.message import ProblemReport
-from ..manager import MediationManager, MediationManagerError
+from ..manager import MediationManager, MediationAlreadyExists
 from ..messages.mediate_request import MediationRequest
 
 
@@ -27,7 +27,7 @@ class MediationRequestHandler(BaseHandler):
             if context.settings.get("mediation.open", False):
                 grant = await mgr.grant_request(record)
                 await responder.send_reply(grant)
-        except MediationManagerError:
+        except MediationAlreadyExists:
             await responder.send_reply(
                 ProblemReport(
                     explain_ltxt="Mediation request already exists from this connection."

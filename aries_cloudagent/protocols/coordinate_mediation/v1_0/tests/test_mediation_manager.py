@@ -14,7 +14,9 @@ from aries_cloudagent.wallet.base import BaseWallet
 from aries_cloudagent.wallet.basic import BasicWallet
 
 from ....routing.v1_0.models.route_record import RouteRecord
-from ..manager import MediationManager, MediationManagerError
+from ..manager import (
+    MediationAlreadyExists, MediationManager, MediationManagerError
+)
 from ..messages.inner.keylist_update_rule import KeylistUpdateRule
 from ..messages.inner.keylist_updated import KeylistUpdated
 from ..messages.mediate_deny import MediationDeny
@@ -67,6 +69,13 @@ class TestMediationManager(AsyncTestCase):  # pylint: disable=R0904
         request = MediationRequest()
         record = await self.manager.receive_request(request)
         assert record.connection_id == TEST_CONN_ID
+
+    async def test_receive_request_record_exists(self):
+        """test_receive_request_no_terms."""
+        request = MediationRequest()
+        await MediationRecord(connection_id=TEST_CONN_ID).save(self.context)
+        with pytest.raises(MediationAlreadyExists):
+            await self.manager.receive_request(request)
 
     @pytest.mark.skip(
         reason='mediator and recipient terms are only loosely defined in RFC 0211'

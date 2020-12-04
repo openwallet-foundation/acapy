@@ -30,6 +30,10 @@ class MediationManagerError(BaseError):
     """Generic Mediation error."""
 
 
+class MediationAlreadyExists(MediationManagerError):
+    """Raised on mediation record already exists for given connection."""
+
+
 class MediationManager:
     """Class for handling Mediation.
 
@@ -103,7 +107,7 @@ class MediationManager:
         if await MediationRecord.exists_for_connection_id(
             self.context, self.context.connection_record.connection_id
         ):
-            raise MediationManagerError('Mediation Record already exists for connection')
+            raise MediationAlreadyExists('MediationRecord already exists for connection')
 
         # TODO: Determine if terms are acceptable
         record = MediationRecord(
