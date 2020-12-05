@@ -7,6 +7,7 @@ from aiohttp_apispec import docs, match_info_schema, querystring_schema
 
 from marshmallow import fields
 
+from ....admin.request_context import AdminRequestContext
 from ....messaging.models.openapi import OpenAPISchema
 from ....messaging.valid import UUIDFour
 from ....storage.error import StorageError
@@ -52,13 +53,13 @@ async def introduction_start(request: web.BaseRequest):
 
     """
     LOGGER.info("Introduction requested")
-    context = request["context"]
+    context: AdminRequestContext = request["context"]
     outbound_handler = request["outbound_message_router"]
     init_connection_id = request.match_info["conn_id"]
     target_connection_id = request.query.get("target_connection_id")
     message = request.query.get("message")
 
-    service: BaseIntroductionService = await context.inject(
+    service: BaseIntroductionService = context.inject(
         BaseIntroductionService, required=False
     )
     if not service:

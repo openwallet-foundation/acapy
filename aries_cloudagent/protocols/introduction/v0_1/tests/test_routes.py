@@ -1,28 +1,28 @@
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
-from .....config.injection_context import InjectionContext
-from .....messaging.request_context import RequestContext
+from .....admin.request_context import AdminRequestContext
 
 from .. import routes as test_module
 
 
 class TestIntroductionRoutes(AsyncTestCase):
-    def setUp(self):
-        self.context = RequestContext(
-            base_context=InjectionContext(enforce_typing=False)
-        )
-        self.mock_request = async_mock.MagicMock(
-            __getitem__=async_mock.Mock(
-                side_effect={
-                    "context": self.context,
-                    "outbound_message_router": None,
-                }.__getitem__
-            ),
+    async def setUp(self):
+        self.session_inject = {}
+        self.context = AdminRequestContext.test_context(self.session_inject)
+        self.request_dict = {
+            "context": self.context,
+            "outbound_message_router": async_mock.CoroutineMock(),
+        }
+        self.request = async_mock.MagicMock(
+            app={},
+            match_info={},
+            query={},
+            __getitem__=lambda _, k: self.request_dict[k],
         )
 
     async def test_introduction_start_no_service(self):
-        self.mock_request.json = async_mock.CoroutineMock(
+        self.request.json = async_mock.CoroutineMock(
             return_value={
                 "my_seed": "my_seed",
                 "my_did": "my_did",
@@ -34,17 +34,17 @@ class TestIntroductionRoutes(AsyncTestCase):
                 "alias": "alias",
             }
         )
-        self.mock_request.match_info = {"conn_id": "dummy"}
-        self.mock_request.query = {
+        self.request.match_info = {"conn_id": "dummy"}
+        self.request.query = {
             "target_connection_id": "dummy",
             "message": "Hello",
         }
 
         with self.assertRaises(test_module.web.HTTPForbidden):
-            await test_module.introduction_start(self.mock_request)
+            await test_module.introduction_start(self.request)
 
     async def test_introduction_start(self):
-        self.mock_request.json = async_mock.CoroutineMock(
+        self.request.json = async_mock.CoroutineMock(
             return_value={
                 "my_seed": "my_seed",
                 "my_did": "my_did",
@@ -56,8 +56,8 @@ class TestIntroductionRoutes(AsyncTestCase):
                 "alias": "alias",
             }
         )
-        self.mock_request.match_info = {"conn_id": "dummy"}
-        self.mock_request.query = {
+        self.request.match_info = {"conn_id": "dummy"}
+        self.request.query = {
             "target_connection_id": "dummy",
             "message": "Hello",
         }
@@ -65,7 +65,7 @@ class TestIntroductionRoutes(AsyncTestCase):
         mock_conn_rec.serialize = async_mock.MagicMock()
 
         with async_mock.patch.object(
-            self.context, "inject", async_mock.CoroutineMock()
+            self.context, "inject", async_mock.MagicMock()
         ) as mock_ctx_inject, async_mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
@@ -73,17 +73,17 @@ class TestIntroductionRoutes(AsyncTestCase):
                 start_introduction=async_mock.CoroutineMock()
             )
 
-            await test_module.introduction_start(self.mock_request)
+            await test_module.introduction_start(self.request)
             mock_ctx_inject.return_value.start_introduction.assert_called_once_with(
-                self.mock_request.match_info["conn_id"],
-                self.mock_request.query["target_connection_id"],
-                self.mock_request.query["message"],
-                self.mock_request["outbound_message_router"],
+                self.request.match_info["conn_id"],
+                self.request.query["target_connection_id"],
+                self.request.query["message"],
+                self.request["outbound_message_router"],
             )
             mock_response.assert_called_once_with({})
 
     async def test_introduction_start_x(self):
-        self.mock_request.json = async_mock.CoroutineMock(
+        self.request.json = async_mock.CoroutineMock(
             return_value={
                 "my_seed": "my_seed",
                 "my_did": "my_did",
@@ -95,8 +95,8 @@ class TestIntroductionRoutes(AsyncTestCase):
                 "alias": "alias",
             }
         )
-        self.mock_request.match_info = {"conn_id": "dummy"}
-        self.mock_request.query = {
+        self.request.match_info = {"conn_id": "dummy"}
+        self.request.query = {
             "target_connection_id": "dummy",
             "message": "Hello",
         }
@@ -104,7 +104,7 @@ class TestIntroductionRoutes(AsyncTestCase):
         mock_conn_rec.serialize = async_mock.MagicMock()
 
         with async_mock.patch.object(
-            self.context, "inject", async_mock.CoroutineMock()
+            self.context, "inject", async_mock.MagicMock()
         ) as mock_ctx_inject:
             mock_ctx_inject.return_value = async_mock.MagicMock(
                 start_introduction=async_mock.CoroutineMock(
@@ -113,7 +113,7 @@ class TestIntroductionRoutes(AsyncTestCase):
             )
 
             with self.assertRaises(test_module.web.HTTPBadRequest):
-                await test_module.introduction_start(self.mock_request)
+                await test_module.introduction_start(self.request)
 
     async def test_register(self):
         mock_app = async_mock.MagicMock()

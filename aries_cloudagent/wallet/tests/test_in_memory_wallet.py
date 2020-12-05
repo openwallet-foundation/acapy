@@ -1,25 +1,24 @@
 import pytest
 import time
 
-from aries_cloudagent.wallet.basic import BasicWallet
-from aries_cloudagent.wallet.error import (
+from ...core.in_memory import InMemoryProfile
+from ...messaging.decorators.signature_decorator import SignatureDecorator
+from ...wallet.in_memory import InMemoryWallet
+from ...wallet.error import (
     WalletError,
     WalletDuplicateError,
     WalletNotFoundError,
 )
 
-from aries_cloudagent.messaging.decorators.signature_decorator import SignatureDecorator
-
 
 @pytest.fixture()
 async def wallet():
-    wallet = BasicWallet({"name": "basic"})
-    await wallet.open()
+    profile = InMemoryProfile.test_profile()
+    wallet = InMemoryWallet(profile)
     yield wallet
-    await wallet.close()
 
 
-class TestBasicWallet:
+class TestInMemoryWallet:
     test_seed = "testseed000000000000000000000001"
     test_did = "55GkHamhTU1ZbTbV2ab9DE"
     test_verkey = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
@@ -37,17 +36,6 @@ class TestBasicWallet:
         b"\xe3\x02\x19\xa1\xb3\x86\xfa2\x07\xc8\xbd3-\x1c\xc4\x8d\x8e\xa3\x9be"
         b"\xea\xcf\x8bc\xfa_\x0c\xb2jE\xe4}\x12+\xbc0\x01l\xdb\x97\xf6\x02"
     )
-
-    @pytest.mark.asyncio
-    async def test_properties(self, wallet):
-        assert wallet.name
-        assert wallet.type == "basic"
-        assert wallet.handle is None
-        none_wallet = BasicWallet()
-        assert none_wallet.name is None
-
-        assert "BasicWallet" in str(wallet)
-        assert wallet.created
 
     @pytest.mark.asyncio
     async def test_create_signing_key_random(self, wallet):

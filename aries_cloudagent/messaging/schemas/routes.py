@@ -14,6 +14,7 @@ from aiohttp_apispec import (
 from marshmallow import fields
 from marshmallow.validate import Regexp
 
+from ...admin.request_context import AdminRequestContext
 from ...indy.issuer import IndyIssuer, IndyIssuerError
 from ...ledger.base import BaseLedger
 from ...ledger.error import LedgerError
@@ -113,7 +114,7 @@ async def schemas_send_schema(request: web.BaseRequest):
         The schema id sent
 
     """
-    context = request["context"]
+    context: AdminRequestContext = request["context"]
 
     body = await request.json()
 
@@ -121,14 +122,15 @@ async def schemas_send_schema(request: web.BaseRequest):
     schema_version = body.get("schema_version")
     attributes = body.get("attributes")
 
-    ledger: BaseLedger = await context.inject(BaseLedger, required=False)
+    session = await context.session()
+    ledger = session.inject(BaseLedger, required=False)
     if not ledger:
         reason = "No ledger available"
-        if not context.settings.get_value("wallet.type"):
+        if not session.settings.get_value("wallet.type"):
             reason += ": missing wallet-type?"
         raise web.HTTPForbidden(reason=reason)
 
-    issuer: IndyIssuer = await context.inject(IndyIssuer)
+    issuer = session.inject(IndyIssuer)
     async with ledger:
         try:
             schema_id, schema_def = await shield(
@@ -159,9 +161,10 @@ async def schemas_created(request: web.BaseRequest):
         The identifiers of matching schemas
 
     """
-    context = request["context"]
+    context: AdminRequestContext = request["context"]
 
-    storage = await context.inject(BaseStorage)
+    session = await context.session()
+    storage = session.inject(BaseStorage)
     found = await storage.search_records(
         type_filter=SCHEMA_SENT_RECORD_TYPE,
         tag_query={
@@ -186,14 +189,15 @@ async def schemas_get_schema(request: web.BaseRequest):
         The schema details.
 
     """
-    context = request["context"]
+    context: AdminRequestContext = request["context"]
 
     schema_id = request.match_info["schema_id"]
 
-    ledger: BaseLedger = await context.inject(BaseLedger, required=False)
+    session = await context.session()
+    ledger = session.inject(BaseLedger, required=False)
     if not ledger:
         reason = "No ledger available"
-        if not context.settings.get_value("wallet.type"):
+        if not session.settings.get_value("wallet.type"):
             reason += ": missing wallet-type?"
         raise web.HTTPForbidden(reason=reason)
 

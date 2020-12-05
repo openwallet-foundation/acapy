@@ -1,21 +1,29 @@
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
-import pytest
+
+from .....admin.request_context import AdminRequestContext
 
 from .. import routes as test_module
 
 
 class TestOutOfBandRoutes(AsyncTestCase):
-    def setUp(self):
-        self.mock_request = async_mock.MagicMock(
-            __getitem__=async_mock.Mock(
-                side_effect={"context": async_mock.MagicMock()}.__getitem__
-            ),
+    async def setUp(self):
+        self.session_inject = {}
+        self.context = AdminRequestContext.test_context(self.session_inject)
+        self.request_dict = {
+            "context": self.context,
+            "outbound_message_router": async_mock.CoroutineMock(),
+        }
+        self.request = async_mock.MagicMock(
+            app={},
+            match_info={},
+            query={},
+            __getitem__=lambda _, k: self.request_dict[k],
         )
 
     async def test_invitation_create(self):
-        self.mock_request.query = {"multi_use": "true"}
-        self.mock_request.json = async_mock.CoroutineMock(
+        self.request.query = {"multi_use": "true"}
+        self.request.json = async_mock.CoroutineMock(
             return_value={
                 "attachments": async_mock.MagicMock(),
                 "include_handshake": True,
@@ -34,12 +42,12 @@ class TestOutOfBandRoutes(AsyncTestCase):
                 )
             )
 
-            result = await test_module.invitation_create(self.mock_request)
+            result = await test_module.invitation_create(self.request)
             mock_json_response.assert_called_once_with({"abc": "123"})
 
     async def test_invitation_create_x(self):
-        self.mock_request.query = {"multi_use": "true"}
-        self.mock_request.json = async_mock.CoroutineMock(
+        self.request.query = {"multi_use": "true"}
+        self.request.json = async_mock.CoroutineMock(
             return_value={
                 "attachments": async_mock.MagicMock(),
                 "include_handshake": True,
@@ -57,11 +65,11 @@ class TestOutOfBandRoutes(AsyncTestCase):
             )
 
             with self.assertRaises(test_module.web.HTTPBadRequest):
-                await test_module.invitation_create(self.mock_request)
+                await test_module.invitation_create(self.request)
             mock_json_response.assert_not_called()
 
     async def test_invitation_receive(self):
-        self.mock_request.json = async_mock.CoroutineMock()
+        self.request.json = async_mock.CoroutineMock()
 
         with async_mock.patch.object(
             test_module, "OutOfBandManager", autospec=True
@@ -74,7 +82,7 @@ class TestOutOfBandRoutes(AsyncTestCase):
                 )
             )
 
-            result = await test_module.invitation_receive(self.mock_request)
+            result = await test_module.invitation_receive(self.request)
             mock_json_response.assert_called_once_with({"abc": "123"})
 
     async def test_register(self):

@@ -6,8 +6,8 @@ import logging
 from typing import Mapping, Sequence
 
 from ....connections.models.conn_record import ConnRecord
-from ....config.injection_context import InjectionContext
 from ....core.error import BaseError
+from ....core.profile import ProfileSession
 from ....ledger.base import BaseLedger
 from ....wallet.base import BaseWallet
 from ....wallet.util import did_key_to_naked, naked_to_did_key
@@ -35,26 +35,26 @@ class OutOfBandManagerNotImplementedError(BaseError):
 class OutOfBandManager:
     """Class for managing out of band messages."""
 
-    def __init__(self, context: InjectionContext):
+    def __init__(self, session: ProfileSession):
         """
         Initialize a OutOfBandManager.
 
         Args:
-            context: The context for this out of band manager
+            session: The profile session for this out of band manager
         """
-        self._context = context
+        self._session = session
         self._logger = logging.getLogger(__name__)
 
     @property
-    def context(self) -> InjectionContext:
+    def session(self) -> ProfileSession:
         """
-        Accessor for the current injection context.
+        Accessor for the current profile session.
 
         Returns:
-            The injection context for this connection manager
+            The profile session for this connection manager
 
         """
-        return self._context
+        return self._session
 
     async def create_invitation(
         self,
@@ -89,13 +89,13 @@ class OutOfBandManager:
             Invitation record
 
         """
-        wallet: BaseWallet = await self.context.inject(BaseWallet)
+        wallet = self._session.inject(BaseWallet)
 
         accept = bool(
             auto_accept
             or (
                 auto_accept is None
-                and self.context.settings.get("debug.auto_accept_requests")
+                and self._session.settings.get("debug.auto_accept_requests")
             )
         )
 
@@ -106,7 +106,7 @@ class OutOfBandManager:
 
             if a_type == "credential-offer":
                 cred_ex_rec = await V10CredentialExchange.retrieve_by_id(
-                    self.context,
+                    self._session,
                     a_id,
                 )
                 message_attachments.append(
@@ -114,7 +114,7 @@ class OutOfBandManager:
                 )
             elif a_type == "present-proof":
                 pres_ex_rec = await V10PresentationExchange.retrieve_by_id(
-                    self.context,
+                    self._session,
                     a_id,
                 )
                 message_attachments.append(
@@ -126,7 +126,7 @@ class OutOfBandManager:
                 raise OutOfBandManagerError(f"Unknown attachment type: {a_type}")
 
         if public:
-            if not self.context.settings.get("public_invites"):
+            if not self._session.settings.get("public_invites"):
                 raise OutOfBandManagerError("Public invitations are not enabled")
 
             public_did = await wallet.get_public_did()
@@ -141,7 +141,7 @@ class OutOfBandManager:
                 )
 
             invi_msg = InvitationMessage(
-                label=my_label or self.context.settings.get("default_label"),
+                label=my_label or self._session.settings.get("default_label"),
                 handshake_protocols=(
                     [DIDCommPrefix.qualify_current(INVITATION)]
                     if include_handshake
@@ -159,7 +159,7 @@ class OutOfBandManager:
             )
 
             if not my_endpoint:
-                my_endpoint = self.context.settings.get("default_endpoint")
+                my_endpoint = self._session.settings.get("default_endpoint")
 
             # Create and store new invitation key
             connection_key = await wallet.create_signing_key()
@@ -179,7 +179,7 @@ class OutOfBandManager:
             # of invitations
             # Would want to reuse create_did_document and convert the result
             invi_msg = InvitationMessage(
-                label=my_label or self.context.settings.get("default_label"),
+                label=my_label or self._session.settings.get("default_label"),
                 handshake_protocols=(
                     [DIDCommPrefix.qualify_current(INVITATION)]
                     if include_handshake
@@ -206,8 +206,8 @@ class OutOfBandManager:
                 alias=alias,
             )
 
-            await conn_rec.save(self.context, reason="Created new invitation")
-            await conn_rec.attach_invitation(self.context, invi_msg)
+            await conn_rec.save(self._session, reason="Created new invitation")
+            await conn_rec.attach_invitation(self._session, invi_msg)
 
         # Create invitation record
         invi_rec = InvitationRecord(
@@ -217,13 +217,13 @@ class OutOfBandManager:
             auto_accept=accept,
             multi_use=multi_use,
         )
-        await invi_rec.save(self.context, reason="Created new invitation")
+        await invi_rec.save(self._session, reason="Created new invitation")
         return invi_rec
 
     async def receive_invitation(self, invi_msg: InvitationMessage) -> ConnRecord:
         """Receive an out of band invitation message."""
 
-        ledger: BaseLedger = await self.context.inject(BaseLedger)
+        ledger: BaseLedger = self._session.inject(BaseLedger)
 
         # There must be exactly 1 service entry
         if len(invi_msg.service_blocks) + len(invi_msg.service_dids) != 1:
@@ -267,7 +267,7 @@ class OutOfBandManager:
                 did_key_to_naked(key) for key in service.routing_keys
             ] or []
 
-            didx_mgr = DIDXManager(self.context)
+            didx_mgr = DIDXManager(self._session)
             conn_rec = await didx_mgr.receive_invitation(invi_msg, auto_accept=True)
 
         elif (

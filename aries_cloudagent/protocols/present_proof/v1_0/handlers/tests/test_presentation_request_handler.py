@@ -1,4 +1,3 @@
-import pytest
 from asynctest import (
     mock as async_mock,
     TestCase as AsyncTestCase,
@@ -21,7 +20,7 @@ CD_ID = f"NcYxiDXkpYi6ov5FcYDi1e:3:CL:{S_ID}:tag1"
 
 class TestPresentationRequestHandler(AsyncTestCase):
     async def test_called(self):
-        request_context = RequestContext()
+        request_context = RequestContext.test_context()
         request_context.connection_record = async_mock.MagicMock()
         request_context.connection_record.connection_id = "dummy"
         request_context.message_receipt = MessageReceipt()
@@ -50,14 +49,13 @@ class TestPresentationRequestHandler(AsyncTestCase):
             responder = MockResponder()
             await handler_inst.handle(request_context, responder)
 
-        mock_pres_mgr.assert_called_once_with(request_context)
         mock_pres_mgr.return_value.receive_request.assert_called_once_with(
             mock_pres_ex_rec
         )
         assert not responder.messages
 
     async def test_called_not_found(self):
-        request_context = RequestContext()
+        request_context = RequestContext.test_context()
         request_context.connection_record = async_mock.MagicMock()
         request_context.connection_record.connection_id = "dummy"
         request_context.message_receipt = MessageReceipt()
@@ -87,14 +85,13 @@ class TestPresentationRequestHandler(AsyncTestCase):
             responder = MockResponder()
             await handler_inst.handle(request_context, responder)
 
-        mock_pres_mgr.assert_called_once_with(request_context)
         mock_pres_mgr.return_value.receive_request.assert_called_once_with(
             mock_pres_ex_rec
         )
         assert not responder.messages
 
     async def test_called_auto_present(self):
-        request_context = RequestContext()
+        request_context = RequestContext.test_context()
         request_context.connection_record = async_mock.MagicMock()
         request_context.connection_record.connection_id = "dummy"
         request_context.message = PresentationRequest()
@@ -154,7 +151,7 @@ class TestPresentationRequestHandler(AsyncTestCase):
                     return_value=[{"cred_info": {"referent": "dummy"}}]
                 )
             )
-            request_context.inject = async_mock.CoroutineMock(return_value=mock_holder)
+            request_context.inject = async_mock.MagicMock(return_value=mock_holder)
 
             mock_pres_ex_rec.return_value = px_rec_instance
             mock_pres_ex_rec.retrieve_by_tag_filter = async_mock.CoroutineMock(
@@ -173,7 +170,6 @@ class TestPresentationRequestHandler(AsyncTestCase):
             await handler_inst.handle(request_context, responder)
             mock_pres_mgr.return_value.create_presentation.assert_called_once()
 
-        mock_pres_mgr.assert_called_once_with(request_context)
         mock_pres_mgr.return_value.receive_request.assert_called_once_with(
             px_rec_instance
         )
@@ -184,7 +180,7 @@ class TestPresentationRequestHandler(AsyncTestCase):
         assert target == {}
 
     async def test_called_auto_present_no_preview(self):
-        request_context = RequestContext()
+        request_context = RequestContext.test_context()
         request_context.connection_record = async_mock.MagicMock()
         request_context.connection_record.connection_id = "dummy"
         request_context.message = PresentationRequest()
@@ -233,7 +229,7 @@ class TestPresentationRequestHandler(AsyncTestCase):
                     ]
                 )
             )
-            request_context.inject = async_mock.CoroutineMock(return_value=mock_holder)
+            request_context.inject = async_mock.MagicMock(return_value=mock_holder)
 
             mock_pres_ex_rec.return_value = px_rec_instance
             mock_pres_ex_rec.retrieve_by_tag_filter = async_mock.CoroutineMock(
@@ -252,7 +248,6 @@ class TestPresentationRequestHandler(AsyncTestCase):
             await handler_inst.handle(request_context, responder)
             mock_pres_mgr.return_value.create_presentation.assert_called_once()
 
-        mock_pres_mgr.assert_called_once_with(request_context)
         mock_pres_mgr.return_value.receive_request.assert_called_once_with(
             px_rec_instance
         )
@@ -263,7 +258,7 @@ class TestPresentationRequestHandler(AsyncTestCase):
         assert target == {}
 
     async def test_called_auto_present_pred_no_match(self):
-        request_context = RequestContext()
+        request_context = RequestContext.test_context()
         request_context.connection_record = async_mock.MagicMock()
         request_context.connection_record.connection_id = "dummy"
         request_context.message = PresentationRequest()
@@ -301,7 +296,7 @@ class TestPresentationRequestHandler(AsyncTestCase):
             mock_holder.get_credentials_for_presentation_request_by_referent = (
                 async_mock.CoroutineMock(return_value=[])
             )
-            request_context.inject = async_mock.CoroutineMock(return_value=mock_holder)
+            request_context.inject = async_mock.MagicMock(return_value=mock_holder)
 
             mock_pres_ex_rec.return_value = px_rec_instance
             mock_pres_ex_rec.retrieve_by_tag_filter = async_mock.CoroutineMock(
@@ -320,14 +315,13 @@ class TestPresentationRequestHandler(AsyncTestCase):
             await handler_inst.handle(request_context, responder)
             mock_pres_mgr.return_value.create_presentation.assert_not_called()
 
-        mock_pres_mgr.assert_called_once_with(request_context)
         mock_pres_mgr.return_value.receive_request.assert_called_once_with(
             px_rec_instance
         )
         assert not responder.messages
 
     async def test_called_auto_present_pred_single_match(self):
-        request_context = RequestContext()
+        request_context = RequestContext.test_context()
         request_context.connection_record = async_mock.MagicMock()
         request_context.connection_record.connection_id = "dummy"
         request_context.message = PresentationRequest()
@@ -367,7 +361,7 @@ class TestPresentationRequestHandler(AsyncTestCase):
                     return_value=[{"cred_info": {"referent": "dummy-0"}}]
                 )
             )
-            request_context.inject = async_mock.CoroutineMock(return_value=mock_holder)
+            request_context.inject = async_mock.MagicMock(return_value=mock_holder)
 
             mock_pres_ex_rec.return_value = px_rec_instance
             mock_pres_ex_rec.retrieve_by_tag_filter = async_mock.CoroutineMock(
@@ -386,7 +380,6 @@ class TestPresentationRequestHandler(AsyncTestCase):
             await handler_inst.handle(request_context, responder)
             mock_pres_mgr.return_value.create_presentation.assert_called_once()
 
-        mock_pres_mgr.assert_called_once_with(request_context)
         mock_pres_mgr.return_value.receive_request.assert_called_once_with(
             px_rec_instance
         )
@@ -397,7 +390,7 @@ class TestPresentationRequestHandler(AsyncTestCase):
         assert target == {}
 
     async def test_called_auto_present_pred_multi_match(self):
-        request_context = RequestContext()
+        request_context = RequestContext.test_context()
         request_context.connection_record = async_mock.MagicMock()
         request_context.connection_record.connection_id = "dummy"
         request_context.message = PresentationRequest()
@@ -440,7 +433,7 @@ class TestPresentationRequestHandler(AsyncTestCase):
                     ]
                 )
             )
-            request_context.inject = async_mock.CoroutineMock(return_value=mock_holder)
+            request_context.inject = async_mock.MagicMock(return_value=mock_holder)
 
             mock_pres_ex_rec.return_value = px_rec_instance
             mock_pres_ex_rec.retrieve_by_tag_filter = async_mock.CoroutineMock(
@@ -459,7 +452,6 @@ class TestPresentationRequestHandler(AsyncTestCase):
             await handler_inst.handle(request_context, responder)
             mock_pres_mgr.return_value.create_presentation.assert_called_once()
 
-        mock_pres_mgr.assert_called_once_with(request_context)
         mock_pres_mgr.return_value.receive_request.assert_called_once_with(
             px_rec_instance
         )
@@ -470,7 +462,7 @@ class TestPresentationRequestHandler(AsyncTestCase):
         assert target == {}
 
     async def test_called_auto_present_multi_cred_match_reft(self):
-        request_context = RequestContext()
+        request_context = RequestContext.test_context()
         request_context.connection_record = async_mock.MagicMock()
         request_context.connection_record.connection_id = "dummy"
         request_context.message = PresentationRequest()
@@ -564,7 +556,7 @@ class TestPresentationRequestHandler(AsyncTestCase):
                     ]
                 )
             )
-            request_context.inject = async_mock.CoroutineMock(return_value=mock_holder)
+            request_context.inject = async_mock.MagicMock(return_value=mock_holder)
 
             mock_pres_ex_rec.return_value = px_rec_instance
             mock_pres_ex_rec.retrieve_by_tag_filter = async_mock.CoroutineMock(
@@ -583,7 +575,6 @@ class TestPresentationRequestHandler(AsyncTestCase):
             await handler_inst.handle(request_context, responder)
             mock_pres_mgr.return_value.create_presentation.assert_called_once()
 
-        mock_pres_mgr.assert_called_once_with(request_context)
         mock_pres_mgr.return_value.receive_request.assert_called_once_with(
             px_rec_instance
         )
@@ -594,7 +585,7 @@ class TestPresentationRequestHandler(AsyncTestCase):
         assert target == {}
 
     async def test_called_auto_present_bait_and_switch(self):
-        request_context = RequestContext()
+        request_context = RequestContext.test_context()
         request_context.connection_record = async_mock.MagicMock()
         request_context.connection_record.connection_id = "dummy"
         request_context.message = PresentationRequest()
@@ -669,7 +660,7 @@ class TestPresentationRequestHandler(AsyncTestCase):
                 ]
             )
             mock_holder.get_credentials_for_presentation_request_by_referent = by_reft
-            request_context.inject = async_mock.CoroutineMock(return_value=mock_holder)
+            request_context.inject = async_mock.MagicMock(return_value=mock_holder)
 
             mock_pres_ex_rec.return_value = px_rec_instance
             mock_pres_ex_rec.retrieve_by_tag_filter = async_mock.CoroutineMock(
@@ -689,14 +680,13 @@ class TestPresentationRequestHandler(AsyncTestCase):
             await handler_inst.handle(request_context, responder)
             mock_pres_mgr.return_value.create_presentation.assert_not_called()
 
-        mock_pres_mgr.assert_called_once_with(request_context)
         mock_pres_mgr.return_value.receive_request.assert_called_once_with(
             px_rec_instance
         )
         assert not responder.messages
 
     async def test_called_not_ready(self):
-        request_context = RequestContext()
+        request_context = RequestContext.test_context()
         request_context.message_receipt = MessageReceipt()
 
         with async_mock.patch.object(

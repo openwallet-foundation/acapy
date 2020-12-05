@@ -1,13 +1,9 @@
 from asynctest import TestCase as AsyncTestCase
-from asynctest import mock as async_mock
 
-from .....config.injection_context import InjectionContext
 from .....connections.models.conn_record import ConnRecord
+from .....core.in_memory import InMemoryProfile
 from .....messaging.request_context import RequestContext
 from .....messaging.responder import MockResponder
-from .....storage.base import BaseStorage
-from .....storage.basic import BasicStorage
-from .....storage.error import StorageNotFoundError
 from .....wallet.util import naked_to_did_key
 
 from ....didcomm_prefix import DIDCommPrefix
@@ -26,11 +22,10 @@ TEST_LABEL = "Label"
 TEST_ENDPOINT = "http://localhost"
 
 
-class TestIntroductionRoutes(AsyncTestCase):
+class TestIntroductionService(AsyncTestCase):
     def setUp(self):
-        self.storage = BasicStorage()
-        self.context = InjectionContext(enforce_typing=False)
-        self.context.injector.bind_instance(BaseStorage, self.storage)
+        self.profile = InMemoryProfile.test_profile()
+        self.context = RequestContext(self.profile)
         self.oob_invi_msg = OOBInvitationMessage(
             label=TEST_LABEL,
             handshake_protocols=[DIDCommPrefix.qualify_current(OOB_INVITATION)],
@@ -63,12 +58,13 @@ class TestIntroductionRoutes(AsyncTestCase):
         service = await demo_service.DemoIntroductionService.service_handler()(
             self.context
         )
+        session = await self.profile.session()
 
         conn_rec_init = ConnRecord(
             connection_id=None,
             state=ConnRecord.State.ABANDONED.rfc23,
         )
-        await conn_rec_init.save(self.context)
+        await conn_rec_init.save(session)
         assert conn_rec_init._id
 
         with self.assertRaises(base_service.IntroductionError):
@@ -83,12 +79,13 @@ class TestIntroductionRoutes(AsyncTestCase):
         service = await demo_service.DemoIntroductionService.service_handler()(
             self.context
         )
+        session = await self.profile.session()
 
         conn_rec_init = ConnRecord(
             connection_id=None,
             state=ConnRecord.State.COMPLETED.rfc23,
         )
-        await conn_rec_init.save(self.context)
+        await conn_rec_init.save(session)
         assert conn_rec_init._id
 
         with self.assertRaises(base_service.IntroductionError):
@@ -103,19 +100,20 @@ class TestIntroductionRoutes(AsyncTestCase):
         service = await demo_service.DemoIntroductionService.service_handler()(
             self.context
         )
+        session = await self.profile.session()
 
         conn_rec_init = ConnRecord(
             connection_id=None,
             state=ConnRecord.State.COMPLETED.rfc23,
         )
-        await conn_rec_init.save(self.context)
+        await conn_rec_init.save(session)
         assert conn_rec_init._id
 
         conn_rec_target = ConnRecord(
             connection_id=None,
             state=ConnRecord.State.ABANDONED.rfc23,
         )
-        await conn_rec_target.save(self.context)
+        await conn_rec_target.save(session)
         assert conn_rec_target._id
 
         with self.assertRaises(base_service.IntroductionError):
@@ -131,19 +129,20 @@ class TestIntroductionRoutes(AsyncTestCase):
             self.context
         )
         start_responder = MockResponder()
+        session = await self.profile.session()
 
         conn_rec_init = ConnRecord(
             connection_id=None,
             state=ConnRecord.State.COMPLETED.rfc23,
         )
-        await conn_rec_init.save(self.context)
+        await conn_rec_init.save(session)
         assert conn_rec_init._id
 
         conn_rec_target = ConnRecord(
             connection_id=None,
             state=ConnRecord.State.COMPLETED.rfc23,
         )
-        await conn_rec_target.save(self.context)
+        await conn_rec_target.save(session)
         assert conn_rec_target._id
 
         await service.start_introduction(
@@ -187,12 +186,13 @@ class TestIntroductionRoutes(AsyncTestCase):
         service = await demo_service.DemoIntroductionService.service_handler()(
             self.context
         )
+        session = await self.profile.session()
 
         conn_rec_target = ConnRecord(
             connection_id=None,
             state=ConnRecord.State.COMPLETED.rfc23,
         )
-        await conn_rec_target.save(self.context)
+        await conn_rec_target.save(session)
         assert conn_rec_target._id
 
         await service.return_invitation(

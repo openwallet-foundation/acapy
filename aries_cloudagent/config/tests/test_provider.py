@@ -1,15 +1,12 @@
-from aries_cloudagent.wallet.provider import WalletProvider
+from aries_cloudagent.core.profile import ProfileManagerProvider
 from tempfile import NamedTemporaryFile
 
 from asynctest import TestCase as AsyncTestCase, mock as async_mock
 
-from ...storage.provider import StorageProvider
 from ...utils.stats import Collector
-from ...wallet.base import BaseWallet
-from ...wallet.basic import BasicWallet
 
 from ..injection_context import InjectionContext
-from ..provider import CachedProvider, StatsProvider
+from ..provider import BaseProvider, StatsProvider, CachedProvider
 from ..settings import Settings
 
 
@@ -24,17 +21,15 @@ class TestProvider(AsyncTestCase):
 
         timing_log = NamedTemporaryFile().name
         settings = {"timing.enabled": True, "timing.log.file": timing_log}
-        stats_provider = StatsProvider(
-            StorageProvider(), ("add_record", "get_record", "search_records")
-        )
+        mock_provider = async_mock.MagicMock(BaseProvider, autospec=True)
+        mock_provider.provide.return_value.mock_method = lambda: ()
+        stats_provider = StatsProvider(mock_provider, ("mock_method",))
         collector = Collector(log_path=timing_log)
 
-        wallet = BasicWallet()
         context = InjectionContext(settings=settings, enforce_typing=False)
         context.injector.bind_instance(Collector, collector)
-        context.injector.bind_instance(BaseWallet, wallet)
 
-        await stats_provider.provide(Settings(settings), context.injector)
+        stats_provider.provide(Settings(settings), context.injector)
 
     async def test_cached_provider_same_unique_settings(self):
         """Cover same unique keys returns same instance."""
@@ -43,7 +38,7 @@ class TestProvider(AsyncTestCase):
         )
         second_settings = first_settings.extend({"wallet.key": "another.wallet.key"})
 
-        cached_provider = CachedProvider(WalletProvider(), ("wallet.name",))
+        cached_provider = CachedProvider(ProfileManagerProvider(), ("wallet.name",))
         context = InjectionContext()
 
         first_instance = await cached_provider.provide(first_settings, context.injector)
@@ -60,7 +55,7 @@ class TestProvider(AsyncTestCase):
         )
         second_settings = first_settings.extend({"wallet.name": "another.wallet.name"})
 
-        cached_provider = CachedProvider(WalletProvider(), ("wallet.name",))
+        cached_provider = CachedProvider(ProfileManagerProvider(), ("wallet.name",))
         context = InjectionContext()
 
         first_instance = await cached_provider.provide(first_settings, context.injector)

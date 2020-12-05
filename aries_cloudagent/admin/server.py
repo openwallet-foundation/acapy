@@ -1,5 +1,9 @@
 """Admin server classes."""
 
+from aries_cloudagent.multitenant.manager import (
+    MultitenantManager,
+    MultitenantManagerError,
+)
 import asyncio
 import logging
 from typing import Callable, Coroutine, Sequence, Set, cast
@@ -18,6 +22,7 @@ import aiohttp_cors
 from marshmallow import fields, Schema
 
 from ..config.injection_context import InjectionContext
+from ..core.profile import Profile
 from ..core.plugin_registry import PluginRegistry
 from ..ledger.error import LedgerConfigError, LedgerTransactionError
 from ..messaging.responder import BaseResponder
@@ -30,6 +35,7 @@ from ..wallet.models.wallet_record import WalletRecord
 
 from .base_server import BaseAdminServer
 from .error import AdminSetupError
+from .request_context import AdminRequestContext
 
 
 LOGGER = logging.getLogger(__name__)
@@ -191,6 +197,7 @@ class AdminServer(BaseAdminServer):
         host: str,
         port: int,
         context: InjectionContext,
+        root_profile: Profile,
         outbound_message_router: Coroutine,
         webhook_router: Callable,
         conductor_stop: Coroutine,
@@ -216,17 +223,17 @@ class AdminServer(BaseAdminServer):
         )
         self.host = host
         self.port = port
+        self.context = context
         self.conductor_stop = conductor_stop
         self.conductor_stats = conductor_stats
         self.loaded_modules = []
+        self.outbound_message_router = outbound_message_router
+        self.root_profile = root_profile
         self.task_queue = task_queue
         self.webhook_router = webhook_router
         self.webhook_targets = {}
         self.websocket_queues = {}
         self.site = None
-        self.outbound_message_router = outbound_message_router
-
-        self.context = context.start_scope("admin")
 
     async def make_application(self) -> web.Application:
         """Get the aiohttp application instance."""
@@ -250,36 +257,12 @@ class AdminServer(BaseAdminServer):
                 or path.startswith("/static/swagger/")
             )
 
-        @web.middleware
-        async def set_request_context(request, handler):
-            context = self.context.copy()
-
-            # Create a responder with the request specific context
-            responder = AdminResponder(
-                context,
-                self.outbound_message_router,
-                self.send_webhook,
-            )
-
-            # Bind responder instance
-            context.injector.bind_instance(BaseResponder, responder)
-
-            # Set context and message_router on the request
-            # This allows for different context per request, which
-            # is needed for multitenancy.
-            request["context"] = context
-            request["outbound_message_router"] = responder.send
-
-            return await handler(request)
-
-        middlewares.append(set_request_context)
-
         # If admin_api_key is None, then admin_insecure_mode must be set so
         # we can safely enable the admin server with no security
         if self.admin_api_key:
 
             @web.middleware
-            async def check_token(request, handler):
+            async def check_token(request: web.Request, handler):
                 header_admin_api_key = request.headers.get("x-api-key")
                 valid_key = self.admin_api_key == header_admin_api_key
 
@@ -290,82 +273,70 @@ class AdminServer(BaseAdminServer):
 
             middlewares.append(check_token)
 
-        collector: Collector = await self.context.inject(Collector, required=False)
+        collector = self.context.inject(Collector, required=False)
 
-        if self.task_queue:
+        @web.middleware
+        async def setup_context(request: web.Request, handler):
+            authorization_header = request.headers.get("Authorization")
+            context = self.context
 
-            @web.middleware
-            async def apply_limiter(request, handler):
-                task = await self.task_queue.put(handler(request))
-                return await task
+            # Multitenancy context setup
+            # MTODO: extract to separate middleware
+            if context.settings.get("multitenant.enabled") and authorization_header:
 
-            middlewares.append(apply_limiter)
-
-        elif collector:
-
-            @web.middleware
-            async def collect_stats(request, handler):
-                handler = collector.wrap_coro(handler, [handler.__qualname__])
-                return await handler(request)
-
-            middlewares.append(collect_stats)
-
-        if self.context.settings.get("multitenant.enabled"):
-
-            @web.middleware
-            async def set_multitenant_wallet(request, handler):
-                authorization_header = request.headers.get("Authorization")
-
-                # MTODO better auth. Now if no authorization header  is present everything
-                # can be done on base wallet. We want to limit this to only subwallet
-                # So we need to check if it's a multitenancy api path and otherwise reject
-                if is_unprotected_path(request.path) or not authorization_header:
-                    return await handler(request)
-
-                context = request["context"]
-                jwt_secret = context.settings.get("multitenant.jwt_secret")
-
-                # Extract token and check if Bearer is present
                 bearer, _, token = authorization_header.partition(" ")
                 if bearer != "Bearer":
                     raise web.HTTPUnauthorized(reason="Invalid header structure")
 
                 try:
-                    token_body = jwt.decode(token, jwt_secret)
+                    multitenant_mgr = context.inject(MultitenantManager)
 
-                    # Get the wallet associated with the subwallet
-                    wallet_id = token_body["wallet_id"]
-                    wallet_record = cast(
-                        WalletRecord,
-                        await WalletRecord.retrieve_by_id(context, wallet_id),
-                    )
+                    (
+                        wallet_record,
+                        token_body,
+                    ) = await multitenant_mgr.get_wallet_for_auth_token(token)
 
                     LOGGER.debug(
                         "token provided for subwallet %s, switching context",
                         wallet_record.wallet_record_id,
                     )
 
+                    # setup context for subwallet
+                    context = self.context.copy()
                     context.settings = context.settings.extend(
                         wallet_record.get_config_as_settings()
                     )
-
-                    if wallet_record.key_management_mode == WalletRecord.MODE_UNMANAGED:
+                    if token_body["wallet_key"]:
                         context.settings["wallet.key"] = token_body["wallet_key"]
-                # MTODO: catch specific exceptions
-                except Exception:
-                    raise web.HTTPUnauthorized()
 
-                return await handler(request)
+                except MultitenantManagerError as err:
+                    raise web.HTTPUnauthorized(err.roll_up)
 
-            middlewares.append(set_multitenant_wallet)
+            # TODO may dynamically adjust the profile used here according to
+            # headers or other parameters
+            admin_context = AdminRequestContext(self.root_profile, context=context)
+
+            # Create a responder with the request specific context
+            responder = AdminResponder(
+                context,
+                self.outbound_message_router,
+                self.send_webhook,
+            )
+            admin_context.injector.bind_instance(BaseResponder, responder)
+
+            request["context"] = admin_context
+            request["outbound_message_router"] = responder.send
+
+            if collector:
+                handler = collector.wrap_coro(handler, [handler.__qualname__])
+            if self.task_queue:
+                task = await self.task_queue.put(handler(request))
+                return await task
+            return await handler(request)
+
+        middlewares.append(setup_context)
 
         app = web.Application(middlewares=middlewares)
-        # MTODO: remove app context, only use request context
-        # This can have breaking changes for external plugins
-        # Maybe global context should be base wallet, request context
-        # should be sub/base wallet. But for now this is used when creating
-        # a connection for a subwallet and adding a routing record to the base wallet
-        app["request_context"] = self.context
 
         app.add_routes(
             [
@@ -380,9 +351,7 @@ class AdminServer(BaseAdminServer):
             ]
         )
 
-        plugin_registry: PluginRegistry = await self.context.inject(
-            PluginRegistry, required=False
-        )
+        plugin_registry = self.context.inject(PluginRegistry, required=False)
         if plugin_registry:
             await plugin_registry.register_admin_routes(app)
 
@@ -434,9 +403,7 @@ class AdminServer(BaseAdminServer):
         runner = web.AppRunner(self.app)
         await runner.setup()
 
-        plugin_registry: PluginRegistry = await self.context.inject(
-            PluginRegistry, required=False
-        )
+        plugin_registry = self.context.inject(PluginRegistry, required=False)
         if plugin_registry:
             plugin_registry.post_process_routes(self.app)
 
@@ -499,9 +466,7 @@ class AdminServer(BaseAdminServer):
             The module list response
 
         """
-        registry: PluginRegistry = await self.context.inject(
-            PluginRegistry, required=False
-        )
+        registry = self.context.inject(PluginRegistry, required=False)
         plugins = registry and sorted(registry.plugin_names) or []
         return web.json_response({"result": plugins})
 
@@ -520,7 +485,7 @@ class AdminServer(BaseAdminServer):
         """
         status = {"version": __version__}
         status["label"] = self.context.settings.get("default_label")
-        collector: Collector = await self.context.inject(Collector, required=False)
+        collector = self.context.inject(Collector, required=False)
         if collector:
             status["timing"] = collector.results
         if self.conductor_stats:
@@ -540,7 +505,7 @@ class AdminServer(BaseAdminServer):
             The web response
 
         """
-        collector: Collector = await self.context.inject(Collector, required=False)
+        collector = self.context.inject(Collector, required=False)
         if collector:
             collector.reset()
         return web.json_response({})

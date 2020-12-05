@@ -40,9 +40,10 @@ class DemoIntroductionService(BaseIntroductionService):
             message: The message to use when requesting the invitation
         """
 
+        session = await self._context.session()
         try:
             init_connection = await ConnRecord.retrieve_by_id(
-                self._context, init_connection_id
+                session, init_connection_id
             )
         except StorageNotFoundError:
             raise IntroductionError(
@@ -59,7 +60,7 @@ class DemoIntroductionService(BaseIntroductionService):
 
         try:
             target_connection = await ConnRecord.retrieve_by_id(
-                self._context, target_connection_id
+                session, target_connection_id
             )
         except StorageNotFoundError:
             raise IntroductionError(
@@ -87,7 +88,8 @@ class DemoIntroductionService(BaseIntroductionService):
                 "target_connection_id": target_connection_id,
             },
         )
-        storage: BaseStorage = await self._context.inject(BaseStorage)
+
+        storage = session.inject(BaseStorage)
         await storage.add_record(record)
 
         await outbound_handler(msg, connection_id=target_connection_id)
@@ -107,7 +109,8 @@ class DemoIntroductionService(BaseIntroductionService):
         thread_id = invitation._thread_id
 
         tag_filter = {"target_connection_id": target_connection_id}
-        storage: BaseStorage = await self._context.inject(BaseStorage)
+        session = await self._context.session()
+        storage = session.inject(BaseStorage)
         records = await storage.search_records(
             DemoIntroductionService.RECORD_TYPE,
             tag_filter,

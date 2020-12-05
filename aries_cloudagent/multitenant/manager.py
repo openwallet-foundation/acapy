@@ -1,11 +1,12 @@
 """Manager for multitenancy."""
 
 import jwt
-from typing import List
+from typing import List, Tuple
 
+from ..core.profile import ProfileSession
 from ..wallet.models.wallet_record import WalletRecord
-from ..config.injection_context import InjectionContext
 from ..core.error import BaseError
+from ..storage.error import StorageNotFoundError
 from ..wallet.indy import IndyWallet
 from ..protocols.routing.v1_0.manager import RouteNotFoundError, RoutingManager
 
@@ -19,16 +20,26 @@ class MultitenantManagerError(BaseError):
 class MultitenantManager:
     """Class for handling multitenancy."""
 
-    def __init__(self, context: InjectionContext):
+    def __init__(self, session: ProfileSession):
         """Initialize multitenant Manager.
 
         Args:
-            context: The context for this manager
+            session: The session for this manager
         """
-        if not context:
-            raise MultitenantManagerError("Missing request context")
+        self._session = session
+        if not session:
+            raise MultitenantManagerError("Missing profile session")
 
-        self.context = context
+    @property
+    def session(self) -> ProfileSession:
+        """
+        Accessor for the current profile session.
+
+        Returns:
+            The profile session for this connection
+
+        """
+        return self._session
 
     async def wallet_name_exists(self, wallet_name: str) -> bool:
         """
@@ -44,12 +55,12 @@ class MultitenantManager:
 
         """
         # wallet_name is same as base wallet name
-        if self.context.settings.get("wallet.name") == wallet_name:
+        if self._session.settings.get("wallet.name") == wallet_name:
             return True
 
         # subwallet record exists, we assume the wallet actually exists
         wallet_records = await WalletRecord.query(
-            self.context, {"wallet_name": wallet_name}
+            self._session, {"wallet_name": wallet_name}
         )
         if len(wallet_records) > 0:
             return True
@@ -91,12 +102,12 @@ class MultitenantManager:
             wallet_config=wallet_config,
             key_management_mode=key_management_mode,
         )
-        await wallet_record.save(self.context)
+        await wallet_record.save(self._session)
 
         # this creates the actual wallet
         # MTODO: override wallet properties that shouldn't be set
         # e.g. it shouldn't take the base wallet name if none is provided
-        await wallet_record.get_instance(self.context, {"key": wallet_key})
+        await wallet_record.get_instance(self._session, {"key": wallet_key})
 
         return wallet_record
 
@@ -113,7 +124,7 @@ class MultitenantManager:
                 Only thrown for "unmanaged" wallets
 
         """
-        wallet_record = await WalletRecord.retrieve_by_id(self.context, wallet_id)
+        wallet_record = await WalletRecord.retrieve_by_id(self._session, wallet_id)
 
         # Check if key is required and present
         if wallet_record.wallet_type == IndyWallet.type and not (
@@ -123,7 +134,7 @@ class MultitenantManager:
 
         # MTODO: handle unable to open error
         wallet_instance = await wallet_record.get_instance(
-            self.context, {"wallet.key": wallet_key} if wallet_key else {}
+            self._session, {"wallet.key": wallet_key} if wallet_key else {}
         )
         await wallet_instance.close()
 
@@ -131,7 +142,7 @@ class MultitenantManager:
         if wallet_instance.type == IndyWallet.type:
             await wallet_instance.remove()
 
-        await wallet_record.delete_record(self.context)
+        await wallet_record.delete_record(self._session)
 
     async def add_wallet_route(
         self, wallet_id: str, recipient_key: str
@@ -144,7 +155,7 @@ class MultitenantManager:
             recipient_key: The recipient key belonging to the wallet
         """
 
-        routing_mgr = RoutingManager(self.context)
+        routing_mgr = RoutingManager(self._session)
 
         await routing_mgr.create_route_record(
             recipient_key=recipient_key, internal_wallet_id=wallet_id
@@ -169,7 +180,7 @@ class MultitenantManager:
 
         """
         jwt_payload = {"wallet_id": wallet_record.wallet_record_id}
-        jwt_secret = self.context.settings.get("multitenant.jwt_secret")
+        jwt_secret = self._session.settings.get("multitenant.jwt_secret")
 
         if wallet_record.key_management_mode == WalletRecord.MODE_UNMANAGED:
             if not wallet_key:
@@ -180,6 +191,44 @@ class MultitenantManager:
         token = jwt.encode(jwt_payload, jwt_secret).decode()
 
         return token
+
+    async def get_wallet_for_auth_token(self, token: str) -> Tuple[WalletRecord, dict]:
+        """Get wallet record associated with the JWT token.
+
+        Args:
+            token: The JWT token to get the wallet record for.
+
+        Raises:
+            WalletKeyMissingError: If the wallet key is missing.
+                Only thrown for "unmanaged" wallets
+
+        Returns:
+            tuple containing wallet record and decoded
+
+        """
+
+        jwt_secret = self._session.settings.get("multitenant.jwt_secret")
+
+        try:
+            token_body = jwt.decode(token, jwt_secret)
+
+            # Get the wallet associated with the subwallet
+            wallet_id = token_body["wallet_id"]
+            wallet_key = token_body["wallet_key"]
+            wallet_record = await WalletRecord.retrieve_by_id(self._session, wallet_id)
+
+            if (
+                wallet_record.key_management_mode == WalletRecord.MODE_UNMANAGED
+                and not wallet_key
+            ):
+                raise WalletKeyMissingError("Wallet key required for unmanaged wallet")
+
+            return (wallet_record, token_body)
+
+        except jwt.InvalidTokenError as e:
+            raise MultitenantManagerError("Invalid token provided")
+        except (StorageNotFoundError) as e:
+            raise MultitenantManagerError(e.roll_up)
 
     async def get_wallets_by_recipient_keys(
         self, recipient_keys: List[str]
@@ -192,7 +241,7 @@ class MultitenantManager:
             list of wallet records associated with the recipient keys
         """
 
-        routing_mgr = RoutingManager(self.context)
+        routing_mgr = RoutingManager(self._session)
         wallet_records = []
 
         for recipient_key in recipient_keys:
@@ -202,7 +251,7 @@ class MultitenantManager:
                 # MTODO: Should not be possible that wallet_id is None here
                 if routing_record.wallet_id:
                     wallet_record = await WalletRecord.retrieve_by_id(
-                        self.context, routing_record.wallet_id
+                        self._session, routing_record.wallet_id
                     )
                     wallet_records.append(wallet_record)
             except (RouteNotFoundError):

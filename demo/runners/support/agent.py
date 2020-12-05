@@ -6,6 +6,7 @@ import logging
 import os
 import random
 import subprocess
+import sys
 from timeit import default_timer
 
 from aiohttp import (
@@ -43,6 +44,7 @@ DEFAULT_INTERNAL_HOST = "127.0.0.1"
 DEFAULT_EXTERNAL_HOST = "localhost"
 DEFAULT_BIN_PATH = "../bin"
 DEFAULT_PYTHON_PATH = ".."
+PYTHON = os.getenv("PYTHON", sys.executable)
 
 START_TIMEOUT = float(os.getenv("START_TIMEOUT", 30.0))
 
@@ -90,6 +92,10 @@ async def default_genesis_txns():
         elif GENESIS_FILE:
             with open(GENESIS_FILE, "r") as genesis_file:
                 genesis = genesis_file.read()
+        elif LEDGER_URL:
+            async with ClientSession() as session:
+                async with session.get(LEDGER_URL.rstrip("/") + "/genesis") as resp:
+                    genesis = await resp.text()
         else:
             with open("local-genesis.txt", "r") as genesis_file:
                 genesis = genesis_file.read()
@@ -174,11 +180,11 @@ class DemoAgent:
 
         # for multitenancy, storage_type and wallet_type are the same for all wallets
         if self.multitenant:
-            self.agency_ident       = self.ident
+            self.agency_ident = self.ident
             self.agency_wallet_name = self.wallet_name
             self.agency_wallet_seed = self.seed
-            self.agency_wallet_did  = self.did
-            self.agency_wallet_key  = self.wallet_key
+            self.agency_wallet_did = self.did
+            self.agency_wallet_key = self.wallet_key
 
     async def get_wallets(self):
         """Get registered wallets of agent (this is an agency call)."""
@@ -242,6 +248,7 @@ class DemoAgent:
             ("--wallet-name", self.wallet_name),
             ("--wallet-key", self.wallet_key),
             "--preserve-exchange-records",
+            "--auto-provision",
         ]
         if self.multitenant:
             result.extend(
@@ -310,7 +317,13 @@ class DemoAgent:
         if self.prefix:
             return f"{self.prefix:10s} |"
 
-    async def register_did(self, ledger_url: str = None, alias: str = None, did: str = None, verkey: str = None):
+    async def register_did(
+        self,
+        ledger_url: str = None,
+        alias: str = None,
+        did: str = None,
+        verkey: str = None,
+    ):
         self.log(f"Registering {self.ident} ...")
         if not ledger_url:
             ledger_url = LEDGER_URL
@@ -346,14 +359,14 @@ class DemoAgent:
             return False
 
         # check if wallet exists already
-        wallets = await self.agency_admin_GET('/multitenancy/wallets')
+        wallets = await self.agency_admin_GET("/multitenancy/wallets")
         for wallet in wallets["results"]:
             if wallet["wallet_name"] == target_wallet_name:
                 # if so set local agent attributes
                 self.wallet_name = target_wallet_name
                 # assume wallet key is wallet name
-                self.wallet_key  = target_wallet_name
-                self.ident       = target_wallet_name
+                self.wallet_key = target_wallet_name
+                self.ident = target_wallet_name
                 # we can't recover the seed so let's set it to None and see what happens ...
                 self.seed = None
                 self.log(f"Switching to EXISTING wallet {target_wallet_name}")
@@ -361,22 +374,24 @@ class DemoAgent:
 
         # if not then create it
         wallet_params = {
-          "wallet_key": target_wallet_name,
-          "wallet_name": target_wallet_name,
-          "wallet_type": "indy"
+            "wallet_key": target_wallet_name,
+            "wallet_name": target_wallet_name,
+            "wallet_type": "indy",
         }
         self.wallet_name = target_wallet_name
-        self.wallet_key  = target_wallet_name
-        self.ident       = target_wallet_name
-        new_wallet = await self.agency_admin_POST('/multitenancy/wallet', wallet_params)
+        self.wallet_key = target_wallet_name
+        self.ident = target_wallet_name
+        new_wallet = await self.agency_admin_POST("/multitenancy/wallet", wallet_params)
         self.log("New wallet params:", new_wallet)
         self.managed_wallet_params = new_wallet
-        if (public_did):
+        if public_did:
             # assign public did
-            new_did = await self.admin_POST('/wallet/did/create')
+            new_did = await self.admin_POST("/wallet/did/create")
             self.did = new_did["result"]["did"]
-            await self.register_did(did=new_did["result"]["did"], verkey=new_did["result"]["verkey"])
-            await self.admin_POST('/wallet/did/public?did=' + self.did)
+            await self.register_did(
+                did=new_did["result"]["did"], verkey=new_did["result"]["verkey"]
+            )
+            await self.admin_POST("/wallet/did/public?did=" + self.did)
             pass
         self.log(f"Created NEW wallet {target_wallet_name}")
         return True
@@ -428,7 +443,7 @@ class DemoAgent:
             bin_path = DEFAULT_BIN_PATH
         if bin_path:
             cmd_path = os.path.join(bin_path, cmd_path)
-        return list(flatten((["python3", cmd_path, "start"], self.get_agent_args())))
+        return list(flatten(([PYTHON, cmd_path, "start"], self.get_agent_args())))
 
     async def start_process(
         self, python_path: str = None, bin_path: str = None, wait: bool = True
@@ -540,14 +555,18 @@ class DemoAgent:
                     raise Exception(f"Error decoding JSON: {resp_text}") from e
             return resp_text
 
-    async def agency_admin_GET(self, path, text=False, params=None, headers=None) -> ClientResponse:
+    async def agency_admin_GET(
+        self, path, text=False, params=None, headers=None
+    ) -> ClientResponse:
         if not self.multitenant:
             raise Exception("Error can't call agency admin unless in multitenant mode")
         try:
             EVENT_LOGGER.debug("Controller GET %s request to Agent", path)
             if not headers:
                 headers = {}
-            response = await self.admin_request("GET", path, None, text, params, headers=headers)
+            response = await self.admin_request(
+                "GET", path, None, text, params, headers=headers
+            )
             EVENT_LOGGER.debug(
                 "Response from GET %s received: \n%s",
                 path,
@@ -566,10 +585,14 @@ class DemoAgent:
             if self.multitenant:
                 if not headers:
                     headers = {}
-                headers['Authorization'] = 'Bearer ' + self.managed_wallet_params['token']
+                headers["Authorization"] = (
+                    "Bearer " + self.managed_wallet_params["token"]
+                )
                 self.log("GET:", path)
                 self.log("Headers:", headers)
-            response = await self.admin_request("GET", path, None, text, params, headers=headers)
+            response = await self.admin_request(
+                "GET", path, None, text, params, headers=headers
+            )
             EVENT_LOGGER.debug(
                 "Response from GET %s received: \n%s",
                 path,
@@ -580,7 +603,9 @@ class DemoAgent:
             self.log(f"Error during GET {path}: {str(e)}")
             raise
 
-    async def agency_admin_POST(self, path, data=None, text=False, params=None, headers=None) -> ClientResponse:
+    async def agency_admin_POST(
+        self, path, data=None, text=False, params=None, headers=None
+    ) -> ClientResponse:
         if not self.multitenant:
             raise Exception("Error can't call agency admin unless in multitenant mode")
         try:
@@ -591,7 +616,9 @@ class DemoAgent:
             )
             if not headers:
                 headers = {}
-            response = await self.admin_request("POST", path, data, text, params, headers=headers)
+            response = await self.admin_request(
+                "POST", path, data, text, params, headers=headers
+            )
             EVENT_LOGGER.debug(
                 "Response from POST %s received: \n%s",
                 path,
@@ -614,10 +641,14 @@ class DemoAgent:
             if self.multitenant:
                 if not headers:
                     headers = {}
-                headers['Authorization'] = 'Bearer ' + self.managed_wallet_params['token']
+                headers["Authorization"] = (
+                    "Bearer " + self.managed_wallet_params["token"]
+                )
                 self.log("POST:", path)
                 self.log("Headers:", headers)
-            response = await self.admin_request("POST", path, data, text, params, headers=headers)
+            response = await self.admin_request(
+                "POST", path, data, text, params, headers=headers
+            )
             EVENT_LOGGER.debug(
                 "Response from POST %s received: \n%s",
                 path,
@@ -663,26 +694,30 @@ class DemoAgent:
 
     async def detect_process(self, headers=None):
         async def fetch_status(url: str, timeout: float, headers=None):
+            code = None
             text = None
             start = default_timer()
             async with ClientSession(timeout=ClientTimeout(total=3.0)) as session:
                 while default_timer() - start < timeout:
                     try:
                         async with session.get(url, headers=headers) as resp:
-                            if resp.status == 200:
+                            code = resp.status
+                            if code == 200:
                                 text = await resp.text()
                                 break
                     except (ClientError, asyncio.TimeoutError):
                         pass
                     await asyncio.sleep(0.5)
-            return text
+            return code, text
 
         status_url = self.admin_url + "/status"
-        status_text = await fetch_status(status_url, START_TIMEOUT, headers=headers)
+        status_code, status_text = await fetch_status(
+            status_url, START_TIMEOUT, headers=headers
+        )
 
         if not status_text:
             raise Exception(
-                "Timed out waiting for agent process to start. "
+                f"Timed out waiting for agent process to start (status={status_code}). "
                 + f"Admin URL: {status_url}"
             )
         ok = False

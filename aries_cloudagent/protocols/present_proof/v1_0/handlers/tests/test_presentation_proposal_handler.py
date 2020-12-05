@@ -14,28 +14,33 @@ from .. import presentation_proposal_handler as handler
 
 class TestPresentationProposalHandler(AsyncTestCase):
     async def test_called(self):
-        request_context = RequestContext()
+        request_context = RequestContext.test_context()
         request_context.message_receipt = MessageReceipt()
         request_context.settings["debug.auto_respond_presentation_proposal"] = False
 
         with async_mock.patch.object(
             handler, "PresentationManager", autospec=True
-        ) as mock_pres_mgr:
+        ) as mock_pres_mgr, async_mock.patch.object(
+            request_context, "session", async_mock.CoroutineMock()
+        ) as mock_session:
             mock_pres_mgr.return_value.receive_proposal = async_mock.CoroutineMock(
                 return_value=async_mock.MagicMock()
             )
             request_context.message = PresentationProposal()
             request_context.connection_ready = True
+            request_context.connection_record = async_mock.MagicMock()
             handler_inst = handler.PresentationProposalHandler()
             responder = MockResponder()
             await handler_inst.handle(request_context, responder)
 
-        mock_pres_mgr.assert_called_once_with(request_context)
-        mock_pres_mgr.return_value.receive_proposal.assert_called_once_with()
+        mock_pres_mgr.assert_called_once_with(mock_session.return_value)
+        mock_pres_mgr.return_value.receive_proposal.assert_called_once_with(
+            request_context.message, request_context.connection_record
+        )
         assert not responder.messages
 
     async def test_called_auto_request(self):
-        request_context = RequestContext()
+        request_context = RequestContext.test_context()
         request_context.message = async_mock.MagicMock()
         request_context.message.comment = "hello world"
         request_context.message_receipt = MessageReceipt()
@@ -43,7 +48,9 @@ class TestPresentationProposalHandler(AsyncTestCase):
 
         with async_mock.patch.object(
             handler, "PresentationManager", autospec=True
-        ) as mock_pres_mgr:
+        ) as mock_pres_mgr, async_mock.patch.object(
+            request_context, "session", async_mock.CoroutineMock()
+        ) as mock_session:
             mock_pres_mgr.return_value.receive_proposal = async_mock.CoroutineMock(
                 return_value="presentation_exchange_record"
             )
@@ -59,7 +66,7 @@ class TestPresentationProposalHandler(AsyncTestCase):
             responder = MockResponder()
             await handler_inst.handle(request_context, responder)
 
-        mock_pres_mgr.assert_called_once_with(request_context)
+        mock_pres_mgr.assert_called_once_with(mock_session.return_value)
         mock_pres_mgr.return_value.create_bound_request.assert_called_once_with(
             presentation_exchange_record=(
                 mock_pres_mgr.return_value.receive_proposal.return_value
@@ -73,7 +80,7 @@ class TestPresentationProposalHandler(AsyncTestCase):
         assert target == {}
 
     async def test_called_not_ready(self):
-        request_context = RequestContext()
+        request_context = RequestContext.test_context()
         request_context.message_receipt = MessageReceipt()
 
         with async_mock.patch.object(

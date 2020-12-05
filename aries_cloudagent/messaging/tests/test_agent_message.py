@@ -3,8 +3,8 @@ import json
 from asynctest import TestCase as AsyncTestCase
 from marshmallow import EXCLUDE, fields
 
+from ...core.in_memory import InMemoryProfile
 from ...protocols.didcomm_prefix import DIDCommPrefix
-from ...wallet.basic import BasicWallet
 from ...wallet.util import bytes_to_b64
 
 from ..agent_message import AgentMessage, AgentMessageSchema
@@ -71,7 +71,8 @@ class TestAgentMessage(AsyncTestCase):
         assert "Can't instantiate abstract" in str(context.exception)
 
     async def test_field_signature(self):
-        wallet = BasicWallet()
+        session = InMemoryProfile.test_session()
+        wallet = session.wallet
         key_info = await wallet.create_signing_key()
 
         msg = SignedAgentMessage()

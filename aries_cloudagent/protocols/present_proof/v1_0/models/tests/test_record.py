@@ -10,7 +10,6 @@ class BasexRecordImpl(BaseExchangeRecord):
         schema_class = "BasexRecordImplSchema"
 
     RECORD_TYPE = "record"
-    CACHE_ENABLED = True
 
 
 class BasexRecordImplSchema(BaseExchangeSchema):

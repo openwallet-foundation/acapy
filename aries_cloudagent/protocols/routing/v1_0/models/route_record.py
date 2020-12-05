@@ -3,7 +3,7 @@
 from typing import Any
 from marshmallow import EXCLUDE, fields, validates_schema, ValidationError
 
-from .....config.injection_context import InjectionContext
+from .....core.profile import ProfileSession
 
 from .....messaging.models.base_record import BaseRecord, BaseRecordSchema
 
@@ -51,12 +51,12 @@ class RouteRecord(BaseRecord):
 
     @classmethod
     async def retrieve_by_recipient_key(
-        cls, context: InjectionContext, recipient_key: str
+        cls, session: ProfileSession, recipient_key: str
     ):
         """Retrieve a route record by recipient key."""
         tag_filter = {"recipient_key": recipient_key}
         # TODO post filter out our mediation requests?
-        return await cls.retrieve_by_tag_filter(context, tag_filter)
+        return await cls.retrieve_by_tag_filter(session, tag_filter)
 
     @property
     def record_value(self) -> dict:
@@ -72,12 +72,12 @@ class RouteRecord(BaseRecord):
 
     @classmethod
     async def retrieve_by_connection_id(
-        cls, context: InjectionContext, connection_id: str
+        cls, session: ProfileSession, connection_id: str
     ):
         """Retrieve a route record by connection id."""
         tag_filter = {"connection_id": connection_id}
         # TODO post filter out our mediation requests?
-        return await cls.retrieve_by_tag_filter(context, tag_filter)
+        return await cls.retrieve_by_tag_filter(session, tag_filter)
 
     def __eq__(self, other: Any) -> bool:
         """Comparison between records."""

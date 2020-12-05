@@ -71,7 +71,7 @@ class TestIndySdkHolder(AsyncTestCase):
     @async_mock.patch("indy.anoncreds.prover_store_credential")
     async def test_store_credential_with_mime_types(self, mock_store_cred):
         with async_mock.patch.object(
-            test_module, "IndyStorage", async_mock.MagicMock()
+            test_module, "IndySdkStorage", async_mock.MagicMock()
         ) as mock_storage:
             mock_storage.return_value = async_mock.MagicMock(
                 add_record=async_mock.CoroutineMock()

@@ -170,7 +170,7 @@ class OutboundTransportManager:
     async def start_transport(self, transport_id: str):
         """Start a registered transport."""
         transport = self.registered_transports[transport_id]()
-        transport.collector = await self.context.inject(Collector, required=False)
+        transport.collector = self.context.inject(Collector, required=False)
         await transport.start()
         self.running_transports[transport_id] = transport
 
@@ -409,9 +409,7 @@ class OutboundTransportManager:
     async def perform_encode(self, queued: QueuedOutboundMessage):
         """Perform message encoding."""
         transport = self.get_transport_instance(queued.transport_id)
-        wire_format = transport.wire_format or await queued.context.inject(
-            BaseWireFormat
-        )
+        wire_format = transport.wire_format or queued.context.inject(BaseWireFormat)
         queued.payload = await wire_format.encode_message(
             queued.context,
             queued.message.payload,

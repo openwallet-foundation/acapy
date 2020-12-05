@@ -7,10 +7,14 @@ from marshmallow import EXCLUDE
 
 from ...config.injection_context import InjectionContext
 from ...connections.models.conn_record import ConnRecord
+from ...core.in_memory import InMemoryProfile
+from ...core.profile import Profile
 from ...core.protocol_registry import ProtocolRegistry
 from ...messaging.agent_message import AgentMessage, AgentMessageSchema
 from ...messaging.responder import MockResponder
+from ...messaging.request_context import RequestContext
 from ...messaging.util import datetime_now
+from ...utils.stats import Collector
 
 from ...protocols.didcomm_prefix import DIDCommPrefix
 from ...protocols.problem_report.v1_0.message import ProblemReport
@@ -22,14 +26,11 @@ from ...transport.outbound.message import OutboundMessage
 from .. import dispatcher as test_module
 
 
-def make_context() -> InjectionContext:
-    context = InjectionContext()
-    context.injector.bind_instance(ProtocolRegistry, ProtocolRegistry())
-
-    collector = test_module.Collector()
-    context.injector.bind_instance(test_module.Collector, collector)
-
-    return context
+def make_profile() -> Profile:
+    profile = InMemoryProfile.test_profile()
+    profile.context.injector.bind_instance(ProtocolRegistry, ProtocolRegistry())
+    profile.context.injector.bind_instance(Collector, Collector())
+    return profile
 
 
 def make_inbound(payload) -> InboundMessage:
@@ -87,16 +88,15 @@ class StubV1_2AgentMessageHandler:
 
 class TestDispatcher(AsyncTestCase):
     async def test_dispatch(self):
-        context = make_context()
-        context.enforce_typing = False
-        registry = await context.inject(ProtocolRegistry)
+        profile = make_profile()
+        registry = profile.inject(ProtocolRegistry)
         registry.register_message_types(
             {
                 pfx.qualify(StubAgentMessage.Meta.message_type): StubAgentMessage
                 for pfx in DIDCommPrefix
             }
         )
-        dispatcher = test_module.Dispatcher(context)
+        dispatcher = test_module.Dispatcher(profile)
         await dispatcher.setup()
         rcv = Receiver()
         message = {
@@ -124,9 +124,8 @@ class TestDispatcher(AsyncTestCase):
             )
 
     async def test_dispatch_versioned_message(self):
-        context = make_context()
-        context.enforce_typing = False
-        registry = await context.inject(ProtocolRegistry)
+        profile = make_profile()
+        registry = profile.inject(ProtocolRegistry)
         registry.register_message_types(
             {
                 DIDCommPrefix.qualify_current(
@@ -140,7 +139,7 @@ class TestDispatcher(AsyncTestCase):
                 "path": "v1_1",
             },
         )
-        dispatcher = test_module.Dispatcher(context)
+        dispatcher = test_module.Dispatcher(profile)
         await dispatcher.setup()
         rcv = Receiver()
         message = {
@@ -161,9 +160,8 @@ class TestDispatcher(AsyncTestCase):
             )
 
     async def test_dispatch_versioned_message_no_message_class(self):
-        context = make_context()
-        context.enforce_typing = False
-        registry = await context.inject(ProtocolRegistry)
+        profile = make_profile()
+        registry = profile.inject(ProtocolRegistry)
         registry.register_message_types(
             {
                 DIDCommPrefix.qualify_current(
@@ -177,7 +175,7 @@ class TestDispatcher(AsyncTestCase):
                 "path": "v1_1",
             },
         )
-        dispatcher = test_module.Dispatcher(context)
+        dispatcher = test_module.Dispatcher(profile)
         await dispatcher.setup()
         rcv = Receiver()
         message = {"@type": "proto-name/1.1/no-such-message-type"}
@@ -196,9 +194,8 @@ class TestDispatcher(AsyncTestCase):
             )
 
     async def test_dispatch_versioned_message_message_class_deserialize_x(self):
-        context = make_context()
-        context.enforce_typing = False
-        registry = await context.inject(ProtocolRegistry)
+        profile = make_profile()
+        registry = profile.inject(ProtocolRegistry)
         registry.register_message_types(
             {
                 DIDCommPrefix.qualify_current(
@@ -212,7 +209,7 @@ class TestDispatcher(AsyncTestCase):
                 "path": "v1_1",
             },
         )
-        dispatcher = test_module.Dispatcher(context)
+        dispatcher = test_module.Dispatcher(profile)
         await dispatcher.setup()
         rcv = Receiver()
         message = {"@type": "proto-name/1.1/no-such-message-type"}
@@ -238,9 +235,8 @@ class TestDispatcher(AsyncTestCase):
             )
 
     async def test_dispatch_versioned_message_handle_greater_succeeds(self):
-        context = make_context()
-        context.enforce_typing = False
-        registry = await context.inject(ProtocolRegistry)
+        profile = make_profile()
+        registry = profile.inject(ProtocolRegistry)
         registry.register_message_types(
             {
                 DIDCommPrefix.qualify_current(
@@ -254,7 +250,7 @@ class TestDispatcher(AsyncTestCase):
                 "path": "v1_1",
             },
         )
-        dispatcher = test_module.Dispatcher(context)
+        dispatcher = test_module.Dispatcher(profile)
         await dispatcher.setup()
         rcv = Receiver()
         message = {
@@ -277,9 +273,8 @@ class TestDispatcher(AsyncTestCase):
             )
 
     async def test_dispatch_versioned_message_fail(self):
-        context = make_context()
-        context.enforce_typing = False
-        registry = await context.inject(ProtocolRegistry)
+        profile = make_profile()
+        registry = profile.inject(ProtocolRegistry)
         registry.register_message_types(
             {
                 DIDCommPrefix.qualify_current(
@@ -293,7 +288,7 @@ class TestDispatcher(AsyncTestCase):
                 "path": "v1_2",
             },
         )
-        dispatcher = test_module.Dispatcher(context)
+        dispatcher = test_module.Dispatcher(profile)
         await dispatcher.setup()
         rcv = Receiver()
         message = {
@@ -314,7 +309,7 @@ class TestDispatcher(AsyncTestCase):
             )
 
     async def test_bad_message_dispatch(self):
-        dispatcher = test_module.Dispatcher(make_context())
+        dispatcher = test_module.Dispatcher(make_profile())
         await dispatcher.setup()
         rcv = Receiver()
         bad_message = {"bad": "message"}
@@ -329,9 +324,8 @@ class TestDispatcher(AsyncTestCase):
         )
 
     async def test_dispatch_log(self):
-        context = make_context()
-        context.enforce_typing = False
-        registry = await context.inject(ProtocolRegistry)
+        profile = make_profile()
+        registry = profile.inject(ProtocolRegistry)
         registry.register_message_types(
             {
                 DIDCommPrefix.qualify_current(
@@ -340,7 +334,7 @@ class TestDispatcher(AsyncTestCase):
             },
         )
 
-        dispatcher = test_module.Dispatcher(context)
+        dispatcher = test_module.Dispatcher(profile)
         await dispatcher.setup()
 
         mock_task = async_mock.MagicMock(
@@ -356,9 +350,10 @@ class TestDispatcher(AsyncTestCase):
         dispatcher.log_task(mock_task)
 
     async def test_create_outbound_send_webhook(self):
-        context = make_context()
+        profile = make_profile()
+        context = RequestContext(profile)
         context.message_receipt = async_mock.MagicMock(in_time=datetime_now())
-        context.settings = {"timing.enabled": True}
+        context.update_settings({"timing.enabled": True})
         message = StubAgentMessage()
         responder = test_module.DispatcherResponder(
             context, message, None, async_mock.CoroutineMock()
@@ -377,7 +372,8 @@ class TestDispatcher(AsyncTestCase):
         assert len(responder.messages) == 1
 
     async def test_create_enc_outbound(self):
-        context = make_context()
+        profile = make_profile()
+        context = RequestContext(profile)
         message = b"abc123xyz7890000"
         responder = test_module.DispatcherResponder(
             context, message, None, async_mock.CoroutineMock()

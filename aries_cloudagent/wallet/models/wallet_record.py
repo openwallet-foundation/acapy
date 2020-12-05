@@ -6,6 +6,7 @@ from marshmallow import fields
 from marshmallow import validate
 from marshmallow.utils import EXCLUDE
 
+from ...core.profile import ProfileSession
 from ...messaging.models.base_record import (
     BaseRecord,
     BaseRecordSchema,
@@ -53,9 +54,11 @@ class WalletRecord(BaseRecord):
         # Wallet settings need to be prefixed with `wallet.`
         return {f"wallet.{k}": v for k, v in config.items()}
 
-    async def get_instance(self, context, extra_settings={}):
+    async def get_instance(
+        self, session: ProfileSession, extra_settings={}
+    ):
         """Get instance of wallet using wallet config."""
-        wallet_instance: BaseWallet = await context.inject(
+        wallet_instance: BaseWallet = session.(
             BaseWallet,
             settings={**self.get_config_as_settings(), **extra_settings},
         )

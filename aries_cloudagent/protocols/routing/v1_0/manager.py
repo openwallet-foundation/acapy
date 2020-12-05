@@ -3,8 +3,8 @@
 import json
 from typing import Coroutine, Sequence
 
-from ....config.injection_context import InjectionContext
 from ....core.error import BaseError
+from ....core.profile import ProfileSession
 from ....storage.base import BaseStorage, StorageRecord
 from ....storage.error import (
     StorageError,
@@ -31,27 +31,27 @@ class RoutingManager:
 
     RECORD_TYPE = "forward_route"
 
-    def __init__(self, context: InjectionContext):
+    def __init__(self, session: ProfileSession):
         """
         Initialize a RoutingManager.
 
         Args:
-            context: The context for this manager
+            session: The session for this manager
         """
-        self._context = context
-        if not context:
-            raise RoutingManagerError("Missing request context")
+        self._session = session
+        if not session:
+            raise RoutingManagerError("Missing profile session")
 
     @property
-    def context(self) -> InjectionContext:
+    def session(self) -> ProfileSession:
         """
-        Accessor for the current request context.
+        Accessor for the current profile session.
 
         Returns:
-            The request context for this connection
+            The profile session for this connection
 
         """
-        return self._context
+        return self._session
 
     async def get_recipient(self, recip_verkey: str) -> RouteRecord:
         """
@@ -66,7 +66,7 @@ class RoutingManager:
         """
         try:
             record = await RouteRecord.retrieve_by_recipient_key(
-                self.context, recip_verkey
+                self._session, recip_verkey
             )
         except StorageDuplicateError:
             raise RouteNotFoundError(
@@ -109,7 +109,7 @@ class RoutingManager:
                     )
 
         results = []
-        storage: BaseStorage = await self._context.inject(BaseStorage)
+        storage: BaseStorage = self._session.inject(BaseStorage)
         async for record in storage.search_records(RoutingManager.RECORD_TYPE, filters):
             value = json.loads(record.value)
             value.update(record.tags)
@@ -145,13 +145,13 @@ class RoutingManager:
             wallet_id=internal_wallet_id,
             recipient_key=recipient_key,
         )
-        await route_record.save(self.context)
+        await route_record.save(self._session)
         return route_record
 
     async def delete_route_record(self, route: RouteRecord):
         """Remove an existing route record."""
         if route and route.record_id:
-            storage: BaseStorage = await self._context.inject(BaseStorage)
+            storage: BaseStorage = self._session.inject(BaseStorage)
             await storage.delete_record(
                 StorageRecord(RoutingManager.RECORD_TYPE, None, None, route.record_id)
             )
