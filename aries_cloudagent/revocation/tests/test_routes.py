@@ -565,7 +565,7 @@ class TestRevocationRoutes(AsyncTestCase):
         )
         self.request.match_info = {"rev_reg_id": REV_REG_ID}
 
-        self.mock_request["context"].injector.clear_binding(BaseTailsServer)
+        self.context.injector.clear_binding(BaseTailsServer)
 
         with self.assertRaises(test_module.web.HTTPForbidden):
             await test_module.upload_tails_file(self.request)
@@ -595,8 +595,8 @@ class TestRevocationRoutes(AsyncTestCase):
         self.tails_server.upload_tails_file = async_mock.CoroutineMock(
             return_value=(False, "Internal Server Error")
         )
-        self.mock_request["context"].injector.clear_binding(BaseTailsServer)
-        self.mock_request["context"].injector.bind_instance(
+        self.context.injector.clear_binding(BaseTailsServer)
+        self.context.injector.bind_instance(
             BaseTailsServer, self.tails_server
         )
 

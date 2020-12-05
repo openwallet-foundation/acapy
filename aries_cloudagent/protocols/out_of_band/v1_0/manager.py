@@ -165,12 +165,12 @@ class OutOfBandManager:
             connection_key = await wallet.create_signing_key()
 
             # Multitenancy: add routing for key to handle inbound messages using relay
-            if self.context.settings.get(
+            if self.session.settings.get(
                 "multitenant.enabled"
-            ) and self.context.settings.get("wallet.id"):
-                multitenant_mgr = await self.context.inject(MultitenantManager)
+            ) and self.session.settings.get("wallet.id"):
+                multitenant_mgr = await self.session.inject(MultitenantManager)
                 await multitenant_mgr.add_wallet_route(
-                    wallet_id=self.context.settings.get("wallet.id"),
+                    wallet_id=self.session.settings.get("wallet.id"),
                     recipient_key=connection_key.verkey,
                 )
 

@@ -176,43 +176,6 @@ class TestAdminServer(AsyncTestCase):
             with self.assertRaises(AdminSetupError):
                 await self.get_admin_server(settings).start()
 
-    async def test_responder_send(self):
-        message = OutboundMessage(payload="{}")
-        server = self.get_admin_server()
-        await server.responder.send_outbound(message)
-        assert self.message_results == [(server.context, message)]
-
-    async def test_responder_webhook(self):
-        server = self.get_admin_server()
-        test_url = "target_url"
-        test_attempts = 99
-        server.add_webhook_target(
-            target_url=test_url,
-            topic_filter=["*"],  # cover vacuous filter
-            max_attempts=test_attempts,
-        )
-        test_topic = "test_topic"
-        test_payload = {"test": "TEST"}
-
-        with async_mock.patch.object(
-            server, "websocket_queues", async_mock.MagicMock()
-        ) as mock_wsq:
-            mock_wsq.values = async_mock.MagicMock(
-                return_value=[
-                    async_mock.MagicMock(
-                        authenticated=True, enqueue=async_mock.CoroutineMock()
-                    )
-                ]
-            )
-
-            await server.responder.send_webhook(test_topic, test_payload)
-            assert self.webhook_results == [
-                (test_topic, test_payload, test_url, test_attempts)
-            ]
-
-        server.remove_webhook_target(target_url=test_url)
-        assert test_url not in server.webhook_targets
-
     async def test_import_routes(self):
         # this test just imports all default admin routes
         # for routes with associated tests, this shouldn't make a difference in coverage

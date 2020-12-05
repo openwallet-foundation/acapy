@@ -228,7 +228,7 @@ class MultitenantManager:
 
             return (wallet_record, token_body)
 
-        except jwt.InvalidTokenError as e:
+        except jwt.InvalidTokenError:
             raise MultitenantManagerError("Invalid token provided")
         except (StorageNotFoundError) as e:
             raise MultitenantManagerError(e.roll_up)

@@ -114,7 +114,7 @@ class TestDispatcher(AsyncTestCase):
                 )
             )
             await dispatcher.queue_message(
-                dispatcher.context, make_inbound(message), rcv.send
+                dispatcher.profile, make_inbound(message), rcv.send
             )
             await dispatcher.task_queue
             handler_mock.assert_awaited_once()
@@ -150,7 +150,7 @@ class TestDispatcher(AsyncTestCase):
             StubAgentMessageHandler, "handle", autospec=True
         ) as handler_mock:
             await dispatcher.queue_message(
-                dispatcher.context, make_inbound(message), rcv.send
+                dispatcher.profile, make_inbound(message), rcv.send
             )
             await dispatcher.task_queue
             handler_mock.assert_awaited_once()
@@ -184,7 +184,7 @@ class TestDispatcher(AsyncTestCase):
             StubAgentMessageHandler, "handle", autospec=True
         ) as handler_mock:
             await dispatcher.queue_message(
-                dispatcher.context, make_inbound(message), rcv.send
+                dispatcher.profile, make_inbound(message), rcv.send
             )
             await dispatcher.task_queue
             assert rcv.messages and isinstance(rcv.messages[0][1], OutboundMessage)
@@ -225,7 +225,7 @@ class TestDispatcher(AsyncTestCase):
                 )
             )
             await dispatcher.queue_message(
-                dispatcher.context, make_inbound(message), rcv.send
+                dispatcher.profile, make_inbound(message), rcv.send
             )
             await dispatcher.task_queue
             assert rcv.messages and isinstance(rcv.messages[0][1], OutboundMessage)
@@ -263,7 +263,7 @@ class TestDispatcher(AsyncTestCase):
             StubAgentMessageHandler, "handle", autospec=True
         ) as handler_mock:
             await dispatcher.queue_message(
-                dispatcher.context, make_inbound(message), rcv.send
+                dispatcher.profile, make_inbound(message), rcv.send
             )
             await dispatcher.task_queue
             handler_mock.assert_awaited_once()
@@ -299,7 +299,7 @@ class TestDispatcher(AsyncTestCase):
             StubAgentMessageHandler, "handle", autospec=True
         ) as handler_mock:
             await dispatcher.queue_message(
-                dispatcher.context, make_inbound(message), rcv.send
+                dispatcher.profile, make_inbound(message), rcv.send
             )
             await dispatcher.task_queue
             assert rcv.messages and isinstance(rcv.messages[0][1], OutboundMessage)
@@ -314,7 +314,7 @@ class TestDispatcher(AsyncTestCase):
         rcv = Receiver()
         bad_message = {"bad": "message"}
         await dispatcher.queue_message(
-            dispatcher.context, make_inbound(bad_message), rcv.send
+            dispatcher.profile, make_inbound(bad_message), rcv.send
         )
         await dispatcher.task_queue
         assert rcv.messages and isinstance(rcv.messages[0][1], OutboundMessage)

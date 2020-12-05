@@ -4,9 +4,8 @@ from tempfile import NamedTemporaryFile
 from asynctest import TestCase as AsyncTestCase, mock as async_mock
 
 from ...utils.stats import Collector
-
 from ..injection_context import InjectionContext
-from ..provider import BaseProvider, StatsProvider, CachedProvider
+from ..provider import BaseProvider, ClassProvider, StatsProvider, CachedProvider
 from ..settings import Settings
 
 
@@ -38,13 +37,13 @@ class TestProvider(AsyncTestCase):
         )
         second_settings = first_settings.extend({"wallet.key": "another.wallet.key"})
 
-        cached_provider = CachedProvider(ProfileManagerProvider(), ("wallet.name",))
+        cached_provider = CachedProvider(
+            ClassProvider("aries_cloudagent.config.settings.Settings"), ("wallet.name",)
+        )
         context = InjectionContext()
 
-        first_instance = await cached_provider.provide(first_settings, context.injector)
-        second_instance = await cached_provider.provide(
-            second_settings, context.injector
-        )
+        first_instance = cached_provider.provide(first_settings, context.injector)
+        second_instance = cached_provider.provide(second_settings, context.injector)
 
         assert first_instance is second_instance
 
@@ -55,12 +54,12 @@ class TestProvider(AsyncTestCase):
         )
         second_settings = first_settings.extend({"wallet.name": "another.wallet.name"})
 
-        cached_provider = CachedProvider(ProfileManagerProvider(), ("wallet.name",))
+        cached_provider = CachedProvider(
+            ClassProvider("aries_cloudagent.config.settings.Settings"), ("wallet.name",)
+        )
         context = InjectionContext()
 
-        first_instance = await cached_provider.provide(first_settings, context.injector)
-        second_instance = await cached_provider.provide(
-            second_settings, context.injector
-        )
+        first_instance = cached_provider.provide(first_settings, context.injector)
+        second_instance = cached_provider.provide(second_settings, context.injector)
 
         assert first_instance is not second_instance
