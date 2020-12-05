@@ -54,11 +54,9 @@ class WalletRecord(BaseRecord):
         # Wallet settings need to be prefixed with `wallet.`
         return {f"wallet.{k}": v for k, v in config.items()}
 
-    async def get_instance(
-        self, session: ProfileSession, extra_settings={}
-    ):
+    def get_instance(self, session: ProfileSession, extra_settings={}):
         """Get instance of wallet using wallet config."""
-        wallet_instance: BaseWallet = session.(
+        wallet_instance = session.inject(
             BaseWallet,
             settings={**self.get_config_as_settings(), **extra_settings},
         )

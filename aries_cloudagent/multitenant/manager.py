@@ -1,13 +1,14 @@
 """Manager for multitenancy."""
 
 import jwt
-from typing import List, Tuple
+from typing import List, Tuple, cast
 
 from ..core.profile import ProfileSession
 from ..wallet.models.wallet_record import WalletRecord
 from ..core.error import BaseError
+from ..indy.sdk.profile import IndySdkProfile
+from ..wallet.indy import IndySdkWallet
 from ..storage.error import StorageNotFoundError
-from ..wallet.indy import IndyWallet
 from ..protocols.routing.v1_0.manager import RouteNotFoundError, RoutingManager
 
 from .error import WalletKeyMissingError
@@ -107,7 +108,7 @@ class MultitenantManager:
         # this creates the actual wallet
         # MTODO: override wallet properties that shouldn't be set
         # e.g. it shouldn't take the base wallet name if none is provided
-        await wallet_record.get_instance(self._session, {"key": wallet_key})
+        wallet_record.get_instance(self._session, {"key": wallet_key})
 
         return wallet_record
 
@@ -124,23 +125,25 @@ class MultitenantManager:
                 Only thrown for "unmanaged" wallets
 
         """
-        wallet_record = await WalletRecord.retrieve_by_id(self._session, wallet_id)
+        wallet_record = cast(
+            WalletRecord, await WalletRecord.retrieve_by_id(self._session, wallet_id)
+        )
 
         # Check if key is required and present
-        if wallet_record.wallet_type == IndyWallet.type and not (
+        if wallet_record.wallet_type == IndySdkProfile.BACKEND_NAME and not (
             wallet_key or wallet_record.wallet_config.get("key")
         ):
             raise WalletKeyMissingError("Missing key to open wallet")
 
         # MTODO: handle unable to open error
-        wallet_instance = await wallet_record.get_instance(
+        wallet_instance = wallet_record.get_instance(
             self._session, {"wallet.key": wallet_key} if wallet_key else {}
         )
-        await wallet_instance.close()
 
         # Remove the actual wallet
-        if wallet_instance.type == IndyWallet.type:
-            await wallet_instance.remove()
+        if isinstance(wallet_instance, IndySdkWallet):
+            wallet_instance.opened.config.auto_remove = True
+            await wallet_instance.opened.close()
 
         await wallet_record.delete_record(self._session)
 

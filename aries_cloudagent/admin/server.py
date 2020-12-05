@@ -31,7 +31,6 @@ from ..transport.outbound.message import OutboundMessage
 from ..utils.stats import Collector
 from ..utils.task_queue import TaskQueue
 from ..version import __version__
-from ..wallet.models.wallet_record import WalletRecord
 
 from .base_server import BaseAdminServer
 from .error import AdminSetupError
@@ -311,6 +310,8 @@ class AdminServer(BaseAdminServer):
 
                 except MultitenantManagerError as err:
                     raise web.HTTPUnauthorized(err.roll_up)
+
+                self.root_profile
 
             # TODO may dynamically adjust the profile used here according to
             # headers or other parameters
