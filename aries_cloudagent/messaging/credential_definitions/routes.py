@@ -13,7 +13,7 @@ from aiohttp_apispec import (
 
 from marshmallow import fields
 
-from ...issuer.base import BaseIssuer
+from ...indy.issuer import IndyIssuer
 from ...ledger.base import BaseLedger
 from ...storage.base import BaseStorage
 from ...tails.base import BaseTailsServer
@@ -37,7 +37,10 @@ class CredentialDefinitionSendRequestSchema(OpenAPISchema):
         required=False, description="Revocation supported flag"
     )
     revocation_registry_size = fields.Int(
-        description="Revocation registry size", required=False, **INDY_REV_REG_SIZE
+        description="Revocation registry size",
+        required=False,
+        strict=True,
+        **INDY_REV_REG_SIZE,
     )
     tag = fields.Str(
         required=False,
@@ -140,7 +143,7 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
             reason += ": missing wallet-type?"
         raise web.HTTPForbidden(reason=reason)
 
-    issuer: BaseIssuer = await context.inject(BaseIssuer)
+    issuer: IndyIssuer = await context.inject(IndyIssuer)
     try:  # even if in wallet, send it and raise if erroneously so
         async with ledger:
             (cred_def_id, cred_def, novel) = await shield(

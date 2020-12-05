@@ -6,7 +6,7 @@ from aiohttp_apispec import docs, querystring_schema, request_schema, response_s
 from marshmallow import fields, validate
 
 from ..messaging.models.openapi import OpenAPISchema
-from ..messaging.valid import ENDPOINT_TYPE, INDY_DID, INDY_RAW_PUBLIC_KEY
+from ..messaging.valid import ENDPOINT_TYPE, INDY_DID, INDY_RAW_PUBLIC_KEY, INT_EPOCH
 from ..storage.error import StorageError
 from ..wallet.error import WalletError
 
@@ -36,7 +36,7 @@ class TAAAcceptanceSchema(OpenAPISchema):
     """TAA acceptance record."""
 
     mechanism = fields.Str()
-    time = fields.Int()
+    time = fields.Int(strict=True, **INT_EPOCH)
 
 
 class TAAInfoSchema(OpenAPISchema):

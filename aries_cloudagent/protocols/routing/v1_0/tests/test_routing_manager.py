@@ -72,21 +72,17 @@ class TestRoutingManager(AsyncTestCase):
 
     async def test_get_recipient_duplicate_routes(self):
         with async_mock.patch.object(
-            self.storage, "search_records", autospec=True
+            self.storage, "find_record", autospec=True
         ) as mock_search:
-            mock_search.return_value.fetch_single = async_mock.CoroutineMock(
-                side_effect=StorageDuplicateError
-            )
+            mock_search.side_effect = StorageDuplicateError
             with self.assertRaises(RouteNotFoundError):
                 await self.manager.get_recipient(TEST_ROUTE_VERKEY)
 
     async def test_get_recipient_no_routes(self):
         with async_mock.patch.object(
-            self.storage, "search_records", autospec=True
+            self.storage, "find_record", autospec=True
         ) as mock_search:
-            mock_search.return_value.fetch_single = async_mock.CoroutineMock(
-                side_effect=StorageNotFoundError
-            )
+            mock_search.side_effect = StorageNotFoundError
             with self.assertRaises(RouteNotFoundError):
                 await self.manager.get_recipient(TEST_ROUTE_VERKEY)
 

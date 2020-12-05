@@ -6,15 +6,15 @@ from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
 from .....config.injection_context import InjectionContext
-from .....holder.base import BaseHolder
-from .....holder.indy import IndyHolder
-from .....issuer.base import BaseIssuer
+from .....indy.holder import IndyHolder
+from .....indy.sdk.holder import IndySdkHolder
+from .....indy.issuer import IndyIssuer
 from .....ledger.base import BaseLedger
 from .....messaging.request_context import RequestContext
 from .....messaging.responder import BaseResponder, MockResponder
 from .....storage.error import StorageNotFoundError
-from .....verifier.base import BaseVerifier
-from .....verifier.indy import IndyVerifier
+from .....indy.verifier import IndyVerifier
+from .....indy.sdk.verifier import IndySdkVerifier
 
 from ....didcomm_prefix import DIDCommPrefix
 
@@ -167,14 +167,14 @@ class TestPresentationManager(AsyncTestCase):
                 }
             )
         )
-        self.context.injector.bind_instance(BaseHolder, self.holder)
+        self.context.injector.bind_instance(IndyHolder, self.holder)
 
         Verifier = async_mock.MagicMock(IndyVerifier, autospec=True)
         self.verifier = Verifier()
         self.verifier.verify_presentation = async_mock.CoroutineMock(
             return_value="true"
         )
-        self.context.injector.bind_instance(BaseVerifier, self.verifier)
+        self.context.injector.bind_instance(IndyVerifier, self.verifier)
 
         self.manager = PresentationManager(self.context)
 
@@ -315,16 +315,6 @@ class TestPresentationManager(AsyncTestCase):
             nonce=PROOF_REQ_NONCE,
             ledger=await self.context.inject(BaseLedger, required=False),
         )
-        indy_proof_req["non_revoked"] = {  # exercise nudge to int
-            "from": 1234567890.1,
-            "to": NOW + 0.1,
-        }
-        for uuid in indy_proof_req["requested_attributes"]:
-            indy_proof_req["requested_attributes"][uuid]["non_revoked"]["from"] -= 0.1
-            indy_proof_req["requested_attributes"][uuid]["non_revoked"]["to"] += 0.1
-        for uuid in indy_proof_req["requested_predicates"]:
-            indy_proof_req["requested_predicates"][uuid]["non_revoked"]["from"] -= 0.1
-            indy_proof_req["requested_predicates"][uuid]["non_revoked"]["to"] += 0.1
 
         exchange_in.presentation_request = indy_proof_req
         request = async_mock.MagicMock()
@@ -535,8 +525,8 @@ class TestPresentationManager(AsyncTestCase):
             )
         )
         self.holder.create_presentation = async_mock.CoroutineMock(return_value="{}")
-        self.context.injector.clear_binding(BaseHolder)
-        self.context.injector.bind_instance(BaseHolder, self.holder)
+        self.context.injector.clear_binding(IndyHolder)
+        self.context.injector.bind_instance(IndyHolder, self.holder)
 
         with async_mock.patch.object(
             V10PresentationExchange, "save", autospec=True
@@ -604,10 +594,10 @@ class TestPresentationManager(AsyncTestCase):
         )
         self.holder.create_presentation = async_mock.CoroutineMock(return_value="{}")
         self.holder.create_revocation_state = async_mock.CoroutineMock(
-            side_effect=test_module.HolderError("Problem", {"message": "Nope"})
+            side_effect=test_module.IndyHolderError("Problem", {"message": "Nope"})
         )
-        self.context.injector.clear_binding(BaseHolder)
-        self.context.injector.bind_instance(BaseHolder, self.holder)
+        self.context.injector.clear_binding(IndyHolder)
+        self.context.injector.bind_instance(IndyHolder, self.holder)
 
         more_magic_rr = async_mock.MagicMock(
             get_or_fetch_local_tails_path=async_mock.CoroutineMock(
@@ -631,7 +621,7 @@ class TestPresentationManager(AsyncTestCase):
                 indy_proof_req, holder=self.holder
             )
 
-            with self.assertRaises(test_module.HolderError):
+            with self.assertRaises(test_module.IndyHolderError):
                 await self.manager.create_presentation(exchange_in, req_creds)
 
     async def test_create_presentation_multi_matching_proposal_creds_names(self):
@@ -701,8 +691,8 @@ class TestPresentationManager(AsyncTestCase):
                 }
             )
         )
-        self.context.injector.clear_binding(BaseHolder)
-        self.context.injector.bind_instance(BaseHolder, self.holder)
+        self.context.injector.clear_binding(IndyHolder)
+        self.context.injector.bind_instance(IndyHolder, self.holder)
 
         more_magic_rr = async_mock.MagicMock(
             get_or_fetch_local_tails_path=async_mock.CoroutineMock(

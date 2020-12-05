@@ -13,8 +13,8 @@ from aiohttp_apispec import (
 from marshmallow import fields, validate, validates_schema
 from marshmallow.exceptions import ValidationError
 
-from ....connections.models.connection_record import ConnectionRecord
-from ....holder.base import BaseHolder, HolderError
+from ....connections.models.conn_record import ConnRecord
+from ....indy.holder import IndyHolder, IndyHolderError
 from ....indy.util import generate_pr_nonce
 from ....ledger.error import LedgerError
 from ....messaging.decorators.attach_decorator import AttachDecorator
@@ -22,16 +22,18 @@ from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
 from ....messaging.valid import (
     INDY_CRED_DEF_ID,
+    INDY_CRED_REV_ID,
     INDY_DID,
     INDY_EXTRA_WQL,
     INDY_PREDICATE,
     INDY_SCHEMA_ID,
+    INDY_REV_REG_ID,
     INDY_VERSION,
     INT_EPOCH,
-    NATURAL_NUM,
+    NUM_STR_NATURAL,
+    NUM_STR_WHOLE,
     UUIDFour,
     UUID4,
-    WHOLE_NUM,
 )
 from ....storage.error import StorageError, StorageNotFoundError
 from ....utils.tracing import trace_event, get_timer, AdminAPIMessageTracingSchema
@@ -156,11 +158,13 @@ class IndyProofReqNonRevokedSchema(OpenAPISchema):
         description="Earliest epoch of interest for non-revocation proof",
         required=False,
         data_key="from",
+        strict=True,
         **INT_EPOCH,
     )
     to = fields.Int(
         description="Latest epoch of interest for non-revocation proof",
         required=False,
+        strict=True,
         **INT_EPOCH,
     )
 
@@ -176,7 +180,7 @@ class IndyProofReqNonRevokedSchema(OpenAPISchema):
             ValidationError: if data has neither from nor to
 
         """
-        if not (data.get("fro") or data.get("to")):
+        if not data:
             raise ValidationError(
                 "Non-revocation interval must have at least one end",
                 "(from, to)",
@@ -255,7 +259,7 @@ class IndyProofReqPredSpecSchema(OpenAPISchema):
         required=True,
         **INDY_PREDICATE,
     )
-    p_value = fields.Integer(description="Threshold value", required=True)
+    p_value = fields.Int(description="Threshold value", required=True, strict=True)
     restrictions = fields.List(
         fields.Nested(IndyProofReqPredSpecRestrictionsSchema()),
         description="If present, credential must satisfy one of given restrictions",
@@ -281,18 +285,67 @@ class IndyProofRequestSchema(OpenAPISchema):
         **INDY_VERSION,
     )
     requested_attributes = fields.Dict(
-        description=("Requested attribute specifications of proof request"),
+        description="Requested attribute specifications of proof request",
         required=True,
         keys=fields.Str(example="0_attr_uuid"),  # marshmallow/apispec v3.0 ignores
         values=fields.Nested(IndyProofReqAttrSpecSchema()),
     )
     requested_predicates = fields.Dict(
-        description=("Requested predicate specifications of proof request"),
+        description="Requested predicate specifications of proof request",
         required=True,
         keys=fields.Str(example="0_age_GE_uuid"),  # marshmallow/apispec v3.0 ignores
         values=fields.Nested(IndyProofReqPredSpecSchema()),
     )
     non_revoked = fields.Nested(IndyProofReqNonRevokedSchema(), required=False)
+
+
+class IndyCredInfoSchema(OpenAPISchema):
+    """Schema for indy cred-info."""
+
+    referent = fields.Str(
+        description="Wallet referent",
+        example=UUIDFour.EXAMPLE,  # typically but not necessarily a UUID4
+    )
+    attrs = fields.Dict(
+        description="Attribute names and value",
+        keys=fields.Str(example="age"),  # marshmallow/apispec v3.0 ignores
+        values=fields.Str(example="24"),
+    )
+
+
+class IndyCredPrecisSchema(OpenAPISchema):
+    """Schema for precis that indy credential search returns (and aca-py augments)."""
+
+    cred_info = fields.Nested(
+        IndyCredInfoSchema(),
+        description="Credential info",
+    )
+    schema_id = fields.Str(
+        description="Schema identifier",
+        **INDY_SCHEMA_ID,
+    )
+    cred_def_id = fields.Str(
+        description="Credential definition identifier",
+        **INDY_CRED_DEF_ID,
+    )
+    rev_reg_id = fields.Str(
+        description="Revocation registry identifier",
+        **INDY_REV_REG_ID,
+    )
+    cred_rev = fields.Str(
+        description="Credential revocation identifier",
+        **INDY_CRED_REV_ID,
+    )
+    interval = fields.Nested(
+        IndyProofReqNonRevokedSchema(),
+        description="Non-revocation interval from presentation request",
+    )
+    presentation_referents = fields.List(
+        fields.Str(
+            description="presentation referent",
+            example="1_age_uuid",
+        ),
+    )
 
 
 class V10PresentationCreateRequestRequestSchema(AdminAPIMessageTracingSchema):
@@ -333,6 +386,7 @@ class IndyRequestedCredsRequestedAttrSchema(OpenAPISchema):
     timestamp = fields.Int(
         description="Epoch timestamp of interest for non-revocation proof",
         required=False,
+        strict=True,
         **INT_EPOCH,
     )
 
@@ -350,6 +404,7 @@ class IndyRequestedCredsRequestedPredSchema(OpenAPISchema):
     timestamp = fields.Int(
         description="Epoch timestamp of interest for non-revocation proof",
         required=False,
+        strict=True,
         **INT_EPOCH,
     )
 
@@ -358,7 +413,7 @@ class V10PresentationRequestSchema(AdminAPIMessageTracingSchema):
     """Request schema for sending a presentation."""
 
     self_attested_attributes = fields.Dict(
-        description=("Self-attested attributes to build into proof"),
+        description="Self-attested attributes to build into proof",
         required=True,
         keys=fields.Str(example="attr_name"),  # marshmallow/apispec v3.0 ignores
         values=fields.Str(
@@ -402,9 +457,16 @@ class CredentialsFetchQueryStringSchema(OpenAPISchema):
         required=False,
         example="1_name_uuid,2_score_uuid",
     )
-    start = fields.Int(description="Start index", required=False, **WHOLE_NUM)
-    count = fields.Int(
-        description="Maximum number to retrieve", required=False, **NATURAL_NUM
+    start = fields.Str(
+        description="Start index",
+        required=False,
+        strict=True,
+        **NUM_STR_WHOLE,
+    )
+    count = fields.Str(
+        description="Maximum number to retrieve",
+        required=False,
+        **NUM_STR_NATURAL,
     )
     extra_query = fields.Str(
         description="(JSON) object mapping referents to extra WQL queries",
@@ -446,7 +508,11 @@ async def presentation_exchange_list(request: web.BaseRequest):
     }
 
     try:
-        records = await V10PresentationExchange.query(context, tag_filter, post_filter)
+        records = await V10PresentationExchange.query(
+            context=context,
+            tag_filter=tag_filter,
+            post_filter_positive=post_filter,
+        )
         results = [record.serialize() for record in records]
     except (StorageError, BaseModelError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
@@ -492,6 +558,7 @@ async def presentation_exchange_retrieve(request: web.BaseRequest):
 )
 @match_info_schema(PresExIdMatchInfoSchema())
 @querystring_schema(CredentialsFetchQueryStringSchema())
+@response_schema(IndyCredPrecisSchema(many=True), 200)
 async def presentation_exchange_credentials_list(request: web.BaseRequest):
     """
     Request handler for searching applicable credential records.
@@ -530,7 +597,7 @@ async def presentation_exchange_credentials_list(request: web.BaseRequest):
     start = int(start) if isinstance(start, str) else 0
     count = int(count) if isinstance(count, str) else 10
 
-    holder: BaseHolder = await context.inject(BaseHolder)
+    holder: IndyHolder = await context.inject(IndyHolder)
     try:
         credentials = await holder.get_credentials_for_presentation_request_by_referent(
             pres_ex_record.presentation_request,
@@ -539,7 +606,7 @@ async def presentation_exchange_credentials_list(request: web.BaseRequest):
             count,
             extra_query,
         )
-    except HolderError as err:
+    except IndyHolderError as err:
         await internal_error(err, web.HTTPBadRequest, pres_ex_record, outbound_handler)
 
     pres_ex_record.log_state(
@@ -583,9 +650,7 @@ async def presentation_exchange_send_proposal(request: web.BaseRequest):
     presentation_preview = body.get("presentation_proposal")
     connection_record = None
     try:
-        connection_record = await ConnectionRecord.retrieve_by_id(
-            context, connection_id
-        )
+        connection_record = await ConnRecord.retrieve_by_id(context, connection_id)
         presentation_proposal_message = PresentationProposal(
             comment=comment,
             presentation_proposal=PresentationPreview.deserialize(presentation_preview),
@@ -734,9 +799,7 @@ async def presentation_exchange_send_free_request(request: web.BaseRequest):
 
     connection_id = body.get("connection_id")
     try:
-        connection_record = await ConnectionRecord.retrieve_by_id(
-            context, connection_id
-        )
+        connection_record = await ConnRecord.retrieve_by_id(context, connection_id)
     except StorageNotFoundError as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
@@ -830,9 +893,7 @@ async def presentation_exchange_send_bound_request(request: web.BaseRequest):
 
     connection_id = body.get("connection_id")
     try:
-        connection_record = await ConnectionRecord.retrieve_by_id(
-            context, connection_id
-        )
+        connection_record = await ConnRecord.retrieve_by_id(context, connection_id)
     except StorageError as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
@@ -907,9 +968,7 @@ async def presentation_exchange_send_presentation(request: web.BaseRequest):
 
     connection_id = pres_ex_record.connection_id
     try:
-        connection_record = await ConnectionRecord.retrieve_by_id(
-            context, connection_id
-        )
+        connection_record = await ConnRecord.retrieve_by_id(context, connection_id)
     except StorageNotFoundError as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
@@ -933,7 +992,7 @@ async def presentation_exchange_send_presentation(request: web.BaseRequest):
         result = pres_ex_record.serialize()
     except (
         BaseModelError,
-        HolderError,
+        IndyHolderError,
         LedgerError,
         StorageError,
         WalletNotFoundError,
@@ -998,9 +1057,7 @@ async def presentation_exchange_verify_presentation(request: web.BaseRequest):
     connection_id = pres_ex_record.connection_id
 
     try:
-        connection_record = await ConnectionRecord.retrieve_by_id(
-            context, connection_id
-        )
+        connection_record = await ConnRecord.retrieve_by_id(context, connection_id)
     except StorageError as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 

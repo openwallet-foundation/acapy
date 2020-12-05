@@ -8,7 +8,7 @@ of the system to process a message.
 from typing import Mapping
 
 from ..config.injection_context import InjectionContext
-from ..connections.models.connection_record import ConnectionRecord
+from ..connections.models.conn_record import ConnRecord
 from ..transport.inbound.receipt import MessageReceipt
 
 from .agent_message import AgentMessage
@@ -58,15 +58,15 @@ class RequestContext(InjectionContext):
         self._connection_ready = active
 
     @property
-    def connection_record(self) -> ConnectionRecord:
+    def connection_record(self) -> ConnRecord:
         """Accessor for the related connection record."""
         return self._connection_record
 
     @connection_record.setter
-    def connection_record(self, record: ConnectionRecord):
+    def connection_record(self, record: ConnRecord):
         """Setter for the related connection record.
 
-        :param record: ConnectionRecord:
+        :param record: ConnRecord:
 
         """
         self._connection_record = record

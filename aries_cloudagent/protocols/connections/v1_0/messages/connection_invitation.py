@@ -37,6 +37,7 @@ class ConnectionInvitation(AgentMessage):
         endpoint: str = None,
         routing_keys: Sequence[str] = None,
         image_url: str = None,
+        tx_my_role: str = None,
         **kwargs,
     ):
         """
@@ -55,6 +56,7 @@ class ConnectionInvitation(AgentMessage):
         self.did = did
         self.recipient_keys = list(recipient_keys) if recipient_keys else None
         self.endpoint = endpoint
+        self.tx_my_role = tx_my_role
         self.routing_keys = list(routing_keys) if routing_keys else None
 
     def to_url(self, base_url: str = None) -> str:
@@ -129,6 +131,11 @@ class ConnectionInvitationSchema(AgentMessageSchema):
         allow_none=True,
         description="Optional image URL for connection invitation",
         example="http://192.168.56.101/img/logo.jpg",
+    )
+    tx_my_role = fields.Str(
+        required=False,
+        description="Optional role in connection to be used in Endorsement Protocol",
+        example="AUTHOR/ENDORSER",
     )
 
     @validates_schema
