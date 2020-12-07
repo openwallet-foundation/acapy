@@ -1,5 +1,6 @@
 """Manager for Mediation coordination."""
 import json
+import logging
 from typing import Optional, Sequence, Tuple
 
 from ....config.injection_context import InjectionContext
@@ -13,9 +14,9 @@ from ...routing.v1_0.models.route_record import RouteRecord
 from ...routing.v1_0.models.route_update import RouteUpdate
 from ...routing.v1_0.models.route_updated import RouteUpdated
 from .messages.inner.keylist_key import KeylistKey
+from .messages.inner.keylist_query_paginate import KeylistQueryPaginate
 from .messages.inner.keylist_update_rule import KeylistUpdateRule
 from .messages.inner.keylist_updated import KeylistUpdated
-from .messages.inner.keylist_query_paginate import KeylistQueryPaginate
 from .messages.keylist import Keylist
 from .messages.keylist_query import KeylistQuery
 from .messages.keylist_update import KeylistUpdate
@@ -24,6 +25,8 @@ from .messages.mediate_deny import MediationDeny
 from .messages.mediate_grant import MediationGrant
 from .messages.mediate_request import MediationRequest
 from .models.mediation_record import MediationRecord
+
+LOG = logging.getLogger(__name__)
 
 
 class MediationManagerError(BaseError):
@@ -368,7 +371,7 @@ class MediationManager:
     async def remove_key(
         self,
         recipient_key: str,
-        message: KeylistUpdate = None
+        message: Optional[KeylistUpdate] = None
     ) -> KeylistUpdate:
         """Prepare keylist update remove.
 
@@ -385,6 +388,66 @@ class MediationManager:
             KeylistUpdateRule(recipient_key, KeylistUpdateRule.RULE_REMOVE)
         )
         return message
+
+    async def store_update_results(
+        self,
+        connection_id: str,
+        results: Sequence[KeylistUpdated]
+    ):
+        """Store results of keylist update from keylist update resopnse message.
+
+        Args:
+            connection_id (str): connection ID of mediator sending results
+            results (Sequence[KeylistUpdated]): keylist update results
+
+        """
+        to_save: Sequence[RouteRecord] = []
+        to_remove: Sequence[RouteRecord] = []
+        for updated in results:
+            if updated.result != KeylistUpdated.RESULT_SUCCESS:
+                # TODO better handle different results?
+                LOG.warning(
+                    'Keylist update failure: %s(%s): %s',
+                    updated.action,
+                    updated.recipient_key,
+                    updated.result
+                )
+                continue
+            if updated.action == KeylistUpdateRule.RULE_ADD:
+                record = RouteRecord(
+                    role=RouteRecord.ROLE_CLIENT,
+                    recipient_key=updated.recipient_key,
+                    connection_id=connection_id
+                )
+                to_save.append(record)
+            elif updated.action == KeylistUpdateRule.RULE_REMOVE:
+                try:
+                    records = await RouteRecord.query(
+                        self.context,
+                        {
+                            'role': RouteRecord.ROLE_CLIENT,
+                            'connection_id': connection_id,
+                            'recipient_key': updated.recipient_key
+                        }
+                    )
+                except StorageNotFoundError as err:
+                    LOG.error(
+                        'No route found while processing keylist update resposne: %s',
+                        err
+                    )
+
+                if len(records) > 1:
+                    LOG.error(
+                        'Too many routes found while processing keylist update resposne'
+                    )
+
+                record = records[0]
+                to_remove.append(record)
+
+        for record_for_saving in to_save:
+            await record_for_saving.save(self.context, reason="Route successfully added.")
+        for record_for_removal in to_remove:
+            await record_for_removal.delete_record(self.context)
 
     async def get_my_keylist(
         self,
