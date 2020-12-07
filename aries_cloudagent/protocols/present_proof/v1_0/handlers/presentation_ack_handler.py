@@ -36,11 +36,12 @@ class PresentationAckHandler(BaseHandler):
         if not context.connection_ready:
             raise HandlerException("No connection established for presentation ack")
 
-        session = await context.session()
-        presentation_manager = PresentationManager(session)
-        await presentation_manager.receive_presentation_ack(
-            context.message, context.connection_record
-        )
+        async with context.session() as session:
+            presentation_manager = PresentationManager(session)
+            await presentation_manager.receive_presentation_ack(
+                context.message, context.connection_record
+            )
+            del presentation_manager
 
         trace_event(
             context.settings,

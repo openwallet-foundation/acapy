@@ -132,11 +132,12 @@ class Dispatcher:
         """
         r_time = get_timer()
 
-        session = await profile.session()
-        connection_mgr = ConnectionManager(session)
-        connection = await connection_mgr.find_inbound_connection(
-            inbound_message.receipt
-        )
+        async with profile.session() as session:
+            connection_mgr = ConnectionManager(session)
+            connection = await connection_mgr.find_inbound_connection(
+                inbound_message.receipt
+            )
+            del connection_mgr
         if connection:
             inbound_message.connection_id = connection.connection_id
 
@@ -151,7 +152,7 @@ class Dispatcher:
             message = None
 
         trace_event(
-            session.settings,
+            self.profile.settings,
             message,
             outcome="Dispatcher.handle_message.START",
         )
@@ -185,7 +186,7 @@ class Dispatcher:
         await handler(context, responder)
 
         trace_event(
-            session.settings,
+            self.profile.settings,
             context.message,
             outcome="Dispatcher.handle_message.END",
             perf_counter=r_time,
@@ -294,7 +295,7 @@ class DispatcherResponder(BaseResponder):
         Args:
             message: The `OutboundMessage` to be sent
         """
-        await self._send(self._context, message, self._inbound_message)
+        await self._send(self._context.profile, message, self._inbound_message)
 
     async def send_webhook(self, topic: str, payload: dict):
         """

@@ -25,7 +25,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 class IndySdkHolder(IndyHolder):
-    """Indy holder class."""
+    """Indy-SDK holder implementation."""
 
     def __init__(self, wallet: IndyOpenWallet):
         """

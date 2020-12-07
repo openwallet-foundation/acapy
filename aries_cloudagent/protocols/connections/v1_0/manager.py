@@ -13,7 +13,7 @@ from ....connections.models.diddoc import (
     PublicKeyType,
     Service,
 )
-from ....config.base import InjectorError
+from ....config.base import InjectionError
 from ....core.error import BaseError
 from ....core.profile import ProfileSession
 from ....ledger.base import BaseLedger
@@ -294,7 +294,7 @@ class ConnectionManager:
             A new `ConnectionRequest` message to send to the other agent
 
         """
-        wallet: BaseWallet = self._session.inject(BaseWallet)
+        wallet = self._session.inject(BaseWallet)
         if connection.my_did:
             my_info = await wallet.get_local_did(connection.my_did)
         else:
@@ -530,7 +530,7 @@ class ConnectionManager:
         response.assign_thread_from(request)
         response.assign_trace_from(request)
         # Sign connection field using the invitation key
-        wallet: BaseWallet = self._session.inject(BaseWallet)
+        wallet = self._session.inject(BaseWallet)
         await response.sign_field("connection", connection.invitation_key, wallet)
 
         # Update connection state
@@ -815,14 +815,14 @@ class ConnectionManager:
 
         if receipt.recipient_verkey:
             try:
-                wallet: BaseWallet = self._session.inject(BaseWallet)
+                wallet = self._session.inject(BaseWallet)
                 my_info = await wallet.get_local_did_for_verkey(
                     receipt.recipient_verkey
                 )
                 receipt.recipient_did = my_info.did
                 if "public" in my_info.metadata and my_info.metadata["public"] is True:
                     receipt.recipient_did_public = True
-            except InjectorError:
+            except InjectionError:
                 self._logger.warning(
                     "Cannot resolve recipient verkey, no wallet defined by "
                     "context: %s",

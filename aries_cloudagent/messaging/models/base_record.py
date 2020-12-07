@@ -198,15 +198,11 @@ class BaseRecord(BaseModel):
             session: The profile session to use
             record_id: The ID of the record to find
         """
-        vals = None
-
-        if not vals:
-            storage = session.inject(BaseStorage)
-            result = await storage.get_record(
-                cls.RECORD_TYPE, record_id, {"retrieveTags": False}
-            )
-            vals = json.loads(result.value)
-
+        storage = session.inject(BaseStorage)
+        result = await storage.get_record(
+            cls.RECORD_TYPE, record_id, {"retrieveTags": False}
+        )
+        vals = json.loads(result.value)
         return cls.from_storage(record_id, vals)
 
     @classmethod

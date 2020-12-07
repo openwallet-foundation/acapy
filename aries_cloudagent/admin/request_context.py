@@ -7,7 +7,7 @@ A request context provided by the admin server to admin route handlers.
 from typing import Mapping, Optional, Type
 
 from ..core.profile import Profile, ProfileSession
-from ..config.injector import Injector, InjectorError, InjectType
+from ..config.injector import Injector, InjectionError, InjectType
 from ..config.injection_context import InjectionContext
 from ..config.settings import Settings
 from ..utils.classloader import DeferLoad
@@ -26,7 +26,7 @@ class AdminRequestContext:
         settings: Mapping[str, object] = None
     ):
         """Initialize an instance of AdminRequestContext."""
-        self._context = context or profile.context.start_scope("admin", settings)
+        self._context = (context or profile.context).start_scope("admin", settings)
         self._profile = profile
 
     @property
@@ -98,7 +98,7 @@ class AdminRequestContext:
             if session._active and base_cls in self.session_inject:
                 ret = self.session_inject[base_cls]
                 if ret is None and required:
-                    raise InjectorError(
+                    raise InjectionError(
                         "No instance provided for class: {}".format(base_cls.__name__)
                     )
                 return ret

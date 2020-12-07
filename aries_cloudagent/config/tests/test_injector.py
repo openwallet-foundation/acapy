@@ -1,6 +1,6 @@
 from asynctest import TestCase as AsyncTestCase
 
-from ..base import BaseProvider, BaseInjector, BaseSettings, InjectorError
+from ..base import BaseProvider, BaseInjector, BaseSettings, InjectionError
 from ..injector import Injector
 from ..provider import ClassProvider, CachedProvider
 
@@ -43,7 +43,7 @@ class TestInjector(AsyncTestCase):
     def test_inject_simple(self):
         """Test a basic injection."""
         assert self.test_instance.inject(str, required=False) is None
-        with self.assertRaises(InjectorError):
+        with self.assertRaises(InjectionError):
             self.test_instance.inject(str)
         with self.assertRaises(ValueError):
             self.test_instance.bind_instance(str, None)
@@ -52,7 +52,7 @@ class TestInjector(AsyncTestCase):
 
     def test_inject_x(self):
         """Test injection failure on null base class."""
-        with self.assertRaises(InjectorError):
+        with self.assertRaises(InjectionError):
             self.test_instance.inject(None)
 
     def test_inject_provider(self):
@@ -72,13 +72,13 @@ class TestInjector(AsyncTestCase):
     def test_bad_provider(self):
         """Test empty and invalid provider results."""
         self.test_instance.bind_provider(str, MockProvider(None))
-        with self.assertRaises(InjectorError):
+        with self.assertRaises(InjectionError):
             self.test_instance.inject(str)
         self.test_instance.inject(str, required=False)
         self.test_instance.bind_provider(str, MockProvider(1))
         self.test_instance.clear_binding(str)
         assert self.test_instance.get_provider(str) is None
-        with self.assertRaises(InjectorError):
+        with self.assertRaises(InjectionError):
             self.test_instance.inject(str)
 
     def test_inject_class(self):
@@ -118,7 +118,7 @@ class TestInjector(AsyncTestCase):
         self.test_instance.clear_binding(int)
         self.test_instance.clear_binding(str)
         self.test_instance.bind_instance(str, test_int)
-        with self.assertRaises(InjectorError):
+        with self.assertRaises(InjectionError):
             self.test_instance.inject(str)
 
     def test_inject_cached(self):

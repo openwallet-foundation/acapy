@@ -119,6 +119,9 @@ class FaberAgent(DemoAgent):
             except ClientError:
                 pass
 
+    async def handle_issuer_cred_rev(self, message):
+        pass
+
     async def handle_present_proof(self, message):
         state = message["state"]
 

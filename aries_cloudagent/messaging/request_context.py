@@ -33,7 +33,7 @@ class RequestContext:
         """Initialize an instance of RequestContext."""
         self._connection_ready = False
         self._connection_record = None
-        self._context = context or profile.context.start_scope("request", settings)
+        self._context = (context or profile.context).start_scope("request", settings)
         self._message = None
         self._message_receipt = None
         self._profile = profile

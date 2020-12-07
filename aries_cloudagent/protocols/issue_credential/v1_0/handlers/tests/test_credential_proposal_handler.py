@@ -1,4 +1,3 @@
-import pytest
 from asynctest import (
     mock as async_mock,
     TestCase as AsyncTestCase,
@@ -20,9 +19,7 @@ class TestCredentialProposalHandler(AsyncTestCase):
 
         with async_mock.patch.object(
             handler, "CredentialManager", autospec=True
-        ) as mock_cred_mgr, async_mock.patch.object(
-            request_context, "session", async_mock.CoroutineMock()
-        ) as mock_session:
+        ) as mock_cred_mgr:
             mock_cred_mgr.return_value.receive_proposal = async_mock.CoroutineMock(
                 return_value=async_mock.MagicMock()
             )
@@ -33,7 +30,7 @@ class TestCredentialProposalHandler(AsyncTestCase):
             responder = MockResponder()
             await handler_inst.handle(request_context, responder)
 
-        mock_cred_mgr.assert_called_once_with(mock_session.return_value)
+        mock_cred_mgr.assert_called_once_with(request_context.profile)
         mock_cred_mgr.return_value.receive_proposal.assert_called_once_with(
             request_context.message, request_context.connection_record.connection_id
         )
@@ -46,9 +43,7 @@ class TestCredentialProposalHandler(AsyncTestCase):
 
         with async_mock.patch.object(
             handler, "CredentialManager", autospec=True
-        ) as mock_cred_mgr, async_mock.patch.object(
-            request_context, "session", async_mock.CoroutineMock()
-        ) as mock_session:
+        ) as mock_cred_mgr:
             mock_cred_mgr.return_value.receive_proposal = async_mock.CoroutineMock(
                 return_value=async_mock.MagicMock()
             )
@@ -62,7 +57,7 @@ class TestCredentialProposalHandler(AsyncTestCase):
             responder = MockResponder()
             await handler_inst.handle(request_context, responder)
 
-        mock_cred_mgr.assert_called_once_with(mock_session.return_value)
+        mock_cred_mgr.assert_called_once_with(request_context.profile)
         mock_cred_mgr.return_value.receive_proposal.assert_called_once_with(
             request_context.message, request_context.connection_record.connection_id
         )

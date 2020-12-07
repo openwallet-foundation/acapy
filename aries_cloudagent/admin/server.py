@@ -66,7 +66,7 @@ class AdminResponder(BaseResponder):
 
     def __init__(
         self,
-        context: InjectionContext,
+        profile: Profile,
         send: Coroutine,
         webhook: Coroutine,
         **kwargs,
@@ -79,7 +79,7 @@ class AdminResponder(BaseResponder):
 
         """
         super().__init__(**kwargs)
-        self._context = context
+        self._profile = profile
         self._send = send
         self._webhook = webhook
 
@@ -90,7 +90,7 @@ class AdminResponder(BaseResponder):
         Args:
             message: The `OutboundMessage` to be sent
         """
-        await self._send(self._context, message)
+        await self._send(self._profile, message)
 
     async def send_webhook(self, topic: str, payload: dict):
         """
@@ -318,7 +318,7 @@ class AdminServer(BaseAdminServer):
 
             # Create a responder with the request specific context
             responder = AdminResponder(
-                context,
+                profile,
                 self.outbound_message_router,
                 self.send_webhook,
             )
