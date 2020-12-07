@@ -1,4 +1,3 @@
-import pytest
 from asynctest import (
     mock as async_mock,
     TestCase as AsyncTestCase,
@@ -25,9 +24,7 @@ class TestCredentialRequestHandler(AsyncTestCase):
 
         with async_mock.patch.object(
             handler, "CredentialManager", autospec=True
-        ) as mock_cred_mgr, async_mock.patch.object(
-            request_context, "session", async_mock.CoroutineMock()
-        ) as mock_session:
+        ) as mock_cred_mgr:
             mock_cred_mgr.return_value.receive_request = async_mock.CoroutineMock(
                 return_value=async_mock.MagicMock()
             )
@@ -38,7 +35,7 @@ class TestCredentialRequestHandler(AsyncTestCase):
             responder = MockResponder()
             await handler_inst.handle(request_context, responder)
 
-        mock_cred_mgr.assert_called_once_with(mock_session.return_value)
+        mock_cred_mgr.assert_called_once_with(request_context.profile)
         mock_cred_mgr.return_value.receive_request.assert_called_once_with(
             request_context.message, request_context.connection_record.connection_id
         )
@@ -61,9 +58,7 @@ class TestCredentialRequestHandler(AsyncTestCase):
 
         with async_mock.patch.object(
             handler, "CredentialManager", autospec=True
-        ) as mock_cred_mgr, async_mock.patch.object(
-            request_context, "session", async_mock.CoroutineMock()
-        ) as mock_session:
+        ) as mock_cred_mgr:
             mock_cred_mgr.return_value.receive_request = async_mock.CoroutineMock(
                 return_value=cred_ex_rec
             )
@@ -80,7 +75,7 @@ class TestCredentialRequestHandler(AsyncTestCase):
                 cred_ex_record=cred_ex_rec, comment=None
             )
 
-        mock_cred_mgr.assert_called_once_with(mock_session.return_value)
+        mock_cred_mgr.assert_called_once_with(request_context.profile)
         mock_cred_mgr.return_value.receive_request.assert_called_once_with(
             request_context.message, request_context.connection_record.connection_id
         )
@@ -101,9 +96,7 @@ class TestCredentialRequestHandler(AsyncTestCase):
 
         with async_mock.patch.object(
             handler, "CredentialManager", autospec=True
-        ) as mock_cred_mgr, async_mock.patch.object(
-            request_context, "session", async_mock.CoroutineMock()
-        ) as mock_session:
+        ) as mock_cred_mgr:
             mock_cred_mgr.return_value.receive_request = async_mock.CoroutineMock(
                 return_value=cred_ex_rec
             )
@@ -119,7 +112,7 @@ class TestCredentialRequestHandler(AsyncTestCase):
             await handler_inst.handle(request_context, responder)
             mock_cred_mgr.return_value.issue_credential.assert_not_called()
 
-        mock_cred_mgr.assert_called_once_with(mock_session.return_value)
+        mock_cred_mgr.assert_called_once_with(request_context.profile)
         mock_cred_mgr.return_value.receive_request.assert_called_once_with(
             request_context.message, request_context.connection_record.connection_id
         )

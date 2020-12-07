@@ -2,7 +2,7 @@
 
 from typing import Mapping, Optional, Type
 
-from .base import BaseProvider, BaseInjector, InjectorError, InjectType
+from .base import BaseProvider, BaseInjector, InjectionError, InjectType
 from .provider import InstanceProvider, CachedProvider
 from .settings import Settings
 
@@ -70,7 +70,7 @@ class Injector(BaseInjector):
 
         """
         if not base_cls:
-            raise InjectorError("No base class provided for lookup")
+            raise InjectionError("No base class provided for lookup")
         provider = self._providers.get(base_cls)
         if settings:
             ext_settings = self.settings.extend(settings)
@@ -82,11 +82,11 @@ class Injector(BaseInjector):
             result = None
         if result is None:
             if required:
-                raise InjectorError(
+                raise InjectionError(
                     "No instance provided for class: {}".format(base_cls.__name__)
                 )
         elif not isinstance(result, base_cls) and self.enforce_typing:
-            raise InjectorError(
+            raise InjectionError(
                 "Provided instance does not implement the base class: {}".format(
                     base_cls.__name__
                 )

@@ -117,7 +117,7 @@ class RoutingManager:
                     )
 
         results = []
-        storage: BaseStorage = self._session.inject(BaseStorage)
+        storage = self._session.inject(BaseStorage)
         async for record in storage.search_records(RoutingManager.RECORD_TYPE, filters):
             value = json.loads(record.value)
             value.update(record.tags)

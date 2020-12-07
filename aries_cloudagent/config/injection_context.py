@@ -4,14 +4,14 @@ from collections import namedtuple
 import copy
 from typing import Mapping, Optional, Type
 
-from .base import BaseInjector, InjectorError
+from .base import BaseInjector, InjectionError
 from .injector import Injector, InjectType
 from .settings import Settings
 
 Scope = namedtuple("Scope", "name injector")
 
 
-class InjectionContextError(InjectorError):
+class InjectionContextError(InjectionError):
     """Base class for issues in the injection context."""
 
 

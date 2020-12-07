@@ -14,7 +14,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 class IndySdkVerifier(IndyVerifier):
-    """Indy verifier class."""
+    """Indy-SDK verifier implementation."""
 
     def __init__(self, ledger: IndySdkLedger):
         """

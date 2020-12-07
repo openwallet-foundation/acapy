@@ -8,12 +8,6 @@ from asynctest import mock as async_mock
 import indy.anoncreds
 from indy.error import IndyError, ErrorCode
 
-from ....storage.error import StorageError
-from ....storage.record import StorageRecord
-from ....protocols.issue_credential.v1_0.messages.inner.credential_preview import (
-    CredentialPreview,
-)
-
 from ...holder import IndyHolder
 
 from .. import holder as test_module

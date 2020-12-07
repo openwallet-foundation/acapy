@@ -1,6 +1,6 @@
 from asynctest import TestCase as AsyncTestCase
 
-from ..base import BaseInjector, InjectorError
+from ..base import InjectionError
 from ..injection_context import InjectionContext, InjectionContextError
 
 
@@ -48,7 +48,7 @@ class TestInjectionContext(AsyncTestCase):
     async def test_inject_simple(self):
         """Test a basic injection."""
         assert self.test_instance.inject(str, required=False) is None
-        with self.assertRaises(InjectorError):
+        with self.assertRaises(InjectionError):
             self.test_instance.inject(str)
         self.test_instance.injector.bind_instance(str, self.test_value)
         assert self.test_instance.inject(str) is self.test_value
@@ -65,3 +65,4 @@ class TestInjectionContext(AsyncTestCase):
         assert self.test_instance.inject(str, required=False) is None
         root = context.injector_for_scope(context.ROOT_SCOPE)
         assert root.inject(str, required=False) is None
+        assert self.test_instance.inject(str, required=False) is None

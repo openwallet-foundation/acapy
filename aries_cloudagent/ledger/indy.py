@@ -212,7 +212,7 @@ class IndySdkLedger(BaseLedger):
 
         Args:
             pool: The pool instance handling the raw ledger connection
-            wallet: The session IndySdkWallet instance
+            wallet: The IndySdkWallet instance
         """
         self.pool = pool
         self.wallet = wallet

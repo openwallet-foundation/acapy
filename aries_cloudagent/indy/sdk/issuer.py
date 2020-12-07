@@ -28,14 +28,14 @@ LOGGER = logging.getLogger(__name__)
 
 
 class IndySdkIssuer(IndyIssuer):
-    """Indy issuer class."""
+    """Indy-SDK issuer implementation."""
 
     def __init__(self, profile: IndySdkProfile):
         """
         Initialize an IndyIssuer instance.
 
         Args:
-            wallet: IndySdkProfile instance
+            profile: IndySdkProfile instance
 
         """
         self.profile = profile

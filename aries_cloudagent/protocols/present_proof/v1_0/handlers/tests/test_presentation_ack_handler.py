@@ -1,4 +1,3 @@
-import pytest
 from asynctest import (
     mock as async_mock,
     TestCase as AsyncTestCase,
@@ -16,12 +15,12 @@ class TestPresentationAckHandler(AsyncTestCase):
     async def test_called(self):
         request_context = RequestContext.test_context()
         request_context.message_receipt = MessageReceipt()
+        session = request_context.session()
+        setattr(request_context, "session", async_mock.MagicMock(return_value=session))
 
         with async_mock.patch.object(
             handler, "PresentationManager", autospec=True
-        ) as mock_pres_mgr, async_mock.patch.object(
-            request_context, "session", async_mock.CoroutineMock()
-        ) as mock_session:
+        ) as mock_pres_mgr:
             mock_pres_mgr.return_value.receive_presentation_ack = (
                 async_mock.CoroutineMock()
             )
@@ -32,7 +31,7 @@ class TestPresentationAckHandler(AsyncTestCase):
             responder = MockResponder()
             await handler_inst.handle(request_context, responder)
 
-        mock_pres_mgr.assert_called_once_with(mock_session.return_value)
+        mock_pres_mgr.assert_called_once_with(session)
         mock_pres_mgr.return_value.receive_presentation_ack.assert_called_once_with(
             request_context.message, request_context.connection_record
         )

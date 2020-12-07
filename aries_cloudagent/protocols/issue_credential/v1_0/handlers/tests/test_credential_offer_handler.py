@@ -1,4 +1,3 @@
-import pytest
 from asynctest import (
     mock as async_mock,
     TestCase as AsyncTestCase,
@@ -21,9 +20,7 @@ class TestCredentialOfferHandler(AsyncTestCase):
 
         with async_mock.patch.object(
             handler, "CredentialManager", autospec=True
-        ) as mock_cred_mgr, async_mock.patch.object(
-            request_context, "session", async_mock.CoroutineMock()
-        ) as mock_session:
+        ) as mock_cred_mgr:
             mock_cred_mgr.return_value.receive_offer = async_mock.CoroutineMock()
             request_context.message = CredentialOffer()
             request_context.connection_ready = True
@@ -31,7 +28,7 @@ class TestCredentialOfferHandler(AsyncTestCase):
             responder = MockResponder()
             await handler_inst.handle(request_context, responder)
 
-        mock_cred_mgr.assert_called_once_with(mock_session.return_value)
+        mock_cred_mgr.assert_called_once_with(request_context.profile)
         mock_cred_mgr.return_value.receive_offer.assert_called_once_with(
             request_context.message, request_context.connection_record.connection_id
         )
@@ -46,9 +43,7 @@ class TestCredentialOfferHandler(AsyncTestCase):
 
         with async_mock.patch.object(
             handler, "CredentialManager", autospec=True
-        ) as mock_cred_mgr, async_mock.patch.object(
-            request_context, "session", async_mock.CoroutineMock()
-        ) as mock_session:
+        ) as mock_cred_mgr:
             mock_cred_mgr.return_value.receive_offer = async_mock.CoroutineMock()
             mock_cred_mgr.return_value.create_request = async_mock.CoroutineMock(
                 return_value=(None, "credential_request_message")
@@ -59,7 +54,7 @@ class TestCredentialOfferHandler(AsyncTestCase):
             responder = MockResponder()
             await handler_inst.handle(request_context, responder)
 
-        mock_cred_mgr.assert_called_once_with(mock_session.return_value)
+        mock_cred_mgr.assert_called_once_with(request_context.profile)
         mock_cred_mgr.return_value.receive_offer.assert_called_once_with(
             request_context.message, request_context.connection_record.connection_id
         )

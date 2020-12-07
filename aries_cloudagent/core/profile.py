@@ -5,7 +5,7 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Any, Mapping, Optional, Type
 
-from ..config.base import ProviderError
+from ..config.base import InjectionError
 from ..config.injector import BaseInjector, InjectType
 from ..config.injection_context import InjectionContext
 from ..config.provider import BaseProvider
@@ -131,7 +131,7 @@ class ProfileSession(ABC):
     ):
         """Initialize a base profile session."""
         self._active = False
-        self._context = context or profile.context.start_scope("session", settings)
+        self._context = (context or profile.context).start_scope("session", settings)
         self._profile = profile
 
     async def _setup(self):
@@ -149,12 +149,12 @@ class ProfileSession(ABC):
         A session must be awaited or used as an async context manager.
         """
 
-        async def init():
+        async def _init():
             if not self._active:
                 await self._setup()
             return self
 
-        return init().__await__()
+        return _init().__await__()
 
     async def __aenter__(self):
         """Async context manager entry."""
@@ -270,6 +270,6 @@ class ProfileManagerProvider(BaseProvider):
             try:
                 self._inst[mgr_class] = ClassLoader.load_class(mgr_class)(self._context)
             except ClassNotFoundError as err:
-                raise ProviderError(f"Unknown profile manager: {mgr_type}") from err
+                raise InjectionError(f"Unknown profile manager: {mgr_type}") from err
 
         return self._inst[mgr_class]

@@ -3,7 +3,7 @@ from asynctest import mock as async_mock
 
 from .....cache.base import BaseCache
 from .....cache.in_memory import InMemoryCache
-from .....config.base import InjectorError
+from .....config.base import InjectionError
 from .....connections.models.conn_record import ConnRecord
 from .....connections.models.connection_target import ConnectionTarget
 from .....connections.models.diddoc import (
@@ -747,7 +747,7 @@ class TestConnectionManager(AsyncTestCase):
         ) as mock_wallet_get_local_did_for_verkey, async_mock.patch.object(
             self.manager, "find_connection", async_mock.CoroutineMock()
         ) as mock_mgr_find_conn:
-            mock_wallet_get_local_did_for_verkey.side_effect = InjectorError()
+            mock_wallet_get_local_did_for_verkey.side_effect = InjectionError()
             mock_mgr_find_conn.return_value = mock_conn
 
             assert await self.manager.resolve_inbound_connection(receipt)

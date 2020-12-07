@@ -180,7 +180,7 @@ class TestAdminServer(AsyncTestCase):
         message = OutboundMessage(payload="{}")
         server = self.get_admin_server()
         await server.responder.send_outbound(message)
-        assert self.message_results == [(server.context, message)]
+        assert self.message_results == [(server.root_profile, message)]
 
     async def test_responder_webhook(self):
         server = self.get_admin_server()
