@@ -100,8 +100,8 @@ class BaseSettings(Mapping[str, object]):
         return "<{}({})>".format(self.__class__.__name__, ", ".join(items))
 
 
-class InjectorError(ConfigError):
-    """The base exception raised by `BaseInjector` implementations."""
+class InjectionError(ConfigError):
+    """The base exception raised by Injector and Provider implementations."""
 
 
 class BaseInjector(ABC):
@@ -130,10 +130,6 @@ class BaseInjector(ABC):
     @abstractmethod
     def copy(self) -> "BaseInjector":
         """Produce a copy of the injector instance."""
-
-
-class ProviderError(ConfigError):
-    """The base exception raised by `BaseProvider` implementations."""
 
 
 class BaseProvider(ABC):

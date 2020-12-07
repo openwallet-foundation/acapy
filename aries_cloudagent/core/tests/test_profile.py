@@ -1,17 +1,28 @@
-import asyncio
+from asynctest import TestCase as AsyncTestCase
 
-from asynctest import TestCase as AsyncTestCase, mock as async_mock
-
-from ...config.base import ProviderError
+from ...config.base import InjectionError
 from ...config.injection_context import InjectionContext
 
 from ..error import ProfileSessionInactiveError
-from ..profile import ProfileManagerProvider, ProfileSession
+from ..profile import Profile, ProfileManagerProvider, ProfileSession
+
+
+class MockProfile(Profile):
+    def session(self, context: InjectionContext = None) -> ProfileSession:
+        """Start a new interactive session with no transaction support requested."""
+
+    def transaction(self, context: InjectionContext = None) -> ProfileSession:
+        """
+        Start a new interactive session with commit and rollback support.
+
+        If the current backend does not support transactions, then commit
+        and rollback operations of the session will not have any effect.
+        """
 
 
 class TestProfileSession(AsyncTestCase):
     async def test_session_active(self):
-        profile = async_mock.MagicMock()
+        profile = MockProfile()
         session = ProfileSession(profile)
 
         self.assertEqual(session.active, False)
@@ -21,10 +32,14 @@ class TestProfileSession(AsyncTestCase):
             await session.rollback()
         with self.assertRaises(ProfileSessionInactiveError):
             await session.inject(dict)
+        assert profile.inject(dict, required=False) is None
 
         await session.__aenter__()
 
         self.assertEqual(session.active, True)
+        session.context.injector.bind_instance(dict, dict())
+        assert session.inject(dict, required=False) is not None
+        assert profile.inject(dict, required=False) is None
 
         await session.__aexit__(None, None, None)
 
@@ -59,5 +74,5 @@ class TestProfileManagerProvider(AsyncTestCase):
         provider = ProfileManagerProvider(context)
         context.settings["wallet.type"] = "invalid-type"
 
-        with self.assertRaises(ProviderError):
+        with self.assertRaises(InjectionError):
             provider.provide(context.settings, context.injector)
