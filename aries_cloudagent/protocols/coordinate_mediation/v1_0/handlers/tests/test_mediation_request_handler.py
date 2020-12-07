@@ -3,8 +3,7 @@ import pytest
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
-from aries_cloudagent.config.injection_context import InjectionContext
-
+from ......config.injection_context import InjectionContext
 from ......connections.models.connection_record import ConnectionRecord
 from ......messaging.base_handler import HandlerException
 from ......messaging.request_context import RequestContext
@@ -14,8 +13,8 @@ from ......storage.base import BaseStorage
 from ......storage.basic import BasicStorage
 from ......wallet.base import BaseWallet
 from ......wallet.basic import BasicWallet
-from ...messages.mediate_request import MediationRequest
 from ...messages.mediate_grant import MediationGrant
+from ...messages.mediate_request import MediationRequest
 from ...models.mediation_record import MediationRecord
 from ..mediate_request_handler import MediationRequestHandler
 

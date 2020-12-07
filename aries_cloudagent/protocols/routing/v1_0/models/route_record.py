@@ -61,6 +61,7 @@ class RouteRecord(BaseRecord):
 
         Returns:
             RouteRecord: retrieved route record
+
         """
         tag_filter = {"recipient_key": recipient_key}
         return await cls.retrieve_by_tag_filter(context, tag_filter)
@@ -77,6 +78,7 @@ class RouteRecord(BaseRecord):
 
         Returns:
             RouteRecord: retrieved route record
+
         """
         tag_filter = {"connection_id": connection_id}
         return await cls.retrieve_by_tag_filter(context, tag_filter)
