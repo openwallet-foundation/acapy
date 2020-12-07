@@ -80,14 +80,6 @@ class DefaultContextBuilder(ContextBuilder):
             BaseIntroductionService, DemoIntroductionService(context)
         )
 
-        # Allow to use multitenant manager (with base wallet context) while
-        # in subwallet context
-        # MTODO: probably need to move this to profile
-        if context.settings.get("multitenant.enabled"):
-            context.injector.bind_instance(
-                MultitenantManager, MultitenantManager(context)
-            )
-
     async def load_plugins(self, context: InjectionContext):
         """Set up plugin registry and load plugins."""
 

@@ -17,6 +17,7 @@ import aiohttp_cors
 from marshmallow import fields, Schema
 
 from ..config.injection_context import InjectionContext
+from ..config.wallet import wallet_config
 from ..core.profile import Profile
 from ..core.plugin_registry import PluginRegistry
 from ..ledger.error import LedgerConfigError, LedgerTransactionError
@@ -274,6 +275,7 @@ class AdminServer(BaseAdminServer):
         async def setup_context(request: web.Request, handler):
             authorization_header = request.headers.get("Authorization")
             context = self.context
+            profile = self.root_profile
 
             # Multitenancy context setup
             # MTODO: extract to separate middleware
@@ -284,6 +286,7 @@ class AdminServer(BaseAdminServer):
                     raise web.HTTPUnauthorized(reason="Invalid header structure")
 
                 try:
+                    # MTODO: multitenant manager bind instance
                     multitenant_mgr = context.inject(MultitenantManager)
 
                     (
@@ -296,22 +299,22 @@ class AdminServer(BaseAdminServer):
                         wallet_record.wallet_record_id,
                     )
 
-                    # setup context for subwallet
-                    context = self.context.copy()
-                    context.settings = context.settings.extend(
-                        wallet_record.get_config_as_settings()
+                    extra_settings = (
+                        {"wallet.key": token_body["wallet_key"]}
+                        if token_body["wallet_key"]
+                        else None
                     )
-                    if token_body["wallet_key"]:
-                        context.settings["wallet.key"] = token_body["wallet_key"]
+                    context = multitenant_mgr.get_wallet_context(
+                        context, wallet_record, extra_settings
+                    )
+                    (profile, did_info) = await wallet_config(context, provision=False)
 
                 except MultitenantManagerError as err:
                     raise web.HTTPUnauthorized(err.roll_up)
 
-                self.root_profile
-
             # TODO may dynamically adjust the profile used here according to
             # headers or other parameters
-            admin_context = AdminRequestContext(self.root_profile, context=context)
+            admin_context = AdminRequestContext(profile, context=context)
 
             # Create a responder with the request specific context
             responder = AdminResponder(

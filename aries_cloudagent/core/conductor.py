@@ -260,7 +260,7 @@ class Conductor:
 
     def inbound_message_router(
         self,
-        context: InjectionContext,
+        profile: Profile,
         message: InboundMessage,
         can_respond: bool = False,
     ):
@@ -285,7 +285,7 @@ class Conductor:
 
         try:
             self.dispatcher.queue_message(
-                context,
+                profile,
                 message,
                 self.outbound_message_router,
                 self.admin_server and self.admin_server.send_webhook,

@@ -3,11 +3,14 @@
 import jwt
 from typing import List, Tuple, cast
 
-from ..core.profile import ProfileSession
+from ..core.profile import ProfileManager, ProfileManagerProvider, ProfileSession
+from ..config.wallet import wallet_config as configure_wallet
+from ..config.injection_context import InjectionContext
 from ..wallet.models.wallet_record import WalletRecord
 from ..core.error import BaseError
 from ..indy.sdk.profile import IndySdkProfile
 from ..wallet.indy import IndySdkWallet
+from ..wallet.base import BaseWallet
 from ..storage.error import StorageNotFoundError
 from ..protocols.routing.v1_0.manager import RouteNotFoundError, RoutingManager
 
@@ -68,6 +71,25 @@ class MultitenantManager:
 
         return False
 
+    def get_wallet_context(
+        self,
+        base_context: InjectionContext,
+        wallet_record: WalletRecord,
+        extra_settings: dict = {},
+    ) -> InjectionContext:
+        context = base_context.copy()
+        # MTODO: remove base wallet settings
+        context.settings = context.settings.extend(
+            wallet_record.get_config_as_settings()
+        ).extend(extra_settings)
+
+        # MTODO: caching
+        # MTODO: context is passed to constructor of provider, if we can avoid
+        # that we don't need to rebind the provider each time
+        context.injector.bind_provider(ProfileManager, ProfileManagerProvider(context))
+
+        return context
+
     async def create_wallet(
         self, wallet_config: dict, key_management_mode: str
     ) -> WalletRecord:
@@ -105,10 +127,14 @@ class MultitenantManager:
         )
         await wallet_record.save(self._session)
 
-        # this creates the actual wallet
-        # MTODO: override wallet properties that shouldn't be set
-        # e.g. it shouldn't take the base wallet name if none is provided
-        wallet_record.get_instance(self._session, {"key": wallet_key})
+        # get context for new wallet
+        context = self.get_wallet_context(
+            self._session.context, wallet_record, {"wallet.key": wallet_key}
+        )
+
+        # provision new wallet
+        (profile,) = await configure_wallet(context, provision=True)
+        await profile.close()
 
         return wallet_record
 
@@ -139,6 +165,17 @@ class MultitenantManager:
         wallet_instance = wallet_record.get_instance(
             self._session, {"wallet.key": wallet_key} if wallet_key else {}
         )
+
+        # get context for new wallet
+        context = self.get_wallet_context(
+            self._session.context,
+            wallet_record,
+            {"wallet.key": wallet_key} if wallet_key else {},
+        )
+
+        # Get profile associated with wallet
+        (profile,) = await configure_wallet(context, provision=False)
+        wallet_instance = profile.session().inject(BaseWallet)
 
         # Remove the actual wallet
         if isinstance(wallet_instance, IndySdkWallet):
