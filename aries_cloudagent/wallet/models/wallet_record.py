@@ -6,13 +6,11 @@ from marshmallow import fields
 from marshmallow import validate
 from marshmallow.utils import EXCLUDE
 
-from ...core.profile import ProfileSession
 from ...messaging.models.base_record import (
     BaseRecord,
     BaseRecordSchema,
 )
 from ...messaging.valid import UUIDFour
-from ..base import BaseWallet
 
 
 class WalletRecord(BaseRecord):

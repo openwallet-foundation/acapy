@@ -77,6 +77,17 @@ class MultitenantManager:
         wallet_record: WalletRecord,
         extra_settings: dict = {},
     ) -> InjectionContext:
+        """Get the context for a wallet record.
+
+        Args:
+            base_context: Base context to extend from
+            wallet_record: Wallet record to get the context for
+            extra_settings: Any extra context settings
+
+        Returns:
+            InjectionContext: Context for the wallet record
+
+        """
         context = base_context.copy()
         # MTODO: remove base wallet settings
         context.settings = context.settings.extend(

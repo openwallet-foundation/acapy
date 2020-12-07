@@ -1,6 +1,5 @@
 """Classes for configuring the default injection context."""
 
-from aries_cloudagent.multitenant.manager import MultitenantManager
 from .base_context import ContextBuilder
 from .injection_context import InjectionContext
 from .provider import CachedProvider, ClassProvider
