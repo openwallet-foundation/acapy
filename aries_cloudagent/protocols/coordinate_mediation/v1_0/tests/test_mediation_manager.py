@@ -45,7 +45,10 @@ class TestMediationManager(AsyncTestCase):  # pylint: disable=R0904
         self.context.injector.bind_instance(BaseStorage, self.storage)
         self.context.injector.bind_instance(BaseWallet, self.wallet)
         self.manager = MediationManager(self.context)
-        self.record = MediationRecord(connection_id=TEST_CONN_ID)
+        self.record = MediationRecord(
+            state=MediationRecord.STATE_GRANTED,
+            connection_id=TEST_CONN_ID
+        )
         assert self.manager.context
 
     async def test_create_manager_no_context(self):
