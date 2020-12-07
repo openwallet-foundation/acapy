@@ -142,7 +142,8 @@ async def actionmenu_perform(request: web.BaseRequest):
     params = await request.json()
 
     try:
-        connection = await ConnRecord.retrieve_by_id(context, connection_id)
+        async with context.session() as session:
+            connection = await ConnRecord.retrieve_by_id(session, connection_id)
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
 
@@ -169,7 +170,8 @@ async def actionmenu_request(request: web.BaseRequest):
     outbound_handler = request.app["outbound_message_router"]
 
     try:
-        connection = await ConnRecord.retrieve_by_id(context, connection_id)
+        async with context.session() as session:
+            connection = await ConnRecord.retrieve_by_id(session, connection_id)
     except StorageNotFoundError as err:
         LOGGER.debug("Connection not found for action menu request: %s", connection_id)
         raise web.HTTPNotFound(reason=err.roll_up) from err
@@ -205,7 +207,8 @@ async def actionmenu_send(request: web.BaseRequest):
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     try:
-        connection = await ConnRecord.retrieve_by_id(context, connection_id)
+        async with context.session() as session:
+            connection = await ConnRecord.retrieve_by_id(session, connection_id)
     except StorageNotFoundError as err:
         LOGGER.debug(
             "Connection not found for action menu send request: %s", connection_id
