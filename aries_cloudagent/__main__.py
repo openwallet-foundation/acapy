@@ -1,3 +1,5 @@
+"""aries_cloudagent package entry point"""
+
 import os
 import sys
 
