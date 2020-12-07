@@ -1,57 +1,77 @@
+"""Test handler for keylist-update message."""
+import pytest
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
 from aries_cloudagent.config.injection_context import InjectionContext
+
+from ......config.injection_context import InjectionContext
+from ......connections.models.connection_record import ConnectionRecord
 from ......messaging.base_handler import HandlerException
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
+from ......storage.base import BaseStorage
+from ......storage.basic import BasicStorage
+from ......wallet.base import BaseWallet
+from ......wallet.basic import BasicWallet
+from .....problem_report.v1_0.message import ProblemReport
+from ...messages.inner.keylist_update_rule import KeylistUpdateRule
+from ...messages.keylist_update import KeylistUpdate
+from ...messages.keylist_update_response import KeylistUpdateResponse
+from ...models.mediation_record import MediationRecord
+from ..keylist_update_handler import KeylistUpdateHandler
 
-from .. import keylist_update_handler as TestModule
-_handler = TestModule.KeylistUpdateHandler()
-from ...messages.keylist_update_response import KeylistUpdateResponse as response
-from ...messages.keylist_update import KeylistUpdate as update
-from ...messages.keylist_query import KeylistQuery as query
+TEST_CONN_ID = 'conn-id'
+TEST_VERKEY = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
 
 
-"""
-    Tests for Mediation based on "0211: Mediator Coordination Protocol" aries-rfc. 
-"""
+class TestKeylistUpdateHandler(AsyncTestCase):
+    """Test handler for keylist-update message."""
 
+    async def setUp(self):
+        """Setup test dependencies."""
+        self.context = RequestContext(
+            base_context=InjectionContext(enforce_typing=False)
+        )
+        self.context.message = KeylistUpdate(updates=[
+            KeylistUpdateRule(
+                recipient_key=TEST_VERKEY, action=KeylistUpdateRule.RULE_ADD
+            )
+        ])
+        self.context.connection_ready = True
+        self.context.connection_record = ConnectionRecord(connection_id=TEST_CONN_ID)
+        self.context.injector.bind_instance(BaseStorage, BasicStorage())
+        self.context.injector.bind_instance(BaseWallet, BasicWallet())
 
-class TestKeyListUpdateRequestHandler:
+    async def test_handler_no_active_connection(self):
+        handler, responder = KeylistUpdateHandler(), MockResponder()
+        self.context.connection_ready = False
+        with pytest.raises(HandlerException) as exc:
+            await handler.handle(self.context, responder)
+            assert 'no active connection' in str(exc.value)
 
-    async def test_update_handle(self):
-        handler, responder = _handler(), MockResponder()
+    async def test_handler_no_record(self):
+        handler, responder = KeylistUpdateHandler(), MockResponder()
+        await handler.handle(self.context, responder)
+        assert len(responder.messages) == 1
+        result, _target = responder.messages[0]
+        assert isinstance(result, ProblemReport)
 
-        mediate_request = update( updates = [])
-        with async_mock.patch.object(
-            TestModule, "ConnectionManager", autospec=True
-        ) as mock_mgr:
-            await handler.handle(self.context,responder)
-    
-    async def test_query_handle(self):
-        handler, responder = _handler(), MockResponder()
+    async def test_handler_mediation_not_granted(self):
+        handler, responder = KeylistUpdateHandler(), MockResponder()
+        await MediationRecord(connection_id=TEST_CONN_ID).save(self.context)
+        await handler.handle(self.context, responder)
+        assert len(responder.messages) == 1
+        result, _target = responder.messages[0]
+        assert isinstance(result, ProblemReport)
 
-        mediate_request = query( filter = None, paginate = None)
-        with async_mock.patch.object(
-            TestModule, "ConnectionManager", autospec=True
-        ) as mock_mgr:
-            await handler.handle(self.context,responder)
-
-    async def test_updated_response(self):
-        handler, responder = _handler(), MockResponder()
-
-        mediate_request = update( updates = [])
-        with async_mock.patch.object(
-            TestModule, "ConnectionManager", autospec=True
-        ) as mock_mgr:
-            await handler.handle(self.context,responder)
-            messages = responder.messages
-
-            assert messages
-            assert len(messages) == 1
-            
-            (result, _) = messages[0]
-            assert type(result) == response
-            assert result._thread._thid == self.context.message._message_id
-
+    async def test_handler(self):
+        handler, responder = KeylistUpdateHandler(), MockResponder()
+        await MediationRecord(
+            state=MediationRecord.STATE_GRANTED,
+            connection_id=TEST_CONN_ID
+        ).save(self.context)
+        await handler.handle(self.context, responder)
+        assert len(responder.messages) == 1
+        result, _target = responder.messages[0]
+        assert isinstance(result, KeylistUpdateResponse)
