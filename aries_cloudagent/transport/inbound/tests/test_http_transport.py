@@ -3,11 +3,12 @@ import pytest
 import json
 
 from aiohttp.test_utils import AioHTTPTestCase, unittest_run_loop, unused_port
-from aiohttp import web
 from asynctest import mock as async_mock
 
+from ....core.in_memory import InMemoryProfile
+
 from ...outbound.message import OutboundMessage
-from ...wire_format import BaseWireFormat, JsonWireFormat
+from ...wire_format import JsonWireFormat
 
 from ..http import HttpTransport
 from ..message import InboundMessage
@@ -39,7 +40,7 @@ class TestHttpTransport(AioHTTPTestCase):
     ):
         if not self.session:
             session = InboundSession(
-                context=None,
+                profile=InMemoryProfile.test_profile(),
                 can_respond=can_respond,
                 inbound_handler=self.receive_message,
                 session_id=None,

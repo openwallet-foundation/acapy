@@ -321,7 +321,7 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             connection_id = "connection_id"
             message = OutboundMessage(payload=payload, connection_id=connection_id)
 
-            await conductor.outbound_message_router(conductor.context, message)
+            await conductor.outbound_message_router(conductor.root_profile, message)
 
             conn_mgr.return_value.get_connection_targets.assert_awaited_once_with(
                 connection_id=connection_id
@@ -332,7 +332,7 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             )
 
             mock_outbound_mgr.return_value.enqueue_message.assert_called_once_with(
-                conductor.context, message
+                conductor.root_profile, message
             )
 
     async def test_outbound_message_handler_with_verkey_no_target(self):
@@ -383,7 +383,7 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
 
             await conductor.setup()
 
-            conductor.handle_not_returned(conductor.context, message)
+            conductor.handle_not_returned(conductor.root_profile, message)
 
             with async_mock.patch.object(
                 test_module, "ConnectionManager"
@@ -394,14 +394,14 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
                     async_mock.CoroutineMock()
                 )
                 mock_run_task.side_effect = test_module.ConnectionManagerError()
-                await conductor.queue_outbound(conductor.context, message)
+                await conductor.queue_outbound(conductor.root_profile, message)
                 mock_outbound_mgr.return_value.enqueue_message.assert_not_called()
 
                 message.connection_id = None
                 mock_outbound_mgr.return_value.enqueue_message.side_effect = (
                     test_module.OutboundDeliveryError()
                 )
-                await conductor.queue_outbound(conductor.context, message)
+                await conductor.queue_outbound(conductor.root_profile, message)
                 mock_run_task.assert_called_once()
 
     async def test_handle_not_returned_ledger_x(self):
@@ -429,7 +429,7 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             )
 
             with self.assertRaises(test_module.LedgerConfigError):
-                conductor.handle_not_returned(conductor.context, message)
+                conductor.handle_not_returned(conductor.root_profile, message)
 
             mock_dispatch_run.assert_called_once()
             mock_notify.assert_called_once()
@@ -460,7 +460,7 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             )
 
             with self.assertRaises(test_module.LedgerConfigError):
-                await conductor.queue_outbound(conductor.context, message)
+                await conductor.queue_outbound(conductor.root_profile, message)
 
             mock_dispatch_run.assert_called_once()
             mock_notify.assert_called_once()

@@ -4,7 +4,6 @@ import json
 import logging
 from typing import Sequence, Tuple, Union
 
-from ..config.base import InjectorError
 from ..core.profile import ProfileSession
 
 from ..protocols.routing.v1_0.messages.forward import Forward
@@ -108,9 +107,8 @@ class PackWireFormat(BaseWireFormat):
         receipt: MessageReceipt,
     ):
         """Look up the wallet instance and perform the message unpack."""
-        try:
-            wallet: BaseWallet = session.inject(BaseWallet)
-        except InjectorError:
+        wallet = session.inject(BaseWallet, required=False)
+        if not wallet:
             raise MessageParseError("Wallet not defined in profile session")
 
         try:
@@ -171,7 +169,7 @@ class PackWireFormat(BaseWireFormat):
         if not sender_key or not recipient_keys:
             raise MessageEncodeError("Cannot pack message without associated keys")
 
-        wallet: BaseWallet = session.inject(BaseWallet, required=False)
+        wallet = session.inject(BaseWallet, required=False)
         if not wallet:
             raise MessageEncodeError("No wallet instance")
 

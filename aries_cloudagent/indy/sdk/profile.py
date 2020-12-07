@@ -3,6 +3,7 @@
 import logging
 
 from typing import Any, Mapping
+from weakref import ref
 
 from ...cache.base import BaseCache
 from ...config.injection_context import InjectionContext
@@ -32,8 +33,9 @@ class IndySdkProfile(Profile):
         """Create a new IndyProfile instance."""
         super().__init__(context=context, name=opened.name, created=opened.created)
         self.opened = opened
-        self.pool: IndySdkLedgerPool = None
+        self.ledger_pool: IndySdkLedgerPool = None
         self.init_ledger_pool()
+        self.bind_providers()
 
     @property
     def name(self) -> str:
@@ -58,13 +60,39 @@ class IndySdkProfile(Profile):
             LOGGER.error("Note: setting ledger to read-only mode")
         genesis_transactions = self.settings.get("ledger.genesis_transactions")
         cache = self.context.injector.inject(BaseCache, required=False)
-        self.pool = IndySdkLedgerPool(
+        self.ledger_pool = IndySdkLedgerPool(
             pool_name,
             keepalive=keepalive,
             cache=cache,
             genesis_transactions=genesis_transactions,
             read_only=read_only,
         )
+
+    def bind_providers(self):
+        """Initialize the profile-level instance providers."""
+        injector = self._context.injector
+        injector.bind_provider(
+            IndyHolder,
+            ClassProvider(
+                "aries_cloudagent.indy.sdk.holder.IndySdkHolder", self.opened
+            ),
+        )
+        injector.bind_provider(
+            IndyIssuer,
+            ClassProvider("aries_cloudagent.indy.sdk.issuer.IndySdkIssuer", ref(self)),
+        )
+
+        if self.ledger_pool:
+            ledger = IndySdkLedger(self.ledger_pool, IndySdkWallet(self.opened))
+
+            injector.bind_instance(BaseLedger, ledger)
+            injector.bind_provider(
+                IndyVerifier,
+                ClassProvider(
+                    "aries_cloudagent.indy.sdk.verifier.IndySdkVerifier",
+                    ledger,
+                ),
+            )
 
     def session(self, context: InjectionContext = None) -> "ProfileSession":
         """Start a new interactive session with no transaction support requested."""
@@ -98,19 +126,13 @@ class IndySdkProfileSession(ProfileSession):
     ):
         """Create a new IndySdkProfileSession instance."""
         super().__init__(profile=profile, context=context, settings=settings)
-        self.wallet = IndySdkWallet(self.profile.opened)
-        if self.profile.pool:
-            self.ledger = IndySdkLedger(self.profile.pool, self.wallet)
-        else:
-            self.ledger = None
 
     async def _setup(self):
         """Create the session or transaction connection, if needed."""
         await super()._setup()
         injector = self._context.injector
-        injector.bind_instance(
-            BaseWallet,
-            self.wallet,
+        injector.bind_provider(
+            BaseWallet, ClassProvider(IndySdkWallet, self.profile.opened)
         )
         injector.bind_provider(
             BaseStorage,
@@ -118,31 +140,6 @@ class IndySdkProfileSession(ProfileSession):
                 "aries_cloudagent.storage.indy.IndySdkStorage", self.profile.opened
             ),
         )
-        injector.bind_provider(
-            IndyHolder,
-            ClassProvider(
-                "aries_cloudagent.indy.sdk.holder.IndySdkHolder", self.profile.opened
-            ),
-        )
-        injector.bind_provider(
-            IndyIssuer,
-            ClassProvider(
-                "aries_cloudagent.indy.sdk.issuer.IndySdkIssuer", self.profile
-            ),
-        )
-
-        if self.ledger:
-            injector.bind_instance(
-                BaseLedger,
-                self.ledger,
-            )
-            injector.bind_provider(
-                IndyVerifier,
-                ClassProvider(
-                    "aries_cloudagent.indy.sdk.verifier.IndySdkVerifier",
-                    self.ledger,
-                ),
-            )
 
 
 class IndySdkProfileManager(ProfileManager):

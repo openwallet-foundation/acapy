@@ -36,8 +36,7 @@ class CredentialAckHandler(BaseHandler):
         if not context.connection_ready:
             raise HandlerException("No connection established for credential ack")
 
-        session = await context.session()
-        credential_manager = CredentialManager(session)
+        credential_manager = CredentialManager(context.profile)
         await credential_manager.receive_credential_ack(
             context.message, context.connection_record.connection_id
         )

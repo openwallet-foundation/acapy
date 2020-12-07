@@ -8,7 +8,7 @@ from typing import Mapping, Tuple
 
 from ....cache.base import BaseCache
 from ....core.error import BaseError
-from ....core.profile import ProfileSession
+from ....core.profile import Profile
 from ....indy.holder import IndyHolder, IndyHolderError
 from ....indy.issuer import IndyIssuer, IndyIssuerRevocationRegistryFullError
 from ....ledger.base import BaseLedger
@@ -40,33 +40,34 @@ class CredentialManagerError(BaseError):
 class CredentialManager:
     """Class for managing credentials."""
 
-    def __init__(self, session: ProfileSession):
+    def __init__(self, profile: Profile):
         """
         Initialize a CredentialManager.
 
         Args:
-            session: The profile session for this credential manager
+            profile: The profile instance for this credential manager
         """
-        self._session = session
+        self._profile = profile
 
     @property
-    def session(self) -> ProfileSession:
+    def profile(self) -> Profile:
         """
-        Accessor for the current profile session.
+        Accessor for the current profile instance.
 
         Returns:
-            The profile sesssion for this credential manager
+            The profile instance for this credential manager
 
         """
-        return self._session
+        return self._profile
 
     async def _match_sent_cred_def_id(self, tag_query: Mapping[str, str]) -> str:
         """Return most recent matching id of cred def that agent sent to ledger."""
 
-        storage: BaseStorage = self._session.inject(BaseStorage)
-        found = await storage.search_records(
-            type_filter=CRED_DEF_SENT_RECORD_TYPE, tag_query=tag_query
-        ).fetch_all()
+        async with self._profile.session() as session:
+            storage = session.inject(BaseStorage)
+            found = await storage.search_records(
+                type_filter=CRED_DEF_SENT_RECORD_TYPE, tag_query=tag_query
+            ).fetch_all()
         if not found:
             raise CredentialManagerError(
                 f"Issuer has no operable cred def for proposal spec {tag_query}"
@@ -92,7 +93,7 @@ class CredentialManager:
 
         """
         if auto_remove is None:
-            auto_remove = not self._session.settings.get("preserve_exchange_records")
+            auto_remove = not self._profile.settings.get("preserve_exchange_records")
         credential_exchange = V10CredentialExchange(
             connection_id=connection_id,
             initiator=V10CredentialExchange.INITIATOR_SELF,
@@ -157,11 +158,11 @@ class CredentialManager:
             issuer_did=issuer_did,
         )
         credential_proposal_message.assign_trace_decorator(
-            self._session.settings, trace
+            self._profile.settings, trace
         )
 
         if auto_remove is None:
-            auto_remove = not self._session.settings.get("preserve_exchange_records")
+            auto_remove = not self._profile.settings.get("preserve_exchange_records")
         cred_ex_record = V10CredentialExchange(
             connection_id=connection_id,
             thread_id=credential_proposal_message._thread_id,
@@ -173,7 +174,8 @@ class CredentialManager:
             auto_remove=auto_remove,
             trace=trace,
         )
-        await cred_ex_record.save(self._session, reason="create credential proposal")
+        async with self._profile.session() as session:
+            await cred_ex_record.save(session, reason="create credential proposal")
         return cred_ex_record
 
     async def receive_proposal(
@@ -194,16 +196,17 @@ class CredentialManager:
             role=V10CredentialExchange.ROLE_ISSUER,
             state=V10CredentialExchange.STATE_PROPOSAL_RECEIVED,
             credential_proposal_dict=message.serialize(),
-            auto_offer=self._session.settings.get(
+            auto_offer=self._profile.settings.get(
                 "debug.auto_respond_credential_proposal"
             ),
-            auto_issue=self._session.settings.get(
+            auto_issue=self._profile.settings.get(
                 "debug.auto_respond_credential_request"
             ),
-            auto_remove=not self._session.settings.get("preserve_exchange_records"),
+            auto_remove=not self._profile.settings.get("preserve_exchange_records"),
             trace=(message._trace is not None),
         )
-        await cred_ex_record.save(self._session, reason="receive credential proposal")
+        async with self._profile.session() as session:
+            await cred_ex_record.save(session, reason="receive credential proposal")
 
         return cred_ex_record
 
@@ -223,7 +226,7 @@ class CredentialManager:
         """
 
         async def _create(cred_def_id):
-            issuer = self._session.inject(IndyIssuer)
+            issuer = self._profile.inject(IndyIssuer)
             offer_json = await issuer.create_credential_offer(cred_def_id)
             return json.loads(offer_json)
 
@@ -231,7 +234,7 @@ class CredentialManager:
             cred_ex_record.credential_proposal_dict
         )
         credential_proposal_message.assign_trace_decorator(
-            self._session.settings, cred_ex_record.trace
+            self._profile.settings, cred_ex_record.trace
         )
         cred_def_id = await self._match_sent_cred_def_id(
             {
@@ -243,7 +246,7 @@ class CredentialManager:
         cred_preview = credential_proposal_message.credential_proposal
 
         # vet attributes
-        ledger = self._session.inject(BaseLedger)
+        ledger = self._profile.inject(BaseLedger)
         async with ledger:
             schema_id = await ledger.credential_definition_id2schema_id(cred_def_id)
             schema = await ledger.get_schema(schema_id)
@@ -257,7 +260,7 @@ class CredentialManager:
 
         credential_offer = None
         cache_key = f"credential_offer::{cred_def_id}"
-        cache = self._session.inject(BaseCache, required=False)
+        cache = self._profile.inject(BaseCache, required=False)
         if cache:
             async with cache.acquire(cache_key) as entry:
                 if entry.result:
@@ -276,7 +279,7 @@ class CredentialManager:
 
         credential_offer_message._thread = {"thid": cred_ex_record.thread_id}
         credential_offer_message.assign_trace_decorator(
-            self._session.settings, cred_ex_record.trace
+            self._profile.settings, cred_ex_record.trace
         )
 
         cred_ex_record.thread_id = credential_offer_message._thread_id
@@ -287,7 +290,8 @@ class CredentialManager:
 
         cred_ex_record.credential_offer_dict = credential_offer_message.serialize()
 
-        await cred_ex_record.save(self._session, reason="create credential offer")
+        async with self._profile.session() as session:
+            await cred_ex_record.save(session, reason="create credential offer")
 
         return (cred_ex_record, credential_offer_message)
 
@@ -313,32 +317,35 @@ class CredentialManager:
             cred_def_id=cred_def_id,
         ).serialize()
 
-        # Get credential exchange record (holder sent proposal first)
-        # or create it (issuer sent offer first)
-        try:
-            (
-                cred_ex_record
-            ) = await V10CredentialExchange.retrieve_by_connection_and_thread(
-                self._session, connection_id, message._thread_id
-            )
-            cred_ex_record.credential_proposal_dict = credential_proposal_dict
-        except StorageNotFoundError:  # issuer sent this offer free of any proposal
-            cred_ex_record = V10CredentialExchange(
-                connection_id=connection_id,
-                thread_id=message._thread_id,
-                initiator=V10CredentialExchange.INITIATOR_EXTERNAL,
-                role=V10CredentialExchange.ROLE_HOLDER,
-                credential_proposal_dict=credential_proposal_dict,
-                auto_remove=not self._session.settings.get("preserve_exchange_records"),
-                trace=(message._trace is not None),
-            )
+        async with self._profile.session() as session:
+            # Get credential exchange record (holder sent proposal first)
+            # or create it (issuer sent offer first)
+            try:
+                cred_ex_record = await (
+                    V10CredentialExchange.retrieve_by_connection_and_thread(
+                        session, connection_id, message._thread_id
+                    )
+                )
+                cred_ex_record.credential_proposal_dict = credential_proposal_dict
+            except StorageNotFoundError:  # issuer sent this offer free of any proposal
+                cred_ex_record = V10CredentialExchange(
+                    connection_id=connection_id,
+                    thread_id=message._thread_id,
+                    initiator=V10CredentialExchange.INITIATOR_EXTERNAL,
+                    role=V10CredentialExchange.ROLE_HOLDER,
+                    credential_proposal_dict=credential_proposal_dict,
+                    auto_remove=not self._profile.settings.get(
+                        "preserve_exchange_records"
+                    ),
+                    trace=(message._trace is not None),
+                )
 
-        cred_ex_record.credential_offer = indy_offer
-        cred_ex_record.state = V10CredentialExchange.STATE_OFFER_RECEIVED
-        cred_ex_record.schema_id = schema_id
-        cred_ex_record.credential_definition_id = cred_def_id
+            cred_ex_record.credential_offer = indy_offer
+            cred_ex_record.state = V10CredentialExchange.STATE_OFFER_RECEIVED
+            cred_ex_record.schema_id = schema_id
+            cred_ex_record.credential_definition_id = cred_def_id
 
-        await cred_ex_record.save(self._session, reason="receive credential offer")
+            await cred_ex_record.save(session, reason="receive credential offer")
 
         return cred_ex_record
 
@@ -368,13 +375,13 @@ class CredentialManager:
         credential_offer = cred_ex_record.credential_offer
 
         async def _create():
-            ledger = self._session.inject(BaseLedger)
+            ledger = self._profile.inject(BaseLedger)
             async with ledger:
                 credential_definition = await ledger.get_credential_definition(
                     credential_definition_id
                 )
 
-            holder = self._session.inject(IndyHolder)
+            holder = self._profile.inject(IndyHolder)
             request_json, metadata_json = await holder.create_credential_request(
                 credential_offer, credential_definition, holder_did
             )
@@ -396,7 +403,7 @@ class CredentialManager:
                 f"credential_request::{credential_definition_id}::{holder_did}::{nonce}"
             )
             cred_req_result = None
-            cache = self._session.inject(BaseCache, required=False)
+            cache = self._profile.inject(BaseCache, required=False)
             if cache:
                 async with cache.acquire(cache_key) as entry:
                     if entry.result:
@@ -419,11 +426,12 @@ class CredentialManager:
         )
         credential_request_message._thread = {"thid": cred_ex_record.thread_id}
         credential_request_message.assign_trace_decorator(
-            self._session.settings, cred_ex_record.trace
+            self._profile.settings, cred_ex_record.trace
         )
 
         cred_ex_record.state = V10CredentialExchange.STATE_REQUEST_SENT
-        await cred_ex_record.save(self._session, reason="create credential request")
+        async with self._profile.session() as session:
+            await cred_ex_record.save(session, reason="create credential request")
 
         return (cred_ex_record, credential_request_message)
 
@@ -441,14 +449,15 @@ class CredentialManager:
         assert len(message.requests_attach or []) == 1
         credential_request = message.indy_cred_req(0)
 
-        (
-            cred_ex_record
-        ) = await V10CredentialExchange.retrieve_by_connection_and_thread(
-            self._session, connection_id, message._thread_id
-        )
-        cred_ex_record.credential_request = credential_request
-        cred_ex_record.state = V10CredentialExchange.STATE_REQUEST_RECEIVED
-        await cred_ex_record.save(self._session, reason="receive credential request")
+        async with self._profile.session() as session:
+            cred_ex_record = await (
+                V10CredentialExchange.retrieve_by_connection_and_thread(
+                    session, connection_id, message._thread_id
+                )
+            )
+            cred_ex_record.credential_request = credential_request
+            cred_ex_record.state = V10CredentialExchange.STATE_REQUEST_RECEIVED
+            await cred_ex_record.save(session, reason="receive credential request")
 
         return cred_ex_record
 
@@ -492,7 +501,7 @@ class CredentialManager:
             credential_offer = cred_ex_record.credential_offer
             credential_request = cred_ex_record.credential_request
 
-            ledger = self._session.inject(BaseLedger)
+            ledger = self._profile.inject(BaseLedger)
             async with ledger:
                 schema = await ledger.get_schema(schema_id)
                 credential_definition = await ledger.get_credential_definition(
@@ -501,67 +510,73 @@ class CredentialManager:
 
             tails_path = None
             if credential_definition["value"].get("revocation"):
-                revoc = IndyRevocation(self._session)
-                try:
-                    active_rev_reg_rec = await revoc.get_active_issuer_rev_reg_record(
-                        cred_ex_record.credential_definition_id
-                    )
-                    rev_reg = await active_rev_reg_rec.get_registry()
-                    cred_ex_record.revoc_reg_id = active_rev_reg_rec.revoc_reg_id
+                async with self._profile.session() as session:
+                    revoc = IndyRevocation(session)
+                    try:
+                        active_rev_reg_rec = (
+                            await revoc.get_active_issuer_rev_reg_record(
+                                cred_ex_record.credential_definition_id
+                            )
+                        )
+                        rev_reg = await active_rev_reg_rec.get_registry()
+                        cred_ex_record.revoc_reg_id = active_rev_reg_rec.revoc_reg_id
 
-                    tails_path = rev_reg.tails_local_path
-                    await rev_reg.get_or_fetch_local_tails_path()
+                        tails_path = rev_reg.tails_local_path
+                        await rev_reg.get_or_fetch_local_tails_path()
 
-                except StorageNotFoundError:
-                    posted_rev_reg_recs = await IssuerRevRegRecord.query_by_cred_def_id(
-                        self._session,
-                        cred_ex_record.credential_definition_id,
-                        state=IssuerRevRegRecord.STATE_POSTED,
-                    )
-                    if not posted_rev_reg_recs:
-                        # Send next 2 rev regs, publish tails files in background
-                        old_rev_reg_recs = sorted(
+                    except StorageNotFoundError:
+                        posted_rev_reg_recs = (
                             await IssuerRevRegRecord.query_by_cred_def_id(
-                                self._session,
+                                session,
                                 cred_ex_record.credential_definition_id,
+                                state=IssuerRevRegRecord.STATE_POSTED,
                             )
-                        )  # prefer to reuse prior rev reg size
-                        for _ in range(2):
-                            pending_rev_reg_rec = await revoc.init_issuer_registry(
-                                cred_ex_record.credential_definition_id,
-                                max_cred_num=(
-                                    old_rev_reg_recs[0].max_cred_num
-                                    if old_rev_reg_recs
-                                    else None
-                                ),
-                            )
-                            asyncio.ensure_future(
-                                pending_rev_reg_rec.stage_pending_registry(
-                                    self._session,
-                                    max_attempts=3,  # fail both in < 2s at worst
+                        )
+                        if not posted_rev_reg_recs:
+                            # Send next 2 rev regs, publish tails files in background
+                            old_rev_reg_recs = sorted(
+                                await IssuerRevRegRecord.query_by_cred_def_id(
+                                    session,
+                                    cred_ex_record.credential_definition_id,
                                 )
+                            )  # prefer to reuse prior rev reg size
+                            for _ in range(2):
+                                pending_rev_reg_rec = await revoc.init_issuer_registry(
+                                    cred_ex_record.credential_definition_id,
+                                    max_cred_num=(
+                                        old_rev_reg_recs[0].max_cred_num
+                                        if old_rev_reg_recs
+                                        else None
+                                    ),
+                                )
+                                asyncio.ensure_future(
+                                    pending_rev_reg_rec.stage_pending_registry(
+                                        session,
+                                        max_attempts=3,  # fail both in < 2s at worst
+                                    )
+                                )
+                        if retries > 0:
+                            LOGGER.info(
+                                "Waiting 2s on posted rev reg for cred def %s, retrying",
+                                cred_ex_record.credential_definition_id,
                             )
-                    if retries > 0:
-                        LOGGER.info(
-                            "Waiting 2s on posted rev reg for cred def %s, retrying",
-                            cred_ex_record.credential_definition_id,
-                        )
-                        await asyncio.sleep(2)
-                        return await self.issue_credential(
-                            cred_ex_record=cred_ex_record,
-                            comment=comment,
-                            retries=retries - 1,
-                        )
+                            await asyncio.sleep(2)
+                            return await self.issue_credential(
+                                cred_ex_record=cred_ex_record,
+                                comment=comment,
+                                retries=retries - 1,
+                            )
 
-                    raise CredentialManagerError(
-                        f"Cred def id {cred_ex_record.credential_definition_id} "
-                        "has no active revocation registry"
-                    )
+                        raise CredentialManagerError(
+                            f"Cred def id {cred_ex_record.credential_definition_id} "
+                            "has no active revocation registry"
+                        )
+                    del revoc
 
             credential_values = CredentialProposal.deserialize(
                 cred_ex_record.credential_proposal_dict
             ).credential_proposal.attr_dict(decode=False)
-            issuer = self._session.inject(IndyIssuer)
+            issuer = self._profile.inject(IndyIssuer)
             try:
                 (
                     credential_json,
@@ -578,29 +593,32 @@ class CredentialManager:
 
                 # If the rev reg is now full
                 if rev_reg and rev_reg.max_creds == int(cred_ex_record.revocation_id):
-                    await active_rev_reg_rec.set_state(
-                        self._session,
-                        IssuerRevRegRecord.STATE_FULL,
-                    )
-
-                    # Send next 1 rev reg, publish tails file in background
-                    pending_rev_reg_rec = await revoc.init_issuer_registry(
-                        active_rev_reg_rec.cred_def_id,
-                        max_cred_num=active_rev_reg_rec.max_cred_num,
-                    )
-                    asyncio.ensure_future(
-                        pending_rev_reg_rec.stage_pending_registry(
-                            self._session,
-                            max_attempts=16,
+                    async with self._profile.session() as session:
+                        await active_rev_reg_rec.set_state(
+                            session,
+                            IssuerRevRegRecord.STATE_FULL,
                         )
-                    )
+
+                        # Send next 1 rev reg, publish tails file in background
+                        revoc = IndyRevocation(session)
+                        pending_rev_reg_rec = await revoc.init_issuer_registry(
+                            active_rev_reg_rec.cred_def_id,
+                            max_cred_num=active_rev_reg_rec.max_cred_num,
+                        )
+                        asyncio.ensure_future(
+                            pending_rev_reg_rec.stage_pending_registry(
+                                session,
+                                max_attempts=16,
+                            )
+                        )
 
             except IndyIssuerRevocationRegistryFullError:
                 # unlucky: duelling instance issued last cred near same time as us
-                await active_rev_reg_rec.set_state(
-                    self._session,
-                    IssuerRevRegRecord.STATE_FULL,
-                )
+                async with self._profile.session() as session:
+                    await active_rev_reg_rec.set_state(
+                        session,
+                        IssuerRevRegRecord.STATE_FULL,
+                    )
 
                 if retries > 0:
                     # use next rev reg; at worst, lucky instance is putting one up
@@ -620,7 +638,9 @@ class CredentialManager:
             cred_ex_record.credential = json.loads(credential_json)
 
         cred_ex_record.state = V10CredentialExchange.STATE_ISSUED
-        await cred_ex_record.save(self._session, reason="issue credential")
+        async with self._profile.session() as session:
+            # FIXME - re-fetch record to check state, apply transactional update
+            await cred_ex_record.save(session, reason="issue credential")
 
         credential_message = CredentialIssue(
             comment=comment,
@@ -630,7 +650,7 @@ class CredentialManager:
         )
         credential_message._thread = {"thid": cred_ex_record.thread_id}
         credential_message.assign_trace_decorator(
-            self._session.settings, cred_ex_record.trace
+            self._profile.settings, cred_ex_record.trace
         )
 
         return (cred_ex_record, credential_message)
@@ -650,18 +670,20 @@ class CredentialManager:
         assert len(message.credentials_attach or []) == 1
         raw_credential = message.indy_credential(0)
 
-        (
-            cred_ex_record
-        ) = await V10CredentialExchange.retrieve_by_connection_and_thread(
-            self._session,
-            connection_id,
-            message._thread_id,
-        )
+        # FIXME use transaction, fetch for_update
+        async with self._profile.session() as session:
+            cred_ex_record = await (
+                V10CredentialExchange.retrieve_by_connection_and_thread(
+                    session,
+                    connection_id,
+                    message._thread_id,
+                )
+            )
 
-        cred_ex_record.raw_credential = raw_credential
-        cred_ex_record.state = V10CredentialExchange.STATE_CREDENTIAL_RECEIVED
+            cred_ex_record.raw_credential = raw_credential
+            cred_ex_record.state = V10CredentialExchange.STATE_CREDENTIAL_RECEIVED
 
-        await cred_ex_record.save(self._session, reason="receive credential")
+            await cred_ex_record.save(session, reason="receive credential")
         return cred_ex_record
 
     async def store_credential(
@@ -688,7 +710,7 @@ class CredentialManager:
 
         raw_credential = cred_ex_record.raw_credential
         revoc_reg_def = None
-        ledger = self._session.inject(BaseLedger)
+        ledger = self._profile.inject(BaseLedger)
         async with ledger:
             credential_definition = await ledger.get_credential_definition(
                 raw_credential["cred_def_id"]
@@ -701,7 +723,7 @@ class CredentialManager:
                     raw_credential["rev_reg_id"]
                 )
 
-        holder = self._session.inject(IndyHolder)
+        holder = self._profile.inject(IndyHolder)
         if (
             cred_ex_record.credential_proposal_dict
             and "credential_proposal" in cred_ex_record.credential_proposal_dict
@@ -737,18 +759,21 @@ class CredentialManager:
         cred_ex_record.revoc_reg_id = credential.get("rev_reg_id", None)
         cred_ex_record.revocation_id = credential.get("cred_rev_id", None)
 
-        await cred_ex_record.save(self._session, reason="store credential")
+        async with self._profile.session() as session:
+            # FIXME - re-fetch record to check state, apply transactional update
+            await cred_ex_record.save(session, reason="store credential")
 
         credential_ack_message = CredentialAck()
         credential_ack_message.assign_thread_id(
             cred_ex_record.thread_id, cred_ex_record.parent_thread_id
         )
         credential_ack_message.assign_trace_decorator(
-            self._session.settings, cred_ex_record.trace
+            self._profile.settings, cred_ex_record.trace
         )
 
         if cred_ex_record.auto_remove:
-            await cred_ex_record.delete_record(self._session)  # all done: delete
+            async with self._profile.session() as session:
+                await cred_ex_record.delete_record(session)  # all done: delete
 
         return (cred_ex_record, credential_ack_message)
 
@@ -762,18 +787,21 @@ class CredentialManager:
             credential exchange record, retrieved and updated
 
         """
-        (
-            cred_ex_record
-        ) = await V10CredentialExchange.retrieve_by_connection_and_thread(
-            self._session,
-            connection_id,
-            message._thread_id,
-        )
+        # FIXME use transaction, fetch for_update
+        async with self._profile.session() as session:
+            cred_ex_record = await (
+                V10CredentialExchange.retrieve_by_connection_and_thread(
+                    session,
+                    connection_id,
+                    message._thread_id,
+                )
+            )
 
-        cred_ex_record.state = V10CredentialExchange.STATE_ACKED
-        await cred_ex_record.save(self._session, reason="credential acked")
+            cred_ex_record.state = V10CredentialExchange.STATE_ACKED
+            await cred_ex_record.save(session, reason="credential acked")
 
         if cred_ex_record.auto_remove:
-            await cred_ex_record.delete_record(self._session)  # all done: delete
+            async with self._profile.session() as session:
+                await cred_ex_record.delete_record(session)  # all done: delete
 
         return cred_ex_record

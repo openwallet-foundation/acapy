@@ -99,7 +99,11 @@ REV_REG_DEF = {
 class TestCredentialManager(AsyncTestCase):
     async def setUp(self):
         self.session = InMemoryProfile.test_session()
-        self.context = self.session.context
+        self.profile = self.session.profile
+        self.context = self.profile.context
+        setattr(
+            self.profile, "session", async_mock.MagicMock(return_value=self.session)
+        )
 
         Ledger = async_mock.MagicMock()
         self.ledger = Ledger()
@@ -116,7 +120,7 @@ class TestCredentialManager(AsyncTestCase):
         )
         self.context.injector.bind_instance(BaseLedger, self.ledger)
 
-        self.manager = CredentialManager(self.session)
+        self.manager = CredentialManager(self.profile)
 
     async def test_record_eq(self):
         same = [
@@ -1530,12 +1534,12 @@ class TestCredentialManager(AsyncTestCase):
                 initiator=V10CredentialExchange.INITIATOR_SELF,
                 role=V10CredentialExchange.ROLE_ISSUER,
             )
-            await exchange_record.save(self.context)
+            await exchange_record.save(self.session)
 
         for i in range(2):  # second pass gets from cache
             for index in range(2):
                 ret_ex = await V10CredentialExchange.retrieve_by_connection_and_thread(
-                    self.context, str(index), str(1000 + index)
+                    self.session, str(index), str(1000 + index)
                 )
                 assert ret_ex.connection_id == str(index)
                 assert ret_ex.thread_id == str(1000 + index)
