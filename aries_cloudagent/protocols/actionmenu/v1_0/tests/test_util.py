@@ -1,9 +1,7 @@
 from asynctest import TestCase as AsyncTestCase
 
-from aries_cloudagent.core.in_memory import InMemoryProfile
-from aries_cloudagent.messaging.responder import MockResponder
-from aries_cloudagent.storage.base import BaseStorage
-from aries_cloudagent.wallet.base import BaseWallet
+from .....admin.request_context import AdminRequestContext
+from .....messaging.responder import MockResponder
 
 from .. import util as test_module
 from ..models.menu_form_param import MenuFormParam
@@ -11,12 +9,12 @@ from ..models.menu_form import MenuForm
 from ..models.menu_option import MenuOption
 
 
-class TestUtil(AsyncTestCase):
+class TestActionMenuUtil(AsyncTestCase):
     async def test_save_retrieve_delete_connection_menu(self):
-        session = InMemoryProfile.test_session()
+        context = AdminRequestContext.test_context()
 
         responder = MockResponder()
-        session.context.injector.bind_instance(test_module.BaseResponder, responder)
+        context.injector.bind_instance(test_module.BaseResponder, responder)
 
         menu = test_module.Menu(
             title="title",
@@ -50,7 +48,7 @@ class TestUtil(AsyncTestCase):
         connection_id = "connid"
 
         for i in range(2):  # once to add, once to update
-            await test_module.save_connection_menu(menu, connection_id, session)
+            await test_module.save_connection_menu(menu, connection_id, context)
 
             webhooks = responder.webhooks
             assert len(webhooks) == 1
@@ -62,11 +60,11 @@ class TestUtil(AsyncTestCase):
 
         # retrieve connection menu
         assert (
-            await test_module.retrieve_connection_menu(connection_id, session)
+            await test_module.retrieve_connection_menu(connection_id, context)
         ).serialize() == menu.serialize()
 
         # delete connection menu
-        await test_module.save_connection_menu(None, connection_id, session)
+        await test_module.save_connection_menu(None, connection_id, context)
 
         webhooks = responder.webhooks
         assert len(webhooks) == 1
@@ -77,5 +75,5 @@ class TestUtil(AsyncTestCase):
 
         # retrieve no menu
         assert (
-            await test_module.retrieve_connection_menu(connection_id, session) is None
+            await test_module.retrieve_connection_menu(connection_id, context) is None
         )
