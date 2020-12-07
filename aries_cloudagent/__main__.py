@@ -50,7 +50,7 @@ def init_debug(args):
             print("pydevd_pycharm library was not found")
 
 
-def main(args):
+def run(args):
     """Execute aca-py."""
 
     from .commands import run_command  # noqa
@@ -65,6 +65,11 @@ def main(args):
     run_command(command, args)
 
 
-if __name__ == "__main__":
-    init_debug(sys.argv)
-    main(sys.argv)
+def main(args):
+    """Execute default entry point."""
+    if __name__ == "__main__":
+        init_debug(args)
+        run(args)
+
+
+main(sys.argv)
