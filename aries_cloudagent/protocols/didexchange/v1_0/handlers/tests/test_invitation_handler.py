@@ -1,6 +1,5 @@
 import pytest
 
-from ......messaging.base_handler import HandlerException
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
 from ......protocols.out_of_band.v1_0.messages.invitation import InvitationMessage
@@ -12,7 +11,7 @@ from ...messages.problem_report import ProblemReport, ProblemReportReason
 
 @pytest.fixture()
 def request_context() -> RequestContext:
-    ctx = RequestContext()
+    ctx = RequestContext.test_context()
     ctx.message_receipt = MessageReceipt()
     yield ctx
 

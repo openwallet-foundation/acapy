@@ -13,6 +13,7 @@ from aiohttp_apispec import (
 
 from marshmallow import fields, validate, validates_schema
 
+from ....admin.request_context import AdminRequestContext
 from ....connections.models.conn_record import ConnRecord, ConnRecordSchema
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
@@ -249,7 +250,7 @@ async def connections_list(request: web.BaseRequest):
         The connection list response
 
     """
-    context = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
 
     tag_filter = {}
     for param_name in (
@@ -273,9 +274,10 @@ async def connections_list(request: web.BaseRequest):
             v for v in ConnRecord.Role.get(request.query["their_role"]).value
         ]
 
+    session = await context.session()
     try:
         records = await ConnRecord.query(
-            context, tag_filter, post_filter_positive=post_filter, alt=True
+            session, tag_filter, post_filter_positive=post_filter, alt=True
         )
         results = [record.serialize() for record in records]
         results.sort(key=connection_sort_key)
@@ -299,11 +301,12 @@ async def connections_retrieve(request: web.BaseRequest):
         The connection record response
 
     """
-    context = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
     connection_id = request.match_info["conn_id"]
+    session = await context.session()
 
     try:
-        record = await ConnRecord.retrieve_by_id(context, connection_id)
+        record = await ConnRecord.retrieve_by_id(session, connection_id)
         result = record.serialize()
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
@@ -331,7 +334,7 @@ async def connections_create_invitation(request: web.BaseRequest):
         The connection invitation details
 
     """
-    context = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
     auto_accept = json.loads(request.query.get("auto_accept", "null"))
     alias = request.query.get("alias")
     public = json.loads(request.query.get("public", "false"))
@@ -345,9 +348,10 @@ async def connections_create_invitation(request: web.BaseRequest):
         raise web.HTTPForbidden(
             reason="Configuration does not include public invitations"
         )
-    base_url = context.settings.get("invite_base_url")
+    session = await context.session()
+    base_url = session.settings.get("invite_base_url")
 
-    connection_mgr = ConnectionManager(context)
+    connection_mgr = ConnectionManager(session)
     try:
         (connection, invitation) = await connection_mgr.create_invitation(
             auto_accept=auto_accept,
@@ -391,12 +395,13 @@ async def connections_receive_invitation(request: web.BaseRequest):
         The resulting connection record details
 
     """
-    context = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
     if context.settings.get("admin.no_receive_invites"):
         raise web.HTTPForbidden(
             reason="Configuration does not allow receipt of invitations"
         )
-    connection_mgr = ConnectionManager(context)
+    session = await context.session()
+    connection_mgr = ConnectionManager(session)
     invitation_json = await request.json()
 
     try:
@@ -431,13 +436,14 @@ async def connections_accept_invitation(request: web.BaseRequest):
         The resulting connection record details
 
     """
-    context = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
     outbound_handler = request.app["outbound_message_router"]
     connection_id = request.match_info["conn_id"]
+    session = await context.session()
 
     try:
-        connection = await ConnRecord.retrieve_by_id(context, connection_id)
-        connection_mgr = ConnectionManager(context)
+        connection = await ConnRecord.retrieve_by_id(session, connection_id)
+        connection_mgr = ConnectionManager(session)
         my_label = request.query.get("my_label") or None
         my_endpoint = request.query.get("my_endpoint") or None
         request = await connection_mgr.create_request(connection, my_label, my_endpoint)
@@ -469,13 +475,14 @@ async def connections_accept_request(request: web.BaseRequest):
         The resulting connection record details
 
     """
-    context = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
     outbound_handler = request.app["outbound_message_router"]
     connection_id = request.match_info["conn_id"]
+    session = await context.session()
 
     try:
-        connection = await ConnRecord.retrieve_by_id(context, connection_id)
-        connection_mgr = ConnectionManager(context)
+        connection = await ConnRecord.retrieve_by_id(session, connection_id)
+        connection_mgr = ConnectionManager(session)
         my_endpoint = request.query.get("my_endpoint") or None
         response = await connection_mgr.create_response(connection, my_endpoint)
         result = connection.serialize()
@@ -499,14 +506,15 @@ async def connections_establish_inbound(request: web.BaseRequest):
     Args:
         request: aiohttp request object
     """
-    context = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
     connection_id = request.match_info["conn_id"]
     outbound_handler = request.app["outbound_message_router"]
     inbound_connection_id = request.match_info["ref_id"]
+    session = await context.session()
 
     try:
-        connection = await ConnRecord.retrieve_by_id(context, connection_id)
-        connection_mgr = ConnectionManager(context)
+        connection = await ConnRecord.retrieve_by_id(session, connection_id)
+        connection_mgr = ConnectionManager(session)
         await connection_mgr.establish_inbound(
             connection, inbound_connection_id, outbound_handler
         )
@@ -527,12 +535,13 @@ async def connections_remove(request: web.BaseRequest):
     Args:
         request: aiohttp request object
     """
-    context = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
     connection_id = request.match_info["conn_id"]
+    session = await context.session()
 
     try:
-        connection = await ConnRecord.retrieve_by_id(context, connection_id)
-        await connection.delete_record(context)
+        connection = await ConnRecord.retrieve_by_id(session, connection_id)
+        await connection.delete_record(session)
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
     except StorageError as err:
@@ -555,10 +564,11 @@ async def connections_create_static(request: web.BaseRequest):
         The new connection record
 
     """
-    context = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
     body = await request.json()
+    session = await context.session()
 
-    connection_mgr = ConnectionManager(context)
+    connection_mgr = ConnectionManager(session)
     try:
         (
             my_info,

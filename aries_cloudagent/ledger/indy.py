@@ -6,11 +6,10 @@ import logging
 import tempfile
 
 from datetime import datetime, date
-from enum import Enum
 from hashlib import sha256
 from os import path
 from time import time
-from typing import Sequence, Tuple, Union
+from typing import Sequence, Tuple
 
 import indy.ledger
 import indy.pool
@@ -22,13 +21,14 @@ from ..indy.sdk.error import IndyErrorHandler
 from ..messaging.credential_definitions.util import CRED_DEF_SENT_RECORD_TYPE
 from ..messaging.schemas.util import SCHEMA_SENT_RECORD_TYPE
 from ..storage.base import StorageRecord
-from ..storage.indy import IndyStorage
+from ..storage.indy import IndySdkStorage
 from ..utils import sentinel
-from ..wallet.base import BaseWallet, DIDInfo
+from ..wallet.base import DIDInfo
+from ..wallet.indy import IndySdkWallet
 from ..wallet.util import full_verkey
 from ..wallet.did_posture import DIDPosture
 
-from .base import BaseLedger
+from .base import BaseLedger, Role
 from .endpoint_type import EndpointType
 from .error import (
     BadLedgerRequestError,
@@ -47,78 +47,32 @@ GENESIS_TRANSACTION_PATH = path.join(
 )
 
 
-class Role(Enum):
-    """Enum for indy roles."""
-
-    STEWARD = (2,)
-    TRUSTEE = (0,)
-    ENDORSER = (101,)
-    NETWORK_MONITOR = (201,)
-    USER = (None, "")  # in case reading from file, default empty "" or None for USER
-    ROLE_REMOVE = ("",)  # but indy-sdk uses "" to identify a role in reset
-
-    @staticmethod
-    def get(token: Union[str, int] = None) -> "Role":
-        """
-        Return enum instance corresponding to input token.
-
-        Args:
-            token: token identifying role to indy-sdk:
-                "STEWARD", "TRUSTEE", "ENDORSER", "" or None
-        """
-        if token is None:
-            return Role.USER
-
-        for role in Role:
-            if role == Role.ROLE_REMOVE:
-                continue  # not a sensible role to parse from any configuration
-            if isinstance(token, int) and token in role.value:
-                return role
-            if str(token).upper() == role.name or token in (str(v) for v in role.value):
-                return role
-
-        return None
-
-    def to_indy_num_str(self) -> str:
-        """
-        Return (typically, numeric) string value that indy-sdk associates with role.
-
-        Recall that None signifies USER and "" signifies a role undergoing reset.
-        """
-
-        return str(self.value[0]) if isinstance(self.value[0], int) else self.value[0]
-
-    def token(self) -> str:
-        """Return token identifying role to indy-sdk."""
-
-        return self.value[0] if self in (Role.USER, Role.ROLE_REMOVE) else self.name
-
-
-class IndyLedger(BaseLedger):
-    """Indy ledger class."""
-
-    LEDGER_TYPE = "indy"
+class IndySdkLedgerPool:
+    """Indy ledger manager class."""
 
     def __init__(
         self,
-        pool_name: str,
-        wallet: BaseWallet,
+        name: str,
         *,
+        checked: bool = False,
         keepalive: int = 0,
         cache: BaseCache = None,
         cache_duration: int = 600,
+        genesis_transactions: str = None,
         read_only: bool = False,
     ):
         """
-        Initialize an IndyLedger instance.
+        Initialize an IndySdkLedgerPool instance.
 
         Args:
-            pool_name: The Indy pool ledger configuration name
-            wallet: IndyWallet instance
+            name: The Indy pool ledger configuration name
             keepalive: How many seconds to keep the ledger open
             cache: The cache instance to use
             cache_duration: The TTL for ledger cache entries
+            genesis_transactions: The ledger genesis transaction as a string
+            read_only: Prevent any ledger write operations
         """
+        self.checked = checked
         self.opened = False
         self.ref_count = 0
         self.ref_lock = asyncio.Lock()
@@ -126,20 +80,11 @@ class IndyLedger(BaseLedger):
         self.close_task: asyncio.Future = None
         self.cache = cache
         self.cache_duration = cache_duration
-        self.wallet = wallet
-        self.pool_handle = None
-        self.pool_name = pool_name
-        self.taa_acceptance = None
+        self.genesis_transactions = genesis_transactions
+        self.handle = None
+        self.name = name
         self.taa_cache = None
         self.read_only = read_only
-
-        if wallet.type != "indy":
-            raise LedgerConfigError("Wallet type is not 'indy'")
-
-    @property
-    def type(self) -> str:
-        """Accessor for the ledger type."""
-        return IndyLedger.LEDGER_TYPE
 
     async def create_pool_config(
         self, genesis_transactions: str, recreate: bool = False
@@ -156,25 +101,35 @@ class IndyLedger(BaseLedger):
         if await self.check_pool_config():
             if recreate:
                 LOGGER.debug("Removing existing ledger config")
-                await indy.pool.delete_pool_ledger_config(self.pool_name)
+                await indy.pool.delete_pool_ledger_config(self.name)
             else:
                 raise LedgerConfigError(
-                    "Ledger pool configuration already exists: %s", self.pool_name
+                    "Ledger pool configuration already exists: %s", self.name
                 )
 
         LOGGER.debug("Creating pool ledger config")
         with IndyErrorHandler(
             "Exception creating pool ledger config", LedgerConfigError
         ):
-            await indy.pool.create_pool_ledger_config(self.pool_name, pool_config)
+            await indy.pool.create_pool_ledger_config(self.name, pool_config)
 
     async def check_pool_config(self) -> bool:
         """Check if a pool config has been created."""
         pool_names = {cfg["pool"] for cfg in await indy.pool.list_pools()}
-        return self.pool_name in pool_names
+        return self.name in pool_names
 
     async def open(self):
         """Open the pool ledger, creating it if necessary."""
+
+        if self.genesis_transactions:
+            await self.create_pool_config(self.genesis_transactions, True)
+            self.genesis_transactions = None
+            self.checked = True
+        elif not self.checked:
+            if not await self.check_pool_config():
+                raise LedgerError("Ledger pool configuration has not been created")
+            self.checked = True
+
         # We only support proto ver 2
         with IndyErrorHandler(
             "Exception setting ledger protocol version", LedgerConfigError
@@ -182,9 +137,9 @@ class IndyLedger(BaseLedger):
             await indy.pool.set_protocol_version(2)
 
         with IndyErrorHandler(
-            f"Exception opening pool ledger {self.pool_name}", LedgerConfigError
+            f"Exception opening pool ledger {self.name}", LedgerConfigError
         ):
-            self.pool_handle = await indy.pool.open_pool_ledger(self.pool_name, "{}")
+            self.handle = await indy.pool.open_pool_ledger(self.name, "{}")
         self.opened = True
 
     async def close(self):
@@ -193,13 +148,13 @@ class IndyLedger(BaseLedger):
             exc = None
             for attempt in range(3):
                 try:
-                    await indy.pool.close_pool_ledger(self.pool_handle)
+                    await indy.pool.close_pool_ledger(self.handle)
                 except IndyError as err:
                     await asyncio.sleep(0.01)
                     exc = err
                     continue
 
-                self.pool_handle = None
+                self.handle = None
                 self.opened = False
                 exc = None
                 break
@@ -212,7 +167,7 @@ class IndyLedger(BaseLedger):
                     exc, "Exception closing pool ledger", LedgerError
                 )
 
-    async def _context_open(self):
+    async def context_open(self):
         """Open the ledger if necessary and increase the number of active references."""
         async with self.ref_lock:
             if self.close_task:
@@ -222,7 +177,7 @@ class IndyLedger(BaseLedger):
                 await self.open()
             self.ref_count += 1
 
-    async def _context_close(self):
+    async def context_close(self):
         """Release the reference and schedule closing of the pool ledger."""
 
         async def closer(timeout: int):
@@ -241,7 +196,43 @@ class IndyLedger(BaseLedger):
                 else:
                     await self.close()
 
-    async def __aenter__(self) -> "IndyLedger":
+
+class IndySdkLedger(BaseLedger):
+    """Indy ledger class."""
+
+    BACKEND_NAME = "indy"
+
+    def __init__(
+        self,
+        pool: IndySdkLedgerPool,
+        wallet: IndySdkWallet,
+    ):
+        """
+        Initialize an IndySdkLedger instance.
+
+        Args:
+            pool: The pool instance handling the raw ledger connection
+            wallet: The IndySdkWallet instance
+        """
+        self.pool = pool
+        self.wallet = wallet
+
+    @property
+    def pool_handle(self):
+        """Accessor for the ledger pool handle."""
+        return self.pool.handle
+
+    @property
+    def pool_name(self) -> str:
+        """Accessor for the ledger pool name."""
+        return self.pool.name
+
+    @property
+    def read_only(self) -> bool:
+        """Accessor for the ledger read-only flag."""
+        return self.pool.read_only
+
+    async def __aenter__(self) -> "IndySdkLedger":
         """
         Context manager entry.
 
@@ -250,12 +241,12 @@ class IndyLedger(BaseLedger):
 
         """
         await super().__aenter__()
-        await self._context_open()
+        await self.pool.context_open()
         return self
 
     async def __aexit__(self, exc_type, exc, tb):
         """Context manager exit."""
-        await self._context_close()
+        await self.pool.context_close()
         await super().__aexit__(exc_type, exc, tb)
 
     async def _submit(
@@ -276,9 +267,9 @@ class IndyLedger(BaseLedger):
 
         """
 
-        if not self.pool_handle:
+        if not self.pool.handle:
             raise ClosedPoolError(
-                f"Cannot sign and submit request to closed pool '{self.pool_name}'"
+                f"Cannot sign and submit request to closed pool '{self.pool.name}'"
             )
 
         if sign is None or sign:
@@ -307,10 +298,10 @@ class IndyLedger(BaseLedger):
                         )
                     )
             submit_op = indy.ledger.sign_and_submit_request(
-                self.pool_handle, self.wallet.handle, sign_did.did, request_json
+                self.pool.handle, self.wallet.opened.handle, sign_did.did, request_json
             )
         else:
-            submit_op = indy.ledger.submit_request(self.pool_handle, request_json)
+            submit_op = indy.ledger.submit_request(self.pool.handle, request_json)
 
         with IndyErrorHandler(
             "Exception raised by ledger transaction", LedgerTransactionError
@@ -363,7 +354,7 @@ class IndyLedger(BaseLedger):
             LOGGER.warning("Schema already exists on ledger. Returning details.")
             schema_id, schema_def = schema_info
         else:
-            if self.read_only:
+            if self.pool.read_only:
                 raise LedgerError(
                     "Error cannot write schema when ledger is in read only mode"
                 )
@@ -458,8 +449,8 @@ class IndyLedger(BaseLedger):
             schema_id: The schema id (or stringified sequence number) to retrieve
 
         """
-        if self.cache:
-            result = await self.cache.get(f"schema::{schema_id}")
+        if self.pool.cache:
+            result = await self.pool.cache.get(f"schema::{schema_id}")
             if result:
                 return result
 
@@ -500,11 +491,11 @@ class IndyLedger(BaseLedger):
             )
 
         parsed_response = json.loads(parsed_schema_json)
-        if parsed_response and self.cache:
-            await self.cache.set(
+        if parsed_response and self.pool.cache:
+            await self.pool.cache.set(
                 [f"schema::{schema_id}", f"schema::{response['result']['seqNo']}"],
                 parsed_response,
-                self.cache_duration,
+                self.pool.cache_duration,
             )
 
         return parsed_response
@@ -571,7 +562,7 @@ class IndyLedger(BaseLedger):
 
         schema = await self.get_schema(schema_id)
         if not schema:
-            raise LedgerError(f"Ledger {self.pool_name} has no schema {schema_id}")
+            raise LedgerError(f"Ledger {self.pool.name} has no schema {schema_id}")
 
         novel = False
 
@@ -587,7 +578,7 @@ class IndyLedger(BaseLedger):
                 LOGGER.warning(
                     "Credential definition %s already exists on ledger %s",
                     credential_definition_id,
-                    self.pool_name,
+                    self.pool.name,
                 )
 
                 try:
@@ -596,7 +587,7 @@ class IndyLedger(BaseLedger):
                     ):
                         raise LedgerError(
                             f"Credential definition {credential_definition_id} is on "
-                            f"ledger {self.pool_name} but not in wallet "
+                            f"ledger {self.pool.name} but not in wallet "
                             f"{self.wallet.name}"
                         )
                 except IndyIssuerError as err:
@@ -610,7 +601,8 @@ class IndyLedger(BaseLedger):
                 ):
                     raise LedgerError(
                         f"Credential definition {credential_definition_id} is in "
-                        f"wallet {self.wallet.name} but not on ledger {self.pool_name}"
+                        f"wallet {self.wallet.name} but not on ledger "
+                        f"{self.pool.name}"
                     )
             except IndyIssuerError as err:
                 raise LedgerError(err.message) from err
@@ -631,7 +623,7 @@ class IndyLedger(BaseLedger):
             except IndyIssuerError as err:
                 raise LedgerError(err.message) from err
 
-            if self.read_only:
+            if self.pool.read_only:
                 raise LedgerError(
                     "Error cannot write cred def when ledger is in read only mode"
                 )
@@ -669,8 +661,8 @@ class IndyLedger(BaseLedger):
             credential_definition_id: The schema id of the schema to fetch cred def for
 
         """
-        if self.cache:
-            result = await self.cache.get(
+        if self.pool.cache:
+            result = await self.pool.cache.get(
                 f"credential_definition::{credential_definition_id}"
             )
             if result:
@@ -710,11 +702,11 @@ class IndyLedger(BaseLedger):
                 else:
                     raise
 
-        if parsed_response and self.cache:
-            await self.cache.set(
+        if parsed_response and self.pool.cache:
+            await self.pool.cache.set(
                 f"credential_definition::{credential_definition_id}",
                 parsed_response,
-                self.cache_duration,
+                self.pool.cache_duration,
             )
 
         return parsed_response
@@ -825,7 +817,7 @@ class IndyLedger(BaseLedger):
         )
 
         if exist_endpoint_of_type != endpoint:
-            if self.read_only:
+            if self.pool.read_only:
                 raise LedgerError(
                     "Error cannot update endpoint when ledger is in read only mode"
                 )
@@ -858,7 +850,7 @@ class IndyLedger(BaseLedger):
             alias: Human-friendly alias to assign to the DID.
             role: For permissioned ledgers, what role should the new DID have.
         """
-        if self.read_only:
+        if self.pool.read_only:
             raise LedgerError(
                 "Error cannot register nym when ledger is in read only mode"
             )
@@ -949,9 +941,9 @@ class IndyLedger(BaseLedger):
 
     async def get_txn_author_agreement(self, reload: bool = False) -> dict:
         """Get the current transaction author agreement, fetching it if necessary."""
-        if not self.taa_cache or reload:
-            self.taa_cache = await self.fetch_txn_author_agreement()
-        return self.taa_cache
+        if not self.pool.taa_cache or reload:
+            self.pool.taa_cache = await self.fetch_txn_author_agreement()
+        return self.pool.taa_cache
 
     async def fetch_txn_author_agreement(self) -> dict:
         """Fetch the current AML and TAA from the ledger."""
@@ -981,9 +973,9 @@ class IndyLedger(BaseLedger):
             "taa_required": taa_required,
         }
 
-    def get_indy_storage(self) -> IndyStorage:
-        """Get an IndyStorage instance for the current wallet."""
-        return IndyStorage(self.wallet)
+    def get_indy_storage(self) -> IndySdkStorage:
+        """Get an IndySdkStorage instance for the current wallet."""
+        return IndySdkStorage(self.wallet.opened)
 
     def taa_rough_timestamp(self) -> int:
         """Get a timestamp accurate to the day.
@@ -1015,21 +1007,21 @@ class IndyLedger(BaseLedger):
         record = StorageRecord(
             TAA_ACCEPTED_RECORD_TYPE,
             json.dumps(acceptance),
-            {"pool_name": self.pool_name},
+            {"pool_name": self.pool.name},
         )
         storage = self.get_indy_storage()
         await storage.add_record(record)
-        if self.cache:
-            cache_key = TAA_ACCEPTED_RECORD_TYPE + "::" + self.pool_name
-            await self.cache.set(cache_key, acceptance, self.cache_duration)
+        if self.pool.cache:
+            cache_key = TAA_ACCEPTED_RECORD_TYPE + "::" + self.pool.name
+            await self.pool.cache.set(cache_key, acceptance, self.pool.cache_duration)
 
     async def get_latest_txn_author_acceptance(self) -> dict:
         """Look up the latest TAA acceptance."""
-        cache_key = TAA_ACCEPTED_RECORD_TYPE + "::" + self.pool_name
-        acceptance = self.cache and await self.cache.get(cache_key)
+        cache_key = TAA_ACCEPTED_RECORD_TYPE + "::" + self.pool.name
+        acceptance = self.pool.cache and await self.pool.cache.get(cache_key)
         if not acceptance:
             storage = self.get_indy_storage()
-            tag_filter = {"pool_name": self.pool_name}
+            tag_filter = {"pool_name": self.pool.name}
             found = await storage.search_records(
                 TAA_ACCEPTED_RECORD_TYPE, tag_filter
             ).fetch_all()
@@ -1039,8 +1031,10 @@ class IndyLedger(BaseLedger):
                 acceptance = records[0]
             else:
                 acceptance = {}
-            if self.cache:
-                await self.cache.set(cache_key, acceptance, self.cache_duration)
+            if self.pool.cache:
+                await self.pool.cache.set(
+                    cache_key, acceptance, self.pool.cache_duration
+                )
         return acceptance
 
     async def get_revoc_reg_def(self, revoc_reg_id: str) -> dict:

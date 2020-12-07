@@ -7,6 +7,7 @@ from aiohttp_apispec import docs, match_info_schema, request_schema
 
 from marshmallow import fields
 
+from ....admin.request_context import AdminRequestContext
 from ....connections.models.conn_record import ConnRecord
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
@@ -89,7 +90,7 @@ async def actionmenu_close(request: web.BaseRequest):
         request: aiohttp request object
 
     """
-    context = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
     connection_id = request.match_info["conn_id"]
 
     menu = await retrieve_connection_menu(connection_id, context)
@@ -116,7 +117,7 @@ async def actionmenu_fetch(request: web.BaseRequest):
         request: aiohttp request object
 
     """
-    context = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
     connection_id = request.match_info["conn_id"]
 
     menu = await retrieve_connection_menu(connection_id, context)
@@ -135,7 +136,7 @@ async def actionmenu_perform(request: web.BaseRequest):
         request: aiohttp request object
 
     """
-    context = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
     connection_id = request.match_info["conn_id"]
     outbound_handler = request.app["outbound_message_router"]
     params = await request.json()
@@ -163,7 +164,7 @@ async def actionmenu_request(request: web.BaseRequest):
         request: aiohttp request object
 
     """
-    context = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
     connection_id = request.match_info["conn_id"]
     outbound_handler = request.app["outbound_message_router"]
 
@@ -192,7 +193,7 @@ async def actionmenu_send(request: web.BaseRequest):
         request: aiohttp request object
 
     """
-    context = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
     connection_id = request.match_info["conn_id"]
     outbound_handler = request.app["outbound_message_router"]
     menu_json = await request.json()

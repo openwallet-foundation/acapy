@@ -8,7 +8,7 @@ from ......connections.models.diddoc import (
     PublicKeyType,
     Service,
 )
-from ......wallet.basic import BasicWallet
+from ......core.in_memory import InMemoryProfile
 
 from .....didcomm_prefix import DIDCommPrefix
 
@@ -106,7 +106,8 @@ class TestConnectionResponseSchema(AsyncTestCase, TestConfig):
         connection_response = ConnectionResponse(
             connection=ConnectionDetail(did=self.test_did, did_doc=self.make_did_doc())
         )
-        wallet = BasicWallet()
+        session = InMemoryProfile.test_session()
+        wallet = session.wallet
         key_info = await wallet.create_signing_key()
         await connection_response.sign_field("connection", key_info.verkey, wallet)
         data = connection_response.serialize()

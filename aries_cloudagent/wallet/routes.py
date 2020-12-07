@@ -11,6 +11,7 @@ from aiohttp_apispec import (
 
 from marshmallow import fields
 
+from ..admin.request_context import AdminRequestContext
 from ..ledger.base import BaseLedger
 from ..ledger.endpoint_type import EndpointType
 from ..ledger.error import LedgerConfigError, LedgerError
@@ -140,8 +141,9 @@ async def wallet_did_list(request: web.BaseRequest):
         The DID list response
 
     """
-    context = request.app["request_context"]
-    wallet: BaseWallet = await context.inject(BaseWallet, required=False)
+    context: AdminRequestContext = request["context"]
+    session = await context.session()
+    wallet = session.inject(BaseWallet, required=False)
     if not wallet:
         raise web.HTTPForbidden(reason="No wallet available")
     filter_did = request.query.get("did")
@@ -224,8 +226,9 @@ async def wallet_create_did(request: web.BaseRequest):
         The DID info
 
     """
-    context = request.app["request_context"]
-    wallet: BaseWallet = await context.inject(BaseWallet, required=False)
+    context: AdminRequestContext = request["context"]
+    session = await context.session()
+    wallet = session.inject(BaseWallet, required=False)
     if not wallet:
         raise web.HTTPForbidden(reason="No wallet available")
     try:
@@ -249,8 +252,9 @@ async def wallet_get_public_did(request: web.BaseRequest):
         The DID info
 
     """
-    context = request.app["request_context"]
-    wallet: BaseWallet = await context.inject(BaseWallet, required=False)
+    context: AdminRequestContext = request["context"]
+    session = await context.session()
+    wallet = session.inject(BaseWallet, required=False)
     if not wallet:
         raise web.HTTPForbidden(reason="No wallet available")
     try:
@@ -275,8 +279,9 @@ async def wallet_set_public_did(request: web.BaseRequest):
         The updated DID info
 
     """
-    context = request.app["request_context"]
-    wallet: BaseWallet = await context.inject(BaseWallet, required=False)
+    context: AdminRequestContext = request["context"]
+    session = await context.session()
+    wallet = session.inject(BaseWallet, required=False)
     if not wallet:
         raise web.HTTPForbidden(reason="No wallet available")
     did = request.query.get("did")
@@ -284,10 +289,10 @@ async def wallet_set_public_did(request: web.BaseRequest):
         raise web.HTTPBadRequest(reason="Request query must include DID")
 
     try:
-        ledger = await context.inject(BaseLedger, required=False)
+        ledger = session.inject(BaseLedger, required=False)
         if not ledger:
             reason = "No ledger available"
-            if not context.settings.get_value("wallet.type"):
+            if not session.settings.get_value("wallet.type"):
                 reason += ": missing wallet-type?"
             raise web.HTTPForbidden(reason=reason)
 
@@ -300,7 +305,7 @@ async def wallet_set_public_did(request: web.BaseRequest):
         if info:
             # Publish endpoint if necessary
             endpoint = did_info.metadata.get(
-                "endpoint", context.settings.get("default_endpoint")
+                "endpoint", session.settings.get("default_endpoint")
             )
             async with ledger:
                 await ledger.update_endpoint_for_did(info.did, endpoint)
@@ -323,8 +328,9 @@ async def wallet_set_did_endpoint(request: web.BaseRequest):
     Args:
         request: aiohttp request object
     """
-    context = request.app["request_context"]
-    wallet: BaseWallet = await context.inject(BaseWallet, required=False)
+    context: AdminRequestContext = request["context"]
+    session = await context.session()
+    wallet = session.inject(BaseWallet, required=False)
     if not wallet:
         raise web.HTTPForbidden(reason="No wallet available")
 
@@ -336,7 +342,7 @@ async def wallet_set_did_endpoint(request: web.BaseRequest):
     )
 
     try:
-        ledger: BaseLedger = await context.inject(BaseLedger, required=False)
+        ledger = session.inject(BaseLedger, required=False)
         await wallet.set_did_endpoint(did, endpoint, ledger, endpoint_type)
     except WalletNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
@@ -362,8 +368,9 @@ async def wallet_get_did_endpoint(request: web.BaseRequest):
         The updated DID info
 
     """
-    context = request.app["request_context"]
-    wallet: BaseWallet = await context.inject(BaseWallet, required=False)
+    context: AdminRequestContext = request["context"]
+    session = await context.session()
+    wallet = session.inject(BaseWallet, required=False)
     if not wallet:
         raise web.HTTPForbidden(reason="No wallet available")
     did = request.query.get("did")
@@ -393,8 +400,9 @@ async def wallet_rotate_did_keypair(request: web.BaseRequest):
         An empty JSON response
 
     """
-    context = request.app["request_context"]
-    wallet: BaseWallet = await context.inject(BaseWallet, required=False)
+    context: AdminRequestContext = request["context"]
+    session = await context.session()
+    wallet = session.inject(BaseWallet, required=False)
     if not wallet:
         raise web.HTTPForbidden(reason="No wallet available")
     did = request.query.get("did")

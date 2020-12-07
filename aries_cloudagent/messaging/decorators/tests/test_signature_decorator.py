@@ -2,8 +2,9 @@ import pytest
 
 from asynctest import TestCase as AsyncTestCase, mock as async_mock
 
+from ....core.in_memory import InMemoryProfile
 from ....protocols.trustping.v1_0.messages.ping import Ping
-from ....wallet.basic import BasicWallet
+from ....wallet.in_memory import InMemoryWallet
 from .. import signature_decorator as test_module
 from ..signature_decorator import SignatureDecorator
 
@@ -41,7 +42,9 @@ class TestSignatureDecorator(AsyncTestCase):
     async def test_create_decode_verify(self):
         TEST_MESSAGE = "Hello world"
         TEST_TIMESTAMP = 1234567890
-        wallet = BasicWallet()
+
+        profile = InMemoryProfile.test_profile()
+        wallet = InMemoryWallet(profile)
         key_info = await wallet.create_signing_key()
 
         deco = await SignatureDecorator.create(

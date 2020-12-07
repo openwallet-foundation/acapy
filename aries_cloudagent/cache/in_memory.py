@@ -6,11 +6,11 @@ from typing import Any, Sequence, Text, Union
 from .base import BaseCache
 
 
-class BasicCache(BaseCache):
+class InMemoryCache(BaseCache):
     """Basic in-memory cache class."""
 
     def __init__(self):
-        """Initialize a `BasicCache` instance."""
+        """Initialize a `InMemoryCache` instance."""
         super().__init__()
         # looks like { "key": { "expires": <epoch timestamp>, "value": <val> } }
         self._cache = {}

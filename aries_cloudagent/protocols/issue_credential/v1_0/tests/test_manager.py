@@ -6,16 +6,14 @@ from asynctest import mock as async_mock
 from copy import deepcopy
 from time import time
 
-from .....config.injection_context import InjectionContext
+from .....core.in_memory import InMemoryProfile
 from .....cache.base import BaseCache
-from .....cache.basic import BasicCache
+from .....cache.in_memory import InMemoryCache
 from .....indy.holder import IndyHolder
 from .....indy.issuer import IndyIssuer
 from .....messaging.credential_definitions.util import CRED_DEF_SENT_RECORD_TYPE
-from .....messaging.request_context import RequestContext
 from .....ledger.base import BaseLedger
-from .....storage.base import BaseStorage, StorageRecord
-from .....storage.basic import BasicStorage
+from .....storage.base import StorageRecord
 from .....storage.error import StorageNotFoundError
 
 from ..manager import CredentialManager, CredentialManagerError
@@ -100,8 +98,11 @@ REV_REG_DEF = {
 
 class TestCredentialManager(AsyncTestCase):
     async def setUp(self):
-        self.context = RequestContext(
-            base_context=InjectionContext(enforce_typing=False)
+        self.session = InMemoryProfile.test_session()
+        self.profile = self.session.profile
+        self.context = self.profile.context
+        setattr(
+            self.profile, "session", async_mock.MagicMock(return_value=self.session)
         )
 
         Ledger = async_mock.MagicMock()
@@ -119,7 +120,7 @@ class TestCredentialManager(AsyncTestCase):
         )
         self.context.injector.bind_instance(BaseLedger, self.ledger)
 
-        self.manager = CredentialManager(self.context)
+        self.manager = CredentialManager(self.profile)
 
     async def test_record_eq(self):
         same = [
@@ -182,8 +183,8 @@ class TestCredentialManager(AsyncTestCase):
             arg_exchange = create_offer.call_args[1]["cred_ex_record"]
             assert arg_exchange.auto_issue
             assert arg_exchange.connection_id == connection_id
-            assert arg_exchange.schema_id == None
-            assert arg_exchange.credential_definition_id == None
+            assert arg_exchange.schema_id is None
+            assert arg_exchange.credential_definition_id is None
             assert arg_exchange.role == V10CredentialExchange.ROLE_ISSUER
             assert arg_exchange.credential_proposal_dict == proposal.serialize()
 
@@ -273,8 +274,6 @@ class TestCredentialManager(AsyncTestCase):
                 CredAttrSpec(name="incorporationDate", value="value"),
             )
         )
-        self.context.connection_record = async_mock.MagicMock()
-        self.context.connection_record.connection_id = connection_id
 
         with async_mock.patch.object(
             V10CredentialExchange, "save", autospec=True
@@ -282,16 +281,15 @@ class TestCredentialManager(AsyncTestCase):
             proposal = CredentialProposal(
                 credential_proposal=preview, cred_def_id=CRED_DEF_ID, schema_id=None
             )
-            self.context.message = proposal
 
-            exchange = await self.manager.receive_proposal()
+            exchange = await self.manager.receive_proposal(proposal, connection_id)
             save_ex.assert_called_once()
 
             assert exchange.connection_id == connection_id
-            assert exchange.credential_definition_id == None
+            assert exchange.credential_definition_id is None
             assert exchange.role == V10CredentialExchange.ROLE_ISSUER
             assert exchange.state == V10CredentialExchange.STATE_PROPOSAL_RECEIVED
-            assert exchange.schema_id == None
+            assert exchange.schema_id is None
             assert exchange.thread_id == proposal._thread_id
 
             ret_proposal: CredentialProposal = CredentialProposal.deserialize(
@@ -303,7 +301,9 @@ class TestCredentialManager(AsyncTestCase):
             self.context.message = CredentialProposal(
                 credential_proposal=preview, cred_def_id=None, schema_id=None
             )
-            await self.manager.receive_proposal()  # OK to leave open until offer
+            await self.manager.receive_proposal(
+                proposal, connection_id
+            )  # OK to leave open until offer
 
     async def test_create_free_offer(self):
         connection_id = "test_conn_id"
@@ -331,8 +331,7 @@ class TestCredentialManager(AsyncTestCase):
         with async_mock.patch.object(
             V10CredentialExchange, "save", autospec=True
         ) as save_ex:
-
-            self.cache = BasicCache()
+            self.cache = InMemoryCache()
             self.context.injector.bind_instance(BaseCache, self.cache)
 
             cred_offer = {"cred_def_id": CRED_DEF_ID, "schema_id": SCHEMA_ID}
@@ -343,8 +342,6 @@ class TestCredentialManager(AsyncTestCase):
             )
             self.context.injector.bind_instance(IndyIssuer, issuer)
 
-            self.storage = BasicStorage()
-            self.context.injector.bind_instance(BaseStorage, self.storage)
             cred_def_record = StorageRecord(
                 CRED_DEF_SENT_RECORD_TYPE,
                 CRED_DEF_ID,
@@ -358,8 +355,7 @@ class TestCredentialManager(AsyncTestCase):
                     "epoch": str(int(time())),
                 },
             )
-            storage: BaseStorage = await self.context.inject(BaseStorage)
-            await storage.add_record(cred_def_record)
+            await self.session.storage.add_record(cred_def_record)
 
             (ret_exchange, ret_offer) = await self.manager.create_offer(
                 cred_ex_record=exchange, comment=comment
@@ -407,7 +403,7 @@ class TestCredentialManager(AsyncTestCase):
         with async_mock.patch.object(
             V10CredentialExchange, "save", autospec=True
         ) as save_ex:
-            self.cache = BasicCache()
+            self.cache = InMemoryCache()
             self.context.injector.bind_instance(BaseCache, self.cache)
 
             cred_offer = {"cred_def_id": CRED_DEF_ID, "schema_id": SCHEMA_ID}
@@ -418,8 +414,6 @@ class TestCredentialManager(AsyncTestCase):
             )
             self.context.injector.bind_instance(IndyIssuer, issuer)
 
-            self.storage = BasicStorage()
-            self.context.injector.bind_instance(BaseStorage, self.storage)
             cred_def_record = StorageRecord(
                 CRED_DEF_SENT_RECORD_TYPE,
                 CRED_DEF_ID,
@@ -433,8 +427,7 @@ class TestCredentialManager(AsyncTestCase):
                     "epoch": str(int(time())),
                 },
             )
-            storage: BaseStorage = await self.context.inject(BaseStorage)
-            await storage.add_record(cred_def_record)
+            await self.session.storage.add_record(cred_def_record)
 
             with self.assertRaises(CredentialManagerError):
                 await self.manager.create_offer(
@@ -476,8 +469,6 @@ class TestCredentialManager(AsyncTestCase):
             )
             self.context.injector.bind_instance(IndyIssuer, issuer)
 
-            self.storage = BasicStorage()
-            self.context.injector.bind_instance(BaseStorage, self.storage)
             cred_def_record = StorageRecord(
                 CRED_DEF_SENT_RECORD_TYPE,
                 CRED_DEF_ID,
@@ -491,8 +482,7 @@ class TestCredentialManager(AsyncTestCase):
                     "epoch": str(int(time())),
                 },
             )
-            storage: BaseStorage = await self.context.inject(BaseStorage)
-            await storage.add_record(cred_def_record)
+            await self.session.storage.add_record(cred_def_record)
 
             (ret_exchange, ret_offer) = await self.manager.create_offer(
                 cred_ex_record=exchange, comment=comment
@@ -547,9 +537,6 @@ class TestCredentialManager(AsyncTestCase):
             )
             self.context.injector.bind_instance(IndyIssuer, issuer)
 
-            self.storage = BasicStorage()
-            self.context.injector.bind_instance(BaseStorage, self.storage)
-
             with self.assertRaises(CredentialManagerError):
                 await self.manager.create_offer(
                     cred_ex_record=exchange, comment=comment
@@ -575,10 +562,6 @@ class TestCredentialManager(AsyncTestCase):
         )
         offer.assign_thread_id(thread_id)
 
-        self.context.message = offer
-        self.context.connection_record = async_mock.MagicMock()
-        self.context.connection_record.connection_id = connection_id
-
         stored_exchange = V10CredentialExchange(
             credential_exchange_id="dummy-cxid",
             connection_id=connection_id,
@@ -597,7 +580,7 @@ class TestCredentialManager(AsyncTestCase):
             "retrieve_by_connection_and_thread",
             async_mock.CoroutineMock(return_value=stored_exchange),
         ) as retrieve_ex:
-            exchange = await self.manager.receive_offer()
+            exchange = await self.manager.receive_offer(offer, connection_id)
 
             assert exchange.connection_id == connection_id
             assert exchange.credential_definition_id == CRED_DEF_ID
@@ -636,7 +619,7 @@ class TestCredentialManager(AsyncTestCase):
             "retrieve_by_connection_and_thread",
             async_mock.CoroutineMock(side_effect=StorageNotFoundError),
         ) as retrieve_ex:
-            exchange = await self.manager.receive_offer()
+            exchange = await self.manager.receive_offer(offer, connection_id)
 
             assert exchange.connection_id == connection_id
             assert exchange.credential_definition_id == CRED_DEF_ID
@@ -671,7 +654,7 @@ class TestCredentialManager(AsyncTestCase):
             thread_id=thread_id,
         )
 
-        self.cache = BasicCache()
+        self.cache = InMemoryCache()
         self.context.injector.bind_instance(BaseCache, self.cache)
 
         with async_mock.patch.object(
@@ -827,9 +810,6 @@ class TestCredentialManager(AsyncTestCase):
         request = CredentialRequest(
             requests_attach=[CredentialRequest.wrap_indy_cred_req(indy_cred_req)]
         )
-        self.context.message = request
-        self.context.connection_record = async_mock.MagicMock()
-        self.context.connection_record.connection_id = connection_id
 
         with async_mock.patch.object(
             V10CredentialExchange, "save", autospec=True
@@ -838,10 +818,10 @@ class TestCredentialManager(AsyncTestCase):
             "retrieve_by_connection_and_thread",
             async_mock.CoroutineMock(return_value=stored_exchange),
         ) as retrieve_ex:
-            exchange = await self.manager.receive_request()
+            exchange = await self.manager.receive_request(request, connection_id)
 
             retrieve_ex.assert_called_once_with(
-                self.context, connection_id, request._thread_id
+                self.session, connection_id, request._thread_id
             )
             save_ex.assert_called_once()
 
@@ -1306,9 +1286,6 @@ class TestCredentialManager(AsyncTestCase):
         issue = CredentialIssue(
             credentials_attach=[CredentialIssue.wrap_indy_credential(indy_cred)]
         )
-        self.context.message = issue
-        self.context.connection_record = async_mock.MagicMock()
-        self.context.connection_record.connection_id = connection_id
 
         with async_mock.patch.object(
             V10CredentialExchange, "save", autospec=True
@@ -1317,10 +1294,10 @@ class TestCredentialManager(AsyncTestCase):
             "retrieve_by_connection_and_thread",
             async_mock.CoroutineMock(return_value=stored_exchange),
         ) as retrieve_ex:
-            exchange = await self.manager.receive_credential()
+            exchange = await self.manager.receive_credential(issue, connection_id)
 
             retrieve_ex.assert_called_once_with(
-                self.context, connection_id, issue._thread_id
+                self.session, connection_id, issue._thread_id
             )
             save_ex.assert_called_once()
 
@@ -1526,9 +1503,6 @@ class TestCredentialManager(AsyncTestCase):
         )
 
         ack = CredentialAck()
-        self.context.message = ack
-        self.context.connection_record = async_mock.MagicMock()
-        self.context.connection_record.connection_id = connection_id
 
         with async_mock.patch.object(
             V10CredentialExchange, "save", autospec=True
@@ -1539,10 +1513,10 @@ class TestCredentialManager(AsyncTestCase):
             "retrieve_by_connection_and_thread",
             async_mock.CoroutineMock(return_value=stored_exchange),
         ) as retrieve_ex:
-            ret_exchange = await self.manager.receive_credential_ack()
+            ret_exchange = await self.manager.receive_credential_ack(ack, connection_id)
 
             retrieve_ex.assert_called_once_with(
-                self.context, connection_id, ack._thread_id
+                self.session, connection_id, ack._thread_id
             )
             save_ex.assert_called_once()
 
@@ -1550,12 +1524,9 @@ class TestCredentialManager(AsyncTestCase):
             delete_ex.assert_called_once()
 
     async def test_retrieve_records(self):
-        self.cache = BasicCache()
+        self.cache = InMemoryCache()
         self.context.injector.bind_instance(BaseCache, self.cache)
 
-        self.storage = BasicStorage()
-        self.context.injector.bind_instance(BaseStorage, self.storage)
-        storage: BaseStorage = await self.context.inject(BaseStorage)
         for index in range(2):
             exchange_record = V10CredentialExchange(
                 connection_id=str(index),
@@ -1563,12 +1534,12 @@ class TestCredentialManager(AsyncTestCase):
                 initiator=V10CredentialExchange.INITIATOR_SELF,
                 role=V10CredentialExchange.ROLE_ISSUER,
             )
-            await exchange_record.save(self.context)
+            await exchange_record.save(self.session)
 
         for i in range(2):  # second pass gets from cache
             for index in range(2):
                 ret_ex = await V10CredentialExchange.retrieve_by_connection_and_thread(
-                    self.context, str(index), str(1000 + index)
+                    self.session, str(index), str(1000 + index)
                 )
                 assert ret_ex.connection_id == str(index)
                 assert ret_ex.thread_id == str(1000 + index)

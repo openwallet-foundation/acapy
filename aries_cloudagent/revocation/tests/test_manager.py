@@ -5,9 +5,7 @@ from asynctest import TestCase as AsyncTestCase
 from copy import deepcopy
 from time import time
 
-from ...config.injection_context import InjectionContext
-from ...cache.base import BaseCache
-from ...cache.basic import BasicCache
+from ...core.in_memory import InMemoryProfile
 from ...indy.holder import IndyHolder
 from ...indy.issuer import IndyIssuer
 from ...messaging.credential_definitions.util import CRED_DEF_SENT_RECORD_TYPE
@@ -16,8 +14,7 @@ from ...protocols.issue_credential.v1_0.models.credential_exchange import (
     V10CredentialExchange,
 )
 from ...ledger.base import BaseLedger
-from ...storage.base import BaseStorage, StorageRecord
-from ...storage.basic import BasicStorage
+from ...storage.base import StorageRecord
 from ...storage.error import StorageNotFoundError
 
 from ..manager import RevocationManager, RevocationManagerError
@@ -37,11 +34,8 @@ TAILS_LOCAL = f"{TAILS_DIR}/{TAILS_HASH}"
 
 class TestRevocationManager(AsyncTestCase):
     async def setUp(self):
-        self.context = RequestContext(
-            base_context=InjectionContext(enforce_typing=False)
-        )
-
-        self.manager = RevocationManager(self.context)
+        self.session = InMemoryProfile.test_session()
+        self.manager = RevocationManager(self.session)
 
     async def test_revoke_credential_publish(self):
         CRED_EX_ID = "dummy-cxid"
@@ -88,7 +82,7 @@ class TestRevocationManager(AsyncTestCase):
                     [],
                 )
             )
-            self.context.injector.bind_instance(IndyIssuer, issuer)
+            self.session.context.injector.bind_instance(IndyIssuer, issuer)
 
             await self.manager.revoke_credential_by_cred_ex_id(CRED_EX_ID, publish=True)
 
@@ -104,10 +98,7 @@ class TestRevocationManager(AsyncTestCase):
             mock_retrieve.side_effect = test_module.StorageNotFoundError("no such rec")
 
             issuer = async_mock.MagicMock(IndyIssuer, autospec=True)
-            self.context.injector.bind_instance(IndyIssuer, issuer)
-
-            self.storage = BasicStorage()
-            self.context.injector.bind_instance(BaseStorage, self.storage)
+            self.session.context.injector.bind_instance(IndyIssuer, issuer)
 
             with self.assertRaises(RevocationManagerError):
                 await self.manager.revoke_credential_by_cred_ex_id(CRED_EX_ID)
@@ -130,7 +121,7 @@ class TestRevocationManager(AsyncTestCase):
             )
 
             issuer = async_mock.MagicMock(IndyIssuer, autospec=True)
-            self.context.injector.bind_instance(IndyIssuer, issuer)
+            self.session.context.injector.bind_instance(IndyIssuer, issuer)
 
             with self.assertRaises(RevocationManagerError):
                 await self.manager.revoke_credential(REV_REG_ID, CRED_REV_ID)
@@ -148,11 +139,11 @@ class TestRevocationManager(AsyncTestCase):
             )
 
             issuer = async_mock.MagicMock(IndyIssuer, autospec=True)
-            self.context.injector.bind_instance(IndyIssuer, issuer)
+            self.session.context.injector.bind_instance(IndyIssuer, issuer)
 
             await self.manager.revoke_credential(REV_REG_ID, CRED_REV_ID, False)
             mock_issuer_rev_reg_record.mark_pending.assert_called_once_with(
-                self.context, CRED_REV_ID
+                self.session, CRED_REV_ID
             )
 
     async def test_publish_pending_revocations(self):
@@ -191,7 +182,7 @@ class TestRevocationManager(AsyncTestCase):
             issuer.revoke_credentials = async_mock.CoroutineMock(
                 side_effect=[(json.dumps(delta), []) for delta in deltas]
             )
-            self.context.injector.bind_instance(IndyIssuer, issuer)
+            self.session.context.injector.bind_instance(IndyIssuer, issuer)
 
             result = await self.manager.publish_pending_revocations()
             assert result == {REV_REG_ID: ["1", "2"]}
@@ -242,7 +233,7 @@ class TestRevocationManager(AsyncTestCase):
             issuer.revoke_credentials = async_mock.CoroutineMock(
                 side_effect=[(json.dumps(delta), []) for delta in deltas]
             )
-            self.context.injector.bind_instance(IndyIssuer, issuer)
+            self.session.context.injector.bind_instance(IndyIssuer, issuer)
 
             result = await self.manager.publish_pending_revocations({REV_REG_ID: None})
             assert result == {REV_REG_ID: ["1", "2"]}
@@ -294,7 +285,7 @@ class TestRevocationManager(AsyncTestCase):
             issuer.revoke_credentials = async_mock.CoroutineMock(
                 side_effect=[(json.dumps(delta), []) for delta in deltas]
             )
-            self.context.injector.bind_instance(IndyIssuer, issuer)
+            self.session.context.injector.bind_instance(IndyIssuer, issuer)
 
             result = await self.manager.publish_pending_revocations({REV_REG_ID: "2"})
             assert result == {REV_REG_ID: ["2"]}
@@ -377,12 +368,6 @@ class TestRevocationManager(AsyncTestCase):
             }
 
     async def test_retrieve_records(self):
-        self.cache = BasicCache()
-        self.context.injector.bind_instance(BaseCache, self.cache)
-
-        self.storage = BasicStorage()
-        self.context.injector.bind_instance(BaseStorage, self.storage)
-        storage: BaseStorage = await self.context.inject(BaseStorage)
         for index in range(2):
             exchange_record = V10CredentialExchange(
                 connection_id=str(index),
@@ -390,12 +375,12 @@ class TestRevocationManager(AsyncTestCase):
                 initiator=V10CredentialExchange.INITIATOR_SELF,
                 role=V10CredentialExchange.ROLE_ISSUER,
             )
-            await exchange_record.save(self.context)
+            await exchange_record.save(self.session)
 
         for i in range(2):  # second pass gets from cache
             for index in range(2):
                 ret_ex = await V10CredentialExchange.retrieve_by_connection_and_thread(
-                    self.context, str(index), str(1000 + index)
+                    self.session, str(index), str(1000 + index)
                 )
                 assert ret_ex.connection_id == str(index)
                 assert ret_ex.thread_id == str(1000 + index)

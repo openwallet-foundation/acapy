@@ -7,44 +7,48 @@ import indy.anoncreds
 import indy.crypto
 import indy.did
 import indy.wallet
+from indy.error import ErrorCode
 
 from asynctest import mock as async_mock
 
-from aries_cloudagent.wallet import indy as test_wallet
-from aries_cloudagent.wallet.indy import IndyWallet
-from aries_cloudagent.storage.error import StorageError, StorageSearchError
-from aries_cloudagent.storage.indy import IndyStorage
-from aries_cloudagent.storage.record import StorageRecord
+from ...indy.sdk.profile import IndySdkProfileManager
+from ...storage.base import BaseStorage
+from ...storage.error import StorageError, StorageSearchError
+from ...storage.indy import IndySdkStorage
+from ...storage.record import StorageRecord
+from ...wallet import indy as test_wallet
+from ...wallet.indy import IndySdkWallet
 
 from .. import indy as test_module
-from . import test_basic_storage
+from . import test_in_memory_storage
 
 
 @pytest.fixture()
 async def store():
-    key = await IndyWallet.generate_wallet_key()
-    wallet = IndyWallet(
+    key = await IndySdkWallet.generate_wallet_key()
+    profile = await IndySdkProfileManager().provision(
         {
-            "auto_create": True,
+            "auto_recreate": True,
             "auto_remove": True,
             "name": "test-wallet",
             "key": key,
             "key_derivation_method": "RAW",  # much slower tests with argon-hashed keys
         }
     )
-    await wallet.open()
-    yield IndyStorage(wallet)
-    await wallet.close()
+    async with profile.session() as session:
+        yield session.inject(BaseStorage)
+    await profile.close()
 
 
 @pytest.mark.indy
-class TestIndyStorage(test_basic_storage.TestBasicStorage):
+class TestIndySdkStorage(test_in_memory_storage.TestInMemoryStorage):
     """Tests for indy storage."""
 
     @pytest.mark.asyncio
     async def test_record(self):
-        with async_mock.patch.object(
-            test_wallet, "load_postgres_plugin", async_mock.MagicMock()
+        with async_mock.patch(
+            "aries_cloudagent.indy.sdk.wallet_plugin.load_postgres_plugin",
+            async_mock.MagicMock(),
         ) as mock_load, async_mock.patch.object(
             indy.wallet, "create_wallet", async_mock.CoroutineMock()
         ) as mock_create, async_mock.patch.object(
@@ -56,12 +60,12 @@ class TestIndyStorage(test_basic_storage.TestBasicStorage):
         ) as mock_close, async_mock.patch.object(
             indy.wallet, "delete_wallet", async_mock.CoroutineMock()
         ) as mock_delete:
-            fake_wallet = IndyWallet(
+            fake_profile = await IndySdkProfileManager().provision(
                 {
-                    "auto_create": True,
+                    "auto_recreate": True,
                     "auto_remove": True,
-                    "name": "test_pg_wallet",
-                    "key": await IndyWallet.generate_wallet_key(),
+                    "name": "test-wallet",
+                    "key": await IndySdkWallet.generate_wallet_key(),
                     "key_derivation_method": "RAW",
                     "storage_type": "postgres_storage",
                     "storage_config": json.dumps({"url": "dummy"}),
@@ -75,8 +79,8 @@ class TestIndyStorage(test_basic_storage.TestBasicStorage):
                     ),
                 }
             )
-            await fake_wallet.open()
-            storage = IndyStorage(fake_wallet)
+            session = await fake_profile.session()
+            storage = session.inject(BaseStorage)
 
             for record_x in [
                 None,
@@ -145,35 +149,35 @@ class TestIndyStorage(test_basic_storage.TestBasicStorage):
                 await storage.get_record("connection", None)
 
             with async_mock.patch.object(
-                test_module.non_secrets, "get_wallet_record", async_mock.CoroutineMock()
+                indy.non_secrets, "get_wallet_record", async_mock.CoroutineMock()
             ) as mock_get_record:
                 mock_get_record.side_effect = test_module.IndyError(
-                    test_module.ErrorCode.CommonInvalidStructure
+                    ErrorCode.CommonInvalidStructure
                 )
                 with pytest.raises(test_module.StorageError):
                     await storage.get_record("connection", "dummy-id")
 
             with async_mock.patch.object(
-                test_module.non_secrets,
+                indy.non_secrets,
                 "update_wallet_record_value",
                 async_mock.CoroutineMock(),
             ) as mock_update_value, async_mock.patch.object(
-                test_module.non_secrets,
+                indy.non_secrets,
                 "update_wallet_record_tags",
                 async_mock.CoroutineMock(),
             ) as mock_update_tags, async_mock.patch.object(
-                test_module.non_secrets,
+                indy.non_secrets,
                 "delete_wallet_record",
                 async_mock.CoroutineMock(),
             ) as mock_delete:
                 mock_update_value.side_effect = test_module.IndyError(
-                    test_module.ErrorCode.CommonInvalidStructure
+                    ErrorCode.CommonInvalidStructure
                 )
                 mock_update_tags.side_effect = test_module.IndyError(
-                    test_module.ErrorCode.CommonInvalidStructure
+                    ErrorCode.CommonInvalidStructure
                 )
                 mock_delete.side_effect = test_module.IndyError(
-                    test_module.ErrorCode.CommonInvalidStructure
+                    ErrorCode.CommonInvalidStructure
                 )
 
                 rec = StorageRecord(
@@ -207,8 +211,9 @@ class TestIndyStorage(test_basic_storage.TestBasicStorage):
 
     @pytest.mark.asyncio
     async def test_storage_search_x(self):
-        with async_mock.patch.object(
-            test_wallet, "load_postgres_plugin", async_mock.MagicMock()
+        with async_mock.patch(
+            "aries_cloudagent.indy.sdk.wallet_plugin.load_postgres_plugin",
+            async_mock.MagicMock(),
         ) as mock_load, async_mock.patch.object(
             indy.wallet, "create_wallet", async_mock.CoroutineMock()
         ) as mock_create, async_mock.patch.object(
@@ -220,12 +225,12 @@ class TestIndyStorage(test_basic_storage.TestBasicStorage):
         ) as mock_close, async_mock.patch.object(
             indy.wallet, "delete_wallet", async_mock.CoroutineMock()
         ) as mock_delete:
-            fake_wallet = IndyWallet(
+            fake_profile = await IndySdkProfileManager().provision(
                 {
-                    "auto_create": True,
+                    "auto_recreate": True,
                     "auto_remove": True,
                     "name": "test_pg_wallet",
-                    "key": await IndyWallet.generate_wallet_key(),
+                    "key": await IndySdkWallet.generate_wallet_key(),
                     "key_derivation_method": "RAW",
                     "storage_type": "postgres_storage",
                     "storage_config": json.dumps({"url": "dummy"}),
@@ -239,8 +244,8 @@ class TestIndyStorage(test_basic_storage.TestBasicStorage):
                     ),
                 }
             )
-            await fake_wallet.open()
-            storage = IndyStorage(fake_wallet)
+            session = await fake_profile.session()
+            storage = session.inject(BaseStorage)
 
             search = storage.search_records("connection")
             with pytest.raises(StorageSearchError):
@@ -295,17 +300,17 @@ class TestIndyStorage(test_basic_storage.TestBasicStorage):
         ) as mock_close, async_mock.patch.object(
             indy.wallet, "delete_wallet", async_mock.CoroutineMock()
         ) as mock_delete:
-            fake_wallet = IndyWallet(
+            fake_profile = await IndySdkProfileManager().provision(
                 {
-                    "auto_create": True,
+                    "auto_recreate": True,
                     "auto_remove": True,
                     "name": "test_indy_wallet",
-                    "key": await IndyWallet.generate_wallet_key(),
+                    "key": await IndySdkWallet.generate_wallet_key(),
                     "key_derivation_method": "RAW",
                 }
             )
-            await fake_wallet.open()
-            storage = IndyStorage(fake_wallet)
+            session = await fake_profile.session()
+            storage = session.inject(BaseStorage)
 
             with async_mock.patch.object(
                 indy.non_secrets, "open_wallet_search", async_mock.CoroutineMock()
@@ -336,11 +341,11 @@ class TestIndyStorage(test_basic_storage.TestBasicStorage):
         if not postgres_url:
             pytest.fail("POSTGRES_URL not configured")
 
-        wallet_key = await IndyWallet.generate_wallet_key()
-        postgres_wallet = IndyWallet(
+        wallet_key = await IndySdkWallet.generate_wallet_key()
+        postgres_wallet = IndySdkWallet(
             {
-                "auto_create": False,
-                "auto_remove": False,
+                "auto_recreate": True,
+                "auto_remove": True,
                 "name": "test_pg_wallet",
                 "key": wallet_key,
                 "key_derivation_method": "RAW",
@@ -352,7 +357,7 @@ class TestIndyStorage(test_basic_storage.TestBasicStorage):
         await postgres_wallet.create()
         await postgres_wallet.open()
 
-        storage = IndyStorage(postgres_wallet)
+        storage = IndySdkStorage(postgres_wallet)
 
         # add and then fetch a record
         record = StorageRecord(

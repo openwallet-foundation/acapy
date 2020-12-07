@@ -15,9 +15,10 @@ from ..admin.base_server import BaseAdminServer
 from ..admin.server import AdminServer
 from ..config.default_context import ContextBuilder
 from ..config.injection_context import InjectionContext
-from ..config.ledger import ledger_config
+from ..config.ledger import get_genesis_transactions, ledger_config
 from ..config.logging import LoggingConfigurator
-from ..config.wallet import wallet_config, BaseWallet
+from ..config.wallet import wallet_config
+from ..core.profile import Profile
 from ..ledger.error import LedgerConfigError, LedgerTransactionError
 from ..messaging.responder import BaseResponder
 from ..protocols.connections.v1_0.manager import (
@@ -32,6 +33,7 @@ from ..transport.outbound.base import OutboundDeliveryError
 from ..transport.outbound.manager import OutboundTransportManager, QueuedOutboundMessage
 from ..transport.outbound.message import OutboundMessage
 from ..transport.wire_format import BaseWireFormat
+from ..wallet.base import DIDInfo
 from ..utils.task_queue import CompletedTask, TaskQueue
 from ..utils.stats import Collector
 
@@ -59,27 +61,39 @@ class Conductor:
 
         """
         self.admin_server = None
-        self.context: InjectionContext = None
         self.context_builder = context_builder
         self.dispatcher: Dispatcher = None
         self.inbound_transport_manager: InboundTransportManager = None
         self.outbound_transport_manager: OutboundTransportManager = None
+        self.root_profile: Profile = None
+        self.setup_public_did: DIDInfo = None
+
+    @property
+    def context(self) -> InjectionContext:
+        """Accessor for the injection context."""
+        return self.root_profile.context
 
     async def setup(self):
         """Initialize the global request context."""
 
-        context = await self.context_builder.build()
+        context = await self.context_builder.build_context()
 
-        self.dispatcher = Dispatcher(context)
-        await self.dispatcher.setup()
+        # Fetch genesis transactions if necessary
+        await get_genesis_transactions(context.settings)
 
-        wire_format = await context.inject(BaseWireFormat, required=False)
-        if wire_format and hasattr(wire_format, "task_queue"):
-            wire_format.task_queue = self.dispatcher.task_queue
+        # Configure the root profile
+        self.root_profile, self.setup_public_did = await wallet_config(context)
+        context = self.root_profile.context
+
+        # Configure the ledger
+        if not await ledger_config(
+            self.root_profile, self.setup_public_did and self.setup_public_did.did
+        ):
+            LOGGER.warning("No ledger configured")
 
         # Register all inbound transports
         self.inbound_transport_manager = InboundTransportManager(
-            context, self.inbound_message_router, self.handle_not_returned
+            self.root_profile, self.inbound_message_router, self.handle_not_returned
         )
         await self.inbound_transport_manager.setup()
 
@@ -89,12 +103,13 @@ class Conductor:
         )
         await self.outbound_transport_manager.setup()
 
-        # Configure the wallet
-        public_did = await wallet_config(context)
+        # Initialize dispatcher
+        self.dispatcher = Dispatcher(self.root_profile)
+        await self.dispatcher.setup()
 
-        # Configure the ledger
-        if not await ledger_config(context, public_did):
-            LOGGER.warning("No ledger configured")
+        wire_format = context.inject(BaseWireFormat, required=False)
+        if wire_format and hasattr(wire_format, "task_queue"):
+            wire_format.task_queue = self.dispatcher.task_queue
 
         # Admin API
         if context.settings.get("admin.enabled"):
@@ -105,6 +120,7 @@ class Conductor:
                     admin_host,
                     admin_port,
                     context,
+                    self.root_profile,
                     self.outbound_message_router,
                     self.webhook_router,
                     self.stop,
@@ -123,7 +139,7 @@ class Conductor:
                 raise
 
         # Fetch stats collector, if any
-        collector = await context.inject(Collector, required=False)
+        collector = context.inject(Collector, required=False)
         if collector:
             # add stats to our own methods
             collector.wrap(
@@ -144,12 +160,10 @@ class Conductor:
                 ),
             )
 
-        self.context = context
-
     async def start(self) -> None:
         """Start the agent."""
 
-        context = self.context
+        context = self.root_profile.context
 
         # Start up transports
         try:
@@ -177,52 +191,51 @@ class Conductor:
         # Get agent label
         default_label = context.settings.get("default_label")
 
-        # Get public did
-        wallet: BaseWallet = await context.inject(BaseWallet)
-        public_did = await wallet.get_public_did()
-
         # Show some details about the configuration to the user
         LoggingConfigurator.print_banner(
             default_label,
             self.inbound_transport_manager.registered_transports,
             self.outbound_transport_manager.registered_transports,
-            public_did.did if public_did else None,
+            self.setup_public_did and self.setup_public_did.did,
             self.admin_server,
         )
 
         # Create a static connection for use by the test-suite
         if context.settings.get("debug.test_suite_endpoint"):
-            mgr = ConnectionManager(self.context)
-            their_endpoint = context.settings["debug.test_suite_endpoint"]
-            test_conn = await mgr.create_static_connection(
-                my_seed=hashlib.sha256(b"aries-protocol-test-subject").digest(),
-                their_seed=hashlib.sha256(b"aries-protocol-test-suite").digest(),
-                their_endpoint=their_endpoint,
-                alias="test-suite",
-            )
-            print("Created static connection for test suite")
-            print(" - My DID:", test_conn.my_did)
-            print(" - Their DID:", test_conn.their_did)
-            print(" - Their endpoint:", their_endpoint)
-            print()
+            async with self.root_profile.session() as session:
+                mgr = ConnectionManager(session)
+                their_endpoint = context.settings["debug.test_suite_endpoint"]
+                test_conn = await mgr.create_static_connection(
+                    my_seed=hashlib.sha256(b"aries-protocol-test-subject").digest(),
+                    their_seed=hashlib.sha256(b"aries-protocol-test-suite").digest(),
+                    their_endpoint=their_endpoint,
+                    alias="test-suite",
+                )
+                print("Created static connection for test suite")
+                print(" - My DID:", test_conn.my_did)
+                print(" - Their DID:", test_conn.their_did)
+                print(" - Their endpoint:", their_endpoint)
+                print()
+                del mgr
 
         # Print an invitation to the terminal
         if context.settings.get("debug.print_invitation"):
             try:
-                mgr = OutOfBandManager(self.context)
-                # _connection, invitation = await mgr.create_invitation(
-                invi_rec = await mgr.create_invitation(
-                    my_label=context.settings.get("debug.invite_label"),
-                    public=context.settings.get("debug.invite_public", False),
-                    multi_use=context.settings.get("debug.invite_multi_use", False),
-                    include_handshake=True,
-                )
-                base_url = context.settings.get("invite_base_url")
-                invite_url = InvitationMessage.deserialize(invi_rec.invitation).to_url(
-                    base_url
-                )
-                print("Invitation URL:")
-                print(invite_url, flush=True)
+                async with self.root_profile.session() as session:
+                    mgr = OutOfBandManager(session)
+                    invi_rec = await mgr.create_invitation(
+                        my_label=context.settings.get("debug.invite_label"),
+                        public=context.settings.get("debug.invite_public", False),
+                        multi_use=context.settings.get("debug.invite_multi_use", False),
+                        include_handshake=True,
+                    )
+                    base_url = context.settings.get("invite_base_url")
+                    invite_url = InvitationMessage.deserialize(
+                        invi_rec.invitation
+                    ).to_url(base_url)
+                    print("Invitation URL:")
+                    print(invite_url, flush=True)
+                    del mgr
             except Exception:
                 LOGGER.exception("Error creating invitation")
 
@@ -237,6 +250,8 @@ class Conductor:
             shutdown.run(self.inbound_transport_manager.stop())
         if self.outbound_transport_manager:
             shutdown.run(self.outbound_transport_manager.stop())
+        if self.root_profile:
+            shutdown.run(self.root_profile.close())
         await shutdown.complete(timeout)
 
     def inbound_message_router(
@@ -317,7 +332,7 @@ class Conductor:
 
     async def outbound_message_router(
         self,
-        context: InjectionContext,
+        profile: Profile,
         outbound: OutboundMessage,
         inbound: InboundMessage = None,
     ) -> None:
@@ -325,7 +340,7 @@ class Conductor:
         Route an outbound message.
 
         Args:
-            context: The request context
+            profile: The active profile for the request
             message: An outbound message to be sent
             inbound: The inbound message that produced this response, if available
         """
@@ -337,12 +352,12 @@ class Conductor:
                 return
 
         if not outbound.to_session_only:
-            await self.queue_outbound(context, outbound, inbound)
+            await self.queue_outbound(profile, outbound, inbound)
 
-    def handle_not_returned(self, context: InjectionContext, outbound: OutboundMessage):
+    def handle_not_returned(self, profile: Profile, outbound: OutboundMessage):
         """Handle a message that failed delivery via an inbound session."""
         try:
-            self.dispatcher.run_task(self.queue_outbound(context, outbound))
+            self.dispatcher.run_task(self.queue_outbound(profile, outbound))
         except (LedgerConfigError, LedgerTransactionError) as e:
             LOGGER.error("Shutdown on ledger error %s", str(e))
             if self.admin_server:
@@ -351,7 +366,7 @@ class Conductor:
 
     async def queue_outbound(
         self,
-        context: InjectionContext,
+        profile: Profile,
         outbound: OutboundMessage,
         inbound: InboundMessage = None,
     ):
@@ -359,39 +374,39 @@ class Conductor:
         Queue an outbound message.
 
         Args:
-            context: The request context
+            profile: The active profile
             message: An outbound message to be sent
             inbound: The inbound message that produced this response, if available
         """
         # populate connection target(s)
         if not outbound.target and not outbound.target_list and outbound.connection_id:
-            # using provided request context
-            conn_mgr = ConnectionManager(context)
-
-            try:
-                outbound.target_list = await self.dispatcher.run_task(
-                    conn_mgr.get_connection_targets(
-                        connection_id=outbound.connection_id
+            async with profile.session() as session:
+                conn_mgr = ConnectionManager(session)
+                try:
+                    outbound.target_list = await self.dispatcher.run_task(
+                        conn_mgr.get_connection_targets(
+                            connection_id=outbound.connection_id
+                        )
                     )
-                )
-            except ConnectionManagerError:
-                LOGGER.exception("Error preparing outbound message for transmission")
-                return
-            except (LedgerConfigError, LedgerTransactionError) as e:
-                LOGGER.error("Shutdown on ledger error %s", str(e))
-                if self.admin_server:
-                    self.admin_server.notify_fatal_error()
-                raise
+                except ConnectionManagerError:
+                    LOGGER.exception(
+                        "Error preparing outbound message for transmission"
+                    )
+                    return
+                except (LedgerConfigError, LedgerTransactionError) as e:
+                    LOGGER.error("Shutdown on ledger error %s", str(e))
+                    if self.admin_server:
+                        self.admin_server.notify_fatal_error()
+                    raise
+                del conn_mgr
 
         try:
-            self.outbound_transport_manager.enqueue_message(context, outbound)
+            self.outbound_transport_manager.enqueue_message(profile, outbound)
         except OutboundDeliveryError:
             LOGGER.warning("Cannot queue message for delivery, no supported transport")
-            self.handle_not_delivered(context, outbound)
+            self.handle_not_delivered(profile, outbound)
 
-    def handle_not_delivered(
-        self, context: InjectionContext, outbound: OutboundMessage
-    ):
+    def handle_not_delivered(self, profile: Profile, outbound: OutboundMessage):
         """Handle a message that failed delivery via outbound transports."""
         self.inbound_transport_manager.return_undelivered(outbound)
 

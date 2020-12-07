@@ -1,12 +1,9 @@
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
-from aiohttp import web as aio_web
-
-from ....config.injection_context import InjectionContext
+from ....admin.request_context import AdminRequestContext
 from ....indy.issuer import IndyIssuer
 from ....ledger.base import BaseLedger
-from ....messaging.request_context import RequestContext
 from ....storage.base import BaseStorage
 from ....tails.base import BaseTailsServer
 
@@ -19,7 +16,15 @@ CRED_DEF_ID = "WgWxqztrNooG92RXvxSTWv:3:CL:20:tag"
 
 class TestCredentialDefinitionRoutes(AsyncTestCase):
     def setUp(self):
-        self.context = InjectionContext(enforce_typing=False)
+        self.session_inject = {}
+        self.context = AdminRequestContext.test_context(self.session_inject)
+        self.request_dict = {"context": self.context}
+        self.request = async_mock.MagicMock(
+            app={"outbound_message_router": async_mock.CoroutineMock()},
+            match_info={},
+            query={},
+            __getitem__=lambda _, k: self.request_dict[k],
+        )
 
         self.ledger = async_mock.create_autospec(BaseLedger)
         self.ledger.__aenter__ = async_mock.CoroutineMock(return_value=self.ledger)
@@ -29,10 +34,10 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
         self.ledger.get_credential_definition = async_mock.CoroutineMock(
             return_value={"cred": "def"}
         )
-        self.context.injector.bind_instance(BaseLedger, self.ledger)
+        self.session_inject[BaseLedger] = self.ledger
 
         self.issuer = async_mock.create_autospec(IndyIssuer)
-        self.context.injector.bind_instance(IndyIssuer, self.issuer)
+        self.session_inject[IndyIssuer] = self.issuer
 
         self.storage = async_mock.create_autospec(BaseStorage)
         self.storage.search_records = async_mock.MagicMock(
@@ -42,28 +47,21 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
                 )
             )
         )
-        self.context.injector.bind_instance(BaseStorage, self.storage)
-
-        self.app = {
-            "request_context": self.context,
-        }
+        self.session_inject[BaseStorage] = self.storage
 
     async def test_send_credential_definition(self):
-        mock_request = async_mock.MagicMock(
-            app=self.app,
-            json=async_mock.CoroutineMock(
-                return_value={
-                    "schema_id": "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0",
-                    "support_revocation": False,
-                    "tag": "tag",
-                }
-            ),
+        self.request.json = async_mock.CoroutineMock(
+            return_value={
+                "schema_id": "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0",
+                "support_revocation": False,
+                "tag": "tag",
+            }
         )
 
         with async_mock.patch.object(test_module.web, "json_response") as mock_response:
             result = (
                 await test_module.credential_definitions_send_credential_definition(
-                    mock_request
+                    self.request
                 )
             )
             assert result == mock_response.return_value
@@ -72,15 +70,12 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
             )
 
     async def test_send_credential_definition_revoc(self):
-        mock_request = async_mock.MagicMock(
-            app=self.app,
-            json=async_mock.CoroutineMock(
-                return_value={
-                    "schema_id": "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0",
-                    "support_revocation": True,
-                    "tag": "tag",
-                }
-            ),
+        self.request.json = async_mock.CoroutineMock(
+            return_value={
+                "schema_id": "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0",
+                "support_revocation": True,
+                "tag": "tag",
+            }
         )
         self.context.settings.set_value("tails_server_base_url", "http://1.2.3.4:8222")
 
@@ -107,39 +102,33 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
             )
 
             await test_module.credential_definitions_send_credential_definition(
-                mock_request
+                self.request
             )
             mock_response.assert_called_once_with(
                 {"credential_definition_id": CRED_DEF_ID}
             )
 
     async def test_send_credential_definition_revoc_no_tails_server_x(self):
-        mock_request = async_mock.MagicMock(
-            app=self.app,
-            json=async_mock.CoroutineMock(
-                return_value={
-                    "schema_id": "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0",
-                    "support_revocation": True,
-                    "tag": "tag",
-                }
-            ),
+        self.request.json = async_mock.CoroutineMock(
+            return_value={
+                "schema_id": "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0",
+                "support_revocation": True,
+                "tag": "tag",
+            }
         )
 
         with self.assertRaises(test_module.web.HTTPBadRequest):
             await test_module.credential_definitions_send_credential_definition(
-                mock_request
+                self.request
             )
 
     async def test_send_credential_definition_revoc_no_support_x(self):
-        mock_request = async_mock.MagicMock(
-            app=self.app,
-            json=async_mock.CoroutineMock(
-                return_value={
-                    "schema_id": "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0",
-                    "support_revocation": True,
-                    "tag": "tag",
-                }
-            ),
+        self.request.json = async_mock.CoroutineMock(
+            return_value={
+                "schema_id": "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0",
+                "support_revocation": True,
+                "tag": "tag",
+            }
         )
         self.context.settings.set_value("tails_server_base_url", "http://1.2.3.4:8222")
 
@@ -153,19 +142,16 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
             )
             with self.assertRaises(test_module.web.HTTPBadRequest):
                 await test_module.credential_definitions_send_credential_definition(
-                    mock_request
+                    self.request
                 )
 
     async def test_send_credential_definition_revoc_upload_x(self):
-        mock_request = async_mock.MagicMock(
-            app=self.app,
-            json=async_mock.CoroutineMock(
-                return_value={
-                    "schema_id": "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0",
-                    "support_revocation": True,
-                    "tag": "tag",
-                }
-            ),
+        self.request.json = async_mock.CoroutineMock(
+            return_value={
+                "schema_id": "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0",
+                "support_revocation": True,
+                "tag": "tag",
+            }
         )
         self.context.settings.set_value("tails_server_base_url", "http://1.2.3.4:8222")
 
@@ -192,19 +178,16 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
             )
             with self.assertRaises(test_module.web.HTTPInternalServerError):
                 await test_module.credential_definitions_send_credential_definition(
-                    mock_request
+                    self.request
                 )
 
     async def test_send_credential_definition_revoc_init_issuer_rev_reg_x(self):
-        mock_request = async_mock.MagicMock(
-            app=self.app,
-            json=async_mock.CoroutineMock(
-                return_value={
-                    "schema_id": "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0",
-                    "support_revocation": True,
-                    "tag": "tag",
-                }
-            ),
+        self.request.json = async_mock.CoroutineMock(
+            return_value={
+                "schema_id": "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0",
+                "support_revocation": True,
+                "tag": "tag",
+            }
         )
         self.context.settings.set_value("tails_server_base_url", "http://1.2.3.4:8222")
 
@@ -231,72 +214,57 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
             )
             with self.assertRaises(test_module.web.HTTPBadRequest):
                 await test_module.credential_definitions_send_credential_definition(
-                    mock_request
+                    self.request
                 )
 
     async def test_send_credential_definition_no_ledger(self):
-        mock_request = async_mock.MagicMock(
-            app=self.app,
-            json=async_mock.CoroutineMock(
-                return_value={
-                    "schema_id": "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0",
-                    "support_revocation": False,
-                    "tag": "tag",
-                }
-            ),
+        self.request.json = async_mock.CoroutineMock(
+            return_value={
+                "schema_id": "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0",
+                "support_revocation": False,
+                "tag": "tag",
+            }
         )
 
-        self.context.injector.clear_binding(BaseLedger)
+        self.session_inject[BaseLedger] = None
         with self.assertRaises(test_module.web.HTTPForbidden):
             await test_module.credential_definitions_send_credential_definition(
-                mock_request
+                self.request
             )
 
     async def test_send_credential_definition_ledger_x(self):
-        mock_request = async_mock.MagicMock(
-            app=self.app,
-            json=async_mock.CoroutineMock(
-                return_value={
-                    "schema_id": "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0",
-                    "support_revocation": False,
-                    "tag": "tag",
-                }
-            ),
+        self.request.json = async_mock.CoroutineMock(
+            return_value={
+                "schema_id": "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0",
+                "support_revocation": False,
+                "tag": "tag",
+            }
         )
 
-        self.context.injector.clear_binding(BaseLedger)
         self.ledger.__aenter__ = async_mock.CoroutineMock(
             side_effect=test_module.LedgerError("oops")
         )
-        self.context.injector.bind_instance(BaseLedger, self.ledger)
-
         with self.assertRaises(test_module.web.HTTPBadRequest):
             await test_module.credential_definitions_send_credential_definition(
-                mock_request
+                self.request
             )
 
     async def test_created(self):
-        mock_request = async_mock.MagicMock(
-            app=self.app,
-            match_info={"cred_def_id": CRED_DEF_ID},
-        )
+        self.request.match_info = {"cred_def_id": CRED_DEF_ID}
 
         with async_mock.patch.object(test_module.web, "json_response") as mock_response:
-            result = await test_module.credential_definitions_created(mock_request)
+            result = await test_module.credential_definitions_created(self.request)
             assert result == mock_response.return_value
             mock_response.assert_called_once_with(
                 {"credential_definition_ids": [CRED_DEF_ID]}
             )
 
     async def test_get_credential_definition(self):
-        mock_request = async_mock.MagicMock(
-            app=self.app,
-            match_info={"cred_def_id": CRED_DEF_ID},
-        )
+        self.request.match_info = {"cred_def_id": CRED_DEF_ID}
 
         with async_mock.patch.object(test_module.web, "json_response") as mock_response:
             result = await test_module.credential_definitions_get_credential_definition(
-                mock_request
+                self.request
             )
             assert result == mock_response.return_value
             mock_response.assert_called_once_with(
@@ -304,15 +272,12 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
             )
 
     async def test_get_credential_definition_no_ledger(self):
-        mock_request = async_mock.MagicMock(
-            app=self.app,
-            match_info={"cred_def_id": CRED_DEF_ID},
-        )
+        self.request.match_info = {"cred_def_id": CRED_DEF_ID}
 
-        self.context.injector.clear_binding(BaseLedger)
+        self.session_inject[BaseLedger] = None
         with self.assertRaises(test_module.web.HTTPForbidden):
             await test_module.credential_definitions_get_credential_definition(
-                mock_request
+                self.request
             )
 
     async def test_register(self):

@@ -2,10 +2,10 @@ from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 import pytest
 
-from ...ledger.base import BaseLedger
-from ...wallet.base import BaseWallet, DIDInfo
+from ....ledger.base import BaseLedger
+from ....wallet.base import BaseWallet, DIDInfo
 
-from .. import plugin as test_module
+from .. import wallet_plugin as test_module
 
 
 class TestWalletCrypto(AsyncTestCase):

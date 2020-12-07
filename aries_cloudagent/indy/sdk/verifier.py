@@ -9,7 +9,7 @@ from typing import Mapping
 import indy.anoncreds
 from indy.error import IndyError
 
-from ...ledger.base import BaseLedger
+from ...ledger.indy import IndySdkLedger
 from ...messaging.util import canon, encode
 from ...protocols.present_proof.v1_0.util.indy import indy_proof_req2non_revoc_intervals
 
@@ -19,9 +19,9 @@ LOGGER = logging.getLogger(__name__)
 
 
 class IndySdkVerifier(IndyVerifier):
-    """Indy verifier class."""
+    """Indy-SDK verifier implementation."""
 
-    def __init__(self, ledger: BaseLedger):
+    def __init__(self, ledger: IndySdkLedger):
         """
         Initialize an IndyVerifier instance.
 

@@ -16,55 +16,6 @@ DIDInfo = namedtuple("DIDInfo", "did verkey metadata")
 class BaseWallet(ABC):
     """Abstract wallet interface."""
 
-    # TODO: break config out into params?
-    def __init__(self, config: dict):
-        """
-        Initialize a `BaseWallet` instance.
-
-        Args:
-            config: {name, key, seed, did, auto-create, auto-remove}
-
-        """
-
-    @property
-    @abstractmethod
-    def name(self) -> str:
-        """Accessor for the wallet name."""
-
-    @property
-    @abstractmethod
-    def type(self) -> str:
-        """Accessor for the wallet type."""
-
-    @property
-    def handle(self):
-        """
-        Get internal wallet reference.
-
-        Returns:
-            Defaults to None
-
-        """
-        return None
-
-    @property
-    @abstractmethod
-    def created(self) -> bool:
-        """Check whether the wallet was created on the last open call."""
-
-    @property
-    @abstractmethod
-    def opened(self) -> bool:
-        """Check whether wallet is currently open."""
-
-    @abstractmethod
-    async def open(self):
-        """Open wallet, removing and/or creating it if so configured."""
-
-    @abstractmethod
-    async def close(self):
-        """Close previously-opened wallet, removing it if so configured."""
-
     @abstractmethod
     async def create_signing_key(
         self, seed: str = None, metadata: dict = None
@@ -375,4 +326,4 @@ class BaseWallet(ABC):
 
     def __repr__(self) -> str:
         """Get a human readable string."""
-        return "<{}(opened={})>".format(self.__class__.__name__, self.opened)
+        return "<{}>".format(self.__class__.__name__)

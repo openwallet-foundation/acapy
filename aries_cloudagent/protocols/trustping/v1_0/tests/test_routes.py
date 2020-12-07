@@ -7,7 +7,7 @@ from asynctest import mock as async_mock
 from .. import routes as test_module
 
 
-class TestHolderRoutes(AsyncTestCase):
+class TestTrustpingRoutes(AsyncTestCase):
     def setUp(self):
         self.context = async_mock.MagicMock()
 
