@@ -69,6 +69,19 @@ class MediationRecord(BaseRecord):
         """Get Mediation ID."""
         return self._id
 
+    @property
+    def record_value(self) -> dict:
+        """Return values of record as dictionary."""
+        return {
+            prop: getattr(self, prop)
+            for prop in (
+                "mediator_terms",
+                "recipient_terms",
+                "endpoint",
+                "routing_keys"
+            )
+        }
+
     @classmethod
     async def retrieve_by_connection_id(
         cls, context: InjectionContext, connection_id: str
