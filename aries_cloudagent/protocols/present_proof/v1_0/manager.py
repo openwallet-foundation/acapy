@@ -289,12 +289,12 @@ class PresentationManager:
             requested_referents[reft] = {"cred_id": preds_creds[reft]["cred_id"]}
             if reft in req_preds and reft in non_revoc_intervals:
                 requested_referents[reft]["non_revoked"] = non_revoc_intervals[reft]
-            """
+            '''
             if referent in req_preds and "non_revoked" in req_preds[referent]:
                 requested_referents[referent]["non_revoked"] = req_preds[referent][
                     "non_revoked"
                 ]
-            """
+            '''
 
         # extract mapping of presentation referents to credential ids
         for reft in requested_referents:
@@ -335,12 +335,12 @@ class PresentationManager:
         # of the presentation request or attributes
         epoch_now = int(time.time())
 
-        """
+        '''
         non_revoc_interval = {"from": 0, "to": epoch_now}
         non_revoc_interval.update(
             presentation_exchange_record.presentation_request.get("non_revoked") or {}
         )
-        """
+        '''
 
         revoc_reg_deltas = {}
         async with ledger:
@@ -375,7 +375,7 @@ class PresentationManager:
                         if stamp_me["cred_id"] == credential_id:
                             stamp_me["timestamp"] = revoc_reg_deltas[key][3]
 
-                """
+                '''
                 referent_non_revoc_interval = precis.get(
                     "non_revoked", non_revoc_interval
                 )
@@ -401,7 +401,7 @@ class PresentationManager:
                         # often one cred satisfies many requested attrs/preds
                         if stamp_me["cred_id"] == credential_id:
                             stamp_me["timestamp"] = revoc_reg_deltas[key][3]
-                """
+                '''
 
         # Get revocation states to prove non-revoked
         revocation_states = {}

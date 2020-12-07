@@ -325,17 +325,6 @@ class TestIndySdkVerifier(AsyncTestCase):
             REV_REG_DEFS,
         )
 
-        # missing timestamp only
-        proof_x = deepcopy(INDY_PROOF_NAME)
-        proof_x["identifiers"][0]["timestamp"] = None
-        with self.assertRaises(ValueError) as context:
-            await self.verifier.check_timestamps(
-                INDY_PROOF_REQ_NAME,
-                proof_x,
-                REV_REG_DEFS,
-            )
-        assert "both timestamp and rev reg id or neither" in str(context.exception)
-
         # timestamp for irrevocable credential
         with async_mock.patch.object(
             self.verifier.ledger,
@@ -355,8 +344,10 @@ class TestIndySdkVerifier(AsyncTestCase):
             assert "Timestamp in presentation identifier #" in str(context.exception)
 
         # all clear, no timestamps
-        proof_req_x = deepcopy(INDY_PROOF_REQ_NAME)
+        proof_x = deepcopy(INDY_PROOF_NAME)
+        proof_x["identifiers"][0]["timestamp"] = None
         proof_x["identifiers"][0]["rev_reg_id"] = None
+        proof_req_x = deepcopy(INDY_PROOF_REQ_NAME)
         proof_req_x.pop("non_revoked")
         await self.verifier.check_timestamps(
             proof_req_x,

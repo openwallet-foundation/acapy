@@ -181,6 +181,7 @@ class IndySdkVerifier(IndyVerifier):
             rev_reg_defs: rev reg defs by rev reg id, augmented with transaction times
         """
         now = int(time())
+        non_revoc_intervals = indy_proof_req2non_revoc_intervals(pres_req)
 
         # timestamp for irrevocable credential
         async with self.ledger:
@@ -199,10 +200,6 @@ class IndySdkVerifier(IndyVerifier):
             timestamp = ident.get("timestamp")
             rev_reg_id = ident.get("rev_reg_id")
 
-            if bool(timestamp) ^ bool(rev_reg_id):
-                raise ValueError(
-                    "Proof identifier needs both timestamp and rev reg id or neither"
-                )
             if not timestamp:
                 continue
 
@@ -218,7 +215,6 @@ class IndySdkVerifier(IndyVerifier):
         revealed_groups = pres["requested_proof"].get("revealed_attr_groups", {})
         self_attested = pres["requested_proof"].get("self_attested_attrs", {})
         preds = pres["requested_proof"].get("predicates", {})
-        non_revoc_intervals = indy_proof_req2non_revoc_intervals(pres_req)
         for (uuid, req_attr) in pres_req["requested_attributes"].items():
             if "name" in req_attr:
                 if uuid in revealed_attrs:
