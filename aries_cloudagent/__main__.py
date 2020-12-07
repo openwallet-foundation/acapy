@@ -1,4 +1,4 @@
-"""aries_cloudagent package entry point"""
+"""aries_cloudagent package entry point."""
 
 import os
 import sys
