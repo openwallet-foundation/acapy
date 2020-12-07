@@ -5,7 +5,7 @@ from .....messaging.base_handler import (
 )
 from .....storage.error import StorageNotFoundError
 from ....problem_report.v1_0.message import ProblemReport
-from ..manager import MediationManager
+from ..manager import MediationManager, MediationNotGrantedError
 from ..messages.keylist_update import KeylistUpdate
 from ..models.mediation_record import MediationRecord
 
@@ -31,15 +31,14 @@ class KeylistUpdateHandler(BaseHandler):
             await self.reject(responder)
             return
 
-        if record.state != MediationRecord.STATE_GRANTED:
-            await self.reject(responder)
-            return
-
         mgr = MediationManager(context)
-        response = await mgr.update_keylist(
-            record, updates=context.message.updates
-        )
-        await responder.send_reply(response)
+        try:
+            response = await mgr.update_keylist(
+                record, updates=context.message.updates
+            )
+            await responder.send_reply(response)
+        except MediationNotGrantedError:
+            await self.reject(responder)
 
     async def reject(self, responder: BaseResponder):
         """Send problem report."""

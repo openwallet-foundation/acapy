@@ -34,6 +34,10 @@ class MediationAlreadyExists(MediationManagerError):
     """Raised on mediation record already exists for given connection."""
 
 
+class MediationNotGrantedError(MediationManagerError):
+    """Raised when mediation state should be granted and is not."""
+
+
 class MediationManager:
     """Class for handling Mediation.
 
@@ -181,6 +185,10 @@ class MediationManager:
             KeylistUpdateResponse: message to return to client
 
         """
+        if record.state != MediationRecord.STATE_GRANTED:
+            raise MediationNotGrantedError(
+                'Mediation has not been granted for this connection.'
+            )
         # TODO: Don't borrow logic from RoutingManager
         # Bidirectional mapping of KeylistUpdateRules to RouteUpdate actions
         action_map = {
@@ -221,6 +229,10 @@ class MediationManager:
             Sequence[RouteRecord]: sequence of routes (the keylist)
 
         """
+        if record.state != MediationRecord.STATE_GRANTED:
+            raise MediationNotGrantedError(
+                'Mediation has not been granted for this connection.'
+            )
         route_mgr = RoutingManager(self.context)
         return await route_mgr.get_routes(record.connection_id)
 
