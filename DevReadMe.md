@@ -161,6 +161,21 @@ To run the tests including [Indy SDK](https://github.com/hyperledger/indy-sdk) a
 ./scripts/run_tests_indy
 ```
 
+### Running Aries Agent Test Harness Tests
+
+You can run a full suite of integration tests using the [Aries Agent Test Harness (AATH)](https://github.com/hyperledger/aries-agent-test-harness).
+
+Check out and run AATH tests as follows (this tests the aca-py `master` branch):
+
+```bash
+git clone https://github.com/hyperledger/aries-agent-test-harness.git
+cd aries-agent-test-harness
+./manage build -a acapy-master
+./manage run -d acapy-master -t @AcceptanceTest -t ~@wip
+```
+
+The `manage` script is described in detail [here](https://github.com/hyperledger/aries-agent-test-harness#the-manage-bash-script), including how to modify the AATH code to run the tests against your aca-py repo/branch.
+
 ## Development Workflow
 
 We use [Flake8](http://flake8.pycqa.org/en/latest/) to enforce a coding style guide.

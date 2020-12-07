@@ -56,7 +56,8 @@ async def connections_send_ping(request: web.BaseRequest):
     comment = body.get("comment")
 
     try:
-        connection = await ConnRecord.retrieve_by_id(context, connection_id)
+        async with context.session() as session:
+            connection = await ConnRecord.retrieve_by_id(session, connection_id)
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
 

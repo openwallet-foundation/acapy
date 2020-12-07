@@ -46,7 +46,8 @@ async def connections_send_message(request: web.BaseRequest):
     params = await request.json()
 
     try:
-        connection = await ConnRecord.retrieve_by_id(context, connection_id)
+        async with context.session() as session:
+            connection = await ConnRecord.retrieve_by_id(session, connection_id)
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
 
