@@ -58,7 +58,7 @@ class TestMediationRequestHandler(AsyncTestCase):
         await handler.handle(self.context, responder)
         record = await MediationRecord.retrieve_by_connection_id(self.context, TEST_CONN_ID)
         assert record
-        assert record.state == MediationRecord.STATE_REQUEST_RECEIVED
+        assert record.state == MediationRecord.STATE_REQUEST
 
     async def test_handler_open_mediation(self):
         handler, responder = MediationRequestHandler(), MockResponder()

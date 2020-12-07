@@ -22,7 +22,7 @@ class MediationRecord(BaseRecord):
     RECORD_ID_NAME = "mediation_id"
     TAG_NAMES = {"state",  "role", "connection_id"}
 
-    STATE_REQUEST_RECEIVED = "request_received"
+    STATE_REQUEST = "request"
     STATE_GRANTED = "granted"
     STATE_DENIED = "denied"
 
@@ -55,7 +55,7 @@ class MediationRecord(BaseRecord):
 
         """
         super().__init__(
-            mediation_id, state or self.STATE_REQUEST_RECEIVED, **kwargs
+            mediation_id, state or self.STATE_REQUEST, **kwargs
         )
         self.role = role if role else self.ROLE_SERVER
         self.connection_id = connection_id
