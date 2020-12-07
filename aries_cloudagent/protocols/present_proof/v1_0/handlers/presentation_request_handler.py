@@ -53,7 +53,7 @@ class PresentationRequestHandler(BaseHandler):
             (
                 presentation_exchange_record
             ) = await V10PresentationExchange.retrieve_by_tag_filter(
-                context,
+                session,
                 {"thread_id": context.message._thread_id},
                 {"connection_id": context.connection_record.connection_id},
             )  # holder initiated via proposal
