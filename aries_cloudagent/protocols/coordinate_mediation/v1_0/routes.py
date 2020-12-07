@@ -221,7 +221,7 @@ async def mediation_records_list(request: web.BaseRequest):
         results.sort(key=mediation_sort_key)
     except (StorageError, BaseModelError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
-    return web.json_response({"results": results})
+    return web.json_response(results)
 
 
 class MediationIdMatchInfoSchema(OpenAPISchema):
