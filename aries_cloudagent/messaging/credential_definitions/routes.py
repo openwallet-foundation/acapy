@@ -116,7 +116,7 @@ class CredDefIdMatchInfoSchema(OpenAPISchema):
     summary="Sends a credential definition to the ledger",
 )
 @request_schema(CredentialDefinitionSendRequestSchema())
-@response_schema(CredentialDefinitionSendResultsSchema(), 200)
+@response_schema(CredentialDefinitionSendResultsSchema(), 200, description="")
 async def credential_definitions_send_credential_definition(request: web.BaseRequest):
     """
     Request handler for sending a credential definition to the ledger.
@@ -222,7 +222,7 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
     summary="Search for matching credential definitions that agent originated",
 )
 @querystring_schema(CredDefQueryStringSchema())
-@response_schema(CredentialDefinitionsCreatedResultsSchema(), 200)
+@response_schema(CredentialDefinitionsCreatedResultsSchema(), 200, description="")
 async def credential_definitions_created(request: web.BaseRequest):
     """
     Request handler for retrieving credential definitions that current agent created.
@@ -255,7 +255,7 @@ async def credential_definitions_created(request: web.BaseRequest):
     summary="Gets a credential definition from the ledger",
 )
 @match_info_schema(CredDefIdMatchInfoSchema())
-@response_schema(CredentialDefinitionGetResultsSchema(), 200)
+@response_schema(CredentialDefinitionGetResultsSchema(), 200, description="")
 async def credential_definitions_get_credential_definition(request: web.BaseRequest):
     """
     Request handler for getting a credential definition from the ledger.

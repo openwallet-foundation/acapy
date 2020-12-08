@@ -46,6 +46,10 @@ from .models.issuer_rev_reg_record import IssuerRevRegRecord, IssuerRevRegRecord
 LOGGER = logging.getLogger(__name__)
 
 
+class RevocationModuleResponseSchema(OpenAPISchema):
+    """Response schema for Revocation Module."""
+
+
 class CredExIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking credential exchange id."""
 
@@ -254,6 +258,7 @@ class CredDefIdMatchInfoSchema(OpenAPISchema):
     summary="Revoke an issued credential",
 )
 @request_schema(RevokeRequestSchema())
+@response_schema(RevocationModuleResponseSchema(), description="")
 async def revoke(request: web.BaseRequest):
     """
     Request handler for storing a credential request.
@@ -295,7 +300,7 @@ async def revoke(request: web.BaseRequest):
 
 @docs(tags=["revocation"], summary="Publish pending revocations to ledger")
 @request_schema(PublishRevocationsSchema())
-@response_schema(PublishRevocationsSchema(), 200)
+@response_schema(PublishRevocationsSchema(), 200, description="")
 async def publish_revocations(request: web.BaseRequest):
     """
     Request handler for publishing pending revocations to the ledger.
@@ -323,7 +328,7 @@ async def publish_revocations(request: web.BaseRequest):
 
 @docs(tags=["revocation"], summary="Clear pending revocations")
 @request_schema(ClearPendingRevocationsRequestSchema())
-@response_schema(PublishRevocationsSchema(), 200)
+@response_schema(PublishRevocationsSchema(), 200, description="")
 async def clear_pending_revocations(request: web.BaseRequest):
     """
     Request handler for clearing pending revocations.
@@ -351,7 +356,7 @@ async def clear_pending_revocations(request: web.BaseRequest):
 
 @docs(tags=["revocation"], summary="Creates a new revocation registry")
 @request_schema(RevRegCreateRequestSchema())
-@response_schema(RevRegResultSchema(), 200)
+@response_schema(RevRegResultSchema(), 200, description="")
 async def create_rev_reg(request: web.BaseRequest):
     """
     Request handler to create a new revocation registry.
@@ -401,7 +406,7 @@ async def create_rev_reg(request: web.BaseRequest):
     summary="Search for matching revocation registries that current agent created",
 )
 @querystring_schema(RevRegsCreatedQueryStringSchema())
-@response_schema(RevRegsCreatedSchema(), 200)
+@response_schema(RevRegsCreatedSchema(), 200, description="")
 async def rev_regs_created(request: web.BaseRequest):
     """
     Request handler to get revocation registries that current agent created.
@@ -432,7 +437,7 @@ async def rev_regs_created(request: web.BaseRequest):
     summary="Get revocation registry by revocation registry id",
 )
 @match_info_schema(RevRegIdMatchInfoSchema())
-@response_schema(RevRegResultSchema(), 200)
+@response_schema(RevRegResultSchema(), 200, description="")
 async def get_rev_reg(request: web.BaseRequest):
     """
     Request handler to get a revocation registry by rev reg id.
@@ -463,7 +468,7 @@ async def get_rev_reg(request: web.BaseRequest):
     summary="Get number of credentials issued against revocation registry",
 )
 @match_info_schema(RevRegIdMatchInfoSchema())
-@response_schema(RevRegIssuedResultSchema(), 200)
+@response_schema(RevRegIssuedResultSchema(), 200, description="")
 async def get_rev_reg_issued(request: web.BaseRequest):
     """
     Request handler to get number of credentials issued against revocation registry.
@@ -499,7 +504,7 @@ async def get_rev_reg_issued(request: web.BaseRequest):
     summary="Get credential revocation status",
 )
 @querystring_schema(CredRevRecordQueryStringSchema())
-@response_schema(CredRevRecordResultSchema(), 200)
+@response_schema(CredRevRecordResultSchema(), 200, description="")
 async def get_cred_rev_record(request: web.BaseRequest):
     """
     Request handler to get credential revocation record.
@@ -536,7 +541,7 @@ async def get_cred_rev_record(request: web.BaseRequest):
     summary="Get current active revocation registry by credential definition id",
 )
 @match_info_schema(CredDefIdMatchInfoSchema())
-@response_schema(RevRegResultSchema(), 200)
+@response_schema(RevRegResultSchema(), 200, description="")
 async def get_active_rev_reg(request: web.BaseRequest):
     """
     Request handler to get current active revocation registry by cred def id.
@@ -565,10 +570,10 @@ async def get_active_rev_reg(request: web.BaseRequest):
 @docs(
     tags=["revocation"],
     summary="Download tails file",
-    produces="application/octet-stream",
-    responses={200: {"description": "tails file"}},
+    produces=["application/octet-stream"],
 )
 @match_info_schema(RevRegIdMatchInfoSchema())
+@response_schema(RevocationModuleResponseSchema, description="tails file")
 async def get_tails_file(request: web.BaseRequest) -> web.FileResponse:
     """
     Request handler to download tails file for revocation registry.
@@ -599,6 +604,7 @@ async def get_tails_file(request: web.BaseRequest) -> web.FileResponse:
     summary="Upload local tails file to server",
 )
 @match_info_schema(RevRegIdMatchInfoSchema())
+@response_schema(RevocationModuleResponseSchema(), description="")
 async def upload_tails_file(request: web.BaseRequest):
     """
     Request handler to upload local tails file for revocation registry.
@@ -637,7 +643,7 @@ async def upload_tails_file(request: web.BaseRequest):
     summary="Send revocation registry definition to ledger",
 )
 @match_info_schema(RevRegIdMatchInfoSchema())
-@response_schema(RevRegResultSchema(), 200)
+@response_schema(RevRegResultSchema(), 200, description="")
 async def send_rev_reg_def(request: web.BaseRequest):
     """
     Request handler to send revocation registry definition by reg reg id to ledger.
@@ -672,7 +678,7 @@ async def send_rev_reg_def(request: web.BaseRequest):
     summary="Send revocation registry entry to ledger",
 )
 @match_info_schema(RevRegIdMatchInfoSchema())
-@response_schema(RevRegResultSchema(), 200)
+@response_schema(RevRegResultSchema(), 200, description="")
 async def send_rev_reg_entry(request: web.BaseRequest):
     """
     Request handler to send rev reg entry by registry id to ledger.
@@ -709,7 +715,7 @@ async def send_rev_reg_entry(request: web.BaseRequest):
 )
 @match_info_schema(RevRegIdMatchInfoSchema())
 @request_schema(RevRegUpdateTailsFileUriSchema())
-@response_schema(RevRegResultSchema(), 200)
+@response_schema(RevRegResultSchema(), 200, description="")
 async def update_rev_reg(request: web.BaseRequest):
     """
     Request handler to update a rev reg's public tails URI by registry id.
@@ -745,7 +751,7 @@ async def update_rev_reg(request: web.BaseRequest):
 @docs(tags=["revocation"], summary="Set revocation registry state manually")
 @match_info_schema(RevRegIdMatchInfoSchema())
 @querystring_schema(SetRevRegStateQueryStringSchema())
-@response_schema(RevRegResultSchema(), 200)
+@response_schema(RevRegResultSchema(), 200, description="")
 async def set_rev_reg_state(request: web.BaseRequest):
     """
     Request handler to set a revocation registry state manually.

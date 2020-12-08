@@ -4,7 +4,7 @@ import json
 import logging
 
 from aiohttp import web
-from aiohttp_apispec import docs, querystring_schema, request_schema
+from aiohttp_apispec import docs, querystring_schema, request_schema, response_schema
 from marshmallow import fields
 from marshmallow.exceptions import ValidationError
 
@@ -16,8 +16,11 @@ from .manager import OutOfBandManager, OutOfBandManagerError
 from .messages.invitation import InvitationMessageSchema
 from .message_types import SPEC_URI
 
-
 LOGGER = logging.getLogger(__name__)
+
+
+class OutOfBandModuleResponseSchema(OpenAPISchema):
+    """Response schema for Out of Band Module."""
 
 
 class InvitationCreateRequestSchema(OpenAPISchema):
@@ -59,6 +62,7 @@ class InvitationCreateQueryStringSchema(OpenAPISchema):
 )
 @querystring_schema(InvitationCreateQueryStringSchema())
 @request_schema(InvitationCreateRequestSchema())
+@response_schema(OutOfBandModuleResponseSchema(), description="")
 async def invitation_create(request: web.BaseRequest):
     """
     Request handler for creating a new connection invitation.
@@ -100,6 +104,7 @@ async def invitation_create(request: web.BaseRequest):
     summary="Create a new connection invitation",
 )
 @request_schema(InvitationReceiveRequestSchema())
+@response_schema(OutOfBandModuleResponseSchema(), 200, description="")
 async def invitation_receive(request: web.BaseRequest):
     """
     Request handler for creating a new connection invitation.
