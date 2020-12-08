@@ -296,7 +296,7 @@ class TestIndySdkStorage(test_in_memory_storage.TestInMemoryStorage):
                 mock_indy_close_search.side_effect = test_module.IndyError("no close")
                 search = storage.search_records("connection")
                 with pytest.raises(StorageSearchError):
-                    await search.fetch_all()
+                    await search.fetch()
 
     @pytest.mark.asyncio
     async def test_storage_del_close(self):

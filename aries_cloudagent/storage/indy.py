@@ -175,9 +175,15 @@ class IndySdkStorage(BaseStorage, BaseStorageSearch):
         options: Mapping = None,
     ):
         """Retrieve all records matching a particular type filter and tag query."""
-        return await self.search_records(
-            type_filter, tag_query, options=options
-        ).fetch_all()
+        results = []
+        search = self.search_records(type_filter, tag_query, options=options)
+        while True:
+            buf = await search.fetch()
+            if buf:
+                results.extend(buf)
+            else:
+                break
+        return results
 
     async def delete_all_records(
         self,

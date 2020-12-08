@@ -23,7 +23,7 @@ def validate_record(record: StorageRecord, *, delete=False):
 
 
 class BaseStorage(ABC):
-    """Abstract Non-Secrets interface."""
+    """Abstract stored records interface."""
 
     @abstractmethod
     async def add_record(self, record: StorageRecord):
@@ -113,6 +113,8 @@ class BaseStorage(ABC):
 
 
 class BaseStorageSearch(ABC):
+    """Abstract stored records search interface."""
+
     @abstractmethod
     def search_records(
         self,
@@ -141,7 +143,7 @@ class BaseStorageSearch(ABC):
 
 
 class BaseStorageSearchSession(ABC):
-    """Represent an active stored records search."""
+    """Abstract stored records search session interface."""
 
     @abstractmethod
     async def fetch(self, max_count: int = None) -> Sequence[StorageRecord]:
@@ -156,17 +158,6 @@ class BaseStorageSearchSession(ABC):
             A list of `StorageRecord` instances
 
         """
-
-    async def fetch_all(self) -> Sequence[StorageRecord]:
-        """Fetch all records from the query."""
-        results = []
-        while True:
-            buf = await self.fetch()
-            if buf:
-                results.extend(buf)
-            else:
-                break
-        return results
 
     async def close(self):
         """Dispose of the search query."""

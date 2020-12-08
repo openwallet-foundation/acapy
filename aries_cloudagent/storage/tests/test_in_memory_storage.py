@@ -208,7 +208,7 @@ class TestInMemoryStorageSearch:
     @pytest.mark.asyncio
     async def test_closed_search(self, store_search):
         search = store_search.search_records("TYPE", {}, None)
-        _rows = await search.fetch_all()
+        _rows = await search.fetch()
         with pytest.raises(StorageSearchError):
             await search.fetch(100)
 
