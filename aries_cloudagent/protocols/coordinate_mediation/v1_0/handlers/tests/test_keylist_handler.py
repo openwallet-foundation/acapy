@@ -4,14 +4,14 @@ import logging
 import pytest
 
 from ......config.injection_context import InjectionContext
-from ......connections.models.connection_record import ConnectionRecord
+from ......connections.models.conn_record import ConnRecord
 from ......messaging.base_handler import HandlerException
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
 from ......storage.base import BaseStorage
-from ......storage.basic import BasicStorage
+from ......storage.in_memory import InMemoryStorage
 from ......wallet.base import BaseWallet
-from ......wallet.basic import BasicWallet
+from ......wallet.in_memory import InMemoryWallet
 from ...messages.keylist import Keylist
 from ...models.mediation_record import MediationRecord
 from ..keylist_handler import KeylistHandler

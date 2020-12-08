@@ -34,7 +34,7 @@ class RoutingManager:
         Initialize a RoutingManager.
 
         Args:
-            context: The context for this manager
+            session: The session for this manager
         """
         self._session = session
         if not session:
@@ -119,7 +119,7 @@ class RoutingManager:
 
     async def delete_route_record(self, route: RouteRecord):
         """Remove an existing route record."""
-        await route.delete_record(self.context)
+        await route.delete_record(self.session)
 
     async def create_route_record(
         self,

@@ -150,7 +150,7 @@ class TestRoutingManager(AsyncTestCase):
             role=RouteRecord.ROLE_CLIENT,
             connection_id=TEST_CONN_ID,
             recipient_key=TEST_ROUTE_VERKEY
-        ).save(self.context)
+        ).save(self.session)
         results = await self.manager.get_routes()
         assert len(results) == 1
         assert results[0].connection_id == TEST_CONN_ID
