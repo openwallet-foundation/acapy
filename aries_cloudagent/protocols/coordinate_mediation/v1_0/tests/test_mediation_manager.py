@@ -1,4 +1,6 @@
 """Test MediationManager."""
+import logging
+
 import pytest
 
 from aries_cloudagent.config.injection_context import InjectionContext
@@ -325,9 +327,9 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
         assert len(routes) == 1
         assert routes[0].recipient_key == TEST_ROUTE_VERKEY
 
-    @pytest.mark.usefixtures('caplog')
     async def test_store_updated_results_errors(self, caplog, manager):
         """test_store_updated_results_errors."""
+        caplog.set_level(logging.WARNING)
         results = [
             KeylistUpdated(
                 recipient_key=TEST_VERKEY,
