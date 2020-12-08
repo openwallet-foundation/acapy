@@ -1,7 +1,6 @@
 """Test mediate grant message handler."""
 import pytest
 from asynctest import TestCase as AsyncTestCase
-from asynctest import mock as async_mock
 
 from ......config.injection_context import InjectionContext
 from ......connections.models.connection_record import ConnectionRecord
@@ -42,7 +41,7 @@ class TestMediationGrantHandler(AsyncTestCase):
         handler, responder = MediationGrantHandler(), MockResponder()
         self.context.connection_ready = False
         with pytest.raises(HandlerException) as exc:
-            await handler.handle(self.context,responder)
+            await handler.handle(self.context, responder)
             assert 'no active connection' in str(exc.value)
 
     async def test_handler_no_mediation_record(self):
@@ -55,7 +54,9 @@ class TestMediationGrantHandler(AsyncTestCase):
         handler, responder = MediationGrantHandler(), MockResponder()
         await MediationRecord(connection_id=TEST_CONN_ID).save(self.context)
         await handler.handle(self.context, responder)
-        record = await MediationRecord.retrieve_by_connection_id(self.context, TEST_CONN_ID)
+        record = await MediationRecord.retrieve_by_connection_id(
+            self.context, TEST_CONN_ID
+        )
         assert record
         assert record.state == MediationRecord.STATE_GRANTED
         assert record.endpoint == TEST_ENDPOINT

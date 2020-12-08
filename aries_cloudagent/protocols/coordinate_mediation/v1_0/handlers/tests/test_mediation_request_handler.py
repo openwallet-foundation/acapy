@@ -1,7 +1,6 @@
 """Test mediate request message handler."""
 import pytest
 from asynctest import TestCase as AsyncTestCase
-from asynctest import mock as async_mock
 
 from ......config.injection_context import InjectionContext
 from ......connections.models.connection_record import ConnectionRecord
@@ -20,6 +19,7 @@ from ..mediate_request_handler import MediationRequestHandler
 
 TEST_CONN_ID = 'conn-id'
 TEST_VERKEY = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
+
 
 class TestMediationRequestHandler(AsyncTestCase):
     """Test mediate request message handler."""
@@ -40,7 +40,7 @@ class TestMediationRequestHandler(AsyncTestCase):
         handler, responder = MediationRequestHandler(), MockResponder()
         self.context.connection_ready = False
         with pytest.raises(HandlerException) as exc:
-            await handler.handle(self.context,responder)
+            await handler.handle(self.context, responder)
             assert 'no active connection' in str(exc.value)
 
     async def test_handler_mediation_record_already_exists(self):
@@ -55,7 +55,9 @@ class TestMediationRequestHandler(AsyncTestCase):
     async def test_handler(self):
         handler, responder = MediationRequestHandler(), MockResponder()
         await handler.handle(self.context, responder)
-        record = await MediationRecord.retrieve_by_connection_id(self.context, TEST_CONN_ID)
+        record = await MediationRecord.retrieve_by_connection_id(
+            self.context, TEST_CONN_ID
+        )
         assert record
         assert record.state == MediationRecord.STATE_REQUEST
 
@@ -63,7 +65,9 @@ class TestMediationRequestHandler(AsyncTestCase):
         handler, responder = MediationRequestHandler(), MockResponder()
         self.context.settings.set_value('mediation.open', True)
         await handler.handle(self.context, responder)
-        record = await MediationRecord.retrieve_by_connection_id(self.context, TEST_CONN_ID)
+        record = await MediationRecord.retrieve_by_connection_id(
+            self.context, TEST_CONN_ID
+        )
         assert record
         assert record.state == MediationRecord.STATE_GRANTED
         messages = responder.messages

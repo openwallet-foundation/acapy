@@ -1,7 +1,6 @@
 """Test handler for keylist-update message."""
 import pytest
 from asynctest import TestCase as AsyncTestCase
-from asynctest import mock as async_mock
 
 from aries_cloudagent.config.injection_context import InjectionContext
 
