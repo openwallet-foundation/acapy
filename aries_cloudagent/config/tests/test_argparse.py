@@ -1,5 +1,4 @@
-import itertools
-from configargparse import ArgumentParser, ArgumentTypeError, YAMLConfigFileParser
+from configargparse import ArgumentTypeError
 
 from asynctest import TestCase as AsyncTestCase, mock as async_mock
 

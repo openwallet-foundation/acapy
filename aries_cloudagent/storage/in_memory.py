@@ -7,7 +7,8 @@ from ..core.in_memory import InMemoryProfile
 from .base import (
     DEFAULT_PAGE_SIZE,
     BaseStorage,
-    BaseStorageRecordSearch,
+    BaseStorageSearch,
+    BaseStorageSearchSession,
     validate_record,
 )
 from .error import (
@@ -18,7 +19,7 @@ from .error import (
 from .record import StorageRecord
 
 
-class InMemoryStorage(BaseStorage):
+class InMemoryStorage(BaseStorage, BaseStorageSearch):
     """Basic in-memory storage class."""
 
     def __init__(self, profile: InMemoryProfile):
@@ -107,13 +108,39 @@ class InMemoryStorage(BaseStorage):
             raise StorageNotFoundError("Record not found: {}".format(record.id))
         del self.profile.records[record.id]
 
+    async def find_all_records(
+        self,
+        type_filter: str,
+        tag_query: Mapping = None,
+        options: Mapping = None,
+    ):
+        """Retrieve all records matching a particular type filter and tag query."""
+        results = []
+        for record in self.profile.records.values():
+            if record.type == type_filter and tag_query_match(record.tags, tag_query):
+                results.append(record)
+        return results
+
+    async def delete_all_records(
+        self,
+        type_filter: str,
+        tag_query: Mapping = None,
+    ):
+        """Remove all records matching a particular type filter and tag query."""
+        ids = []
+        for record_id, record in self.profile.records.items():
+            if record.type == type_filter and tag_query_match(record.tags, tag_query):
+                ids.append(record_id)
+        for record_id in ids:
+            del self.profile.records[record_id]
+
     def search_records(
         self,
         type_filter: str,
         tag_query: Mapping = None,
         page_size: int = None,
         options: Mapping = None,
-    ) -> "InMemoryStorageRecordSearch":
+    ) -> "InMemoryStorageSearch":
         """
         Search stored records.
 
@@ -124,10 +151,10 @@ class InMemoryStorage(BaseStorage):
             options: Dictionary of backend-specific options
 
         Returns:
-            An instance of `BaseStorageRecordSearch`
+            An instance of `InMemoryStorageSearch`
 
         """
-        return InMemoryStorageRecordSearch(
+        return InMemoryStorageSearch(
             self.profile, type_filter, tag_query, page_size, options
         )
 
@@ -201,7 +228,7 @@ def tag_query_match(tags: dict, tag_query: dict) -> bool:
     return result
 
 
-class InMemoryStorageRecordSearch(BaseStorageRecordSearch):
+class InMemoryStorageSearch(BaseStorageSearchSession):
     """Represent an active stored records search."""
 
     def __init__(
@@ -213,10 +240,10 @@ class InMemoryStorageRecordSearch(BaseStorageRecordSearch):
         options: Mapping = None,
     ):
         """
-        Initialize a `InMemoryStorageRecordSearch` instance.
+        Initialize a `InMemoryStorageSearch` instance.
 
         Args:
-            store: `BaseStorage` to search
+            profile: The in-memory profile to search
             type_filter: Filter string
             tag_query: Tags to search
             page_size: Size of page to return

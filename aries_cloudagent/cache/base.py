@@ -71,7 +71,7 @@ class BaseCache(ABC):
             del self._key_locks[key]
 
     def __repr__(self) -> str:
-        """Human readable representation of `BaseStorageRecordSearch`."""
+        """Human readable representation of this instance."""
         return "<{}>".format(self.__class__.__name__)
 
 

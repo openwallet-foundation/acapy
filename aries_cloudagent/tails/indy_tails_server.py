@@ -30,18 +30,18 @@ class IndyTailsServer(BaseTailsServer):
         """
 
         genesis_transactions = context.settings.get("ledger.genesis_transactions")
-        tails_server_base_url = context.settings.get("tails_server_base_url")
+        tails_server_upload_url = context.settings.get("tails_server_upload_url")
 
-        if not tails_server_base_url:
+        if not tails_server_upload_url:
             raise TailsServerNotConfiguredError(
-                "tails_server_base_url setting is not set"
+                "tails_server_upload_url setting is not set"
             )
 
         try:
             return (
                 True,
                 await put(
-                    f"{tails_server_base_url}/{rev_reg_id}",
+                    f"{tails_server_upload_url}/{rev_reg_id}",
                     {"tails": tails_file_path},
                     {"genesis": genesis_transactions},
                     interval=interval,
