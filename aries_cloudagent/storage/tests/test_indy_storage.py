@@ -16,17 +16,15 @@ from ...storage.base import BaseStorage
 from ...storage.error import StorageError, StorageSearchError
 from ...storage.indy import IndySdkStorage
 from ...storage.record import StorageRecord
-from ...wallet import indy as test_wallet
 from ...wallet.indy import IndySdkWallet
 
 from .. import indy as test_module
 from . import test_in_memory_storage
 
 
-@pytest.fixture()
-async def store():
+async def make_profile():
     key = await IndySdkWallet.generate_wallet_key()
-    profile = await IndySdkProfileManager().provision(
+    return await IndySdkProfileManager().provision(
         {
             "auto_recreate": True,
             "auto_remove": True,
@@ -35,6 +33,19 @@ async def store():
             "key_derivation_method": "RAW",  # much slower tests with argon-hashed keys
         }
     )
+
+
+@pytest.fixture()
+async def store():
+    profile = await make_profile()
+    async with profile.session() as session:
+        yield session.inject(BaseStorage)
+    await profile.close()
+
+
+@pytest.fixture()
+async def store_search():
+    profile = await make_profile()
     async with profile.session() as session:
         yield session.inject(BaseStorage)
     await profile.close()
@@ -397,3 +408,8 @@ class TestIndySdkStorage(test_in_memory_storage.TestInMemoryStorage):
 
         await postgres_wallet.close()
         await postgres_wallet.remove()
+
+
+@pytest.mark.indy
+class TestIndySdkStorageSearch(test_in_memory_storage.TestInMemoryStorageSearch):
+    pass

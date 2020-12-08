@@ -137,15 +137,14 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
     tag = body.get("tag")
     rev_reg_size = body.get("revocation_registry_size")
 
-    session = await context.session()
-    ledger = session.inject(BaseLedger, required=False)
+    ledger = context.inject(BaseLedger, required=False)
     if not ledger:
         reason = "No ledger available"
-        if not session.settings.get_value("wallet.type"):
+        if not context.settings.get_value("wallet.type"):
             reason += ": missing wallet-type?"
         raise web.HTTPForbidden(reason=reason)
 
-    issuer = session.inject(IndyIssuer)
+    issuer = context.inject(IndyIssuer)
     try:  # even if in wallet, send it and raise if erroneously so
         async with ledger:
             (cred_def_id, cred_def, novel) = await shield(
@@ -162,6 +161,9 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
 
     # If revocation is requested and cred def is novel, create revocation registry
     if support_revocation and novel:
+        session = (
+            await context.session()
+        )  # FIXME - will update to not require session here
         tails_base_url = session.settings.get("tails_server_base_url")
         if not tails_base_url:
             raise web.HTTPBadRequest(reason="tails_server_base_url not configured")
@@ -236,12 +238,12 @@ async def credential_definitions_created(request: web.BaseRequest):
 
     session = await context.session()
     storage = session.inject(BaseStorage)
-    found = await storage.search_records(
+    found = await storage.find_all_records(
         type_filter=CRED_DEF_SENT_RECORD_TYPE,
         tag_query={
             tag: request.query[tag] for tag in CRED_DEF_TAGS if tag in request.query
         },
-    ).fetch_all()
+    )
 
     return web.json_response(
         {"credential_definition_ids": [record.value for record in found]}
@@ -269,11 +271,10 @@ async def credential_definitions_get_credential_definition(request: web.BaseRequ
 
     cred_def_id = request.match_info["cred_def_id"]
 
-    session = await context.session()
-    ledger = session.inject(BaseLedger, required=False)
+    ledger = context.inject(BaseLedger, required=False)
     if not ledger:
         reason = "No ledger available"
-        if not session.settings.get_value("wallet.type"):
+        if not context.settings.get_value("wallet.type"):
             reason += ": missing wallet-type?"
         raise web.HTTPForbidden(reason=reason)
 

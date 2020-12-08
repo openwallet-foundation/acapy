@@ -95,13 +95,32 @@ class BaseStorage(ABC):
         return results[0]
 
     @abstractmethod
+    async def find_all_records(
+        self,
+        type_filter: str,
+        tag_query: Mapping = None,
+        options: Mapping = None,
+    ):
+        """Retrieve all records matching a particular type filter and tag query."""
+
+    @abstractmethod
+    async def delete_all_records(
+        self,
+        type_filter: str,
+        tag_query: Mapping = None,
+    ):
+        """Remove all records matching a particular type filter and tag query."""
+
+
+class BaseStorageSearch(ABC):
+    @abstractmethod
     def search_records(
         self,
         type_filter: str,
         tag_query: Mapping = None,
         page_size: int = None,
         options: Mapping = None,
-    ) -> "BaseStorageRecordSearch":
+    ) -> "BaseStorageSearchSession":
         """
         Create a new record query.
 
@@ -112,7 +131,7 @@ class BaseStorage(ABC):
             options: Dictionary of backend-specific options
 
         Returns:
-            An instance of `BaseStorageRecordSearch`
+            An instance of `BaseStorageSearchSession`
 
         """
 
@@ -121,7 +140,7 @@ class BaseStorage(ABC):
         return "<{}>".format(self.__class__.__name__)
 
 
-class BaseStorageRecordSearch(ABC):
+class BaseStorageSearchSession(ABC):
     """Represent an active stored records search."""
 
     @abstractmethod
@@ -157,14 +176,14 @@ class BaseStorageRecordSearch(ABC):
         return IterSearch(self)
 
     def __repr__(self) -> str:
-        """Human readable representation of `BaseStorageRecordSearch`."""
+        """Human readable representation of this instance."""
         return "<{}>".format(self.__class__.__name__)
 
 
 class IterSearch:
     """A generic record search async iterator."""
 
-    def __init__(self, search: BaseStorageRecordSearch, page_size: int = None):
+    def __init__(self, search: BaseStorageSearchSession, page_size: int = None):
         """Instantiate a new `IterSearch` instance."""
         self._buffer = None
         self._page_size = page_size

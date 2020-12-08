@@ -699,11 +699,7 @@ class DIDXManager:
             did: The DID for which to remove keys
         """
         storage = self._session.inject(BaseStorage)
-        keys = await storage.search_records(
-            DIDXManager.RECORD_TYPE_DID_KEY, {"did": did}
-        ).fetch_all()
-        for record in keys:
-            await storage.delete_record(record)
+        await storage.delete_all_records(DIDXManager.RECORD_TYPE_DID_KEY, {"did": did})
 
     async def verify_diddoc(
         self,
