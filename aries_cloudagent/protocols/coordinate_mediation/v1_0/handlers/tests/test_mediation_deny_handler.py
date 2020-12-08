@@ -1,7 +1,6 @@
 """Test mediate deny message handler."""
 import pytest
 from asynctest import TestCase as AsyncTestCase
-from asynctest import mock as async_mock
 
 from ......config.injection_context import InjectionContext
 from ......connections.models.connection_record import ConnectionRecord
