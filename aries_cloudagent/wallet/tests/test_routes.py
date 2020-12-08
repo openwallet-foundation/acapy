@@ -1,10 +1,9 @@
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
-import pytest
 
 from aiohttp.web import HTTPForbidden
 
-from ...config.injection_context import InjectionContext
+from ...admin.request_context import AdminRequestContext
 from ...ledger.base import BaseLedger
 from ...wallet.base import BaseWallet, DIDInfo
 
@@ -14,40 +13,42 @@ from ..did_posture import DIDPosture
 
 class TestWalletRoutes(AsyncTestCase):
     def setUp(self):
-        self.context = InjectionContext(enforce_typing=False)
         self.wallet = async_mock.create_autospec(BaseWallet)
-        self.context.injector.bind_instance(BaseWallet, self.wallet)
-        self.app = {
-            "outbound_message_router": async_mock.CoroutineMock(),
-            "request_context": self.context,
-        }
+        self.session_inject = {BaseWallet: self.wallet}
+        self.context = AdminRequestContext.test_context(self.session_inject)
+        self.request_dict = {"context": self.context}
+        self.request = async_mock.MagicMock(
+            app={"outbound_message_router": async_mock.CoroutineMock()},
+            match_info={},
+            query={},
+            __getitem__=lambda _, k: self.request_dict[k],
+        )
+
         self.test_did = "did"
         self.test_verkey = "verkey"
         self.test_posted_did = "posted-did"
         self.test_posted_verkey = "posted-verkey"
 
     async def test_missing_wallet(self):
-        request = async_mock.MagicMock()
-        request.app = self.app
-        self.context.injector.clear_binding(BaseWallet)
+        self.session_inject[BaseWallet] = None
 
         with self.assertRaises(HTTPForbidden):
-            await test_module.wallet_create_did(request)
+            await test_module.wallet_create_did(self.request)
 
         with self.assertRaises(HTTPForbidden):
-            await test_module.wallet_did_list(request)
+            await test_module.wallet_did_list(self.request)
 
         with self.assertRaises(HTTPForbidden):
-            await test_module.wallet_get_public_did(request)
+            await test_module.wallet_get_public_did(self.request)
 
         with self.assertRaises(HTTPForbidden):
-            await test_module.wallet_set_public_did(request)
+            await test_module.wallet_set_public_did(self.request)
 
         with self.assertRaises(HTTPForbidden):
-            await test_module.wallet_set_did_endpoint(request)
+            await test_module.wallet_set_did_endpoint(self.request)
 
         with self.assertRaises(HTTPForbidden):
-            await test_module.wallet_get_did_endpoint(request)
+            await test_module.wallet_get_did_endpoint(self.request)
 
     def test_format_did_info(self):
         did_info = DIDInfo(
@@ -73,15 +74,13 @@ class TestWalletRoutes(AsyncTestCase):
         assert result["posture"] == DIDPosture.POSTED.moniker
 
     async def test_create_did(self):
-        request = async_mock.MagicMock()
-        request.app = self.app
         with async_mock.patch.object(
             test_module.web, "json_response", async_mock.Mock()
         ) as json_response:
             self.wallet.create_local_did.return_value = DIDInfo(
                 self.test_did, self.test_verkey, DIDPosture.WALLET_ONLY.metadata
             )
-            result = await test_module.wallet_create_did(request)
+            result = await test_module.wallet_create_did(self.request)
             json_response.assert_called_once_with(
                 {
                     "result": {
@@ -94,16 +93,11 @@ class TestWalletRoutes(AsyncTestCase):
             assert result is json_response.return_value
 
     async def test_create_did_x(self):
-        request = async_mock.MagicMock()
-        request.app = self.app
         self.wallet.create_local_did.side_effect = test_module.WalletError()
         with self.assertRaises(test_module.web.HTTPBadRequest):
-            await test_module.wallet_create_did(request)
+            await test_module.wallet_create_did(self.request)
 
     async def test_did_list(self):
-        request = async_mock.MagicMock()
-        request.app = self.app
-        request.query = {}
         with async_mock.patch.object(
             test_module.web, "json_response", async_mock.Mock()
         ) as json_response:  # , async_mock.patch.object(
@@ -117,7 +111,7 @@ class TestWalletRoutes(AsyncTestCase):
                     DIDPosture.POSTED.metadata,
                 ),
             ]
-            result = await test_module.wallet_did_list(request)
+            result = await test_module.wallet_did_list(self.request)
             json_response.assert_called_once_with(
                 {
                     "results": [
@@ -138,9 +132,7 @@ class TestWalletRoutes(AsyncTestCase):
             assert result is json_response.return_value
 
     async def test_did_list_filter_public(self):
-        request = async_mock.MagicMock()
-        request.app = self.app
-        request.query = {"posture": DIDPosture.PUBLIC.moniker}
+        self.request.query = {"posture": DIDPosture.PUBLIC.moniker}
         with async_mock.patch.object(
             test_module.web, "json_response", async_mock.Mock()
         ) as json_response:
@@ -154,7 +146,7 @@ class TestWalletRoutes(AsyncTestCase):
                     DIDPosture.POSTED.metadata,
                 )
             ]
-            result = await test_module.wallet_did_list(request)
+            result = await test_module.wallet_did_list(self.request)
             json_response.assert_called_once_with(
                 {
                     "results": [
@@ -170,9 +162,7 @@ class TestWalletRoutes(AsyncTestCase):
             assert result is json_response.return_value
 
     async def test_did_list_filter_posted(self):
-        request = async_mock.MagicMock()
-        request.app = self.app
-        request.query = {"posture": DIDPosture.POSTED.moniker}
+        self.request.query = {"posture": DIDPosture.POSTED.moniker}
         with async_mock.patch.object(
             test_module.web, "json_response", async_mock.Mock()
         ) as json_response:
@@ -189,7 +179,7 @@ class TestWalletRoutes(AsyncTestCase):
                     },
                 )
             ]
-            result = await test_module.wallet_did_list(request)
+            result = await test_module.wallet_did_list(self.request)
             json_response.assert_called_once_with(
                 {
                     "results": [
@@ -205,16 +195,14 @@ class TestWalletRoutes(AsyncTestCase):
             assert result is json_response.return_value
 
     async def test_did_list_filter_did(self):
-        request = async_mock.MagicMock()
-        request.app = self.app
-        request.query = {"did": self.test_did}
+        self.request.query = {"did": self.test_did}
         with async_mock.patch.object(
             test_module.web, "json_response", async_mock.Mock()
         ) as json_response:
             self.wallet.get_local_did.return_value = DIDInfo(
                 self.test_did, self.test_verkey, DIDPosture.WALLET_ONLY.metadata
             )
-            result = await test_module.wallet_did_list(request)
+            result = await test_module.wallet_did_list(self.request)
             json_response.assert_called_once_with(
                 {
                     "results": [
@@ -230,29 +218,25 @@ class TestWalletRoutes(AsyncTestCase):
             assert result is json_response.return_value
 
     async def test_did_list_filter_did_x(self):
-        request = async_mock.MagicMock()
-        request.app = self.app
-        request.query = {"did": self.test_did}
+        self.request.query = {"did": self.test_did}
         with async_mock.patch.object(
             test_module.web, "json_response", async_mock.Mock()
         ) as json_response:
             self.wallet.get_local_did.side_effect = test_module.WalletError()
-            result = await test_module.wallet_did_list(request)
+            result = await test_module.wallet_did_list(self.request)
             json_response.assert_called_once_with({"results": []})
             assert json_response.return_value is json_response()
             assert result is json_response.return_value
 
     async def test_did_list_filter_verkey(self):
-        request = async_mock.MagicMock()
-        request.app = self.app
-        request.query = {"verkey": self.test_verkey}
+        self.request.query = {"verkey": self.test_verkey}
         with async_mock.patch.object(
             test_module.web, "json_response", async_mock.Mock()
         ) as json_response:
             self.wallet.get_local_did_for_verkey.return_value = DIDInfo(
                 self.test_did, self.test_verkey, DIDPosture.WALLET_ONLY.metadata
             )
-            result = await test_module.wallet_did_list(request)
+            result = await test_module.wallet_did_list(self.request)
             json_response.assert_called_once_with(
                 {
                     "results": [
@@ -268,28 +252,24 @@ class TestWalletRoutes(AsyncTestCase):
             assert result is json_response.return_value
 
     async def test_did_list_filter_verkey_x(self):
-        request = async_mock.MagicMock()
-        request.app = self.app
-        request.query = {"verkey": self.test_verkey}
+        self.request.query = {"verkey": self.test_verkey}
         with async_mock.patch.object(
             test_module.web, "json_response", async_mock.Mock()
         ) as json_response:
             self.wallet.get_local_did_for_verkey.side_effect = test_module.WalletError()
-            result = await test_module.wallet_did_list(request)
+            result = await test_module.wallet_did_list(self.request)
             json_response.assert_called_once_with({"results": []})
             assert json_response.return_value is json_response()
             assert result is json_response.return_value
 
     async def test_get_public_did(self):
-        request = async_mock.MagicMock()
-        request.app = self.app
         with async_mock.patch.object(
             test_module.web, "json_response", async_mock.Mock()
         ) as json_response:
             self.wallet.get_public_did.return_value = DIDInfo(
                 self.test_did, self.test_verkey, DIDPosture.PUBLIC.metadata
             )
-            result = await test_module.wallet_get_public_did(request)
+            result = await test_module.wallet_get_public_did(self.request)
             json_response.assert_called_once_with(
                 {
                     "result": {
@@ -302,23 +282,19 @@ class TestWalletRoutes(AsyncTestCase):
             assert result is json_response.return_value
 
     async def test_get_public_did_x(self):
-        request = async_mock.MagicMock()
-        request.app = self.app
         self.wallet.get_public_did.side_effect = test_module.WalletError()
         with self.assertRaises(test_module.web.HTTPBadRequest):
-            await test_module.wallet_get_public_did(request)
+            await test_module.wallet_get_public_did(self.request)
 
     async def test_set_public_did(self):
-        request = async_mock.MagicMock()
-        request.app = self.app
-        request.query = {"did": self.test_did}
+        self.request.query = {"did": self.test_did}
 
         Ledger = async_mock.MagicMock()
-        self.ledger = Ledger()
-        self.ledger.get_key_for_did = async_mock.CoroutineMock()
-        self.ledger.update_endpoint_for_did = async_mock.CoroutineMock()
-        self.ledger.__aenter__ = async_mock.CoroutineMock(return_value=self.ledger)
-        self.context.injector.bind_instance(BaseLedger, self.ledger)
+        ledger = Ledger()
+        ledger.get_key_for_did = async_mock.CoroutineMock()
+        ledger.update_endpoint_for_did = async_mock.CoroutineMock()
+        ledger.__aenter__ = async_mock.CoroutineMock(return_value=ledger)
+        self.session_inject[BaseLedger] = ledger
 
         with async_mock.patch.object(
             test_module.web, "json_response", async_mock.Mock()
@@ -326,8 +302,10 @@ class TestWalletRoutes(AsyncTestCase):
             self.wallet.set_public_did.return_value = DIDInfo(
                 self.test_did, self.test_verkey, DIDPosture.PUBLIC.metadata
             )
-            result = await test_module.wallet_set_public_did(request)
-            self.wallet.set_public_did.assert_awaited_once_with(request.query["did"])
+            result = await test_module.wallet_set_public_did(self.request)
+            self.wallet.set_public_did.assert_awaited_once_with(
+                self.request.query["did"]
+            )
             json_response.assert_called_once_with(
                 {
                     "result": {
@@ -340,61 +318,49 @@ class TestWalletRoutes(AsyncTestCase):
             assert result is json_response.return_value
 
     async def test_set_public_did_no_query_did(self):
-        request = async_mock.MagicMock()
-        request.app = self.app
-        request.query = {}
-
         with self.assertRaises(test_module.web.HTTPBadRequest):
-            await test_module.wallet_set_public_did(request)
+            await test_module.wallet_set_public_did(self.request)
 
     async def test_set_public_did_no_ledger(self):
-        request = async_mock.MagicMock()
-        request.app = self.app
-        request.query = {"did": self.test_did}
+        self.request.query = {"did": self.test_did}
 
         with self.assertRaises(test_module.web.HTTPForbidden):
-            await test_module.wallet_set_public_did(request)
+            await test_module.wallet_set_public_did(self.request)
 
     async def test_set_public_did_not_public(self):
-        request = async_mock.MagicMock()
-        request.app = self.app
-        request.query = {"did": self.test_did}
+        self.request.query = {"did": self.test_did}
 
         Ledger = async_mock.MagicMock()
-        self.ledger = Ledger()
-        self.ledger.get_key_for_did = async_mock.CoroutineMock(return_value=None)
-        self.ledger.__aenter__ = async_mock.CoroutineMock(return_value=self.ledger)
-        self.context.injector.bind_instance(BaseLedger, self.ledger)
+        ledger = Ledger()
+        ledger.get_key_for_did = async_mock.CoroutineMock(return_value=None)
+        ledger.__aenter__ = async_mock.CoroutineMock(return_value=ledger)
+        self.session_inject[BaseLedger] = ledger
 
         with self.assertRaises(test_module.web.HTTPNotFound):
-            await test_module.wallet_set_public_did(request)
+            await test_module.wallet_set_public_did(self.request)
 
     async def test_set_public_did_not_found(self):
-        request = async_mock.MagicMock()
-        request.app = self.app
-        request.query = {"did": self.test_did}
+        self.request.query = {"did": self.test_did}
 
         Ledger = async_mock.MagicMock()
-        self.ledger = Ledger()
-        self.ledger.get_key_for_did = async_mock.CoroutineMock(return_value=None)
-        self.ledger.__aenter__ = async_mock.CoroutineMock(return_value=self.ledger)
-        self.context.injector.bind_instance(BaseLedger, self.ledger)
+        ledger = Ledger()
+        ledger.get_key_for_did = async_mock.CoroutineMock(return_value=None)
+        ledger.__aenter__ = async_mock.CoroutineMock(return_value=ledger)
+        self.session_inject[BaseLedger] = ledger
 
         self.wallet.get_local_did.side_effect = test_module.WalletNotFoundError()
         with self.assertRaises(test_module.web.HTTPNotFound):
-            await test_module.wallet_set_public_did(request)
+            await test_module.wallet_set_public_did(self.request)
 
     async def test_set_public_did_x(self):
-        request = async_mock.MagicMock()
-        request.app = self.app
-        request.query = {"did": self.test_did}
+        self.request.query = {"did": self.test_did}
 
         Ledger = async_mock.MagicMock()
-        self.ledger = Ledger()
-        self.ledger.update_endpoint_for_did = async_mock.CoroutineMock()
-        self.ledger.get_key_for_did = async_mock.CoroutineMock()
-        self.ledger.__aenter__ = async_mock.CoroutineMock(return_value=self.ledger)
-        self.context.injector.bind_instance(BaseLedger, self.ledger)
+        ledger = Ledger()
+        ledger.update_endpoint_for_did = async_mock.CoroutineMock()
+        ledger.get_key_for_did = async_mock.CoroutineMock()
+        ledger.__aenter__ = async_mock.CoroutineMock(return_value=ledger)
+        self.session_inject[BaseLedger] = ledger
 
         with async_mock.patch.object(
             test_module.web, "json_response", async_mock.Mock()
@@ -404,19 +370,17 @@ class TestWalletRoutes(AsyncTestCase):
             )
             self.wallet.set_public_did.side_effect = test_module.WalletError()
             with self.assertRaises(test_module.web.HTTPBadRequest):
-                await test_module.wallet_set_public_did(request)
+                await test_module.wallet_set_public_did(self.request)
 
     async def test_set_public_did_no_wallet_did(self):
-        request = async_mock.MagicMock()
-        request.app = self.app
-        request.query = {"did": self.test_did}
+        self.request.query = {"did": self.test_did}
 
         Ledger = async_mock.MagicMock()
-        self.ledger = Ledger()
-        self.ledger.update_endpoint_for_did = async_mock.CoroutineMock()
-        self.ledger.get_key_for_did = async_mock.CoroutineMock()
-        self.ledger.__aenter__ = async_mock.CoroutineMock(return_value=self.ledger)
-        self.context.injector.bind_instance(BaseLedger, self.ledger)
+        ledger = Ledger()
+        ledger.update_endpoint_for_did = async_mock.CoroutineMock()
+        ledger.get_key_for_did = async_mock.CoroutineMock()
+        ledger.__aenter__ = async_mock.CoroutineMock(return_value=ledger)
+        self.session_inject[BaseLedger] = ledger
 
         with async_mock.patch.object(
             test_module.web, "json_response", async_mock.Mock()
@@ -426,19 +390,17 @@ class TestWalletRoutes(AsyncTestCase):
             )
             self.wallet.set_public_did.side_effect = test_module.WalletNotFoundError()
             with self.assertRaises(test_module.web.HTTPNotFound):
-                await test_module.wallet_set_public_did(request)
+                await test_module.wallet_set_public_did(self.request)
 
     async def test_set_public_did_update_endpoint(self):
-        request = async_mock.MagicMock()
-        request.app = self.app
-        request.query = {"did": self.test_did}
+        self.request.query = {"did": self.test_did}
 
         Ledger = async_mock.MagicMock()
-        self.ledger = Ledger()
-        self.ledger.update_endpoint_for_did = async_mock.CoroutineMock()
-        self.ledger.get_key_for_did = async_mock.CoroutineMock()
-        self.ledger.__aenter__ = async_mock.CoroutineMock(return_value=self.ledger)
-        self.context.injector.bind_instance(BaseLedger, self.ledger)
+        ledger = Ledger()
+        ledger.update_endpoint_for_did = async_mock.CoroutineMock()
+        ledger.get_key_for_did = async_mock.CoroutineMock()
+        ledger.__aenter__ = async_mock.CoroutineMock(return_value=ledger)
+        self.session_inject[BaseLedger] = ledger
 
         with async_mock.patch.object(
             test_module.web, "json_response", async_mock.Mock()
@@ -446,8 +408,10 @@ class TestWalletRoutes(AsyncTestCase):
             self.wallet.set_public_did.return_value = DIDInfo(
                 self.test_did, self.test_verkey, DIDPosture.PUBLIC.metadata
             )
-            result = await test_module.wallet_set_public_did(request)
-            self.wallet.set_public_did.assert_awaited_once_with(request.query["did"])
+            result = await test_module.wallet_set_public_did(self.request)
+            self.wallet.set_public_did.assert_awaited_once_with(
+                self.request.query["did"]
+            )
             json_response.assert_called_once_with(
                 {
                     "result": {
@@ -460,9 +424,7 @@ class TestWalletRoutes(AsyncTestCase):
             assert result is json_response.return_value
 
     async def test_set_did_endpoint(self):
-        request = async_mock.MagicMock()
-        request.app = self.app
-        request.json = async_mock.CoroutineMock(
+        self.request.json = async_mock.CoroutineMock(
             return_value={
                 "did": self.test_did,
                 "endpoint": "https://my-endpoint.ca:8020",
@@ -470,10 +432,10 @@ class TestWalletRoutes(AsyncTestCase):
         )
 
         Ledger = async_mock.MagicMock()
-        self.ledger = Ledger()
-        self.ledger.update_endpoint_for_did = async_mock.CoroutineMock()
-        self.ledger.__aenter__ = async_mock.CoroutineMock(return_value=self.ledger)
-        self.context.injector.bind_instance(BaseLedger, self.ledger)
+        ledger = Ledger()
+        ledger.update_endpoint_for_did = async_mock.CoroutineMock()
+        ledger.__aenter__ = async_mock.CoroutineMock(return_value=ledger)
+        self.session_inject[BaseLedger] = ledger
 
         self.wallet.get_local_did.return_value = DIDInfo(
             self.test_did,
@@ -487,13 +449,11 @@ class TestWalletRoutes(AsyncTestCase):
         with async_mock.patch.object(
             test_module.web, "json_response", async_mock.Mock()
         ) as json_response:
-            await test_module.wallet_set_did_endpoint(request)
+            await test_module.wallet_set_did_endpoint(self.request)
             json_response.assert_called_once_with({})
 
     async def test_set_did_endpoint_public_did_no_ledger(self):
-        request = async_mock.MagicMock()
-        request.app = self.app
-        request.json = async_mock.CoroutineMock(
+        self.request.json = async_mock.CoroutineMock(
             return_value={
                 "did": self.test_did,
                 "endpoint": "https://my-endpoint.ca:8020",
@@ -511,12 +471,10 @@ class TestWalletRoutes(AsyncTestCase):
         self.wallet.set_did_endpoint.side_effect = test_module.LedgerConfigError()
 
         with self.assertRaises(test_module.web.HTTPForbidden):
-            await test_module.wallet_set_did_endpoint(request)
+            await test_module.wallet_set_did_endpoint(self.request)
 
     async def test_set_did_endpoint_x(self):
-        request = async_mock.MagicMock()
-        request.app = self.app
-        request.json = async_mock.CoroutineMock(
+        self.request.json = async_mock.CoroutineMock(
             return_value={
                 "did": self.test_did,
                 "endpoint": "https://my-endpoint.ca:8020",
@@ -524,20 +482,18 @@ class TestWalletRoutes(AsyncTestCase):
         )
 
         Ledger = async_mock.MagicMock()
-        self.ledger = Ledger()
-        self.ledger.update_endpoint_for_did = async_mock.CoroutineMock()
-        self.ledger.__aenter__ = async_mock.CoroutineMock(return_value=self.ledger)
-        self.context.injector.bind_instance(BaseLedger, self.ledger)
+        ledger = Ledger()
+        ledger.update_endpoint_for_did = async_mock.CoroutineMock()
+        ledger.__aenter__ = async_mock.CoroutineMock(return_value=ledger)
+        self.session_inject[BaseLedger] = ledger
 
         self.wallet.set_did_endpoint.side_effect = test_module.WalletError()
 
         with self.assertRaises(test_module.web.HTTPBadRequest):
-            await test_module.wallet_set_did_endpoint(request)
+            await test_module.wallet_set_did_endpoint(self.request)
 
     async def test_set_did_endpoint_no_wallet_did(self):
-        request = async_mock.MagicMock()
-        request.app = self.app
-        request.json = async_mock.CoroutineMock(
+        self.request.json = async_mock.CoroutineMock(
             return_value={
                 "did": self.test_did,
                 "endpoint": "https://my-endpoint.ca:8020",
@@ -545,20 +501,18 @@ class TestWalletRoutes(AsyncTestCase):
         )
 
         Ledger = async_mock.MagicMock()
-        self.ledger = Ledger()
-        self.ledger.update_endpoint_for_did = async_mock.CoroutineMock()
-        self.ledger.__aenter__ = async_mock.CoroutineMock(return_value=self.ledger)
-        self.context.injector.bind_instance(BaseLedger, self.ledger)
+        ledger = Ledger()
+        ledger.update_endpoint_for_did = async_mock.CoroutineMock()
+        ledger.__aenter__ = async_mock.CoroutineMock(return_value=ledger)
+        self.session_inject[BaseLedger] = ledger
 
         self.wallet.set_did_endpoint.side_effect = test_module.WalletNotFoundError()
 
         with self.assertRaises(test_module.web.HTTPNotFound):
-            await test_module.wallet_set_did_endpoint(request)
+            await test_module.wallet_set_did_endpoint(self.request)
 
     async def test_get_did_endpoint(self):
-        request = async_mock.MagicMock()
-        request.app = self.app
-        request.query = {"did": self.test_did}
+        self.request.query = {"did": self.test_did}
 
         self.wallet.get_local_did.return_value = DIDInfo(
             self.test_did,
@@ -569,7 +523,7 @@ class TestWalletRoutes(AsyncTestCase):
         with async_mock.patch.object(
             test_module.web, "json_response", async_mock.Mock()
         ) as json_response:
-            await test_module.wallet_get_did_endpoint(request)
+            await test_module.wallet_get_did_endpoint(self.request)
             json_response.assert_called_once_with(
                 {
                     "did": self.test_did,
@@ -580,37 +534,27 @@ class TestWalletRoutes(AsyncTestCase):
             )
 
     async def test_get_did_endpoint_no_did(self):
-        request = async_mock.MagicMock()
-        request.app = self.app
-        request.query = {}
-
         with self.assertRaises(test_module.web.HTTPBadRequest):
-            await test_module.wallet_get_did_endpoint(request)
+            await test_module.wallet_get_did_endpoint(self.request)
 
     async def test_get_did_endpoint_no_wallet_did(self):
-        request = async_mock.MagicMock()
-        request.app = self.app
-        request.query = {"did": self.test_did}
+        self.request.query = {"did": self.test_did}
 
         self.wallet.get_local_did.side_effect = test_module.WalletNotFoundError()
 
         with self.assertRaises(test_module.web.HTTPNotFound):
-            await test_module.wallet_get_did_endpoint(request)
+            await test_module.wallet_get_did_endpoint(self.request)
 
     async def test_get_did_endpoint_wallet_x(self):
-        request = async_mock.MagicMock()
-        request.app = self.app
-        request.query = {"did": self.test_did}
+        self.request.query = {"did": self.test_did}
 
         self.wallet.get_local_did.side_effect = test_module.WalletError()
 
         with self.assertRaises(test_module.web.HTTPBadRequest):
-            await test_module.wallet_get_did_endpoint(request)
+            await test_module.wallet_get_did_endpoint(self.request)
 
     async def test_rotate_did_keypair(self):
-        request = async_mock.MagicMock()
-        request.app = self.app
-        request.query = {"did": "did"}
+        self.request.query = {"did": "did"}
 
         with async_mock.patch.object(
             test_module.web, "json_response", async_mock.Mock()
@@ -621,47 +565,37 @@ class TestWalletRoutes(AsyncTestCase):
             self.wallet.rotate_did_keypair_start = async_mock.CoroutineMock()
             self.wallet.rotate_did_keypair_apply = async_mock.CoroutineMock()
 
-            await test_module.wallet_rotate_did_keypair(request)
+            await test_module.wallet_rotate_did_keypair(self.request)
             json_response.assert_called_once_with({})
 
     async def test_rotate_did_keypair_missing_wallet(self):
-        request = async_mock.MagicMock()
-        request.app = self.app
-        request.query = {"did": "did"}
-        self.context.injector.clear_binding(BaseWallet)
+        self.request.query = {"did": "did"}
+        self.session_inject[BaseWallet] = None
 
         with self.assertRaises(HTTPForbidden):
-            await test_module.wallet_rotate_did_keypair(request)
+            await test_module.wallet_rotate_did_keypair(self.request)
 
     async def test_rotate_did_keypair_no_query_did(self):
-        request = async_mock.MagicMock()
-        request.app = self.app
-        request.query = {}
-
         with self.assertRaises(test_module.web.HTTPBadRequest):
-            await test_module.wallet_rotate_did_keypair(request)
+            await test_module.wallet_rotate_did_keypair(self.request)
 
     async def test_rotate_did_keypair_did_not_local(self):
-        request = async_mock.MagicMock()
-        request.app = self.app
-        request.query = {"did": "did"}
+        self.request.query = {"did": "did"}
 
         self.wallet.get_local_did = async_mock.CoroutineMock(
             side_effect=test_module.WalletNotFoundError("Unknown DID")
         )
         with self.assertRaises(test_module.web.HTTPNotFound):
-            await test_module.wallet_rotate_did_keypair(request)
+            await test_module.wallet_rotate_did_keypair(self.request)
 
         self.wallet.get_local_did = async_mock.CoroutineMock(
             return_value=DIDInfo("did", "verkey", {"posted": True, "public": True})
         )
         with self.assertRaises(test_module.web.HTTPBadRequest):
-            await test_module.wallet_rotate_did_keypair(request)
+            await test_module.wallet_rotate_did_keypair(self.request)
 
     async def test_rotate_did_keypair_x(self):
-        request = async_mock.MagicMock()
-        request.app = self.app
-        request.query = {"did": "did"}
+        self.request.query = {"did": "did"}
 
         self.wallet.get_local_did = async_mock.CoroutineMock(
             return_value=DIDInfo("did", "verkey", {"public": False})
@@ -670,7 +604,7 @@ class TestWalletRoutes(AsyncTestCase):
             side_effect=test_module.WalletError()
         )
         with self.assertRaises(test_module.web.HTTPBadRequest):
-            await test_module.wallet_rotate_did_keypair(request)
+            await test_module.wallet_rotate_did_keypair(self.request)
 
     async def test_register(self):
         mock_app = async_mock.MagicMock()

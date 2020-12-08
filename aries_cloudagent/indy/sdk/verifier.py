@@ -6,7 +6,7 @@ import logging
 import indy.anoncreds
 from indy.error import IndyError
 
-from ...ledger.base import BaseLedger
+from ...ledger.indy import IndySdkLedger
 
 from ..verifier import IndyVerifier, PreVerifyResult
 
@@ -14,9 +14,9 @@ LOGGER = logging.getLogger(__name__)
 
 
 class IndySdkVerifier(IndyVerifier):
-    """Indy verifier class."""
+    """Indy-SDK verifier implementation."""
 
-    def __init__(self, ledger: BaseLedger):
+    def __init__(self, ledger: IndySdkLedger):
         """
         Initialize an IndyVerifier instance.
 

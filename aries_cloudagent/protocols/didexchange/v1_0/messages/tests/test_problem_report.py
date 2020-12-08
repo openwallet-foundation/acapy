@@ -1,8 +1,5 @@
-from unittest import mock, TestCase
+from unittest import TestCase
 
-from ......messaging.models.base import BaseModelError
-
-from ...message_types import PROBLEM_REPORT
 from ..problem_report import ProblemReport, ProblemReportReason
 
 

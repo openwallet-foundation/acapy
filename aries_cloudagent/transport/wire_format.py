@@ -6,7 +6,7 @@ import logging
 from abc import abstractmethod
 from typing import Sequence, Tuple, Union
 
-from ..config.injection_context import InjectionContext
+from ..core.profile import ProfileSession
 from ..messaging.util import time_now
 
 from .inbound.receipt import MessageReceipt
@@ -24,14 +24,14 @@ class BaseWireFormat:
     @abstractmethod
     async def parse_message(
         self,
-        context: InjectionContext,
+        session: ProfileSession,
         message_body: Union[str, bytes],
     ) -> Tuple[dict, MessageReceipt]:
         """
         Deserialize an incoming message and further populate the request context.
 
         Args:
-            context: The injection context for settings and services
+            session: The profile session for providing wallet access
             message_body: The body of the message
 
         Returns:
@@ -45,7 +45,7 @@ class BaseWireFormat:
     @abstractmethod
     async def encode_message(
         self,
-        context: InjectionContext,
+        session: ProfileSession,
         message_json: Union[str, bytes],
         recipient_keys: Sequence[str],
         routing_keys: Sequence[str],
@@ -55,7 +55,7 @@ class BaseWireFormat:
         Encode an outgoing message for transport.
 
         Args:
-            context: The injection context for settings and services
+            session: The profile session for providing wallet access
             message_json: The message body to serialize
             recipient_keys: A sequence of recipient verkeys
             routing_keys: A sequence of routing verkeys
@@ -76,14 +76,14 @@ class JsonWireFormat(BaseWireFormat):
     @abstractmethod
     async def parse_message(
         self,
-        context: InjectionContext,
+        session: ProfileSession,
         message_body: Union[str, bytes],
     ) -> Tuple[dict, MessageReceipt]:
         """
         Deserialize an incoming message and further populate the request context.
 
         Args:
-            context: The injection context for settings and services
+            session: The profile session for providing wallet access
             message_body: The body of the message
 
         Returns:
@@ -128,7 +128,7 @@ class JsonWireFormat(BaseWireFormat):
     @abstractmethod
     async def encode_message(
         self,
-        context: InjectionContext,
+        session: ProfileSession,
         message_json: Union[str, bytes],
         recipient_keys: Sequence[str],
         routing_keys: Sequence[str],
@@ -138,7 +138,7 @@ class JsonWireFormat(BaseWireFormat):
         Encode an outgoing message for transport.
 
         Args:
-            context: The injection context for settings and services
+            session: The profile session for providing wallet access
             message_json: The message body to serialize
             recipient_keys: A sequence of recipient verkeys
             routing_keys: A sequence of routing verkeys

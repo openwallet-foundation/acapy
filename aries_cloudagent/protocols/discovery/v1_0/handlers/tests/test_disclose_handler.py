@@ -14,14 +14,19 @@ TEST_MESSAGE_FAMILY = "TEST_FAMILY"
 TEST_MESSAGE_TYPE = TEST_MESSAGE_FAMILY + "/MESSAGE"
 
 
-class TestQueryHandler:
+@pytest.fixture()
+def request_context() -> RequestContext:
+    ctx = RequestContext.test_context()
+    yield ctx
+
+
+class TestDiscloseHandler:
     @pytest.mark.asyncio
-    async def test_disclose(self):
-        ctx = RequestContext()
+    async def test_disclose(self, request_context):
         registry = ProtocolRegistry()
         registry.register_message_types({TEST_MESSAGE_TYPE: object()})
-        ctx.injector.bind_instance(ProtocolRegistry, registry)
-        ctx.message = Disclose(
+        request_context.injector.bind_instance(ProtocolRegistry, registry)
+        request_context.message = Disclose(
             protocols=[
                 {
                     "pid": DIDCommPrefix.qualify_current(
@@ -34,5 +39,5 @@ class TestQueryHandler:
 
         handler = DiscloseHandler()
         mock_responder = MockResponder()
-        await handler.handle(ctx, mock_responder)
+        await handler.handle(request_context, mock_responder)
         assert not mock_responder.messages

@@ -161,6 +161,21 @@ To run the tests including [Indy SDK](https://github.com/hyperledger/indy-sdk) a
 ./scripts/run_tests_indy
 ```
 
+### Running Aries Agent Test Harness Tests
+
+You can run a full suite of integration tests using the [Aries Agent Test Harness (AATH)](https://github.com/hyperledger/aries-agent-test-harness).
+
+Check out and run AATH tests as follows (this tests the aca-py `master` branch):
+
+```bash
+git clone https://github.com/hyperledger/aries-agent-test-harness.git
+cd aries-agent-test-harness
+./manage build -a acapy-master
+./manage run -d acapy-master -t @AcceptanceTest -t ~@wip
+```
+
+The `manage` script is described in detail [here](https://github.com/hyperledger/aries-agent-test-harness#the-manage-bash-script), including how to modify the AATH code to run the tests against your aca-py repo/branch.
+
 ## Development Workflow
 
 We use [Flake8](http://flake8.pycqa.org/en/latest/) to enforce a coding style guide.
@@ -183,7 +198,7 @@ The [publishing](https://github.com/hyperledger/aries-cloudagent-python/blob/mas
 
 ## Dynamic Injection of Services
 
-The Agent employs a dynamic injection system whereby providers of base classes are registered with the `RequestContext` instance, currently within `conductor.py`. Message handlers and services request an instance of the selected implementation using `await context.inject(BaseClass)`; for instance the wallet instance may be injected using `wallet = await context.inject(BaseWallet)`. The `inject` method normally throws an exception if no implementation of the base class is provided, but can be called with `required=False` for optional dependencies (in which case a value of `None` may be returned).
+The Agent employs a dynamic injection system whereby providers of base classes are registered with the `RequestContext` instance, currently within `conductor.py`. Message handlers and services request an instance of the selected implementation using `context.inject(BaseClass)`; for instance the wallet instance may be injected using `wallet = context.inject(BaseWallet)`. The `inject` method normally throws an exception if no implementation of the base class is provided, but can be called with `required=False` for optional dependencies (in which case a value of `None` may be returned).
 
 Providers are registered with either `context.injector.bind_instance(BaseClass, instance)` for previously-constructed (singleton) object instances, or `context.injector.bind_provider(BaseClass, provider)` for dynamic providers. In some cases it may be desirable to write a custom provider which switches implementations based on configuration settings, such as the wallet provider.
 

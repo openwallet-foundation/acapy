@@ -6,6 +6,7 @@ import logging
 import os
 import random
 import subprocess
+import sys
 from timeit import default_timer
 
 from aiohttp import (
@@ -43,6 +44,7 @@ DEFAULT_INTERNAL_HOST = "127.0.0.1"
 DEFAULT_EXTERNAL_HOST = "localhost"
 DEFAULT_BIN_PATH = "../bin"
 DEFAULT_PYTHON_PATH = ".."
+PYTHON = os.getenv("PYTHON", sys.executable)
 
 START_TIMEOUT = float(os.getenv("START_TIMEOUT", 30.0))
 
@@ -90,6 +92,10 @@ async def default_genesis_txns():
         elif GENESIS_FILE:
             with open(GENESIS_FILE, "r") as genesis_file:
                 genesis = genesis_file.read()
+        elif LEDGER_URL:
+            async with ClientSession() as session:
+                async with session.get(LEDGER_URL.rstrip("/") + "/genesis") as resp:
+                    genesis = await resp.text()
         else:
             with open("local-genesis.txt", "r") as genesis_file:
                 genesis = genesis_file.read()
@@ -222,6 +228,7 @@ class DemoAgent:
             ("--wallet-name", self.wallet_name),
             ("--wallet-key", self.wallet_key),
             "--preserve-exchange-records",
+            "--auto-provision",
         ]
         if self.genesis_data:
             result.append(("--genesis-transactions", self.genesis_data))
@@ -345,7 +352,7 @@ class DemoAgent:
             bin_path = DEFAULT_BIN_PATH
         if bin_path:
             cmd_path = os.path.join(bin_path, cmd_path)
-        return list(flatten((["python3", cmd_path, "start"], self.get_agent_args())))
+        return list(flatten(([PYTHON, cmd_path, "start"], self.get_agent_args())))
 
     async def start_process(
         self, python_path: str = None, bin_path: str = None, wait: bool = True
@@ -525,26 +532,28 @@ class DemoAgent:
 
     async def detect_process(self):
         async def fetch_status(url: str, timeout: float):
+            code = None
             text = None
             start = default_timer()
             async with ClientSession(timeout=ClientTimeout(total=3.0)) as session:
                 while default_timer() - start < timeout:
                     try:
                         async with session.get(url) as resp:
-                            if resp.status == 200:
+                            code = resp.status
+                            if code == 200:
                                 text = await resp.text()
                                 break
                     except (ClientError, asyncio.TimeoutError):
                         pass
                     await asyncio.sleep(0.5)
-            return text
+            return code, text
 
         status_url = self.admin_url + "/status"
-        status_text = await fetch_status(status_url, START_TIMEOUT)
+        status_code, status_text = await fetch_status(status_url, START_TIMEOUT)
 
         if not status_text:
             raise Exception(
-                "Timed out waiting for agent process to start. "
+                f"Timed out waiting for agent process to start (status={status_code}). "
                 + f"Admin URL: {status_url}"
             )
         ok = False

@@ -2,7 +2,7 @@ import asyncio
 
 from asynctest import TestCase as AsyncTestCase, mock as async_mock
 
-from ....config.injection_context import InjectionContext
+from ....core.in_memory import InMemoryProfile
 
 from ...outbound.message import OutboundMessage
 
@@ -12,9 +12,11 @@ from ..manager import InboundTransportManager
 
 
 class TestInboundTransportManager(AsyncTestCase):
+    def setUp(self):
+        self.profile = InMemoryProfile.test_profile()
+
     def test_register_path(self):
-        context = InjectionContext()
-        mgr = InboundTransportManager(context, None)
+        mgr = InboundTransportManager(self.profile, None)
 
         config = InboundTransportConfiguration(module="http", host="0.0.0.0", port=80)
         mgr.register(config)
@@ -32,18 +34,17 @@ class TestInboundTransportManager(AsyncTestCase):
             mgr.register(config)
 
     async def test_setup(self):
-        context = InjectionContext()
         test_module = "http"
         test_host = "host"
         test_port = 80
-        context.update_settings(
+        self.profile.context.update_settings(
             {
                 "transport.max_message_size": 65535,
                 "transport.inbound_configs": [[test_module, test_host, test_port]],
                 "transport.enable_undelivered_queue": True,
             }
         )
-        mgr = InboundTransportManager(context, None)
+        mgr = InboundTransportManager(self.profile, None)
 
         with async_mock.patch.object(mgr, "register") as mock_register:
             await mgr.setup()
@@ -62,8 +63,7 @@ class TestInboundTransportManager(AsyncTestCase):
         transport.start = async_mock.CoroutineMock()
         transport.stop = async_mock.CoroutineMock()
 
-        context = InjectionContext()
-        mgr = InboundTransportManager(context, None)
+        mgr = InboundTransportManager(self.profile, None)
         mgr.register_transport(transport, "transport_cls")
         await mgr.start()
         await mgr.task_queue
@@ -74,12 +74,11 @@ class TestInboundTransportManager(AsyncTestCase):
         transport.stop.assert_awaited_once_with()
 
     async def test_create_session(self):
-        context = InjectionContext(enforce_typing=False)
         test_wire_format = async_mock.MagicMock()
-        context.injector.bind_instance(BaseWireFormat, test_wire_format)
+        self.profile.context.injector.bind_instance(BaseWireFormat, test_wire_format)
 
         test_inbound_handler = async_mock.CoroutineMock()
-        mgr = InboundTransportManager(context, test_inbound_handler)
+        mgr = InboundTransportManager(self.profile, test_inbound_handler)
         test_transport = "http"
         test_accept = True
         test_can_respond = True
@@ -106,8 +105,7 @@ class TestInboundTransportManager(AsyncTestCase):
         assert session.session_id not in mgr.sessions
 
     async def test_return_to_session(self):
-        context = InjectionContext()
-        mgr = InboundTransportManager(context, None)
+        mgr = InboundTransportManager(self.profile, None)
         test_wire_format = async_mock.MagicMock()
 
         session = await mgr.create_session("http", wire_format=test_wire_format)
@@ -137,9 +135,8 @@ class TestInboundTransportManager(AsyncTestCase):
             mock_accept.assert_called_once_with(test_outbound)
 
     async def test_close_return(self):
-        context = InjectionContext()
         test_return = async_mock.MagicMock()
-        mgr = InboundTransportManager(context, None, return_inbound=test_return)
+        mgr = InboundTransportManager(self.profile, None, return_inbound=test_return)
         test_wire_format = async_mock.MagicMock()
 
         session = await mgr.create_session("http", wire_format=test_wire_format)
@@ -148,11 +145,10 @@ class TestInboundTransportManager(AsyncTestCase):
         session.set_response(test_outbound)
 
         session.close()
-        test_return.assert_called_once_with(session.context, test_outbound)
+        test_return.assert_called_once_with(session.profile, test_outbound)
 
     async def test_dispatch_complete_undelivered(self):
-        context = InjectionContext()
-        mgr = InboundTransportManager(context, None)
+        mgr = InboundTransportManager(self.profile, None)
         test_wire_format = async_mock.MagicMock(
             parse_message=async_mock.CoroutineMock(return_value=("payload", "receipt"))
         )
@@ -163,17 +159,17 @@ class TestInboundTransportManager(AsyncTestCase):
         mgr.dispatch_complete(inbound_msg, None)
 
     async def test_close_x(self):
-        context = InjectionContext()
-        mgr = InboundTransportManager(context, None)
+        mgr = InboundTransportManager(self.profile, None)
         mock_session = async_mock.MagicMock(response_buffer=async_mock.MagicMock())
         mgr.closed_session(mock_session)
 
     async def test_process_undelivered(self):
-        context = InjectionContext()
-        context.update_settings({"transport.enable_undelivered_queue": True})
+        self.profile.context.update_settings(
+            {"transport.enable_undelivered_queue": True}
+        )
         test_verkey = "test-verkey"
         test_wire_format = async_mock.MagicMock()
-        mgr = InboundTransportManager(context, None)
+        mgr = InboundTransportManager(self.profile, None)
         await mgr.setup()
 
         test_outbound = OutboundMessage(payload=None)
@@ -194,11 +190,12 @@ class TestInboundTransportManager(AsyncTestCase):
         assert not mgr.undelivered_queue.has_message_for_key(test_verkey)
 
     async def test_return_undelivered_false(self):
-        context = InjectionContext()
-        context.update_settings({"transport.enable_undelivered_queue": False})
+        self.profile.context.update_settings(
+            {"transport.enable_undelivered_queue": False}
+        )
         test_verkey = "test-verkey"
         test_wire_format = async_mock.MagicMock()
-        mgr = InboundTransportManager(context, None)
+        mgr = InboundTransportManager(self.profile, None)
         await mgr.setup()
 
         test_outbound = OutboundMessage(payload=None)

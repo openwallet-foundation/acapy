@@ -9,10 +9,7 @@ from shutil import rmtree
 
 import base58
 
-from ....config.injection_context import InjectionContext
 from ....indy.util import indy_client_dir
-from ....storage.base import BaseStorage
-from ....storage.basic import BasicStorage
 
 from ...error import RevocationError
 

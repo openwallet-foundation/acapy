@@ -24,7 +24,8 @@ class DIDXCompleteHandler(BaseHandler):
         self._logger.debug(f"DIDXCompleteHandler called with context {context}")
         assert isinstance(context.message, DIDXComplete)
 
-        mgr = DIDXManager(context)
+        session = await context.session()
+        mgr = DIDXManager(session)
         try:
             await mgr.accept_complete(context.message, context.message_receipt)
         except DIDXManagerError:

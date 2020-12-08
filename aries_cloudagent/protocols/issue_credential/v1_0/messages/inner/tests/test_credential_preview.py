@@ -7,7 +7,6 @@ from ....message_types import CREDENTIAL_PREVIEW
 from ..credential_preview import (
     CredAttrSpec,
     CredentialPreview,
-    CredentialPreviewSchema,
 )
 
 CRED_PREVIEW = CredentialPreview(

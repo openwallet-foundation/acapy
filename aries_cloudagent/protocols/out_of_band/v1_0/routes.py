@@ -8,6 +8,7 @@ from aiohttp_apispec import docs, querystring_schema, request_schema, response_s
 from marshmallow import fields
 from marshmallow.exceptions import ValidationError
 
+from ....admin.request_context import AdminRequestContext
 from ....messaging.models.openapi import OpenAPISchema
 from ....storage.error import StorageNotFoundError
 
@@ -73,7 +74,7 @@ async def invitation_create(request: web.BaseRequest):
         The out of band invitation details
 
     """
-    context = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
 
     body = await request.json() if request.body_exists else {}
     attachments = body.get("attachments")
@@ -82,8 +83,8 @@ async def invitation_create(request: web.BaseRequest):
 
     multi_use = json.loads(request.query.get("multi_use", "false"))
     auto_accept = json.loads(request.query.get("auto_accept", "null"))
-
-    oob_mgr = OutOfBandManager(context)
+    session = await context.session()
+    oob_mgr = OutOfBandManager(session)
     try:
         invitation = await oob_mgr.create_invitation(
             auto_accept=auto_accept,
@@ -115,10 +116,11 @@ async def invitation_receive(request: web.BaseRequest):
         The out of band invitation details
 
     """
-    context = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
     body = await request.json()
 
-    oob_mgr = OutOfBandManager(context)
+    session = await context.session()
+    oob_mgr = OutOfBandManager(session)
 
     invitation = await oob_mgr.receive_invitation(invi_msg=body)
 

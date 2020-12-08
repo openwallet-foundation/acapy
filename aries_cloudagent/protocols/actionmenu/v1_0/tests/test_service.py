@@ -1,18 +1,19 @@
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
-from aries_cloudagent.config.injection_context import InjectionContext
-from aries_cloudagent.messaging.request_context import RequestContext
-from aries_cloudagent.messaging.responder import MockResponder
+from .....core.in_memory import InMemoryProfile
+from .....messaging.request_context import RequestContext
+from .....messaging.responder import MockResponder
+
 from .. import driver_service as test_module
 
 
 class TestActionMenuService(AsyncTestCase):
-    async def test_get_active_menu(self):
-        self.context = RequestContext(
-            base_context=InjectionContext(enforce_typing=False)
-        )
+    async def setUp(self):
+        self.session = InMemoryProfile.test_session()
+        self.context = RequestContext(self.session.profile)
 
+    async def test_get_active_menu(self):
         self.responder = MockResponder()
         self.context.injector.bind_instance(test_module.BaseResponder, self.responder)
 
@@ -36,10 +37,6 @@ class TestActionMenuService(AsyncTestCase):
         }
 
     async def test_perform_menu_action(self):
-        self.context = RequestContext(
-            base_context=InjectionContext(enforce_typing=False)
-        )
-
         self.responder = MockResponder()
         self.context.injector.bind_instance(test_module.BaseResponder, self.responder)
 

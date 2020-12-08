@@ -42,7 +42,8 @@ class PresentationRequestHandler(BaseHandler):
         if not context.connection_ready:
             raise HandlerException("No connection established for presentation request")
 
-        presentation_manager = PresentationManager(context)
+        session = await context.session()
+        presentation_manager = PresentationManager(session)
 
         indy_proof_request = context.message.indy_proof_request(0)
 
@@ -52,7 +53,7 @@ class PresentationRequestHandler(BaseHandler):
             (
                 presentation_exchange_record
             ) = await V10PresentationExchange.retrieve_by_tag_filter(
-                context,
+                session,
                 {"thread_id": context.message._thread_id},
                 {"connection_id": context.connection_record.connection_id},
             )  # holder initiated via proposal
@@ -95,7 +96,7 @@ class PresentationRequestHandler(BaseHandler):
                 req_creds = await indy_proof_req_preview2indy_requested_creds(
                     indy_proof_request,
                     presentation_preview,
-                    holder=await context.inject(IndyHolder),
+                    holder=context.inject(IndyHolder),
                 )
             except ValueError as err:
                 self._logger.warning(f"{err}")

@@ -22,7 +22,8 @@ class DIDXRequestHandler(BaseHandler):
         self._logger.debug(f"DIDXRequestHandler called with context {context}")
         assert isinstance(context.message, DIDXRequest)
 
-        mgr = DIDXManager(context)
+        session = await context.session()
+        mgr = DIDXManager(session)
         try:
             await mgr.receive_request(context.message, context.message_receipt)
         except DIDXManagerError as e:

@@ -6,7 +6,7 @@ import uuid
 from collections import OrderedDict
 from typing import Callable, Coroutine
 
-from ...config.injection_context import InjectionContext
+from ...core.profile import Profile
 from ...utils.classloader import ClassLoader, ModuleLoadError, ClassNotFoundError
 from ...utils.task_queue import CompletedTask, TaskQueue
 
@@ -31,12 +31,12 @@ class InboundTransportManager:
 
     def __init__(
         self,
-        context: InjectionContext,
+        profile: Profile,
         receive_inbound: Coroutine,
         return_inbound: Callable = None,
     ):
         """Initialize an `InboundTransportManager` instance."""
-        self.context = context
+        self.profile = profile
         self.max_message_size = 0
         self.receive_inbound = receive_inbound
         self.return_inbound = return_inbound
@@ -50,11 +50,13 @@ class InboundTransportManager:
     async def setup(self):
         """Perform setup operations."""
         # Load config settings
-        if self.context.settings.get("transport.max_message_size"):
-            self.max_message_size = self.context.settings["transport.max_message_size"]
+        if self.profile.context.settings.get("transport.max_message_size"):
+            self.max_message_size = self.profile.context.settings[
+                "transport.max_message_size"
+            ]
 
         inbound_transports = (
-            self.context.settings.get("transport.inbound_configs") or []
+            self.profile.context.settings.get("transport.inbound_configs") or []
         )
         for transport in inbound_transports:
             module, host, port = transport
@@ -63,7 +65,7 @@ class InboundTransportManager:
             )
 
         # Setup queue for undelivered messages
-        if self.context.settings.get("transport.enable_undelivered_queue"):
+        if self.profile.context.settings.get("transport.enable_undelivered_queue"):
             self.undelivered_queue = DeliveryQueue()
 
         # self.session_limit = asyncio.Semaphore(50)
@@ -163,9 +165,9 @@ class InboundTransportManager:
         if self.session_limit:
             await self.session_limit
         if not wire_format:
-            wire_format = await self.context.inject(BaseWireFormat)
+            wire_format = self.profile.context.inject(BaseWireFormat)
         session = InboundSession(
-            context=self.context,
+            profile=self.profile,
             accept_undelivered=accept_undelivered,
             can_respond=can_respond,
             client_info=client_info,
@@ -196,7 +198,7 @@ class InboundTransportManager:
                 self.session_limit.release()
         if session.response_buffer:
             if self.return_inbound:
-                self.return_inbound(session.context, session.response_buffer)
+                self.return_inbound(session.profile, session.response_buffer)
             else:
                 LOGGER.warning("Message failed return delivery, will not be delivered")
 

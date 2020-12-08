@@ -47,6 +47,22 @@ class BaseError(Exception):
         return f"{line.strip()}."
 
 
+class ProfileError(BaseError):
+    """Base error for profile operations."""
+
+
+class ProfileDuplicateError(ProfileError):
+    """Profile with the given name already exists."""
+
+
+class ProfileNotFoundError(ProfileError):
+    """Requested profile was not found."""
+
+
+class ProfileSessionInactiveError(ProfileError):
+    """Error raised when a profile session is not currently active."""
+
+
 class StartupError(BaseError):
     """Error raised when there is a problem starting the conductor."""
 
