@@ -1,7 +1,10 @@
 """Commands module common setup."""
 
 from importlib import import_module
+from os import getenv
 from typing import Sequence
+
+PROG = getenv("ACAPY_COMMAND_NAME", "aca-py")
 
 
 def available_commands():
