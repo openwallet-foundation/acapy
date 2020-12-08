@@ -91,7 +91,11 @@ class InvitationMessage(AgentMessage):
         """
         c_json = self.to_json()
         c_i = bytes_to_b64(c_json.encode("ascii"), urlsafe=True)
-        result = urljoin(base_url or "", "?c_i={}".format(c_i))
+        result = urljoin(
+            base_url
+            or (self.service_blocks[0].service_endpoint if self.service_blocks else ""),
+            "?c_i={}".format(c_i),
+        )
         return result
 
     @classmethod

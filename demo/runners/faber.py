@@ -206,19 +206,19 @@ async def main(
             log_status(
                 "#7 Create a connection to alice and print out the invite details"
             )
-            invi_msg = await agent.admin_POST(
+            invi_rec = await agent.admin_POST(
                 "/out-of-band/create-invitation",
                 {"include_handshake": True},
             )
 
         qr = QRCode()
-        qr.add_data(invi_msg["invitation"]["service"][0]["serviceEndpoint"])
+        qr.add_data(invi_rec["invitation_url"])
         log_msg(
             "Use the following JSON to accept the invite from another demo agent."
             " Or use the QR code to connect from a mobile agent."
         )
         log_msg(
-            json.dumps(invi_msg["invitation"]), label="Invitation Data:", color=None
+            json.dumps(invi_rec["invitation"]), label="Invitation Data:", color=None
         )
         qr.print_ascii(invert=True)
 

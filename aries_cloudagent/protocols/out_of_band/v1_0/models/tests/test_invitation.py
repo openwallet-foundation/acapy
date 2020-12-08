@@ -12,6 +12,7 @@ class TestInvitationRecord(AsyncTestCase):
         assert isinstance(invi, InvitationRecord)
         assert invi.record_value == {
             "invitation": None,
+            "invitation_url": None,
             "state": None,
             "trace": False,
             "auto_accept": False,
