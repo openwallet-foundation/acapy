@@ -11,7 +11,7 @@ REV_REG_ID = f"{TEST_DID}:4:{CRED_DEF_ID}:CL_ACCUM:0"
 
 
 class TestIndyTailsServer(AsyncTestCase):
-    async def test_upload_no_tails_base_url_x(self):
+    async def test_upload_no_tails_upload_url_x(self):
         context = InjectionContext(settings={"ledger.genesis_transactions": "dummy"})
         indy_tails = test_module.IndyTailsServer()
 
@@ -22,7 +22,7 @@ class TestIndyTailsServer(AsyncTestCase):
         context = InjectionContext(
             settings={
                 "ledger.genesis_transactions": "dummy",
-                "tails_server_base_url": "http://1.2.3.4:8088",
+                "tails_server_upload_url": "http://1.2.3.4:8088",
             }
         )
         indy_tails = test_module.IndyTailsServer()
@@ -43,7 +43,7 @@ class TestIndyTailsServer(AsyncTestCase):
         context = InjectionContext(
             settings={
                 "ledger.genesis_transactions": "dummy",
-                "tails_server_base_url": "http://1.2.3.4:8088",
+                "tails_server_upload_url": "http://1.2.3.4:8088",
             }
         )
         indy_tails = test_module.IndyTailsServer()
