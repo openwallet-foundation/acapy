@@ -6,6 +6,7 @@ import logging
 import os
 import random
 import subprocess
+import sys
 from timeit import default_timer
 
 from aiohttp import (
@@ -34,13 +35,15 @@ TRACE_TARGET = os.getenv("TRACE_TARGET")
 TRACE_TAG = os.getenv("TRACE_TAG")
 TRACE_ENABLED = os.getenv("TRACE_ENABLED")
 
+WEBHOOK_TARGET = os.getenv("WEBHOOK_TARGET")
+
 AGENT_ENDPOINT = os.getenv("AGENT_ENDPOINT")
 
 DEFAULT_POSTGRES = bool(os.getenv("POSTGRES"))
 DEFAULT_INTERNAL_HOST = "127.0.0.1"
 DEFAULT_EXTERNAL_HOST = "localhost"
-DEFAULT_BIN_PATH = "../bin"
 DEFAULT_PYTHON_PATH = ".."
+PYTHON = os.getenv("PYTHON", sys.executable)
 
 START_TIMEOUT = float(os.getenv("START_TIMEOUT", 30.0))
 
@@ -53,12 +56,10 @@ GENESIS_FILE = os.getenv("GENESIS_FILE")
 if RUN_MODE == "docker":
     DEFAULT_INTERNAL_HOST = os.getenv("DOCKERHOST") or "host.docker.internal"
     DEFAULT_EXTERNAL_HOST = DEFAULT_INTERNAL_HOST
-    DEFAULT_BIN_PATH = "./bin"
     DEFAULT_PYTHON_PATH = "."
 elif RUN_MODE == "pwd":
     # DEFAULT_INTERNAL_HOST =
     DEFAULT_EXTERNAL_HOST = os.getenv("DOCKERHOST") or "host.docker.internal"
-    DEFAULT_BIN_PATH = "./bin"
     DEFAULT_PYTHON_PATH = "."
 
 
@@ -88,6 +89,10 @@ async def default_genesis_txns():
         elif GENESIS_FILE:
             with open(GENESIS_FILE, "r") as genesis_file:
                 genesis = genesis_file.read()
+        elif LEDGER_URL:
+            async with ClientSession() as session:
+                async with session.get(LEDGER_URL.rstrip("/") + "/genesis") as resp:
+                    genesis = await resp.text()
         else:
             with open("local-genesis.txt", "r") as genesis_file:
                 genesis = genesis_file.read()
@@ -134,6 +139,7 @@ class DemoAgent:
         self.trace_enabled = TRACE_ENABLED
         self.trace_target = TRACE_TARGET
         self.trace_tag = TRACE_TAG
+        self.external_webhook_target = WEBHOOK_TARGET
 
         self.admin_url = f"http://{self.internal_host}:{admin_port}"
         if AGENT_ENDPOINT:
@@ -159,7 +165,7 @@ class DemoAgent:
             else seed
         )
         self.storage_type = params.get("storage_type")
-        self.wallet_type = params.get("wallet_type", "indy")
+        self.wallet_type = params.get("wallet_type") or "indy"
         self.wallet_name = (
             params.get("wallet_name") or self.ident.lower().replace(" ", "") + rand_name
         )
@@ -219,6 +225,7 @@ class DemoAgent:
             ("--wallet-name", self.wallet_name),
             ("--wallet-key", self.wallet_key),
             "--preserve-exchange-records",
+            "--auto-provision",
         ]
         if self.genesis_data:
             result.append(("--genesis-transactions", self.genesis_data))
@@ -240,6 +247,8 @@ class DemoAgent:
             )
         if self.webhook_url:
             result.append(("--webhook-url", self.webhook_url))
+        if self.external_webhook_target:
+            result.append(("--webhook-url", self.external_webhook_target))
         if self.trace_enabled:
             result.extend(
                 [
@@ -334,23 +343,20 @@ class DemoAgent:
         )
         return proc
 
-    def get_process_args(self, bin_path: str = None):
-        cmd_path = "aca-py"
-        if bin_path is None:
-            bin_path = DEFAULT_BIN_PATH
-        if bin_path:
-            cmd_path = os.path.join(bin_path, cmd_path)
-        return list(flatten((["python3", cmd_path, "start"], self.get_agent_args())))
+    def get_process_args(self):
+        return list(
+            flatten(
+                ([PYTHON, "-m", "aries_cloudagent", "start"], self.get_agent_args())
+            )
+        )
 
-    async def start_process(
-        self, python_path: str = None, bin_path: str = None, wait: bool = True
-    ):
+    async def start_process(self, python_path: str = None, wait: bool = True):
         my_env = os.environ.copy()
         python_path = DEFAULT_PYTHON_PATH if python_path is None else python_path
         if python_path:
             my_env["PYTHONPATH"] = python_path
 
-        agent_args = self.get_process_args(bin_path)
+        agent_args = self.get_process_args()
 
         # start agent sub-process
         loop = asyncio.get_event_loop()
@@ -396,7 +402,7 @@ class DemoAgent:
         await self.webhook_site.start()
 
     async def _receive_webhook(self, request: ClientRequest):
-        topic = request.match_info["topic"]
+        topic = request.match_info["topic"].replace("-", "_")
         payload = await request.json()
         await self.handle_webhook(topic, payload)
         return web.Response(status=200)
@@ -520,26 +526,28 @@ class DemoAgent:
 
     async def detect_process(self):
         async def fetch_status(url: str, timeout: float):
+            code = None
             text = None
             start = default_timer()
             async with ClientSession(timeout=ClientTimeout(total=3.0)) as session:
                 while default_timer() - start < timeout:
                     try:
                         async with session.get(url) as resp:
-                            if resp.status == 200:
+                            code = resp.status
+                            if code == 200:
                                 text = await resp.text()
                                 break
                     except (ClientError, asyncio.TimeoutError):
                         pass
                     await asyncio.sleep(0.5)
-            return text
+            return code, text
 
         status_url = self.admin_url + "/status"
-        status_text = await fetch_status(status_url, START_TIMEOUT)
+        status_code, status_text = await fetch_status(status_url, START_TIMEOUT)
 
         if not status_text:
             raise Exception(
-                "Timed out waiting for agent process to start. "
+                f"Timed out waiting for agent process to start (status={status_code}). "
                 + f"Admin URL: {status_url}"
             )
         ok = False

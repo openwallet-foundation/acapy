@@ -5,8 +5,9 @@ from aiohttp_apispec import docs, querystring_schema, request_schema, response_s
 
 from marshmallow import fields, validate
 
+from ..admin.request_context import AdminRequestContext
 from ..messaging.models.openapi import OpenAPISchema
-from ..messaging.valid import ENDPOINT_TYPE, INDY_DID, INDY_RAW_PUBLIC_KEY
+from ..messaging.valid import ENDPOINT_TYPE, INDY_DID, INDY_RAW_PUBLIC_KEY, INT_EPOCH
 from ..storage.error import StorageError
 from ..wallet.error import WalletError
 
@@ -14,6 +15,10 @@ from .base import BaseLedger
 from .endpoint_type import EndpointType
 from .error import BadLedgerRequestError, LedgerError, LedgerTransactionError
 from .indy import Role
+
+
+class LedgerModulesResultSchema(OpenAPISchema):
+    """Schema for the modules endpoint."""
 
 
 class AMLRecordSchema(OpenAPISchema):
@@ -36,7 +41,7 @@ class TAAAcceptanceSchema(OpenAPISchema):
     """TAA acceptance record."""
 
     mechanism = fields.Str()
-    time = fields.Int()
+    time = fields.Int(strict=True, **INT_EPOCH)
 
 
 class TAAInfoSchema(OpenAPISchema):
@@ -111,6 +116,7 @@ class QueryStringEndpointSchema(OpenAPISchema):
     summary="Send a NYM registration to the ledger.",
 )
 @querystring_schema(RegisterLedgerNymQueryStringSchema())
+@response_schema(LedgerModulesResultSchema(), 200, description="")
 async def register_ledger_nym(request: web.BaseRequest):
     """
     Request handler for registering a NYM with the ledger.
@@ -118,11 +124,12 @@ async def register_ledger_nym(request: web.BaseRequest):
     Args:
         request: aiohttp request object
     """
-    context = request.app["request_context"]
-    ledger = await context.inject(BaseLedger, required=False)
+    context: AdminRequestContext = request["context"]
+    session = await context.session()
+    ledger = session.inject(BaseLedger, required=False)
     if not ledger:
-        reason = "No ledger available"
-        if not context.settings.get_value("wallet.type"):
+        reason = "No Indy ledger available"
+        if not session.settings.get_value("wallet.type"):
             reason += ": missing wallet-type?"
         raise web.HTTPForbidden(reason=reason)
 
@@ -163,6 +170,7 @@ async def register_ledger_nym(request: web.BaseRequest):
     summary="Get the role from the NYM registration of a public DID.",
 )
 @querystring_schema(QueryStringDIDSchema)
+@response_schema(LedgerModulesResultSchema(), 200, description="")
 async def get_nym_role(request: web.BaseRequest):
     """
     Request handler for getting the role from the NYM registration of a public DID.
@@ -170,11 +178,12 @@ async def get_nym_role(request: web.BaseRequest):
     Args:
         request: aiohttp request object
     """
-    context = request.app["request_context"]
-    ledger = await context.inject(BaseLedger, required=False)
+    context: AdminRequestContext = request["context"]
+    session = await context.session()
+    ledger = session.inject(BaseLedger, required=False)
     if not ledger:
-        reason = "No ledger available"
-        if not context.settings.get_value("wallet.type"):
+        reason = "No Indy ledger available"
+        if not session.settings.get_value("wallet.type"):
             reason += ": missing wallet-type?"
         raise web.HTTPForbidden(reason=reason)
 
@@ -195,6 +204,7 @@ async def get_nym_role(request: web.BaseRequest):
 
 
 @docs(tags=["ledger"], summary="Rotate key pair for public DID.")
+@response_schema(LedgerModulesResultSchema(), 200, description="")
 async def rotate_public_did_keypair(request: web.BaseRequest):
     """
     Request handler for rotating key pair associated with public DID.
@@ -202,11 +212,12 @@ async def rotate_public_did_keypair(request: web.BaseRequest):
     Args:
         request: aiohttp request object
     """
-    context = request.app["request_context"]
-    ledger = await context.inject(BaseLedger, required=False)
+    context: AdminRequestContext = request["context"]
+    session = await context.session()
+    ledger = session.inject(BaseLedger, required=False)
     if not ledger:
-        reason = "No ledger available"
-        if not context.settings.get_value("wallet.type"):
+        reason = "No Indy ledger available"
+        if not session.settings.get_value("wallet.type"):
             reason += ": missing wallet-type?"
         raise web.HTTPForbidden(reason=reason)
     async with ledger:
@@ -223,6 +234,7 @@ async def rotate_public_did_keypair(request: web.BaseRequest):
     summary="Get the verkey for a DID from the ledger.",
 )
 @querystring_schema(QueryStringDIDSchema())
+@response_schema(LedgerModulesResultSchema(), 200, description="")
 async def get_did_verkey(request: web.BaseRequest):
     """
     Request handler for getting a verkey for a DID from the ledger.
@@ -230,11 +242,12 @@ async def get_did_verkey(request: web.BaseRequest):
     Args:
         request: aiohttp request object
     """
-    context = request.app["request_context"]
-    ledger = await context.inject(BaseLedger, required=False)
+    context: AdminRequestContext = request["context"]
+    session = await context.session()
+    ledger = session.inject(BaseLedger, required=False)
     if not ledger:
         reason = "No ledger available"
-        if not context.settings.get_value("wallet.type"):
+        if not session.settings.get_value("wallet.type"):
             reason += ": missing wallet-type?"
         raise web.HTTPForbidden(reason=reason)
 
@@ -258,6 +271,7 @@ async def get_did_verkey(request: web.BaseRequest):
     summary="Get the endpoint for a DID from the ledger.",
 )
 @querystring_schema(QueryStringEndpointSchema())
+@response_schema(LedgerModulesResultSchema(), 200, description="")
 async def get_did_endpoint(request: web.BaseRequest):
     """
     Request handler for getting a verkey for a DID from the ledger.
@@ -265,11 +279,12 @@ async def get_did_endpoint(request: web.BaseRequest):
     Args:
         request: aiohttp request object
     """
-    context = request.app["request_context"]
-    ledger = await context.inject(BaseLedger, required=False)
+    context: AdminRequestContext = request["context"]
+    session = await context.session()
+    ledger = session.inject(BaseLedger, required=False)
     if not ledger:
-        reason = "No ledger available"
-        if not context.settings.get_value("wallet.type"):
+        reason = "No Indy ledger available"
+        if not session.settings.get_value("wallet.type"):
             reason += ": missing wallet-type?"
         raise web.HTTPForbidden(reason=reason)
 
@@ -291,7 +306,7 @@ async def get_did_endpoint(request: web.BaseRequest):
 
 
 @docs(tags=["ledger"], summary="Fetch the current transaction author agreement, if any")
-@response_schema(TAAResultSchema, 200)
+@response_schema(TAAResultSchema, 200, description="")
 async def ledger_get_taa(request: web.BaseRequest):
     """
     Request handler for fetching the transaction author agreement.
@@ -303,11 +318,12 @@ async def ledger_get_taa(request: web.BaseRequest):
         The TAA information including the AML
 
     """
-    context = request.app["request_context"]
-    ledger: BaseLedger = await context.inject(BaseLedger, required=False)
-    if not ledger or ledger.type != "indy":
-        reason = "No indy ledger available"
-        if not context.settings.get_value("wallet.type"):
+    context: AdminRequestContext = request["context"]
+    session = await context.session()
+    ledger = session.inject(BaseLedger, required=False)
+    if not ledger:
+        reason = "No Indy ledger available"
+        if not session.settings.get_value("wallet.type"):
             reason += ": missing wallet-type?"
         raise web.HTTPForbidden(reason=reason)
 
@@ -331,6 +347,7 @@ async def ledger_get_taa(request: web.BaseRequest):
 
 @docs(tags=["ledger"], summary="Accept the transaction author agreement")
 @request_schema(TAAAcceptSchema)
+@response_schema(LedgerModulesResultSchema(), 200, description="")
 async def ledger_accept_taa(request: web.BaseRequest):
     """
     Request handler for accepting the current transaction author agreement.
@@ -342,11 +359,12 @@ async def ledger_accept_taa(request: web.BaseRequest):
         The DID list response
 
     """
-    context = request.app["request_context"]
-    ledger: BaseLedger = await context.inject(BaseLedger, required=False)
-    if not ledger or ledger.type != "indy":
-        reason = "No indy ledger available"
-        if not context.settings.get_value("wallet.type"):
+    context: AdminRequestContext = request["context"]
+    session = await context.session()
+    ledger = session.inject(BaseLedger, required=False)
+    if not ledger:
+        reason = "No Indy ledger available"
+        if not session.settings.get_value("wallet.type"):
             reason += ": missing wallet-type?"
         raise web.HTTPForbidden(reason=reason)
 

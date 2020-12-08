@@ -95,3 +95,7 @@ class Settings(BaseSettings):
         vals = self._values.copy()
         vals.update(other)
         return Settings(vals)
+
+    def update(self, other: Mapping[str, object]):
+        """Update the settings in place."""
+        self._values.update(other)

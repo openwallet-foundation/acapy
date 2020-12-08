@@ -1,14 +1,11 @@
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
-from aries_cloudagent.config.injection_context import InjectionContext
-from aries_cloudagent.connections.models.connection_record import ConnectionRecord
-from aries_cloudagent.messaging.base_handler import HandlerException
-from aries_cloudagent.messaging.request_context import RequestContext
-from aries_cloudagent.messaging.responder import MockResponder
-from aries_cloudagent.storage.base import BaseStorage
-from aries_cloudagent.storage.basic import BasicStorage
-from aries_cloudagent.transport.inbound.receipt import MessageReceipt
+from ......connections.models.conn_record import ConnRecord
+from ......messaging.base_handler import HandlerException
+from ......messaging.request_context import RequestContext
+from ......messaging.responder import MockResponder
+from ......transport.inbound.receipt import MessageReceipt
 
 from ...handlers.route_query_request_handler import RouteQueryRequestHandler
 from ...handlers.route_update_request_handler import RouteUpdateRequestHandler
@@ -30,13 +27,10 @@ TEST_ROUTE_VERKEY = "9WCgWKUaAJj3VWxxtzvvMQN3AoFxoBtBDo9ntwJnVVCC"
 
 class TestQueryUpdateHandlers(AsyncTestCase):
     async def setUp(self):
-        self.context = RequestContext(
-            base_context=InjectionContext(enforce_typing=False)
-        )
+        self.context = RequestContext.test_context()
         self.context.connection_ready = True
-        self.context.connection_record = ConnectionRecord(connection_id="conn-id")
+        self.context.connection_record = ConnRecord(connection_id="conn-id")
         self.context.message_receipt = MessageReceipt(sender_verkey=TEST_VERKEY)
-        self.context.injector.bind_instance(BaseStorage, BasicStorage())
 
     async def test_query_none(self):
         self.context.message = RouteQueryRequest()

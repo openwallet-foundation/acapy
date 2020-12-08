@@ -277,6 +277,7 @@ class TraceReportSchema(BaseModelSchema):
         allow_none=True,
         description="Elapsed milliseconds processing time",
         example=27,
+        strict=True,
     )
     outcome = fields.Str(
         required=False,

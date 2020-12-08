@@ -3,7 +3,7 @@
 import json
 import logging
 
-from ....connections.models.connection_record import ConnectionRecord
+from ....connections.models.conn_record import ConnRecord
 from ....storage.base import (
     BaseStorage,
     StorageRecord,
@@ -12,8 +12,8 @@ from ....storage.base import (
 
 from .base_service import BaseIntroductionService, IntroductionError
 from .messages.forward_invitation import ForwardInvitation
-from .messages.invitation import Invitation
-from .messages.invitation_request import InvitationRequest
+from .messages.invitation import Invitation as IntroInvitation
+from .messages.invitation_request import InvitationRequest as IntroInvitationRequest
 
 LOGGER = logging.getLogger(__name__)
 
@@ -40,35 +40,45 @@ class DemoIntroductionService(BaseIntroductionService):
             message: The message to use when requesting the invitation
         """
 
+        session = await self._context.session()
         try:
-            init_connection = await ConnectionRecord.retrieve_by_id(
-                self._context, init_connection_id
+            init_connection = await ConnRecord.retrieve_by_id(
+                session, init_connection_id
             )
         except StorageNotFoundError:
             raise IntroductionError(
                 f"Initiator connection {init_connection_id} not found"
             )
 
-        if init_connection.state != "active":
+        if (
+            ConnRecord.State.get(init_connection.state)
+            is not ConnRecord.State.COMPLETED
+        ):
             raise IntroductionError(
                 f"Initiator connection {init_connection_id} not active"
             )
 
         try:
-            target_connection = await ConnectionRecord.retrieve_by_id(
-                self._context, target_connection_id
+            target_connection = await ConnRecord.retrieve_by_id(
+                session, target_connection_id
             )
         except StorageNotFoundError:
             raise IntroductionError(
                 "Target connection {target_connection_id} not found"
             )
 
-        if target_connection.state != "active":
+        if (
+            ConnRecord.State.get(target_connection.state)
+            is not ConnRecord.State.COMPLETED
+        ):
             raise IntroductionError(
                 "Target connection {target_connection_id} not active"
             )
 
-        msg = InvitationRequest(responder=init_connection.their_label, message=message)
+        msg = IntroInvitationRequest(
+            responder=init_connection.their_label,
+            message=message,
+        )
 
         record = StorageRecord(
             type=DemoIntroductionService.RECORD_TYPE,
@@ -78,13 +88,14 @@ class DemoIntroductionService(BaseIntroductionService):
                 "target_connection_id": target_connection_id,
             },
         )
-        storage: BaseStorage = await self._context.inject(BaseStorage)
+
+        storage = session.inject(BaseStorage)
         await storage.add_record(record)
 
         await outbound_handler(msg, connection_id=target_connection_id)
 
     async def return_invitation(
-        self, target_connection_id: str, invitation: Invitation, outbound_handler
+        self, target_connection_id: str, invitation: IntroInvitation, outbound_handler
     ):
         """
         Handle the forwarding of an invitation to the responder.
@@ -98,11 +109,12 @@ class DemoIntroductionService(BaseIntroductionService):
         thread_id = invitation._thread_id
 
         tag_filter = {"target_connection_id": target_connection_id}
-        storage: BaseStorage = await self._context.inject(BaseStorage)
-        records = await storage.search_records(
+        session = await self._context.session()
+        storage = session.inject(BaseStorage)
+        records = await storage.find_all_records(
             DemoIntroductionService.RECORD_TYPE,
             tag_filter,
-        ).fetch_all()
+        )
 
         found = False
         for row in records:
@@ -115,7 +127,7 @@ class DemoIntroductionService(BaseIntroductionService):
                 msg.assign_trace_from(invitation)
 
                 value["state"] = "complete"
-                await storage.update_record_value(row, json.dumps(value))
+                await storage.update_record(row, json.dumps(value), row.tags)
 
                 init_connection_id = row.tags["init_connection_id"]
                 await outbound_handler(msg, connection_id=init_connection_id)

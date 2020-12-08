@@ -12,7 +12,7 @@ from typing import Callable, Coroutine, Union
 
 from aiohttp.web import HTTPException
 
-from ..config.injection_context import InjectionContext
+from ..core.profile import Profile
 from ..messaging.agent_message import AgentMessage
 from ..messaging.error import MessageParseError
 from ..messaging.models.base import BaseModelError
@@ -41,15 +41,15 @@ class Dispatcher:
     to other agents.
     """
 
-    def __init__(self, context: InjectionContext):
+    def __init__(self, profile: Profile):
         """Initialize an instance of Dispatcher."""
-        self.context = context
         self.collector: Collector = None
+        self.profile = profile
         self.task_queue: TaskQueue = None
 
     async def setup(self):
         """Perform async instance setup."""
-        self.collector = await self.context.inject(Collector, required=False)
+        self.collector = self.profile.inject(Collector, required=False)
         max_active = int(os.getenv("DISPATCHER_MAX_ACTIVE", 50))
         self.task_queue = TaskQueue(
             max_active=max_active, timed=bool(self.collector), trace_fn=self.log_task
@@ -127,10 +127,12 @@ class Dispatcher:
         """
         r_time = get_timer()
 
-        connection_mgr = ConnectionManager(self.context)
-        connection = await connection_mgr.find_inbound_connection(
-            inbound_message.receipt
-        )
+        async with self.profile.session() as session:
+            connection_mgr = ConnectionManager(session)
+            connection = await connection_mgr.find_inbound_connection(
+                inbound_message.receipt
+            )
+            del connection_mgr
         if connection:
             inbound_message.connection_id = connection.connection_id
 
@@ -145,12 +147,12 @@ class Dispatcher:
             message = None
 
         trace_event(
-            self.context.settings,
+            self.profile.settings,
             message,
             outcome="Dispatcher.handle_message.START",
         )
 
-        context = RequestContext(base_context=self.context)
+        context = RequestContext(self.profile)
         context.message = message
         context.message_receipt = inbound_message.receipt
         context.connection_ready = connection and connection.is_ready
@@ -179,7 +181,7 @@ class Dispatcher:
         await handler(context, responder)
 
         trace_event(
-            self.context.settings,
+            self.profile.settings,
             context.message,
             outcome="Dispatcher.handle_message.END",
             perf_counter=r_time,
@@ -205,7 +207,7 @@ class Dispatcher:
 
         """
 
-        registry: ProtocolRegistry = await self.context.inject(ProtocolRegistry)
+        registry: ProtocolRegistry = self.profile.inject(ProtocolRegistry)
         message_type = parsed_msg.get("@type")
 
         if not message_type:
@@ -288,7 +290,7 @@ class DispatcherResponder(BaseResponder):
         Args:
             message: The `OutboundMessage` to be sent
         """
-        await self._send(self._context, message, self._inbound_message)
+        await self._send(self._context.profile, message, self._inbound_message)
 
     async def send_webhook(self, topic: str, payload: dict):
         """

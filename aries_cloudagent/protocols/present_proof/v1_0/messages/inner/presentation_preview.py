@@ -6,7 +6,7 @@ from typing import Mapping, Sequence
 
 from marshmallow import fields
 
-from ......ledger.indy import IndyLedger
+from ......ledger.indy import IndySdkLedger
 from ......messaging.models.base import BaseModel, BaseModelSchema
 from ......messaging.util import canon
 from ......messaging.valid import INDY_CRED_DEF_ID, INDY_PREDICATE
@@ -87,7 +87,7 @@ class PresPredSpecSchema(BaseModelSchema):
         required=True,
         **INDY_PREDICATE,
     )
-    threshold = fields.Int(description="Threshold value", required=True)
+    threshold = fields.Int(description="Threshold value", required=True, strict=True)
 
 
 class PresAttrSpec(BaseModel):
@@ -291,7 +291,7 @@ class PresentationPreview(BaseModel):
         name: str = None,
         version: str = None,
         nonce: str = None,
-        ledger: IndyLedger = None,
+        ledger: IndySdkLedger = None,
         non_revoc_intervals: Mapping[str, NonRevocationInterval] = None,
     ) -> dict:
         """

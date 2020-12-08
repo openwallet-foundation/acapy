@@ -8,42 +8,30 @@ SPEC_URI = (
 )
 
 # Message types
-PRESENTATION_PROPOSAL = f"present-proof/1.0/propose-presentation"
-PRESENTATION_REQUEST = f"present-proof/1.0/request-presentation"
-PRESENTATION = f"present-proof/1.0/presentation"
-PRESENTATION_ACK = f"present-proof/1.0/ack"
+PRESENTATION_PROPOSAL = "present-proof/1.0/propose-presentation"
+PRESENTATION_REQUEST = "present-proof/1.0/request-presentation"
+PRESENTATION = "present-proof/1.0/presentation"
+PRESENTATION_ACK = "present-proof/1.0/ack"
 
 PROTOCOL_PACKAGE = "aries_cloudagent.protocols.present_proof.v1_0"
 
-MESSAGE_TYPES = {
-    **{
-        pfx.qualify(PRESENTATION_PROPOSAL): (
+MESSAGE_TYPES = DIDCommPrefix.qualify_all(
+    {
+        PRESENTATION_PROPOSAL: (
             f"{PROTOCOL_PACKAGE}.messages.presentation_proposal.PresentationProposal"
-        )
-        for pfx in DIDCommPrefix
-    },
-    **{
-        pfx.qualify(PRESENTATION_REQUEST): (
+        ),
+        PRESENTATION_REQUEST: (
             f"{PROTOCOL_PACKAGE}.messages.presentation_request.PresentationRequest"
-        )
-        for pfx in DIDCommPrefix
-    },
-    **{
-        pfx.qualify(PRESENTATION): (
-            f"{PROTOCOL_PACKAGE}.messages.presentation.Presentation"
-        )
-        for pfx in DIDCommPrefix
-    },
-    **{
-        pfx.qualify(PRESENTATION_ACK): (
+        ),
+        PRESENTATION: f"{PROTOCOL_PACKAGE}.messages.presentation.Presentation",
+        PRESENTATION_ACK: (
             f"{PROTOCOL_PACKAGE}.messages.presentation_ack.PresentationAck"
-        )
-        for pfx in DIDCommPrefix
-    },
-}
+        ),
+    }
+)
 
 # Inner object types
-PRESENTATION_PREVIEW = f"present-proof/1.0/presentation-preview"
+PRESENTATION_PREVIEW = "present-proof/1.0/presentation-preview"
 
 # Identifiers to use in attachment decorators
 ATTACH_DECO_IDS = {

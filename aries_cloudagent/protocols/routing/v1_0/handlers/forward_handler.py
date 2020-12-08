@@ -26,10 +26,11 @@ class ForwardHandler(BaseHandler):
         self._logger.info(
             "Received forward for: %s", context.message_receipt.recipient_verkey
         )
+        session = await context.session()
 
         packed = context.message.msg
         packed = json.dumps(packed).encode("ascii")
-        rt_mgr = RoutingManager(context)
+        rt_mgr = RoutingManager(session)
         target = context.message.to
 
         try:
@@ -39,7 +40,7 @@ class ForwardHandler(BaseHandler):
             return
 
         # load connection
-        connection_mgr = ConnectionManager(context)
+        connection_mgr = ConnectionManager(session)
         connection_targets = await connection_mgr.get_connection_targets(
             connection_id=recipient.connection_id
         )

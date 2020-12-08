@@ -8,49 +8,34 @@ SPEC_URI = (
 )
 
 # Message types
-CREDENTIAL_PROPOSAL = f"issue-credential/1.0/propose-credential"
-CREDENTIAL_OFFER = f"issue-credential/1.0/offer-credential"
-CREDENTIAL_REQUEST = f"issue-credential/1.0/request-credential"
-CREDENTIAL_ISSUE = f"issue-credential/1.0/issue-credential"
-CREDENTIAL_ACK = f"issue-credential/1.0/ack"
+CREDENTIAL_PROPOSAL = "issue-credential/1.0/propose-credential"
+CREDENTIAL_OFFER = "issue-credential/1.0/offer-credential"
+CREDENTIAL_REQUEST = "issue-credential/1.0/request-credential"
+CREDENTIAL_ISSUE = "issue-credential/1.0/issue-credential"
+CREDENTIAL_ACK = "issue-credential/1.0/ack"
 
 PROTOCOL_PACKAGE = "aries_cloudagent.protocols.issue_credential.v1_0"
 
-MESSAGE_TYPES = {
-    **{
-        pfx.qualify(CREDENTIAL_PROPOSAL): (
+MESSAGE_TYPES = DIDCommPrefix.qualify_all(
+    {
+        CREDENTIAL_PROPOSAL: (
             f"{PROTOCOL_PACKAGE}.messages.credential_proposal.CredentialProposal"
-        )
-        for pfx in DIDCommPrefix
-    },
-    **{
-        pfx.qualify(CREDENTIAL_OFFER): (
+        ),
+        CREDENTIAL_OFFER: (
             f"{PROTOCOL_PACKAGE}.messages.credential_offer.CredentialOffer"
-        )
-        for pfx in DIDCommPrefix
-    },
-    **{
-        pfx.qualify(CREDENTIAL_REQUEST): (
+        ),
+        CREDENTIAL_REQUEST: (
             f"{PROTOCOL_PACKAGE}.messages.credential_request.CredentialRequest"
-        )
-        for pfx in DIDCommPrefix
-    },
-    **{
-        pfx.qualify(CREDENTIAL_ISSUE): (
+        ),
+        CREDENTIAL_ISSUE: (
             f"{PROTOCOL_PACKAGE}.messages.credential_issue.CredentialIssue"
-        )
-        for pfx in DIDCommPrefix
-    },
-    **{
-        pfx.qualify(CREDENTIAL_ACK): (
-            f"{PROTOCOL_PACKAGE}.messages.credential_ack.CredentialAck"
-        )
-        for pfx in DIDCommPrefix
-    },
-}
+        ),
+        CREDENTIAL_ACK: f"{PROTOCOL_PACKAGE}.messages.credential_ack.CredentialAck",
+    }
+)
 
 # Inner object types
-CREDENTIAL_PREVIEW = f"issue-credential/1.0/credential-preview"
+CREDENTIAL_PREVIEW = "issue-credential/1.0/credential-preview"
 
 # Identifiers to use in attachment decorators
 ATTACH_DECO_IDS = {

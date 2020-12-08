@@ -4,15 +4,15 @@ from asynctest import (
     TestCase as AsyncTestCase,
 )
 
-from aries_cloudagent.messaging.request_context import RequestContext
-from aries_cloudagent.messaging.responder import MockResponder
+from ......messaging.request_context import RequestContext
+from ......messaging.responder import MockResponder
 
 from .. import menu_handler as handler
 
 
-class TestHandler(AsyncTestCase):
+class TestMenuHandler(AsyncTestCase):
     async def test_called(self):
-        request_context = RequestContext()
+        request_context = RequestContext.test_context()
         request_context.connection_record = async_mock.MagicMock()
         request_context.connection_record.connection_id = "dummy"
 

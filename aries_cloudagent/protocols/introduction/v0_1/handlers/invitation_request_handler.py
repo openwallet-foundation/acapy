@@ -28,7 +28,8 @@ class InvitationRequestHandler(BaseHandler):
 
         if context.settings.get("accept_requests"):
             # Create a new connection invitation and send it back in an Invitation
-            connection_mgr = ConnectionManager(context)
+            session = await context.session()
+            connection_mgr = ConnectionManager(session)
             _connection, invite = await connection_mgr.create_invitation()
             response = Invitation(invitation=invite)
             response.assign_thread_from(context.message)

@@ -1,9 +1,9 @@
 """Routing manager classes for tracking and inspecting routing records."""
 
-from typing import Sequence
+from typing import Coroutine, Sequence
 
-from ....config.injection_context import InjectionContext
 from ....core.error import BaseError
+from ....core.profile import ProfileSession
 from ....storage.error import (
     StorageError,
     StorageDuplicateError,
@@ -29,27 +29,27 @@ class RoutingManager:
 
     RECORD_TYPE = "forward_route"
 
-    def __init__(self, context: InjectionContext):
+    def __init__(self, session: ProfileSession):
         """
         Initialize a RoutingManager.
 
         Args:
             context: The context for this manager
         """
-        self._context = context
-        if not context:
-            raise RoutingManagerError("Missing request context")
+        self._session = session
+        if not session:
+            raise RoutingManagerError("Missing profile session")
 
     @property
-    def context(self) -> InjectionContext:
+    def session(self) -> ProfileSession:
         """
-        Accessor for the current request context.
+        Accessor for the current profile session.
 
         Returns:
-            The request context for this connection
+            The profile session for this connection
 
         """
-        return self._context
+        return self._session
 
     async def get_recipient(self, recip_verkey: str) -> RouteRecord:
         """
@@ -67,7 +67,7 @@ class RoutingManager:
 
         try:
             record = await RouteRecord.retrieve_by_recipient_key(
-                self.context,
+                self.session,
                 recip_verkey
             )
         except StorageDuplicateError:
@@ -113,7 +113,7 @@ class RoutingManager:
                         "Unsupported tag filter: '{}' = {}".format(key, val)
                     )
 
-        results = await RouteRecord.query(self.context, tag_filter=filters)
+        results = await RouteRecord.query(self.session, tag_filter=filters)
 
         return results
 
@@ -145,7 +145,7 @@ class RoutingManager:
             connection_id=client_connection_id,
             recipient_key=recipient_key,
         )
-        await route.save(self.context, reason="Created new route")
+        await route.save(self.session, reason="Created new route")
         return route
 
     async def update_routes(
@@ -201,7 +201,7 @@ class RoutingManager:
         return updated
 
     async def send_create_route(
-        self, router_connection_id: str, recip_key: str, outbound_handler
+        self, router_connection_id: str, recip_key: str, outbound_handler: Coroutine
     ):
         """Create and send a route update request.
 

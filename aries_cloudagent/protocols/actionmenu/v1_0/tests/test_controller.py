@@ -1,16 +1,17 @@
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
-from aries_cloudagent.config.injection_context import InjectionContext
-from aries_cloudagent.messaging.request_context import RequestContext
+from .....core.in_memory import InMemoryProfile
+from .....messaging.request_context import RequestContext
 from .. import controller as test_module
 
 
 class TestActionMenuController(AsyncTestCase):
+    async def setUp(self):
+        self.session = InMemoryProfile.test_session()
+        self.context = RequestContext(self.session.profile)
+
     async def test_controller(self):
-        self.context = RequestContext(
-            base_context=InjectionContext(enforce_typing=False)
-        )
         MenuService = async_mock.MagicMock(test_module.BaseMenuService, autospec=True)
         self.menu_service = MenuService()
         self.context.injector.bind_instance(

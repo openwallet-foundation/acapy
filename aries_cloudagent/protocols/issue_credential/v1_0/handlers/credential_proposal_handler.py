@@ -37,8 +37,10 @@ class CredentialProposalHandler(BaseHandler):
         if not context.connection_ready:
             raise HandlerException("No connection established for credential proposal")
 
-        credential_manager = CredentialManager(context)
-        cred_ex_record = await credential_manager.receive_proposal()
+        credential_manager = CredentialManager(context.profile)
+        cred_ex_record = await credential_manager.receive_proposal(
+            context.message, context.connection_record.connection_id
+        )
 
         r_time = trace_event(
             context.settings,

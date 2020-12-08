@@ -4,6 +4,7 @@ from aiohttp import web
 from aiohttp_apispec import docs, querystring_schema, response_schema
 from marshmallow import fields
 
+from ....admin.request_context import AdminRequestContext
 from ....core.protocol_registry import ProtocolRegistry
 from ....messaging.models.openapi import OpenAPISchema
 
@@ -31,7 +32,7 @@ class QueryFeaturesQueryStringSchema(OpenAPISchema):
     summary="Query supported features",
 )
 @querystring_schema(QueryFeaturesQueryStringSchema())
-@response_schema(QueryResultSchema(), 200)
+@response_schema(QueryResultSchema(), 200, description="")
 async def query_features(request: web.BaseRequest):
     """
     Request handler for inspecting supported protocols.
@@ -43,8 +44,8 @@ async def query_features(request: web.BaseRequest):
         The diclosed protocols response
 
     """
-    context = request.app["request_context"]
-    registry: ProtocolRegistry = await context.inject(ProtocolRegistry)
+    context: AdminRequestContext = request["context"]
+    registry: ProtocolRegistry = context.inject(ProtocolRegistry)
     results = registry.protocols_matching_query(request.query.get("query", "*"))
 
     return web.json_response({"results": {k: {} for k in results}})

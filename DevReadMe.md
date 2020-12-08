@@ -61,6 +61,14 @@ aca-py provision --help
 aca-py start --help
 ```
 
+If you get an error about a missing module `indy` (e.g. `ModuleNotFoundError: No module named 'indy'`) when running `aca-py`, you will need to install the Indy libraries from the command line:
+
+```bash
+pip install python3_indy
+```
+
+Once that completes successfully, you should be able to run `aca-py --version` and the other examples above.
+
 ### About ACA-Py Command Line Parameters
 
 ACA-Py invocations are separated into two types - initially provisioning an agent (`provision`) and starting a new agent process (`start`). This separation enables not having to pass in some encryption-related parameters required for provisioning when starting an agent instance. This improves security in production deployments.
@@ -135,11 +143,38 @@ To run the ACA-Py test suite, use the following script:
 ./scripts/run_tests
 ```
 
+To run the ACA-Py test suite with ptvsd debugger enabled:
+
+```bash
+./scripts/run_tests --debug
+```
+
+To run specific tests pass parameters as defined by [pytest](https://docs.pytest.org/en/stable/usage.html#specifying-tests-selecting-tests):
+
+```bash
+./scripts/run_tests aries_cloudagent/protocols/connections
+```
+
 To run the tests including [Indy SDK](https://github.com/hyperledger/indy-sdk) and related dependencies, run the script:
 
 ```bash
 ./scripts/run_tests_indy
 ```
+
+### Running Aries Agent Test Harness Tests
+
+You can run a full suite of integration tests using the [Aries Agent Test Harness (AATH)](https://github.com/hyperledger/aries-agent-test-harness).
+
+Check out and run AATH tests as follows (this tests the aca-py `master` branch):
+
+```bash
+git clone https://github.com/hyperledger/aries-agent-test-harness.git
+cd aries-agent-test-harness
+./manage build -a acapy-master
+./manage run -d acapy-master -t @AcceptanceTest -t ~@wip
+```
+
+The `manage` script is described in detail [here](https://github.com/hyperledger/aries-agent-test-harness#the-manage-bash-script), including how to modify the AATH code to run the tests against your aca-py repo/branch.
 
 ## Development Workflow
 
@@ -163,7 +198,7 @@ The [publishing](https://github.com/hyperledger/aries-cloudagent-python/blob/mas
 
 ## Dynamic Injection of Services
 
-The Agent employs a dynamic injection system whereby providers of base classes are registered with the `RequestContext` instance, currently within `conductor.py`. Message handlers and services request an instance of the selected implementation using `await context.inject(BaseClass)`; for instance the wallet instance may be injected using `wallet = await context.inject(BaseWallet)`. The `inject` method normally throws an exception if no implementation of the base class is provided, but can be called with `required=False` for optional dependencies (in which case a value of `None` may be returned).
+The Agent employs a dynamic injection system whereby providers of base classes are registered with the `RequestContext` instance, currently within `conductor.py`. Message handlers and services request an instance of the selected implementation using `context.inject(BaseClass)`; for instance the wallet instance may be injected using `wallet = context.inject(BaseWallet)`. The `inject` method normally throws an exception if no implementation of the base class is provided, but can be called with `required=False` for optional dependencies (in which case a value of `None` may be returned).
 
 Providers are registered with either `context.injector.bind_instance(BaseClass, instance)` for previously-constructed (singleton) object instances, or `context.injector.bind_provider(BaseClass, provider)` for dynamic providers. In some cases it may be desirable to write a custom provider which switches implementations based on configuration settings, such as the wallet provider.
 

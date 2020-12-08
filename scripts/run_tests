@@ -4,6 +4,19 @@ cd $(dirname $0)
 
 docker build -t aries-cloudagent-test -f ../docker/Dockerfile.test .. || exit 1
 
+DOCKER_ARGS=""
+PTVSD_PORT="5678"
+
+for arg in "$@"; do 
+  if [ "$arg" = "--debug" ]; then
+    ENABLE_PTVSD=1 # set ptvsd env
+    #shift # remove debug flag from pytest args.
+  fi
+done
+if [ ! -z "${ENABLE_PTVSD}" ]; then
+  DOCKER_ARGS="${DOCKER_ARGS} -e ENABLE_PTVSD=\"${ENABLE_PTVSD}\" -p $PTVSD_PORT:$PTVSD_PORT"
+fi
+
 if [ ! -d ../test-reports ]; then mkdir ../test-reports; fi
 
 # on Windows, docker run needs to be prefixed by winpty
@@ -14,5 +27,5 @@ else
 fi
 
 $DOCKER run --rm -ti --name aries-cloudagent-runner \
-	-v "/$(pwd)/../test-reports:/usr/src/app/test-reports" \
-	aries-cloudagent-test "$@"
+	-v "$(pwd)/../test-reports:/usr/src/app/test-reports" \
+	$DOCKER_ARGS aries-cloudagent-test "$@"

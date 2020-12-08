@@ -4,19 +4,23 @@ import json
 import logging
 
 from aiohttp import web
-from aiohttp_apispec import docs, request_schema
+from aiohttp_apispec import docs, querystring_schema, request_schema, response_schema
 from marshmallow import fields
 from marshmallow.exceptions import ValidationError
 
+from ....admin.request_context import AdminRequestContext
 from ....messaging.models.openapi import OpenAPISchema
 from ....storage.error import StorageNotFoundError
 
 from .manager import OutOfBandManager, OutOfBandManagerError
-from .messages.invitation import InvitationSchema
+from .messages.invitation import InvitationMessageSchema
 from .message_types import SPEC_URI
 
-
 LOGGER = logging.getLogger(__name__)
+
+
+class OutOfBandModuleResponseSchema(OpenAPISchema):
+    """Response schema for Out of Band Module."""
 
 
 class InvitationCreateRequestSchema(OpenAPISchema):
@@ -33,17 +37,32 @@ class InvitationCreateRequestSchema(OpenAPISchema):
     use_public_did = fields.Boolean(default=False)
 
 
-class InvitationReceiveRequestSchema(InvitationSchema):
-    """Invitation Schema."""
+class InvitationReceiveRequestSchema(InvitationMessageSchema):
+    """Invitation request schema."""
 
     service = fields.Field()
+
+
+class InvitationCreateQueryStringSchema(OpenAPISchema):
+    """Parameters and validators for create invitation request query string."""
+
+    auto_accept = fields.Boolean(
+        description="Auto-accept connection (default as per configuration)",
+        required=False,
+    )
+    multi_use = fields.Boolean(
+        description="Create invitation for multiple use (default false)",
+        required=False,
+    )
 
 
 @docs(
     tags=["out-of-band"],
     summary="Create a new connection invitation",
 )
+@querystring_schema(InvitationCreateQueryStringSchema())
 @request_schema(InvitationCreateRequestSchema())
+@response_schema(OutOfBandModuleResponseSchema(), description="")
 async def invitation_create(request: web.BaseRequest):
     """
     Request handler for creating a new connection invitation.
@@ -55,22 +74,24 @@ async def invitation_create(request: web.BaseRequest):
         The out of band invitation details
 
     """
-    context = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
 
-    body = await request.json()
-
+    body = await request.json() if request.body_exists else {}
     attachments = body.get("attachments")
     include_handshake = body.get("include_handshake")
     use_public_did = body.get("use_public_did")
-    multi_use = json.loads(request.query.get("multi_use", "false"))
-    oob_mgr = OutOfBandManager(context)
 
+    multi_use = json.loads(request.query.get("multi_use", "false"))
+    auto_accept = json.loads(request.query.get("auto_accept", "null"))
+    session = await context.session()
+    oob_mgr = OutOfBandManager(session)
     try:
         invitation = await oob_mgr.create_invitation(
+            auto_accept=auto_accept,
+            public=use_public_did,
+            include_handshake=include_handshake,
             multi_use=multi_use,
             attachments=attachments,
-            include_handshake=include_handshake,
-            use_public_did=use_public_did,
         )
     except (StorageNotFoundError, ValidationError, OutOfBandManagerError) as e:
         raise web.HTTPBadRequest(reason=str(e))
@@ -83,6 +104,7 @@ async def invitation_create(request: web.BaseRequest):
     summary="Create a new connection invitation",
 )
 @request_schema(InvitationReceiveRequestSchema())
+@response_schema(OutOfBandModuleResponseSchema(), 200, description="")
 async def invitation_receive(request: web.BaseRequest):
     """
     Request handler for creating a new connection invitation.
@@ -94,12 +116,13 @@ async def invitation_receive(request: web.BaseRequest):
         The out of band invitation details
 
     """
-    context = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
     body = await request.json()
 
-    oob_mgr = OutOfBandManager(context)
+    session = await context.session()
+    oob_mgr = OutOfBandManager(session)
 
-    invitation = await oob_mgr.receive_invitation(invitation=body)
+    invitation = await oob_mgr.receive_invitation(invi_msg=body)
 
     return web.json_response(invitation.serialize())
 

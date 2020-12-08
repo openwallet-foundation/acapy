@@ -12,8 +12,6 @@ from runners.support.agent import DemoAgent, default_genesis_txns
 from runners.support.utils import log_timer, progress, require_indy
 
 LOGGER = logging.getLogger(__name__)
-
-
 TAILS_FILE_COUNT = int(os.getenv("TAILS_FILE_COUNT", 100))
 
 
@@ -49,15 +47,15 @@ class BaseAgent(DemoAgent):
 
     async def get_invite(self, auto_accept: bool = True):
         result = await self.admin_POST(
-            "/connections/create-invitation",
+            "/out-of-band/create-invitation",
+            data={"include_handshake": True},
             params={"auto_accept": json.dumps(auto_accept)},
         )
-        self.connection_id = result["connection_id"]
         return result["invitation"]
 
     async def receive_invite(self, invite, auto_accept: bool = True):
         result = await self.admin_POST(
-            "/connections/receive-invitation",
+            "/didexchange/receive-invitation",
             invite,
             params={"auto_accept": json.dumps(auto_accept)},
         )
@@ -65,7 +63,7 @@ class BaseAgent(DemoAgent):
         return self.connection_id
 
     async def accept_invite(self, conn_id: str):
-        await self.admin_POST(f"/connections/{conn_id}/accept-invitation")
+        await self.admin_POST(f"/didexchange/{conn_id}/accept-invitation")
 
     async def establish_inbound(self, conn_id: str, router_conn_id: str):
         await self.admin_POST(
@@ -77,8 +75,14 @@ class BaseAgent(DemoAgent):
             raise Exception("No connection to await")
         await self._connection_ready
 
+    async def handle_oob_invitation(self, message):
+        pass
+
     async def handle_connections(self, payload):
-        if payload["connection_id"] == self.connection_id:
+        conn_id = payload["connection_id"]
+        if (not self.connection_id) and (payload["state"] in ("invitation", "request")):
+            self.connection_id = conn_id
+        if conn_id == self.connection_id:
             if payload["state"] == "active" and not self._connection_ready.done():
                 self.log("Connected")
                 self._connection_ready.set_result(True)
@@ -159,10 +163,6 @@ class AliceAgent(BaseAgent):
             "--monitor-ping",
         ]
         self.timing_log = "logs/alice_perf.log"
-
-    async def set_tag_policy(self, cred_def_id, taggables):
-        req_body = {"taggables": taggables}
-        await self.admin_POST(f"/wallet/tag-policy/{cred_def_id}", req_body)
 
 
 class FaberAgent(BaseAgent):
@@ -295,7 +295,6 @@ async def main(
         if not ping_only:
             with log_timer("Publish duration:"):
                 await faber.publish_defs(revocation)
-                # await alice.set_tag_policy(faber.credential_definition_id, ["name"])
 
         with log_timer("Connect duration:"):
             if routing:
@@ -454,8 +453,8 @@ async def main(
         if revocation and faber.revocations:
             (rev_reg_id, cred_rev_id) = next(iter(faber.revocations))
             print(
-                "Revoking and publishing cred rev id {cred_rev_id} "
-                "from rev reg id {rev_reg_id}"
+                f"Revoking and publishing cred rev id {cred_rev_id} "
+                f"from rev reg id {rev_reg_id}"
             )
 
         if show_timing:

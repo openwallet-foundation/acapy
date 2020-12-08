@@ -14,11 +14,13 @@ from aiohttp_apispec import (
 )
 import aiohttp_cors
 
-from marshmallow import fields, Schema
+from marshmallow import fields
 
 from ..config.injection_context import InjectionContext
+from ..core.profile import Profile
 from ..core.plugin_registry import PluginRegistry
 from ..ledger.error import LedgerConfigError, LedgerTransactionError
+from ..messaging.models.openapi import OpenAPISchema
 from ..messaging.responder import BaseResponder
 from ..transport.queue.basic import BasicMessageQueue
 from ..transport.outbound.message import OutboundMessage
@@ -28,12 +30,13 @@ from ..version import __version__
 
 from .base_server import BaseAdminServer
 from .error import AdminSetupError
+from .request_context import AdminRequestContext
 
 
 LOGGER = logging.getLogger(__name__)
 
 
-class AdminModulesSchema(Schema):
+class AdminModulesSchema(OpenAPISchema):
     """Schema for the modules endpoint."""
 
     result = fields.List(
@@ -41,20 +44,24 @@ class AdminModulesSchema(Schema):
     )
 
 
-class AdminStatusSchema(Schema):
+class AdminStatusSchema(OpenAPISchema):
     """Schema for the status endpoint."""
 
 
-class AdminStatusLivelinessSchema(Schema):
+class AdminStatusLivelinessSchema(OpenAPISchema):
     """Schema for the liveliness endpoint."""
 
     alive = fields.Boolean(description="Liveliness status", example=True)
 
 
-class AdminStatusReadinessSchema(Schema):
+class AdminStatusReadinessSchema(OpenAPISchema):
     """Schema for the readiness endpoint."""
 
     ready = fields.Boolean(description="Readiness status", example=True)
+
+
+class AdminShutdownSchema(OpenAPISchema):
+    """Response schema for admin Module."""
 
 
 class AdminResponder(BaseResponder):
@@ -62,7 +69,7 @@ class AdminResponder(BaseResponder):
 
     def __init__(
         self,
-        context: InjectionContext,
+        profile: Profile,
         send: Coroutine,
         webhook: Coroutine,
         **kwargs,
@@ -75,7 +82,7 @@ class AdminResponder(BaseResponder):
 
         """
         super().__init__(**kwargs)
-        self._context = context
+        self._profile = profile
         self._send = send
         self._webhook = webhook
 
@@ -86,7 +93,7 @@ class AdminResponder(BaseResponder):
         Args:
             message: The `OutboundMessage` to be sent
         """
-        await self._send(self._context, message)
+        await self._send(self._profile, message)
 
     async def send_webhook(self, topic: str, payload: dict):
         """
@@ -159,6 +166,10 @@ async def ready_middleware(request: web.BaseRequest, handler: Coroutine):
         except Exception as e:
             # some other error?
             LOGGER.error("Handler error with exception: %s", str(e))
+            import traceback
+
+            print("\n=================")
+            traceback.print_exc()
             raise
 
     raise web.HTTPServiceUnavailable(reason="Shutdown in progress")
@@ -171,7 +182,7 @@ async def debug_middleware(request: web.BaseRequest, handler: Coroutine):
     if LOGGER.isEnabledFor(logging.DEBUG):
         LOGGER.debug(f"Incoming request: {request.method} {request.path_qs}")
         LOGGER.debug(f"Match info: {request.match_info}")
-        body = await request.text()
+        body = await request.text() if request.body_exists else None
         LOGGER.debug(f"Body: {body}")
 
     return await handler(request)
@@ -185,6 +196,7 @@ class AdminServer(BaseAdminServer):
         host: str,
         port: int,
         context: InjectionContext,
+        root_profile: Profile,
         outbound_message_router: Coroutine,
         webhook_router: Callable,
         conductor_stop: Coroutine,
@@ -210,22 +222,23 @@ class AdminServer(BaseAdminServer):
         )
         self.host = host
         self.port = port
+        self.context = context
         self.conductor_stop = conductor_stop
         self.conductor_stats = conductor_stats
         self.loaded_modules = []
+        self.outbound_message_router = outbound_message_router
+        self.root_profile = root_profile
         self.task_queue = task_queue
         self.webhook_router = webhook_router
         self.webhook_targets = {}
         self.websocket_queues = {}
         self.site = None
 
-        self.context = context.start_scope("admin")
         self.responder = AdminResponder(
-            self.context,
-            outbound_message_router,
+            self.root_profile,
+            self.outbound_message_router,
             self.send_webhook,
         )
-        self.context.injector.bind_instance(BaseResponder, self.responder)
 
     async def make_application(self) -> web.Application:
         """Get the aiohttp application instance."""
@@ -254,7 +267,7 @@ class AdminServer(BaseAdminServer):
         if self.admin_api_key:
 
             @web.middleware
-            async def check_token(request, handler):
+            async def check_token(request: web.Request, handler):
                 header_admin_api_key = request.headers.get("x-api-key")
                 valid_key = self.admin_api_key == header_admin_api_key
 
@@ -265,28 +278,26 @@ class AdminServer(BaseAdminServer):
 
             middlewares.append(check_token)
 
-        collector: Collector = await self.context.inject(Collector, required=False)
+        collector = self.context.inject(Collector, required=False)
 
-        if self.task_queue:
+        @web.middleware
+        async def setup_context(request: web.Request, handler):
+            # TODO may dynamically adjust the profile used here according to
+            # headers or other parameters
+            context = AdminRequestContext(self.root_profile, context=self.context)
+            context.injector.bind_instance(BaseResponder, self.responder)
+            request["context"] = context
 
-            @web.middleware
-            async def apply_limiter(request, handler):
+            if collector:
+                handler = collector.wrap_coro(handler, [handler.__qualname__])
+            if self.task_queue:
                 task = await self.task_queue.put(handler(request))
                 return await task
+            return await handler(request)
 
-            middlewares.append(apply_limiter)
-
-        elif collector:
-
-            @web.middleware
-            async def collect_stats(request, handler):
-                handler = collector.wrap_coro(handler, [handler.__qualname__])
-                return await handler(request)
-
-            middlewares.append(collect_stats)
+        middlewares.append(setup_context)
 
         app = web.Application(middlewares=middlewares)
-        app["request_context"] = self.context
         app["outbound_message_router"] = self.responder.send
 
         app.add_routes(
@@ -302,9 +313,7 @@ class AdminServer(BaseAdminServer):
             ]
         )
 
-        plugin_registry: PluginRegistry = await self.context.inject(
-            PluginRegistry, required=False
-        )
+        plugin_registry = self.context.inject(PluginRegistry, required=False)
         if plugin_registry:
             await plugin_registry.register_admin_routes(app)
 
@@ -356,20 +365,22 @@ class AdminServer(BaseAdminServer):
         runner = web.AppRunner(self.app)
         await runner.setup()
 
-        plugin_registry: PluginRegistry = await self.context.inject(
-            PluginRegistry, required=False
-        )
+        plugin_registry = self.context.inject(PluginRegistry, required=False)
         if plugin_registry:
             plugin_registry.post_process_routes(self.app)
 
         # order tags alphabetically, parameters deterministically and pythonically
         swagger_dict = self.app._state["swagger_dict"]
         swagger_dict.get("tags", []).sort(key=lambda t: t["name"])
-        for path in swagger_dict["paths"].values():
-            for method_spec in path.values():
+
+        # sort content per path and sort paths
+        for path_spec in swagger_dict["paths"].values():
+            for method_spec in path_spec.values():
                 method_spec["parameters"].sort(
                     key=lambda p: (p["in"], not p["required"], p["name"])
                 )
+        for path in sorted([p for p in swagger_dict["paths"]]):
+            swagger_dict["paths"][path] = swagger_dict["paths"].pop(path)
 
         # order definitions alphabetically by dict key
         swagger_dict["definitions"] = sort_dict(swagger_dict["definitions"])
@@ -405,7 +416,7 @@ class AdminServer(BaseAdminServer):
             swagger["security"] = [{"ApiKeyHeader": []}]
 
     @docs(tags=["server"], summary="Fetch the list of loaded plugins")
-    @response_schema(AdminModulesSchema(), 200)
+    @response_schema(AdminModulesSchema(), 200, description="")
     async def plugins_handler(self, request: web.BaseRequest):
         """
         Request handler for the loaded plugins list.
@@ -417,14 +428,12 @@ class AdminServer(BaseAdminServer):
             The module list response
 
         """
-        registry: PluginRegistry = await self.context.inject(
-            PluginRegistry, required=False
-        )
+        registry = self.context.inject(PluginRegistry, required=False)
         plugins = registry and sorted(registry.plugin_names) or []
         return web.json_response({"result": plugins})
 
     @docs(tags=["server"], summary="Fetch the server status")
-    @response_schema(AdminStatusSchema(), 200)
+    @response_schema(AdminStatusSchema(), 200, description="")
     async def status_handler(self, request: web.BaseRequest):
         """
         Request handler for the server status information.
@@ -438,7 +447,7 @@ class AdminServer(BaseAdminServer):
         """
         status = {"version": __version__}
         status["label"] = self.context.settings.get("default_label")
-        collector: Collector = await self.context.inject(Collector, required=False)
+        collector = self.context.inject(Collector, required=False)
         if collector:
             status["timing"] = collector.results
         if self.conductor_stats:
@@ -446,7 +455,7 @@ class AdminServer(BaseAdminServer):
         return web.json_response(status)
 
     @docs(tags=["server"], summary="Reset statistics")
-    @response_schema(AdminStatusSchema(), 200)
+    @response_schema(AdminStatusSchema(), 200, description="")
     async def status_reset_handler(self, request: web.BaseRequest):
         """
         Request handler for resetting the timing statistics.
@@ -458,7 +467,7 @@ class AdminServer(BaseAdminServer):
             The web response
 
         """
-        collector: Collector = await self.context.inject(Collector, required=False)
+        collector = self.context.inject(Collector, required=False)
         if collector:
             collector.reset()
         return web.json_response({})
@@ -468,7 +477,7 @@ class AdminServer(BaseAdminServer):
         raise web.HTTPFound("/api/doc")
 
     @docs(tags=["server"], summary="Liveliness check")
-    @response_schema(AdminStatusLivelinessSchema(), 200)
+    @response_schema(AdminStatusLivelinessSchema(), 200, description="")
     async def liveliness_handler(self, request: web.BaseRequest):
         """
         Request handler for liveliness check.
@@ -487,7 +496,7 @@ class AdminServer(BaseAdminServer):
             raise web.HTTPServiceUnavailable(reason="Service not available")
 
     @docs(tags=["server"], summary="Readiness check")
-    @response_schema(AdminStatusReadinessSchema(), 200)
+    @response_schema(AdminStatusReadinessSchema(), 200, description="")
     async def readiness_handler(self, request: web.BaseRequest):
         """
         Request handler for liveliness check.
@@ -506,6 +515,7 @@ class AdminServer(BaseAdminServer):
             raise web.HTTPServiceUnavailable(reason="Service not ready")
 
     @docs(tags=["server"], summary="Shut down server")
+    @response_schema(AdminShutdownSchema(), description="")
     async def shutdown_handler(self, request: web.BaseRequest):
         """
         Request handler for server shutdown.

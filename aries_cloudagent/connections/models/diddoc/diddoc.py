@@ -27,7 +27,6 @@ from .publickey import PublicKey, PublicKeyType
 from .service import Service
 from .util import canon_did, canon_ref, ok_did, resource
 
-
 LOGGER = logging.getLogger(__name__)
 
 
@@ -122,7 +121,7 @@ class DIDDoc:
                 "Cannot add item {} to DIDDoc on DID {}".format(item, self.did)
             )
 
-    def serialize(self) -> str:
+    def serialize(self) -> dict:
         """
         Dump current object to a JSON-compatible dictionary.
 

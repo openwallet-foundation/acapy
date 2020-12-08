@@ -5,7 +5,7 @@ import functools
 import logging
 import os
 import signal
-from argparse import ArgumentParser
+from configargparse import ArgumentParser
 from typing import Coroutine, Sequence
 
 try:
@@ -17,6 +17,8 @@ from ..core.conductor import Conductor
 from ..config import argparse as arg
 from ..config.default_context import DefaultContextBuilder
 from ..config.util import common_config
+
+from . import PROG
 
 LOGGER = logging.getLogger(__name__)
 
@@ -40,7 +42,7 @@ def init_argument_parser(parser: ArgumentParser):
 
 def execute(argv: Sequence[str] = None):
     """Entrypoint."""
-    parser = ArgumentParser()
+    parser = arg.create_argument_parser(prog=PROG)
     parser.prog += " start"
     get_settings = init_argument_parser(parser)
     args = parser.parse_args(argv)
@@ -104,5 +106,10 @@ def run_loop(startup: Coroutine, shutdown: Coroutine):
         loop.run_until_complete(done())
 
 
-if __name__ == "__main__":
-    execute()
+def main():
+    """Execute the main line."""
+    if __name__ == "__main__":
+        execute()
+
+
+main()

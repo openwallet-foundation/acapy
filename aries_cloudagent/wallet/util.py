@@ -61,8 +61,17 @@ def bytes_to_b58(val: bytes) -> str:
     return base58.b58encode(val).decode("ascii")
 
 
+def full_verkey(did: str, abbr_verkey: str) -> str:
+    """Given a DID and a short verkey, return the full verkey."""
+    return (
+        bytes_to_b58(b58_to_bytes(did.split(":")[-1]) + b58_to_bytes(abbr_verkey[1:]))
+        if abbr_verkey.startswith("~")
+        else abbr_verkey
+    )
+
+
 def naked_to_did_key(key: str) -> str:
-    """Convert a naked ed25519 verkey to did:key format."""
+    """Convert a naked ed25519 verkey to W3C did:key format."""
     key_bytes = b58_to_bytes(key)
     prefixed_key_bytes = add_prefix("ed25519-pub", key_bytes)
     did_key = f"did:key:z{bytes_to_b58(prefixed_key_bytes)}"
@@ -70,7 +79,7 @@ def naked_to_did_key(key: str) -> str:
 
 
 def did_key_to_naked(did_key: str) -> str:
-    """Convert a did:key to naked ed25519 verkey format."""
+    """Convert a W3C did:key to naked ed25519 verkey format."""
     stripped_key = did_key.split("did:key:z").pop()
     stripped_key_bytes = b58_to_bytes(stripped_key)
     naked_key_bytes = remove_prefix(stripped_key_bytes)
