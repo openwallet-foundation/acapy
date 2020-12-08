@@ -275,7 +275,7 @@ class ConnRecord(BaseRecord):
             invitation.to_json(),
             {"connection_id": self.connection_id},
         )
-        storage: BaseStorage = session.inject(BaseStorage)
+        storage = session.inject(BaseStorage)
         await storage.add_record(record)
 
     async def retrieve_invitation(
@@ -287,7 +287,7 @@ class ConnRecord(BaseRecord):
             session: The active profile session
         """
         assert self.connection_id
-        storage: BaseStorage = session.inject(BaseStorage)
+        storage = session.inject(BaseStorage)
         result = await storage.find_record(
             self.RECORD_TYPE_INVITATION, {"connection_id": self.connection_id}
         )

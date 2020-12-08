@@ -65,9 +65,9 @@ class CredentialManager:
 
         async with self._profile.session() as session:
             storage = session.inject(BaseStorage)
-            found = await storage.search_records(
+            found = await storage.find_all_records(
                 type_filter=CRED_DEF_SENT_RECORD_TYPE, tag_query=tag_query
-            ).fetch_all()
+            )
         if not found:
             raise CredentialManagerError(
                 f"Issuer has no operable cred def for proposal spec {tag_query}"

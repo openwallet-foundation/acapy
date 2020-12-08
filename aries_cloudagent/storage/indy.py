@@ -11,7 +11,8 @@ from indy.error import IndyError, ErrorCode
 from .base import (
     DEFAULT_PAGE_SIZE,
     BaseStorage,
-    BaseStorageRecordSearch,
+    BaseStorageSearch,
+    BaseStorageSearchSession,
     validate_record,
 )
 from .error import (
@@ -26,7 +27,7 @@ from ..indy.sdk.wallet_setup import IndyOpenWallet
 LOGGER = logging.getLogger(__name__)
 
 
-class IndySdkStorage(BaseStorage):
+class IndySdkStorage(BaseStorage, BaseStorageSearch):
     """Indy Non-Secrets interface."""
 
     def __init__(self, wallet: IndyOpenWallet):
@@ -167,6 +168,34 @@ class IndySdkStorage(BaseStorage):
                 raise StorageNotFoundError(f"Record not found: {record.id}")
             raise StorageError(str(x_indy))
 
+    async def find_all_records(
+        self,
+        type_filter: str,
+        tag_query: Mapping = None,
+        options: Mapping = None,
+    ):
+        """Retrieve all records matching a particular type filter and tag query."""
+        results = []
+        search = self.search_records(type_filter, tag_query, options=options)
+        while True:
+            buf = await search.fetch()
+            if buf:
+                results.extend(buf)
+            else:
+                break
+        return results
+
+    async def delete_all_records(
+        self,
+        type_filter: str,
+        tag_query: Mapping = None,
+    ):
+        """Remove all records matching a particular type filter and tag query."""
+        async for row in self.search_records(
+            type_filter, tag_query, options={"retrieveTags": False}
+        ):
+            await self.delete_record(row)
+
     def search_records(
         self,
         type_filter: str,
@@ -190,7 +219,7 @@ class IndySdkStorage(BaseStorage):
         return IndySdkStorageSearch(self, type_filter, tag_query, page_size, options)
 
 
-class IndySdkStorageSearch(BaseStorageRecordSearch):
+class IndySdkStorageSearch(BaseStorageSearchSession):
     """Represent an active stored records search."""
 
     def __init__(

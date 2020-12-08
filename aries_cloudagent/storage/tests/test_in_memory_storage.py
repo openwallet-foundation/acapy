@@ -23,6 +23,12 @@ def store():
     yield InMemoryStorage(profile)
 
 
+@pytest.fixture()
+def store_search():
+    profile = InMemoryProfile.test_profile()
+    yield InMemoryStorage(profile)
+
+
 def test_record(tags={}):
     return StorageRecord(type="TYPE", value="TEST", tags=tags)
 
@@ -102,42 +108,17 @@ class TestInMemoryStorage:
             await store.update_record(missing, missing.value, {})
 
     @pytest.mark.asyncio
-    async def test_search(self, store):
+    async def test_find_record(self, store):
         record = test_record()
         await store.add_record(record)
 
-        # search
-        search = store.search_records(record.type, {}, None)
-        assert search.__class__.__name__ in str(search)
-        rows = await search.fetch(100)
-        assert len(rows) == 1
-        found = rows[0]
+        # search with find_record
+        found = await store.find_record(record.type, {}, None)
+        assert found
         assert found.id == record.id
         assert found.type == record.type
         assert found.value == record.value
         assert found.tags == record.tags
-        more = await search.fetch(100)
-        assert len(more) == 0
-
-        # search again with fetch-all
-        search = store.search_records(record.type, {}, None)
-        rows = await search.fetch_all()
-        assert len(rows) == 1
-
-        # search again with with iterator mystery error
-        search = store.search_records(record.type, {}, None)
-        with async_mock.patch.object(
-            search, "fetch", async_mock.CoroutineMock()
-        ) as mock_fetch:
-            mock_fetch.return_value = async_mock.MagicMock(
-                pop=async_mock.MagicMock(side_effect=IndexError())
-            )
-            async for row in search:
-                pytest.fail("Should not arrive here")
-
-        # search with find_record
-        row = await store.find_record(record.type, {}, None)
-        assert row
 
         # search again with find_record on no rows
         with pytest.raises(StorageNotFoundError):
@@ -150,11 +131,72 @@ class TestInMemoryStorage:
             await store.find_record(record.type, {}, None)
 
     @pytest.mark.asyncio
-    async def test_iter_search(self, store):
+    async def test_find_all(self, store):
         record = test_record()
         await store.add_record(record)
+
+        # search
+        rows = await store.find_all_records(record.type, {}, None)
+        assert len(rows) == 1
+        found = rows[0]
+        assert found.id == record.id
+        assert found.type == record.type
+        assert found.value == record.value
+        assert found.tags == record.tags
+
+    @pytest.mark.asyncio
+    async def test_delete_all(self, store):
+        record = test_record({"tag": "one"})
+        await store.add_record(record)
+
+        await store.delete_all_records(record.type, {"tag": "two"})
+        assert await store.find_record(record.type, {}, None)
+
+        await store.delete_all_records(record.type, {"tag": "one"})
+        with pytest.raises(StorageNotFoundError):
+            await store.find_record(record.type, {}, None)
+
+
+class TestInMemoryStorageSearch:
+    @pytest.mark.asyncio
+    async def test_search(self, store_search):
+        record = test_record()
+        await store_search.add_record(record)
+
+        # search
+        search = store_search.search_records(record.type, {}, None)
+        assert search.__class__.__name__ in str(search)
+        rows = await search.fetch(100)
+        assert len(rows) == 1
+        found = rows[0]
+        assert found.id == record.id
+        assert found.type == record.type
+        assert found.value == record.value
+        assert found.tags == record.tags
+        more = await search.fetch(100)
+        assert len(more) == 0
+
+        # search again with fetch-all
+        rows = await store_search.find_all_records(record.type, {}, None)
+        assert len(rows) == 1
+
+        # search again with with iterator mystery error
+        search = store_search.search_records(record.type, {}, None)
+        with async_mock.patch.object(
+            search, "fetch", async_mock.CoroutineMock()
+        ) as mock_fetch:
+            mock_fetch.return_value = async_mock.MagicMock(
+                pop=async_mock.MagicMock(side_effect=IndexError())
+            )
+            async for row in search:
+                pytest.fail("Should not arrive here")
+
+    @pytest.mark.asyncio
+    async def test_iter_search(self, store_search):
+        record = test_record()
+        await store_search.add_record(record)
         count = 0
-        search = store.search_records(record.type, {}, None)
+        search = store_search.search_records(record.type, {}, None)
         async for found in search:
             assert found.id == record.id
             assert found.type == record.type
@@ -164,12 +206,14 @@ class TestInMemoryStorage:
         assert count == 1
 
     @pytest.mark.asyncio
-    async def test_closed_search(self, store):
-        search = store.search_records("TYPE", {}, None)
-        _rows = await search.fetch_all()
+    async def test_closed_search(self, store_search):
+        search = store_search.search_records("TYPE", {}, None)
+        _rows = await search.fetch()
         with pytest.raises(StorageSearchError):
             await search.fetch(100)
 
+
+class TestInMemoryTagQuery:
     @pytest.mark.asyncio
     async def test_tag_value_match(self, store):
         TAGS = {"a": "aardvark", "b": "bear", "z": "0"}

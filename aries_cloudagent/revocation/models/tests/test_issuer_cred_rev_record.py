@@ -1,10 +1,7 @@
-import json
-
-from asynctest import TestCase as AsyncTestCase, mock as async_mock
+from asynctest import TestCase as AsyncTestCase
 
 from ....core.in_memory import InMemoryProfile
 from ....storage.base import StorageNotFoundError
-from ....wallet.base import DIDInfo
 
 from .. import issuer_cred_rev_record as test_module
 from ..issuer_cred_rev_record import IssuerCredRevRecord
@@ -14,7 +11,7 @@ CRED_DEF_ID = f"{TEST_DID}:3:CL:1234:default"
 REV_REG_ID = f"{TEST_DID}:4:{CRED_DEF_ID}:CL_ACCUM:0"
 
 
-class TestRecord(AsyncTestCase):
+class TestIssuerCredRevRecord(AsyncTestCase):
     def setUp(self):
         self.session = InMemoryProfile.test_session()
 
