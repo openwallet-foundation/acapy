@@ -29,55 +29,69 @@ TEST_VERKEY = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
 TEST_ROUTE_VERKEY = "9WCgWKUaAJj3VWxxtzvvMQN3AoFxoBtBDo9ntwJnVVCC"
 
 
-class TestMediationManager(AsyncTestCase):  # pylint: disable=R0904
-    """Test MediationManager."""
+pytestmark = pytest.mark.asyncio
 
-    async def setUp(self):  # pylint: disable=C0103
-        """setUp."""
-        self.context = RequestContext(
-            base_context=InjectionContext(enforce_typing=False)
-        )
-        self.context.message_receipt = MessageReceipt(sender_verkey=TEST_VERKEY)
-        self.context.connection_record = ConnectionRecord(connection_id=TEST_CONN_ID)
-        self.storage = BasicStorage()
-        self.wallet = BasicWallet()
-        self.context.injector.bind_instance(BaseStorage, self.storage)
-        self.context.injector.bind_instance(BaseWallet, self.wallet)
-        self.manager = MediationManager(self.context)
-        self.record = MediationRecord(
-            state=MediationRecord.STATE_GRANTED,
-            connection_id=TEST_CONN_ID
-        )
-        assert self.manager.context
+
+@pytest.fixture
+def context():
+    """Fixture for context used in tests."""
+    # pylint: disable=W0621
+    context = RequestContext(
+        base_context=InjectionContext(enforce_typing=False)
+    )
+    context.message_receipt = MessageReceipt(sender_verkey=TEST_VERKEY)
+    context.connection_record = ConnectionRecord(connection_id=TEST_CONN_ID)
+    context.injector.bind_instance(BaseStorage, BasicStorage())
+    context.injector.bind_instance(BaseWallet, BasicWallet())
+    yield context
+
+
+@pytest.fixture
+def manager(context):  # pylint: disable=W0621
+    """Fixture for manager used in tests."""
+    yield MediationManager(context)
+
+
+@pytest.fixture
+def record():
+    """Fixture for record used in tets."""
+    yield MediationRecord(
+        state=MediationRecord.STATE_GRANTED,
+        connection_id=TEST_CONN_ID
+    )
+
+
+class TestMediationManager:  # pylint: disable=R0904,W0621
+    """Test MediationManager."""
 
     async def test_create_manager_no_context(self):
         """test_create_manager_no_context."""
-        with self.assertRaises(MediationManagerError):
+        with pytest.raises(MediationManagerError):
             await MediationManager(None)
 
-    async def test_create_did(self):
+    async def test_create_did(self, manager):
         """test_create_did."""
         # pylint: disable=W0212
-        await self.manager._create_routing_did()
-        assert await self.manager._retrieve_routing_did()
+        await manager._create_routing_did()
+        assert await manager._retrieve_routing_did()
 
-    async def test_retrieve_did_when_absent(self):
+    async def test_retrieve_did_when_absent(self, manager):
         """test_retrieve_did_when_absent."""
         # pylint: disable=W0212
-        assert await self.manager._retrieve_routing_did() is None
+        assert await manager._retrieve_routing_did() is None
 
-    async def test_receive_request_no_terms(self):
+    async def test_receive_request_no_terms(self, manager):
         """test_receive_request_no_terms."""
         request = MediationRequest()
-        record = await self.manager.receive_request(request)
+        record = await manager.receive_request(request)
         assert record.connection_id == TEST_CONN_ID
 
-    async def test_receive_request_record_exists(self):
+    async def test_receive_request_record_exists(self, context, manager):
         """test_receive_request_no_terms."""
         request = MediationRequest()
-        await MediationRecord(connection_id=TEST_CONN_ID).save(self.context)
+        await MediationRecord(connection_id=TEST_CONN_ID).save(context)
         with pytest.raises(MediationAlreadyExists):
-            await self.manager.receive_request(request)
+            await manager.receive_request(request)
 
     @pytest.mark.skip(
         reason='mediator and recipient terms are only loosely defined in RFC 0211'
@@ -85,33 +99,33 @@ class TestMediationManager(AsyncTestCase):  # pylint: disable=R0904
     async def test_receive_request_unacceptable_terms(self):
         """test_receive_request_unacceptable_terms."""
 
-    async def test_grant_request(self):
+    async def test_grant_request(self, context, manager):
         """test_grant_request."""
         # pylint: disable=W0212
         request = MediationRequest()
-        record = await self.manager.receive_request(request)
+        record = await manager.receive_request(request)
         assert record.connection_id == TEST_CONN_ID
-        grant = await self.manager.grant_request(record)
-        assert grant.endpoint == self.context.settings.get("default_endpoint")
-        assert grant.routing_keys == [(await self.manager._retrieve_routing_did()).verkey]
+        grant = await manager.grant_request(record)
+        assert grant.endpoint == context.settings.get("default_endpoint")
+        assert grant.routing_keys == [(await manager._retrieve_routing_did()).verkey]
 
-    async def test_deny_request(self):
+    async def test_deny_request(self, manager):
         """test_deny_request."""
         request = MediationRequest()
-        record = await self.manager.receive_request(request)
+        record = await manager.receive_request(request)
         assert record.connection_id == TEST_CONN_ID
-        deny = await self.manager.deny_request(record)
+        deny = await manager.deny_request(record)
         assert deny.mediator_terms == []
         assert deny.recipient_terms == []
 
-    async def test_update_keylist_delete(self):
+    async def test_update_keylist_delete(self, context, manager, record):
         """test_update_keylist_delete."""
         await RouteRecord(
             connection_id=TEST_CONN_ID,
             recipient_key=TEST_VERKEY
-        ).save(self.context)
-        response = await self.manager.update_keylist(
-            record=self.record,
+        ).save(context)
+        response = await manager.update_keylist(
+            record=record,
             updates=[
                 KeylistUpdateRule(
                     recipient_key=TEST_VERKEY, action=KeylistUpdateRule.RULE_REMOVE
@@ -124,10 +138,10 @@ class TestMediationManager(AsyncTestCase):  # pylint: disable=R0904
         assert results[0].action == KeylistUpdateRule.RULE_REMOVE
         assert results[0].result == KeylistUpdated.RESULT_SUCCESS
 
-    async def test_update_keylist_create(self):
+    async def test_update_keylist_create(self, manager, record):
         """test_update_keylist_create."""
-        response = await self.manager.update_keylist(
-            record=self.record,
+        response = await manager.update_keylist(
+            record=record,
             updates=[
                 KeylistUpdateRule(
                     recipient_key=TEST_VERKEY, action=KeylistUpdateRule.RULE_ADD
@@ -140,14 +154,14 @@ class TestMediationManager(AsyncTestCase):  # pylint: disable=R0904
         assert results[0].action == KeylistUpdateRule.RULE_ADD
         assert results[0].result == KeylistUpdated.RESULT_SUCCESS
 
-    async def test_update_keylist_create_existing(self):
+    async def test_update_keylist_create_existing(self, context, manager, record):
         """test_update_keylist_create_existing."""
         await RouteRecord(
             connection_id=TEST_CONN_ID,
             recipient_key=TEST_VERKEY
-        ).save(self.context)
-        response = await self.manager.update_keylist(
-            record=self.record,
+        ).save(context)
+        response = await manager.update_keylist(
+            record=record,
             updates=[
                 KeylistUpdateRule(
                     recipient_key=TEST_VERKEY, action=KeylistUpdateRule.RULE_ADD
@@ -160,71 +174,71 @@ class TestMediationManager(AsyncTestCase):  # pylint: disable=R0904
         assert results[0].action == KeylistUpdateRule.RULE_ADD
         assert results[0].result == KeylistUpdated.RESULT_NO_CHANGE
 
-    async def test_get_keylist(self):
+    async def test_get_keylist(self, context, manager, record):
         """test_get_keylist."""
         await RouteRecord(
             connection_id=TEST_CONN_ID,
             recipient_key=TEST_VERKEY
-        ).save(self.context)
+        ).save(context)
         # Non-server route for verifying filtering
         await RouteRecord(
             role=RouteRecord.ROLE_CLIENT,
             connection_id=TEST_CONN_ID,
             recipient_key=TEST_ROUTE_VERKEY
-        ).save(self.context)
-        results = await self.manager.get_keylist(self.record)
+        ).save(context)
+        results = await manager.get_keylist(record)
         assert len(results) == 1
         assert results[0].connection_id == TEST_CONN_ID
         assert results[0].recipient_key == TEST_VERKEY
 
-    async def test_create_keylist_query_response(self):
+    async def test_create_keylist_query_response(self, context, manager, record):
         """test_create_keylist_query_response."""
         await RouteRecord(
             connection_id=TEST_CONN_ID,
             recipient_key=TEST_VERKEY
-        ).save(self.context)
-        results = await self.manager.get_keylist(self.record)
-        response = await self.manager.create_keylist_query_response(results)
+        ).save(context)
+        results = await manager.get_keylist(record)
+        response = await manager.create_keylist_query_response(results)
         assert len(response.keys) == 1
         assert response.keys[0].recipient_key
-        response = await self.manager.create_keylist_query_response([])
+        response = await manager.create_keylist_query_response([])
         assert not response.keys
 
-    async def test_prepare_request(self):
+    async def test_prepare_request(self, manager):
         """test_prepare_request."""
-        record, request = await self.manager.prepare_request(TEST_CONN_ID)
+        record, request = await manager.prepare_request(TEST_CONN_ID)
         assert record.connection_id == TEST_CONN_ID
         assert request
 
-    async def test_request_granted(self):
+    async def test_request_granted(self, manager):
         """test_request_granted."""
-        record, _ = await self.manager.prepare_request(TEST_CONN_ID)
+        record, _ = await manager.prepare_request(TEST_CONN_ID)
         grant = MediationGrant(endpoint=TEST_ENDPOINT, routing_keys=[TEST_ROUTE_VERKEY])
-        await self.manager.request_granted(record, grant)
+        await manager.request_granted(record, grant)
         assert record.state == MediationRecord.STATE_GRANTED
         assert record.endpoint == TEST_ENDPOINT
         assert record.routing_keys == [TEST_ROUTE_VERKEY]
 
-    async def test_request_denied(self):
+    async def test_request_denied(self, manager):
         """test_request_denied."""
-        record, _ = await self.manager.prepare_request(TEST_CONN_ID)
+        record, _ = await manager.prepare_request(TEST_CONN_ID)
         deny = MediationDeny()
-        await self.manager.request_denied(record, deny)
+        await manager.request_denied(record, deny)
         assert record.state == MediationRecord.STATE_DENIED
 
     @pytest.mark.skip(reason='Mediation terms are not well defined in RFC 0211')
     async def test_request_denied_counter_terms(self):
         """test_request_denied_counter_terms."""
 
-    async def test_prepare_keylist_query(self):
+    async def test_prepare_keylist_query(self, manager):
         """test_prepare_keylist_query."""
-        query = await self.manager.prepare_keylist_query()
+        query = await manager.prepare_keylist_query()
         assert query.paginate.limit == -1
         assert query.paginate.offset == 0
 
-    async def test_prepare_keylist_query_pagination(self):
+    async def test_prepare_keylist_query_pagination(self, manager):
         """test_prepare_keylist_query_pagination."""
-        query = await self.manager.prepare_keylist_query(
+        query = await manager.prepare_keylist_query(
             paginate_limit=10,
             paginate_offset=20
         )
@@ -235,16 +249,16 @@ class TestMediationManager(AsyncTestCase):  # pylint: disable=R0904
     async def test_prepare_keylist_query_filter(self):
         """test_prepare_keylist_query_filter."""
 
-    async def test_add_key_no_message(self):
+    async def test_add_key_no_message(self, manager):
         """test_add_key_no_message."""
-        update = await self.manager.add_key(TEST_VERKEY)
+        update = await manager.add_key(TEST_VERKEY)
         assert update.updates
         assert update.updates[0].action == KeylistUpdateRule.RULE_ADD
 
-    async def test_add_key_accumulate_in_message(self):
+    async def test_add_key_accumulate_in_message(self, manager):
         """test_add_key_accumulate_in_message."""
-        update = await self.manager.add_key(TEST_VERKEY)
-        await self.manager.add_key(recipient_key=TEST_ROUTE_VERKEY, message=update)
+        update = await manager.add_key(TEST_VERKEY)
+        await manager.add_key(recipient_key=TEST_ROUTE_VERKEY, message=update)
         assert update.updates
         assert len(update.updates) == 2
         assert update.updates[0].action == KeylistUpdateRule.RULE_ADD
@@ -252,16 +266,16 @@ class TestMediationManager(AsyncTestCase):  # pylint: disable=R0904
         assert update.updates[0].recipient_key == TEST_VERKEY
         assert update.updates[1].recipient_key == TEST_ROUTE_VERKEY
 
-    async def test_remove_key_no_message(self):
+    async def test_remove_key_no_message(self, manager):
         """test_remove_key_no_message."""
-        update = await self.manager.remove_key(TEST_VERKEY)
+        update = await manager.remove_key(TEST_VERKEY)
         assert update.updates
         assert update.updates[0].action == KeylistUpdateRule.RULE_REMOVE
 
-    async def test_remove_key_accumulate_in_message(self):
+    async def test_remove_key_accumulate_in_message(self, manager):
         """test_remove_key_accumulate_in_message."""
-        update = await self.manager.remove_key(TEST_VERKEY)
-        await self.manager.remove_key(recipient_key=TEST_ROUTE_VERKEY, message=update)
+        update = await manager.remove_key(TEST_VERKEY)
+        await manager.remove_key(recipient_key=TEST_ROUTE_VERKEY, message=update)
         assert update.updates
         assert len(update.updates) == 2
         assert update.updates[0].action == KeylistUpdateRule.RULE_REMOVE
@@ -269,10 +283,10 @@ class TestMediationManager(AsyncTestCase):  # pylint: disable=R0904
         assert update.updates[0].recipient_key == TEST_VERKEY
         assert update.updates[1].recipient_key == TEST_ROUTE_VERKEY
 
-    async def test_add_remove_key_mix(self):
+    async def test_add_remove_key_mix(self, manager):
         """test_add_remove_key_mix."""
-        update = await self.manager.add_key(TEST_VERKEY)
-        await self.manager.remove_key(recipient_key=TEST_ROUTE_VERKEY, message=update)
+        update = await manager.add_key(TEST_VERKEY)
+        await manager.remove_key(recipient_key=TEST_ROUTE_VERKEY, message=update)
         assert update.updates
         assert len(update.updates) == 2
         assert update.updates[0].action == KeylistUpdateRule.RULE_ADD
@@ -280,20 +294,70 @@ class TestMediationManager(AsyncTestCase):  # pylint: disable=R0904
         assert update.updates[0].recipient_key == TEST_VERKEY
         assert update.updates[1].recipient_key == TEST_ROUTE_VERKEY
 
-    async def test_get_my_keylist(self):
+    async def test_store_update_results(self, context, manager):
+        """test_store_update_results."""
+        await RouteRecord(
+            role=RouteRecord.ROLE_CLIENT,
+            connection_id=TEST_CONN_ID,
+            recipient_key=TEST_VERKEY
+        ).save(context)
+        results = [
+            KeylistUpdated(
+                recipient_key=TEST_ROUTE_VERKEY,
+                action=KeylistUpdateRule.RULE_ADD,
+                result=KeylistUpdated.RESULT_SUCCESS
+            ),
+            KeylistUpdated(
+                recipient_key=TEST_VERKEY,
+                action=KeylistUpdateRule.RULE_REMOVE,
+                result=KeylistUpdated.RESULT_SUCCESS
+            )
+        ]
+        await manager.store_update_results(TEST_CONN_ID, results)
+        routes = await RouteRecord.query(context)
+        assert len(routes) == 1
+        assert routes[0].recipient_key == TEST_ROUTE_VERKEY
+
+    @pytest.mark.usefixtures('caplog')
+    async def test_store_updated_results_errors(self, caplog, manager):
+        """test_store_updated_results_errors."""
+        results = [
+            KeylistUpdated(
+                recipient_key=TEST_VERKEY,
+                action=KeylistUpdateRule.RULE_ADD,
+                result=KeylistUpdated.RESULT_NO_CHANGE
+            ),
+            KeylistUpdated(
+                recipient_key=TEST_VERKEY,
+                action=KeylistUpdateRule.RULE_REMOVE,
+                result=KeylistUpdated.RESULT_SERVER_ERROR
+            ),
+            KeylistUpdated(
+                recipient_key=TEST_VERKEY,
+                action=KeylistUpdateRule.RULE_REMOVE,
+                result=KeylistUpdated.RESULT_CLIENT_ERROR
+            )
+        ]
+        await manager.store_update_results(TEST_CONN_ID, results)
+        assert 'no_change' in caplog.text
+        assert 'client_error' in caplog.text
+        assert 'server_error' in caplog.text
+        print(caplog.text)
+
+    async def test_get_my_keylist(self, context, manager):
         """test_get_my_keylist."""
         await RouteRecord(
             role=RouteRecord.ROLE_CLIENT,
             connection_id=TEST_CONN_ID,
             recipient_key=TEST_VERKEY
-        ).save(self.context)
+        ).save(context)
         # Non-client record to verify filtering
         await RouteRecord(
             role=RouteRecord.ROLE_SERVER,
             connection_id=TEST_CONN_ID,
             recipient_key=TEST_ROUTE_VERKEY
-        ).save(self.context)
-        keylist = await self.manager.get_my_keylist(TEST_CONN_ID)
+        ).save(context)
+        keylist = await manager.get_my_keylist(TEST_CONN_ID)
         assert keylist
         assert len(keylist) == 1
         assert keylist[0].connection_id == TEST_CONN_ID
