@@ -14,7 +14,8 @@ from aries_cloudagent.wallet.basic import BasicWallet
 
 from ....routing.v1_0.models.route_record import RouteRecord
 from ..manager import (
-    MediationAlreadyExists, MediationManager, MediationManagerError
+    MediationAlreadyExists, MediationManager, MediationManagerError,
+    MediationNotGrantedError
 )
 from ..messages.inner.keylist_update_rule import KeylistUpdateRule
 from ..messages.inner.keylist_updated import KeylistUpdated
@@ -190,6 +191,12 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
         assert len(results) == 1
         assert results[0].connection_id == TEST_CONN_ID
         assert results[0].recipient_key == TEST_VERKEY
+
+    async def test_gey_keylist_no_granted_record(self, manager):
+        """test_gey_keylist_no_granted_record."""
+        record = MediationRecord()
+        with pytest.raises(MediationNotGrantedError):
+            await manager.get_keylist(record)
 
     async def test_create_keylist_query_response(self, context, manager, record):
         """test_create_keylist_query_response."""
