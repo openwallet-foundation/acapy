@@ -18,6 +18,8 @@ from ..config import argparse as arg
 from ..config.default_context import DefaultContextBuilder
 from ..config.util import common_config
 
+from . import PROG
+
 LOGGER = logging.getLogger(__name__)
 
 
@@ -40,7 +42,7 @@ def init_argument_parser(parser: ArgumentParser):
 
 def execute(argv: Sequence[str] = None):
     """Entrypoint."""
-    parser = arg.create_argument_parser()
+    parser = arg.create_argument_parser(prog=PROG)
     parser.prog += " start"
     get_settings = init_argument_parser(parser)
     args = parser.parse_args(argv)

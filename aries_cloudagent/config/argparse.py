@@ -53,9 +53,9 @@ class group:
         )
 
 
-def create_argument_parser():
+def create_argument_parser(*, prog: str = None):
     """Create am instance of an arg parser, force yaml format for external config."""
-    return ArgumentParser(config_file_parser_class=YAMLConfigFileParser)
+    return ArgumentParser(config_file_parser_class=YAMLConfigFileParser, prog=prog)
 
 
 def load_argument_groups(parser: ArgumentParser, *groups: Type[ArgumentGroup]):
