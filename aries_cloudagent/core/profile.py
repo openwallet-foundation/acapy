@@ -135,12 +135,10 @@ class ProfileSession(ABC):
         self._profile = profile
 
     async def _setup(self):
-        """Create the session or transaction connection, if needed."""
-        self._active = True
+        """Create the underlying session or transaction."""
 
     async def _teardown(self, commit: bool = None):
-        """Dispose of the session or transaction connection, if needed."""
-        self._active = False
+        """Dispose of the underlying session or transaction."""
 
     def __await__(self):
         """
@@ -152,6 +150,7 @@ class ProfileSession(ABC):
         async def _init():
             if not self._active:
                 await self._setup()
+                self._active = True
             return self
 
         return _init().__await__()
@@ -160,12 +159,14 @@ class ProfileSession(ABC):
         """Async context manager entry."""
         if not self._active:
             await self._setup()
+            self._active = True
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         """Async context manager exit."""
         if self._active:
             await self._teardown()
+            self._active = False
 
     @property
     def active(self) -> bool:
@@ -201,6 +202,7 @@ class ProfileSession(ABC):
         if not self._active:
             raise ProfileSessionInactiveError()
         await self._teardown(commit=True)
+        self._active = False
 
     async def rollback(self):
         """
@@ -211,6 +213,7 @@ class ProfileSession(ABC):
         if not self._active:
             raise ProfileSessionInactiveError()
         await self._teardown(commit=False)
+        self._active = False
 
     def inject(
         self,
@@ -245,6 +248,7 @@ class ProfileManagerProvider(BaseProvider):
     """The standard profile manager provider which keys off the selected wallet type."""
 
     MANAGER_TYPES = {
+        "askar": "aries_cloudagent.askar.profile.AskarProfileManager",
         "in_memory": "aries_cloudagent.core.in_memory.InMemoryProfileManager",
         "indy": "aries_cloudagent.indy.sdk.profile.IndySdkProfileManager",
     }

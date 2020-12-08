@@ -218,14 +218,13 @@ class BaseRecord(BaseModel):
                 with sequence values specifying alternatives to match (hit any)
         """
         storage = session.inject(BaseStorage)
-        query = storage.search_records(
+        rows = await storage.find_all_records(
             cls.RECORD_TYPE,
             cls.prefix_tag_filter(tag_filter),
-            None,
-            {"retrieveTags": False},
+            options={"retrieveTags": False},
         )
         found = None
-        async for record in query:
+        for record in rows:
             vals = json.loads(record.value)
             if match_post_filter(vals, post_filter, alt=False):
                 if found:
@@ -266,14 +265,13 @@ class BaseRecord(BaseModel):
                 values in post_filter
         """
         storage = session.inject(BaseStorage)
-        query = storage.search_records(
+        rows = await storage.find_all_records(
             cls.RECORD_TYPE,
             cls.prefix_tag_filter(tag_filter),
-            None,
-            {"retrieveTags": False},
+            options={"retrieveTags": False},
         )
         result = []
-        async for record in query:
+        for record in rows:
             vals = json.loads(record.value)
             if match_post_filter(
                 vals,

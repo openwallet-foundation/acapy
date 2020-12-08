@@ -111,10 +111,10 @@ class DemoIntroductionService(BaseIntroductionService):
         tag_filter = {"target_connection_id": target_connection_id}
         session = await self._context.session()
         storage = session.inject(BaseStorage)
-        records = await storage.search_records(
+        records = await storage.find_all_records(
             DemoIntroductionService.RECORD_TYPE,
             tag_filter,
-        ).fetch_all()
+        )
 
         found = False
         for row in records:
