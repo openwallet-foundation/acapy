@@ -20,12 +20,13 @@ class MediationDenyHandler(BaseHandler):
         assert isinstance(context.message, MediationDeny)
 
         if not context.connection_ready:
-            raise HandlerException('Recieved mediation deny from inactive connection')
+            raise HandlerException('Received mediation deny from inactive connection')
 
-        mgr = MediationManager(context)
+        session = await context.session()
+        mgr = MediationManager(session)
         try:
             record = await MediationRecord.retrieve_by_connection_id(
-                context, context.connection_record.connection_id
+                session, context.connection_record.connection_id
             )
             await mgr.request_denied(record, context.message)
         except StorageNotFoundError as err:

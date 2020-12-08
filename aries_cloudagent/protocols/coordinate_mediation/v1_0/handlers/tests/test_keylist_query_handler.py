@@ -2,17 +2,11 @@
 import pytest
 from asynctest import TestCase as AsyncTestCase
 
-from aries_cloudagent.config.injection_context import InjectionContext
-
 from ......config.injection_context import InjectionContext
-from ......connections.models.connection_record import ConnectionRecord
+from ......connections.models.conn_record import ConnRecord
 from ......messaging.base_handler import HandlerException
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
-from ......storage.base import BaseStorage
-from ......storage.basic import BasicStorage
-from ......wallet.base import BaseWallet
-from ......wallet.basic import BasicWallet
 from .....problem_report.v1_0.message import ProblemReport
 from .....routing.v1_0.models.route_record import RouteRecord
 from ...messages.keylist import Keylist
@@ -29,14 +23,12 @@ class TestKeylistQueryHandler(AsyncTestCase):
 
     async def setUp(self):
         """Setup test dependencies."""
-        self.context = RequestContext(
-            base_context=InjectionContext(enforce_typing=False)
-        )
+        self.context = RequestContext.test_context()
+        self.session = await self.context.session()
+        self.session = await self.context.session()
         self.context.message = KeylistQuery()
         self.context.connection_ready = True
-        self.context.connection_record = ConnectionRecord(connection_id=TEST_CONN_ID)
-        self.context.injector.bind_instance(BaseStorage, BasicStorage())
-        self.context.injector.bind_instance(BaseWallet, BasicWallet())
+        self.context.connection_record = ConnRecord(connection_id=TEST_CONN_ID)
 
     async def test_handler_no_active_connection(self):
         handler, responder = KeylistQueryHandler(), MockResponder()
@@ -58,7 +50,7 @@ class TestKeylistQueryHandler(AsyncTestCase):
         await MediationRecord(
             state=MediationRecord.STATE_DENIED,
             connection_id=TEST_CONN_ID
-        ).save(self.context)
+        ).save(self.session)
         await handler.handle(self.context, responder)
         assert len(responder.messages) == 1
         result, _target = responder.messages[0]
@@ -70,11 +62,11 @@ class TestKeylistQueryHandler(AsyncTestCase):
         await MediationRecord(
             state=MediationRecord.STATE_GRANTED,
             connection_id=TEST_CONN_ID
-        ).save(self.context)
+        ).save(self.session)
         await RouteRecord(
             connection_id=TEST_CONN_ID,
             recipient_key=TEST_VERKEY
-        ).save(self.context)
+        ).save(self.session)
         await handler.handle(self.context, responder)
         assert len(responder.messages) == 1
         result, _target = responder.messages[0]

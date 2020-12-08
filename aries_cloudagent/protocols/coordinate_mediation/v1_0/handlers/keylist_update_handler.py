@@ -23,15 +23,16 @@ class KeylistUpdateHandler(BaseHandler):
         if not context.connection_ready:
             raise HandlerException("Cannot update routes: no active connection")
 
+        session = await context.session()
         try:
             record = await MediationRecord.retrieve_by_connection_id(
-                context, context.connection_record.connection_id
+                session, context.connection_record.connection_id
             )
         except StorageNotFoundError:
             await self.reject(responder)
             return
 
-        mgr = MediationManager(context)
+        mgr = MediationManager(session)
         try:
             response = await mgr.update_keylist(
                 record, updates=context.message.updates

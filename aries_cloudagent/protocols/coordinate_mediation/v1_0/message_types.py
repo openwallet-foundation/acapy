@@ -21,16 +21,16 @@ MESSAGE_TYPES = DIDCommPrefix.qualify_all(
     {
         KEYLIST:  f"{PROTOCOL_PACKAGE}.messages.keylist.Keylist",
         KEYLIST_QUERY: f"{PROTOCOL_PACKAGE}."
-            "messages.keylist_query.KeylistQuery",
+        "messages.keylist_query.KeylistQuery",
         KEYLIST_UPDATE: f"{PROTOCOL_PACKAGE}."
-            "messages.keylist_update.KeylistUpdate",
+        "messages.keylist_update.KeylistUpdate",
         KEYLIST_UPDATE_RESPONSE: f"{PROTOCOL_PACKAGE}."
-            "messages.keylist_update_response.KeylistUpdateResponse",
+        "messages.keylist_update_response.KeylistUpdateResponse",
         MEDIATE_DENY: f"{PROTOCOL_PACKAGE}."
-            "messages.mediate_deny.MediationDeny",
+        "messages.mediate_deny.MediationDeny",
         MEDIATE_GRANT: f"{PROTOCOL_PACKAGE}."
-            "messages.mediate_grant.MediationGrant",
+        "messages.mediate_grant.MediationGrant",
         MEDIATE_REQUEST: f"{PROTOCOL_PACKAGE}."
-            "messages.mediate_request.MediationRequest",
+        "messages.mediate_request.MediationRequest",
     }
 )

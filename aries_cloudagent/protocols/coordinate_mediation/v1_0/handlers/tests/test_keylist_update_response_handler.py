@@ -4,17 +4,10 @@ import pytest
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
-from aries_cloudagent.config.injection_context import InjectionContext
-
-from ......config.injection_context import InjectionContext
-from ......connections.models.connection_record import ConnectionRecord
+from ......connections.models.conn_record import ConnRecord
 from ......messaging.base_handler import HandlerException
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
-from ......storage.base import BaseStorage
-from ......storage.basic import BasicStorage
-from ......wallet.base import BaseWallet
-from ......wallet.basic import BasicWallet
 from ...messages.inner.keylist_update_rule import KeylistUpdateRule
 from ...messages.inner.keylist_updated import KeylistUpdated
 from ...messages.keylist_update_response import KeylistUpdateResponse
@@ -29,9 +22,7 @@ class TestKeylistUpdateResponseHandler(AsyncTestCase):
 
     async def setUp(self):
         """Setup test dependencies."""
-        self.context = RequestContext(
-            base_context=InjectionContext(enforce_typing=False)
-        )
+        self.context = RequestContext.test_context()
         self.updated = [
             KeylistUpdated(
                 recipient_key=TEST_VERKEY,
@@ -41,9 +32,7 @@ class TestKeylistUpdateResponseHandler(AsyncTestCase):
         ]
         self.context.message = KeylistUpdateResponse(updated=self.updated)
         self.context.connection_ready = True
-        self.context.connection_record = ConnectionRecord(connection_id=TEST_CONN_ID)
-        self.context.injector.bind_instance(BaseStorage, BasicStorage())
-        self.context.injector.bind_instance(BaseWallet, BasicWallet())
+        self.context.connection_record = ConnRecord(connection_id=TEST_CONN_ID)
 
     async def test_handler_no_active_connection(self):
         handler, responder = KeylistUpdateResponseHandler(), MockResponder()

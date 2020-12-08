@@ -3,15 +3,10 @@ import logging
 
 import pytest
 
-from ......config.injection_context import InjectionContext
 from ......connections.models.conn_record import ConnRecord
 from ......messaging.base_handler import HandlerException
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
-from ......storage.base import BaseStorage
-from ......storage.in_memory import InMemoryStorage
-from ......wallet.base import BaseWallet
-from ......wallet.in_memory import InMemoryWallet
 from ...messages.keylist import Keylist
 from ...models.mediation_record import MediationRecord
 from ..keylist_handler import KeylistHandler
@@ -24,15 +19,16 @@ pytestmark = pytest.mark.asyncio
 def context():
     """Fixture for context used in tests."""
     # pylint: disable=W0621
-    context = RequestContext(
-        base_context=InjectionContext(enforce_typing=False)
-    )
+    context = RequestContext.test_context()
     context.message = Keylist()
-    context.connection_record = ConnectionRecord(connection_id=TEST_CONN_ID)
+    context.connection_record = ConnRecord(connection_id=TEST_CONN_ID)
     context.connection_ready = True
-    context.injector.bind_instance(BaseStorage, BasicStorage())
-    context.injector.bind_instance(BaseWallet, BasicWallet())
     yield context
+
+@pytest.fixture
+async def session(context):  # pylint: disable=W0621
+    """Fixture for session used in tests"""
+    yield await context.session()
 
 
 class TestKeylistHandler:
@@ -53,11 +49,11 @@ class TestKeylistHandler:
         assert 'not acting as mediator' in caplog.text
         assert 'Keylist received: ' not in caplog.text
 
-    async def test_handler(self, context, caplog):
+    async def test_handler(self, context, session, caplog):
         caplog.set_level(logging.INFO)
         handler, responder = KeylistHandler(), MockResponder()
         await MediationRecord(
             connection_id=TEST_CONN_ID
-        ).save(context)
+        ).save(session)
         await handler.handle(context, responder)
         assert 'Keylist received: ' in caplog.text

@@ -21,9 +21,12 @@ class MediationRequestHandler(BaseHandler):
         if not context.connection_ready:
             raise HandlerException("Invalid mediation request: no active connection")
 
-        mgr = MediationManager(context)
+        session = await context.session()
+        mgr = MediationManager(session)
         try:
-            record = await mgr.receive_request(context.message)
+            record = await mgr.receive_request(
+                context.connection_record.connection_id, context.message
+            )
             if context.settings.get("mediation.open", False):
                 grant = await mgr.grant_request(record)
                 await responder.send_reply(grant)

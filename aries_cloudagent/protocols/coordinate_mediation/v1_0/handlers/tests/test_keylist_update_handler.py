@@ -2,17 +2,11 @@
 import pytest
 from asynctest import TestCase as AsyncTestCase
 
-from aries_cloudagent.config.injection_context import InjectionContext
-
 from ......config.injection_context import InjectionContext
-from ......connections.models.connection_record import ConnectionRecord
+from ......connections.models.conn_record import ConnRecord
 from ......messaging.base_handler import HandlerException
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
-from ......storage.base import BaseStorage
-from ......storage.basic import BasicStorage
-from ......wallet.base import BaseWallet
-from ......wallet.basic import BasicWallet
 from .....problem_report.v1_0.message import ProblemReport
 from ...messages.inner.keylist_update_rule import KeylistUpdateRule
 from ...messages.keylist_update import KeylistUpdate
@@ -29,18 +23,15 @@ class TestKeylistUpdateHandler(AsyncTestCase):
 
     async def setUp(self):
         """Setup test dependencies."""
-        self.context = RequestContext(
-            base_context=InjectionContext(enforce_typing=False)
-        )
+        self.context = RequestContext.test_context()
+        self.session = await self.context.session()
         self.context.message = KeylistUpdate(updates=[
             KeylistUpdateRule(
                 recipient_key=TEST_VERKEY, action=KeylistUpdateRule.RULE_ADD
             )
         ])
         self.context.connection_ready = True
-        self.context.connection_record = ConnectionRecord(connection_id=TEST_CONN_ID)
-        self.context.injector.bind_instance(BaseStorage, BasicStorage())
-        self.context.injector.bind_instance(BaseWallet, BasicWallet())
+        self.context.connection_record = ConnRecord(connection_id=TEST_CONN_ID)
 
     async def test_handler_no_active_connection(self):
         handler, responder = KeylistUpdateHandler(), MockResponder()
@@ -58,7 +49,7 @@ class TestKeylistUpdateHandler(AsyncTestCase):
 
     async def test_handler_mediation_not_granted(self):
         handler, responder = KeylistUpdateHandler(), MockResponder()
-        await MediationRecord(connection_id=TEST_CONN_ID).save(self.context)
+        await MediationRecord(connection_id=TEST_CONN_ID).save(self.session)
         await handler.handle(self.context, responder)
         assert len(responder.messages) == 1
         result, _target = responder.messages[0]
@@ -69,7 +60,7 @@ class TestKeylistUpdateHandler(AsyncTestCase):
         await MediationRecord(
             state=MediationRecord.STATE_GRANTED,
             connection_id=TEST_CONN_ID
-        ).save(self.context)
+        ).save(self.session)
         await handler.handle(self.context, responder)
         assert len(responder.messages) == 1
         result, _target = responder.messages[0]
