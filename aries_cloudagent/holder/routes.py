@@ -24,6 +24,10 @@ from ..messaging.valid import (
 from ..wallet.error import WalletNotFoundError
 
 
+class HolderModuleResponseSchema(OpenAPISchema):
+    """Response schema for Holder Module."""
+
+
 class AttributeMimeTypesResultSchema(OpenAPISchema):
     """Result schema for credential attribute MIME type."""
 
@@ -107,7 +111,7 @@ class CredRevokedResultSchema(OpenAPISchema):
 
 @docs(tags=["credentials"], summary="Fetch a credential from wallet by id")
 @match_info_schema(CredIdMatchInfoSchema())
-@response_schema(CredBriefSchema(), 200)
+@response_schema(CredBriefSchema(), 200, description="")
 async def credentials_get(request: web.BaseRequest):
     """
     Request handler for retrieving a credential.
@@ -137,7 +141,7 @@ async def credentials_get(request: web.BaseRequest):
 @docs(tags=["credentials"], summary="Query credential revocation status by id")
 @match_info_schema(CredIdMatchInfoSchema())
 @querystring_schema(CredRevokedQueryStringSchema())
-@response_schema(CredRevokedResultSchema(), 200)
+@response_schema(CredRevokedResultSchema(), 200, description="")
 async def credentials_revoked(request: web.BaseRequest):
     """
     Request handler for querying revocation status of credential.
@@ -182,7 +186,7 @@ async def credentials_revoked(request: web.BaseRequest):
 
 @docs(tags=["credentials"], summary="Get attribute MIME types from wallet")
 @match_info_schema(CredIdMatchInfoSchema())
-@response_schema(AttributeMimeTypesResultSchema(), 200)
+@response_schema(AttributeMimeTypesResultSchema(), 200, description="")
 async def credentials_attr_mime_types_get(request: web.BaseRequest):
     """
     Request handler for getting credential attribute MIME types.
@@ -204,6 +208,7 @@ async def credentials_attr_mime_types_get(request: web.BaseRequest):
 
 @docs(tags=["credentials"], summary="Remove a credential from the wallet by id")
 @match_info_schema(CredIdMatchInfoSchema())
+@response_schema(HolderModuleResponseSchema(), description="")
 async def credentials_remove(request: web.BaseRequest):
     """
     Request handler for searching connection records.
@@ -234,7 +239,7 @@ async def credentials_remove(request: web.BaseRequest):
     summary="Fetch credentials from wallet",
 )
 @querystring_schema(CredentialsListQueryStringSchema())
-@response_schema(CredBriefListSchema(), 200)
+@response_schema(CredBriefListSchema(), 200, description="")
 async def credentials_list(request: web.BaseRequest):
     """
     Request handler for searching credential records.
