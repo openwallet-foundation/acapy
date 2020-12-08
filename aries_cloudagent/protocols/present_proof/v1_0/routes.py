@@ -361,13 +361,7 @@ class IndyRequestedCredsRequestedAttrSchema(OpenAPISchema):
         required=True,
     )
     revealed = fields.Bool(
-        description="Whether to reveal attribute in proof", required=True
-    )
-    timestamp = fields.Int(
-        description="Epoch timestamp of interest for non-revocation proof",
-        required=False,
-        strict=True,
-        **INT_EPOCH,
+        description="Whether to reveal attribute in proof (default true)", default=True
     )
 
 
