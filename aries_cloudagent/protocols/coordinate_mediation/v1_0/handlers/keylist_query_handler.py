@@ -5,7 +5,7 @@ from .....messaging.base_handler import (
 )
 from .....storage.error import StorageNotFoundError
 from ....problem_report.v1_0.message import ProblemReport
-from ..manager import MediationManager as Manager
+from ..manager import MediationManager, MediationNotGrantedError
 from ..messages.keylist_query import KeylistQuery
 from ..models.mediation_record import MediationRecord
 
@@ -23,22 +23,16 @@ class KeylistQueryHandler(BaseHandler):
         if not context.connection_ready:
             raise HandlerException("Invalid keylist query: no active connection")
 
+        mgr = MediationManager(context)
         try:
             record = await MediationRecord.retrieve_by_connection_id(
                 context, context.connection_record.connection_id
             )
-        except StorageNotFoundError:
+            keylist = await mgr.get_keylist(record)
+            keylist_response = await mgr.create_keylist_query_response(keylist)
+            await responder.send_reply(keylist_response)
+        except (StorageNotFoundError, MediationNotGrantedError):
             await self.reject(responder)
-            return
-
-        if record.state != MediationRecord.STATE_GRANTED:
-            await self.reject(responder)
-            return
-
-        mgr = Manager(context)
-        keylist = await mgr.get_keylist(record)
-        keylist_response = mgr.create_keylist_query_response(keylist)
-        await responder.send_reply(keylist_response)
 
     async def reject(self, responder: BaseResponder):
         """Send problem report."""
