@@ -56,6 +56,10 @@ from .models.presentation_exchange import (
 )
 
 
+class PresentProofModuleResponseSchema(OpenAPISchema):
+    """Response schema for Present Proof Module."""
+
+
 class V10PresentationExchangeListQueryStringSchema(OpenAPISchema):
     """Parameters and validators for presentation exchange list query."""
 
@@ -461,7 +465,7 @@ class PresExIdMatchInfoSchema(OpenAPISchema):
 
 @docs(tags=["present-proof"], summary="Fetch all present-proof exchange records")
 @querystring_schema(V10PresentationExchangeListQueryStringSchema)
-@response_schema(V10PresentationExchangeListSchema(), 200)
+@response_schema(V10PresentationExchangeListSchema(), 200, description="")
 async def presentation_exchange_list(request: web.BaseRequest):
     """
     Request handler for searching presentation exchange records.
@@ -500,7 +504,7 @@ async def presentation_exchange_list(request: web.BaseRequest):
 
 @docs(tags=["present-proof"], summary="Fetch a single presentation exchange record")
 @match_info_schema(PresExIdMatchInfoSchema())
-@response_schema(V10PresentationExchangeSchema(), 200)
+@response_schema(V10PresentationExchangeSchema(), 200, description="")
 async def presentation_exchange_retrieve(request: web.BaseRequest):
     """
     Request handler for fetching a single presentation exchange record.
@@ -537,7 +541,7 @@ async def presentation_exchange_retrieve(request: web.BaseRequest):
 )
 @match_info_schema(PresExIdMatchInfoSchema())
 @querystring_schema(CredentialsFetchQueryStringSchema())
-@response_schema(IndyCredPrecisSchema(many=True), 200)
+@response_schema(IndyCredPrecisSchema(many=True), 200, description="")
 async def presentation_exchange_credentials_list(request: web.BaseRequest):
     """
     Request handler for searching applicable credential records.
@@ -604,7 +608,7 @@ async def presentation_exchange_credentials_list(request: web.BaseRequest):
 
 @docs(tags=["present-proof"], summary="Sends a presentation proposal")
 @request_schema(V10PresentationProposalRequestSchema())
-@response_schema(V10PresentationExchangeSchema(), 200)
+@response_schema(V10PresentationExchangeSchema(), 200, description="")
 async def presentation_exchange_send_proposal(request: web.BaseRequest):
     """
     Request handler for sending a presentation proposal.
@@ -689,7 +693,7 @@ async def presentation_exchange_send_proposal(request: web.BaseRequest):
     """,
 )
 @request_schema(V10PresentationCreateRequestRequestSchema())
-@response_schema(V10PresentationExchangeSchema(), 200)
+@response_schema(V10PresentationExchangeSchema(), 200, description="")
 async def presentation_exchange_create_request(request: web.BaseRequest):
     """
     Request handler for creating a free presentation request.
@@ -760,7 +764,7 @@ async def presentation_exchange_create_request(request: web.BaseRequest):
     summary="Sends a free presentation request not bound to any proposal",
 )
 @request_schema(V10PresentationSendRequestRequestSchema())
-@response_schema(V10PresentationExchangeSchema(), 200)
+@response_schema(V10PresentationExchangeSchema(), 200, description="")
 async def presentation_exchange_send_free_request(request: web.BaseRequest):
     """
     Request handler for sending a presentation request free from any proposal.
@@ -843,7 +847,7 @@ async def presentation_exchange_send_free_request(request: web.BaseRequest):
 )
 @match_info_schema(PresExIdMatchInfoSchema())
 @request_schema(V10PresentationSendRequestRequestSchema())
-@response_schema(V10PresentationExchangeSchema(), 200)
+@response_schema(V10PresentationExchangeSchema(), 200, description="")
 async def presentation_exchange_send_bound_request(request: web.BaseRequest):
     """
     Request handler for sending a presentation request free from any proposal.
@@ -919,7 +923,7 @@ async def presentation_exchange_send_bound_request(request: web.BaseRequest):
 @docs(tags=["present-proof"], summary="Sends a proof presentation")
 @match_info_schema(PresExIdMatchInfoSchema())
 @request_schema(V10PresentationRequestSchema())
-@response_schema(V10PresentationExchangeSchema())
+@response_schema(V10PresentationExchangeSchema(), description="")
 async def presentation_exchange_send_presentation(request: web.BaseRequest):
     """
     Request handler for sending a presentation.
@@ -1009,7 +1013,7 @@ async def presentation_exchange_send_presentation(request: web.BaseRequest):
 
 @docs(tags=["present-proof"], summary="Verify a received presentation")
 @match_info_schema(PresExIdMatchInfoSchema())
-@response_schema(V10PresentationExchangeSchema())
+@response_schema(V10PresentationExchangeSchema(), description="")
 async def presentation_exchange_verify_presentation(request: web.BaseRequest):
     """
     Request handler for verifying a presentation request.
@@ -1070,6 +1074,7 @@ async def presentation_exchange_verify_presentation(request: web.BaseRequest):
 
 @docs(tags=["present-proof"], summary="Remove an existing presentation exchange record")
 @match_info_schema(PresExIdMatchInfoSchema())
+@response_schema(PresentProofModuleResponseSchema(), description="")
 async def presentation_exchange_remove(request: web.BaseRequest):
     """
     Request handler for removing a presentation exchange record.

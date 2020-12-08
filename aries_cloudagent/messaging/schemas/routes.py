@@ -102,7 +102,7 @@ class SchemaIdMatchInfoSchema(OpenAPISchema):
 
 @docs(tags=["schema"], summary="Sends a schema to the ledger")
 @request_schema(SchemaSendRequestSchema())
-@response_schema(SchemaSendResultsSchema(), 200)
+@response_schema(SchemaSendResultsSchema(), 200, description="")
 async def schemas_send_schema(request: web.BaseRequest):
     """
     Request handler for sending a credential offer.
@@ -149,7 +149,7 @@ async def schemas_send_schema(request: web.BaseRequest):
     summary="Search for matching schema that agent originated",
 )
 @querystring_schema(SchemaQueryStringSchema())
-@response_schema(SchemasCreatedResultsSchema(), 200)
+@response_schema(SchemasCreatedResultsSchema(), 200, description="")
 async def schemas_created(request: web.BaseRequest):
     """
     Request handler for retrieving schemas that current agent created.
@@ -177,7 +177,7 @@ async def schemas_created(request: web.BaseRequest):
 
 @docs(tags=["schema"], summary="Gets a schema from the ledger")
 @match_info_schema(SchemaIdMatchInfoSchema())
-@response_schema(SchemaGetResultsSchema(), 200)
+@response_schema(SchemaGetResultsSchema(), 200, description="")
 async def schemas_get_schema(request: web.BaseRequest):
     """
     Request handler for sending a credential offer.

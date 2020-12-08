@@ -32,7 +32,7 @@ class QueryFeaturesQueryStringSchema(OpenAPISchema):
     summary="Query supported features",
 )
 @querystring_schema(QueryFeaturesQueryStringSchema())
-@response_schema(QueryResultSchema(), 200)
+@response_schema(QueryResultSchema(), 200, description="")
 async def query_features(request: web.BaseRequest):
     """
     Request handler for inspecting supported protocols.
