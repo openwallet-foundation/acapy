@@ -10,10 +10,10 @@ from qrcode import QRCode
 
 from aiohttp import ClientError
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # noqa
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from runners.support.agent import DemoAgent, default_genesis_txns
-from runners.support.utils import (
+from runners.support.agent import DemoAgent, default_genesis_txns  # noqa:E402
+from runners.support.utils import (  # noqa:E402
     log_msg,
     log_status,
     log_timer,
@@ -22,10 +22,13 @@ from runners.support.utils import (
     require_indy,
 )
 
+
 CRED_PREVIEW_TYPE = "https://didcomm.org/issue-credential/1.0/credential-preview"
 SELF_ATTESTED = os.getenv("SELF_ATTESTED")
-LOGGER = logging.getLogger(__name__)
 TAILS_FILE_COUNT = int(os.getenv("TAILS_FILE_COUNT", 100))
+
+logging.basicConfig(level=logging.WARNING)
+LOGGER = logging.getLogger(__name__)
 
 
 class FaberAgent(DemoAgent):
@@ -34,7 +37,6 @@ class FaberAgent(DemoAgent):
         http_port: int,
         admin_port: int,
         no_auto: bool = False,
-        tails_server_base_url: str = None,
         **kwargs,
     ):
         super().__init__(
@@ -42,7 +44,6 @@ class FaberAgent(DemoAgent):
             http_port,
             admin_port,
             prefix="Faber",
-            tails_server_base_url=tails_server_base_url,
             extra_args=[]
             if no_auto
             else ["--auto-accept-invites", "--auto-accept-requests"],
@@ -150,6 +151,7 @@ async def main(
     revocation: bool = False,
     tails_server_base_url: str = None,
     show_timing: bool = False,
+    wallet_type: str = None,
 ):
 
     genesis = await default_genesis_txns()
@@ -160,7 +162,10 @@ async def main(
     agent = None
 
     try:
-        log_status("#1 Provision an agent and wallet, get back configuration details")
+        log_status(
+            "#1 Provision an agent and wallet, get back configuration details"
+            + (f" (Wallet type: {wallet_type})" if wallet_type else "")
+        )
         agent = FaberAgent(
             start_port,
             start_port + 1,
@@ -168,6 +173,7 @@ async def main(
             no_auto=no_auto,
             tails_server_base_url=tails_server_base_url,
             timing=show_timing,
+            wallet_type=wallet_type,
         )
         await agent.listen_webhooks(start_port + 2)
         await agent.register_did()
@@ -408,16 +414,20 @@ if __name__ == "__main__":
     parser.add_argument(
         "--revocation", action="store_true", help="Enable credential revocation"
     )
-
     parser.add_argument(
         "--tails-server-base-url",
         type=str,
         metavar=("<tails-server-base-url>"),
         help="Tals server base url",
     )
-
     parser.add_argument(
         "--timing", action="store_true", help="Enable timing information"
+    )
+    parser.add_argument(
+        "--wallet-type",
+        type=str,
+        metavar="<wallet-type>",
+        help="Set the agent wallet type",
     )
     args = parser.parse_args()
 
@@ -466,6 +476,7 @@ if __name__ == "__main__":
                 args.revocation,
                 tails_server_base_url,
                 args.timing,
+                args.wallet_type,
             )
         )
     except KeyboardInterrupt:
