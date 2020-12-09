@@ -22,12 +22,7 @@ class KeylistUpdateRule(BaseModel):
     RULE_ADD = "add"
     RULE_REMOVE = "remove"
 
-    def __init__(
-        self,
-        recipient_key: str,
-        action: str,
-        **kwargs
-    ):
+    def __init__(self, recipient_key: str, action: str, **kwargs):
         """
         Initialize keylist update rule object.
 
@@ -50,9 +45,7 @@ class KeylistUpdateRuleSchema(BaseModelSchema):
         model_class = KeylistUpdateRule
 
     recipient_key = fields.Str(
-        description="Keylist to remove or add",
-        required=True,
-        **INDY_RAW_PUBLIC_KEY
+        description="Keylist to remove or add", required=True, **INDY_RAW_PUBLIC_KEY
     )
     action = fields.Str(
         required=True,

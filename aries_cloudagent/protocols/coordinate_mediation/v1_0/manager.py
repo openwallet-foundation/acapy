@@ -73,8 +73,7 @@ class MediationManager:
         storage: BaseStorage = self.session.inject(BaseStorage)
         try:
             record = await storage.get_record(
-                record_type=self.RECORD_TYPE,
-                record_id=self.RECORD_TYPE
+                record_type=self.RECORD_TYPE, record_id=self.RECORD_TYPE
             )
             info = json.loads(record.value)
             info.update(record.tags)
@@ -96,7 +95,7 @@ class MediationManager:
             type=self.RECORD_TYPE,
             value=json.dumps({"verkey": info.verkey, "metadata": info.metadata}),
             tags={"did": info.did},
-            id=self.RECORD_TYPE
+            id=self.RECORD_TYPE,
         )
         await storage.add_record(record)
         return info
@@ -113,16 +112,16 @@ class MediationManager:
             MediationRecord: record created during receipt of request.
 
         """
-        if await MediationRecord.exists_for_connection_id(
-            self.session, connection_id
-        ):
-            raise MediationAlreadyExists('MediationRecord already exists for connection')
+        if await MediationRecord.exists_for_connection_id(self.session, connection_id):
+            raise MediationAlreadyExists(
+                "MediationRecord already exists for connection"
+            )
 
         # TODO: Determine if terms are acceptable
         record = MediationRecord(
             connection_id=connection_id,
             mediator_terms=request.mediator_terms,
-            recipient_terms=request.recipient_terms
+            recipient_terms=request.recipient_terms,
         )
         await record.save(self.session, reason="New mediation request received")
         return record
@@ -145,7 +144,7 @@ class MediationManager:
         await mediation.save(self.session, reason="Mediation request granted")
         grant = MediationGrant(
             endpoint=self.session.settings.get("default_endpoint"),
-            routing_keys=[routing_did.verkey]
+            routing_keys=[routing_did.verkey],
         )
         return grant
 
@@ -172,8 +171,7 @@ class MediationManager:
         mediation.state = MediationRecord.STATE_DENIED
         await mediation.save(self.session, reason="Mediation request denied")
         deny = MediationDeny(
-            mediator_terms=mediator_terms,
-            recipient_terms=recipient_terms
+            mediator_terms=mediator_terms, recipient_terms=recipient_terms
         )
         return deny
 
@@ -192,7 +190,7 @@ class MediationManager:
         """
         if record.state != MediationRecord.STATE_GRANTED:
             raise MediationNotGrantedError(
-                'Mediation has not been granted for this connection.'
+                "Mediation has not been granted for this connection."
             )
         # TODO: Don't borrow logic from RoutingManager
         # Bidirectional mapping of KeylistUpdateRules to RouteUpdate actions
@@ -200,20 +198,19 @@ class MediationManager:
             KeylistUpdateRule.RULE_ADD: RouteUpdate.ACTION_CREATE,
             KeylistUpdateRule.RULE_REMOVE: RouteUpdate.ACTION_DELETE,
             RouteUpdate.ACTION_DELETE: KeylistUpdateRule.RULE_REMOVE,
-            RouteUpdate.ACTION_CREATE: KeylistUpdateRule.RULE_ADD
+            RouteUpdate.ACTION_CREATE: KeylistUpdateRule.RULE_ADD,
         }
 
         def rule_to_update(rule: KeylistUpdateRule):
             return RouteUpdate(
-                recipient_key=rule.recipient_key,
-                action=action_map[rule.action]
+                recipient_key=rule.recipient_key, action=action_map[rule.action]
             )
 
         def updated_to_keylist_updated(updated: RouteUpdated):
             return KeylistUpdated(
                 recipient_key=updated.recipient_key,
                 action=action_map[updated.action],
-                result=updated.result
+                result=updated.result,
             )
 
         route_mgr = RoutingManager(self.session)
@@ -236,7 +233,7 @@ class MediationManager:
         """
         if record.state != MediationRecord.STATE_GRANTED:
             raise MediationNotGrantedError(
-                'Mediation has not been granted for this connection.'
+                "Mediation has not been granted for this connection."
             )
         route_mgr = RoutingManager(self.session)
         return await route_mgr.get_routes(record.connection_id)
@@ -253,9 +250,9 @@ class MediationManager:
             Keylist: message to return to client
 
         """
-        keys = list(map(
-            lambda key: KeylistKey(recipient_key=key.recipient_key), keylist
-        ))
+        keys = list(
+            map(lambda key: KeylistKey(recipient_key=key.recipient_key), keylist)
+        )
         return Keylist(keys=keys, pagination=None)
 
     # }}}
@@ -266,7 +263,7 @@ class MediationManager:
         self,
         connection_id: str,
         mediator_terms: Sequence[str] = None,
-        recipient_terms: Sequence[str] = None
+        recipient_terms: Sequence[str] = None,
     ) -> Tuple[MediationRecord, MediationRequest]:
         """Prepare a MediationRequest Message, saving a new mediation record.
 
@@ -283,20 +280,15 @@ class MediationManager:
             role=MediationRecord.ROLE_CLIENT,
             connection_id=connection_id,
             mediator_terms=mediator_terms,
-            recipient_terms=recipient_terms
+            recipient_terms=recipient_terms,
         )
         await record.save(self.session, reason="Creating new mediation request.")
         request = MediationRequest(
-            mediator_terms=mediator_terms,
-            recipient_terms=recipient_terms
+            mediator_terms=mediator_terms, recipient_terms=recipient_terms
         )
         return record, request
 
-    async def request_granted(
-        self,
-        record: MediationRecord,
-        grant: MediationGrant
-    ):
+    async def request_granted(self, record: MediationRecord, grant: MediationGrant):
         """Process mediation grant message.
 
         Args:
@@ -308,11 +300,7 @@ class MediationManager:
         record.routing_keys = grant.routing_keys
         await record.save(self.session, reason="Mediation request granted.")
 
-    async def request_denied(
-        self,
-        record: MediationRecord,
-        deny: MediationDeny
-    ):
+    async def request_denied(self, record: MediationRecord, deny: MediationDeny):
         """Process mediation denied message.
 
         Args:
@@ -326,10 +314,7 @@ class MediationManager:
         await record.save(self.session, reason="Mediation request denied.")
 
     async def prepare_keylist_query(
-        self,
-        filter_: dict = None,
-        paginate_limit: int = -1,
-        paginate_offset: int = 0
+        self, filter_: dict = None, paginate_limit: int = -1, paginate_offset: int = 0
     ) -> KeylistQuery:
         """Prepare keylist query message.
 
@@ -345,14 +330,12 @@ class MediationManager:
         # TODO Handle creation of filter rather than delegating to caller?
         message = KeylistQuery(
             filter=filter_,
-            paginate=KeylistQueryPaginate(paginate_limit, paginate_offset)
+            paginate=KeylistQueryPaginate(paginate_limit, paginate_offset),
         )
         return message
 
     async def add_key(
-        self,
-        recipient_key: str,
-        message: Optional[KeylistUpdate] = None
+        self, recipient_key: str, message: Optional[KeylistUpdate] = None
     ) -> KeylistUpdate:
         """Prepare a keylist update add.
 
@@ -371,9 +354,7 @@ class MediationManager:
         return message
 
     async def remove_key(
-        self,
-        recipient_key: str,
-        message: Optional[KeylistUpdate] = None
+        self, recipient_key: str, message: Optional[KeylistUpdate] = None
     ) -> KeylistUpdate:
         """Prepare keylist update remove.
 
@@ -392,9 +373,7 @@ class MediationManager:
         return message
 
     async def store_update_results(
-        self,
-        connection_id: str,
-        results: Sequence[KeylistUpdated]
+        self, connection_id: str, results: Sequence[KeylistUpdated]
     ):
         """Store results of keylist update from keylist update resopnse message.
 
@@ -409,17 +388,17 @@ class MediationManager:
             if updated.result != KeylistUpdated.RESULT_SUCCESS:
                 # TODO better handle different results?
                 LOG.warning(
-                    'Keylist update failure: %s(%s): %s',
+                    "Keylist update failure: %s(%s): %s",
                     updated.action,
                     updated.recipient_key,
-                    updated.result
+                    updated.result,
                 )
                 continue
             if updated.action == KeylistUpdateRule.RULE_ADD:
                 record = RouteRecord(
                     role=RouteRecord.ROLE_CLIENT,
                     recipient_key=updated.recipient_key,
-                    connection_id=connection_id
+                    connection_id=connection_id,
                 )
                 to_save.append(record)
             elif updated.action == KeylistUpdateRule.RULE_REMOVE:
@@ -427,33 +406,34 @@ class MediationManager:
                     records = await RouteRecord.query(
                         self.session,
                         {
-                            'role': RouteRecord.ROLE_CLIENT,
-                            'connection_id': connection_id,
-                            'recipient_key': updated.recipient_key
-                        }
+                            "role": RouteRecord.ROLE_CLIENT,
+                            "connection_id": connection_id,
+                            "recipient_key": updated.recipient_key,
+                        },
                     )
                 except StorageNotFoundError as err:
                     LOG.error(
-                        'No route found while processing keylist update resposne: %s',
-                        err
+                        "No route found while processing keylist update resposne: %s",
+                        err,
                     )
 
                 if len(records) > 1:
                     LOG.error(
-                        'Too many routes found while processing keylist update resposne'
+                        "Too many routes found while processing keylist update resposne"
                     )
 
                 record = records[0]
                 to_remove.append(record)
 
         for record_for_saving in to_save:
-            await record_for_saving.save(self.session, reason="Route successfully added.")
+            await record_for_saving.save(
+                self.session, reason="Route successfully added."
+            )
         for record_for_removal in to_remove:
             await record_for_removal.delete_record(self.session)
 
     async def get_my_keylist(
-        self,
-        connection_id: Optional[str] = None
+        self, connection_id: Optional[str] = None
     ) -> Sequence[RouteRecord]:
         """Get my routed keys.
 
@@ -465,8 +445,8 @@ class MediationManager:
 
         """
         # TODO use mediation record id instead of connection id?
-        tag_filter = {'connection_id': connection_id} if connection_id else {}
-        tag_filter['role'] = RouteRecord.ROLE_CLIENT
+        tag_filter = {"connection_id": connection_id} if connection_id else {}
+        tag_filter["role"] = RouteRecord.ROLE_CLIENT
         return await RouteRecord.query(self.session, tag_filter)
 
     # }}}

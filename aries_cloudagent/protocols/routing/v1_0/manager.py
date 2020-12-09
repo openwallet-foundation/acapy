@@ -67,8 +67,7 @@ class RoutingManager:
 
         try:
             record = await RouteRecord.retrieve_by_recipient_key(
-                self.session,
-                recip_verkey
+                self.session, recip_verkey
             )
         except StorageDuplicateError:
             raise RouteNotFoundError(
@@ -179,7 +178,7 @@ class RoutingManager:
                     try:
                         await self.create_route_record(
                             client_connection_id=client_connection_id,
-                            recipient_key=recip_key
+                            recipient_key=recip_key,
                         )
                     except RoutingManagerError:
                         result.result = RouteUpdated.RESULT_SERVER_ERROR

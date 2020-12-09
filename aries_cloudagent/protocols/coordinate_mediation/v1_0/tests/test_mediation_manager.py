@@ -3,16 +3,16 @@ import logging
 
 import pytest
 
-from aries_cloudagent.connections.models.conn_record import (
-    ConnRecord
-)
+from aries_cloudagent.connections.models.conn_record import ConnRecord
 from aries_cloudagent.messaging.request_context import RequestContext
 from aries_cloudagent.transport.inbound.receipt import MessageReceipt
 
 from ....routing.v1_0.models.route_record import RouteRecord
 from ..manager import (
-    MediationAlreadyExists, MediationManager, MediationManagerError,
-    MediationNotGrantedError
+    MediationAlreadyExists,
+    MediationManager,
+    MediationManagerError,
+    MediationNotGrantedError,
 )
 from ..messages.inner.keylist_update_rule import KeylistUpdateRule
 from ..messages.inner.keylist_updated import KeylistUpdated
@@ -50,8 +50,7 @@ async def manager(session):  # pylint: disable=W0621
 def record():
     """Fixture for record used in tets."""
     yield MediationRecord(
-        state=MediationRecord.STATE_GRANTED,
-        connection_id=TEST_CONN_ID
+        state=MediationRecord.STATE_GRANTED, connection_id=TEST_CONN_ID
     )
 
 
@@ -88,7 +87,7 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
             await manager.receive_request(TEST_CONN_ID, request)
 
     @pytest.mark.skip(
-        reason='mediator and recipient terms are only loosely defined in RFC 0211'
+        reason="mediator and recipient terms are only loosely defined in RFC 0211"
     )
     async def test_receive_request_unacceptable_terms(self):
         """test_receive_request_unacceptable_terms."""
@@ -114,10 +113,9 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
 
     async def test_update_keylist_delete(self, session, manager, record):
         """test_update_keylist_delete."""
-        await RouteRecord(
-            connection_id=TEST_CONN_ID,
-            recipient_key=TEST_VERKEY
-        ).save(session)
+        await RouteRecord(connection_id=TEST_CONN_ID, recipient_key=TEST_VERKEY).save(
+            session
+        )
         response = await manager.update_keylist(
             record=record,
             updates=[
@@ -150,10 +148,9 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
 
     async def test_update_keylist_create_existing(self, session, manager, record):
         """test_update_keylist_create_existing."""
-        await RouteRecord(
-            connection_id=TEST_CONN_ID,
-            recipient_key=TEST_VERKEY
-        ).save(session)
+        await RouteRecord(connection_id=TEST_CONN_ID, recipient_key=TEST_VERKEY).save(
+            session
+        )
         response = await manager.update_keylist(
             record=record,
             updates=[
@@ -170,15 +167,14 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
 
     async def test_get_keylist(self, session, manager, record):
         """test_get_keylist."""
-        await RouteRecord(
-            connection_id=TEST_CONN_ID,
-            recipient_key=TEST_VERKEY
-        ).save(session)
+        await RouteRecord(connection_id=TEST_CONN_ID, recipient_key=TEST_VERKEY).save(
+            session
+        )
         # Non-server route for verifying filtering
         await RouteRecord(
             role=RouteRecord.ROLE_CLIENT,
             connection_id=TEST_CONN_ID,
-            recipient_key=TEST_ROUTE_VERKEY
+            recipient_key=TEST_ROUTE_VERKEY,
         ).save(session)
         results = await manager.get_keylist(record)
         assert len(results) == 1
@@ -193,10 +189,9 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
 
     async def test_create_keylist_query_response(self, session, manager, record):
         """test_create_keylist_query_response."""
-        await RouteRecord(
-            connection_id=TEST_CONN_ID,
-            recipient_key=TEST_VERKEY
-        ).save(session)
+        await RouteRecord(connection_id=TEST_CONN_ID, recipient_key=TEST_VERKEY).save(
+            session
+        )
         results = await manager.get_keylist(record)
         response = await manager.create_keylist_query_response(results)
         assert len(response.keys) == 1
@@ -226,7 +221,7 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
         await manager.request_denied(record, deny)
         assert record.state == MediationRecord.STATE_DENIED
 
-    @pytest.mark.skip(reason='Mediation terms are not well defined in RFC 0211')
+    @pytest.mark.skip(reason="Mediation terms are not well defined in RFC 0211")
     async def test_request_denied_counter_terms(self):
         """test_request_denied_counter_terms."""
 
@@ -239,13 +234,12 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
     async def test_prepare_keylist_query_pagination(self, manager):
         """test_prepare_keylist_query_pagination."""
         query = await manager.prepare_keylist_query(
-            paginate_limit=10,
-            paginate_offset=20
+            paginate_limit=10, paginate_offset=20
         )
         assert query.paginate.limit == 10
         assert query.paginate.offset == 20
 
-    @pytest.mark.skip(reason='Filtering is not well defined in RFC 0211')
+    @pytest.mark.skip(reason="Filtering is not well defined in RFC 0211")
     async def test_prepare_keylist_query_filter(self):
         """test_prepare_keylist_query_filter."""
 
@@ -299,19 +293,19 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
         await RouteRecord(
             role=RouteRecord.ROLE_CLIENT,
             connection_id=TEST_CONN_ID,
-            recipient_key=TEST_VERKEY
+            recipient_key=TEST_VERKEY,
         ).save(session)
         results = [
             KeylistUpdated(
                 recipient_key=TEST_ROUTE_VERKEY,
                 action=KeylistUpdateRule.RULE_ADD,
-                result=KeylistUpdated.RESULT_SUCCESS
+                result=KeylistUpdated.RESULT_SUCCESS,
             ),
             KeylistUpdated(
                 recipient_key=TEST_VERKEY,
                 action=KeylistUpdateRule.RULE_REMOVE,
-                result=KeylistUpdated.RESULT_SUCCESS
-            )
+                result=KeylistUpdated.RESULT_SUCCESS,
+            ),
         ]
         await manager.store_update_results(TEST_CONN_ID, results)
         routes = await RouteRecord.query(session)
@@ -325,23 +319,23 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
             KeylistUpdated(
                 recipient_key=TEST_VERKEY,
                 action=KeylistUpdateRule.RULE_ADD,
-                result=KeylistUpdated.RESULT_NO_CHANGE
+                result=KeylistUpdated.RESULT_NO_CHANGE,
             ),
             KeylistUpdated(
                 recipient_key=TEST_VERKEY,
                 action=KeylistUpdateRule.RULE_REMOVE,
-                result=KeylistUpdated.RESULT_SERVER_ERROR
+                result=KeylistUpdated.RESULT_SERVER_ERROR,
             ),
             KeylistUpdated(
                 recipient_key=TEST_VERKEY,
                 action=KeylistUpdateRule.RULE_REMOVE,
-                result=KeylistUpdated.RESULT_CLIENT_ERROR
-            )
+                result=KeylistUpdated.RESULT_CLIENT_ERROR,
+            ),
         ]
         await manager.store_update_results(TEST_CONN_ID, results)
-        assert 'no_change' in caplog.text
-        assert 'client_error' in caplog.text
-        assert 'server_error' in caplog.text
+        assert "no_change" in caplog.text
+        assert "client_error" in caplog.text
+        assert "server_error" in caplog.text
         print(caplog.text)
 
     async def test_get_my_keylist(self, session, manager):
@@ -349,13 +343,13 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
         await RouteRecord(
             role=RouteRecord.ROLE_CLIENT,
             connection_id=TEST_CONN_ID,
-            recipient_key=TEST_VERKEY
+            recipient_key=TEST_VERKEY,
         ).save(session)
         # Non-client record to verify filtering
         await RouteRecord(
             role=RouteRecord.ROLE_SERVER,
             connection_id=TEST_CONN_ID,
-            recipient_key=TEST_ROUTE_VERKEY
+            recipient_key=TEST_ROUTE_VERKEY,
         ).save(session)
         keylist = await manager.get_my_keylist(TEST_CONN_ID)
         assert keylist

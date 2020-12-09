@@ -14,7 +14,7 @@ from ...messages.keylist_update_response import KeylistUpdateResponse
 from ...models.mediation_record import MediationRecord
 from ..keylist_update_handler import KeylistUpdateHandler
 
-TEST_CONN_ID = 'conn-id'
+TEST_CONN_ID = "conn-id"
 TEST_VERKEY = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
 
 
@@ -25,11 +25,13 @@ class TestKeylistUpdateHandler(AsyncTestCase):
         """Setup test dependencies."""
         self.context = RequestContext.test_context()
         self.session = await self.context.session()
-        self.context.message = KeylistUpdate(updates=[
-            KeylistUpdateRule(
-                recipient_key=TEST_VERKEY, action=KeylistUpdateRule.RULE_ADD
-            )
-        ])
+        self.context.message = KeylistUpdate(
+            updates=[
+                KeylistUpdateRule(
+                    recipient_key=TEST_VERKEY, action=KeylistUpdateRule.RULE_ADD
+                )
+            ]
+        )
         self.context.connection_ready = True
         self.context.connection_record = ConnRecord(connection_id=TEST_CONN_ID)
 
@@ -38,7 +40,7 @@ class TestKeylistUpdateHandler(AsyncTestCase):
         self.context.connection_ready = False
         with pytest.raises(HandlerException) as exc:
             await handler.handle(self.context, responder)
-            assert 'no active connection' in str(exc.value)
+            assert "no active connection" in str(exc.value)
 
     async def test_handler_no_record(self):
         handler, responder = KeylistUpdateHandler(), MockResponder()
@@ -58,8 +60,7 @@ class TestKeylistUpdateHandler(AsyncTestCase):
     async def test_handler(self):
         handler, responder = KeylistUpdateHandler(), MockResponder()
         await MediationRecord(
-            state=MediationRecord.STATE_GRANTED,
-            connection_id=TEST_CONN_ID
+            state=MediationRecord.STATE_GRANTED, connection_id=TEST_CONN_ID
         ).save(self.session)
         await handler.handle(self.context, responder)
         assert len(responder.messages) == 1

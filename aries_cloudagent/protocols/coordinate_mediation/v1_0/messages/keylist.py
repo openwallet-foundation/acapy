@@ -10,13 +10,12 @@ from .inner.keylist_key import KeylistKeySchema
 
 from .inner.keylist_query_paginate import (
     KeylistQueryPaginate,
-    KeylistQueryPaginateSchema
+    KeylistQueryPaginateSchema,
 )
 
 
 HANDLER_CLASS = (
-    f"{PROTOCOL_PACKAGE}.handlers"
-    ".keylist_query_response_handler.KeylistHandler"
+    f"{PROTOCOL_PACKAGE}.handlers" ".keylist_query_response_handler.KeylistHandler"
 )
 
 
@@ -58,11 +57,6 @@ class KeylistSchema(AgentMessageSchema):
         model_class = Keylist
 
     pagination = fields.Nested(
-        KeylistQueryPaginateSchema(),
-        required=False,
-        description="List of update rules"
+        KeylistQueryPaginateSchema(), required=False, description="List of update rules"
     )
-    keys = fields.List(
-        fields.Nested(KeylistKeySchema()),
-        description="Keys"
-    )
+    keys = fields.List(fields.Nested(KeylistKeySchema()), description="Keys")

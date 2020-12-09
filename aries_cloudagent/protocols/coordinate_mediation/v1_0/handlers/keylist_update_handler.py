@@ -1,7 +1,10 @@
 """Handler for keylist-update messages."""
 
 from .....messaging.base_handler import (
-    BaseHandler, BaseResponder, HandlerException, RequestContext
+    BaseHandler,
+    BaseResponder,
+    HandlerException,
+    RequestContext,
 )
 from .....storage.error import StorageNotFoundError
 from ....problem_report.v1_0.message import ProblemReport
@@ -34,9 +37,7 @@ class KeylistUpdateHandler(BaseHandler):
 
         mgr = MediationManager(session)
         try:
-            response = await mgr.update_keylist(
-                record, updates=context.message.updates
-            )
+            response = await mgr.update_keylist(record, updates=context.message.updates)
             await responder.send_reply(response)
         except MediationNotGrantedError:
             await self.reject(responder)

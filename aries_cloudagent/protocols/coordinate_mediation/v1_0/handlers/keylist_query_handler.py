@@ -1,7 +1,10 @@
 """Handler for keylist-query message."""
 
 from .....messaging.base_handler import (
-    BaseHandler, BaseResponder, HandlerException, RequestContext
+    BaseHandler,
+    BaseResponder,
+    HandlerException,
+    RequestContext,
 )
 from .....storage.error import StorageNotFoundError
 from ....problem_report.v1_0.message import ProblemReport

@@ -14,7 +14,7 @@ from ...messages.keylist_query import KeylistQuery
 from ...models.mediation_record import MediationRecord
 from ..keylist_query_handler import KeylistQueryHandler
 
-TEST_CONN_ID = 'conn-id'
+TEST_CONN_ID = "conn-id"
 TEST_VERKEY = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
 
 
@@ -35,7 +35,7 @@ class TestKeylistQueryHandler(AsyncTestCase):
         self.context.connection_ready = False
         with pytest.raises(HandlerException) as exc:
             await handler.handle(self.context, responder)
-            assert 'no active connection' in str(exc.value)
+            assert "no active connection" in str(exc.value)
 
     async def test_handler_no_record(self):
         handler, responder = KeylistQueryHandler(), MockResponder()
@@ -43,30 +43,27 @@ class TestKeylistQueryHandler(AsyncTestCase):
         assert len(responder.messages) == 1
         result, _target = responder.messages[0]
         assert isinstance(result, ProblemReport)
-        assert 'not been granted' in result.explain_ltxt
+        assert "not been granted" in result.explain_ltxt
 
     async def test_handler_record_not_granted(self):
         handler, responder = KeylistQueryHandler(), MockResponder()
         await MediationRecord(
-            state=MediationRecord.STATE_DENIED,
-            connection_id=TEST_CONN_ID
+            state=MediationRecord.STATE_DENIED, connection_id=TEST_CONN_ID
         ).save(self.session)
         await handler.handle(self.context, responder)
         assert len(responder.messages) == 1
         result, _target = responder.messages[0]
         assert isinstance(result, ProblemReport)
-        assert 'not been granted' in result.explain_ltxt
+        assert "not been granted" in result.explain_ltxt
 
     async def test_handler(self):
         handler, responder = KeylistQueryHandler(), MockResponder()
         await MediationRecord(
-            state=MediationRecord.STATE_GRANTED,
-            connection_id=TEST_CONN_ID
+            state=MediationRecord.STATE_GRANTED, connection_id=TEST_CONN_ID
         ).save(self.session)
-        await RouteRecord(
-            connection_id=TEST_CONN_ID,
-            recipient_key=TEST_VERKEY
-        ).save(self.session)
+        await RouteRecord(connection_id=TEST_CONN_ID, recipient_key=TEST_VERKEY).save(
+            self.session
+        )
         await handler.handle(self.context, responder)
         assert len(responder.messages) == 1
         result, _target = responder.messages[0]

@@ -20,7 +20,7 @@ class MediationRecord(BaseRecord):
 
     RECORD_TYPE = "mediation_requests"
     RECORD_ID_NAME = "mediation_id"
-    TAG_NAMES = {"state",  "role", "connection_id"}
+    TAG_NAMES = {"state", "role", "connection_id"}
 
     STATE_REQUEST = "request"
     STATE_GRANTED = "granted"
@@ -54,9 +54,7 @@ class MediationRecord(BaseRecord):
             kwargs: Pass arguments through to BaseRecord.__init__
 
         """
-        super().__init__(
-            mediation_id, state or self.STATE_REQUEST, **kwargs
-        )
+        super().__init__(mediation_id, state or self.STATE_REQUEST, **kwargs)
         self.role = role if role else self.ROLE_SERVER
         self.connection_id = connection_id
         self.mediator_terms = list(mediator_terms) if mediator_terms else []
@@ -78,7 +76,7 @@ class MediationRecord(BaseRecord):
                 "mediator_terms",
                 "recipient_terms",
                 "endpoint",
-                "routing_keys"
+                "routing_keys",
             )
         }
 
@@ -139,9 +137,4 @@ class MediationRecordSchema(BaseRecordSchema):
     mediator_terms = fields.List(fields.Str(), required=False)
     recipient_terms = fields.List(fields.Str(), required=False)
     endpoint = fields.Str(required=False)
-    routing_keys = fields.List(
-        fields.Str(
-            **INDY_RAW_PUBLIC_KEY
-        ),
-        required=False
-    )
+    routing_keys = fields.List(fields.Str(**INDY_RAW_PUBLIC_KEY), required=False)

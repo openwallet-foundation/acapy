@@ -10,16 +10,17 @@ from . import MessageTest
 
 class TestKeylist(MessageTest, TestCase):
     """Test Keylist message."""
+
     TYPE = KEYLIST
     CLASS = Keylist
     SCHEMA = KeylistSchema
     VALUES = {
-        'pagination': KeylistQueryPaginate(10, 10),
-        'keys': [
+        "pagination": KeylistQueryPaginate(10, 10),
+        "keys": [
             KeylistKey(
-                recipient_key='3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx',
-                action='added',
-                result='success'
+                recipient_key="3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx",
+                action="added",
+                result="success",
             )
-        ]
+        ],
     }

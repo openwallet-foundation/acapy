@@ -44,7 +44,4 @@ class KeylistKeySchema(BaseModelSchema):
         model_class = KeylistKey
         unknown = EXCLUDE
 
-    recipient_key = fields.Str(
-        required=True,
-        **INDY_RAW_PUBLIC_KEY
-    )
+    recipient_key = fields.Str(required=True, **INDY_RAW_PUBLIC_KEY)

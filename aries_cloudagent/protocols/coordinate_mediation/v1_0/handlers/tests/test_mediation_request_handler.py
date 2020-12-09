@@ -12,7 +12,7 @@ from ...messages.mediate_request import MediationRequest
 from ...models.mediation_record import MediationRecord
 from ..mediate_request_handler import MediationRequestHandler
 
-TEST_CONN_ID = 'conn-id'
+TEST_CONN_ID = "conn-id"
 TEST_VERKEY = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
 
 
@@ -33,7 +33,7 @@ class TestMediationRequestHandler(AsyncTestCase):
         self.context.connection_ready = False
         with pytest.raises(HandlerException) as exc:
             await handler.handle(self.context, responder)
-            assert 'no active connection' in str(exc.value)
+            assert "no active connection" in str(exc.value)
 
     async def test_handler_mediation_record_already_exists(self):
         handler, responder = MediationRequestHandler(), MockResponder()
@@ -55,7 +55,7 @@ class TestMediationRequestHandler(AsyncTestCase):
 
     async def test_handler_open_mediation(self):
         handler, responder = MediationRequestHandler(), MockResponder()
-        self.context.settings.set_value('mediation.open', True)
+        self.context.settings.set_value("mediation.open", True)
         await handler.handle(self.context, responder)
         record = await MediationRecord.retrieve_by_connection_id(
             self.session, TEST_CONN_ID

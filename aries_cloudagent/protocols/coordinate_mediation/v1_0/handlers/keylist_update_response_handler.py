@@ -1,6 +1,9 @@
 """Handler for keylist-update-response message."""
 from .....messaging.base_handler import (
-    BaseHandler, BaseResponder, HandlerException, RequestContext
+    BaseHandler,
+    BaseResponder,
+    HandlerException,
+    RequestContext,
 )
 from ..messages.keylist_update_response import KeylistUpdateResponse
 from ..manager import MediationManager
@@ -22,6 +25,5 @@ class KeylistUpdateResponseHandler(BaseHandler):
         session = await context.session()
         mgr = MediationManager(session)
         await mgr.store_update_results(
-            context.connection_record.connection_id,
-            context.message.updated
+            context.connection_record.connection_id, context.message.updated
         )

@@ -8,8 +8,7 @@ from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 from ..message_types import MEDIATE_DENY, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = (
-    f"{PROTOCOL_PACKAGE}.handlers"
-    ".mediation_deny_handler.MediationDenyHandler"
+    f"{PROTOCOL_PACKAGE}.handlers" ".mediation_deny_handler.MediationDenyHandler"
 )
 
 
@@ -51,14 +50,10 @@ class MediationDenySchema(AgentMessageSchema):
         model_class = MediationDeny
 
     mediator_terms = fields.List(
-        fields.Str(
-            description="Terms for mediator to agree"
-        ),
+        fields.Str(description="Terms for mediator to agree"),
         required=False,
     )
     recipient_terms = fields.List(
-        fields.Str(
-            description="Terms for recipient to agree"
-        ),
+        fields.Str(description="Terms for recipient to agree"),
         required=False,
     )

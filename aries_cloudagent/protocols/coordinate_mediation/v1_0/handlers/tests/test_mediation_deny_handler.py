@@ -10,9 +10,9 @@ from ...messages.mediate_deny import MediationDeny
 from ...models.mediation_record import MediationRecord
 from ..mediation_deny_handler import MediationDenyHandler
 
-TEST_CONN_ID = 'conn-id'
-TEST_MEDIATOR_TERMS = ['test', 'mediator', 'terms']
-TEST_RECIPIENT_TERMS = ['test', 'recipient', 'terms']
+TEST_CONN_ID = "conn-id"
+TEST_MEDIATOR_TERMS = ["test", "mediator", "terms"]
+TEST_RECIPIENT_TERMS = ["test", "recipient", "terms"]
 
 
 class TestMediationDenyHandler(AsyncTestCase):
@@ -23,8 +23,7 @@ class TestMediationDenyHandler(AsyncTestCase):
         self.context = RequestContext.test_context()
         self.session = await self.context.session()
         self.context.message = MediationDeny(
-            mediator_terms=TEST_MEDIATOR_TERMS,
-            recipient_terms=TEST_RECIPIENT_TERMS
+            mediator_terms=TEST_MEDIATOR_TERMS, recipient_terms=TEST_RECIPIENT_TERMS
         )
         self.context.connection_ready = True
         self.context.connection_record = ConnRecord(connection_id=TEST_CONN_ID)
@@ -34,13 +33,13 @@ class TestMediationDenyHandler(AsyncTestCase):
         self.context.connection_ready = False
         with pytest.raises(HandlerException) as exc:
             await handler.handle(self.context, responder)
-            assert 'no active connection' in str(exc.value)
+            assert "no active connection" in str(exc.value)
 
     async def test_handler_no_mediation_record(self):
         handler, responder = MediationDenyHandler(), MockResponder()
         with pytest.raises(HandlerException) as exc:
             await handler.handle(self.context, responder)
-            assert 'has not been requested' in str(exc.value)
+            assert "has not been requested" in str(exc.value)
 
     async def test_handler(self):
         handler, responder = MediationDenyHandler(), MockResponder()

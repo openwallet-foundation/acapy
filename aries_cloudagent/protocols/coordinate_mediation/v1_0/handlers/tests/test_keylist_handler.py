@@ -25,6 +25,7 @@ def context():
     context.connection_ready = True
     yield context
 
+
 @pytest.fixture
 async def session(context):  # pylint: disable=W0621
     """Fixture for session used in tests"""
@@ -33,6 +34,7 @@ async def session(context):  # pylint: disable=W0621
 
 class TestKeylistHandler:
     """Test keylist handler."""
+
     # pylint: disable=W0621
 
     async def test_handler_no_active_connection(self, context):
@@ -40,20 +42,18 @@ class TestKeylistHandler:
         context.connection_ready = False
         with pytest.raises(HandlerException) as exc:
             await handler.handle(context, responder)
-            assert 'inactive connection' in exc.value
+            assert "inactive connection" in exc.value
 
     async def test_handler_no_record(self, context, caplog):
         caplog.set_level(logging.INFO)
         handler, responder = KeylistHandler(), MockResponder()
         await handler.handle(context, responder)
-        assert 'not acting as mediator' in caplog.text
-        assert 'Keylist received: ' not in caplog.text
+        assert "not acting as mediator" in caplog.text
+        assert "Keylist received: " not in caplog.text
 
     async def test_handler(self, context, session, caplog):
         caplog.set_level(logging.INFO)
         handler, responder = KeylistHandler(), MockResponder()
-        await MediationRecord(
-            connection_id=TEST_CONN_ID
-        ).save(session)
+        await MediationRecord(connection_id=TEST_CONN_ID).save(session)
         await handler.handle(context, responder)
-        assert 'Keylist received: ' in caplog.text
+        assert "Keylist received: " in caplog.text

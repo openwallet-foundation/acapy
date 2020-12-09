@@ -2,7 +2,10 @@
 import logging
 
 from .....messaging.base_handler import (
-    BaseHandler, BaseResponder, HandlerException, RequestContext
+    BaseHandler,
+    BaseResponder,
+    HandlerException,
+    RequestContext,
 )
 from .....storage.error import StorageNotFoundError
 from ..messages.keylist import Keylist
@@ -32,10 +35,10 @@ class KeylistHandler(BaseHandler):
             )
         except StorageNotFoundError as err:
             LOG.warning(
-                'Received keylist from connection that is not acting as mediator: %s',
-                err
+                "Received keylist from connection that is not acting as mediator: %s",
+                err,
             )
             return
 
         # TODO verify our keylist matches?
-        LOG.info('Keylist received: %s', context.message)
+        LOG.info("Keylist received: %s", context.message)

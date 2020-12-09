@@ -14,8 +14,9 @@ from ...messages.keylist_update_response import KeylistUpdateResponse
 from ...manager import MediationManager
 from ..keylist_update_response_handler import KeylistUpdateResponseHandler
 
-TEST_CONN_ID = 'conn-id'
+TEST_CONN_ID = "conn-id"
 TEST_VERKEY = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
+
 
 class TestKeylistUpdateResponseHandler(AsyncTestCase):
     """Test handler for keylist-update-response message."""
@@ -27,7 +28,7 @@ class TestKeylistUpdateResponseHandler(AsyncTestCase):
             KeylistUpdated(
                 recipient_key=TEST_VERKEY,
                 action=KeylistUpdateRule.RULE_ADD,
-                result=KeylistUpdated.RESULT_SUCCESS
+                result=KeylistUpdated.RESULT_SUCCESS,
             )
         ]
         self.context.message = KeylistUpdateResponse(updated=self.updated)
@@ -39,12 +40,12 @@ class TestKeylistUpdateResponseHandler(AsyncTestCase):
         self.context.connection_ready = False
         with pytest.raises(HandlerException) as exc:
             await handler.handle(self.context, responder)
-            assert 'no active connection' in str(exc.value)
+            assert "no active connection" in str(exc.value)
 
     async def test_handler(self):
         handler, responder = KeylistUpdateResponseHandler(), MockResponder()
         with async_mock.patch.object(
-            MediationManager, 'store_update_results'
+            MediationManager, "store_update_results"
         ) as mock_method:
             await handler.handle(self.context, responder)
             mock_method.assert_called_once_with(TEST_CONN_ID, self.updated)

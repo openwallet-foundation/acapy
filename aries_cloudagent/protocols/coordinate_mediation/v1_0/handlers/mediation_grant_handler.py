@@ -1,7 +1,10 @@
 """Handler for mediate-grant message."""
 
 from .....messaging.base_handler import (
-    BaseHandler, BaseResponder, HandlerException, RequestContext
+    BaseHandler,
+    BaseResponder,
+    HandlerException,
+    RequestContext,
 )
 from .....storage.error import StorageNotFoundError
 from ..manager import MediationManager
@@ -20,7 +23,7 @@ class MediationGrantHandler(BaseHandler):
         assert isinstance(context.message, MediationGrant)
 
         if not context.connection_ready:
-            raise HandlerException('Received mediation grant from inactive connection')
+            raise HandlerException("Received mediation grant from inactive connection")
 
         session = await context.session()
         mgr = MediationManager(session)
@@ -31,6 +34,6 @@ class MediationGrantHandler(BaseHandler):
             await mgr.request_granted(record, context.message)
         except StorageNotFoundError as err:
             raise HandlerException(
-                'Received mediation grant from connection from which mediation '
-                'has not been requested.'
+                "Received mediation grant from connection from which mediation "
+                "has not been requested."
             ) from err

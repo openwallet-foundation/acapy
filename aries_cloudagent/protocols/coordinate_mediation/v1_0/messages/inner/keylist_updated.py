@@ -54,9 +54,6 @@ class KeylistUpdatedSchema(BaseModelSchema):
         model_class = KeylistUpdated
         unknown = EXCLUDE
 
-    recipient_key = fields.Str(
-        required=True,
-        **INDY_RAW_PUBLIC_KEY
-    )
+    recipient_key = fields.Str(required=True, **INDY_RAW_PUBLIC_KEY)
     action = fields.Str(required=True)
     result = fields.Str(required=True)

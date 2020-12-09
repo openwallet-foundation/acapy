@@ -82,9 +82,7 @@ class TestRoutingManager(AsyncTestCase):
                 await self.manager.get_recipient(TEST_ROUTE_VERKEY)
 
     async def test_get_routes_connection_id(self):
-        await self.manager.create_route_record(
-            TEST_CONN_ID, TEST_ROUTE_VERKEY
-        )
+        await self.manager.create_route_record(TEST_CONN_ID, TEST_ROUTE_VERKEY)
         results = await self.manager.get_routes(
             client_connection_id=TEST_CONN_ID, tag_filter=None
         )
@@ -149,13 +147,12 @@ class TestRoutingManager(AsyncTestCase):
         await RouteRecord(
             role=RouteRecord.ROLE_CLIENT,
             connection_id=TEST_CONN_ID,
-            recipient_key=TEST_ROUTE_VERKEY
+            recipient_key=TEST_ROUTE_VERKEY,
         ).save(self.session)
         results = await self.manager.get_routes()
         assert len(results) == 1
         assert results[0].connection_id == TEST_CONN_ID
         assert results[0].recipient_key == TEST_ROUTE_VERKEY
-
 
     async def test_update_routes_delete(self):
         await self.manager.create_route_record(TEST_CONN_ID, TEST_ROUTE_VERKEY)

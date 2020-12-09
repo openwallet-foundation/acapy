@@ -11,8 +11,7 @@ from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 from ..message_types import MEDIATE_GRANT, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = (
-    f"{PROTOCOL_PACKAGE}.handlers"
-    ".mediation_grant_handler.MediationGrantHandler"
+    f"{PROTOCOL_PACKAGE}.handlers" ".mediation_grant_handler.MediationGrantHandler"
 )
 
 
@@ -54,13 +53,11 @@ class MediationGrantSchema(AgentMessageSchema):
         model_class = MediationGrant
 
     endpoint = fields.Str(
-            description="endpoint on which messages destined "
-            "for the recipient are received.",
-            example="http://192.168.56.102:8020/"
-        )
+        description="endpoint on which messages destined "
+        "for the recipient are received.",
+        example="http://192.168.56.102:8020/",
+    )
     routing_keys = fields.List(
-        fields.Str(
-            description="Keys to use for forward message packaging"
-        ),
+        fields.Str(description="Keys to use for forward message packaging"),
         required=False,
     )

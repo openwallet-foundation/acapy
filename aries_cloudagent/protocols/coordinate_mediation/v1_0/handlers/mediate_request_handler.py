@@ -1,7 +1,10 @@
 """Handler for mediate-request message."""
 
 from .....messaging.base_handler import (
-    BaseHandler, BaseResponder, HandlerException, RequestContext
+    BaseHandler,
+    BaseResponder,
+    HandlerException,
+    RequestContext,
 )
 from ....problem_report.v1_0.message import ProblemReport
 from ..manager import MediationManager, MediationAlreadyExists

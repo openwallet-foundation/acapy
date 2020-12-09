@@ -899,7 +899,7 @@ class MediationGroup(ArgumentGroup):
             action="store_true",
             help="Enables didcomm mediation. After establishing a connection, if enabled, \
                 an agent may request message mediation, which will allow the mediator to \
-                forward messages on behalf of the recipient. See aries-rfc:0211."
+                forward messages on behalf of the recipient. See aries-rfc:0211.",
         )
         # TODO: add flags for terms and queue
 

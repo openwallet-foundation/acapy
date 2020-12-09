@@ -10,9 +10,9 @@ from ...messages.mediate_grant import MediationGrant
 from ...models.mediation_record import MediationRecord
 from ..mediation_grant_handler import MediationGrantHandler
 
-TEST_CONN_ID = 'conn-id'
+TEST_CONN_ID = "conn-id"
 TEST_VERKEY = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
-TEST_ENDPOINT = 'https://example.com'
+TEST_ENDPOINT = "https://example.com"
 
 
 class TestMediationGrantHandler(AsyncTestCase):
@@ -23,8 +23,7 @@ class TestMediationGrantHandler(AsyncTestCase):
         self.context = RequestContext.test_context()
         self.session = await self.context.session()
         self.context.message = MediationGrant(
-            endpoint=TEST_ENDPOINT,
-            routing_keys=[TEST_VERKEY]
+            endpoint=TEST_ENDPOINT, routing_keys=[TEST_VERKEY]
         )
         self.context.connection_ready = True
         self.context.connection_record = ConnRecord(connection_id=TEST_CONN_ID)
@@ -34,13 +33,13 @@ class TestMediationGrantHandler(AsyncTestCase):
         self.context.connection_ready = False
         with pytest.raises(HandlerException) as exc:
             await handler.handle(self.context, responder)
-            assert 'no active connection' in str(exc.value)
+            assert "no active connection" in str(exc.value)
 
     async def test_handler_no_mediation_record(self):
         handler, responder = MediationGrantHandler(), MockResponder()
         with pytest.raises(HandlerException) as exc:
             await handler.handle(self.context, responder)
-            assert 'has not been requested' in str(exc.value)
+            assert "has not been requested" in str(exc.value)
 
     async def test_handler(self):
         handler, responder = MediationGrantHandler(), MockResponder()

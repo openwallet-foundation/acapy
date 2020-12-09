@@ -8,6 +8,7 @@ from .....didcomm_prefix import DIDCommPrefix
 
 class MessageTest:
     """Base class for message tests."""
+
     TYPE: str = None
     CLASS = AgentMessage
     SCHEMA = AgentMessageSchema
@@ -27,7 +28,7 @@ class MessageTest:
 
     def test_deserialize(self):
         """Test deserialization of message."""
-        with mock.patch.object(self.SCHEMA, 'load') as message_schema_load:
+        with mock.patch.object(self.SCHEMA, "load") as message_schema_load:
             obj = {"obj": "obj"}
 
             message = self.CLASS.deserialize(obj)
@@ -37,7 +38,7 @@ class MessageTest:
 
     def test_serialize(self):
         """Test serialization of message."""
-        with mock.patch.object(self.SCHEMA, 'dump') as message_schema_dump:
+        with mock.patch.object(self.SCHEMA, "dump") as message_schema_dump:
             message_dict = self.message.serialize()
             message_schema_dump.assert_called_once_with(self.message)
 
