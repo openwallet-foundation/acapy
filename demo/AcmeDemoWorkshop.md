@@ -51,18 +51,19 @@ Then, in the Acme shell, you can select option ```2``` and then option ```1```, 
 
 In the Acme code ```acme.py``` we are going to add code to issue a proof request to Alice, and then validate the received proof.
 
-First the following import statements and a constant we will need near the top of acme.py:
+First the following import statements and constants that we will need near the top of acme.py:
 ```
-        import random
+import random
 
-        from datetime import date
-        from uuid import uuid4
+from datetime import date
+from uuid import uuid4
 ```
 
 ```
-        CRED_PREVIEW_TYPE = (
-            "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/issue-credential/1.0/credential-preview"
-        )
+TAILS_FILE_COUNT = int(os.getenv("TAILS_FILE_COUNT", 100))
+CRED_PREVIEW_TYPE = (
+    "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/issue-credential/1.0/credential-preview"
+)
 ```
 
 Next locate the code that is triggered by option ```2```:
@@ -190,6 +191,8 @@ First though we need to register a schema and credential definition.  Find this 
             #     "employee id schema",
             #     version,
             #     ["employee_id", "name", "date", "position"],
+            #     support_revocation=False,
+            #     revocation_registry_size=TAILS_FILE_COUNT,
             # )
 ```
 
@@ -213,6 +216,8 @@ First though we need to register a schema and credential definition.  Find this 
                 "employee id schema",
                 version,
                 ["employee_id", "name", "date", "position"],
+                support_revocation=False,
+                revocation_registry_size=TAILS_FILE_COUNT,
             )
 ```
 

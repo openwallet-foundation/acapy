@@ -135,6 +135,8 @@ async def main(start_port: int, show_timing: bool = False):
             #     "employee id schema",
             #     version,
             #     ["employee_id", "name", "date", "position"],
+            #     support_revocation=False,
+            #     revocation_registry_size=TAILS_FILE_COUNT,
             # )
 
         with log_timer("Generate invitation duration:"):
