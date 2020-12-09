@@ -49,9 +49,9 @@ class RouteRecord(BaseRecord):
         if not isinstance(other, RouteRecord):
             return False
         return (
-            self.record_id == other.record_id and
-            self.record_tags == other.record_tags and
-            self.record_value == other.record_value
+            self.record_id == other.record_id
+            and self.record_tags == other.record_tags
+            and self.record_value == other.record_value
         )
 
     @property

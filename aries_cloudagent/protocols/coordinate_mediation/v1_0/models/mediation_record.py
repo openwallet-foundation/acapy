@@ -67,9 +67,9 @@ class MediationRecord(BaseRecord):
         if not isinstance(other, MediationRecord):
             return False
         return (
-            self.mediation_id == other.mediation_id and
-            self.record_tags == other.record_tags and
-            self.record_value == other.record_value
+            self.mediation_id == other.mediation_id
+            and self.record_tags == other.record_tags
+            and self.record_value == other.record_value
         )
 
     @property
