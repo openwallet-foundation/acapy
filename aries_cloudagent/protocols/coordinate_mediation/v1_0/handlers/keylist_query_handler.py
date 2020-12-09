@@ -36,12 +36,8 @@ class KeylistQueryHandler(BaseHandler):
             keylist_response = await mgr.create_keylist_query_response(keylist)
             await responder.send_reply(keylist_response)
         except (StorageNotFoundError, MediationNotGrantedError):
-            await self.reject(responder)
-
-    async def reject(self, responder: BaseResponder):
-        """Send problem report."""
-        await responder.send_reply(
-            ProblemReport(
-                explain_ltxt="Mediation has not been granted for this connection."
+            await responder.send_reply(
+                ProblemReport(
+                    explain_ltxt="Mediation has not been granted for this connection."
+                )
             )
-        )
