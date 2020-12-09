@@ -36,6 +36,7 @@ from ..transport.wire_format import BaseWireFormat
 from ..wallet.base import DIDInfo
 from ..utils.task_queue import CompletedTask, TaskQueue
 from ..utils.stats import Collector
+from ..multitenant.manager import MultitenantManager
 
 from .dispatcher import Dispatcher
 
@@ -110,6 +111,11 @@ class Conductor:
         wire_format = context.inject(BaseWireFormat, required=False)
         if wire_format and hasattr(wire_format, "task_queue"):
             wire_format.task_queue = self.dispatcher.task_queue
+
+        # Bind manager for multitenancy related tasks
+        if context.settings.get("multitenant.enabled"):
+            multitenant_mgr = MultitenantManager(self.root_profile)
+            context.injector.bind_instance(MultitenantManager, multitenant_mgr)
 
         # Admin API
         if context.settings.get("admin.enabled"):

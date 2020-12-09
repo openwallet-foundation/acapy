@@ -13,11 +13,11 @@ from aiohttp_apispec import (
     validation_middleware,
 )
 import aiohttp_cors
+import jwt
 
 from marshmallow import fields, Schema
 
 from ..config.injection_context import InjectionContext
-from ..config.wallet import wallet_config
 from ..core.profile import Profile
 from ..core.plugin_registry import PluginRegistry
 from ..ledger.error import LedgerConfigError, LedgerTransactionError
@@ -27,6 +27,7 @@ from ..transport.outbound.message import OutboundMessage
 from ..utils.stats import Collector
 from ..utils.task_queue import TaskQueue
 from ..version import __version__
+from ..wallet.models.wallet_record import WalletRecord
 from ..multitenant.manager import MultitenantManager, MultitenantManagerError
 
 from .base_server import BaseAdminServer
@@ -192,6 +193,7 @@ class AdminServer(BaseAdminServer):
         self,
         host: str,
         port: int,
+        # MTODO: can't we use root_profile context here?
         context: InjectionContext,
         root_profile: Profile,
         outbound_message_router: Coroutine,
@@ -230,6 +232,8 @@ class AdminServer(BaseAdminServer):
         self.webhook_targets = {}
         self.websocket_queues = {}
         self.site = None
+        self.multitenant_enabled = context.settings.get("multitenant.enabled")
+        self.jwt_secret = context.settings.get("multitenant.jwt_secret")
 
     async def make_application(self) -> web.Application:
         """Get the aiohttp application instance."""
@@ -279,38 +283,36 @@ class AdminServer(BaseAdminServer):
 
             # Multitenancy context setup
             # MTODO: extract to separate middleware
-            if context.settings.get("multitenant.enabled") and authorization_header:
-
-                bearer, _, token = authorization_header.partition(" ")
-                if bearer != "Bearer":
-                    raise web.HTTPUnauthorized(reason="Invalid header structure")
-
+            if self.multitenant_enabled and authorization_header:
                 try:
-                    # MTODO: multitenant manager bind instance
-                    multitenant_mgr = context.inject(MultitenantManager)
+                    bearer, _, token = authorization_header.partition("")
+                    if bearer != "Bearer":
+                        raise web.HTTPUnauthorized(reason="Invalid header structure")
+                    token_body = jwt.decode(token, self.jwt_secret)
 
-                    (
-                        wallet_record,
-                        token_body,
-                    ) = await multitenant_mgr.get_wallet_for_auth_token(token)
+                    wallet_id = token_body.get("wallet_id")
+                    wallet_key = token_body.get("wallet_key")
 
-                    LOGGER.debug(
-                        "token provided for subwallet %s, switching context",
-                        wallet_record.wallet_record_id,
-                    )
+                    async with self.root_profile.session() as session:
+                        multitenant_mgr = session.inject(MultitenantManager)
+                        wallet = await WalletRecord.retrieve_by_id(session, wallet_id)
+                        extra_settings = {}
 
-                    extra_settings = (
-                        {"wallet.key": token_body["wallet_key"]}
-                        if token_body["wallet_key"]
-                        else None
-                    )
-                    context = multitenant_mgr.get_wallet_context(
-                        context, wallet_record, extra_settings
-                    )
-                    (profile, did_info) = await wallet_config(context, provision=False)
+                        if not wallet.is_managed:
+                            if not wallet_key:
+                                raise web.HTTPUnauthorized(
+                                    "Missing wallet_key for unmanaged wallet"
+                                )
 
+                            extra_settings["wallet.key"] = wallet_key
+
+                        profile = await multitenant_mgr.get_wallet_profile(
+                            context, wallet, extra_settings
+                        )
                 except MultitenantManagerError as err:
                     raise web.HTTPUnauthorized(err.roll_up)
+                except jwt.InvalidTokenError:
+                    raise web.HTTPUnauthorized()
 
             # TODO may dynamically adjust the profile used here according to
             # headers or other parameters

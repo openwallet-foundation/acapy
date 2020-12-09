@@ -78,6 +78,11 @@ class WalletRecord(BaseRecord):
             )
         }
 
+    @property
+    def is_managed(self) -> bool:
+        """Accessor to check if the key management mode is managed."""
+        return self.key_management_mode == WalletRecord.MODE_MANAGED
+
     def __eq__(self, other: Any) -> bool:
         """Comparison between records."""
         return super().__eq__(other)

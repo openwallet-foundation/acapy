@@ -196,12 +196,12 @@ class ConnectionManager:
         await connection.attach_invitation(self._session, invitation)
 
         # Multitenancy: add routing for key to handle inbound messages using relay
-        if self._session.settings.get(
-            "multitenant.enabled"
-        ) and self._session.settings.get("wallet.id"):
-            multitenant_mgr = await self._session.inject(MultitenantManager)
+        multitenant_enabled = self._session.settings.get("multitenant.enabled")
+        wallet_id = self._session.settings.get("wallet.id")
+        if multitenant_enabled and wallet_id:
+            multitenant_mgr = self._session.inject(MultitenantManager)
             await multitenant_mgr.add_wallet_route(
-                wallet_id=self._session.settings.get("wallet.id"),
+                wallet_id=wallet_id,
                 recipient_key=invitation_key,
             )
 
@@ -328,13 +328,12 @@ class ConnectionManager:
         await connection.save(self._session, reason="Created connection request")
 
         # Multitenancy: add routing for key to handle inbound messages using relay
-        # MTODO: Key could already be registered.
-        if self._session.settings.get(
-            "multitenant.enabled"
-        ) and self._session.settings.get("wallet.id"):
-            multitenant_mgr = await self._session.inject(MultitenantManager)
+        multitenant_enabled = self._session.settings.get("multitenant.enabled")
+        wallet_id = self._session.settings.get("wallet.id")
+        if multitenant_enabled and wallet_id:
+            multitenant_mgr = self._session.inject(MultitenantManager)
             await multitenant_mgr.add_wallet_route(
-                wallet_id=self._session.settings.get("wallet.id"),
+                wallet_id=wallet_id,
                 recipient_key=my_info.verkey,
             )
 
@@ -448,14 +447,12 @@ class ConnectionManager:
 
         # Multitenancy: add routing for key to handle inbound messages using relay
         # MTODO: Key could already be registered.
-        if (
-            my_info
-            and self._session.settings.get("multitenant.enabled")
-            and self._session.settings.get("wallet.id")
-        ):
-            multitenant_mgr = await self._session.inject(MultitenantManager)
+        multitenant_enabled = self._session.settings.get("multitenant.enabled")
+        wallet_id = self._session.settings.get("wallet.id")
+        if my_info and multitenant_enabled and wallet_id:
+            multitenant_mgr = self._session.inject(MultitenantManager)
             await multitenant_mgr.add_wallet_route(
-                wallet_id=self._session.settings.get("wallet.id"),
+                wallet_id=wallet_id,
                 recipient_key=my_info.verkey,
             )
 
@@ -543,13 +540,12 @@ class ConnectionManager:
         )
 
         # Multitenancy: add routing for key to handle inbound messages using relay
-        # MTODO: Key could already be registered.
-        if self._session.settings.get(
-            "multitenant.enabled"
-        ) and self._session.settings.get("wallet.id"):
-            multitenant_mgr = await self._session.inject(MultitenantManager)
+        multitenant_enabled = self._session.settings.get("multitenant.enabled")
+        wallet_id = self._session.settings.get("wallet.id")
+        if multitenant_enabled and wallet_id:
+            multitenant_mgr = self._session.inject(MultitenantManager)
             await multitenant_mgr.add_wallet_route(
-                wallet_id=self._session.settings.get("wallet.id"),
+                wallet_id=wallet_id,
                 recipient_key=my_info.verkey,
             )
 

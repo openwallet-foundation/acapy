@@ -125,6 +125,7 @@ class TestHttpTransport(AioHTTPTestCase):
                     )
                 ),
                 can_respond=True,
+                profile=InMemoryProfile.test_profile(),
                 clear_response=async_mock.MagicMock(),
                 wait_response=async_mock.CoroutineMock(return_value=b"Hello world"),
             )
@@ -136,6 +137,7 @@ class TestHttpTransport(AioHTTPTestCase):
                 receive=async_mock.CoroutineMock(
                     side_effect=test_module.MessageParseError()
                 ),
+                profile=InMemoryProfile.test_profile(),
             )
             async with self.client.post("/", data=test_message) as resp:
                 status = resp.status
