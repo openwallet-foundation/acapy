@@ -44,6 +44,16 @@ class RouteRecord(BaseRecord):
         self.connection_id = connection_id
         self.recipient_key = recipient_key
 
+    def __eq__(self, other: "RouteRecord"):
+        """Equality check."""
+        if not isinstance(other, RouteRecord):
+            return False
+        return (
+            self.record_id == other.record_id and
+            self.record_tags == other.record_tags and
+            self.record_value == other.record_value
+        )
+
     @property
     def record_id(self) -> str:
         """Get record ID."""

@@ -62,6 +62,16 @@ class MediationRecord(BaseRecord):
         self.endpoint = endpoint
         self.routing_keys = list(routing_keys) if routing_keys else []
 
+    def __eq__(self, other: "MediationRecord"):
+        """Equality check."""
+        if not isinstance(other, MediationRecord):
+            return False
+        return (
+            self.mediation_id == other.mediation_id and
+            self.record_tags == other.record_tags and
+            self.record_value == other.record_value
+        )
+
     @property
     def mediation_id(self) -> str:
         """Get Mediation ID."""
