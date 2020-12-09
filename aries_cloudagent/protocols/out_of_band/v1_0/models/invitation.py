@@ -7,6 +7,8 @@ from marshmallow import fields
 from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
 from .....messaging.valid import UUIDFour
 
+from ..messages.invitation import InvitationMessage
+
 
 class InvitationRecord(BaseExchangeRecord):
     """Represents an out of band invitation record."""
@@ -57,12 +59,22 @@ class InvitationRecord(BaseExchangeRecord):
         return self._id
 
     @property
+    def invitation_url(self) -> str:
+        """Accessor to the invitation url."""
+        return (
+            InvitationMessage.deserialize(self.invitation).to_url()
+            if self.invitation
+            else None
+        )
+
+    @property
     def record_value(self) -> dict:
         """Accessor for the JSON record value generated for this invitation."""
         return {
             prop: getattr(self, prop)
             for prop in (
                 "invitation",
+                "invitation_url",
                 "state",
                 "trace",
                 "auto_accept",
@@ -97,6 +109,15 @@ class InvitationRecordSchema(BaseExchangeSchema):
     invitation = fields.Dict(
         required=False,
         description="Out of band invitation object",
+    )
+    invitation_url = fields.Str(
+        required=False,
+        dump_only=True,
+        description="Invitation message URL",
+        example=(
+            "https://example.com/endpoint?"
+            "c_i=eyJAdHlwZSI6ICIuLi4iLCAiLi4uIjogIi4uLiJ9XX0="
+        ),
     )
     auto_accept = fields.Bool(
         required=False,

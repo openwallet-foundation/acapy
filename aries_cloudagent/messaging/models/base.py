@@ -142,7 +142,11 @@ class BaseModel(ABC):
         """
         schema = self.Schema(unknown=EXCLUDE)
         try:
-            return schema.dumps(self) if as_string else schema.dump(self)
+            return (
+                schema.dumps(self, separators=(",", ":"))
+                if as_string
+                else schema.dump(self)
+            )
         except ValidationError as e:
             LOGGER.exception(f"{self.__class__.__name__} message serialization error:")
             raise BaseModelError(
