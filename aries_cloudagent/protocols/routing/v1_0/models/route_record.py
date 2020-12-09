@@ -2,10 +2,12 @@
 
 from marshmallow import EXCLUDE, fields
 
-from .....messaging.models.base import BaseModel, BaseModelSchema
+from .....config.injection_context import InjectionContext
+
+from .....messaging.models.base_record import BaseRecord, BaseRecordSchema
 
 
-class RouteRecord(BaseModel):
+class RouteRecord(BaseRecord):
     """Class representing stored route information."""
 
     class Meta:
@@ -13,32 +15,86 @@ class RouteRecord(BaseModel):
 
         schema_class = "RouteRecordSchema"
 
+    RECORD_TYPE = "forward_route"
+    RECORD_ID_NAME = "record_id"
+    ROLE_CLIENT = "client"
+    ROLE_SERVER = "server"
+    TAG_NAMES = {"connection_id", "role", "recipient_key"}
+
     def __init__(
         self,
         *,
         record_id: str = None,
+        role: str = None,
         connection_id: str = None,
         recipient_key: str = None,
-        created_at: str = None,
-        updated_at: str = None,
         **kwargs
     ):
-        """
-        Initialize a RouteRecord instance.
+        """Initialize route record.
 
         Args:
-            recipient_key: The recipient verkey of the route
-
+            record_id (str): record_id optionally specify record id manually
+            role (str): role of agent, client or server
+            connection_id (str): connection_id associated with record
+            recipient_key (str): recipient_key associated with record
+            kwargs: additional args for BaseRecord
         """
-        super().__init__(**kwargs)
-        self.record_id = record_id
+        super().__init__(record_id, None, **kwargs)
+        self.role = role or self.ROLE_SERVER
         self.connection_id = connection_id
         self.recipient_key = recipient_key
-        self.created_at = created_at
-        self.updated_at = updated_at
+
+    def __eq__(self, other: "RouteRecord"):
+        """Equality check."""
+        if not isinstance(other, RouteRecord):
+            return False
+        return (
+            self.record_id == other.record_id
+            and self.record_tags == other.record_tags
+            and self.record_value == other.record_value
+        )
+
+    @property
+    def record_id(self) -> str:
+        """Get record ID."""
+        return self._id
+
+    @classmethod
+    async def retrieve_by_recipient_key(
+        cls, context: InjectionContext, recipient_key: str
+    ) -> "RouteRecord":
+        """Retrieve a route record by recipient key.
+
+        Args:
+            context (InjectionContext): context
+            recipient_key (str): key to look up
+
+        Returns:
+            RouteRecord: retrieved route record
+
+        """
+        tag_filter = {"recipient_key": recipient_key}
+        return await cls.retrieve_by_tag_filter(context, tag_filter)
+
+    @classmethod
+    async def retrieve_by_connection_id(
+        cls, context: InjectionContext, connection_id: str
+    ) -> "RouteRecord":
+        """Retrieve a route record by connection ID.
+
+        Args:
+            context (InjectionContext): context
+            connection_id (str): ID to look up
+
+        Returns:
+            RouteRecord: retrieved route record
+
+        """
+        tag_filter = {"connection_id": connection_id}
+        return await cls.retrieve_by_tag_filter(context, tag_filter)
 
 
-class RouteRecordSchema(BaseModelSchema):
+class RouteRecordSchema(BaseRecordSchema):
     """RouteRecord schema."""
 
     class Meta:
@@ -48,7 +104,6 @@ class RouteRecordSchema(BaseModelSchema):
         unknown = EXCLUDE
 
     record_id = fields.Str(required=False)
+    role = fields.Str(required=False)
     connection_id = fields.Str(required=True)
     recipient_key = fields.Str(required=True)
-    created_at = fields.Str(required=False)
-    updated_at = fields.Str(required=False)
