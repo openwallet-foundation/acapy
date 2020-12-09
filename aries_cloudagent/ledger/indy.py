@@ -1022,9 +1022,7 @@ class IndySdkLedger(BaseLedger):
         if not acceptance:
             storage = self.get_indy_storage()
             tag_filter = {"pool_name": self.pool.name}
-            found = await storage.search_records(
-                TAA_ACCEPTED_RECORD_TYPE, tag_filter
-            ).fetch_all()
+            found = await storage.find_all_records(TAA_ACCEPTED_RECORD_TYPE, tag_filter)
             if found:
                 records = list(json.loads(record.value) for record in found)
                 records.sort(key=lambda v: v["time"], reverse=True)

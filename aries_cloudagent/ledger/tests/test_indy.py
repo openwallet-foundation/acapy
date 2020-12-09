@@ -23,7 +23,6 @@ from ...ledger.indy import (
     Role,
     TAA_ACCEPTED_RECORD_TYPE,
 )
-from ...storage.indy import IndySdkStorage
 from ...storage.record import StorageRecord
 from ...wallet.base import DIDInfo
 
@@ -149,7 +148,7 @@ class TestIndySdkLedger(AsyncTestCase):
             assert led.pool_handle == mock_open_ledger.return_value
 
         mock_close_pool.assert_called_once()
-        assert ledger.pool_handle == None
+        assert ledger.pool_handle is None
 
     @async_mock.patch("indy.pool.set_protocol_version")
     @async_mock.patch("indy.pool.open_pool_ledger")
@@ -177,7 +176,7 @@ class TestIndySdkLedger(AsyncTestCase):
 
         await asyncio.sleep(1.01)
         mock_close_pool.assert_called_once()
-        assert ledger.pool_handle == None
+        assert ledger.pool_handle is None
 
     @async_mock.patch("indy.pool.set_protocol_version")
     @async_mock.patch("indy.pool.open_pool_ledger")
@@ -963,14 +962,14 @@ class TestIndySdkLedger(AsyncTestCase):
         "aries_cloudagent.ledger.indy.IndySdkLedger.fetch_credential_definition"
     )
     @async_mock.patch("aries_cloudagent.ledger.indy.IndySdkLedger._submit")
-    @async_mock.patch("aries_cloudagent.storage.indy.IndySdkStorage.search_records")
+    @async_mock.patch("aries_cloudagent.storage.indy.IndySdkStorage.find_all_records")
     @async_mock.patch("aries_cloudagent.storage.indy.IndySdkStorage.add_record")
     @async_mock.patch("indy.ledger.build_cred_def_request")
     async def test_send_credential_definition(
         self,
         mock_build_cred_def,
         mock_add_record,
-        mock_search_records,
+        mock_find_all_records,
         mock_submit,
         mock_fetch_cred_def,
         mock_close,
@@ -979,9 +978,7 @@ class TestIndySdkLedger(AsyncTestCase):
     ):
         mock_wallet = async_mock.MagicMock()
 
-        mock_search_records.return_value.fetch_all = async_mock.CoroutineMock(
-            return_value=[]
-        )
+        mock_find_all_records.return_value = []
 
         mock_get_schema.return_value = {"seqNo": 999}
         cred_def_id = f"{self.test_did}:3:CL:999:default"
@@ -1049,14 +1046,14 @@ class TestIndySdkLedger(AsyncTestCase):
         "aries_cloudagent.ledger.indy.IndySdkLedger.fetch_credential_definition"
     )
     @async_mock.patch("aries_cloudagent.ledger.indy.IndySdkLedger._submit")
-    @async_mock.patch("aries_cloudagent.storage.indy.IndySdkStorage.search_records")
+    @async_mock.patch("aries_cloudagent.storage.indy.IndySdkStorage.find_all_records")
     @async_mock.patch("aries_cloudagent.storage.indy.IndySdkStorage.add_record")
     @async_mock.patch("indy.ledger.build_cred_def_request")
     async def test_send_credential_definition_exists_in_ledger_and_wallet(
         self,
         mock_build_cred_def,
         mock_add_record,
-        mock_search_records,
+        mock_find_all_records,
         mock_submit,
         mock_fetch_cred_def,
         mock_close,
@@ -1065,9 +1062,7 @@ class TestIndySdkLedger(AsyncTestCase):
     ):
         mock_wallet = async_mock.MagicMock()
 
-        mock_search_records.return_value.fetch_all = async_mock.CoroutineMock(
-            return_value=[]
-        )
+        mock_find_all_records.return_value = []
 
         mock_get_schema.return_value = {"seqNo": 999}
         cred_def_id = f"{self.test_did}:3:CL:999:default"
@@ -1162,14 +1157,14 @@ class TestIndySdkLedger(AsyncTestCase):
         "aries_cloudagent.ledger.indy.IndySdkLedger.fetch_credential_definition"
     )
     @async_mock.patch("aries_cloudagent.ledger.indy.IndySdkLedger._submit")
-    @async_mock.patch("aries_cloudagent.storage.indy.IndySdkStorage.search_records")
+    @async_mock.patch("aries_cloudagent.storage.indy.IndySdkStorage.find_all_records")
     @async_mock.patch("aries_cloudagent.storage.indy.IndySdkStorage.add_record")
     @async_mock.patch("indy.ledger.build_cred_def_request")
     async def test_send_credential_definition_offer_exception(
         self,
         mock_build_cred_def,
         mock_add_record,
-        mock_search_records,
+        mock_find_all_records,
         mock_submit,
         mock_fetch_cred_def,
         mock_close,
@@ -1178,9 +1173,7 @@ class TestIndySdkLedger(AsyncTestCase):
     ):
         mock_wallet = async_mock.MagicMock()
 
-        mock_search_records.return_value.fetch_all = async_mock.CoroutineMock(
-            return_value=[]
-        )
+        mock_find_all_records.return_value = []
 
         mock_get_schema.return_value = {"seqNo": 999}
 
@@ -1461,14 +1454,14 @@ class TestIndySdkLedger(AsyncTestCase):
         "aries_cloudagent.ledger.indy.IndySdkLedger.fetch_credential_definition"
     )
     @async_mock.patch("aries_cloudagent.ledger.indy.IndySdkLedger._submit")
-    @async_mock.patch("aries_cloudagent.storage.indy.IndySdkStorage.search_records")
+    @async_mock.patch("aries_cloudagent.storage.indy.IndySdkStorage.find_all_records")
     @async_mock.patch("aries_cloudagent.storage.indy.IndySdkStorage.add_record")
     @async_mock.patch("indy.ledger.build_cred_def_request")
     async def test_send_credential_definition_on_ledger_in_wallet(
         self,
         mock_build_cred_def,
         mock_add_record,
-        mock_search_records,
+        mock_find_all_records,
         mock_submit,
         mock_fetch_cred_def,
         mock_close,
@@ -1477,9 +1470,7 @@ class TestIndySdkLedger(AsyncTestCase):
     ):
         mock_wallet = async_mock.MagicMock()
 
-        mock_search_records.return_value.fetch_all = async_mock.CoroutineMock(
-            return_value=[]
-        )
+        mock_find_all_records.return_value = []
 
         mock_get_schema.return_value = {"seqNo": 999}
         cred_def_id = f"{self.test_did}:3:CL:999:default"
@@ -1545,14 +1536,14 @@ class TestIndySdkLedger(AsyncTestCase):
         "aries_cloudagent.ledger.indy.IndySdkLedger.fetch_credential_definition"
     )
     @async_mock.patch("aries_cloudagent.ledger.indy.IndySdkLedger._submit")
-    @async_mock.patch("aries_cloudagent.storage.indy.IndySdkStorage.search_records")
+    @async_mock.patch("aries_cloudagent.storage.indy.IndySdkStorage.find_all_records")
     @async_mock.patch("aries_cloudagent.storage.indy.IndySdkStorage.add_record")
     @async_mock.patch("indy.ledger.build_cred_def_request")
     async def test_send_credential_definition_create_cred_def_exception(
         self,
         mock_build_cred_def,
         mock_add_record,
-        mock_search_records,
+        mock_find_all_records,
         mock_submit,
         mock_fetch_cred_def,
         mock_close,
@@ -1561,9 +1552,7 @@ class TestIndySdkLedger(AsyncTestCase):
     ):
         mock_wallet = async_mock.MagicMock()
 
-        mock_search_records.return_value.fetch_all = async_mock.CoroutineMock(
-            return_value=[]
-        )
+        mock_find_all_records.return_value = []
 
         mock_get_schema.return_value = {"seqNo": 999}
         cred_def_id = f"{self.test_did}:3:CL:999:default"
@@ -2804,9 +2793,9 @@ class TestIndySdkLedger(AsyncTestCase):
     @async_mock.patch("aries_cloudagent.ledger.indy.IndySdkLedgerPool.context_open")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndySdkLedgerPool.context_close")
     @async_mock.patch("aries_cloudagent.storage.indy.IndySdkStorage.add_record")
-    @async_mock.patch("aries_cloudagent.storage.indy.IndySdkStorage.search_records")
+    @async_mock.patch("aries_cloudagent.storage.indy.IndySdkStorage.find_all_records")
     async def test_accept_and_get_latest_txn_author_agreement(
-        self, mock_search_records, mock_add_record, mock_close, mock_open
+        self, mock_find_all_records, mock_add_record, mock_close, mock_open
     ):
         mock_wallet = async_mock.MagicMock()
 
@@ -2828,15 +2817,13 @@ class TestIndySdkLedger(AsyncTestCase):
             "time": accept_time,
         }
 
-        mock_search_records.return_value.fetch_all = async_mock.CoroutineMock(
-            return_value=[
-                StorageRecord(
-                    TAA_ACCEPTED_RECORD_TYPE,
-                    json.dumps(acceptance),
-                    {"pool_name": ledger.pool_name},
-                )
-            ]
-        )
+        mock_find_all_records.return_value = [
+            StorageRecord(
+                TAA_ACCEPTED_RECORD_TYPE,
+                json.dumps(acceptance),
+                {"pool_name": ledger.pool_name},
+            )
+        ]
 
         async with ledger:
             await ledger.accept_txn_author_agreement(
@@ -2852,9 +2839,9 @@ class TestIndySdkLedger(AsyncTestCase):
 
     @async_mock.patch("aries_cloudagent.ledger.indy.IndySdkLedgerPool.context_open")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndySdkLedgerPool.context_close")
-    @async_mock.patch("aries_cloudagent.storage.indy.IndySdkStorage.search_records")
+    @async_mock.patch("aries_cloudagent.storage.indy.IndySdkStorage.find_all_records")
     async def test_get_latest_txn_author_agreement_none(
-        self, mock_search_records, mock_close, mock_open
+        self, mock_find_all_records, mock_close, mock_open
     ):
         mock_wallet = async_mock.MagicMock()
 
@@ -2862,9 +2849,7 @@ class TestIndySdkLedger(AsyncTestCase):
             IndySdkLedgerPool("name", checked=True, cache=InMemoryCache()), mock_wallet
         )
 
-        mock_search_records.return_value.fetch_all = async_mock.CoroutineMock(
-            return_value=[]
-        )
+        mock_find_all_records.return_value = []
 
         async with ledger:
             await ledger.pool.cache.clear(

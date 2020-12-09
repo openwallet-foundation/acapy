@@ -11,6 +11,8 @@ from ..config.ledger import get_genesis_transactions, ledger_config
 from ..config.util import common_config
 from ..config.wallet import wallet_config
 
+from . import PROG
+
 
 class ProvisionError(BaseError):
     """Base exception for provisioning errors."""
@@ -45,7 +47,7 @@ async def provision(settings: dict):
 
 def execute(argv: Sequence[str] = None):
     """Entrypoint."""
-    parser = arg.create_argument_parser()
+    parser = arg.create_argument_parser(prog=PROG)
     parser.prog += " provision"
     get_settings = init_argument_parser(parser)
     args = parser.parse_args(argv)

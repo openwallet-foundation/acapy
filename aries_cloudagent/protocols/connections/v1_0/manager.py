@@ -932,11 +932,7 @@ class ConnectionManager:
             did: The DID to remove keys for
         """
         storage = self._session.inject(BaseStorage)
-        keys = await storage.search_records(
-            self.RECORD_TYPE_DID_KEY, {"did": did}
-        ).fetch_all()
-        for record in keys:
-            await storage.delete_record(record)
+        await storage.delete_all_records(self.RECORD_TYPE_DID_KEY, {"did": did})
 
     async def get_connection_targets(
         self, *, connection_id: str = None, connection: ConnRecord = None

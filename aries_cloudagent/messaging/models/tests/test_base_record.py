@@ -167,10 +167,10 @@ class TestBaseRecord(AsyncTestCase):
             BaseRecordImpl.RECORD_TYPE, json.dumps(record_value), {}, record_id
         )
 
-        mock_storage.search_records.return_value.__aiter__.return_value = [stored]
+        mock_storage.find_all_records.return_value = [stored]
         result = await BaseRecordImpl.query(session, tag_filter)
-        mock_storage.search_records.assert_called_once_with(
-            BaseRecordImpl.RECORD_TYPE, tag_filter, None, {"retrieveTags": False}
+        mock_storage.find_all_records.assert_awaited_once_with(
+            BaseRecordImpl.RECORD_TYPE, tag_filter, options={"retrieveTags": False}
         )
         assert result and isinstance(result[0], BaseRecordImpl)
         assert result[0]._id == record_id
@@ -193,17 +193,16 @@ class TestBaseRecord(AsyncTestCase):
             {"code": "red"},
             record_id,
         )
-        mock_storage.search_records.return_value.__aiter__.return_value = [stored]
+        mock_storage.find_all_records.return_value = [stored]
 
         # positive match
         result = await ARecordImpl.query(
             session, tag_filter, post_filter_positive={"a": "one"}
         )
-        mock_storage.search_records.assert_called_once_with(
+        mock_storage.find_all_records.assert_awaited_once_with(
             ARecordImpl.RECORD_TYPE,
             tag_filter,
-            None,
-            {"retrieveTags": False},
+            options={"retrieveTags": False},
         )
         assert result and isinstance(result[0], ARecordImpl)
         assert result[0]._id == record_id
