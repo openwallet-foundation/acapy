@@ -90,11 +90,11 @@ class InvitationMessage(AgentMessage):
 
         """
         c_json = self.to_json()
-        c_i = bytes_to_b64(c_json.encode("ascii"), urlsafe=True)
+        oob = bytes_to_b64(c_json.encode("ascii"), urlsafe=True)
         result = urljoin(
             base_url
             or (self.service_blocks[0].service_endpoint if self.service_blocks else ""),
-            "?c_i={}".format(c_i),
+            "?oob={}".format(oob),
         )
         return result
 
@@ -112,9 +112,9 @@ class InvitationMessage(AgentMessage):
         """
         parts = urlparse(url)
         query = parse_qs(parts.query)
-        if "c_i" in query:
-            c_i = b64_to_bytes(query["c_i"][0], urlsafe=True)
-            return cls.from_json(c_i)
+        if "oob" in query:
+            oob = b64_to_bytes(query["oob"][0], urlsafe=True)
+            return cls.from_json(oob)
         return None
 
 
