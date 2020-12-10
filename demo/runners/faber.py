@@ -232,11 +232,7 @@ async def main(
             json.dumps(invi_rec["invitation"]), label="Invitation Data:", color=None
         )
         buf = io.StringIO()
-        qr.print_ascii(invert=False, out=buf)
-        for line in buf.getvalue().split("\n"):
-            # invert terminal colours, print UTF-8 data, reset
-            # this helps avoid gaps between the lines
-            print("\033[7m" + line + "\033[0m")
+        qr.print_ascii(invert=True)
 
         log_msg("Waiting for connection...")
         await agent.detect_connection()
