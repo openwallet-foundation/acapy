@@ -101,7 +101,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             assert invi_rec.invitation["@type"] == DIDCommPrefix.qualify_current(
                 INVITATION
             )
-            assert not invi_rec.invitation["request~attach"]
+            assert not invi_rec.invitation.get("request~attach")
             assert invi_rec.invitation["label"] == "This guy"
             assert (
                 DIDCommPrefix.qualify_current(INVITATION)
@@ -223,7 +223,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         )
 
         assert invi_rec.invitation["@type"] == DIDCommPrefix.qualify_current(INVITATION)
-        assert not invi_rec.invitation["request~attach"]
+        assert not invi_rec.invitation.get("request~attach")
         assert invi_rec.invitation["label"] == "That guy"
         assert (
             DIDCommPrefix.qualify_current(INVITATION)
@@ -233,7 +233,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         assert service["id"] == "#inline"
         assert service["type"] == "did-communication"
         assert len(service["recipientKeys"]) == 1
-        assert not service["routingKeys"]
+        assert not service.get("routingKeys")
         assert service["serviceEndpoint"] == TestConfig.test_endpoint
 
     async def test_receive_invitation_service_block(self):

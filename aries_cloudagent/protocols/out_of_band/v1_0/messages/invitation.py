@@ -130,7 +130,7 @@ class InvitationMessageSchema(AgentMessageSchema):
     label = fields.Str(required=False, description="Optional label", example="Bob")
     handshake_protocols = fields.List(fields.String, required=False, many=True)
     request_attach = fields.Nested(
-        AttachDecoratorSchema, required=True, many=True, data_key="request~attach"
+        AttachDecoratorSchema, required=False, many=True, data_key="request~attach"
     )
 
     service_blocks = fields.Nested(ServiceSchema, many=True)
@@ -191,5 +191,8 @@ class InvitationMessageSchema(AgentMessageSchema):
 
         del data["service_dids"]
         del data["service_blocks"]
+
+        if "request~attach" in data and not data["request~attach"]:
+            del data["request~attach"]
 
         return data
