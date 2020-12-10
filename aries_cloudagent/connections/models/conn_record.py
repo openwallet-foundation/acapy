@@ -400,6 +400,29 @@ class ConnRecord(BaseRecord):
             )
             await storage.add_record(record)
 
+    async def metadata_delete(self, session: ProfileSession, key: str):
+        """Delete custom metadata associated with this connection."""
+        assert self.connection_id
+        storage: BaseStorage = session.inject(BaseStorage)
+        try:
+            record = await storage.find_record(
+                self.RECORD_TYPE_METADATA,
+                {"key": key, "connection_id": self.connection_id},
+            )
+            await storage.delete_record(record)
+        except StorageNotFoundError as err:
+            raise KeyError(f"{key} not found in connection metadata") from err
+
+    async def metadata_get_all(self, session: ProfileSession) -> dict:
+        """Return all custom metadata associated with this connection."""
+        assert self.connection_id
+        storage: BaseStorage = session.inject(BaseStorage)
+        records = await storage.find_all_records(
+            self.RECORD_TYPE_METADATA,
+            {"connection_id": self.connection_id},
+        )
+        return {record.tags["key"]: json.loads(record.value) for record in records}
+
     def __eq__(self, other: Any) -> bool:
         """Comparison between records."""
         return super().__eq__(other)
