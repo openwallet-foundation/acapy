@@ -31,6 +31,7 @@ class InvitationRecord(BaseExchangeRecord):
         self,
         *,
         invitation_id: str = None,
+        invitation_url: str = None,
         state: str = None,
         invi_msg_id: str = None,
         invitation: dict = None,

@@ -2,7 +2,7 @@
 
 from typing import Sequence
 
-from marshmallow import EXCLUDE, fields
+from marshmallow import EXCLUDE, fields, post_dump
 
 from .....messaging.models.base import BaseModel, BaseModelSchema
 from .....messaging.valid import INDY_DID, DID_KEY
@@ -78,3 +78,12 @@ class ServiceSchema(BaseModelSchema):
         description="Service endpoint at which to reach this agent",
         example="http://192.168.56.101:8020",
     )
+
+    @post_dump
+    def post_dump(self, data, **kwargs):
+        """Post dump hook."""
+
+        if "routingKeys" in data and not data["routingKeys"]:
+            del data["routingKeys"]
+
+        return data
