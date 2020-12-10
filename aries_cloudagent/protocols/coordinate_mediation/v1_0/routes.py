@@ -48,16 +48,7 @@ from ...routing.v1_0.models.route_record import RouteRecord, RouteRecordSchema
 from .messages.keylist_update_response import KeylistUpdateResponseSchema
 import json
 from ...connections.v1_0.manager import ConnectionManager, ConnectionManagerError
-from ...connections.v1_0.routes import (
-    AcceptInvitationQueryStringSchema,
-    ConnRecordSchema,
-    ReceiveInvitationRequestSchema
-)
-from ...connections.v1_0.messages.connection_invitation import ConnectionInvitation
-from ...connections.v1_0.models.connection_detail import ConnectionDetail
 from ....connections.models.conn_record import ConnRecord
-from ...connections.v1_0.messages.connection_request import ConnectionRequest
-from aries_cloudagent.wallet.error import WalletError
 from aries_cloudagent.messaging.responder import BaseResponder
 
 
@@ -127,7 +118,7 @@ def mediation_sort_key(mediation):
     """Get the sorting key for a particular mediation."""
     if mediation["state"] == MediationRecord.STATE_DENIED:
         pfx = "2"
-    elif mediation["state"] == MediationRecord.STATE_REQUEST_RECEIVED:
+    elif mediation["state"] == MediationRecord.STATE_REQUEST:
         pfx = "1"
     else:  # GRANTED
         pfx = "0"

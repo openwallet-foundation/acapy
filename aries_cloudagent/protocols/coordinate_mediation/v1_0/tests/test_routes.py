@@ -210,7 +210,7 @@ class TestCoordinateMediationRoutes(AsyncTestCase):
                                 "5r4SX9xRHmfv3iC6EWMY4ZLSwUY8tXiTrP29y54zqE2Y"
                             ],
                             "created_at": "2020-12-02 16:50:56.7511652Z",
-                            "state": MediationRecord.STATE_REQUEST_RECEIVED,
+                            "state": MediationRecord.STATE_REQUEST,
                             "role": MediationRecord.ROLE_SERVER,
                             "endpoint": "http://192.168.1.13:3005",
                             "routing_keys": [
