@@ -285,7 +285,7 @@ class AdminServer(BaseAdminServer):
             # MTODO: extract to separate middleware
             if self.multitenant_enabled and authorization_header:
                 try:
-                    bearer, _, token = authorization_header.partition("")
+                    bearer, _, token = authorization_header.partition(" ")
                     if bearer != "Bearer":
                         raise web.HTTPUnauthorized(reason="Invalid header structure")
                     token_body = jwt.decode(token, self.jwt_secret)

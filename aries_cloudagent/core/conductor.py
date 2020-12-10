@@ -263,6 +263,7 @@ class Conductor:
             shutdown.run(self.outbound_transport_manager.stop())
         if self.root_profile:
             shutdown.run(self.root_profile.close())
+        # MTODO: close all profiles
         await shutdown.complete(timeout)
 
     def inbound_message_router(

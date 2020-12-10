@@ -46,7 +46,7 @@ class MultitenantManager:
             The profile for this manager
 
         """
-        return self.profile
+        return self._profile
 
     async def _wallet_name_exists(
         self, session: ProfileSession, wallet_name: str
@@ -168,15 +168,15 @@ class MultitenantManager:
 
             await wallet_record.save(session)
 
-            profile = await self.get_wallet_profile(
-                session.context,
-                wallet_record,
-                {"wallet.key": wallet_key},
-                provision=True,
-            )
+        profile = await self.get_wallet_profile(
+            self.profile.context,
+            wallet_record,
+            {"wallet.key": wallet_key},
+            provision=True,
+        )
 
-            await profile.close()
-            del profile
+        await profile.close()
+        del profile
 
         return wallet_record
 
