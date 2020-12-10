@@ -406,7 +406,7 @@ async def main(
                 log_msg(
                     "Creating a new invitation, please Receive and Accept this invitation using Alice agent"
                 )
-                await generate_invitation(agent)
+                await generate_invitation(agent, use_did_exchange)
 
             elif option == "5" and revocation:
                 rev_reg_id = (await prompt("Enter revocation registry ID: ")).strip()
