@@ -139,6 +139,7 @@ class V10CredentialExchange(BaseExchangeRecord):
         """Retrieve a credential exchange record by connection and thread ID."""
         cache_key = f"credential_exchange_ctidx::{connection_id}::{thread_id}"
         record_id = await cls.get_cached_key(session, cache_key)
+        print(f'.. record id: {cache_key} -> {record_id}')
         if record_id:
             record = await cls.retrieve_by_id(session, record_id)
         else:
@@ -148,6 +149,7 @@ class V10CredentialExchange(BaseExchangeRecord):
                 {"connection_id": connection_id} if connection_id else None,
             )
             await cls.set_cached_key(session, cache_key, record.credential_exchange_id)
+            print(f'.. set cached key: {cache_key} -> {record.credential_exchange_id}')
         return record
 
     def __eq__(self, other: Any) -> bool:

@@ -50,6 +50,9 @@ class TestLedgerRoutes(AsyncTestCase):
         with self.assertRaises(test_module.web.HTTPForbidden):
             await test_module.ledger_accept_taa(self.request)
 
+        with self.assertRaises(test_module.web.HTTPForbidden):
+            await test_module.ledger_get_taa(self.request)
+
     async def test_get_verkey(self):
         self.request.query = {"did": self.test_did}
         with async_mock.patch.object(

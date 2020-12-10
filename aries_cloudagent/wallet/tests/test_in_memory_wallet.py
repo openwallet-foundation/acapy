@@ -39,6 +39,7 @@ class TestInMemoryWallet:
 
     @pytest.mark.asyncio
     async def test_create_signing_key_random(self, wallet):
+        assert str(wallet)
         info = await wallet.create_signing_key()
         assert info and info.verkey
 

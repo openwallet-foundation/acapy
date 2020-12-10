@@ -36,6 +36,7 @@ class TestRevocationManager(AsyncTestCase):
     async def setUp(self):
         self.session = InMemoryProfile.test_session()
         self.manager = RevocationManager(self.session)
+        assert self.manager.session
 
     async def test_revoke_credential_publish(self):
         CRED_EX_ID = "dummy-cxid"
