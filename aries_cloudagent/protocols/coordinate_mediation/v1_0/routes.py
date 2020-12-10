@@ -49,7 +49,6 @@ from .messages.keylist_update_response import KeylistUpdateResponseSchema
 import json
 from ...connections.v1_0.manager import ConnectionManager, ConnectionManagerError
 from ....connections.models.conn_record import ConnRecord
-from aries_cloudagent.messaging.responder import BaseResponder
 
 
 class CreateMediationInvitationQueryStringSchema(OpenAPISchema):

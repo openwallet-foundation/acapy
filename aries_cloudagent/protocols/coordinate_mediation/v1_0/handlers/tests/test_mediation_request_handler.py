@@ -10,7 +10,7 @@ from ......protocols.problem_report.v1_0.message import ProblemReport
 from ...messages.mediate_grant import MediationGrant
 from ...messages.mediate_request import MediationRequest
 from ...models.mediation_record import MediationRecord
-from ..mediate_request_handler import MediationRequestHandler
+from ..mediation_request_handler import MediationRequestHandler
 
 TEST_CONN_ID = "conn-id"
 TEST_VERKEY = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
