@@ -51,7 +51,7 @@ class DefaultContextBuilder(ContextBuilder):
     async def bind_providers(self, context: InjectionContext):
         """Bind various class providers."""
 
-        context.injector.bind_provider(ProfileManager, ProfileManagerProvider(context))
+        context.injector.bind_provider(ProfileManager, ProfileManagerProvider())
 
         context.injector.bind_provider(
             BaseTailsServer,

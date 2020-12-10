@@ -1,5 +1,6 @@
 """Manage Indy-SDK profile interaction."""
 
+from aries_cloudagent.core.error import ProfileError
 import logging
 
 from typing import Any, Mapping
@@ -113,6 +114,14 @@ class IndySdkProfile(Profile):
             await self.opened.close()
             self.opened = None
 
+    async def remove(self):
+        """Remove the profile associated with this instance."""
+        if not self.opened:
+            raise ProfileError("Wallet must be opened to remove profile")
+
+        self.opened.config.auto_remove = True
+        await self.close()
+
 
 class IndySdkProfileSession(ProfileSession):
     """An active connection to the profile management backend."""
@@ -145,14 +154,18 @@ class IndySdkProfileSession(ProfileSession):
 class IndySdkProfileManager(ProfileManager):
     """Manager for Indy-SDK wallets."""
 
-    async def provision(self, config: Mapping[str, Any] = None) -> Profile:
+    async def provision(
+        self, context: InjectionContext, config: Mapping[str, Any] = None
+    ) -> Profile:
         """Provision a new instance of a profile."""
         indy_config = IndyWalletConfig(config)
         opened = await indy_config.create_wallet()
-        return IndySdkProfile(opened, self.context)
+        return IndySdkProfile(opened, context)
 
-    async def open(self, config: Mapping[str, Any] = None) -> Profile:
+    async def open(
+        self, context: InjectionContext, config: Mapping[str, Any] = None
+    ) -> Profile:
         """Open an instance of an existing profile."""
         indy_config = IndyWalletConfig(config)
         opened = await indy_config.open_wallet()
-        return IndySdkProfile(opened, self.context)
+        return IndySdkProfile(opened, context)

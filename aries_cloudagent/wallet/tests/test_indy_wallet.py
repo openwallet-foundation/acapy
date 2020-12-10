@@ -12,6 +12,7 @@ from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
 from ...core.in_memory import InMemoryProfile
+from ...config.injection_context import InjectionContext
 from ...core.error import ProfileError, ProfileDuplicateError, ProfileNotFoundError
 from ...indy.sdk import wallet_setup as test_setup_module
 from ...indy.sdk.profile import IndySdkProfileManager
@@ -37,6 +38,7 @@ async def in_memory_wallet():
 async def wallet():
     key = await IndySdkWallet.generate_wallet_key()
     profile = await IndySdkProfileManager().provision(
+        InjectionContext(),
         {
             "auto_recreate": True,
             "auto_remove": True,

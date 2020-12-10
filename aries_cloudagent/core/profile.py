@@ -96,6 +96,9 @@ class Profile(ABC):
     async def close(self):
         """Close the profile instance."""
 
+    async def remove(self):
+        """Remove the profile."""
+
     def __repr__(self) -> str:
         """Get a human readable string."""
         return "<{}(backend={}, name={})>".format(
@@ -106,16 +109,19 @@ class Profile(ABC):
 class ProfileManager(ABC):
     """Handle provision and open for profile instances."""
 
-    def __init__(self, context: InjectionContext = None):
+    def __init__(self):
         """Initialize the profile manager."""
-        self.context = context or InjectionContext()
 
     @abstractmethod
-    async def provision(self, config: Mapping[str, Any] = None) -> Profile:
+    async def provision(
+        self, context: InjectionContext, config: Mapping[str, Any] = None
+    ) -> Profile:
         """Provision a new instance of a profile."""
 
     @abstractmethod
-    async def open(self, config: Mapping[str, Any] = None) -> Profile:
+    async def open(
+        self, context: InjectionContext, config: Mapping[str, Any] = None
+    ) -> Profile:
         """Open an instance of an existing profile."""
 
 
@@ -249,9 +255,8 @@ class ProfileManagerProvider(BaseProvider):
         "indy": "aries_cloudagent.indy.sdk.profile.IndySdkProfileManager",
     }
 
-    def __init__(self, context: InjectionContext):
+    def __init__(self):
         """Initialize the profile manager provider."""
-        self._context = context
         self._inst = {}
 
     def provide(self, settings: BaseSettings, injector: BaseInjector):
@@ -268,7 +273,7 @@ class ProfileManagerProvider(BaseProvider):
         if mgr_class not in self._inst:
             LOGGER.info("Create profile manager: %s", mgr_type)
             try:
-                self._inst[mgr_class] = ClassLoader.load_class(mgr_class)(self._context)
+                self._inst[mgr_class] = ClassLoader.load_class(mgr_class)()
             except ClassNotFoundError as err:
                 raise InjectionError(f"Unknown profile manager: {mgr_type}") from err
 

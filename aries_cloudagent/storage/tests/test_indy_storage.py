@@ -11,6 +11,7 @@ from indy.error import ErrorCode
 
 from asynctest import mock as async_mock
 
+from ...config.injection_context import InjectionContext
 from ...indy.sdk.profile import IndySdkProfileManager
 from ...storage.base import BaseStorage
 from ...storage.error import StorageError, StorageSearchError
@@ -27,13 +28,14 @@ from . import test_in_memory_storage
 async def store():
     key = await IndySdkWallet.generate_wallet_key()
     profile = await IndySdkProfileManager().provision(
+        InjectionContext(),
         {
             "auto_recreate": True,
             "auto_remove": True,
             "name": "test-wallet",
             "key": key,
             "key_derivation_method": "RAW",  # much slower tests with argon-hashed keys
-        }
+        },
     )
     async with profile.session() as session:
         yield session.inject(BaseStorage)
@@ -61,6 +63,7 @@ class TestIndySdkStorage(test_in_memory_storage.TestInMemoryStorage):
             indy.wallet, "delete_wallet", async_mock.CoroutineMock()
         ) as mock_delete:
             fake_profile = await IndySdkProfileManager().provision(
+                InjectionContext(),
                 {
                     "auto_recreate": True,
                     "auto_remove": True,
@@ -77,7 +80,7 @@ class TestIndySdkStorage(test_in_memory_storage.TestInMemoryStorage):
                             "admin_password": "mysecretpassword",
                         }
                     ),
-                }
+                },
             )
             session = await fake_profile.session()
             storage = session.inject(BaseStorage)
@@ -226,6 +229,7 @@ class TestIndySdkStorage(test_in_memory_storage.TestInMemoryStorage):
             indy.wallet, "delete_wallet", async_mock.CoroutineMock()
         ) as mock_delete:
             fake_profile = await IndySdkProfileManager().provision(
+                InjectionContext(),
                 {
                     "auto_recreate": True,
                     "auto_remove": True,
@@ -242,7 +246,7 @@ class TestIndySdkStorage(test_in_memory_storage.TestInMemoryStorage):
                             "admin_password": "mysecretpassword",
                         }
                     ),
-                }
+                },
             )
             session = await fake_profile.session()
             storage = session.inject(BaseStorage)
@@ -301,13 +305,14 @@ class TestIndySdkStorage(test_in_memory_storage.TestInMemoryStorage):
             indy.wallet, "delete_wallet", async_mock.CoroutineMock()
         ) as mock_delete:
             fake_profile = await IndySdkProfileManager().provision(
+                InjectionContext(),
                 {
                     "auto_recreate": True,
                     "auto_remove": True,
                     "name": "test_indy_wallet",
                     "key": await IndySdkWallet.generate_wallet_key(),
                     "key_derivation_method": "RAW",
-                }
+                },
             )
             session = await fake_profile.session()
             storage = session.inject(BaseStorage)

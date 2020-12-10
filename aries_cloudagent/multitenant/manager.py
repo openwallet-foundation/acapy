@@ -5,15 +5,12 @@ from typing import List, Optional, cast
 
 from ..core.profile import (
     Profile,
-    ProfileManager,
-    ProfileManagerProvider,
     ProfileSession,
 )
 from ..config.wallet import wallet_config as configure_wallet
 from ..config.injection_context import InjectionContext
 from ..wallet.models.wallet_record import WalletRecord
 from ..core.error import BaseError
-from ..indy.sdk.profile import IndySdkProfile
 from ..protocols.routing.v1_0.manager import RouteNotFoundError, RoutingManager
 from ..transport.wire_format import BaseWireFormat
 
@@ -36,6 +33,8 @@ class MultitenantManager:
         self._profile = profile
         if not profile:
             raise MultitenantManagerError("Missing profile")
+
+        self._instances = {}
 
     @property
     def profile(self) -> Profile:
@@ -75,36 +74,6 @@ class MultitenantManager:
 
         return False
 
-    def get_wallet_context(
-        self,
-        base_context: InjectionContext,
-        wallet_record: WalletRecord,
-        extra_settings: dict = {},
-    ) -> InjectionContext:
-        """Get the context for a wallet record.
-
-        Args:
-            base_context: Base context to extend from
-            wallet_record: Wallet record to get the context for
-            extra_settings: Any extra context settings
-
-        Returns:
-            InjectionContext: Context for the wallet record
-
-        """
-        context = base_context.copy()
-        # MTODO: remove base wallet settings
-        context.settings = context.settings.extend(
-            wallet_record.get_config_as_settings()
-        ).extend(extra_settings)
-
-        # MTODO: caching
-        # MTODO: context is passed to constructor of provider, if we can avoid
-        # that we don't need to rebind the provider each time
-        context.injector.bind_provider(ProfileManager, ProfileManagerProvider(context))
-
-        return context
-
     async def get_wallet_profile(
         self,
         base_context: InjectionContext,
@@ -124,10 +93,21 @@ class MultitenantManager:
             Profile: Profile for the wallet record
 
         """
-        context = self.get_wallet_context(base_context, wallet_record, extra_settings)
-        profile, _ = await configure_wallet(context, provision=provision)
+        wallet_id = wallet_record.wallet_record_id
 
-        return profile
+        if wallet_id not in self._instances:
+            # Extend base context
+            context = base_context.copy()
+
+            # MTODO: remove base wallet settings
+            context.settings = context.settings.extend(
+                wallet_record.get_config_as_settings()
+            ).extend(extra_settings)
+
+            profile, _ = await configure_wallet(context, provision=provision)
+            self._instances[wallet_id] = profile
+
+        return self._instances[wallet_id]
 
     async def create_wallet(
         self, wallet_config: dict, key_management_mode: str
@@ -168,15 +148,13 @@ class MultitenantManager:
 
             await wallet_record.save(session)
 
-        profile = await self.get_wallet_profile(
+        # profision wallet. We don't need to do anything with it for now
+        await self.get_wallet_profile(
             self.profile.context,
             wallet_record,
             {"wallet.key": wallet_key},
             provision=True,
         )
-
-        await profile.close()
-        del profile
 
         return wallet_record
 
@@ -206,16 +184,13 @@ class MultitenantManager:
                 raise WalletKeyMissingError("Missing key to open wallet")
 
             profile = await self.get_wallet_profile(
-                session.context,
+                self.profile.context,
                 wallet,
                 {"wallet.key": wallet_key},
             )
 
-            # MTODO: add remove method to base profile
-            # Remove the actual wallet
-            if isinstance(profile, IndySdkProfile):
-                profile.opened.config.auto_remove = True
-                await profile.opened.close()
+            await profile.remove()
+            del self._instances[wallet_id]
 
             # MTODO: delete route records
             await wallet.delete_record(session)

@@ -71,7 +71,7 @@ class StubContextBuilder(ContextBuilder):
 
     async def build_context(self) -> InjectionContext:
         context = InjectionContext(settings=self.settings, enforce_typing=False)
-        context.injector.bind_instance(ProfileManager, InMemoryProfileManager(context))
+        context.injector.bind_instance(ProfileManager, InMemoryProfileManager())
         context.injector.bind_instance(ProtocolRegistry, ProtocolRegistry())
         context.injector.bind_instance(BaseWireFormat, self.wire_format)
         return context
