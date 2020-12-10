@@ -119,7 +119,7 @@ class ConnRecord(BaseRecord):
     RECORD_TYPE = "connection"
     RECORD_TYPE_INVITATION = "connection_invitation"
     RECORD_TYPE_REQUEST = "connection_request"
-    RECORD_TYPE_METADATA = 'connection_metadata'
+    RECORD_TYPE_METADATA = "connection_metadata"
 
     INVITATION_MODE_ONCE = "once"
     INVITATION_MODE_MULTI = "multi"
@@ -375,7 +375,7 @@ class ConnRecord(BaseRecord):
         try:
             record = await storage.find_record(
                 self.RECORD_TYPE_METADATA,
-                {"key": key, "connection_id": self.connection_id}
+                {"key": key, "connection_id": self.connection_id},
             )
             return record.value
         except StorageNotFoundError:
@@ -388,14 +388,14 @@ class ConnRecord(BaseRecord):
         try:
             record = await storage.find_record(
                 self.RECORD_TYPE_METADATA,
-                {"key": key, "connection_id": self.connection_id}
+                {"key": key, "connection_id": self.connection_id},
             )
             await storage.update_record(record, value, record.tags)
         except StorageNotFoundError:
             record = StorageRecord(
                 self.RECORD_TYPE_METADATA,
                 value,
-                {"key": key, "connection_id": self.connection_id}
+                {"key": key, "connection_id": self.connection_id},
             )
             await storage.add_record(record)
 
