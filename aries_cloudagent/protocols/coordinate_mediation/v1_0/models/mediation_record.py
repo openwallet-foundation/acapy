@@ -4,7 +4,7 @@ from typing import Sequence
 
 from marshmallow import EXCLUDE, fields
 
-from .....config.injection_context import InjectionContext
+from .....core.profile import ProfileSession
 from .....messaging.models.base_record import BaseRecord, BaseRecordSchema
 from .....messaging.valid import INDY_RAW_PUBLIC_KEY
 from .....storage.base import StorageDuplicateError, StorageNotFoundError
@@ -92,12 +92,12 @@ class MediationRecord(BaseRecord):
 
     @classmethod
     async def retrieve_by_connection_id(
-        cls, context: InjectionContext, connection_id: str
+        cls, session: ProfileSession, connection_id: str
     ) -> "MediationRecord":
         """Retrieve a mediation record by connection ID.
 
         Args:
-            context (InjectionContext): context
+            session (ProfileSession): session
             connection_id (str): connection_id
 
         Returns:
@@ -105,16 +105,16 @@ class MediationRecord(BaseRecord):
 
         """
         tag_filter = {"connection_id": connection_id}
-        return await cls.retrieve_by_tag_filter(context, tag_filter)
+        return await cls.retrieve_by_tag_filter(session, tag_filter)
 
     @classmethod
     async def exists_for_connection_id(
-        cls, context: InjectionContext, connection_id: str
+        cls, session: ProfileSession, connection_id: str
     ) -> bool:
         """Return whether a mediation record exists for the given connection.
 
         Args:
-            context (InjectionContext): context
+            session (ProfileSession): session
             connection_id (str): connection_id
 
         Returns:
@@ -123,7 +123,7 @@ class MediationRecord(BaseRecord):
         """
         tag_filter = {"connection_id": connection_id}
         try:
-            record = await cls.retrieve_by_tag_filter(context, tag_filter)
+            record = await cls.retrieve_by_tag_filter(session, tag_filter)
         except StorageNotFoundError:
             return False
         except StorageDuplicateError:
