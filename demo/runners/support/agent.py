@@ -431,9 +431,8 @@ class DemoAgent:
         )
 
     async def handle_revocation_registry(self, message):
-        self.log(
-            f"Revocation registry: {message['revoc_reg_id']} state: {message['state']}"
-        )
+        reg_id = message.get("revoc_reg_id", "(undetermined)")
+        self.log(f"Revocation registry: {reg_id} state: {message['state']}")
 
     async def admin_request(
         self, method, path, data=None, text=False, params=None

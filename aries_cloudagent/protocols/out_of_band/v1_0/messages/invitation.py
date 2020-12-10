@@ -90,8 +90,12 @@ class InvitationMessage(AgentMessage):
 
         """
         c_json = self.to_json()
-        c_i = bytes_to_b64(c_json.encode("ascii"), urlsafe=True)
-        result = urljoin(base_url or "", "?c_i={}".format(c_i))
+        oob = bytes_to_b64(c_json.encode("ascii"), urlsafe=True)
+        result = urljoin(
+            base_url
+            or (self.service_blocks[0].service_endpoint if self.service_blocks else ""),
+            "?oob={}".format(oob),
+        )
         return result
 
     @classmethod
@@ -108,9 +112,9 @@ class InvitationMessage(AgentMessage):
         """
         parts = urlparse(url)
         query = parse_qs(parts.query)
-        if "c_i" in query:
-            c_i = b64_to_bytes(query["c_i"][0], urlsafe=True)
-            return cls.from_json(c_i)
+        if "oob" in query:
+            oob = b64_to_bytes(query["oob"][0], urlsafe=True)
+            return cls.from_json(oob)
         return None
 
 
@@ -126,7 +130,7 @@ class InvitationMessageSchema(AgentMessageSchema):
     label = fields.Str(required=False, description="Optional label", example="Bob")
     handshake_protocols = fields.List(fields.String, required=False, many=True)
     request_attach = fields.Nested(
-        AttachDecoratorSchema, required=True, many=True, data_key="request~attach"
+        AttachDecoratorSchema, required=False, many=True, data_key="request~attach"
     )
 
     service_blocks = fields.Nested(ServiceSchema, many=True)
@@ -187,5 +191,8 @@ class InvitationMessageSchema(AgentMessageSchema):
 
         del data["service_dids"]
         del data["service_blocks"]
+
+        if "request~attach" in data and not data["request~attach"]:
+            del data["request~attach"]
 
         return data

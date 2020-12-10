@@ -6,10 +6,11 @@ import sys
 
 import json
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # noqa
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from runners.support.agent import DemoAgent, default_genesis_txns
-from runners.support.utils import log_timer, progress, require_indy
+from runners.support.agent import DemoAgent, default_genesis_txns  # noqa:E402
+from runners.support.utils import log_timer, progress, require_indy  # noqa:E402
+
 
 LOGGER = logging.getLogger(__name__)
 TAILS_FILE_COUNT = int(os.getenv("TAILS_FILE_COUNT", 100))
@@ -164,6 +165,9 @@ class AliceAgent(BaseAgent):
         ]
         self.timing_log = "logs/alice_perf.log"
 
+    async def fetch_credential_definition(self, cred_def_id):
+        return await self.admin_GET(f"/credential-definitions/{cred_def_id}")
+
 
 class FaberAgent(BaseAgent):
     def __init__(self, port: int, **kwargs):
@@ -252,6 +256,7 @@ async def main(
     revocation: bool = False,
     tails_server_base_url: str = None,
     issue_count: int = 300,
+    wallet_type: str = None,
 ):
 
     genesis = await default_genesis_txns()
@@ -266,7 +271,12 @@ async def main(
     run_timer.start()
 
     try:
-        alice = AliceAgent(start_port, genesis_data=genesis, timing=show_timing)
+        alice = AliceAgent(
+            start_port,
+            genesis_data=genesis,
+            timing=show_timing,
+            wallet_type=wallet_type,
+        )
         await alice.listen_webhooks(start_port + 2)
 
         faber = FaberAgent(
@@ -274,6 +284,7 @@ async def main(
             genesis_data=genesis,
             timing=show_timing,
             tails_server_base_url=tails_server_base_url,
+            wallet_type=wallet_type,
         )
 
         await faber.listen_webhooks(start_port + 5)
@@ -295,6 +306,8 @@ async def main(
         if not ping_only:
             with log_timer("Publish duration:"):
                 await faber.publish_defs(revocation)
+            # cache the credential definition
+            await alice.fetch_credential_definition(faber.credential_definition_id)
 
         with log_timer("Connect duration:"):
             if routing:
@@ -531,14 +544,12 @@ if __name__ == "__main__":
     parser.add_argument(
         "--revocation", action="store_true", help="Enable credential revocation"
     )
-
     parser.add_argument(
         "--tails-server-base-url",
         type=str,
-        metavar=("<tails-server-base-url>"),
-        help="Tals server base url",
+        metavar="<tails-server-base-url>",
+        help="Tails server base url",
     )
-
     parser.add_argument(
         "--routing", action="store_true", help="Enable inbound routing demonstration"
     )
@@ -552,7 +563,20 @@ if __name__ == "__main__":
     parser.add_argument(
         "--timing", action="store_true", help="Enable detailed timing report"
     )
+    parser.add_argument(
+        "--wallet-type",
+        type=str,
+        metavar="<wallet-type>",
+        help="Set the agent wallet type",
+    )
     args = parser.parse_args()
+
+    tails_server_base_url = args.tails_server_base_url or os.getenv("PUBLIC_TAILS_URL")
+
+    if args.revocation and not tails_server_base_url:
+        raise Exception(
+            "If revocation is enabled, --tails-server-base-url must be provided"
+        )
 
     require_indy()
 
@@ -565,8 +589,9 @@ if __name__ == "__main__":
                 args.timing,
                 args.routing,
                 args.revocation,
-                args.tails_server_base_url,
+                tails_server_base_url,
                 args.count,
+                args.wallet_type,
             )
         )
     except KeyboardInterrupt:
