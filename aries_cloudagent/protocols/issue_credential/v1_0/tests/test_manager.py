@@ -123,7 +123,6 @@ class TestCredentialManager(AsyncTestCase):
         self.manager = CredentialManager(self.profile)
         assert self.manager.profile
 
-    '''
     async def test_record_eq(self):
         same = [
             V10CredentialExchange(
@@ -1524,12 +1523,10 @@ class TestCredentialManager(AsyncTestCase):
 
             assert ret_exchange.state == V10CredentialExchange.STATE_ACKED
             delete_ex.assert_called_once()
-    '''
 
     async def test_retrieve_records(self):
-        print('\n\n** ** ')
         self.cache = InMemoryCache()
-        self.context.injector.bind_instance(BaseCache, self.cache)
+        self.session.context.injector.bind_instance(BaseCache, self.cache)
 
         for index in range(2):
             exchange_record = V10CredentialExchange(
