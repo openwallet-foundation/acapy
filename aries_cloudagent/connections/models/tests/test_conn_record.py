@@ -234,19 +234,19 @@ class TestConnRecord(AsyncTestCase):
             my_did=self.test_did,
         )
         await record.save(self.session)
-        await record.metadata_set(self.session, "key", "value")
+        await record.metadata_set(self.session, "key", {"test": "value"})
         retrieved = await record.metadata_get(self.session, "key")
-        assert retrieved == "value"
+        assert retrieved == {"test": "value"}
 
     async def test_metadata_set_update_get(self):
         record = ConnRecord(
             my_did=self.test_did,
         )
         await record.save(self.session)
-        await record.metadata_set(self.session, "key", "value")
-        await record.metadata_set(self.session, "key", "updated")
+        await record.metadata_set(self.session, "key", {"test": "value"})
+        await record.metadata_set(self.session, "key", {"test": "updated"})
         retrieved = await record.metadata_get(self.session, "key")
-        assert retrieved == "updated"
+        assert retrieved == {"test": "updated"}
 
     async def test_metadata_get_without_set_is_none(self):
         record = ConnRecord(
@@ -260,4 +260,6 @@ class TestConnRecord(AsyncTestCase):
             my_did=self.test_did,
         )
         await record.save(self.session)
-        assert await record.metadata_get(self.session, "key", "default") == "default"
+        assert await record.metadata_get(self.session, "key", {"test": "default"}) == {
+            "test": "default"
+        }

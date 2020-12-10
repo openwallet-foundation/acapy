@@ -367,8 +367,8 @@ class ConnRecord(BaseRecord):
         await self.clear_cached_key(session, cache_key)
 
     async def metadata_get(
-        self, session: ProfileSession, key: str, default: str = None
-    ) -> str:
+        self, session: ProfileSession, key: str, default: dict = None
+    ) -> dict:
         """Retrieve arbitrary metadata associated with this connection."""
         assert self.connection_id
         storage: BaseStorage = session.inject(BaseStorage)
@@ -377,13 +377,14 @@ class ConnRecord(BaseRecord):
                 self.RECORD_TYPE_METADATA,
                 {"key": key, "connection_id": self.connection_id},
             )
-            return record.value
+            return json.loads(record.value)
         except StorageNotFoundError:
             return default
 
-    async def metadata_set(self, session: ProfileSession, key: str, value: str):
+    async def metadata_set(self, session: ProfileSession, key: str, value: dict):
         """Set arbitrary metadata associated with this connection."""
         assert self.connection_id
+        value = json.dumps(value)
         storage: BaseStorage = session.inject(BaseStorage)
         try:
             record = await storage.find_record(
