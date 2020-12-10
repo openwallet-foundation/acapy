@@ -63,6 +63,6 @@ class DriverMenuService(BaseMenuService):
 
     async def send_webhook(self, topic: str, payload: dict):
         """Dispatch a webhook through the registered responder."""
-        responder = await self._context.inject(BaseResponder, required=False)
+        responder = self._context.inject(BaseResponder, required=False)
         if responder:
             await responder.send_webhook(topic, payload)

@@ -10,7 +10,7 @@ from typing import Any, Mapping, Sequence, Union
 from marshmallow import fields
 
 from ...cache.base import BaseCache
-from ...config.injection_context import InjectionContext
+from ...core.profile import ProfileSession
 from ...storage.base import BaseStorage, StorageDuplicateError, StorageNotFoundError
 from ...storage.record import StorageRecord
 
@@ -59,12 +59,11 @@ class BaseRecord(BaseModel):
     class Meta:
         """BaseRecord metadata."""
 
+    DEFAULT_CACHE_TTL = 60
     RECORD_ID_NAME = "id"
     RECORD_TYPE = None
     WEBHOOK_TOPIC = None
     LOG_STATE_FLAG = None
-    CACHE_TTL = 60
-    CACHE_ENABLED = False
     TAG_NAMES = {"state"}
 
     def __init__(
@@ -144,117 +143,88 @@ class BaseRecord(BaseModel):
         return tags
 
     @classmethod
-    def cache_key(cls, record_id: str, record_type: str = None):
-        """Assemble a cache key.
-
-        Args:
-            record_id: The record identifier
-            record_type The cache type identifier, defaulting to RECORD_TYPE
-        """
-        if not record_type:
-            record_type = cls.RECORD_TYPE
-        if record_id:
-            return f"{record_type}::{record_id}"
-
-    @classmethod
-    async def get_cached_key(cls, context: InjectionContext, cache_key: str):
+    async def get_cached_key(cls, session: ProfileSession, cache_key: str):
         """Shortcut method to fetch a cached key value.
 
         Args:
-            context: The injection context to use
+            session: The profile session to use
             cache_key: The unique cache identifier
         """
         if not cache_key:
             return
-        cache: BaseCache = await context.inject(BaseCache, required=False)
+        cache = session.inject(BaseCache, required=False)
         if cache:
             return await cache.get(cache_key)
 
     @classmethod
     async def set_cached_key(
-        cls, context: InjectionContext, cache_key: str, value: Any, ttl=None
+        cls, session: ProfileSession, cache_key: str, value: Any, ttl=None
     ):
         """Shortcut method to set a cached key value.
 
         Args:
-            context: The injection context to use
+            session: The profile session to use
             cache_key: The unique cache identifier
             value: The value to cache
             ttl: The cache ttl
         """
         if not cache_key:
             return
-        cache: BaseCache = await context.inject(BaseCache, required=False)
+        cache = session.inject(BaseCache, required=False)
         if cache:
-            await cache.set(cache_key, value, ttl or cls.CACHE_TTL)
+            await cache.set(cache_key, value, ttl or cls.DEFAULT_CACHE_TTL)
 
     @classmethod
-    async def clear_cached_key(cls, context: InjectionContext, cache_key: str):
+    async def clear_cached_key(cls, session: ProfileSession, cache_key: str):
         """Shortcut method to clear a cached key value, if any.
 
         Args:
-            context: The injection context to use
+            session: The profile session to use
             cache_key: The unique cache identifier
         """
         if not cache_key:
             return
-        cache: BaseCache = await context.inject(BaseCache, required=False)
+        cache = session.inject(BaseCache, required=False)
         if cache:
             await cache.clear(cache_key)
 
-    async def clear_cached(self, context: InjectionContext):
-        """Clear the cached value of this record, if any."""
-        await self.clear_cached_key(context, self.cache_key(self._id))
-
     @classmethod
     async def retrieve_by_id(
-        cls, context: InjectionContext, record_id: str, cached: bool = True
+        cls, session: ProfileSession, record_id: str
     ) -> "BaseRecord":
         """Retrieve a stored record by ID.
 
         Args:
-            context: The injection context to use
+            session: The profile session to use
             record_id: The ID of the record to find
-            cached: Whether to check the cache for this record
         """
-        cache_key = cls.cache_key(record_id)
-        vals = None
-
-        if cls.CACHE_ENABLED and cached:
-            vals = await cls.get_cached_key(context, cache_key)
-
-        if not vals:
-            storage: BaseStorage = await context.inject(BaseStorage)
-            result = await storage.get_record(
-                cls.RECORD_TYPE, record_id, {"retrieveTags": False}
-            )
-            vals = json.loads(result.value)
-            if cls.CACHE_ENABLED:
-                await cls.set_cached_key(context, cache_key, vals)
-
+        storage = session.inject(BaseStorage)
+        result = await storage.get_record(
+            cls.RECORD_TYPE, record_id, {"retrieveTags": False}
+        )
+        vals = json.loads(result.value)
         return cls.from_storage(record_id, vals)
 
     @classmethod
     async def retrieve_by_tag_filter(
-        cls, context: InjectionContext, tag_filter: dict, post_filter: dict = None
+        cls, session: ProfileSession, tag_filter: dict, post_filter: dict = None
     ) -> "BaseRecord":
         """Retrieve a record by tag filter.
 
         Args:
-            context: The injection context to use
+            session: The profile session to use
             tag_filter: The filter dictionary to apply
             post_filter: Additional value filters to apply matching positively,
                 with sequence values specifying alternatives to match (hit any)
         """
-        storage: BaseStorage = await context.inject(BaseStorage)
-        query = storage.search_records(
+        storage = session.inject(BaseStorage)
+        rows = await storage.find_all_records(
             cls.RECORD_TYPE,
             cls.prefix_tag_filter(tag_filter),
-            None,
-            {"retrieveTags": False},
+            options={"retrieveTags": False},
         )
         found = None
-        async for record in query:
+        for record in rows:
             vals = json.loads(record.value)
             if match_post_filter(vals, post_filter, alt=False):
                 if found:
@@ -277,7 +247,7 @@ class BaseRecord(BaseModel):
     @classmethod
     async def query(
         cls,
-        context: InjectionContext,
+        session: ProfileSession,
         tag_filter: dict = None,
         *,
         post_filter_positive: dict = None,
@@ -287,22 +257,21 @@ class BaseRecord(BaseModel):
         """Query stored records.
 
         Args:
-            context: The injection context to use
+            session: The profile session to use
             tag_filter: An optional dictionary of tag filter clauses
             post_filter_positive: Additional value filters to apply matching positively
             post_filter_negative: Additional value filters to apply matching negatively
             alt: set to match any (positive=True) value or miss all (positive=False)
                 values in post_filter
         """
-        storage: BaseStorage = await context.inject(BaseStorage)
-        query = storage.search_records(
+        storage = session.inject(BaseStorage)
+        rows = await storage.find_all_records(
             cls.RECORD_TYPE,
             cls.prefix_tag_filter(tag_filter),
-            None,
-            {"retrieveTags": False},
+            options={"retrieveTags": False},
         )
         result = []
-        async for record in query:
+        for record in rows:
             vals = json.loads(record.value)
             if match_post_filter(
                 vals,
@@ -320,7 +289,7 @@ class BaseRecord(BaseModel):
 
     async def save(
         self,
-        context: InjectionContext,
+        session: ProfileSession,
         *,
         reason: str = None,
         log_params: Mapping[str, Any] = None,
@@ -330,7 +299,7 @@ class BaseRecord(BaseModel):
         """Persist the record to storage.
 
         Args:
-            context: The injection context to use
+            session: The profile session to use
             reason: A reason to add to the log
             log_params: Additional parameters to log
             webhook: Flag to override whether the webhook is sent
@@ -339,7 +308,7 @@ class BaseRecord(BaseModel):
         log_reason = reason or ("Updated record" if self._id else "Created record")
         try:
             self.updated_at = time_now()
-            storage: BaseStorage = await context.inject(BaseStorage)
+            storage = session.inject(BaseStorage)
             if self._id:
                 record = self.storage_record
                 await storage.update_record(record, record.value, record.tags)
@@ -355,16 +324,16 @@ class BaseRecord(BaseModel):
                 params.update(log_params)
             if new_record is None:
                 log_reason = f"FAILED: {log_reason}"
-            self.log_state(context, log_reason, params, override=log_override)
+            self.log_state(session, log_reason, params, override=log_override)
 
-        await self.post_save(context, new_record, self._last_state, webhook)
+        await self.post_save(session, new_record, self._last_state, webhook)
         self._last_state = self.state
 
         return self._id
 
     async def post_save(
         self,
-        context: InjectionContext,
+        session: ProfileSession,
         new_record: bool,
         last_state: str,
         webhook: bool = None,
@@ -372,29 +341,27 @@ class BaseRecord(BaseModel):
         """Perform post-save actions.
 
         Args:
-            context: The injection context to use
+            session: The profile session to use
             new_record: Flag indicating if the record was just created
             last_state: The previous state value
             webhook: Adjust whether the webhook is called
         """
-        await self.clear_cached(context)
-
         webhook_topic = self.webhook_topic
         if webhook is None:
             webhook = bool(webhook_topic) and (new_record or (last_state != self.state))
         if webhook:
             await self.send_webhook(
-                context, self.webhook_payload, topic=self.webhook_topic
+                session, self.webhook_payload, topic=self.webhook_topic
             )
 
-    async def delete_record(self, context: InjectionContext):
+    async def delete_record(self, session: ProfileSession):
         """Remove the stored record.
 
         Args:
-            context: The injection context to use
+            session: The profile session to use
         """
         if self._id:
-            storage: BaseStorage = await context.inject(BaseStorage)
+            storage = session.inject(BaseStorage)
             await storage.delete_record(self.storage_record)
         # FIXME - update state and send webhook?
 
@@ -409,12 +376,12 @@ class BaseRecord(BaseModel):
         return self.WEBHOOK_TOPIC
 
     async def send_webhook(
-        self, context: InjectionContext, payload: Any, topic: str = None
+        self, session: ProfileSession, payload: Any, topic: str = None
     ):
         """Send a standard webhook.
 
         Args:
-            context: The injection context to use
+            session: The profile session to use
             payload: The webhook payload
             topic: The webhook topic, defaulting to WEBHOOK_TOPIC
         """
@@ -424,21 +391,21 @@ class BaseRecord(BaseModel):
             topic = self.webhook_topic
             if not topic:
                 return
-        responder: BaseResponder = await context.inject(BaseResponder, required=False)
+        responder = session.inject(BaseResponder, required=False)
         if responder:
             await responder.send_webhook(topic, payload)
 
     @classmethod
     def log_state(
         cls,
-        context: InjectionContext,
+        session: ProfileSession,
         msg: str,
         params: dict = None,
         override: bool = False,
     ):
         """Print a message with increased visibility (for testing)."""
         if override or (
-            cls.LOG_STATE_FLAG and context.settings.get(cls.LOG_STATE_FLAG)
+            cls.LOG_STATE_FLAG and session.context.settings.get(cls.LOG_STATE_FLAG)
         ):
             out = msg + "\n"
             if params:
@@ -487,7 +454,7 @@ class BaseExchangeRecord(BaseRecord):
         trace: bool = False,
         **kwargs,
     ):
-        """Initialize a new V10CredentialExchange."""
+        """Initialize a new BaseExchangeRecord."""
         super().__init__(id, state, **kwargs)
         self.trace = trace
 

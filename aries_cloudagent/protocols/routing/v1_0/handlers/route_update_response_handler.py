@@ -27,7 +27,8 @@ class RouteUpdateResponseHandler(BaseHandler):
         if not context.connection_ready:
             raise HandlerException("Cannot handle updated routes: no active connection")
 
-        conn_mgr = ConnectionManager(context)
+        session = await context.session()
+        conn_mgr = ConnectionManager(session)
         router_id = context.connection_record.connection_id
 
         for update in context.message.updated:

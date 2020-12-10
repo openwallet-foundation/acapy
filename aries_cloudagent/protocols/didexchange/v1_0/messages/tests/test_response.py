@@ -1,4 +1,4 @@
-from unittest import mock, TestCase
+from unittest import mock
 
 from asynctest import TestCase as AsyncTestCase
 
@@ -8,8 +8,8 @@ from ......connections.models.diddoc import (
     PublicKeyType,
     Service,
 )
+from ......core.in_memory import InMemoryProfile
 from ......messaging.decorators.attach_decorator import AttachDecorator
-from ......wallet.basic import BasicWallet
 
 from .....didcomm_prefix import DIDCommPrefix
 
@@ -54,7 +54,7 @@ class TestConfig:
 
 class TestDIDXResponse(AsyncTestCase, TestConfig):
     async def setUp(self):
-        self.wallet = BasicWallet()
+        self.wallet = InMemoryProfile.test_session().wallet
         self.did_info = await self.wallet.create_local_did()
 
         did_doc_attach = AttachDecorator.from_indy_dict(self.make_did_doc().serialize())
@@ -105,7 +105,7 @@ class TestDIDXResponseSchema(AsyncTestCase, TestConfig):
     """Test response schema."""
 
     async def setUp(self):
-        self.wallet = BasicWallet()
+        self.wallet = InMemoryProfile.test_session().wallet
         self.did_info = await self.wallet.create_local_did()
 
         did_doc_attach = AttachDecorator.from_indy_dict(self.make_did_doc().serialize())
@@ -119,4 +119,4 @@ class TestDIDXResponseSchema(AsyncTestCase, TestConfig):
     async def test_make_model(self):
         data = self.response.serialize()
         model_instance = DIDXResponse.deserialize(data)
-        assert type(model_instance) is type(self.response)
+        assert isinstance(model_instance, DIDXResponse)

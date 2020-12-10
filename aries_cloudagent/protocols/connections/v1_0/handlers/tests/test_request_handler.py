@@ -1,17 +1,16 @@
 import pytest
 from asynctest import mock as async_mock
 
-from aries_cloudagent.connections.models import connection_target
-from aries_cloudagent.connections.models.diddoc import (
+from ......connections.models import connection_target
+from ......connections.models.diddoc import (
     DIDDoc,
     PublicKey,
     PublicKeyType,
     Service,
 )
-from aries_cloudagent.messaging.base_handler import HandlerException
-from aries_cloudagent.messaging.request_context import RequestContext
-from aries_cloudagent.messaging.responder import MockResponder
-from aries_cloudagent.transport.inbound.receipt import MessageReceipt
+from ......messaging.request_context import RequestContext
+from ......messaging.responder import MockResponder
+from ......transport.inbound.receipt import MessageReceipt
 
 from ...handlers import connection_request_handler as handler
 from ...manager import ConnectionManagerError
@@ -22,7 +21,7 @@ from ...models.connection_detail import ConnectionDetail
 
 @pytest.fixture()
 def request_context() -> RequestContext:
-    ctx = RequestContext()
+    ctx = RequestContext.test_context()
     ctx.message_receipt = MessageReceipt()
     yield ctx
 
@@ -72,8 +71,6 @@ class TestRequestHandler:
         handler_inst = handler.ConnectionRequestHandler()
         responder = MockResponder()
         await handler_inst.handle(request_context, responder)
-
-        mock_conn_mgr.assert_called_once_with(request_context)
         mock_conn_mgr.return_value.receive_request.assert_called_once_with(
             request_context.message, request_context.message_receipt
         )

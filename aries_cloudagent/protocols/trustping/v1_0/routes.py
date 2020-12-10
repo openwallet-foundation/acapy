@@ -5,6 +5,7 @@ from aiohttp_apispec import docs, match_info_schema, request_schema, response_sc
 
 from marshmallow import fields
 
+from ....admin.request_context import AdminRequestContext
 from ....connections.models.conn_record import ConnRecord
 from ....messaging.models.openapi import OpenAPISchema
 from ....messaging.valid import UUIDFour
@@ -39,7 +40,7 @@ class ConnIdMatchInfoSchema(OpenAPISchema):
 @docs(tags=["trustping"], summary="Send a trust ping to a connection")
 @match_info_schema(ConnIdMatchInfoSchema())
 @request_schema(PingRequestSchema())
-@response_schema(PingRequestResponseSchema(), 200)
+@response_schema(PingRequestResponseSchema(), 200, description="")
 async def connections_send_ping(request: web.BaseRequest):
     """
     Request handler for sending a trust ping to a connection.
@@ -48,14 +49,15 @@ async def connections_send_ping(request: web.BaseRequest):
         request: aiohttp request object
 
     """
-    context = request["context"]
+    context: AdminRequestContext = request["context"]
     connection_id = request.match_info["conn_id"]
     outbound_handler = request["outbound_message_router"]
     body = await request.json()
     comment = body.get("comment")
 
     try:
-        connection = await ConnRecord.retrieve_by_id(context, connection_id)
+        async with context.session() as session:
+            connection = await ConnRecord.retrieve_by_id(session, connection_id)
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
 

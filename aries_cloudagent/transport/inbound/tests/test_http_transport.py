@@ -5,9 +5,11 @@ import json
 from aiohttp.test_utils import AioHTTPTestCase, unittest_run_loop, unused_port
 from asynctest import mock as async_mock
 
+from ....core.in_memory import InMemoryProfile
+from ....core.profile import Profile
+
 from ...outbound.message import OutboundMessage
 from ...wire_format import JsonWireFormat
-from ....config.injection_context import InjectionContext
 
 from ..http import HttpTransport
 from ..message import InboundMessage
@@ -39,7 +41,7 @@ class TestHttpTransport(AioHTTPTestCase):
     ):
         if not self.session:
             session = InboundSession(
-                context=None,
+                profile=InMemoryProfile.test_profile(),
                 can_respond=can_respond,
                 inbound_handler=self.receive_message,
                 session_id=None,
@@ -54,7 +56,7 @@ class TestHttpTransport(AioHTTPTestCase):
 
     def receive_message(
         self,
-        context: InjectionContext,
+        profile: Profile,
         message: InboundMessage,
         can_respond: bool = False,
     ):
@@ -123,6 +125,7 @@ class TestHttpTransport(AioHTTPTestCase):
                     )
                 ),
                 can_respond=True,
+                profile=InMemoryProfile.test_profile(),
                 clear_response=async_mock.MagicMock(),
                 wait_response=async_mock.CoroutineMock(return_value=b"Hello world"),
             )
@@ -134,6 +137,7 @@ class TestHttpTransport(AioHTTPTestCase):
                 receive=async_mock.CoroutineMock(
                     side_effect=test_module.MessageParseError()
                 ),
+                profile=InMemoryProfile.test_profile(),
             )
             async with self.client.post("/", data=test_message) as resp:
                 status = resp.status

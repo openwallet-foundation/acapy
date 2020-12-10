@@ -11,8 +11,12 @@ from indy.error import (
     WalletItemNotFound,
 )
 
-from ....wallet.indy import IndyWallet
+from ....config.injection_context import InjectionContext
+from ....indy.sdk.profile import IndySdkProfile
+from ....indy.sdk.wallet_setup import IndyWalletConfig
+from ....wallet.indy import IndySdkWallet
 from ...issuer import IndyIssuerRevocationRegistryFullError
+from ....ledger.indy import IndySdkLedgerPool
 
 from .. import issuer as test_module
 
@@ -33,21 +37,25 @@ TEST_RR_DELTA = {
 @pytest.mark.indy
 class TestIndySdkIssuer(AsyncTestCase):
     async def setUp(self):
-        self.wallet = IndyWallet(
-            {
-                "auto_create": True,
-                "auto_remove": True,
-                "key": await IndyWallet.generate_wallet_key(),
-                "key_derivation_method": "RAW",
-                "name": "test",
-            }
+        self.context = InjectionContext()
+        self.context.injector.bind_instance(
+            IndySdkLedgerPool, IndySdkLedgerPool("name")
         )
-        self.issuer = test_module.IndySdkIssuer(self.wallet)
-        assert self.issuer.wallet is self.wallet
-        await self.wallet.open()
+
+        self.wallet = await IndyWalletConfig(
+            {
+                "auto_recreate": True,
+                "auto_remove": True,
+                "key": await IndySdkWallet.generate_wallet_key(),
+                "key_derivation_method": "RAW",
+                "name": "test-wallet",
+            }
+        ).create_wallet()
+        self.profile = IndySdkProfile(self.wallet, self.context)
+        self.issuer = test_module.IndySdkIssuer(self.profile)
 
     async def tearDown(self):
-        await self.wallet.close()
+        await self.profile.close()
 
     async def test_repr(self):
         assert "IndySdkIssuer" in str(self.issuer)  # cover __repr__
@@ -117,11 +125,13 @@ class TestIndySdkIssuer(AsyncTestCase):
         test_offer = {"test": "offer"}
         test_cred_def_id = "test-cred-def-id"
         mock_create_offer.return_value = json.dumps(test_offer)
-        mock_wallet = async_mock.MagicMock()
-        issuer = test_module.IndySdkIssuer(mock_wallet)
+        mock_profile = async_mock.MagicMock()
+        issuer = test_module.IndySdkIssuer(mock_profile)
         offer_json = await issuer.create_credential_offer(test_cred_def_id)
         assert json.loads(offer_json) == test_offer
-        mock_create_offer.assert_called_once_with(mock_wallet.handle, test_cred_def_id)
+        mock_create_offer.assert_called_once_with(
+            mock_profile.wallet.handle, test_cred_def_id
+        )
 
     @async_mock.patch("indy.anoncreds.issuer_create_credential")
     @async_mock.patch.object(test_module, "create_tails_reader", autospec=True)

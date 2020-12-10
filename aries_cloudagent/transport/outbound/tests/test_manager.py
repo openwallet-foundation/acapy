@@ -1,10 +1,10 @@
-import asyncio
 import json
 
 from asynctest import TestCase as AsyncTestCase, mock as async_mock
 
 from ....config.injection_context import InjectionContext
 from ....connections.models.connection_target import ConnectionTarget
+from ....core.in_memory import InMemoryProfile
 
 from .. import manager as test_module
 from ..manager import (
@@ -81,19 +81,23 @@ class TestOutboundTransportManager(AsyncTestCase):
             sender_key=4,
         )
 
-        send_context = InjectionContext()
-        mgr.enqueue_message(send_context, message)
+        send_session = InMemoryProfile.test_session()
+        send_profile = send_session.profile
+        setattr(
+            send_profile, "session", async_mock.MagicMock(return_value=send_session)
+        )
+        mgr.enqueue_message(send_profile, message)
         await mgr.flush()
 
         transport.wire_format.encode_message.assert_awaited_once_with(
-            send_context,
+            send_session,
             message.payload,
             message.target.recipient_keys,
             message.target.routing_keys,
             message.target.sender_key,
         )
         transport.handle_message.assert_awaited_once_with(
-            send_context,
+            send_profile,
             transport.wire_format.encode_message.return_value,
             message.target.endpoint,
         )
@@ -108,7 +112,7 @@ class TestOutboundTransportManager(AsyncTestCase):
             sender_key=4,
         )
         with self.assertRaises(OutboundDeliveryError) as context:
-            mgr.enqueue_message(send_context, message)
+            mgr.enqueue_message(send_profile, message)
         assert "No supported transport" in str(context.exception)
 
         await mgr.stop()

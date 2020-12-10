@@ -4,7 +4,7 @@ from typing import Any, Sequence
 
 from marshmallow import fields
 
-from ...config.injection_context import InjectionContext
+from ...core.profile import ProfileSession
 from ...messaging.models.base_record import BaseRecord, BaseRecordSchema
 from ...messaging.valid import (
     INDY_CRED_DEF_ID,
@@ -62,7 +62,7 @@ class IssuerCredRevRecord(BaseRecord):
     @classmethod
     async def query_by_ids(
         cls,
-        context: InjectionContext,
+        session: ProfileSession,
         *,
         cred_def_id: str = None,
         rev_reg_id: str = None,
@@ -71,7 +71,7 @@ class IssuerCredRevRecord(BaseRecord):
         """Retrieve issuer cred rev records by cred def id and/or rev reg id.
 
         Args:
-            context: the injection context to use
+            session: the profile session to use
             cred_def_id: the cred def id by which to filter
             rev_reg_id: the rev reg id by which to filter
             state: a state value by which to filter
@@ -82,33 +82,33 @@ class IssuerCredRevRecord(BaseRecord):
             **{"state": state for _ in [""] if state},
         }
 
-        return await cls.query(context, tag_filter)
+        return await cls.query(session, tag_filter)
 
     @classmethod
     async def retrieve_by_ids(
         cls,
-        context: InjectionContext,
+        session: ProfileSession,
         rev_reg_id: str,
         cred_rev_id: str,
     ) -> "IssuerCredRevRecord":
         """Retrieve an issuer cred rev record by rev reg id and cred rev id."""
         return await cls.retrieve_by_tag_filter(
-            context, {"rev_reg_id": rev_reg_id}, {"cred_rev_id": cred_rev_id}
+            session, {"rev_reg_id": rev_reg_id}, {"cred_rev_id": cred_rev_id}
         )
 
     @classmethod
     async def retrieve_by_cred_ex_id(
         cls,
-        context: InjectionContext,
+        session: ProfileSession,
         cred_ex_id: str,
     ) -> "IssuerCredRevRecord":
         """Retrieve an issuer cred rev record by rev reg id and cred rev id."""
-        return await cls.retrieve_by_tag_filter(context, {"cred_ex_id": cred_ex_id})
+        return await cls.retrieve_by_tag_filter(session, {"cred_ex_id": cred_ex_id})
 
-    async def set_state(self, context: InjectionContext, state: str = None):
+    async def set_state(self, session: ProfileSession, state: str = None):
         """Change the issuer cred rev record state (default issued)."""
         self.state = state or IssuerCredRevRecord.STATE_ISSUED
-        await self.save(context, reason=f"Marked {self.state}")
+        await self.save(session, reason=f"Marked {self.state}")
 
     def __eq__(self, other: Any) -> bool:
         """Comparison between records."""

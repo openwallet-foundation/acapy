@@ -1,14 +1,27 @@
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
-from .....config.injection_context import InjectionContext
+from .....admin.request_context import AdminRequestContext
 from .....storage.error import StorageNotFoundError
-from .....messaging.request_context import RequestContext
 
 from .. import routes as test_module
 
 
 class TestDIDExchangeConnRoutes(AsyncTestCase):
+    async def setUp(self):
+        self.session_inject = {}
+        self.context = AdminRequestContext.test_context(self.session_inject)
+        self.request_dict = {
+            "context": self.context,
+            "outbound_message_router": async_mock.CoroutineMock(),
+        }
+        self.request = async_mock.MagicMock(
+            app={},
+            match_info={},
+            query={},
+            __getitem__=lambda _, k: self.request_dict[k],
+        )
+
     """
     async def test_didx_list(self):
         context = RequestContext(base_context=InjectionContext(enforce_typing=False))
@@ -172,21 +185,9 @@ class TestDIDExchangeConnRoutes(AsyncTestCase):
                 await test_module.didx_retrieve_connection(mock_req)
     """
 
-    async def setUp(self):
-        self.request_dict = {
-            "context": RequestContext(
-                base_context=InjectionContext(enforce_typing=False)
-            ),
-            "outbound_message_router": async_mock.CoroutineMock(),
-        }
-        self.mock_request = async_mock.MagicMock(
-            __getitem__=async_mock.Mock(side_effect=self.request_dict.__getitem__),
-            __setitem__=async_mock.Mock(side_effect=self.request_dict.__setitem__),
-        )
-
     async def test_didx_receive_invitation(self):
-        self.mock_request.json = async_mock.CoroutineMock()
-        self.mock_request.query = {
+        self.request.json = async_mock.CoroutineMock()
+        self.request.query = {
             "auto_accept": "true",
             "alias": "alias",
         }
@@ -205,12 +206,12 @@ class TestDIDExchangeConnRoutes(AsyncTestCase):
                 return_value=mock_conn_rec
             )
 
-            await test_module.didx_receive_invitation(self.mock_request)
+            await test_module.didx_receive_invitation(self.request)
             mock_response.assert_called_once_with(mock_conn_rec.serialize.return_value)
 
     async def test_didx_receive_invitation_bad(self):
-        self.mock_request.json = async_mock.CoroutineMock()
-        self.mock_request.query = {
+        self.request.json = async_mock.CoroutineMock()
+        self.request.query = {
             "auto_accept": "true",
             "alias": "alias",
         }
@@ -226,19 +227,17 @@ class TestDIDExchangeConnRoutes(AsyncTestCase):
             mock_inv_deser.side_effect = test_module.BaseModelError()
 
             with self.assertRaises(test_module.web.HTTPBadRequest):
-                await test_module.didx_receive_invitation(self.mock_request)
+                await test_module.didx_receive_invitation(self.request)
 
     async def test_didx_receive_invitation_forbidden(self):
-        context = RequestContext(base_context=InjectionContext(enforce_typing=False))
-        context.update_settings({"admin.no_receive_invites": True})
-        mock_req = async_mock.MagicMock()
+        self.context.update_settings({"admin.no_receive_invites": True})
 
         with self.assertRaises(test_module.web.HTTPForbidden):
-            await test_module.didx_receive_invitation(mock_req)
+            await test_module.didx_receive_invitation(self.request)
 
     async def test_didx_accept_invitation(self):
-        self.mock_request.match_info = {"conn_id": "dummy"}
-        self.mock_request.query = {
+        self.request.match_info = {"conn_id": "dummy"}
+        self.request.query = {
             "my_label": "label",
             "my_endpoint": "http://endpoint.ca",
         }
@@ -257,11 +256,11 @@ class TestDIDExchangeConnRoutes(AsyncTestCase):
             mock_conn_rec_class.retrieve_by_id.return_value = mock_conn_rec
             mock_didx_mgr.return_value.create_request = async_mock.CoroutineMock()
 
-            await test_module.didx_accept_invitation(self.mock_request)
+            await test_module.didx_accept_invitation(self.request)
             mock_response.assert_called_once_with(mock_conn_rec.serialize.return_value)
 
     async def test_didx_accept_invitation_not_found(self):
-        self.mock_request.match_info = {"conn_id": "dummy"}
+        self.request.match_info = {"conn_id": "dummy"}
 
         with async_mock.patch.object(
             test_module.ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
@@ -269,10 +268,10 @@ class TestDIDExchangeConnRoutes(AsyncTestCase):
             mock_conn_rec_retrieve_by_id.side_effect = StorageNotFoundError()
 
             with self.assertRaises(test_module.web.HTTPNotFound):
-                await test_module.didx_accept_invitation(self.mock_request)
+                await test_module.didx_accept_invitation(self.request)
 
     async def test_didx_accept_invitation_x(self):
-        self.mock_request.match_info = {"conn_id": "dummy"}
+        self.request.match_info = {"conn_id": "dummy"}
 
         with async_mock.patch.object(
             test_module.ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
@@ -284,11 +283,11 @@ class TestDIDExchangeConnRoutes(AsyncTestCase):
             )
 
             with self.assertRaises(test_module.web.HTTPBadRequest):
-                await test_module.didx_accept_invitation(self.mock_request)
+                await test_module.didx_accept_invitation(self.request)
 
     async def test_didx_accept_request(self):
-        self.mock_request.match_info = {"conn_id": "dummy"}
-        self.mock_request.query = {
+        self.request.match_info = {"conn_id": "dummy"}
+        self.request.query = {
             "my_endpoint": "http://endpoint.ca",
         }
 
@@ -305,11 +304,11 @@ class TestDIDExchangeConnRoutes(AsyncTestCase):
             mock_conn_rec_retrieve_by_id.return_value = mock_conn_rec
             mock_didx_mgr.return_value.create_response = async_mock.CoroutineMock()
 
-            await test_module.didx_accept_request(self.mock_request)
+            await test_module.didx_accept_request(self.request)
             mock_response.assert_called_once_with(mock_conn_rec.serialize.return_value)
 
     async def test_didx_accept_request_not_found(self):
-        self.mock_request.match_info = {"conn_id": "dummy"}
+        self.request.match_info = {"conn_id": "dummy"}
 
         with async_mock.patch.object(
             test_module.ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
@@ -317,10 +316,10 @@ class TestDIDExchangeConnRoutes(AsyncTestCase):
             mock_conn_rec_retrieve_by_id.side_effect = StorageNotFoundError()
 
             with self.assertRaises(test_module.web.HTTPNotFound):
-                await test_module.didx_accept_request(self.mock_request)
+                await test_module.didx_accept_request(self.request)
 
     async def test_didx_accept_request_x(self):
-        self.mock_request.match_info = {"conn_id": "dummy"}
+        self.request.match_info = {"conn_id": "dummy"}
 
         with async_mock.patch.object(
             test_module.ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
@@ -334,7 +333,7 @@ class TestDIDExchangeConnRoutes(AsyncTestCase):
             )
 
             with self.assertRaises(test_module.web.HTTPBadRequest):
-                await test_module.didx_accept_request(self.mock_request)
+                await test_module.didx_accept_request(self.request)
 
     """
     async def test_didx_establish_inbound(self):

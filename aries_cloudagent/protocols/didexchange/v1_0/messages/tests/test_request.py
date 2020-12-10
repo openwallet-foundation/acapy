@@ -8,8 +8,8 @@ from ......connections.models.diddoc import (
     PublicKeyType,
     Service,
 )
+from ......core.in_memory import InMemoryProfile
 from ......messaging.decorators.attach_decorator import AttachDecorator
-from ......wallet.basic import BasicWallet
 
 from .....didcomm_prefix import DIDCommPrefix
 
@@ -55,7 +55,7 @@ class TestConfig:
 
 class TestDIDXRequest(AsyncTestCase, TestConfig):
     async def setUp(self):
-        self.wallet = BasicWallet()
+        self.wallet = InMemoryProfile.test_session().wallet
         self.did_info = await self.wallet.create_local_did()
 
         did_doc_attach = AttachDecorator.from_indy_dict(self.make_did_doc().serialize())
@@ -109,7 +109,7 @@ class TestDIDXRequestSchema(AsyncTestCase, TestConfig):
     """Test request schema."""
 
     async def setUp(self):
-        self.wallet = BasicWallet()
+        self.wallet = InMemoryProfile.test_session().wallet
         self.did_info = await self.wallet.create_local_did()
 
         did_doc_attach = AttachDecorator.from_indy_dict(self.make_did_doc().serialize())
@@ -124,4 +124,4 @@ class TestDIDXRequestSchema(AsyncTestCase, TestConfig):
     async def test_make_model(self):
         data = self.request.serialize()
         model_instance = DIDXRequest.deserialize(data)
-        assert type(model_instance) is type(self.request)
+        assert isinstance(model_instance, DIDXRequest)

@@ -5,8 +5,11 @@ from aiohttp_apispec import docs, request_schema, response_schema
 
 from marshmallow import fields
 
+from ...admin.request_context import AdminRequestContext
 from ...wallet.base import BaseWallet
+
 from ..models.openapi import OpenAPISchema
+
 from .credential import sign_credential, verify_credential
 
 
@@ -25,7 +28,7 @@ class SignResponseSchema(OpenAPISchema):
 
 @docs(tags=["jsonld"], summary="Sign a JSON-LD structure and return it")
 @request_schema(SignRequestSchema())
-@response_schema(SignResponseSchema(), 200)
+@response_schema(SignResponseSchema(), 200, description="")
 async def sign(request: web.BaseRequest):
     """
     Request handler for signing a jsonld doc.
@@ -36,8 +39,9 @@ async def sign(request: web.BaseRequest):
     """
     response = {}
     try:
-        context = request["context"]
-        wallet: BaseWallet = await context.inject(BaseWallet)
+        context: AdminRequestContext = request["context"]
+        session = await context.session()
+        wallet = session.inject(BaseWallet, required=False)
         if not wallet:
             raise web.HTTPForbidden()
 
@@ -73,7 +77,7 @@ class VerifyResponseSchema(OpenAPISchema):
 
 @docs(tags=["jsonld"], summary="Verify a JSON-LD structure.")
 @request_schema(VerifyRequestSchema())
-@response_schema(VerifyResponseSchema(), 200)
+@response_schema(VerifyResponseSchema(), 200, description="")
 async def verify(request: web.BaseRequest):
     """
     Request handler for signing a jsonld doc.
@@ -84,8 +88,9 @@ async def verify(request: web.BaseRequest):
     """
     response = {"valid": False}
     try:
-        context = request["context"]
-        wallet: BaseWallet = await context.inject(BaseWallet)
+        context: AdminRequestContext = request["context"]
+        session = await context.session()
+        wallet = session.inject(BaseWallet, required=False)
         if not wallet:
             raise web.HTTPForbidden()
 

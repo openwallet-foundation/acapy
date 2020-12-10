@@ -4,7 +4,7 @@ import asyncio
 import logging
 from typing import Callable, Sequence, Union
 
-from ...config.injection_context import InjectionContext
+from ...core.profile import Profile
 
 from ..error import WireFormatError
 from ..outbound.message import OutboundMessage
@@ -35,7 +35,7 @@ class InboundSession:
     def __init__(
         self,
         *,
-        context: InjectionContext,
+        profile: Profile,
         inbound_handler: Callable,
         session_id: str,
         wire_format: BaseWireFormat,
@@ -49,7 +49,7 @@ class InboundSession:
         transport_type: str = None,
     ):
         """Initialize the inbound session."""
-        self.context = context
+        self.profile = profile
         self.inbound_handler = inbound_handler
         self.session_id = session_id
         self.wire_format = wire_format
@@ -164,9 +164,8 @@ class InboundSession:
 
     async def parse_inbound(self, payload_enc: Union[str, bytes]) -> InboundMessage:
         """Convert a message payload and to an inbound message."""
-        payload, receipt = await self.wire_format.parse_message(
-            self.context, payload_enc
-        )
+        session = await self.profile.session()
+        payload, receipt = await self.wire_format.parse_message(session, payload_enc)
         return InboundMessage(
             payload,
             receipt,
@@ -183,7 +182,7 @@ class InboundSession:
     def receive_inbound(self, message: InboundMessage):
         """Deliver the inbound message to the conductor."""
         self.process_inbound(message)
-        self.inbound_handler(self.context, message, can_respond=self.can_respond)
+        self.inbound_handler(self.profile, message, can_respond=self.can_respond)
 
     def select_outbound(self, message: OutboundMessage) -> bool:
         """Determine if an outbound message should be sent to this session.
@@ -218,8 +217,9 @@ class InboundSession:
         if not outbound.reply_to_verkey:
             raise WireFormatError("No reply verkey available for encoding message")
 
+        session = await self.profile.session()
         return await self.wire_format.encode_message(
-            self.context,
+            session,
             outbound.payload,
             [outbound.reply_to_verkey],
             None,

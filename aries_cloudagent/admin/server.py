@@ -2,9 +2,8 @@
 
 import asyncio
 import logging
-from typing import Callable, Coroutine, Sequence, Set, cast
+from typing import Callable, Coroutine, Sequence, Set
 import uuid
-import jwt
 
 from aiohttp import web
 from aiohttp_apispec import (
@@ -14,12 +13,15 @@ from aiohttp_apispec import (
     validation_middleware,
 )
 import aiohttp_cors
+import jwt
 
-from marshmallow import fields, Schema
+from marshmallow import fields
 
 from ..config.injection_context import InjectionContext
+from ..core.profile import Profile
 from ..core.plugin_registry import PluginRegistry
 from ..ledger.error import LedgerConfigError, LedgerTransactionError
+from ..messaging.models.openapi import OpenAPISchema
 from ..messaging.responder import BaseResponder
 from ..transport.queue.basic import BasicMessageQueue
 from ..transport.outbound.message import OutboundMessage
@@ -27,15 +29,18 @@ from ..utils.stats import Collector
 from ..utils.task_queue import TaskQueue
 from ..version import __version__
 from ..wallet.models.wallet_record import WalletRecord
+from ..multitenant.manager import MultitenantManager, MultitenantManagerError
 
+from ..storage.error import StorageNotFoundError
 from .base_server import BaseAdminServer
 from .error import AdminSetupError
+from .request_context import AdminRequestContext
 
 
 LOGGER = logging.getLogger(__name__)
 
 
-class AdminModulesSchema(Schema):
+class AdminModulesSchema(OpenAPISchema):
     """Schema for the modules endpoint."""
 
     result = fields.List(
@@ -43,20 +48,24 @@ class AdminModulesSchema(Schema):
     )
 
 
-class AdminStatusSchema(Schema):
+class AdminStatusSchema(OpenAPISchema):
     """Schema for the status endpoint."""
 
 
-class AdminStatusLivelinessSchema(Schema):
+class AdminStatusLivelinessSchema(OpenAPISchema):
     """Schema for the liveliness endpoint."""
 
     alive = fields.Boolean(description="Liveliness status", example=True)
 
 
-class AdminStatusReadinessSchema(Schema):
+class AdminStatusReadinessSchema(OpenAPISchema):
     """Schema for the readiness endpoint."""
 
     ready = fields.Boolean(description="Readiness status", example=True)
+
+
+class AdminShutdownSchema(OpenAPISchema):
+    """Response schema for admin Module."""
 
 
 class AdminResponder(BaseResponder):
@@ -64,7 +73,7 @@ class AdminResponder(BaseResponder):
 
     def __init__(
         self,
-        context: InjectionContext,
+        profile: Profile,
         send: Coroutine,
         webhook: Coroutine,
         **kwargs,
@@ -77,7 +86,7 @@ class AdminResponder(BaseResponder):
 
         """
         super().__init__(**kwargs)
-        self._context = context
+        self._profile = profile
         self._send = send
         self._webhook = webhook
 
@@ -88,7 +97,7 @@ class AdminResponder(BaseResponder):
         Args:
             message: The `OutboundMessage` to be sent
         """
-        await self._send(self._context, message)
+        await self._send(self._profile, message)
 
     async def send_webhook(self, topic: str, payload: dict):
         """
@@ -190,7 +199,9 @@ class AdminServer(BaseAdminServer):
         self,
         host: str,
         port: int,
+        # MTODO: can't we use root_profile context here?
         context: InjectionContext,
+        root_profile: Profile,
         outbound_message_router: Coroutine,
         webhook_router: Callable,
         conductor_stop: Coroutine,
@@ -216,17 +227,19 @@ class AdminServer(BaseAdminServer):
         )
         self.host = host
         self.port = port
+        self.context = context
         self.conductor_stop = conductor_stop
         self.conductor_stats = conductor_stats
         self.loaded_modules = []
+        self.outbound_message_router = outbound_message_router
+        self.root_profile = root_profile
         self.task_queue = task_queue
         self.webhook_router = webhook_router
         self.webhook_targets = {}
         self.websocket_queues = {}
         self.site = None
-        self.outbound_message_router = outbound_message_router
-
-        self.context = context.start_scope("admin")
+        self.multitenant_enabled = context.settings.get("multitenant.enabled")
+        self.jwt_secret = context.settings.get("multitenant.jwt_secret")
 
     async def make_application(self) -> web.Application:
         """Get the aiohttp application instance."""
@@ -250,36 +263,12 @@ class AdminServer(BaseAdminServer):
                 or path.startswith("/static/swagger/")
             )
 
-        @web.middleware
-        async def set_request_context(request, handler):
-            context = self.context.copy()
-
-            # Create a responder with the request specific context
-            responder = AdminResponder(
-                context,
-                self.outbound_message_router,
-                self.send_webhook,
-            )
-
-            # Bind responder instance
-            context.injector.bind_instance(BaseResponder, responder)
-
-            # Set context and message_router on the request
-            # This allows for different context per request, which
-            # is needed for multitenancy.
-            request["context"] = context
-            request["outbound_message_router"] = responder.send
-
-            return await handler(request)
-
-        middlewares.append(set_request_context)
-
         # If admin_api_key is None, then admin_insecure_mode must be set so
         # we can safely enable the admin server with no security
         if self.admin_api_key:
 
             @web.middleware
-            async def check_token(request, handler):
+            async def check_token(request: web.Request, handler):
                 header_admin_api_key = request.headers.get("x-api-key")
                 valid_key = self.admin_api_key == header_admin_api_key
 
@@ -290,82 +279,72 @@ class AdminServer(BaseAdminServer):
 
             middlewares.append(check_token)
 
-        collector: Collector = await self.context.inject(Collector, required=False)
+        collector = self.context.inject(Collector, required=False)
 
-        if self.task_queue:
+        @web.middleware
+        async def setup_context(request: web.Request, handler):
+            authorization_header = request.headers.get("Authorization")
+            context = self.context
+            profile = self.root_profile
 
-            @web.middleware
-            async def apply_limiter(request, handler):
-                task = await self.task_queue.put(handler(request))
-                return await task
-
-            middlewares.append(apply_limiter)
-
-        elif collector:
-
-            @web.middleware
-            async def collect_stats(request, handler):
-                handler = collector.wrap_coro(handler, [handler.__qualname__])
-                return await handler(request)
-
-            middlewares.append(collect_stats)
-
-        if self.context.settings.get("multitenant.enabled"):
-
-            @web.middleware
-            async def set_multitenant_wallet(request, handler):
-                authorization_header = request.headers.get("Authorization")
-
-                # MTODO better auth. Now if no authorization header  is present everything
-                # can be done on base wallet. We want to limit this to only subwallet
-                # So we need to check if it's a multitenancy api path and otherwise reject
-                if is_unprotected_path(request.path) or not authorization_header:
-                    return await handler(request)
-
-                context = request["context"]
-                jwt_secret = context.settings.get("multitenant.jwt_secret")
-
-                # Extract token and check if Bearer is present
-                bearer, _, token = authorization_header.partition(" ")
-                if bearer != "Bearer":
-                    raise web.HTTPUnauthorized(reason="Invalid header structure")
-
+            # Multitenancy context setup
+            # MTODO: extract to separate middleware
+            if self.multitenant_enabled and authorization_header:
                 try:
-                    token_body = jwt.decode(token, jwt_secret)
+                    bearer, _, token = authorization_header.partition(" ")
+                    if bearer != "Bearer":
+                        raise web.HTTPUnauthorized(reason="Invalid header structure")
+                    token_body = jwt.decode(token, self.jwt_secret)
 
-                    # Get the wallet associated with the subwallet
-                    wallet_id = token_body["wallet_id"]
-                    wallet_record = cast(
-                        WalletRecord,
-                        await WalletRecord.retrieve_by_id(context, wallet_id),
-                    )
+                    wallet_id = token_body.get("wallet_id")
+                    wallet_key = token_body.get("wallet_key")
 
-                    LOGGER.debug(
-                        "token provided for subwallet %s, switching context",
-                        wallet_record.wallet_record_id,
-                    )
+                    async with self.root_profile.session() as session:
+                        multitenant_mgr = session.inject(MultitenantManager)
+                        wallet = await WalletRecord.retrieve_by_id(session, wallet_id)
+                        extra_settings = {}
 
-                    context.settings = context.settings.extend(
-                        wallet_record.get_config_as_settings()
-                    )
+                        if not wallet.is_managed:
+                            if not wallet_key:
+                                raise web.HTTPUnauthorized(
+                                    "Missing wallet_key for unmanaged wallet"
+                                )
 
-                    if wallet_record.key_management_mode == WalletRecord.MODE_UNMANAGED:
-                        context.settings["wallet.key"] = token_body["wallet_key"]
-                # MTODO: catch specific exceptions
-                except Exception:
+                            extra_settings["wallet.key"] = wallet_key
+
+                        profile = await multitenant_mgr.get_wallet_profile(
+                            context, wallet, extra_settings
+                        )
+                except MultitenantManagerError as err:
+                    raise web.HTTPUnauthorized(err.roll_up)
+                except (jwt.InvalidTokenError, StorageNotFoundError):
                     raise web.HTTPUnauthorized()
 
-                return await handler(request)
+            # TODO may dynamically adjust the profile used here according to
+            # headers or other parameters
+            admin_context = AdminRequestContext(profile, context=profile.context)
 
-            middlewares.append(set_multitenant_wallet)
+            # Create a responder with the request specific context
+            responder = AdminResponder(
+                profile,
+                self.outbound_message_router,
+                self.send_webhook,
+            )
+            admin_context.injector.bind_instance(BaseResponder, responder)
+
+            request["context"] = admin_context
+            request["outbound_message_router"] = responder.send
+
+            if collector:
+                handler = collector.wrap_coro(handler, [handler.__qualname__])
+            if self.task_queue:
+                task = await self.task_queue.put(handler(request))
+                return await task
+            return await handler(request)
+
+        middlewares.append(setup_context)
 
         app = web.Application(middlewares=middlewares)
-        # MTODO: remove app context, only use request context
-        # This can have breaking changes for external plugins
-        # Maybe global context should be base wallet, request context
-        # should be sub/base wallet. But for now this is used when creating
-        # a connection for a subwallet and adding a routing record to the base wallet
-        app["request_context"] = self.context
 
         app.add_routes(
             [
@@ -380,9 +359,7 @@ class AdminServer(BaseAdminServer):
             ]
         )
 
-        plugin_registry: PluginRegistry = await self.context.inject(
-            PluginRegistry, required=False
-        )
+        plugin_registry = self.context.inject(PluginRegistry, required=False)
         if plugin_registry:
             await plugin_registry.register_admin_routes(app)
 
@@ -434,9 +411,7 @@ class AdminServer(BaseAdminServer):
         runner = web.AppRunner(self.app)
         await runner.setup()
 
-        plugin_registry: PluginRegistry = await self.context.inject(
-            PluginRegistry, required=False
-        )
+        plugin_registry = self.context.inject(PluginRegistry, required=False)
         if plugin_registry:
             plugin_registry.post_process_routes(self.app)
 
@@ -487,7 +462,7 @@ class AdminServer(BaseAdminServer):
             swagger["security"] = [{"ApiKeyHeader": []}]
 
     @docs(tags=["server"], summary="Fetch the list of loaded plugins")
-    @response_schema(AdminModulesSchema(), 200)
+    @response_schema(AdminModulesSchema(), 200, description="")
     async def plugins_handler(self, request: web.BaseRequest):
         """
         Request handler for the loaded plugins list.
@@ -499,14 +474,12 @@ class AdminServer(BaseAdminServer):
             The module list response
 
         """
-        registry: PluginRegistry = await self.context.inject(
-            PluginRegistry, required=False
-        )
+        registry = self.context.inject(PluginRegistry, required=False)
         plugins = registry and sorted(registry.plugin_names) or []
         return web.json_response({"result": plugins})
 
     @docs(tags=["server"], summary="Fetch the server status")
-    @response_schema(AdminStatusSchema(), 200)
+    @response_schema(AdminStatusSchema(), 200, description="")
     async def status_handler(self, request: web.BaseRequest):
         """
         Request handler for the server status information.
@@ -520,7 +493,7 @@ class AdminServer(BaseAdminServer):
         """
         status = {"version": __version__}
         status["label"] = self.context.settings.get("default_label")
-        collector: Collector = await self.context.inject(Collector, required=False)
+        collector = self.context.inject(Collector, required=False)
         if collector:
             status["timing"] = collector.results
         if self.conductor_stats:
@@ -528,7 +501,7 @@ class AdminServer(BaseAdminServer):
         return web.json_response(status)
 
     @docs(tags=["server"], summary="Reset statistics")
-    @response_schema(AdminStatusSchema(), 200)
+    @response_schema(AdminStatusSchema(), 200, description="")
     async def status_reset_handler(self, request: web.BaseRequest):
         """
         Request handler for resetting the timing statistics.
@@ -540,7 +513,7 @@ class AdminServer(BaseAdminServer):
             The web response
 
         """
-        collector: Collector = await self.context.inject(Collector, required=False)
+        collector = self.context.inject(Collector, required=False)
         if collector:
             collector.reset()
         return web.json_response({})
@@ -550,7 +523,7 @@ class AdminServer(BaseAdminServer):
         raise web.HTTPFound("/api/doc")
 
     @docs(tags=["server"], summary="Liveliness check")
-    @response_schema(AdminStatusLivelinessSchema(), 200)
+    @response_schema(AdminStatusLivelinessSchema(), 200, description="")
     async def liveliness_handler(self, request: web.BaseRequest):
         """
         Request handler for liveliness check.
@@ -569,7 +542,7 @@ class AdminServer(BaseAdminServer):
             raise web.HTTPServiceUnavailable(reason="Service not available")
 
     @docs(tags=["server"], summary="Readiness check")
-    @response_schema(AdminStatusReadinessSchema(), 200)
+    @response_schema(AdminStatusReadinessSchema(), 200, description="")
     async def readiness_handler(self, request: web.BaseRequest):
         """
         Request handler for liveliness check.
@@ -588,6 +561,7 @@ class AdminServer(BaseAdminServer):
             raise web.HTTPServiceUnavailable(reason="Service not ready")
 
     @docs(tags=["server"], summary="Shut down server")
+    @response_schema(AdminShutdownSchema(), description="")
     async def shutdown_handler(self, request: web.BaseRequest):
         """
         Request handler for server shutdown.

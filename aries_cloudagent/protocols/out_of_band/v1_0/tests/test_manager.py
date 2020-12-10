@@ -1,12 +1,8 @@
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
-from .....cache.base import BaseCache
-from .....cache.basic import BasicCache
-from .....config.base import InjectorError
-from .....config.injection_context import InjectionContext
+from .....core.in_memory import InMemoryProfile
 from .....connections.models.conn_record import ConnRecord
-from .....connections.models.connection_target import ConnectionTarget
 from .....connections.models.diddoc import (
     DIDDoc,
     PublicKey,
@@ -17,14 +13,8 @@ from .....ledger.base import BaseLedger
 from .....messaging.responder import BaseResponder, MockResponder
 from .....protocols.didexchange.v1_0.manager import DIDXManager
 from .....protocols.present_proof.v1_0.message_types import PRESENTATION_REQUEST
-from .....protocols.routing.v1_0.manager import RoutingManager
-from .....storage.base import BaseStorage
-from .....storage.basic import BasicStorage
-from .....storage.error import StorageNotFoundError
-from .....transport.inbound.receipt import MessageReceipt
-from .....wallet.base import BaseWallet, DIDInfo
-from .....wallet.basic import BasicWallet
-from .....wallet.error import WalletNotFoundError
+from .....wallet.base import DIDInfo
+from .....wallet.in_memory import InMemoryWallet
 
 from ....didcomm_prefix import DIDCommPrefix
 
@@ -34,7 +24,6 @@ from ..manager import (
     OutOfBandManagerError,
     OutOfBandManagerNotImplementedError,
 )
-from ..messages.service import Service as ServiceMessage
 from ..message_types import INVITATION
 
 
@@ -66,21 +55,10 @@ class TestConfig:
 
 class TestOOBManager(AsyncTestCase, TestConfig):
     def setUp(self):
-        self.storage = BasicStorage()
-        self.cache = BasicCache()
-        self.wallet = BasicWallet()
         self.responder = MockResponder()
         self.responder.send = async_mock.CoroutineMock()
 
-        self.context = InjectionContext(enforce_typing=False)
-        self.context.injector.bind_instance(BaseStorage, self.storage)
-        self.context.injector.bind_instance(BaseWallet, self.wallet)
-        self.context.injector.bind_instance(BaseResponder, self.responder)
-        self.context.injector.bind_instance(BaseCache, self.cache)
-        self.ledger = async_mock.create_autospec(BaseLedger)
-        self.ledger.__aenter__ = async_mock.CoroutineMock(return_value=self.ledger)
-        self.context.injector.bind_instance(BaseLedger, self.ledger)
-        self.context.update_settings(
+        self.session = InMemoryProfile.test_session(
             {
                 "default_endpoint": TestConfig.test_endpoint,
                 "default_label": "This guy",
@@ -89,8 +67,13 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 "debug.auto_accept_requests": True,
             }
         )
+        self.session.context.injector.bind_instance(BaseResponder, self.responder)
 
-        self.manager = OutOfBandManager(self.context)
+        self.ledger = async_mock.create_autospec(BaseLedger)
+        self.ledger.__aenter__ = async_mock.CoroutineMock(return_value=self.ledger)
+        self.session.context.injector.bind_instance(BaseLedger, self.ledger)
+
+        self.manager = OutOfBandManager(self.session)
         self.test_conn_rec = ConnRecord(
             my_did=TestConfig.test_did,
             their_did=TestConfig.test_target_did,
@@ -99,9 +82,9 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         )
 
     async def test_create_invitation_handshake_succeeds(self):
-        self.manager.context.update_settings({"public_invites": True})
+        self.manager.session.context.update_settings({"public_invites": True})
         with async_mock.patch.object(
-            BaseWallet, "get_public_did", autospec=True
+            InMemoryWallet, "get_public_did", autospec=True
         ) as mock_wallet_get_public_did:
             mock_wallet_get_public_did.return_value = DIDInfo(
                 TestConfig.test_did, TestConfig.test_verkey, None
@@ -116,7 +99,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             assert invi_rec.invitation["@type"] == DIDCommPrefix.qualify_current(
                 INVITATION
             )
-            assert not invi_rec.invitation["request~attach"]
+            assert not invi_rec.invitation.get("request~attach")
             assert invi_rec.invitation["label"] == "This guy"
             assert (
                 DIDCommPrefix.qualify_current(INVITATION)
@@ -125,9 +108,9 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             assert invi_rec.invitation["service"] == [f"did:sov:{TestConfig.test_did}"]
 
     async def test_create_invitation_attachment_cred_offer(self):
-        self.manager.context.update_settings({"public_invites": True})
+        self.manager.session.context.update_settings({"public_invites": True})
         with async_mock.patch.object(
-            BaseWallet, "get_public_did", autospec=True
+            InMemoryWallet, "get_public_did", autospec=True
         ) as mock_wallet_get_public_did, async_mock.patch.object(
             test_module.V10CredentialExchange,
             "retrieve_by_id",
@@ -148,12 +131,12 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             )
 
             assert invi_rec.invitation["request~attach"]
-            mock_retrieve_cxid.assert_called_once_with(self.manager.context, "dummy-id")
+            mock_retrieve_cxid.assert_called_once_with(self.manager.session, "dummy-id")
 
     async def test_create_invitation_attachment_present_proof(self):
-        self.manager.context.update_settings({"public_invites": True})
+        self.session.context.update_settings({"public_invites": True})
         with async_mock.patch.object(
-            BaseWallet, "get_public_did", autospec=True
+            InMemoryWallet, "get_public_did", autospec=True
         ) as mock_wallet_get_public_did, async_mock.patch.object(
             test_module.V10PresentationExchange,
             "retrieve_by_id",
@@ -174,10 +157,10 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             )
 
             assert invi_rec.invitation["request~attach"]
-            mock_retrieve_pxid.assert_called_once_with(self.manager.context, "dummy-id")
+            mock_retrieve_pxid.assert_called_once_with(self.manager.session, "dummy-id")
 
     async def test_create_invitation_public_x_no_public_invites(self):
-        self.manager.context.update_settings({"public_invites": False})
+        self.session.context.update_settings({"public_invites": False})
 
         with self.assertRaises(OutOfBandManagerError):
             await self.manager.create_invitation(
@@ -187,10 +170,10 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             )
 
     async def test_create_invitation_public_x_no_public_did(self):
-        self.manager.context.update_settings({"public_invites": True})
+        self.session.context.update_settings({"public_invites": True})
 
         with async_mock.patch.object(
-            BaseWallet, "get_public_did", autospec=True
+            InMemoryWallet, "get_public_did", autospec=True
         ) as mock_wallet_get_public_did:
             mock_wallet_get_public_did.return_value = None
             with self.assertRaises(OutOfBandManagerError):
@@ -201,9 +184,9 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 )
 
     async def tests_create_invitation_x_public_multi_use(self):
-        self.manager.context.update_settings({"public_invites": True})
+        self.session.context.update_settings({"public_invites": True})
         with async_mock.patch.object(
-            BaseWallet, "get_public_did", autospec=True
+            InMemoryWallet, "get_public_did", autospec=True
         ) as mock_wallet_get_public_did:
             mock_wallet_get_public_did.return_value = DIDInfo(
                 TestConfig.test_did, TestConfig.test_verkey, None
@@ -212,9 +195,9 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 await self.manager.create_invitation(public=True, multi_use=True)
 
     async def test_create_invitation_attachment_x(self):
-        self.manager.context.update_settings({"public_invites": True})
+        self.manager.session.context.update_settings({"public_invites": True})
         with async_mock.patch.object(
-            BaseWallet, "get_public_did", autospec=True
+            InMemoryWallet, "get_public_did", autospec=True
         ) as mock_wallet_get_public_did:
             mock_wallet_get_public_did.return_value = DIDInfo(
                 TestConfig.test_did, TestConfig.test_verkey, None
@@ -238,7 +221,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         )
 
         assert invi_rec.invitation["@type"] == DIDCommPrefix.qualify_current(INVITATION)
-        assert not invi_rec.invitation["request~attach"]
+        assert not invi_rec.invitation.get("request~attach")
         assert invi_rec.invitation["label"] == "That guy"
         assert (
             DIDCommPrefix.qualify_current(INVITATION)
@@ -248,11 +231,11 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         assert service["id"] == "#inline"
         assert service["type"] == "did-communication"
         assert len(service["recipientKeys"]) == 1
-        assert not service["routingKeys"]
+        assert not service.get("routingKeys")
         assert service["serviceEndpoint"] == TestConfig.test_endpoint
 
     async def test_receive_invitation_service_block(self):
-        self.manager.context.update_settings({"public_invites": True})
+        self.manager.session.context.update_settings({"public_invites": True})
         with async_mock.patch.object(
             test_module, "DIDXManager", autospec=True
         ) as didx_mgr_cls, async_mock.patch.object(
@@ -281,7 +264,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             await self.manager.receive_invitation(mock_oob_invi)
 
     async def test_receive_invitation_no_service_blocks_nor_dids(self):
-        self.manager.context.update_settings({"public_invites": True})
+        self.manager.session.context.update_settings({"public_invites": True})
         with async_mock.patch.object(
             test_module, "InvitationMessage", async_mock.MagicMock()
         ) as invi_msg_cls:
@@ -294,7 +277,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 await self.manager.receive_invitation(mock_invi_msg)
 
     async def test_receive_invitation_service_did(self):
-        self.manager.context.update_settings({"public_invites": True})
+        self.manager.session.context.update_settings({"public_invites": True})
         with async_mock.patch.object(
             self.ledger, "get_key_for_did", async_mock.CoroutineMock()
         ) as mock_ledger_get_key_for_did, async_mock.patch.object(
@@ -323,7 +306,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             assert invi_rec.invitation["service"]
 
     async def test_receive_invitation_attachment_x(self):
-        self.manager.context.update_settings({"public_invites": True})
+        self.manager.session.context.update_settings({"public_invites": True})
         with async_mock.patch.object(
             self.ledger, "get_key_for_did", async_mock.CoroutineMock()
         ) as mock_ledger_get_key_for_did, async_mock.patch.object(
@@ -349,7 +332,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 await self.manager.receive_invitation(mock_oob_invi)
 
     async def test_receive_invitation_req_pres_attachment_x(self):
-        self.manager.context.update_settings({"public_invites": True})
+        self.manager.session.context.update_settings({"public_invites": True})
         with async_mock.patch.object(
             self.ledger, "get_key_for_did", async_mock.CoroutineMock()
         ) as mock_ledger_get_key_for_did, async_mock.patch.object(
@@ -390,7 +373,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 await self.manager.receive_invitation(mock_oob_invi)
 
     async def test_receive_invitation_invalid_request_type_x(self):
-        self.manager.context.update_settings({"public_invites": True})
+        self.manager.session.context.update_settings({"public_invites": True})
         with async_mock.patch.object(
             self.ledger, "get_key_for_did", async_mock.CoroutineMock()
         ) as mock_ledger_get_key_for_did, async_mock.patch.object(

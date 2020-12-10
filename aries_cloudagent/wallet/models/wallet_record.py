@@ -11,7 +11,6 @@ from ...messaging.models.base_record import (
     BaseRecordSchema,
 )
 from ...messaging.valid import UUIDFour
-from ..base import BaseWallet
 
 
 class WalletRecord(BaseRecord):
@@ -53,14 +52,6 @@ class WalletRecord(BaseRecord):
         # Wallet settings need to be prefixed with `wallet.`
         return {f"wallet.{k}": v for k, v in config.items()}
 
-    async def get_instance(self, context, extra_settings={}):
-        """Get instance of wallet using wallet config."""
-        wallet_instance: BaseWallet = await context.inject(
-            BaseWallet,
-            settings={**self.get_config_as_settings(), **extra_settings},
-        )
-        return wallet_instance
-
     @property
     def wallet_record_id(self) -> str:
         """Accessor for the ID associated with this record."""
@@ -86,6 +77,11 @@ class WalletRecord(BaseRecord):
                 "key_management_mode",
             )
         }
+
+    @property
+    def is_managed(self) -> bool:
+        """Accessor to check if the key management mode is managed."""
+        return self.key_management_mode == WalletRecord.MODE_MANAGED
 
     def __eq__(self, other: Any) -> bool:
         """Comparison between records."""

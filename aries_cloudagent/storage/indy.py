@@ -11,7 +11,8 @@ from indy.error import IndyError, ErrorCode
 from .base import (
     DEFAULT_PAGE_SIZE,
     BaseStorage,
-    BaseStorageRecordSearch,
+    BaseStorageSearch,
+    BaseStorageSearchSession,
     validate_record,
 )
 from .error import (
@@ -21,17 +22,17 @@ from .error import (
     StorageSearchError,
 )
 from .record import StorageRecord
-from ..wallet.indy import IndyWallet
+from ..indy.sdk.wallet_setup import IndyOpenWallet
 
 LOGGER = logging.getLogger(__name__)
 
 
-class IndyStorage(BaseStorage):
+class IndySdkStorage(BaseStorage, BaseStorageSearch):
     """Indy Non-Secrets interface."""
 
-    def __init__(self, wallet: IndyWallet):
+    def __init__(self, wallet: IndyOpenWallet):
         """
-        Initialize an `IndyStorage` instance.
+        Initialize an `IndySdkStorage` instance.
 
         Args:
             wallet: The indy wallet instance to use
@@ -40,8 +41,8 @@ class IndyStorage(BaseStorage):
         self._wallet = wallet
 
     @property
-    def wallet(self) -> IndyWallet:
-        """Accessor for IndyWallet instance."""
+    def wallet(self) -> IndyOpenWallet:
+        """Accessor for IndyOpenWallet instance."""
         return self._wallet
 
     async def add_record(self, record: StorageRecord):
@@ -167,13 +168,41 @@ class IndyStorage(BaseStorage):
                 raise StorageNotFoundError(f"Record not found: {record.id}")
             raise StorageError(str(x_indy))
 
+    async def find_all_records(
+        self,
+        type_filter: str,
+        tag_query: Mapping = None,
+        options: Mapping = None,
+    ):
+        """Retrieve all records matching a particular type filter and tag query."""
+        results = []
+        search = self.search_records(type_filter, tag_query, options=options)
+        while True:
+            buf = await search.fetch()
+            if buf:
+                results.extend(buf)
+            else:
+                break
+        return results
+
+    async def delete_all_records(
+        self,
+        type_filter: str,
+        tag_query: Mapping = None,
+    ):
+        """Remove all records matching a particular type filter and tag query."""
+        async for row in self.search_records(
+            type_filter, tag_query, options={"retrieveTags": False}
+        ):
+            await self.delete_record(row)
+
     def search_records(
         self,
         type_filter: str,
         tag_query: Mapping = None,
         page_size: int = None,
         options: Mapping = None,
-    ) -> "IndyStorageRecordSearch":
+    ) -> "IndySdkStorageSearch":
         """
         Search stored records.
 
@@ -184,25 +213,25 @@ class IndyStorage(BaseStorage):
             options: Dictionary of backend-specific options
 
         Returns:
-            An instance of `IndyStorageRecordSearch`
+            An instance of `IndySdkStorageSearch`
 
         """
-        return IndyStorageRecordSearch(self, type_filter, tag_query, page_size, options)
+        return IndySdkStorageSearch(self, type_filter, tag_query, page_size, options)
 
 
-class IndyStorageRecordSearch(BaseStorageRecordSearch):
+class IndySdkStorageSearch(BaseStorageSearchSession):
     """Represent an active stored records search."""
 
     def __init__(
         self,
-        store: IndyStorage,
+        store: IndySdkStorage,
         type_filter: str,
         tag_query: Mapping,
         page_size: int = None,
         options: Mapping = None,
     ):
         """
-        Initialize a `IndyStorageRecordSearch` instance.
+        Initialize a `IndySdkStorageSearch` instance.
 
         Args:
             store: `BaseStorage` to search
@@ -310,6 +339,4 @@ class IndyStorageRecordSearch(BaseStorageRecordSearch):
             loop = asyncio.get_event_loop()
             task = loop.create_task(cleanup(self._handle))
             if not loop.is_running():
-                print("not running")
                 loop.run_until_complete(task)
-            print(task)

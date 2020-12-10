@@ -1,4 +1,3 @@
-import pytest
 from asynctest import (
     mock as async_mock,
     TestCase as AsyncTestCase,
@@ -14,9 +13,10 @@ from .. import credential_issue_handler as handler
 
 class TestCredentialIssueHandler(AsyncTestCase):
     async def test_called(self):
-        request_context = RequestContext()
+        request_context = RequestContext.test_context()
         request_context.message_receipt = MessageReceipt()
         request_context.settings["debug.auto_store_credential"] = False
+        request_context.connection_record = async_mock.MagicMock()
 
         with async_mock.patch.object(
             handler, "CredentialManager", autospec=True
@@ -28,12 +28,14 @@ class TestCredentialIssueHandler(AsyncTestCase):
             responder = MockResponder()
             await handler_inst.handle(request_context, responder)
 
-        mock_cred_mgr.assert_called_once_with(request_context)
-        mock_cred_mgr.return_value.receive_credential.assert_called_once_with()
+        mock_cred_mgr.assert_called_once_with(request_context.profile)
+        mock_cred_mgr.return_value.receive_credential.assert_called_once_with(
+            request_context.message, request_context.connection_record.connection_id
+        )
         assert not responder.messages
 
     async def test_called_auto_store(self):
-        request_context = RequestContext()
+        request_context = RequestContext.test_context()
         request_context.message_receipt = MessageReceipt()
         request_context.settings["debug.auto_store_credential"] = True
         request_context.connection_record = async_mock.MagicMock()
@@ -51,8 +53,10 @@ class TestCredentialIssueHandler(AsyncTestCase):
             responder = MockResponder()
             await handler_inst.handle(request_context, responder)
 
-        mock_cred_mgr.assert_called_once_with(request_context)
-        mock_cred_mgr.return_value.receive_credential.assert_called_once_with()
+        mock_cred_mgr.assert_called_once_with(request_context.profile)
+        mock_cred_mgr.return_value.receive_credential.assert_called_once_with(
+            request_context.message, request_context.connection_record.connection_id
+        )
         messages = responder.messages
         assert len(messages) == 1
         (result, target) = messages[0]
@@ -60,7 +64,7 @@ class TestCredentialIssueHandler(AsyncTestCase):
         assert target == {}
 
     async def test_called_not_ready(self):
-        request_context = RequestContext()
+        request_context = RequestContext.test_context()
         request_context.message_receipt = MessageReceipt()
 
         with async_mock.patch.object(

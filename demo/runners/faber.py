@@ -1,4 +1,5 @@
 import asyncio
+import io
 import json
 import logging
 import os
@@ -10,10 +11,10 @@ from qrcode import QRCode
 
 from aiohttp import ClientError
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # noqa
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from runners.support.agent import DemoAgent, default_genesis_txns
-from runners.support.utils import (
+from runners.support.agent import DemoAgent, default_genesis_txns  # noqa:E402
+from runners.support.utils import (  # noqa:E402
     log_msg,
     log_status,
     log_timer,
@@ -22,10 +23,13 @@ from runners.support.utils import (
     require_indy,
 )
 
+
 CRED_PREVIEW_TYPE = "https://didcomm.org/issue-credential/1.0/credential-preview"
 SELF_ATTESTED = os.getenv("SELF_ATTESTED")
-LOGGER = logging.getLogger(__name__)
 TAILS_FILE_COUNT = int(os.getenv("TAILS_FILE_COUNT", 100))
+
+logging.basicConfig(level=logging.WARNING)
+LOGGER = logging.getLogger(__name__)
 
 
 class FaberAgent(DemoAgent):
@@ -35,7 +39,6 @@ class FaberAgent(DemoAgent):
         http_port: int,
         admin_port: int,
         no_auto: bool = False,
-        tails_server_base_url: str = None,
         **kwargs,
     ):
         super().__init__(
@@ -43,7 +46,6 @@ class FaberAgent(DemoAgent):
             http_port,
             admin_port,
             prefix="Faber",
-            tails_server_base_url=tails_server_base_url,
             extra_args=[]
             if no_auto
             else ["--auto-accept-invites", "--auto-accept-requests"],
@@ -119,6 +121,9 @@ class FaberAgent(DemoAgent):
             except ClientError:
                 pass
 
+    async def handle_issuer_cred_rev(self, message):
+        pass
+
     async def handle_present_proof(self, message):
         state = message["state"]
 
@@ -142,23 +147,32 @@ class FaberAgent(DemoAgent):
         self.log("Received message:", message["content"])
 
 
-async def generate_invitation(agent):
+async def generate_invitation(agent, use_did_exchange: bool):
     agent._connection_ready = asyncio.Future()
     with log_timer("Generate invitation duration:"):
         # Generate an invitation
         log_status("#7 Create a connection to alice and print out the invite details")
-        invi_msg = await agent.admin_POST(
-            "/out-of-band/create-invitation", {"include_handshake": True}
-        )
+        if use_did_exchange:
+            invi_rec = await agent.admin_POST(
+                "/out-of-band/create-invitation",
+                {"include_handshake": True},
+            )
+        else:
+            invi_rec = await agent.admin_POST("/connections/create-invitation")
 
-    qr = QRCode()
-    qr.add_data(invi_msg["invitation"]["service"][0]["serviceEndpoint"])
+    qr = QRCode(border=1)
+    qr.add_data(invi_rec["invitation_url"])
     log_msg(
         "Use the following JSON to accept the invite from another demo agent."
         " Or use the QR code to connect from a mobile agent."
     )
-    log_msg(json.dumps(invi_msg["invitation"]), label="Invitation Data:", color=None)
-    qr.print_ascii(invert=True)
+    log_msg(json.dumps(invi_rec["invitation"]), label="Invitation Data:", color=None)
+    buf = io.StringIO()
+    qr.print_ascii(invert=False, out=buf)
+    for line in buf.getvalue().split("\n"):
+        # invert terminal colours, print UTF-8 data, reset
+        # this helps avoid gaps between the lines
+        print("\033[7m" + line + "\033[0m")
 
     log_msg("Waiting for connection...")
     await agent.detect_connection()
@@ -195,6 +209,8 @@ async def main(
     tails_server_base_url: str = None,
     show_timing: bool = False,
     multitenant: bool = False,
+    use_did_exchange: bool = False,
+    wallet_type: str = None,
 ):
 
     genesis = await default_genesis_txns()
@@ -205,7 +221,10 @@ async def main(
     agent = None
 
     try:
-        log_status("#1 Provision an agent and wallet, get back configuration details")
+        log_status(
+            "#1 Provision an agent and wallet, get back configuration details"
+            + (f" (Wallet type: {wallet_type})" if wallet_type else "")
+        )
         agent = FaberAgent(
             "Faber.Agent",
             start_port,
@@ -215,6 +234,7 @@ async def main(
             tails_server_base_url=tails_server_base_url,
             timing=show_timing,
             multitenant=multitenant,
+            wallet_type=wallet_type,
         )
         await agent.listen_webhooks(start_port + 2)
         await agent.register_did()
@@ -233,7 +253,7 @@ async def main(
 
         # TODO add an additional credential for Student ID
 
-        await generate_invitation(agent)
+        await generate_invitation(agent, use_did_exchange)
 
         log_msg("Waiting for connection...")
         await agent.detect_connection()
@@ -386,7 +406,7 @@ async def main(
                 log_msg(
                     "Creating a new invitation, please Receive and Accept this invitation using Alice agent"
                 )
-                await generate_invitation(agent)
+                await generate_invitation(agent, use_did_exchange)
 
             elif option == "5" and revocation:
                 rev_reg_id = (await prompt("Enter revocation registry ID: ")).strip()
@@ -454,24 +474,31 @@ if __name__ == "__main__":
         help="Choose the starting port number to listen on",
     )
     parser.add_argument(
+        "--did-exchange",
+        action="store_true",
+        help="Use DID-Exchange protocol for connections",
+    )
+    parser.add_argument(
         "--revocation", action="store_true", help="Enable credential revocation"
     )
-
     parser.add_argument(
         "--tails-server-base-url",
         type=str,
         metavar=("<tails-server-base-url>"),
         help="Tals server base url",
     )
-
     parser.add_argument(
         "--timing", action="store_true", help="Enable timing information"
     )
-
     parser.add_argument(
         "--multitenant", action="store_true", help="Enable multitenancy options"
     )
-
+    parser.add_argument(
+        "--wallet-type",
+        type=str,
+        metavar="<wallet-type>",
+        help="Set the agent wallet type",
+    )
     args = parser.parse_args()
 
     ENABLE_PYDEVD_PYCHARM = os.getenv("ENABLE_PYDEVD_PYCHARM", "").lower()
@@ -520,6 +547,8 @@ if __name__ == "__main__":
                 tails_server_base_url,
                 args.timing,
                 args.multitenant,
+                args.did_exchange,
+                args.wallet_type,
             )
         )
     except KeyboardInterrupt:

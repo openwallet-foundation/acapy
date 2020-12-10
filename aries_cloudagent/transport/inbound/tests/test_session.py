@@ -3,7 +3,7 @@ import pytest
 
 from asynctest import TestCase, mock as async_mock
 
-from ....config.injection_context import InjectionContext
+from ....core.in_memory import InMemoryProfile
 
 from ...error import WireFormatError
 from ...outbound.message import OutboundMessage
@@ -14,8 +14,10 @@ from ..session import InboundSession
 
 
 class TestInboundSession(TestCase):
+    def setUp(self):
+        self.profile = InMemoryProfile.test_profile()
+
     def test_init(self):
-        test_ctx = InjectionContext()
         test_inbound = async_mock.MagicMock()
         test_session_id = "session-id"
         test_wire_format = async_mock.MagicMock()
@@ -26,7 +28,7 @@ class TestInboundSession(TestCase):
         test_reply_verkeys = {"3", "4"}
         test_transport_type = "transport-type"
         sess = InboundSession(
-            context=test_ctx,
+            profile=self.profile,
             inbound_handler=test_inbound,
             session_id=test_session_id,
             wire_format=test_wire_format,
@@ -38,7 +40,7 @@ class TestInboundSession(TestCase):
             transport_type=test_transport_type,
         )
 
-        assert sess.context is test_ctx
+        assert sess.profile is self.profile
         assert sess.session_id == test_session_id
         assert sess.wire_format is test_wire_format
         assert sess.client_info == test_client_info
@@ -52,7 +54,7 @@ class TestInboundSession(TestCase):
             sess.receive_inbound(test_msg)
             process.assert_called_once_with(test_msg)
             test_inbound.assert_called_once_with(
-                sess.context, test_msg, can_respond=False
+                sess.profile, test_msg, can_respond=False
             )
 
         sess.close()
@@ -60,9 +62,11 @@ class TestInboundSession(TestCase):
         assert sess.closed
 
     def test_setters(self):
-        test_ctx = InjectionContext()
         sess = InboundSession(
-            context=test_ctx, inbound_handler=None, session_id=None, wire_format=None
+            profile=self.profile,
+            inbound_handler=None,
+            session_id=None,
+            wire_format=None,
         )
 
         sess.reply_mode = MessageReceipt.REPLY_MODE_ALL
@@ -78,7 +82,6 @@ class TestInboundSession(TestCase):
         assert not sess.reply_thread_ids  # reset by setter method
 
     async def test_parse_inbound(self):
-        test_ctx = InjectionContext()
         test_session_id = "session-id"
         test_transport_type = "transport-type"
         test_wire_format = async_mock.MagicMock()
@@ -87,25 +90,27 @@ class TestInboundSession(TestCase):
         test_receipt = async_mock.MagicMock()
         test_wire_format.parse_message.return_value = (test_parsed, test_receipt)
         sess = InboundSession(
-            context=test_ctx,
+            profile=self.profile,
             inbound_handler=None,
             session_id=test_session_id,
             wire_format=test_wire_format,
             transport_type=test_transport_type,
         )
 
+        session = self.profile.session()
+        setattr(self.profile, "session", async_mock.MagicMock(return_value=session))
+
         test_payload = "{}"
         result = await sess.parse_inbound(test_payload)
-        test_wire_format.parse_message.assert_awaited_once_with(test_ctx, test_payload)
+        test_wire_format.parse_message.assert_awaited_once_with(session, test_payload)
         assert result.payload == test_parsed
         assert result.receipt is test_receipt
         assert result.session_id == test_session_id
         assert result.transport_type == test_transport_type
 
     async def test_receive(self):
-        test_ctx = InjectionContext()
         sess = InboundSession(
-            context=test_ctx,
+            profile=self.profile,
             inbound_handler=None,
             session_id=None,
             wire_format=None,
@@ -123,12 +128,11 @@ class TestInboundSession(TestCase):
             assert result is encode.return_value
 
     def test_process_inbound(self):
-        test_ctx = InjectionContext()
         test_session_id = "session-id"
         test_thread_id = "thread-id"
         test_verkey = "verkey"
         sess = InboundSession(
-            context=test_ctx,
+            profile=self.profile,
             inbound_handler=None,
             session_id=test_session_id,
             wire_format=None,
@@ -165,12 +169,11 @@ class TestInboundSession(TestCase):
         assert receipt.connection_id == "dummy"
 
     def test_select_outbound(self):
-        test_ctx = InjectionContext()
         test_session_id = "session-id"
         test_thread_id = "thread-id"
         test_verkey = "verkey"
         sess = InboundSession(
-            context=test_ctx,
+            profile=self.profile,
             inbound_handler=None,
             session_id=test_session_id,
             wire_format=None,
@@ -203,9 +206,8 @@ class TestInboundSession(TestCase):
         assert not sess.select_outbound(test_msg)
 
     async def test_wait_response(self):
-        test_ctx = InjectionContext()
         sess = InboundSession(
-            context=test_ctx,
+            profile=self.profile,
             inbound_handler=None,
             session_id=None,
             wire_format=None,
@@ -229,9 +231,8 @@ class TestInboundSession(TestCase):
         assert await asyncio.wait_for(sess.wait_response(), 0.1) is None
 
     async def test_wait_response_x(self):
-        test_ctx = InjectionContext()
         sess = InboundSession(
-            context=test_ctx,
+            profile=self.profile,
             inbound_handler=None,
             session_id=None,
             wire_format=None,
@@ -254,11 +255,10 @@ class TestInboundSession(TestCase):
         assert await asyncio.wait_for(sess.wait_response(), 0.1) is None
 
     async def test_encode_response(self):
-        test_ctx = InjectionContext()
         test_wire_format = async_mock.MagicMock()
         test_wire_format.encode_message = async_mock.CoroutineMock()
         sess = InboundSession(
-            context=test_ctx,
+            profile=self.profile,
             inbound_handler=None,
             session_id=None,
             wire_format=test_wire_format,
@@ -266,6 +266,9 @@ class TestInboundSession(TestCase):
         test_msg = OutboundMessage(payload=None)
         test_from_verkey = "from-verkey"
         test_to_verkey = "to-verkey"
+
+        session = self.profile.session()
+        setattr(self.profile, "session", async_mock.MagicMock(return_value=session))
 
         with self.assertRaises(WireFormatError):
             await sess.encode_outbound(test_msg)
@@ -278,7 +281,7 @@ class TestInboundSession(TestCase):
         assert result is test_wire_format.encode_message.return_value
 
         test_wire_format.encode_message.assert_awaited_once_with(
-            test_ctx,
+            session,
             test_msg.payload,
             [test_to_verkey],
             None,
@@ -286,9 +289,8 @@ class TestInboundSession(TestCase):
         )
 
     async def test_accept_response(self):
-        test_ctx = InjectionContext()
         sess = InboundSession(
-            context=test_ctx,
+            profile=self.profile,
             inbound_handler=None,
             session_id=None,
             wire_format=None,
@@ -311,9 +313,8 @@ class TestInboundSession(TestCase):
             assert accepted
 
     async def test_context_mgr(self):
-        test_ctx = InjectionContext()
         sess = InboundSession(
-            context=test_ctx,
+            profile=self.profile,
             inbound_handler=None,
             session_id=None,
             wire_format=None,

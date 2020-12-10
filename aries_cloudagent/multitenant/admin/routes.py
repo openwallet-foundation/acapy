@@ -4,12 +4,13 @@ from marshmallow import fields, Schema, validate, validates_schema, ValidationEr
 from aiohttp import web
 from aiohttp_apispec import docs, request_schema, match_info_schema
 
+from ...admin.request_context import AdminRequestContext
 from ...messaging.valid import UUIDFour
 from ...messaging.models.openapi import OpenAPISchema
 from ...storage.error import StorageNotFoundError
-from ...wallet.provider import WalletProvider
 from ...wallet.models.wallet_record import WalletRecord
 from ...core.error import BaseError
+from ...core.profile import ProfileManagerProvider
 from ..manager import MultitenantManager
 from ..error import WalletKeyMissingError
 
@@ -54,9 +55,9 @@ class CreateWalletRequestSchema(Schema):
     wallet_type = fields.Str(
         description="Type of the wallet to create",
         example="indy",
-        default="basic",
+        default="in_memory",
         validate=validate.OneOf(
-            [wallet_type for wallet_type in WalletProvider.WALLET_TYPES]
+            [wallet_type for wallet_type in ProfileManagerProvider.MANAGER_TYPES]
         ),
     )
 
@@ -105,13 +106,15 @@ async def wallet_list(request: web.BaseRequest):
         request: aiohttp request object
     """
 
-    context = request["context"]
+    context: AdminRequestContext = request["context"]
 
-    try:
-        records = await WalletRecord.query(context)
-        results = [format_wallet_record(record) for record in records]
-    except StorageNotFoundError:
-        raise web.HTTPNotFound()
+    async with context.session() as session:
+        try:
+            records = await WalletRecord.query(session)
+            results = [format_wallet_record(record) for record in records]
+        except StorageNotFoundError:
+            raise web.HTTPNotFound()
+
     return web.json_response({"results": results})
 
 
@@ -130,14 +133,16 @@ async def wallet_get(request: web.BaseRequest):
 
     """
 
-    context = request["context"]
+    context: AdminRequestContext = request["context"]
     wallet_id = request.match_info["wallet_id"]
 
-    try:
-        wallet_record = await WalletRecord.retrieve_by_id(context, wallet_id)
-        result = format_wallet_record(wallet_record)
-    except StorageNotFoundError:
-        raise web.HTTPNotFound()
+    async with context.session() as session:
+        try:
+            wallet_record = await WalletRecord.retrieve_by_id(session, wallet_id)
+            result = format_wallet_record(wallet_record)
+        except StorageNotFoundError:
+            raise web.HTTPNotFound()
+
     return web.json_response(result)
 
 
@@ -152,7 +157,7 @@ async def wallet_create(request: web.BaseRequest):
         request: aiohttp request object
     """
 
-    context = request["context"]
+    context: AdminRequestContext = request["context"]
     body = await request.json()
 
     # MTODO: make mode variable. Either trough setting or body parameter
@@ -166,17 +171,18 @@ async def wallet_create(request: web.BaseRequest):
         "key": wallet_key,
     }
 
-    try:
-        multitenant_manager = MultitenantManager(context)
+    async with context.session() as session:
+        try:
+            multitenant_mgr = session.inject(MultitenantManager)
 
-        wallet_record = await multitenant_manager.create_wallet(
-            wallet_config,
-            key_management_mode,
-        )
+            wallet_record = await multitenant_mgr.create_wallet(
+                wallet_config,
+                key_management_mode,
+            )
 
-        token = await multitenant_manager.create_auth_token(wallet_record, wallet_key)
-    except BaseError as err:
-        raise web.HTTPBadRequest(reason=err.roll_up) from err
+            token = await multitenant_mgr.create_auth_token(wallet_record, wallet_key)
+        except BaseError as err:
+            raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     result = {
         **format_wallet_record(wallet_record),
@@ -196,7 +202,7 @@ async def wallet_create_token(request: web.BaseRequest):
         request: aiohttp request object
     """
 
-    context = request["context"]
+    context: AdminRequestContext = request["context"]
     wallet_id = request.match_info["wallet_id"]
     wallet_key = None
 
@@ -204,15 +210,16 @@ async def wallet_create_token(request: web.BaseRequest):
         body = await request.json()
         wallet_key = body.get("wallet_key")
 
-    try:
-        multitenant_manager = MultitenantManager(context)
-        wallet_record = await WalletRecord.retrieve_by_id(context, wallet_id)
+    async with context.session() as session:
+        try:
+            multitenant_mgr = session.inject(MultitenantManager)
+            wallet_record = await WalletRecord.retrieve_by_id(session, wallet_id)
 
-        token = await multitenant_manager.create_auth_token(wallet_record, wallet_key)
-    except StorageNotFoundError:
-        raise web.HTTPNotFound()
-    except WalletKeyMissingError as e:
-        raise web.HTTPUnauthorized(e.roll_up) from e
+            token = await multitenant_mgr.create_auth_token(wallet_record, wallet_key)
+        except StorageNotFoundError:
+            raise web.HTTPNotFound()
+        except WalletKeyMissingError as e:
+            raise web.HTTPUnauthorized(e.roll_up) from e
 
     return web.json_response({"token": token})
 
@@ -233,7 +240,7 @@ async def wallet_remove(request: web.BaseRequest):
 
     """
 
-    context = request["context"]
+    context: AdminRequestContext = request["context"]
     wallet_id = request.match_info["wallet_id"]
     wallet_key = None
 
@@ -241,13 +248,14 @@ async def wallet_remove(request: web.BaseRequest):
         body = await request.json()
         wallet_key = body.get("wallet_key")
 
-    try:
-        multitenant_manager = MultitenantManager(context)
-        await multitenant_manager.remove_wallet(wallet_id, wallet_key)
-    except StorageNotFoundError:
-        raise web.HTTPNotFound()
-    except WalletKeyMissingError as e:
-        raise web.HTTPUnauthorized(e.message)
+    async with context.session() as session:
+        try:
+            multitenant_mgr = session.inject(MultitenantManager)
+            await multitenant_mgr.remove_wallet(wallet_id, wallet_key)
+        except StorageNotFoundError:
+            raise web.HTTPNotFound()
+        except WalletKeyMissingError as e:
+            raise web.HTTPUnauthorized(e.message)
 
     return web.json_response({})
 
