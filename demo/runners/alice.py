@@ -188,6 +188,9 @@ async def input_invitation(agent):
             if query and "c_i=" in query:
                 pos = query.index("c_i=") + 4
                 b64_invite = query[pos:]
+            elif query and "oob=" in query:
+                pos = query.index("oob=") + 4
+                b64_invite = query[pos:]
             else:
                 b64_invite = details
         except ValueError:
@@ -213,7 +216,14 @@ async def input_invitation(agent):
                 log_msg("Invalid invitation:", str(e))
 
     with log_timer("Connect duration:"):
-        connection = await agent.admin_POST("/didexchange/receive-invitation", details)
+        if "/out-of-band/" in details["@type"]:
+            connection = await agent.admin_POST(
+                "/didexchange/receive-invitation", details
+            )
+        else:
+            connection = await agent.admin_POST(
+                "/connections/receive-invitation", details
+            )
         agent.connection_id = connection["connection_id"]
         log_json(connection, label="Invitation response:")
 

@@ -1,4 +1,5 @@
 import asyncio
+import io
 import json
 import logging
 import os
@@ -151,6 +152,7 @@ async def main(
     revocation: bool = False,
     tails_server_base_url: str = None,
     show_timing: bool = False,
+    use_did_exchange: bool = False,
     wallet_type: str = None,
 ):
 
@@ -212,12 +214,15 @@ async def main(
             log_status(
                 "#7 Create a connection to alice and print out the invite details"
             )
-            invi_rec = await agent.admin_POST(
-                "/out-of-band/create-invitation",
-                {"include_handshake": True},
-            )
+            if use_did_exchange:
+                invi_rec = await agent.admin_POST(
+                    "/out-of-band/create-invitation",
+                    {"include_handshake": True},
+                )
+            else:
+                invi_rec = await agent.admin_POST("/connections/create-invitation")
 
-        qr = QRCode()
+        qr = QRCode(border=1)
         qr.add_data(invi_rec["invitation_url"])
         log_msg(
             "Use the following JSON to accept the invite from another demo agent."
@@ -226,7 +231,12 @@ async def main(
         log_msg(
             json.dumps(invi_rec["invitation"]), label="Invitation Data:", color=None
         )
-        qr.print_ascii(invert=True)
+        buf = io.StringIO()
+        qr.print_ascii(invert=False, out=buf)
+        for line in buf.getvalue().split("\n"):
+            # invert terminal colours, print UTF-8 data, reset
+            # this helps avoid gaps between the lines
+            print("\033[7m" + line + "\033[0m")
 
         log_msg("Waiting for connection...")
         await agent.detect_connection()
@@ -412,6 +422,11 @@ if __name__ == "__main__":
         help="Choose the starting port number to listen on",
     )
     parser.add_argument(
+        "--did-exchange",
+        action="store_true",
+        help="Use DID-Exchange protocol for connections",
+    )
+    parser.add_argument(
         "--revocation", action="store_true", help="Enable credential revocation"
     )
     parser.add_argument(
@@ -476,6 +491,7 @@ if __name__ == "__main__":
                 args.revocation,
                 tails_server_base_url,
                 args.timing,
+                args.did_exchange,
                 args.wallet_type,
             )
         )
