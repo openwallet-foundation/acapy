@@ -89,7 +89,7 @@ class TestLedgerConfig(AsyncTestCase):
             read_only=False,
         )
 
-        session = InMemoryProfile.test_session()
+        session = InMemoryProfile.test_session(settings=settings)
         profile = session.profile
 
         async def _get_session():
@@ -127,7 +127,7 @@ class TestLedgerConfig(AsyncTestCase):
         )
         mock_wallet = async_mock.MagicMock(set_did_endpoint=async_mock.CoroutineMock())
 
-        session = InMemoryProfile.test_session()
+        session = InMemoryProfile.test_session(settings=settings)
         profile = session.profile
 
         async def _get_session():
@@ -161,7 +161,7 @@ class TestLedgerConfig(AsyncTestCase):
             ),
         )
 
-        session = InMemoryProfile.test_session()
+        session = InMemoryProfile.test_session(settings=settings)
         profile = session.profile
 
         async def _get_session():
@@ -194,7 +194,7 @@ class TestLedgerConfig(AsyncTestCase):
             set_did_endpoint=async_mock.CoroutineMock(),
         )
 
-        session = InMemoryProfile.test_session()
+        session = InMemoryProfile.test_session(settings=settings)
         profile = session.profile
 
         async def _get_session():
@@ -211,6 +211,50 @@ class TestLedgerConfig(AsyncTestCase):
             mock_ledger.get_txn_author_agreement.assert_not_called()
             mock_ledger.get_latest_txn_author_acceptance.assert_not_called()
             mock_ledger.update_endpoint_for_did.assert_not_called()
+
+    async def test_ledger_config_read_write_skip_taa_endpoint_publish(self):
+        settings = {
+            "ledger.genesis_url": "00000000000000000000000000000000",
+            "default_endpoint": "http://agent-default.ca",
+            "profile_endpoint": "http://agent-profile.ca",
+        }
+        mock_ledger = async_mock.MagicMock(
+            get_txn_author_agreement=async_mock.CoroutineMock(
+                return_value={"taa_required": False}
+            ),
+            get_latest_txn_author_acceptance=async_mock.CoroutineMock(),
+            update_endpoint_for_did=async_mock.CoroutineMock(),
+            read_only=False,
+        )
+        mock_wallet = async_mock.MagicMock(
+            set_did_endpoint=async_mock.CoroutineMock(),
+        )
+
+        session = InMemoryProfile.test_session(settings=settings)
+        profile = session.profile
+
+        async def _get_session():
+            return session
+
+        setattr(profile, "session", _get_session)
+        session.context.injector.bind_instance(BaseLedger, mock_ledger)
+        session.context.injector.bind_instance(BaseWallet, mock_wallet)
+
+        with async_mock.patch.object(
+            test_module, "accept_taa", async_mock.CoroutineMock()
+        ) as mock_accept_taa:
+            await test_module.ledger_config(
+                profile,
+                public_did=TEST_DID,
+                provision=False,
+            )
+            mock_ledger.get_txn_author_agreement.called_once_with()
+            mock_ledger.get_latest_txn_author_acceptance.assert_not_called()
+            mock_ledger.update_endpoint_for_did.called_once_with(
+                TEST_DID,
+                settings["profile_endpoint"],
+                test_module.EndpointType.PROFILE,
+            )
 
     @async_mock.patch("sys.stdout")
     async def test_ledger_accept_taa_not_tty(self, mock_stdout):

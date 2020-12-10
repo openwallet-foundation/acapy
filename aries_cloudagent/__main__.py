@@ -52,7 +52,6 @@ def init_debug(args):
 
 def run(args):
     """Execute aca-py."""
-
     from .commands import run_command  # noqa
 
     if len(args) > 1 and args[1] and args[1][0] != "-":

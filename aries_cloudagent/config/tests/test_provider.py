@@ -1,12 +1,19 @@
 from tempfile import NamedTemporaryFile
+from weakref import ref, ReferenceType
 
 from asynctest import TestCase as AsyncTestCase, mock as async_mock
 
 from ...utils.stats import Collector
 
+from ..base import InjectionError
 from ..injection_context import InjectionContext
-from ..provider import BaseProvider, StatsProvider
+from ..provider import BaseProvider, ClassProvider, InstanceProvider, StatsProvider
 from ..settings import Settings
+
+
+class X:
+    def __init__(self, *args, **kwargs):
+        pass
 
 
 class TestProvider(AsyncTestCase):
@@ -29,3 +36,27 @@ class TestProvider(AsyncTestCase):
         context.injector.bind_instance(Collector, collector)
 
         stats_provider.provide(Settings(settings), context.injector)
+
+    async def test_instance_provider_ref_gone_x(self):
+        context = InjectionContext(settings=Settings({}), enforce_typing=False)
+        item = X()
+        instance = ref(item)
+        del item
+
+        with self.assertRaises(InjectionError):
+            provider = InstanceProvider(instance=instance)
+            provider.provide(Settings({}), context.injector)
+
+    async def test_class_provider_ref_gone_x(self):
+        context = InjectionContext(settings=Settings({}), enforce_typing=False)
+        item = X()
+        instance = ref(item)
+        del item
+
+        with self.assertRaises(InjectionError):
+            provider = ClassProvider(X, instance)
+            provider.provide(Settings({}), context.injector)
+
+        with self.assertRaises(InjectionError):
+            provider = ClassProvider(X, kwarg=instance)
+            provider.provide(Settings({}), context.injector)
