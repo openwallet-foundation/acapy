@@ -4,7 +4,6 @@ from typing import Coroutine, Sequence
 
 from ....core.error import BaseError
 from ....core.profile import ProfileSession
-from ....storage.base import BaseStorage, StorageRecord
 from ....storage.error import (
     StorageError,
     StorageDuplicateError,

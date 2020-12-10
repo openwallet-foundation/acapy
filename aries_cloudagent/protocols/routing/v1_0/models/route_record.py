@@ -1,6 +1,5 @@
 """An object for containing information on an individual route."""
 
-from typing import Any
 from marshmallow import EXCLUDE, fields, validates_schema, ValidationError
 
 from .....core.profile import ProfileSession
