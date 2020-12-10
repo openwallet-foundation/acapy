@@ -10,6 +10,7 @@ from ..core.plugin_registry import PluginRegistry
 from ..core.profile import ProfileManager, ProfileManagerProvider
 from ..core.protocol_registry import ProtocolRegistry
 from ..tails.base import BaseTailsServer
+from ..ledger.indy import IndySdkLedgerPool, IndySdkLedgerPoolProvider
 
 from ..protocols.actionmenu.v1_0.base_service import BaseMenuService
 from ..protocols.actionmenu.v1_0.driver_service import DriverMenuService
@@ -50,6 +51,13 @@ class DefaultContextBuilder(ContextBuilder):
 
     async def bind_providers(self, context: InjectionContext):
         """Bind various class providers."""
+
+        # Bind global indy ledger pool provider to be able to share
+        # pools between wallets
+        context.injector.bind_provider(
+            IndySdkLedgerPool,
+            CachedProvider(IndySdkLedgerPoolProvider(), ("ledger.pool_name",)),
+        )
 
         context.injector.bind_provider(ProfileManager, ProfileManagerProvider())
 

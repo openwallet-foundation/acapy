@@ -1,19 +1,23 @@
 import pytest
-import time
 
 from ..profile import IndySdkProfile
 from ..wallet_setup import IndyWalletConfig, IndyOpenWallet
+from ....ledger.indy import IndySdkLedgerPool
+from ....config.injection_context import InjectionContext
 
 
 @pytest.fixture()
 async def profile():
+    context = InjectionContext()
+    context.injector.bind_instance(IndySdkLedgerPool, IndySdkLedgerPool("name"))
     yield IndySdkProfile(
         IndyOpenWallet(
             config=IndyWalletConfig({"name": "test-profile"}),
             created=True,
             handle=1,
             master_secret_id="master-secret",
-        )
+        ),
+        context,
     )
 
 

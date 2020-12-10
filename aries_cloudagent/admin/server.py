@@ -30,6 +30,7 @@ from ..version import __version__
 from ..wallet.models.wallet_record import WalletRecord
 from ..multitenant.manager import MultitenantManager, MultitenantManagerError
 
+from ..storage.error import StorageNotFoundError
 from .base_server import BaseAdminServer
 from .error import AdminSetupError
 from .request_context import AdminRequestContext
@@ -311,12 +312,12 @@ class AdminServer(BaseAdminServer):
                         )
                 except MultitenantManagerError as err:
                     raise web.HTTPUnauthorized(err.roll_up)
-                except jwt.InvalidTokenError:
+                except (jwt.InvalidTokenError, StorageNotFoundError):
                     raise web.HTTPUnauthorized()
 
             # TODO may dynamically adjust the profile used here according to
             # headers or other parameters
-            admin_context = AdminRequestContext(profile, context=context)
+            admin_context = AdminRequestContext(profile, context=profile.context)
 
             # Create a responder with the request specific context
             responder = AdminResponder(

@@ -6,7 +6,6 @@ import logging
 from typing import Any, Mapping
 from weakref import ref
 
-from ...cache.base import BaseCache
 from ...config.injection_context import InjectionContext
 from ...config.provider import ClassProvider
 from ...core.profile import Profile, ProfileManager, ProfileSession
@@ -54,20 +53,7 @@ class IndySdkProfile(Profile):
             LOGGER.info("Ledger support is disabled")
             return
 
-        pool_name = self.settings.get("ledger.pool_name", "default")
-        keepalive = int(self.settings.get("ledger.keepalive", 5))
-        read_only = bool(self.settings.get("ledger.read_only", False))
-        if read_only:
-            LOGGER.error("Note: setting ledger to read-only mode")
-        genesis_transactions = self.settings.get("ledger.genesis_transactions")
-        cache = self.context.injector.inject(BaseCache, required=False)
-        self.ledger_pool = IndySdkLedgerPool(
-            pool_name,
-            keepalive=keepalive,
-            cache=cache,
-            genesis_transactions=genesis_transactions,
-            read_only=read_only,
-        )
+        self.ledger_pool = self.context.inject(IndySdkLedgerPool, self.settings)
 
     def bind_providers(self):
         """Initialize the profile-level instance providers."""

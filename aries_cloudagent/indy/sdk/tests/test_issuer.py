@@ -11,10 +11,12 @@ from indy.error import (
     WalletItemNotFound,
 )
 
+from ....config.injection_context import InjectionContext
 from ....indy.sdk.profile import IndySdkProfile
 from ....indy.sdk.wallet_setup import IndyWalletConfig
 from ....wallet.indy import IndySdkWallet
 from ...issuer import IndyIssuerRevocationRegistryFullError
+from ....ledger.indy import IndySdkLedgerPool
 
 from .. import issuer as test_module
 
@@ -35,6 +37,11 @@ TEST_RR_DELTA = {
 @pytest.mark.indy
 class TestIndySdkIssuer(AsyncTestCase):
     async def setUp(self):
+        self.context = InjectionContext()
+        self.context.injector.bind_instance(
+            IndySdkLedgerPool, IndySdkLedgerPool("name")
+        )
+
         self.wallet = await IndyWalletConfig(
             {
                 "auto_recreate": True,
@@ -44,7 +51,7 @@ class TestIndySdkIssuer(AsyncTestCase):
                 "name": "test-wallet",
             }
         ).create_wallet()
-        self.profile = IndySdkProfile(self.wallet)
+        self.profile = IndySdkProfile(self.wallet, self.context)
         self.issuer = test_module.IndySdkIssuer(self.profile)
 
     async def tearDown(self):

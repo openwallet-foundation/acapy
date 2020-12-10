@@ -15,6 +15,7 @@ import indy.ledger
 import indy.pool
 from indy.error import IndyError, ErrorCode
 
+from ..config.base import BaseInjector, BaseProvider, BaseSettings
 from ..cache.base import BaseCache
 from ..indy.issuer import IndyIssuer, IndyIssuerError, DEFAULT_CRED_DEF_TAG
 from ..indy.sdk.error import IndyErrorHandler
@@ -41,10 +42,34 @@ from .util import TAA_ACCEPTED_RECORD_TYPE
 
 LOGGER = logging.getLogger(__name__)
 
-GENESIS_TRANSACTION_PATH = tempfile.gettempdir()
-GENESIS_TRANSACTION_PATH = path.join(
-    GENESIS_TRANSACTION_PATH, "indy_genesis_transactions.txt"
-)
+GENESIS_TRANSACTION_FILE = "indy_genesis_transactions.txt"
+
+
+class IndySdkLedgerPoolProvider(BaseProvider):
+    """Indy ledger pool provider which keys off the selected pool name."""
+
+    def provide(self, settings: BaseSettings, injector: BaseInjector):
+        """Create and open the pool instance."""
+
+        pool_name = settings.get("ledger.pool_name", "default")
+        keepalive = int(settings.get("ledger.keepalive", 5))
+        read_only = bool(settings.get("ledger.read_only", False))
+
+        if read_only:
+            LOGGER.error("Note: setting ledger to read-only mode")
+
+        genesis_transactions = settings.get("ledger.genesis_transactions")
+        cache = injector.inject(BaseCache, required=False)
+
+        ledger_pool = IndySdkLedgerPool(
+            pool_name,
+            keepalive=keepalive,
+            cache=cache,
+            genesis_transactions=genesis_transactions,
+            read_only=read_only,
+        )
+
+        return ledger_pool
 
 
 class IndySdkLedgerPool:
@@ -91,9 +116,11 @@ class IndySdkLedgerPool:
     ):
         """Create the pool ledger configuration."""
 
-        # indy-sdk requires a file but it's only used once to bootstrap
-        # the connection so we take a string instead of create a tmp file
-        txn_path = GENESIS_TRANSACTION_PATH
+        # indy-sdk requires a file to pass the pool configuration
+        # the file path includes the pool name to avoid conflicts
+        txn_path = path.join(
+            tempfile.gettempdir(), f"{self.name}_{GENESIS_TRANSACTION_FILE}"
+        )
         with open(txn_path, "w") as genesis_file:
             genesis_file.write(genesis_transactions)
         pool_config = json.dumps({"genesis_txn": txn_path})

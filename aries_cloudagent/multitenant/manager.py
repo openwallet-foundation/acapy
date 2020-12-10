@@ -1,5 +1,6 @@
 """Manager for multitenancy."""
 
+import logging
 import jwt
 from typing import List, Optional, cast
 
@@ -15,6 +16,9 @@ from ..protocols.routing.v1_0.manager import RouteNotFoundError, RoutingManager
 from ..transport.wire_format import BaseWireFormat
 
 from .error import WalletKeyMissingError
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 class MultitenantManagerError(BaseError):
@@ -207,6 +211,9 @@ class MultitenantManager:
         """
 
         async with self.profile.session() as session:
+            LOGGER.info(
+                f"Add route record for recipient {recipient_key} to wallet {wallet_id}"
+            )
             routing_mgr = RoutingManager(session)
 
             await routing_mgr.create_route_record(
@@ -297,3 +304,5 @@ class MultitenantManager:
 
                 if wallet:
                     wallets.append(wallet)
+
+            return wallets

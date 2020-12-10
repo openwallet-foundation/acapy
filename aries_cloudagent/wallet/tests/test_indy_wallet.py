@@ -1,3 +1,4 @@
+from aries_cloudagent.ledger.indy import IndySdkLedgerPool
 import base64
 import json
 import os
@@ -37,15 +38,17 @@ async def in_memory_wallet():
 @pytest.fixture()
 async def wallet():
     key = await IndySdkWallet.generate_wallet_key()
+    context = InjectionContext()
+    context.injector.bind_instance(IndySdkLedgerPool, IndySdkLedgerPool("name"))
     profile = await IndySdkProfileManager().provision(
-        InjectionContext(),
+        context,
         {
             "auto_recreate": True,
             "auto_remove": True,
             "name": "test-wallet",
             "key": key,
             "key_derivation_method": "RAW",  # much slower tests with argon-hashed keys
-        }
+        },
     )
     async with profile.session() as session:
         yield session.inject(BaseWallet)

@@ -1,5 +1,7 @@
 import asyncio
 import json
+from os import path
+import tempfile
 import pytest
 
 from asynctest import TestCase as AsyncTestCase
@@ -16,7 +18,7 @@ from ...ledger.indy import (
     IndyError,
     IndySdkLedger,
     IndySdkLedgerPool,
-    GENESIS_TRANSACTION_PATH,
+    GENESIS_TRANSACTION_FILE,
     LedgerConfigError,
     LedgerError,
     LedgerTransactionError,
@@ -56,6 +58,11 @@ class TestRole(AsyncTestCase):
         assert Role.NETWORK_MONITOR.token() == "NETWORK_MONITOR"
         assert Role.USER.token() is None
         assert Role.ROLE_REMOVE.to_indy_num_str() == ""
+
+
+GENESIS_TRANSACTION_PATH = path.join(
+    tempfile.gettempdir(), f"name_{GENESIS_TRANSACTION_FILE}"
+)
 
 
 @pytest.mark.indy
