@@ -6,8 +6,8 @@ import sys
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # noqa
 
-from runners.support.agent import DemoAgent, default_genesis_txns
-from runners.support.utils import (
+from runners.support.agent import DemoAgent, default_genesis_txns  # noqa:E402
+from runners.support.utils import (  # noqa:E402
     log_msg,
     log_status,
     log_timer,
