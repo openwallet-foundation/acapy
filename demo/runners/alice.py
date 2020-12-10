@@ -7,10 +7,12 @@ import os
 import sys
 from urllib.parse import urlparse
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # noqa
+from aiohttp import ClientError
 
-from runners.support.agent import DemoAgent, default_genesis_txns
-from runners.support.utils import (
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from runners.support.agent import DemoAgent, default_genesis_txns  # noqa:E402
+from runners.support.utils import (  # noqa:E402
     log_json,
     log_msg,
     log_status,
@@ -20,7 +22,7 @@ from runners.support.utils import (
     require_indy,
 )
 
-
+logging.basicConfig(level=logging.WARNING)
 LOGGER = logging.getLogger(__name__)
 
 
@@ -121,54 +123,57 @@ class AliceAgent(DemoAgent):
             self_attested = {}
             predicates = {}
 
-            # select credentials to provide for the proof
-            credentials = await self.admin_GET(
-                f"/present-proof/records/{presentation_exchange_id}/credentials"
-            )
-            if credentials:
-                for row in sorted(
-                    credentials,
-                    key=lambda c: int(c["cred_info"]["attrs"]["timestamp"]),
-                    reverse=True,
-                ):
-                    for referent in row["presentation_referents"]:
-                        if referent not in credentials_by_reft:
-                            credentials_by_reft[referent] = row
+            try:
+                # select credentials to provide for the proof
+                credentials = await self.admin_GET(
+                    f"/present-proof/records/{presentation_exchange_id}/credentials"
+                )
+                if credentials:
+                    for row in sorted(
+                        credentials,
+                        key=lambda c: int(c["cred_info"]["attrs"]["timestamp"]),
+                        reverse=True,
+                    ):
+                        for referent in row["presentation_referents"]:
+                            if referent not in credentials_by_reft:
+                                credentials_by_reft[referent] = row
 
-            for referent in presentation_request["requested_attributes"]:
-                if referent in credentials_by_reft:
-                    revealed[referent] = {
-                        "cred_id": credentials_by_reft[referent]["cred_info"][
-                            "referent"
-                        ],
-                        "revealed": True,
-                    }
-                else:
-                    self_attested[referent] = "my self-attested value"
+                for referent in presentation_request["requested_attributes"]:
+                    if referent in credentials_by_reft:
+                        revealed[referent] = {
+                            "cred_id": credentials_by_reft[referent]["cred_info"][
+                                "referent"
+                            ],
+                            "revealed": True,
+                        }
+                    else:
+                        self_attested[referent] = "my self-attested value"
 
-            for referent in presentation_request["requested_predicates"]:
-                if referent in credentials_by_reft:
-                    predicates[referent] = {
-                        "cred_id": credentials_by_reft[referent]["cred_info"][
-                            "referent"
-                        ]
-                    }
+                for referent in presentation_request["requested_predicates"]:
+                    if referent in credentials_by_reft:
+                        predicates[referent] = {
+                            "cred_id": credentials_by_reft[referent]["cred_info"][
+                                "referent"
+                            ]
+                        }
 
-            log_status("#25 Generate the proof")
-            request = {
-                "requested_predicates": predicates,
-                "requested_attributes": revealed,
-                "self_attested_attributes": self_attested,
-            }
+                log_status("#25 Generate the proof")
+                request = {
+                    "requested_predicates": predicates,
+                    "requested_attributes": revealed,
+                    "self_attested_attributes": self_attested,
+                }
 
-            log_status("#26 Send the proof to X")
-            await self.admin_POST(
-                (
-                    "/present-proof/records/"
-                    f"{presentation_exchange_id}/send-presentation"
-                ),
-                request,
-            )
+                log_status("#26 Send the proof to X")
+                await self.admin_POST(
+                    (
+                        "/present-proof/records/"
+                        f"{presentation_exchange_id}/send-presentation"
+                    ),
+                    request,
+                )
+            except ClientError:
+                pass
 
     async def handle_basicmessages(self, message):
         self.log("Received message:", message["content"])
@@ -182,6 +187,9 @@ async def input_invitation(agent):
             query = url.query
             if query and "c_i=" in query:
                 pos = query.index("c_i=") + 4
+                b64_invite = query[pos:]
+            elif query and "oob=" in query:
+                pos = query.index("oob=") + 4
                 b64_invite = query[pos:]
             else:
                 b64_invite = details
@@ -208,14 +216,26 @@ async def input_invitation(agent):
                 log_msg("Invalid invitation:", str(e))
 
     with log_timer("Connect duration:"):
-        connection = await agent.admin_POST("/didexchange/receive-invitation", details)
+        if "/out-of-band/" in details["@type"]:
+            connection = await agent.admin_POST(
+                "/didexchange/receive-invitation", details
+            )
+        else:
+            connection = await agent.admin_POST(
+                "/connections/receive-invitation", details
+            )
         agent.connection_id = connection["connection_id"]
         log_json(connection, label="Invitation response:")
 
         await agent.detect_connection()
 
 
-async def main(start_port: int, no_auto: bool = False, show_timing: bool = False):
+async def main(
+    start_port: int,
+    no_auto: bool = False,
+    show_timing: bool = False,
+    wallet_type: str = None,
+):
 
     genesis = await default_genesis_txns()
     if not genesis:
@@ -225,13 +245,17 @@ async def main(start_port: int, no_auto: bool = False, show_timing: bool = False
     agent = None
 
     try:
-        log_status("#7 Provision an agent and wallet, get back configuration details")
+        log_status(
+            "#7 Provision an agent and wallet, get back configuration details"
+            + (f" (Wallet type: {wallet_type})" if wallet_type else "")
+        )
         agent = AliceAgent(
             start_port,
             start_port + 1,
             genesis_data=genesis,
             no_auto=no_auto,
             timing=show_timing,
+            wallet_type=wallet_type,
         )
         await agent.listen_webhooks(start_port + 2)
 
@@ -303,6 +327,12 @@ if __name__ == "__main__":
     parser.add_argument(
         "--timing", action="store_true", help="Enable timing information"
     )
+    parser.add_argument(
+        "--wallet-type",
+        type=str,
+        metavar="<wallet-type>",
+        help="Set the agent wallet type",
+    )
     args = parser.parse_args()
 
     ENABLE_PYDEVD_PYCHARM = os.getenv("ENABLE_PYDEVD_PYCHARM", "").lower()
@@ -337,7 +367,7 @@ if __name__ == "__main__":
 
     try:
         asyncio.get_event_loop().run_until_complete(
-            main(args.port, args.no_auto, args.timing)
+            main(args.port, args.no_auto, args.timing, args.wallet_type)
         )
     except KeyboardInterrupt:
         os._exit(1)
