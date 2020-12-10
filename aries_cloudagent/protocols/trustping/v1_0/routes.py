@@ -40,7 +40,7 @@ class ConnIdMatchInfoSchema(OpenAPISchema):
 @docs(tags=["trustping"], summary="Send a trust ping to a connection")
 @match_info_schema(ConnIdMatchInfoSchema())
 @request_schema(PingRequestSchema())
-@response_schema(PingRequestResponseSchema(), 200)
+@response_schema(PingRequestResponseSchema(), 200, description="")
 async def connections_send_ping(request: web.BaseRequest):
     """
     Request handler for sending a trust ping to a connection.

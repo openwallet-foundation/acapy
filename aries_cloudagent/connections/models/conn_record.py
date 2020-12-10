@@ -26,6 +26,7 @@ from ...protocols.out_of_band.v1_0.messages.invitation import (
 )
 from ...storage.base import BaseStorage
 from ...storage.record import StorageRecord
+from ...storage.error import StorageNotFoundError
 
 
 class ConnRecord(BaseRecord):
@@ -118,6 +119,7 @@ class ConnRecord(BaseRecord):
     RECORD_TYPE = "connection"
     RECORD_TYPE_INVITATION = "connection_invitation"
     RECORD_TYPE_REQUEST = "connection_request"
+    RECORD_TYPE_METADATA = "connection_metadata"
 
     INVITATION_MODE_ONCE = "once"
     INVITATION_MODE_MULTI = "multi"
@@ -275,7 +277,7 @@ class ConnRecord(BaseRecord):
             invitation.to_json(),
             {"connection_id": self.connection_id},
         )
-        storage: BaseStorage = session.inject(BaseStorage)
+        storage = session.inject(BaseStorage)
         await storage.add_record(record)
 
     async def retrieve_invitation(
@@ -287,7 +289,7 @@ class ConnRecord(BaseRecord):
             session: The active profile session
         """
         assert self.connection_id
-        storage: BaseStorage = session.inject(BaseStorage)
+        storage = session.inject(BaseStorage)
         result = await storage.find_record(
             self.RECORD_TYPE_INVITATION, {"connection_id": self.connection_id}
         )
@@ -363,6 +365,63 @@ class ConnRecord(BaseRecord):
         # clear cache key set by connection manager
         cache_key = f"connection_target::{self.connection_id}"
         await self.clear_cached_key(session, cache_key)
+
+    async def metadata_get(
+        self, session: ProfileSession, key: str, default: dict = None
+    ) -> dict:
+        """Retrieve arbitrary metadata associated with this connection."""
+        assert self.connection_id
+        storage: BaseStorage = session.inject(BaseStorage)
+        try:
+            record = await storage.find_record(
+                self.RECORD_TYPE_METADATA,
+                {"key": key, "connection_id": self.connection_id},
+            )
+            return json.loads(record.value)
+        except StorageNotFoundError:
+            return default
+
+    async def metadata_set(self, session: ProfileSession, key: str, value: dict):
+        """Set arbitrary metadata associated with this connection."""
+        assert self.connection_id
+        value = json.dumps(value)
+        storage: BaseStorage = session.inject(BaseStorage)
+        try:
+            record = await storage.find_record(
+                self.RECORD_TYPE_METADATA,
+                {"key": key, "connection_id": self.connection_id},
+            )
+            await storage.update_record(record, value, record.tags)
+        except StorageNotFoundError:
+            record = StorageRecord(
+                self.RECORD_TYPE_METADATA,
+                value,
+                {"key": key, "connection_id": self.connection_id},
+            )
+            await storage.add_record(record)
+
+    async def metadata_delete(self, session: ProfileSession, key: str):
+        """Delete custom metadata associated with this connection."""
+        assert self.connection_id
+        storage: BaseStorage = session.inject(BaseStorage)
+        try:
+            record = await storage.find_record(
+                self.RECORD_TYPE_METADATA,
+                {"key": key, "connection_id": self.connection_id},
+            )
+            await storage.delete_record(record)
+        except StorageNotFoundError as err:
+            raise KeyError(f"{key} not found in connection metadata") from err
+
+    async def metadata_get_all(self, session: ProfileSession) -> dict:
+        """Return all custom metadata associated with this connection."""
+        assert self.connection_id
+        storage: BaseStorage = session.inject(BaseStorage)
+        records = await storage.find_all_records(
+            self.RECORD_TYPE_METADATA,
+            {"connection_id": self.connection_id},
+        )
+        return {record.tags["key"]: json.loads(record.value) for record in records}
 
     def __eq__(self, other: Any) -> bool:
         """Comparison between records."""

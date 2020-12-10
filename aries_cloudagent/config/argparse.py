@@ -53,9 +53,9 @@ class group:
         )
 
 
-def create_argument_parser():
+def create_argument_parser(*, prog: str = None):
     """Create am instance of an arg parser, force yaml format for external config."""
-    return ArgumentParser(config_file_parser_class=YAMLConfigFileParser)
+    return ArgumentParser(config_file_parser_class=YAMLConfigFileParser, prog=prog)
 
 
 def load_argument_groups(parser: ArgumentParser, *groups: Type[ArgumentGroup]):
@@ -452,6 +452,14 @@ class GeneralGroup(ArgumentGroup):
             env_var="ACAPY_TAILS_SERVER_BASE_URL",
             help="Sets the base url of the tails server in use.",
         )
+        parser.add_argument(
+            "--tails-server-upload-url",
+            type=str,
+            metavar="<tails-server-upload-url>",
+            env_var="ACAPY_TAILS_SERVER_UPLOAD_URL",
+            help="Sets the base url of the tails server for upload, defaulting to the\
+            tails server base url.",
+        )
 
     def get_settings(self, args: Namespace) -> dict:
         """Extract general settings."""
@@ -473,6 +481,9 @@ class GeneralGroup(ArgumentGroup):
             settings["read_only_ledger"] = True
         if args.tails_server_base_url:
             settings["tails_server_base_url"] = args.tails_server_base_url
+            settings["tails_server_upload_url"] = args.tails_server_base_url
+        if args.tails_server_upload_url:
+            settings["tails_server_upload_url"] = args.tails_server_upload_url
         return settings
 
 
@@ -871,6 +882,31 @@ class TransportGroup(ArgumentGroup):
             settings["transport.max_message_size"] = args.max_message_size
         if args.max_outbound_retry:
             settings["transport.max_outbound_retry"] = args.max_outbound_retry
+
+        return settings
+
+
+@group(CAT_START)
+class MediationGroup(ArgumentGroup):
+    """Mediation settings."""
+
+    GROUP_NAME = "Mediation"
+
+    def add_arguments(self, parser: ArgumentParser):
+        """Add mediation command line arguments to the parser."""
+        parser.add_argument(
+            "--open-mediation",
+            action="store_true",
+            help="Enables didcomm mediation. After establishing a connection, if enabled, \
+                an agent may request message mediation, which will allow the mediator to \
+                forward messages on behalf of the recipient. See aries-rfc:0211.",
+        )
+        # TODO: add flags for terms and queue
+
+    def get_settings(self, args: Namespace):
+        """Extract mediation settings."""
+        settings = {}
+        settings["mediation.open"] = args.open_mediation
 
         return settings
 

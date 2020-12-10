@@ -42,7 +42,6 @@ AGENT_ENDPOINT = os.getenv("AGENT_ENDPOINT")
 DEFAULT_POSTGRES = bool(os.getenv("POSTGRES"))
 DEFAULT_INTERNAL_HOST = "127.0.0.1"
 DEFAULT_EXTERNAL_HOST = "localhost"
-DEFAULT_BIN_PATH = "../bin"
 DEFAULT_PYTHON_PATH = ".."
 PYTHON = os.getenv("PYTHON", sys.executable)
 
@@ -57,12 +56,10 @@ GENESIS_FILE = os.getenv("GENESIS_FILE")
 if RUN_MODE == "docker":
     DEFAULT_INTERNAL_HOST = os.getenv("DOCKERHOST") or "host.docker.internal"
     DEFAULT_EXTERNAL_HOST = DEFAULT_INTERNAL_HOST
-    DEFAULT_BIN_PATH = "./bin"
     DEFAULT_PYTHON_PATH = "."
 elif RUN_MODE == "pwd":
     # DEFAULT_INTERNAL_HOST =
     DEFAULT_EXTERNAL_HOST = os.getenv("DOCKERHOST") or "host.docker.internal"
-    DEFAULT_BIN_PATH = "./bin"
     DEFAULT_PYTHON_PATH = "."
 
 
@@ -170,7 +167,7 @@ class DemoAgent:
             else seed
         )
         self.storage_type = params.get("storage_type")
-        self.wallet_type = params.get("wallet_type", "indy")
+        self.wallet_type = params.get("wallet_type") or "indy"
         self.wallet_name = (
             params.get("wallet_name") or self.ident.lower().replace(" ", "") + rand_name
         )
@@ -437,23 +434,20 @@ class DemoAgent:
         )
         return proc
 
-    def get_process_args(self, bin_path: str = None):
-        cmd_path = "aca-py"
-        if bin_path is None:
-            bin_path = DEFAULT_BIN_PATH
-        if bin_path:
-            cmd_path = os.path.join(bin_path, cmd_path)
-        return list(flatten(([PYTHON, cmd_path, "start"], self.get_agent_args())))
+    def get_process_args(self):
+        return list(
+            flatten(
+                ([PYTHON, "-m", "aries_cloudagent", "start"], self.get_agent_args())
+            )
+        )
 
-    async def start_process(
-        self, python_path: str = None, bin_path: str = None, wait: bool = True
-    ):
+    async def start_process(self, python_path: str = None, wait: bool = True):
         my_env = os.environ.copy()
         python_path = DEFAULT_PYTHON_PATH if python_path is None else python_path
         if python_path:
             my_env["PYTHONPATH"] = python_path
 
-        agent_args = self.get_process_args(bin_path)
+        agent_args = self.get_process_args()
         self.log(agent_args)
 
         # start agent sub-process
@@ -529,9 +523,8 @@ class DemoAgent:
         )
 
     async def handle_revocation_registry(self, message):
-        self.log(
-            f"Revocation registry: {message['revoc_reg_id']} state: {message['state']}"
-        )
+        reg_id = message.get("revoc_reg_id", "(undetermined)")
+        self.log(f"Revocation registry: {reg_id} state: {message['state']}")
 
     async def admin_request(
         self, method, path, data=None, text=False, params=None, headers=None

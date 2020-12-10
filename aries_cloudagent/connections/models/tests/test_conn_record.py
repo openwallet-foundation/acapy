@@ -228,3 +228,74 @@ class TestConnRecord(AsyncTestCase):
         deser = ConnRecord.deserialize(ser)
         reser = deser.serialize()
         assert "initiator" not in reser
+
+    async def test_metadata_set_get(self):
+        record = ConnRecord(
+            my_did=self.test_did,
+        )
+        await record.save(self.session)
+        await record.metadata_set(self.session, "key", {"test": "value"})
+        retrieved = await record.metadata_get(self.session, "key")
+        assert retrieved == {"test": "value"}
+
+    async def test_metadata_set_update_get(self):
+        record = ConnRecord(
+            my_did=self.test_did,
+        )
+        await record.save(self.session)
+        await record.metadata_set(self.session, "key", {"test": "value"})
+        await record.metadata_set(self.session, "key", {"test": "updated"})
+        retrieved = await record.metadata_get(self.session, "key")
+        assert retrieved == {"test": "updated"}
+
+    async def test_metadata_get_without_set_is_none(self):
+        record = ConnRecord(
+            my_did=self.test_did,
+        )
+        await record.save(self.session)
+        assert await record.metadata_get(self.session, "key") is None
+
+    async def test_metadata_get_default(self):
+        record = ConnRecord(
+            my_did=self.test_did,
+        )
+        await record.save(self.session)
+        assert await record.metadata_get(self.session, "key", {"test": "default"}) == {
+            "test": "default"
+        }
+
+    async def test_metadata_set_delete_get_is_none(self):
+        record = ConnRecord(
+            my_did=self.test_did,
+        )
+        await record.save(self.session)
+        await record.metadata_set(self.session, "key", {"test": "value"})
+        await record.metadata_delete(self.session, "key")
+        assert await record.metadata_get(self.session, "key") is None
+
+    async def test_metadata_delete_without_set_raise_error(self):
+        record = ConnRecord(
+            my_did=self.test_did,
+        )
+        await record.save(self.session)
+        with self.assertRaises(KeyError) as exc:
+            await record.metadata_delete(self.session, "key")
+            assert "key not found in connection metadata" in exc.msg
+
+    async def test_metadata_get_all(self):
+        record = ConnRecord(
+            my_did=self.test_did,
+        )
+        await record.save(self.session)
+        await record.metadata_set(self.session, "key", {"test": "value"})
+        await record.metadata_set(self.session, "key", {"test": "updated"})
+        await record.metadata_set(self.session, "other", {"test": "other"})
+        retrieved = await record.metadata_get_all(self.session)
+        assert retrieved == {"key": {"test": "updated"}, "other": {"test": "other"}}
+
+    async def test_metadata_get_all_without_set_is_empty(self):
+        record = ConnRecord(
+            my_did=self.test_did,
+        )
+        await record.save(self.session)
+        assert await record.metadata_get_all(self.session) == {}

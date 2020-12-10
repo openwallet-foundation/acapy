@@ -11,7 +11,7 @@ from ...config.provider import ClassProvider
 from ...core.profile import Profile, ProfileManager, ProfileSession
 from ...ledger.base import BaseLedger
 from ...ledger.indy import IndySdkLedger, IndySdkLedgerPool
-from ...storage.base import BaseStorage
+from ...storage.base import BaseStorage, BaseStorageSearch
 from ...wallet.base import BaseWallet
 from ...wallet.indy import IndySdkWallet
 
@@ -58,6 +58,12 @@ class IndySdkProfile(Profile):
     def bind_providers(self):
         """Initialize the profile-level instance providers."""
         injector = self._context.injector
+
+        injector.bind_provider(
+            BaseStorageSearch,
+            ClassProvider("aries_cloudagent.storage.indy.IndySdkStorage", self.opened),
+        )
+
         injector.bind_provider(
             IndyHolder,
             ClassProvider(
@@ -124,7 +130,6 @@ class IndySdkProfileSession(ProfileSession):
 
     async def _setup(self):
         """Create the session or transaction connection, if needed."""
-        await super()._setup()
         injector = self._context.injector
         injector.bind_provider(
             BaseWallet, ClassProvider(IndySdkWallet, self.profile.opened)

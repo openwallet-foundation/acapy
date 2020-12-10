@@ -214,15 +214,13 @@ class TestRevocationRoutes(AsyncTestCase):
         )
 
         with async_mock.patch.object(
-            InMemoryStorage, "search_records", autospec=True
-        ) as mock_search, async_mock.patch.object(
+            InMemoryStorage, "find_all_records", autospec=True
+        ) as mock_find, async_mock.patch.object(
             test_module, "IndyRevocation", autospec=True
         ) as mock_indy_revoc, async_mock.patch.object(
             test_module.web, "json_response", async_mock.Mock()
         ) as mock_json_response:
-            mock_search.return_value.fetch_all = async_mock.CoroutineMock(
-                return_value=True
-            )
+            mock_find.return_value = True
             mock_indy_revoc.return_value = async_mock.MagicMock(
                 init_issuer_registry=async_mock.CoroutineMock(
                     return_value=async_mock.MagicMock(
@@ -246,13 +244,11 @@ class TestRevocationRoutes(AsyncTestCase):
         )
 
         with async_mock.patch.object(
-            InMemoryStorage, "search_records", autospec=True
-        ) as mock_search, async_mock.patch.object(
+            InMemoryStorage, "find_all_records", autospec=True
+        ) as mock_find, async_mock.patch.object(
             test_module.web, "json_response", async_mock.Mock()
         ) as mock_json_response:
-            mock_search.return_value.fetch_all = async_mock.CoroutineMock(
-                return_value=False
-            )
+            mock_find.return_value = False
 
             with self.assertRaises(HTTPNotFound):
                 result = await test_module.create_rev_reg(self.request)
@@ -268,15 +264,13 @@ class TestRevocationRoutes(AsyncTestCase):
         )
 
         with async_mock.patch.object(
-            InMemoryStorage, "search_records", autospec=True
-        ) as mock_search, async_mock.patch.object(
+            InMemoryStorage, "find_all_records", autospec=True
+        ) as mock_find, async_mock.patch.object(
             test_module, "IndyRevocation", autospec=True
         ) as mock_indy_revoc, async_mock.patch.object(
             test_module.web, "json_response", async_mock.Mock()
         ) as mock_json_response:
-            mock_search.return_value.fetch_all = async_mock.CoroutineMock(
-                return_value=True
-            )
+            mock_find = True
             mock_indy_revoc.return_value = async_mock.MagicMock(
                 init_issuer_registry=async_mock.CoroutineMock(
                     side_effect=test_module.RevocationNotSupportedError(

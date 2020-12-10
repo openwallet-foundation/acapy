@@ -52,6 +52,10 @@ from .models.credential_exchange import (
 )
 
 
+class IssueCredentialModuleResponseSchema(OpenAPISchema):
+    """Response schema for Issue Credential Module."""
+
+
 class V10CredentialExchangeListQueryStringSchema(OpenAPISchema):
     """Parameters and validators for credential exchange list query."""
 
@@ -329,7 +333,7 @@ class CredExIdMatchInfoSchema(OpenAPISchema):
 
 @docs(tags=["issue-credential"], summary="Fetch all credential exchange records")
 @querystring_schema(V10CredentialExchangeListQueryStringSchema)
-@response_schema(V10CredentialExchangeListResultSchema(), 200)
+@response_schema(V10CredentialExchangeListResultSchema(), 200, description="")
 async def credential_exchange_list(request: web.BaseRequest):
     """
     Request handler for searching connection records.
@@ -367,7 +371,7 @@ async def credential_exchange_list(request: web.BaseRequest):
 
 @docs(tags=["issue-credential"], summary="Fetch a single credential exchange record")
 @match_info_schema(CredExIdMatchInfoSchema())
-@response_schema(V10CredentialExchangeSchema(), 200)
+@response_schema(V10CredentialExchangeSchema(), 200, description="")
 async def credential_exchange_retrieve(request: web.BaseRequest):
     """
     Request handler for fetching single connection record.
@@ -403,7 +407,7 @@ async def credential_exchange_retrieve(request: web.BaseRequest):
     summary="Send holder a credential, automating entire flow",
 )
 @request_schema(V10CredentialCreateSchema())
-@response_schema(V10CredentialExchangeSchema(), 200)
+@response_schema(V10CredentialExchangeSchema(), 200, description="")
 async def credential_exchange_create(request: web.BaseRequest):
     """
     Request handler for creating a credential from attr values.
@@ -479,7 +483,7 @@ async def credential_exchange_create(request: web.BaseRequest):
     summary="Send holder a credential, automating entire flow",
 )
 @request_schema(V10CredentialProposalRequestMandSchema())
-@response_schema(V10CredentialExchangeSchema(), 200)
+@response_schema(V10CredentialExchangeSchema(), 200, description="")
 async def credential_exchange_send(request: web.BaseRequest):
     """
     Request handler for sending credential from issuer to holder from attr values.
@@ -570,7 +574,7 @@ async def credential_exchange_send(request: web.BaseRequest):
 
 @docs(tags=["issue-credential"], summary="Send issuer a credential proposal")
 @request_schema(V10CredentialProposalRequestOptSchema())
-@response_schema(V10CredentialExchangeSchema(), 200)
+@response_schema(V10CredentialExchangeSchema(), 200, description="")
 async def credential_exchange_send_proposal(request: web.BaseRequest):
     """
     Request handler for sending credential proposal.
@@ -692,7 +696,7 @@ async def _create_free_offer(
     summary="Create a credential offer, independent of any proposal",
 )
 @request_schema(V10CredentialOfferRequestSchema())
-@response_schema(CredentialOfferSchema(), 200)
+@response_schema(CredentialOfferSchema(), 200, description="")
 async def credential_exchange_create_free_offer(request: web.BaseRequest):
     """
     Request handler for creating free credential offer.
@@ -795,7 +799,7 @@ async def credential_exchange_create_free_offer(request: web.BaseRequest):
     summary="Send holder a credential offer, independent of any proposal",
 )
 @request_schema(V10CredentialOfferRequestSchema())
-@response_schema(V10CredentialExchangeSchema(), 200)
+@response_schema(V10CredentialExchangeSchema(), 200, description="")
 async def credential_exchange_send_free_offer(request: web.BaseRequest):
     """
     Request handler for sending free credential offer.
@@ -883,7 +887,7 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
     summary="Send holder a credential offer in reference to a proposal with preview",
 )
 @match_info_schema(CredExIdMatchInfoSchema())
-@response_schema(V10CredentialExchangeSchema(), 200)
+@response_schema(V10CredentialExchangeSchema(), 200, description="")
 async def credential_exchange_send_bound_offer(request: web.BaseRequest):
     """
     Request handler for sending bound credential offer.
@@ -959,7 +963,7 @@ async def credential_exchange_send_bound_offer(request: web.BaseRequest):
 
 @docs(tags=["issue-credential"], summary="Send issuer a credential request")
 @match_info_schema(CredExIdMatchInfoSchema())
-@response_schema(V10CredentialExchangeSchema(), 200)
+@response_schema(V10CredentialExchangeSchema(), 200, description="")
 async def credential_exchange_send_request(request: web.BaseRequest):
     """
     Request handler for sending credential request.
@@ -1027,7 +1031,7 @@ async def credential_exchange_send_request(request: web.BaseRequest):
 @docs(tags=["issue-credential"], summary="Send holder a credential")
 @match_info_schema(CredExIdMatchInfoSchema())
 @request_schema(V10CredentialIssueRequestSchema())
-@response_schema(V10CredentialExchangeSchema(), 200)
+@response_schema(V10CredentialExchangeSchema(), 200, description="")
 async def credential_exchange_issue(request: web.BaseRequest):
     """
     Request handler for sending credential.
@@ -1101,7 +1105,7 @@ async def credential_exchange_issue(request: web.BaseRequest):
 @docs(tags=["issue-credential"], summary="Store a received credential")
 @match_info_schema(CredExIdMatchInfoSchema())
 @request_schema(V10CredentialStoreRequestSchema())
-@response_schema(V10CredentialExchangeSchema(), 200)
+@response_schema(V10CredentialExchangeSchema(), 200, description="")
 async def credential_exchange_store(request: web.BaseRequest):
     """
     Request handler for storing credential.
@@ -1174,6 +1178,7 @@ async def credential_exchange_store(request: web.BaseRequest):
     tags=["issue-credential"], summary="Remove an existing credential exchange record"
 )
 @match_info_schema(CredExIdMatchInfoSchema())
+@response_schema(IssueCredentialModuleResponseSchema(), 200, description="")
 async def credential_exchange_remove(request: web.BaseRequest):
     """
     Request handler for removing a credential exchange record.
@@ -1206,6 +1211,7 @@ async def credential_exchange_remove(request: web.BaseRequest):
 )
 @match_info_schema(CredExIdMatchInfoSchema())
 @request_schema(V10CredentialProblemReportRequestSchema())
+@response_schema(IssueCredentialModuleResponseSchema(), 200, description="")
 async def credential_exchange_problem_report(request: web.BaseRequest):
     """
     Request handler for sending problem report.

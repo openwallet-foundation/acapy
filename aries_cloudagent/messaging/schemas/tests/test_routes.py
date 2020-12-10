@@ -35,18 +35,14 @@ class TestSchemaRoutes(AsyncTestCase):
         self.ledger.get_schema = async_mock.CoroutineMock(
             return_value={"schema": "def"}
         )
-        self.session_inject[BaseLedger] = self.ledger
+        self.context.injector.bind_instance(BaseLedger, self.ledger)
 
         self.issuer = async_mock.create_autospec(IndyIssuer)
-        self.session_inject[IndyIssuer] = self.issuer
+        self.context.injector.bind_instance(IndyIssuer, self.issuer)
 
         self.storage = async_mock.create_autospec(BaseStorage)
-        self.storage.search_records = async_mock.MagicMock(
-            return_value=async_mock.MagicMock(
-                fetch_all=async_mock.CoroutineMock(
-                    return_value=[async_mock.MagicMock(value=SCHEMA_ID)]
-                )
-            )
+        self.storage.find_all_records = async_mock.CoroutineMock(
+            return_value=[async_mock.MagicMock(value=SCHEMA_ID)]
         )
         self.session_inject[BaseStorage] = self.storage
 
@@ -75,7 +71,7 @@ class TestSchemaRoutes(AsyncTestCase):
             }
         )
 
-        self.session_inject[BaseLedger] = None
+        self.context.injector.clear_binding(BaseLedger)
         with self.assertRaises(test_module.web.HTTPForbidden):
             await test_module.schemas_send_schema(self.request)
 
@@ -124,7 +120,7 @@ class TestSchemaRoutes(AsyncTestCase):
             side_effect=test_module.LedgerError("Down for routine maintenance")
         )
 
-        self.session_inject[BaseLedger] = None
+        self.context.injector.clear_binding(BaseLedger)
         with self.assertRaises(test_module.web.HTTPForbidden):
             await test_module.schemas_get_schema(self.request)
 

@@ -667,7 +667,7 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             await conductor.start()
             await conductor.stop()
             value = captured.getvalue()
-            assert "http://localhost?c_i=" in captured.getvalue()
+            assert "http://localhost?oob=" in captured.getvalue()
 
     async def test_webhook_router(self):
         builder: ContextBuilder = StubContextBuilder(self.test_settings)

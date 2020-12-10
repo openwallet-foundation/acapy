@@ -102,7 +102,7 @@ class SchemaIdMatchInfoSchema(OpenAPISchema):
 
 @docs(tags=["schema"], summary="Sends a schema to the ledger")
 @request_schema(SchemaSendRequestSchema())
-@response_schema(SchemaSendResultsSchema(), 200)
+@response_schema(SchemaSendResultsSchema(), 200, description="")
 async def schemas_send_schema(request: web.BaseRequest):
     """
     Request handler for sending a credential offer.
@@ -122,15 +122,14 @@ async def schemas_send_schema(request: web.BaseRequest):
     schema_version = body.get("schema_version")
     attributes = body.get("attributes")
 
-    session = await context.session()
-    ledger = session.inject(BaseLedger, required=False)
+    ledger = context.inject(BaseLedger, required=False)
     if not ledger:
         reason = "No ledger available"
-        if not session.settings.get_value("wallet.type"):
+        if not context.settings.get_value("wallet.type"):
             reason += ": missing wallet-type?"
         raise web.HTTPForbidden(reason=reason)
 
-    issuer = session.inject(IndyIssuer)
+    issuer = context.inject(IndyIssuer)
     async with ledger:
         try:
             schema_id, schema_def = await shield(
@@ -149,7 +148,7 @@ async def schemas_send_schema(request: web.BaseRequest):
     summary="Search for matching schema that agent originated",
 )
 @querystring_schema(SchemaQueryStringSchema())
-@response_schema(SchemasCreatedResultsSchema(), 200)
+@response_schema(SchemasCreatedResultsSchema(), 200, description="")
 async def schemas_created(request: web.BaseRequest):
     """
     Request handler for retrieving schemas that current agent created.
@@ -165,19 +164,19 @@ async def schemas_created(request: web.BaseRequest):
 
     session = await context.session()
     storage = session.inject(BaseStorage)
-    found = await storage.search_records(
+    found = await storage.find_all_records(
         type_filter=SCHEMA_SENT_RECORD_TYPE,
         tag_query={
             tag: request.query[tag] for tag in SCHEMA_TAGS if tag in request.query
         },
-    ).fetch_all()
+    )
 
     return web.json_response({"schema_ids": [record.value for record in found]})
 
 
 @docs(tags=["schema"], summary="Gets a schema from the ledger")
 @match_info_schema(SchemaIdMatchInfoSchema())
-@response_schema(SchemaGetResultsSchema(), 200)
+@response_schema(SchemaGetResultsSchema(), 200, description="")
 async def schemas_get_schema(request: web.BaseRequest):
     """
     Request handler for sending a credential offer.
@@ -193,11 +192,10 @@ async def schemas_get_schema(request: web.BaseRequest):
 
     schema_id = request.match_info["schema_id"]
 
-    session = await context.session()
-    ledger = session.inject(BaseLedger, required=False)
+    ledger = context.inject(BaseLedger, required=False)
     if not ledger:
         reason = "No ledger available"
-        if not session.settings.get_value("wallet.type"):
+        if not context.settings.get_value("wallet.type"):
             reason += ": missing wallet-type?"
         raise web.HTTPForbidden(reason=reason)
 
