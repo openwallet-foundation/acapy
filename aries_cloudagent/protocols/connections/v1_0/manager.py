@@ -1,23 +1,25 @@
 """Classes to manage connections."""
 
 import logging
+from contextlib import contextmanager
+from typing import Coroutine, Sequence, Tuple, Optional
 
-from typing import Coroutine, Sequence, Tuple
+from aries_cloudagent.protocols.coordinate_mediation.v1_0.manager import (
+    MediationManager
+)
 
 from ....cache.base import BaseCache
+from ....config.base import InjectionError
 from ....connections.models.conn_record import ConnRecord
 from ....connections.models.connection_target import ConnectionTarget
 from ....connections.models.diddoc import (
-    DIDDoc,
-    PublicKey,
-    PublicKeyType,
-    Service,
+    DIDDoc, PublicKey, PublicKeyType, Service
 )
-from ....config.base import InjectionError
 from ....core.error import BaseError
 from ....core.profile import ProfileSession
 from ....ledger.base import BaseLedger
 from ....messaging.responder import BaseResponder
+from ....protocols.routing.v1_0.manager import RoutingManager
 from ....storage.base import BaseStorage
 from ....storage.error import StorageError, StorageNotFoundError
 from ....storage.record import StorageRecord
@@ -26,8 +28,9 @@ from ....wallet.base import BaseWallet, DIDInfo
 from ....wallet.crypto import create_keypair, seed_to_did
 from ....wallet.error import WalletNotFoundError
 from ....wallet.util import bytes_to_b58, did_key_to_naked
-from ....protocols.routing.v1_0.manager import RoutingManager
-
+from ...coordinate_mediation.v1_0.models.mediation_record import (
+    MediationRecord
+)
 from .messages.connection_invitation import ConnectionInvitation
 from .messages.connection_request import ConnectionRequest
 from .messages.connection_response import ConnectionResponse
@@ -78,6 +81,7 @@ class ConnectionManager:
         alias: str = None,
         routing_keys: Sequence[str] = None,
         recipient_keys: Sequence[str] = None,
+        mediation_id: str = None,
     ) -> Tuple[ConnRecord, ConnectionInvitation]:
         """
         Generate new connection invitation.
@@ -122,6 +126,9 @@ class ConnectionManager:
             A tuple of the new `ConnRecord` and `ConnectionInvitation` instances
 
         """
+        mediation_mgr = MediationManager(self._session)
+        keylist_updates = None
+
         if not my_label:
             my_label = self._session.settings.get("default_label")
         wallet = self._session.inject(BaseWallet)
@@ -150,41 +157,21 @@ class ConnectionManager:
         invitation_mode = ConnRecord.INVITATION_MODE_ONCE
         if multi_use:
             invitation_mode = ConnRecord.INVITATION_MODE_MULTI
-        mediation_record = None
-        if mediation_id:
-            mediation_record = await MediationRecord.retrieve_by_id(
-                self._session,
-                mediation_id
-            )
 
-        if recipient_keys:
-            # TODO: check that recipient keys are in wallet
-            invitation_key = recipient_keys[0]
-        else:
+        if not recipient_keys:
             # Create and store new invitation key
             invitation_signing_key = await wallet.create_signing_key()
             invitation_key = invitation_signing_key.verkey
             recipient_keys = [invitation_key]
-            if mediation_record and self._session.settings.get(
-                "mediation.auto_send_keylist_update_in_create_invitation"
-            ):
-                # send a update keylist message with new recipient keys.
-                mediation_mgr = MediationManager(self._session)
-                update_keylist_request = await mediation_mgr.add_key(invitation_key)
-                responder = self._session.inject(BaseResponder, required=False)
-                await responder.send(
-                    update_keylist_request,
-                    connection_id=mediation_record.connection_id
-                )
-
-        if mediation_record:
-            routing_keys = mediation_record.routing_keys
+            keylist_updates = await mediation_mgr.add_key(
+                invitation_key, keylist_updates
+            )
+        else:
+            invitation_key = recipient_keys[0]  # TODO first key appropriate?
 
         if not my_endpoint:
-            if mediation_record:
-                my_endpoint = mediation_record.endpoint
-            else:
-                my_endpoint = self._session.settings.get("default_endpoint")
+            my_endpoint = self._session.settings.get("default_endpoint")
+
         accept = (
             ConnRecord.ACCEPT_AUTO
             if (
@@ -209,6 +196,27 @@ class ConnectionManager:
 
         await connection.save(self._session, reason="Created new invitation")
 
+        if mediation_id:
+            # Let the error percolate up
+            mediation_record = await MediationRecord.retrieve_by_id(
+                self._session, mediation_id
+            )
+            routing_keys = mediation_record.routing_keys
+            my_endpoint = mediation_record.endpoint
+
+            # Save that this invitation was created with mediation
+            await connection.metadata_set(
+                self._session, "mediation", {"id": mediation_id}
+            )
+
+            if keylist_updates and self._session.settings.get(
+                "mediation.auto_send_keylist_update_in_create_invitation"
+            ):
+                responder = self._session.inject(BaseResponder, required=False)
+                await responder.send(
+                    keylist_updates, connection_id=mediation_record.connection_id
+                )
+
         # Create connection invitation message
         # Note: Need to split this into two stages to support inbound routing of invites
         # Would want to reuse create_did_document and convert the result
@@ -232,7 +240,7 @@ class ConnectionManager:
         invitation: ConnectionInvitation,
         auto_accept: bool = None,
         alias: str = None,
-        mediation_id: str = None
+        mediation_id: str = None,
     ) -> ConnRecord:
         """
         Create a new connection record to track a received invitation.
@@ -315,15 +323,15 @@ class ConnectionManager:
             A new `ConnectionRequest` message to send to the other agent
 
         """
+        # Mediation setup
+        mediation_mgr = MediationManager(self._session)
         mediation_record = None
+        keylist_updates = None
         if mediation_id:
-            try:
-                mediation_record = await MediationRecord.retrieve_by_id(
-                    self._session,
-                    mediation_id
-                )
-            except StorageNotFoundError:
-                raise ConnectionManagerError
+            mediation_record = await MediationRecord.retrieve_by_id(
+                self._session, mediation_id
+            )
+
         my_info = None
         wallet = self._session.inject(BaseWallet)
         if connection.my_did:
@@ -332,18 +340,10 @@ class ConnectionManager:
             # Create new DID for connection
             my_info = await wallet.create_local_did()
             connection.my_did = my_info.did
+            keylist_updates = await mediation_mgr.add_key(
+                my_info.verkey, keylist_updates
+            )
 
-            if mediation_record and self._session.settings.get(
-                "mediation.auto_send_keylist_update_in_requests"
-            ):
-                # send a update keylist message with new recipient keys.
-                mediation_mgr = MediationManager(self._session)
-                update_keylist_request = await mediation_mgr.add_key(my_info.verkey)
-                responder = self._session.inject(BaseResponder, required=False)
-                await responder.send(
-                    update_keylist_request,
-                    connection_id=mediation_record.connection_id
-                )
         # Create connection request message
         if my_endpoint:
             my_endpoints = [my_endpoint]
@@ -358,7 +358,7 @@ class ConnectionManager:
             my_info,
             connection.inbound_connection_id,
             my_endpoints,
-            mediation_record=mediation_record
+            mediation_record=mediation_record,
         )
 
         if not my_label:
@@ -374,10 +374,21 @@ class ConnectionManager:
 
         await connection.save(self._session, reason="Created connection request")
 
+        # Notfiy mediator of keylist changes
+        if keylist_updates and mediation_record and self._session.settings.get(
+            "mediation.auto_send_keylist_update_in_requests"
+        ):
+            # send a update keylist message with new recipient keys.
+            responder = self._session.inject(BaseResponder, required=False)
+            await responder.send(
+                keylist_updates, connection_id=mediation_record.connection_id
+            )
+
         return request
 
     async def receive_request(
-        self, request: ConnectionRequest,
+        self,
+        request: ConnectionRequest,
         receipt: MessageReceipt,
         mediation_id: str = None,
     ) -> ConnRecord:
@@ -396,11 +407,8 @@ class ConnectionManager:
             self._session, "Receiving connection request", {"request": request}
         )
 
-        if mediation_id:
-            mediation_mgr = MediationManager(self._session)
-            mediation_record = await MediationRecord.retrieve_by_id(self._session, mediation_id)
-            update_keylist_request = None
-
+        mediation_mgr = MediationManager(self._session)
+        keylist_updates = None
         connection = None
         connection_key = None
 
@@ -433,11 +441,9 @@ class ConnectionManager:
             if connection.is_multiuse_invitation:
                 wallet = self._session.inject(BaseWallet)
                 my_info = await wallet.create_local_did()
-
-                if mediation_record and self._session.settings.get(
-                    "mediation.auto_send_keylist_update_in_requests"):
-                    # update keylist message with new recipient keys.
-                    update_keylist_request = await mediation_mgr.add_key(my_info.verkey, update_keylist_request)
+                keylist_updates = await mediation_mgr.add_key(
+                    my_info.verkey, keylist_updates
+                )
 
                 new_connection = ConnRecord(
                     invitation_key=connection_key,
@@ -452,9 +458,11 @@ class ConnectionManager:
                     reason="Received connection request from multi-use invitation DID",
                 )
                 connection = new_connection
-            elif mediation_record:
+            else:
                 # remove key from mediator keylist
-                update_keylist_request = await mediation_mgr.remove_key(connection_key, update_keylist_request)
+                keylist_updates = await mediation_mgr.remove_key(
+                    connection_key, keylist_updates
+                )
         conn_did_doc = request.connection.did_doc
         if not conn_did_doc:
             raise ConnectionManagerError(
@@ -476,14 +484,12 @@ class ConnectionManager:
             )
         elif not self._session.settings.get("public_invites"):
             raise ConnectionManagerError("Public invitations are not enabled")
-        else:  # request from public did 
+        else:  # request from public did
             my_info = await wallet.create_local_did()
-            # update mediator if mediation is set
-            if mediation_record and self._session.settings.get(
-                    "mediation.auto_send_keylist_update_in_requests"
-            ):
-                # send a update keylist message with new recipient keys.
-                update_keylist_request = await mediation_mgr.add_key(my_info.verkey, update_keylist_request)
+            # send a update keylist message with new recipient keys.
+            keylist_updates = await mediation_mgr.add_key(
+                my_info.verkey, keylist_updates
+            )
 
             connection = ConnRecord(
                 invitation_key=connection_key,
@@ -502,16 +508,24 @@ class ConnectionManager:
 
         # Attach the connection request so it can be found and responded to
         await connection.attach_request(self._session, request)
-        if update_keylist_request:
+
+        # Send keylist updates to mediator
+        if keylist_updates and mediation_id and self._session.settings.get(
+            "mediation_id.auto_send_keylist_update_in_requests"
+        ):
+            mediation_record = await MediationRecord.retrieve_by_id(
+                self._session, mediation_id
+            )
             responder = self._session.inject(BaseResponder, required=False)
-            await responder.send(update_keylist_request, connection_id=mediation_record.connection_id)
+            await responder.send(
+                keylist_updates, connection_id=mediation_record.connection_id
+            )
+
         if connection.accept == ConnRecord.ACCEPT_AUTO:
             response = await self.create_response(connection, mediation_id)
             responder = self._session.inject(BaseResponder, required=False)
             if responder:
-                await responder.send(
-                    response, connection_id=connection.connection_id
-                )
+                await responder.send(response, connection_id=connection.connection_id)
                 # refetch connection for accurate state
                 connection = await ConnRecord.retrieve_by_id(
                     self._session, connection.connection_id
@@ -541,7 +555,15 @@ class ConnectionManager:
             "Creating connection response",
             {"connection_id": connection.connection_id},
         )
+
+        mediation_mgr = MediationManager(self._session)
+        keylist_updates = None
         mediation_record = None
+        if mediation_id:
+            mediation_record = await MediationRecord.retrieve_by_id(
+                self._session, mediation_id
+            )
+
         if ConnRecord.State.get(connection.state) not in (
             ConnRecord.State.REQUEST,
             ConnRecord.State.RESPONSE,
@@ -557,12 +579,8 @@ class ConnectionManager:
         else:
             my_info = await wallet.create_local_did()
             connection.my_did = my_info.did
-            if mediation_id:
-                responder = self._session.inject(BaseResponder, required=False)
-                mediation_mgr = MediationManager(self._session)
-                mediation_record = await MediationRecord.retrieve_by_id(self._session, mediation_id)
-                update_keylist_request = await mediation_mgr.add_key(my_info.verkey)
-                responder.send(update_keylist_request,connection_id=mediation_record.connection_id)
+            keylist_updates = await mediation_mgr.add_key(my_info.verkey, keylist_updates)
+
         # Create connection response message
         if my_endpoint:
             my_endpoints = [my_endpoint]
@@ -572,12 +590,15 @@ class ConnectionManager:
             if default_endpoint:
                 my_endpoints.append(default_endpoint)
             my_endpoints.extend(self._session.settings.get("additional_endpoints", []))
+
         did_doc = await self.create_did_document(
             my_info, connection.inbound_connection_id, my_endpoints, mediation_record
         )
+
         response = ConnectionResponse(
             connection=ConnectionDetail(did=my_info.did, did_doc=did_doc)
         )
+
         # Assign thread information
         response.assign_thread_from(request)
         response.assign_trace_from(request)
@@ -593,6 +614,14 @@ class ConnectionManager:
             reason="Created connection response",
             log_params={"response": response},
         )
+
+        # Update mediator if necessary
+        if keylist_updates and mediation_record:
+            responder = self._session.inject(BaseResponder, required=False)
+            responder.send(
+                keylist_updates, connection_id=mediation_record.connection_id
+            )
+
         return response
 
     async def accept_response(
@@ -883,7 +912,7 @@ class ConnectionManager:
         did_info: DIDInfo,
         inbound_connection_id: str = None,
         svc_endpoints: Sequence[str] = None,
-        mediation_record: MediationRecord = None
+        mediation_record: MediationRecord = None,
     ) -> DIDDoc:
         """Create our DID document for a given DID.
 
