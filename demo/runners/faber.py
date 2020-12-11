@@ -72,7 +72,7 @@ class FaberAgent(DemoAgent):
         if (not self.connection_id) and (message["state"] == "invitation"):
             self.connection_id = conn_id
         if conn_id == self.connection_id:
-            if message["state"] == "active" and not self._connection_ready.done():
+            if message["state"] in ["active", "response"] and not self._connection_ready.done():
                 self.log("Connected")
                 self._connection_ready.set_result(True)
 
