@@ -1,8 +1,7 @@
 """Classes to manage connections."""
 
 import logging
-from contextlib import contextmanager
-from typing import Coroutine, Sequence, Tuple, Optional
+from typing import Coroutine, Sequence, Tuple
 
 from aries_cloudagent.protocols.coordinate_mediation.v1_0.manager import (
     MediationManager,
@@ -197,6 +196,13 @@ class ConnectionManager:
             mediation_record = await MediationRecord.retrieve_by_id(
                 self._session, mediation_id
             )
+
+            if mediation_record.state != MediationRecord.STATE_GRANTED:
+                raise ConnectionManagerError(
+                    "Medation is not granted for mediation identified by "
+                    f"{mediation_record.mediation_id}"
+                )
+
             routing_keys = mediation_record.routing_keys
             my_endpoint = mediation_record.endpoint
 
@@ -327,9 +333,15 @@ class ConnectionManager:
             mediation_record = await MediationRecord.retrieve_by_id(
                 self._session, mediation_id
             )
+            if mediation_record.state != MediationRecord.STATE_GRANTED:
+                raise ConnectionManagerError(
+                    "Medation is not granted for mediation identified by "
+                    f"{mediation_record.mediation_id}"
+                )
 
         my_info = None
         wallet = self._session.inject(BaseWallet)
+        print(connection)
         if connection.my_did:
             my_info = await wallet.get_local_did(connection.my_did)
         else:
@@ -514,12 +526,18 @@ class ConnectionManager:
             keylist_updates
             and mediation_id
             and self._session.settings.get(
-                "mediation_id.auto_send_keylist_update_in_requests"
+                "mediation.auto_send_keylist_update_in_requests"
             )
         ):
             mediation_record = await MediationRecord.retrieve_by_id(
                 self._session, mediation_id
             )
+            if mediation_record.state != MediationRecord.STATE_GRANTED:
+                raise ConnectionManagerError(
+                    "Medation is not granted for mediation identified by "
+                    f"{mediation_record.mediation_id}"
+                )
+
             responder = self._session.inject(BaseResponder, required=False)
             await responder.send(
                 keylist_updates, connection_id=mediation_record.connection_id
@@ -567,6 +585,11 @@ class ConnectionManager:
             mediation_record = await MediationRecord.retrieve_by_id(
                 self._session, mediation_id
             )
+            if mediation_record.state != MediationRecord.STATE_GRANTED:
+                raise ConnectionManagerError(
+                    "Medation is not granted for mediation identified by "
+                    f"{mediation_record.mediation_id}"
+                )
 
         if ConnRecord.State.get(connection.state) not in (
             ConnRecord.State.REQUEST,
@@ -624,7 +647,7 @@ class ConnectionManager:
         # Update mediator if necessary
         if keylist_updates and mediation_record:
             responder = self._session.inject(BaseResponder, required=False)
-            responder.send(
+            await responder.send(
                 keylist_updates, connection_id=mediation_record.connection_id
             )
 
