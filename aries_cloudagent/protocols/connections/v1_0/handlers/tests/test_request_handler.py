@@ -2,16 +2,13 @@ import pytest
 from asynctest import mock as async_mock
 
 from ......connections.models import connection_target
+from ......connections.models.conn_record import ConnRecord
 from ......connections.models.diddoc import (
-    DIDDoc,
-    PublicKey,
-    PublicKeyType,
-    Service,
+    DIDDoc, PublicKey, PublicKeyType, Service
 )
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
 from ......transport.inbound.receipt import MessageReceipt
-
 from ...handlers import connection_request_handler as handler
 from ...manager import ConnectionManagerError
 from ...messages.connection_request import ConnectionRequest
@@ -20,9 +17,12 @@ from ...models.connection_detail import ConnectionDetail
 
 
 @pytest.fixture()
-def request_context() -> RequestContext:
+async def request_context() -> RequestContext:
     ctx = RequestContext.test_context()
+    session = await ctx.session()
     ctx.message_receipt = MessageReceipt()
+    ctx.connection_record = ConnRecord()
+    await ctx.connection_record.save(session)
     yield ctx
 
 
@@ -72,7 +72,7 @@ class TestRequestHandler:
         responder = MockResponder()
         await handler_inst.handle(request_context, responder)
         mock_conn_mgr.return_value.receive_request.assert_called_once_with(
-            request_context.message, request_context.message_receipt
+            request_context.message, request_context.message_receipt, mediation_id=None
         )
         assert not responder.messages
 
