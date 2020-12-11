@@ -33,6 +33,7 @@ class TestInjector(AsyncTestCase):
         self.test_value = "VALUE"
         self.test_settings = {self.test_key: self.test_value}
         self.test_instance = Injector(settings=self.test_settings)
+        assert self.test_instance.__class__.__name__ in str(self.test_instance)
 
     def test_settings_init(self):
         """Test settings initialization."""

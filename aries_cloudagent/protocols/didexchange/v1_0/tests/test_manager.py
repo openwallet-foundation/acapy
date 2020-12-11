@@ -77,6 +77,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
         self.did_info = await self.session.wallet.create_local_did()
 
         self.manager = DIDXManager(self.session)
+        assert self.manager.session
         self.oob_manager = OutOfBandManager(self.session)
 
     async def test_verify_diddoc(self):

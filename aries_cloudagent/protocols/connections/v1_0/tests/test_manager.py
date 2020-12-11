@@ -73,6 +73,7 @@ class TestConnectionManager(AsyncTestCase):
         self.context = self.session.context
 
         self.manager = ConnectionManager(self.session)
+        assert self.manager.session
 
     async def test_create_invitation_public_and_multi_use_fails(self):
         self.context.update_settings({"public_invites": True})

@@ -176,6 +176,7 @@ class TestPresentationManager(AsyncTestCase):
         injector.bind_instance(IndyVerifier, self.verifier)
 
         self.manager = PresentationManager(self.session)
+        assert self.manager.session
 
     async def test_record_eq(self):
         same = [

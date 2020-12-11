@@ -61,25 +61,28 @@ class TestRoutingManager(AsyncTestCase):
         results = await self.manager.get_routes()
         assert not results
 
-    async def test_get_recipient_no_recipient(self):
-        with self.assertRaises(RoutingManagerError):
-            await self.manager.get_recipient(TEST_ROUTE_VERKEY)
+    async def test_get_recipient_no_verkey(self):
+        with self.assertRaises(RoutingManagerError) as context:
+            await self.manager.get_recipient(None)
+        assert "Must pass non-empty" in str(context.exception)
 
     async def test_get_recipient_duplicate_routes(self):
         with async_mock.patch.object(
-            InMemoryStorage, "find_record", autospec=True
-        ) as mock_search:
-            mock_search.side_effect = StorageDuplicateError
-            with self.assertRaises(RouteNotFoundError):
+            RouteRecord, "retrieve_by_recipient_key", async_mock.CoroutineMock()
+        ) as mock_retrieve:
+            mock_retrieve.side_effect = StorageDuplicateError()
+            with self.assertRaises(RouteNotFoundError) as context:
                 await self.manager.get_recipient(TEST_ROUTE_VERKEY)
+        assert "More than one route" in str(context.exception)
 
     async def test_get_recipient_no_routes(self):
         with async_mock.patch.object(
-            InMemoryStorage, "find_record", autospec=True
-        ) as mock_search:
-            mock_search.side_effect = StorageNotFoundError
-            with self.assertRaises(RouteNotFoundError):
+            RouteRecord, "retrieve_by_recipient_key", async_mock.CoroutineMock()
+        ) as mock_retrieve:
+            mock_retrieve.side_effect = StorageNotFoundError()
+            with self.assertRaises(RouteNotFoundError) as context:
                 await self.manager.get_recipient(TEST_ROUTE_VERKEY)
+        assert "No route found" in str(context.exception)
 
     async def test_get_routes_connection_id(self):
         await self.manager.create_route_record(TEST_CONN_ID, TEST_ROUTE_VERKEY)

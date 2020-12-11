@@ -32,6 +32,9 @@ class TestInjectionContext(AsyncTestCase):
 
         context = self.test_instance.start_scope(self.test_scope)
         assert context.scope_name == self.test_scope
+        context.scope_name = "Bob"
+        assert context.scope_name == "Bob"
+
         with self.assertRaises(InjectionContextError):
             context.start_scope(self.test_instance.ROOT_SCOPE)
         assert self.test_instance.scope_name == self.test_instance.ROOT_SCOPE
@@ -44,6 +47,9 @@ class TestInjectionContext(AsyncTestCase):
         assert self.test_instance.settings[self.test_key] == self.test_value
         root = context.injector_for_scope(context.ROOT_SCOPE)
         assert root.settings[self.test_key] == self.test_value
+
+        context.settings = upd_settings
+        assert context.settings == upd_settings
 
     async def test_inject_simple(self):
         """Test a basic injection."""
