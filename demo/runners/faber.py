@@ -1,5 +1,4 @@
 import asyncio
-import io
 import json
 import logging
 import os
@@ -73,7 +72,10 @@ class FaberAgent(DemoAgent):
         if message["state"] == "invitation":
             self.connection_id = conn_id
         if conn_id == self.connection_id:
-            if message["state"] == "active" and not self._connection_ready.done():
+            if (
+                message["state"] in ["active", "response"]
+                and not self._connection_ready.done()
+            ):
                 self.log("Connected")
                 self._connection_ready.set_result(True)
 
@@ -167,12 +169,7 @@ async def generate_invitation(agent, use_did_exchange: bool):
         " Or use the QR code to connect from a mobile agent."
     )
     log_msg(json.dumps(invi_rec["invitation"]), label="Invitation Data:", color=None)
-    buf = io.StringIO()
-    qr.print_ascii(invert=False, out=buf)
-    for line in buf.getvalue().split("\n"):
-        # invert terminal colours, print UTF-8 data, reset
-        # this helps avoid gaps between the lines
-        print("\033[7m" + line + "\033[0m")
+    qr.print_ascii(invert=True)
 
     log_msg("Waiting for connection...")
     await agent.detect_connection()

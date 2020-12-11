@@ -3,9 +3,9 @@ from asynctest import TestCase as AsyncTestCase, mock as async_mock
 from ...core.profile import Profile, ProfileManager, ProfileSession
 from ...wallet.base import BaseWallet
 
+from .. import wallet as test_module
 from ..injector import Injector
 from ..injection_context import InjectionContext
-from .. import wallet as test_module
 
 TEST_DID = "55GkHamhTU1ZbTbV2ab9DE"
 TEST_VERKEY = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
@@ -27,15 +27,15 @@ class MockManager(ProfileManager):
 
 class TestWalletConfig(AsyncTestCase):
     async def setUp(self):
-        self.profile = async_mock.MagicMock(
-            backend="indy",
-            created=True,
-        )
-        self.profile.name = "Test Wallet"
         self.injector = Injector(enforce_typing=False)
         self.session = async_mock.MagicMock(ProfileSession)()
         self.session.commit = async_mock.CoroutineMock()
-        self.profile.transaction = async_mock.CoroutineMock(return_value=self.session)
+        self.profile = async_mock.MagicMock(
+            backend="indy",
+            created=True,
+            name="Test Wallet",
+            transaction=async_mock.CoroutineMock(return_value=self.session),
+        )
 
         def _inject(cls, required=True):
             return self.injector.inject(cls, required=required)
@@ -69,6 +69,74 @@ class TestWalletConfig(AsyncTestCase):
             mock_seed_to_did.return_value = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
 
             await test_module.wallet_config(self.context, provision=True)
+
+    async def test_wallet_config_existing_open(self):
+        self.profile = async_mock.MagicMock(
+            backend="indy",
+            created=False,
+            name="Test Wallet",
+            transaction=async_mock.CoroutineMock(return_value=self.session),
+        )
+        self.context.injector.clear_binding(ProfileManager)
+        self.context.injector.bind_instance(ProfileManager, MockManager(self.profile))
+
+        self.context.update_settings(
+            {
+                "wallet.seed": "00000000000000000000000000000000",
+                "wallet.replace_public_did": True,
+                "debug.enabled": True,
+            }
+        )
+        mock_wallet = async_mock.MagicMock(
+            get_public_did=async_mock.CoroutineMock(
+                return_value=async_mock.MagicMock(did=TEST_DID, verkey=TEST_VERKEY)
+            ),
+            set_public_did=async_mock.CoroutineMock(),
+            create_local_did=async_mock.CoroutineMock(
+                return_value=async_mock.MagicMock(did=TEST_DID, verkey=TEST_VERKEY)
+            ),
+        )
+        self.injector.bind_instance(BaseWallet, mock_wallet)
+
+        self.context.injector.bind_instance(ProfileManager, MockManager(self.profile))
+
+        with async_mock.patch.object(
+            test_module, "seed_to_did", async_mock.MagicMock()
+        ) as mock_seed_to_did:
+            mock_seed_to_did.return_value = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+
+            await test_module.wallet_config(self.context, provision=True)
+
+    async def test_wallet_config_auto_provision(self):
+        self.context.update_settings(
+            {
+                "wallet.seed": "00000000000000000000000000000000",
+                "wallet.replace_public_did": True,
+                "debug.enabled": True,
+                "auto_provision": False,
+            }
+        )
+        mock_wallet = async_mock.MagicMock(
+            get_public_did=async_mock.CoroutineMock(
+                return_value=async_mock.MagicMock(did=TEST_DID, verkey=TEST_VERKEY)
+            ),
+            set_public_did=async_mock.CoroutineMock(),
+            create_local_did=async_mock.CoroutineMock(
+                return_value=async_mock.MagicMock(did=TEST_DID, verkey=TEST_VERKEY)
+            ),
+        )
+        self.injector.bind_instance(BaseWallet, mock_wallet)
+
+        with async_mock.patch.object(
+            MockManager, "open", async_mock.CoroutineMock()
+        ) as mock_mgr_open:
+            mock_mgr_open.side_effect = test_module.ProfileNotFoundError()
+
+            with self.assertRaises(test_module.ProfileNotFoundError):
+                await test_module.wallet_config(self.context, provision=False)
+
+            self.context.update_settings({"auto_provision": True})
+            await test_module.wallet_config(self.context, provision=False)
 
     async def test_wallet_config_non_indy_x(self):
         self.context.update_settings(

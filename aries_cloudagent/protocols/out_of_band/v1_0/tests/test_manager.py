@@ -74,6 +74,8 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         self.session.context.injector.bind_instance(BaseLedger, self.ledger)
 
         self.manager = OutOfBandManager(self.session)
+        assert self.manager.session
+
         self.test_conn_rec = ConnRecord(
             my_did=TestConfig.test_did,
             their_did=TestConfig.test_target_did,
