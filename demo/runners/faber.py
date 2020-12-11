@@ -1,5 +1,4 @@
 import asyncio
-import io
 import json
 import logging
 import os
@@ -234,7 +233,6 @@ async def main(
         log_msg(
             json.dumps(invi_rec["invitation"]), label="Invitation Data:", color=None
         )
-        buf = io.StringIO()
         qr.print_ascii(invert=True)
 
         log_msg("Waiting for connection...")
