@@ -901,13 +901,94 @@ class MediationGroup(ArgumentGroup):
                 an agent may request message mediation, which will allow the mediator to \
                 forward messages on behalf of the recipient. See aries-rfc:0211.",
         )
+        parser.add_argument(
+            "--automate-mediation",
+            action="store_true",
+            env_var="ACAPY_AUTO_MEDIATION",
+            help="automate all steps of mediation. Default: false.",
+        )
+        parser.add_argument(
+            "--mediation-invitation",
+            type=str,
+            dest="mediation_invitation",
+            # metavar="<mediation-invitation>",
+            env_var="ACAPY_MEDIATION_INVITATION",
+            help="Specifies a connection invitation to connect to"
+            "a mediation agent for mediation service. The invitation is provided as"
+            " JSON string e.g. "
+            "{{ @type: did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/invitation"
+            ", serviceEndpoint: http://192.168.1.13:3005,...",
+        )
+        parser.add_argument(
+            "--auto-mediation-request-on-discovery",
+            action="store_true",
+            env_var="ACAPY_AUTOMATE_MEDIATION_REQUEST_ON_DISCOVERY",
+            help="When enabled, connection completion will trigger a feature discovery"
+            " request over the connection, if mediation is supported a mediation request"
+            " will be sent. Default: false.",
+        )
+        parser.add_argument(
+            "--auto-respond-mediation-grant",
+            action="store_true",
+            env_var="ACAPY_AUTO_RESPOND_MEDIATION_GRANT",
+            help="Automatically respond to mediation grant message with a keylist update"
+            "message containing a newly created did verkey for use as a recipient key"
+            ". Default: false.",
+        )
+        parser.add_argument(
+            "--auto-respond-keylist-update-response",
+            action="store_true",
+            env_var="ACAPY_AUTO_RESPOND_KEYLIST_UPDATE_RESPONSE",
+            help="Automatically create a connection invitation with the received updated"
+            " keylists. Default: false.",
+        )
+        parser.add_argument(
+            "--auto-send-keylist-update-in-requests",
+            action="store_true",
+            env_var="ACAPY_AUTO_SEND_KEYLIST_UPDATE_IN_REQUESTS",
+            help="Automatically updated mediator with newly created keys."
+            " keylists. Default: false.",
+        )
+        parser.add_argument(
+            "--auto-send-keylist-update-in-create-invitation",
+            action="store_true",
+            env_var="ACAPY_AUTO_SEND_KEYLIST_UPDATE_IN_CREATE_INVITATION",
+            help="Automatically updated mediator with newly created keys."
+            " keylists. Default: false.",
+        )
         # TODO: add flags for terms and queue
 
     def get_settings(self, args: Namespace):
         """Extract mediation settings."""
         settings = {}
-        settings["mediation.open"] = args.open_mediation
-
+        if args.auto_mediation_request_on_discovery:
+            settings["mediation.auto_mediation_request_on_discovery"] = True
+        else:
+            settings["mediation.auto_mediation_request_on_discovery"] = False
+        settings["mediation_invitation"] = True if args.mediation_invitation else False
+        if args.auto_send_keylist_update_in_requests:
+            settings["mediation.auto_send_keylist_update_in_requests"] = True
+        else:
+            settings["mediation.auto_send_keylist_update_in_requests"] = False
+        if args.auto_send_keylist_update_in_create_invitation:
+            settings["mediation.auto_send_keylist_update_in_create_invitation"] = True
+        else:
+            settings["mediation.auto_send_keylist_update_in_create_invitation"] = False
+        if args.open_mediation:
+            settings["mediation.open"] = True
+            if args.automate_mediation:
+                settings["mediation.automate_mediation"] = True
+                settings["mediation.auto_respond_mediation_grant"] = True
+                settings["mediation.auto_respond_keylist_update_response"] = True
+                settings["mediation.auto_send_keylist_update_in_requests"] = True
+                settings[
+                    "mediation.auto_send_keylist_update_in_create_invitation"
+                ] = True
+            else:
+                if args.auto_respond_mediation_grant:
+                    settings["mediation.auto_respond_mediation_grant"] = True
+                else:
+                    settings["mediation.auto_respond_mediation_grant"] = False
         return settings
 
 

@@ -44,7 +44,7 @@ class TestConnectionManager(AsyncTestCase):
         doc.set(service)
         return doc
 
-    def setUp(self):
+    async def setUp(self):
         self.test_seed = "testseed000000000000000000000001"
         self.test_did = "55GkHamhTU1ZbTbV2ab9DE"
         self.test_verkey = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
@@ -67,7 +67,9 @@ class TestConnectionManager(AsyncTestCase):
         )
         self.context = self.session.context
 
-        self.test_mediator_routing_keys = ["3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRR"]
+        self.test_mediator_routing_keys = [
+            "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRR"
+        ]
         self.test_mediator_conn_id = "mediator-conn-id"
         self.test_mediator_endpoint = "http://mediator.example.com"
 
@@ -226,8 +228,8 @@ class TestConnectionManager(AsyncTestCase):
         assert len(message.updates) == 1
         assert message.updates[0].recipient_key == invite.recipient_keys[0]
         assert (
-            'connection_id' in used_kwargs
-            and used_kwargs['connection_id'] == self.test_mediator_conn_id
+            "connection_id" in used_kwargs
+            and used_kwargs["connection_id"] == self.test_mediator_conn_id
         )
 
         assert await record.metadata_get(self.session, "mediation") == {
@@ -276,7 +278,7 @@ class TestConnectionManager(AsyncTestCase):
         _, invite = await self.manager.create_invitation(
             routing_keys=[self.test_verkey],
             my_endpoint=self.test_endpoint,
-            mediation_id=mediation_record.mediation_id
+            mediation_id=mediation_record.mediation_id,
         )
         assert invite.routing_keys == self.test_mediator_routing_keys
         assert invite.endpoint == self.test_mediator_endpoint
@@ -312,18 +314,20 @@ class TestConnectionManager(AsyncTestCase):
                 await self.manager.receive_invitation(x_invite)
 
     async def test_receive_invitation_mediation_passes_id_when_auto_accept(self):
-        with async_mock.patch.object(ConnectionManager, 'create_request') as create_request:
+        with async_mock.patch.object(
+            ConnectionManager, "create_request"
+        ) as create_request:
             _, connect_invite = await self.manager.create_invitation(
                 my_endpoint="testendpoint"
             )
 
             await self.manager.receive_invitation(
-                connect_invite, mediation_id='test-mediation-id', auto_accept=True
+                connect_invite, mediation_id="test-mediation-id", auto_accept=True
             )
             record = await ConnRecord.retrieve_by_invitation_key(
                 self.session, connect_invite.invitation_key
             )
-            create_request.assert_called_once_with(record, 'test-mediation-id')
+            create_request.assert_called_once_with(record, "test-mediation-id")
 
     async def test_create_request(self):
         conn_req = await self.manager.create_request(
@@ -371,7 +375,7 @@ class TestConnectionManager(AsyncTestCase):
         )
         await mediation_record.save(self.session)
         with async_mock.patch.object(
-            ConnectionManager, 'create_did_document'
+            ConnectionManager, "create_did_document"
         ) as create_did_document:
             await self.manager.create_request(
                 ConnRecord(
@@ -381,7 +385,7 @@ class TestConnectionManager(AsyncTestCase):
                     their_role=ConnRecord.Role.RESPONDER.rfc160,
                     alias="Bob",
                 ),
-                mediation_id=mediation_record.mediation_id
+                mediation_id=mediation_record.mediation_id,
             )
             create_did_document.assert_called_once_with(
                 mediation_record=mediation_record
@@ -391,8 +395,8 @@ class TestConnectionManager(AsyncTestCase):
         message, used_kwargs = self.responder.messages[0]
         assert isinstance(message, KeylistUpdate)
         assert (
-            'connection_id' in used_kwargs
-            and used_kwargs['connection_id'] == self.test_mediator_conn_id
+            "connection_id" in used_kwargs
+            and used_kwargs["connection_id"] == self.test_mediator_conn_id
         )
 
     async def test_receive_request_public_did(self):

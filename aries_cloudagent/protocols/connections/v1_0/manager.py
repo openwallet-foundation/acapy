@@ -5,16 +5,14 @@ from contextlib import contextmanager
 from typing import Coroutine, Sequence, Tuple, Optional
 
 from aries_cloudagent.protocols.coordinate_mediation.v1_0.manager import (
-    MediationManager
+    MediationManager,
 )
 
 from ....cache.base import BaseCache
 from ....config.base import InjectionError
 from ....connections.models.conn_record import ConnRecord
 from ....connections.models.connection_target import ConnectionTarget
-from ....connections.models.diddoc import (
-    DIDDoc, PublicKey, PublicKeyType, Service
-)
+from ....connections.models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
 from ....core.error import BaseError
 from ....core.profile import ProfileSession
 from ....ledger.base import BaseLedger
@@ -28,9 +26,7 @@ from ....wallet.base import BaseWallet, DIDInfo
 from ....wallet.crypto import create_keypair, seed_to_did
 from ....wallet.error import WalletNotFoundError
 from ....wallet.util import bytes_to_b58, did_key_to_naked
-from ...coordinate_mediation.v1_0.models.mediation_record import (
-    MediationRecord
-)
+from ...coordinate_mediation.v1_0.models.mediation_record import MediationRecord
 from .messages.connection_invitation import ConnectionInvitation
 from .messages.connection_request import ConnectionRequest
 from .messages.connection_response import ConnectionResponse
@@ -375,8 +371,12 @@ class ConnectionManager:
         await connection.save(self._session, reason="Created connection request")
 
         # Notfiy mediator of keylist changes
-        if keylist_updates and mediation_record and self._session.settings.get(
-            "mediation.auto_send_keylist_update_in_requests"
+        if (
+            keylist_updates
+            and mediation_record
+            and self._session.settings.get(
+                "mediation.auto_send_keylist_update_in_requests"
+            )
         ):
             # send a update keylist message with new recipient keys.
             responder = self._session.inject(BaseResponder, required=False)
@@ -510,8 +510,12 @@ class ConnectionManager:
         await connection.attach_request(self._session, request)
 
         # Send keylist updates to mediator
-        if keylist_updates and mediation_id and self._session.settings.get(
-            "mediation_id.auto_send_keylist_update_in_requests"
+        if (
+            keylist_updates
+            and mediation_id
+            and self._session.settings.get(
+                "mediation_id.auto_send_keylist_update_in_requests"
+            )
         ):
             mediation_record = await MediationRecord.retrieve_by_id(
                 self._session, mediation_id
@@ -579,7 +583,9 @@ class ConnectionManager:
         else:
             my_info = await wallet.create_local_did()
             connection.my_did = my_info.did
-            keylist_updates = await mediation_mgr.add_key(my_info.verkey, keylist_updates)
+            keylist_updates = await mediation_mgr.add_key(
+                my_info.verkey, keylist_updates
+            )
 
         # Create connection response message
         if my_endpoint:

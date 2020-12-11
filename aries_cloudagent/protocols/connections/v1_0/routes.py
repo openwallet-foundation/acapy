@@ -32,6 +32,7 @@ from .messages.connection_invitation import (
     ConnectionInvitation,
     ConnectionInvitationSchema,
 )
+from ...coordinate_mediation.v1_0.models.mediation_record import MediationRecord
 
 
 class ConnectionModuleResponseSchema(OpenAPISchema):
@@ -365,6 +366,7 @@ async def connections_create_invitation(request: web.BaseRequest):
             recipient_keys=recipient_keys,
             my_endpoint=service_endpoint,
             routing_keys=routing_keys,
+            mediation_id=mediation_id,
         )
 
         result = {
@@ -414,10 +416,7 @@ async def connections_receive_invitation(request: web.BaseRequest):
         alias = request.query.get("alias")
         mediation_id = request.query.get("mediation_id")
         connection = await connection_mgr.receive_invitation(
-            invitation,
-            auto_accept=auto_accept,
-            alias=alias,
-            mediation_id=mediation_id
+            invitation, auto_accept=auto_accept, alias=alias, mediation_id=mediation_id
         )
         result = connection.serialize()
     except (ConnectionManagerError, StorageError, BaseModelError) as err:
@@ -452,9 +451,17 @@ async def connections_accept_invitation(request: web.BaseRequest):
     try:
         connection = await ConnRecord.retrieve_by_id(session, connection_id)
         connection_mgr = ConnectionManager(session)
-        my_label = request.query.get("my_label") or None
-        my_endpoint = request.query.get("my_endpoint") or None
-        request = await connection_mgr.create_request(connection, my_label, my_endpoint)
+        my_label = request.query.get("my_label")
+        my_endpoint = request.query.get("my_endpoint")
+        mediation_id = request.query.get("mediation_id")
+        mediation_record = None
+        if mediation_id:
+            mediation_record = await MediationRecord.retrieve_by_id(
+                session, mediation_id
+            )
+        request = await connection_mgr.create_request(
+            connection, my_label, my_endpoint, routing_options=mediation_record
+        )
         result = connection.serialize()
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
