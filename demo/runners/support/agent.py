@@ -194,8 +194,9 @@ class DemoAgent:
         log_msg("Schema ID:", schema_id)
 
         # Create a cred def for the schema
-        cred_def_tag = (tag if tag else
-            (self.ident + "." + schema_name).replace(" ", "_"))
+        cred_def_tag = (
+            tag if tag else (self.ident + "." + schema_name).replace(" ", "_")
+        )
         credential_definition_body = {
             "schema_id": schema_id,
             "support_revocation": support_revocation,
