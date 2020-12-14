@@ -38,5 +38,5 @@ class TestIndySdkProfile:
                 handle=1,
                 master_secret_id="master-secret",
             ),
-            context=InjectionContext(settings={"ledger.read_only": True})
+            context=InjectionContext(settings={"ledger.read_only": True}),
         )

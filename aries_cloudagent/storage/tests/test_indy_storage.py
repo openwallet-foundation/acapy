@@ -365,7 +365,7 @@ class TestIndySdkStorage(test_in_memory_storage.TestInMemoryStorage):
                 mock_get_event_loop.return_value = async_mock.MagicMock(
                     create_task=async_mock.MagicMock(),
                     is_running=async_mock.MagicMock(return_value=False),
-                    run_until_complete=async_mock.MagicMock()
+                    run_until_complete=async_mock.MagicMock(),
                 )
                 mock_indy_open_search.return_value = 1
                 search = storage.search_records("connection")
