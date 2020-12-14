@@ -31,8 +31,6 @@ from .messages.connection_request import ConnectionRequest
 from .messages.connection_response import ConnectionResponse
 from .messages.problem_report import ProblemReportReason
 from .models.connection_detail import ConnectionDetail
-from ...coordinate_mediation.v1_0.models.mediation_record import MediationRecord
-from aries_cloudagent.protocols.coordinate_mediation.v1_0.manager import MediationManager
 
 
 class ConnectionManagerError(BaseError):
@@ -229,11 +227,6 @@ class ConnectionManager:
             endpoint=my_endpoint,
         )
         await connection.attach_invitation(self._session, invitation)
-
-        if mediation_record:
-            await connection.metadata_set(
-                self._session, 'mediation', {'id': mediation_id}
-            )
 
         return connection, invitation
 

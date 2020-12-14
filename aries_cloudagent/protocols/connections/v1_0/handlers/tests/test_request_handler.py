@@ -3,9 +3,7 @@ from asynctest import mock as async_mock
 
 from ......connections.models import connection_target
 from ......connections.models.conn_record import ConnRecord
-from ......connections.models.diddoc import (
-    DIDDoc, PublicKey, PublicKeyType, Service
-)
+from ......connections.models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
 from ......transport.inbound.receipt import MessageReceipt

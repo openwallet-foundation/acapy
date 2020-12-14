@@ -74,6 +74,7 @@ class InvitationConnectionTargetRequestSchema(OpenAPISchema):
         required=False,
         description="List of routing keys",
     )
+    mediation_id = UUIDFour
 
 
 class InvitationResultSchema(OpenAPISchema):
@@ -185,6 +186,7 @@ class ReceiveInvitationQueryStringSchema(OpenAPISchema):
         description="Auto-accept connection (defaults to configuration)",
         required=False,
     )
+    mediation_id = UUIDFour
 
 
 class AcceptInvitationQueryStringSchema(OpenAPISchema):
@@ -194,6 +196,7 @@ class AcceptInvitationQueryStringSchema(OpenAPISchema):
     my_label = fields.Str(
         description="Label for connection", required=False, example="Broker"
     )
+    mediation_id = UUIDFour
 
 
 class AcceptRequestQueryStringSchema(OpenAPISchema):
@@ -348,6 +351,7 @@ async def connections_create_invitation(request: web.BaseRequest):
     recipient_keys = body.get("recipient_keys")
     service_endpoint = body.get("service_endpoint")
     routing_keys = body.get("routing_keys")
+    mediation_id = body.get("mediation_id")
 
     if public and not context.settings.get("public_invites"):
         raise web.HTTPForbidden(
