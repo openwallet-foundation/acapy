@@ -200,6 +200,7 @@ class DemoAgent:
         schema_attrs,
         support_revocation: bool = False,
         revocation_registry_size: int = None,
+        tag=None,
     ):
         # Create a schema
         schema_body = {
@@ -213,6 +214,9 @@ class DemoAgent:
         log_msg("Schema ID:", schema_id)
 
         # Create a cred def for the schema
+        cred_def_tag = (
+            tag if tag else (self.ident + "." + schema_name).replace(" ", "_")
+        )
         credential_definition_body = {
             "schema_id": schema_id,
             "support_revocation": support_revocation,
@@ -221,6 +225,7 @@ class DemoAgent:
                 for _ in [""]
                 if support_revocation
             },
+            "tag": cred_def_tag,
         }
         credential_definition_response = await self.admin_POST(
             "/credential-definitions", credential_definition_body
