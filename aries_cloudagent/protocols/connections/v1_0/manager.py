@@ -127,7 +127,6 @@ class ConnectionManager:
         if not my_label:
             my_label = self._session.settings.get("default_label")
         wallet = self._session.inject(BaseWallet)
-
         if public:
             if not self._session.settings.get("public_invites"):
                 raise ConnectionManagerError("Public invitations are not enabled")
@@ -162,6 +161,7 @@ class ConnectionManager:
                 invitation_key, keylist_updates
             )
         else:
+            # TODO: check that recipient keys are in wallet
             invitation_key = recipient_keys[0]  # TODO first key appropriate?
 
         if not my_endpoint:
@@ -261,7 +261,6 @@ class ConnectionManager:
                 raise ConnectionManagerError("Invitation must contain recipient key(s)")
             if not invitation.endpoint:
                 raise ConnectionManagerError("Invitation must contain an endpoint")
-
         accept = (
             ConnRecord.ACCEPT_AUTO
             if (
@@ -275,7 +274,7 @@ class ConnectionManager:
         )
         # Create connection record
         connection = ConnRecord(
-            invitation_key=invitation.recipient_keys and invitation.recipient_keys[0],
+            invitation_key=invitation.recipient_keys[0],
             their_label=invitation.label,
             their_role=ConnRecord.Role.RESPONDER.rfc160,
             state=ConnRecord.State.INVITATION.rfc160,
@@ -303,7 +302,6 @@ class ConnectionManager:
                 )
         else:
             self._logger.debug("Connection invitation will await acceptance")
-
         return connection
 
     async def create_request(
@@ -382,7 +380,7 @@ class ConnectionManager:
 
         await connection.save(self._session, reason="Created connection request")
 
-        # Notfiy mediator of keylist changes
+        # Notify mediator of keylist changes
         if (
             keylist_updates
             and mediation_record
@@ -566,7 +564,8 @@ class ConnectionManager:
         Args:
             connection: The `ConnRecord` with a pending connection request
             my_endpoint: The endpoint I can be reached at
-            mediation_id: ...
+            mediation_id: The record id for mediation that contains routing_keys and
+            service endpoint
 
         Returns:
             A tuple of the updated `ConnRecord` new `ConnectionResponse` message
@@ -707,7 +706,7 @@ class ConnectionManager:
             ConnRecord.State.RESPONSE,
         ):
             raise ConnectionManagerError(
-                "Cannot accept connection response for connection"
+                f"Cannot accept connection response for connection"
                 f" in state: {connection.state}"
             )
 
@@ -949,7 +948,7 @@ class ConnectionManager:
             did_info: The DID information (DID and verkey) used in the connection
             inbound_connection_id: The ID of the inbound routing connection to use
             svc_endpoints: Custom endpoints for the DID Document
-            mediation_id: record id for mediation that contains routing_keys and
+            mediation_id: The record id for mediation that contains routing_keys and
             service endpoint
 
         Returns:
