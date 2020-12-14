@@ -71,7 +71,7 @@ class RoutingManager:
             )
         except StorageDuplicateError:
             raise RouteNotFoundError(
-                f"More than one route records found with recipient key: {recip_verkey}"
+                f"More than one route record found with recipient key: {recip_verkey}"
             )
         except StorageNotFoundError:
             raise RouteNotFoundError(

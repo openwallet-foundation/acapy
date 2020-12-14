@@ -82,6 +82,8 @@ class TestIndySdkLedger(AsyncTestCase):
         )
 
         assert ledger.pool_name == "name"
+        assert not ledger.read_only
+        assert ledger.backend
         assert ledger.wallet is mock_wallet
 
         await ledger.__aenter__()
@@ -94,6 +96,29 @@ class TestIndySdkLedger(AsyncTestCase):
             "name", json.dumps({"genesis_txn": GENESIS_TRANSACTION_PATH})
         )
         assert ledger.did_to_nym(ledger.nym_to_did(self.test_did)) == self.test_did
+
+    @async_mock.patch("indy.pool.create_pool_ledger_config")
+    @async_mock.patch("indy.pool.list_pools")
+    @async_mock.patch("indy.pool.open_pool_ledger")
+    @async_mock.patch("builtins.open")
+    async def test_init_not_checked(
+        self, mock_open, mock_open_ledger, mock_list_pools, mock_create_config
+    ):
+        mock_open.return_value = async_mock.MagicMock()
+        mock_list_pools.return_value = []
+
+        mock_wallet = async_mock.MagicMock()
+        ledger = IndySdkLedger(IndySdkLedgerPool("name"), mock_wallet)
+
+        assert ledger.pool_name == "name"
+        assert ledger.backend
+        assert ledger.wallet is mock_wallet
+
+        with self.assertRaises(LedgerError):
+            await ledger.__aenter__()
+
+        mock_list_pools.return_value = [{"pool": ledger.pool_name}]
+        await ledger.__aenter__()
 
     @async_mock.patch("indy.pool.list_pools")
     @async_mock.patch("builtins.open")
