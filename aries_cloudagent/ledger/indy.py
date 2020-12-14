@@ -857,6 +857,18 @@ class IndySdkLedger(BaseLedger):
 
         public_info = await self.wallet.get_public_did()
         public_did = public_info.did if public_info else None
+
+        ''' TODO
+        check if DID in wallet:
+            if so, carry on
+                update ledger
+                update wallet
+            else, check role:
+                if STEWARD, carry on
+                    update ledger
+                else, raise
+
+        '''
         with IndyErrorHandler("Exception building nym request", LedgerError):
             request_json = await indy.ledger.build_nym_request(
                 public_did, did, verkey, alias, role
