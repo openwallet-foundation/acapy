@@ -644,7 +644,7 @@ class TestConnectionManager(AsyncTestCase):
         ) as mock_conn_rec_save, async_mock.patch.object(
             ConnRecord, "attach_request", autospec=True
         ) as mock_conn_attach_request, async_mock.patch.object(
-            ConnRecord, "retrieve_by_invitation_key", autospec=True
+            ConnRecord, "retrieve_by_invitation_key"
         ) as mock_conn_retrieve_by_invitation_key, async_mock.patch.object(
             ConnRecord, "retrieve_request", autospec=True
         ):
@@ -677,7 +677,7 @@ class TestConnectionManager(AsyncTestCase):
         ) as mock_conn_rec_save, async_mock.patch.object(
             ConnRecord, "attach_request", autospec=True
         ) as mock_conn_attach_request, async_mock.patch.object(
-            ConnRecord, "retrieve_by_invitation_key", autospec=True
+            ConnRecord, "retrieve_by_invitation_key"
         ) as mock_conn_retrieve_by_invitation_key, async_mock.patch.object(
             ConnRecord, "retrieve_request", autospec=True
         ):
@@ -715,7 +715,7 @@ class TestConnectionManager(AsyncTestCase):
         ) as mock_conn_rec_save, async_mock.patch.object(
             ConnRecord, "attach_request", autospec=True
         ) as mock_conn_attach_request, async_mock.patch.object(
-            ConnRecord, "retrieve_by_invitation_key", autospec=True
+            ConnRecord, "retrieve_by_invitation_key"
         ) as mock_conn_retrieve_by_invitation_key, async_mock.patch.object(
             ConnRecord, "retrieve_request", autospec=True
         ):
