@@ -32,7 +32,6 @@ from .messages.connection_invitation import (
     ConnectionInvitation,
     ConnectionInvitationSchema,
 )
-from ...coordinate_mediation.v1_0.models.mediation_record import MediationRecord
 
 
 class ConnectionModuleResponseSchema(OpenAPISchema):
