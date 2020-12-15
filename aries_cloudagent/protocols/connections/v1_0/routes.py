@@ -84,7 +84,7 @@ MEDIATION_ID_SCHEMA = {
 }
 
 
-class InvitationConnectionTargetRequestSchema(OpenAPISchema):
+class CreateInvitationRequestSchema(OpenAPISchema):
     """Request schema for invitation connection target."""
 
     recipient_keys = fields.List(
@@ -101,6 +101,11 @@ class InvitationConnectionTargetRequestSchema(OpenAPISchema):
         fields.Str(description="Routing key", **INDY_RAW_PUBLIC_KEY),
         required=False,
         description="List of routing keys",
+    )
+    metadata = fields.Dict(
+        description="Optional metadata to attach to the connection created with "
+        "the invitation",
+        required=False,
     )
     mediation_id = fields.Str(
         required=False,
@@ -418,7 +423,7 @@ async def connections_metadata_set(request: web.BaseRequest):
     summary="Create a new connection invitation",
 )
 @querystring_schema(CreateInvitationQueryStringSchema())
-@request_schema(InvitationConnectionTargetRequestSchema())
+@request_schema(CreateInvitationRequestSchema())
 @response_schema(InvitationResultSchema(), 200, description="")
 async def connections_create_invitation(request: web.BaseRequest):
     """
@@ -440,6 +445,7 @@ async def connections_create_invitation(request: web.BaseRequest):
     recipient_keys = body.get("recipient_keys")
     service_endpoint = body.get("service_endpoint")
     routing_keys = body.get("routing_keys")
+    metadata = body.get("metadata")
     mediation_id = body.get("mediation_id")
 
     if public and not context.settings.get("public_invites"):
@@ -459,6 +465,7 @@ async def connections_create_invitation(request: web.BaseRequest):
             recipient_keys=recipient_keys,
             my_endpoint=service_endpoint,
             routing_keys=routing_keys,
+            metadata=metadata,
             mediation_id=mediation_id,
         )
 

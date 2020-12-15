@@ -1,3 +1,5 @@
+import json
+
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
@@ -19,14 +21,14 @@ class TestOutOfBandRoutes(AsyncTestCase):
         )
 
     async def test_invitation_create(self):
-        self.request.query = {"multi_use": "true"}
-        self.request.json = async_mock.CoroutineMock(
-            return_value={
-                "attachments": async_mock.MagicMock(),
-                "include_handshake": True,
-                "use_public_did": True,
-            }
-        )
+        self.request.query = {"multi_use": "true", "auto_accept": "true"}
+        body = {
+            "attachments": async_mock.MagicMock(),
+            "include_handshake": True,
+            "use_public_did": True,
+            "metadata": {"hello": "world"},
+        }
+        self.request.json = async_mock.CoroutineMock(return_value=body)
 
         with async_mock.patch.object(
             test_module, "OutOfBandManager", autospec=True
@@ -40,6 +42,14 @@ class TestOutOfBandRoutes(AsyncTestCase):
             )
 
             result = await test_module.invitation_create(self.request)
+            mock_oob_mgr.return_value.create_invitation.assert_called_once_with(
+                auto_accept=True,
+                public=True,
+                multi_use=True,
+                include_handshake=True,
+                attachments=body["attachments"],
+                metadata=body["metadata"],
+            )
             mock_json_response.assert_called_once_with({"abc": "123"})
 
     async def test_invitation_create_x(self):

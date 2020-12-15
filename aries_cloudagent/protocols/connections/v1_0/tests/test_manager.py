@@ -208,6 +208,25 @@ class TestConnectionManager(AsyncTestCase):
 
         await self.manager.receive_request(requestA, receipt)
 
+    async def test_create_invitation_metadata_assigned(self):
+        record, invite = await self.manager.create_invitation(
+            metadata={"hello": "world"}
+        )
+        assert await record.metadata_get_all(self.session) == {"hello": "world"}
+
+    async def test_create_invitation_public_and_metadata_fails(self):
+        self.context.update_settings({"public_invites": True})
+        with async_mock.patch.object(
+            InMemoryWallet, "get_public_did", autospec=True
+        ) as mock_wallet_get_public_did:
+            mock_wallet_get_public_did.return_value = DIDInfo(
+                self.test_did, self.test_verkey, None
+            )
+            with self.assertRaises(ConnectionManagerError):
+                await self.manager.create_invitation(
+                    public=True, metadata={"hello": "world"}
+                )
+
     async def test_create_invitation_mediation_id(self):
         mediation_record = MediationRecord(
             role=MediationRecord.ROLE_CLIENT,

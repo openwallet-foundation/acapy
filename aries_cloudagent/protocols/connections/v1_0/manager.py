@@ -74,6 +74,7 @@ class ConnectionManager:
         alias: str = None,
         routing_keys: Sequence[str] = None,
         recipient_keys: Sequence[str] = None,
+        metadata: dict = None,
         mediation_id: str = None,
     ) -> Tuple[ConnRecord, ConnectionInvitation]:
         """
@@ -138,6 +139,11 @@ class ConnectionManager:
             if multi_use:
                 raise ConnectionManagerError(
                     "Cannot use public and multi_use at the same time"
+                )
+
+            if metadata:
+                raise ConnectionManagerError(
+                    "Cannot use public and set metadata at the same time"
                 )
 
             # FIXME - allow ledger instance to format public DID with prefix?
@@ -227,6 +233,10 @@ class ConnectionManager:
             endpoint=my_endpoint,
         )
         await connection.attach_invitation(self._session, invitation)
+
+        if metadata:
+            for key, value in metadata.items():
+                await connection.metadata_set(self._session, key, value)
 
         return connection, invitation
 

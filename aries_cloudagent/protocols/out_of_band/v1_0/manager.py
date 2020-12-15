@@ -66,6 +66,7 @@ class OutOfBandManager:
         multi_use: bool = False,
         alias: str = None,
         attachments: Sequence[Mapping] = None,
+        metadata: dict = None,
     ) -> InvitationRecord:
         """
         Generate new connection invitation.
@@ -140,6 +141,11 @@ class OutOfBandManager:
                     "Cannot use public and multi_use at the same time"
                 )
 
+            if metadata:
+                raise OutOfBandManagerError(
+                    "Cannot store metadata on public invitations"
+                )
+
             invi_msg = InvitationMessage(
                 label=my_label or self._session.settings.get("default_label"),
                 handshake_protocols=(
@@ -198,6 +204,10 @@ class OutOfBandManager:
 
             await conn_rec.save(self._session, reason="Created new invitation")
             await conn_rec.attach_invitation(self._session, invi_msg)
+
+            if metadata:
+                for key, value in metadata.items():
+                    await conn_rec.metadata_set(self._session, key, value)
 
         # Create invitation record
         invi_rec = InvitationRecord(
