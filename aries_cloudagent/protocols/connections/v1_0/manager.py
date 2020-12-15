@@ -76,6 +76,7 @@ class ConnectionManager:
         alias: str = None,
         routing_keys: Sequence[str] = None,
         recipient_keys: Sequence[str] = None,
+        metadata: dict = None,
     ) -> Tuple[ConnRecord, ConnectionInvitation]:
         """
         Generate new connection invitation.
@@ -193,6 +194,10 @@ class ConnectionManager:
             routing_keys=routing_keys,
         )
         await connection.attach_invitation(self._session, invitation)
+
+        if metadata:
+            for key, value in metadata.items():
+                await connection.metadata_set(self._session, key, value)
 
         return connection, invitation
 

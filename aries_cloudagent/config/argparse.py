@@ -253,6 +253,13 @@ class DebugGroup(ArgumentGroup):
             help="Flag specifying the generated invite should be public.",
         )
         parser.add_argument(
+            "--invite-metadata-json",
+            type=str,
+            metavar="<metadata-json>",
+            env_var="ACAPY_INVITE_METADATA_JSON",
+            help="Add metadata json to invitation created with --invite argument.",
+        )
+        parser.add_argument(
             "--test-suite-endpoint",
             type=str,
             metavar="<endpoint>",
@@ -352,6 +359,8 @@ class DebugGroup(ArgumentGroup):
             settings["debug.invite_multi_use"] = True
         if args.invite_public:
             settings["debug.invite_public"] = True
+        if args.invite_metadata_json:
+            settings["debug.invite_metadata_json"] = args.invite_metadata_json
         if args.test_suite_endpoint:
             settings["debug.test_suite_endpoint"] = args.test_suite_endpoint
 

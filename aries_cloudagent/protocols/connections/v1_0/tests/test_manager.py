@@ -204,6 +204,12 @@ class TestConnectionManager(AsyncTestCase):
 
         await self.manager.receive_request(requestA, receipt)
 
+    async def test_create_invitation_metadata_assigned(self):
+        record, invite = await self.manager.create_invitation(
+            metadata={"hello": "world"}
+        )
+        assert await record.metadata_get_all(self.session) == {"hello": "world"}
+
     async def test_receive_invitation(self):
         (_, connect_invite) = await self.manager.create_invitation(
             my_endpoint="testendpoint"

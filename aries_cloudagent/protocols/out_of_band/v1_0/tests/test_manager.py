@@ -1,23 +1,18 @@
+"""Test OOB Manager."""
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
-from .....core.in_memory import InMemoryProfile
 from .....connections.models.conn_record import ConnRecord
-from .....connections.models.diddoc import (
-    DIDDoc,
-    PublicKey,
-    PublicKeyType,
-    Service,
-)
+from .....connections.models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
+from .....core.in_memory import InMemoryProfile
 from .....ledger.base import BaseLedger
 from .....messaging.responder import BaseResponder, MockResponder
 from .....protocols.didexchange.v1_0.manager import DIDXManager
 from .....protocols.present_proof.v1_0.message_types import PRESENTATION_REQUEST
 from .....wallet.base import DIDInfo
 from .....wallet.in_memory import InMemoryWallet
-
+from .....wallet.util import did_key_to_naked
 from ....didcomm_prefix import DIDCommPrefix
-
 from .. import manager as test_module
 from ..manager import (
     OutOfBandManager,
@@ -235,6 +230,18 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         assert len(service["recipientKeys"]) == 1
         assert not service.get("routingKeys")
         assert service["serviceEndpoint"] == TestConfig.test_endpoint
+
+    async def test_create_invitation_metadata_assigned(self):
+        invi_rec = await self.manager.create_invitation(
+            include_handshake=True,
+            metadata={"hello": "world"},
+        )
+        service = invi_rec.invitation["service"][0]
+        invitation_key = did_key_to_naked(service["recipientKeys"][0])
+        record = await ConnRecord.retrieve_by_invitation_key(
+            self.session, invitation_key
+        )
+        assert await record.metadata_get_all(self.session) == {"hello": "world"}
 
     async def test_receive_invitation_service_block(self):
         self.manager.session.context.update_settings({"public_invites": True})

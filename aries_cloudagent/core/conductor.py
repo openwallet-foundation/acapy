@@ -9,6 +9,7 @@ wallet.
 """
 
 import hashlib
+import json
 import logging
 
 from ..admin.base_server import BaseAdminServer
@@ -33,10 +34,9 @@ from ..transport.outbound.base import OutboundDeliveryError
 from ..transport.outbound.manager import OutboundTransportManager, QueuedOutboundMessage
 from ..transport.outbound.message import OutboundMessage
 from ..transport.wire_format import BaseWireFormat
-from ..wallet.base import DIDInfo
-from ..utils.task_queue import CompletedTask, TaskQueue
 from ..utils.stats import Collector
-
+from ..utils.task_queue import CompletedTask, TaskQueue
+from ..wallet.base import DIDInfo
 from .dispatcher import Dispatcher
 
 LOGGER = logging.getLogger(__name__)
@@ -228,6 +228,9 @@ class Conductor:
                         public=context.settings.get("debug.invite_public", False),
                         multi_use=context.settings.get("debug.invite_multi_use", False),
                         include_handshake=True,
+                        metadata=json.loads(
+                            context.settings.get("debug.invite_metadata_json", "{}")
+                        ),
                     )
                     base_url = context.settings.get("invite_base_url")
                     invite_url = InvitationMessage.deserialize(
