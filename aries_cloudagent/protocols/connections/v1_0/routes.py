@@ -55,6 +55,12 @@ class ReceiveInvitationRequestSchema(ConnectionInvitationSchema):
         """Bypass middleware field validation: marshmallow has no data yet."""
 
 
+MEDIATION_ID_SCHEMA = {
+    "validate": UUIDFour(),
+    "example": UUIDFour.EXAMPLE,
+}
+
+
 class InvitationConnectionTargetRequestSchema(OpenAPISchema):
     """Request schema for invitation connection target."""
 
@@ -73,7 +79,11 @@ class InvitationConnectionTargetRequestSchema(OpenAPISchema):
         required=False,
         description="List of routing keys",
     )
-    mediation_id = UUIDFour
+    mediation_id = fields.Str(
+        required=False,
+        description="Identifier for active mediation record to be used",
+        **MEDIATION_ID_SCHEMA
+    )
 
 
 class InvitationResultSchema(OpenAPISchema):
@@ -185,7 +195,11 @@ class ReceiveInvitationQueryStringSchema(OpenAPISchema):
         description="Auto-accept connection (defaults to configuration)",
         required=False,
     )
-    mediation_id = UUIDFour
+    mediation_id = fields.Str(
+        required=False,
+        description="Identifier for active mediation record to be used",
+        **MEDIATION_ID_SCHEMA
+    )
 
 
 class AcceptInvitationQueryStringSchema(OpenAPISchema):
@@ -195,7 +209,11 @@ class AcceptInvitationQueryStringSchema(OpenAPISchema):
     my_label = fields.Str(
         description="Label for connection", required=False, example="Broker"
     )
-    mediation_id = UUIDFour
+    mediation_id = fields.Str(
+        required=False,
+        description="Identifier for active mediation record to be used",
+        **MEDIATION_ID_SCHEMA
+    )
 
 
 class AcceptRequestQueryStringSchema(OpenAPISchema):

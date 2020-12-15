@@ -150,7 +150,10 @@ class ConnectionManager:
         if multi_use:
             invitation_mode = ConnRecord.INVITATION_MODE_MULTI
 
-        if not recipient_keys:
+        if recipient_keys:
+            # TODO: check that recipient keys are in wallet
+            invitation_key = recipient_keys[0]  # TODO first key appropriate?
+        else:
             # Create and store new invitation key
             invitation_signing_key = await wallet.create_signing_key()
             invitation_key = invitation_signing_key.verkey
@@ -158,9 +161,6 @@ class ConnectionManager:
             keylist_updates = await mediation_mgr.add_key(
                 invitation_key, keylist_updates
             )
-        else:
-            # TODO: check that recipient keys are in wallet
-            invitation_key = recipient_keys[0]  # TODO first key appropriate?
 
         if not my_endpoint:
             my_endpoint = self._session.settings.get("default_endpoint")
@@ -332,7 +332,6 @@ class ConnectionManager:
 
         my_info = None
         wallet = self._session.inject(BaseWallet)
-        print(connection)
         if connection.my_did:
             my_info = await wallet.get_local_did(connection.my_did)
         else:
