@@ -1,3 +1,5 @@
+import json
+
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
@@ -158,7 +160,13 @@ class TestConnectionRoutes(AsyncTestCase):
 
     async def test_connections_create_invitation(self):
         self.context.update_settings({"public_invites": True})
-        self.request.json = async_mock.CoroutineMock()
+        body = {
+            "recipient_keys": ["test"],
+            "routing_keys": ["test"],
+            "service_endpoint": "http://example.com",
+            "metadata": {"hello": "world"},
+        }
+        self.request.json = async_mock.CoroutineMock(return_value=body)
         self.request.query = {
             "auto_accept": "true",
             "alias": "alias",
@@ -185,6 +193,16 @@ class TestConnectionRoutes(AsyncTestCase):
             )
 
             await test_module.connections_create_invitation(self.request)
+            mock_conn_mgr.return_value.create_invitation.assert_called_once_with(
+                **{
+                    key: json.loads(value) if key != "alias" else value
+                    for key, value in self.request.query.items()
+                },
+                recipient_keys=body["recipient_keys"],
+                routing_keys=body["routing_keys"],
+                my_endpoint=body["service_endpoint"],
+                metadata=body["metadata"]
+            )
             mock_response.assert_called_once_with(
                 {
                     "connection_id": "dummy",
