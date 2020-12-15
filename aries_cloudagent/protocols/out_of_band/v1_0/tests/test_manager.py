@@ -180,7 +180,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                     include_handshake=True,
                 )
 
-    async def tests_create_invitation_x_public_multi_use(self):
+    async def test_create_invitation_x_public_multi_use(self):
         self.session.context.update_settings({"public_invites": True})
         with async_mock.patch.object(
             InMemoryWallet, "get_public_did", autospec=True
@@ -242,6 +242,19 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             self.session, invitation_key
         )
         assert await record.metadata_get_all(self.session) == {"hello": "world"}
+
+    async def test_create_invitation_x_public_metadata(self):
+        self.session.context.update_settings({"public_invites": True})
+        with async_mock.patch.object(
+            InMemoryWallet, "get_public_did", autospec=True
+        ) as mock_wallet_get_public_did:
+            mock_wallet_get_public_did.return_value = DIDInfo(
+                TestConfig.test_did, TestConfig.test_verkey, None
+            )
+            with self.assertRaises(OutOfBandManagerError):
+                await self.manager.create_invitation(
+                    public=True, metadata={"hello": "world"}
+                )
 
     async def test_receive_invitation_service_block(self):
         self.manager.session.context.update_settings({"public_invites": True})

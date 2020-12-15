@@ -140,6 +140,11 @@ class ConnectionManager:
                     "Cannot use public and multi_use at the same time"
                 )
 
+            if metadata:
+                raise ConnectionManagerError(
+                    "Cannot use public and set metadata at the same time"
+                )
+
             # FIXME - allow ledger instance to format public DID with prefix?
             invitation = ConnectionInvitation(
                 label=my_label, did=f"did:sov:{public_did.did}"
