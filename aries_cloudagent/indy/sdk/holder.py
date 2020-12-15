@@ -246,6 +246,7 @@ class IndySdkHolder(IndyHolder):
                     if start > 0:
                         await fetch(reft, start)
                     credentials = await fetch(reft, count - len(creds_dict))
+
                     for cred in credentials:
                         cred_id = cred["cred_info"]["referent"]
                         if cred_id not in creds_dict:
@@ -264,7 +265,21 @@ class IndySdkHolder(IndyHolder):
         for cred in creds_dict.values():
             cred["presentation_referents"] = list(cred["presentation_referents"])
 
-        return tuple(creds_dict.values())[:count]
+        creds_ordered = tuple(
+            [
+                cred
+                for cred in sorted(
+                    creds_dict.values(),
+                    key=lambda c: (
+                        c["cred_info"]["rev_reg_id"] or "",  # irrevocable 1st
+                        c["cred_info"][
+                            "referent"
+                        ],  # should be descending by timestamp if we had it
+                    ),
+                )
+            ]
+        )[:count]
+        return creds_ordered
 
     async def get_credential(self, credential_id: str) -> str:
         """
@@ -295,14 +310,13 @@ class IndySdkHolder(IndyHolder):
         return credential_json
 
     async def credential_revoked(
-        self, credential_id: str, ledger: BaseLedger, fro: int = None, to: int = None
+        self, ledger: BaseLedger, credential_id: str, fro: int = None, to: int = None
     ) -> bool:
         """
         Check ledger for revocation status of credential by cred id.
 
         Args:
             credential_id: Credential id to check
-            ledger: ledger to open and query
 
         """
         cred = json.loads(await self.get_credential(credential_id))
@@ -310,7 +324,11 @@ class IndySdkHolder(IndyHolder):
 
         if rev_reg_id:
             cred_rev_id = int(cred["cred_rev_id"])
-            (rev_reg_delta, _) = await ledger.get_revoc_reg_delta(rev_reg_id, fro, to)
+            (rev_reg_delta, _) = await ledger.get_revoc_reg_delta(
+                rev_reg_id,
+                fro,
+                to,
+            )
 
             return cred_rev_id in rev_reg_delta["value"].get("revoked", [])
         else:

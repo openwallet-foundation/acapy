@@ -15,27 +15,37 @@ from .. import holder as test_module
 
 @pytest.mark.indy
 class TestIndySdkHolder(AsyncTestCase):
-    def test_init(self):
-        holder = test_module.IndySdkHolder("wallet")
-        assert holder.wallet == "wallet"
-        assert "IndySdkHolder" in str(holder)
+    def setUp(self):
+        mock_ledger = async_mock.MagicMock(
+            get_credential_definition=async_mock.MagicMock(return_value={"value": {}}),
+            get_revoc_reg_delta=async_mock.CoroutineMock(
+                return_value=(
+                    {"value": {"...": "..."}},
+                    1234567890,
+                )
+            ),
+        )
+        mock_ledger.__aenter__ = async_mock.CoroutineMock(return_value=mock_ledger)
+        self.ledger = mock_ledger
+        self.wallet = async_mock.MagicMock()
+
+        self.holder = test_module.IndySdkHolder(self.wallet)
+        assert "IndySdkHolder" in str(self.holder)
 
     @async_mock.patch("indy.anoncreds.prover_create_credential_req")
     async def test_create_credential_request(self, mock_create_credential_req):
         mock_create_credential_req.return_value = ("{}", "[]")
-        mock_wallet = async_mock.MagicMock()
 
-        holder = test_module.IndySdkHolder(mock_wallet)
-        cred_req_json, cred_req_meta_json = await holder.create_credential_request(
+        cred_req_json, cred_req_meta_json = await self.holder.create_credential_request(
             "credential_offer", "credential_definition", "did"
         )
 
         mock_create_credential_req.assert_called_once_with(
-            mock_wallet.handle,
+            self.wallet.handle,
             "did",
             json.dumps("credential_offer"),
             json.dumps("credential_definition"),
-            mock_wallet.master_secret_id,
+            self.wallet.master_secret_id,
         )
 
         assert (json.loads(cred_req_json), json.loads(cred_req_meta_json)) == ({}, [])
@@ -43,16 +53,13 @@ class TestIndySdkHolder(AsyncTestCase):
     @async_mock.patch("indy.anoncreds.prover_store_credential")
     async def test_store_credential(self, mock_store_cred):
         mock_store_cred.return_value = "cred_id"
-        mock_wallet = async_mock.MagicMock()
 
-        holder = test_module.IndySdkHolder(mock_wallet)
-
-        cred_id = await holder.store_credential(
+        cred_id = await self.holder.store_credential(
             "credential_definition", "credential_data", "credential_request_metadata"
         )
 
         mock_store_cred.assert_called_once_with(
-            wallet_handle=mock_wallet.handle,
+            wallet_handle=self.wallet.handle,
             cred_id=None,
             cred_req_metadata_json=json.dumps("credential_request_metadata"),
             cred_json=json.dumps("credential_data"),
@@ -72,12 +79,9 @@ class TestIndySdkHolder(AsyncTestCase):
             )
 
             mock_store_cred.return_value = "cred_id"
-            mock_wallet = async_mock.MagicMock()
-
-            holder = test_module.IndySdkHolder(mock_wallet)
 
             CRED_DATA = {"values": {"cameo": "d29yZCB1cA=="}}
-            cred_id = await holder.store_credential(
+            cred_id = await self.holder.store_credential(
                 "credential_definition",
                 CRED_DATA,
                 "credential_request_metadata",
@@ -85,7 +89,7 @@ class TestIndySdkHolder(AsyncTestCase):
             )
 
             mock_store_cred.assert_called_once_with(
-                wallet_handle=mock_wallet.handle,
+                wallet_handle=self.wallet.handle,
                 cred_id=None,
                 cred_req_metadata_json=json.dumps("credential_request_metadata"),
                 cred_json=json.dumps(CRED_DATA),
@@ -108,14 +112,10 @@ class TestIndySdkHolder(AsyncTestCase):
         }
         mock_nonsec_get_wallet_record.return_value = json.dumps(dummy_rec)
 
-        mock_wallet = async_mock.MagicMock()
-
-        holder = test_module.IndySdkHolder(mock_wallet)
-
-        mime_types = await holder.get_mime_type(cred_id)
+        mime_types = await self.holder.get_mime_type(cred_id)
 
         mock_nonsec_get_wallet_record.assert_called_once_with(
-            mock_wallet.handle,
+            self.wallet.handle,
             dummy_rec["type"],
             f"{IndyHolder.RECORD_TYPE_MIME_TYPES}::{dummy_rec['id']}",
             json.dumps(
@@ -137,14 +137,10 @@ class TestIndySdkHolder(AsyncTestCase):
         }
         mock_nonsec_get_wallet_record.return_value = json.dumps(dummy_rec)
 
-        mock_wallet = async_mock.MagicMock()
-
-        holder = test_module.IndySdkHolder(mock_wallet)
-
-        a_mime_type = await holder.get_mime_type(cred_id, "a")
+        a_mime_type = await self.holder.get_mime_type(cred_id, "a")
 
         mock_nonsec_get_wallet_record.assert_called_once_with(
-            mock_wallet.handle,
+            self.wallet.handle,
             dummy_rec["type"],
             f"{IndyHolder.RECORD_TYPE_MIME_TYPES}::{dummy_rec['id']}",
             json.dumps(
@@ -165,11 +161,8 @@ class TestIndySdkHolder(AsyncTestCase):
             "tags": dummy_tags,
         }
         mock_nonsec_get_wallet_record.side_effect = test_module.StorageError()
-        mock_wallet = async_mock.MagicMock()
 
-        holder = test_module.IndySdkHolder(mock_wallet)
-
-        assert await holder.get_mime_type(cred_id, "a") is None
+        assert await self.holder.get_mime_type(cred_id, "a") is None
 
     @async_mock.patch("indy.anoncreds.prover_search_credentials")
     @async_mock.patch("indy.anoncreds.prover_fetch_credentials")
@@ -184,13 +177,9 @@ class TestIndySdkHolder(AsyncTestCase):
             json.dumps([1] * (SIZE % test_module.IndySdkHolder.CHUNK)),
         ]
 
-        mock_wallet = async_mock.MagicMock()
-        holder = test_module.IndySdkHolder(mock_wallet)
-
-        credentials = await holder.get_credentials(0, SIZE, {})
-
+        credentials = await self.holder.get_credentials(0, SIZE, {})
         mock_search_credentials.assert_called_once_with(
-            mock_wallet.handle, json.dumps({})
+            self.wallet.handle, json.dumps({})
         )
 
         assert mock_fetch_credentials.call_count == 2
@@ -202,7 +191,7 @@ class TestIndySdkHolder(AsyncTestCase):
             json.dumps([0] * test_module.IndySdkHolder.CHUNK),
             json.dumps([1] * (SIZE % test_module.IndySdkHolder.CHUNK)),
         ]
-        credentials = await holder.get_credentials(0, 0, {})  # check 0 default to all
+        credentials = await self.holder.get_credentials(0, 0, {})  # 0 defaults to all
         assert len(credentials) == SIZE
 
     @async_mock.patch("indy.anoncreds.prover_search_credentials")
@@ -214,11 +203,7 @@ class TestIndySdkHolder(AsyncTestCase):
         mock_search_credentials.return_value = ("search_handle", 3)
         mock_fetch_credentials.return_value = "[1,2,3]"
 
-        mock_wallet = async_mock.MagicMock()
-        holder = test_module.IndySdkHolder(mock_wallet)
-
-        credentials = await holder.get_credentials(2, 3, {})
-
+        credentials = await self.holder.get_credentials(2, 3, {})
         assert mock_fetch_credentials.call_args_list == [
             (("search_handle", 2),),
             (("search_handle", 3),),
@@ -227,7 +212,7 @@ class TestIndySdkHolder(AsyncTestCase):
     @async_mock.patch("indy.anoncreds.prover_search_credentials_for_proof_req")
     @async_mock.patch("indy.anoncreds.prover_fetch_credentials_for_proof_req")
     @async_mock.patch("indy.anoncreds.prover_close_credentials_search_for_proof_req")
-    async def test_get_credentials_for_presentation_request_by_referent(
+    async def test_get_credentials_for_presentation_request_by_reft(
         self,
         mock_prover_close_credentials_search_for_proof_req,
         mock_prover_fetch_credentials_for_proof_req,
@@ -237,35 +222,53 @@ class TestIndySdkHolder(AsyncTestCase):
         SKIP = 50
         mock_prover_search_credentials_for_proof_req.return_value = "search_handle"
         mock_prover_fetch_credentials_for_proof_req.side_effect = [
-            json.dumps([{"cred_info": {"referent": f"skip-{i}"}} for i in range(SKIP)]),
             json.dumps(
                 [
-                    {"cred_info": {"referent": f"reft-{i}"}}
-                    for i in range(test_module.IndySdkHolder.CHUNK)
+                    {"cred_info": {"referent": f"skip-{i}", "rev_reg_id": None}}
+                    for i in range(SKIP)
                 ]
             ),
             json.dumps(
                 [
                     {
                         "cred_info": {
-                            "referent": f"reft-{test_module.IndySdkHolder.CHUNK + i}"
+                            "referent": f"reft-{i}",
+                            "rev_reg_id": None if i % 2 else "dummy-rrid",
                         }
                     }
-                    for i in range(SIZE % test_module.IndySdkHolder.CHUNK)
+                    for i in range(test_module.IndyHolder.CHUNK)
+                ]
+            ),
+            json.dumps(
+                [
+                    {
+                        "cred_info": {
+                            "referent": f"reft-{test_module.IndyHolder.CHUNK + i}",
+                            "rev_reg_id": None,
+                        }
+                    }
+                    for i in range(SIZE % test_module.IndyHolder.CHUNK)
                 ]
             ),
         ]
 
-        mock_wallet = async_mock.MagicMock()
-        holder = test_module.IndySdkHolder(mock_wallet)
-
-        credentials = await holder.get_credentials_for_presentation_request_by_referent(
-            {"proof": "req"}, ("asdb",), 50, SIZE, {"extra": "query"}
+        PROOF_REQ = {
+            "requested_attributes": {"attr_0_uuid": {"...": "..."}},
+            "requested_predicates": {"pred_0_uuid": {"...": "..."}},
+        }
+        credentials = (
+            await self.holder.get_credentials_for_presentation_request_by_referent(
+                PROOF_REQ,
+                ("asdb",),
+                50,
+                SIZE,
+                {"extra": "query"},
+            )
         )
 
         mock_prover_search_credentials_for_proof_req.assert_called_once_with(
-            mock_wallet.handle,
-            json.dumps({"proof": "req"}),
+            self.wallet.handle,
+            json.dumps(PROOF_REQ),
             json.dumps({"extra": "query"}),
         )
 
@@ -275,7 +278,16 @@ class TestIndySdkHolder(AsyncTestCase):
         )
 
         assert len(credentials) == SIZE
-        assert all("reft-" in cred["cred_info"]["referent"] for cred in credentials)
+        assert all(
+            not c["cred_info"]["rev_reg_id"]
+            for c in credentials[
+                0 : len(credentials) - (test_module.IndyHolder.CHUNK // 2)
+            ]
+        )  # irrevocable first
+        assert all(
+            c["cred_info"]["rev_reg_id"]
+            for c in credentials[-test_module.IndyHolder.CHUNK // 2 :]
+        )  # revocable last
 
     @async_mock.patch("indy.anoncreds.prover_search_credentials_for_proof_req")
     @async_mock.patch("indy.anoncreds.prover_fetch_credentials_for_proof_req")
@@ -287,12 +299,9 @@ class TestIndySdkHolder(AsyncTestCase):
         mock_prover_search_credentials_for_proof_req,
     ):
         mock_prover_search_credentials_for_proof_req.return_value = "search_handle"
-        mock_prover_fetch_credentials_for_proof_req.return_value = (
-            '[{"cred_info": {"referent": "asdb"}}]'
+        mock_prover_fetch_credentials_for_proof_req.return_value = json.dumps(
+            [{"cred_info": {"referent": "asdb", "rev_reg_id": None}}]
         )
-
-        mock_wallet = async_mock.MagicMock()
-        holder = test_module.IndySdkHolder(mock_wallet)
 
         PRES_REQ = {
             "requested_attributes": {
@@ -302,65 +311,43 @@ class TestIndySdkHolder(AsyncTestCase):
             "requested_predicates": {"2_c_ge_80": {"...": "..."}},
         }
 
-        credentials = await holder.get_credentials_for_presentation_request_by_referent(
-            PRES_REQ,
-            None,
-            2,
-            3,
+        credentials = (
+            await self.holder.get_credentials_for_presentation_request_by_referent(
+                PRES_REQ,
+                None,
+                2,
+                3,
+            )
         )
 
         mock_prover_search_credentials_for_proof_req.assert_called_once_with(
-            mock_wallet.handle, json.dumps(PRES_REQ), json.dumps({})
+            self.wallet.handle, json.dumps(PRES_REQ), json.dumps({})
         )
 
     @async_mock.patch("indy.anoncreds.prover_get_credential")
     async def test_get_credential(self, mock_get_cred):
         mock_get_cred.return_value = "{}"
-
-        mock_wallet = async_mock.MagicMock()
-        holder = test_module.IndySdkHolder(mock_wallet)
-
-        credential_json = await holder.get_credential("credential_id")
-
-        mock_get_cred.assert_called_once_with(mock_wallet.handle, "credential_id")
+        credential_json = await self.holder.get_credential("credential_id")
+        mock_get_cred.assert_called_once_with(self.wallet.handle, "credential_id")
 
         assert json.loads(credential_json) == {}
 
     @async_mock.patch("indy.anoncreds.prover_get_credential")
     async def test_get_credential_not_found(self, mock_get_cred):
         mock_get_cred.side_effect = IndyError(error_code=ErrorCode.WalletItemNotFound)
-
-        mock_wallet = async_mock.MagicMock()
-        holder = test_module.IndySdkHolder(mock_wallet)
-
         with self.assertRaises(test_module.WalletNotFoundError):
-            await holder.get_credential("credential_id")
+            await self.holder.get_credential("credential_id")
 
     @async_mock.patch("indy.anoncreds.prover_get_credential")
     async def test_get_credential_x(self, mock_get_cred):
         mock_get_cred.side_effect = IndyError("unexpected failure")
 
-        mock_wallet = async_mock.MagicMock()
-        holder = test_module.IndySdkHolder(mock_wallet)
-
         with self.assertRaises(test_module.IndyHolderError):
-            await holder.get_credential("credential_id")
+            await self.holder.get_credential("credential_id")
 
     async def test_credential_revoked(self):
-        mock_wallet = async_mock.MagicMock()
-        holder = test_module.IndySdkHolder(mock_wallet)
-
-        ledger = async_mock.MagicMock()
-        ledger.__aenter__ = async_mock.CoroutineMock(return_value=ledger)
-        ledger.get_revoc_reg_delta = async_mock.CoroutineMock(
-            return_value=(
-                {"value": {"...": "..."}},
-                1234567890,
-            )
-        )
-
         with async_mock.patch.object(  # no creds revoked
-            holder, "get_credential", async_mock.CoroutineMock()
+            self.holder, "get_credential", async_mock.CoroutineMock()
         ) as mock_get_cred:
             mock_get_cred.return_value = json.dumps(
                 {
@@ -369,11 +356,11 @@ class TestIndySdkHolder(AsyncTestCase):
                     "...": "...",
                 }
             )
-            result = await holder.credential_revoked("credential_id", ledger)
+            result = await self.holder.credential_revoked(self.ledger, "credential_id")
             assert not result
 
         with async_mock.patch.object(  # cred not revocable
-            holder, "get_credential", async_mock.CoroutineMock()
+            self.holder, "get_credential", async_mock.CoroutineMock()
         ) as mock_get_cred:
             mock_get_cred.return_value = json.dumps(
                 {
@@ -382,10 +369,10 @@ class TestIndySdkHolder(AsyncTestCase):
                     "...": "...",
                 }
             )
-            result = await holder.credential_revoked("credential_id", ledger)
+            result = await self.holder.credential_revoked(self.ledger, "credential_id")
             assert not result
 
-        ledger.get_revoc_reg_delta = async_mock.CoroutineMock(
+        self.ledger.get_revoc_reg_delta = async_mock.CoroutineMock(
             return_value=(
                 {
                     "value": {
@@ -397,7 +384,7 @@ class TestIndySdkHolder(AsyncTestCase):
             )
         )
         with async_mock.patch.object(  # cred not revoked
-            holder, "get_credential", async_mock.CoroutineMock()
+            self.holder, "get_credential", async_mock.CoroutineMock()
         ) as mock_get_cred:
             mock_get_cred.return_value = json.dumps(
                 {
@@ -406,11 +393,11 @@ class TestIndySdkHolder(AsyncTestCase):
                     "...": "...",
                 }
             )
-            result = await holder.credential_revoked("credential_id", ledger)
+            result = await self.holder.credential_revoked(self.ledger, "credential_id")
             assert not result
 
         with async_mock.patch.object(  # cred revoked
-            holder, "get_credential", async_mock.CoroutineMock()
+            self.holder, "get_credential", async_mock.CoroutineMock()
         ) as mock_get_cred:
             mock_get_cred.return_value = json.dumps(
                 {
@@ -419,7 +406,7 @@ class TestIndySdkHolder(AsyncTestCase):
                     "...": "...",
                 }
             )
-            result = await holder.credential_revoked("credential_id", ledger)
+            result = await self.holder.credential_revoked(self.ledger, "credential_id")
             assert result
 
     @async_mock.patch("indy.anoncreds.prover_delete_credential")
@@ -431,8 +418,6 @@ class TestIndySdkHolder(AsyncTestCase):
         mock_nonsec_get_wallet_record,
         mock_prover_del_cred,
     ):
-        mock_wallet = async_mock.MagicMock()
-        holder = test_module.IndySdkHolder(mock_wallet)
         mock_nonsec_get_wallet_record.return_value = json.dumps(
             {
                 "type": "typ",
@@ -442,10 +427,10 @@ class TestIndySdkHolder(AsyncTestCase):
             }
         )
 
-        credential = await holder.delete_credential("credential_id")
+        credential = await self.holder.delete_credential("credential_id")
 
         mock_prover_del_cred.assert_called_once_with(
-            mock_wallet.handle, "credential_id"
+            self.wallet.handle, "credential_id"
         )
 
     @async_mock.patch("indy.anoncreds.prover_delete_credential")
@@ -457,35 +442,29 @@ class TestIndySdkHolder(AsyncTestCase):
         mock_nonsec_get_wallet_record,
         mock_prover_del_cred,
     ):
-        mock_wallet = async_mock.MagicMock()
-        holder = test_module.IndySdkHolder(mock_wallet)
-
         mock_nonsec_get_wallet_record.side_effect = test_module.StorageNotFoundError()
         mock_prover_del_cred.side_effect = IndyError(
             error_code=ErrorCode.WalletItemNotFound
         )
 
         with self.assertRaises(test_module.WalletNotFoundError):
-            await holder.delete_credential("credential_id")
+            await self.holder.delete_credential("credential_id")
         mock_prover_del_cred.assert_called_once_with(
-            mock_wallet.handle, "credential_id"
+            self.wallet.handle, "credential_id"
         )
 
         mock_prover_del_cred.side_effect = IndyError(
             error_code=ErrorCode.CommonInvalidParam1
         )
         with self.assertRaises(test_module.IndyHolderError):
-            await holder.delete_credential("credential_id")
+            await self.holder.delete_credential("credential_id")
         assert mock_prover_del_cred.call_count == 2
 
     @async_mock.patch("indy.anoncreds.prover_create_proof")
     async def test_create_presentation(self, mock_create_proof):
         mock_create_proof.return_value = "{}"
 
-        mock_wallet = async_mock.MagicMock()
-        holder = test_module.IndySdkHolder(mock_wallet)
-
-        presentation_json = await holder.create_presentation(
+        presentation_json = await self.holder.create_presentation(
             "presentation_request",
             "requested_credentials",
             "schemas",
@@ -493,10 +472,10 @@ class TestIndySdkHolder(AsyncTestCase):
         )
 
         mock_create_proof.assert_called_once_with(
-            mock_wallet.handle,
+            self.wallet.handle,
             json.dumps("presentation_request"),
             json.dumps("requested_credentials"),
-            mock_wallet.master_secret_id,
+            self.wallet.master_secret_id,
             json.dumps("schemas"),
             json.dumps("credential_definitions"),
             json.dumps({}),
@@ -510,7 +489,6 @@ class TestIndySdkHolder(AsyncTestCase):
             "rev_reg": {"accum": "21 ..."},
             "timestamp": 1234567890,
         }
-        holder = test_module.IndySdkHolder("wallet")
 
         with async_mock.patch.object(
             test_module, "create_tails_reader", async_mock.CoroutineMock()
@@ -525,7 +503,7 @@ class TestIndySdkHolder(AsyncTestCase):
             timestamp = 1234567890
             tails_path = "/tmp/some.tails"
 
-            result = await holder.create_revocation_state(
+            result = await self.holder.create_revocation_state(
                 cred_rev_id, rev_reg_def, rev_reg_delta, timestamp, tails_path
             )
             assert json.loads(result) == rr_state
