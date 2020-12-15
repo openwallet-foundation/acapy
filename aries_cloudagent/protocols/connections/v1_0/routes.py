@@ -55,6 +55,15 @@ class ConnectionMetadataSchema(OpenAPISchema):
     )
 
 
+class ConnectionMetadataSetRequestSchema(OpenAPISchema):
+    """Request Schema for set metadata."""
+
+    metadata = fields.Dict(
+        required=True,
+        description="Dictionary of metadata to set for connection.",
+    )
+
+
 class ConnectionMetadataQuerySchema(OpenAPISchema):
     """Query schema for metadata."""
 
@@ -359,6 +368,30 @@ async def connections_metadata(request: web.BaseRequest):
     return web.json_response(result)
 
 
+@docs(tags=["connection"], summary="Set connection metadata")
+@match_info_schema(ConnIdMatchInfoSchema())
+@request_schema(ConnectionMetadataSetRequestSchema())
+@response_schema(ConnectionMetadataSchema(), 200, description="")
+async def connections_metadata_set(request: web.BaseRequest):
+    """Handle fetching metadata associated with a single connection record."""
+    context: AdminRequestContext = request["context"]
+    connection_id = request.match_info["conn_id"]
+    body = await request.json() if request.body_exists else {}
+    session = await context.session()
+
+    try:
+        record = await ConnRecord.retrieve_by_id(session, connection_id)
+        for key, value in body.get("metadata", {}).items():
+            await record.metadata_set(session, key, value)
+        result = await record.metadata_get_all(session)
+    except StorageNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
+    except BaseModelError as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+    return web.json_response(result)
+
+
 @docs(
     tags=["connection"],
     summary="Create a new connection invitation",
@@ -655,6 +688,7 @@ async def register(app: web.Application):
                 connections_metadata,
                 allow_head=False,
             ),
+            web.post("/connections/{conn_id}/metadata", connections_metadata_set),
             web.post("/connections/create-static", connections_create_static),
             web.post("/connections/create-invitation", connections_create_invitation),
             web.post("/connections/receive-invitation", connections_receive_invitation),
