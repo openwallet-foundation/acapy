@@ -238,6 +238,15 @@ class TestConnRecord(AsyncTestCase):
         retrieved = await record.metadata_get(self.session, "key")
         assert retrieved == {"test": "value"}
 
+    async def test_metadata_set_get_str(self):
+        record = ConnRecord(
+            my_did=self.test_did,
+        )
+        await record.save(self.session)
+        await record.metadata_set(self.session, "key", "value")
+        retrieved = await record.metadata_get(self.session, "key")
+        assert retrieved == "value"
+
     async def test_metadata_set_update_get(self):
         record = ConnRecord(
             my_did=self.test_did,

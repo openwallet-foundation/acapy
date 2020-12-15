@@ -17,10 +17,11 @@ from ...issue_credential.v1_0.models.credential_exchange import V10CredentialExc
 from ...present_proof.v1_0.message_types import PRESENTATION_REQUEST
 from ...present_proof.v1_0.models.presentation_exchange import V10PresentationExchange
 
-from .message_types import INVITATION
 from .messages.invitation import InvitationMessage
 from .messages.service import Service as ServiceMessage
 from .models.invitation import InvitationRecord
+
+DIDX_INVITATION = "didexchange/v1.0"
 
 
 class OutOfBandManagerError(BaseError):
@@ -65,6 +66,7 @@ class OutOfBandManager:
         multi_use: bool = False,
         alias: str = None,
         attachments: Sequence[Mapping] = None,
+        metadata: dict = None,
     ) -> InvitationRecord:
         """
         Generate new connection invitation.
@@ -139,10 +141,15 @@ class OutOfBandManager:
                     "Cannot use public and multi_use at the same time"
                 )
 
+            if metadata:
+                raise OutOfBandManagerError(
+                    "Cannot store metadata on public invitations"
+                )
+
             invi_msg = InvitationMessage(
                 label=my_label or self._session.settings.get("default_label"),
                 handshake_protocols=(
-                    [DIDCommPrefix.qualify_current(INVITATION)]
+                    [DIDCommPrefix.qualify_current(DIDX_INVITATION)]
                     if include_handshake
                     else None
                 ),
@@ -170,7 +177,7 @@ class OutOfBandManager:
             invi_msg = InvitationMessage(
                 label=my_label or self._session.settings.get("default_label"),
                 handshake_protocols=(
-                    [DIDCommPrefix.qualify_current(INVITATION)]
+                    [DIDCommPrefix.qualify_current(DIDX_INVITATION)]
                     if include_handshake
                     else None
                 ),
@@ -197,6 +204,10 @@ class OutOfBandManager:
 
             await conn_rec.save(self._session, reason="Created new invitation")
             await conn_rec.attach_invitation(self._session, invi_msg)
+
+            if metadata:
+                for key, value in metadata.items():
+                    await conn_rec.metadata_set(self._session, key, value)
 
         # Create invitation record
         invi_rec = InvitationRecord(
@@ -242,7 +253,7 @@ class OutOfBandManager:
         unq_handshake_protos = {
             DIDCommPrefix.unqualify(proto) for proto in invi_msg.handshake_protocols
         }
-        if unq_handshake_protos == {INVITATION}:
+        if unq_handshake_protos == {DIDX_INVITATION}:
             if len(invi_msg.request_attach) != 0:
                 raise OutOfBandManagerError(
                     "request block must be empty for invitation message type."

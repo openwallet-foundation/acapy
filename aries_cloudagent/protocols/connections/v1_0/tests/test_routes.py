@@ -1,3 +1,5 @@
+import json
+
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
@@ -130,6 +132,68 @@ class TestConnectionRoutes(AsyncTestCase):
             await test_module.connections_retrieve(self.request)
             mock_response.assert_called_once_with({"hello": "world"})
 
+    async def test_connections_metadata(self):
+        self.request.match_info = {"conn_id": "dummy"}
+        mock_conn_rec = async_mock.MagicMock()
+
+        with async_mock.patch.object(
+            test_module.ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
+        ) as mock_conn_rec_retrieve_by_id, async_mock.patch.object(
+            mock_conn_rec, "metadata_get_all", async_mock.CoroutineMock()
+        ) as mock_metadata_get_all, async_mock.patch.object(
+            test_module.web, "json_response"
+        ) as mock_response:
+            mock_conn_rec_retrieve_by_id.return_value = mock_conn_rec
+            mock_metadata_get_all.return_value = {"hello": "world"}
+
+            await test_module.connections_metadata(self.request)
+            mock_metadata_get_all.assert_called_once()
+            mock_response.assert_called_once_with({"hello": "world"})
+
+    async def test_connections_metadata_get_single(self):
+        self.request.match_info = {"conn_id": "dummy"}
+        mock_conn_rec = async_mock.MagicMock()
+        self.request.query = {"key": "test"}
+
+        with async_mock.patch.object(
+            test_module.ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
+        ) as mock_conn_rec_retrieve_by_id, async_mock.patch.object(
+            mock_conn_rec, "metadata_get_all", async_mock.CoroutineMock()
+        ) as mock_metadata_get_all, async_mock.patch.object(
+            mock_conn_rec, "metadata_get", async_mock.CoroutineMock()
+        ) as mock_metadata_get, async_mock.patch.object(
+            test_module.web, "json_response"
+        ) as mock_response:
+            mock_conn_rec_retrieve_by_id.return_value = mock_conn_rec
+            mock_metadata_get.return_value = {"test": "value"}
+
+            await test_module.connections_metadata(self.request)
+            mock_metadata_get.assert_called_once()
+            mock_response.assert_called_once_with({"test": "value"})
+
+    async def test_connections_metadata_set(self):
+        self.request.match_info = {"conn_id": "dummy"}
+        mock_conn_rec = async_mock.MagicMock()
+        self.request.json = async_mock.CoroutineMock(
+            return_value={"metadata": {"hello": "world"}}
+        )
+
+        with async_mock.patch.object(
+            test_module.ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
+        ) as mock_conn_rec_retrieve_by_id, async_mock.patch.object(
+            mock_conn_rec, "metadata_get_all", async_mock.CoroutineMock()
+        ) as mock_metadata_get_all, async_mock.patch.object(
+            mock_conn_rec, "metadata_set", async_mock.CoroutineMock()
+        ) as mock_metadata_set, async_mock.patch.object(
+            test_module.web, "json_response"
+        ) as mock_response:
+            mock_conn_rec_retrieve_by_id.return_value = mock_conn_rec
+            mock_metadata_get_all.return_value = {"hello": "world"}
+
+            await test_module.connections_metadata_set(self.request)
+            mock_metadata_set.assert_called_once()
+            mock_response.assert_called_once_with({"hello": "world"})
+
     async def test_connections_retrieve_not_found(self):
         self.request.match_info = {"conn_id": "dummy"}
 
@@ -158,7 +222,14 @@ class TestConnectionRoutes(AsyncTestCase):
 
     async def test_connections_create_invitation(self):
         self.context.update_settings({"public_invites": True})
-        self.request.json = async_mock.CoroutineMock()
+        body = {
+            "recipient_keys": ["test"],
+            "routing_keys": ["test"],
+            "service_endpoint": "http://example.com",
+            "metadata": {"hello": "world"},
+            "mediation_id": "some-id",
+        }
+        self.request.json = async_mock.CoroutineMock(return_value=body)
         self.request.query = {
             "auto_accept": "true",
             "alias": "alias",
@@ -185,6 +256,17 @@ class TestConnectionRoutes(AsyncTestCase):
             )
 
             await test_module.connections_create_invitation(self.request)
+            mock_conn_mgr.return_value.create_invitation.assert_called_once_with(
+                **{
+                    key: json.loads(value) if key != "alias" else value
+                    for key, value in self.request.query.items()
+                },
+                recipient_keys=body["recipient_keys"],
+                routing_keys=body["routing_keys"],
+                my_endpoint=body["service_endpoint"],
+                metadata=body["metadata"],
+                mediation_id="some-id"
+            )
             mock_response.assert_called_once_with(
                 {
                     "connection_id": "dummy",
