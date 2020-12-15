@@ -104,7 +104,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             assert not invi_rec.invitation.get("request~attach")
             assert invi_rec.invitation["label"] == "This guy"
             assert (
-                DIDCommPrefix.qualify_current(INVITATION)
+                DIDCommPrefix.qualify_current(test_module.DIDX_INVITATION)
                 in invi_rec.invitation["handshake_protocols"]
             )
             assert invi_rec.invitation["service"] == [f"did:sov:{TestConfig.test_did}"]
@@ -226,7 +226,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         assert not invi_rec.invitation.get("request~attach")
         assert invi_rec.invitation["label"] == "That guy"
         assert (
-            DIDCommPrefix.qualify_current(INVITATION)
+            DIDCommPrefix.qualify_current(test_module.DIDX_INVITATION)
             in invi_rec.invitation["handshake_protocols"]
         )
         service = invi_rec.invitation["service"][0]
@@ -252,7 +252,9 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             )
             mock_oob_invi = async_mock.MagicMock(
                 request_attach=[],
-                handshake_protocols=[pfx.qualify(INVITATION) for pfx in DIDCommPrefix],
+                handshake_protocols=[
+                    pfx.qualify(test_module.DIDX_INVITATION) for pfx in DIDCommPrefix
+                ],
                 service_dids=[],
                 service_blocks=[
                     async_mock.MagicMock(
@@ -297,7 +299,9 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 receive_invitation=async_mock.CoroutineMock()
             )
             mock_oob_invi = async_mock.MagicMock(
-                handshake_protocols=[pfx.qualify(INVITATION) for pfx in DIDCommPrefix],
+                handshake_protocols=[
+                    pfx.qualify(test_module.DIDX_INVITATION) for pfx in DIDCommPrefix
+                ],
                 service_dids=[TestConfig.test_did],
                 service_blocks=[],
                 request_attach=[],
@@ -325,7 +329,9 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             mock_oob_invi = async_mock.MagicMock(
                 service_blocks=[],
                 service_dids=[TestConfig.test_did],
-                handshake_protocols=[pfx.qualify(INVITATION) for pfx in DIDCommPrefix],
+                handshake_protocols=[
+                    pfx.qualify(test_module.DIDX_INVITATION) for pfx in DIDCommPrefix
+                ],
                 request_attach=[{"having": "attachment", "is": "no", "good": "here"}],
             )
             inv_message_cls.deserialize.return_value = mock_oob_invi

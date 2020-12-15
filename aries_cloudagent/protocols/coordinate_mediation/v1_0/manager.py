@@ -26,7 +26,7 @@ from .messages.mediate_grant import MediationGrant
 from .messages.mediate_request import MediationRequest
 from .models.mediation_record import MediationRecord
 
-LOG = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 class MediationManagerError(BaseError):
@@ -153,7 +153,7 @@ class MediationManager:
         mediation: MediationRecord,
         *,
         mediator_terms: Sequence[str] = None,
-        recipient_terms: Sequence[str] = None
+        recipient_terms: Sequence[str] = None,
     ) -> MediationDeny:
         """Deny a mediation request and prepare a deny message.
 
@@ -387,7 +387,7 @@ class MediationManager:
         for updated in results:
             if updated.result != KeylistUpdated.RESULT_SUCCESS:
                 # TODO better handle different results?
-                LOG.warning(
+                LOGGER.warning(
                     "Keylist update failure: %s(%s): %s",
                     updated.action,
                     updated.recipient_key,
@@ -412,18 +412,18 @@ class MediationManager:
                         },
                     )
                 except StorageNotFoundError as err:
-                    LOG.error(
-                        "No route found while processing keylist update resposne: %s",
+                    LOGGER.error(
+                        "No route found while processing keylist update response: %s",
                         err,
                     )
-
-                if len(records) > 1:
-                    LOG.error(
-                        "Too many routes found while processing keylist update resposne"
-                    )
-
-                record = records[0]
-                to_remove.append(record)
+                else:
+                    if len(records) > 1:
+                        LOGGER.error(
+                            f"Too many ({len(records)}) routes found "
+                            "while processing keylist update response"
+                        )
+                    record = records[0]
+                    to_remove.append(record)
 
         for record_for_saving in to_save:
             await record_for_saving.save(
