@@ -75,7 +75,8 @@ class CreateInvitationRequestSchema(OpenAPISchema):
     )
     metadata = fields.Dict(
         description="Optional metadata to attach to the connection created with "
-        "the invitation", required=False
+        "the invitation",
+        required=False,
     )
 
 
