@@ -2180,7 +2180,7 @@ class TestIndySdkLedger(AsyncTestCase):
                 {
                     "...": "...",
                     **DIDPosture.POSTED.metadata,
-                }
+                },
             )
 
     @async_mock.patch("aries_cloudagent.ledger.indy.IndySdkLedgerPool.context_open")
@@ -2212,9 +2212,7 @@ class TestIndySdkLedger(AsyncTestCase):
         ledger = IndySdkLedger(IndySdkLedgerPool("name", checked=True), mock_wallet)
 
         async with ledger:
-            mock_wallet.get_public_did = async_mock.CoroutineMock(
-                return_value=None
-            )
+            mock_wallet.get_public_did = async_mock.CoroutineMock(return_value=None)
             with self.assertRaises(WalletNotFoundError):
                 await ledger.register_nym(
                     self.test_did,
@@ -2255,9 +2253,7 @@ class TestIndySdkLedger(AsyncTestCase):
     ):
         mock_wallet = async_mock.MagicMock(
             type="indy",
-            get_local_did=async_mock.CoroutineMock(
-                side_effect=WalletNotFoundError()
-            ),
+            get_local_did=async_mock.CoroutineMock(side_effect=WalletNotFoundError()),
             replace_local_did_metadata=async_mock.CoroutineMock(),
         )
         ledger = IndySdkLedger(IndySdkLedgerPool("name", checked=True), mock_wallet)

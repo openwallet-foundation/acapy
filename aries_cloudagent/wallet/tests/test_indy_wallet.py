@@ -159,11 +159,30 @@ class TestIndySdkWallet(test_in_memory_wallet.TestInMemoryWallet):
             assert "outlier" in str(excinfo.value)
 
     @pytest.mark.asyncio
+    async def test_replace_local_did_metadata_x(self, wallet):
+        info = await wallet.create_local_did(
+            self.test_seed, self.test_did, self.test_metadata
+        )
+        assert info.did == self.test_did
+        assert info.verkey == self.test_verkey
+        assert info.metadata == self.test_metadata
+
+        with async_mock.patch.object(
+            indy.did, "set_did_metadata", async_mock.CoroutineMock()
+        ) as mock_set_did_metadata:
+            mock_set_did_metadata.side_effect = test_module.IndyError(
+                test_module.ErrorCode.CommonIOError, {"message": "outlier"}
+            )
+            with pytest.raises(test_module.WalletError) as excinfo:
+                await wallet.replace_local_did_metadata(info.did, info.metadata)
+            assert "outlier" in str(excinfo.value)
+
+    @pytest.mark.asyncio
     async def test_verify_message_x(self, wallet):
         with async_mock.patch.object(
             indy.crypto, "crypto_verify", async_mock.CoroutineMock()
         ) as mock_verify:
-            mock_verify.side_effect = test_module.IndyError(  # outlier
+            mock_verify.side_effect = test_module.IndyError(
                 test_module.ErrorCode.CommonIOError, {"message": "outlier"}
             )
             with pytest.raises(test_module.WalletError) as excinfo:
