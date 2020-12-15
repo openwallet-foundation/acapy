@@ -350,6 +350,9 @@ class TestDispatcher(AsyncTestCase):
         )
         await responder.send_webhook("topic", "payload")
 
+        context.default_endpoint = "http://agent.ca"
+        assert context.default_endpoint == "http://agent.ca"
+
     async def test_create_send_outbound(self):
         message = StubAgentMessage()
         responder = MockResponder()
