@@ -25,6 +25,8 @@ from ...ledger.indy import (
 )
 from ...storage.record import StorageRecord
 from ...wallet.base import DIDInfo
+from ...wallet.did_posture import DIDPosture
+from ...wallet.error import WalletNotFoundError
 
 
 class TestRole(AsyncTestCase):
@@ -2151,10 +2153,11 @@ class TestIndySdkLedger(AsyncTestCase):
     ):
         mock_wallet = async_mock.MagicMock(
             type="indy",
-            get_local_did=async_mock.CoroutineMock(),
+            get_local_did=async_mock.CoroutineMock(
+                return_value=async_mock.MagicMock(metadata={"...": "..."})
+            ),
             replace_local_did_metadata=async_mock.CoroutineMock(),
         )
-
         ledger = IndySdkLedger(IndySdkLedgerPool("name", checked=True), mock_wallet)
 
         async with ledger:
@@ -2172,6 +2175,53 @@ class TestIndySdkLedger(AsyncTestCase):
                 True,
                 sign_did=mock_wallet.get_public_did.return_value,
             )
+            mock_wallet.replace_local_did_metadata.assert_called_once_with(
+                self.test_did_info.did,
+                {
+                    "...": "...",
+                    **DIDPosture.POSTED.metadata,
+                }
+            )
+
+    @async_mock.patch("aries_cloudagent.ledger.indy.IndySdkLedgerPool.context_open")
+    @async_mock.patch("aries_cloudagent.ledger.indy.IndySdkLedgerPool.context_close")
+    async def test_register_nym_read_only(self, mock_close, mock_open):
+        mock_wallet = async_mock.MagicMock()
+        ledger = IndySdkLedger(
+            IndySdkLedgerPool("name", checked=True, read_only=True), mock_wallet
+        )
+
+        async with ledger:
+            mock_wallet.get_public_did = async_mock.CoroutineMock(
+                return_value=self.test_did_info
+            )
+            with self.assertRaises(LedgerError) as context:
+                await ledger.register_nym(
+                    self.test_did, self.test_verkey, "alias", None
+                )
+            assert "read only" in str(context.exception)
+
+    @async_mock.patch("aries_cloudagent.ledger.indy.IndySdkLedgerPool.context_open")
+    @async_mock.patch("aries_cloudagent.ledger.indy.IndySdkLedgerPool.context_close")
+    async def test_register_nym_no_public_did(self, mock_close, mock_open):
+        mock_wallet = async_mock.MagicMock(
+            type="indy",
+            get_local_did=async_mock.CoroutineMock(),
+            replace_local_did_metadata=async_mock.CoroutineMock(),
+        )
+        ledger = IndySdkLedger(IndySdkLedgerPool("name", checked=True), mock_wallet)
+
+        async with ledger:
+            mock_wallet.get_public_did = async_mock.CoroutineMock(
+                return_value=None
+            )
+            with self.assertRaises(WalletNotFoundError):
+                await ledger.register_nym(
+                    self.test_did,
+                    self.test_verkey,
+                    "alias",
+                    None,
+                )
 
     @async_mock.patch("aries_cloudagent.ledger.indy.IndySdkLedgerPool.context_open")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndySdkLedgerPool.context_close")
@@ -2181,12 +2231,10 @@ class TestIndySdkLedger(AsyncTestCase):
         self, mock_submit, mock_build_nym_req, mock_close, mock_open
     ):
         mock_wallet = async_mock.MagicMock()
-
         mock_build_nym_req.side_effect = IndyError(
             error_code=ErrorCode.CommonInvalidParam1,
             error_details={"message": "not today"},
         )
-
         ledger = IndySdkLedger(IndySdkLedgerPool("name", checked=True), mock_wallet)
 
         async with ledger:
@@ -2202,24 +2250,34 @@ class TestIndySdkLedger(AsyncTestCase):
     @async_mock.patch("aries_cloudagent.ledger.indy.IndySdkLedgerPool.context_close")
     @async_mock.patch("indy.ledger.build_nym_request")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndySdkLedger._submit")
-    async def test_register_nym_read_only(
+    async def test_register_nym_steward_register_others_did(
         self, mock_submit, mock_build_nym_req, mock_close, mock_open
     ):
-        mock_wallet = async_mock.MagicMock()
-
-        ledger = IndySdkLedger(
-            IndySdkLedgerPool("name", checked=True, read_only=True), mock_wallet
+        mock_wallet = async_mock.MagicMock(
+            type="indy",
+            get_local_did=async_mock.CoroutineMock(
+                side_effect=WalletNotFoundError()
+            ),
+            replace_local_did_metadata=async_mock.CoroutineMock(),
         )
+        ledger = IndySdkLedger(IndySdkLedgerPool("name", checked=True), mock_wallet)
 
         async with ledger:
             mock_wallet.get_public_did = async_mock.CoroutineMock(
                 return_value=self.test_did_info
             )
-            with self.assertRaises(LedgerError) as context:
-                await ledger.register_nym(
-                    self.test_did, self.test_verkey, "alias", None
-                )
-            assert "read only" in str(context.exception)
+            await ledger.register_nym(self.test_did, self.test_verkey, "alias", None)
+
+            assert mock_build_nym_req.called_once_with(
+                self.test_did, self.test_did, self.test_verkey, "alias", None
+            )
+            assert mock_submit.called_once_with(
+                mock_build_nym_req.return_value,
+                True,
+                True,
+                sign_did=mock_wallet.get_public_did.return_value,
+            )
+            mock_wallet.replace_local_did_metadata.assert_not_called()
 
     @async_mock.patch("aries_cloudagent.ledger.indy.IndySdkLedgerPool.context_open")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndySdkLedgerPool.context_close")
