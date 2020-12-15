@@ -55,6 +55,12 @@ class ReceiveInvitationRequestSchema(ConnectionInvitationSchema):
         """Bypass middleware field validation: marshmallow has no data yet."""
 
 
+MEDIATION_ID_SCHEMA = {
+    "validate": UUIDFour(),
+    "example": UUIDFour.EXAMPLE,
+}
+
+
 class InvitationConnectionTargetRequestSchema(OpenAPISchema):
     """Request schema for invitation connection target."""
 
@@ -72,6 +78,11 @@ class InvitationConnectionTargetRequestSchema(OpenAPISchema):
         fields.Str(description="Routing key", **INDY_RAW_PUBLIC_KEY),
         required=False,
         description="List of routing keys",
+    )
+    mediation_id = fields.Str(
+        required=False,
+        description="Identifier for active mediation record to be used",
+        **MEDIATION_ID_SCHEMA
     )
 
 
@@ -184,6 +195,11 @@ class ReceiveInvitationQueryStringSchema(OpenAPISchema):
         description="Auto-accept connection (defaults to configuration)",
         required=False,
     )
+    mediation_id = fields.Str(
+        required=False,
+        description="Identifier for active mediation record to be used",
+        **MEDIATION_ID_SCHEMA
+    )
 
 
 class AcceptInvitationQueryStringSchema(OpenAPISchema):
@@ -192,6 +208,11 @@ class AcceptInvitationQueryStringSchema(OpenAPISchema):
     my_endpoint = fields.Str(description="My URL endpoint", required=False, **ENDPOINT)
     my_label = fields.Str(
         description="Label for connection", required=False, example="Broker"
+    )
+    mediation_id = fields.Str(
+        required=False,
+        description="Identifier for active mediation record to be used",
+        **MEDIATION_ID_SCHEMA
     )
 
 
@@ -347,6 +368,7 @@ async def connections_create_invitation(request: web.BaseRequest):
     recipient_keys = body.get("recipient_keys")
     service_endpoint = body.get("service_endpoint")
     routing_keys = body.get("routing_keys")
+    mediation_id = body.get("mediation_id")
 
     if public and not context.settings.get("public_invites"):
         raise web.HTTPForbidden(
@@ -365,6 +387,7 @@ async def connections_create_invitation(request: web.BaseRequest):
             recipient_keys=recipient_keys,
             my_endpoint=service_endpoint,
             routing_keys=routing_keys,
+            mediation_id=mediation_id,
         )
 
         result = {
@@ -412,8 +435,9 @@ async def connections_receive_invitation(request: web.BaseRequest):
         invitation = ConnectionInvitation.deserialize(invitation_json)
         auto_accept = json.loads(request.query.get("auto_accept", "null"))
         alias = request.query.get("alias")
+        mediation_id = request.query.get("mediation_id")
         connection = await connection_mgr.receive_invitation(
-            invitation, auto_accept=auto_accept, alias=alias
+            invitation, auto_accept=auto_accept, alias=alias, mediation_id=mediation_id
         )
         result = connection.serialize()
     except (ConnectionManagerError, StorageError, BaseModelError) as err:
@@ -448,9 +472,12 @@ async def connections_accept_invitation(request: web.BaseRequest):
     try:
         connection = await ConnRecord.retrieve_by_id(session, connection_id)
         connection_mgr = ConnectionManager(session)
-        my_label = request.query.get("my_label") or None
-        my_endpoint = request.query.get("my_endpoint") or None
-        request = await connection_mgr.create_request(connection, my_label, my_endpoint)
+        my_label = request.query.get("my_label")
+        my_endpoint = request.query.get("my_endpoint")
+        mediation_id = request.query.get("mediation_id")
+        request = await connection_mgr.create_request(
+            connection, my_label, my_endpoint, mediation_id=mediation_id
+        )
         result = connection.serialize()
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
