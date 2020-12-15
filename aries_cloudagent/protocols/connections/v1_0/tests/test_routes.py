@@ -130,6 +130,68 @@ class TestConnectionRoutes(AsyncTestCase):
             await test_module.connections_retrieve(self.request)
             mock_response.assert_called_once_with({"hello": "world"})
 
+    async def test_connections_metadata(self):
+        self.request.match_info = {"conn_id": "dummy"}
+        mock_conn_rec = async_mock.MagicMock()
+
+        with async_mock.patch.object(
+            test_module.ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
+        ) as mock_conn_rec_retrieve_by_id, async_mock.patch.object(
+            mock_conn_rec, "metadata_get_all", async_mock.CoroutineMock()
+        ) as mock_metadata_get_all, async_mock.patch.object(
+            test_module.web, "json_response"
+        ) as mock_response:
+            mock_conn_rec_retrieve_by_id.return_value = mock_conn_rec
+            mock_metadata_get_all.return_value = {"hello": "world"}
+
+            await test_module.connections_metadata(self.request)
+            mock_metadata_get_all.assert_called_once()
+            mock_response.assert_called_once_with({"hello": "world"})
+
+    async def test_connections_metadata_get_single(self):
+        self.request.match_info = {"conn_id": "dummy"}
+        mock_conn_rec = async_mock.MagicMock()
+        self.request.query = {"key": "test"}
+
+        with async_mock.patch.object(
+            test_module.ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
+        ) as mock_conn_rec_retrieve_by_id, async_mock.patch.object(
+            mock_conn_rec, "metadata_get_all", async_mock.CoroutineMock()
+        ) as mock_metadata_get_all, async_mock.patch.object(
+            mock_conn_rec, "metadata_get", async_mock.CoroutineMock()
+        ) as mock_metadata_get, async_mock.patch.object(
+            test_module.web, "json_response"
+        ) as mock_response:
+            mock_conn_rec_retrieve_by_id.return_value = mock_conn_rec
+            mock_metadata_get.return_value = {"test": "value"}
+
+            await test_module.connections_metadata(self.request)
+            mock_metadata_get.assert_called_once()
+            mock_response.assert_called_once_with({"test": "value"})
+
+    async def test_connections_metadata_set(self):
+        self.request.match_info = {"conn_id": "dummy"}
+        mock_conn_rec = async_mock.MagicMock()
+        self.request.json = async_mock.CoroutineMock(
+            return_value={"metadata": {"hello": "world"}}
+        )
+
+        with async_mock.patch.object(
+            test_module.ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
+        ) as mock_conn_rec_retrieve_by_id, async_mock.patch.object(
+            mock_conn_rec, "metadata_get_all", async_mock.CoroutineMock()
+        ) as mock_metadata_get_all, async_mock.patch.object(
+            mock_conn_rec, "metadata_set", async_mock.CoroutineMock()
+        ) as mock_metadata_set, async_mock.patch.object(
+            test_module.web, "json_response"
+        ) as mock_response:
+            mock_conn_rec_retrieve_by_id.return_value = mock_conn_rec
+            mock_metadata_get_all.return_value = {"hello": "world"}
+
+            await test_module.connections_metadata_set(self.request)
+            mock_metadata_set.assert_called_once()
+            mock_response.assert_called_once_with({"hello": "world"})
+
     async def test_connections_retrieve_not_found(self):
         self.request.match_info = {"conn_id": "dummy"}
 

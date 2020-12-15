@@ -47,6 +47,29 @@ class ConnectionListSchema(OpenAPISchema):
     )
 
 
+class ConnectionMetadataSchema(OpenAPISchema):
+    """Result schema for connection metadata."""
+
+    results = fields.Dict(
+        description="Dictionary of metadata associated with connection.",
+    )
+
+
+class ConnectionMetadataSetRequestSchema(OpenAPISchema):
+    """Request Schema for set metadata."""
+
+    metadata = fields.Dict(
+        required=True,
+        description="Dictionary of metadata to set for connection.",
+    )
+
+
+class ConnectionMetadataQuerySchema(OpenAPISchema):
+    """Query schema for metadata."""
+
+    key = fields.Str(required=False, description="Key to retrieve.")
+
+
 class ReceiveInvitationRequestSchema(ConnectionInvitationSchema):
     """Request schema for receive invitation request."""
 
@@ -333,6 +356,55 @@ async def connections_retrieve(request: web.BaseRequest):
     try:
         record = await ConnRecord.retrieve_by_id(session, connection_id)
         result = record.serialize()
+    except StorageNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
+    except BaseModelError as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+    return web.json_response(result)
+
+
+@docs(tags=["connection"], summary="Fetch connection metadata")
+@match_info_schema(ConnIdMatchInfoSchema())
+@querystring_schema(ConnectionMetadataQuerySchema())
+@response_schema(ConnectionMetadataSchema(), 200, description="")
+async def connections_metadata(request: web.BaseRequest):
+    """Handle fetching metadata associated with a single connection record."""
+    context: AdminRequestContext = request["context"]
+    connection_id = request.match_info["conn_id"]
+    key = request.query.get("key", None)
+    session = await context.session()
+
+    try:
+        record = await ConnRecord.retrieve_by_id(session, connection_id)
+        if key:
+            result = await record.metadata_get(session, key)
+        else:
+            result = await record.metadata_get_all(session)
+    except StorageNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
+    except BaseModelError as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+    return web.json_response(result)
+
+
+@docs(tags=["connection"], summary="Set connection metadata")
+@match_info_schema(ConnIdMatchInfoSchema())
+@request_schema(ConnectionMetadataSetRequestSchema())
+@response_schema(ConnectionMetadataSchema(), 200, description="")
+async def connections_metadata_set(request: web.BaseRequest):
+    """Handle fetching metadata associated with a single connection record."""
+    context: AdminRequestContext = request["context"]
+    connection_id = request.match_info["conn_id"]
+    body = await request.json() if request.body_exists else {}
+    session = await context.session()
+
+    try:
+        record = await ConnRecord.retrieve_by_id(session, connection_id)
+        for key, value in body.get("metadata", {}).items():
+            await record.metadata_set(session, key, value)
+        result = await record.metadata_get_all(session)
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
     except BaseModelError as err:
@@ -638,6 +710,12 @@ async def register(app: web.Application):
         [
             web.get("/connections", connections_list, allow_head=False),
             web.get("/connections/{conn_id}", connections_retrieve, allow_head=False),
+            web.get(
+                "/connections/{conn_id}/metadata",
+                connections_metadata,
+                allow_head=False,
+            ),
+            web.post("/connections/{conn_id}/metadata", connections_metadata_set),
             web.post("/connections/create-static", connections_create_static),
             web.post("/connections/create-invitation", connections_create_invitation),
             web.post("/connections/receive-invitation", connections_receive_invitation),
