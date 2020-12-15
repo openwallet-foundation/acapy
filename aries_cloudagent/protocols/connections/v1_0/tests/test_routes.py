@@ -227,6 +227,7 @@ class TestConnectionRoutes(AsyncTestCase):
             "routing_keys": ["test"],
             "service_endpoint": "http://example.com",
             "metadata": {"hello": "world"},
+            "mediation_id": "some-id",
         }
         self.request.json = async_mock.CoroutineMock(return_value=body)
         self.request.query = {
@@ -263,7 +264,8 @@ class TestConnectionRoutes(AsyncTestCase):
                 recipient_keys=body["recipient_keys"],
                 routing_keys=body["routing_keys"],
                 my_endpoint=body["service_endpoint"],
-                metadata=body["metadata"]
+                metadata=body["metadata"],
+                mediation_id="some-id"
             )
             mock_response.assert_called_once_with(
                 {
