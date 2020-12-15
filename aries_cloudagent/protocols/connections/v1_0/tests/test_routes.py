@@ -130,6 +130,24 @@ class TestConnectionRoutes(AsyncTestCase):
             await test_module.connections_retrieve(self.request)
             mock_response.assert_called_once_with({"hello": "world"})
 
+    async def test_connections_metadata(self):
+        self.request.match_info = {"conn_id": "dummy"}
+        mock_conn_rec = async_mock.MagicMock()
+
+        with async_mock.patch.object(
+            test_module.ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
+        ) as mock_conn_rec_retrieve_by_id, async_mock.patch.object(
+            mock_conn_rec, "metadata_get_all", async_mock.CoroutineMock()
+        ) as mock_metadata_get_all, async_mock.patch.object(
+            test_module.web, "json_response"
+        ) as mock_response:
+            mock_conn_rec_retrieve_by_id.return_value = mock_conn_rec
+            mock_metadata_get_all.return_value = {"hello": "world"}
+
+            await test_module.connections_metadata(self.request)
+            mock_metadata_get_all.assert_called_once()
+            mock_response.assert_called_once_with({"hello": "world"})
+
     async def test_connections_retrieve_not_found(self):
         self.request.match_info = {"conn_id": "dummy"}
 
