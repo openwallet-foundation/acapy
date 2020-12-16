@@ -431,7 +431,12 @@ class Conductor:
         self.inbound_transport_manager.return_undelivered(outbound)
 
     def webhook_router(
-        self, topic: str, payload: dict, endpoint: str, max_attempts: int = None
+        self,
+        topic: str,
+        payload: dict,
+        endpoint: str,
+        max_attempts: int = None,
+        metadata: dict = None,
     ):
         """
         Route a webhook through the outbound transport manager.
@@ -441,10 +446,11 @@ class Conductor:
             payload: The webhook payload
             endpoint: The endpoint of the webhook target
             max_attempts: The maximum number of attempts
+            metadata: Additional metadata associated with the payload
         """
         try:
             self.outbound_transport_manager.enqueue_webhook(
-                topic, payload, endpoint, max_attempts
+                topic, payload, endpoint, max_attempts, metadata
             )
         except OutboundDeliveryError:
             LOGGER.warning(

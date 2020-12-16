@@ -116,7 +116,7 @@ class MultitenantManager:
         return self._instances[wallet_id]
 
     async def create_wallet(
-        self, wallet_config: dict, key_management_mode: str, extra_settings=None
+        self, wallet_config: dict, key_management_mode: str, extra_settings: dict = None
     ) -> WalletRecord:
         """Create new wallet and wallet record.
 
@@ -124,6 +124,7 @@ class MultitenantManager:
             wallet_config: The wallet config for the wallet to create
             key_management_mode: The mode to use for key management. Either "unmanaged"
                 to not store the wallet key, or "managed" to store the wallet key
+            extra_settings: Additional context settings for this wallet
 
         Raises:
             MultitenantManagerError: If the wallet name already exists

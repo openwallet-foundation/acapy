@@ -689,7 +689,7 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
                 test_topic, test_payload, test_endpoint, test_attempts
             )
             mock_enqueue.assert_called_once_with(
-                test_topic, test_payload, test_endpoint, test_attempts
+                test_topic, test_payload, test_endpoint, test_attempts, None
             )
 
         # swallow error
@@ -702,5 +702,5 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
                 test_topic, test_payload, test_endpoint, test_attempts
             )
             mock_enqueue.assert_called_once_with(
-                test_topic, test_payload, test_endpoint, test_attempts
+                test_topic, test_payload, test_endpoint, test_attempts, None
             )

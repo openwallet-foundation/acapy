@@ -106,7 +106,7 @@ class AdminResponder(BaseResponder):
             topic: the webhook topic identifier
             payload: the webhook payload value
         """
-        await self._webhook(topic, payload)
+        await self._webhook(self._profile, topic, payload)
 
 
 class WebhookTarget:
@@ -725,15 +725,30 @@ class AdminServer(BaseAdminServer):
         if target_url in self.webhook_targets:
             del self.webhook_targets[target_url]
 
-    async def send_webhook(self, topic: str, payload: dict):
+    async def send_webhook(self, profile: Profile, topic: str, payload: dict):
         """Add a webhook to the queue, to send to all registered targets."""
+        wallet_id = profile.settings.get("wallet.id")
+
+        metadata = None
+        if wallet_id:
+            metadata = {"x-wallet-id": wallet_id}
+
         if self.webhook_router:
             for idx, target in self.webhook_targets.items():
                 if not target.topic_filter or topic in target.topic_filter:
                     self.webhook_router(
-                        topic, payload, target.endpoint, target.max_attempts
+                        topic,
+                        payload,
+                        target.endpoint,
+                        target.max_attempts,
+                        metadata,
                     )
+
+        # set ws webhook body, optionally add wallet id for multitenant mode
+        webhook_body = {"topic": topic, "payload": payload}
+        if wallet_id:
+            webhook_body["wallet_id"] = wallet_id
 
         for queue in self.websocket_queues.values():
             if queue.authenticated or topic in ("ping", "settings"):
-                await queue.enqueue({"topic": topic, "payload": payload})
+                await queue.enqueue(webhook_body)

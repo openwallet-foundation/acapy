@@ -502,18 +502,20 @@ class DemoAgent:
     async def _receive_webhook(self, request: ClientRequest):
         topic = request.match_info["topic"].replace("-", "_")
         payload = await request.json()
-        await self.handle_webhook(topic, payload)
+        await self.handle_webhook(topic, payload, request.headers)
         return web.Response(status=200)
 
-    async def handle_webhook(self, topic: str, payload):
+    async def handle_webhook(self, topic: str, payload, headers: dict):
         if topic != "webhook":  # would recurse
             handler = f"handle_{topic}"
+            wallet_id = headers.get("x-wallet-id")
             method = getattr(self, handler, None)
             if method:
                 EVENT_LOGGER.debug(
-                    "Agent called controller webhook: %s%s",
+                    "Agent called controller webhook: %s%s%s",
                     handler,
-                    (f" with payload: \n{repr_json(payload)}" if payload else ""),
+                    (f" for wallet: {wallet_id}" if wallet_id else ""),
+                    (f" with payload: \n{repr_json(payload)}\n" if payload else ""),
                 )
                 asyncio.get_event_loop().create_task(method(payload))
             else:
