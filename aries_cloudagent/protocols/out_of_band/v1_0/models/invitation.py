@@ -18,9 +18,9 @@ class InvitationRecord(BaseExchangeRecord):
 
         schema_class = "InvitationRecordSchema"
 
-    RECORD_TYPE = "oob-invitation"
+    RECORD_TYPE = "oob_invitation"
     RECORD_ID_NAME = "invitation_id"
-    WEBHOOK_TOPIC = "oob-invitation"
+    WEBHOOK_TOPIC = "oob_invitation"
     TAG_NAMES = {"invi_msg_id"}
 
     STATE_INITIAL = "initial"
