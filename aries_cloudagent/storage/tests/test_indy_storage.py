@@ -15,7 +15,7 @@ from ...config.injection_context import InjectionContext
 from ...indy.sdk.profile import IndySdkProfileManager
 from ...storage.base import BaseStorage
 from ...storage.error import StorageError, StorageSearchError
-from ...storage.indy import IndySdkStorage
+from ...storage.indy import IndySdkStorage, IndySdkStorageSearch
 from ...storage.record import StorageRecord
 from ...wallet.indy import IndySdkWallet
 from ...ledger.indy import IndySdkLedgerPool
@@ -76,28 +76,29 @@ class TestIndySdkStorage(test_in_memory_storage.TestInMemoryStorage):
         ) as mock_close, async_mock.patch.object(
             indy.wallet, "delete_wallet", async_mock.CoroutineMock()
         ) as mock_delete:
+            config = {
+                "auto_recreate": True,
+                "auto_remove": True,
+                "name": "test-wallet",
+                "key": await IndySdkWallet.generate_wallet_key(),
+                "key_derivation_method": "RAW",
+                "storage_type": "postgres_storage",
+                "storage_config": json.dumps({"url": "dummy"}),
+                "storage_creds": json.dumps(
+                    {
+                        "account": "postgres",
+                        "password": "mysecretpassword",
+                        "admin_account": "postgres",
+                        "admin_password": "mysecretpassword",
+                    }
+                ),
+            }
             context = InjectionContext()
             context.injector.bind_instance(IndySdkLedgerPool, IndySdkLedgerPool("name"))
-            fake_profile = await IndySdkProfileManager().provision(
-                context,
-                {
-                    "auto_recreate": True,
-                    "auto_remove": True,
-                    "name": "test-wallet",
-                    "key": await IndySdkWallet.generate_wallet_key(),
-                    "key_derivation_method": "RAW",
-                    "storage_type": "postgres_storage",
-                    "storage_config": json.dumps({"url": "dummy"}),
-                    "storage_creds": json.dumps(
-                        {
-                            "account": "postgres",
-                            "password": "mysecretpassword",
-                            "admin_account": "postgres",
-                            "admin_password": "mysecretpassword",
-                        }
-                    ),
-                },
-            )
+            fake_profile = await IndySdkProfileManager().provision(context, config)
+            opened = await IndySdkProfileManager().open(context, config)  # cover open()
+            await opened.close()
+
             session = await fake_profile.session()
             storage = session.inject(BaseStorage)
 
@@ -354,6 +355,36 @@ class TestIndySdkStorage(test_in_memory_storage.TestInMemoryStorage):
                     await asyncio.sleep(0.1)
                     c += 1
                 mock_indy_close_search.assert_awaited_once_with(1)
+
+            with async_mock.patch.object(  # error on close
+                indy.non_secrets, "open_wallet_search", async_mock.CoroutineMock()
+            ) as mock_indy_open_search, async_mock.patch.object(
+                indy.non_secrets, "close_wallet_search", async_mock.CoroutineMock()
+            ) as mock_indy_close_search:
+                mock_indy_close_search.side_effect = test_module.IndyError("no close")
+                mock_indy_open_search.return_value = 1
+                search = storage.search_records("connection")
+                await search._open()
+                with pytest.raises(StorageSearchError):
+                    await search.close()
+
+            with async_mock.patch.object(  # run on event loop until complete
+                indy.non_secrets, "open_wallet_search", async_mock.CoroutineMock()
+            ) as mock_indy_open_search, async_mock.patch.object(
+                indy.non_secrets, "close_wallet_search", async_mock.CoroutineMock()
+            ) as mock_indy_close_search, async_mock.patch.object(
+                asyncio, "get_event_loop", async_mock.MagicMock()
+            ) as mock_get_event_loop:
+                mock_get_event_loop.return_value = async_mock.MagicMock(
+                    create_task=async_mock.MagicMock(),
+                    is_running=async_mock.MagicMock(return_value=False),
+                    run_until_complete=async_mock.MagicMock(),
+                )
+                mock_indy_open_search.return_value = 1
+                search = storage.search_records("connection")
+                await search._open()
+                await search.close()
+                del search
 
     # TODO get these to run in docker ci/cd
     @pytest.mark.asyncio

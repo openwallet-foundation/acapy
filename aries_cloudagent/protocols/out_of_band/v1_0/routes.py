@@ -35,6 +35,11 @@ class InvitationCreateRequestSchema(OpenAPISchema):
     attachments = fields.Nested(AttachmentDefSchema, many=True, required=False)
     include_handshake = fields.Boolean(default=False)
     use_public_did = fields.Boolean(default=False)
+    metadata = fields.Dict(
+        description="Optional metadata to attach to the connection created with "
+        "the invitation",
+        required=False,
+    )
 
 
 class InvitationReceiveRequestSchema(InvitationMessageSchema):
@@ -80,6 +85,7 @@ async def invitation_create(request: web.BaseRequest):
     attachments = body.get("attachments")
     include_handshake = body.get("include_handshake")
     use_public_did = body.get("use_public_did")
+    metadata = body.get("metadata")
 
     multi_use = json.loads(request.query.get("multi_use", "false"))
     auto_accept = json.loads(request.query.get("auto_accept", "null"))
@@ -92,6 +98,7 @@ async def invitation_create(request: web.BaseRequest):
             include_handshake=include_handshake,
             multi_use=multi_use,
             attachments=attachments,
+            metadata=metadata,
         )
     except (StorageNotFoundError, ValidationError, OutOfBandManagerError) as e:
         raise web.HTTPBadRequest(reason=str(e))

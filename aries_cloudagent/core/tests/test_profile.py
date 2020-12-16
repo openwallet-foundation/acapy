@@ -24,6 +24,8 @@ class TestProfileSession(AsyncTestCase):
     async def test_session_active(self):
         profile = MockProfile()
         session = ProfileSession(profile)
+        assert not session.is_transaction
+        assert session.__class__.__name__ in str(session)
 
         self.assertEqual(session.active, False)
         with self.assertRaises(ProfileSessionInactiveError):
@@ -49,6 +51,8 @@ class TestProfileSession(AsyncTestCase):
         self.assertEqual(session2.active, False)
         assert (await session2) is session2
         self.assertEqual(session2.active, True)
+
+        await session2.rollback()
 
 
 class TestProfileManagerProvider(AsyncTestCase):
