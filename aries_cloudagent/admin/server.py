@@ -238,6 +238,8 @@ class AdminServer(BaseAdminServer):
         self.site = None
         self.multitenant_manager = context.inject(MultitenantManager, required=False)
 
+        self.server_paths = []
+
     async def make_application(self) -> web.Application:
         """Get the aiohttp application instance."""
 
@@ -278,32 +280,55 @@ class AdminServer(BaseAdminServer):
 
         collector = self.context.inject(Collector, required=False)
 
+        if self.multitenant_manager:
+
+            @web.middleware
+            async def check_multitenant_authorization(request: web.Request, handler):
+                authorization_header = request.headers.get("Authorization")
+                path = request.path
+
+                is_multitenancy_path = path.startswith("/multitenancy")
+                is_server_path = path in self.server_paths or path == "/features"
+
+                # subwallets are not allowed to access multitenancy routes
+                if authorization_header and is_multitenancy_path:
+                    raise web.HTTPUnauthorized()
+
+                # base wallet is not allowed to perform ssi related actions.
+                # Only multitenancy and general server actions
+                if (
+                    not authorization_header
+                    and not is_multitenancy_path
+                    and not is_server_path
+                    and not is_unprotected_path(path)
+                ):
+                    raise web.HTTPUnauthorized()
+
+                return await handler(request)
+
+            middlewares.append(check_multitenant_authorization)
+
         @web.middleware
         async def setup_context(request: web.Request, handler):
             authorization_header = request.headers.get("Authorization")
             profile = self.root_profile
 
             # Multitenancy context setup
-            if self.multitenant_manager:
-                if authorization_header:
-                    # Don't allow manager route
-                    try:
-                        bearer, _, token = authorization_header.partition(" ")
-                        if bearer != "Bearer":
-                            raise web.HTTPUnauthorized(
-                                reason="Invalid Authorization header structure"
-                            )
-
-                        profile = await self.multitenant_manager.get_profile_for_token(
-                            self.context, token
+            if self.multitenant_manager and authorization_header:
+                try:
+                    bearer, _, token = authorization_header.partition(" ")
+                    if bearer != "Bearer":
+                        raise web.HTTPUnauthorized(
+                            reason="Invalid Authorization header structure"
                         )
-                    except MultitenantManagerError as err:
-                        raise web.HTTPUnauthorized(err.roll_up)
-                    except (jwt.InvalidTokenError, StorageNotFoundError):
-                        raise web.HTTPUnauthorized()
-                else:
-                    pass
-                    # don't allow non_manager route
+
+                    profile = await self.multitenant_manager.get_profile_for_token(
+                        self.context, token
+                    )
+                except MultitenantManagerError as err:
+                    raise web.HTTPUnauthorized(err.roll_up)
+                except (jwt.InvalidTokenError, StorageNotFoundError):
+                    raise web.HTTPUnauthorized()
 
             # TODO may dynamically adjust the profile used here according to
             # headers or other parameters
@@ -331,18 +356,20 @@ class AdminServer(BaseAdminServer):
 
         app = web.Application(middlewares=middlewares)
 
-        app.add_routes(
-            [
-                web.get("/", self.redirect_handler, allow_head=False),
-                web.get("/plugins", self.plugins_handler, allow_head=False),
-                web.get("/status", self.status_handler, allow_head=False),
-                web.post("/status/reset", self.status_reset_handler),
-                web.get("/status/live", self.liveliness_handler, allow_head=False),
-                web.get("/status/ready", self.readiness_handler, allow_head=False),
-                web.get("/shutdown", self.shutdown_handler, allow_head=False),
-                web.get("/ws", self.websocket_handler, allow_head=False),
-            ]
-        )
+        server_routes = [
+            web.get("/", self.redirect_handler, allow_head=False),
+            web.get("/plugins", self.plugins_handler, allow_head=False),
+            web.get("/status", self.status_handler, allow_head=False),
+            web.post("/status/reset", self.status_reset_handler),
+            web.get("/status/live", self.liveliness_handler, allow_head=False),
+            web.get("/status/ready", self.readiness_handler, allow_head=False),
+            web.get("/shutdown", self.shutdown_handler, allow_head=False),
+            web.get("/ws", self.websocket_handler, allow_head=False),
+        ]
+
+        # Store server_paths for multitenant authorization handling
+        self.server_paths = [route.path for route in server_routes]
+        app.add_routes(server_routes)
 
         plugin_registry = self.context.inject(PluginRegistry, required=False)
         if plugin_registry:
