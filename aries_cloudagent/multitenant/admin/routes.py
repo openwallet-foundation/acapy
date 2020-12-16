@@ -46,12 +46,6 @@ class CreateWalletRequestSchema(Schema):
         description="Master key used for key derivation.", example="MySecretKey123"
     )
 
-    # MTODO: add seed
-    # seed = fields.Str(
-    #     description="Seed used for did derivation - 32 bytes.",
-    #     example="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-    # )
-
     wallet_type = fields.Str(
         description="Type of the wallet to create",
         example="indy",
@@ -65,6 +59,13 @@ class CreateWalletRequestSchema(Schema):
         description="Label for this wallet. This label is publicized\
             (self-attested) to other agents as part of forming a connection.",
         example="Alice",
+    )
+
+    key_management_mode = fields.Str(
+        description="Key management method to use for this wallet.",
+        example=WalletRecord.MODE_MANAGED,
+        default=WalletRecord.MODE_MANAGED,
+        validate=validate.OneOf(WalletRecord.MODE_MANAGED, WalletRecord.MODE_UNMANAGED),
     )
 
     @validates_schema
@@ -90,7 +91,9 @@ class RemoveWalletRequestSchema(Schema):
     """Request schema for removing a wallet."""
 
     wallet_key = fields.Str(
-        description="Master key used for key derivation.", example="MySecretKey123"
+        description="Master key used for key derivation. Only required for \
+            unmanaged wallets.",
+        example="MySecretKey123",
     )
 
 
@@ -98,7 +101,9 @@ class CreateWalletTokenRequestSchema(Schema):
     """Request schema for creating a wallet token."""
 
     wallet_key = fields.Str(
-        description="Master key used for key derivation.", example="MySecretKey123"
+        description="Master key used for key derivation. Only required for \
+            unamanged wallets.",
+        example="MySecretKey123",
     )
 
 
@@ -166,8 +171,7 @@ async def wallet_create(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     body = await request.json()
 
-    # MTODO: make mode variable. Either trough setting or body parameter
-    key_management_mode = WalletRecord.MODE_MANAGED  # body.get("key_management_mode")
+    key_management_mode = body.get("key_management_mode")
     wallet_name = body.get("wallet_name")
     wallet_key = body.get("wallet_key")
 
