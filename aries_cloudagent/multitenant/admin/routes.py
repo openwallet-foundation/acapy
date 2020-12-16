@@ -61,6 +61,12 @@ class CreateWalletRequestSchema(Schema):
         ),
     )
 
+    label = fields.Str(
+        description="Label for this wallet. This label is publicized\
+            (self-attested) to other agents as part of forming a connection.",
+        example="Alice",
+    )
+
     @validates_schema
     def validate_fields(self, data, **kwargs):
         """
@@ -171,13 +177,17 @@ async def wallet_create(request: web.BaseRequest):
         "key": wallet_key,
     }
 
+    extra_settings = {}
+    label = body.get("label")
+    if label:
+        extra_settings["default_label"] = label
+
     async with context.session() as session:
         try:
             multitenant_mgr = session.inject(MultitenantManager)
 
             wallet_record = await multitenant_mgr.create_wallet(
-                wallet_config,
-                key_management_mode,
+                wallet_config, key_management_mode, extra_settings=extra_settings
             )
 
             token = await multitenant_mgr.create_auth_token(wallet_record, wallet_key)

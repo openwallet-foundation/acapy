@@ -105,7 +105,7 @@ class MultitenantManager:
 
             # MTODO: remove base wallet settings
             context.settings = context.settings.extend(
-                wallet_record.get_config_as_settings()
+                wallet_record.get_settings()
             ).extend(extra_settings)
 
             profile, _ = await configure_wallet(context, provision=provision)

@@ -35,6 +35,7 @@ class WalletRecord(BaseRecord):
         wallet_record_id: str = None,
         wallet_config: dict = None,
         key_management_mode: str = None,
+        extra_settings: dict = None,
         # MTODO: how to make this a tag without making it
         # a constructor param
         wallet_name: str = None,
@@ -45,12 +46,17 @@ class WalletRecord(BaseRecord):
         self._id = wallet_record_id
         self.wallet_config = wallet_config
         self.key_management_mode = key_management_mode
+        self.extra_settings = extra_settings or {}
 
-    def get_config_as_settings(self):
+    def get_wallet_config_as_settings(self):
         """Get the wallet config as settings dict."""
         config = {**self.wallet_config, "id": self.wallet_record_id}
         # Wallet settings need to be prefixed with `wallet.`
         return {f"wallet.{k}": v for k, v in config.items()}
+
+    def get_settings(self):
+        """Get the settings for this wallet record."""
+        return {**self.extra_settings, **self.get_wallet_config_as_settings()}
 
     @property
     def wallet_record_id(self) -> str:
@@ -72,10 +78,7 @@ class WalletRecord(BaseRecord):
         """Accessor for the JSON record value generated for this record."""
         return {
             prop: getattr(self, prop)
-            for prop in (
-                "wallet_config",
-                "key_management_mode",
-            )
+            for prop in ("wallet_config", "key_management_mode", "extra_settings")
         }
 
     @property
