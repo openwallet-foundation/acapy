@@ -88,20 +88,22 @@ class TestRequestHandler:
     @pytest.mark.asyncio
     @async_mock.patch.object(handler, "ConnectionManager")
     async def test_connection_record_with_mediation_metadata(
-        self, mock_conn_mgr, request_context, session, connection_record
+        self, mock_conn_mgr, request_context, connection_record
     ):
         mock_conn_mgr.return_value.receive_request = async_mock.CoroutineMock()
         request_context.message = ConnectionRequest()
         with async_mock.patch.object(
-            connection_record, "metadata_get", async_mock.CoroutineMock(
-                return_value={"id": "test-mediation-id"}
-            )
+            connection_record,
+            "metadata_get",
+            async_mock.CoroutineMock(return_value={"id": "test-mediation-id"}),
         ) as mock_metadata_get:
             handler_inst = handler.ConnectionRequestHandler()
             responder = MockResponder()
             await handler_inst.handle(request_context, responder)
             mock_conn_mgr.return_value.receive_request.assert_called_once_with(
-                request_context.message, request_context.message_receipt, mediation_id="test-mediation-id"
+                request_context.message,
+                request_context.message_receipt,
+                mediation_id="test-mediation-id",
             )
             assert not responder.messages
 
