@@ -258,6 +258,43 @@ class MultitenantManager:
 
         return token
 
+    async def get_profile_for_token(
+        self, context: InjectionContext, token: str
+    ) -> Profile:
+        """Get the profile associated with a JWT header token.
+
+        Args:
+            context: The context to use for profile creation
+            token: The token
+
+        Raises:
+            WalletKeyMissingError: [description]
+
+        Returns:
+            Profile associated with the token
+
+        """
+        jwt_secret = self.profile.context.settings.get("multitenant.jwt_secret")
+        extra_settings = {}
+
+        token_body = jwt.decode(token, jwt_secret)
+
+        wallet_id = token_body.get("wallet_id")
+        wallet_key = token_body.get("wallet_key")
+
+        async with self.profile.session() as session:
+            wallet = await WalletRecord.retrieve_by_id(session, wallet_id)
+
+            if wallet.requires_external_key:
+                if not wallet_key:
+                    raise WalletKeyMissingError()
+
+                extra_settings["wallet.key"] = wallet_key
+
+            profile = await self.get_wallet_profile(context, wallet, extra_settings)
+
+            return profile
+
     async def _get_wallet_by_key(
         self, session: ProfileSession, recipient_key: str
     ) -> Optional[WalletRecord]:

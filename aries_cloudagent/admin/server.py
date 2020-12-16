@@ -28,7 +28,6 @@ from ..transport.outbound.message import OutboundMessage
 from ..utils.stats import Collector
 from ..utils.task_queue import TaskQueue
 from ..version import __version__
-from ..wallet.models.wallet_record import WalletRecord
 from ..multitenant.manager import MultitenantManager, MultitenantManagerError
 
 from ..storage.error import StorageNotFoundError
@@ -237,8 +236,7 @@ class AdminServer(BaseAdminServer):
         self.webhook_targets = {}
         self.websocket_queues = {}
         self.site = None
-        self.multitenant_enabled = context.settings.get("multitenant.enabled")
-        self.jwt_secret = context.settings.get("multitenant.jwt_secret")
+        self.multitenant_manager = context.inject(MultitenantManager, required=False)
 
     async def make_application(self) -> web.Application:
         """Get the aiohttp application instance."""
@@ -283,41 +281,29 @@ class AdminServer(BaseAdminServer):
         @web.middleware
         async def setup_context(request: web.Request, handler):
             authorization_header = request.headers.get("Authorization")
-            context = self.context
             profile = self.root_profile
 
             # Multitenancy context setup
-            # MTODO: extract to separate middleware
-            if self.multitenant_enabled and authorization_header:
-                try:
-                    bearer, _, token = authorization_header.partition(" ")
-                    if bearer != "Bearer":
-                        raise web.HTTPUnauthorized(reason="Invalid header structure")
-                    token_body = jwt.decode(token, self.jwt_secret)
+            if self.multitenant_manager:
+                if authorization_header:
+                    # Don't allow manager route
+                    try:
+                        bearer, _, token = authorization_header.partition(" ")
+                        if bearer != "Bearer":
+                            raise web.HTTPUnauthorized(
+                                reason="Invalid Authorization header structure"
+                            )
 
-                    wallet_id = token_body.get("wallet_id")
-                    wallet_key = token_body.get("wallet_key")
-
-                    async with self.root_profile.session() as session:
-                        multitenant_mgr = session.inject(MultitenantManager)
-                        wallet = await WalletRecord.retrieve_by_id(session, wallet_id)
-                        extra_settings = {}
-
-                        if not wallet.is_managed:
-                            if not wallet_key:
-                                raise web.HTTPUnauthorized(
-                                    "Missing wallet_key for unmanaged wallet"
-                                )
-
-                            extra_settings["wallet.key"] = wallet_key
-
-                        profile = await multitenant_mgr.get_wallet_profile(
-                            context, wallet, extra_settings
+                        profile = await self.multitenant_manager.get_profile_for_token(
+                            self.context, token
                         )
-                except MultitenantManagerError as err:
-                    raise web.HTTPUnauthorized(err.roll_up)
-                except (jwt.InvalidTokenError, StorageNotFoundError):
-                    raise web.HTTPUnauthorized()
+                    except MultitenantManagerError as err:
+                        raise web.HTTPUnauthorized(err.roll_up)
+                    except (jwt.InvalidTokenError, StorageNotFoundError):
+                        raise web.HTTPUnauthorized()
+                else:
+                    pass
+                    # don't allow non_manager route
 
             # TODO may dynamically adjust the profile used here according to
             # headers or other parameters
@@ -453,12 +439,29 @@ class AdminServer(BaseAdminServer):
 
     async def on_startup(self, app: web.Application):
         """Perform webserver startup actions."""
+        security_definitions = {}
+        security = []
+
         if self.admin_api_key:
-            swagger = app["swagger_dict"]
-            swagger["securityDefinitions"] = {
-                "ApiKeyHeader": {"type": "apiKey", "in": "header", "name": "X-API-KEY"}
+            security_definitions["ApiKeyHeader"] = {
+                "type": "apiKey",
+                "in": "header",
+                "name": "X-API-KEY",
             }
-            swagger["security"] = [{"ApiKeyHeader": []}]
+            security.append({"ApiKeyHeader": []})
+        if self.multitenant_manager:
+            security_definitions["AuthorizationHeader"] = {
+                "type": "apiKey",
+                "in": "header",
+                "name": "Authorization",
+                "description": "Bearer token. Be sure to preprend token with 'Bearer '",
+            }
+            security.append({"AuthorizationHeader": []})
+
+        if self.admin_api_key or self.multitenant_manager:
+            swagger = app["swagger_dict"]
+            swagger["securityDefinitions"] = security_definitions
+            swagger["security"] = security
 
     @docs(tags=["server"], summary="Fetch the list of loaded plugins")
     @response_schema(AdminModulesSchema(), 200, description="")
