@@ -87,6 +87,7 @@ class WalletRecord(BaseRecord):
 
     @property
     def requires_external_key(self) -> bool:
+        """Accessor to check if the wallet requires an external key."""
         wallet_type = self.wallet_config.get("type")
 
         # Key not required for in_memory wallets

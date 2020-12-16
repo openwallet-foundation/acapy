@@ -92,6 +92,8 @@ class CreateWalletRequestSchema(OpenAPISchema):
 
 
 class CreateWalletResponseSchema(WalletRecordSchema):
+    """Response schema for creating a wallet."""
+
     token = fields.Str(
         description="Authorization token to authenticate wallet requests",
         example=JSONWebToken.EXAMPLE,
@@ -119,6 +121,8 @@ class CreateWalletTokenRequestSchema(OpenAPISchema):
 
 
 class CreateWalletTokenResponseSchema(OpenAPISchema):
+    """Response schema for creating a wallet token."""
+
     token = fields.Str(
         description="Authorization token to authenticate wallet requests",
         example=JSONWebToken.EXAMPLE,

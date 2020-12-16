@@ -199,7 +199,6 @@ class AdminServer(BaseAdminServer):
         self,
         host: str,
         port: int,
-        # MTODO: can't we use root_profile context here?
         context: InjectionContext,
         root_profile: Profile,
         outbound_message_router: Coroutine,
