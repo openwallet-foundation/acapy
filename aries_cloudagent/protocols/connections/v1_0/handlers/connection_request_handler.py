@@ -31,7 +31,7 @@ class ConnectionRequestHandler(BaseHandler):
 
         if context.connection_record:
             mediation_metadata = await context.connection_record.metadata_get(
-                session, "mediation"
+                session, "mediation", {}
             )
         else:
             mediation_metadata = {}
