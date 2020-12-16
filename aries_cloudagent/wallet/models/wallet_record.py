@@ -94,7 +94,7 @@ class WalletRecord(BaseRecord):
         if wallet_type == "in_memory":
             return False
         # Managed wallets have the key stored in the wallet
-        elif self.is_managed():
+        elif self.is_managed:
             return False
         # All other cases the key is required
         else:

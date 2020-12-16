@@ -202,12 +202,13 @@ async def wallet_create(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     body = await request.json()
 
-    key_management_mode = body.get("key_management_mode")
+    key_management_mode = body.get("key_management_mode") or WalletRecord.MODE_MANAGED
+    wallet_type = body.get("wallet_type") or "in_memory"
     wallet_name = body.get("wallet_name")
     wallet_key = body.get("wallet_key")
 
     wallet_config = {
-        "type": body.get("wallet_type"),
+        "type": wallet_type,
         "name": wallet_name,
         "key": wallet_key,
     }

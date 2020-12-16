@@ -26,7 +26,6 @@ from ....wallet.crypto import create_keypair, seed_to_did
 from ....wallet.error import WalletNotFoundError
 from ....wallet.util import bytes_to_b58, did_key_to_naked
 from ....multitenant.manager import MultitenantManager
-from ....protocols.routing.v1_0.manager import RoutingManager
 from ...coordinate_mediation.v1_0.models.mediation_record import MediationRecord
 from .messages.connection_invitation import ConnectionInvitation
 from .messages.connection_request import ConnectionRequest

@@ -363,7 +363,7 @@ class DemoAgent:
         # check if wallet exists already
         wallets = await self.agency_admin_GET("/multitenancy/wallets")
         for wallet in wallets["results"]:
-            if wallet["wallet_name"] == target_wallet_name:
+            if wallet["wallet_config"]["name"] == target_wallet_name:
                 # if so set local agent attributes
                 self.wallet_name = target_wallet_name
                 # assume wallet key is wallet name
@@ -378,7 +378,8 @@ class DemoAgent:
         wallet_params = {
             "wallet_key": target_wallet_name,
             "wallet_name": target_wallet_name,
-            "wallet_type": "indy",
+            "wallet_type": self.wallet_type,
+            "label": target_wallet_name,
         }
         self.wallet_name = target_wallet_name
         self.wallet_key = target_wallet_name
