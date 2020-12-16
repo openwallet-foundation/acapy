@@ -68,7 +68,7 @@ class ConnectionManager:
 
     def validate_mediation(func):
         """
-        Decorator that validates mediation input.
+        Decorator validate mediation input.
 
         Check for mediation id, if one is present
         check for mediation record, if no record, retrieve
