@@ -1,14 +1,14 @@
 """Multitenant admin routes."""
 
-from marshmallow import fields, Schema, validate, validates_schema, ValidationError
+from marshmallow import fields, validate, validates_schema, ValidationError
 from aiohttp import web
-from aiohttp_apispec import docs, request_schema, match_info_schema
+from aiohttp_apispec import docs, request_schema, match_info_schema, response_schema
 
 from ...admin.request_context import AdminRequestContext
-from ...messaging.valid import UUIDFour
+from ...messaging.valid import JSONWebToken, UUIDFour
 from ...messaging.models.openapi import OpenAPISchema
 from ...storage.error import StorageNotFoundError
-from ...wallet.models.wallet_record import WalletRecord
+from ...wallet.models.wallet_record import WalletRecord, WalletRecordSchema
 from ...core.error import BaseError
 from ...core.profile import ProfileManagerProvider
 from ..manager import MultitenantManager
@@ -18,15 +18,17 @@ from ..error import WalletKeyMissingError
 def format_wallet_record(wallet_record: WalletRecord):
     """Serialize a WalletRecord object."""
 
-    wallet_info = {
-        "wallet_id": wallet_record.wallet_id,
-        "wallet_type": wallet_record.wallet_config.get("type"),
-        "wallet_name": wallet_record.wallet_name,
-        "created_at": wallet_record.created_at,
-        "updated_at": wallet_record.updated_at,
-    }
+    wallet_info = wallet_record.serialize()
+
+    # Hide wallet wallet key
+    if "key" in wallet_info["wallet_config"]:
+        del wallet_info["wallet_config"]["key"]
 
     return wallet_info
+
+
+class MultitenantModuleResponseSchema(OpenAPISchema):
+    """Response schema for multitenant module."""
 
 
 class WalletIdMatchInfoSchema(OpenAPISchema):
@@ -37,7 +39,7 @@ class WalletIdMatchInfoSchema(OpenAPISchema):
     )
 
 
-class CreateWalletRequestSchema(Schema):
+class CreateWalletRequestSchema(OpenAPISchema):
     """Request schema for adding a new wallet which will be registered by the agent."""
 
     wallet_name = fields.Str(description="Wallet name", example="MyNewWallet")
@@ -87,7 +89,14 @@ class CreateWalletRequestSchema(Schema):
                     raise ValidationError("Missing required field", field)
 
 
-class RemoveWalletRequestSchema(Schema):
+class CreateWalletResponseSchema(WalletRecordSchema):
+    token = fields.Str(
+        description="Authorization token to authenticate wallet requests",
+        example=JSONWebToken.EXAMPLE,
+    )
+
+
+class RemoveWalletRequestSchema(OpenAPISchema):
     """Request schema for removing a wallet."""
 
     wallet_key = fields.Str(
@@ -97,7 +106,7 @@ class RemoveWalletRequestSchema(Schema):
     )
 
 
-class CreateWalletTokenRequestSchema(Schema):
+class CreateWalletTokenRequestSchema(OpenAPISchema):
     """Request schema for creating a wallet token."""
 
     wallet_key = fields.Str(
@@ -107,8 +116,24 @@ class CreateWalletTokenRequestSchema(Schema):
     )
 
 
+class CreateWalletTokenResponseSchema(OpenAPISchema):
+    token = fields.Str(
+        description="Authorization token to authenticate wallet requests",
+        example=JSONWebToken.EXAMPLE,
+    )
+
+
+class WalletListSchema(OpenAPISchema):
+    """Result schema for wallet list."""
+
+    results = fields.List(
+        fields.Nested(WalletRecordSchema()),
+        description="List of wallet records",
+    )
+
+
 @docs(tags=["multitenancy"], summary="List all subwallets")
-# MTODO: wallet_list response schema
+@response_schema(WalletListSchema(), 200, description="")
 async def wallet_list(request: web.BaseRequest):
     """
     Request handler for listing all internal subwallets.
@@ -131,7 +156,7 @@ async def wallet_list(request: web.BaseRequest):
 
 @docs(tags=["multitenancy"], summary="Get a single subwallet")
 @match_info_schema(WalletIdMatchInfoSchema())
-# MTODO: wallet_get response schema
+@response_schema(WalletRecordSchema(), 200, description="")
 async def wallet_get(request: web.BaseRequest):
     """
     Request handler for getting a single subwallet.
@@ -159,7 +184,7 @@ async def wallet_get(request: web.BaseRequest):
 
 @docs(tags=["multitenancy"], summary="Create a subwallet")
 @request_schema(CreateWalletRequestSchema)
-# MTODO: wallet_create Response schema
+@response_schema(CreateWalletResponseSchema(), 200, description="")
 async def wallet_create(request: web.BaseRequest):
     """
     Request handler for adding a new subwallet for handling by the agent.
@@ -207,7 +232,7 @@ async def wallet_create(request: web.BaseRequest):
 
 @docs(tags=["multitenancy"], summary="Get auth token for a subwallet")
 @request_schema(CreateWalletTokenRequestSchema)
-# MTODO: wallet_create_token Response schema
+@response_schema(CreateWalletTokenResponseSchema(), 200, description="")
 async def wallet_create_token(request: web.BaseRequest):
     """
     Request handler for creating an authorization token for a specific subwallet.
@@ -244,7 +269,7 @@ async def wallet_create_token(request: web.BaseRequest):
 )
 @match_info_schema(WalletIdMatchInfoSchema())
 @request_schema(RemoveWalletRequestSchema)
-# MTODO: wallet_remove response schema
+@response_schema(MultitenantModuleResponseSchema(), 200, description="")
 async def wallet_remove(request: web.BaseRequest):
     """
     Request handler to remove a subwallet from agent and storage.

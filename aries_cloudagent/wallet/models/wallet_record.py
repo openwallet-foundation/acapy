@@ -115,3 +115,6 @@ class WalletRecordSchema(BaseRecordSchema):
             ]
         ),
     )
+    extra_settings = fields.Dict(
+        required=False, description="Extra context settings for this wallet."
+    )
