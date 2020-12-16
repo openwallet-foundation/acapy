@@ -67,7 +67,9 @@ class CreateWalletRequestSchema(OpenAPISchema):
         description="Key management method to use for this wallet.",
         example=WalletRecord.MODE_MANAGED,
         default=WalletRecord.MODE_MANAGED,
-        validate=validate.OneOf(WalletRecord.MODE_MANAGED, WalletRecord.MODE_UNMANAGED),
+        validate=validate.OneOf(
+            (WalletRecord.MODE_MANAGED, WalletRecord.MODE_UNMANAGED)
+        ),
     )
 
     @validates_schema

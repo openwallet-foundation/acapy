@@ -85,6 +85,20 @@ class WalletRecord(BaseRecord):
         """Accessor to check if the key management mode is managed."""
         return self.key_management_mode == WalletRecord.MODE_MANAGED
 
+    @property
+    def requires_external_key(self) -> bool:
+        wallet_type = self.wallet_config.get("type")
+
+        # Key not required for in_memory wallets
+        if wallet_type == "in_memory":
+            return False
+        # Managed wallets have the key stored in the wallet
+        elif self.is_managed():
+            return False
+        # All other cases the key is required
+        else:
+            return True
+
     def __eq__(self, other: Any) -> bool:
         """Comparison between records."""
         return super().__eq__(other)

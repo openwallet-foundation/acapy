@@ -13,7 +13,9 @@ from ..config.injection_context import InjectionContext
 from ..wallet.models.wallet_record import WalletRecord
 from ..core.error import BaseError
 from ..protocols.routing.v1_0.manager import RouteNotFoundError, RoutingManager
+from ..protocols.routing.v1_0.models.route_record import RouteRecord
 from ..transport.wire_format import BaseWireFormat
+from ..storage.base import BaseStorage
 
 from .error import WalletKeyMissingError
 
@@ -114,7 +116,7 @@ class MultitenantManager:
         return self._instances[wallet_id]
 
     async def create_wallet(
-        self, wallet_config: dict, key_management_mode: str
+        self, wallet_config: dict, key_management_mode: str, extra_settings=None
     ) -> WalletRecord:
         """Create new wallet and wallet record.
 
@@ -148,6 +150,7 @@ class MultitenantManager:
             wallet_record = WalletRecord(
                 wallet_config=wallet_config,
                 key_management_mode=key_management_mode,
+                extra_settings=extra_settings,
             )
 
             await wallet_record.save(session)
@@ -182,9 +185,7 @@ class MultitenantManager:
             )
 
             wallet_key = wallet_key or wallet.wallet_config.get("key")
-
-            # MTODO: make wallet key required
-            if not wallet.is_managed and not wallet_key:
+            if wallet.requires_external_key and not wallet_key:
                 raise WalletKeyMissingError("Missing key to open wallet")
 
             profile = await self.get_wallet_profile(
@@ -193,10 +194,15 @@ class MultitenantManager:
                 {"wallet.key": wallet_key},
             )
 
-            await profile.remove()
             del self._instances[wallet_id]
+            await profile.remove()
 
-            # MTODO: delete route records
+            # Remove all routing records associated with wallet
+            storage = session.inject(BaseStorage)
+            await storage.delete_all_records(
+                RouteRecord.RECORD_TYPE, {"wallet_id": wallet.wallet_id}
+            )
+
             await wallet.delete_record(session)
 
     async def add_wallet_route(
@@ -242,7 +248,7 @@ class MultitenantManager:
         jwt_payload = {"wallet_id": wallet_record.wallet_id}
         jwt_secret = self.profile.settings.get("multitenant.jwt_secret")
 
-        if not wallet_record.is_managed:
+        if wallet_record.requires_external_key:
             if not wallet_key:
                 raise WalletKeyMissingError()
 
