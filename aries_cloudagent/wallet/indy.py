@@ -288,7 +288,12 @@ class IndySdkWallet(BaseWallet):
         """
         meta_json = json.dumps(metadata or {})
         await self.get_local_did(did)  # throw exception if undefined
-        await indy.did.set_did_metadata(self.opened.handle, did, meta_json)
+        try:
+            await indy.did.set_did_metadata(self.opened.handle, did, meta_json)
+        except IndyError as x_indy:
+            raise IndyErrorHandler.wrap_error(
+                x_indy, "Wallet {} error".format(self.opened.name), WalletError
+            ) from x_indy
 
     async def set_did_endpoint(
         self,
