@@ -28,16 +28,19 @@ class ConnectionRequestHandler(BaseHandler):
 
         session = await context.session()
         mgr = ConnectionManager(session)
-        mediation_metadata = await context.connection_record.metadata_get(
-            session, "mediation"
-        )
+
+        if context.connection_record:
+            mediation_metadata = await context.connection_record.metadata_get(
+                session, "mediation"
+            )
+        else:
+            mediation_metadata = {}
+
         try:
             await mgr.receive_request(
                 context.message,
                 context.message_receipt,
-                mediation_id=None
-                if not mediation_metadata
-                else mediation_metadata["id"],
+                mediation_id=mediation_metadata.get("id"),
             )
         except ConnectionManagerError as e:
             self._logger.exception("Error receiving connection request")
