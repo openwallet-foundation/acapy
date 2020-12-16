@@ -19,7 +19,7 @@ def format_wallet_record(wallet_record: WalletRecord):
     """Serialize a WalletRecord object."""
 
     wallet_info = {
-        "wallet_id": wallet_record.wallet_record_id,
+        "wallet_id": wallet_record.wallet_id,
         "wallet_type": wallet_record.wallet_config.get("type"),
         "wallet_name": wallet_record.wallet_name,
         "created_at": wallet_record.created_at,

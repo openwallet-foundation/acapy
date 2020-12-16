@@ -97,7 +97,7 @@ class MultitenantManager:
             Profile: Profile for the wallet record
 
         """
-        wallet_id = wallet_record.wallet_record_id
+        wallet_id = wallet_record.wallet_id
 
         if wallet_id not in self._instances:
             # Extend base context
@@ -239,7 +239,7 @@ class MultitenantManager:
 
         """
 
-        jwt_payload = {"wallet_id": wallet_record.wallet_record_id}
+        jwt_payload = {"wallet_id": wallet_record.wallet_id}
         jwt_secret = self.profile.settings.get("multitenant.jwt_secret")
 
         if not wallet_record.is_managed:

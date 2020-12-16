@@ -22,7 +22,7 @@ class WalletRecord(BaseRecord):
         schema_class = "WalletRecordSchema"
 
     RECORD_TYPE = "wallet_record"
-    RECORD_ID_NAME = "wallet_record_id"
+    RECORD_ID_NAME = "wallet_id"
 
     TAG_NAMES = {"wallet_name"}
 
@@ -32,7 +32,7 @@ class WalletRecord(BaseRecord):
     def __init__(
         self,
         *,
-        wallet_record_id: str = None,
+        wallet_id: str = None,
         wallet_config: dict = None,
         key_management_mode: str = None,
         extra_settings: dict = None,
@@ -42,15 +42,14 @@ class WalletRecord(BaseRecord):
         **kwargs,
     ):
         """Initialize a new WalletRecord."""
-        super().__init__(wallet_record_id, **kwargs)
-        self._id = wallet_record_id
+        super().__init__(wallet_id, **kwargs)
         self.wallet_config = wallet_config
         self.key_management_mode = key_management_mode
         self.extra_settings = extra_settings or {}
 
     def get_wallet_config_as_settings(self):
         """Get the wallet config as settings dict."""
-        config = {**self.wallet_config, "id": self.wallet_record_id}
+        config = {**self.wallet_config, "id": self.wallet_id}
         # Wallet settings need to be prefixed with `wallet.`
         return {f"wallet.{k}": v for k, v in config.items()}
 
@@ -59,7 +58,7 @@ class WalletRecord(BaseRecord):
         return {**self.extra_settings, **self.get_wallet_config_as_settings()}
 
     @property
-    def wallet_record_id(self) -> str:
+    def wallet_id(self) -> str:
         """Accessor for the ID associated with this record."""
         return self._id
 
@@ -100,7 +99,7 @@ class WalletRecordSchema(BaseRecordSchema):
         model_class = WalletRecord
         unknown = EXCLUDE
 
-    wallet_record_id = fields.Str(
+    wallet_id = fields.Str(
         required=True,
         description="Wallet record ID",
         example=UUIDFour.EXAMPLE,
