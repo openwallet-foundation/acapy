@@ -106,9 +106,9 @@ class MultitenantManager:
             context = base_context.copy()
 
             # MTODO: remove base wallet settings
-            context.settings = context.settings.extend(
-                wallet_record.get_settings()
-            ).extend(extra_settings)
+            context.settings = context.settings.extend(wallet_record.settings).extend(
+                extra_settings
+            )
 
             profile, _ = await configure_wallet(context, provision=provision)
             self._instances[wallet_id] = profile
@@ -116,15 +116,14 @@ class MultitenantManager:
         return self._instances[wallet_id]
 
     async def create_wallet(
-        self, wallet_config: dict, key_management_mode: str, extra_settings: dict = None
+        self, settings: dict, key_management_mode: str
     ) -> WalletRecord:
         """Create new wallet and wallet record.
 
         Args:
-            wallet_config: The wallet config for the wallet to create
+            settings: The context settings for this wallet
             key_management_mode: The mode to use for key management. Either "unmanaged"
                 to not store the wallet key, or "managed" to store the wallet key
-            extra_settings: Additional context settings for this wallet
 
         Raises:
             MultitenantManagerError: If the wallet name already exists
@@ -133,8 +132,8 @@ class MultitenantManager:
             WalletRecord: The newly created wallet record
 
         """
-        wallet_key = wallet_config.get("key")
-        wallet_name = wallet_config.get("name")
+        wallet_key = settings.get("wallet.key")
+        wallet_name = settings.get("wallet.name")
 
         async with self.profile.session() as session:
             # Check if the wallet name already exists to avoid indy wallet errors
@@ -145,13 +144,11 @@ class MultitenantManager:
 
             # In unmanaged mode we don't want to store the wallet key
             if key_management_mode == WalletRecord.MODE_UNMANAGED:
-                wallet_config = {k: v for k, v in wallet_config.items() if k != "key"}
+                del settings["wallet.key"]
 
             # create and store wallet record
             wallet_record = WalletRecord(
-                wallet_config=wallet_config,
-                key_management_mode=key_management_mode,
-                extra_settings=extra_settings,
+                settings=settings, key_management_mode=key_management_mode
             )
 
             await wallet_record.save(session)
@@ -185,7 +182,7 @@ class MultitenantManager:
                 await WalletRecord.retrieve_by_id(session, wallet_id),
             )
 
-            wallet_key = wallet_key or wallet.wallet_config.get("key")
+            wallet_key = wallet_key or wallet.wallet_key
             if wallet.requires_external_key and not wallet_key:
                 raise WalletKeyMissingError("Missing key to open wallet")
 

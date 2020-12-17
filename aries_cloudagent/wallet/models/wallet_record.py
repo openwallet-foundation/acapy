@@ -1,6 +1,6 @@
 """Wallet record."""
 
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 from marshmallow import fields
 from marshmallow import validate
@@ -33,9 +33,8 @@ class WalletRecord(BaseRecord):
         self,
         *,
         wallet_id: str = None,
-        wallet_config: dict = None,
         key_management_mode: str = None,
-        extra_settings: dict = None,
+        settings: dict = None,
         # MTODO: how to make this a tag without making it
         # a constructor param
         wallet_name: str = None,
@@ -43,19 +42,8 @@ class WalletRecord(BaseRecord):
     ):
         """Initialize a new WalletRecord."""
         super().__init__(wallet_id, **kwargs)
-        self.wallet_config = wallet_config
         self.key_management_mode = key_management_mode
-        self.extra_settings = extra_settings or {}
-
-    def get_wallet_config_as_settings(self):
-        """Get the wallet config as settings dict."""
-        config = {**self.wallet_config, "id": self.wallet_id}
-        # Wallet settings need to be prefixed with `wallet.`
-        return {f"wallet.{k}": v for k, v in config.items()}
-
-    def get_settings(self):
-        """Get the settings for this wallet record."""
-        return {**self.extra_settings, **self.get_wallet_config_as_settings()}
+        self.settings = settings
 
     @property
     def wallet_id(self) -> str:
@@ -65,19 +53,23 @@ class WalletRecord(BaseRecord):
     @property
     def wallet_name(self) -> Optional[str]:
         """Accessor for the name of the wallet."""
-        return self.wallet_config.get("name")
+        return self.settings.get("wallet.name")
 
     @property
     def wallet_type(self) -> str:
         """Accessor for the type of the wallet."""
-        return self.wallet_config.get("type")
+        return self.settings.get("wallet.type")
+
+    @property
+    def wallet_key(self) -> Optional[str]:
+        """Accessor for the key of the wallet."""
+        return self.settings.get("wallet.key")
 
     @property
     def record_value(self) -> dict:
         """Accessor for the JSON record value generated for this record."""
         return {
-            prop: getattr(self, prop)
-            for prop in ("wallet_config", "key_management_mode", "extra_settings")
+            prop: getattr(self, prop) for prop in ("settings", "key_management_mode")
         }
 
     @property
@@ -88,7 +80,7 @@ class WalletRecord(BaseRecord):
     @property
     def requires_external_key(self) -> bool:
         """Accessor to check if the wallet requires an external key."""
-        wallet_type = self.wallet_config.get("type")
+        wallet_type = self.settings.get("wallet.type")
 
         # Key not required for in_memory wallets
         if wallet_type == "in_memory":
@@ -119,7 +111,6 @@ class WalletRecordSchema(BaseRecordSchema):
         description="Wallet record ID",
         example=UUIDFour.EXAMPLE,
     )
-    wallet_config = fields.Dict(required=True, description="Wallet config")
     key_management_mode = fields.Str(
         required=True,
         description="Mode regarding management of wallet key",
@@ -130,6 +121,4 @@ class WalletRecordSchema(BaseRecordSchema):
             ]
         ),
     )
-    extra_settings = fields.Dict(
-        required=False, description="Extra context settings for this wallet."
-    )
+    settings = fields.Dict(required=False, description="Settings for this wallet.")

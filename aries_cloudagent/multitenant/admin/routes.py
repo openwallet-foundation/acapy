@@ -203,27 +203,24 @@ async def wallet_create(request: web.BaseRequest):
     body = await request.json()
 
     key_management_mode = body.get("key_management_mode") or WalletRecord.MODE_MANAGED
-    wallet_type = body.get("wallet_type") or "in_memory"
-    wallet_name = body.get("wallet_name")
     wallet_key = body.get("wallet_key")
 
-    wallet_config = {
-        "type": wallet_type,
-        "name": wallet_name,
-        "key": wallet_key,
+    settings = {
+        "wallet.type": body.get("wallet_type") or "in_memory",
+        "wallet.name": body.get("wallet_name"),
+        "wallet.key": wallet_key,
     }
 
-    extra_settings = {}
     label = body.get("label")
     if label:
-        extra_settings["default_label"] = label
+        settings["default_label"] = label
 
     async with context.session() as session:
         try:
             multitenant_mgr = session.inject(MultitenantManager)
 
             wallet_record = await multitenant_mgr.create_wallet(
-                wallet_config, key_management_mode, extra_settings=extra_settings
+                settings, key_management_mode
             )
 
             token = await multitenant_mgr.create_auth_token(wallet_record, wallet_key)
