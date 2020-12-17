@@ -66,55 +66,26 @@ class ConnectionManager:
         """
         return self._session
 
-    def validate_mediation(id_index, record_index):
-        """
-        Decorate method for validation of mediation input.
+    async def mediation_record_if_id(self, mediation_id: str = None):
+        """Validate mediation and return record.
 
-        Check for mediation id, if one is present
-        check for mediation record, if no record, retrieve
-        and attach it to the key value arguments. if mediation
-        record data is wrong, raise appropriate error.
+        If mediation_id is not None,
+        validate medation record state and return record
+        else, return None
         """
-        def validate(func):
-            @wraps(func)
-            async def check(self, *args, **kwargs):
-                record_is_in_args = (len(args)-1) >= record_index
-                if (len(args)-1) >= id_index:
-                    mediation_id = args[id_index]
-                else:
-                    mediation_id = kwargs.get("mediation_id")
-                if mediation_id:
-                    if record_is_in_args:
-                        mediation_record = args[record_index]
-                    else:
-                        mediation_record = kwargs.get("mediation_record")
-                    if not mediation_record:
-                        mediation_record = await MediationRecord.retrieve_by_id(
-                            self._session, mediation_id
-                        )
-                        if record_is_in_args:
-                            args = (
-                                *args[0:record_index],
-                                mediation_record,
-                                *args[record_index+1:]
-                            )
-                        else:
-                            kwargs["mediation_record"] = mediation_record
-                if record_is_in_args:
-                    mediation_record = args[record_index]
-                else:
-                    mediation_record = kwargs.get("mediation_record")
-                if mediation_record:
-                    if mediation_record.state != MediationRecord.STATE_GRANTED:
-                        raise ConnectionManagerError(
-                            "Mediation is not granted for mediation identified by "
-                            f"{mediation_record.mediation_id}"
-                        )
-                return await func(self, *args, **kwargs)
-            return check
-        return validate
+        mediation_record = None
+        if mediation_id:
+            mediation_record = await MediationRecord.retrieve_by_id(
+                self._session, mediation_id
+            )
+        if mediation_record:
+            if mediation_record.state != MediationRecord.STATE_GRANTED:
+                raise ConnectionManagerError(
+                    "Mediation is not granted for mediation identified by "
+                    f"{mediation_record.mediation_id}"
+                )
+        return mediation_record
 
-    @validate_mediation(9, 10)
     async def create_invitation(
         self,
         my_label: str = None,
@@ -127,7 +98,6 @@ class ConnectionManager:
         recipient_keys: Sequence[str] = None,
         metadata: dict = None,
         mediation_id: str = None,
-        mediation_record: MediationRecord = None,
     ) -> Tuple[ConnRecord, ConnectionInvitation]:
         """
         Generate new connection invitation.
@@ -247,7 +217,8 @@ class ConnectionManager:
 
         await connection.save(self._session, reason="Created new invitation")
 
-        if mediation_id:
+        mediation_record = await self.mediation_record_if_id(mediation_id)
+        if mediation_record:
             routing_keys = mediation_record.routing_keys
             my_endpoint = mediation_record.endpoint
 
@@ -337,9 +308,7 @@ class ConnectionManager:
         await connection.attach_invitation(self._session, invitation)
 
         if connection.accept == ConnRecord.ACCEPT_AUTO:
-            request = await self.create_request(
-                connection, mediation_id=mediation_id, mediation_record=mediation_record
-            )
+            request = await self.create_request(connection, mediation_id=mediation_id)
             responder = self._session.inject(BaseResponder, required=False)
             if responder:
                 await responder.send(request, connection_id=connection.connection_id)
@@ -351,14 +320,12 @@ class ConnectionManager:
             self._logger.debug("Connection invitation will await acceptance")
         return connection
 
-    @validate_mediation(3, 4)
     async def create_request(
         self,
         connection: ConnRecord,
         my_label: str = None,
         my_endpoint: str = None,
         mediation_id: str = None,
-        mediation_record: MediationRecord = None,
     ) -> ConnectionRequest:
         """
         Create a new connection request for a previously-received invitation.
@@ -373,7 +340,11 @@ class ConnectionManager:
 
         """
 
-        keylist_updates = None  # Mediation setup
+        # Mediation setup
+        keylist_updates = None
+        mediation_record = await self.mediation_record_if_id(mediation_id)
+        mediation_mgr = MediationManager(self._session)
+
         my_info = None
         wallet = self._session.inject(BaseWallet)
         if connection.my_did:
@@ -382,7 +353,6 @@ class ConnectionManager:
             # Create new DID for connection
             my_info = await wallet.create_local_did()
             connection.my_did = my_info.did
-            mediation_mgr = MediationManager(self._session)
             keylist_updates = await mediation_mgr.add_key(
                 my_info.verkey, keylist_updates
             )
@@ -433,13 +403,11 @@ class ConnectionManager:
 
         return request
 
-    @validate_mediation(2, 3)
     async def receive_request(
         self,
         request: ConnectionRequest,
         receipt: MessageReceipt,
         mediation_id: str = None,
-        mediation_record: MediationRecord = None,
     ) -> ConnRecord:
         """
         Receive and store a connection request.
@@ -559,9 +527,10 @@ class ConnectionManager:
         await connection.attach_request(self._session, request)
 
         # Send keylist updates to mediator
+        mediation_record = await self.mediation_record_if_id(mediation_id)
         if (
             keylist_updates
-            and mediation_id
+            and mediation_record
             and self._session.settings.get(
                 "mediation.auto_send_keylist_update_in_requests"
             )
@@ -572,7 +541,7 @@ class ConnectionManager:
             )
 
         if connection.accept == ConnRecord.ACCEPT_AUTO:
-            response = await self.create_response(connection, mediation_id)
+            response = await self.create_response(connection, mediation_id=mediation_id)
             responder = self._session.inject(BaseResponder, required=False)
             if responder:
                 await responder.send(response, connection_id=connection.connection_id)
@@ -585,13 +554,11 @@ class ConnectionManager:
 
         return connection
 
-    @validate_mediation(2, 3)
     async def create_response(
         self,
         connection: ConnRecord,
         my_endpoint: str = None,
         mediation_id: str = None,
-        mediation_record: MediationRecord = None,
     ) -> ConnectionResponse:
         """
         Create a connection response for a received connection request.
@@ -601,7 +568,6 @@ class ConnectionManager:
             my_endpoint: The endpoint I can be reached at
             mediation_id: The record id for mediation that contains routing_keys and
             service endpoint
-            mediation_record: The record for mediation
         Returns:
             A tuple of the updated `ConnRecord` new `ConnectionResponse` message
 
@@ -614,6 +580,7 @@ class ConnectionManager:
 
         mediation_mgr = MediationManager(self._session)
         keylist_updates = None
+        mediation_record = await self.mediation_record_if_id(mediation_id)
 
         if ConnRecord.State.get(connection.state) not in (
             ConnRecord.State.REQUEST,
