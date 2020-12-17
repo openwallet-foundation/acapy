@@ -541,7 +541,7 @@ class ConnectionManager:
             )
 
         if connection.accept == ConnRecord.ACCEPT_AUTO:
-            response = await self.create_response(connection, mediation_id)
+            response = await self.create_response(connection, mediation_id=mediation_id)
             responder = self._session.inject(BaseResponder, required=False)
             if responder:
                 await responder.send(response, connection_id=connection.connection_id)
