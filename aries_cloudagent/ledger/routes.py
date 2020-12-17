@@ -9,7 +9,7 @@ from ..admin.request_context import AdminRequestContext
 from ..messaging.models.openapi import OpenAPISchema
 from ..messaging.valid import ENDPOINT_TYPE, INDY_DID, INDY_RAW_PUBLIC_KEY, INT_EPOCH
 from ..storage.error import StorageError
-from ..wallet.error import WalletError
+from ..wallet.error import WalletError, WalletNotFoundError
 
 from .base import BaseLedger
 from .endpoint_type import EndpointType
@@ -154,6 +154,8 @@ async def register_ledger_nym(request: web.BaseRequest):
             raise web.HTTPForbidden(reason=err.roll_up)
         except LedgerError as err:
             raise web.HTTPBadRequest(reason=err.roll_up)
+        except WalletNotFoundError as err:
+            raise web.HTTPForbidden(reason=err.roll_up)
         except WalletError as err:
             raise web.HTTPBadRequest(
                 reason=(
