@@ -264,9 +264,16 @@ class Conductor:
             shutdown.run(self.inbound_transport_manager.stop())
         if self.outbound_transport_manager:
             shutdown.run(self.outbound_transport_manager.stop())
+
+        # close multitenant profiles
+        multitenant_mgr = self.context.inject(MultitenantManager, required=False)
+        if multitenant_mgr:
+            for profile in multitenant_mgr._instances.values():
+                shutdown.run(profile.close())
+
         if self.root_profile:
             shutdown.run(self.root_profile.close())
-        # MTODO: close all profiles
+
         await shutdown.complete(timeout)
 
     def inbound_message_router(

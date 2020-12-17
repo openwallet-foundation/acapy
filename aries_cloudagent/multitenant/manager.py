@@ -40,7 +40,7 @@ class MultitenantManager:
         if not profile:
             raise MultitenantManagerError("Missing profile")
 
-        self._instances = {}
+        self._instances: dict[str, Profile] = {}
 
     @property
     def profile(self) -> Profile:
