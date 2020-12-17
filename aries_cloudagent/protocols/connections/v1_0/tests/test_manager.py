@@ -240,7 +240,7 @@ class TestConnectionManager(AsyncTestCase):
             "mediation.auto_send_keylist_update_in_create_invitation"
         ] = True
         record, invite = await self.manager.create_invitation(
-            mediation_id=mediation_record.mediation_id, mediation_record=None
+            mediation_id=mediation_record.mediation_id
         )
         assert invite.routing_keys == self.test_mediator_routing_keys
         assert invite.endpoint == self.test_mediator_endpoint
@@ -280,9 +280,8 @@ class TestConnectionManager(AsyncTestCase):
             None,
             None,
             None,
-            mediation_record.mediation_id,
-            None
-        )
+            mediation_record.mediation_id
+            )
         assert invite.routing_keys == self.test_mediator_routing_keys
         assert invite.endpoint == self.test_mediator_endpoint
         assert len(self.responder.messages) == 1
@@ -357,8 +356,7 @@ class TestConnectionManager(AsyncTestCase):
                 None,
                 None,
                 None,
-                "not-a-mediation-id",
-                None
+                "not-a-mediation-id"
             )
 
     async def test_create_invitation_mediation_not_granted_kwargs(self):
@@ -409,8 +407,7 @@ class TestConnectionManager(AsyncTestCase):
                 None,
                 None,
                 None,
-                mediation_record.mediation_id,
-                None
+                mediation_record.mediation_id
             )
 
     async def test_create_invitation_mediation_overwrites_routing_and_endpoint(self):
@@ -475,7 +472,7 @@ class TestConnectionManager(AsyncTestCase):
                 connect_invite, mediation_id="test-mediation-id", auto_accept=True
             )
             create_request.assert_called_once_with(
-                invitee_record, mediation_id="test-mediation-id", mediation_record=None
+                invitee_record, mediation_id="test-mediation-id"
             )
 
     async def test_receive_invitation_bad_mediation(self):
