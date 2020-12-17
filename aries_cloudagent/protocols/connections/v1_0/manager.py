@@ -2,7 +2,6 @@
 
 import logging
 from typing import Coroutine, Sequence, Tuple
-from functools import wraps
 
 from aries_cloudagent.protocols.coordinate_mediation.v1_0.manager import (
     MediationManager,
