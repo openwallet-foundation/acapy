@@ -1,12 +1,15 @@
 import pytest
 from asynctest import mock as async_mock
 
+from ......core.profile import ProfileSession
 from ......connections.models import connection_target
 from ......connections.models.conn_record import ConnRecord
 from ......connections.models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
 from ......transport.inbound.receipt import MessageReceipt
+from ......storage.base import BaseStorage
+from ......storage.error import StorageNotFoundError
 from ...handlers import connection_request_handler as handler
 from ...manager import ConnectionManagerError
 from ...messages.connection_request import ConnectionRequest
@@ -17,11 +20,21 @@ from ...models.connection_detail import ConnectionDetail
 @pytest.fixture()
 async def request_context() -> RequestContext:
     ctx = RequestContext.test_context()
-    session = await ctx.session()
     ctx.message_receipt = MessageReceipt()
-    ctx.connection_record = ConnRecord()
-    await ctx.connection_record.save(session)
     yield ctx
+
+
+@pytest.fixture()
+async def session(request_context) -> ProfileSession:
+    yield await request_context.session()
+
+
+@pytest.fixture()
+async def connection_record(request_context, session) -> ConnRecord:
+    record = ConnRecord()
+    request_context.connection_record = record
+    await record.save(session)
+    yield record
 
 
 TEST_DID = "55GkHamhTU1ZbTbV2ab9DE"
@@ -73,6 +86,51 @@ class TestRequestHandler:
             request_context.message, request_context.message_receipt, mediation_id=None
         )
         assert not responder.messages
+
+    @pytest.mark.asyncio
+    @async_mock.patch.object(handler, "ConnectionManager")
+    async def test_connection_record_with_mediation_metadata(
+        self, mock_conn_mgr, request_context, connection_record
+    ):
+        mock_conn_mgr.return_value.receive_request = async_mock.CoroutineMock()
+        request_context.message = ConnectionRequest()
+        with async_mock.patch.object(
+            connection_record,
+            "metadata_get",
+            async_mock.CoroutineMock(return_value={"id": "test-mediation-id"}),
+        ) as mock_metadata_get:
+            handler_inst = handler.ConnectionRequestHandler()
+            responder = MockResponder()
+            await handler_inst.handle(request_context, responder)
+            mock_conn_mgr.return_value.receive_request.assert_called_once_with(
+                request_context.message,
+                request_context.message_receipt,
+                mediation_id="test-mediation-id",
+            )
+            assert not responder.messages
+
+    @pytest.mark.asyncio
+    @async_mock.patch.object(handler, "ConnectionManager")
+    async def test_connection_record_without_mediation_metadata(
+        self, mock_conn_mgr, request_context, session, connection_record
+    ):
+        mock_conn_mgr.return_value.receive_request = async_mock.CoroutineMock()
+        request_context.message = ConnectionRequest()
+        storage: BaseStorage = session.inject(BaseStorage)
+        with async_mock.patch.object(
+            storage,
+            "find_record",
+            async_mock.CoroutineMock(raises=StorageNotFoundError),
+        ) as mock_storage_find_record:
+            handler_inst = handler.ConnectionRequestHandler()
+            responder = MockResponder()
+            await handler_inst.handle(request_context, responder)
+            mock_conn_mgr.return_value.receive_request.assert_called_once_with(
+                request_context.message,
+                request_context.message_receipt,
+                mediation_id=None,
+            )
+            assert not responder.messages
 
     @pytest.mark.asyncio
     @async_mock.patch.object(handler, "ConnectionManager")
