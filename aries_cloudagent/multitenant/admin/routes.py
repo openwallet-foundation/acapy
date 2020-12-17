@@ -21,8 +21,8 @@ def format_wallet_record(wallet_record: WalletRecord):
     wallet_info = wallet_record.serialize()
 
     # Hide wallet wallet key
-    if "key" in wallet_info["wallet_config"]:
-        del wallet_info["wallet_config"]["key"]
+    if "wallet.key" in wallet_info["settings"]:
+        del wallet_info["settings"]["wallet.key"]
 
     return wallet_info
 

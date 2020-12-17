@@ -363,7 +363,7 @@ class DemoAgent:
         # check if wallet exists already
         wallets = await self.agency_admin_GET("/multitenancy/wallets")
         for wallet in wallets["results"]:
-            if wallet["wallet_config"]["name"] == target_wallet_name:
+            if wallet["settings"]["wallet.name"] == target_wallet_name:
                 # if so set local agent attributes
                 self.wallet_name = target_wallet_name
                 # assume wallet key is wallet name
@@ -463,7 +463,7 @@ class DemoAgent:
         )
         if wait:
             await asyncio.sleep(1.0)
-            await self.detect_process(headers={"Wallet": self.wallet_name})
+            await self.detect_process()
 
     def _terminate(self):
         if self.proc and self.proc.poll() is None:

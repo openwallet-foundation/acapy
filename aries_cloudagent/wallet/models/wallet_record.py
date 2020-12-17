@@ -1,6 +1,6 @@
 """Wallet record."""
 
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 from marshmallow import fields
 from marshmallow import validate
@@ -43,12 +43,17 @@ class WalletRecord(BaseRecord):
         """Initialize a new WalletRecord."""
         super().__init__(wallet_id, **kwargs)
         self.key_management_mode = key_management_mode
-        self.settings = settings
+        self._settings = settings
 
     @property
     def wallet_id(self) -> str:
         """Accessor for the ID associated with this record."""
         return self._id
+
+    @property
+    def settings(self) -> dict:
+        """Accessor for the context settings associated with this wallet."""
+        return {**self._settings, "wallet.id": self.wallet_id}
 
     @property
     def wallet_name(self) -> Optional[str]:
