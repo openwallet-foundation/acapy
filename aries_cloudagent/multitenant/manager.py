@@ -105,6 +105,30 @@ class MultitenantManager:
             # Extend base context
             context = base_context.copy()
 
+            # MTODO: take over or remove?
+            # wallet.local_did
+
+            # Settings to take over (for now)
+            # wallet.replace_public_did
+            # wallet.storage_type
+            # walet.storage_config
+            # wallet.storage_creds
+
+            # Settings we don't want to use from base wallet
+            reset_settings = {
+                "wallet.recreate": False,
+                "wallet.seed": None,
+                "wallet.rekey": None,
+                "wallet.name": None,
+                "wallet.type": None,
+            }
+
+            context.settings = (
+                context.settings.extend(reset_settings)
+                .extend(wallet_record.settings)
+                .extend(extra_settings)
+            )
+
             # MTODO: remove base wallet settings
             context.settings = context.settings.extend(wallet_record.settings).extend(
                 extra_settings
