@@ -65,7 +65,7 @@ class ConnRecord(BaseRecord):
             return None
 
         def flip(self):
-            """Return interlocutor role."""
+            """Return opposite interlocutor role: theirs for ours, ours for theirs."""
             return (
                 ConnRecord.Role.REQUESTER
                 if self is ConnRecord.Role.RESPONDER

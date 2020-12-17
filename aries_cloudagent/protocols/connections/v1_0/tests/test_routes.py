@@ -171,6 +171,27 @@ class TestConnectionRoutes(AsyncTestCase):
             mock_metadata_get.assert_called_once()
             mock_response.assert_called_once_with({"test": "value"})
 
+    async def test_connections_metadata_x(self):
+        self.request.match_info = {"conn_id": "dummy"}
+        mock_conn_rec = async_mock.MagicMock()
+
+        with async_mock.patch.object(
+            test_module.ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
+        ) as mock_conn_rec_retrieve_by_id, async_mock.patch.object(
+            mock_conn_rec, "metadata_get_all", async_mock.CoroutineMock()
+        ) as mock_metadata_get_all, async_mock.patch.object(
+            test_module.web, "json_response"
+        ) as mock_response:
+            mock_conn_rec_retrieve_by_id.return_value = mock_conn_rec
+            mock_metadata_get_all.side_effect = StorageNotFoundError()
+
+            with self.assertRaises(test_module.web.HTTPNotFound):
+                await test_module.connections_metadata(self.request)
+
+            mock_metadata_get_all.side_effect = test_module.BaseModelError()
+            with self.assertRaises(test_module.web.HTTPBadRequest):
+                await test_module.connections_metadata(self.request)
+
     async def test_connections_metadata_set(self):
         self.request.match_info = {"conn_id": "dummy"}
         mock_conn_rec = async_mock.MagicMock()
@@ -193,6 +214,32 @@ class TestConnectionRoutes(AsyncTestCase):
             await test_module.connections_metadata_set(self.request)
             mock_metadata_set.assert_called_once()
             mock_response.assert_called_once_with({"hello": "world"})
+
+    async def test_connections_metadata_set_x(self):
+        self.request.match_info = {"conn_id": "dummy"}
+        mock_conn_rec = async_mock.MagicMock()
+        self.request.json = async_mock.CoroutineMock(
+            return_value={"metadata": {"hello": "world"}}
+        )
+
+        with async_mock.patch.object(
+            test_module.ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
+        ) as mock_conn_rec_retrieve_by_id, async_mock.patch.object(
+            mock_conn_rec, "metadata_get_all", async_mock.CoroutineMock()
+        ) as mock_metadata_get_all, async_mock.patch.object(
+            mock_conn_rec, "metadata_set", async_mock.CoroutineMock()
+        ) as mock_metadata_set, async_mock.patch.object(
+            test_module.web, "json_response"
+        ) as mock_response:
+            mock_conn_rec_retrieve_by_id.return_value = mock_conn_rec
+            mock_metadata_set.side_effect = StorageNotFoundError()
+
+            with self.assertRaises(test_module.web.HTTPNotFound):
+                await test_module.connections_metadata_set(self.request)
+
+            mock_metadata_set.side_effect = test_module.BaseModelError()
+            with self.assertRaises(test_module.web.HTTPBadRequest):
+                await test_module.connections_metadata_set(self.request)
 
     async def test_connections_retrieve_not_found(self):
         self.request.match_info = {"conn_id": "dummy"}

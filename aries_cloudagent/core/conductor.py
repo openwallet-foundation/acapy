@@ -242,6 +242,26 @@ class Conductor:
             except Exception:
                 LOGGER.exception("Error creating invitation")
 
+        # Print connections protocol invitation to the terminal
+        if context.settings.get("debug.print_connections_invitation"):
+            try:
+                async with self.root_profile.session() as session:
+                    mgr = ConnectionManager(session)
+                    _record, invite = await mgr.create_invitation(
+                        my_label=context.settings.get("debug.invite_label"),
+                        public=context.settings.get("debug.invite_public", False),
+                        multi_use=context.settings.get("debug.invite_multi_use", False),
+                        metadata=json.loads(
+                            context.settings.get("debug.invite_metadata_json", "{}")
+                        ),
+                    )
+                    base_url = context.settings.get("invite_base_url")
+                    print("Invitation URL (Connections protocol):")
+                    print(invite.to_url(base_url), flush=True)
+                    del mgr
+            except Exception:
+                LOGGER.exception("Error creating invitation")
+
     async def stop(self, timeout=1.0):
         """Stop the agent."""
         shutdown = TaskQueue()
