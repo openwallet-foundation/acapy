@@ -280,8 +280,8 @@ class TestConnectionManager(AsyncTestCase):
             None,
             None,
             None,
-            mediation_record.mediation_id
-            )
+            mediation_record.mediation_id,
+        )
         assert invite.routing_keys == self.test_mediator_routing_keys
         assert invite.endpoint == self.test_mediator_endpoint
         assert len(self.responder.messages) == 1
@@ -320,7 +320,7 @@ class TestConnectionManager(AsyncTestCase):
             None,
             None,
             None,
-            mediation_record.mediation_id
+            mediation_record.mediation_id,
         )
         assert invite.routing_keys == self.test_mediator_routing_keys
         assert invite.endpoint == self.test_mediator_endpoint
@@ -356,7 +356,7 @@ class TestConnectionManager(AsyncTestCase):
                 None,
                 None,
                 None,
-                "not-a-mediation-id"
+                "not-a-mediation-id",
             )
 
     async def test_create_invitation_mediation_not_granted_kwargs(self):
@@ -407,7 +407,7 @@ class TestConnectionManager(AsyncTestCase):
                 None,
                 None,
                 None,
-                mediation_record.mediation_id
+                mediation_record.mediation_id,
             )
 
     async def test_create_invitation_mediation_overwrites_routing_and_endpoint(self):
