@@ -229,8 +229,15 @@ class DebugGroup(ArgumentGroup):
             "--invite",
             action="store_true",
             env_var="ACAPY_INVITE",
-            help="After startup, generate and print a new connection invitation\
+            help="After startup, generate and print a new out-of-band connection invitation\
             URL. Default: false.",
+        )
+        parser.add_argument(
+            "--connections-invite",
+            action="store_true",
+            env_var="ACAPY_CONNECTIONS_INVITE",
+            help="After startup, generate and print a new connections protocol \
+            style invitation URL. Default: false.",
         )
         parser.add_argument(
             "--invite-label",
@@ -353,6 +360,8 @@ class DebugGroup(ArgumentGroup):
             settings["debug.seed"] = args.debug_seed
         if args.invite:
             settings["debug.print_invitation"] = True
+        if args.connections_invite:
+            settings["debug.print_connections_invitation"] = True
         if args.invite_label:
             settings["debug.invite_label"] = args.invite_label
         if args.invite_multi_use:
