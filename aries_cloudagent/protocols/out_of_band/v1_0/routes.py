@@ -138,8 +138,6 @@ async def register(app: web.Application):
     """Register routes."""
     app.add_routes(
         [
-            # web.get("/out-of-band", invitation_list),
-            # web.get("/out-of-band/{id}", invitation_retrieve),
             web.post("/out-of-band/create-invitation", invitation_create),
             web.post("/out-of-band/receive-invitation", invitation_receive),
         ]

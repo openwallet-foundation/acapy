@@ -197,6 +197,9 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
         assert record_0 != record_1
         assert record_0 != ValueError("not a mediation record")
 
+        with pytest.raises(ValueError):
+            record_0.state = "bad state"
+
     async def test_mediation_record_duplicate_means_exists(self, session):
         await MediationRecord(connection_id=TEST_CONN_ID, endpoint="abc").save(session)
         await MediationRecord(connection_id=TEST_CONN_ID, endpoint="def").save(session)
