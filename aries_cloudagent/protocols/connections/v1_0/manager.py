@@ -66,7 +66,7 @@ class ConnectionManager:
         """
         return self._session
 
-    def validate_mediation(func):
+    def validate_mediation(id_index, record_index):
         """
         Decorate method for validation of mediation input.
 
@@ -75,29 +75,46 @@ class ConnectionManager:
         and attach it to the key value arguments. if mediation
         record data is wrong, raise appropriate error.
         """
+        def validate(func):
+            @wraps(func)
+            async def check(self, *args, **kwargs):
+                record_is_in_args = (len(args)-1) >= record_index
+                if (len(args)-1) >= id_index:
+                    mediation_id = args[id_index]
+                else:
+                    mediation_id = kwargs.get("mediation_id")
+                if mediation_id:
+                    if record_is_in_args:
+                        mediation_record = args[record_index]
+                    else:
+                        mediation_record = kwargs.get("mediation_record")
+                    if not mediation_record:
+                        mediation_record = await MediationRecord.retrieve_by_id(
+                            self._session, mediation_id
+                        )
+                        if record_is_in_args:
+                            args = (
+                                *args[0:record_index],
+                                mediation_record,
+                                *args[record_index+1:]
+                            )
+                        else:
+                            kwargs["mediation_record"] = mediation_record
+                if record_is_in_args:
+                    mediation_record = args[record_index]
+                else:
+                    mediation_record = kwargs.get("mediation_record")
+                if mediation_record:
+                    if mediation_record.state != MediationRecord.STATE_GRANTED:
+                        raise ConnectionManagerError(
+                            "Mediation is not granted for mediation identified by "
+                            f"{mediation_record.mediation_id}"
+                        )
+                return await func(self, *args, **kwargs)
+            return check
+        return validate
 
-        @wraps(func)
-        async def check(self, *args, **kwargs):
-            mediation_id = kwargs.get("mediation_id")
-            if mediation_id:
-                mediation_record = kwargs.get("mediation_record")
-                if not mediation_record:
-                    mediation_record = await MediationRecord.retrieve_by_id(
-                        self._session, mediation_id
-                    )
-                    kwargs["mediation_record"] = mediation_record
-            mediation_record = kwargs.get("mediation_record")
-            if mediation_record:
-                if mediation_record.state != MediationRecord.STATE_GRANTED:
-                    raise ConnectionManagerError(
-                        "Mediation is not granted for mediation identified by "
-                        f"{mediation_record.mediation_id}"
-                    )
-            return await func(self, *args, **kwargs)
-
-        return check
-
-    @validate_mediation
+    @validate_mediation(9, 10)
     async def create_invitation(
         self,
         my_label: str = None,
@@ -334,7 +351,7 @@ class ConnectionManager:
             self._logger.debug("Connection invitation will await acceptance")
         return connection
 
-    @validate_mediation
+    @validate_mediation(3, 4)
     async def create_request(
         self,
         connection: ConnRecord,
@@ -416,7 +433,7 @@ class ConnectionManager:
 
         return request
 
-    @validate_mediation
+    @validate_mediation(2, 3)
     async def receive_request(
         self,
         request: ConnectionRequest,
@@ -568,7 +585,7 @@ class ConnectionManager:
 
         return connection
 
-    @validate_mediation
+    @validate_mediation(2, 3)
     async def create_response(
         self,
         connection: ConnRecord,
