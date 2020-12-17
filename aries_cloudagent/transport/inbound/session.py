@@ -5,6 +5,7 @@ import logging
 from typing import Callable, Sequence, Union
 
 from ...core.profile import Profile
+from ...multitenant.manager import MultitenantManager
 
 from ..error import WireFormatError
 from ..outbound.message import OutboundMessage
@@ -66,6 +67,13 @@ class InboundSession:
         self._reply_mode = None
         self._reply_verkeys = None
         self._reply_thread_ids = None
+
+        # If multitenancy is enabled we need to relay the message by changing
+        # the context/profile to the wallet associated with the message.
+        # Only needs to happen for the first received message
+        self._check_relay_context = profile.context.settings.get(
+            "multitenant.enabled", False
+        )
 
         # call setters
         self.reply_thread_ids = reply_thread_ids
@@ -147,6 +155,26 @@ class InboundSession:
         """Check if a response is currently buffered."""
         return bool(self.response_buffer)
 
+    async def handle_relay_context(self, payload_enc: Union[str, bytes]):
+        """Update the session profile based on the recipients of an incoming message."""
+        multitenant_mgr = self.profile.context.inject(MultitenantManager)
+
+        try:
+            [wallet] = await multitenant_mgr.get_wallets_by_message(
+                payload_enc, self.wire_format
+            )
+
+            if wallet.is_managed:
+                profile = await multitenant_mgr.get_wallet_profile(
+                    self.profile.context, wallet
+                )
+
+                # overwrite session profile with wallet profile
+                self.profile = profile
+
+        except ValueError:
+            pass  # No wallet found. Use the base session profile
+
     def process_inbound(self, message: InboundMessage):
         """
         Process an incoming message and update the session metadata as necessary.
@@ -175,6 +203,10 @@ class InboundSession:
 
     async def receive(self, payload_enc: Union[str, bytes]) -> InboundMessage:
         """Receive a new message payload and dispatch the message."""
+        if self._check_relay_context:
+            await self.handle_relay_context(payload_enc)
+            self._check_relay_context = False
+
         message = await self.parse_inbound(payload_enc)
         self.receive_inbound(message)
         return message

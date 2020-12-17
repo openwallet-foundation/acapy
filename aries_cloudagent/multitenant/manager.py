@@ -337,7 +337,7 @@ class MultitenantManager:
 
             if not wire_format:
                 raise MultitenantManagerError(
-                    "Unable to detect recipient keys without wire formats"
+                    "Unable to detect recipient keys without wire format"
                 )
 
             recipient_keys = wire_format.get_recipient_keys(message_body)

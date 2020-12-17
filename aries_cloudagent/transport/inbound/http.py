@@ -7,10 +7,6 @@ from aiohttp import web
 from ...messaging.error import MessageParseError
 
 from .base import BaseInboundTransport, InboundTransportSetupError
-from ...multitenant.manager import (
-    MultitenantManager,
-    MultitenantManagerError,
-)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -91,26 +87,6 @@ class HttpTransport(BaseInboundTransport):
         session = await self.create_session(
             accept_undelivered=True, can_respond=True, client_info=client_info
         )
-
-        context = session.profile.context
-        multitenant_enabled = context.settings.get("multitenant.enabled")
-
-        if multitenant_enabled:
-            multitenant_mgr = context.inject(MultitenantManager)
-
-            try:
-                [wallet] = await multitenant_mgr.get_wallets_by_message(body)
-
-                if wallet.is_managed:
-                    profile = await multitenant_mgr.get_wallet_profile(context, wallet)
-
-                    # overwrite session profile with wallet profile
-                    session.profile = profile
-
-            except ValueError:
-                pass  # No wallet found. We'll use the normal session profile
-            except MultitenantManagerError as e:
-                raise web.HTTPBadRequest(e.roll_up)
 
         async with session:
             try:
