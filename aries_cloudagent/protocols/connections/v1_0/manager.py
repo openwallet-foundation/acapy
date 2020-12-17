@@ -547,7 +547,9 @@ class ConnectionManager:
             response = await self.create_response(connection, mediation_id)
             responder = self._session.inject(BaseResponder, required=False)
             if responder:
-                await responder.send(response, connection_id=connection.connection_id)
+                await responder.send_reply(
+                    response, connection_id=connection.connection_id
+                )
                 # refetch connection for accurate state
                 connection = await ConnRecord.retrieve_by_id(
                     self._session, connection.connection_id
