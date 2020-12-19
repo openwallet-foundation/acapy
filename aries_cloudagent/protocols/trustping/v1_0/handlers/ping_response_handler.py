@@ -38,7 +38,7 @@ class PingResponseHandler(BaseHandler):
                     "state": "response_received",
                     "thread_id": context.message._thread_id,
                 },
-                context.profile.name
+                context.profile.name,
             )
 
         # Nothing to do, Connection should be automatically promoted to 'active'

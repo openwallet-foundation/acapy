@@ -302,5 +302,4 @@ class DispatcherResponder(BaseResponder):
             wallet_id: the wallet identifier currently in use
         """
         if self._webhook:
-            # wallet_id = self._context.profile.name
             await self._webhook(topic, payload, wallet_id)
