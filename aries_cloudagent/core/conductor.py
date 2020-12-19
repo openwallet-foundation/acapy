@@ -130,7 +130,11 @@ class Conductor:
                 webhook_urls = context.settings.get("admin.webhook_urls")
                 if webhook_urls:
                     for url in webhook_urls:
-                        self.admin_server.add_webhook_target(url)
+                        url_hashlink = url.split('#')
+                        if len(url_hashlink)>1:
+                            self.admin_server.add_webhook_target(target_url=url_hashlink[0], api_key=url_hashlink[1], wallet_id=self.root_profile.name)
+                        else:
+                            self.admin_server.add_webhook_target(target_url=url, wallet_id=self.root_profile.name)
                 context.injector.bind_instance(BaseAdminServer, self.admin_server)
                 if "http" not in self.outbound_transport_manager.registered_schemes:
                     self.outbound_transport_manager.register("http")
@@ -434,7 +438,7 @@ class Conductor:
         self.inbound_transport_manager.return_undelivered(outbound)
 
     def webhook_router(
-        self, topic: str, payload: dict, endpoint: str, max_attempts: int = None
+        self, topic: str, payload: dict, endpoint: str, max_attempts: int = None, api_key: str = None
     ):
         """
         Route a webhook through the outbound transport manager.
@@ -447,7 +451,7 @@ class Conductor:
         """
         try:
             self.outbound_transport_manager.enqueue_webhook(
-                topic, payload, endpoint, max_attempts
+                topic, payload, endpoint, max_attempts, api_key=api_key
             )
         except OutboundDeliveryError:
             LOGGER.warning(

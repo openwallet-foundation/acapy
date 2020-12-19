@@ -292,13 +292,15 @@ class DispatcherResponder(BaseResponder):
         """
         await self._send(self._context.profile, message, self._inbound_message)
 
-    async def send_webhook(self, topic: str, payload: dict):
+    async def send_webhook(self, topic: str, payload: dict, wallet_id: str):
         """
         Dispatch a webhook.
 
         Args:
             topic: the webhook topic identifier
             payload: the webhook payload value
+            wallet_id: the wallet identifier currently in use
         """
         if self._webhook:
-            await self._webhook(topic, payload)
+            # wallet_id = self._context.profile.name
+            await self._webhook(topic, payload, wallet_id)

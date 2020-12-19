@@ -140,10 +140,11 @@ class AdminGroup(ArgumentGroup):
         parser.add_argument(
             "--webhook-url",
             action="append",
-            metavar="<url>",
+            metavar="<url#api_key>",
             env_var="ACAPY_WEBHOOK_URL",
             help="Send webhooks containing internal state changes to the specified\
-            URL. This is useful for a controller to monitor agent events and respond\
+            URL. Append an API key if required separated by a hash [#] to be included in the header.\
+            This is useful for a controller to monitor agent events and respond\
             to those events using the admin API. If not specified, webhooks are not\
             published by the agent.",
         )
