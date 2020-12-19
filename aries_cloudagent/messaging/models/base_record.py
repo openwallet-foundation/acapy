@@ -393,7 +393,8 @@ class BaseRecord(BaseModel):
                 return
         responder = session.inject(BaseResponder, required=False)
         if responder:
-            await responder.send_webhook(topic, payload)
+            wallet_id = session.profile.name
+            await responder.send_webhook(topic, payload, wallet_id)
 
     @classmethod
     def log_state(

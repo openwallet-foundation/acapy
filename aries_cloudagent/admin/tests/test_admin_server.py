@@ -205,7 +205,7 @@ class TestAdminServer(AsyncTestCase):
                 ]
             )
 
-            await server.responder.send_webhook(test_topic, test_payload)
+            await server.responder.send_webhook(test_topic, test_payload, server.root_profile.name)
             assert self.webhook_results == [
                 (test_topic, test_payload, test_url, test_attempts)
             ]

@@ -348,7 +348,7 @@ class TestDispatcher(AsyncTestCase):
         assert json.loads(result.payload)["@type"] == DIDCommPrefix.qualify_current(
             StubAgentMessage.Meta.message_type
         )
-        await responder.send_webhook("topic", "payload")
+        await responder.send_webhook("topic", "payload", context.profile.name)
 
         context.default_endpoint = "http://agent.ca"
         assert context.default_endpoint == "http://agent.ca"

@@ -36,5 +36,5 @@ class BaseAdminServer(ABC):
         """Remove a webhook target."""
 
     @abstractmethod
-    async def send_webhook(self, topic: str, payload: dict):
+    async def send_webhook(self, topic: str, payload: dict, wallet_id: str):
         """Add a webhook to the queue, to send to all registered targets."""
