@@ -188,6 +188,7 @@ class TestAdminServer(AsyncTestCase):
         test_attempts = 99
         server.add_webhook_target(
             target_url=test_url,
+            wallet_id=server.root_profile.name,
             topic_filter=["*"],  # cover vacuous filter
             max_attempts=test_attempts,
         )
@@ -210,7 +211,7 @@ class TestAdminServer(AsyncTestCase):
                 (test_topic, test_payload, test_url, test_attempts)
             ]
 
-        server.remove_webhook_target(target_url=test_url)
+        server.remove_webhook_target(target_url=test_url, wallet_id=server.root_profile.name)
         assert test_url not in server.webhook_targets
 
     async def test_import_routes(self):

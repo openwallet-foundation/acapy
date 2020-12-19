@@ -26,13 +26,15 @@ class BaseAdminServer(ABC):
     def add_webhook_target(
         self,
         target_url: str,
+        wallet_id: str,
         topic_filter: Sequence[str] = None,
         max_attempts: int = None,
+        api_key: str = None,
     ):
         """Add a webhook target."""
 
     @abstractmethod
-    def remove_webhook_target(self, target_url: str):
+    def remove_webhook_target(self, target_url: str, wallet_id: str):
         """Remove a webhook target."""
 
     @abstractmethod
