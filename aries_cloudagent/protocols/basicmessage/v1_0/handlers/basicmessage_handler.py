@@ -42,6 +42,7 @@ class BasicMessageHandler(BaseHandler):
                 "content": body,
                 "state": "received",
             },
+            context.profile.name,
         )
 
         reply = None

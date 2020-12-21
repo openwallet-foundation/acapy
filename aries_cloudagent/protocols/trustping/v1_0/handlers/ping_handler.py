@@ -52,4 +52,5 @@ class PingHandler(BaseHandler):
                     "state": "received",
                     "thread_id": context.message._thread_id,
                 },
+                context.profile.name,
             )

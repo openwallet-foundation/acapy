@@ -16,12 +16,13 @@ class DriverMenuService(BaseMenuService):
     """Driver-based action menu service."""
 
     async def get_active_menu(
-        self, connection: ConnRecord = None, thread_id: str = None
+        self, wallet_id: str, connection: ConnRecord = None, thread_id: str = None
     ) -> Menu:
         """
         Render the current menu.
 
         Args:
+            wallet_id: Wallet identifier currently in use
             connection: The active connection record
             thread_id: The thread identifier from the requesting message.
         """
@@ -31,6 +32,7 @@ class DriverMenuService(BaseMenuService):
                 "connection_id": connection and connection.connection_id,
                 "thread_id": thread_id,
             },
+            wallet_id=wallet_id,
         )
         return None
 
@@ -38,6 +40,7 @@ class DriverMenuService(BaseMenuService):
         self,
         action_name: str,
         action_params: dict,
+        wallet_id: str,
         connection: ConnRecord = None,
         thread_id: str = None,
     ) -> AgentMessage:
@@ -47,6 +50,7 @@ class DriverMenuService(BaseMenuService):
         Args:
             action_name: The unique name of the action being performed
             action_params: A collection of parameters for the action
+            wallet_id: Wallet identifier currently in use
             connection: The active connection record
             thread_id: The thread identifier from the requesting message.
         """
@@ -58,11 +62,12 @@ class DriverMenuService(BaseMenuService):
                 "action_name": action_name,
                 "action_params": action_params,
             },
+            wallet_id=wallet_id,
         )
         return None
 
-    async def send_webhook(self, topic: str, payload: dict):
+    async def send_webhook(self, topic: str, payload: dict, wallet_id: str):
         """Dispatch a webhook through the registered responder."""
         responder = self._context.inject(BaseResponder, required=False)
         if responder:
-            await responder.send_webhook(topic, payload)
+            await responder.send_webhook(topic, payload, wallet_id)

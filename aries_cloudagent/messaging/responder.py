@@ -112,13 +112,14 @@ class BaseResponder(ABC):
         """
 
     @abstractmethod
-    async def send_webhook(self, topic: str, payload: dict):
+    async def send_webhook(self, topic: str, payload: dict, wallet_id: str):
         """
         Dispatch a webhook.
 
         Args:
             topic: the webhook topic identifier
             payload: the webhook payload value
+            wallet_id: Wallet identifier currently in use
         """
 
 
@@ -142,6 +143,6 @@ class MockResponder(BaseResponder):
         """Send an outbound message."""
         self.messages.append((message, None))
 
-    async def send_webhook(self, topic: str, payload: dict):
+    async def send_webhook(self, topic: str, payload: dict, wallet_id: str):
         """Send an outbound message."""
-        self.webhooks.append((topic, payload))
+        self.webhooks.append((topic, payload, wallet_id))

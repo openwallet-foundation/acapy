@@ -62,4 +62,5 @@ async def save_connection_menu(
                 "connection_id": connection_id,
                 "menu": menu.serialize() if menu else None,
             },
+            context.profile.name,
         )

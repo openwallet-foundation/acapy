@@ -95,15 +95,16 @@ class AdminResponder(BaseResponder):
         """
         await self._send(self._profile, message)
 
-    async def send_webhook(self, topic: str, payload: dict):
+    async def send_webhook(self, topic: str, payload: dict, wallet_id: str):
         """
         Dispatch a webhook.
 
         Args:
             topic: the webhook topic identifier
             payload: the webhook payload value
+            wallet_id: the wallet id currently in use
         """
-        await self._webhook(topic, payload)
+        await self._webhook(topic, payload, wallet_id)
 
 
 class WebhookTarget:
@@ -114,12 +115,14 @@ class WebhookTarget:
         endpoint: str,
         topic_filter: Sequence[str] = None,
         max_attempts: int = None,
+        api_key: str = None,
     ):
         """Initialize the webhook target."""
         self.endpoint = endpoint
         self.max_attempts = max_attempts
         self._topic_filter = None
         self.topic_filter = topic_filter  # call setter
+        self.api_key = api_key
 
     @property
     def topic_filter(self) -> Set[str]:
@@ -637,27 +640,32 @@ class AdminServer(BaseAdminServer):
     def add_webhook_target(
         self,
         target_url: str,
+        wallet_id: str,
         topic_filter: Sequence[str] = None,
         max_attempts: int = None,
+        api_key: str = None,
     ):
         """Add a webhook target."""
-        self.webhook_targets[target_url] = WebhookTarget(
-            target_url, topic_filter, max_attempts
+        webhook_target_key = (wallet_id, target_url)
+        self.webhook_targets[webhook_target_key] = WebhookTarget(
+            target_url, topic_filter, max_attempts, api_key
         )
 
-    def remove_webhook_target(self, target_url: str):
+    def remove_webhook_target(self, target_url: str, wallet_id: str):
         """Remove a webhook target."""
         if target_url in self.webhook_targets:
-            del self.webhook_targets[target_url]
+            del self.webhook_targets[(wallet_id, target_url)]
 
-    async def send_webhook(self, topic: str, payload: dict):
+    async def send_webhook(self, topic: str, payload: dict, wallet_id: str):
         """Add a webhook to the queue, to send to all registered targets."""
         if self.webhook_router:
             for idx, target in self.webhook_targets.items():
-                if not target.topic_filter or topic in target.topic_filter:
-                    self.webhook_router(
-                        topic, payload, target.endpoint, target.max_attempts
-                    )
+                temp_wallet_id = idx[0]
+                if temp_wallet_id == wallet_id:
+                    if not target.topic_filter or topic in target.topic_filter:
+                        self.webhook_router(
+                            topic, payload, target.endpoint, target.max_attempts, target.api_key
+                        )
 
         for queue in self.websocket_queues.values():
             if queue.authenticated or topic in ("ping", "settings"):

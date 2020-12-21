@@ -43,7 +43,7 @@ class HttpTransport(BaseOutboundTransport):
         self.client_session = None
 
     async def handle_message(
-        self, context: InjectionContext, payload: Union[str, bytes], endpoint: str
+        self, context: InjectionContext, payload: Union[str, bytes], endpoint: str, api_key: str = None
     ):
         """
         Handle message from queue.
@@ -60,6 +60,8 @@ class HttpTransport(BaseOutboundTransport):
             headers["Content-Type"] = "application/ssi-agent-wire"
         else:
             headers["Content-Type"] = "application/json"
+        if api_key is not None:
+            headers["x-api-key"] = api_key
         self.logger.debug(
             "Posting to %s; Data: %s; Headers: %s", endpoint, payload, headers
         )

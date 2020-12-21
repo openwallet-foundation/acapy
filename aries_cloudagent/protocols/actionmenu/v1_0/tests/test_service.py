@@ -25,7 +25,7 @@ class TestActionMenuService(AsyncTestCase):
         connection.connection_id = "connid"
         thread_id = "thid"
 
-        await self.menu_service.get_active_menu(connection, thread_id)
+        await self.menu_service.get_active_menu(self.context.profile.name, connection, thread_id)
 
         webhooks = self.responder.webhooks
         assert len(webhooks) == 1
@@ -51,7 +51,7 @@ class TestActionMenuService(AsyncTestCase):
         thread_id = "thid"
 
         await self.menu_service.perform_menu_action(
-            action_name, action_params, connection, thread_id
+            action_name, action_params, self.context.profile.name, connection, thread_id
         )
 
         webhooks = self.responder.webhooks

@@ -30,4 +30,4 @@ class ProblemReportHandler(BaseHandler):
             context.message,
         )
 
-        await responder.send_webhook("problem_report", context.message.serialize())
+        await responder.send_webhook("problem_report", context.message.serialize(), context.profile.name)
