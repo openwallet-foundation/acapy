@@ -119,6 +119,7 @@ class DemoAgent:
         timing_log: str = None,
         postgres: bool = None,
         revocation: bool = False,
+        multitenant: bool = False,
         extra_args=None,
         **params,
     ):
@@ -139,6 +140,7 @@ class DemoAgent:
         self.trace_enabled = TRACE_ENABLED
         self.trace_target = TRACE_TARGET
         self.trace_tag = TRACE_TAG
+        self.multitenant = multitenant
         self.external_webhook_target = WEBHOOK_TARGET
 
         self.admin_url = f"http://{self.internal_host}:{admin_port}"
@@ -172,6 +174,24 @@ class DemoAgent:
         self.wallet_key = params.get("wallet_key") or self.ident + rand_name
         self.did = None
         self.wallet_stats = []
+
+        # for multitenancy, storage_type and wallet_type are the same for all wallets
+        if self.multitenant:
+            self.agency_ident = self.ident
+            self.agency_wallet_name = self.wallet_name
+            self.agency_wallet_seed = self.seed
+            self.agency_wallet_did = self.did
+            self.agency_wallet_key = self.wallet_key
+
+    async def get_wallets(self):
+        """Get registered wallets of agent (this is an agency call)."""
+        wallets = await self.admin_GET("/multitenancy/wallets")
+        return wallets
+
+    async def get_public_did(self):
+        """Get public did of wallet (called for a sub-wallet)."""
+        did = await self.admin_GET("/wallet/did/public")
+        return did
 
     async def register_schema_and_creddef(
         self,
@@ -232,6 +252,14 @@ class DemoAgent:
             "--preserve-exchange-records",
             "--auto-provision",
         ]
+        if self.multitenant:
+            result.extend(
+                [
+                    "--multitenant",
+                    "--multitenant-admin",
+                    ("--jwt-secret", "very_secret_secret"),
+                ]
+            )
         if self.genesis_data:
             result.append(("--genesis-transactions", self.genesis_data))
         if self.seed:
@@ -291,13 +319,24 @@ class DemoAgent:
         if self.prefix:
             return f"{self.prefix:10s} |"
 
-    async def register_did(self, ledger_url: str = None, alias: str = None):
-        self.log(f"Registering {self.ident} with seed {self.seed}")
+    async def register_did(
+        self,
+        ledger_url: str = None,
+        alias: str = None,
+        did: str = None,
+        verkey: str = None,
+    ):
+        self.log(f"Registering {self.ident} ...")
         if not ledger_url:
             ledger_url = LEDGER_URL
         if not ledger_url:
             ledger_url = f"http://{self.external_host}:9000"
-        data = {"alias": alias or self.ident, "seed": self.seed, "role": "TRUST_ANCHOR"}
+        data = {"alias": alias or self.ident, "role": "TRUST_ANCHOR"}
+        if did and verkey:
+            data["did"] = did
+            data["verkey"] = verkey
+        else:
+            data["seed"] = self.seed
         async with self.client_session.post(
             ledger_url + "/register", json=data
         ) as resp:
@@ -305,7 +344,60 @@ class DemoAgent:
                 raise Exception(f"Error registering DID, response code {resp.status}")
             nym_info = await resp.json()
             self.did = nym_info["did"]
-        self.log(f"Got DID: {self.did}")
+            if self.multitenant:
+                if not self.agency_wallet_did:
+                    self.agency_wallet_did = self.did
+        self.log(f"Registered DID: {self.did}")
+
+    async def register_or_switch_wallet(self, target_wallet_name, public_did=False):
+        self.log(f"Register or switch to wallet {target_wallet_name}")
+        if target_wallet_name == self.agency_wallet_name:
+            self.ident = self.agency_ident
+            self.wallet_name = self.agency_wallet_name
+            self.seed = self.agency_wallet_seed
+            self.did = self.agency_wallet_did
+            self.wallet_key = self.agency_wallet_key
+            self.log(f"Switching to AGENCY wallet {target_wallet_name}")
+            return False
+
+        # check if wallet exists already
+        wallets = await self.agency_admin_GET("/multitenancy/wallets")
+        for wallet in wallets["results"]:
+            if wallet["settings"]["wallet.name"] == target_wallet_name:
+                # if so set local agent attributes
+                self.wallet_name = target_wallet_name
+                # assume wallet key is wallet name
+                self.wallet_key = target_wallet_name
+                self.ident = target_wallet_name
+                # we can't recover the seed so let's set it to None and see what happens ...
+                self.seed = None
+                self.log(f"Switching to EXISTING wallet {target_wallet_name}")
+                return False
+
+        # if not then create it
+        wallet_params = {
+            "wallet_key": target_wallet_name,
+            "wallet_name": target_wallet_name,
+            "wallet_type": self.wallet_type,
+            "label": target_wallet_name,
+        }
+        self.wallet_name = target_wallet_name
+        self.wallet_key = target_wallet_name
+        self.ident = target_wallet_name
+        new_wallet = await self.agency_admin_POST("/multitenancy/wallet", wallet_params)
+        self.log("New wallet params:", new_wallet)
+        self.managed_wallet_params = new_wallet
+        if public_did:
+            # assign public did
+            new_did = await self.admin_POST("/wallet/did/create")
+            self.did = new_did["result"]["did"]
+            await self.register_did(
+                did=new_did["result"]["did"], verkey=new_did["result"]["verkey"]
+            )
+            await self.admin_POST("/wallet/did/public?did=" + self.did)
+            pass
+        self.log(f"Created NEW wallet {target_wallet_name}")
+        return True
 
     def handle_output(self, *output, source: str = None, **kwargs):
         end = "" if source else "\n"
@@ -362,6 +454,7 @@ class DemoAgent:
             my_env["PYTHONPATH"] = python_path
 
         agent_args = self.get_process_args()
+        self.log(agent_args)
 
         # start agent sub-process
         loop = asyncio.get_event_loop()
@@ -409,18 +502,20 @@ class DemoAgent:
     async def _receive_webhook(self, request: ClientRequest):
         topic = request.match_info["topic"].replace("-", "_")
         payload = await request.json()
-        await self.handle_webhook(topic, payload)
+        await self.handle_webhook(topic, payload, request.headers)
         return web.Response(status=200)
 
-    async def handle_webhook(self, topic: str, payload):
+    async def handle_webhook(self, topic: str, payload, headers: dict):
         if topic != "webhook":  # would recurse
             handler = f"handle_{topic}"
+            wallet_id = headers.get("x-wallet-id")
             method = getattr(self, handler, None)
             if method:
                 EVENT_LOGGER.debug(
-                    "Agent called controller webhook: %s%s",
+                    "Agent called controller webhook: %s%s%s",
                     handler,
-                    (f" with payload: \n{repr_json(payload)}" if payload else ""),
+                    (f" for wallet: {wallet_id}" if wallet_id else ""),
+                    (f" with payload: \n{repr_json(payload)}\n" if payload else ""),
                 )
                 asyncio.get_event_loop().create_task(method(payload))
             else:
@@ -440,11 +535,11 @@ class DemoAgent:
         self.log(f"Revocation registry: {reg_id} state: {message['state']}")
 
     async def admin_request(
-        self, method, path, data=None, text=False, params=None
+        self, method, path, data=None, text=False, params=None, headers=None
     ) -> ClientResponse:
         params = {k: v for (k, v) in (params or {}).items() if v is not None}
         async with self.client_session.request(
-            method, self.admin_url + path, json=data, params=params
+            method, self.admin_url + path, json=data, params=params, headers=headers
         ) as resp:
             resp_text = await resp.text()
             try:
@@ -461,10 +556,18 @@ class DemoAgent:
                     raise Exception(f"Error decoding JSON: {resp_text}") from e
             return resp_text
 
-    async def admin_GET(self, path, text=False, params=None) -> ClientResponse:
+    async def agency_admin_GET(
+        self, path, text=False, params=None, headers=None
+    ) -> ClientResponse:
+        if not self.multitenant:
+            raise Exception("Error can't call agency admin unless in multitenant mode")
         try:
             EVENT_LOGGER.debug("Controller GET %s request to Agent", path)
-            response = await self.admin_request("GET", path, None, text, params)
+            if not headers:
+                headers = {}
+            response = await self.admin_request(
+                "GET", path, None, text, params, headers=headers
+            )
             EVENT_LOGGER.debug(
                 "Response from GET %s received: \n%s",
                 path,
@@ -475,8 +578,60 @@ class DemoAgent:
             self.log(f"Error during GET {path}: {str(e)}")
             raise
 
+    async def admin_GET(
+        self, path, text=False, params=None, headers=None
+    ) -> ClientResponse:
+        try:
+            EVENT_LOGGER.debug("Controller GET %s request to Agent", path)
+            if self.multitenant:
+                if not headers:
+                    headers = {}
+                headers["Authorization"] = (
+                    "Bearer " + self.managed_wallet_params["token"]
+                )
+                self.log("GET:", path)
+                self.log("Headers:", headers)
+            response = await self.admin_request(
+                "GET", path, None, text, params, headers=headers
+            )
+            EVENT_LOGGER.debug(
+                "Response from GET %s received: \n%s",
+                path,
+                repr_json(response),
+            )
+            return response
+        except ClientError as e:
+            self.log(f"Error during GET {path}: {str(e)}")
+            raise
+
+    async def agency_admin_POST(
+        self, path, data=None, text=False, params=None, headers=None
+    ) -> ClientResponse:
+        if not self.multitenant:
+            raise Exception("Error can't call agency admin unless in multitenant mode")
+        try:
+            EVENT_LOGGER.debug(
+                "Controller POST %s request to Agent%s",
+                path,
+                (" with data: \n{}".format(repr_json(data)) if data else ""),
+            )
+            if not headers:
+                headers = {}
+            response = await self.admin_request(
+                "POST", path, data, text, params, headers=headers
+            )
+            EVENT_LOGGER.debug(
+                "Response from POST %s received: \n%s",
+                path,
+                repr_json(response),
+            )
+            return response
+        except ClientError as e:
+            self.log(f"Error during POST {path}: {str(e)}")
+            raise
+
     async def admin_POST(
-        self, path, data=None, text=False, params=None
+        self, path, data=None, text=False, params=None, headers=None
     ) -> ClientResponse:
         try:
             EVENT_LOGGER.debug(
@@ -484,7 +639,17 @@ class DemoAgent:
                 path,
                 (" with data: \n{}".format(repr_json(data)) if data else ""),
             )
-            response = await self.admin_request("POST", path, data, text, params)
+            if self.multitenant:
+                if not headers:
+                    headers = {}
+                headers["Authorization"] = (
+                    "Bearer " + self.managed_wallet_params["token"]
+                )
+                self.log("POST:", path)
+                self.log("Headers:", headers)
+            response = await self.admin_request(
+                "POST", path, data, text, params, headers=headers
+            )
             EVENT_LOGGER.debug(
                 "Response from POST %s received: \n%s",
                 path,
@@ -528,15 +693,15 @@ class DemoAgent:
             self.log(f"Error during PUT FILE {url}: {str(e)}")
             raise
 
-    async def detect_process(self):
-        async def fetch_status(url: str, timeout: float):
+    async def detect_process(self, headers=None):
+        async def fetch_status(url: str, timeout: float, headers=None):
             code = None
             text = None
             start = default_timer()
             async with ClientSession(timeout=ClientTimeout(total=3.0)) as session:
                 while default_timer() - start < timeout:
                     try:
-                        async with session.get(url) as resp:
+                        async with session.get(url, headers=headers) as resp:
                             code = resp.status
                             if code == 200:
                                 text = await resp.text()
@@ -547,7 +712,9 @@ class DemoAgent:
             return code, text
 
         status_url = self.admin_url + "/status"
-        status_code, status_text = await fetch_status(status_url, START_TIMEOUT)
+        status_code, status_text = await fetch_status(
+            status_url, START_TIMEOUT, headers=headers
+        )
 
         if not status_text:
             raise Exception(

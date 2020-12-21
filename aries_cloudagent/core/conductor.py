@@ -13,7 +13,7 @@ import json
 import logging
 
 from ..admin.base_server import BaseAdminServer
-from ..admin.server import AdminServer
+from ..admin.server import AdminResponder, AdminServer
 from ..config.default_context import ContextBuilder
 from ..config.injection_context import InjectionContext
 from ..config.ledger import get_genesis_transactions, ledger_config
@@ -35,6 +35,7 @@ from ..transport.outbound.manager import OutboundTransportManager, QueuedOutboun
 from ..transport.outbound.message import OutboundMessage
 from ..transport.wire_format import BaseWireFormat
 from ..utils.stats import Collector
+from ..multitenant.manager import MultitenantManager
 from ..utils.task_queue import CompletedTask, TaskQueue
 from ..wallet.base import DIDInfo
 from .dispatcher import Dispatcher
@@ -111,6 +112,11 @@ class Conductor:
         if wire_format and hasattr(wire_format, "task_queue"):
             wire_format.task_queue = self.dispatcher.task_queue
 
+        # Bind manager for multitenancy related tasks
+        if context.settings.get("multitenant.enabled"):
+            multitenant_mgr = MultitenantManager(self.root_profile)
+            context.injector.bind_instance(MultitenantManager, multitenant_mgr)
+
         # Admin API
         if context.settings.get("admin.enabled"):
             try:
@@ -186,7 +192,12 @@ class Conductor:
             # Make admin responder available during message parsing
             # This allows webhooks to be called when a connection is marked active,
             # for example
-            context.injector.bind_instance(BaseResponder, self.admin_server.responder)
+            responder = AdminResponder(
+                context,
+                self.admin_server.outbound_message_router,
+                self.admin_server.send_webhook,
+            )
+            context.injector.bind_instance(BaseResponder, responder)
 
         # Get agent label
         default_label = context.settings.get("default_label")
@@ -273,17 +284,29 @@ class Conductor:
             shutdown.run(self.inbound_transport_manager.stop())
         if self.outbound_transport_manager:
             shutdown.run(self.outbound_transport_manager.stop())
+
+        # close multitenant profiles
+        multitenant_mgr = self.context.inject(MultitenantManager, required=False)
+        if multitenant_mgr:
+            for profile in multitenant_mgr._instances.values():
+                shutdown.run(profile.close())
+
         if self.root_profile:
             shutdown.run(self.root_profile.close())
+
         await shutdown.complete(timeout)
 
     def inbound_message_router(
-        self, message: InboundMessage, can_respond: bool = False
+        self,
+        profile: Profile,
+        message: InboundMessage,
+        can_respond: bool = False,
     ):
         """
         Route inbound messages.
 
         Args:
+            context: The context associated with the inbound message
             message: The inbound message instance
             can_respond: If the session supports return routing
 
@@ -300,6 +323,7 @@ class Conductor:
 
         try:
             self.dispatcher.queue_message(
+                profile,
                 message,
                 self.outbound_message_router,
                 self.admin_server and self.admin_server.send_webhook,
@@ -434,7 +458,12 @@ class Conductor:
         self.inbound_transport_manager.return_undelivered(outbound)
 
     def webhook_router(
-        self, topic: str, payload: dict, endpoint: str, max_attempts: int = None
+        self,
+        topic: str,
+        payload: dict,
+        endpoint: str,
+        max_attempts: int = None,
+        metadata: dict = None,
     ):
         """
         Route a webhook through the outbound transport manager.
@@ -444,10 +473,11 @@ class Conductor:
             payload: The webhook payload
             endpoint: The endpoint of the webhook target
             max_attempts: The maximum number of attempts
+            metadata: Additional metadata associated with the payload
         """
         try:
             self.outbound_transport_manager.enqueue_webhook(
-                topic, payload, endpoint, max_attempts
+                topic, payload, endpoint, max_attempts, metadata
             )
         except OutboundDeliveryError:
             LOGGER.warning(

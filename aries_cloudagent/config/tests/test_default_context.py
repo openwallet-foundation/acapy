@@ -31,6 +31,7 @@ class TestDefaultContext(AsyncTestCase):
             settings={
                 "timing.enabled": True,
                 "timing.log.file": NamedTemporaryFile().name,
+                "multitenant.admin_enabled": True,
             }
         )
         result = await builder.build_context()

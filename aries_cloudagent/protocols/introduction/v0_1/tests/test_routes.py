@@ -10,9 +10,12 @@ class TestIntroductionRoutes(AsyncTestCase):
     async def setUp(self):
         self.session_inject = {}
         self.context = AdminRequestContext.test_context(self.session_inject)
-        self.request_dict = {"context": self.context}
+        self.request_dict = {
+            "context": self.context,
+            "outbound_message_router": async_mock.CoroutineMock(),
+        }
         self.request = async_mock.MagicMock(
-            app={"outbound_message_router": async_mock.CoroutineMock()},
+            app={},
             match_info={},
             query={},
             __getitem__=lambda _, k: self.request_dict[k],
@@ -75,7 +78,7 @@ class TestIntroductionRoutes(AsyncTestCase):
                 self.request.match_info["conn_id"],
                 self.request.query["target_connection_id"],
                 self.request.query["message"],
-                self.request.app["outbound_message_router"],
+                self.request["outbound_message_router"],
             )
             mock_response.assert_called_once_with({})
 

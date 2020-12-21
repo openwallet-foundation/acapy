@@ -166,7 +166,7 @@ class TestRoutingManager(AsyncTestCase):
         )
         await route_rec.save(self.session)
         by_conn_id = await RouteRecord.retrieve_by_connection_id(
-            context=self.session.context,
+            session=self.session,
             connection_id=TEST_CONN_ID,
         )
         assert by_conn_id == route_rec

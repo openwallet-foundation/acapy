@@ -11,9 +11,12 @@ class TestActionMenuRoutes(AsyncTestCase):
     def setUp(self):
         self.session_inject = {}
         self.context = AdminRequestContext.test_context(self.session_inject)
-        self.request_dict = {"context": self.context}
+        self.request_dict = {
+            "context": self.context,
+            "outbound_message_router": async_mock.CoroutineMock(),
+        }
         self.request = async_mock.MagicMock(
-            app={"outbound_message_router": async_mock.CoroutineMock()},
+            app={},
             match_info={},
             query={},
             __getitem__=lambda _, k: self.request_dict[k],
@@ -80,7 +83,7 @@ class TestActionMenuRoutes(AsyncTestCase):
 
             res = await test_module.actionmenu_perform(self.request)
             mock_response.assert_called_once_with({})
-            self.request.app["outbound_message_router"].assert_called_once_with(
+            self.request["outbound_message_router"].assert_called_once_with(
                 mock_perform.return_value,
                 connection_id=self.request.match_info["conn_id"],
             )
@@ -136,7 +139,7 @@ class TestActionMenuRoutes(AsyncTestCase):
 
             res = await test_module.actionmenu_request(self.request)
             mock_response.assert_called_once_with({})
-            self.request.app["outbound_message_router"].assert_called_once_with(
+            self.request["outbound_message_router"].assert_called_once_with(
                 menu_request.return_value,
                 connection_id=self.request.match_info["conn_id"],
             )
@@ -193,7 +196,7 @@ class TestActionMenuRoutes(AsyncTestCase):
 
             res = await test_module.actionmenu_send(self.request)
             mock_response.assert_called_once_with({})
-            self.request.app["outbound_message_router"].assert_called_once_with(
+            self.request["outbound_message_router"].assert_called_once_with(
                 mock_menu.deserialize.return_value,
                 connection_id=self.request.match_info["conn_id"],
             )

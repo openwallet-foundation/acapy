@@ -1,5 +1,6 @@
 """Classes to manage connections."""
 
+from aries_cloudagent.multitenant.manager import MultitenantManager
 import logging
 
 from typing import Mapping, Sequence
@@ -175,6 +176,16 @@ class OutOfBandManager:
 
             # Create and store new invitation key
             connection_key = await wallet.create_signing_key()
+
+            # Multitenancy: add routing for key to handle inbound messages using relay
+            multitenant_enabled = self._session.settings.get("multitenant.enabled")
+            wallet_id = self._session.settings.get("wallet.id")
+            if multitenant_enabled and wallet_id:
+                multitenant_mgr = self._session.inject(MultitenantManager)
+                await multitenant_mgr.add_wallet_route(
+                    wallet_id=wallet_id,
+                    recipient_key=connection_key.verkey,
+                )
 
             # Create connection invitation message
             # Note: Need to split this into two stages to support inbound routing

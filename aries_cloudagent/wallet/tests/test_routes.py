@@ -16,9 +16,12 @@ class TestWalletRoutes(AsyncTestCase):
         self.wallet = async_mock.create_autospec(BaseWallet)
         self.session_inject = {BaseWallet: self.wallet}
         self.context = AdminRequestContext.test_context(self.session_inject)
-        self.request_dict = {"context": self.context}
+        self.request_dict = {
+            "context": self.context,
+            "outbound_message_router": async_mock.CoroutineMock(),
+        }
         self.request = async_mock.MagicMock(
-            app={"outbound_message_router": async_mock.CoroutineMock()},
+            app={},
             match_info={},
             query={},
             __getitem__=lambda _, k: self.request_dict[k],

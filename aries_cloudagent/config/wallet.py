@@ -34,27 +34,27 @@ async def wallet_config(
         profile_cfg["auto_recreate"] = True
 
     if provision:
-        root_profile = await mgr.provision(profile_cfg)
+        profile = await mgr.provision(context, profile_cfg)
     else:
         try:
-            root_profile = await mgr.open(profile_cfg)
+            profile = await mgr.open(context, profile_cfg)
         except ProfileNotFoundError:
             if settings.get("auto_provision", False):
-                root_profile = await mgr.provision(profile_cfg)
+                profile = await mgr.provision(context, profile_cfg)
             else:
                 raise
 
     if provision:
-        if root_profile.created:
+        if profile.created:
             print("Created new profile")
         else:
             print("Opened existing profile")
-        print("Profile backend:", root_profile.backend)
-        print("Profile name:", root_profile.name)
+        print("Profile backend:", profile.backend)
+        print("Profile name:", profile.name)
 
     wallet_seed = context.settings.get("wallet.seed")
     wallet_local_did = context.settings.get("wallet.local_did")
-    txn = await root_profile.transaction()
+    txn = await profile.transaction()
     wallet = txn.inject(BaseWallet)
 
     public_did_info = await wallet.get_public_did()
@@ -112,4 +112,4 @@ async def wallet_config(
 
     await txn.commit()
 
-    return (root_profile, public_did_info)
+    return (profile, public_did_info)
