@@ -537,7 +537,7 @@ class DIDXManager:
         if responder:
             await responder.send_reply(complete, connection_id=conn_rec.connection_id)
 
-            conn_rec.state = ConnRecord.State.RESPONSE.rfc23
+            conn_rec.state = ConnRecord.State.COMPLETED.rfc23
             await conn_rec.save(self._session, reason="Sent connection complete")
 
         return conn_rec

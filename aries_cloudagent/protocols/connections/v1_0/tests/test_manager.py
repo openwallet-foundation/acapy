@@ -227,7 +227,7 @@ class TestConnectionManager(AsyncTestCase):
                     public=True, metadata={"hello": "world"}
                 )
 
-    async def test_create_invitation_mediation_id(self):
+    async def test_create_invitation_mediation_id_kwargs(self):
         mediation_record = MediationRecord(
             role=MediationRecord.ROLE_CLIENT,
             state=MediationRecord.STATE_GRANTED,
@@ -258,13 +258,108 @@ class TestConnectionManager(AsyncTestCase):
             "id": mediation_record.mediation_id
         }
 
-    async def test_create_invitation_bad_mediation_id(self):
+    async def test_create_invitation_mediation_id_args(self):
+        mediation_record = MediationRecord(
+            role=MediationRecord.ROLE_CLIENT,
+            state=MediationRecord.STATE_GRANTED,
+            connection_id=self.test_mediator_conn_id,
+            routing_keys=self.test_mediator_routing_keys,
+            endpoint=self.test_mediator_endpoint,
+        )
+        await mediation_record.save(self.session)
+        self.session.settings[
+            "mediation.auto_send_keylist_update_in_create_invitation"
+        ] = True
+        record, invite = await self.manager.create_invitation(
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            mediation_record.mediation_id,
+        )
+        assert invite.routing_keys == self.test_mediator_routing_keys
+        assert invite.endpoint == self.test_mediator_endpoint
+        assert len(self.responder.messages) == 1
+        message, used_kwargs = self.responder.messages[0]
+        assert isinstance(message, KeylistUpdate)
+        assert len(message.updates) == 1
+        assert message.updates[0].recipient_key == invite.recipient_keys[0]
+        assert (
+            "connection_id" in used_kwargs
+            and used_kwargs["connection_id"] == self.test_mediator_conn_id
+        )
+
+        assert await record.metadata_get(self.session, "mediation") == {
+            "id": mediation_record.mediation_id
+        }
+
+    async def test_create_invitation_mediation_id_partial_args(self):
+        mediation_record = MediationRecord(
+            role=MediationRecord.ROLE_CLIENT,
+            state=MediationRecord.STATE_GRANTED,
+            connection_id=self.test_mediator_conn_id,
+            routing_keys=self.test_mediator_routing_keys,
+            endpoint=self.test_mediator_endpoint,
+        )
+        await mediation_record.save(self.session)
+        self.session.settings[
+            "mediation.auto_send_keylist_update_in_create_invitation"
+        ] = True
+        record, invite = await self.manager.create_invitation(
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            mediation_record.mediation_id,
+        )
+        assert invite.routing_keys == self.test_mediator_routing_keys
+        assert invite.endpoint == self.test_mediator_endpoint
+        assert len(self.responder.messages) == 1
+        message, used_kwargs = self.responder.messages[0]
+        assert isinstance(message, KeylistUpdate)
+        assert len(message.updates) == 1
+        assert message.updates[0].recipient_key == invite.recipient_keys[0]
+        assert (
+            "connection_id" in used_kwargs
+            and used_kwargs["connection_id"] == self.test_mediator_conn_id
+        )
+
+        assert await record.metadata_get(self.session, "mediation") == {
+            "id": mediation_record.mediation_id
+        }
+
+    async def test_create_invitation_bad_mediation_id_kwargs(self):
         with self.assertRaises(StorageNotFoundError):
             _record, _invite = await self.manager.create_invitation(
                 mediation_id="not-a-mediation-id"
             )
 
-    async def test_create_invitation_mediation_not_granted(self):
+    async def test_create_invitation_bad_mediation_id_args(self):
+        with self.assertRaises(StorageNotFoundError):
+            _record, _invite = await self.manager.create_invitation(
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                "not-a-mediation-id",
+            )
+
+    async def test_create_invitation_mediation_not_granted_kwargs(self):
         mediation_record = MediationRecord(
             role=MediationRecord.ROLE_CLIENT,
             state=MediationRecord.STATE_DENIED,
@@ -283,6 +378,36 @@ class TestConnectionManager(AsyncTestCase):
         with self.assertRaises(ConnectionManagerError):
             await self.manager.create_invitation(
                 mediation_id=mediation_record.mediation_id
+            )
+
+    async def test_create_invitation_mediation_not_granted_args(self):
+        mediation_record = MediationRecord(
+            role=MediationRecord.ROLE_CLIENT,
+            state=MediationRecord.STATE_DENIED,
+            connection_id=self.test_mediator_conn_id,
+            routing_keys=self.test_mediator_routing_keys,
+            endpoint=self.test_mediator_endpoint,
+        )
+        await mediation_record.save(self.session)
+        with self.assertRaises(ConnectionManagerError):
+            await self.manager.create_invitation(
+                mediation_id=mediation_record.mediation_id
+            )
+
+        mediation_record.state = MediationRecord.STATE_REQUEST
+        await mediation_record.save(self.session)
+        with self.assertRaises(ConnectionManagerError):
+            await self.manager.create_invitation(
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                mediation_record.mediation_id,
             )
 
     async def test_create_invitation_mediation_overwrites_routing_and_endpoint(self):
@@ -1384,7 +1509,8 @@ class TestConnectionManager(AsyncTestCase):
         services = list(doc.service.values())
         assert len(services) == 1
         (service,) = services
-        assert service.routing_keys == mediation_record.routing_keys
+        service_public_keys = service.routing_keys[0]
+        assert service_public_keys.value == mediation_record.routing_keys[0]
         assert service.endpoint == mediation_record.endpoint
 
     async def test_create_did_document_mediation_svc_endpoints_overwritten(self):
@@ -1409,7 +1535,8 @@ class TestConnectionManager(AsyncTestCase):
         services = list(doc.service.values())
         assert len(services) == 1
         (service,) = services
-        assert service.routing_keys == mediation_record.routing_keys
+        service_public_keys = service.routing_keys[0]
+        assert service_public_keys.value == mediation_record.routing_keys[0]
         assert service.endpoint == mediation_record.endpoint
 
     async def test_did_key_storage(self):

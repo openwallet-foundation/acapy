@@ -10,7 +10,7 @@ from ....storage.base import (
 
 from .messages.menu import Menu
 
-MENU_RECORD_TYPE = "connection-action-menu"
+MENU_RECORD_TYPE = "connection_action_menu"
 
 
 async def retrieve_connection_menu(

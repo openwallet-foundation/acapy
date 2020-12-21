@@ -91,6 +91,12 @@ class OutOfBandManager:
             Invitation record
 
         """
+        if not (include_handshake or attachments):
+            raise OutOfBandManagerError(
+                "Invitation must include handshake protocols, "
+                "request attachments, or both"
+            )
+
         wallet = self._session.inject(BaseWallet)
 
         accept = bool(

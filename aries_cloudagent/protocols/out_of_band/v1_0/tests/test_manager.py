@@ -104,6 +104,16 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             )
             assert invi_rec.invitation["service"] == [f"did:sov:{TestConfig.test_did}"]
 
+    async def test_create_invitation_no_handshake_no_attachments_x(self):
+        with self.assertRaises(OutOfBandManagerError) as context:
+            await self.manager.create_invitation(
+                my_endpoint=TestConfig.test_endpoint,
+                public=True,
+                include_handshake=False,
+                multi_use=False,
+            )
+            assert "Invitation must include" in str(context.exception)
+
     async def test_create_invitation_attachment_cred_offer(self):
         self.manager.session.context.update_settings({"public_invites": True})
         with async_mock.patch.object(
@@ -159,12 +169,13 @@ class TestOOBManager(AsyncTestCase, TestConfig):
     async def test_create_invitation_public_x_no_public_invites(self):
         self.session.context.update_settings({"public_invites": False})
 
-        with self.assertRaises(OutOfBandManagerError):
+        with self.assertRaises(OutOfBandManagerError) as context:
             await self.manager.create_invitation(
                 public=True,
                 my_endpoint="testendpoint",
                 include_handshake=True,
             )
+        assert "Public invitations" in str(context.exception)
 
     async def test_create_invitation_public_x_no_public_did(self):
         self.session.context.update_settings({"public_invites": True})
@@ -173,12 +184,13 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             InMemoryWallet, "get_public_did", autospec=True
         ) as mock_wallet_get_public_did:
             mock_wallet_get_public_did.return_value = None
-            with self.assertRaises(OutOfBandManagerError):
+            with self.assertRaises(OutOfBandManagerError) as context:
                 await self.manager.create_invitation(
                     public=True,
                     my_endpoint="testendpoint",
                     include_handshake=True,
                 )
+        assert "Cannot create public invitation" in str(context.exception)
 
     async def test_create_invitation_x_public_multi_use(self):
         self.session.context.update_settings({"public_invites": True})
@@ -188,8 +200,13 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             mock_wallet_get_public_did.return_value = DIDInfo(
                 TestConfig.test_did, TestConfig.test_verkey, None
             )
-            with self.assertRaises(OutOfBandManagerError):
-                await self.manager.create_invitation(public=True, multi_use=True)
+            with self.assertRaises(OutOfBandManagerError) as context:
+                await self.manager.create_invitation(
+                    public=True,
+                    include_handshake=True,
+                    multi_use=True,
+                )
+            assert "Cannot use public and multi_use" in str(context.exception)
 
     async def test_create_invitation_attachment_x(self):
         self.manager.session.context.update_settings({"public_invites": True})
@@ -199,7 +216,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             mock_wallet_get_public_did.return_value = DIDInfo(
                 TestConfig.test_did, TestConfig.test_verkey, None
             )
-            with self.assertRaises(OutOfBandManagerError):
+            with self.assertRaises(OutOfBandManagerError) as context:
                 await self.manager.create_invitation(
                     my_endpoint=TestConfig.test_endpoint,
                     public=True,
@@ -207,6 +224,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                     multi_use=False,
                     attachments=[{"having": "attachment", "is": "no", "good": "here"}],
                 )
+            assert "Unknown attachment type" in str(context.exception)
 
     async def test_create_invitation_peer_did(self):
         invi_rec = await self.manager.create_invitation(
@@ -251,10 +269,13 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             mock_wallet_get_public_did.return_value = DIDInfo(
                 TestConfig.test_did, TestConfig.test_verkey, None
             )
-            with self.assertRaises(OutOfBandManagerError):
+            with self.assertRaises(OutOfBandManagerError) as context:
                 await self.manager.create_invitation(
-                    public=True, metadata={"hello": "world"}
+                    public=True,
+                    include_handshake=True,
+                    metadata={"hello": "world"},
                 )
+            assert "Cannot store metadata on public" in str(context.exception)
 
     async def test_receive_invitation_service_block(self):
         self.manager.session.context.update_settings({"public_invites": True})

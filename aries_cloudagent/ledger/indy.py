@@ -25,6 +25,7 @@ from ..storage.base import StorageRecord
 from ..storage.indy import IndySdkStorage
 from ..utils import sentinel
 from ..wallet.base import DIDInfo
+from ..wallet.error import WalletNotFoundError
 from ..wallet.indy import IndySdkWallet
 from ..wallet.util import full_verkey
 from ..wallet.did_posture import DIDPosture
@@ -883,17 +884,25 @@ class IndySdkLedger(BaseLedger):
             )
 
         public_info = await self.wallet.get_public_did()
-        public_did = public_info.did if public_info else None
-        with IndyErrorHandler("Exception building nym request", LedgerError):
-            request_json = await indy.ledger.build_nym_request(
-                public_did, did, verkey, alias, role
+        if not public_info:
+            raise WalletNotFoundError(
+                f"Cannot register NYM to ledger: wallet {self.wallet.name} "
+                "has no public DID"
             )
 
-        await self._submit(request_json)
+        with IndyErrorHandler("Exception building nym request", LedgerError):
+            request_json = await indy.ledger.build_nym_request(
+                public_info.did, did, verkey, alias, role
+            )
+        await self._submit(request_json)  # let ledger raise on insufficient privilege
 
-        did_info = await self.wallet.get_local_did(did)
-        metadata = {**did_info.metadata, **DIDPosture.POSTED.metadata}
-        await self.wallet.replace_local_did_metadata(did, metadata)
+        try:
+            did_info = await self.wallet.get_local_did(did)
+        except WalletNotFoundError:
+            pass  # registering another user's NYM
+        else:
+            metadata = {**did_info.metadata, **DIDPosture.POSTED.metadata}
+            await self.wallet.replace_local_did_metadata(did, metadata)
 
     async def get_nym_role(self, did: str) -> Role:
         """
