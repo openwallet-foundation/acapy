@@ -18,7 +18,7 @@ class RouteRecord(BaseRecord):
     RECORD_ID_NAME = "record_id"
     ROLE_CLIENT = "client"
     ROLE_SERVER = "server"
-    TAG_NAMES = {"connection_id", "role", "recipient_key"}
+    TAG_NAMES = {"connection_id", "role", "recipient_key", "wallet_id"}
 
     def __init__(
         self,

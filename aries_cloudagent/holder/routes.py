@@ -171,8 +171,8 @@ async def credentials_revoked(request: web.BaseRequest):
         try:
             holder = session.inject(IndyHolder)
             revoked = await holder.credential_revoked(
-                credential_id,
                 ledger,
+                credential_id,
                 int(fro) if fro else None,
                 int(to) if to else None,
             )

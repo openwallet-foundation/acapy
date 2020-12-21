@@ -25,6 +25,7 @@ class TestRoutingManager(AsyncTestCase):
         self.context = RequestContext.test_context()
         self.context.message_receipt = MessageReceipt(sender_verkey=TEST_VERKEY)
         self.session = await self.context.session()
+        self.transaction = await self.context.transaction()  # for coverage
         self.manager = RoutingManager(self.session)
         assert self.manager.session
 
@@ -156,6 +157,20 @@ class TestRoutingManager(AsyncTestCase):
         assert len(results) == 1
         assert results[0].connection_id == TEST_CONN_ID
         assert results[0].recipient_key == TEST_ROUTE_VERKEY
+
+    async def test_route_rec_retrieve_eq(self):
+        route_rec = RouteRecord(
+            role=RouteRecord.ROLE_CLIENT,
+            connection_id=TEST_CONN_ID,
+            recipient_key=TEST_ROUTE_VERKEY,
+        )
+        await route_rec.save(self.session)
+        by_conn_id = await RouteRecord.retrieve_by_connection_id(
+            session=self.session,
+            connection_id=TEST_CONN_ID,
+        )
+        assert by_conn_id == route_rec
+        assert route_rec != ValueError()
 
     async def test_update_routes_delete(self):
         await self.manager.create_route_record(TEST_CONN_ID, TEST_ROUTE_VERKEY)

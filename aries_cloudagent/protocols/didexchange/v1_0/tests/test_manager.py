@@ -1,7 +1,6 @@
 import json
 
-from asynctest import TestCase as AsyncTestCase
-from asynctest import mock as async_mock
+from asynctest import mock as async_mock, TestCase as AsyncTestCase
 
 from .....cache.base import BaseCache
 from .....cache.in_memory import InMemoryCache
@@ -720,7 +719,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
 
             conn_rec = await self.manager.accept_response(mock_response, receipt)
             assert conn_rec.their_did == TestConfig.test_target_did
-            assert ConnRecord.State.get(conn_rec.state) is ConnRecord.State.RESPONSE
+            assert ConnRecord.State.get(conn_rec.state) is ConnRecord.State.COMPLETED
 
     async def test_accept_response_not_found_by_thread_id_receipt_has_sender_did(self):
         mock_response = async_mock.MagicMock()
@@ -770,7 +769,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
 
             conn_rec = await self.manager.accept_response(mock_response, receipt)
             assert conn_rec.their_did == TestConfig.test_target_did
-            assert ConnRecord.State.get(conn_rec.state) is ConnRecord.State.RESPONSE
+            assert ConnRecord.State.get(conn_rec.state) is ConnRecord.State.COMPLETED
 
     async def test_accept_response_not_found_by_thread_id_nor_receipt_sender_did(self):
         mock_response = async_mock.MagicMock()

@@ -4,7 +4,7 @@ from collections import namedtuple
 from enum import Enum
 from typing import Mapping, Union
 
-DIDPostureSpec = namedtuple("DIDPostureTuple", "moniker ordinal public posted")
+DIDPostureSpec = namedtuple("DIDPostureSpec", "moniker ordinal public posted")
 
 
 class DIDPosture(Enum):

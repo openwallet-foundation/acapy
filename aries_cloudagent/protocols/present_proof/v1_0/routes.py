@@ -159,37 +159,12 @@ class IndyProofReqPredSpecRestrictionsSchema(OpenAPISchema):
 class IndyProofReqNonRevokedSchema(OpenAPISchema):
     """Non-revocation times specification in indy proof request."""
 
-    fro = fields.Int(
-        description="Earliest epoch of interest for non-revocation proof",
-        required=False,
-        data_key="from",
-        strict=True,
-        **INT_EPOCH,
-    )
     to = fields.Int(
-        description="Latest epoch of interest for non-revocation proof",
-        required=False,
+        description="Timestamp of interest for non-revocation proof",
+        required=True,
         strict=True,
         **INT_EPOCH,
     )
-
-    @validates_schema
-    def validate_fields(self, data, **kwargs):
-        """
-        Validate schema fields - must have from, to, or both.
-
-        Args:
-            data: The data to validate
-
-        Raises:
-            ValidationError: if data has neither from nor to
-
-        """
-        if not data:
-            raise ValidationError(
-                "Non-revocation interval must have at least one end",
-                "(from, to)",
-            )
 
 
 class IndyProofReqAttrSpecSchema(OpenAPISchema):
@@ -386,13 +361,7 @@ class IndyRequestedCredsRequestedAttrSchema(OpenAPISchema):
         required=True,
     )
     revealed = fields.Bool(
-        description="Whether to reveal attribute in proof", required=True
-    )
-    timestamp = fields.Int(
-        description="Epoch timestamp of interest for non-revocation proof",
-        required=False,
-        strict=True,
-        **INT_EPOCH,
+        description="Whether to reveal attribute in proof (default true)", default=True
     )
 
 

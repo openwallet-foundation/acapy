@@ -25,6 +25,7 @@ from ..storage.base import StorageRecord
 from ..storage.indy import IndySdkStorage
 from ..utils import sentinel
 from ..wallet.base import DIDInfo
+from ..wallet.error import WalletNotFoundError
 from ..wallet.indy import IndySdkWallet
 from ..wallet.util import full_verkey
 from ..wallet.did_posture import DIDPosture
@@ -883,17 +884,25 @@ class IndySdkLedger(BaseLedger):
             )
 
         public_info = await self.wallet.get_public_did()
-        public_did = public_info.did if public_info else None
-        with IndyErrorHandler("Exception building nym request", LedgerError):
-            request_json = await indy.ledger.build_nym_request(
-                public_did, did, verkey, alias, role
+        if not public_info:
+            raise WalletNotFoundError(
+                f"Cannot register NYM to ledger: wallet {self.wallet.name} "
+                "has no public DID"
             )
 
-        await self._submit(request_json)
+        with IndyErrorHandler("Exception building nym request", LedgerError):
+            request_json = await indy.ledger.build_nym_request(
+                public_info.did, did, verkey, alias, role
+            )
+        await self._submit(request_json)  # let ledger raise on insufficient privilege
 
-        did_info = await self.wallet.get_local_did(did)
-        metadata = {**did_info.metadata, **DIDPosture.POSTED.metadata}
-        await self.wallet.replace_local_did_metadata(did, metadata)
+        try:
+            did_info = await self.wallet.get_local_did(did)
+        except WalletNotFoundError:
+            pass  # registering another user's NYM
+        else:
+            metadata = {**did_info.metadata, **DIDPosture.POSTED.metadata}
+            await self.wallet.replace_local_did_metadata(did, metadata)
 
     async def get_nym_role(self, did: str) -> Role:
         """
@@ -1063,7 +1072,7 @@ class IndySdkLedger(BaseLedger):
         return acceptance
 
     async def get_revoc_reg_def(self, revoc_reg_id: str) -> dict:
-        """Get revocation registry definition by ID."""
+        """Get revocation registry definition by ID; augment with ledger timestamp."""
         public_info = await self.wallet.get_public_did()
         try:
             fetch_req = await indy.ledger.build_get_revoc_reg_def_request(
@@ -1074,6 +1083,9 @@ class IndySdkLedger(BaseLedger):
                 found_id,
                 found_def_json,
             ) = await indy.ledger.parse_get_revoc_reg_def_response(response_json)
+            found_def = json.loads(found_def_json)
+            found_def["txnTime"] = json.loads(response_json)["result"]["txnTime"]
+
         except IndyError as e:
             LOGGER.error(
                 f"get_revoc_reg_def failed with revoc_reg_id={revoc_reg_id} - "
@@ -1082,7 +1094,7 @@ class IndySdkLedger(BaseLedger):
             raise e
 
         assert found_id == revoc_reg_id
-        return json.loads(found_def_json)
+        return found_def
 
     async def get_revoc_reg_entry(self, revoc_reg_id: str, timestamp: int):
         """Get revocation registry entry by revocation registry ID and timestamp."""
@@ -1108,26 +1120,26 @@ class IndySdkLedger(BaseLedger):
         return json.loads(found_reg_json), ledger_timestamp
 
     async def get_revoc_reg_delta(
-        self, revoc_reg_id: str, timestamp_from=0, timestamp_to=None
+        self, revoc_reg_id: str, fro=0, to=None
     ) -> (dict, int):
         """
         Look up a revocation registry delta by ID.
 
         :param revoc_reg_id revocation registry id
-        :param timestamp_from earliest EPOCH time of interest
-        :param timestamp_to latest EPOCH time of interest
+        :param fro earliest EPOCH time of interest
+        :param to latest EPOCH time of interest
 
         :returns delta response, delta timestamp
         """
-        if timestamp_to is None:
-            timestamp_to = int(time())
+        if to is None:
+            to = int(time())
         public_info = await self.wallet.get_public_did()
         with IndyErrorHandler("Exception building rev reg delta request", LedgerError):
             fetch_req = await indy.ledger.build_get_revoc_reg_delta_request(
                 public_info and public_info.did,
                 revoc_reg_id,
-                timestamp_from,
-                timestamp_to,
+                0 if fro == to else fro,
+                to,
             )
         response_json = await self._submit(fetch_req, sign_did=public_info)
         with IndyErrorHandler(

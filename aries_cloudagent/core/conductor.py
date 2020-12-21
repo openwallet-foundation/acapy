@@ -9,6 +9,7 @@ wallet.
 """
 
 import hashlib
+import json
 import logging
 
 from ..admin.base_server import BaseAdminServer
@@ -33,11 +34,10 @@ from ..transport.outbound.base import OutboundDeliveryError
 from ..transport.outbound.manager import OutboundTransportManager, QueuedOutboundMessage
 from ..transport.outbound.message import OutboundMessage
 from ..transport.wire_format import BaseWireFormat
-from ..wallet.base import DIDInfo
-from ..utils.task_queue import CompletedTask, TaskQueue
 from ..utils.stats import Collector
 from ..multitenant.manager import MultitenantManager
-
+from ..utils.task_queue import CompletedTask, TaskQueue
+from ..wallet.base import DIDInfo
 from .dispatcher import Dispatcher
 
 LOGGER = logging.getLogger(__name__)
@@ -239,6 +239,9 @@ class Conductor:
                         public=context.settings.get("debug.invite_public", False),
                         multi_use=context.settings.get("debug.invite_multi_use", False),
                         include_handshake=True,
+                        metadata=json.loads(
+                            context.settings.get("debug.invite_metadata_json", "{}")
+                        ),
                     )
                     base_url = context.settings.get("invite_base_url")
                     invite_url = InvitationMessage.deserialize(
@@ -246,6 +249,26 @@ class Conductor:
                     ).to_url(base_url)
                     print("Invitation URL:")
                     print(invite_url, flush=True)
+                    del mgr
+            except Exception:
+                LOGGER.exception("Error creating invitation")
+
+        # Print connections protocol invitation to the terminal
+        if context.settings.get("debug.print_connections_invitation"):
+            try:
+                async with self.root_profile.session() as session:
+                    mgr = ConnectionManager(session)
+                    _record, invite = await mgr.create_invitation(
+                        my_label=context.settings.get("debug.invite_label"),
+                        public=context.settings.get("debug.invite_public", False),
+                        multi_use=context.settings.get("debug.invite_multi_use", False),
+                        metadata=json.loads(
+                            context.settings.get("debug.invite_metadata_json", "{}")
+                        ),
+                    )
+                    base_url = context.settings.get("invite_base_url")
+                    print("Invitation URL (Connections protocol):")
+                    print(invite.to_url(base_url), flush=True)
                     del mgr
             except Exception:
                 LOGGER.exception("Error creating invitation")
@@ -261,9 +284,16 @@ class Conductor:
             shutdown.run(self.inbound_transport_manager.stop())
         if self.outbound_transport_manager:
             shutdown.run(self.outbound_transport_manager.stop())
+
+        # close multitenant profiles
+        multitenant_mgr = self.context.inject(MultitenantManager, required=False)
+        if multitenant_mgr:
+            for profile in multitenant_mgr._instances.values():
+                shutdown.run(profile.close())
+
         if self.root_profile:
             shutdown.run(self.root_profile.close())
-        # MTODO: close all profiles
+
         await shutdown.complete(timeout)
 
     def inbound_message_router(
@@ -428,7 +458,12 @@ class Conductor:
         self.inbound_transport_manager.return_undelivered(outbound)
 
     def webhook_router(
-        self, topic: str, payload: dict, endpoint: str, max_attempts: int = None
+        self,
+        topic: str,
+        payload: dict,
+        endpoint: str,
+        max_attempts: int = None,
+        metadata: dict = None,
     ):
         """
         Route a webhook through the outbound transport manager.
@@ -438,10 +473,11 @@ class Conductor:
             payload: The webhook payload
             endpoint: The endpoint of the webhook target
             max_attempts: The maximum number of attempts
+            metadata: Additional metadata associated with the payload
         """
         try:
             self.outbound_transport_manager.enqueue_webhook(
-                topic, payload, endpoint, max_attempts
+                topic, payload, endpoint, max_attempts, metadata
             )
         except OutboundDeliveryError:
             LOGGER.warning(

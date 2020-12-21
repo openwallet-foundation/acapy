@@ -22,7 +22,7 @@ class WalletRecord(BaseRecord):
         schema_class = "WalletRecordSchema"
 
     RECORD_TYPE = "wallet_record"
-    RECORD_ID_NAME = "wallet_record_id"
+    RECORD_ID_NAME = "wallet_id"
 
     TAG_NAMES = {"wallet_name"}
 
@@ -32,56 +32,70 @@ class WalletRecord(BaseRecord):
     def __init__(
         self,
         *,
-        wallet_record_id: str = None,
-        wallet_config: dict = None,
+        wallet_id: str = None,
         key_management_mode: str = None,
+        settings: dict = None,
         # MTODO: how to make this a tag without making it
         # a constructor param
         wallet_name: str = None,
         **kwargs,
     ):
         """Initialize a new WalletRecord."""
-        super().__init__(wallet_record_id, **kwargs)
-        self._id = wallet_record_id
-        self.wallet_config = wallet_config
+        super().__init__(wallet_id, **kwargs)
         self.key_management_mode = key_management_mode
-
-    def get_config_as_settings(self):
-        """Get the wallet config as settings dict."""
-        config = {**self.wallet_config, "id": self.wallet_record_id}
-        # Wallet settings need to be prefixed with `wallet.`
-        return {f"wallet.{k}": v for k, v in config.items()}
+        self._settings = settings
 
     @property
-    def wallet_record_id(self) -> str:
+    def wallet_id(self) -> str:
         """Accessor for the ID associated with this record."""
         return self._id
 
     @property
+    def settings(self) -> dict:
+        """Accessor for the context settings associated with this wallet."""
+        return {**self._settings, "wallet.id": self.wallet_id}
+
+    @property
     def wallet_name(self) -> Optional[str]:
         """Accessor for the name of the wallet."""
-        return self.wallet_config.get("name")
+        return self.settings.get("wallet.name")
 
     @property
     def wallet_type(self) -> str:
         """Accessor for the type of the wallet."""
-        return self.wallet_config.get("type")
+        return self.settings.get("wallet.type")
+
+    @property
+    def wallet_key(self) -> Optional[str]:
+        """Accessor for the key of the wallet."""
+        return self.settings.get("wallet.key")
 
     @property
     def record_value(self) -> dict:
         """Accessor for the JSON record value generated for this record."""
         return {
-            prop: getattr(self, prop)
-            for prop in (
-                "wallet_config",
-                "key_management_mode",
-            )
+            prop: getattr(self, prop) for prop in ("settings", "key_management_mode")
         }
 
     @property
     def is_managed(self) -> bool:
         """Accessor to check if the key management mode is managed."""
         return self.key_management_mode == WalletRecord.MODE_MANAGED
+
+    @property
+    def requires_external_key(self) -> bool:
+        """Accessor to check if the wallet requires an external key."""
+        wallet_type = self.settings.get("wallet.type")
+
+        # Key not required for in_memory wallets
+        if wallet_type == "in_memory":
+            return False
+        # Managed wallets have the key stored in the wallet
+        elif self.is_managed:
+            return False
+        # All other cases the key is required
+        else:
+            return True
 
     def __eq__(self, other: Any) -> bool:
         """Comparison between records."""
@@ -97,12 +111,11 @@ class WalletRecordSchema(BaseRecordSchema):
         model_class = WalletRecord
         unknown = EXCLUDE
 
-    wallet_record_id = fields.Str(
+    wallet_id = fields.Str(
         required=True,
         description="Wallet record ID",
         example=UUIDFour.EXAMPLE,
     )
-    wallet_config = fields.Dict(required=True, description="Wallet config")
     key_management_mode = fields.Str(
         required=True,
         description="Mode regarding management of wallet key",
@@ -113,3 +126,4 @@ class WalletRecordSchema(BaseRecordSchema):
             ]
         ),
     )
+    settings = fields.Dict(required=False, description="Settings for this wallet.")

@@ -13,7 +13,9 @@ from ..config.injection_context import InjectionContext
 from ..wallet.models.wallet_record import WalletRecord
 from ..core.error import BaseError
 from ..protocols.routing.v1_0.manager import RouteNotFoundError, RoutingManager
+from ..protocols.routing.v1_0.models.route_record import RouteRecord
 from ..transport.wire_format import BaseWireFormat
+from ..storage.base import BaseStorage
 
 from .error import WalletKeyMissingError
 
@@ -38,7 +40,7 @@ class MultitenantManager:
         if not profile:
             raise MultitenantManagerError("Missing profile")
 
-        self._instances = {}
+        self._instances: dict[str, Profile] = {}
 
     @property
     def profile(self) -> Profile:
@@ -97,16 +99,40 @@ class MultitenantManager:
             Profile: Profile for the wallet record
 
         """
-        wallet_id = wallet_record.wallet_record_id
+        wallet_id = wallet_record.wallet_id
 
         if wallet_id not in self._instances:
             # Extend base context
             context = base_context.copy()
 
+            # MTODO: take over or remove?
+            # wallet.local_did
+
+            # Settings to take over (for now)
+            # wallet.replace_public_did
+            # wallet.storage_type
+            # walet.storage_config
+            # wallet.storage_creds
+
+            # Settings we don't want to use from base wallet
+            reset_settings = {
+                "wallet.recreate": False,
+                "wallet.seed": None,
+                "wallet.rekey": None,
+                "wallet.name": None,
+                "wallet.type": None,
+            }
+
+            context.settings = (
+                context.settings.extend(reset_settings)
+                .extend(wallet_record.settings)
+                .extend(extra_settings)
+            )
+
             # MTODO: remove base wallet settings
-            context.settings = context.settings.extend(
-                wallet_record.get_config_as_settings()
-            ).extend(extra_settings)
+            context.settings = context.settings.extend(wallet_record.settings).extend(
+                extra_settings
+            )
 
             profile, _ = await configure_wallet(context, provision=provision)
             self._instances[wallet_id] = profile
@@ -114,12 +140,12 @@ class MultitenantManager:
         return self._instances[wallet_id]
 
     async def create_wallet(
-        self, wallet_config: dict, key_management_mode: str
+        self, settings: dict, key_management_mode: str
     ) -> WalletRecord:
         """Create new wallet and wallet record.
 
         Args:
-            wallet_config: The wallet config for the wallet to create
+            settings: The context settings for this wallet
             key_management_mode: The mode to use for key management. Either "unmanaged"
                 to not store the wallet key, or "managed" to store the wallet key
 
@@ -130,8 +156,8 @@ class MultitenantManager:
             WalletRecord: The newly created wallet record
 
         """
-        wallet_key = wallet_config.get("key")
-        wallet_name = wallet_config.get("name")
+        wallet_key = settings.get("wallet.key")
+        wallet_name = settings.get("wallet.name")
 
         async with self.profile.session() as session:
             # Check if the wallet name already exists to avoid indy wallet errors
@@ -142,12 +168,11 @@ class MultitenantManager:
 
             # In unmanaged mode we don't want to store the wallet key
             if key_management_mode == WalletRecord.MODE_UNMANAGED:
-                wallet_config = {k: v for k, v in wallet_config.items() if k != "key"}
+                del settings["wallet.key"]
 
             # create and store wallet record
             wallet_record = WalletRecord(
-                wallet_config=wallet_config,
-                key_management_mode=key_management_mode,
+                settings=settings, key_management_mode=key_management_mode
             )
 
             await wallet_record.save(session)
@@ -181,10 +206,8 @@ class MultitenantManager:
                 await WalletRecord.retrieve_by_id(session, wallet_id),
             )
 
-            wallet_key = wallet_key or wallet.wallet_config.get("key")
-
-            # MTODO: make wallet key required
-            if not wallet.is_managed and not wallet_key:
+            wallet_key = wallet_key or wallet.wallet_key
+            if wallet.requires_external_key and not wallet_key:
                 raise WalletKeyMissingError("Missing key to open wallet")
 
             profile = await self.get_wallet_profile(
@@ -193,10 +216,15 @@ class MultitenantManager:
                 {"wallet.key": wallet_key},
             )
 
-            await profile.remove()
             del self._instances[wallet_id]
+            await profile.remove()
 
-            # MTODO: delete route records
+            # Remove all routing records associated with wallet
+            storage = session.inject(BaseStorage)
+            await storage.delete_all_records(
+                RouteRecord.RECORD_TYPE, {"wallet_id": wallet.wallet_id}
+            )
+
             await wallet.delete_record(session)
 
     async def add_wallet_route(
@@ -239,10 +267,10 @@ class MultitenantManager:
 
         """
 
-        jwt_payload = {"wallet_id": wallet_record.wallet_record_id}
+        jwt_payload = {"wallet_id": wallet_record.wallet_id}
         jwt_secret = self.profile.settings.get("multitenant.jwt_secret")
 
-        if not wallet_record.is_managed:
+        if wallet_record.requires_external_key:
             if not wallet_key:
                 raise WalletKeyMissingError()
 
@@ -251,6 +279,43 @@ class MultitenantManager:
         token = jwt.encode(jwt_payload, jwt_secret).decode()
 
         return token
+
+    async def get_profile_for_token(
+        self, context: InjectionContext, token: str
+    ) -> Profile:
+        """Get the profile associated with a JWT header token.
+
+        Args:
+            context: The context to use for profile creation
+            token: The token
+
+        Raises:
+            WalletKeyMissingError: [description]
+
+        Returns:
+            Profile associated with the token
+
+        """
+        jwt_secret = self.profile.context.settings.get("multitenant.jwt_secret")
+        extra_settings = {}
+
+        token_body = jwt.decode(token, jwt_secret)
+
+        wallet_id = token_body.get("wallet_id")
+        wallet_key = token_body.get("wallet_key")
+
+        async with self.profile.session() as session:
+            wallet = await WalletRecord.retrieve_by_id(session, wallet_id)
+
+            if wallet.requires_external_key:
+                if not wallet_key:
+                    raise WalletKeyMissingError()
+
+                extra_settings["wallet.key"] = wallet_key
+
+            profile = await self.get_wallet_profile(context, wallet, extra_settings)
+
+            return profile
 
     async def _get_wallet_by_key(
         self, session: ProfileSession, recipient_key: str
@@ -293,7 +358,7 @@ class MultitenantManager:
 
             if not wire_format:
                 raise MultitenantManagerError(
-                    "Unable to detect recipient keys without wire formats"
+                    "Unable to detect recipient keys without wire format"
                 )
 
             recipient_keys = wire_format.get_recipient_keys(message_body)

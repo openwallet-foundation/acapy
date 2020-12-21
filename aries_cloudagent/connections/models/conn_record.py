@@ -65,7 +65,7 @@ class ConnRecord(BaseRecord):
             return None
 
         def flip(self):
-            """Return interlocutor role."""
+            """Return opposite interlocutor role: theirs for ours, ours for theirs."""
             return (
                 ConnRecord.Role.REQUESTER
                 if self is ConnRecord.Role.RESPONDER
@@ -367,9 +367,20 @@ class ConnRecord(BaseRecord):
         await self.clear_cached_key(session, cache_key)
 
     async def metadata_get(
-        self, session: ProfileSession, key: str, default: dict = None
-    ) -> dict:
-        """Retrieve arbitrary metadata associated with this connection."""
+        self, session: ProfileSession, key: str, default: Any = None
+    ) -> Any:
+        """Retrieve arbitrary metadata associated with this connection.
+
+        Args:
+            session (ProfileSession): session used for storage
+            key (str): key identifying metadata
+            default (Any): default value to get; type should be a JSON
+            compatible value.
+
+        Returns:
+            Any: metadata stored by key
+
+        """
         assert self.connection_id
         storage: BaseStorage = session.inject(BaseStorage)
         try:
@@ -381,8 +392,14 @@ class ConnRecord(BaseRecord):
         except StorageNotFoundError:
             return default
 
-    async def metadata_set(self, session: ProfileSession, key: str, value: dict):
-        """Set arbitrary metadata associated with this connection."""
+    async def metadata_set(self, session: ProfileSession, key: str, value: Any):
+        """Set arbitrary metadata associated with this connection.
+
+        Args:
+            session (ProfileSession): session used for storage
+            key (str): key identifying metadata
+            value (Any): value to set
+        """
         assert self.connection_id
         value = json.dumps(value)
         storage: BaseStorage = session.inject(BaseStorage)
@@ -401,7 +418,12 @@ class ConnRecord(BaseRecord):
             await storage.add_record(record)
 
     async def metadata_delete(self, session: ProfileSession, key: str):
-        """Delete custom metadata associated with this connection."""
+        """Delete custom metadata associated with this connection.
+
+        Args:
+            session (ProfileSession): session used for storage
+            key (str): key of metadata to delete
+        """
         assert self.connection_id
         storage: BaseStorage = session.inject(BaseStorage)
         try:
@@ -414,7 +436,15 @@ class ConnRecord(BaseRecord):
             raise KeyError(f"{key} not found in connection metadata") from err
 
     async def metadata_get_all(self, session: ProfileSession) -> dict:
-        """Return all custom metadata associated with this connection."""
+        """Return all custom metadata associated with this connection.
+
+        Args:
+            session (ProfileSession): session used for storage
+
+        Returns:
+            dict: dictionary representation of all metadata values
+
+        """
         assert self.connection_id
         storage: BaseStorage = session.inject(BaseStorage)
         records = await storage.find_all_records(

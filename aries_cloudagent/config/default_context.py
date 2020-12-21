@@ -52,8 +52,8 @@ class DefaultContextBuilder(ContextBuilder):
     async def bind_providers(self, context: InjectionContext):
         """Bind various class providers."""
 
-        # Bind global indy ledger pool provider to be able to share
-        # pools between wallets
+        # MTODO: move to IndySdkProfileManager if possible
+        # Bind global indy pool provider to be able to share pools between wallets
         context.injector.bind_provider(
             IndySdkLedgerPool,
             CachedProvider(IndySdkLedgerPoolProvider(), ("ledger.pool_name",)),

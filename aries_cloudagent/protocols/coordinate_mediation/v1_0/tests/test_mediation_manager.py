@@ -3,11 +3,16 @@ import logging
 
 import pytest
 
-from aries_cloudagent.connections.models.conn_record import ConnRecord
-from aries_cloudagent.messaging.request_context import RequestContext
-from aries_cloudagent.transport.inbound.receipt import MessageReceipt
+from asynctest import mock as async_mock
+
+from .....connections.models.conn_record import ConnRecord
+from .....messaging.request_context import RequestContext
+from .....storage.error import StorageNotFoundError
+from .....transport.inbound.receipt import MessageReceipt
 
 from ....routing.v1_0.models.route_record import RouteRecord
+
+from .. import manager as test_module
 from ..manager import (
     MediationAlreadyExists,
     MediationManager,
@@ -25,7 +30,6 @@ TEST_CONN_ID = "conn-id"
 TEST_ENDPOINT = "https://example.com"
 TEST_VERKEY = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
 TEST_ROUTE_VERKEY = "9WCgWKUaAJj3VWxxtzvvMQN3AoFxoBtBDo9ntwJnVVCC"
-
 
 pytestmark = pytest.mark.asyncio
 
@@ -181,11 +185,25 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
         assert results[0].connection_id == TEST_CONN_ID
         assert results[0].recipient_key == TEST_VERKEY
 
-    async def test_gey_keylist_no_granted_record(self, manager):
-        """test_gey_keylist_no_granted_record."""
+    async def test_get_keylist_no_granted_record(self, manager):
+        """test_get_keylist_no_granted_record."""
         record = MediationRecord()
         with pytest.raises(MediationNotGrantedError):
             await manager.get_keylist(record)
+
+    async def test_mediation_record_eq(self):
+        record_0 = MediationRecord(endpoint="zero")
+        record_1 = MediationRecord(endpoint="one")
+        assert record_0 != record_1
+        assert record_0 != ValueError("not a mediation record")
+
+        with pytest.raises(ValueError):
+            record_0.state = "bad state"
+
+    async def test_mediation_record_duplicate_means_exists(self, session):
+        await MediationRecord(connection_id=TEST_CONN_ID, endpoint="abc").save(session)
+        await MediationRecord(connection_id=TEST_CONN_ID, endpoint="def").save(session)
+        assert await MediationRecord.exists_for_connection_id(session, TEST_CONN_ID)
 
     async def test_create_keylist_query_response(self, session, manager, record):
         """test_create_keylist_query_response."""
@@ -309,11 +327,42 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
         ]
         await manager.store_update_results(TEST_CONN_ID, results)
         routes = await RouteRecord.query(session)
+
         assert len(routes) == 1
         assert routes[0].recipient_key == TEST_ROUTE_VERKEY
 
-    async def test_store_updated_results_errors(self, caplog, manager):
-        """test_store_updated_results_errors."""
+        results = [
+            KeylistUpdated(
+                recipient_key=TEST_VERKEY,
+                action=KeylistUpdateRule.RULE_REMOVE,
+                result=KeylistUpdated.RESULT_SUCCESS,
+            ),
+        ]
+
+        with async_mock.patch.object(
+            RouteRecord, "query", async_mock.CoroutineMock()
+        ) as mock_route_rec_query, async_mock.patch.object(
+            test_module.LOGGER, "error", async_mock.MagicMock()
+        ) as mock_logger_error:
+            mock_route_rec_query.side_effect = StorageNotFoundError("no record")
+
+            await manager.store_update_results(TEST_CONN_ID, results)
+            mock_logger_error.assert_called_once()
+
+        with async_mock.patch.object(
+            RouteRecord, "query", async_mock.CoroutineMock()
+        ) as mock_route_rec_query, async_mock.patch.object(
+            test_module.LOGGER, "error", async_mock.MagicMock()
+        ) as mock_logger_error:
+            mock_route_rec_query.return_value = [
+                async_mock.MagicMock(delete_record=async_mock.CoroutineMock())
+            ] * 2
+
+            await manager.store_update_results(TEST_CONN_ID, results)
+            mock_logger_error.assert_called_once()
+
+    async def test_store_update_results_errors(self, caplog, manager):
+        """test_store_update_results with errors."""
         caplog.set_level(logging.WARNING)
         results = [
             KeylistUpdated(
