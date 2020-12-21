@@ -10,19 +10,18 @@ MEDIATION_STATE_SCHEMA = fields.Str(
     required=False,
     validate=validate.OneOf(
         [
-                getattr(MediationRecord, m)
-                for m in vars(MediationRecord)
-                if m.startswith("STATE_")
+            getattr(MediationRecord, m)
+            for m in vars(MediationRecord)
+            if m.startswith("STATE_")
         ]
     ),
-    example="'request_received',"
-    "'granted' or 'denied'",
+    example="'request_received'," "'granted' or 'denied'",
 )
 
 
 MEDIATION_ID_SCHEMA = {
     "validate": UUIDFour(),
-    "example": UUIDFour.EXAMPLE
+    "example": UUIDFour.EXAMPLE,
 }  # TODO: is mediation req id a did?
 
 
@@ -57,9 +56,9 @@ ROLE_SCHEMA = fields.Str(
     description="Role of the mediator request record.",
     validate=validate.OneOf(
         [
-                getattr(MediationRecord, m)
-                for m in vars(MediationRecord)
-                if m.startswith("ROLE_")
+            getattr(MediationRecord, m)
+            for m in vars(MediationRecord)
+            if m.startswith("ROLE_")
         ]
     ),
     example="client",
@@ -69,14 +68,12 @@ ROLE_SCHEMA = fields.Str(
 ENDPOINT_SCHEMA = fields.Str(
     description="endpoint on which messages destined "
     "for the recipient are received.",
-    example="http://192.168.56.102:8020/"
+    example="http://192.168.56.102:8020/",
 )
 
 
 ROUTING_KEYS_SCHEMA = fields.List(
-    fields.Str(
-        description="Keys to use for forward message packaging"
-    ),
+    fields.Str(description="Keys to use for forward message packaging"),
     required=False,
 )
 

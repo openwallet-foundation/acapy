@@ -13,7 +13,6 @@ from ..messages.keylist_update import KeylistUpdate
 from ..models.mediation_record import MediationRecord
 
 
-
 class KeylistUpdateHandler(BaseHandler):
     """Handler for keylist-update messages."""
 
