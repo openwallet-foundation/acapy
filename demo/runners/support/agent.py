@@ -395,7 +395,6 @@ class DemoAgent:
                 did=new_did["result"]["did"], verkey=new_did["result"]["verkey"]
             )
             await self.admin_POST("/wallet/did/public?did=" + self.did)
-            pass
         self.log(f"Created NEW wallet {target_wallet_name}")
         return True
 
