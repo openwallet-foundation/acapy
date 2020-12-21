@@ -8,7 +8,13 @@ from ...utils.stats import Collector
 
 from ..base import InjectionError
 from ..injection_context import InjectionContext
-from ..provider import BaseProvider, ClassProvider, InstanceProvider, StatsProvider, CachedProvider
+from ..provider import (
+    BaseProvider,
+    ClassProvider,
+    InstanceProvider,
+    StatsProvider,
+    CachedProvider
+)
 from ..settings import Settings
 
 
