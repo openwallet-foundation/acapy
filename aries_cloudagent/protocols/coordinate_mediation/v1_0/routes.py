@@ -343,10 +343,6 @@ async def mediation_record_send(request: web.BaseRequest):
             mediator_terms=mediation_record.mediator_terms,
             recipient_terms=mediation_record.recipient_terms,
         )
-        _message = MediationRequest(
-            mediator_terms=_record.mediator_terms,
-            recipient_terms=_record.recipient_terms,
-        )
     except (StorageError, BaseModelError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
     await outbound_handler(_message, connection_id=mediation_record.connection_id)
@@ -368,7 +364,7 @@ async def mediation_record_grant(request: web.BaseRequest):
         await _prepare_handler(request)
     )
     # TODO: check that request origination point
-    _record = None
+    mediation_record = None
     try:
         session = await context.session()
         mediation_record = await MediationRecord.retrieve_by_id(session, _id)
@@ -377,7 +373,7 @@ async def mediation_record_grant(request: web.BaseRequest):
         result = mediation_record.serialize()
     except (StorageError, BaseModelError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
-    await outbound_handler(_message, connection_id=_record.connection_id)
+    await outbound_handler(grant_request, connection_id=mediation_record.connection_id)
     return web.json_response(result, status=201)
 
 
@@ -417,7 +413,7 @@ async def mediation_record_deny(request: web.BaseRequest):
         result = deny_request.serialize()
     except (StorageError, BaseModelError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
-    await outbound_handler(_message, connection_id=_record.connection_id)
+    await outbound_handler(deny_request, connection_id=mediation_record.connection_id)
     return web.json_response(result, status=201)
 
 
