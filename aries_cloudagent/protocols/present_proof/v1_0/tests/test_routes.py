@@ -18,7 +18,7 @@ class TestProofRoutes(AsyncTestCase):
         self.context = AdminRequestContext.test_context(self.session_inject)
         self.request_dict = {
             "context": self.context,
-            "outbound_message_router": async_mock.CoroutineMock()
+            "outbound_message_router": async_mock.CoroutineMock(),
         }
         self.request = async_mock.MagicMock(
             app={},
