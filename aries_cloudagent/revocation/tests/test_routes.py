@@ -590,9 +590,7 @@ class TestRevocationRoutes(AsyncTestCase):
             return_value=(False, "Internal Server Error")
         )
         self.context.injector.clear_binding(BaseTailsServer)
-        self.context.injector.bind_instance(
-            BaseTailsServer, self.tails_server
-        )
+        self.context.injector.bind_instance(BaseTailsServer, self.tails_server)
 
         with async_mock.patch.object(
             test_module, "tails_path", async_mock.MagicMock()

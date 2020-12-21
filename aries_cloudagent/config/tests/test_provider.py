@@ -13,7 +13,7 @@ from ..provider import (
     ClassProvider,
     InstanceProvider,
     StatsProvider,
-    CachedProvider
+    CachedProvider,
 )
 from ..settings import Settings
 
