@@ -33,6 +33,8 @@ from .messages.connection_invitation import (
     ConnectionInvitationSchema,
 )
 
+from .transaction_roles import TransactionRole
+
 
 class ConnectionModuleResponseSchema(OpenAPISchema):
     """Response schema for connection module."""
@@ -269,6 +271,18 @@ class ConnIdRefIdMatchInfoSchema(OpenAPISchema):
         description="Inbound connection identifier",
         required=True,
         example=UUIDFour.EXAMPLE,
+    )
+
+
+class AssignTransactionRolesSchema(OpenAPISchema):
+    """Assign transaction related roles to connection record."""
+
+    transaction_my_role = fields.Str(
+        description="Transaction related roles",
+        required=False,
+        validate=validate.OneOf(
+            [r.name for r in TransactionRole if isinstance(r.value[0], int)] + ["reset"]
+        ),
     )
 
 
@@ -710,6 +724,47 @@ async def connections_create_static(request: web.BaseRequest):
     return web.json_response(response)
 
 
+@docs(
+    tags=["connection"],
+    summary="Set transaction roles",
+)
+@querystring_schema(AssignTransactionRolesSchema())
+@match_info_schema(ConnIdMatchInfoSchema())
+@response_schema(ConnRecordSchema(), 200, description="")
+async def set_transaction_roles(request: web.BaseRequest):
+    """
+    Request handler for assigning transaction roles.
+
+    Args:
+        request: aiohttp request object
+
+    Returns:
+        The assigned transaction roles
+
+    """
+
+    context: AdminRequestContext = request["context"]
+    outbound_handler = request.app["outbound_message_router"]
+    connection_id = request.match_info["conn_id"]
+    transaction_my_role = request.query.get("transaction_my_role")
+    session = await context.session()
+
+    try:
+        record = await ConnRecord.retrieve_by_id(session, connection_id)
+        connection_mgr = ConnectionManager(session)
+        tx_role_to_send = await connection_mgr.set_transaction_my_role(
+            record=record, transaction_my_role=transaction_my_role
+        )
+        roles = await record.metadata_get(session, "transaction_roles")
+    except StorageNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
+    except BaseModelError as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+    await outbound_handler(tx_role_to_send, connection_id=connection_id)
+    return web.json_response(roles)
+
+
 async def register(app: web.Application):
     """Register routes."""
 
@@ -736,6 +791,9 @@ async def register(app: web.Application):
             web.post(
                 "/connections/{conn_id}/establish-inbound/{ref_id}",
                 connections_establish_inbound,
+            ),
+            web.post(
+                "/connections/{conn_id}/set-transaction-roles", set_transaction_roles
             ),
             web.delete("/connections/{conn_id}", connections_remove),
         ]

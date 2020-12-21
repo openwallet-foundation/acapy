@@ -2,6 +2,7 @@
 
 import logging
 from typing import Coroutine, Sequence, Tuple
+from aiohttp import web
 
 from aries_cloudagent.protocols.coordinate_mediation.v1_0.manager import (
     MediationManager,
@@ -30,6 +31,7 @@ from ...coordinate_mediation.v1_0.models.mediation_record import MediationRecord
 from .messages.connection_invitation import ConnectionInvitation
 from .messages.connection_request import ConnectionRequest
 from .messages.connection_response import ConnectionResponse
+from .messages.transaction_role_to_send import TransactionRoleToSend
 from .messages.problem_report import ProblemReportReason
 from .models.connection_detail import ConnectionDetail
 
@@ -1311,3 +1313,56 @@ class ConnectionManager:
             if conn_info.verkey == recip_verkey:
                 connection.routing_state = routing_state
                 await connection.save(self._session)
+
+    async def set_transaction_my_role(
+        self, record: ConnRecord, transaction_my_role: str
+    ):
+        """
+        Set transaction_my_role.
+
+        Args:
+            record: The connection record in which to set transaction roles
+            transaction_my_role: My transaction role
+
+        Returns:
+            The transaction role that is send to other agent
+
+        """
+
+        value = await record.metadata_get(self._session, "transaction_roles")
+
+        if value:
+            value["transaction_my_role"] = transaction_my_role
+        else:
+            value = {"transaction_my_role": transaction_my_role}
+        await record.metadata_set(self._session, key="transaction_roles", value=value)
+
+        tx_role_to_send = TransactionRoleToSend(role=transaction_my_role)
+        return tx_role_to_send
+
+    async def set_transaction_their_role(
+        self, tx_role_received: TransactionRoleToSend, receipt: MessageReceipt
+    ):
+        """
+        Set transaction_their_role.
+
+        Args:
+            tx_role_received: The transaction role that is received from the other agent
+            receipt: The Message Receipt Object
+        """
+
+        try:
+            connection = await ConnRecord.retrieve_by_did(
+                self._session, receipt.sender_did, receipt.recipient_did
+            )
+        except StorageNotFoundError as err:
+            raise web.HTTPNotFound(reason=err.roll_up) from err
+
+        value = await connection.metadata_get(self._session, "transaction_roles")
+        if value:
+            value["transaction_their_role"] = tx_role_received.role
+        else:
+            value = {"transaction_their_role": tx_role_received.role}
+        await connection.metadata_set(
+            self._session, key="transaction_roles", value=value
+        )
