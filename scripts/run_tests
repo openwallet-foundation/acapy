@@ -1,8 +1,9 @@
 #!/bin/bash
 
-cd $(dirname $0)
+cd "$(dirname "$0")" || exit
+CONTAINER_RUNTIME="${CONTAINER_RUNTIME:-docker}"
 
-docker build -t aries-cloudagent-test -f ../docker/Dockerfile.test .. || exit 1
+$CONTAINER_RUNTIME build -t aries-cloudagent-test -f ../docker/Dockerfile.test .. || exit 1
 
 DOCKER_ARGS=""
 PTVSD_PORT="5678"
@@ -13,7 +14,7 @@ for arg in "$@"; do
     #shift # remove debug flag from pytest args.
   fi
 done
-if [ ! -z "${ENABLE_PTVSD}" ]; then
+if [ -n "${ENABLE_PTVSD}" ]; then
   DOCKER_ARGS="${DOCKER_ARGS} -e ENABLE_PTVSD=\"${ENABLE_PTVSD}\" -p $PTVSD_PORT:$PTVSD_PORT"
 fi
 
@@ -21,11 +22,9 @@ if [ ! -d ../test-reports ]; then mkdir ../test-reports; fi
 
 # on Windows, docker run needs to be prefixed by winpty
 if [ "$OSTYPE" == "msys" ]; then
-  DOCKER="winpty docker"
-else
-  DOCKER="docker"
+  CONTAINER_RUNTIME="winpty docker"
 fi
 
-$DOCKER run --rm -ti --name aries-cloudagent-runner \
-	-v "$(pwd)/../test-reports:/usr/src/app/test-reports" \
+$CONTAINER_RUNTIME run --rm -ti --name aries-cloudagent-runner \
+	-v "$(pwd)/../test-reports:/usr/src/app/test-reports:z" \
 	$DOCKER_ARGS aries-cloudagent-test "$@"
