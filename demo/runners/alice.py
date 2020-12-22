@@ -222,7 +222,7 @@ async def input_invitation(agent):
                 log_msg("Invalid invitation:", str(e))
 
     with log_timer("Connect duration:"):
-        if "/out-of-band/" in details["@type"]:
+        if "/out-of-band/" in details.get("@type", ""):
             connection = await agent.admin_POST(
                 "/didexchange/receive-invitation", details
             )
