@@ -63,6 +63,12 @@ class CreateWalletRequestSchema(OpenAPISchema):
         example="Alice",
     )
 
+    image_url = fields.Str(
+        description="Image url for this wallet. This image url is publicized\
+            (self-attested) to other agents as part of forming a connection.",
+        example="https://aries.ca/images/sample.png",
+    )
+
     key_management_mode = fields.Str(
         description="Key management method to use for this wallet.",
         example=WalletRecord.MODE_MANAGED,
@@ -212,8 +218,11 @@ async def wallet_create(request: web.BaseRequest):
     }
 
     label = body.get("label")
+    image_url = body.get("image_url")
     if label:
         settings["default_label"] = label
+    if image_url:
+        settings["image_url"] = image_url
 
     async with context.session() as session:
         try:

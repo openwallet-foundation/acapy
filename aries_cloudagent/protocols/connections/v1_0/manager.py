@@ -144,6 +144,7 @@ class ConnectionManager:
         """
         mediation_mgr = MediationManager(self._session)
         keylist_updates = None
+        image_url = self._session.context.settings.get("image_url")
 
         if not my_label:
             my_label = self._session.settings.get("default_label")
@@ -170,7 +171,7 @@ class ConnectionManager:
 
             # FIXME - allow ledger instance to format public DID with prefix?
             invitation = ConnectionInvitation(
-                label=my_label, did=f"did:sov:{public_did.did}"
+                label=my_label, did=f"did:sov:{public_did.did}", image_url=image_url
             )
             return None, invitation
 
@@ -243,6 +244,7 @@ class ConnectionManager:
             recipient_keys=recipient_keys,
             routing_keys=routing_keys,
             endpoint=my_endpoint,
+            image_url=image_url,
         )
         await connection.attach_invitation(self._session, invitation)
 
@@ -389,6 +391,7 @@ class ConnectionManager:
         request = ConnectionRequest(
             label=my_label,
             connection=ConnectionDetail(did=connection.my_did, did_doc=did_doc),
+            image_url=self._session.settings.get("image_url"),
         )
 
         # Update connection state
