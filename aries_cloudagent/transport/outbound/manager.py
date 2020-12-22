@@ -59,6 +59,7 @@ class QueuedOutboundMessage:
         self.target = target
         self.task: asyncio.Task = None
         self.transport_id: str = transport_id
+        self.metadata: dict = None
 
 
 class OutboundTransportManager:
@@ -259,7 +260,12 @@ class OutboundTransportManager:
         self.process_queued()
 
     def enqueue_webhook(
-        self, topic: str, payload: dict, endpoint: str, max_attempts: int = None
+        self,
+        topic: str,
+        payload: dict,
+        endpoint: str,
+        max_attempts: int = None,
+        metadata: dict = None,
     ):
         """
         Add a webhook to the queue.
@@ -269,6 +275,7 @@ class OutboundTransportManager:
             payload: The webhook payload
             endpoint: The webhook endpoint
             max_attempts: Override the maximum number of attempts
+            metadata: Additional metadata associated with the payload
 
         Raises:
             OutboundDeliveryError: if the associated transport is not running
@@ -277,6 +284,7 @@ class OutboundTransportManager:
         transport_id = self.get_running_transport_for_endpoint(endpoint)
         queued = QueuedOutboundMessage(None, None, None, transport_id)
         queued.endpoint = f"{endpoint}/topic/{topic}/"
+        queued.metadata = metadata
         queued.payload = json.dumps(payload)
         queued.state = QueuedOutboundMessage.STATE_PENDING
         queued.retries = 4 if max_attempts is None else max_attempts - 1
@@ -434,7 +442,9 @@ class OutboundTransportManager:
         """Kick off delivery of a queued message."""
         transport = self.get_transport_instance(queued.transport_id)
         queued.task = self.task_queue.run(
-            transport.handle_message(queued.profile, queued.payload, queued.endpoint),
+            transport.handle_message(
+                queued.profile, queued.payload, queued.endpoint, queued.metadata
+            ),
             lambda completed: self.finished_deliver(queued, completed),
         )
         return queued.task

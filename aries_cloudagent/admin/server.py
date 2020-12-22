@@ -13,6 +13,7 @@ from aiohttp_apispec import (
     validation_middleware,
 )
 import aiohttp_cors
+import jwt
 
 from marshmallow import fields
 
@@ -27,7 +28,9 @@ from ..transport.outbound.message import OutboundMessage
 from ..utils.stats import Collector
 from ..utils.task_queue import TaskQueue
 from ..version import __version__
+from ..multitenant.manager import MultitenantManager, MultitenantManagerError
 
+from ..storage.error import StorageNotFoundError
 from .base_server import BaseAdminServer
 from .error import AdminSetupError
 from .request_context import AdminRequestContext
@@ -103,7 +106,7 @@ class AdminResponder(BaseResponder):
             topic: the webhook topic identifier
             payload: the webhook payload value
         """
-        await self._webhook(topic, payload)
+        await self._webhook(self._profile, topic, payload)
 
 
 class WebhookTarget:
@@ -233,12 +236,9 @@ class AdminServer(BaseAdminServer):
         self.webhook_targets = {}
         self.websocket_queues = {}
         self.site = None
+        self.multitenant_manager = context.inject(MultitenantManager, required=False)
 
-        self.responder = AdminResponder(
-            self.root_profile,
-            self.outbound_message_router,
-            self.send_webhook,
-        )
+        self.server_paths = []
 
     async def make_application(self) -> web.Application:
         """Get the aiohttp application instance."""
@@ -280,13 +280,70 @@ class AdminServer(BaseAdminServer):
 
         collector = self.context.inject(Collector, required=False)
 
+        if self.multitenant_manager:
+
+            @web.middleware
+            async def check_multitenant_authorization(request: web.Request, handler):
+                authorization_header = request.headers.get("Authorization")
+                path = request.path
+
+                is_multitenancy_path = path.startswith("/multitenancy")
+                is_server_path = path in self.server_paths or path == "/features"
+
+                # subwallets are not allowed to access multitenancy routes
+                if authorization_header and is_multitenancy_path:
+                    raise web.HTTPUnauthorized()
+
+                # base wallet is not allowed to perform ssi related actions.
+                # Only multitenancy and general server actions
+                if (
+                    not authorization_header
+                    and not is_multitenancy_path
+                    and not is_server_path
+                    and not is_unprotected_path(path)
+                ):
+                    raise web.HTTPUnauthorized()
+
+                return await handler(request)
+
+            middlewares.append(check_multitenant_authorization)
+
         @web.middleware
         async def setup_context(request: web.Request, handler):
+            authorization_header = request.headers.get("Authorization")
+            profile = self.root_profile
+
+            # Multitenancy context setup
+            if self.multitenant_manager and authorization_header:
+                try:
+                    bearer, _, token = authorization_header.partition(" ")
+                    if bearer != "Bearer":
+                        raise web.HTTPUnauthorized(
+                            reason="Invalid Authorization header structure"
+                        )
+
+                    profile = await self.multitenant_manager.get_profile_for_token(
+                        self.context, token
+                    )
+                except MultitenantManagerError as err:
+                    raise web.HTTPUnauthorized(err.roll_up)
+                except (jwt.InvalidTokenError, StorageNotFoundError):
+                    raise web.HTTPUnauthorized()
+
             # TODO may dynamically adjust the profile used here according to
             # headers or other parameters
-            context = AdminRequestContext(self.root_profile, context=self.context)
-            context.injector.bind_instance(BaseResponder, self.responder)
-            request["context"] = context
+            admin_context = AdminRequestContext(profile, context=profile.context)
+
+            # Create a responder with the request specific context
+            responder = AdminResponder(
+                profile,
+                self.outbound_message_router,
+                self.send_webhook,
+            )
+            admin_context.injector.bind_instance(BaseResponder, responder)
+
+            request["context"] = admin_context
+            request["outbound_message_router"] = responder.send
 
             if collector:
                 handler = collector.wrap_coro(handler, [handler.__qualname__])
@@ -298,20 +355,21 @@ class AdminServer(BaseAdminServer):
         middlewares.append(setup_context)
 
         app = web.Application(middlewares=middlewares)
-        app["outbound_message_router"] = self.responder.send
 
-        app.add_routes(
-            [
-                web.get("/", self.redirect_handler, allow_head=False),
-                web.get("/plugins", self.plugins_handler, allow_head=False),
-                web.get("/status", self.status_handler, allow_head=False),
-                web.post("/status/reset", self.status_reset_handler),
-                web.get("/status/live", self.liveliness_handler, allow_head=False),
-                web.get("/status/ready", self.readiness_handler, allow_head=False),
-                web.get("/shutdown", self.shutdown_handler, allow_head=False),
-                web.get("/ws", self.websocket_handler, allow_head=False),
-            ]
-        )
+        server_routes = [
+            web.get("/", self.redirect_handler, allow_head=False),
+            web.get("/plugins", self.plugins_handler, allow_head=False),
+            web.get("/status", self.status_handler, allow_head=False),
+            web.post("/status/reset", self.status_reset_handler),
+            web.get("/status/live", self.liveliness_handler, allow_head=False),
+            web.get("/status/ready", self.readiness_handler, allow_head=False),
+            web.get("/shutdown", self.shutdown_handler, allow_head=False),
+            web.get("/ws", self.websocket_handler, allow_head=False),
+        ]
+
+        # Store server_paths for multitenant authorization handling
+        self.server_paths = [route.path for route in server_routes]
+        app.add_routes(server_routes)
 
         plugin_registry = self.context.inject(PluginRegistry, required=False)
         if plugin_registry:
@@ -408,12 +466,29 @@ class AdminServer(BaseAdminServer):
 
     async def on_startup(self, app: web.Application):
         """Perform webserver startup actions."""
+        security_definitions = {}
+        security = []
+
         if self.admin_api_key:
-            swagger = app["swagger_dict"]
-            swagger["securityDefinitions"] = {
-                "ApiKeyHeader": {"type": "apiKey", "in": "header", "name": "X-API-KEY"}
+            security_definitions["ApiKeyHeader"] = {
+                "type": "apiKey",
+                "in": "header",
+                "name": "X-API-KEY",
             }
-            swagger["security"] = [{"ApiKeyHeader": []}]
+            security.append({"ApiKeyHeader": []})
+        if self.multitenant_manager:
+            security_definitions["AuthorizationHeader"] = {
+                "type": "apiKey",
+                "in": "header",
+                "name": "Authorization",
+                "description": "Bearer token. Be sure to preprend token with 'Bearer '",
+            }
+            security.append({"AuthorizationHeader": []})
+
+        if self.admin_api_key or self.multitenant_manager:
+            swagger = app["swagger_dict"]
+            swagger["securityDefinitions"] = security_definitions
+            swagger["security"] = security
 
     @docs(tags=["server"], summary="Fetch the list of loaded plugins")
     @response_schema(AdminModulesSchema(), 200, description="")
@@ -650,15 +725,30 @@ class AdminServer(BaseAdminServer):
         if target_url in self.webhook_targets:
             del self.webhook_targets[target_url]
 
-    async def send_webhook(self, topic: str, payload: dict):
+    async def send_webhook(self, profile: Profile, topic: str, payload: dict):
         """Add a webhook to the queue, to send to all registered targets."""
+        wallet_id = profile.settings.get("wallet.id")
+
+        metadata = None
+        if wallet_id:
+            metadata = {"x-wallet-id": wallet_id}
+
         if self.webhook_router:
             for idx, target in self.webhook_targets.items():
                 if not target.topic_filter or topic in target.topic_filter:
                     self.webhook_router(
-                        topic, payload, target.endpoint, target.max_attempts
+                        topic,
+                        payload,
+                        target.endpoint,
+                        target.max_attempts,
+                        metadata,
                     )
+
+        # set ws webhook body, optionally add wallet id for multitenant mode
+        webhook_body = {"topic": topic, "payload": payload}
+        if wallet_id:
+            webhook_body["wallet_id"] = wallet_id
 
         for queue in self.websocket_queues.values():
             if queue.authenticated or topic in ("ping", "settings"):
-                await queue.enqueue({"topic": topic, "payload": payload})
+                await queue.enqueue(webhook_body)

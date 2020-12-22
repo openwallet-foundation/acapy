@@ -4,7 +4,7 @@ import json
 import logging
 
 from abc import abstractmethod
-from typing import Sequence, Tuple, Union
+from typing import List, Sequence, Tuple, Union
 
 from ..core.profile import ProfileSession
 from ..messaging.util import time_now
@@ -66,6 +66,22 @@ class BaseWireFormat:
 
         Raises:
             MessageEncodeError: If the message could not be encoded
+
+        """
+
+    @abstractmethod
+    def get_recipient_keys(self, message_body: Union[str, bytes]) -> List[str]:
+        """
+        Get all recipient keys from a wire message.
+
+        Args:
+            message_body: The body of the message
+
+        Returns:
+            List of recipient keys from the message body
+
+        Raises:
+            RecipientKeysError: If the recipient keys could not be extracted
 
         """
 
@@ -152,3 +168,21 @@ class JsonWireFormat(BaseWireFormat):
 
         """
         return message_json
+
+    def get_recipient_keys(self, message_body: Union[str, bytes]) -> List[str]:
+        """
+        Get all recipient keys from a wire message.
+
+        Args:
+            message_body: The body of the message
+
+        Returns:
+            List of recipient keys from the message body
+
+        Raises:
+            RecipientKeysError: If the recipient keys could not be extracted
+
+        """
+
+        # JSON message cannot contain recipient keys
+        return []

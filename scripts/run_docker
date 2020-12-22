@@ -1,8 +1,9 @@
 #!/bin/bash
 
-cd $(dirname $0)
+cd "$(dirname "$0")" || exit 1
+CONTAINER_RUNTIME="${CONTAINER_RUNTIME:-docker}"
 
-docker build -t aries-cloudagent-run -f ../docker/Dockerfile.run .. || exit 1
+$CONTAINER_RUNTIME build -t aries-cloudagent-run -f ../docker/Dockerfile.run .. || exit 1
 
 ARGS=""
 for PORT in $PORTS; do
@@ -11,26 +12,25 @@ done
 
 PTVSD_PORT="${PTVSD_PORT-5678}"
 
-for arg in $@; do
+for arg in "$@"; do
   if [ "$arg" = "--debug" ]; then
     ENABLE_PTVSD=1
   fi
 done
-if [ ! -z "${ENABLE_PTVSD}" ]; then
+if [ -n "${ENABLE_PTVSD}" ]; then
   ARGS="${ARGS} -e ENABLE_PTVSD=\"${ENABLE_PTVSD}\" -p $PTVSD_PORT:$PTVSD_PORT"
 fi
 
 ARGS="${ARGS} -v $(pwd)/../logs:/home/indy/logs"
 
-if [ ! -z "${WEBHOOK_URL}" ]; then
+if [ -n "${WEBHOOK_URL}" ]; then
   ARGS="${ARGS} -e WEBHOOK_URL=\"${WEBHOOK_URL}\""
 fi
 
 if [ "$OSTYPE" == "msys" ]; then
-  DOCKER="winpty docker"
-else
-  DOCKER="docker"
+  CONTAINER_RUNTIME="winpty docker"
 fi
 
-RAND_NAME=$(cat /dev/urandom | env LC_CTYPE=C tr -dc 'a-zA-Z0-9' | fold -w 16 | head -n 1)
-$DOCKER run --rm -ti --name "aries-cloudagent-runner_${RAND_NAME}" $ARGS aries-cloudagent-run "$@"
+RAND_NAME=$(env LC_CTYPE=C tr -dc 'a-zA-Z0-9' < /dev/urandom | fold -w 16 | head -n 1)
+$CONTAINER_RUNTIME run --rm -ti --name "aries-cloudagent-runner_${RAND_NAME}" \
+    $ARGS aries-cloudagent-run "$@"

@@ -27,6 +27,7 @@ from ....wallet.base import BaseWallet, DIDInfo
 from ....wallet.crypto import create_keypair, seed_to_did
 from ....wallet.error import WalletNotFoundError
 from ....wallet.util import bytes_to_b58, did_key_to_naked
+from ....multitenant.manager import MultitenantManager
 from ...coordinate_mediation.v1_0.models.mediation_record import MediationRecord
 from .messages.connection_invitation import ConnectionInvitation
 from .messages.connection_request import ConnectionRequest
@@ -251,6 +252,16 @@ class ConnectionManager:
             for key, value in metadata.items():
                 await connection.metadata_set(self._session, key, value)
 
+        # Multitenancy: add routing for key to handle inbound messages using relay
+        multitenant_enabled = self._session.settings.get("multitenant.enabled")
+        wallet_id = self._session.settings.get("wallet.id")
+        if multitenant_enabled and wallet_id:
+            multitenant_mgr = self._session.inject(MultitenantManager)
+            await multitenant_mgr.add_wallet_route(
+                wallet_id=wallet_id,
+                recipient_key=invitation_key,
+            )
+
         return connection, invitation
 
     async def receive_invitation(
@@ -388,6 +399,16 @@ class ConnectionManager:
 
         await connection.save(self._session, reason="Created connection request")
 
+        # Multitenancy: add routing for key to handle inbound messages using relay
+        multitenant_enabled = self._session.settings.get("multitenant.enabled")
+        wallet_id = self._session.settings.get("wallet.id")
+        if multitenant_enabled and wallet_id:
+            multitenant_mgr = self._session.inject(MultitenantManager)
+            await multitenant_mgr.add_wallet_route(
+                wallet_id=wallet_id,
+                recipient_key=my_info.verkey,
+            )
+
         # Notify mediator of keylist changes
         if (
             keylist_updates
@@ -429,6 +450,7 @@ class ConnectionManager:
         keylist_updates = None
         connection = None
         connection_key = None
+        my_info = None
 
         # Determine what key will need to sign the response
         if receipt.recipient_did_public:
@@ -526,6 +548,17 @@ class ConnectionManager:
 
         # Attach the connection request so it can be found and responded to
         await connection.attach_request(self._session, request)
+
+        # Multitenancy: add routing for key to handle inbound messages using relay
+        # MTODO: Key could already be registered.
+        multitenant_enabled = self._session.settings.get("multitenant.enabled")
+        wallet_id = self._session.settings.get("wallet.id")
+        if my_info and multitenant_enabled and wallet_id:
+            multitenant_mgr = self._session.inject(MultitenantManager)
+            await multitenant_mgr.add_wallet_route(
+                wallet_id=wallet_id,
+                recipient_key=my_info.verkey,
+            )
 
         # Send keylist updates to mediator
         mediation_record = await self.mediation_record_if_id(mediation_id)
@@ -637,6 +670,16 @@ class ConnectionManager:
             reason="Created connection response",
             log_params={"response": response},
         )
+
+        # Multitenancy: add routing for key to handle inbound messages using relay
+        multitenant_enabled = self._session.settings.get("multitenant.enabled")
+        wallet_id = self._session.settings.get("wallet.id")
+        if multitenant_enabled and wallet_id:
+            multitenant_mgr = self._session.inject(MultitenantManager)
+            await multitenant_mgr.add_wallet_route(
+                wallet_id=wallet_id,
+                recipient_key=my_info.verkey,
+            )
 
         # Update mediator if necessary
         if keylist_updates and mediation_record:

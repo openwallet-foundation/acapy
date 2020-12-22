@@ -51,7 +51,7 @@ async def connections_send_ping(request: web.BaseRequest):
     """
     context: AdminRequestContext = request["context"]
     connection_id = request.match_info["conn_id"]
-    outbound_handler = request.app["outbound_message_router"]
+    outbound_handler = request["outbound_message_router"]
     body = await request.json()
     comment = body.get("comment")
 

@@ -1,11 +1,11 @@
 """Manage Indy-SDK profile interaction."""
 
+from aries_cloudagent.core.error import ProfileError
 import logging
 
 from typing import Any, Mapping
 from weakref import ref
 
-from ...cache.base import BaseCache
 from ...config.injection_context import InjectionContext
 from ...config.provider import ClassProvider
 from ...core.profile import Profile, ProfileManager, ProfileSession
@@ -53,20 +53,7 @@ class IndySdkProfile(Profile):
             LOGGER.info("Ledger support is disabled")
             return
 
-        pool_name = self.settings.get("ledger.pool_name", "default")
-        keepalive = int(self.settings.get("ledger.keepalive", 5))
-        read_only = bool(self.settings.get("ledger.read_only", False))
-        if read_only:
-            LOGGER.error("Note: setting ledger to read-only mode")
-        genesis_transactions = self.settings.get("ledger.genesis_transactions")
-        cache = self.context.injector.inject(BaseCache, required=False)
-        self.ledger_pool = IndySdkLedgerPool(
-            pool_name,
-            keepalive=keepalive,
-            cache=cache,
-            genesis_transactions=genesis_transactions,
-            read_only=read_only,
-        )
+        self.ledger_pool = self.context.inject(IndySdkLedgerPool, self.settings)
 
     def bind_providers(self):
         """Initialize the profile-level instance providers."""
@@ -119,6 +106,14 @@ class IndySdkProfile(Profile):
             await self.opened.close()
             self.opened = None
 
+    async def remove(self):
+        """Remove the profile associated with this instance."""
+        if not self.opened:
+            raise ProfileError("Wallet must be opened to remove profile")
+
+        self.opened.config.auto_remove = True
+        await self.close()
+
 
 class IndySdkProfileSession(ProfileSession):
     """An active connection to the profile management backend."""
@@ -150,14 +145,18 @@ class IndySdkProfileSession(ProfileSession):
 class IndySdkProfileManager(ProfileManager):
     """Manager for Indy-SDK wallets."""
 
-    async def provision(self, config: Mapping[str, Any] = None) -> Profile:
+    async def provision(
+        self, context: InjectionContext, config: Mapping[str, Any] = None
+    ) -> Profile:
         """Provision a new instance of a profile."""
         indy_config = IndyWalletConfig(config)
         opened = await indy_config.create_wallet()
-        return IndySdkProfile(opened, self.context)
+        return IndySdkProfile(opened, context)
 
-    async def open(self, config: Mapping[str, Any] = None) -> Profile:
+    async def open(
+        self, context: InjectionContext, config: Mapping[str, Any] = None
+    ) -> Profile:
         """Open an instance of an existing profile."""
         indy_config = IndyWalletConfig(config)
         opened = await indy_config.open_wallet()
-        return IndySdkProfile(opened, self.context)
+        return IndySdkProfile(opened, context)

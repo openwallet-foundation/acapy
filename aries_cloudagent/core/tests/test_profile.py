@@ -33,7 +33,7 @@ class TestProfileSession(AsyncTestCase):
         with self.assertRaises(ProfileSessionInactiveError):
             await session.rollback()
         with self.assertRaises(ProfileSessionInactiveError):
-            await session.inject(dict)
+            session.inject(dict)
         assert profile.inject(dict, required=False) is None
 
         await session.__aenter__()
@@ -58,7 +58,7 @@ class TestProfileSession(AsyncTestCase):
 class TestProfileManagerProvider(AsyncTestCase):
     async def test_basic_wallet_type(self):
         context = InjectionContext()
-        provider = ProfileManagerProvider(context)
+        provider = ProfileManagerProvider()
         context.settings["wallet.type"] = "basic"
 
         self.assertEqual(
@@ -75,7 +75,7 @@ class TestProfileManagerProvider(AsyncTestCase):
 
     async def test_invalid_wallet_type(self):
         context = InjectionContext()
-        provider = ProfileManagerProvider(context)
+        provider = ProfileManagerProvider()
         context.settings["wallet.type"] = "invalid-type"
 
         with self.assertRaises(InjectionError):

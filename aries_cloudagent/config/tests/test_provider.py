@@ -1,3 +1,4 @@
+from aries_cloudagent.core.profile import ProfileManagerProvider
 from tempfile import NamedTemporaryFile
 from weakref import ref, ReferenceType
 
@@ -7,7 +8,13 @@ from ...utils.stats import Collector
 
 from ..base import InjectionError
 from ..injection_context import InjectionContext
-from ..provider import BaseProvider, ClassProvider, InstanceProvider, StatsProvider
+from ..provider import (
+    BaseProvider,
+    ClassProvider,
+    InstanceProvider,
+    StatsProvider,
+    CachedProvider,
+)
 from ..settings import Settings
 
 
@@ -36,6 +43,40 @@ class TestProvider(AsyncTestCase):
         context.injector.bind_instance(Collector, collector)
 
         stats_provider.provide(Settings(settings), context.injector)
+
+    async def test_cached_provider_same_unique_settings(self):
+        """Cover same unique keys returns same instance."""
+        first_settings = Settings(
+            {"wallet.name": "wallet.name", "wallet.key": "wallet.key"}
+        )
+        second_settings = first_settings.extend({"wallet.key": "another.wallet.key"})
+
+        cached_provider = CachedProvider(
+            ClassProvider("aries_cloudagent.config.settings.Settings"), ("wallet.name",)
+        )
+        context = InjectionContext()
+
+        first_instance = cached_provider.provide(first_settings, context.injector)
+        second_instance = cached_provider.provide(second_settings, context.injector)
+
+        assert first_instance is second_instance
+
+    async def test_cached_provider_different_unique_settings(self):
+        """Cover two different unique keys returns different instance."""
+        first_settings = Settings(
+            {"wallet.name": "wallet.name", "wallet.key": "wallet.key"}
+        )
+        second_settings = first_settings.extend({"wallet.name": "another.wallet.name"})
+
+        cached_provider = CachedProvider(
+            ClassProvider("aries_cloudagent.config.settings.Settings"), ("wallet.name",)
+        )
+        context = InjectionContext()
+
+        first_instance = cached_provider.provide(first_settings, context.injector)
+        second_instance = cached_provider.provide(second_settings, context.injector)
+
+        assert first_instance is not second_instance
 
     async def test_instance_provider_ref_gone_x(self):
         context = InjectionContext(settings=Settings({}), enforce_typing=False)

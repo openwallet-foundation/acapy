@@ -145,7 +145,7 @@ async def actionmenu_perform(request: web.BaseRequest):
     """
     context: AdminRequestContext = request["context"]
     connection_id = request.match_info["conn_id"]
-    outbound_handler = request.app["outbound_message_router"]
+    outbound_handler = request["outbound_message_router"]
     params = await request.json()
 
     try:
@@ -175,7 +175,7 @@ async def actionmenu_request(request: web.BaseRequest):
     """
     context: AdminRequestContext = request["context"]
     connection_id = request.match_info["conn_id"]
-    outbound_handler = request.app["outbound_message_router"]
+    outbound_handler = request["outbound_message_router"]
 
     try:
         async with context.session() as session:
@@ -206,7 +206,7 @@ async def actionmenu_send(request: web.BaseRequest):
     """
     context: AdminRequestContext = request["context"]
     connection_id = request.match_info["conn_id"]
-    outbound_handler = request.app["outbound_message_router"]
+    outbound_handler = request["outbound_message_router"]
     menu_json = await request.json()
     LOGGER.debug("Received send-menu request: %s %s", connection_id, menu_json)
     try:

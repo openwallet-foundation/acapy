@@ -16,12 +16,12 @@ class MockManager(ProfileManager):
         self.profile = profile
         self.calls = []
 
-    async def provision(self, config):
-        self.calls.append(("provision", config))
+    async def provision(self, context, config):
+        self.calls.append(("provision", context, config))
         return self.profile
 
-    async def open(self, config):
-        self.calls.append(("open", config))
+    async def open(self, context, config):
+        self.calls.append(("open", context, config))
         return self.profile
 
 

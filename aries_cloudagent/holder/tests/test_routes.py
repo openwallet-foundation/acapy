@@ -1,7 +1,10 @@
 import json
 
-from asynctest import TestCase as AsyncTestCase
-from asynctest import mock as async_mock
+from asynctest import mock as async_mock, TestCase as AsyncTestCase
+
+from ...config.injection_context import InjectionContext
+from ...ledger.base import BaseLedger
+from ...wallet.base import BaseWallet
 
 from ...admin.request_context import AdminRequestContext
 from ...indy.holder import IndyHolder
@@ -14,6 +17,7 @@ class TestHolderRoutes(AsyncTestCase):
     def setUp(self):
         self.session_inject = {}
         self.context = AdminRequestContext.test_context(self.session_inject)
+
         self.request_dict = {"context": self.context}
         self.request = async_mock.MagicMock(
             app={},
@@ -44,6 +48,7 @@ class TestHolderRoutes(AsyncTestCase):
                 side_effect=test_module.WalletNotFoundError()
             )
         )
+
         with self.assertRaises(test_module.web.HTTPNotFound):
             await test_module.credentials_get(self.request)
 
