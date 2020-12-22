@@ -120,6 +120,7 @@ class DIDXManager:
                 if invitation.service_blocks
                 else None
             ),
+            invitation_msg_id=invitation._id,
             their_label=invitation.label,
             their_role=ConnRecord.Role.RESPONDER.rfc23,
             state=ConnRecord.State.INVITATION.rfc23,

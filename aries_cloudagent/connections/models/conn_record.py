@@ -142,6 +142,7 @@ class ConnRecord(BaseRecord):
         their_label: str = None,
         their_role: Union[str, "ConnRecord.Role"] = None,
         invitation_key: str = None,
+        invitation_msg_id: str = None,
         request_id: str = None,
         state: Union[str, "ConnRecord.State"] = None,
         inbound_connection_id: str = None,
@@ -169,6 +170,7 @@ class ConnRecord(BaseRecord):
             else their_role.rfc160
         )
         self.invitation_key = invitation_key
+        self.invitation_msg_id = invitation_msg_id
         self.request_id = request_id
         self.error_msg = error_msg
         self.inbound_connection_id = inbound_connection_id
@@ -193,6 +195,7 @@ class ConnRecord(BaseRecord):
                 "routing_state",
                 "accept",
                 "invitation_mode",
+                "invitation_msg_id",
                 "alias",
                 "error_msg",
                 "their_label",
@@ -493,6 +496,11 @@ class ConnRecordSchema(BaseRecordSchema):
     )
     invitation_key = fields.Str(
         required=False, description="Public key for connection", **INDY_RAW_PUBLIC_KEY
+    )
+    invitation_msg_id = fields.Str(
+        required=False,
+        description="ID of out-of-band invitation message",
+        example=UUIDFour.EXAMPLE,
     )
     request_id = fields.Str(
         required=False,
