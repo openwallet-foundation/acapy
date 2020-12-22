@@ -61,6 +61,9 @@ class HttpTransport(BaseOutboundTransport):
         if not endpoint:
             raise OutboundTransportError("No endpoint provided")
         headers = metadata or {}
+        if len(endpoint.split('#'))>1:
+            endpoint_hash_split = endpoint.split('#')
+            headers["x-api-key"] = endpoint_hash_split[1]
         if isinstance(payload, bytes):
             headers["Content-Type"] = "application/ssi-agent-wire"
         else:
