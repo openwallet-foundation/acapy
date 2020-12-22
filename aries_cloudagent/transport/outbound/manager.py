@@ -284,7 +284,7 @@ class OutboundTransportManager:
         """
         transport_id = self.get_running_transport_for_endpoint(endpoint)
         queued = QueuedOutboundMessage(None, None, None, transport_id)
-        if len(endpoint.split('#'))>1:
+        if len(endpoint.split('#')) > 1:
             endpoint_hash_split = endpoint.split('#')
             endpoint = endpoint_hash_split[0]
             api_key = endpoint_hash_split[1]
@@ -449,7 +449,7 @@ class OutboundTransportManager:
         transport = self.get_transport_instance(queued.transport_id)
         queued.task = self.task_queue.run(
             transport.handle_message(
-                queued.profile, queued.payload, queued.endpoint, queued.metadata, queued.api_key
+                queued.profile, queued.payload, queued.endpoint, queued.metadata, queued.api_key,
             ),
             lambda completed: self.finished_deliver(queued, completed),
         )
