@@ -70,18 +70,16 @@ class MediationListQueryStringSchema(OpenAPISchema):
     state = MEDIATION_STATE_SCHEMA
 
 
-class MediationCreateSchema(OpenAPISchema):
+class MediationCreateRequestSchema(OpenAPISchema):
     """Parameters and validators for create Mediation request query string."""
 
-    # conn_id = CONNECTION_ID_SCHEMA
-    # mediation_id = MEDIATION_ID_SCHEMA
-    # state = MEDIATION_STATE_SCHEMA
-    role = ROLE_SCHEMA
     mediator_terms = MEDIATOR_TERMS_SCHEMA
     recipient_terms = RECIPIENT_TERMS_SCHEMA
 
 
-class CreateMedionRequestQuerySchema(OpenAPISchema):
+class MediationCreateRequestQuerySchema(OpenAPISchema):
+    """Create mediation request query string schema."""
+
     auto_send = fields.Boolean(
         description="Auto-send created mediation request",
         required=False,
@@ -229,10 +227,10 @@ async def mediation_record_retrieve(request: web.BaseRequest):
 
 @docs(tags=["mediation"], summary="create mediation request record.")
 @match_info_schema(ConnIdMatchInfoSchema())
-@querystring_schema(CreateMedionRequestQuerySchema)
-@request_schema(MediationCreateSchema())
+@querystring_schema(MediationCreateRequestQuerySchema())
+@request_schema(MediationCreateRequestSchema())
 @response_schema(MediationRecordSchema(), 201)  # TODO: return mediation report
-async def mediation_record_create(request: web.BaseRequest):
+async def mediation_create_request(request: web.BaseRequest):
     """
     Request handler for creating a mediation record locally.
 
@@ -609,7 +607,7 @@ async def register(app: web.Application):
                 mediation_record_retrieve,
                 allow_head=False,
             ),  # . -> fetch a single mediation request record
-            web.post("/mediation/requests/{conn_id}/create", mediation_record_create),
+            web.post("/mediation/requests/{conn_id}/create", mediation_create_request),
             web.post(
                 "/mediation/requests/client/{mediation_id}/send", mediation_record_send
             ),  # -> send mediation request
