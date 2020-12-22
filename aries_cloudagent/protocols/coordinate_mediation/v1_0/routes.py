@@ -2,53 +2,36 @@
 
 # https://github.com/hyperledger/aries-rfcs/tree/master/features/0211-route-coordination#0211-mediator-coordination-protocol
 
+import json
+from operator import itemgetter
+
 from aiohttp import web
 from aiohttp_apispec import (
-    docs,
-    match_info_schema,
-    querystring_schema,
-    request_schema,
-    response_schema,
+    docs, match_info_schema, querystring_schema, request_schema,
+    response_schema
 )
-
 from marshmallow import fields, validate
 
 from ....admin.request_context import AdminRequestContext
-from .models.mediation_record import (
-    MediationRecord,
-    MediationRecordSchema,
-)
-from .models.mediation_schemas import (
-    CONNECTION_ID_SCHEMA,
-    MEDIATION_ID_SCHEMA,
-    MEDIATION_STATE_SCHEMA,
-    MEDIATOR_TERMS_SCHEMA,
-    RECIPIENT_TERMS_SCHEMA,
-    ROLE_SCHEMA,
-    # ENDPOINT_SCHEMA,
-    # ROUTING_KEYS_SCHEMA
-)
-
-from .messages.mediate_request import MediationRequest
-from .messages.mediate_grant import MediationGrantSchema
-from .messages.mediate_deny import MediationDenySchema
-from .messages.keylist_update import KeylistUpdate
+from ....connections.models.conn_record import ConnRecord
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
-from ...problem_report.v1_0 import internal_error
 from ....storage.error import StorageError, StorageNotFoundError
 from ....utils.tracing import get_timer
-
-from .message_types import SPEC_URI
-from operator import itemgetter
-from .messages.inner.keylist_update_rule import KeylistUpdateRule
-from .manager import MediationManager
+from ...problem_report.v1_0 import internal_error
 from ...routing.v1_0.models.route_record import RouteRecordSchema
+from .manager import MediationAlreadyExists, MediationManager
+from .message_types import SPEC_URI
+from .messages.inner.keylist_update_rule import KeylistUpdateRule
+from .messages.keylist_update import KeylistUpdate
 from .messages.keylist_update_response import KeylistUpdateResponseSchema
-from ....connections.models.conn_record import ConnRecord
-import json
-from aries_cloudagent.protocols.coordinate_mediation.v1_0.manager import (
-    MediationAlreadyExists,
+from .messages.mediate_deny import MediationDenySchema
+from .messages.mediate_grant import MediationGrantSchema
+from .messages.mediate_request import MediationRequest
+from .models.mediation_record import MediationRecord, MediationRecordSchema
+from .models.mediation_schemas import (  # ENDPOINT_SCHEMA,; ROUTING_KEYS_SCHEMA
+    CONNECTION_ID_SCHEMA, MEDIATION_ID_SCHEMA, MEDIATION_STATE_SCHEMA,
+    MEDIATOR_TERMS_SCHEMA, RECIPIENT_TERMS_SCHEMA, ROLE_SCHEMA
 )
 
 
@@ -626,10 +609,6 @@ async def register(app: web.Application):
                 allow_head=False,
             ),  # . -> fetch a single mediation request record
             web.post("/mediation/requests/{conn_id}/create", mediation_record_create),
-            web.post(
-                "/mediation/requests/client/{conn_id}/create-send",
-                mediation_record_send_create,
-            ),
             web.post(
                 "/mediation/requests/client/{mediation_id}/send", mediation_record_send
             ),  # -> send mediation request
