@@ -4,6 +4,8 @@
 from abc import ABC, abstractmethod
 from typing import Sequence
 
+from ..core.profile import Profile
+
 
 class BaseAdminServer(ABC):
     """Admin HTTP server class."""
@@ -36,5 +38,5 @@ class BaseAdminServer(ABC):
         """Remove a webhook target."""
 
     @abstractmethod
-    async def send_webhook(self, topic: str, payload: dict):
+    async def send_webhook(self, profile: Profile, topic: str, payload: dict):
         """Add a webhook to the queue, to send to all registered targets."""

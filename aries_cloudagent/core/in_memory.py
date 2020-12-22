@@ -108,10 +108,14 @@ class InMemoryProfileSession(ProfileSession):
 class InMemoryProfileManager(ProfileManager):
     """Manager for producing in-memory wallet/storage implementation."""
 
-    async def provision(self, config: Mapping[str, Any] = None) -> Profile:
+    async def provision(
+        self, context: InjectionContext, config: Mapping[str, Any] = None
+    ) -> Profile:
         """Provision a new instance of a profile."""
-        return InMemoryProfile(context=self.context, name=(config or {}).get("name"))
+        return InMemoryProfile(context=context, name=(config or {}).get("name"))
 
-    async def open(self, config: Mapping[str, Any] = None) -> Profile:
+    async def open(
+        self, context: InjectionContext, config: Mapping[str, Any] = None
+    ) -> Profile:
         """Open an instance of an existing profile."""
-        return await self.provision(config)
+        return await self.provision(context, config)

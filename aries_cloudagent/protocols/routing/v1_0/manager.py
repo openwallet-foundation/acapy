@@ -124,6 +124,7 @@ class RoutingManager:
         self,
         client_connection_id: str = None,
         recipient_key: str = None,
+        internal_wallet_id: str = None,
     ) -> RouteRecord:
         """
         Create and store a new RouteRecord.
@@ -131,17 +132,21 @@ class RoutingManager:
         Args:
             client_connection_id: The ID of the connection record
             recipient_key: The recipient verkey of the route
+            internal_wallet_id: The ID of the wallet record. Used for internal routing
 
         Returns:
             The new routing record
 
         """
-        if not client_connection_id:
-            raise RoutingManagerError("Missing client_connection_id")
+        if not (client_connection_id or internal_wallet_id):
+            raise RoutingManagerError(
+                "Either client_connection_id or internal_wallet_id is required"
+            )
         if not recipient_key:
             raise RoutingManagerError("Missing recipient_key")
         route = RouteRecord(
             connection_id=client_connection_id,
+            wallet_id=internal_wallet_id,
             recipient_key=recipient_key,
         )
         await route.save(self.session, reason="Created new route")

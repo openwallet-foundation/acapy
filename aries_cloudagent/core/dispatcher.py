@@ -85,6 +85,7 @@ class Dispatcher:
 
     def queue_message(
         self,
+        profile: Profile,
         inbound_message: InboundMessage,
         send_outbound: Coroutine,
         send_webhook: Coroutine = None,
@@ -94,6 +95,7 @@ class Dispatcher:
         Add a message to the processing queue for handling.
 
         Args:
+            profile: The profile associated with the inbound message
             inbound_message: The inbound message instance
             send_outbound: Async function to send outbound messages
             send_webhook: Async function to dispatch a webhook
@@ -104,11 +106,13 @@ class Dispatcher:
 
         """
         return self.put_task(
-            self.handle_message(inbound_message, send_outbound, send_webhook), complete
+            self.handle_message(profile, inbound_message, send_outbound, send_webhook),
+            complete,
         )
 
     async def handle_message(
         self,
+        profile: Profile,
         inbound_message: InboundMessage,
         send_outbound: Coroutine,
         send_webhook: Coroutine = None,
@@ -117,6 +121,7 @@ class Dispatcher:
         Configure responder and message context and invoke the message handler.
 
         Args:
+            profile: The profile associated with the inbound message
             inbound_message: The inbound message instance
             send_outbound: Async function to send outbound messages
             send_webhook: Async function to dispatch a webhook
@@ -126,15 +131,6 @@ class Dispatcher:
 
         """
         r_time = get_timer()
-
-        async with self.profile.session() as session:
-            connection_mgr = ConnectionManager(session)
-            connection = await connection_mgr.find_inbound_connection(
-                inbound_message.receipt
-            )
-            del connection_mgr
-        if connection:
-            inbound_message.connection_id = connection.connection_id
 
         error_result = None
         try:
@@ -152,27 +148,37 @@ class Dispatcher:
             outcome="Dispatcher.handle_message.START",
         )
 
-        context = RequestContext(self.profile)
+        context = RequestContext(profile)
         context.message = message
         context.message_receipt = inbound_message.receipt
-        context.connection_ready = connection and connection.is_ready
-        context.connection_record = connection
 
         responder = DispatcherResponder(
             context,
             inbound_message,
             send_outbound,
             send_webhook,
-            connection_id=connection and connection.connection_id,
             reply_session_id=inbound_message.session_id,
             reply_to_verkey=inbound_message.receipt.sender_verkey,
         )
 
+        context.injector.bind_instance(BaseResponder, responder)
+
+        async with profile.session(context._context) as session:
+            connection_mgr = ConnectionManager(session)
+            connection = await connection_mgr.find_inbound_connection(
+                inbound_message.receipt
+            )
+            del connection_mgr
+        if connection:
+            inbound_message.connection_id = connection.connection_id
+
+        context.connection_ready = connection and connection.is_ready
+        context.connection_record = connection
+        responder.connection_id = connection and connection.connection_id
+
         if error_result:
             await responder.send_reply(error_result)
             return
-
-        context.injector.bind_instance(BaseResponder, responder)
 
         handler_cls = context.message.Handler
         handler = handler_cls().handle
@@ -301,4 +307,4 @@ class DispatcherResponder(BaseResponder):
             payload: the webhook payload value
         """
         if self._webhook:
-            await self._webhook(topic, payload)
+            await self._webhook(self._context.profile, topic, payload)

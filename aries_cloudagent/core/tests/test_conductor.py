@@ -71,7 +71,7 @@ class StubContextBuilder(ContextBuilder):
 
     async def build_context(self) -> InjectionContext:
         context = InjectionContext(settings=self.settings, enforce_typing=False)
-        context.injector.bind_instance(ProfileManager, InMemoryProfileManager(context))
+        context.injector.bind_instance(ProfileManager, InMemoryProfileManager())
         context.injector.bind_instance(ProtocolRegistry, ProtocolRegistry())
         context.injector.bind_instance(BaseWireFormat, self.wire_format)
         return context
@@ -227,13 +227,16 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             receipt = MessageReceipt(direct_response_mode="snail mail")
             message = InboundMessage(message_body, receipt)
 
-            conductor.inbound_message_router(message, can_respond=False)
+            conductor.inbound_message_router(
+                conductor.context, message, can_respond=False
+            )
 
             mock_dispatch_q.assert_called_once()
-            assert mock_dispatch_q.call_args[0][0] is message
-            assert mock_dispatch_q.call_args[0][1] == conductor.outbound_message_router
-            assert mock_dispatch_q.call_args[0][2] is None  # admin webhook router
-            assert callable(mock_dispatch_q.call_args[0][3])
+            assert mock_dispatch_q.call_args[0][0] is conductor.context
+            assert mock_dispatch_q.call_args[0][1] is message
+            assert mock_dispatch_q.call_args[0][2] == conductor.outbound_message_router
+            assert mock_dispatch_q.call_args[0][3] is None  # admin webhook router
+            assert callable(mock_dispatch_q.call_args[0][4])
 
     async def test_inbound_message_handler_ledger_x(self):
         builder: ContextBuilder = StubContextBuilder(self.test_settings_admin)
@@ -253,7 +256,9 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             message = InboundMessage(message_body, receipt)
 
             with self.assertRaises(test_module.LedgerConfigError):
-                conductor.inbound_message_router(message, can_respond=False)
+                conductor.inbound_message_router(
+                    conductor.context, message, can_respond=False
+                )
 
             mock_dispatch_q.assert_called_once()
             mock_notify.assert_called_once()
@@ -684,7 +689,7 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
                 test_topic, test_payload, test_endpoint, test_attempts
             )
             mock_enqueue.assert_called_once_with(
-                test_topic, test_payload, test_endpoint, test_attempts
+                test_topic, test_payload, test_endpoint, test_attempts, None
             )
 
         # swallow error
@@ -697,5 +702,5 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
                 test_topic, test_payload, test_endpoint, test_attempts
             )
             mock_enqueue.assert_called_once_with(
-                test_topic, test_payload, test_endpoint, test_attempts
+                test_topic, test_payload, test_endpoint, test_attempts, None
             )

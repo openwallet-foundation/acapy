@@ -1160,3 +1160,51 @@ class WalletGroup(ArgumentGroup):
                         + " must be provided for indy postgres wallets"
                     )
         return settings
+
+
+@group(CAT_START)
+class MultitenantGroup(ArgumentGroup):
+    """Multitenant settings."""
+
+    GROUP_NAME = "Multitenant"
+
+    def add_arguments(self, parser: ArgumentParser):
+        """Add multitenant-specific command line arguments to the parser."""
+        parser.add_argument(
+            "--multitenant",
+            action="store_true",
+            env_var="ACAPY_MULTITENANT",
+            help="Enable multitenant mode.",
+        )
+        parser.add_argument(
+            "--jwt-secret",
+            type=str,
+            metavar="<jwt-secret>",
+            env_var="ACAPY_MULTITENANT_JWT_SECRET",
+            help="Specify the secret to be used for Json Web Token (JWT) \
+            creation and verification. The JWTs are used to authenticate and authorize \
+            multitenant wallets.",
+        )
+        parser.add_argument(
+            "--multitenant-admin",
+            action="store_true",
+            env_var="ACAPY_MULTITENANT_ADMIN",
+            help="Specify whether to enable the multitenant admin api.",
+        )
+
+    def get_settings(self, args: Namespace):
+        """Extract multitenant settings."""
+        settings = {}
+        if args.multitenant:
+            settings["multitenant.enabled"] = True
+
+            if args.jwt_secret:
+                settings["multitenant.jwt_secret"] = args.jwt_secret
+            else:
+                raise ArgsParseError(
+                    "Parameter --jwt-secret must be provided in multitenant mode"
+                )
+
+            if args.multitenant_admin:
+                settings["multitenant.admin_enabled"] = True
+        return settings

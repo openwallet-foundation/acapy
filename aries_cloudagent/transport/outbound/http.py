@@ -5,7 +5,7 @@ from typing import Union
 
 from aiohttp import ClientSession, DummyCookieJar, TCPConnector
 
-from ...config.injection_context import InjectionContext
+from ...core.profile import Profile
 
 from ..stats import StatsTracer
 
@@ -43,19 +43,24 @@ class HttpTransport(BaseOutboundTransport):
         self.client_session = None
 
     async def handle_message(
-        self, context: InjectionContext, payload: Union[str, bytes], endpoint: str
+        self,
+        profile: Profile,
+        payload: Union[str, bytes],
+        endpoint: str,
+        metadata: dict = None,
     ):
         """
         Handle message from queue.
 
         Args:
-            context: the context that produced the message
+            profile: the profile that produced the message
             payload: message payload in string or byte format
             endpoint: URI endpoint for delivery
+            metadata: Additional metadata associated with the payload
         """
         if not endpoint:
             raise OutboundTransportError("No endpoint provided")
-        headers = {}
+        headers = metadata or {}
         if isinstance(payload, bytes):
             headers["Content-Type"] = "application/ssi-agent-wire"
         else:

@@ -11,9 +11,12 @@ class TestCredentialRoutes(AsyncTestCase):
     async def setUp(self):
         self.session_inject = {}
         self.context = AdminRequestContext.test_context(self.session_inject)
-        self.request_dict = {"context": self.context}
+        self.request_dict = {
+            "context": self.context,
+            "outbound_message_router": async_mock.CoroutineMock(),
+        }
         self.request = async_mock.MagicMock(
-            app={"outbound_message_router": async_mock.CoroutineMock()},
+            app={},
             match_info={},
             query={},
             __getitem__=lambda _, k: self.request_dict[k],
@@ -318,7 +321,7 @@ class TestCredentialRoutes(AsyncTestCase):
                 mock_cred_ex_record.serialize.return_value
             )
 
-            self.request.app["outbound_message_router"].assert_awaited_once_with(
+            self.request["outbound_message_router"].assert_awaited_once_with(
                 mock_proposal_deserialize.return_value, connection_id=conn_id
             )
 
@@ -1351,7 +1354,7 @@ class TestCredentialRoutes(AsyncTestCase):
             await test_module.credential_exchange_problem_report(self.request)
 
             mock_response.assert_called_once_with({})
-            self.request.app["outbound_message_router"].assert_awaited_once_with(
+            self.request["outbound_message_router"].assert_awaited_once_with(
                 mock_prob_report.return_value,
                 connection_id=mock_cred_ex.retrieve_by_id.return_value.connection_id,
             )
