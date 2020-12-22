@@ -138,7 +138,73 @@ class TestCoordinateMediationRoutes(AsyncTestCase):
             await test_module.mediation_record_retrieve(self.request)  #TODO: desired behavior?
 
     async def test_mediation_records_create(self):
-        pass
+        self.request.match_info = {"conn_id": "c3dd00cf-f6a2-4ddf-93d8-49ae74bdacef"}
+        body = {
+            "mediator_terms": [
+                "meaningless string because terms are not used"
+            ],
+            "recipient_terms": [
+                "meaningless string because terms are not a 'thing'"
+            ],
+            "role": "client",
+        }
+        self.request.json = async_mock.CoroutineMock(return_value=body)
+        self.request.query = {
+            "auto_send": "false",
+        }
+        mock_mediation_rec = async_mock.MagicMock()
+        record = {
+                "recipient_keys": ["5r4SX9xRHmfv3iC4EWMY4ZLSwUY8tXiTrP29y54zqE2Y"],
+                "created_at": "2020-12-02 16:50:56.751163Z",
+                "state": "granted",
+                "role": "server",
+                "endpoint": "http://192.168.1.13:3005",
+                "routing_keys": ["EwUKjVLboiLSuoWSEtDvrgrd41EUxG5bLecQrkHB63Up"],
+                "connection_id": "c3dd00cf-f6a2-4ddf-93d8-49ae74bdacef",
+                "updated_at": "2020-12-02 16:50:56.870189Z",
+                "mediator_terms": [],
+                "mediation_id": "57a445ce-add4-4536-bc65-b630e6cef759",
+                "recipient_terms": [],
+            }
+        mock_mediation_rec.serialize = async_mock.MagicMock(
+            return_value=record
+        )
+        with async_mock.patch.object(
+            test_module, "MediationManager", autospec=True
+        ) as mock_med_mgr, async_mock.patch.object(
+            test_module.web, "json_response"
+        ) as mock_response, async_mock.patch.object(
+            test_module.MediationRecord, "retrieve_by_id", async_mock.CoroutineMock()
+        ) as mock_mediation_record_retrieve, async_mock.patch.object(
+            test_module.ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
+        ) as mock_conn_rec_retrieve_by_id:
+            mock_med_mgr.return_value.prepare_request = async_mock.CoroutineMock(
+                return_value=(
+                    async_mock.MagicMock(  # mediation record
+                        mediation_id="dummy"
+                    ),
+                    async_mock.MagicMock(  # mediation request
+                        serialize=async_mock.MagicMock(return_value={"a": "value"}),
+                    ),
+                )
+            )
+            mock_conn_rec_retrieve_by_id.return_value = async_mock.MagicMock()
+            mock_mediation_record_retrieve.return_value = mock_mediation_rec
+            mock_mediation_record_retrieve.return_value.save = async_mock.CoroutineMock(
+                return_value="fake id"
+            )
+            await test_module.mediation_record_create(self.request)
+            mock_mediation_record_retrieve.assert_called()
+            mock_med_mgr.return_value.mediation_record_create.assert_called_once_with(
+                **{
+                    key: json.loads(value) if key != "alias" else value
+                    for key, value in self.request.query.items()
+                },
+                mediator_terms=body["mediator_terms"],
+                recipient_terms=body["recipient_terms"],
+                role=body["role"]
+            )
+            mock_response.assert_called()
 
     async def test_mediation_records_create_send(self):
         pass

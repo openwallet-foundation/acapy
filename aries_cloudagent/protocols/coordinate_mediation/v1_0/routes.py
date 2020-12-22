@@ -82,8 +82,8 @@ class MediationCreateSchema(OpenAPISchema):
 
 
 class CreateMedionRequestQuerySchema(OpenAPISchema):
-    auto_accept = fields.Boolean(
-        description="Auto-accept connection (default as per configuration)",
+    auto_send = fields.Boolean(
+        description="Auto-send created mediation request",
         required=False,
     )
 
@@ -237,8 +237,9 @@ async def mediation_record_create(request: web.BaseRequest):
     Request handler for creating a mediation record locally.
 
     The internal mediation record will be created without the request
-    being sent to any connection. This can be used in conjunction with
-    the `oob` protocols to bind messages to an out of band message.
+    being sent to any connection unless specified by auto_send. This can be
+    used in conjunction with the `oob` protocols to bind messages to an out
+    of band message.
 
     Args:
         request: aiohttp request object
