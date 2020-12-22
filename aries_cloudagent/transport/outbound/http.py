@@ -48,6 +48,7 @@ class HttpTransport(BaseOutboundTransport):
         payload: Union[str, bytes],
         endpoint: str,
         metadata: dict = None,
+        api_key: str = None,
     ):
         """
         Handle message from queue.
@@ -61,9 +62,8 @@ class HttpTransport(BaseOutboundTransport):
         if not endpoint:
             raise OutboundTransportError("No endpoint provided")
         headers = metadata or {}
-        if len(endpoint.split('#'))>1:
-            endpoint_hash_split = endpoint.split('#')
-            headers["x-api-key"] = endpoint_hash_split[1]
+        if api_key is not None:
+            headers["x-api-key"] = api_key
         if isinstance(payload, bytes):
             headers["Content-Type"] = "application/ssi-agent-wire"
         else:
