@@ -177,7 +177,7 @@ class TestCoordinateMediationRoutes(AsyncTestCase):
                     ),
                 )
             )
-            await test_module.mediation_record_create(self.request)
+            await test_module.mediation_create_request(self.request)
             mock_response.assert_called_once_with(
                 mock_mediation_rec.serialize.return_value,
                 status=201
