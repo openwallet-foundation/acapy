@@ -31,7 +31,7 @@ from .messages.mediate_request import MediationRequest
 from .models.mediation_record import MediationRecord, MediationRecordSchema
 from .models.mediation_schemas import (  # ENDPOINT_SCHEMA,; ROUTING_KEYS_SCHEMA
     CONNECTION_ID_SCHEMA, MEDIATION_ID_SCHEMA, MEDIATION_STATE_SCHEMA,
-    MEDIATOR_TERMS_SCHEMA, RECIPIENT_TERMS_SCHEMA, ROLE_SCHEMA
+    MEDIATOR_TERMS_SCHEMA, RECIPIENT_TERMS_SCHEMA
 )
 
 
@@ -415,10 +415,10 @@ async def mediation_record_deny(request: web.BaseRequest):
 #     )
 
 
-class KeyListRecordListSchema(OpenAPISchema):
+class KeylistSchema(OpenAPISchema):
     """Result schema for mediation list query."""
 
-    results = fields.List(  # TODO: order matters, should match sequence?
+    results = fields.List(
         fields.Nested(RouteRecordSchema),
         description="List of keylist records",
     )
@@ -451,19 +451,12 @@ class KeylistUpdateRequestSchema(OpenAPISchema):
     updates = fields.List(fields.Nested(KeylistUpdateSchema()))
 
 
-class MediationIdMatchInfoSchema(OpenAPISchema):
-    """Path parameters and validators for request taking mediation request id."""
-
-    mediation_id = MEDIATION_ID_SCHEMA
-
-
 @docs(
     tags=["keylist"],
     summary="Query keylists, returns list of all keylist records.",
 )
-# @querystring_schema(AllRecordsQueryStringSchema()) # TODO: add filtering
-@response_schema(KeyListRecordListSchema(), 200)
-async def list_all_records(request: web.BaseRequest):
+@response_schema(KeylistSchema(), 200)
+async def get_keylist(request: web.BaseRequest):
     """
     Request handler for searching keylist records.
 
@@ -475,6 +468,8 @@ async def list_all_records(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
+    # TODO: Return my stored keylists versus their stored keylists?
+    # TODO: Filter on mediation id or connection id?
     mediation_id = request.match_info["mediation_id"]
     try:
         session = await context.session()
@@ -491,10 +486,9 @@ async def list_all_records(request: web.BaseRequest):
     tags=["keylist"],
     summary="send Query keylists request, returns list of all keylist records.",
 )
-# @querystring_schema(AllRecordsQueryStringSchema()) # TODO: add filtering
 @match_info_schema(MediationIdMatchInfoSchema())
-@response_schema(KeyListRecordListSchema(), 200)
-async def send_keylists_request(request: web.BaseRequest):
+@response_schema(KeylistSchema(), 201)
+async def send_keylist_query(request: web.BaseRequest):
     """
     Request handler for searching keylist records.
 
@@ -506,7 +500,7 @@ async def send_keylists_request(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
-    outbound_handler = (request.app["outbound_message_router"],)
+    outbound_handler = request.app["outbound_message_router"]
     mediation_id = request.match_info["mediation_id"]
     # TODO: add pagination to request
     try:
@@ -525,7 +519,7 @@ async def send_keylists_request(request: web.BaseRequest):
 @match_info_schema(MediationIdMatchInfoSchema())
 @request_schema(KeylistUpdateRequestSchema())
 @response_schema(KeylistUpdateResponseSchema(), 201)
-async def update_keylists(request: web.BaseRequest):
+async def receive_keylist_update(request: web.BaseRequest):
     """
     Request handler for updating local keylist.
 
@@ -558,7 +552,7 @@ async def update_keylists(request: web.BaseRequest):
 # @querystring_schema(KeylistUpdateRequestSchema())
 @request_schema(KeylistUpdateRequestSchema())
 @response_schema(KeylistUpdateResponseSchema(), 201)
-async def send_update_keylists(request: web.BaseRequest):
+async def send_keylist_update(request: web.BaseRequest):
     """
     Request handler for updating keylist.
 
@@ -619,7 +613,7 @@ async def register(app: web.Application):
                 "/mediation/requests/broker/{mediation_id}/deny", mediation_record_deny
             ),  # -> deny
             # ======
-            web.get("/mediation/keylists/broker", list_all_records, allow_head=False),
+            web.get("/mediation/keylists/broker", get_keylist, allow_head=False),
             # web.get("/keylists/records/pagination",
             #     list_all_records_paging,
             #     allow_head=False),
@@ -630,13 +624,13 @@ async def register(app: web.Application):
             #     keylist,
             #     allow_head=False),
             web.post(
-                "/mediation/keylists/broker/{mediation_id}/update", update_keylists
+                "/mediation/keylists/broker/{mediation_id}/update", receive_keylist_update
             ),
             web.post(
-                "/mediation/keylists/client/{mediation_id}/update", send_update_keylists
+                "/mediation/keylists/client/{mediation_id}/update", send_keylist_update
             ),
             web.post(
-                "/mediation/keylists/client/{mediation_id}", send_keylists_request
+                "/mediation/keylists/client/{mediation_id}", send_keylist_query
             ),
         ]
     )
