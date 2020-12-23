@@ -144,13 +144,18 @@ class TestCoordinateMediationRoutes(AsyncTestCase):
         body = {
             "mediator_terms": ["meaningless string because terms are not used"],
             "recipient_terms": ["meaningless string because terms are not a 'thing'"],
+            "role": MediationRecord.ROLE_SERVER
         }
         self.request.json = async_mock.CoroutineMock(return_value=body)
         self.request.query = {
             "auto_send": "false",
         }
         mock_mediation_rec = async_mock.MagicMock()
-        record = {"fake": "mediation record", "but": "serialized"}
+        record = {
+            "fake": "mediation record",
+            "but": "serialized",
+            "role": MediationRecord.ROLE_CLIENT
+        }
         mock_mediation_rec.serialize = async_mock.MagicMock(return_value=record)
         mock_mediation_rec.save = async_mock.CoroutineMock()
         with async_mock.patch.object(
@@ -176,18 +181,221 @@ class TestCoordinateMediationRoutes(AsyncTestCase):
             mock_response.assert_called_once_with(
                 mock_mediation_rec.serialize.return_value, status=201
             )
+            self.request.app["outbound_message_router"].assert_not_called()
 
     async def test_mediation_records_create_send(self):
-        pass
+        self.request.match_info = {"conn_id": "c3dd00cf-f6a2-4ddf-93d8-49ae74bdacef"}
+        body = {
+            "mediator_terms": ["meaningless string because terms are not used"],
+            "recipient_terms": ["meaningless string because terms are not a 'thing'"],
+            "role": MediationRecord.ROLE_CLIENT
+        }
+        self.request.json = async_mock.CoroutineMock(return_value=body)
+        self.request.query = {
+            "auto_send": "true",
+        }
+        mock_mediation_rec = async_mock.MagicMock()
+        record = {
+            "fake": "mediation record",
+            "but": "serialized",
+            "role": MediationRecord.ROLE_CLIENT
+        }
+        mock_mediation_rec.serialize = async_mock.MagicMock(return_value=record)
+        mock_mediation_rec.save = async_mock.CoroutineMock()
+        with async_mock.patch.object(
+            test_module, "MediationManager", autospec=True
+        ) as mock_med_mgr, async_mock.patch.object(
+            test_module.web, "json_response"
+        ) as mock_response, async_mock.patch.object(
+            test_module.MediationRecord,
+            "exists_for_connection_id",
+            async_mock.CoroutineMock(return_value=False),
+        ) as mock_mediation_record_exists, async_mock.patch.object(
+            test_module.ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
+        ) as mock_conn_rec_retrieve_by_id:
+            mock_med_mgr.return_value.prepare_request = async_mock.CoroutineMock(
+                return_value=(
+                    mock_mediation_rec,
+                    async_mock.MagicMock(  # mediation request
+                        serialize=async_mock.MagicMock(return_value={"a": "value"}),
+                    ),
+                )
+            )
+            await test_module.mediation_create_request(self.request)
+            mock_response.assert_called_once_with(
+                mock_mediation_rec.serialize.return_value, status=201
+            )
+            self.request.app["outbound_message_router"].assert_called_once()
+            self.request.app["outbound_message_router"].assert_called_once_with(
+                mock_med_mgr.return_value.prepare_request.return_value[1],
+                connection_id='c3dd00cf-f6a2-4ddf-93d8-49ae74bdacef')
+
+    async def test_mediation_records_create_auto_send_role_server(self):
+        self.request.match_info = {"conn_id": "c3dd00cf-f6a2-4ddf-93d8-49ae74bdacef"}
+        body = {
+            "mediator_terms": ["meaningless string because terms are not used"],
+            "recipient_terms": ["meaningless string because terms are not a 'thing'"],
+            "role": MediationRecord.ROLE_SERVER
+        }
+        self.request.json = async_mock.CoroutineMock(return_value=body)
+        self.request.query = {
+            "auto_send": "true",
+        }
+        mock_mediation_rec = async_mock.MagicMock()
+        record = {
+            "fake": "mediation record",
+            "but": "serialized",
+            "role": MediationRecord.ROLE_CLIENT
+        }
+        mock_mediation_rec.serialize = async_mock.MagicMock(return_value=record)
+        mock_mediation_rec.save = async_mock.CoroutineMock()
+        with async_mock.patch.object(
+            test_module, "MediationManager", autospec=True
+        ) as mock_med_mgr, async_mock.patch.object(
+            test_module.web, "json_response"
+        ) as mock_response, async_mock.patch.object(
+            test_module.MediationRecord,
+            "exists_for_connection_id",
+            async_mock.CoroutineMock(return_value=False),
+        ) as mock_mediation_record_exists, async_mock.patch.object(
+            test_module.ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
+        ) as mock_conn_rec_retrieve_by_id:
+            mock_med_mgr.return_value.prepare_request = async_mock.CoroutineMock(
+                return_value=(
+                    mock_mediation_rec,
+                    async_mock.MagicMock(  # mediation request
+                        serialize=async_mock.MagicMock(return_value={"a": "value"}),
+                    ),
+                )
+            )
+            await test_module.mediation_create_request(self.request)
+            mock_response.assert_called_once_with(
+                mock_mediation_rec.serialize.return_value, status=201
+            )
+            self.request.app["outbound_message_router"].assert_not_called()
 
     async def test_mediation_records_send_stored(self):
-        pass
-
+        self.request.match_info = {"mediation_id": "c3dd00cf-f6a2-4ddf-93d8-49ae74bdacef"}
+        body = {
+            "mediator_terms": ["meaningless string because terms are not used"],
+            "recipient_terms": ["meaningless string because terms are not a 'thing'"]
+        }
+        self.request.json = async_mock.CoroutineMock(return_value=body)
+        self.request.query = {
+            "auto_send": "true",
+        }
+        mock_mediation_rec = async_mock.MagicMock()
+        record = {
+            "fake": "mediation record",
+            "but": "serialized",
+            "role": MediationRecord.ROLE_CLIENT,
+            "connection_id": "c3dd00cf-f6a2-4ddf-93d8-49ae74bdacef"
+        }
+        mock_mediation_rec.serialize = async_mock.MagicMock(return_value=record)
+        with async_mock.patch.object(
+            test_module.MediationRecord, "retrieve_by_id", async_mock.CoroutineMock()
+        ) as mock_mediation_record_retrieve, async_mock.patch.object(
+            test_module.web, "json_response"
+        ) as mock_response:  # TODO: mock MediationRequest, check mocked msg sent
+            mock_mediation_record_retrieve.return_value = mock_mediation_rec
+            await test_module.send_mediation_request(self.request)
+            mock_response.assert_called_once_with(
+                mock_mediation_rec.serialize.return_value, status=201
+            )
+            self.request.app["outbound_message_router"].assert_called()
+    
     async def test_mediation_invitation(self):
-        pass
+        pass  # Todo: implement in connection manager tests if not already.
 
-    async def test_mediation_record_grant(self):
-        pass
+    async def test_mediation_record_grant_role_server(self):
+        self.request.match_info = {"mediation_id": "c3dd00cf-f6a2-4ddf-93d8-49ae74bdacef"}
+        self.request.json = async_mock.CoroutineMock(return_value={})  # must have body
+        mock_mediation_rec = async_mock.MagicMock()
+        record = {
+            "fake": "mediation record",
+            "but": "serialized",
+            # "role": MediationRecord.ROLE_SERVER,
+            "connection_id": "c3dd00cf-f6a2-4ddf-93d8-49ae74bdacef"
+        }
+        mock_mediation_rec.serialize = async_mock.MagicMock(return_value=record)
+        mock_mediation_rec.role = MediationRecord.ROLE_SERVER
+        mock_mediation_rec.save = async_mock.CoroutineMock()
+        with async_mock.patch.object(
+            test_module.MediationRecord, "retrieve_by_id", async_mock.CoroutineMock()
+        ) as mock_mediation_record_retrieve, async_mock.patch.object(
+            test_module.web, "json_response"
+        ) as mock_response:  # TODO: mock MediationRequest, check mocked msg sent
+            mock_mediation_record_retrieve.return_value = mock_mediation_rec
+            await test_module.mediation_record_grant(self.request)
+            mock_response.assert_called_once_with(
+                mock_mediation_rec.serialize.return_value, status=201
+            )
+            self.request.app["outbound_message_router"].assert_called()
+
+    async def test_mediation_record_grant_role_client(self):
+        self.request.match_info = {"mediation_id": "c3dd00cf-f6a2-4ddf-93d8-49ae74bdacef"}
+        self.request.json = async_mock.CoroutineMock(return_value={})
+        mock_mediation_rec = async_mock.MagicMock()
+        record = {
+            "fake": "mediation record",
+            "but": "serialized",
+            "role": MediationRecord.ROLE_CLIENT,
+            "connection_id": "c3dd00cf-f6a2-4ddf-93d8-49ae74bdacef"
+        }
+        mock_mediation_rec.serialize = async_mock.MagicMock(return_value=record)
+        with async_mock.patch.object(
+            test_module.MediationRecord, "retrieve_by_id", async_mock.CoroutineMock()
+        ) as mock_mediation_record_retrieve, async_mock.patch.object(
+            test_module.web, "json_response"
+        ):
+            mock_mediation_record_retrieve.return_value = mock_mediation_rec
+            with self.assertRaises(test_module.web.HTTPBadRequest):
+                await test_module.mediation_record_grant(self.request)
+
+    async def test_mediation_record_deny_role_server(self):
+        self.request.match_info = {"mediation_id": "c3dd00cf-f6a2-4ddf-93d8-49ae74bdacef"}
+        self.request.json = async_mock.CoroutineMock(return_value={})  # must have body
+        mock_mediation_rec = async_mock.MagicMock()
+        record = {
+            "fake": "mediation record",
+            "but": "serialized",
+            # "role": MediationRecord.ROLE_SERVER,
+            "connection_id": "c3dd00cf-f6a2-4ddf-93d8-49ae74bdacef"
+        }
+        mock_mediation_rec.serialize = async_mock.MagicMock(return_value=record)
+        mock_mediation_rec.role = MediationRecord.ROLE_SERVER
+        mock_mediation_rec.save = async_mock.CoroutineMock()
+        with async_mock.patch.object(
+            test_module.MediationRecord, "retrieve_by_id", async_mock.CoroutineMock()
+        ) as mock_mediation_record_retrieve, async_mock.patch.object(
+            test_module.web, "json_response"
+        ) as mock_response:  # TODO: mock Request, check mocked msg sent
+            mock_mediation_record_retrieve.return_value = mock_mediation_rec
+            await test_module.mediation_record_deny(self.request)
+            mock_response.assert_called_once_with(
+                mock_mediation_rec.serialize.return_value, status=201
+            )
+            self.request.app["outbound_message_router"].assert_called()
+
+    async def test_mediation_record_deny_role_client(self):
+        self.request.match_info = {"mediation_id": "c3dd00cf-f6a2-4ddf-93d8-49ae74bdacef"}
+        self.request.json = async_mock.CoroutineMock(return_value={})
+        mock_mediation_rec = async_mock.MagicMock()
+        record = {
+            "fake": "mediation record",
+            "but": "serialized",
+            "role": MediationRecord.ROLE_CLIENT,
+            "connection_id": "c3dd00cf-f6a2-4ddf-93d8-49ae74bdacef"
+        }
+        mock_mediation_rec.serialize = async_mock.MagicMock(return_value=record)
+        with async_mock.patch.object(
+            test_module.MediationRecord, "retrieve_by_id", async_mock.CoroutineMock()
+        ) as mock_mediation_record_retrieve, async_mock.patch.object(
+            test_module.web, "json_response"
+        ):
+            mock_mediation_record_retrieve.return_value = mock_mediation_rec
+            with self.assertRaises(test_module.web.HTTPBadRequest):
+                await test_module.mediation_record_deny(self.request)
 
     async def test_keylist_list_all_records(self):
         pass
