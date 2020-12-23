@@ -294,7 +294,7 @@ async def mediation_create_request(request: web.BaseRequest):
 @docs(tags=["mediation"], summary="create and send mediation request.")
 @match_info_schema(MediationIdMatchInfoSchema())
 @response_schema(MediationRecordSchema(), 201)
-async def mediation_record_send(request: web.BaseRequest):
+async def send_mediation_request(request: web.BaseRequest):
     """
     Request handler for sending a mediation request record.
 
@@ -601,36 +601,31 @@ async def register(app: web.Application):
                 mediation_record_retrieve,
                 allow_head=False,
             ),  # . -> fetch a single mediation request record
-            web.post("/mediation/requests/{conn_id}/create", mediation_create_request),
             web.post(
-                "/mediation/requests/client/{mediation_id}/send", mediation_record_send
-            ),  # -> send mediation request
+                "/mediation/requests/{conn_id}/create-request", mediation_create_request
+            ),
             web.post(
-                "/mediation/requests/broker/{mediation_id}/grant",
+                "/mediation/requests/{mediation_id}/send-request",
+                send_mediation_request,
+            ),
+            web.post(
+                "/mediation/requests/{mediation_id}/grant",
                 mediation_record_grant,
-            ),  # -> grant
-            web.post(
-                "/mediation/requests/broker/{mediation_id}/deny", mediation_record_deny
-            ),  # -> deny
+            ),
+            web.post("/mediation/requests/{mediation_id}/deny", mediation_record_deny),
             # ======
-            web.get("/mediation/keylists/broker", get_keylist, allow_head=False),
-            # web.get("/keylists/records/pagination",
-            #     list_all_records_paging,
-            #     allow_head=False),
-            # web.get("/keylists/records/{record_id}",
-            #     keylist,
-            #     allow_head=False),
-            # web.get("/keylists/records/{record_id}/pagination",
-            #     keylist,
-            #     allow_head=False),
+            web.get("/mediation/keylists", get_keylist, allow_head=False),
             web.post(
-                "/mediation/keylists/broker/{mediation_id}/update", receive_keylist_update
+                "/mediation/keylists/{mediation_id}/recieve-keylist-update",
+                receive_keylist_update,
             ),
             web.post(
-                "/mediation/keylists/client/{mediation_id}/update", send_keylist_update
+                "/mediation/keylists/{mediation_id}/send-keylist-update",
+                send_keylist_update,
             ),
             web.post(
-                "/mediation/keylists/client/{mediation_id}", send_keylist_query
+                "/mediation/keylists/{mediation_id}/send-keylist-query",
+                send_keylist_query,
             ),
         ]
     )
