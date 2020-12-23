@@ -212,6 +212,7 @@ class OutOfBandManager:
             # Create connection record
             conn_rec = ConnRecord(
                 invitation_key=connection_key.verkey,
+                invitation_msg_id=invi_msg._id,
                 their_role=ConnRecord.Role.REQUESTER.rfc23,
                 state=ConnRecord.State.INVITATION.rfc23,
                 accept=ConnRecord.ACCEPT_AUTO if accept else ConnRecord.ACCEPT_MANUAL,
