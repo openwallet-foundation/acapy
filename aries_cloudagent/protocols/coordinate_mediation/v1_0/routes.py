@@ -7,8 +7,11 @@ from operator import itemgetter
 
 from aiohttp import web
 from aiohttp_apispec import (
-    docs, match_info_schema, querystring_schema, request_schema,
-    response_schema
+    docs,
+    match_info_schema,
+    querystring_schema,
+    request_schema,
+    response_schema,
 )
 from marshmallow import fields, validate
 
@@ -30,8 +33,11 @@ from .messages.mediate_grant import MediationGrantSchema
 from .messages.mediate_request import MediationRequest
 from .models.mediation_record import MediationRecord, MediationRecordSchema
 from .models.mediation_schemas import (  # ENDPOINT_SCHEMA,; ROUTING_KEYS_SCHEMA
-    CONNECTION_ID_SCHEMA, MEDIATION_ID_SCHEMA, MEDIATION_STATE_SCHEMA,
-    MEDIATOR_TERMS_SCHEMA, RECIPIENT_TERMS_SCHEMA
+    CONNECTION_ID_SCHEMA,
+    MEDIATION_ID_SCHEMA,
+    MEDIATION_STATE_SCHEMA,
+    MEDIATOR_TERMS_SCHEMA,
+    RECIPIENT_TERMS_SCHEMA,
 )
 
 
