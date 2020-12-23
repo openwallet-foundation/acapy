@@ -9,7 +9,12 @@ from .messages.endorsed_transaction_response import EndorsedTransactionResponse
 from .messages.refused_transaction_response import RefusedTransactionResponse
 from .messages.cancel_transaction import CancelTransaction
 from .messages.transaction_resend import TransactionResend
+from .messages.transaction_job_to_send import TransactionJobToSend
 from .messages.messages_attach import MessagesAttach
+
+from ....connections.models.conn_record import ConnRecord
+from ....transport.inbound.receipt import MessageReceipt
+from ....storage.error import StorageNotFoundError
 
 from ....ledger.base import BaseLedger
 from ....core.error import BaseError
@@ -438,3 +443,54 @@ class TransactionManager:
         transaction.state = response.state
         async with self._profile.session() as session:
             await transaction.save(session, reason="Change it")
+
+    async def set_transaction_my_job(self, record: ConnRecord, transaction_my_job: str):
+        """
+        Set transaction_my_job.
+
+        Args:
+            record: The connection record in which to set transaction jobs
+            transaction_my_job: My transaction job
+
+        Returns:
+            The transaction job that is send to other agent
+
+        """
+
+        value = await record.metadata_get(self._session, "transaction_jobs")
+
+        if value:
+            value["transaction_my_job"] = transaction_my_job
+        else:
+            value = {"transaction_my_job": transaction_my_job}
+        await record.metadata_set(self._session, key="transaction_jobs", value=value)
+
+        tx_job_to_send = TransactionJobToSend(job=transaction_my_job)
+        return tx_job_to_send
+
+    async def set_transaction_their_job(
+        self, tx_job_received: TransactionJobToSend, receipt: MessageReceipt
+    ):
+        """
+        Set transaction_their_job.
+
+        Args:
+            tx_job_received: The transaction job that is received from the other agent
+            receipt: The Message Receipt Object
+        """
+
+        try:
+            connection = await ConnRecord.retrieve_by_did(
+                self._session, receipt.sender_did, receipt.recipient_did
+            )
+        except StorageNotFoundError as err:
+            raise web.HTTPNotFound(reason=err.roll_up) from err
+
+        value = await connection.metadata_get(self._session, "transaction_jobs")
+        if value:
+            value["transaction_their_job"] = tx_job_received.job
+        else:
+            value = {"transaction_their_job": tx_job_received.job}
+        await connection.metadata_set(
+            self._session, key="transaction_jobs", value=value
+        )

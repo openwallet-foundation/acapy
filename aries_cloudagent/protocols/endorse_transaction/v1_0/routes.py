@@ -8,19 +8,20 @@ from aiohttp_apispec import (
     querystring_schema,
     match_info_schema,
 )
-from marshmallow import fields
+from marshmallow import fields, validate
 
 from ....admin.request_context import AdminRequestContext
 from ....utils.tracing import AdminAPIMessageTracingSchema
 from .manager import TransactionManager
 from .models.transaction_record import TransactionRecord, TransactionRecordSchema
-from ....connections.models.conn_record import ConnRecord
+from ....connections.models.conn_record import ConnRecord, ConnRecordSchema
 
 from ....messaging.models.openapi import OpenAPISchema
 from ....messaging.valid import UUIDFour
 from ....messaging.models.base import BaseModelError
 
 from ....storage.error import StorageError, StorageNotFoundError
+from .transaction_jobs import TransactionJob
 
 
 class TransactionListSchema(OpenAPISchema):
@@ -57,6 +58,26 @@ class CreateTransactionRecordSchema(AdminAPIMessageTracingSchema):
             "name": "test_schema",
             "version": "2.1",
         },
+    )
+
+
+class AssignTransactionJobsSchema(OpenAPISchema):
+    """Assign transaction related jobs to connection record."""
+
+    transaction_my_job = fields.Str(
+        description="Transaction related jobs",
+        required=False,
+        validate=validate.OneOf(
+            [r.name for r in TransactionJob if isinstance(r.value[0], int)] + ["reset"]
+        ),
+    )
+
+
+class ConnIdMatchInfoSchema(OpenAPISchema):
+    """Path parameters and validators for request taking connection id."""
+
+    conn_id = fields.Str(
+        description="Connection identifier", required=True, example=UUIDFour.EXAMPLE
     )
 
 
@@ -142,7 +163,7 @@ async def transaction_record_create(request: web.BaseRequest):
     """
 
     context: AdminRequestContext = request["context"]
-    outbound_handler = request.app["outbound_message_router"]
+    outbound_handler = request["outbound_message_router"]
 
     body = await request.json()
 
@@ -186,7 +207,7 @@ async def endorse_transaction_response(request: web.BaseRequest):
     """
 
     context: AdminRequestContext = request["context"]
-    outbound_handler = request.app["outbound_message_router"]
+    outbound_handler = request["outbound_message_router"]
 
     transaction_id = request.match_info["tran_id"]
     try:
@@ -237,7 +258,7 @@ async def refuse_transaction_response(request: web.BaseRequest):
     """
 
     context: AdminRequestContext = request["context"]
-    outbound_handler = request.app["outbound_message_router"]
+    outbound_handler = request["outbound_message_router"]
 
     transaction_id = request.match_info["tran_id"]
     try:
@@ -288,7 +309,7 @@ async def cancel_transaction(request: web.BaseRequest):
     """
 
     context: AdminRequestContext = request["context"]
-    outbound_handler = request.app["outbound_message_router"]
+    outbound_handler = request["outbound_message_router"]
 
     transaction_id = request.match_info["tran_id"]
     try:
@@ -339,7 +360,7 @@ async def transaction_resend(request: web.BaseRequest):
     """
 
     context: AdminRequestContext = request["context"]
-    outbound_handler = request.app["outbound_message_router"]
+    outbound_handler = request["outbound_message_router"]
 
     transaction_id = request.match_info["tran_id"]
     try:
@@ -371,6 +392,47 @@ async def transaction_resend(request: web.BaseRequest):
         return web.json_response({"error": "You cannot resend an endorsed transaction"})
 
 
+@docs(
+    tags=["endorse-transaction"],
+    summary="Set transaction jobs",
+)
+@querystring_schema(AssignTransactionJobsSchema())
+@match_info_schema(ConnIdMatchInfoSchema())
+@response_schema(ConnRecordSchema(), 200, description="")
+async def set_transaction_jobs(request: web.BaseRequest):
+    """
+    Request handler for assigning transaction jobs.
+
+    Args:
+        request: aiohttp request object
+
+    Returns:
+        The assigned transaction jobs
+
+    """
+
+    context: AdminRequestContext = request["context"]
+    outbound_handler = request["outbound_message_router"]
+    connection_id = request.match_info["conn_id"]
+    transaction_my_job = request.query.get("transaction_my_job")
+    session = await context.session()
+
+    try:
+        record = await ConnRecord.retrieve_by_id(session, connection_id)
+        transaction_mgr = TransactionManager(session, context.profile)
+        tx_job_to_send = await transaction_mgr.set_transaction_my_job(
+            record=record, transaction_my_job=transaction_my_job
+        )
+        jobs = await record.metadata_get(session, "transaction_jobs")
+    except StorageNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
+    except BaseModelError as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+    await outbound_handler(tx_job_to_send, connection_id=connection_id)
+    return web.json_response(jobs)
+
+
 async def register(app: web.Application):
     """Register routes."""
 
@@ -383,6 +445,9 @@ async def register(app: web.Application):
             web.post("/transactions/{tran_id}/refuse", refuse_transaction_response),
             web.post("/transactions/{tran_id}/cancel", cancel_transaction),
             web.post("/transaction/{tran_id}/resend", transaction_resend),
+            web.post(
+                "/transactions/{conn_id}/set-transaction-jobs", set_transaction_jobs
+            ),
         ]
     )
 

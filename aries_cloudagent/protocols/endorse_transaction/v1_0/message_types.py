@@ -9,6 +9,7 @@ ENDORSED_TRANSACTION_RESPONSE = "transactions/1.0/endorse"
 REFUSED_TRANSACTION_RESPONSE = "transactions/1.0/refuse"
 CANCEL_TRANSACTION = "transactions/1.0/cancel"
 TRANSACTION_RESEND = "transactions/1.0/resend"
+TRANSACTION_JOB_TO_SEND = "transactions/1.0/transaction_my_job"
 ATTACHED_MESSAGE = "transactions/1.0/message"
 PROTOCOL_PACKAGE = "aries_cloudagent.protocols.endorse_transaction.v1_0"
 
@@ -31,6 +32,9 @@ MESSAGE_TYPES = DIDCommPrefix.qualify_all(
         ),
         TRANSACTION_RESEND: (
             f"{PROTOCOL_PACKAGE}.messages.transaction_resend.TransactionResend"
+        ),
+        TRANSACTION_JOB_TO_SEND: (
+            f"{PROTOCOL_PACKAGE}.messages.transaction_job_to_send.TransactionJobToSend"
         ),
     }
 )
