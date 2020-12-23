@@ -307,6 +307,31 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             invi_msg_cls.deserialize.return_value = mock_oob_invi
 
             await self.manager.receive_invitation(mock_oob_invi)
+    
+    async def test_receive_invitation_plain_service(self):
+        self.manager.session.context.update_settings({"public_invites": True})
+        with async_mock.patch.object(
+            test_module, "DIDXManager", autospec=True
+        ) as didx_mgr_cls, async_mock.patch.object(
+            test_module,
+            "InvitationMessage",
+            autospec=True,
+        ) as invi_msg_cls, async_mock.patch.object(
+            test_module, "did_key_to_naked", async_mock.MagicMock()
+        ) as did2naked:
+            didx_mgr_cls.return_value = async_mock.MagicMock(
+                receive_invitation=async_mock.CoroutineMock()
+            )
+            mock_oob_invi = async_mock.MagicMock(
+                request_attach=[],
+                handshake_protocols=[
+                    pfx.qualify(test_module.DIDX_INVITATION) for pfx in DIDCommPrefix
+                ],
+                services=[TestConfig.test_did]
+            )
+            invi_msg_cls.deserialize.return_value = mock_oob_invi
+
+            await self.manager.receive_invitation(mock_oob_invi)
 
     async def test_receive_invitation_no_service_blocks_nor_dids(self):
         self.manager.session.context.update_settings({"public_invites": True})
