@@ -52,13 +52,18 @@ class TestHttpTransport(AioHTTPTestCase):
     async def test_handle_message_api_key(self):
         server_addr = f"http://localhost:{self.server.port}"
         api_key = "test1234"
+
         async def send_message(transport, payload, endpoint, api_key):
             async with transport:
-                await transport.handle_message(self.context, payload, endpoint, api_key=api_key)
+                await transport.handle_message(
+                    self.context, payload, endpoint, api_key=api_key
+                )
 
         transport = HttpTransport()
 
-        await asyncio.wait_for(send_message(transport, "{}", endpoint=server_addr, api_key=api_key), 5.0)
+        await asyncio.wait_for(
+            send_message(transport, "{}", endpoint=server_addr, api_key=api_key), 5.0
+        )
         assert self.message_results == [{}]
         assert self.headers.get("x-api-key") == api_key
 
