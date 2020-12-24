@@ -29,6 +29,7 @@ from ..utils.stats import Collector
 from ..utils.task_queue import TaskQueue
 from ..version import __version__
 from ..multitenant.manager import MultitenantManager, MultitenantManagerError
+
 # from ..wallet.models.wallet_record import WalletRecord
 from ..storage.error import StorageNotFoundError
 from .base_server import BaseAdminServer
@@ -762,19 +763,13 @@ class AdminServer(BaseAdminServer):
             if not base_wallet and wallet_dispatch_type == "default":
                 for webhook_url in wallet_webhook_urls:
                     await self.dispatch_subwallet_webhook(
-                            topic,
-                            payload,
-                            webhook_url,
-                            metadata
+                            topic, payload, webhook_url, metadata
                         )
             else:
                 if not base_wallet and wallet_dispatch_type == "both":
                     for webhook_url in wallet_webhook_urls:
                         await self.dispatch_subwallet_webhook(
-                            topic,
-                            payload,
-                            webhook_url,
-                            metadata
+                            topic, payload, webhook_url, metadata
                         )
                 for idx, target in self.webhook_targets.items():
                     if not target.topic_filter or topic in target.topic_filter:

@@ -64,9 +64,7 @@ class CreateWalletRequestSchema(OpenAPISchema):
             both - Dispatch to both webhook targets.",
         example="default",
         default="default",
-        validate=validate.OneOf(
-            ["default", "both", "base"]
-        ),
+        validate=validate.OneOf(["default", "both", "base"]),
     )
 
     wallet_webhoook_urls = fields.List(
