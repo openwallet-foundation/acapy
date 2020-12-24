@@ -17,19 +17,20 @@ class TestCoordinateMediationRoutes(AsyncTestCase):
     def setUp(self):
         self.session_inject = {}
         self.context = AdminRequestContext.test_context(self.session_inject)
-        self.request_dict = {"context": self.context}
         self.outbound_message_router = async_mock.CoroutineMock()
+        self.request_dict = {
+            "context": self.context,
+            "outbound_message_router": self.outbound_message_router,
+        }
         self.request = async_mock.MagicMock(
-            app={"outbound_message_router": self.outbound_message_router},
-            match_info={},
+            match_info={
+                "mediation_id": "test-mediation-id",
+                "conn_id": "test-conn-id",
+            },
             query={},
+            json=async_mock.CoroutineMock(return_value={}),
             __getitem__=lambda _, k: self.request_dict[k],
         )
-        self.request.match_info = {
-            "mediation_id": "test-mediation-id",
-            "conn_id": "test-conn-id",
-        }
-        self.request.json = async_mock.CoroutineMock(return_value={})
         serialized = {
             "mediation_id": "fake_id",
             "state": "granted",

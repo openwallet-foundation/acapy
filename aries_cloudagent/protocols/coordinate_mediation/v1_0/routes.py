@@ -197,7 +197,7 @@ async def retrieve_mediation_request(request: web.BaseRequest):
 async def request_mediation(request: web.BaseRequest):
     """Request mediation from connection."""
     context: AdminRequestContext = request["context"]
-    outbound_message_router = request.app["outbound_message_router"]
+    outbound_message_router = request["outbound_message_router"]
 
     conn_id = request.query.get("conn_id")
 
@@ -242,7 +242,7 @@ async def request_mediation(request: web.BaseRequest):
 async def mediation_request_grant(request: web.BaseRequest):
     """Grant a stored mediation request."""
     context: AdminRequestContext = request["context"]
-    outbound_handler = request.app["outbound_message_router"]
+    outbound_handler = request["outbound_message_router"]
     mediation_id = request.match_info.get("mediation_id")
     try:
         session = await context.session()
@@ -270,7 +270,7 @@ async def mediation_request_grant(request: web.BaseRequest):
 async def mediation_request_deny(request: web.BaseRequest):
     """Deny a stored mediation request."""
     context: AdminRequestContext = request["context"]
-    outbound_handler = request.app["outbound_message_router"]
+    outbound_handler = request["outbound_message_router"]
     mediation_id = request.match_info.get("mediation_id")
     body = await request.json()
     mediator_terms = body.get("mediator_terms")
@@ -337,7 +337,7 @@ async def get_keylist(request: web.BaseRequest):
 async def send_keylist_query(request: web.BaseRequest):
     """Send keylist query to mediator."""
     context: AdminRequestContext = request["context"]
-    outbound_handler = request.app["outbound_message_router"]
+    outbound_handler = request["outbound_message_router"]
 
     mediation_id = request.match_info["mediation_id"]
 
@@ -374,7 +374,7 @@ async def send_keylist_update(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     session = await context.session()
 
-    outbound_handler = request.app["outbound_message_router"]
+    outbound_handler = request["outbound_message_router"]
 
     mediation_id = request.match_info["mediation_id"]
 
