@@ -3,7 +3,7 @@
 cd "$(dirname "$0")" || exit
 CONTAINER_RUNTIME="${CONTAINER_RUNTIME:-docker}"
 
-$CONTAINER_RUNTIME build -t aries-cloudagent-test -f ../docker/Dockerfile.test .. || exit 1
+$CONTAINER_RUNTIME build --platform linux/amd64 -t aries-cloudagent-test -f ../docker/Dockerfile.test .. || exit 1
 
 DOCKER_ARGS=""
 PTVSD_PORT="5678"
