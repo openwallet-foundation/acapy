@@ -763,8 +763,8 @@ class AdminServer(BaseAdminServer):
             if not base_wallet and wallet_dispatch_type == "default":
                 for webhook_url in wallet_webhook_urls:
                     await self.dispatch_subwallet_webhook(
-                            topic, payload, webhook_url, metadata
-                        )
+                        topic, payload, webhook_url, metadata
+                    )
             else:
                 if not base_wallet and wallet_dispatch_type == "both":
                     for webhook_url in wallet_webhook_urls:
