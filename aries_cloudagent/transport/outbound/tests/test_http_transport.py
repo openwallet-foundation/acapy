@@ -19,9 +19,11 @@ class TestHttpTransport(AioHTTPTestCase):
     async def setUpAsync(self):
         self.context = InjectionContext()
         self.message_results = []
+        self.headers = {}
 
     async def receive_message(self, request):
         payload = await request.json()
+        self.headers = request.headers
         self.message_results.append(payload)
         raise web.HTTPOk()
 
@@ -34,7 +36,7 @@ class TestHttpTransport(AioHTTPTestCase):
         return app
 
     @unittest_run_loop
-    async def test_handle_message(self):
+    async def test_handle_message_no_api_key(self):
         server_addr = f"http://localhost:{self.server.port}"
 
         async def send_message(transport, payload, endpoint):
@@ -45,6 +47,20 @@ class TestHttpTransport(AioHTTPTestCase):
 
         await asyncio.wait_for(send_message(transport, "{}", endpoint=server_addr), 5.0)
         assert self.message_results == [{}]
+
+    @unittest_run_loop
+    async def test_handle_message_api_key(self):
+        server_addr = f"http://localhost:{self.server.port}"
+        api_key = "test1234"
+        async def send_message(transport, payload, endpoint, api_key):
+            async with transport:
+                await transport.handle_message(self.context, payload, endpoint, api_key=api_key)
+
+        transport = HttpTransport()
+
+        await asyncio.wait_for(send_message(transport, "{}", endpoint=server_addr, api_key=api_key), 5.0)
+        assert self.message_results == [{}]
+        assert self.headers.get("x-api-key") == api_key
 
     @unittest_run_loop
     async def test_stats(self):
