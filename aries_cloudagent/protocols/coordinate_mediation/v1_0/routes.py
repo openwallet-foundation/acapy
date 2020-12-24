@@ -17,15 +17,13 @@ from ....connections.models.conn_record import ConnRecord
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
 from ....storage.error import StorageError, StorageNotFoundError
-from ...problem_report.v1_0 import internal_error
 from ...routing.v1_0.models.route_record import RouteRecord, RouteRecordSchema
-from .manager import MediationAlreadyExists, MediationManager
+from .manager import MediationManager
 from .message_types import SPEC_URI
 from .messages.inner.keylist_update_rule import (
     KeylistUpdateRule,
     KeylistUpdateRuleSchema,
 )
-from .messages.keylist_update import KeylistUpdate, KeylistUpdateSchema
 from .messages.keylist_update_response import KeylistUpdateResponseSchema
 from .messages.mediate_deny import MediationDenySchema
 from .messages.mediate_grant import MediationGrantSchema
@@ -131,6 +129,17 @@ class KeylistUpdateRequestSchema(OpenAPISchema):
     updates = fields.List(fields.Nested(KeylistUpdateRuleSchema()))
 
 
+def mediation_sort_key(mediation: dict):
+    """Get the sorting key for a particular serialized mediation record."""
+    if mediation["state"] == MediationRecord.STATE_DENIED:
+        pfx = "2"
+    elif mediation["state"] == MediationRecord.STATE_REQUEST:
+        pfx = "1"
+    else:  # GRANTED
+        pfx = "0"
+    return pfx + mediation["created_at"]
+
+
 @docs(
     tags=["mediation"],
     summary="Query mediation requests, returns list of all mediation records.",
@@ -138,16 +147,7 @@ class KeylistUpdateRequestSchema(OpenAPISchema):
 @querystring_schema(MediationListQueryStringSchema())
 @response_schema(MediationListSchema(), 200)
 async def list_mediation_requests(request: web.BaseRequest):
-    """
-    Request handler for searching mediation records.
-
-    Args:
-        request: aiohttp request object
-
-    Returns:
-        The mediation list response
-
-    """
+    """List mediation requests for either client or server role."""
     context: AdminRequestContext = request["context"]
     conn_id = request.query.get("conn_id")
     state = request.query.get("state")
@@ -168,45 +168,24 @@ async def list_mediation_requests(request: web.BaseRequest):
     return web.json_response(results)
 
 
-def mediation_sort_key(mediation):
-    """Get the sorting key for a particular mediation."""
-    if mediation["state"] == MediationRecord.STATE_DENIED:
-        pfx = "2"
-    elif mediation["state"] == MediationRecord.STATE_REQUEST:
-        pfx = "1"
-    else:  # GRANTED
-        pfx = "0"
-    return pfx + mediation["created_at"]
-
-
 @docs(
     tags=["mediation"], summary="mediation request, returns a single mediation record."
 )
 @match_info_schema(MediationIdMatchInfoSchema())
 @response_schema(MediationRecordSchema(), 200)
 async def retrieve_mediation_request(request: web.BaseRequest):
-    """
-    Request handler for fetching single mediation request record.
-
-    Args:
-        request: aiohttp request object
-
-    Returns:
-        The credential exchange record
-
-    """
+    """Retrieve a single mediation request."""
     context: AdminRequestContext = request["context"]
-    outbound_handler = request.app["outbound_message_router"]
 
-    _id = request.match_info["mediation_id"]
+    mediation_id = request.match_info["mediation_id"]
     try:
         session = await context.session()
-        _record = await MediationRecord.retrieve_by_id(session, _id)
-        result = _record.serialize()
+        mediation_record = await MediationRecord.retrieve_by_id(session, mediation_id)
+        result = mediation_record.serialize()
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
     except (BaseModelError, StorageError) as err:
-        await internal_error(err, web.HTTPBadRequest, _record, outbound_handler)
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     return web.json_response(result)
 
@@ -216,18 +195,7 @@ async def retrieve_mediation_request(request: web.BaseRequest):
 @request_schema(MediationCreateRequestSchema())
 @response_schema(MediationRecordSchema(), 201)
 async def request_mediation(request: web.BaseRequest):
-    """
-    Request handler for creating a mediation record locally.
-
-    The internal mediation record will be created without the request
-    being sent to any connection unless specified by auto_send. This can be
-    used in conjunction with the `oob` protocols to bind messages to an out
-    of band message.
-
-    Args:
-        request: aiohttp request object
-
-    """
+    """Request mediation from connection."""
     context: AdminRequestContext = request["context"]
     outbound_message_router = request.app["outbound_message_router"]
 
@@ -245,8 +213,8 @@ async def request_mediation(request: web.BaseRequest):
             raise web.HTTPBadRequest(reason="requested connection is not ready")
 
         if await MediationRecord.exists_for_connection_id(session, conn_id):
-            raise MediationAlreadyExists(
-                f"MediationRecord already exists for connection {conn_id}"
+            raise web.HTTPBadRequest(
+                reason=f"MediationRecord already exists for connection {conn_id}"
             )
 
         mediation_record, mediation_request = await MediationManager(
@@ -258,6 +226,8 @@ async def request_mediation(request: web.BaseRequest):
         )
 
         result = mediation_record.serialize()
+    except StorageNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
     except (StorageError, BaseModelError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
@@ -270,16 +240,10 @@ async def request_mediation(request: web.BaseRequest):
 @match_info_schema(MediationIdMatchInfoSchema())
 @response_schema(MediationGrantSchema(), 201)
 async def mediation_request_grant(request: web.BaseRequest):
-    """
-    Request handler for granting a stored mediation record.
-
-    Args:
-        request: aiohttp request object
-    """
+    """Grant a stored mediation request."""
     context: AdminRequestContext = request["context"]
     outbound_handler = request.app["outbound_message_router"]
     mediation_id = request.match_info.get("mediation_id")
-    mediation_record = None
     try:
         session = await context.session()
         mediation_record = await MediationRecord.retrieve_by_id(session, mediation_id)
@@ -291,6 +255,8 @@ async def mediation_request_grant(request: web.BaseRequest):
         mediation_mgr = MediationManager(session)
         grant_request = await mediation_mgr.grant_request(mediation=mediation_record)
         result = mediation_record.serialize()
+    except StorageNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
     except (StorageError, BaseModelError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
     await outbound_handler(grant_request, connection_id=mediation_record.connection_id)
@@ -302,12 +268,7 @@ async def mediation_request_grant(request: web.BaseRequest):
 @request_schema(AdminMediationDenySchema())
 @response_schema(MediationDenySchema(), 201)
 async def mediation_request_deny(request: web.BaseRequest):
-    """
-    Request handler for denying a stored mediation record.
-
-    Args:
-        request: aiohttp request object
-    """
+    """Deny a stored mediation request."""
     context: AdminRequestContext = request["context"]
     outbound_handler = request.app["outbound_message_router"]
     mediation_id = request.match_info.get("mediation_id")
@@ -329,6 +290,8 @@ async def mediation_request_deny(request: web.BaseRequest):
             recipient_terms=recipient_terms,
         )
         result = mediation_record.serialize()
+    except StorageNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
     except (StorageError, BaseModelError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
@@ -393,6 +356,8 @@ async def send_keylist_query(request: web.BaseRequest):
             paginate_limit=paginate_limit,
             paginate_offset=paginate_offset,
         )
+    except StorageNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
     except (StorageError, BaseModelError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
@@ -402,16 +367,10 @@ async def send_keylist_query(request: web.BaseRequest):
 
 @docs(tags=["keylist"], summary="update keylist.")
 @match_info_schema(MediationIdMatchInfoSchema())
-# @querystring_schema(KeylistUpdateRequestSchema())
 @request_schema(KeylistUpdateRequestSchema())
 @response_schema(KeylistUpdateResponseSchema(), 201)
 async def send_keylist_update(request: web.BaseRequest):
-    """
-    Request handler for updating keylist.
-
-    Args:
-        request: aiohttp request object
-    """
+    """Send keylist update to mediator."""
     context: AdminRequestContext = request["context"]
     session = await context.session()
 
@@ -444,6 +403,8 @@ async def send_keylist_update(request: web.BaseRequest):
         if record.state != MediationRecord.STATE_GRANTED:
             raise web.HTTPBadRequest(reason=("mediation is not granted."))
         results = keylist_updates.serialize()
+    except StorageNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
     except (StorageError, BaseModelError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
     await outbound_handler(keylist_updates, connection_id=record.connection_id)
