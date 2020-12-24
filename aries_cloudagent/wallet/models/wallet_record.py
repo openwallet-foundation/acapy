@@ -66,6 +66,16 @@ class WalletRecord(BaseRecord):
         return self.settings.get("wallet.type")
 
     @property
+    def wallet_webhoook_urls(self) -> str:
+        """Accessor for webhook_urls of the wallet."""
+        return self.settings.get("wallet.webhook_urls")
+
+    @property
+    def wallet_dispatch_type(self) -> str:
+        """Accessor for webhook dispatch type of the wallet."""
+        return self.settings.get("wallet.dispatch_type")
+
+    @property
     def wallet_key(self) -> Optional[str]:
         """Accessor for the key of the wallet."""
         return self.settings.get("wallet.key")
@@ -81,6 +91,24 @@ class WalletRecord(BaseRecord):
     def is_managed(self) -> bool:
         """Accessor to check if the key management mode is managed."""
         return self.key_management_mode == WalletRecord.MODE_MANAGED
+
+    # @classmethod
+    # async def retrieve_by_name(
+    #     cls,
+    #     context: InjectionContext,
+    #     name: str,
+    # ) -> "WalletRecord":
+    #     """Retrieve a wallet record by wallet_name."""
+    #     return await cls.retrieve_by_tag_filter(context, {"name": name})
+
+    # @classmethod
+    # async def retrieve_by_id(
+    #     cls,
+    #     context: InjectionContext,
+    #     id: str,
+    # ) -> "WalletRecord":
+    #     """Retrieve a wallet record by wallet_id."""
+    #     return await cls.retrieve_by_id(context, id)
 
     @property
     def requires_external_key(self) -> bool:
