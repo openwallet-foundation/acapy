@@ -45,7 +45,7 @@ class KeylistUpdateRuleSchema(BaseModelSchema):
         model_class = KeylistUpdateRule
 
     recipient_key = fields.Str(
-        description="Keylist to remove or add", required=True, **INDY_RAW_PUBLIC_KEY
+        description="Key to remove or add", required=True, **INDY_RAW_PUBLIC_KEY
     )
     action = fields.Str(
         required=True,
