@@ -227,6 +227,27 @@ class TestConnectionManager(AsyncTestCase):
                     public=True, metadata={"hello": "world"}
                 )
 
+    async def test_create_invitation_multi_use_metadata_transfers_to_connection(self):
+        connect_record, _ = await self.manager.create_invitation(
+            my_endpoint="testendpoint", multi_use=True, metadata={"test": "value"}
+        )
+
+        receipt = MessageReceipt(recipient_verkey=connect_record.invitation_key)
+
+        request = ConnectionRequest(
+            connection=ConnectionDetail(
+                did=self.test_target_did,
+                did_doc=self.make_did_doc(
+                    self.test_target_did, self.test_target_verkey
+                ),
+            ),
+            label="request",
+        )
+
+        new_conn_rec = await self.manager.receive_request(request, receipt)
+        assert new_conn_rec != connect_record
+        assert await new_conn_rec.metadata_get_all(self.session) == {"test": "value"}
+
     async def test_create_invitation_mediation_id_kwargs(self):
         mediation_record = MediationRecord(
             role=MediationRecord.ROLE_CLIENT,
