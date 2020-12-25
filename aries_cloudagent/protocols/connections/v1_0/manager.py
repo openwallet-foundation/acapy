@@ -495,6 +495,14 @@ class ConnectionManager:
                     self._session,
                     reason="Received connection request from multi-use invitation DID",
                 )
+
+                # Transfer metadata from multi-use to new connection
+                # Must come after save so there's an ID to associate with metadata
+                for key, value in (
+                    await connection.metadata_get_all(self._session)
+                ).items():
+                    await new_connection.metadata_set(self._session, key, value)
+
                 connection = new_connection
             else:
                 # remove key from mediator keylist

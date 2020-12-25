@@ -297,6 +297,14 @@ class DIDXManager:
                     self._session,
                     reason="Received connection request from multi-use invitation DID",
                 )
+
+                # Transfer metadata from multi-use to new connection
+                # Must come after save so there's an ID to associate with metadata
+                for key, value in (
+                    await conn_rec.metadata_get_all(self._session)
+                ).items():
+                    await new_conn_rec.metadata_set(self._session, key, value)
+
                 conn_rec = new_conn_rec
 
         if not (request.did_doc_attach and request.did_doc_attach.data):
