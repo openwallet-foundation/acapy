@@ -29,6 +29,9 @@ from ...ledger.error import LedgerError
 
 from .util import CredDefQueryStringSchema, CRED_DEF_TAGS, CRED_DEF_SENT_RECORD_TYPE
 
+from ...protocols.endorse_transaction.v1_0.manager import TransactionManager
+import json
+
 
 class CredentialDefinitionSendRequestSchema(OpenAPISchema):
     """Request schema for schema send request."""
@@ -111,11 +114,21 @@ class CredDefIdMatchInfoSchema(OpenAPISchema):
     )
 
 
+class AutoEndorseOptionSchema(OpenAPISchema):
+    """Class for user to input whether to auto-endorse the transaction or not."""
+
+    auto_endorse = fields.Boolean(
+        description="Auto-endorse Transaction",
+        required=True,
+    )
+
+
 @docs(
     tags=["credential-definition"],
     summary="Sends a credential definition to the ledger",
 )
 @request_schema(CredentialDefinitionSendRequestSchema())
+@querystring_schema(AutoEndorseOptionSchema())
 @response_schema(CredentialDefinitionSendResultsSchema(), 200, description="")
 async def credential_definitions_send_credential_definition(request: web.BaseRequest):
     """
@@ -129,92 +142,107 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
 
     """
     context: AdminRequestContext = request["context"]
+    auto_endorse = json.loads(request.query.get("auto_endorse", "null"))
 
-    body = await request.json()
+    if auto_endorse:
+        body = await request.json()
 
-    schema_id = body.get("schema_id")
-    support_revocation = bool(body.get("support_revocation"))
-    tag = body.get("tag")
-    rev_reg_size = body.get("revocation_registry_size")
+        schema_id = body.get("schema_id")
+        support_revocation = bool(body.get("support_revocation"))
+        tag = body.get("tag")
+        rev_reg_size = body.get("revocation_registry_size")
 
-    ledger = context.inject(BaseLedger, required=False)
-    if not ledger:
-        reason = "No ledger available"
-        if not context.settings.get_value("wallet.type"):
-            reason += ": missing wallet-type?"
-        raise web.HTTPForbidden(reason=reason)
+        ledger = context.inject(BaseLedger, required=False)
+        if not ledger:
+            reason = "No ledger available"
+            if not context.settings.get_value("wallet.type"):
+                reason += ": missing wallet-type?"
+            raise web.HTTPForbidden(reason=reason)
 
-    issuer = context.inject(IndyIssuer)
-    try:  # even if in wallet, send it and raise if erroneously so
-        async with ledger:
-            (cred_def_id, cred_def, novel) = await shield(
-                ledger.create_and_send_credential_definition(
-                    issuer,
-                    schema_id,
-                    signature_type=None,
-                    tag=tag,
-                    support_revocation=support_revocation,
+        issuer = context.inject(IndyIssuer)
+        try:  # even if in wallet, send it and raise if erroneously so
+            async with ledger:
+                (cred_def_id, cred_def, novel) = await shield(
+                    ledger.create_and_send_credential_definition(
+                        issuer,
+                        schema_id,
+                        signature_type=None,
+                        tag=tag,
+                        support_revocation=support_revocation,
+                    )
                 )
-            )
-    except LedgerError as e:
-        raise web.HTTPBadRequest(reason=e.message) from e
-
-    # If revocation is requested and cred def is novel, create revocation registry
-    if support_revocation and novel:
-        session = (
-            await context.session()
-        )  # FIXME - will update to not require session here
-        tails_base_url = session.settings.get("tails_server_base_url")
-        if not tails_base_url:
-            raise web.HTTPBadRequest(reason="tails_server_base_url not configured")
-        try:
-            # Create registry
-            revoc = IndyRevocation(session)
-            registry_record = await revoc.init_issuer_registry(
-                cred_def_id,
-                max_cred_num=rev_reg_size,
-            )
-
-        except RevocationNotSupportedError as e:
+        except LedgerError as e:
             raise web.HTTPBadRequest(reason=e.message) from e
-        await shield(registry_record.generate_registry(session))
-        try:
-            await registry_record.set_tails_file_public_uri(
-                session, f"{tails_base_url}/{registry_record.revoc_reg_id}"
-            )
-            await registry_record.send_def(session)
-            await registry_record.send_entry(session)
 
-            # stage pending registry independent of whether tails server is OK
-            pending_registry_record = await revoc.init_issuer_registry(
-                registry_record.cred_def_id,
-                max_cred_num=registry_record.max_cred_num,
-            )
-            ensure_future(
-                pending_registry_record.stage_pending_registry(session, max_attempts=16)
-            )
+        # If revocation is requested and cred def is novel, create revocation registry
+        if support_revocation and novel:
+            session = (
+                await context.session()
+            )  # FIXME - will update to not require session here
+            tails_base_url = session.settings.get("tails_server_base_url")
+            if not tails_base_url:
+                raise web.HTTPBadRequest(reason="tails_server_base_url not configured")
+            try:
+                # Create registry
+                revoc = IndyRevocation(session)
+                registry_record = await revoc.init_issuer_registry(
+                    cred_def_id,
+                    max_cred_num=rev_reg_size,
+                )
 
-            tails_server = session.inject(BaseTailsServer)
-            (upload_success, reason) = await tails_server.upload_tails_file(
-                session,
-                registry_record.revoc_reg_id,
-                registry_record.tails_local_path,
-                interval=0.8,
-                backoff=-0.5,
-                max_attempts=5,  # heuristic: respect HTTP timeout
-            )
-            if not upload_success:
-                raise web.HTTPInternalServerError(
-                    reason=(
-                        f"Tails file for rev reg {registry_record.revoc_reg_id} "
-                        f"failed to upload: {reason}"
+            except RevocationNotSupportedError as e:
+                raise web.HTTPBadRequest(reason=e.message) from e
+            await shield(registry_record.generate_registry(session))
+            try:
+                await registry_record.set_tails_file_public_uri(
+                    session, f"{tails_base_url}/{registry_record.revoc_reg_id}"
+                )
+                await registry_record.send_def(session)
+                await registry_record.send_entry(session)
+
+                # stage pending registry independent of whether tails server is OK
+                pending_registry_record = await revoc.init_issuer_registry(
+                    registry_record.cred_def_id,
+                    max_cred_num=registry_record.max_cred_num,
+                )
+                ensure_future(
+                    pending_registry_record.stage_pending_registry(
+                        session, max_attempts=16
                     )
                 )
 
-        except RevocationError as e:
-            raise web.HTTPBadRequest(reason=e.message) from e
+                tails_server = session.inject(BaseTailsServer)
+                (upload_success, reason) = await tails_server.upload_tails_file(
+                    session,
+                    registry_record.revoc_reg_id,
+                    registry_record.tails_local_path,
+                    interval=0.8,
+                    backoff=-0.5,
+                    max_attempts=5,  # heuristic: respect HTTP timeout
+                )
+                if not upload_success:
+                    raise web.HTTPInternalServerError(
+                        reason=(
+                            f"Tails file for rev reg {registry_record.revoc_reg_id} "
+                            f"failed to upload: {reason}"
+                        )
+                    )
 
-    return web.json_response({"credential_definition_id": cred_def_id})
+            except RevocationError as e:
+                raise web.HTTPBadRequest(reason=e.message) from e
+
+        return web.json_response({"credential_definition_id": cred_def_id})
+
+    else:
+        transaction_message = await request.json()
+        session = await context.session()
+        transaction_mgr = TransactionManager(session, context.profile)
+
+        transaction = await transaction_mgr.create_record(
+            transaction_message=transaction_message,
+        )
+
+        return web.json_response(transaction.serialize())
 
 
 @docs(

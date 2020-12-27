@@ -65,17 +65,15 @@ class TransactionManager:
         """
         return self._profile
 
-    async def create_request(
+    async def create_record(
         self,
-        connection_id: str = None,
         expires_time: str = None,
         transaction_message: dict = {},
     ):
         """
-        Create a new Transaction Record and Request.
+        Create a new Transaction Record.
 
         Args:
-            connection_id: The connection id related to this transaction record
             expires_time: The time till which the endorser should endorse the transaction
             transaction_message: The actual data in the transaction payload
 
@@ -148,6 +146,7 @@ class TransactionManager:
             "signer_goal_code": TransactionRecord.ENDORSE_TRANSACTION,
             "author_goal_code": TransactionRecord.WRITE_TRANSACTION,
         }
+        transaction.signature_request.clear()
         transaction.signature_request.append(signature_request)
 
         timing = {"expires_time": "1597708800"}
@@ -157,20 +156,43 @@ class TransactionManager:
             "attach_id": messages_attach._id,
             "format": TransactionRecord.FORMAT_VERSION,
         }
+        transaction.formats.clear()
         transaction.formats.append(formats)
 
+        transaction.messages_attach.clear()
         transaction.messages_attach.append(messages_attach_dict)
-        transaction.connection_id = connection_id
-        transaction.state = "request"
+        transaction.state = "created"
 
         async with self._profile.session() as session:
             await transaction.save(session, reason="Change it")
 
+        return transaction
+
+    async def create_request(
+        self, transaction: TransactionRecord, connection_id: str = None
+    ):
+        """
+        Create a new Transaction Request.
+
+        Args:
+            transaction: The transaction from which the request is created.
+            connection_id: The connection_id to which the request is send.
+
+        Returns:
+            The transaction Record and transaction request
+
+        """
+
+        transaction.state = "request"
+        transaction.connection_id = connection_id
+        async with self._profile.session() as session:
+            await transaction.save(session, reason="Change to requested state")
+
         transaction_request = TransactionRequest(
             transaction_id=transaction._id,
-            signature_request=signature_request,
-            timing=timing,
-            messages_attach=messages_attach_dict,
+            signature_request=transaction.signature_request[0],
+            timing=transaction.timing,
+            messages_attach=transaction.messages_attach[0],
         )
 
         return transaction, transaction_request
@@ -187,6 +209,7 @@ class TransactionManager:
         transaction = TransactionRecord()
 
         transaction._type = TransactionRecord.SIGNATURE_REQUEST
+        transaction.signature_request.clear()
         transaction.signature_request.append(request.signature_request)
         transaction.timing = request.timing
 
@@ -194,8 +217,10 @@ class TransactionManager:
             "attach_id": request.messages_attach["_message_id"],
             "format": TransactionRecord.FORMAT_VERSION,
         }
+        transaction.formats.clear()
         transaction.formats.append(format)
 
+        transaction.messages_attach.clear()
         transaction.messages_attach.append(request.messages_attach)
         transaction.thread_id = request.transaction_id
         transaction.connection_id = connection_id
@@ -240,6 +265,7 @@ class TransactionManager:
             "signature_type": TransactionRecord.SIGNATURE_TYPE,
             "signature": {endorser_did: endorser_verkey},
         }
+        transaction.signature_response.clear()
         transaction.signature_response.append(signature_response)
 
         transaction.state = state
@@ -273,6 +299,7 @@ class TransactionManager:
         transaction._type = TransactionRecord.SIGNATURE_RESPONSE
         transaction.state = response.state
 
+        transaction.signature_response.clear()
         transaction.signature_response.append(response.signature_response)
 
         transaction.thread_id = response.thread_id
@@ -316,6 +343,7 @@ class TransactionManager:
             "method": TransactionRecord.ADD_SIGNATURE,
             "signer_goal_code": TransactionRecord.REFUSE_TRANSACTION,
         }
+        transaction.signature_response.clear()
         transaction.signature_response.append(signature_response)
 
         transaction.state = state
@@ -349,6 +377,7 @@ class TransactionManager:
         transaction._type = TransactionRecord.SIGNATURE_RESPONSE
         transaction.state = response.state
 
+        transaction.signature_response.clear()
         transaction.signature_response.append(response.signature_response)
         transaction.thread_id = response.thread_id
         transaction.messages_attach[0]["data"]["json"][
@@ -390,7 +419,6 @@ class TransactionManager:
         Args:
             response: The cancel transaction response
         """
-
         connection_id = self.session.connection_record.connection_id
         async with self._profile.session() as session:
             transaction = await TransactionRecord.retrieve_by_connection_and_thread(
@@ -433,7 +461,6 @@ class TransactionManager:
         Args:
             response: The Resend transaction response
         """
-
         connection_id = self.session.connection_record.connection_id
         async with self._profile.session() as session:
             transaction = await TransactionRecord.retrieve_by_connection_and_thread(

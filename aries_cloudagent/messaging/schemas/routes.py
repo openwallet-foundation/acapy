@@ -23,6 +23,9 @@ from ..models.openapi import OpenAPISchema
 from ..valid import B58, NATURAL_NUM, INDY_SCHEMA_ID, INDY_VERSION
 from .util import SchemaQueryStringSchema, SCHEMA_SENT_RECORD_TYPE, SCHEMA_TAGS
 
+from ...protocols.endorse_transaction.v1_0.manager import TransactionManager
+import json
+
 
 class SchemaSendRequestSchema(OpenAPISchema):
     """Request schema for schema send request."""
@@ -100,8 +103,18 @@ class SchemaIdMatchInfoSchema(OpenAPISchema):
     )
 
 
+class AutoEndorseOptionSchema(OpenAPISchema):
+    """Class for user to input whether to auto-endorse the transaction or not."""
+
+    auto_endorse = fields.Boolean(
+        description="Auto-endorse Transaction",
+        required=True,
+    )
+
+
 @docs(tags=["schema"], summary="Sends a schema to the ledger")
 @request_schema(SchemaSendRequestSchema())
+@querystring_schema(AutoEndorseOptionSchema())
 @response_schema(SchemaSendResultsSchema(), 200, description="")
 async def schemas_send_schema(request: web.BaseRequest):
     """
@@ -115,32 +128,45 @@ async def schemas_send_schema(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
+    auto_endorse = json.loads(request.query.get("auto_endorse", "null"))
 
-    body = await request.json()
+    if auto_endorse:
+        body = await request.json()
 
-    schema_name = body.get("schema_name")
-    schema_version = body.get("schema_version")
-    attributes = body.get("attributes")
+        schema_name = body.get("schema_name")
+        schema_version = body.get("schema_version")
+        attributes = body.get("attributes")
 
-    ledger = context.inject(BaseLedger, required=False)
-    if not ledger:
-        reason = "No ledger available"
-        if not context.settings.get_value("wallet.type"):
-            reason += ": missing wallet-type?"
-        raise web.HTTPForbidden(reason=reason)
+        ledger = context.inject(BaseLedger, required=False)
+        if not ledger:
+            reason = "No ledger available"
+            if not context.settings.get_value("wallet.type"):
+                reason += ": missing wallet-type?"
+            raise web.HTTPForbidden(reason=reason)
 
-    issuer = context.inject(IndyIssuer)
-    async with ledger:
-        try:
-            schema_id, schema_def = await shield(
-                ledger.create_and_send_schema(
-                    issuer, schema_name, schema_version, attributes
+        issuer = context.inject(IndyIssuer)
+        async with ledger:
+            try:
+                schema_id, schema_def = await shield(
+                    ledger.create_and_send_schema(
+                        issuer, schema_name, schema_version, attributes
+                    )
                 )
-            )
-        except (IndyIssuerError, LedgerError) as err:
-            raise web.HTTPBadRequest(reason=err.roll_up) from err
+            except (IndyIssuerError, LedgerError) as err:
+                raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-    return web.json_response({"schema_id": schema_id, "schema": schema_def})
+        return web.json_response({"schema_id": schema_id, "schema": schema_def})
+
+    else:
+        transaction_message = await request.json()
+        session = await context.session()
+        transaction_mgr = TransactionManager(session, context.profile)
+
+        transaction = await transaction_mgr.create_record(
+            transaction_message=transaction_message,
+        )
+
+        return web.json_response(transaction.serialize())
 
 
 @docs(

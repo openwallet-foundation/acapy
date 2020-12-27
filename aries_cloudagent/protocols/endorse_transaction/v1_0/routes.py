@@ -2,7 +2,6 @@
 
 from aiohttp import web
 from aiohttp_apispec import (
-    request_schema,
     docs,
     response_schema,
     querystring_schema,
@@ -11,7 +10,6 @@ from aiohttp_apispec import (
 from marshmallow import fields, validate
 
 from ....admin.request_context import AdminRequestContext
-from ....utils.tracing import AdminAPIMessageTracingSchema
 from .manager import TransactionManager
 from .models.transaction_record import TransactionRecord, TransactionRecordSchema
 from ....connections.models.conn_record import ConnRecord, ConnRecordSchema
@@ -42,22 +40,6 @@ class TranIdMatchInfoSchema(OpenAPISchema):
 
     tran_id = fields.Str(
         description="Transaction identifier", required=True, example=UUIDFour.EXAMPLE
-    )
-
-
-class CreateTransactionRecordSchema(AdminAPIMessageTracingSchema):
-    """Parameters and validators to create transaction request and record."""
-
-    conn_id = fields.Str(
-        description="Connection identifier", required=True, example=UUIDFour.EXAMPLE
-    )
-    transaction_message = fields.Dict(
-        required=False,
-        example={
-            "attr_names": ["first_name", "last_name"],
-            "name": "test_schema",
-            "version": "2.1",
-        },
     )
 
 
@@ -148,9 +130,10 @@ async def transactions_retrieve(request: web.BaseRequest):
     tags=["endorse-transaction"],
     summary="For author to send a transaction request",
 )
-@request_schema(CreateTransactionRecordSchema())
+@querystring_schema(TranIdMatchInfoSchema())
+@querystring_schema(ConnIdMatchInfoSchema())
 @response_schema(TransactionRecordSchema(), 200)
-async def transaction_record_create(request: web.BaseRequest):
+async def transaction_create_request(request: web.BaseRequest):
     """
     Request handler for creating a new transaction record and request.
 
@@ -164,28 +147,35 @@ async def transaction_record_create(request: web.BaseRequest):
 
     context: AdminRequestContext = request["context"]
     outbound_handler = request["outbound_message_router"]
-
-    body = await request.json()
-
-    connection_id = body.get("conn_id")
-    transaction_message = body.get("transaction_message")
+    connection_id = request.query.get("conn_id")
+    transaction_id = request.query.get("tran_id")
 
     try:
         async with context.session() as session:
-            connection = await ConnRecord.retrieve_by_id(session, connection_id)
+            connection_record = await ConnRecord.retrieve_by_id(session, connection_id)
+    except StorageNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
+
+    try:
+        async with context.session() as session:
+            transaction_record = await TransactionRecord.retrieve_by_id(
+                session, transaction_id
+            )
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
 
     session = await context.session()
     transaction_mgr = TransactionManager(session, context.profile)
-    (transaction, transaction_request) = await transaction_mgr.create_request(
-        connection_id=connection_id,
-        transaction_message=transaction_message,
+
+    (transaction_record, transaction_request) = await transaction_mgr.create_request(
+        transaction=transaction_record, connection_id=connection_id
     )
 
-    await outbound_handler(transaction_request, connection_id=connection.connection_id)
+    await outbound_handler(
+        transaction_request, connection_id=connection_record.connection_id
+    )
 
-    return web.json_response(transaction.serialize())
+    return web.json_response(transaction_record.serialize())
 
 
 @docs(
@@ -440,7 +430,7 @@ async def register(app: web.Application):
         [
             web.get("/transactions", transactions_list, allow_head=False),
             web.get("/transactions/{tran_id}", transactions_retrieve, allow_head=False),
-            web.post("/transactions/create-request", transaction_record_create),
+            web.post("/transactions/create-request", transaction_create_request),
             web.post("/transactions/{tran_id}/endorse", endorse_transaction_response),
             web.post("/transactions/{tran_id}/refuse", refuse_transaction_response),
             web.post("/transactions/{tran_id}/cancel", cancel_transaction),

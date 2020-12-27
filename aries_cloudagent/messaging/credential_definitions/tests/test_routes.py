@@ -57,6 +57,8 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
             }
         )
 
+        self.request.query = {"auto_endorse": "true"}
+
         with async_mock.patch.object(test_module.web, "json_response") as mock_response:
             result = (
                 await test_module.credential_definitions_send_credential_definition(
@@ -76,6 +78,9 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
                 "tag": "tag",
             }
         )
+
+        self.request.query = {"auto_endorse": "true"}
+
         self.context.settings.set_value("tails_server_base_url", "http://1.2.3.4:8222")
 
         mock_tails_server = async_mock.MagicMock(
@@ -116,6 +121,8 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
             }
         )
 
+        self.request.query = {"auto_endorse": "true"}
+
         with self.assertRaises(test_module.web.HTTPBadRequest):
             await test_module.credential_definitions_send_credential_definition(
                 self.request
@@ -129,6 +136,9 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
                 "tag": "tag",
             }
         )
+
+        self.request.query = {"auto_endorse": "true"}
+
         self.context.settings.set_value("tails_server_base_url", "http://1.2.3.4:8222")
 
         with async_mock.patch.object(
@@ -152,6 +162,9 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
                 "tag": "tag",
             }
         )
+
+        self.request.query = {"auto_endorse": "true"}
+
         self.context.settings.set_value("tails_server_base_url", "http://1.2.3.4:8222")
 
         mock_tails_server = async_mock.MagicMock(
@@ -188,6 +201,9 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
                 "tag": "tag",
             }
         )
+
+        self.request.query = {"auto_endorse": "true"}
+
         self.context.settings.set_value("tails_server_base_url", "http://1.2.3.4:8222")
 
         mock_tails_server = async_mock.MagicMock(
@@ -239,6 +255,8 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
                 "tag": "tag",
             }
         )
+
+        self.request.query = {"auto_endorse": "true"}
 
         self.ledger.__aenter__ = async_mock.CoroutineMock(
             side_effect=test_module.LedgerError("oops")
