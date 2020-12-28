@@ -548,6 +548,10 @@ class TestCoordinateMediationRoutes(AsyncTestCase):
                 filter_={"test": "filter"}, paginate_limit=10, paginate_offset=20
             )
             self.outbound_message_router.assert_called()
+            mock_response.assert_called_once_with(
+                mock_prepare_keylist_query.return_value.serialize.return_value,
+                status=201,
+            )
 
     async def test_send_keylist_query_x_no_mediation_record(self):
         with async_mock.patch.object(

@@ -204,9 +204,7 @@ async def list_mediation_requests(request: web.BaseRequest):
     return web.json_response(results)
 
 
-@docs(
-    tags=["mediation"], summary="retrieve mediation request record."
-)
+@docs(tags=["mediation"], summary="retrieve mediation request record.")
 @match_info_schema(MediationIdMatchInfoSchema())
 @response_schema(MediationRecordSchema(), 200)
 async def retrieve_mediation_request(request: web.BaseRequest):
@@ -420,7 +418,7 @@ async def send_keylist_query(request: web.BaseRequest):
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     await outbound_handler(request, connection_id=record.connection_id)
-    return web.json_response(request, status=201)
+    return web.json_response(request.serialize(), status=201)
 
 
 @docs(tags=["keylist"], summary="update keylist.")
