@@ -16,6 +16,7 @@ from ....admin.request_context import AdminRequestContext
 from ....connections.models.conn_record import ConnRecord
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
+from ....messaging.valid import UUIDFour
 from ....storage.error import StorageError, StorageNotFoundError
 from ...connections.v1_0.routes import ConnIdMatchInfoSchema
 from ...routing.v1_0.models.route_record import RouteRecord, RouteRecordSchema
@@ -29,12 +30,52 @@ from .messages.keylist_update_response import KeylistUpdateResponseSchema
 from .messages.mediate_deny import MediationDenySchema
 from .messages.mediate_grant import MediationGrantSchema
 from .models.mediation_record import MediationRecord, MediationRecordSchema
-from .models.mediation_schemas import (
-    CONNECTION_ID_SCHEMA,
-    MEDIATION_ID_SCHEMA,
-    MEDIATION_STATE_SCHEMA,
-    MEDIATOR_TERMS_SCHEMA,
-    RECIPIENT_TERMS_SCHEMA,
+
+
+CONNECTION_ID_SCHEMA = fields.UUID(
+    description="Connection identifier (optional)",
+    required=False,
+    example=UUIDFour.EXAMPLE,
+)
+
+
+MEDIATION_ID_SCHEMA = fields.UUID(
+    validate=UUIDFour(),
+    example=UUIDFour.EXAMPLE,
+)
+
+
+MEDIATION_STATE_SCHEMA = fields.Str(
+    description="Mediation state (optional)",
+    required=False,
+    validate=validate.OneOf(
+        [
+            getattr(MediationRecord, m)
+            for m in vars(MediationRecord)
+            if m.startswith("STATE_")
+        ]
+    ),
+    example="request, granted, or denied",
+)
+
+
+MEDIATOR_TERMS_SCHEMA = fields.List(
+    fields.Str(
+        description="Indicate terms that the mediator "
+        "requires the recipient to agree to"
+    ),
+    required=False,
+    description="List of mediator rules for recipient",
+)
+
+
+RECIPIENT_TERMS_SCHEMA = fields.List(
+    fields.Str(
+        description="Indicate terms that the recipient "
+        "requires the mediator to agree to"
+    ),
+    required=False,
+    description="List of recipient rules for mediation",
 )
 
 
