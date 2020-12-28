@@ -507,6 +507,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             save=async_mock.CoroutineMock(),
             attach_request=async_mock.CoroutineMock(),
             accept=ConnRecord.ACCEPT_MANUAL,
+            metadata_get_all=async_mock.CoroutineMock(return_value={"test": "value"}),
         )
         mock_conn_rec_state_request = ConnRecord.State.REQUEST
 
@@ -536,6 +537,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 attach_request=async_mock.CoroutineMock(),
                 retrieve_request=async_mock.CoroutineMock(),
                 save=async_mock.CoroutineMock(),
+                metadata_set=async_mock.CoroutineMock(),
             )
             mock_oob_invi_rec_retrieve.return_value = async_mock.MagicMock(
                 auto_accept=False,
@@ -555,6 +557,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
 
             conn_rec = await self.manager.receive_request(mock_request, receipt)
             assert conn_rec
+            mock_conn_rec.return_value.metadata_set.assert_called()
 
         assert not self.responder.messages
 
