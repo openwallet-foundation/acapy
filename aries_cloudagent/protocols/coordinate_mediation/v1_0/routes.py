@@ -40,7 +40,7 @@ CONNECTION_ID_SCHEMA = fields.UUID(
 
 
 MEDIATION_ID_SCHEMA = fields.UUID(
-    validate=UUIDFour(),
+    description="Mediation record identifier",
     example=UUIDFour.EXAMPLE,
 )
 
@@ -205,7 +205,7 @@ async def list_mediation_requests(request: web.BaseRequest):
 
 
 @docs(
-    tags=["mediation"], summary="mediation request, returns a single mediation record."
+    tags=["mediation"], summary="retrieve mediation request record."
 )
 @match_info_schema(MediationIdMatchInfoSchema())
 @response_schema(MediationRecordSchema(), 200)
@@ -248,7 +248,7 @@ async def delete_mediation_request(request: web.BaseRequest):
     return web.json_response(result)
 
 
-@docs(tags=["mediation"], summary="create mediation request record.")
+@docs(tags=["mediation"], summary="request mediation from connection.")
 @match_info_schema(ConnIdMatchInfoSchema())
 @request_schema(MediationCreateRequestSchema())
 @response_schema(MediationRecordSchema(), 201)
