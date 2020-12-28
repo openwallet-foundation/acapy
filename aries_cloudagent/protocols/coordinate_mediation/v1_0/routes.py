@@ -26,7 +26,8 @@ from .messages.inner.keylist_update_rule import (
     KeylistUpdateRule,
     KeylistUpdateRuleSchema,
 )
-from .messages.keylist_update_response import KeylistUpdateResponseSchema
+from .messages.keylist_query import KeylistQuerySchema
+from .messages.keylist_update import KeylistUpdateSchema
 from .messages.mediate_deny import MediationDenySchema
 from .messages.mediate_grant import MediationGrantSchema
 from .models.mediation_record import MediationRecord, MediationRecordSchema
@@ -389,7 +390,7 @@ async def get_keylist(request: web.BaseRequest):
 @match_info_schema(MediationIdMatchInfoSchema())
 @querystring_schema(KeylistQueryPaginateQuerySchema())
 @request_schema(KeylistQueryFilterRequestSchema())
-@response_schema(KeylistSchema(), 201)
+@response_schema(KeylistQuerySchema(), 201)
 async def send_keylist_query(request: web.BaseRequest):
     """Send keylist query to mediator."""
     context: AdminRequestContext = request["context"]
@@ -424,7 +425,7 @@ async def send_keylist_query(request: web.BaseRequest):
 @docs(tags=["keylist"], summary="update keylist.")
 @match_info_schema(MediationIdMatchInfoSchema())
 @request_schema(KeylistUpdateRequestSchema())
-@response_schema(KeylistUpdateResponseSchema(), 201)
+@response_schema(KeylistUpdateSchema(), 201)
 async def send_keylist_update(request: web.BaseRequest):
     """Send keylist update to mediator."""
     context: AdminRequestContext = request["context"]
