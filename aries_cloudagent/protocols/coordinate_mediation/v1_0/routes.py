@@ -17,6 +17,7 @@ from ....connections.models.conn_record import ConnRecord
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
 from ....storage.error import StorageError, StorageNotFoundError
+from ...connections.v1_0.routes import ConnIdMatchInfoSchema
 from ...routing.v1_0.models.route_record import RouteRecord, RouteRecordSchema
 from .manager import MediationManager
 from .message_types import SPEC_URI
@@ -60,12 +61,6 @@ class MediationCreateRequestSchema(OpenAPISchema):
 
     mediator_terms = MEDIATOR_TERMS_SCHEMA
     recipient_terms = RECIPIENT_TERMS_SCHEMA
-
-
-class MediationCreateRequestQuerySchema(OpenAPISchema):
-    """Create mediation request query string schema."""
-
-    conn_id = CONNECTION_ID_SCHEMA
 
 
 class AdminMediationDenySchema(OpenAPISchema):
@@ -213,7 +208,7 @@ async def delete_mediation_request(request: web.BaseRequest):
 
 
 @docs(tags=["mediation"], summary="create mediation request record.")
-@querystring_schema(MediationCreateRequestQuerySchema())
+@match_info_schema(ConnIdMatchInfoSchema())
 @request_schema(MediationCreateRequestSchema())
 @response_schema(MediationRecordSchema(), 201)
 async def request_mediation(request: web.BaseRequest):
@@ -221,7 +216,7 @@ async def request_mediation(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     outbound_message_router = request["outbound_message_router"]
 
-    conn_id = request.query.get("conn_id")
+    conn_id = request.match_info["conn_id"]
 
     body = await request.json()
     mediator_terms = body.get("mediator_terms")
@@ -450,7 +445,7 @@ async def register(app: web.Application):
                 mediation_request_grant,
             ),
             web.post("/mediation/requests/{mediation_id}/deny", mediation_request_deny),
-            web.post("/mediation/request", request_mediation),
+            web.post("/mediation/request/{conn_id}", request_mediation),
             web.get("/mediation/keylists", get_keylist, allow_head=False),
             web.post(
                 "/mediation/keylists/{mediation_id}/send-keylist-update",
