@@ -168,6 +168,46 @@ class TestCoordinateMediationRoutes(AsyncTestCase):
         ):
             await test_module.retrieve_mediation_request(self.request)
 
+    async def test_delete_mediation_request(self):
+        with async_mock.patch.object(
+            test_module.MediationRecord, "retrieve_by_id", async_mock.CoroutineMock()
+        ) as mock_mediation_record_retrieve, async_mock.patch.object(
+            self.mock_record, "delete_record", async_mock.CoroutineMock()
+        ) as mock_delete_record, async_mock.patch.object(
+            test_module.web, "json_response"
+        ) as mock_response:
+            mock_mediation_record_retrieve.return_value = self.mock_record
+            await test_module.delete_mediation_request(self.request)
+            mock_response.assert_called_once_with(
+                self.mock_record.serialize.return_value
+            )
+            mock_mediation_record_retrieve.assert_called()
+            mock_delete_record.assert_called()
+
+    async def test_delete_mediation_request_x_not_found(self):
+        with async_mock.patch.object(
+            test_module.MediationRecord,
+            "retrieve_by_id",
+            async_mock.CoroutineMock(side_effect=test_module.StorageNotFoundError()),
+        ) as mock_mediation_record_retrieve, async_mock.patch.object(
+            test_module.web, "json_response"
+        ) as mock_response, self.assertRaises(
+            test_module.web.HTTPNotFound
+        ):
+            await test_module.delete_mediation_request(self.request)
+
+    async def test_delete_mediation_request_x_storage_error(self):
+        with async_mock.patch.object(
+            test_module.MediationRecord,
+            "retrieve_by_id",
+            async_mock.CoroutineMock(side_effect=test_module.StorageError()),
+        ) as mock_mediation_record_retrieve, async_mock.patch.object(
+            test_module.web, "json_response"
+        ) as mock_response, self.assertRaises(
+            test_module.web.HTTPBadRequest
+        ):
+            await test_module.delete_mediation_request(self.request)
+
     async def test_request_mediation(self):
         body = {
             "mediator_terms": ["meaningless string because terms are not used"],

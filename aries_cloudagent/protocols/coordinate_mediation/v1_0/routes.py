@@ -190,6 +190,28 @@ async def retrieve_mediation_request(request: web.BaseRequest):
     return web.json_response(result)
 
 
+@docs(tags=["mediation"], summary="Delete mediation request by ID.")
+@match_info_schema(MediationIdMatchInfoSchema())
+@response_schema(MediationRecordSchema, 200)
+async def delete_mediation_request(request: web.BaseRequest):
+    """Delete a mediation request by ID."""
+    context: AdminRequestContext = request["context"]
+
+    mediation_id = request.match_info["mediation_id"]
+    try:
+        session = await context.session()
+
+        mediation_record = await MediationRecord.retrieve_by_id(session, mediation_id)
+        result = mediation_record.serialize()
+        await mediation_record.delete_record(session)
+    except StorageNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
+    except (BaseModelError, StorageError) as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+    return web.json_response(result)
+
+
 @docs(tags=["mediation"], summary="create mediation request record.")
 @querystring_schema(MediationCreateRequestQuerySchema())
 @request_schema(MediationCreateRequestSchema())
@@ -422,6 +444,7 @@ async def register(app: web.Application):
                 retrieve_mediation_request,
                 allow_head=False,
             ),
+            web.delete("/mediation/requests/{mediation_id}", delete_mediation_request),
             web.post(
                 "/mediation/requests/{mediation_id}/grant",
                 mediation_request_grant,
