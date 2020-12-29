@@ -204,7 +204,7 @@ class MultitenantManager:
             {
                 "wallet.key": wallet_key,
                 "wallet.dispatch_type": wallet_dispatch_type,
-                "wallet.webhook_urls": wallet_webhook_urls
+                "wallet.webhook_urls": wallet_webhook_urls,
             },
             provision=True,
         )
