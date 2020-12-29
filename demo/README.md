@@ -18,6 +18,10 @@ There are several demos available for ACA-Py mostly (but not only) aimed at deve
   - [Follow The Script](#follow-the-script)
     - [Exchanging Messages](#exchanging-messages)
     - [Issuing and Proving Credentials](#issuing-and-proving-credentials)
+- [Additional Options in the Alice/Faber demo](#additional-options-in-the-alicefaber-demo)
+  - [Revocation](#revocation)
+  - [Multi-tenancy](#multi-tenancy)
+  - [DID Exchange](#did-exchange)
 - [Learning about the Alice/Faber code](#learning-about-the-alicefaber-code)
 - [OpenAPI (Swagger) Demo](#openapi-swagger-demo)
 - [Performance Demo](#performance-demo)
@@ -145,18 +149,20 @@ With both the Alice and Faber agents started, go to the Faber terminal window. T
 Faber:
 
 ```
-    1 = Issue Credential - send a credential to Alice
-    2 = Send Proof Request - send a proof request to Alice
-    3 = Send Message - send a message to Alice
-    x = Exit - Stop and exit
+    (1) Issue Credential
+    (2) Send Proof Request
+    (3) Send Message
+    (4) Create New Invitation
+    (T) Toggle tracing on credential/proof exchange
+    (X) Exit?
 ```
 
 Alice:
 
 ```
-    3 = Send Message - send a message to Faber
-    4 = Input New Invitation
-    x = Exit - stop and exit
+    (3) Send Message
+    (4) Input New Invitation
+    (X) Exit?
 ```
 
 #### Exchanging Messages
@@ -168,6 +174,149 @@ Feel free to use the "3" option to send messages back and forth between the agen
 When ready to test the credentials exchange protocols, go to the Faber prompt, enter "1" to send a credential, and then "2" to request a proof.
 
 You don't need to do anything with Alice's agent - her agent is implemented to automatically receive credentials and respond to proof requests.
+
+## Additional Options in the Alice/Faber demo
+
+You can enable support for various aca-py features by providing additional command-line arguements when starting up `alice` or `faber`.
+
+Note that when the controller starts up the agent, it prints out the aca-py startup command with *all* parameters - you can inspect this command to see what parameters are provided in each case.  For more details on the parameters, just start aca-py with the `--help` parameter, for example:
+
+```
+./scripts/run_docker start --help
+```
+
+### Revocation
+
+To enable support for revoking credentials, run the `faber` demo with the `--revocation` option:
+
+```bash
+./run_demo faber --revocation
+```
+
+Note that you don't specify this option with `alice` because it's only applicable for the credential `issuer` (who has to enable revocation when creating a credential definition, and explicitely revoke credentials as appropriate; alice doesn't have to do anything special when revocation is enabled).
+
+You need to run a revocation registry in order to support revocation - the details are described in the [Alice gets a Phone](https://github.com/hyperledger/aries-cloudagent-python/blob/master/demo/AliceGetsAPhone.md#run-an-instance-of-indy-tails-server) demo instructions.
+
+Faber will setup support for revocatiom automatically, and you will see an extra option in faber's menu to revoke a credential:
+
+```
+    (1) Issue Credential
+    (2) Send Proof Request
+    (3) Send Message
+    (4) Create New Invitation
+    (5) Revoke Credential
+    (6) Publish Revocations
+    (T) Toggle tracing on credential/proof exchange
+    (X) Exit?
+  ```
+
+When you issue a credential, make a note of the `Revocation registry ID` and `Credential revocation ID`:
+
+```
+Faber      | Revocation registry ID: WGmUNAdH2ZfeGvacFoMVVP:4:WGmUNAdH2ZfeGvacFoMVVP:3:CL:38:Faber.Agent.degree_schema:CL_ACCUM:15ca49ed-1250-4608-9e8f-c0d52d7260c3
+Faber      | Credential revocation ID: 1
+```
+
+When you revoke a credential you will need to provide those values:
+
+```
+[1/2/3/4/5/6/T/X] 5
+
+Enter revocation registry ID: WGmUNAdH2ZfeGvacFoMVVP:4:WGmUNAdH2ZfeGvacFoMVVP:3:CL:38:Faber.Agent.degree_schema:CL_ACCUM:15ca49ed-1250-4608-9e8f-c0d52d7260c3
+Enter credential revocation ID: 1
+Publish now? [Y/N]: y 
+```
+
+Note that you need to Publish the revocation information to the ledger.  Once you've revoked a credential any proof which uses this credential will fail to verify.
+
+### DID Exchange
+
+You can enable DID Exchange using the `--did-exchange` parameter for the `alice` and `faber` demo's.
+
+This will use the new DID Exchange protocol when establishing connections between the agents, rather than the older Connection protocol.  There is no other affect on the operation of the agents.
+
+Note that you can't (currently) use the DID Exchange protocol to connect with any of the available mobile agents.
+
+### Multi-tenancy
+
+To enable support for multi-tenancy, run the `alice` or `faber` demo with the `--multitenant` option:
+
+```bash
+./run_demo faber --multitenant
+```
+
+(This option can be used with both (or either) `alice` and/or `faber'.)
+
+You will see an additional menu option to create new sub-wallets (or they can be considered to be "virtual agents").
+
+Faber:
+
+```
+    (1) Issue Credential
+    (2) Send Proof Request
+    (3) Send Message
+    (4) Create New Invitation
+    (W) Create and/or Enable Wallet
+    (T) Toggle tracing on credential/proof exchange
+    (X) Exit?
+```
+
+Alice:
+
+```
+    (3) Send Message
+    (4) Input New Invitation
+    (W) Create and/or Enable Wallet
+    (X) Exit?
+```
+
+When you create a new wallet, you just need to provide the wallet name.  (If you provide the name of an existing wallet then the controller will "activate" that wallet and make it the current wallet.)
+
+```
+[1/2/3/4/W/T/X] w
+
+Enter wallet name: new_wallet_12
+
+Faber      | Register or switch to wallet new_wallet_12
+Faber      | Created new profile
+Faber      | Profile backend: indy
+Faber      | Profile name: new_wallet_12
+Faber      | No public DID
+... etc
+```
+
+Note that `faber` will create a public DID for this wallet, and will create a schema and credential definition.
+
+Once you have created a new wallet, you must estsablish a connection between `alice` and `faber` (remember that this is a new "virtual agent" and doesn't know anything about connections established for other "agents").
+
+In faber, create a new invitation:
+
+```
+[1/2/3/4/W/T/X] 4
+
+(... creates a new invitation ...)
+```
+
+In alice, accent the invitation:
+
+```
+[1/2/3/4/W/T/X] 4
+
+(... enter the new invitation string ...)
+```
+
+You can inspect the additional multi-tenancy admin api's (i.e. the "agency api" by opening either agent's swagger page in your browser:
+
+[todo image]
+
+Note that with multi-tenancy enabled:
+
+- The "base" wallet will have access to this new "agency api" - the agent's admin key, if enabled, must be provided in a header
+- "Base wallet" api calls are handled [here](https://github.com/hyperledger/aries-cloudagent-python/blob/244194e68330835e5e2e53cc6c2993899d2437fb/demo/runners/support/agent.py#L606)
+- The "sub-wallets" will have access to the "normal" aca-py admin api - to identify the sub-wallet, a JWT token must be provided, this token is created upon creation of the new wallet (see: [this code here](https://github.com/hyperledger/aries-cloudagent-python/blob/master/demo/runners/support/agent.py#L378))
+- "Sub-wallet" api calls are handled [here](https://github.com/hyperledger/aries-cloudagent-python/blob/244194e68330835e5e2e53cc6c2993899d2437fb/demo/runners/support/agent.py#L632)
+
+Documentation on aca-py's multi-tenancy support can be found [tbd here]().
 
 ## Learning about the Alice/Faber code
 
