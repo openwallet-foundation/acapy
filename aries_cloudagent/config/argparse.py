@@ -140,12 +140,13 @@ class AdminGroup(ArgumentGroup):
         parser.add_argument(
             "--webhook-url",
             action="append",
-            metavar="<url>",
+            metavar="<url#api_key>",
             env_var="ACAPY_WEBHOOK_URL",
             help="Send webhooks containing internal state changes to the specified\
-            URL. This is useful for a controller to monitor agent events and respond\
-            to those events using the admin API. If not specified, webhooks are not\
-            published by the agent.",
+            URL. Optional API key to be passed in the request body can be appended using\
+            a hash separator [#]. This is useful for a controller to monitor agent events\
+            and respond to those events using the admin API. If not specified, \
+            webhooks are not published by the agent.",
         )
 
     def get_settings(self, args: Namespace):
@@ -920,19 +921,6 @@ class MediationGroup(ArgumentGroup):
                 forward messages on behalf of the recipient. See aries-rfc:0211.",
         )
         parser.add_argument(
-            "--automate-mediation",
-            action="store_true",
-            env_var="ACAPY_AUTO_MEDIATION",
-            help="automate all steps of mediation. Default: false.",
-        )
-        parser.add_argument(
-            "--auto-respond-keylist-update-response",
-            action="store_true",
-            env_var="ACAPY_AUTO_RESPOND_KEYLIST_UPDATE_RESPONSE",
-            help="Automatically create a connection invitation with the received updated"
-            " keylists. Default: false.",
-        )
-        parser.add_argument(
             "--auto-send-keylist-update-in-requests",
             action="store_true",
             env_var="ACAPY_AUTO_SEND_KEYLIST_UPDATE_IN_REQUESTS",
@@ -946,28 +934,16 @@ class MediationGroup(ArgumentGroup):
             help="Automatically updated mediator with newly created keys."
             " keylists. Default: false.",
         )
-        # TODO: add flags for terms and queue
 
     def get_settings(self, args: Namespace):
         """Extract mediation settings."""
         settings = {}
         if args.auto_send_keylist_update_in_requests:
             settings["mediation.auto_send_keylist_update_in_requests"] = True
-        else:
-            settings["mediation.auto_send_keylist_update_in_requests"] = False
         if args.auto_send_keylist_update_in_create_invitation:
             settings["mediation.auto_send_keylist_update_in_create_invitation"] = True
-        else:
-            settings["mediation.auto_send_keylist_update_in_create_invitation"] = False
         if args.open_mediation:
             settings["mediation.open"] = True
-            if args.automate_mediation:
-                settings["mediation.automate_mediation"] = True
-                settings["mediation.auto_respond_keylist_update_response"] = True
-                settings["mediation.auto_send_keylist_update_in_requests"] = True
-                settings[
-                    "mediation.auto_send_keylist_update_in_create_invitation"
-                ] = True
         return settings
 
 
