@@ -54,7 +54,7 @@ class MediationManager:
         """Initialize Mediation Manager.
 
         Args:
-            session: The session for this manager
+            session: The profile session for this manager
         """
         if not session:
             raise MediationManagerError("Missing request session")
@@ -375,7 +375,7 @@ class MediationManager:
     async def store_update_results(
         self, connection_id: str, results: Sequence[KeylistUpdated]
     ):
-        """Store results of keylist update from keylist update resopnse message.
+        """Store results of keylist update from keylist update response message.
 
         Args:
             connection_id (str): connection ID of mediator sending results
