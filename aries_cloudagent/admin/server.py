@@ -30,7 +30,6 @@ from ..utils.task_queue import TaskQueue
 from ..version import __version__
 from ..multitenant.manager import MultitenantManager, MultitenantManagerError
 
-# from ..wallet.models.wallet_record import WalletRecord
 from ..storage.error import StorageNotFoundError
 from .base_server import BaseAdminServer
 from .error import AdminSetupError
@@ -726,60 +725,26 @@ class AdminServer(BaseAdminServer):
         if target_url in self.webhook_targets:
             del self.webhook_targets[target_url]
 
-    async def dispatch_subwallet_webhook(
-        self,
-        topic: str,
-        payload: dict,
-        webhook_url: str,
-        metadata: dict,
-        max_attempts: int = None,
-    ):
-        """Route a webhook associated with a subwallet using webhook_router."""
-        self.webhook_router(
-            topic=topic,
-            payload=payload,
-            endpoint=webhook_url,
-            metadata=metadata,
-        )
-
     async def send_webhook(self, profile: Profile, topic: str, payload: dict):
         """Add a webhook to the queue, to send to all registered targets."""
         wallet_id = profile.settings.get("wallet.id")
-        wallet_name = profile.settings.get("wallet.name")
-        wallet_dispatch_type = profile.settings.get("wallet.dispatch_type")
-        wallet_webhook_urls = profile.settings.get("wallet.webhook_urls")
-        base_wallet = wallet_id == wallet_name
+        webhook_urls = profile.settings.get("admin.webhook_urls")
 
-        # async with profile.session() as session:
-        #     wallet = await WalletRecord.retrieve_by_id(session, wallet_id)
-        #     base_wallet = wallet.wallet_id == wallet.wallet_name
-        #     wallet_dispatch_type = wallet.wallet_dispatch_type
-        #     wallet_webhook_urls = wallet.wallet_webhoook_urls
         metadata = None
         if wallet_id:
             metadata = {"x-wallet-id": wallet_id}
 
         if self.webhook_router:
-            if not base_wallet and wallet_dispatch_type == "default":
-                for webhook_url in wallet_webhook_urls:
-                    await self.dispatch_subwallet_webhook(
-                        topic, payload, webhook_url, metadata
-                    )
-            else:
-                if not base_wallet and wallet_dispatch_type == "both":
-                    for webhook_url in wallet_webhook_urls:
-                        await self.dispatch_subwallet_webhook(
-                            topic, payload, webhook_url, metadata
-                        )
-                for idx, target in self.webhook_targets.items():
-                    if not target.topic_filter or topic in target.topic_filter:
-                        self.webhook_router(
-                            topic,
-                            payload,
-                            target.endpoint,
-                            target.max_attempts,
-                            metadata,
-                        )
+            # for idx, target in self.webhook_targets.items():
+            #     if not target.topic_filter or topic in target.topic_filter:
+            for endpoint in webhook_urls:
+                self.webhook_router(
+                    topic,
+                    payload,
+                    endpoint,
+                    None,
+                    metadata,
+                )
 
         # set ws webhook body, optionally add wallet id for multitenant mode
         webhook_body = {"topic": topic, "payload": payload}

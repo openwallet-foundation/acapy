@@ -92,24 +92,6 @@ class WalletRecord(BaseRecord):
         """Accessor to check if the key management mode is managed."""
         return self.key_management_mode == WalletRecord.MODE_MANAGED
 
-    # @classmethod
-    # async def retrieve_by_name(
-    #     cls,
-    #     context: InjectionContext,
-    #     name: str,
-    # ) -> "WalletRecord":
-    #     """Retrieve a wallet record by wallet_name."""
-    #     return await cls.retrieve_by_tag_filter(context, {"name": name})
-
-    # @classmethod
-    # async def retrieve_by_id(
-    #     cls,
-    #     context: InjectionContext,
-    #     id: str,
-    # ) -> "WalletRecord":
-    #     """Retrieve a wallet record by wallet_id."""
-    #     return await cls.retrieve_by_id(context, id)
-
     @property
     def requires_external_key(self) -> bool:
         """Accessor to check if the wallet requires an external key."""

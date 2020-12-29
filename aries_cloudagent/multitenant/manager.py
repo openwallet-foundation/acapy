@@ -123,6 +123,17 @@ class MultitenantManager:
                 "wallet.type": None,
             }
 
+            dispatch_type = extra_settings.get("wallet.dispatch_type")
+            webhook_urls = extra_settings.get("wallet.webhook_urls")
+            del extra_settings["wallet.dispatch_type"]
+            del extra_settings["wallet.webhook_urls"]
+            base_webhook_urls = context.settings.get("admin.webhook_urls")
+            if dispatch_type == "both":
+                target_urls = list(set(base_webhook_urls) | set(webhook_urls))
+                extra_settings["admin.webhook_urls"] = target_urls
+            elif dispatch_type == "default":
+                extra_settings["admin.webhook_urls"] = webhook_urls
+
             context.settings = (
                 context.settings.extend(reset_settings)
                 .extend(wallet_record.settings)
@@ -158,8 +169,17 @@ class MultitenantManager:
         """
         wallet_key = settings.get("wallet.key")
         wallet_name = settings.get("wallet.name")
+        wallet_webhook_urls = settings.get("wallet.webhook_urls")
+        wallet_dispatch_type = settings.get("wallet.dispatch_type")
 
         async with self.profile.session() as session:
+            # Delete webhook_urls and dispatch_type from settings
+            # They will be added as extra base_context settings
+            if wallet_dispatch_type is not None:
+                del settings["wallet.dispatch_type"]
+            if wallet_webhook_urls is not None:
+                del settings["wallet.webhook_urls"]
+
             # Check if the wallet name already exists to avoid indy wallet errors
             if wallet_name and await self._wallet_name_exists(session, wallet_name):
                 raise MultitenantManagerError(
@@ -181,7 +201,11 @@ class MultitenantManager:
         await self.get_wallet_profile(
             self.profile.context,
             wallet_record,
-            {"wallet.key": wallet_key},
+            {
+                "wallet.key": wallet_key,
+                "wallet.dispatch_type": wallet_dispatch_type,
+                "wallet.webhook_urls": wallet_webhook_urls
+            },
             provision=True,
         )
 
