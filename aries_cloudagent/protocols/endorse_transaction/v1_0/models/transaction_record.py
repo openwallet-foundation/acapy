@@ -25,6 +25,7 @@ class TransactionRecord(BaseExchangeRecord):
     TAG_NAMES = {"state", "thread_id", "connection_id"}
     RECORD_TYPE = "transaction"
     STATE_INIT = "init"
+    WEBHOOK_TOPIC = "endorse_transaction"
 
     SIGNATURE_REQUEST = "http://didcomm.org/sign-attachment/%VER/signature-request"
 
