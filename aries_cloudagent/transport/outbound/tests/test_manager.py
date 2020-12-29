@@ -101,6 +101,7 @@ class TestOutboundTransportManager(AsyncTestCase):
             transport.wire_format.encode_message.return_value,
             message.target.endpoint,
             None,
+            None,
         )
 
         with self.assertRaises(OutboundDeliveryError):
