@@ -151,7 +151,8 @@ class MultitenantManager:
         return self._instances[wallet_id]
 
     async def create_wallet(
-        self, settings: dict,
+        self,
+        settings: dict,
         key_management_mode: str,
         wallet_webhook_urls: list = [],
         wallet_dispatch_type: str = "base",
