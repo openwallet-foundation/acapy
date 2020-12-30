@@ -151,7 +151,10 @@ class MultitenantManager:
         return self._instances[wallet_id]
 
     async def create_wallet(
-        self, settings: dict, key_management_mode: str
+        self, settings: dict,
+        key_management_mode: str,
+        wallet_webhook_urls: list = [],
+        wallet_dispatch_type: str = "base",
     ) -> WalletRecord:
         """Create new wallet and wallet record.
 
@@ -169,17 +172,8 @@ class MultitenantManager:
         """
         wallet_key = settings.get("wallet.key")
         wallet_name = settings.get("wallet.name")
-        wallet_webhook_urls = settings.get("wallet.webhook_urls")
-        wallet_dispatch_type = settings.get("wallet.dispatch_type")
 
         async with self.profile.session() as session:
-            # Delete webhook_urls and dispatch_type from settings
-            # They will be added as extra base_context settings
-            if wallet_dispatch_type is not None:
-                del settings["wallet.dispatch_type"]
-            if wallet_webhook_urls is not None:
-                del settings["wallet.webhook_urls"]
-
             # Check if the wallet name already exists to avoid indy wallet errors
             if wallet_name and await self._wallet_name_exists(session, wallet_name):
                 raise MultitenantManagerError(

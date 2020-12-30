@@ -232,12 +232,13 @@ async def wallet_create(request: web.BaseRequest):
         "wallet.type": body.get("wallet_type") or "in_memory",
         "wallet.name": body.get("wallet_name"),
         "wallet.key": wallet_key,
-        "wallet.webhook_urls": body.get("wallet_webhoook_urls") or [],
-        "wallet.dispatch_type": body.get("wallet_dispatch_type") or "default",
     }
+
+    wallet_webhook_urls = body.get("wallet_webhoook_urls") or []
+    wallet_dispatch_type = body.get("wallet_dispatch_type") or "default"
     # If no webhooks specified, then dispatch only to base webhook targets
-    if settings.get("wallet.webhook_urls") == []:
-        settings["wallet.dispatch_type"] = "base"
+    if wallet_webhook_urls == []:
+        wallet_dispatch_type = "base"
     label = body.get("label")
     if label:
         settings["default_label"] = label
@@ -247,7 +248,7 @@ async def wallet_create(request: web.BaseRequest):
             multitenant_mgr = session.inject(MultitenantManager)
 
             wallet_record = await multitenant_mgr.create_wallet(
-                settings, key_management_mode
+                settings, key_management_mode, wallet_webhook_urls, wallet_dispatch_type
             )
 
             token = await multitenant_mgr.create_auth_token(wallet_record, wallet_key)
