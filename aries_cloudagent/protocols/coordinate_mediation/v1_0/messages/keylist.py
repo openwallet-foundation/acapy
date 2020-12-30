@@ -14,9 +14,7 @@ from .inner.keylist_query_paginate import (
 )
 
 
-HANDLER_CLASS = (
-    f"{PROTOCOL_PACKAGE}.handlers" ".keylist_query_response_handler.KeylistHandler"
-)
+HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.keylist_handler.KeylistHandler"
 
 
 class Keylist(AgentMessage):

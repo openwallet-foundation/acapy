@@ -9,7 +9,7 @@ from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 from ..message_types import MEDIATE_REQUEST, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = (
-    f"{PROTOCOL_PACKAGE}.handlers.mediate_request_handler.MediationRequestHandler"
+    f"{PROTOCOL_PACKAGE}.handlers.mediation_request_handler.MediationRequestHandler"
 )
 
 

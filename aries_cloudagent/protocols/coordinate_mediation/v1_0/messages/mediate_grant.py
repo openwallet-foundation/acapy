@@ -11,7 +11,7 @@ from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 from ..message_types import MEDIATE_GRANT, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = (
-    f"{PROTOCOL_PACKAGE}.handlers" ".mediation_grant_handler.MediationGrantHandler"
+    f"{PROTOCOL_PACKAGE}.handlers.mediation_grant_handler.MediationGrantHandler"
 )
 
 
