@@ -67,8 +67,13 @@ class TransactionManager:
 
     async def create_record(
         self,
-        expires_time: str = None,
-        transaction_message: dict = {},
+        author_did:str,
+        author_verkey:str,
+        transaction_message: dict,
+        mechanism:str,
+        taaDigest:str,
+        time:int,
+        expires_time: str,      
     ):
         """
         Create a new Transaction Record.
@@ -78,53 +83,9 @@ class TransactionManager:
             transaction_message: The actual data in the transaction payload
 
         Returns:
-            The transaction Record and transaction request
+            The transaction Record
 
         """
-
-        wallet: BaseWallet = self.session.inject(BaseWallet, required=False)
-        if not wallet:
-            raise web.HTTPForbidden(reason="No wallet available")
-        author_did_info = await wallet.get_public_did()
-        if not author_did_info:
-            raise web.HTTPForbidden(reason="Public DID not found in wallet")
-        author_did = author_did_info.did
-        author_verkey = author_did_info.verkey
-
-        ledger: BaseLedger = self.session.inject(BaseLedger, required=False)
-
-        if not ledger:
-            reason = "No indy ledger available"
-            if not self.session.settings.get_value("wallet.type"):
-                reason += ": missing wallet-type?"
-            raise web.HTTPForbidden(reason=reason)
-
-        async with ledger:
-            try:
-                taa_info = await ledger.get_txn_author_agreement()
-                accepted = None
-                if taa_info["taa_required"]:
-                    accept_record = await ledger.get_latest_txn_author_acceptance()
-                    if accept_record:
-                        accepted = {
-                            "mechanism": accept_record["mechanism"],
-                            "time": accept_record["time"],
-                        }
-                taa_info["taa_accepted"] = accepted
-            except LedgerError as err:
-                raise web.HTTPBadRequest(reason=err.roll_up) from err
-
-        if taa_info["taa_accepted"] is not None:
-            mechanism = taa_info["taa_accepted"]["mechanism"]
-            time = taa_info["taa_accepted"]["time"]
-        else:
-            mechanism = None
-            time = None
-
-        if taa_info["taa_record"] is not None:
-            taaDigest = taa_info["taa_record"]["digest"]
-        else:
-            taaDigest = None
 
         messages_attach = MessagesAttach(
             author_did=author_did,
@@ -149,7 +110,7 @@ class TransactionManager:
         transaction.signature_request.clear()
         transaction.signature_request.append(signature_request)
 
-        timing = {"expires_time": "1597708800"}
+        timing = {"expires_time": expires_time}
         transaction.timing = timing
 
         formats = {
@@ -169,7 +130,7 @@ class TransactionManager:
         return transaction
 
     async def create_request(
-        self, transaction: TransactionRecord, connection_id: str = None
+        self, transaction: TransactionRecord, connection_id: str
     ):
         """
         Create a new Transaction Request.
@@ -229,8 +190,14 @@ class TransactionManager:
         async with self._profile.session() as session:
             await transaction.save(session, reason="Change it")
 
+        return transaction
+
     async def create_endorse_response(
-        self, transaction: TransactionRecord = None, state: str = None
+        self,
+        transaction: TransactionRecord,
+        state: str,
+        endorser_did: str,
+        endorser_verkey: str
     ):
         """
         Create a response to endorse a transaction.
@@ -243,15 +210,6 @@ class TransactionManager:
             The updated transaction and an endorsed response
 
         """
-
-        wallet: BaseWallet = self.session.inject(BaseWallet, required=False)
-        if not wallet:
-            raise web.HTTPForbidden(reason="No wallet available")
-        endorser_did_info = await wallet.get_public_did()
-        if not endorser_did_info:
-            raise web.HTTPForbidden(reason="Public DID not found in wallet")
-        endorser_did = endorser_did_info.did
-        endorser_verkey = endorser_did_info.verkey
 
         transaction.messages_attach[0]["data"]["json"]["endorser"] = endorser_did
 
@@ -309,9 +267,14 @@ class TransactionManager:
 
         async with self._profile.session() as session:
             await transaction.save(session, reason="Change it")
+        
+        return transaction
 
     async def create_refuse_response(
-        self, transaction: TransactionRecord = None, state: str = None
+        self,
+        transaction: TransactionRecord,
+        state: str,
+        refuser_did :str
     ):
         """
         Create a response to refuse a transaction.
@@ -325,15 +288,7 @@ class TransactionManager:
 
         """
 
-        wallet: BaseWallet = self.session.inject(BaseWallet, required=False)
-        if not wallet:
-            raise web.HTTPForbidden(reason="No wallet available")
-        endorser_did_info = await wallet.get_public_did()
-        if not endorser_did_info:
-            raise web.HTTPForbidden(reason="Public DID not found in wallet")
-        endorser_did = endorser_did_info.did
-
-        transaction.messages_attach[0]["data"]["json"]["endorser"] = endorser_did
+        transaction.messages_attach[0]["data"]["json"]["endorser"] = refuser_did
 
         transaction._type = TransactionRecord.SIGNATURE_RESPONSE
 
@@ -356,7 +311,7 @@ class TransactionManager:
             thread_id=transaction._id,
             signature_response=signature_response,
             state=state,
-            endorser_did=endorser_did,
+            endorser_did=refuser_did,
         )
 
         return transaction, refused_transaction_response
@@ -387,8 +342,10 @@ class TransactionManager:
         async with self._profile.session() as session:
             await transaction.save(session, reason="Change it")
 
+        return transaction
+
     async def cancel_transaction(
-        self, transaction: TransactionRecord = None, state: str = None
+        self, transaction: TransactionRecord, state: str
     ):
         """
         Cancel a Transaction Request.
@@ -429,8 +386,10 @@ class TransactionManager:
         async with self._profile.session() as session:
             await transaction.save(session, reason="Change it")
 
+        return transaction
+
     async def transaction_resend(
-        self, transaction: TransactionRecord = None, state: str = None
+        self, transaction: TransactionRecord, state: str
     ):
         """
         Resend a transaction request.
@@ -470,6 +429,8 @@ class TransactionManager:
         transaction.state = response.state
         async with self._profile.session() as session:
             await transaction.save(session, reason="Change it")
+
+        return transaction
 
     async def set_transaction_my_job(self, record: ConnRecord, transaction_my_job: str):
         """

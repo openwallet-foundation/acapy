@@ -30,6 +30,8 @@ from ...ledger.error import LedgerError
 from .util import CredDefQueryStringSchema, CRED_DEF_TAGS, CRED_DEF_SENT_RECORD_TYPE
 
 from ...protocols.endorse_transaction.v1_0.manager import TransactionManager
+from ...wallet.base import BaseWallet
+from ...ledger.base import BaseLedger
 import json
 
 
@@ -236,10 +238,63 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
     else:
         transaction_message = await request.json()
         session = await context.session()
+
+        wallet: BaseWallet = session.inject(BaseWallet, required=False)
+        if not wallet:
+            raise web.HTTPForbidden(reason="No wallet available")
+        author_did_info = await wallet.get_public_did()
+        if not author_did_info:
+            raise web.HTTPForbidden(reason="Public DID not found in wallet")
+        author_did = author_did_info.did
+        author_verkey = author_did_info.verkey
+
+        ledger: BaseLedger = session.inject(BaseLedger, required=False)
+
+        if not ledger:
+            reason = "No indy ledger available"
+            if not session.settings.get_value("wallet.type"):
+                reason += ": missing wallet-type?"
+            raise web.HTTPForbidden(reason=reason)
+
+        async with ledger:
+            try:
+                taa_info = await ledger.get_txn_author_agreement()
+                accepted = None
+                if taa_info["taa_required"]:
+                    accept_record = await ledger.get_latest_txn_author_acceptance()
+                    if accept_record:
+                        accepted = {
+                            "mechanism": accept_record["mechanism"],
+                            "time": accept_record["time"],
+                        }
+                taa_info["taa_accepted"] = accepted
+            except LedgerError as err:
+                raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+        if taa_info["taa_accepted"] is not None:
+            mechanism = taa_info["taa_accepted"]["mechanism"]
+            time = taa_info["taa_accepted"]["time"]
+        else:
+            mechanism = None
+            time = None
+
+        if taa_info["taa_record"] is not None:
+            taaDigest = taa_info["taa_record"]["digest"]
+        else:
+            taaDigest = None
+
+
+
         transaction_mgr = TransactionManager(session, context.profile)
 
         transaction = await transaction_mgr.create_record(
+            author_did=author_did,
+            author_verkey=author_verkey,
             transaction_message=transaction_message,
+            mechanism=mechanism,
+            taaDigest=taaDigest,
+            time=time,
+            expires_time="1597708800"
         )
 
         return web.json_response(transaction.serialize())

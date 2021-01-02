@@ -21,6 +21,8 @@ from ....messaging.models.base import BaseModelError
 from ....storage.error import StorageError, StorageNotFoundError
 from .transaction_jobs import TransactionJob
 
+from ....wallet.base import BaseWallet
+
 
 class TransactionListSchema(OpenAPISchema):
     """Result schema for transaction list."""
@@ -198,6 +200,17 @@ async def endorse_transaction_response(request: web.BaseRequest):
 
     context: AdminRequestContext = request["context"]
     outbound_handler = request["outbound_message_router"]
+    session = await context.session()
+
+    wallet: BaseWallet = session.inject(BaseWallet, required=False)
+
+    if not wallet:
+        raise web.HTTPForbidden(reason="No wallet available")
+    endorser_did_info = await wallet.get_public_did()
+    if not endorser_did_info:
+        raise web.HTTPForbidden(reason="Public DID not found in wallet")
+    endorser_did = endorser_did_info.did
+    endorser_verkey = endorser_did_info.verkey
 
     transaction_id = request.match_info["tran_id"]
     try:
@@ -210,13 +223,15 @@ async def endorse_transaction_response(request: web.BaseRequest):
 
     if transaction.state == "request" or transaction.state == "resend":
 
-        session = await context.session()
         transaction_mgr = TransactionManager(session, context.profile)
         (
             transaction,
             endorsed_transaction_response,
         ) = await transaction_mgr.create_endorse_response(
-            transaction=transaction, state="endorsed"
+            transaction=transaction,
+            state="endorsed",
+            endorser_did=endorser_did,
+            endorser_verkey=endorser_verkey
         )
 
         await outbound_handler(
@@ -249,6 +264,17 @@ async def refuse_transaction_response(request: web.BaseRequest):
 
     context: AdminRequestContext = request["context"]
     outbound_handler = request["outbound_message_router"]
+    session = await context.session()
+
+    wallet: BaseWallet = session.inject(BaseWallet, required=False)
+
+    if not wallet:
+        raise web.HTTPForbidden(reason="No wallet available")
+    refuser_did_info = await wallet.get_public_did()
+    if not refuser_did_info:
+        raise web.HTTPForbidden(reason="Public DID not found in wallet")
+    refuser_did = refuser_did_info.did
+
 
     transaction_id = request.match_info["tran_id"]
     try:
@@ -261,13 +287,14 @@ async def refuse_transaction_response(request: web.BaseRequest):
 
     if transaction.state == "request" or transaction.state == "resend":
 
-        session = await context.session()
         transaction_mgr = TransactionManager(session, context.profile)
         (
             transaction,
             refused_transaction_response,
         ) = await transaction_mgr.create_refuse_response(
-            transaction=transaction, state="refused"
+            transaction=transaction,
+            state="refused",
+            refuser_did=refuser_did
         )
 
         await outbound_handler(
