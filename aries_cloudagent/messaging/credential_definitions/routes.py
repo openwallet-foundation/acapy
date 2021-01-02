@@ -31,7 +31,6 @@ from .util import CredDefQueryStringSchema, CRED_DEF_TAGS, CRED_DEF_SENT_RECORD_
 
 from ...protocols.endorse_transaction.v1_0.manager import TransactionManager
 from ...wallet.base import BaseWallet
-from ...ledger.base import BaseLedger
 import json
 
 
@@ -283,8 +282,6 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
         else:
             taaDigest = None
 
-
-
         transaction_mgr = TransactionManager(session, context.profile)
 
         transaction = await transaction_mgr.create_record(
@@ -294,7 +291,7 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
             mechanism=mechanism,
             taaDigest=taaDigest,
             time=time,
-            expires_time="1597708800"
+            expires_time="1597708800",
         )
 
         return web.json_response(transaction.serialize())

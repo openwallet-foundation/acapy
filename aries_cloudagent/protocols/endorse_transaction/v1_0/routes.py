@@ -231,7 +231,7 @@ async def endorse_transaction_response(request: web.BaseRequest):
             transaction=transaction,
             state="endorsed",
             endorser_did=endorser_did,
-            endorser_verkey=endorser_verkey
+            endorser_verkey=endorser_verkey,
         )
 
         await outbound_handler(
@@ -275,7 +275,6 @@ async def refuse_transaction_response(request: web.BaseRequest):
         raise web.HTTPForbidden(reason="Public DID not found in wallet")
     refuser_did = refuser_did_info.did
 
-
     transaction_id = request.match_info["tran_id"]
     try:
         async with context.session() as session:
@@ -292,9 +291,7 @@ async def refuse_transaction_response(request: web.BaseRequest):
             transaction,
             refused_transaction_response,
         ) = await transaction_mgr.create_refuse_response(
-            transaction=transaction,
-            state="refused",
-            refuser_did=refuser_did
+            transaction=transaction, state="refused", refuser_did=refuser_did
         )
 
         await outbound_handler(

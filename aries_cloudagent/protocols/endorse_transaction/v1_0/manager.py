@@ -16,12 +16,8 @@ from ....connections.models.conn_record import ConnRecord
 from ....transport.inbound.receipt import MessageReceipt
 from ....storage.error import StorageNotFoundError
 
-from ....ledger.base import BaseLedger
 from ....core.error import BaseError
 from ....core.profile import Profile, ProfileSession
-from ....ledger.error import LedgerError
-
-from ....wallet.base import BaseWallet
 
 
 class TransactionManagerError(BaseError):
@@ -67,13 +63,13 @@ class TransactionManager:
 
     async def create_record(
         self,
-        author_did:str,
-        author_verkey:str,
+        author_did: str,
+        author_verkey: str,
         transaction_message: dict,
-        mechanism:str,
-        taaDigest:str,
-        time:int,
-        expires_time: str,      
+        mechanism: str,
+        taaDigest: str,
+        time: int,
+        expires_time: str,
     ):
         """
         Create a new Transaction Record.
@@ -129,9 +125,7 @@ class TransactionManager:
 
         return transaction
 
-    async def create_request(
-        self, transaction: TransactionRecord, connection_id: str
-    ):
+    async def create_request(self, transaction: TransactionRecord, connection_id: str):
         """
         Create a new Transaction Request.
 
@@ -197,7 +191,7 @@ class TransactionManager:
         transaction: TransactionRecord,
         state: str,
         endorser_did: str,
-        endorser_verkey: str
+        endorser_verkey: str,
     ):
         """
         Create a response to endorse a transaction.
@@ -267,14 +261,11 @@ class TransactionManager:
 
         async with self._profile.session() as session:
             await transaction.save(session, reason="Change it")
-        
+
         return transaction
 
     async def create_refuse_response(
-        self,
-        transaction: TransactionRecord,
-        state: str,
-        refuser_did :str
+        self, transaction: TransactionRecord, state: str, refuser_did: str
     ):
         """
         Create a response to refuse a transaction.
@@ -344,9 +335,7 @@ class TransactionManager:
 
         return transaction
 
-    async def cancel_transaction(
-        self, transaction: TransactionRecord, state: str
-    ):
+    async def cancel_transaction(self, transaction: TransactionRecord, state: str):
         """
         Cancel a Transaction Request.
 
@@ -388,9 +377,7 @@ class TransactionManager:
 
         return transaction
 
-    async def transaction_resend(
-        self, transaction: TransactionRecord, state: str
-    ):
+    async def transaction_resend(self, transaction: TransactionRecord, state: str):
         """
         Resend a transaction request.
 

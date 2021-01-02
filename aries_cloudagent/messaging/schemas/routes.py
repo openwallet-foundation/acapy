@@ -25,7 +25,6 @@ from .util import SchemaQueryStringSchema, SCHEMA_SENT_RECORD_TYPE, SCHEMA_TAGS
 
 from ...protocols.endorse_transaction.v1_0.manager import TransactionManager
 from ...wallet.base import BaseWallet
-from ...ledger.base import BaseLedger
 import json
 
 
@@ -207,8 +206,6 @@ async def schemas_send_schema(request: web.BaseRequest):
         else:
             taaDigest = None
 
-
-
         transaction_mgr = TransactionManager(session, context.profile)
 
         transaction = await transaction_mgr.create_record(
@@ -218,7 +215,7 @@ async def schemas_send_schema(request: web.BaseRequest):
             mechanism=mechanism,
             taaDigest=taaDigest,
             time=time,
-            expires_time="1597708800"
+            expires_time="1597708800",
         )
 
         return web.json_response(transaction.serialize())
