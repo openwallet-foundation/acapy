@@ -30,6 +30,7 @@ from .manager import DIDXManager, DIDXManagerError
 from .message_types import SPEC_URI
 
 
+'''
 class DIDXReceiveInvitationRequestSchema(OOBInvitationSchema):
     """Request schema for receive invitation request."""
 
@@ -49,7 +50,6 @@ class DIDXReceiveInvitationQueryStringSchema(OpenAPISchema):
         required=False,
     )
 
-
 class DIDXAcceptInvitationQueryStringSchema(OpenAPISchema):
     """Parameters and validators for accept invitation request query string."""
 
@@ -57,6 +57,7 @@ class DIDXAcceptInvitationQueryStringSchema(OpenAPISchema):
     my_label = fields.Str(
         description="Label for connection", required=False, example="Broker"
     )
+'''
 
 
 class DIDXAcceptRequestQueryStringSchema(OpenAPISchema):

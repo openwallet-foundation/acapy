@@ -10,6 +10,7 @@ from marshmallow.exceptions import ValidationError
 
 from ....admin.request_context import AdminRequestContext
 from ....messaging.models.openapi import OpenAPISchema
+from ....messaging.valid import ENDPOINT
 from ....storage.error import StorageNotFoundError
 
 from .manager import OutOfBandManager, OutOfBandManagerError
@@ -22,6 +23,18 @@ LOGGER = logging.getLogger(__name__)
 class OutOfBandModuleResponseSchema(OpenAPISchema):
     """Response schema for Out of Band Module."""
 
+
+class InvitationCreateQueryStringSchema(OpenAPISchema):
+    """Parameters and validators for create invitation request query string."""
+
+    auto_accept = fields.Boolean(
+        description="Auto-accept connection (default as per configuration)",
+        required=False,
+    )
+    multi_use = fields.Boolean(
+        description="Create invitation for multiple use (default false)",
+        required=False,
+    )
 
 class InvitationCreateRequestSchema(OpenAPISchema):
     """Invitation create request Schema."""
@@ -48,16 +61,26 @@ class InvitationReceiveRequestSchema(InvitationMessageSchema):
     service = fields.Field()
 
 
-class InvitationCreateQueryStringSchema(OpenAPISchema):
-    """Parameters and validators for create invitation request query string."""
+class InvitationReceiveQueryStringSchema(OpenAPISchema):
+    """Parameters and validators for receive invitation request query string."""
 
+    alias = fields.Str(
+        description="Alias",
+        required=False,
+        example="Barry",
+    )
     auto_accept = fields.Boolean(
-        description="Auto-accept connection (default as per configuration)",
+        description="Auto-accept connection (defaults to configuration)",
         required=False,
     )
-    multi_use = fields.Boolean(
-        description="Create invitation for multiple use (default false)",
-        required=False,
+
+
+class InvitationAcceptQueryStringSchema(OpenAPISchema):
+    """Parameters and validators for accept invitation request query string."""
+
+    my_endpoint = fields.Str(description="My URL endpoint", required=False, **ENDPOINT)
+    my_label = fields.Str(
+        description="Label for connection", required=False, example="Broker"
     )
 
 
@@ -110,6 +133,7 @@ async def invitation_create(request: web.BaseRequest):
     tags=["out-of-band"],
     summary="Receive a new connection invitation",
 )
+@querystring_schema(ReceiveInvitationQueryStringSchema())
 @request_schema(InvitationReceiveRequestSchema())
 @response_schema(OutOfBandModuleResponseSchema(), 200, description="")
 async def invitation_receive(request: web.BaseRequest):
@@ -134,12 +158,31 @@ async def invitation_receive(request: web.BaseRequest):
     return web.json_response(invitation.serialize())
 
 
+# TODO
+@docs(
+    tags=["out-of-band"],
+    summary="Accept a new connection invitation",
+)
+async def invitation_accept(self):
+    """
+    Request handler for accepting a stored connection invitation.
+
+    Args:
+        request: aiohttp request object
+
+    Returns:
+        The resulting connection record details
+
+    """
+    pass
+
 async def register(app: web.Application):
     """Register routes."""
     app.add_routes(
         [
             web.post("/out-of-band/create-invitation", invitation_create),
             web.post("/out-of-band/receive-invitation", invitation_receive),
+            web.post("/out-of-band/accept-invitation", invitation_accept),
         ]
     )
 
