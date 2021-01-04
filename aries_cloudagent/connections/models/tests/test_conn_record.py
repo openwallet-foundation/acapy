@@ -245,6 +245,15 @@ class TestConnRecord(AsyncTestCase):
         retrieved = await record.retrieve_request(self.session)
         assert isinstance(retrieved, ConnectionRequest)
 
+    async def test_ser_rfc23_state_present(self):
+        record = ConnRecord(
+            state=ConnRecord.State.INVITATION,
+            my_did=self.test_did,
+            their_role=ConnRecord.Role.REQUESTER,
+        )
+        ser = record.serialize()
+        assert ser["rfc23_state"] == f"{ConnRecord.State.INVITATION.value[1]}-sent"
+
     async def test_deser_old_style_record(self):
         record = ConnRecord(
             state=ConnRecord.State.INIT,
