@@ -13,7 +13,7 @@ from .....messaging.responder import BaseResponder, MockResponder
 from .....protocols.routing.v1_0.manager import RoutingManager
 from .....storage.error import StorageNotFoundError
 from .....transport.inbound.receipt import MessageReceipt
-from .....wallet.base import DIDInfo, BaseWallet
+from .....wallet.base import DIDInfo, KeyInfo
 from .....wallet.error import WalletNotFoundError
 from .....wallet.in_memory import InMemoryWallet
 from .....wallet.util import naked_to_did_key
@@ -22,6 +22,7 @@ from ....coordinate_mediation.v1_0.messages.keylist_update import KeylistUpdate
 from ....coordinate_mediation.v1_0.messages.inner.keylist_update_rule import (
     KeylistUpdateRule,
 )
+from .....multitenant.manager import MultitenantManager
 from ..manager import ConnectionManager, ConnectionManagerError
 from ..messages.connection_invitation import ConnectionInvitation
 from ..messages.connection_request import ConnectionRequest
@@ -69,6 +70,11 @@ class TestConnectionManager(AsyncTestCase):
             bind={BaseResponder: self.responder, BaseCache: InMemoryCache()},
         )
         self.context = self.session.context
+
+        self.multitenant_mgr = async_mock.MagicMock(MultitenantManager, autospec=True)
+        self.session.context.injector.bind_instance(
+            MultitenantManager, self.multitenant_mgr
+        )
 
         self.test_mediator_routing_keys = [
             "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRR"
@@ -134,6 +140,22 @@ class TestConnectionManager(AsyncTestCase):
 
             assert connect_record is None
             assert connect_invite.did.endswith(self.test_did)
+
+    async def test_create_invitation_multitenant(self):
+        self.context.update_settings(
+            {"wallet.id": "test_wallet", "multitenant.enabled": True}
+        )
+
+        with async_mock.patch.object(
+            InMemoryWallet, "create_signing_key", autospec=True
+        ) as mock_wallet_create_signing_key:
+            mock_wallet_create_signing_key.return_value = KeyInfo(
+                self.test_verkey, None
+            )
+            await self.manager.create_invitation()
+            self.multitenant_mgr.add_wallet_route.assert_called_once_with(
+                "test_wallet", self.test_verkey
+            )
 
     async def test_create_invitation_public_no_public_invites(self):
         self.context.update_settings({"public_invites": False})
@@ -566,6 +588,29 @@ class TestConnectionManager(AsyncTestCase):
         )
         assert conn_req
 
+    async def test_create_request_multitenant(self):
+        self.context.update_settings(
+            {"wallet.id": "test_wallet", "multitenant.enabled": True}
+        )
+
+        with async_mock.patch.object(
+            InMemoryWallet, "create_local_did", autospec=True
+        ) as mock_wallet_create_local_did:
+            mock_wallet_create_local_did.return_value = DIDInfo(
+                self.test_did, self.test_verkey, None
+            )
+            await self.manager.create_request(
+                ConnRecord(
+                    invitation_key=self.test_verkey,
+                    their_label="Hello",
+                    their_role=ConnRecord.Role.RESPONDER.rfc160,
+                    alias="Bob",
+                )
+            )
+            self.multitenant_mgr.add_wallet_route.assert_called_once_with(
+                "test_wallet", self.test_verkey
+            )
+
     async def test_create_request_mediation_id(self):
         mediation_record = MediationRecord(
             role=MediationRecord.ROLE_CLIENT,
@@ -675,6 +720,86 @@ class TestConnectionManager(AsyncTestCase):
         (result, target) = messages[0]
         assert type(result) == ConnectionResponse
         assert "connection_id" in target
+
+    async def test_receive_request_multi_use_multitenant(self):
+        multiuse_info = await self.session.wallet.create_local_did()
+        new_info = await self.session.wallet.create_local_did()
+
+        mock_request = async_mock.MagicMock()
+        mock_request.connection = async_mock.MagicMock(
+            is_multiuse_invitation=True, invitation_key=multiuse_info.verkey
+        )
+        mock_request.connection.did = self.test_did
+        mock_request.connection.did_doc = async_mock.MagicMock()
+        mock_request.connection.did_doc.did = self.test_did
+        receipt = MessageReceipt(recipient_verkey=multiuse_info.verkey)
+
+        self.context.update_settings(
+            {"wallet.id": "test_wallet", "multitenant.enabled": True}
+        )
+        with async_mock.patch.object(
+            ConnRecord, "attach_request", autospec=True
+        ), async_mock.patch.object(
+            ConnRecord, "save", autospec=True
+        ), async_mock.patch.object(
+            ConnRecord, "retrieve_by_invitation_key"
+        ) as mock_conn_retrieve_by_invitation_key, async_mock.patch.object(
+            InMemoryWallet, "create_local_did", autospec=True
+        ) as mock_wallet_create_local_did:
+            mock_wallet_create_local_did.return_value = DIDInfo(
+                new_info.did, new_info.verkey, None
+            )
+            mock_conn_retrieve_by_invitation_key.return_value = async_mock.MagicMock(
+                connection_id="dummy",
+                retrieve_invitation=async_mock.CoroutineMock(return_value={}),
+            )
+            await self.manager.receive_request(mock_request, receipt)
+
+            self.multitenant_mgr.add_wallet_route.assert_called_once_with(
+                "test_wallet", new_info.verkey
+            )
+
+    async def test_receive_request_public_multitenant(self):
+        new_info = await self.session.wallet.create_local_did()
+
+        mock_request = async_mock.MagicMock()
+        mock_request.connection = async_mock.MagicMock(accept=ConnRecord.ACCEPT_MANUAL)
+        mock_request.connection.did = self.test_did
+        mock_request.connection.did_doc = async_mock.MagicMock()
+        mock_request.connection.did_doc.did = self.test_did
+        receipt = MessageReceipt(recipient_did_public=True)
+
+        self.context.update_settings(
+            {
+                "wallet.id": "test_wallet",
+                "multitenant.enabled": True,
+                "public_invites": True,
+                "debug.auto_accept_requests": False,
+            }
+        )
+
+        with async_mock.patch.object(
+            ConnRecord, "retrieve_request", autospec=True
+        ), async_mock.patch.object(
+            ConnRecord, "attach_request", autospec=True
+        ), async_mock.patch.object(
+            ConnRecord, "save", autospec=True
+        ), async_mock.patch.object(
+            InMemoryWallet, "create_local_did", autospec=True
+        ) as mock_wallet_create_local_did, async_mock.patch.object(
+            InMemoryWallet, "get_local_did", autospec=True
+        ) as mock_wallet_get_local_did:
+            mock_wallet_create_local_did.return_value = DIDInfo(
+                new_info.did, new_info.verkey, None
+            )
+            mock_wallet_get_local_did.return_value = DIDInfo(
+                self.test_did, self.test_verkey, None
+            )
+            await self.manager.receive_request(mock_request, receipt)
+
+            self.multitenant_mgr.add_wallet_route.assert_called_once_with(
+                "test_wallet", new_info.verkey
+            )
 
     async def test_receive_request_public_did_no_did_doc(self):
         mock_request = async_mock.MagicMock()
@@ -910,6 +1035,30 @@ class TestConnectionManager(AsyncTestCase):
             ConnectionResponse, "sign_field", autospec=True
         ) as mock_sign:
             await self.manager.create_response(conn_rec, "http://10.20.30.40:5060/")
+
+    async def test_create_response_multitenant(self):
+        self.context.update_settings(
+            {"wallet.id": "test_wallet", "multitenant.enabled": True}
+        )
+
+        with async_mock.patch.object(
+            ConnectionResponse, "sign_field", autospec=True
+        ), async_mock.patch.object(
+            ConnRecord, "retrieve_request", autospec=True
+        ), async_mock.patch.object(
+            InMemoryWallet, "create_local_did", autospec=True
+        ) as mock_wallet_create_local_did:
+            mock_wallet_create_local_did.return_value = DIDInfo(
+                self.test_did, self.test_verkey, None
+            )
+            await self.manager.create_response(
+                ConnRecord(
+                    state=ConnRecord.State.REQUEST,
+                )
+            )
+            self.multitenant_mgr.add_wallet_route.assert_called_once_with(
+                "test_wallet", self.test_verkey
+            )
 
     async def test_create_response_bad_state(self):
         with self.assertRaises(ConnectionManagerError):

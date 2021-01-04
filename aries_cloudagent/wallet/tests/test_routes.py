@@ -6,6 +6,7 @@ from aiohttp.web import HTTPForbidden
 from ...admin.request_context import AdminRequestContext
 from ...ledger.base import BaseLedger
 from ...wallet.base import BaseWallet, DIDInfo
+from ...multitenant.manager import MultitenantManager
 
 from .. import routes as test_module
 from ..did_posture import DIDPosture
@@ -94,6 +95,25 @@ class TestWalletRoutes(AsyncTestCase):
                 }
             )
             assert result is json_response.return_value
+
+    async def test_create_did_multitenant(self):
+        multitenant_mgr = async_mock.MagicMock(MultitenantManager, autospec=True)
+        self.session_inject[MultitenantManager] = multitenant_mgr
+        self.context.update_settings(
+            {"multitenant.enabled": True, "wallet.id": "test_wallet"}
+        )
+
+        with async_mock.patch.object(
+            test_module.web, "json_response", async_mock.Mock()
+        ) as json_response:
+            self.wallet.create_local_did.return_value = DIDInfo(
+                self.test_did, self.test_verkey, DIDPosture.WALLET_ONLY.metadata
+            )
+            await test_module.wallet_create_did(self.request)
+
+            multitenant_mgr.add_wallet_route.assert_called_once_with(
+                "test_wallet", self.test_verkey
+            )
 
     async def test_create_did_x(self):
         self.wallet.create_local_did.side_effect = test_module.WalletError()
