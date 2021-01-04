@@ -654,6 +654,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             mock_conn_retrieve_by_invitation_key.return_value = async_mock.MagicMock(
                 connection_id="dummy",
                 retrieve_invitation=async_mock.CoroutineMock(return_value={}),
+                metadata_get_all=async_mock.CoroutineMock(return_value={}),
             )
             mock_inv_retrieve_by_tag_filter.return_value = async_mock.MagicMock(
                 auto_accept=False
