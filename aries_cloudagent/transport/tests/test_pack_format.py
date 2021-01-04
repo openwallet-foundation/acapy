@@ -148,6 +148,9 @@ class TestPackWireFormat(AsyncTestCase):
         packed = json.loads(packed_json)
 
         assert isinstance(packed, dict) and "protected" in packed
+        assert serializer.get_recipient_keys(packed_json) == list(recipient_keys)
+        with self.assertRaises(test_module.RecipientKeysError):
+            serializer.get_recipient_keys(message_json)
 
         message_dict, delivery = await serializer.parse_message(
             self.session, packed_json
