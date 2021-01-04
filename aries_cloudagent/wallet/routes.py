@@ -24,6 +24,7 @@ from ..messaging.valid import (
     INDY_DID,
     INDY_RAW_PUBLIC_KEY,
 )
+from ..multitenant.manager import MultitenantManager
 
 from .base import DIDInfo, BaseWallet
 from .did_posture import DIDPosture
@@ -237,6 +238,13 @@ async def wallet_create_did(request: web.BaseRequest):
         raise web.HTTPForbidden(reason="No wallet available")
     try:
         info = await wallet.create_local_did()
+
+        # Relay for multitenancy should know which wallet to route this key to
+        multitenant_mgr = session.inject(MultitenantManager, required=False)
+        wallet_id = session.settings.get("wallet.id")
+        if multitenant_mgr and wallet_id:
+            await multitenant_mgr.add_wallet_route(wallet_id, info.verkey)
+
     except WalletError as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
