@@ -114,11 +114,15 @@ class ConnRecord(BaseRecord):
 
             if self is ConnRecord.State.REQUEST:
                 return self.value[1] + (
-                    "-sent" if their_role is ConnRecord.Role.RESPONDER else "-received"
+                    "-sent"
+                    if ConnRecord.Role.get(their_role) is ConnRecord.Role.RESPONDER
+                    else "-received"
                 )
             else:
                 return self.value[1] + (
-                    "-received" if their_role is ConnRecord.Role.RESPONDER else "-sent"
+                    "-received"
+                    if ConnRecord.Role.get(their_role) is ConnRecord.Role.RESPONDER
+                    else "-sent"
                 )
 
         @classmethod
