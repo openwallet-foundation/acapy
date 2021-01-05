@@ -1303,6 +1303,31 @@ class TestConnectionManager(AsyncTestCase):
 
             assert ConnRecord.State.get(conn_rec.state) is ConnRecord.State.COMPLETED
 
+    async def test_create_static_connection_multitenant(self):
+        self.context.update_settings(
+            {"wallet.id": "test_wallet", "multitenant.enabled": True}
+        )
+
+        with async_mock.patch.object(
+            ConnRecord, "save", autospec=True
+        ), async_mock.patch.object(
+            InMemoryWallet, "create_local_did", autospec=True
+        ) as mock_wallet_create_local_did:
+            mock_wallet_create_local_did.return_value = DIDInfo(
+                self.test_did, self.test_verkey, None
+            )
+
+            await self.manager.create_static_connection(
+                my_did=self.test_did,
+                their_did=self.test_target_did,
+                their_verkey=self.test_target_verkey,
+                their_endpoint=self.test_endpoint,
+            )
+
+            self.multitenant_mgr.add_wallet_route.assert_called_once_with(
+                "test_wallet", self.test_verkey
+            )
+
     async def test_create_static_connection_no_their(self):
         with async_mock.patch.object(
             ConnRecord, "save", autospec=True
