@@ -15,6 +15,7 @@ from .....connections.models.diddoc import (
 from .....core.in_memory import InMemoryProfile
 from .....messaging.responder import BaseResponder, MockResponder
 from .....messaging.decorators.attach_decorator import AttachDecorator
+from .....multitenant.manager import MultitenantManager
 from .....storage.error import StorageNotFoundError
 from .....transport.inbound.receipt import MessageReceipt
 from .....wallet.base import DIDInfo
@@ -68,6 +69,8 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 "additional_endpoints": ["http://aries.ca/another-endpoint"],
                 "debug.auto_accept_invites": True,
                 "debug.auto_accept_requests": True,
+                "multitenant.enabled": True,
+                "wallet.id": True,
             },
             bind={BaseResponder: self.responder, BaseCache: InMemoryCache()},
         )
@@ -78,6 +81,10 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
         self.manager = DIDXManager(self.session)
         assert self.manager.session
         self.oob_manager = OutOfBandManager(self.session)
+
+        self.mt_mgr = async_mock.MagicMock()
+        self.mt_mgr = async_mock.create_autospec(MultitenantManager)
+        self.session.context.injector.bind_instance(MultitenantManager, self.mt_mgr)
 
     async def test_verify_diddoc(self):
         did_doc = self.make_did_doc(
