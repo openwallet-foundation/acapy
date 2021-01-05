@@ -224,7 +224,7 @@ async def input_invitation(agent):
     with log_timer("Connect duration:"):
         if "/out-of-band/" in details.get("@type", ""):
             connection = await agent.admin_POST(
-                "/didexchange/receive-invitation", details
+                "/out-of-band/receive-invitation", details
             )
         else:
             connection = await agent.admin_POST(

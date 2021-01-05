@@ -1,4 +1,4 @@
-"""Connection handling admin routes."""
+"""Out-of-band handling admin routes."""
 
 import json
 import logging
@@ -9,12 +9,15 @@ from marshmallow import fields
 from marshmallow.exceptions import ValidationError
 
 from ....admin.request_context import AdminRequestContext
+from ....connections.models.conn_record import ConnRecordSchema
+from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
-from ....messaging.valid import ENDPOINT
-from ....storage.error import StorageNotFoundError
+from ....storage.error import StorageError, StorageNotFoundError
+
+from ...didexchange.v1_0.manager import DIDXManagerError
 
 from .manager import OutOfBandManager, OutOfBandManagerError
-from .messages.invitation import InvitationMessageSchema
+from .messages.invitation import InvitationMessage, InvitationMessageSchema
 from .message_types import SPEC_URI
 
 LOGGER = logging.getLogger(__name__)
@@ -36,6 +39,7 @@ class InvitationCreateQueryStringSchema(OpenAPISchema):
         required=False,
     )
 
+
 class InvitationCreateRequestSchema(OpenAPISchema):
     """Invitation create request Schema."""
 
@@ -55,12 +59,6 @@ class InvitationCreateRequestSchema(OpenAPISchema):
     )
 
 
-class InvitationReceiveRequestSchema(InvitationMessageSchema):
-    """Invitation request schema."""
-
-    service = fields.Field()
-
-
 class InvitationReceiveQueryStringSchema(OpenAPISchema):
     """Parameters and validators for receive invitation request query string."""
 
@@ -75,13 +73,10 @@ class InvitationReceiveQueryStringSchema(OpenAPISchema):
     )
 
 
-class InvitationAcceptQueryStringSchema(OpenAPISchema):
-    """Parameters and validators for accept invitation request query string."""
+class InvitationReceiveRequestSchema(InvitationMessageSchema):
+    """Invitation request schema."""
 
-    my_endpoint = fields.Str(description="My URL endpoint", required=False, **ENDPOINT)
-    my_label = fields.Str(
-        description="Label for connection", required=False, example="Broker"
-    )
+    service = fields.Field()
 
 
 @docs(
@@ -133,9 +128,9 @@ async def invitation_create(request: web.BaseRequest):
     tags=["out-of-band"],
     summary="Receive a new connection invitation",
 )
-@querystring_schema(ReceiveInvitationQueryStringSchema())
+@querystring_schema(InvitationReceiveQueryStringSchema())
 @request_schema(InvitationReceiveRequestSchema())
-@response_schema(OutOfBandModuleResponseSchema(), 200, description="")
+@response_schema(ConnRecordSchema(), 200, description="")
 async def invitation_receive(request: web.BaseRequest):
     """
     Request handler for receiving a new connection invitation.
@@ -147,34 +142,33 @@ async def invitation_receive(request: web.BaseRequest):
         The out of band invitation details
 
     """
+
     context: AdminRequestContext = request["context"]
-    body = await request.json()
+    if context.settings.get("admin.no_receive_invites"):
+        raise web.HTTPForbidden(
+            reason="Configuration does not allow receipt of invitations"
+        )
 
     session = await context.session()
     oob_mgr = OutOfBandManager(session)
 
-    invitation = await oob_mgr.receive_invitation(invi_msg=body)
+    body = await request.json()
+    auto_accept = json.loads(request.query.get("auto_accept", "null"))
+    alias = request.query.get("alias")
 
-    return web.json_response(invitation.serialize())
+    try:
+        invitation = InvitationMessage.deserialize(body)
+        conn_rec = await oob_mgr.receive_invitation(
+            invitation,
+            auto_accept=auto_accept,
+            alias=alias,
+        )
+        result = conn_rec.serialize()
+    except (DIDXManagerError, StorageError, BaseModelError) as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
 
+    return web.json_response(result)
 
-# TODO
-@docs(
-    tags=["out-of-band"],
-    summary="Accept a new connection invitation",
-)
-async def invitation_accept(self):
-    """
-    Request handler for accepting a stored connection invitation.
-
-    Args:
-        request: aiohttp request object
-
-    Returns:
-        The resulting connection record details
-
-    """
-    pass
 
 async def register(app: web.Application):
     """Register routes."""
@@ -182,7 +176,6 @@ async def register(app: web.Application):
         [
             web.post("/out-of-band/create-invitation", invitation_create),
             web.post("/out-of-band/receive-invitation", invitation_receive),
-            web.post("/out-of-band/accept-invitation", invitation_accept),
         ]
     )
 
