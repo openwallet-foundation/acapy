@@ -84,6 +84,8 @@ class TestOutOfBandRoutes(AsyncTestCase):
         with async_mock.patch.object(
             test_module, "OutOfBandManager", autospec=True
         ) as mock_oob_mgr, async_mock.patch.object(
+            test_module.InvitationMessage, "deserialize", async_mock.Mock()
+        ) as mock_invi_deser, async_mock.patch.object(
             test_module.web, "json_response", async_mock.Mock()
         ) as mock_json_response:
             mock_oob_mgr.return_value.receive_invitation = async_mock.CoroutineMock(
@@ -94,6 +96,28 @@ class TestOutOfBandRoutes(AsyncTestCase):
 
             result = await test_module.invitation_receive(self.request)
             mock_json_response.assert_called_once_with({"abc": "123"})
+
+    async def test_invitation_receive_forbidden_x(self):
+        self.context.update_settings({"admin.no_receive_invites": True})
+        with self.assertRaises(test_module.web.HTTPForbidden):
+            await test_module.invitation_receive(self.request)
+
+    async def test_invitation_receive_x(self):
+        self.request.json = async_mock.CoroutineMock()
+
+        with async_mock.patch.object(
+            test_module, "OutOfBandManager", autospec=True
+        ) as mock_oob_mgr, async_mock.patch.object(
+            test_module.InvitationMessage, "deserialize", async_mock.Mock()
+        ) as mock_invi_deser, async_mock.patch.object(
+            test_module.web, "json_response", async_mock.Mock()
+        ) as mock_json_response:
+            mock_oob_mgr.return_value.receive_invitation = async_mock.CoroutineMock(
+                side_effect=test_module.StorageError("cannot write")
+            )
+
+            with self.assertRaises(test_module.web.HTTPBadRequest):
+                await test_module.invitation_receive(self.request)
 
     async def test_register(self):
         mock_app = async_mock.MagicMock()

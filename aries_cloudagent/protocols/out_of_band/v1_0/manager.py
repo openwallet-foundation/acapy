@@ -238,7 +238,12 @@ class OutOfBandManager:
         await invi_rec.save(self._session, reason="Created new invitation")
         return invi_rec
 
-    async def receive_invitation(self, invi_msg: InvitationMessage) -> ConnRecord:
+    async def receive_invitation(
+        self,
+        invi_msg: InvitationMessage,
+        auto_accept: bool = None,
+        alias: str = None,
+    ) -> ConnRecord:
         """Receive an out of band invitation message."""
 
         ledger: BaseLedger = self._session.inject(BaseLedger)
@@ -286,7 +291,10 @@ class OutOfBandManager:
             ] or []
 
             didx_mgr = DIDXManager(self._session)
-            conn_rec = await didx_mgr.receive_invitation(invi_msg, auto_accept=True)
+            conn_rec = await didx_mgr.receive_invitation(
+                invi_msg,
+                auto_accept=auto_accept,
+            )
 
         elif (
             len(invi_msg.request_attach) == 1
