@@ -73,7 +73,7 @@ class DIDXManager:
         invitation: OOBInvitationMessage,
         auto_accept: bool = None,
         alias: str = None,
-    ) -> ConnRecord:
+    ) -> ConnRecord:  # leave in didexchange as it uses a responder: not out-of-band
         """
         Create a new connection record to track a received invitation.
 

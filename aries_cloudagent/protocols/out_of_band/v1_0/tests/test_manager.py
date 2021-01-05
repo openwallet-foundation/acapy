@@ -7,6 +7,7 @@ from .....connections.models.diddoc import DIDDoc, PublicKey, PublicKeyType, Ser
 from .....core.in_memory import InMemoryProfile
 from .....ledger.base import BaseLedger
 from .....messaging.responder import BaseResponder, MockResponder
+from .....multitenant.manager import MultitenantManager
 from .....protocols.didexchange.v1_0.manager import DIDXManager
 from .....protocols.present_proof.v1_0.message_types import PRESENTATION_REQUEST
 from .....wallet.base import DIDInfo
@@ -63,6 +64,9 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             }
         )
         self.session.context.injector.bind_instance(BaseResponder, self.responder)
+        self.mt_mgr = async_mock.MagicMock()
+        self.mt_mgr = async_mock.create_autospec(MultitenantManager)
+        self.session.context.injector.bind_instance(MultitenantManager, self.mt_mgr)
 
         self.ledger = async_mock.create_autospec(BaseLedger)
         self.ledger.__aenter__ = async_mock.CoroutineMock(return_value=self.ledger)
@@ -80,6 +84,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
 
     async def test_create_invitation_handshake_succeeds(self):
         self.manager.session.context.update_settings({"public_invites": True})
+
         with async_mock.patch.object(
             InMemoryWallet, "get_public_did", autospec=True
         ) as mock_wallet_get_public_did:
@@ -227,6 +232,13 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             assert "Unknown attachment type" in str(context.exception)
 
     async def test_create_invitation_peer_did(self):
+        self.manager.session.context.update_settings(
+            {
+                "multitenant.enabled": True,
+                "wallet.id": "my-wallet",
+            }
+        )
+
         invi_rec = await self.manager.create_invitation(
             my_label="That guy",
             my_endpoint=None,

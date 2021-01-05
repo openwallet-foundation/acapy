@@ -26,6 +26,7 @@ class TestHttpTransport(AioHTTPTestCase):
             "0.0.0.0", self.port, self.create_session, max_message_size=65535
         )
         self.transport.wire_format = JsonWireFormat()
+        assert not self.transport.wire_format.get_recipient_keys(None)  # cover method
         self.result_event = None
         self.response_message = None
         super().setUp()

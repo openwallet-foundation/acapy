@@ -33,6 +33,7 @@ class TestConnRecord(AsyncTestCase):
         )
         assert self.test_conn_record.their_role == ConnRecord.Role.REQUESTER.rfc160
         assert self.test_conn_record.state == ConnRecord.State.COMPLETED.rfc160
+        assert self.test_conn_record.rfc23_state == ConnRecord.State.COMPLETED.rfc23
 
     async def test_get_enums(self):
         assert ConnRecord.Role.get("Larry") is None
@@ -53,6 +54,33 @@ class TestConnRecord(AsyncTestCase):
         assert ConnRecord.Role.REQUESTER == ConnRecord.Role.REQUESTER.rfc160  # check ==
         assert ConnRecord.Role.REQUESTER == ConnRecord.Role.REQUESTER.rfc23
         assert ConnRecord.Role.REQUESTER != ConnRecord.Role.RESPONDER.rfc23
+
+    async def test_state_rfc23strict(self):
+        for state in (
+            ConnRecord.State.INIT,
+            ConnRecord.State.ABANDONED,
+            ConnRecord.State.COMPLETED,
+        ):
+            assert state.rfc23strict(their_role=None) == state.value[1]
+
+        for state in (ConnRecord.State.INVITATION, ConnRecord.State.RESPONSE):
+            assert (
+                state.rfc23strict(their_role=ConnRecord.Role.REQUESTER)
+                == f"{state.value[1]}-sent"
+            )
+            assert (
+                state.rfc23strict(their_role=ConnRecord.Role.RESPONDER)
+                == f"{state.value[1]}-received"
+            )
+
+        assert (
+            ConnRecord.State.REQUEST.rfc23strict(their_role=ConnRecord.Role.REQUESTER)
+            == f"{ConnRecord.State.REQUEST.value[1]}-received"
+        )
+        assert (
+            ConnRecord.State.REQUEST.rfc23strict(their_role=ConnRecord.Role.RESPONDER)
+            == f"{ConnRecord.State.REQUEST.value[1]}-sent"
+        )
 
     async def test_save_retrieve_compare(self):
         record = ConnRecord(my_did=self.test_did)
@@ -216,6 +244,15 @@ class TestConnRecord(AsyncTestCase):
         await record.attach_request(self.session, req)
         retrieved = await record.retrieve_request(self.session)
         assert isinstance(retrieved, ConnectionRequest)
+
+    async def test_ser_rfc23_state_present(self):
+        record = ConnRecord(
+            state=ConnRecord.State.INVITATION,
+            my_did=self.test_did,
+            their_role=ConnRecord.Role.REQUESTER,
+        )
+        ser = record.serialize()
+        assert ser["rfc23_state"] == f"{ConnRecord.State.INVITATION.value[1]}-sent"
 
     async def test_deser_old_style_record(self):
         record = ConnRecord(
