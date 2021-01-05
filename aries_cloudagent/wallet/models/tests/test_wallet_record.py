@@ -3,7 +3,7 @@ from asynctest import TestCase as AsyncTestCase
 from ..wallet_record import WalletRecord
 
 
-class TestConnRecord(AsyncTestCase):
+class TestWalletRecord(AsyncTestCase):
     async def test_requires_external_key_in_memory(self):
         wallet_record = WalletRecord(
             settings={"wallet.type": "in_memory"},

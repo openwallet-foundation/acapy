@@ -14,7 +14,7 @@ from ....storage.error import StorageError, StorageNotFoundError
 from .. import routes as test_module
 
 
-class TestConnectionRoutes(AsyncTestCase):
+class TestMultitenantRoutes(AsyncTestCase):
     async def setUp(self):
         mock_multitenant_mgr = async_mock.MagicMock(
             __aexit__=async_mock.CoroutineMock(), autospec=True
