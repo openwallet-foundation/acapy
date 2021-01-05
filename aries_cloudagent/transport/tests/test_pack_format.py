@@ -1,4 +1,5 @@
 import json
+from base64 import b64encode
 
 from asynctest import TestCase as AsyncTestCase, mock as async_mock
 
@@ -8,7 +9,7 @@ from ...protocols.didcomm_prefix import DIDCommPrefix
 from ...wallet.base import BaseWallet
 from ...wallet.error import WalletError
 
-from ..error import MessageEncodeError, MessageParseError
+from ..error import MessageEncodeError, MessageParseError, RecipientKeysError
 from ..pack_format import PackWireFormat
 from .. import pack_format as test_module
 
@@ -188,3 +189,26 @@ class TestPackWireFormat(AsyncTestCase):
         assert message_dict["@type"] == DIDCommPrefix.qualify_current(FORWARD)
         assert delivery.recipient_verkey == router_did.verkey
         assert delivery.sender_verkey is None
+
+    async def test_get_recipient_keys(self):
+        recip_keys = ["kid1", "kid2", "kid3"]
+        enc_message = {
+            "protected": b64encode(
+                json.dumps(
+                    {"recipients": [{"header": {"kid": k}} for k in recip_keys]}
+                ).encode("utf-8")
+            ).decode()
+        }
+
+        serializer = PackWireFormat()
+        actual_recip_keys = serializer.get_recipient_keys(json.dumps(enc_message))
+
+        self.assertEqual(recip_keys, actual_recip_keys)
+
+    async def test_get_recipient_keys_fails(self):
+        enc_message = {"protected": {}}
+
+        serializer = PackWireFormat()
+
+        with self.assertRaises(RecipientKeysError):
+            serializer.get_recipient_keys(json.dumps(enc_message))
