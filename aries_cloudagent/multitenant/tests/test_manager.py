@@ -316,6 +316,34 @@ class TestMultitenantManager(AsyncTestCase):
                 recipient_key="recipient_key", internal_wallet_id="wallet_id"
             )
 
+    async def test_add_wallet_route_skip_if_exists_does_not_exist(self):
+        with async_mock.patch.object(
+            RoutingManager, "create_route_record"
+        ) as create_route_record, async_mock.patch.object(
+            RouteRecord, "retrieve_by_recipient_key"
+        ) as retrieve_by_recipient_key:
+            retrieve_by_recipient_key.side_effect = StorageNotFoundError()
+
+            await self.manager.add_wallet_route(
+                "wallet_id", "recipient_key", skip_if_exists=True
+            )
+
+            create_route_record.assert_called_once_with(
+                recipient_key="recipient_key", internal_wallet_id="wallet_id"
+            )
+
+    async def test_add_wallet_route_skip_if_exists_does_exist(self):
+        with async_mock.patch.object(
+            RoutingManager, "create_route_record"
+        ) as create_route_record, async_mock.patch.object(
+            RouteRecord, "retrieve_by_recipient_key"
+        ) as retrieve_by_recipient_key:
+            await self.manager.add_wallet_route(
+                "wallet_id", "recipient_key", skip_if_exists=True
+            )
+
+            create_route_record.assert_not_called()
+
     async def test_create_auth_token_fails_no_wallet_key_but_required(self):
         self.profile.settings["multitenant.jwt_secret"] = "very_secret_jwt"
         wallet_record = WalletRecord(

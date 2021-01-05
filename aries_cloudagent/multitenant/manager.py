@@ -16,6 +16,7 @@ from ..protocols.routing.v1_0.manager import RouteNotFoundError, RoutingManager
 from ..protocols.routing.v1_0.models.route_record import RouteRecord
 from ..transport.wire_format import BaseWireFormat
 from ..storage.base import BaseStorage
+from ..storage.error import StorageNotFoundError
 
 from .error import WalletKeyMissingError
 
@@ -228,8 +229,8 @@ class MultitenantManager:
             await wallet.delete_record(session)
 
     async def add_wallet_route(
-        self, wallet_id: str, recipient_key: str
-    ) -> List[WalletRecord]:
+        self, wallet_id: str, recipient_key: str, *, skip_if_exists: bool = False
+    ):
         """
         Add a wallet route to map incoming messages to specific subwallets.
 
@@ -243,6 +244,15 @@ class MultitenantManager:
                 f"Add route record for recipient {recipient_key} to wallet {wallet_id}"
             )
             routing_mgr = RoutingManager(session)
+
+            if skip_if_exists:
+                try:
+                    await RouteRecord.retrieve_by_recipient_key(session, recipient_key)
+
+                    # If no error is thrown, it means there is already a record
+                    return
+                except (StorageNotFoundError):
+                    pass
 
             await routing_mgr.create_route_record(
                 recipient_key=recipient_key, internal_wallet_id=wallet_id

@@ -177,6 +177,13 @@ class ConnectionManager:
             invitation = ConnectionInvitation(
                 label=my_label, did=f"did:sov:{public_did.did}", image_url=image_url
             )
+
+            # Add mapping for multitenant relay.
+            if multitenant_mgr and wallet_id:
+                await multitenant_mgr.add_wallet_route(
+                    wallet_id, public_did.verkey, skip_if_exists=True
+                )
+
             return None, invitation
 
         invitation_mode = ConnRecord.INVITATION_MODE_ONCE

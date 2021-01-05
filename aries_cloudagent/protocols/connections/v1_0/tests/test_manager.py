@@ -157,6 +157,26 @@ class TestConnectionManager(AsyncTestCase):
                 "test_wallet", self.test_verkey
             )
 
+    async def test_create_invitation_public_multitenant(self):
+        self.context.update_settings(
+            {
+                "public_invites": True,
+                "wallet.id": "test_wallet",
+                "multitenant.enabled": True,
+            }
+        )
+
+        with async_mock.patch.object(
+            InMemoryWallet, "get_public_did", autospec=True
+        ) as mock_wallet_get_public_did:
+            mock_wallet_get_public_did.return_value = DIDInfo(
+                self.test_did, self.test_verkey, None
+            )
+            await self.manager.create_invitation(public=True)
+            self.multitenant_mgr.add_wallet_route.assert_called_once_with(
+                "test_wallet", self.test_verkey, skip_if_exists=True
+            )
+
     async def test_create_invitation_public_no_public_invites(self):
         self.context.update_settings({"public_invites": False})
 

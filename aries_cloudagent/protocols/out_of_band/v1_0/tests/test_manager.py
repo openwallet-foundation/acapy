@@ -141,6 +141,29 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 "test_wallet", TestConfig.test_verkey
             )
 
+    async def test_create_invitation_multitenant_public(self):
+        self.manager.session.context.update_settings(
+            {
+                "multitenant.enabled": True,
+                "wallet.id": "test_wallet",
+                "public_invites": True,
+            }
+        )
+
+        self.multitenant_mgr.add_wallet_route = async_mock.CoroutineMock()
+
+        with async_mock.patch.object(
+            InMemoryWallet, "get_public_did", autospec=True
+        ) as mock_wallet_get_public_did:
+            mock_wallet_get_public_did.return_value = DIDInfo(
+                self.test_did, self.test_verkey, None
+            )
+            await self.manager.create_invitation(include_handshake=True, public=True)
+
+            self.multitenant_mgr.add_wallet_route.assert_called_once_with(
+                "test_wallet", TestConfig.test_verkey, skip_if_exists=True
+            )
+
     async def test_create_invitation_no_handshake_no_attachments_x(self):
         with self.assertRaises(OutOfBandManagerError) as context:
             await self.manager.create_invitation(
