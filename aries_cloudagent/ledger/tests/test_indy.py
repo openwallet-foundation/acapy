@@ -67,9 +67,10 @@ GENESIS_TRANSACTION_PATH = path.join(
     tempfile.gettempdir(), f"name_{GENESIS_TRANSACTION_FILE}"
 )
 
+
 @pytest.mark.indy
 class TestIndySdkLedgerPoolProvider(AsyncTestCase):
-    async def test_provide(self): 
+    async def test_provide(self):
         provider = IndySdkLedgerPoolProvider()
         mock_injector = async_mock.MagicMock(
             inject=async_mock.MagicMock(return_value=None)
@@ -81,6 +82,7 @@ class TestIndySdkLedgerPoolProvider(AsyncTestCase):
             },
             injector=mock_injector,
         )
+
 
 @pytest.mark.indy
 class TestIndySdkLedger(AsyncTestCase):

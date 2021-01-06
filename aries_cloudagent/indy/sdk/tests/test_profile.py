@@ -46,7 +46,6 @@ class TestIndySdkProfile:
         ):
             await profile.remove()
             assert profile.opened is None
-            
 
     def test_read_only(self):
         context = InjectionContext(settings={"ledger.read_only": True})

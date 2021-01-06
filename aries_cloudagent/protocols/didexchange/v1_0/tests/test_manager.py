@@ -89,7 +89,6 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
         assert self.manager.session
         self.oob_manager = OutOfBandManager(self.session)
 
-
     async def test_verify_diddoc(self):
         did_doc = self.make_did_doc(
             TestConfig.test_target_did,

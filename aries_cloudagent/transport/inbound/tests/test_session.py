@@ -111,12 +111,10 @@ class TestInboundSession(TestCase):
 
     async def test_receive(self):
         self.multitenant_mgr = async_mock.MagicMock(MultitenantManager, autospec=True)
-        self.multitenant_mgr.get_wallets_by_message=async_mock.CoroutineMock(
-            return_value=[
-                async_mock.MagicMock(is_managed=True)
-            ]
+        self.multitenant_mgr.get_wallets_by_message = async_mock.CoroutineMock(
+            return_value=[async_mock.MagicMock(is_managed=True)]
         )
-        self.multitenant_mgr.get_wallet_profile=async_mock.CoroutineMock(
+        self.multitenant_mgr.get_wallet_profile = async_mock.CoroutineMock(
             return_value=self.profile
         )
         self.profile.context.injector.bind_instance(
@@ -144,10 +142,10 @@ class TestInboundSession(TestCase):
 
     async def test_receive_no_wallet_found(self):
         self.multitenant_mgr = async_mock.MagicMock(MultitenantManager, autospec=True)
-        self.multitenant_mgr.get_wallets_by_message=async_mock.CoroutineMock(
+        self.multitenant_mgr.get_wallets_by_message = async_mock.CoroutineMock(
             side_effect=ValueError("no such wallet")
         )
-        self.multitenant_mgr.get_wallet_profile=async_mock.CoroutineMock(
+        self.multitenant_mgr.get_wallet_profile = async_mock.CoroutineMock(
             return_value=self.profile
         )
         self.profile.context.injector.bind_instance(
