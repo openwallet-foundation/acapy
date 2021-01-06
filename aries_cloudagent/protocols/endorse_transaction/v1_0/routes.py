@@ -167,6 +167,15 @@ async def transaction_create_request(request: web.BaseRequest):
         raise web.HTTPNotFound(reason=err.roll_up) from err
 
     session = await context.session()
+    jobs = await connection_record.metadata_get(session, "transaction_jobs")
+    if not jobs:
+        raise web.HTTPForbidden(
+            reason="The transaction related jobs are not setup in"
+            "connection metadata for this connection record"
+        )
+    if jobs["transaction_my_job"] != "TRANSACTION_AUTHOR":
+        raise web.HTTPForbidden(reason="Only a TRANSACTION_AUTHOR can create a request")
+
     transaction_mgr = TransactionManager(session, context.profile)
 
     (transaction_record, transaction_request) = await transaction_mgr.create_request(
@@ -208,7 +217,9 @@ async def endorse_transaction_response(request: web.BaseRequest):
         raise web.HTTPForbidden(reason="No wallet available")
     endorser_did_info = await wallet.get_public_did()
     if not endorser_did_info:
-        raise web.HTTPForbidden(reason="Public DID not found in wallet")
+        raise web.HTTPForbidden(
+            reason="Transaction cannot be endorsed as there is no Public DID in wallet"
+        )
     endorser_did = endorser_did_info.did
     endorser_verkey = endorser_did_info.verkey
 
@@ -221,27 +232,41 @@ async def endorse_transaction_response(request: web.BaseRequest):
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
 
-    if transaction.state == "request" or transaction.state == "resend":
-
-        transaction_mgr = TransactionManager(session, context.profile)
-        (
-            transaction,
-            endorsed_transaction_response,
-        ) = await transaction_mgr.create_endorse_response(
-            transaction=transaction,
-            state="endorsed",
-            endorser_did=endorser_did,
-            endorser_verkey=endorser_verkey,
+    try:
+        async with context.session() as session:
+            connection_record = await ConnRecord.retrieve_by_id(
+                session, transaction.connection_id
+            )
+    except StorageNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
+    session = await context.session()
+    jobs = await connection_record.metadata_get(session, "transaction_jobs")
+    if not jobs:
+        raise web.HTTPForbidden(
+            reason="The transaction related jobs are not setup in"
+            "connection metadata for this connection record"
+        )
+    if jobs["transaction_my_job"] != "TRANSACTION_ENDORSER":
+        raise web.HTTPForbidden(
+            reason="Only a TRANSACTION_ENDORSER can endorse a transaction"
         )
 
-        await outbound_handler(
-            endorsed_transaction_response, connection_id=transaction.connection_id
-        )
+    transaction_mgr = TransactionManager(session, context.profile)
+    (
+        transaction,
+        endorsed_transaction_response,
+    ) = await transaction_mgr.create_endorse_response(
+        transaction=transaction,
+        state=TransactionRecord.STATE_TRANSACTION_ENDORSED,
+        endorser_did=endorser_did,
+        endorser_verkey=endorser_verkey,
+    )
 
-        return web.json_response(transaction.serialize())
+    await outbound_handler(
+        endorsed_transaction_response, connection_id=transaction.connection_id
+    )
 
-    else:
-        return web.json_response({"error": "You cannot endorse this transaction"})
+    return web.json_response(transaction.serialize())
 
 
 @docs(
@@ -272,7 +297,9 @@ async def refuse_transaction_response(request: web.BaseRequest):
         raise web.HTTPForbidden(reason="No wallet available")
     refuser_did_info = await wallet.get_public_did()
     if not refuser_did_info:
-        raise web.HTTPForbidden(reason="Public DID not found in wallet")
+        raise web.HTTPForbidden(
+            reason="Transaction cannot be refused as there is no Public DID in wallet"
+        )
     refuser_did = refuser_did_info.did
 
     transaction_id = request.match_info["tran_id"]
@@ -284,24 +311,40 @@ async def refuse_transaction_response(request: web.BaseRequest):
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
 
-    if transaction.state == "request" or transaction.state == "resend":
-
-        transaction_mgr = TransactionManager(session, context.profile)
-        (
-            transaction,
-            refused_transaction_response,
-        ) = await transaction_mgr.create_refuse_response(
-            transaction=transaction, state="refused", refuser_did=refuser_did
+    try:
+        async with context.session() as session:
+            connection_record = await ConnRecord.retrieve_by_id(
+                session, transaction.connection_id
+            )
+    except StorageNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
+    session = await context.session()
+    jobs = await connection_record.metadata_get(session, "transaction_jobs")
+    if not jobs:
+        raise web.HTTPForbidden(
+            reason="The transaction related jobs are not setup in"
+            "connection metadata for this connection record"
+        )
+    if jobs["transaction_my_job"] != "TRANSACTION_ENDORSER":
+        raise web.HTTPForbidden(
+            reason="Only a TRANSACTION_ENDORSER can refuse a transaction"
         )
 
-        await outbound_handler(
-            refused_transaction_response, connection_id=transaction.connection_id
-        )
+    transaction_mgr = TransactionManager(session, context.profile)
+    (
+        transaction,
+        refused_transaction_response,
+    ) = await transaction_mgr.create_refuse_response(
+        transaction=transaction,
+        state=TransactionRecord.STATE_TRANSACTION_REFUSED,
+        refuser_did=refuser_did,
+    )
 
-        return web.json_response(transaction.serialize())
+    await outbound_handler(
+        refused_transaction_response, connection_id=transaction.connection_id
+    )
 
-    else:
-        return web.json_response({"error": "You cannot refuse the transaction"})
+    return web.json_response(transaction.serialize())
 
 
 @docs(
@@ -334,25 +377,38 @@ async def cancel_transaction(request: web.BaseRequest):
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
 
-    if transaction.state != "endorsed" and transaction.state != "refused":
-
-        session = await context.session()
-        transaction_mgr = TransactionManager(session, context.profile)
-        (
-            transaction,
-            cancelled_transaction_response,
-        ) = await transaction_mgr.cancel_transaction(
-            transaction=transaction, state="cancelled"
+    try:
+        async with context.session() as session:
+            connection_record = await ConnRecord.retrieve_by_id(
+                session, transaction.connection_id
+            )
+    except StorageNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
+    session = await context.session()
+    jobs = await connection_record.metadata_get(session, "transaction_jobs")
+    if not jobs:
+        raise web.HTTPForbidden(
+            reason="The transaction related jobs are not setup in"
+            "connection metadata for this connection record"
+        )
+    if jobs["transaction_my_job"] != "TRANSACTION_AUTHOR":
+        raise web.HTTPForbidden(
+            reason="Only a TRANSACTION_AUTHOR can cancel a transaction"
         )
 
-        await outbound_handler(
-            cancelled_transaction_response, connection_id=transaction.connection_id
-        )
+    transaction_mgr = TransactionManager(session, context.profile)
+    (
+        transaction,
+        cancelled_transaction_response,
+    ) = await transaction_mgr.cancel_transaction(
+        transaction=transaction, state=TransactionRecord.STATE_TRANSACTION_CANCELLED
+    )
 
-        return web.json_response(transaction.serialize())
+    await outbound_handler(
+        cancelled_transaction_response, connection_id=transaction.connection_id
+    )
 
-    else:
-        return web.json_response({"error": "This transaction cannot be cancelled"})
+    return web.json_response(transaction.serialize())
 
 
 @docs(
@@ -385,25 +441,38 @@ async def transaction_resend(request: web.BaseRequest):
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
 
-    if transaction.state != "endorsed":
-
-        session = await context.session()
-        transaction_mgr = TransactionManager(session, context.profile)
-        (
-            transaction,
-            resend_transaction_response,
-        ) = await transaction_mgr.transaction_resend(
-            transaction=transaction, state="resend"
+    try:
+        async with context.session() as session:
+            connection_record = await ConnRecord.retrieve_by_id(
+                session, transaction.connection_id
+            )
+    except StorageNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
+    session = await context.session()
+    jobs = await connection_record.metadata_get(session, "transaction_jobs")
+    if not jobs:
+        raise web.HTTPForbidden(
+            reason="The transaction related jobs are not setup in"
+            "connection metadata for this connection record"
+        )
+    if jobs["transaction_my_job"] != "TRANSACTION_AUTHOR":
+        raise web.HTTPForbidden(
+            reason="Only a TRANSACTION_AUTHOR can resend a transaction"
         )
 
-        await outbound_handler(
-            resend_transaction_response, connection_id=transaction.connection_id
-        )
+    transaction_mgr = TransactionManager(session, context.profile)
+    (
+        transaction,
+        resend_transaction_response,
+    ) = await transaction_mgr.transaction_resend(
+        transaction=transaction, state=TransactionRecord.STATE_TRANSACTION_RESENT
+    )
 
-        return web.json_response(transaction.serialize())
+    await outbound_handler(
+        resend_transaction_response, connection_id=transaction.connection_id
+    )
 
-    else:
-        return web.json_response({"error": "You cannot resend an endorsed transaction"})
+    return web.json_response(transaction.serialize())
 
 
 @docs(
@@ -433,15 +502,16 @@ async def set_transaction_jobs(request: web.BaseRequest):
 
     try:
         record = await ConnRecord.retrieve_by_id(session, connection_id)
-        transaction_mgr = TransactionManager(session, context.profile)
-        tx_job_to_send = await transaction_mgr.set_transaction_my_job(
-            record=record, transaction_my_job=transaction_my_job
-        )
-        jobs = await record.metadata_get(session, "transaction_jobs")
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
     except BaseModelError as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+    transaction_mgr = TransactionManager(session, context.profile)
+    tx_job_to_send = await transaction_mgr.set_transaction_my_job(
+        record=record, transaction_my_job=transaction_my_job
+    )
+    jobs = await record.metadata_get(session, "transaction_jobs")
 
     await outbound_handler(tx_job_to_send, connection_id=connection_id)
     return web.json_response(jobs)

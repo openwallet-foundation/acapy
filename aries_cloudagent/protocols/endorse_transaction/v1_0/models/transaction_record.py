@@ -43,6 +43,15 @@ class TransactionRecord(BaseExchangeRecord):
 
     FORMAT_VERSION = "dif/endorse-transaction/request@v1.0"
 
+    STATE_TRANSACTION_CREATED = "transaction_created"
+    STATE_REQUEST_SENT = "request_sent"
+    STATE_REQUEST_RECEIVED = "request_received"
+    STATE_TRANSACTION_ENDORSED = "transaction_endorsed"
+    STATE_TRANSACTION_REFUSED = "transaction_refused"
+    STATE_TRANSACTION_RESENT = "transaction_resent"
+    STATE_TRANSACTION_RESENT_RECEIEVED = "transaction_resent_received"
+    STATE_TRANSACTION_CANCELLED = "transaction_cancelled"
+
     def __init__(
         self,
         *,

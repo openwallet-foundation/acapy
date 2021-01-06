@@ -118,7 +118,7 @@ class TransactionManager:
 
         transaction.messages_attach.clear()
         transaction.messages_attach.append(messages_attach_dict)
-        transaction.state = "created"
+        transaction.state = TransactionRecord.STATE_TRANSACTION_CREATED
 
         async with self._profile.session() as session:
             await transaction.save(session, reason="Change it")
@@ -138,7 +138,13 @@ class TransactionManager:
 
         """
 
-        transaction.state = "request"
+        if transaction.state != TransactionRecord.STATE_TRANSACTION_CREATED:
+            raise TransactionManagerError(
+                f"Cannot create a request for transaction record"
+                f" in state: {transaction.state}"
+            )
+
+        transaction.state = TransactionRecord.STATE_REQUEST_SENT
         transaction.connection_id = connection_id
         async with self._profile.session() as session:
             await transaction.save(session, reason="Change to requested state")
@@ -179,7 +185,7 @@ class TransactionManager:
         transaction.messages_attach.append(request.messages_attach)
         transaction.thread_id = request.transaction_id
         transaction.connection_id = connection_id
-        transaction.state = "request"
+        transaction.state = TransactionRecord.STATE_REQUEST_RECEIVED
 
         async with self._profile.session() as session:
             await transaction.save(session, reason="Change it")
@@ -204,6 +210,15 @@ class TransactionManager:
             The updated transaction and an endorsed response
 
         """
+
+        if transaction.state not in (
+            TransactionRecord.STATE_REQUEST_RECEIVED,
+            TransactionRecord.STATE_TRANSACTION_RESENT_RECEIEVED,
+        ):
+            raise TransactionManagerError(
+                f"Cannot endorse transaction for transaction record"
+                f" in state: {transaction.state}"
+            )
 
         transaction.messages_attach[0]["data"]["json"]["endorser"] = endorser_did
 
@@ -279,6 +294,15 @@ class TransactionManager:
 
         """
 
+        if transaction.state not in (
+            TransactionRecord.STATE_REQUEST_RECEIVED,
+            TransactionRecord.STATE_TRANSACTION_RESENT_RECEIEVED,
+        ):
+            raise TransactionManagerError(
+                f"Cannot refuse transaction for transaction record"
+                f" in state: {transaction.state}"
+            )
+
         transaction.messages_attach[0]["data"]["json"]["endorser"] = refuser_did
 
         transaction._type = TransactionRecord.SIGNATURE_RESPONSE
@@ -348,12 +372,21 @@ class TransactionManager:
 
         """
 
+        if transaction.state not in (
+            TransactionRecord.STATE_REQUEST_SENT,
+            TransactionRecord.STATE_TRANSACTION_RESENT,
+        ):
+            raise TransactionManagerError(
+                f"Cannot cancel transaction as transaction is"
+                f" in state: {transaction.state}"
+            )
+
         transaction.state = state
         async with self._profile.session() as session:
             await transaction.save(session, reason="Change it")
 
         cancelled_transaction_response = CancelTransaction(
-            state="cancelled", thread_id=transaction._id
+            state=state, thread_id=transaction._id
         )
 
         return transaction, cancelled_transaction_response
@@ -390,12 +423,22 @@ class TransactionManager:
 
         """
 
+        if transaction.state not in (
+            TransactionRecord.STATE_TRANSACTION_REFUSED,
+            TransactionRecord.STATE_TRANSACTION_CANCELLED,
+        ):
+            raise TransactionManagerError(
+                f"Cannot resend transaction as transaction is"
+                f" in state: {transaction.state}"
+            )
+
         transaction.state = state
         async with self._profile.session() as session:
             await transaction.save(session, reason="Change it")
 
         resend_transaction_response = TransactionResend(
-            state="resend", thread_id=transaction._id
+            state=TransactionRecord.STATE_TRANSACTION_RESENT_RECEIEVED,
+            thread_id=transaction._id,
         )
 
         return transaction, resend_transaction_response

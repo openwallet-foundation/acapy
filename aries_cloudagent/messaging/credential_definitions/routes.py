@@ -243,7 +243,9 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
             raise web.HTTPForbidden(reason="No wallet available")
         author_did_info = await wallet.get_public_did()
         if not author_did_info:
-            raise web.HTTPForbidden(reason="Public DID not found in wallet")
+            raise web.HTTPForbidden(
+                reason="Transaction cannot be created as there is no Public DID in wallet"
+            )
         author_did = author_did_info.did
         author_verkey = author_did_info.verkey
 
