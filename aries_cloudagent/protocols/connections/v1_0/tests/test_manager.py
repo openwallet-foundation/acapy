@@ -523,6 +523,12 @@ class TestConnectionManager(AsyncTestCase):
             with self.assertRaises(ConnectionManagerError):
                 await self.manager.receive_invitation(x_invite)
 
+    async def test_receive_invitation_from_did(self):
+        """Test invitation received through public DID."""
+        invite = ConnectionInvitation(did=self.test_did)
+        invitee_record = await self.manager.receive_invitation(invite)
+        assert ConnRecord.State.get(invitee_record.state) is ConnRecord.State.REQUEST
+
     async def test_receive_invitation_mediation_passes_id_when_auto_accept(self):
         with async_mock.patch.object(
             ConnectionManager, "create_request"
