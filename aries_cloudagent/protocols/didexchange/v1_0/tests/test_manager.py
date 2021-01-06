@@ -15,6 +15,7 @@ from .....connections.models.diddoc import (
 from .....core.in_memory import InMemoryProfile
 from .....messaging.responder import BaseResponder, MockResponder
 from .....messaging.decorators.attach_decorator import AttachDecorator
+from .....multitenant.manager import MultitenantManager
 from .....storage.error import StorageNotFoundError
 from .....transport.inbound.receipt import MessageReceipt
 from ....out_of_band.v1_0.models.invitation import InvitationRecord
@@ -70,6 +71,8 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 "additional_endpoints": ["http://aries.ca/another-endpoint"],
                 "debug.auto_accept_invites": True,
                 "debug.auto_accept_requests": True,
+                "multitenant.enabled": True,
+                "wallet.id": True,
             },
             bind={BaseResponder: self.responder, BaseCache: InMemoryCache()},
         )
