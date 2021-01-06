@@ -523,8 +523,8 @@ class TestConnectionManager(AsyncTestCase):
             with self.assertRaises(ConnectionManagerError):
                 await self.manager.receive_invitation(x_invite)
 
-    async def test_receive_invitation_from_did(self):
-        """Test invitation received through public DID."""
+    async def test_receive_invitation_with_did(self):
+        """Test invitation received with a public DID instead of service info."""
         invite = ConnectionInvitation(did=self.test_did)
         invitee_record = await self.manager.receive_invitation(invite)
         assert ConnRecord.State.get(invitee_record.state) is ConnRecord.State.REQUEST
