@@ -56,7 +56,7 @@ class DIDCreateSchema(OpenAPISchema):
         description="Optional seed for did derivation",
         required=False,
         example="00000000000000000000000Endorser1",
-        validate=validate.Length(equal=32)
+        validate=validate.Length(equal=32),
     )
 
 
