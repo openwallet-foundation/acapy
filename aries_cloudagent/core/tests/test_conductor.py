@@ -15,6 +15,7 @@ from ...connections.models.diddoc import (
 from ...core.in_memory import InMemoryProfileManager
 from ...core.profile import ProfileManager
 from ...core.protocol_registry import ProtocolRegistry
+from ...multitenant.manager import MultitenantManager
 from ...transport.inbound.message import InboundMessage
 from ...transport.inbound.receipt import MessageReceipt
 from ...transport.outbound.base import OutboundDeliveryError
@@ -704,3 +705,31 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             mock_enqueue.assert_called_once_with(
                 test_topic, test_payload, test_endpoint, test_attempts, None
             )
+
+    async def test_shutdown_multitenant_profiles(self):
+        builder: ContextBuilder = StubContextBuilder(
+            {**self.test_settings, "multitenant.enabled": True}
+        )
+        conductor = test_module.Conductor(builder)
+
+        with async_mock.patch.object(
+            test_module, "InboundTransportManager", autospec=True
+        ) as mock_inbound_mgr, async_mock.patch.object(
+            test_module, "OutboundTransportManager", autospec=True
+        ) as mock_outbound_mgr, async_mock.patch.object(
+            test_module, "LoggingConfigurator", autospec=True
+        ) as mock_logger:
+
+            await conductor.setup()
+
+            multitenant_mgr = conductor.context.inject(MultitenantManager)
+
+            multitenant_mgr._instances = {
+                "test1": async_mock.MagicMock(close=async_mock.CoroutineMock()),
+                "test2": async_mock.MagicMock(close=async_mock.CoroutineMock()),
+            }
+
+            await conductor.stop()
+
+            multitenant_mgr._instances["test1"].close.assert_called_once_with()
+            multitenant_mgr._instances["test2"].close.assert_called_once_with()

@@ -857,6 +857,13 @@ class TransportGroup(ArgumentGroup):
             (self-attested) to other agents as part of forming a connection.",
         )
         parser.add_argument(
+            "--image-url",
+            type=str,
+            env_var="ACAPY_IMAGE_URL",
+            help="Specifies the image url for this agent. This image url is publicized\
+            (self-attested) to other agents as part of forming a connection.",
+        )
+        parser.add_argument(
             "--max-message-size",
             default=2097152,
             type=ByteSize(min_size=1024),
@@ -897,6 +904,8 @@ class TransportGroup(ArgumentGroup):
 
         if args.label:
             settings["default_label"] = args.label
+        if args.image_url:
+            settings["image_url"] = args.image_url
         if args.max_message_size:
             settings["transport.max_message_size"] = args.max_message_size
         if args.max_outbound_retry:
