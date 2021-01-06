@@ -56,6 +56,7 @@ class ConnectionInvitation(AgentMessage):
         self.recipient_keys = list(recipient_keys) if recipient_keys else None
         self.endpoint = endpoint
         self.routing_keys = list(routing_keys) if routing_keys else None
+        self.image_url = image_url
 
     def to_url(self, base_url: str = None) -> str:
         """
