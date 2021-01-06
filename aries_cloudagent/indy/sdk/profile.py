@@ -1,6 +1,5 @@
 """Manage Indy-SDK profile interaction."""
 
-from aries_cloudagent.core.error import ProfileError
 import logging
 
 from typing import Any, Mapping
@@ -9,6 +8,7 @@ from weakref import ref
 from ...config.injection_context import InjectionContext
 from ...config.provider import ClassProvider
 from ...core.profile import Profile, ProfileManager, ProfileSession
+from ...core.error import ProfileError
 from ...ledger.base import BaseLedger
 from ...ledger.indy import IndySdkLedger, IndySdkLedgerPool
 from ...storage.base import BaseStorage, BaseStorageSearch

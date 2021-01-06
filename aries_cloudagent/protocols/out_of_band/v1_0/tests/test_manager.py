@@ -10,7 +10,7 @@ from .....messaging.responder import BaseResponder, MockResponder
 from .....multitenant.manager import MultitenantManager
 from .....protocols.didexchange.v1_0.manager import DIDXManager
 from .....protocols.present_proof.v1_0.message_types import PRESENTATION_REQUEST
-from .....wallet.base import DIDInfo
+from .....wallet.base import DIDInfo, KeyInfo
 from .....wallet.in_memory import InMemoryWallet
 from .....wallet.util import did_key_to_naked
 from ....didcomm_prefix import DIDCommPrefix
@@ -20,6 +20,7 @@ from ..manager import (
     OutOfBandManagerError,
     OutOfBandManagerNotImplementedError,
 )
+from .....multitenant.manager import MultitenantManager
 from ..message_types import INVITATION
 
 
@@ -68,6 +69,11 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         self.mt_mgr = async_mock.create_autospec(MultitenantManager)
         self.session.context.injector.bind_instance(MultitenantManager, self.mt_mgr)
 
+        self.multitenant_mgr = async_mock.MagicMock(MultitenantManager, autospec=True)
+        self.session.context.injector.bind_instance(
+            MultitenantManager, self.multitenant_mgr
+        )
+
         self.ledger = async_mock.create_autospec(BaseLedger)
         self.ledger.__aenter__ = async_mock.CoroutineMock(return_value=self.ledger)
         self.session.context.injector.bind_instance(BaseLedger, self.ledger)
@@ -108,6 +114,55 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 in invi_rec.invitation["handshake_protocols"]
             )
             assert invi_rec.invitation["service"] == [f"did:sov:{TestConfig.test_did}"]
+
+    async def test_create_invitation_multitenant_local(self):
+        self.manager.session.context.update_settings(
+            {
+                "multitenant.enabled": True,
+                "wallet.id": "test_wallet",
+            }
+        )
+
+        self.multitenant_mgr.add_wallet_route = async_mock.CoroutineMock()
+
+        with async_mock.patch.object(
+            InMemoryWallet, "create_signing_key", autospec=True
+        ) as mock_wallet_create_signing_key:
+            mock_wallet_create_signing_key.return_value = KeyInfo(
+                TestConfig.test_verkey, None
+            )
+            await self.manager.create_invitation(
+                my_endpoint=TestConfig.test_endpoint,
+                include_handshake=True,
+                multi_use=False,
+            )
+
+            self.multitenant_mgr.add_wallet_route.assert_called_once_with(
+                "test_wallet", TestConfig.test_verkey
+            )
+
+    async def test_create_invitation_multitenant_public(self):
+        self.manager.session.context.update_settings(
+            {
+                "multitenant.enabled": True,
+                "wallet.id": "test_wallet",
+                "public_invites": True,
+            }
+        )
+
+        self.multitenant_mgr.add_wallet_route = async_mock.CoroutineMock()
+
+        with async_mock.patch.object(
+            InMemoryWallet, "get_public_did", autospec=True
+        ) as mock_wallet_get_public_did:
+            mock_wallet_get_public_did.return_value = DIDInfo(
+                self.test_did, self.test_verkey, None
+            )
+            await self.manager.create_invitation(include_handshake=True, public=True)
+
+            self.multitenant_mgr.add_wallet_route.assert_called_once_with(
+                "test_wallet", TestConfig.test_verkey, skip_if_exists=True
+            )
 
     async def test_create_invitation_no_handshake_no_attachments_x(self):
         with self.assertRaises(OutOfBandManagerError) as context:

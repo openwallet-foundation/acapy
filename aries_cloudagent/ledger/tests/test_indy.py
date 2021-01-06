@@ -9,8 +9,13 @@ from asynctest import mock as async_mock
 
 from ...cache.in_memory import InMemoryCache
 from ...indy.issuer import IndyIssuer, IndyIssuerError
-from ...ledger.endpoint_type import EndpointType
-from ...ledger.indy import (
+from ...storage.record import StorageRecord
+from ...wallet.base import DIDInfo
+from ...wallet.did_posture import DIDPosture
+from ...wallet.error import WalletNotFoundError
+
+from ..endpoint_type import EndpointType
+from ..indy import (
     BadLedgerRequestError,
     ClosedPoolError,
     ErrorCode,
@@ -18,6 +23,7 @@ from ...ledger.indy import (
     IndyError,
     IndySdkLedger,
     IndySdkLedgerPool,
+    IndySdkLedgerPoolProvider,
     GENESIS_TRANSACTION_FILE,
     LedgerConfigError,
     LedgerError,
@@ -25,10 +31,6 @@ from ...ledger.indy import (
     Role,
     TAA_ACCEPTED_RECORD_TYPE,
 )
-from ...storage.record import StorageRecord
-from ...wallet.base import DIDInfo
-from ...wallet.did_posture import DIDPosture
-from ...wallet.error import WalletNotFoundError
 
 
 class TestRole(AsyncTestCase):
@@ -65,6 +67,20 @@ GENESIS_TRANSACTION_PATH = path.join(
     tempfile.gettempdir(), f"name_{GENESIS_TRANSACTION_FILE}"
 )
 
+@pytest.mark.indy
+class TestIndySdkLedgerPoolProvider(AsyncTestCase):
+    async def test_provide(self): 
+        provider = IndySdkLedgerPoolProvider()
+        mock_injector = async_mock.MagicMock(
+            inject=async_mock.MagicMock(return_value=None)
+        )
+        provider.provide(
+            settings={
+                "ledger.read_only": True,
+                "ledger.genesis_transactions": "genesis-txns",
+            },
+            injector=mock_injector,
+        )
 
 @pytest.mark.indy
 class TestIndySdkLedger(AsyncTestCase):

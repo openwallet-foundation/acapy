@@ -4,6 +4,7 @@ import pytest
 from asynctest import TestCase, mock as async_mock
 
 from ....core.in_memory import InMemoryProfile
+from ....multitenant.manager import MultitenantManager
 
 from ...error import WireFormatError
 from ...outbound.message import OutboundMessage
@@ -109,6 +110,51 @@ class TestInboundSession(TestCase):
         assert result.transport_type == test_transport_type
 
     async def test_receive(self):
+        self.multitenant_mgr = async_mock.MagicMock(MultitenantManager, autospec=True)
+        self.multitenant_mgr.get_wallets_by_message=async_mock.CoroutineMock(
+            return_value=[
+                async_mock.MagicMock(is_managed=True)
+            ]
+        )
+        self.multitenant_mgr.get_wallet_profile=async_mock.CoroutineMock(
+            return_value=self.profile
+        )
+        self.profile.context.injector.bind_instance(
+            MultitenantManager, self.multitenant_mgr
+        )
+        self.profile.context.update_settings({"multitenant.enabled": True})
+
+        sess = InboundSession(
+            profile=self.profile,
+            inbound_handler=None,
+            session_id=None,
+            wire_format=None,
+        )
+        test_msg = async_mock.MagicMock()
+
+        with async_mock.patch.object(
+            sess, "parse_inbound", async_mock.CoroutineMock()
+        ) as encode, async_mock.patch.object(
+            sess, "receive_inbound", async_mock.MagicMock()
+        ) as receive:
+            result = await sess.receive(test_msg)
+            encode.assert_awaited_once_with(test_msg)
+            receive.assert_called_once_with(encode.return_value)
+            assert result is encode.return_value
+
+    async def test_receive_no_wallet_found(self):
+        self.multitenant_mgr = async_mock.MagicMock(MultitenantManager, autospec=True)
+        self.multitenant_mgr.get_wallets_by_message=async_mock.CoroutineMock(
+            side_effect=ValueError("no such wallet")
+        )
+        self.multitenant_mgr.get_wallet_profile=async_mock.CoroutineMock(
+            return_value=self.profile
+        )
+        self.profile.context.injector.bind_instance(
+            MultitenantManager, self.multitenant_mgr
+        )
+        self.profile.context.update_settings({"multitenant.enabled": True})
+
         sess = InboundSession(
             profile=self.profile,
             inbound_handler=None,

@@ -1,10 +1,13 @@
 import pytest
 
+from asynctest import mock as async_mock
+
 from ....config.injection_context import InjectionContext
+from ....core.error import ProfileError
+from ....ledger.indy import IndySdkLedgerPool
+
 from ..profile import IndySdkProfile
 from ..wallet_setup import IndyWalletConfig, IndyOpenWallet
-from ....ledger.indy import IndySdkLedgerPool
-from ....config.injection_context import InjectionContext
 
 
 @pytest.fixture()
@@ -33,6 +36,17 @@ class TestIndySdkProfile:
         assert profile.created
         assert profile.wallet.created
         assert profile.wallet.master_secret_id == "master-secret"
+
+        with async_mock.patch.object(profile, "opened", False):
+            with pytest.raises(ProfileError):
+                await profile.remove()
+
+        with async_mock.patch.object(
+            profile.opened, "close", async_mock.CoroutineMock()
+        ):
+            await profile.remove()
+            assert profile.opened is None
+            
 
     def test_read_only(self):
         context = InjectionContext(settings={"ledger.read_only": True})

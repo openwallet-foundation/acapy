@@ -1,10 +1,9 @@
 from asynctest import TestCase as AsyncTestCase
 
-from .. import wallet_record as test_module
 from ..wallet_record import WalletRecord
 
 
-class TestIssuerCredRevRecord(AsyncTestCase):
+class TestWalletRecord(AsyncTestCase):
     async def test_serde(self):
         rec = WalletRecord(
             wallet_id="my-wallet-id",
@@ -50,17 +49,30 @@ class TestIssuerCredRevRecord(AsyncTestCase):
         assert not recs[0].is_managed
         assert recs[1].is_managed
 
-        assert recs[0].requires_external_key
-        assert not recs[1].requires_external_key
-
-        rec_in_mem = WalletRecord(
-            wallet_id="my-wallet-id-2",
-            key_management_mode=WalletRecord.MODE_UNMANAGED,
-            settings={
-                "wallet.name": "my-wallet-2",
-                "wallet.type": "in_memory",
-                "wallet.key": "dummy-wallet-key-2",
-            },
-            wallet_name="my-wallet-2",
+    async def test_requires_external_key_in_memory(self):
+        wallet_record = WalletRecord(
+            settings={"wallet.type": "in_memory"},
         )
-        assert not rec_in_mem.requires_external_key
+
+        # should be false for in_memory wallets
+        assert wallet_record.requires_external_key is False
+
+    async def test_requires_external_key_managed(self):
+        wallet_record = WalletRecord(
+            wallet_id="test",
+            settings={"wallet.type": "indy"},
+            key_management_mode=WalletRecord.MODE_MANAGED,
+        )
+
+        # should be false for managed wallets
+        assert wallet_record.requires_external_key is False
+
+    async def test_requires_external_key_unmanaged(self):
+        wallet_record = WalletRecord(
+            wallet_id="test",
+            settings={"wallet.type": "indy"},
+            key_management_mode=WalletRecord.MODE_UNMANAGED,
+        )
+
+        # should return true if wallet is unmanaged and wallet_type != unmanaged
+        assert wallet_record.requires_external_key is True
