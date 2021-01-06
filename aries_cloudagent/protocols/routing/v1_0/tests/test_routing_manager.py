@@ -1,6 +1,8 @@
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
+from marshmallow import ValidationError
+
 from .....messaging.request_context import RequestContext
 from .....storage.error import (
     StorageDuplicateError,
@@ -11,7 +13,7 @@ from .....storage.in_memory import InMemoryStorage
 from .....transport.inbound.receipt import MessageReceipt
 
 from ..manager import RoutingManager, RoutingManagerError, RouteNotFoundError
-from ..models.route_record import RouteRecord
+from ..models.route_record import RouteRecord, RouteRecordSchema
 from ..models.route_update import RouteUpdate
 from ..models.route_updated import RouteUpdated
 
@@ -44,6 +46,11 @@ class TestRoutingManager(AsyncTestCase):
         assert len(results) == 1
         assert results[0].connection_id == TEST_CONN_ID
         assert results[0].recipient_key == TEST_ROUTE_VERKEY
+
+    async def test_route_record_schema_validate(self):
+        route_rec_schema = RouteRecordSchema()
+        with self.assertRaises(ValidationError):
+            route_rec_schema.validate_fields({})
 
     async def test_get_routes_retrieve_none(self):
         results = await self.manager.get_routes()

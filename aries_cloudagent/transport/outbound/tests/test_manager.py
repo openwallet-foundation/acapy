@@ -138,7 +138,8 @@ class TestOutboundTransportManager(AsyncTestCase):
         mgr = OutboundTransportManager(context)
         test_topic = "test-topic"
         test_payload = {"test": "payload"}
-        test_endpoint = "http://example"
+        test_endpoint_host = "http://example"
+        test_endpoint = f"{test_endpoint_host}#abc123"
         test_attempts = 2
 
         with self.assertRaises(OutboundDeliveryError):
@@ -161,7 +162,7 @@ class TestOutboundTransportManager(AsyncTestCase):
             mock_process.assert_called_once_with()
             assert len(mgr.outbound_new) == 1
             queued = mgr.outbound_new[0]
-            assert queued.endpoint == f"{test_endpoint}/topic/{test_topic}/"
+            assert queued.endpoint == f"{test_endpoint_host}/topic/{test_topic}/"
             assert json.loads(queued.payload) == test_payload
             assert queued.retries == test_attempts - 1
             assert queued.state == QueuedOutboundMessage.STATE_PENDING
