@@ -9,7 +9,7 @@ from aiohttp_apispec import (
     response_schema,
 )
 
-from marshmallow import fields
+from marshmallow import fields, validate
 
 from ..admin.request_context import AdminRequestContext
 from ..ledger.base import BaseLedger
@@ -46,6 +46,17 @@ class DIDSchema(OpenAPISchema):
             "or local to the wallet"
         ),
         **DID_POSTURE,
+    )
+
+
+class DIDCreateSchema(OpenAPISchema):
+    """Request schema to create a new DID."""
+
+    seed = fields.Str(
+        description="Optional seed for did derivation",
+        required=False,
+        example="00000000000000000000000Endorser1",
+        validate=validate.Length(equal=32)
     )
 
 
@@ -218,6 +229,7 @@ async def wallet_did_list(request: web.BaseRequest):
 
 
 @docs(tags=["wallet"], summary="Create a local DID")
+@request_schema(DIDCreateSchema)
 @response_schema(DIDResultSchema, 200, description="")
 async def wallet_create_did(request: web.BaseRequest):
     """
@@ -235,8 +247,10 @@ async def wallet_create_did(request: web.BaseRequest):
     wallet = session.inject(BaseWallet, required=False)
     if not wallet:
         raise web.HTTPForbidden(reason="No wallet available")
+    body = await request.json() if request.body_exists else {}
+    seed = body.get("seed")
     try:
-        info = await wallet.create_local_did()
+        info = await wallet.create_local_did(seed=seed)
 
     except WalletError as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
