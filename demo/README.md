@@ -245,7 +245,7 @@ To enable support for multi-tenancy, run the `alice` or `faber` demo with the `-
 ./run_demo faber --multitenant
 ```
 
-(This option can be used with both (or either) `alice` and/or `faber'.)
+(This option can be used with both (or either) `alice` and/or `faber`.)
 
 You will see an additional menu option to create new sub-wallets (or they can be considered to be "virtual agents").
 
@@ -287,7 +287,7 @@ Faber      | No public DID
 
 Note that `faber` will create a public DID for this wallet, and will create a schema and credential definition.
 
-Once you have created a new wallet, you must estsablish a connection between `alice` and `faber` (remember that this is a new "virtual agent" and doesn't know anything about connections established for other "agents").
+Once you have created a new wallet, you must establish a connection between `alice` and `faber` (remember that this is a new "virtual agent" and doesn't know anything about connections established for other "agents").
 
 In faber, create a new invitation:
 
@@ -297,7 +297,7 @@ In faber, create a new invitation:
 (... creates a new invitation ...)
 ```
 
-In alice, accent the invitation:
+In alice, accept the invitation:
 
 ```
 [1/2/3/4/W/T/X] 4
@@ -305,16 +305,19 @@ In alice, accent the invitation:
 (... enter the new invitation string ...)
 ```
 
-You can inspect the additional multi-tenancy admin api's (i.e. the "agency api" by opening either agent's swagger page in your browser:
+You can inspect the additional multi-tenancy admin API's (i.e. the "agency API" by opening either agent's swagger page in your browser:
 
-[todo image]
+<details>
+    <summary>Show me a screenshot - multi-tenancy via admin API</summary>
+    <img src="./collateral/multitenancy-admin-api.png" alt="Multi-tenancy via Admin API">
+</details>
 
 Note that with multi-tenancy enabled:
 
-- The "base" wallet will have access to this new "agency api" - the agent's admin key, if enabled, must be provided in a header
-- "Base wallet" api calls are handled [here](https://github.com/hyperledger/aries-cloudagent-python/blob/244194e68330835e5e2e53cc6c2993899d2437fb/demo/runners/support/agent.py#L606)
-- The "sub-wallets" will have access to the "normal" aca-py admin api - to identify the sub-wallet, a JWT token must be provided, this token is created upon creation of the new wallet (see: [this code here](https://github.com/hyperledger/aries-cloudagent-python/blob/master/demo/runners/support/agent.py#L378))
-- "Sub-wallet" api calls are handled [here](https://github.com/hyperledger/aries-cloudagent-python/blob/244194e68330835e5e2e53cc6c2993899d2437fb/demo/runners/support/agent.py#L632)
+- The "base" wallet will have access to this new "agency API" - the agent's admin key, if enabled, must be provided in a header
+- "Base wallet" API calls are handled [here](https://github.com/hyperledger/aries-cloudagent-python/blob/244194e68330835e5e2e53cc6c2993899d2437fb/demo/runners/support/agent.py#L606)
+- The "sub-wallets" will have access to the "normal" aca-py admin API - to identify the sub-wallet, a JWT token must be provided, this token is created upon creation of the new wallet (see: [this code here](https://github.com/hyperledger/aries-cloudagent-python/blob/master/demo/runners/support/agent.py#L378))
+- "Sub-wallet" API calls are handled [here](https://github.com/hyperledger/aries-cloudagent-python/blob/244194e68330835e5e2e53cc6c2993899d2437fb/demo/runners/support/agent.py#L632)
 
 Documentation on aca-py's multi-tenancy support can be found [tbd here]().
 
