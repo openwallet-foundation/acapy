@@ -185,7 +185,9 @@ class MultitenantManager:
             # In unmanaged mode we don't want to store the wallet key
             if key_management_mode == WalletRecord.MODE_UNMANAGED:
                 del settings["wallet.key"]
-
+            # Adding wallet_webhook_urls and wallet_dispath_type to wallet_record
+            settings["wallet.webhook_urls"] = wallet_webhook_urls
+            settings["wallet.dispatch_type"] = wallet_dispatch_type
             # create and store wallet record
             wallet_record = WalletRecord(
                 settings=settings, key_management_mode=key_management_mode

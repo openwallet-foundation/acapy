@@ -66,6 +66,16 @@ class WalletRecord(BaseRecord):
         return self.settings.get("wallet.type")
 
     @property
+    def wallet_webhoook_urls(self) -> str:
+        """Accessor for webhook_urls of the wallet."""
+        return self.settings.get("wallet.webhook_urls")
+
+    @property
+    def wallet_dispatch_type(self) -> str:
+        """Accessor for webhook dispatch type of the wallet."""
+        return self.settings.get("wallet.dispatch_type")
+
+    @property
     def wallet_key(self) -> Optional[str]:
         """Accessor for the key of the wallet."""
         return self.settings.get("wallet.key")
