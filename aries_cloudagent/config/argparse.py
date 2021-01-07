@@ -944,7 +944,7 @@ class MediationGroup(ArgumentGroup):
             " keylists. Default: false.",
         )
         parser.add_argument(
-            "--mediation-invitation",
+            "--mediator-invitation",
             type=str,
             metavar="<invite URL to mediator>",
             env_var="ACAPY_MEDIATION_INVITATION",
@@ -952,7 +952,7 @@ class MediationGroup(ArgumentGroup):
             and send mediation request and set as default mediator.",
         )
         parser.add_argument(
-            "--default-mediation-id",
+            "--default-mediator-id",
             type=str,
             metavar="<mediation id>",
             env_var="ACAPY_DEFAULT_MEDIATION_ID",
@@ -975,13 +975,13 @@ class MediationGroup(ArgumentGroup):
         if args.open_mediation:
             settings["mediation.open"] = True
         if args.mediation_invitation:
-            settings["mediation.invite"] = args.mediation_invitation
+            settings["mediation.invite"] = args.mediator_invitation
         if args.default_mediation_id:
-            settings["mediation.default_id"] = args.default_mediation_id
+            settings["mediation.default_id"] = args.default_mediator_id
         if args.clear_default_mediator:
             settings["mediation.clear"] = True
 
-        if args.clear_default_mediator and args.default_mediation_id:
+        if args.clear_default_mediator and args.default_mediator_id:
             raise ArgsParseError(
                 "Cannot both set and clear mediation at the same time."
             )
