@@ -1,4 +1,3 @@
-from aries_cloudagent.core.profile import ProfileManagerProvider
 from tempfile import NamedTemporaryFile
 from weakref import ref, ReferenceType
 
