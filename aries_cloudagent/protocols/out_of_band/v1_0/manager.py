@@ -22,7 +22,14 @@ from .messages.invitation import InvitationMessage
 from .messages.service import Service as ServiceMessage
 from .models.invitation import InvitationRecord
 
+from ...connections.v1_0.manager import ConnectionManager
+from ...present_proof.v1_0.manager import PresentationManager
+# from ...present_proof.v1_0.messages.presentation_request import PresentationRequest
+from ...connections.v1_0.messages.connection_invitation import ConnectionInvitation
+
+
 DIDX_INVITATION = "didexchange/v1.0"
+CONNECTION_INVITATION = "connections/v1.0"
 
 
 class OutOfBandManagerError(BaseError):
@@ -246,11 +253,15 @@ class OutOfBandManager:
         # There must be exactly 1 service entry
         if len(invi_msg.service_blocks) + len(invi_msg.service_dids) != 1:
             raise OutOfBandManagerError("service array must have exactly one element")
-
+  
+        if (len(invi_msg.request_attach) < 1 and
+                len(invi_msg.handshake_protocols) < 1):
+            raise OutOfBandManagerError("Either handshake_protocols or request_attach \
+                or both needs to be specified")
         # Get the single service item
-        if invi_msg.service_blocks:
+        if len(invi_msg.service_blocks) >= 1:
             service = invi_msg.service_blocks[0]
-
+            public_did = service.recipient_keys[0]
         else:
             # If it's in the did format, we need to convert to a full service block
             service_did = invi_msg.service_dids[0]
@@ -258,6 +269,7 @@ class OutOfBandManager:
                 verkey = await ledger.get_key_for_did(service_did)
                 did_key = naked_to_did_key(verkey)
                 endpoint = await ledger.get_endpoint_for_did(service_did)
+            public_did = service_did
             service = ServiceMessage.deserialize(
                 {
                     "id": "#inline",
@@ -267,37 +279,77 @@ class OutOfBandManager:
                     "serviceEndpoint": endpoint,
                 }
             )
-
-        unq_handshake_protos = {
-            DIDCommPrefix.unqualify(proto) for proto in invi_msg.handshake_protocols
-        }
-        if unq_handshake_protos == {DIDX_INVITATION}:
-            if len(invi_msg.request_attach) != 0:
-                raise OutOfBandManagerError(
-                    "request block must be empty for invitation message type."
-                )
-
-            # Transform back to 'naked' verkey
-            service.recipient_keys = [
-                did_key_to_naked(key) for key in service.recipient_keys or []
-            ]
-            service.routing_keys = [
-                did_key_to_naked(key) for key in service.routing_keys
-            ] or []
-
-            didx_mgr = DIDXManager(self._session)
-            conn_rec = await didx_mgr.receive_invitation(invi_msg, auto_accept=True)
-
-        elif (
-            len(invi_msg.request_attach) == 1
-            and DIDCommPrefix.unqualify(invi_msg.request_attach[0].data.json["@type"])
-            == PRESENTATION_REQUEST
-        ):
-            raise OutOfBandManagerNotImplementedError(
-                f"{invi_msg.request_attach[0].data.json['@type']} "
-                "request type not implemented."
-            )
+        # Check if there is an existing active connection with this public DID
+        tag_filter = {}
+        post_filter = {}
+        post_filter["state"] = "request"
+        post_filter["their_public_did"] = public_did
+        conn_records = await ConnRecord.query(
+            self._session,
+            tag_filter,
+            post_filter_positive=post_filter,
+        )
+        if len(conn_records) == 0:
+            conn_rec = None
         else:
-            raise OutOfBandManagerError("Invalid request type")
+            conn_rec = conn_records[0]
+        unq_handshake_protos = {
+            DIDCommPrefix.unqualify(proto)
+            for proto in invi_msg.handshake_protocols
+        }
+        if not conn_rec:
+            if unq_handshake_protos == {DIDX_INVITATION}:
+                # Transform back to 'naked' verkey
+                service.recipient_keys = [
+                    did_key_to_naked(key) for key in service.recipient_keys or []
+                ]
+                service.routing_keys = [
+                    did_key_to_naked(key) for key in service.routing_keys
+                ] or []
+                didx_mgr = DIDXManager(self._session)
+                conn_rec = await didx_mgr.receive_invitation(
+                    invitation=invi_msg,
+                    their_public_did=public_did,
+                    auto_accept=True
+                )
+            elif unq_handshake_protos == {CONNECTION_INVITATION}:
+                service.recipient_keys = [
+                    did_key_to_naked(key) for key in service.recipient_keys or []
+                ]
+                service.routing_keys = [
+                    did_key_to_naked(key) for key in service.routing_keys
+                ] or []
+                connection_invitation = ConnectionInvitation.deserialize(
+                    {
+                        "@id": invi_msg._id,
+                        "@type": DIDCommPrefix.qualify_current(CONNECTION_INVITATION),
+                        "label": invi_msg.label,
+                        "recipientKeys": service.recipient_keys,
+                        "serviceEndpoint": service.service_endpoint,
+                        "routingKeys": service.routing_keys,
+                    }
+                )
+                conn_mgr = ConnectionManager(self._session)
+                conn_rec = await conn_mgr.receive_invitation(
+                        invitation=connection_invitation,
+                        their_public_did=public_did,
+                        auto_accept=True,
+                )
+        if len(invi_msg.request_attach) > 1:
+            raise OutOfBandManagerError("More than 1 request~attach included.")
+        elif len(invi_msg.request_attach) == 1:
+            req_attach = invi_msg.request_attach[0]
+            req_attach_type = req_attach.data.json["@type"]
+            if DIDCommPrefix.unqualify(req_attach_type) == PRESENTATION_REQUEST:
+                proof_present_mgr = PresentationManager(self._session)
+                presentation_exchange_record = V10PresentationExchange(
+                    connection_id=conn_rec.connection_id,
+                    initiator=V10PresentationExchange.INITIATOR_EXTERNAL,
+                    role=V10PresentationExchange.ROLE_PROVER,
+                    presentation_request_dict=req_attach.data.json.serialize(),
+                )
+                presentation_exchange_record = await proof_present_mgr.receive_request(
+                    presentation_exchange_record=presentation_exchange_record
+                )
 
         return conn_rec

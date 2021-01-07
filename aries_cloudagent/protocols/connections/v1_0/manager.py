@@ -265,6 +265,7 @@ class ConnectionManager:
     async def receive_invitation(
         self,
         invitation: ConnectionInvitation,
+        their_public_did: str,
         auto_accept: bool = None,
         alias: str = None,
         mediation_id: str = None,
@@ -306,6 +307,7 @@ class ConnectionManager:
             state=ConnRecord.State.INVITATION.rfc160,
             accept=accept,
             alias=alias,
+            their_public_did=their_public_did,
         )
 
         await connection.save(

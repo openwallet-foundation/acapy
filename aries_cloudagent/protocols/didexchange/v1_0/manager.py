@@ -71,6 +71,7 @@ class DIDXManager:
     async def receive_invitation(
         self,
         invitation: OOBInvitationMessage,
+        their_public_did: str,
         auto_accept: bool = None,
         alias: str = None,
     ) -> ConnRecord:
@@ -126,6 +127,7 @@ class DIDXManager:
             state=ConnRecord.State.INVITATION.rfc23,
             accept=accept,
             alias=alias,
+            their_public_did=their_public_did,
         )
 
         await conn_rec.save(
