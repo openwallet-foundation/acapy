@@ -237,6 +237,7 @@ async def wallet_create_did(request: web.BaseRequest):
         raise web.HTTPForbidden(reason="No wallet available")
     try:
         info = await wallet.create_local_did()
+
     except WalletError as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 

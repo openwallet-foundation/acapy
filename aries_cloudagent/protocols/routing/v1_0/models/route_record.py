@@ -136,7 +136,7 @@ class RouteRecordSchema(BaseRecordSchema):
 
         """
 
-        if not data.get("connection_id") and data.get("wallet_id"):
+        if not (data.get("connection_id") or data.get("wallet_id")):
             raise ValidationError(
                 "Either connection_id or wallet_id must be set for route"
             )

@@ -8,7 +8,7 @@ from ..core.profile import (
     Profile,
     ProfileSession,
 )
-from ..config.wallet import wallet_config as configure_wallet
+from ..config.wallet import wallet_config
 from ..config.injection_context import InjectionContext
 from ..wallet.models.wallet_record import WalletRecord
 from ..core.error import BaseError
@@ -16,6 +16,7 @@ from ..protocols.routing.v1_0.manager import RouteNotFoundError, RoutingManager
 from ..protocols.routing.v1_0.models.route_record import RouteRecord
 from ..transport.wire_format import BaseWireFormat
 from ..storage.base import BaseStorage
+from ..storage.error import StorageNotFoundError
 
 from .error import WalletKeyMissingError
 
@@ -140,12 +141,12 @@ class MultitenantManager:
                 .extend(extra_settings)
             )
 
-            # MTODO: remove base wallet settings
             context.settings = context.settings.extend(wallet_record.settings).extend(
                 extra_settings
             )
 
-            profile, _ = await configure_wallet(context, provision=provision)
+            # MTODO: add ledger config
+            profile, _ = await wallet_config(context, provision=provision)
             self._instances[wallet_id] = profile
 
         return self._instances[wallet_id]
@@ -192,7 +193,7 @@ class MultitenantManager:
 
             await wallet_record.save(session)
 
-        # profision wallet. We don't need to do anything with it for now
+        # provision wallet. We don't need to do anything with it for now
         await self.get_wallet_profile(
             self.profile.context,
             wallet_record,
@@ -247,8 +248,8 @@ class MultitenantManager:
             await wallet.delete_record(session)
 
     async def add_wallet_route(
-        self, wallet_id: str, recipient_key: str
-    ) -> List[WalletRecord]:
+        self, wallet_id: str, recipient_key: str, *, skip_if_exists: bool = False
+    ):
         """
         Add a wallet route to map incoming messages to specific subwallets.
 
@@ -263,11 +264,20 @@ class MultitenantManager:
             )
             routing_mgr = RoutingManager(session)
 
+            if skip_if_exists:
+                try:
+                    await RouteRecord.retrieve_by_recipient_key(session, recipient_key)
+
+                    # If no error is thrown, it means there is already a record
+                    return
+                except (StorageNotFoundError):
+                    pass
+
             await routing_mgr.create_route_record(
                 recipient_key=recipient_key, internal_wallet_id=wallet_id
             )
 
-    async def create_auth_token(
+    def create_auth_token(
         self, wallet_record: WalletRecord, wallet_key: str = None
     ) -> str:
         """Create JWT auth token for specified wallet record.
@@ -295,7 +305,7 @@ class MultitenantManager:
 
             jwt_payload["wallet_key"] = wallet_key
 
-        token = jwt.encode(jwt_payload, jwt_secret).decode()
+        token = jwt.encode(jwt_payload, jwt_secret, algorithm="HS256").decode()
 
         return token
 
@@ -309,7 +319,8 @@ class MultitenantManager:
             token: The token
 
         Raises:
-            WalletKeyMissingError: [description]
+            WalletKeyMissingError: If the wallet_key is missing for an unmanaged wallet
+            InvalidTokenError: If there is an exception while decoding the token
 
         Returns:
             Profile associated with the token
@@ -318,7 +329,7 @@ class MultitenantManager:
         jwt_secret = self.profile.context.settings.get("multitenant.jwt_secret")
         extra_settings = {}
 
-        token_body = jwt.decode(token, jwt_secret)
+        token_body = jwt.decode(token, jwt_secret, algorithms=["HS256"])
 
         wallet_id = token_body.get("wallet_id")
         wallet_key = token_body.get("wallet_key")
@@ -374,11 +385,6 @@ class MultitenantManager:
         """
         async with self.profile.session() as session:
             wire_format = wire_format or session.inject(BaseWireFormat)
-
-            if not wire_format:
-                raise MultitenantManagerError(
-                    "Unable to detect recipient keys without wire format"
-                )
 
             recipient_keys = wire_format.get_recipient_keys(message_body)
             wallets = []
