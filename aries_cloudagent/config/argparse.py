@@ -974,9 +974,9 @@ class MediationGroup(ArgumentGroup):
             settings["mediation.auto_send_keylist_update_in_create_invitation"] = True
         if args.open_mediation:
             settings["mediation.open"] = True
-        if args.mediation_invitation:
+        if args.mediator_invitation:
             settings["mediation.invite"] = args.mediator_invitation
-        if args.default_mediation_id:
+        if args.default_mediator_id:
             settings["mediation.default_id"] = args.default_mediator_id
         if args.clear_default_mediator:
             settings["mediation.clear"] = True

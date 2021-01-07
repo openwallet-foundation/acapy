@@ -318,7 +318,7 @@ class Conductor:
                     )
                     await mediation_mgr.set_default_mediator(record)
                 except Exception:
-                    LOGGER.exception("Error retrieving mediation ID")
+                    LOGGER.exception("Error retrieving mediation record")
 
     async def stop(self, timeout=1.0):
         """Stop the agent."""
