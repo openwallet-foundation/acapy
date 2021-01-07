@@ -3,8 +3,9 @@ import json
 import logging
 from typing import Optional, Sequence, Tuple
 
-from ....core.profile import ProfileSession
 from ....core.error import BaseError
+from ....core.profile import ProfileSession
+from ....messaging.responder import BaseResponder
 from ....storage.base import BaseStorage
 from ....storage.error import StorageNotFoundError
 from ....storage.record import StorageRecord
@@ -48,7 +49,10 @@ class MediationManager:
     a consistent routing key to mediation clients.
     """
 
-    RECORD_TYPE = "routing_did"
+    ROUTING_DID_RECORD_TYPE = "routing_did"
+    DEFAULT_MEDIATOR_RECORD_TYPE = "default_mediator"
+    SEND_REQ_AFTER_CONNECTION = "send_mediation_request_on_connection"
+    SET_TO_DEFAULT_ON_GRANTED = "set_to_default_on_granted"
 
     def __init__(self, session: ProfileSession):
         """Initialize Mediation Manager.
@@ -73,7 +77,8 @@ class MediationManager:
         storage: BaseStorage = self.session.inject(BaseStorage)
         try:
             record = await storage.get_record(
-                record_type=self.RECORD_TYPE, record_id=self.RECORD_TYPE
+                record_type=self.ROUTING_DID_RECORD_TYPE,
+                record_id=self.ROUTING_DID_RECORD_TYPE,
             )
             info = json.loads(record.value)
             info.update(record.tags)
@@ -92,10 +97,10 @@ class MediationManager:
         storage: BaseStorage = self.session.inject(BaseStorage)
         info: DIDInfo = await wallet.create_local_did(metadata={"type": "routing_did"})
         record = StorageRecord(
-            type=self.RECORD_TYPE,
+            type=self.ROUTING_DID_RECORD_TYPE,
             value=json.dumps({"verkey": info.verkey, "metadata": info.metadata}),
             tags={"did": info.did},
-            id=self.RECORD_TYPE,
+            id=self.ROUTING_DID_RECORD_TYPE,
         )
         await storage.add_record(record)
         return info
@@ -258,6 +263,52 @@ class MediationManager:
     # }}}
 
     # Role: Client {{{
+
+    async def get_default_mediator(self) -> Optional[MediationRecord]:
+        """Retrieve default mediator from the store.
+
+        Returns:
+            Optional[MediationRecord]: retrieved default mediator or None if not set
+
+        """
+        storage: BaseStorage = self.session.inject(BaseStorage)
+        try:
+            default_record = await storage.get_record(
+                record_type=self.DEFAULT_MEDIATOR_RECORD_TYPE,
+                record_id=self.DEFAULT_MEDIATOR_RECORD_TYPE,
+            )
+            mediation_record = await MediationRecord.retrieve_by_id(
+                self.session, default_record.value
+            )
+            return mediation_record
+        except StorageNotFoundError:
+            return None
+
+    async def set_default_mediator(self, record: MediationRecord):
+        """Set default mediator from record."""
+        return await self.set_default_mediator_by_id(record.mediation_id)
+
+    async def set_default_mediator_by_id(self, mediation_id: str):
+        """Set default mediator from ID."""
+        storage: BaseStorage = self.session.inject(BaseStorage)
+        default_record = await self.get_default_mediator()
+
+        if default_record:
+            await storage.update_record(default_record, mediation_id, {})
+        else:
+            default_record = StorageRecord(
+                type=self.DEFAULT_MEDIATOR_RECORD_TYPE,
+                value=mediation_id,
+                id=self.DEFAULT_MEDIATOR_RECORD_TYPE,
+            )
+            await storage.add_record(default_record)
+
+    async def clear_default_mediator(self):
+        """Clear the stored default mediator."""
+        storage: BaseStorage = self.session.inject(BaseStorage)
+        record = await self.get_default_mediator()
+        if record:
+            await storage.delete_record(record)
 
     async def prepare_request(
         self,

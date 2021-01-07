@@ -699,6 +699,19 @@ class ConnectionManager:
                 keylist_updates, connection_id=mediation_record.connection_id
             )
 
+        # TODO It's possible the mediation request sent here might arrive
+        # before the connection response. This would result in an error condition
+        # difficult to accomodate for without modifying handlers for trust ping
+        # to ensure the connection is active.
+        send_mediation_request = await connection.metadata_get(
+            self._session, MediationManager.SEND_REQ_AFTER_CONNECTION
+        )
+        if send_mediation_request:
+            mgr = MediationManager(self._session)
+            _record, request = await mgr.prepare_request(connection.connection_id)
+            responder = self._session.inject(BaseResponder)
+            responder.send(request, connection_id=connection.connection_id)
+
         return response
 
     async def accept_response(
@@ -773,6 +786,15 @@ class ConnectionManager:
         connection.state = ConnRecord.State.RESPONSE.rfc160
 
         await connection.save(self._session, reason="Accepted connection response")
+
+        send_mediation_request = await connection.metadata_get(
+            self._session, MediationManager.SEND_REQ_AFTER_CONNECTION
+        )
+        if send_mediation_request:
+            mgr = MediationManager(self._session)
+            _record, request = await mgr.prepare_request(connection.connection_id)
+            responder = self._session.inject(BaseResponder)
+            responder.send(request, connection_id=connection.connection_id)
 
         return connection
 
