@@ -120,7 +120,7 @@ class AutoEndorseOptionSchema(OpenAPISchema):
 
     auto_endorse = fields.Boolean(
         description="Auto-endorse Transaction",
-        required=True,
+        required=False,
     )
 
 
@@ -143,7 +143,7 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
 
     """
     context: AdminRequestContext = request["context"]
-    auto_endorse = json.loads(request.query.get("auto_endorse", "null"))
+    auto_endorse = json.loads(request.query.get("auto_endorse", "true"))
 
     if auto_endorse:
         body = await request.json()

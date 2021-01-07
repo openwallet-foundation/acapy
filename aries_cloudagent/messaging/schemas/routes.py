@@ -109,7 +109,7 @@ class AutoEndorseOptionSchema(OpenAPISchema):
 
     auto_endorse = fields.Boolean(
         description="Auto-endorse Transaction",
-        required=True,
+        required=False,
     )
 
 
@@ -129,7 +129,7 @@ async def schemas_send_schema(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
-    auto_endorse = json.loads(request.query.get("auto_endorse", "null"))
+    auto_endorse = json.loads(request.query.get("auto_endorse", "true"))
 
     if auto_endorse:
         body = await request.json()
