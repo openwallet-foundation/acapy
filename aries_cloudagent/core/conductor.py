@@ -22,9 +22,17 @@ from ..config.wallet import wallet_config
 from ..core.profile import Profile
 from ..ledger.error import LedgerConfigError, LedgerTransactionError
 from ..messaging.responder import BaseResponder
+from ..multitenant.manager import MultitenantManager
 from ..protocols.connections.v1_0.manager import (
     ConnectionManager,
     ConnectionManagerError,
+)
+from ..protocols.connections.v1_0.messages.connection_invitation import (
+    ConnectionInvitation,
+)
+from ..protocols.coordinate_mediation.v1_0.manager import MediationManager
+from ..protocols.coordinate_mediation.v1_0.models.mediation_record import (
+    MediationRecord,
 )
 from ..protocols.out_of_band.v1_0.manager import OutOfBandManager
 from ..protocols.out_of_band.v1_0.messages.invitation import InvitationMessage
@@ -35,7 +43,6 @@ from ..transport.outbound.manager import OutboundTransportManager, QueuedOutboun
 from ..transport.outbound.message import OutboundMessage
 from ..transport.wire_format import BaseWireFormat
 from ..utils.stats import Collector
-from ..multitenant.manager import MultitenantManager
 from ..utils.task_queue import CompletedTask, TaskQueue
 from ..wallet.base import DIDInfo
 from .dispatcher import Dispatcher
@@ -272,6 +279,46 @@ class Conductor:
                     del mgr
             except Exception:
                 LOGGER.exception("Error creating invitation")
+
+        # Accept mediation invitation if specified
+        mediation_invitation = context.settings.get("mediation.invite")
+        if mediation_invitation:
+            try:
+                async with self.root_profile.session() as session:
+                    mgr = ConnectionManager(session)
+                    conn_record = await mgr.receive_invitation(
+                        invitation=ConnectionInvitation.deserialize(
+                            mediation_invitation
+                        ),
+                        auto_accept=True,
+                    )
+                    await conn_record.metadata_set(
+                        session, MediationManager.SEND_REQ_AFTER_CONNECTION, True
+                    )
+                    await conn_record.metadata_set(
+                        session, MediationManager.SET_TO_DEFAULT_ON_GRANTED, True
+                    )
+            except Exception:
+                LOGGER.exception("Error accepting mediation invitation")
+
+        # Clear default mediator
+        if context.settings.get("mediation.clear"):
+            async with self.root_profile.session() as session:
+                mediation_mgr = MediationManager(session)
+                await mediation_mgr.clear_default_mediator()
+
+        # Set default mediator by id
+        default_mediator_id = context.settings.get("mediation.default_id")
+        if default_mediator_id:
+            async with self.root_profile.session() as session:
+                mediation_mgr = MediationManager(session)
+                try:
+                    record = await MediationRecord.retrieve_by_id(
+                        session, default_mediator_id
+                    )
+                    await mediation_mgr.set_default_mediator(record)
+                except Exception:
+                    LOGGER.exception("Error retrieving mediation ID")
 
     async def stop(self, timeout=1.0):
         """Stop the agent."""
