@@ -346,6 +346,31 @@ class TestConnectionRoutes(AsyncTestCase):
             with self.assertRaises(test_module.web.HTTPBadRequest):
                 await test_module.connections_create_invitation(self.request)
 
+    async def test_connections_create_invitation_x_bad_mediation_id(self):
+        self.context.update_settings({"public_invites": True})
+        body = {
+            "recipient_keys": ["test"],
+            "routing_keys": ["test"],
+            "service_endpoint": "http://example.com",
+            "metadata": {"hello": "world"},
+            "mediation_id": "some-id",
+        }
+        self.request.json = async_mock.CoroutineMock(return_value=body)
+        self.request.query = {
+            "auto_accept": "true",
+            "alias": "alias",
+            "public": "true",
+            "multi_use": "true",
+        }
+        with async_mock.patch.object(
+            test_module, "ConnectionManager", autospec=True
+        ) as mock_conn_mgr:
+            mock_conn_mgr.return_value.create_invitation = async_mock.CoroutineMock(
+                side_effect=StorageNotFoundError()
+            )
+            with self.assertRaises(test_module.web.HTTPBadRequest):
+                await test_module.connections_create_invitation(self.request)
+
     async def test_connections_create_invitation_public_forbidden(self):
         self.context.update_settings({"public_invites": False})
         self.request.json = async_mock.CoroutineMock()

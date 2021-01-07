@@ -474,7 +474,7 @@ async def connections_create_invitation(request: web.BaseRequest):
             "invitation": invitation.serialize(),
             "invitation_url": invitation.to_url(base_url),
         }
-    except (ConnectionManagerError, BaseModelError) as err:
+    except (ConnectionManagerError, StorageError, BaseModelError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     if connection and connection.alias:
