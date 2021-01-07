@@ -439,7 +439,7 @@ class TestConnectionRoutes(AsyncTestCase):
         self.request.query = {
             "auto_accept": "true",
             "alias": "alias",
-            "mediation_id": "some-id"
+            "mediation_id": "some-id",
         }
 
         mock_conn_rec = async_mock.MagicMock()
