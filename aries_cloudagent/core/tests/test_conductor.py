@@ -497,7 +497,13 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
 
     async def test_admin_startx(self):
         builder: ContextBuilder = StubContextBuilder(self.test_settings)
-        builder.update_settings({"admin.enabled": "1", "debug.print_invitation": "1"})
+        builder.update_settings(
+            {
+                "admin.enabled": "1",
+                "debug.print_invitation": True,
+                "debug.print_connections_invitation": True,
+            }
+        )
         conductor = test_module.Conductor(builder)
 
         await conductor.setup()
@@ -514,10 +520,15 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             admin, "stop", autospec=True
         ) as admin_stop, async_mock.patch.object(
             test_module, "OutOfBandManager"
-        ) as oob_mgr:
+        ) as oob_mgr, async_mock.patch.object(
+            test_module, "ConnectionManager"
+        ) as conn_mgr:
             admin_start.side_effect = KeyError("trouble")
             oob_mgr.return_value.create_invitation = async_mock.CoroutineMock(
-                side_effect=KeyError("more trouble")
+                side_effect=KeyError("double trouble")
+            )
+            conn_mgr.return_value.create_invitation = async_mock.CoroutineMock(
+                side_effect=KeyError("triple trouble")
             )
             await conductor.start()
             admin_start.assert_awaited_once_with()
@@ -649,10 +660,14 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             conductor.dispatch_complete(message, mock_task)
             mock_notify.assert_called_once_with()
 
-    async def test_print_invite(self):
+    async def test_print_invite_connection(self):
         builder: ContextBuilder = StubContextBuilder(self.test_settings)
         builder.update_settings(
-            {"debug.print_invitation": True, "invite_base_url": "http://localhost"}
+            {
+                "debug.print_invitation": True,
+                "debug.print_connections_invitation": True,
+                "invite_base_url": "http://localhost",
+            }
         )
         conductor = test_module.Conductor(builder)
 
