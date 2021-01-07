@@ -119,7 +119,7 @@ class MediationIdMatchInfoSchema(OpenAPISchema):
 
 
 class GetKeylistQuerySchema(OpenAPISchema):
-    """Get Keylist query string paramaters."""
+    """Get keylist query string paramaters."""
 
     conn_id = CONNECTION_ID_SCHEMA
     role = fields.Str(
@@ -144,7 +144,7 @@ class KeylistSchema(OpenAPISchema):
 
 
 class KeylistQueryFilterRequestSchema(OpenAPISchema):
-    """Request schema for Keylist Query filtering."""
+    """Request schema for keylist query filtering."""
 
     filter = fields.Dict(required=False, description="Filter for keylist query.")
 
@@ -179,7 +179,7 @@ def mediation_sort_key(mediation: dict):
 
 @docs(
     tags=["mediation"],
-    summary="Query mediation requests, returns list of all mediation records.",
+    summary="Query mediation requests, returns list of all mediation records",
 )
 @querystring_schema(MediationListQueryStringSchema())
 @response_schema(MediationListSchema(), 200)
@@ -205,7 +205,7 @@ async def list_mediation_requests(request: web.BaseRequest):
     return web.json_response(results)
 
 
-@docs(tags=["mediation"], summary="retrieve mediation request record.")
+@docs(tags=["mediation"], summary="Retrieve mediation request record")
 @match_info_schema(MediationIdMatchInfoSchema())
 @response_schema(MediationRecordSchema(), 200)
 async def retrieve_mediation_request(request: web.BaseRequest):
@@ -225,7 +225,7 @@ async def retrieve_mediation_request(request: web.BaseRequest):
     return web.json_response(result)
 
 
-@docs(tags=["mediation"], summary="Delete mediation request by ID.")
+@docs(tags=["mediation"], summary="Delete mediation request by ID")
 @match_info_schema(MediationIdMatchInfoSchema())
 @response_schema(MediationRecordSchema, 200)
 async def delete_mediation_request(request: web.BaseRequest):
@@ -247,7 +247,7 @@ async def delete_mediation_request(request: web.BaseRequest):
     return web.json_response(result)
 
 
-@docs(tags=["mediation"], summary="request mediation from connection.")
+@docs(tags=["mediation"], summary="Request mediation from connection")
 @match_info_schema(ConnIdMatchInfoSchema())
 @request_schema(MediationCreateRequestSchema())
 @response_schema(MediationRecordSchema(), 201)
@@ -293,7 +293,7 @@ async def request_mediation(request: web.BaseRequest):
     return web.json_response(result, status=201)
 
 
-@docs(tags=["mediation"], summary="grant received mediation")
+@docs(tags=["mediation"], summary="Grant received mediation")
 @match_info_schema(MediationIdMatchInfoSchema())
 @response_schema(MediationGrantSchema(), 201)
 async def mediation_request_grant(request: web.BaseRequest):
@@ -320,7 +320,7 @@ async def mediation_request_grant(request: web.BaseRequest):
     return web.json_response(result, status=201)
 
 
-@docs(tags=["mediation"], summary="deny a stored mediation request")
+@docs(tags=["mediation"], summary="Deny a stored mediation request")
 @match_info_schema(MediationIdMatchInfoSchema())
 @request_schema(AdminMediationDenySchema())
 @response_schema(MediationDenySchema(), 201)
@@ -357,7 +357,7 @@ async def mediation_request_deny(request: web.BaseRequest):
 
 
 @docs(
-    tags=["keylist"],
+    tags=["mediation"],
     summary="Retrieve keylists by connection or role",
 )
 @querystring_schema(GetKeylistQuerySchema())
@@ -384,7 +384,7 @@ async def get_keylist(request: web.BaseRequest):
 
 
 @docs(
-    tags=["keylist"],
+    tags=["mediation"],
     summary="Send keylist query to mediator",
 )
 @match_info_schema(MediationIdMatchInfoSchema())
@@ -422,7 +422,7 @@ async def send_keylist_query(request: web.BaseRequest):
     return web.json_response(request.serialize(), status=201)
 
 
-@docs(tags=["keylist"], summary="update keylist.")
+@docs(tags=["mediation"], summary="Send keylist update to mediator")
 @match_info_schema(MediationIdMatchInfoSchema())
 @request_schema(KeylistUpdateRequestSchema())
 @response_schema(KeylistUpdateSchema(), 201)
@@ -508,7 +508,7 @@ def post_process_routes(app: web.Application):
     app._state["swagger_dict"]["tags"].append(
         {
             "name": "mediation",
-            "description": "mediation management",
+            "description": "Mediation management",
             "externalDocs": {"description": "Specification", "url": SPEC_URI},
         }
     )
