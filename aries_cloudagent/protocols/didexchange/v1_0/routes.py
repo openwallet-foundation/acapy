@@ -1,13 +1,10 @@
 """Connection handling admin routes."""
 
-import json
-
 from aiohttp import web
 from aiohttp_apispec import (
     docs,
     match_info_schema,
     querystring_schema,
-    request_schema,
     response_schema,
 )
 
@@ -21,33 +18,8 @@ from ....messaging.valid import ENDPOINT, UUIDFour
 from ....storage.error import StorageError, StorageNotFoundError
 from ....wallet.error import WalletError
 
-from ...out_of_band.v1_0.messages.invitation import (
-    InvitationMessage as OOBInvitation,
-    InvitationMessageSchema as OOBInvitationSchema,
-)
-
 from .manager import DIDXManager, DIDXManagerError
 from .message_types import SPEC_URI
-
-
-class DIDXReceiveInvitationRequestSchema(OOBInvitationSchema):
-    """Request schema for receive invitation request."""
-
-    service = fields.Field()
-
-
-class DIDXReceiveInvitationQueryStringSchema(OpenAPISchema):
-    """Parameters and validators for receive invitation request query string."""
-
-    alias = fields.Str(
-        description="Alias",
-        required=False,
-        example="Barry",
-    )
-    auto_accept = fields.Boolean(
-        description="Auto-accept connection (defaults to configuration)",
-        required=False,
-    )
 
 
 class DIDXAcceptInvitationQueryStringSchema(OpenAPISchema):
@@ -85,49 +57,6 @@ class DIDXConnIdRefIdMatchInfoSchema(OpenAPISchema):
         required=True,
         example=UUIDFour.EXAMPLE,
     )
-
-
-@docs(
-    tags=["did-exchange"],
-    summary="Receive a new connection invitation",
-)
-@querystring_schema(DIDXReceiveInvitationQueryStringSchema())
-@request_schema(DIDXReceiveInvitationRequestSchema())
-@response_schema(ConnRecordSchema(), 200, description="")
-async def didx_receive_invitation(request: web.BaseRequest):
-    """
-    Request handler for receiving a new connection invitation.
-
-    Args:
-        request: aiohttp request object
-
-    Returns:
-        The resulting connection record details
-
-    """
-    context: AdminRequestContext = request["context"]
-    if context.settings.get("admin.no_receive_invites"):
-        raise web.HTTPForbidden(
-            reason="Configuration does not allow receipt of invitations"
-        )
-    session = await context.session()
-    didx_mgr = DIDXManager(session)
-    invitation_json = await request.json()
-
-    try:
-        invitation = OOBInvitation.deserialize(invitation_json)
-        auto_accept = json.loads(request.query.get("auto_accept", "null"))
-        alias = request.query.get("alias")
-        conn_rec = await didx_mgr.receive_invitation(
-            invitation,
-            auto_accept=auto_accept,
-            alias=alias,
-        )
-        result = conn_rec.serialize()
-    except (DIDXManagerError, StorageError, BaseModelError) as err:
-        raise web.HTTPBadRequest(reason=err.roll_up) from err
-
-    return web.json_response(result)
 
 
 @docs(
@@ -214,7 +143,6 @@ async def register(app: web.Application):
 
     app.add_routes(
         [
-            web.post("/didexchange/receive-invitation", didx_receive_invitation),
             web.post(
                 "/didexchange/{conn_id}/accept-invitation",
                 didx_accept_invitation,

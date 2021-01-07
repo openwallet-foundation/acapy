@@ -77,7 +77,13 @@ class ConnRecord(BaseRecord):
             return self is ConnRecord.Role.get(other)
 
     class State(Enum):
-        """Collator for equivalent states between RFC 160 and RFC 23."""
+        """
+        Collator for equivalent states between RFC 160 and RFC 23.
+
+        On the connection record, the state has to serve for both RFCs.
+        Hence, internally, RFC23 requester/responder states collate to
+        their RFC160 condensed equivalent.
+        """
 
         INIT = ("init", "start")
         INVITATION = ("invitation", "invitation")
@@ -93,8 +99,31 @@ class ConnRecord(BaseRecord):
 
         @property
         def rfc23(self):
-            """Return RFC 23 (DID exchange protocol) nomenclature."""
+            """Return RFC 23 (DID exchange protocol) nomenclature to record logic."""
             return self.value[1]
+
+        def rfc23strict(self, their_role: "ConnRecord.Role"):
+            """Return RFC 23 (DID exchange protocol) nomenclature to role as per RFC."""
+
+            if not their_role or self in (
+                ConnRecord.State.INIT,
+                ConnRecord.State.COMPLETED,
+                ConnRecord.State.ABANDONED,
+            ):
+                return self.value[1]
+
+            if self is ConnRecord.State.REQUEST:
+                return self.value[1] + (
+                    "-sent"
+                    if ConnRecord.Role.get(their_role) is ConnRecord.Role.RESPONDER
+                    else "-received"
+                )
+            else:
+                return self.value[1] + (
+                    "-received"
+                    if ConnRecord.Role.get(their_role) is ConnRecord.Role.RESPONDER
+                    else "-sent"
+                )
 
         @classmethod
         def get(cls, label: Union[str, "ConnRecord.State"]):
@@ -185,6 +214,11 @@ class ConnRecord(BaseRecord):
     def connection_id(self) -> str:
         """Accessor for the ID associated with this connection."""
         return self._id
+
+    @property
+    def rfc23_state(self) -> str:
+        """RFC23 state per RFC text, potentially particular to role."""
+        return ConnRecord.State.get(self.state).rfc23strict(self.their_role)
 
     @property
     def record_value(self) -> dict:
@@ -490,6 +524,11 @@ class ConnRecordSchema(BaseRecordSchema):
             [label for role in ConnRecord.Role for label in role.value]
         ),
         example=ConnRecord.Role.REQUESTER.rfc23,
+    )
+    rfc23_state = fields.Str(
+        dump_only=True,
+        description="State per RFC 23",
+        example="invitation-sent",
     )
     inbound_connection_id = fields.Str(
         required=False,

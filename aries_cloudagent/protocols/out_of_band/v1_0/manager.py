@@ -106,6 +106,10 @@ class OutOfBandManager:
 
         wallet = self._session.inject(BaseWallet)
 
+        # Multitenancy setup
+        multitenant_mgr = self._session.inject(MultitenantManager, required=False)
+        wallet_id = self._session.settings.get("wallet.id")
+
         accept = bool(
             auto_accept
             or (
@@ -171,6 +175,12 @@ class OutOfBandManager:
                 service=[f"did:sov:{public_did.did}"],
             )
 
+            # Add mapping for multitenant relay.
+            if multitenant_mgr and wallet_id:
+                await multitenant_mgr.add_wallet_route(
+                    wallet_id, public_did.verkey, skip_if_exists=True
+                )
+
         else:
             invitation_mode = (
                 ConnRecord.INVITATION_MODE_MULTI
@@ -184,15 +194,9 @@ class OutOfBandManager:
             # Create and store new invitation key
             connection_key = await wallet.create_signing_key()
 
-            # Multitenancy: add routing for key to handle inbound messages using relay
-            multitenant_enabled = self._session.settings.get("multitenant.enabled")
-            wallet_id = self._session.settings.get("wallet.id")
-            if multitenant_enabled and wallet_id:
-                multitenant_mgr = self._session.inject(MultitenantManager)
-                await multitenant_mgr.add_wallet_route(
-                    wallet_id=wallet_id,
-                    recipient_key=connection_key.verkey,
-                )
+            # Add mapping for multitenant relay
+            if multitenant_mgr and wallet_id:
+                await multitenant_mgr.add_wallet_route(wallet_id, connection_key.verkey)
 
             # Create connection invitation message
             # Note: Need to split this into two stages to support inbound routing
@@ -245,7 +249,12 @@ class OutOfBandManager:
         await invi_rec.save(self._session, reason="Created new invitation")
         return invi_rec
 
-    async def receive_invitation(self, invi_msg: InvitationMessage) -> ConnRecord:
+    async def receive_invitation(
+        self,
+        invi_msg: InvitationMessage,
+        auto_accept: bool = None,
+        alias: str = None,
+    ) -> ConnRecord:
         """Receive an out of band invitation message."""
 
         ledger: BaseLedger = self._session.inject(BaseLedger)

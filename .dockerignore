@@ -6,3 +6,4 @@ build
 docs
 dist
 test-reports
+.python-version

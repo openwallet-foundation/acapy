@@ -42,6 +42,7 @@ class ConnectionRequest(AgentMessage):
         super().__init__(**kwargs)
         self.connection = connection
         self.label = label
+        self.image_url = image_url
 
 
 class ConnectionRequestSchema(AgentMessageSchema):

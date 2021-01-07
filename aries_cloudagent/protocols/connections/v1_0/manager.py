@@ -144,6 +144,11 @@ class ConnectionManager:
         """
         mediation_mgr = MediationManager(self._session)
         keylist_updates = None
+        image_url = self._session.context.settings.get("image_url")
+
+        # Multitenancy setup
+        multitenant_mgr = self._session.inject(MultitenantManager, required=False)
+        wallet_id = self._session.settings.get("wallet.id")
 
         if not my_label:
             my_label = self._session.settings.get("default_label")
@@ -170,8 +175,15 @@ class ConnectionManager:
 
             # FIXME - allow ledger instance to format public DID with prefix?
             invitation = ConnectionInvitation(
-                label=my_label, did=f"did:sov:{public_did.did}"
+                label=my_label, did=f"did:sov:{public_did.did}", image_url=image_url
             )
+
+            # Add mapping for multitenant relay.
+            if multitenant_mgr and wallet_id:
+                await multitenant_mgr.add_wallet_route(
+                    wallet_id, public_did.verkey, skip_if_exists=True
+                )
+
             return None, invitation
 
         invitation_mode = ConnRecord.INVITATION_MODE_ONCE
@@ -179,6 +191,7 @@ class ConnectionManager:
             invitation_mode = ConnRecord.INVITATION_MODE_MULTI
 
         if recipient_keys:
+            # TODO: register recipient keys for relay
             # TODO: check that recipient keys are in wallet
             invitation_key = recipient_keys[0]  # TODO first key appropriate?
         else:
@@ -189,6 +202,10 @@ class ConnectionManager:
             keylist_updates = await mediation_mgr.add_key(
                 invitation_key, keylist_updates
             )
+
+            # Add mapping for multitenant relay
+            if multitenant_mgr and wallet_id:
+                await multitenant_mgr.add_wallet_route(wallet_id, invitation_key)
 
         if not my_endpoint:
             my_endpoint = self._session.settings.get("default_endpoint")
@@ -243,22 +260,13 @@ class ConnectionManager:
             recipient_keys=recipient_keys,
             routing_keys=routing_keys,
             endpoint=my_endpoint,
+            image_url=image_url,
         )
         await connection.attach_invitation(self._session, invitation)
 
         if metadata:
             for key, value in metadata.items():
                 await connection.metadata_set(self._session, key, value)
-
-        # Multitenancy: add routing for key to handle inbound messages using relay
-        multitenant_enabled = self._session.settings.get("multitenant.enabled")
-        wallet_id = self._session.settings.get("wallet.id")
-        if multitenant_enabled and wallet_id:
-            multitenant_mgr = self._session.inject(MultitenantManager)
-            await multitenant_mgr.add_wallet_route(
-                wallet_id=wallet_id,
-                recipient_key=invitation_key,
-            )
 
         return connection, invitation
 
@@ -357,6 +365,10 @@ class ConnectionManager:
         mediation_record = await self.mediation_record_if_id(mediation_id)
         mediation_mgr = MediationManager(self._session)
 
+        # Multitenancy setup
+        multitenant_mgr = self._session.inject(MultitenantManager, required=False)
+        wallet_id = self._session.settings.get("wallet.id")
+
         my_info = None
         wallet = self._session.inject(BaseWallet)
         if connection.my_did:
@@ -368,6 +380,10 @@ class ConnectionManager:
             keylist_updates = await mediation_mgr.add_key(
                 my_info.verkey, keylist_updates
             )
+
+            # Add mapping for multitenant relay
+            if multitenant_mgr and wallet_id:
+                await multitenant_mgr.add_wallet_route(wallet_id, my_info.verkey)
 
         # Create connection request message
         if my_endpoint:
@@ -391,6 +407,7 @@ class ConnectionManager:
         request = ConnectionRequest(
             label=my_label,
             connection=ConnectionDetail(did=connection.my_did, did_doc=did_doc),
+            image_url=self._session.settings.get("image_url"),
         )
 
         # Update connection state
@@ -398,16 +415,6 @@ class ConnectionManager:
         connection.state = ConnRecord.State.REQUEST.rfc160
 
         await connection.save(self._session, reason="Created connection request")
-
-        # Multitenancy: add routing for key to handle inbound messages using relay
-        multitenant_enabled = self._session.settings.get("multitenant.enabled")
-        wallet_id = self._session.settings.get("wallet.id")
-        if multitenant_enabled and wallet_id:
-            multitenant_mgr = self._session.inject(MultitenantManager)
-            await multitenant_mgr.add_wallet_route(
-                wallet_id=wallet_id,
-                recipient_key=my_info.verkey,
-            )
 
         # Notify mediator of keylist changes
         if (
@@ -451,6 +458,10 @@ class ConnectionManager:
         connection = None
         connection_key = None
         my_info = None
+
+        # Multitenancy setup
+        multitenant_mgr = self._session.inject(MultitenantManager, required=False)
+        wallet_id = self._session.settings.get("wallet.id")
 
         # Determine what key will need to sign the response
         if receipt.recipient_did_public:
@@ -506,6 +517,10 @@ class ConnectionManager:
                     await new_connection.metadata_set(self._session, key, value)
 
                 connection = new_connection
+
+                # Add mapping for multitenant relay
+                if multitenant_mgr and wallet_id:
+                    await multitenant_mgr.add_wallet_route(wallet_id, my_info.verkey)
             else:
                 # remove key from mediator keylist
                 keylist_updates = await mediation_mgr.remove_key(
@@ -539,6 +554,10 @@ class ConnectionManager:
                 my_info.verkey, keylist_updates
             )
 
+            # Add mapping for multitenant relay
+            if multitenant_mgr and wallet_id:
+                await multitenant_mgr.add_wallet_route(wallet_id, my_info.verkey)
+
             connection = ConnRecord(
                 invitation_key=connection_key,
                 my_did=my_info.did,
@@ -556,17 +575,6 @@ class ConnectionManager:
 
         # Attach the connection request so it can be found and responded to
         await connection.attach_request(self._session, request)
-
-        # Multitenancy: add routing for key to handle inbound messages using relay
-        # MTODO: Key could already be registered.
-        multitenant_enabled = self._session.settings.get("multitenant.enabled")
-        wallet_id = self._session.settings.get("wallet.id")
-        if my_info and multitenant_enabled and wallet_id:
-            multitenant_mgr = self._session.inject(MultitenantManager)
-            await multitenant_mgr.add_wallet_route(
-                wallet_id=wallet_id,
-                recipient_key=my_info.verkey,
-            )
 
         # Send keylist updates to mediator
         mediation_record = await self.mediation_record_if_id(mediation_id)
@@ -626,6 +634,10 @@ class ConnectionManager:
         keylist_updates = None
         mediation_record = await self.mediation_record_if_id(mediation_id)
 
+        # Multitenancy setup
+        multitenant_mgr = self._session.inject(MultitenantManager, required=False)
+        wallet_id = self._session.settings.get("wallet.id")
+
         if ConnRecord.State.get(connection.state) not in (
             ConnRecord.State.REQUEST,
             ConnRecord.State.RESPONSE,
@@ -644,6 +656,9 @@ class ConnectionManager:
             keylist_updates = await mediation_mgr.add_key(
                 my_info.verkey, keylist_updates
             )
+            # Add mapping for multitenant relay
+            if multitenant_mgr and wallet_id:
+                await multitenant_mgr.add_wallet_route(wallet_id, my_info.verkey)
 
         # Create connection response message
         if my_endpoint:
@@ -678,16 +693,6 @@ class ConnectionManager:
             reason="Created connection response",
             log_params={"response": response},
         )
-
-        # Multitenancy: add routing for key to handle inbound messages using relay
-        multitenant_enabled = self._session.settings.get("multitenant.enabled")
-        wallet_id = self._session.settings.get("wallet.id")
-        if multitenant_enabled and wallet_id:
-            multitenant_mgr = self._session.inject(MultitenantManager)
-            await multitenant_mgr.add_wallet_route(
-                wallet_id=wallet_id,
-                recipient_key=my_info.verkey,
-            )
 
         # Update mediator if necessary
         if keylist_updates and mediation_record:
@@ -802,6 +807,10 @@ class ConnectionManager:
         """
         wallet = self._session.inject(BaseWallet)
 
+        # Multitenancy setup
+        multitenant_mgr = self._session.inject(MultitenantManager, required=False)
+        wallet_id = self._session.settings.get("wallet.id")
+
         # seed and DID optional
         my_info = await wallet.create_local_did(my_seed, my_did)
 
@@ -827,6 +836,10 @@ class ConnectionManager:
             alias=alias,
         )
         await connection.save(self._session, reason="Created new static connection")
+
+        # Add mapping for multitenant relay
+        if multitenant_mgr and wallet_id:
+            await multitenant_mgr.add_wallet_route(wallet_id, my_info.verkey)
 
         # Synthesize their DID doc
         did_doc = await self.create_did_document(their_info, None, [their_endpoint])
