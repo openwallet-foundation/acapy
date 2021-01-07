@@ -554,9 +554,17 @@ async def connections_accept_invitation(request: web.BaseRequest):
         my_label = request.query.get("my_label")
         my_endpoint = request.query.get("my_endpoint")
         mediation_id = request.query.get("mediation_id")
-        request = await connection_mgr.create_request(
-            connection, my_label, my_endpoint, mediation_id=mediation_id
-        )
+
+        try:
+            request = await connection_mgr.create_request(
+                connection, my_label, my_endpoint, mediation_id=mediation_id
+            )
+        except StorageError as err:
+            # Handle storage errors (including not found errors) from
+            # create_request separately as these errors represent a bad request
+            # rather than a bad url
+            raise web.HTTPBadRequest(reason=err.roll_up) from err
+
         result = connection.serialize()
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
