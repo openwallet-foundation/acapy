@@ -309,7 +309,7 @@ class ConnectionManager:
         )
         # Create connection record
         connection = ConnRecord(
-            invitation_key=invitation.recipient_keys[0],
+            invitation_key=invitation.recipient_keys and invitation.recipient_keys[0],
             their_label=invitation.label,
             their_role=ConnRecord.Role.RESPONDER.rfc160,
             state=ConnRecord.State.INVITATION.rfc160,

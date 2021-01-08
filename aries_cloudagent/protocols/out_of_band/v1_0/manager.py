@@ -1,6 +1,5 @@
 """Classes to manage connections."""
 
-from aries_cloudagent.multitenant.manager import MultitenantManager
 import logging
 
 from typing import Mapping, Sequence, Optional
@@ -8,9 +7,9 @@ from typing import Mapping, Sequence, Optional
 from ....connections.models.conn_record import ConnRecord
 from ....core.error import BaseError
 from ....core.profile import ProfileSession
-from ....ledger.base import BaseLedger
+from ....multitenant.manager import MultitenantManager
 from ....wallet.base import BaseWallet
-from ....wallet.util import did_key_to_naked, naked_to_did_key
+from ....wallet.util import naked_to_did_key
 
 from ...didexchange.v1_0.manager import DIDXManager
 from ...didcomm_prefix import DIDCommPrefix

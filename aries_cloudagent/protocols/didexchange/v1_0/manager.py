@@ -22,6 +22,7 @@ from ....storage.error import StorageNotFoundError
 from ....storage.record import StorageRecord
 from ....transport.inbound.receipt import MessageReceipt
 from ....wallet.base import BaseWallet, DIDInfo
+from ....wallet.util import did_key_to_naked
 from ....multitenant.manager import MultitenantManager
 
 from ...out_of_band.v1_0.messages.invitation import (
@@ -117,7 +118,8 @@ class DIDXManager:
         # Create connection record
         conn_rec = ConnRecord(
             invitation_key=(
-                invitation.service_blocks[0].recipient_keys[0]
+                # invitation.service_blocks[0].recipient_keys[0]
+                did_key_to_naked(invitation.service_blocks[0].recipient_keys[0])
                 if invitation.service_blocks
                 else None
             ),
