@@ -233,7 +233,10 @@ async def wallet_create(request: web.BaseRequest):
     key_management_mode = body.get("key_management_mode") or WalletRecord.MODE_MANAGED
     wallet_key = body.get("wallet_key")
     wallet_webhook_urls = body.get("wallet_webhook_urls") or []
-    wallet_dispatch_type = body.get("wallet_dispatch_type") or "base"
+    wallet_dispatch_type = body.get("wallet_dispatch_type") or "default"
+    # If no webhooks specified, then dispatch only to base webhook targets
+    if wallet_webhook_urls == []:
+        wallet_dispatch_type = "base"
 
     settings = {
         "wallet.type": body.get("wallet_type") or "in_memory",
@@ -243,9 +246,6 @@ async def wallet_create(request: web.BaseRequest):
         "wallet.dispatch_type": wallet_dispatch_type,
     }
 
-    # If no webhooks specified, then dispatch only to base webhook targets
-    if wallet_webhook_urls == []:
-        wallet_dispatch_type = "base"
     label = body.get("label")
     image_url = body.get("image_url")
     if label:

@@ -111,7 +111,7 @@ class TestMultitenantRoutes(AsyncTestCase):
             "wallet_key": "test",
             "key_management_mode": "managed",
             "wallet_webhook_urls": [],
-            "wallet_dispatch_type": "default",
+            "wallet_dispatch_type": "base",
         }
         self.request.json = async_mock.CoroutineMock(return_value=body)
 
