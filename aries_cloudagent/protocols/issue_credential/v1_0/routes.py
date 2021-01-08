@@ -1309,7 +1309,7 @@ def post_process_routes(app: web.Application):
     app._state["swagger_dict"]["tags"].append(
         {
             "name": "issue-credential",
-            "description": "Credential issue, revocation",
+            "description": "Credential issue",
             "externalDocs": {"description": "Specification", "url": SPEC_URI},
         }
     )
