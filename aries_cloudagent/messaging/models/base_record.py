@@ -40,10 +40,17 @@ def match_post_filter(
 
     if alt:
         return (
-            positive and all(record.get(k) in alts for k, alts in post_filter.items())
+            positive
+            and all(
+                record.get(k) and record.get(k) in alts
+                for k, alts in post_filter.items()
+            )
         ) or (
             (not positive)
-            and all(record.get(k) not in alts for k, alts in post_filter.items())
+            and all(
+                record.get(k) and record.get(k) not in alts
+                for k, alts in post_filter.items()
+            )
         )
 
     for k, v in post_filter.items():
