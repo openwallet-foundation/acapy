@@ -236,6 +236,7 @@ class ConnRecord(BaseRecord):
                 "error_msg",
                 "their_label",
                 "state",
+                "their_public_did",
             )
         }
 

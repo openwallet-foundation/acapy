@@ -3,7 +3,7 @@
 from aries_cloudagent.multitenant.manager import MultitenantManager
 import logging
 
-from typing import Mapping, Sequence
+from typing import Mapping, Sequence, Optional
 
 from ....connections.models.conn_record import ConnRecord
 from ....core.error import BaseError
@@ -28,8 +28,8 @@ from ...present_proof.v1_0.manager import PresentationManager
 from ...connections.v1_0.messages.connection_invitation import ConnectionInvitation
 
 
-DIDX_INVITATION = "didexchange/v1.0"
-CONNECTION_INVITATION = "connections/v1.0"
+DIDX_INVITATION = "didexchange/1.0"
+CONNECTION_INVITATION = "connections/1.0"
 
 
 class OutOfBandManagerError(BaseError):
@@ -262,7 +262,7 @@ class OutOfBandManager:
         # There must be exactly 1 service entry
         if len(invi_msg.service_blocks) + len(invi_msg.service_dids) != 1:
             raise OutOfBandManagerError("service array must have exactly one element")
-  
+
         if (len(invi_msg.request_attach) < 1 and
                 len(invi_msg.handshake_protocols) < 1):
             raise OutOfBandManagerError("Either handshake_protocols or request_attach \
@@ -278,7 +278,7 @@ class OutOfBandManager:
                 verkey = await ledger.get_key_for_did(service_did)
                 did_key = naked_to_did_key(verkey)
                 endpoint = await ledger.get_endpoint_for_did(service_did)
-            public_did = service_did
+            public_did = service_did.split(":")[2]
             service = ServiceMessage.deserialize(
                 {
                     "id": "#inline",
@@ -288,62 +288,71 @@ class OutOfBandManager:
                     "serviceEndpoint": endpoint,
                 }
             )
-        # Check if there is an existing active connection with this public DID
-        tag_filter = {}
-        post_filter = {}
-        post_filter["state"] = "request"
-        post_filter["their_public_did"] = public_did
-        conn_records = await ConnRecord.query(
-            self._session,
-            tag_filter,
-            post_filter_positive=post_filter,
+
+        unq_handshake_protos = list(
+            dict.fromkeys(
+                [DIDCommPrefix.unqualify(proto) for proto in invi_msg.handshake_protocols]
+            )
         )
-        if len(conn_records) == 0:
-            conn_rec = None
+
+        # Reuse Connection
+        conn_rec = None
+        if len(invi_msg.request_attach) >= 1:
+            tag_filter = {}
+            post_filter = {}
+            post_filter["state"] = "active"
+            post_filter["their_public_did"] = public_did
+            conn_rec = await self.find_existing_connection(
+                tag_filter=tag_filter,
+                post_filter=post_filter
+            )
         else:
-            conn_rec = conn_records[0]
-        unq_handshake_protos = {
-            DIDCommPrefix.unqualify(proto)
-            for proto in invi_msg.handshake_protocols
-        }
-        if not conn_rec:
-            if unq_handshake_protos == {DIDX_INVITATION}:
-                # Transform back to 'naked' verkey
-                service.recipient_keys = [
-                    did_key_to_naked(key) for key in service.recipient_keys or []
-                ]
-                service.routing_keys = [
-                    did_key_to_naked(key) for key in service.routing_keys
-                ] or []
-                didx_mgr = DIDXManager(self._session)
-                conn_rec = await didx_mgr.receive_invitation(
-                    invitation=invi_msg,
-                    their_public_did=public_did,
-                    auto_accept=True
-                )
-            elif unq_handshake_protos == {CONNECTION_INVITATION}:
-                service.recipient_keys = [
-                    did_key_to_naked(key) for key in service.recipient_keys or []
-                ]
-                service.routing_keys = [
-                    did_key_to_naked(key) for key in service.routing_keys
-                ] or []
-                connection_invitation = ConnectionInvitation.deserialize(
-                    {
-                        "@id": invi_msg._id,
-                        "@type": DIDCommPrefix.qualify_current(CONNECTION_INVITATION),
-                        "label": invi_msg.label,
-                        "recipientKeys": service.recipient_keys,
-                        "serviceEndpoint": service.service_endpoint,
-                        "routingKeys": service.routing_keys,
-                    }
-                )
-                conn_mgr = ConnectionManager(self._session)
-                conn_rec = await conn_mgr.receive_invitation(
-                        invitation=connection_invitation,
+            pass
+
+        # Create new connection
+        if conn_rec is None:
+            for proto in unq_handshake_protos:
+                if proto == DIDX_INVITATION:
+                    # Transform back to 'naked' verkey
+                    service.recipient_keys = [
+                        did_key_to_naked(key) for key in service.recipient_keys or []
+                    ]
+                    service.routing_keys = [
+                        did_key_to_naked(key) for key in service.routing_keys
+                    ] or []
+                    didx_mgr = DIDXManager(self._session)
+                    conn_rec = await didx_mgr.receive_invitation(
+                        invitation=invi_msg,
                         their_public_did=public_did,
                         auto_accept=True,
-                )
+                    )
+                elif proto == CONNECTION_INVITATION:
+                    service.recipient_keys = [
+                        did_key_to_naked(key) for key in service.recipient_keys or []
+                    ]
+                    service.routing_keys = [
+                        did_key_to_naked(key) for key in service.routing_keys
+                    ] or []
+                    connection_invitation = ConnectionInvitation.deserialize(
+                        {
+                            "@id": invi_msg._id,
+                            "@type": DIDCommPrefix.qualify_current(CONNECTION_INVITATION),
+                            "label": invi_msg.label,
+                            "recipientKeys": service.recipient_keys,
+                            "serviceEndpoint": service.service_endpoint,
+                            "routingKeys": service.routing_keys,
+                        }
+                    )
+                    conn_mgr = ConnectionManager(self._session)
+                    conn_rec = await conn_mgr.receive_invitation(
+                            invitation=connection_invitation,
+                            their_public_did=public_did,
+                            auto_accept=True,
+                    )
+                if conn_rec is not None:
+                    break
+
+        # Request Attach
         if len(invi_msg.request_attach) > 1:
             raise OutOfBandManagerError("More than 1 request~attach included.")
         elif len(invi_msg.request_attach) == 1:
@@ -361,4 +370,20 @@ class OutOfBandManager:
                     presentation_exchange_record=presentation_exchange_record
                 )
 
+        return conn_rec
+
+    async def find_existing_connection(
+        self,
+        tag_filter: dict,
+        post_filter: dict,
+    ) -> Optional[ConnRecord]:
+        conn_records = await ConnRecord.query(
+            self._session,
+            tag_filter,
+            post_filter_positive=post_filter,
+        )
+        if len(conn_records) == 0:
+            conn_rec = None
+        else:
+            conn_rec = conn_records[0]
         return conn_rec
