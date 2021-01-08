@@ -1,6 +1,5 @@
 """Classes to manage connections."""
 
-from aries_cloudagent.multitenant.manager import MultitenantManager
 import logging
 
 from typing import Mapping, Sequence
@@ -8,9 +7,9 @@ from typing import Mapping, Sequence
 from ....connections.models.conn_record import ConnRecord
 from ....core.error import BaseError
 from ....core.profile import ProfileSession
-from ....ledger.base import BaseLedger
+from ....multitenant.manager import MultitenantManager
 from ....wallet.base import BaseWallet
-from ....wallet.util import did_key_to_naked, naked_to_did_key
+from ....wallet.util import naked_to_did_key
 
 from ...didexchange.v1_0.manager import DIDXManager
 from ...didcomm_prefix import DIDCommPrefix
@@ -250,33 +249,6 @@ class OutOfBandManager:
     ) -> ConnRecord:
         """Receive an out of band invitation message."""
 
-        ledger: BaseLedger = self._session.inject(BaseLedger)
-
-        # There must be exactly 1 service entry
-        if len(invi_msg.service_blocks) + len(invi_msg.service_dids) != 1:
-            raise OutOfBandManagerError("service array must have exactly one element")
-
-        # Get the single service item
-        if invi_msg.service_blocks:
-            service = invi_msg.service_blocks[0]
-
-        else:
-            # If it's in the did format, we need to convert to a full service block
-            service_did = invi_msg.service_dids[0]
-            async with ledger:
-                verkey = await ledger.get_key_for_did(service_did)
-                did_key = naked_to_did_key(verkey)
-                endpoint = await ledger.get_endpoint_for_did(service_did)
-            service = ServiceMessage.deserialize(
-                {
-                    "id": "#inline",
-                    "type": "did-communication",
-                    "recipientKeys": [did_key],
-                    "routingKeys": [],
-                    "serviceEndpoint": endpoint,
-                }
-            )
-
         unq_handshake_protos = {
             DIDCommPrefix.unqualify(proto) for proto in invi_msg.handshake_protocols
         }
@@ -285,14 +257,6 @@ class OutOfBandManager:
                 raise OutOfBandManagerError(
                     "request block must be empty for invitation message type."
                 )
-
-            # Transform back to 'naked' verkey
-            service.recipient_keys = [
-                did_key_to_naked(key) for key in service.recipient_keys or []
-            ]
-            service.routing_keys = [
-                did_key_to_naked(key) for key in service.routing_keys
-            ] or []
 
             didx_mgr = DIDXManager(self._session)
             conn_rec = await didx_mgr.receive_invitation(
