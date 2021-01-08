@@ -124,8 +124,8 @@ class MultitenantManager:
                 "wallet.type": None,
             }
 
-            dispatch_type = wallet_record.wallet_webhook_urls
-            webhook_urls = wallet_record.wallet_dispatch_type
+            dispatch_type = wallet_record.wallet_dispatch_type
+            webhook_urls = wallet_record.wallet_webhook_urls
             base_webhook_urls = context.settings.get("admin.webhook_urls")
             if dispatch_type == "both":
                 target_urls = list(set(base_webhook_urls) | set(webhook_urls))
@@ -153,8 +153,6 @@ class MultitenantManager:
         self,
         settings: dict,
         key_management_mode: str,
-        wallet_webhook_urls: list = [],
-        wallet_dispatch_type: str = "base",
     ) -> WalletRecord:
         """Create new wallet and wallet record.
 
@@ -183,9 +181,6 @@ class MultitenantManager:
             # In unmanaged mode we don't want to store the wallet key
             if key_management_mode == WalletRecord.MODE_UNMANAGED:
                 del settings["wallet.key"]
-            # Adding wallet_webhook_urls and wallet_dispath_type to wallet_record
-            settings["wallet.webhook_urls"] = wallet_webhook_urls
-            settings["wallet.dispatch_type"] = wallet_dispatch_type
             # create and store wallet record
             wallet_record = WalletRecord(
                 settings=settings, key_management_mode=key_management_mode
@@ -199,8 +194,6 @@ class MultitenantManager:
             wallet_record,
             {
                 "wallet.key": wallet_key,
-                "wallet.dispatch_type": wallet_dispatch_type,
-                "wallet.webhook_urls": wallet_webhook_urls,
             },
             provision=True,
         )

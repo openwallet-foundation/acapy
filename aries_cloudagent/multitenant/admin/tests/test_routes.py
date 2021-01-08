@@ -110,6 +110,8 @@ class TestMultitenantRoutes(AsyncTestCase):
             "wallet_type": "indy",
             "wallet_key": "test",
             "key_management_mode": "managed",
+            "wallet_webhook_urls": [],
+            "wallet_dispatch_type": "default",
         }
         self.request.json = async_mock.CoroutineMock(return_value=body)
 
@@ -140,6 +142,8 @@ class TestMultitenantRoutes(AsyncTestCase):
                     "wallet.name": body["wallet_name"],
                     "wallet.type": body["wallet_type"],
                     "wallet.key": body["wallet_key"],
+                    "wallet.webhook_urls": body["wallet_webhook_urls"],
+                    "wallet.dispatch_type": body["wallet_dispatch_type"],
                 },
                 body["key_management_mode"],
             )
@@ -170,6 +174,8 @@ class TestMultitenantRoutes(AsyncTestCase):
         body = {
             "wallet_name": "test",
             "wallet_key": "test",
+            "wallet_webhook_urls": [],
+            "wallet_dispatch_type": "base",
             "label": "my_test_label",
             "image_url": "https://image.com",
         }
@@ -189,6 +195,8 @@ class TestMultitenantRoutes(AsyncTestCase):
                     "wallet.key": body["wallet_key"],
                     "default_label": body["label"],
                     "image_url": body["image_url"],
+                    "wallet.webhook_urls": body["wallet_webhook_urls"],
+                    "wallet.dispatch_type": body["wallet_dispatch_type"],
                 },
                 WalletRecord.MODE_MANAGED,
             )
