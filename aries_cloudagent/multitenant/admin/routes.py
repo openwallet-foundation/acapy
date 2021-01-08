@@ -68,7 +68,7 @@ class CreateWalletRequestSchema(OpenAPISchema):
         validate=validate.OneOf(["default", "both", "base"]),
     )
 
-    wallet_webhoook_urls = fields.List(
+    wallet_webhook_urls = fields.List(
         fields.Str(
             description="Optional webhook URL to receive webhook messages",
             example="http://localhost:8022/webhooks",
@@ -243,7 +243,7 @@ async def wallet_create(request: web.BaseRequest):
         "wallet.key": wallet_key,
     }
 
-    wallet_webhook_urls = body.get("wallet_webhoook_urls") or []
+    wallet_webhook_urls = body.get("wallet_webhook_urls") or []
     wallet_dispatch_type = body.get("wallet_dispatch_type") or "default"
     # If no webhooks specified, then dispatch only to base webhook targets
     if wallet_webhook_urls == []:

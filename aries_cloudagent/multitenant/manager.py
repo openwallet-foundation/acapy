@@ -124,10 +124,8 @@ class MultitenantManager:
                 "wallet.type": None,
             }
 
-            dispatch_type = extra_settings.get("wallet.dispatch_type")
-            webhook_urls = extra_settings.get("wallet.webhook_urls")
-            del extra_settings["wallet.dispatch_type"]
-            del extra_settings["wallet.webhook_urls"]
+            dispatch_type = wallet_record.wallet_webhook_urls
+            webhook_urls = wallet_record.wallet_dispatch_type
             base_webhook_urls = context.settings.get("admin.webhook_urls")
             if dispatch_type == "both":
                 target_urls = list(set(base_webhook_urls) | set(webhook_urls))
