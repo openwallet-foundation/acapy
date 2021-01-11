@@ -483,7 +483,13 @@ class AdminServer(BaseAdminServer):
                 "name": "Authorization",
                 "description": "Bearer token. Be sure to preprend token with 'Bearer '",
             }
-            security.append({"AuthorizationHeader": []})
+
+            # If multitenancy is enabled we need Authorization header
+            multitenant_security = {"AuthorizationHeader": []}
+            # If admin api key is also enabled, we need both for subwallet requests
+            if self.admin_api_key:
+                multitenant_security["ApiKeyHeader"] = []
+            security.append(multitenant_security)
 
         if self.admin_api_key or self.multitenant_manager:
             swagger = app["swagger_dict"]
@@ -728,21 +734,23 @@ class AdminServer(BaseAdminServer):
     async def send_webhook(self, profile: Profile, topic: str, payload: dict):
         """Add a webhook to the queue, to send to all registered targets."""
         wallet_id = profile.settings.get("wallet.id")
+        webhook_urls = profile.settings.get("admin.webhook_urls")
 
         metadata = None
         if wallet_id:
             metadata = {"x-wallet-id": wallet_id}
 
         if self.webhook_router:
-            for idx, target in self.webhook_targets.items():
-                if not target.topic_filter or topic in target.topic_filter:
-                    self.webhook_router(
-                        topic,
-                        payload,
-                        target.endpoint,
-                        target.max_attempts,
-                        metadata,
-                    )
+            # for idx, target in self.webhook_targets.items():
+            #     if not target.topic_filter or topic in target.topic_filter:
+            for endpoint in webhook_urls:
+                self.webhook_router(
+                    topic,
+                    payload,
+                    endpoint,
+                    None,
+                    metadata,
+                )
 
         # set ws webhook body, optionally add wallet id for multitenant mode
         webhook_body = {"topic": topic, "payload": payload}

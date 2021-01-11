@@ -352,9 +352,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             test_module,
             "InvitationMessage",
             autospec=True,
-        ) as invi_msg_cls, async_mock.patch.object(
-            test_module, "did_key_to_naked", async_mock.MagicMock()
-        ) as did2naked:
+        ) as invi_msg_cls:
             didx_mgr_cls.return_value = async_mock.MagicMock(
                 receive_invitation=async_mock.CoroutineMock()
             )

@@ -58,6 +58,25 @@ class CreateWalletRequestSchema(OpenAPISchema):
         ),
     )
 
+    wallet_dispatch_type = fields.Str(
+        description="Webhook target dispatch type for this wallet. \
+            default - Dispatch only to webhooks associated with this wallet. \
+            base - Dispatch only to webhooks associated with the base wallet. \
+            both - Dispatch to both webhook targets.",
+        example="default",
+        default="default",
+        validate=validate.OneOf(["default", "both", "base"]),
+    )
+
+    wallet_webhook_urls = fields.List(
+        fields.Str(
+            description="Optional webhook URL to receive webhook messages",
+            example="http://localhost:8022/webhooks",
+        ),
+        required=False,
+        description="List of Webhook URLs associated with this subwallet",
+    )
+
     label = fields.Str(
         description="Label for this wallet. This label is publicized\
             (self-attested) to other agents as part of forming a connection.",
@@ -213,11 +232,18 @@ async def wallet_create(request: web.BaseRequest):
 
     key_management_mode = body.get("key_management_mode") or WalletRecord.MODE_MANAGED
     wallet_key = body.get("wallet_key")
+    wallet_webhook_urls = body.get("wallet_webhook_urls") or []
+    wallet_dispatch_type = body.get("wallet_dispatch_type") or "default"
+    # If no webhooks specified, then dispatch only to base webhook targets
+    if wallet_webhook_urls == []:
+        wallet_dispatch_type = "base"
 
     settings = {
         "wallet.type": body.get("wallet_type") or "in_memory",
         "wallet.name": body.get("wallet_name"),
         "wallet.key": wallet_key,
+        "wallet.webhook_urls": wallet_webhook_urls,
+        "wallet.dispatch_type": wallet_dispatch_type,
     }
 
     label = body.get("label")

@@ -346,6 +346,31 @@ class TestConnectionRoutes(AsyncTestCase):
             with self.assertRaises(test_module.web.HTTPBadRequest):
                 await test_module.connections_create_invitation(self.request)
 
+    async def test_connections_create_invitation_x_bad_mediation_id(self):
+        self.context.update_settings({"public_invites": True})
+        body = {
+            "recipient_keys": ["test"],
+            "routing_keys": ["test"],
+            "service_endpoint": "http://example.com",
+            "metadata": {"hello": "world"},
+            "mediation_id": "some-id",
+        }
+        self.request.json = async_mock.CoroutineMock(return_value=body)
+        self.request.query = {
+            "auto_accept": "true",
+            "alias": "alias",
+            "public": "true",
+            "multi_use": "true",
+        }
+        with async_mock.patch.object(
+            test_module, "ConnectionManager", autospec=True
+        ) as mock_conn_mgr:
+            mock_conn_mgr.return_value.create_invitation = async_mock.CoroutineMock(
+                side_effect=StorageNotFoundError()
+            )
+            with self.assertRaises(test_module.web.HTTPBadRequest):
+                await test_module.connections_create_invitation(self.request)
+
     async def test_connections_create_invitation_public_forbidden(self):
         self.context.update_settings({"public_invites": False})
         self.request.json = async_mock.CoroutineMock()
@@ -409,6 +434,29 @@ class TestConnectionRoutes(AsyncTestCase):
         with self.assertRaises(test_module.web.HTTPForbidden):
             await test_module.connections_receive_invitation(self.request)
 
+    async def test_connections_receive_invitation_x_bad_mediation_id(self):
+        self.request.json = async_mock.CoroutineMock()
+        self.request.query = {
+            "auto_accept": "true",
+            "alias": "alias",
+            "mediation_id": "some-id",
+        }
+
+        mock_conn_rec = async_mock.MagicMock()
+        mock_conn_rec.serialize = async_mock.MagicMock()
+
+        with async_mock.patch.object(
+            test_module.ConnectionInvitation, "deserialize", autospec=True
+        ) as mock_inv_deser, async_mock.patch.object(
+            test_module, "ConnectionManager", autospec=True
+        ) as mock_conn_mgr:
+            mock_conn_mgr.return_value.receive_invitation = async_mock.CoroutineMock(
+                side_effect=StorageNotFoundError()
+            )
+
+            with self.assertRaises(test_module.web.HTTPBadRequest):
+                await test_module.connections_receive_invitation(self.request)
+
     async def test_connections_accept_invitation(self):
         self.request.match_info = {"conn_id": "dummy"}
         self.request.query = {
@@ -454,6 +502,22 @@ class TestConnectionRoutes(AsyncTestCase):
         ) as mock_conn_mgr:
             mock_conn_mgr.return_value.create_request = async_mock.CoroutineMock(
                 side_effect=test_module.ConnectionManagerError()
+            )
+
+            with self.assertRaises(test_module.web.HTTPBadRequest):
+                await test_module.connections_accept_invitation(self.request)
+
+    async def test_connections_accept_invitation_x_bad_mediation_id(self):
+        self.request.match_info = {"conn_id": "dummy"}
+        self.request.query["mediation_id"] = "some-id"
+
+        with async_mock.patch.object(
+            test_module.ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
+        ) as mock_conn_rec_retrieve_by_id, async_mock.patch.object(
+            test_module, "ConnectionManager", autospec=True
+        ) as mock_conn_mgr:
+            mock_conn_mgr.return_value.create_request = async_mock.CoroutineMock(
+                side_effect=StorageNotFoundError()
             )
 
             with self.assertRaises(test_module.web.HTTPBadRequest):
