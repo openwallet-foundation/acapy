@@ -63,12 +63,14 @@ class TestMediationGrantHandler(AsyncTestCase):
         with async_mock.patch.object(
             self.context.connection_record,
             "metadata_get",
-            async_mock.CoroutineMock(return_value=True)
+            async_mock.CoroutineMock(return_value=True),
         ), async_mock.patch.object(
             test_module, "MediationManager", autospec=True
         ) as mock_mediation_manager:
             await handler.handle(self.context, responder)
-            mock_mediation_manager.return_value.set_default_mediator.assert_called_once_with(record)
+            mock_mediation_manager.return_value.set_default_mediator.assert_called_once_with(
+                record
+            )
 
     async def test_handler_connection_no_set_to_default(self):
         handler, responder = MediationGrantHandler(), MockResponder()
@@ -77,7 +79,7 @@ class TestMediationGrantHandler(AsyncTestCase):
         with async_mock.patch.object(
             self.context.connection_record,
             "metadata_get",
-            async_mock.CoroutineMock(return_value=False)
+            async_mock.CoroutineMock(return_value=False),
         ), async_mock.patch.object(
             test_module, "MediationManager", autospec=True
         ) as mock_mediation_manager:
