@@ -5,6 +5,7 @@ import pytest
 
 from asynctest import mock as async_mock
 
+from .....core.profile import ProfileSession
 from .....connections.models.conn_record import ConnRecord
 from .....messaging.request_context import RequestContext
 from .....storage.error import StorageNotFoundError
@@ -35,7 +36,7 @@ pytestmark = pytest.mark.asyncio
 
 
 @pytest.fixture
-async def session():
+async def session() -> ProfileSession:
     """Fixture for session used in tests."""
     # pylint: disable=W0621
     context = RequestContext.test_context()
@@ -45,14 +46,14 @@ async def session():
 
 
 @pytest.fixture
-async def manager(session):  # pylint: disable=W0621
+async def manager(session) -> MediationManager:  # pylint: disable=W0621
     """Fixture for manager used in tests."""
     yield MediationManager(session)
 
 
 @pytest.fixture
-def record():
-    """Fixture for record used in tets."""
+def record() -> MediationRecord:
+    """Fixture for record used in tests."""
     yield MediationRecord(
         state=MediationRecord.STATE_GRANTED, connection_id=TEST_CONN_ID
     )
@@ -216,6 +217,32 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
         assert response.keys[0].recipient_key
         response = await manager.create_keylist_query_response([])
         assert not response.keys
+
+    async def test_set_get_default_mediator(
+        self,
+        session: ProfileSession,
+        manager: MediationManager,
+        record: MediationRecord
+    ):
+        await record.save(session)
+        await manager.set_default_mediator(record)
+        assert await manager.get_default_mediator() == record
+
+    async def test_set_get_default_mediator_by_id(self, manager: MediationManager):
+        await manager.set_default_mediator_by_id("test")
+        assert await manager.get_default_mediator_id() == "test"
+
+    async def test_clear_default_mediator(
+        self,
+        session: ProfileSession,
+        manager: MediationManager,
+        record: MediationRecord
+    ):
+        await record.save(session)
+        await manager.set_default_mediator_by_id(record.mediation_id)
+        assert await manager.get_default_mediator_id()
+        await manager.clear_default_mediator()
+        assert not await manager.get_default_mediator_id()
 
     async def test_prepare_request(self, manager):
         """test_prepare_request."""
