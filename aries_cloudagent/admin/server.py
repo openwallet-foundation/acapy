@@ -330,17 +330,17 @@ class AdminServer(BaseAdminServer):
                 except (jwt.InvalidTokenError, StorageNotFoundError):
                     raise web.HTTPUnauthorized()
 
-            # TODO may dynamically adjust the profile used here according to
-            # headers or other parameters
-            admin_context = AdminRequestContext(profile, context=profile.context)
-
             # Create a responder with the request specific context
             responder = AdminResponder(
                 profile,
                 self.outbound_message_router,
                 self.send_webhook,
             )
-            admin_context.injector.bind_instance(BaseResponder, responder)
+            profile.context.injector.bind_instance(BaseResponder, responder)
+
+            # TODO may dynamically adjust the profile used here according to
+            # headers or other parameters
+            admin_context = AdminRequestContext(profile)
 
             request["context"] = admin_context
             request["outbound_message_router"] = responder.send
