@@ -130,3 +130,15 @@ class TestArgParse(AsyncTestCase):
         assert bs("10") == 10
 
         assert repr(bs) == "ByteSize"
+
+    async def test_mediation_x_clear_and_default(self):
+        parser = argparse.create_argument_parser()
+        group = argparse.MediationGroup()
+        group.add_arguments(parser)
+
+        with self.assertRaises(argparse.ArgsParseError):
+            args = parser.parse_args([
+                "--clear-default-mediator",
+                "--default-mediator-id", "asdf"
+            ])
+            group.get_settings(args)
