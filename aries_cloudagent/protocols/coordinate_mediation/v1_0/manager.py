@@ -263,11 +263,11 @@ class MediationManager:
 
     # Role: Client {{{
 
-    async def get_default_mediator_id(self) -> Optional[str]:
-        """Retrieve the default mediator's ID from the store.
+    async def _get_default_record(self) -> Optional[StorageRecord]:
+        """Rertieve the default mediator raw record for use in updating or deleting.
 
         Returns:
-            Optional[str]: ID if present
+            Optional[StorageRecord]: Record if present
 
         """
         storage: BaseStorage = self.session.inject(BaseStorage)
@@ -276,9 +276,22 @@ class MediationManager:
                 record_type=self.DEFAULT_MEDIATOR_RECORD_TYPE,
                 record_id=self.DEFAULT_MEDIATOR_RECORD_TYPE,
             )
-            return default_record.value
+            return default_record
         except StorageNotFoundError:
             return None
+
+    async def get_default_mediator_id(self) -> Optional[str]:
+        """Retrieve the default mediator's ID from the store.
+
+        Returns:
+            Optional[str]: ID if present
+
+        """
+        default_record = await self._get_default_record()
+        if default_record:
+            return default_record.value
+
+        return None
 
     async def get_default_mediator(self) -> Optional[MediationRecord]:
         """Retrieve default mediator from the store.
@@ -296,7 +309,7 @@ class MediationManager:
     async def set_default_mediator_by_id(self, mediation_id: str):
         """Set default mediator from ID."""
         storage: BaseStorage = self.session.inject(BaseStorage)
-        default_record = await self.get_default_mediator()
+        default_record = await self._get_default_record()
 
         if default_record:
             await storage.update_record(default_record, mediation_id, {})
@@ -315,14 +328,7 @@ class MediationManager:
     async def clear_default_mediator(self):
         """Clear the stored default mediator."""
         storage: BaseStorage = self.session.inject(BaseStorage)
-        try:
-            default_record = await storage.get_record(
-                record_type=self.DEFAULT_MEDIATOR_RECORD_TYPE,
-                record_id=self.DEFAULT_MEDIATOR_RECORD_TYPE,
-            )
-        except StorageNotFoundError:
-            pass
-
+        default_record = await self._get_default_record()
         if default_record:
             await storage.delete_record(default_record)
 
