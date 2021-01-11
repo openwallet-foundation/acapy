@@ -309,9 +309,12 @@ async def wallet_set_public_did(request: web.BaseRequest):
         info = await wallet.set_public_did(did)
         if info:
             # Publish endpoint if necessary
-            endpoint = did_info.metadata.get(
-                "endpoint", session.settings.get("default_endpoint")
-            )
+            endpoint = did_info.metadata.get("endpoint")
+
+            if not endpoint:
+                endpoint = session.settings.get("default_endpoint")
+                await wallet.set_did_endpoint(info.did, endpoint, ledger)
+
             async with ledger:
                 await ledger.update_endpoint_for_did(info.did, endpoint)
     except WalletNotFoundError as err:
