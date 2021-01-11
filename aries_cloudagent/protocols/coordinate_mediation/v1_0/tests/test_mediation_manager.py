@@ -171,8 +171,7 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
         assert results[0].result == KeylistUpdated.RESULT_NO_CHANGE
 
     async def test_update_keylist_x_not_granted(
-        self, manager: MediationManager,
-        record: MediationRecord
+        self, manager: MediationManager, record: MediationRecord
     ):
         record.state = MediationRecord.STATE_DENIED
         with pytest.raises(MediationNotGrantedError):
@@ -230,7 +229,7 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
         self,
         session: ProfileSession,
         manager: MediationManager,
-        record: MediationRecord
+        record: MediationRecord,
     ):
         await record.save(session)
         assert await manager.get_default_mediator() == None
