@@ -143,9 +143,12 @@ class ConnectionManager:
 
         """
         mediation_mgr = MediationManager(self._session)
+        # Mediation Record can still be None after this operation if no
+        # mediation id passed and no default
+        mediation_record = await self.mediation_record_if_id(
+            mediation_id or await mediation_mgr.get_default_mediator()
+        )
         keylist_updates = None
-        if not mediation_id:
-            mediation_id = await mediation_mgr.get_default_mediator()
         image_url = self._session.context.settings.get("image_url")
 
         # Multitenancy setup
@@ -236,7 +239,6 @@ class ConnectionManager:
 
         await connection.save(self._session, reason="Created new invitation")
 
-        mediation_record = await self.mediation_record_if_id(mediation_id)
         if mediation_record:
             routing_keys = mediation_record.routing_keys
             my_endpoint = mediation_record.endpoint
@@ -362,10 +364,14 @@ class ConnectionManager:
 
         # Mediation setup
         keylist_updates = None
-        mediation_record = await self.mediation_record_if_id(mediation_id)
         mediation_mgr = MediationManager(self._session)
-        if not mediation_id:
-            mediation_id = await mediation_mgr.get_default_mediator()
+
+        # Mediation Record can still be None after this operation if no
+        # mediation id passed and no default
+        mediation_record = await self.mediation_record_if_id(
+            mediation_id or await mediation_mgr.get_default_mediator()
+        )
+
         multitenant_mgr = self._session.inject(MultitenantManager, required=False)
         wallet_id = self._session.settings.get("wallet.id")
 
@@ -712,7 +718,7 @@ class ConnectionManager:
             mgr = MediationManager(self._session)
             _record, request = await mgr.prepare_request(connection.connection_id)
             responder = self._session.inject(BaseResponder)
-            responder.send(request, connection_id=connection.connection_id)
+            await responder.send(request, connection_id=connection.connection_id)
 
         return response
 
@@ -796,7 +802,7 @@ class ConnectionManager:
             mgr = MediationManager(self._session)
             _record, request = await mgr.prepare_request(connection.connection_id)
             responder = self._session.inject(BaseResponder)
-            responder.send(request, connection_id=connection.connection_id)
+            await responder.send(request, connection_id=connection.connection_id)
 
         return connection
 
