@@ -332,9 +332,7 @@ class TestConnectionManager(AsyncTestCase):
         with async_mock.patch.object(
             MediationManager,
             "get_default_mediator",
-            async_mock.CoroutineMock(
-                return_value=mediation_record.mediation_id
-            )
+            async_mock.CoroutineMock(return_value=mediation_record.mediation_id),
         ) as mock_get_default_mediator:
             _, invite = await self.manager.create_invitation(
                 routing_keys=[self.test_verkey],
@@ -570,9 +568,9 @@ class TestConnectionManager(AsyncTestCase):
         ) as create_did_document, async_mock.patch.object(
             self.session.wallet, "create_local_did"
         ) as create_local_did, async_mock.patch.object(
-            MediationManager, "get_default_mediator", async_mock.CoroutineMock(
-                return_value=mediation_record.mediation_id
-            )
+            MediationManager,
+            "get_default_mediator",
+            async_mock.CoroutineMock(return_value=mediation_record.mediation_id),
         ) as mock_get_default_mediator:
 
             did_info = DIDInfo(did=self.test_did, verkey=self.test_verkey, metadata={})
@@ -1037,9 +1035,7 @@ class TestConnectionManager(AsyncTestCase):
         ) as mock_conn_save, async_mock.patch.object(
             ConnectionResponse, "sign_field", autospec=True
         ) as mock_sign, async_mock.patch.object(
-            conn_rec, "metadata_get", async_mock.CoroutineMock(
-                return_value=False
-            )
+            conn_rec, "metadata_get", async_mock.CoroutineMock(return_value=False)
         ):
             await self.manager.create_response(
                 conn_rec, mediation_id=mediation_record.mediation_id
@@ -1102,9 +1098,7 @@ class TestConnectionManager(AsyncTestCase):
         ) as mock_conn_save, async_mock.patch.object(
             ConnectionResponse, "sign_field", autospec=True
         ) as mock_sign, async_mock.patch.object(
-            conn_rec, "metadata_get", async_mock.CoroutineMock(
-                return_value=True
-            )
+            conn_rec, "metadata_get", async_mock.CoroutineMock(return_value=True)
         ):
             await self.manager.create_response(conn_rec)
 
@@ -1136,7 +1130,7 @@ class TestConnectionManager(AsyncTestCase):
                 state=ConnRecord.State.RESPONSE.rfc23,
                 save=async_mock.CoroutineMock(),
                 metadata_get=async_mock.CoroutineMock(),
-                connection_id="test-conn-id"
+                connection_id="test-conn-id",
             )
             conn_rec = await self.manager.accept_response(mock_response, receipt)
             assert conn_rec.their_did == self.test_target_did
@@ -1168,7 +1162,7 @@ class TestConnectionManager(AsyncTestCase):
                 state=ConnRecord.State.RESPONSE.rfc23,
                 save=async_mock.CoroutineMock(),
                 metadata_get=async_mock.CoroutineMock(return_value=False),
-                connection_id="test-conn-id"
+                connection_id="test-conn-id",
             )
 
             conn_rec = await self.manager.accept_response(mock_response, receipt)
@@ -1292,7 +1286,7 @@ class TestConnectionManager(AsyncTestCase):
                 state=ConnRecord.State.RESPONSE.rfc23,
                 save=async_mock.CoroutineMock(),
                 metadata_get=async_mock.CoroutineMock(return_value=True),
-                connection_id="test-conn-id"
+                connection_id="test-conn-id",
             )
             conn_rec = await self.manager.accept_response(mock_response, receipt)
             assert conn_rec.their_did == self.test_target_did

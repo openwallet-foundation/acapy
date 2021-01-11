@@ -137,8 +137,7 @@ class TestArgParse(AsyncTestCase):
         group.add_arguments(parser)
 
         with self.assertRaises(argparse.ArgsParseError):
-            args = parser.parse_args([
-                "--clear-default-mediator",
-                "--default-mediator-id", "asdf"
-            ])
+            args = parser.parse_args(
+                ["--clear-default-mediator", "--default-mediator-id", "asdf"]
+            )
             group.get_settings(args)
