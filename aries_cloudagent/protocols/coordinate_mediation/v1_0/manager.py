@@ -5,7 +5,6 @@ from typing import Optional, Sequence, Tuple
 
 from ....core.error import BaseError
 from ....core.profile import ProfileSession
-from ....messaging.responder import BaseResponder
 from ....storage.base import BaseStorage
 from ....storage.error import StorageNotFoundError
 from ....storage.record import StorageRecord

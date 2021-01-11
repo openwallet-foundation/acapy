@@ -18,6 +18,7 @@ from .....wallet.error import WalletNotFoundError
 from .....wallet.in_memory import InMemoryWallet
 from .....wallet.util import naked_to_did_key
 from ....coordinate_mediation.v1_0.models.mediation_record import MediationRecord
+from ....coordinate_mediation.v1_0.manager import MediationManager
 from ....coordinate_mediation.v1_0.messages.keylist_update import KeylistUpdate
 from ....coordinate_mediation.v1_0.messages.inner.keylist_update_rule import (
     KeylistUpdateRule,
@@ -1183,7 +1184,9 @@ class TestConnectionManager(AsyncTestCase):
             ConnRecord, "save", autospec=True
         ) as mock_conn_rec_save, async_mock.patch.object(
             ConnRecord, "retrieve_by_request_id", async_mock.CoroutineMock()
-        ) as mock_conn_retrieve_by_req_id:
+        ) as mock_conn_retrieve_by_req_id, async_mock.patch.object(
+            MediationManager, "get_default_mediator", async_mock.CoroutineMock()
+        ), async_mock.patch.object(ConnRecord, "metadata_get", async_mock.CoroutineMock()):
             mock_conn_retrieve_by_req_id.return_value = async_mock.MagicMock(
                 did=self.test_target_did,
                 did_doc=async_mock.MagicMock(did=self.test_target_did),
@@ -1210,7 +1213,9 @@ class TestConnectionManager(AsyncTestCase):
             ConnRecord, "retrieve_by_request_id", async_mock.CoroutineMock()
         ) as mock_conn_retrieve_by_req_id, async_mock.patch.object(
             ConnRecord, "retrieve_by_did", async_mock.CoroutineMock()
-        ) as mock_conn_retrieve_by_did:
+        ) as mock_conn_retrieve_by_did, async_mock.patch.object(
+            MediationManager, "get_default_mediator", async_mock.CoroutineMock()
+        ), async_mock.patch.object(ConnRecord, "metadata_get", async_mock.CoroutineMock()) :
             mock_conn_retrieve_by_req_id.side_effect = StorageNotFoundError()
             mock_conn_retrieve_by_did.return_value = async_mock.MagicMock(
                 did=self.test_target_did,
