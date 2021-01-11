@@ -146,7 +146,7 @@ class ConnectionManager:
         # Mediation Record can still be None after this operation if no
         # mediation id passed and no default
         mediation_record = await self.mediation_record_if_id(
-            mediation_id or await mediation_mgr.get_default_mediator()
+            mediation_id or await mediation_mgr.get_default_mediator_id()
         )
         keylist_updates = None
         image_url = self._session.context.settings.get("image_url")
@@ -369,7 +369,7 @@ class ConnectionManager:
         # Mediation Record can still be None after this operation if no
         # mediation id passed and no default
         mediation_record = await self.mediation_record_if_id(
-            mediation_id or await mediation_mgr.get_default_mediator()
+            mediation_id or await mediation_mgr.get_default_mediator_id()
         )
 
         multitenant_mgr = self._session.inject(MultitenantManager, required=False)
