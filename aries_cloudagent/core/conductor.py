@@ -287,9 +287,7 @@ class Conductor:
                 async with self.root_profile.session() as session:
                     mgr = ConnectionManager(session)
                     conn_record = await mgr.receive_invitation(
-                        invitation=ConnectionInvitation.from_url(
-                            mediation_invitation
-                        ),
+                        invitation=ConnectionInvitation.from_url(mediation_invitation),
                         auto_accept=True,
                     )
                     await conn_record.metadata_set(
