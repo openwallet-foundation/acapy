@@ -144,6 +144,8 @@ class ConnectionManager:
         """
         mediation_mgr = MediationManager(self._session)
         keylist_updates = None
+        if not mediation_id:
+            mediation_id = await mediation_mgr.get_default_mediator()
         image_url = self._session.context.settings.get("image_url")
 
         # Multitenancy setup
@@ -362,8 +364,8 @@ class ConnectionManager:
         keylist_updates = None
         mediation_record = await self.mediation_record_if_id(mediation_id)
         mediation_mgr = MediationManager(self._session)
-
-        # Multitenancy setup
+        if not mediation_id:
+            mediation_id = await mediation_mgr.get_default_mediator()
         multitenant_mgr = self._session.inject(MultitenantManager, required=False)
         wallet_id = self._session.settings.get("wallet.id")
 
