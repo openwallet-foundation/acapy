@@ -263,11 +263,11 @@ class MediationManager:
 
     # Role: Client {{{
 
-    async def get_default_mediator(self) -> Optional[MediationRecord]:
-        """Retrieve default mediator from the store.
+    async def get_default_mediator_id(self) -> Optional[str]:
+        """Retrieve the default mediator's ID from the store.
 
         Returns:
-            Optional[MediationRecord]: retrieved default mediator or None if not set
+            Optional[str]: ID if present
 
         """
         storage: BaseStorage = self.session.inject(BaseStorage)
@@ -276,16 +276,22 @@ class MediationManager:
                 record_type=self.DEFAULT_MEDIATOR_RECORD_TYPE,
                 record_id=self.DEFAULT_MEDIATOR_RECORD_TYPE,
             )
-            mediation_record = await MediationRecord.retrieve_by_id(
-                self.session, default_record.value
-            )
-            return mediation_record
+            return default_record.value
         except StorageNotFoundError:
             return None
 
-    async def set_default_mediator(self, record: MediationRecord):
-        """Set default mediator from record."""
-        return await self.set_default_mediator_by_id(record.mediation_id)
+    async def get_default_mediator(self) -> Optional[MediationRecord]:
+        """Retrieve default mediator from the store.
+
+        Returns:
+            Optional[MediationRecord]: retrieved default mediator or None if not set
+
+        """
+        mediation_id = await self.get_default_mediator_id()
+        if mediation_id:
+            return await MediationRecord.retrieve_by_id(self.session, mediation_id)
+
+        return None
 
     async def set_default_mediator_by_id(self, mediation_id: str):
         """Set default mediator from ID."""
@@ -302,12 +308,23 @@ class MediationManager:
             )
             await storage.add_record(default_record)
 
+    async def set_default_mediator(self, record: MediationRecord):
+        """Set default mediator from record."""
+        return await self.set_default_mediator_by_id(record.mediation_id)
+
     async def clear_default_mediator(self):
         """Clear the stored default mediator."""
         storage: BaseStorage = self.session.inject(BaseStorage)
-        record = await self.get_default_mediator()
-        if record:
-            await storage.delete_record(record)
+        try:
+            default_record = await storage.get_record(
+                record_type=self.DEFAULT_MEDIATOR_RECORD_TYPE,
+                record_id=self.DEFAULT_MEDIATOR_RECORD_TYPE,
+            )
+        except StorageNotFoundError:
+            pass
+
+        if default_record:
+            await storage.delete_record(default_record)
 
     async def prepare_request(
         self,
