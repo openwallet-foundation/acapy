@@ -361,7 +361,7 @@ class DemoAgent:
         webhook_port: int = None,
     ):
         if webhook_port is not None:
-            await self.listen_webhooks(webhook_port)     
+            await self.listen_webhooks(webhook_port)
         self.log(f"Register or switch to wallet {target_wallet_name}")
         if target_wallet_name == self.agency_wallet_name:
             self.ident = self.agency_ident
@@ -527,7 +527,7 @@ class DemoAgent:
                 self.log(
                     f"Agent called controller webhook: POST {self.webhook_url}",
                     (f"\nFor wallet: {wallet_id}" if wallet_id else ""),
-                    (f"\nPayload: {repr_json(payload)}"if payload else repr_json({})),
+                    (f"\nPayload: {repr_json(payload)}" if payload else repr_json({})),
                 )
                 EVENT_LOGGER.debug(
                     "Agent called controller webhook: %s%s%s",

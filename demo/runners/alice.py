@@ -275,8 +275,7 @@ async def main(
         if multitenant:
             # create an initial managed sub-wallet
             await agent.register_or_switch_wallet(
-                "Alice.initial",
-                webhook_port=agent.get_new_webhook_port()
+                "Alice.initial", webhook_port=agent.get_new_webhook_port()
             )
 
         log_status("#9 Input faber.py invitation details")

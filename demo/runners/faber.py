@@ -245,7 +245,7 @@ async def main(
             await agent.register_or_switch_wallet(
                 "Faber.initial",
                 public_did=True,
-                webhook_port=agent.get_new_webhook_port()
+                webhook_port=agent.get_new_webhook_port(),
             )
 
         # Create a schema
@@ -290,6 +290,7 @@ async def main(
                     created = await agent.register_or_switch_wallet(
                         target_wallet_name,
                         webhook_port=agent.get_new_webhook_port(),
+                        public_did=True,
                     )
                 else:
                     created = await agent.register_or_switch_wallet(
