@@ -525,7 +525,7 @@ class DemoAgent:
             method = getattr(self, handler, None)
             if method:
                 self.log(
-                    f"Agent called controller webhook: POST {self.webhook_url}",
+                    f"Agent called controller webhook: POST {self.webhook_url}/topic/{topic}/",
                     (f"\nFor wallet: {wallet_id}" if wallet_id else ""),
                     (f"\nPayload: {repr_json(payload)}" if payload else repr_json({})),
                 )
