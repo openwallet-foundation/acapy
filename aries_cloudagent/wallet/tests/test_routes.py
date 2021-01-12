@@ -6,6 +6,7 @@ from aiohttp.web import HTTPForbidden
 from ...admin.request_context import AdminRequestContext
 from ...ledger.base import BaseLedger
 from ...wallet.base import BaseWallet, DIDInfo
+from ...multitenant.manager import MultitenantManager
 
 from .. import routes as test_module
 from ..did_posture import DIDPosture
@@ -319,6 +320,35 @@ class TestWalletRoutes(AsyncTestCase):
                 }
             )
             assert result is json_response.return_value
+
+    async def test_set_public_did_multitenant(self):
+        self.context.update_settings(
+            {"multitenant.enabled": True, "wallet.id": "test_wallet"}
+        )
+
+        self.request.query = {"did": self.test_did}
+
+        Ledger = async_mock.MagicMock()
+        ledger = Ledger()
+        ledger.get_key_for_did = async_mock.CoroutineMock()
+        ledger.update_endpoint_for_did = async_mock.CoroutineMock()
+        ledger.__aenter__ = async_mock.CoroutineMock(return_value=ledger)
+        self.session_inject[BaseLedger] = ledger
+
+        multitenant_mgr = async_mock.MagicMock(MultitenantManager, autospec=True)
+        self.session_inject[MultitenantManager] = multitenant_mgr
+
+        with async_mock.patch.object(
+            test_module.web, "json_response", async_mock.Mock()
+        ):
+            self.wallet.set_public_did.return_value = DIDInfo(
+                self.test_did, self.test_verkey, DIDPosture.PUBLIC.metadata
+            )
+            await test_module.wallet_set_public_did(self.request)
+
+            multitenant_mgr.add_wallet_route.assert_called_once_with(
+                "test_wallet", self.test_verkey, skip_if_exists=True
+            )
 
     async def test_set_public_did_no_query_did(self):
         with self.assertRaises(test_module.web.HTTPBadRequest):
