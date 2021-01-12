@@ -24,6 +24,7 @@ from ..messaging.valid import (
     INDY_DID,
     INDY_RAW_PUBLIC_KEY,
 )
+from ..multitenant.manager import MultitenantManager
 
 from .base import DIDInfo, BaseWallet
 from .did_posture import DIDPosture
@@ -293,6 +294,10 @@ async def wallet_set_public_did(request: web.BaseRequest):
     if not did:
         raise web.HTTPBadRequest(reason="Request query must include DID")
 
+    # Multitenancy setup
+    multitenant_mgr = session.inject(MultitenantManager, required=False)
+    wallet_id = session.settings.get("wallet.id")
+
     try:
         ledger = session.inject(BaseLedger, required=False)
         if not ledger:
@@ -314,6 +319,13 @@ async def wallet_set_public_did(request: web.BaseRequest):
             )
             async with ledger:
                 await ledger.update_endpoint_for_did(info.did, endpoint)
+
+            # Add multitenant relay mapping so implicit invitations are still routed
+            if multitenant_mgr and wallet_id:
+                await multitenant_mgr.add_wallet_route(
+                    wallet_id, info.verkey, skip_if_exists=True
+                )
+
     except WalletNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
     except (LedgerError, WalletError) as err:
