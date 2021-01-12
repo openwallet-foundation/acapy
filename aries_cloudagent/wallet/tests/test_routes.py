@@ -439,11 +439,52 @@ class TestWalletRoutes(AsyncTestCase):
             test_module.web, "json_response", async_mock.Mock()
         ) as json_response:
             self.wallet.set_public_did.return_value = DIDInfo(
-                self.test_did, self.test_verkey, DIDPosture.PUBLIC.metadata
+                self.test_did,
+                self.test_verkey,
+                {**DIDPosture.PUBLIC.metadata, "endpoint": "https://endpoint.com"},
             )
             result = await test_module.wallet_set_public_did(self.request)
             self.wallet.set_public_did.assert_awaited_once_with(
                 self.request.query["did"]
+            )
+            json_response.assert_called_once_with(
+                {
+                    "result": {
+                        "did": self.test_did,
+                        "verkey": self.test_verkey,
+                        "posture": DIDPosture.PUBLIC.moniker,
+                    }
+                }
+            )
+            assert result is json_response.return_value
+
+    async def test_set_public_did_update_endpoint_use_default_update_in_wallet(self):
+        self.request.query = {"did": self.test_did}
+        self.context.update_settings(
+            {"default_endpoint": "https://default_endpoint.com"}
+        )
+
+        Ledger = async_mock.MagicMock()
+        ledger = Ledger()
+        ledger.update_endpoint_for_did = async_mock.CoroutineMock()
+        ledger.get_key_for_did = async_mock.CoroutineMock()
+        ledger.__aenter__ = async_mock.CoroutineMock(return_value=ledger)
+        self.session_inject[BaseLedger] = ledger
+
+        with async_mock.patch.object(
+            test_module.web, "json_response", async_mock.Mock()
+        ) as json_response:
+            did_info = DIDInfo(
+                self.test_did, self.test_verkey, DIDPosture.PUBLIC.metadata
+            )
+            self.wallet.get_local_did.return_value = did_info
+            self.wallet.set_public_did.return_value = did_info
+            result = await test_module.wallet_set_public_did(self.request)
+            self.wallet.set_public_did.assert_awaited_once_with(
+                self.request.query["did"]
+            )
+            self.wallet.set_did_endpoint.assert_awaited_once_with(
+                did_info.did, "https://default_endpoint.com", ledger
             )
             json_response.assert_called_once_with(
                 {
