@@ -11,6 +11,7 @@ from ..core.profile import (
 from ..config.wallet import wallet_config
 from ..config.injection_context import InjectionContext
 from ..wallet.models.wallet_record import WalletRecord
+from ..wallet.base import BaseWallet
 from ..core.error import BaseError
 from ..protocols.routing.v1_0.manager import RouteNotFoundError, RoutingManager
 from ..protocols.routing.v1_0.models.route_record import RouteRecord
@@ -124,6 +125,15 @@ class MultitenantManager:
                 "wallet.type": None,
             }
 
+            dispatch_type = wallet_record.wallet_dispatch_type
+            webhook_urls = wallet_record.wallet_webhook_urls
+            base_webhook_urls = context.settings.get("admin.webhook_urls")
+            if dispatch_type == "both":
+                target_urls = list(set(base_webhook_urls) | set(webhook_urls))
+                extra_settings["admin.webhook_urls"] = target_urls
+            elif dispatch_type == "default":
+                extra_settings["admin.webhook_urls"] = webhook_urls
+
             context.settings = (
                 context.settings.extend(reset_settings)
                 .extend(wallet_record.settings)
@@ -141,7 +151,9 @@ class MultitenantManager:
         return self._instances[wallet_id]
 
     async def create_wallet(
-        self, settings: dict, key_management_mode: str
+        self,
+        settings: dict,
+        key_management_mode: str,
     ) -> WalletRecord:
         """Create new wallet and wallet record.
 
@@ -160,6 +172,7 @@ class MultitenantManager:
         wallet_key = settings.get("wallet.key")
         wallet_name = settings.get("wallet.name")
 
+        # base wallet context
         async with self.profile.session() as session:
             # Check if the wallet name already exists to avoid indy wallet errors
             if wallet_name and await self._wallet_name_exists(session, wallet_name):
@@ -170,7 +183,6 @@ class MultitenantManager:
             # In unmanaged mode we don't want to store the wallet key
             if key_management_mode == WalletRecord.MODE_UNMANAGED:
                 del settings["wallet.key"]
-
             # create and store wallet record
             wallet_record = WalletRecord(
                 settings=settings, key_management_mode=key_management_mode
@@ -178,13 +190,25 @@ class MultitenantManager:
 
             await wallet_record.save(session)
 
-        # provision wallet. We don't need to do anything with it for now
-        await self.get_wallet_profile(
+        # provision wallet
+        profile = await self.get_wallet_profile(
             self.profile.context,
             wallet_record,
-            {"wallet.key": wallet_key},
+            {
+                "wallet.key": wallet_key,
+            },
             provision=True,
         )
+
+        # subwallet context
+        async with profile.session() as session:
+            wallet = session.inject(BaseWallet)
+            public_did_info = await wallet.get_public_did()
+
+            if public_did_info:
+                await self.add_wallet_route(
+                    wallet_record.wallet_id, public_did_info.verkey, skip_if_exists=True
+                )
 
         return wallet_record
 
