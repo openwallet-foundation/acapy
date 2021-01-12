@@ -200,7 +200,7 @@ class Conductor:
             # This allows webhooks to be called when a connection is marked active,
             # for example
             responder = AdminResponder(
-                context,
+                self.root_profile,
                 self.admin_server.outbound_message_router,
                 self.admin_server.send_webhook,
             )
