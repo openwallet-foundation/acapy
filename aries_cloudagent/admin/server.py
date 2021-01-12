@@ -483,7 +483,13 @@ class AdminServer(BaseAdminServer):
                 "name": "Authorization",
                 "description": "Bearer token. Be sure to preprend token with 'Bearer '",
             }
-            security.append({"AuthorizationHeader": []})
+
+            # If multitenancy is enabled we need Authorization header
+            multitenant_security = {"AuthorizationHeader": []}
+            # If admin api key is also enabled, we need both for subwallet requests
+            if self.admin_api_key:
+                multitenant_security["ApiKeyHeader"] = []
+            security.append(multitenant_security)
 
         if self.admin_api_key or self.multitenant_manager:
             swagger = app["swagger_dict"]
