@@ -188,6 +188,11 @@ class DemoAgent:
         wallets = await self.admin_GET("/multitenancy/wallets")
         return wallets
 
+    def get_new_webhook_port(self):
+        """Get new webhook port for registering additional sub-wallets"""
+        self.webhook_port = self.webhook_port + 1
+        return self.webhook_port
+
     async def get_public_did(self):
         """Get public did of wallet (called for a sub-wallet)."""
         did = await self.admin_GET("/wallet/did/public")
@@ -353,13 +358,10 @@ class DemoAgent:
         self,
         target_wallet_name,
         public_did=False,
-        include_api_key=False,
         webhook_port: int = None,
     ):
         if webhook_port is not None:
-            self.listen_webhooks(webhook_port)
-        if include_api_key:
-            self.webhook_url = self.webhook_url + "#test_api_key"
+            await self.listen_webhooks(webhook_port)     
         self.log(f"Register or switch to wallet {target_wallet_name}")
         if target_wallet_name == self.agency_wallet_name:
             self.ident = self.agency_ident
@@ -391,7 +393,7 @@ class DemoAgent:
             "wallet_type": self.wallet_type,
             "label": target_wallet_name,
             "wallet_webhook_urls": self.webhook_url,
-            "wallet_dispatch_type": "default",
+            "wallet_dispatch_type": "both",
         }
         self.wallet_name = target_wallet_name
         self.wallet_key = target_wallet_name
@@ -522,6 +524,11 @@ class DemoAgent:
             wallet_id = headers.get("x-wallet-id")
             method = getattr(self, handler, None)
             if method:
+                self.log(
+                    f"Agent called controller webhook: POST {self.webhook_url}",
+                    (f"\nFor wallet: {wallet_id}" if wallet_id else ""),
+                    (f"\nPayload: {repr_json(payload)}"if payload else repr_json({})),
+                )
                 EVENT_LOGGER.debug(
                     "Agent called controller webhook: %s%s%s",
                     handler,
