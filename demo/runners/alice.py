@@ -243,7 +243,7 @@ async def main(
     multitenant: bool = False,
     wallet_type: str = None,
 ):
-
+    multi_webhook_port = start_port + 10
     genesis = await default_genesis_txns()
     if not genesis:
         print("Error retrieving ledger genesis transactions")
@@ -295,7 +295,24 @@ async def main(
 
             elif option in "wW" and multitenant:
                 target_wallet_name = await prompt("Enter wallet name: ")
-                await agent.register_or_switch_wallet(target_wallet_name)
+                include_subwallet_webhook = await prompt("(Y/N) Create a webhook target")
+                include_api_key_header = await prompt("(Y/N) Include API Key in request \
+                    header when dispatching webhook")
+                if include_subwallet_webhook.lower() == "Y":
+                    if include_api_key_header.lower() == "Y":
+                        await agent.register_or_switch_wallet(
+                            target_wallet_name,
+                            webhook_port=multi_webhook_port,
+                            include_api_key=True,
+                        )
+                    else:
+                        await agent.register_or_switch_wallet(
+                            target_wallet_name,
+                            webhook_port=multi_webhook_port,
+                        )
+                    multi_webhook_port = multi_webhook_port + 1
+                else:
+                    await agent.register_or_switch_wallet(target_wallet_name)
 
             elif option == "3":
                 msg = await prompt("Enter message: ")

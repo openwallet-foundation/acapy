@@ -349,7 +349,17 @@ class DemoAgent:
                     self.agency_wallet_did = self.did
         self.log(f"Registered DID: {self.did}")
 
-    async def register_or_switch_wallet(self, target_wallet_name, public_did=False):
+    async def register_or_switch_wallet(
+        self,
+        target_wallet_name,
+        public_did=False,
+        include_api_key=False,
+        webhook_port: int = None,
+    ):
+        if webhook_port is not None:
+            self.listen_webhooks(webhook_port)
+        if include_api_key:
+            self.webhook_url = self.webhook_url + "#test_api_key"
         self.log(f"Register or switch to wallet {target_wallet_name}")
         if target_wallet_name == self.agency_wallet_name:
             self.ident = self.agency_ident
@@ -380,6 +390,8 @@ class DemoAgent:
             "wallet_name": target_wallet_name,
             "wallet_type": self.wallet_type,
             "label": target_wallet_name,
+            "wallet_webhook_urls": self.webhook_url,
+            "wallet_dispatch_type": "default",
         }
         self.wallet_name = target_wallet_name
         self.wallet_key = target_wallet_name
