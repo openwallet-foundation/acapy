@@ -524,14 +524,10 @@ class DemoAgent:
             wallet_id = headers.get("x-wallet-id")
             method = getattr(self, handler, None)
             if method:
-                self.log(
-                    f"Agent called controller webhook: POST {self.webhook_url}/topic/{topic}/",
-                    (f"\nFor wallet: {wallet_id}" if wallet_id else ""),
-                    (f"\nPayload: {repr_json(payload)}" if payload else repr_json({})),
-                )
                 EVENT_LOGGER.debug(
-                    "Agent called controller webhook: %s%s%s",
+                    "Agent called controller webhook: %s%s%s%s",
                     handler,
+                    f"\nPOST {self.webhook_url}/topic/{topic}/",
                     (f" for wallet: {wallet_id}" if wallet_id else ""),
                     (f" with payload: \n{repr_json(payload)}\n" if payload else ""),
                 )
