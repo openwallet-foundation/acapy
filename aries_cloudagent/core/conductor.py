@@ -236,6 +236,27 @@ class Conductor:
                 print()
                 del mgr
 
+        # Clear default mediator
+        if context.settings.get("mediation.clear"):
+            async with self.root_profile.session() as session:
+                mediation_mgr = MediationManager(session)
+                await mediation_mgr.clear_default_mediator()
+                print("Default mediator cleared.")
+
+        # Set default mediator by id
+        default_mediator_id = context.settings.get("mediation.default_id")
+        if default_mediator_id:
+            async with self.root_profile.session() as session:
+                mediation_mgr = MediationManager(session)
+                try:
+                    record = await MediationRecord.retrieve_by_id(
+                        session, default_mediator_id
+                    )
+                    await mediation_mgr.set_default_mediator(record)
+                    print(f"Default mediator set to {default_mediator_id}")
+                except Exception:
+                    LOGGER.exception("Error retrieving mediation record")
+
         # Print an invitation to the terminal
         if context.settings.get("debug.print_invitation"):
             try:
@@ -296,27 +317,10 @@ class Conductor:
                     await conn_record.metadata_set(
                         session, MediationManager.SET_TO_DEFAULT_ON_GRANTED, True
                     )
+                    print("Attempting to connect to mediator...")
+                    del mgr
             except Exception:
                 LOGGER.exception("Error accepting mediation invitation")
-
-        # Clear default mediator
-        if context.settings.get("mediation.clear"):
-            async with self.root_profile.session() as session:
-                mediation_mgr = MediationManager(session)
-                await mediation_mgr.clear_default_mediator()
-
-        # Set default mediator by id
-        default_mediator_id = context.settings.get("mediation.default_id")
-        if default_mediator_id:
-            async with self.root_profile.session() as session:
-                mediation_mgr = MediationManager(session)
-                try:
-                    record = await MediationRecord.retrieve_by_id(
-                        session, default_mediator_id
-                    )
-                    await mediation_mgr.set_default_mediator(record)
-                except Exception:
-                    LOGGER.exception("Error retrieving mediation record")
 
     async def stop(self, timeout=1.0):
         """Stop the agent."""
