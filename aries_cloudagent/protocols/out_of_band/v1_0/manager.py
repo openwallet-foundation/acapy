@@ -25,6 +25,8 @@ from ...connections.v1_0.manager import ConnectionManager
 from ...present_proof.v1_0.manager import PresentationManager
 # from ...present_proof.v1_0.messages.presentation_request import PresentationRequest
 from ...connections.v1_0.messages.connection_invitation import ConnectionInvitation
+from ....ledger.base import BaseLedger
+from ....wallet.util import did_key_to_naked
 
 
 DIDX_INVITATION = "didexchange/1.0"
@@ -269,15 +271,17 @@ class OutOfBandManager:
         # Get the single service item
         if len(invi_msg.service_blocks) >= 1:
             service = invi_msg.service_blocks[0]
-            public_did = service.recipient_keys[0]
+            public_did = None
         else:
             # If it's in the did format, we need to convert to a full service block
+            # An existing connection can only be reused based on a public DID in an out-of-band message.
+            # https://github.com/hyperledger/aries-rfcs/tree/master/features/0434-outofband
             service_did = invi_msg.service_dids[0]
             async with ledger:
                 verkey = await ledger.get_key_for_did(service_did)
                 did_key = naked_to_did_key(verkey)
                 endpoint = await ledger.get_endpoint_for_did(service_did)
-            public_did = service_did.split(":")[2]
+            public_did = service_did
             service = ServiceMessage.deserialize(
                 {
                     "id": "#inline",
@@ -293,20 +297,25 @@ class OutOfBandManager:
                 [DIDCommPrefix.unqualify(proto) for proto in invi_msg.handshake_protocols]
             )
         )
-
         # Reuse Connection
+        # Only if started by an invitee with Public DID
         conn_rec = None
-        if len(invi_msg.request_attach) >= 1:
-            tag_filter = {}
-            post_filter = {}
-            post_filter["state"] = "active"
-            post_filter["their_public_did"] = public_did
-            conn_rec = await self.find_existing_connection(
-                tag_filter=tag_filter,
-                post_filter=post_filter
-            )
-        else:
-            pass
+        if public_did is not None:
+            # If only handshake_protocols are included or
+            # if only request~attach is included
+            # Look for an exitsting connection [state: active]
+            if (len(unq_handshake_protos) >= 1 and len(invi_msg.request_attach) == 0):
+                # TODO: Message Reuse Handler
+                pass
+            elif (len(unq_handshake_protos) == 0 and len(invi_msg.request_attach) >= 1):
+                tag_filter = {}
+                post_filter = {}
+                post_filter["state"] = "active"
+                post_filter["their_public_did"] = public_did
+                conn_rec = await self.find_existing_connection(
+                    tag_filter=tag_filter,
+                    post_filter=post_filter
+                )
 
         # Create new connection
         if conn_rec is None:
