@@ -7,6 +7,7 @@ from asynctest import mock as async_mock
 from aries_cloudagent.config.injection_context import InjectionContext
 from aries_cloudagent.messaging.request_context import RequestContext
 
+from .....storage.base import BaseStorage
 from .....admin.request_context import AdminRequestContext
 from .. import routes as test_module
 from ..manager import MediationManager
@@ -568,6 +569,52 @@ class TestCoordinateMediationRoutes(AsyncTestCase):
             async_mock.CoroutineMock(side_effect=test_module.StorageError()),
         ) as mock_retrieve_by_id, self.assertRaises(test_module.web.HTTPBadRequest):
             await test_module.send_keylist_query(self.request)
+
+    async def test_get_default_mediator(self):
+        self.request.query = {}
+        self.context.session = async_mock.CoroutineMock()
+        with async_mock.patch.object(
+            test_module.MediationRecord,
+            "query",
+            async_mock.CoroutineMock(return_value=[self.mock_record]),
+        ) as mock_query, async_mock.patch.object(
+            test_module.web, "json_response"
+        ) as json_response, async_mock.patch.object(
+            BaseStorage, "get_record", async_mock.CoroutineMock()
+        ) as mock_get_record:
+            await test_module.get_default_mediator(self.request)
+            json_response.assert_called_once_with(
+                self.mock_record.serialize.return_value
+            )
+            mock_query.assert_called_once_with(
+                self.context.session.return_value,
+                {
+                    "connection_id": "test-conn-id",
+                    "state": MediationRecord.STATE_GRANTED,
+                },
+            )
+
+    async def test_set_default_mediator(self):
+        self.request.query = {}
+        self.context.session = async_mock.CoroutineMock()
+        with async_mock.patch.object(
+            test_module.MediationRecord,
+            "query",
+            async_mock.CoroutineMock(return_value=[self.mock_record]),
+        ) as mock_query, async_mock.patch.object(
+            test_module.web, "json_response"
+        ) as json_response:
+            await test_module.get_default_mediator(self.request)
+            json_response.assert_called_once_with(
+                self.mock_record.serialize.return_value
+            )
+            mock_query.assert_called_once_with(
+                self.context.session.return_value,
+                {
+                    "connection_id": "test-conn-id",
+                    "state": MediationRecord.STATE_GRANTED,
+                },
+            )
 
     async def test_register(self):
         mock_app = async_mock.MagicMock()
