@@ -307,7 +307,10 @@ class OutOfBandManager:
             if (len(unq_handshake_protos) >= 1 and len(invi_msg.request_attach) == 0):
                 # TODO: Message Reuse Handler
                 pass
-            elif (len(unq_handshake_protos) == 0 and len(invi_msg.request_attach) >= 1):
+            elif ((len(unq_handshake_protos) == 0 and
+                  len(invi_msg.request_attach) >= 1) or
+                  (len(unq_handshake_protos) >= 1 and
+                  len(invi_msg.request_attach) >= 1)):
                 tag_filter = {}
                 post_filter = {}
                 post_filter["state"] = "active"
