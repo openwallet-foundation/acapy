@@ -2,7 +2,7 @@
 
 In this example, we'll walk through an example of complex routing in Aries, outlining some of the possibilities that can be implemented.
 
-We'll start with the Alice and Bob example from the [Cross Domain Messaging]() Aries RFC.
+We'll start with the Alice and Bob example from the [Cross Domain Messaging](https://github.com/hyperledger/aries-rfcs/blob/master/concepts/0094-cross-domain-messaging) Aries RFC.
 
 ![Cross Domain Messaging Example](https://github.com/hyperledger/aries-rfcs/blob/master/concepts/0094-cross-domain-messaging/domains.jpg "Cross Domain Messaging Example")
 
