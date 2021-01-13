@@ -4,8 +4,8 @@
 
 A Hyperledger Aries agent (such as the one in this repository):
 
-* enables establishing connections with other DIDcomm-based agents (using DIDcomm encryption envelopes),
-* exchanges messages between connected agents to execute message protocols (using DIDcomm protocols)
+* enables establishing connections with other DIDComm-based agents (using DIDComm encryption envelopes),
+* exchanges messages between connected agents to execute message protocols (using DIDComm protocols)
 * sends notifications about protocol events to a controller, and
 * exposes an API for responses from the controller with direction in handling protocol events.
 
