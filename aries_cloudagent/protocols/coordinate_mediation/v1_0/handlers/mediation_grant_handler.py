@@ -32,6 +32,13 @@ class MediationGrantHandler(BaseHandler):
                 session, context.connection_record.connection_id
             )
             await mgr.request_granted(record, context.message)
+
+            # Set to default if metdata set on connection to do so
+            if await context.connection_record.metadata_get(
+                session, MediationManager.SET_TO_DEFAULT_ON_GRANTED
+            ):
+                await mgr.set_default_mediator(record)
+
         except StorageNotFoundError as err:
             raise HandlerException(
                 "Received mediation grant from connection from which mediation "
