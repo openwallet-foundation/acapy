@@ -586,27 +586,114 @@ class TestCoordinateMediationRoutes(AsyncTestCase):
                 status=200,
             )
 
-    async def test_set_default_mediator(self):
+    async def test_get_empty_default_mediator(self):
         self.request.query = {}
         self.context.session = async_mock.CoroutineMock()
         with async_mock.patch.object(
-            test_module.MediationRecord,
-            "query",
-            async_mock.CoroutineMock(return_value=[self.mock_record]),
-        ) as mock_query, async_mock.patch.object(
             test_module.web, "json_response"
-        ) as json_response:
+        ) as json_response, async_mock.patch.object(
+            test_module.MediationManager,
+            "get_default_mediator",
+            async_mock.CoroutineMock(return_value=None)
+        ) as mock_mgr_get_default_record:
             await test_module.get_default_mediator(self.request)
             json_response.assert_called_once_with(
-                self.mock_record.serialize.return_value
+                {},
+                status=200,
             )
-            mock_query.assert_called_once_with(
-                self.context.session.return_value,
-                {
-                    "connection_id": "test-conn-id",
-                    "state": MediationRecord.STATE_GRANTED,
-                },
+
+    async def test_get_default_mediator_storage_error(self):
+        self.request.query = {}
+        self.context.session = async_mock.CoroutineMock()
+        with async_mock.patch.object(
+            test_module.web, "json_response"
+        ) as json_response, async_mock.patch.object(
+            test_module.MediationManager,
+            "get_default_mediator",
+            async_mock.CoroutineMock(side_effect=test_module.StorageNotFoundError())
+        ) as mock_mgr_get_default_record:
+            with self.assertRaises(test_module.web.HTTPBadRequest): 
+                await test_module.get_default_mediator(self.request)
+
+    async def test_set_default_mediator(self):
+        self.request.match_info={
+                "mediation_id": "fake_id",
+            }
+        self.request.query = {}
+        self.context.session = async_mock.CoroutineMock()
+        with async_mock.patch.object(
+            test_module.MediationManager,
+            "get_default_mediator",
+            async_mock.CoroutineMock(return_value=self.mock_record)
+        ) as mock_mgr_get_default_record, async_mock.patch.object(
+            test_module.MediationManager,
+            "set_default_mediator_by_id",
+            async_mock.CoroutineMock()
+        ) as mock_mgr_set_default_record_by_id, async_mock.patch.object(
+            test_module.web, "json_response"
+        ) as json_response:
+            await test_module.set_default_mediator(self.request)
+            json_response.assert_called_once_with(
+                self.mock_record.serialize.return_value,
+                status=201,
             )
+
+    async def test_set_default_mediator_storage_error(self):
+        self.request.match_info={
+                "mediation_id": "bad_id",
+            }
+        self.request.query = {}
+        self.context.session = async_mock.CoroutineMock()
+        with async_mock.patch.object(
+            test_module.MediationManager,
+            "get_default_mediator",
+            async_mock.CoroutineMock(side_effect=test_module.StorageError())
+        ) as mock_mgr_get_default_record, async_mock.patch.object(
+            test_module.MediationManager,
+            "set_default_mediator_by_id",
+            async_mock.CoroutineMock(side_effect=test_module.StorageError())
+        ) as mock_mgr_set_default_record_by_id, async_mock.patch.object(
+            test_module.web, "json_response"
+        ) as json_response:
+            with self.assertRaises(test_module.web.HTTPBadRequest):    
+                await test_module.set_default_mediator(self.request)
+
+    async def test_clear_default_mediator(self):
+        self.request.query = {}
+        self.context.session = async_mock.CoroutineMock()
+        with async_mock.patch.object(
+            test_module.MediationManager,
+            "get_default_mediator",
+            async_mock.CoroutineMock(return_value=self.mock_record)
+        ) as mock_mgr_get_default_record, async_mock.patch.object(
+            test_module.MediationManager,
+            "clear_default_mediator",
+            async_mock.CoroutineMock()
+        ) as mock_mgr_clear_default_record_by_id, async_mock.patch.object(
+            test_module.web, "json_response"
+        ) as json_response:
+            await test_module.clear_default_mediator(self.request)
+            json_response.assert_called_once_with(
+                self.mock_record.serialize.return_value,
+                status=201,
+            )
+    
+    async def test_clear_default_mediator_storage_error(self):
+        self.request.query = {}
+        self.context.session = async_mock.CoroutineMock()
+        with async_mock.patch.object(
+            test_module.MediationManager,
+            "get_default_mediator",
+            async_mock.CoroutineMock(side_effect=test_module.StorageError())
+        ) as mock_mgr_get_default_record, async_mock.patch.object(
+            test_module.MediationManager,
+            "clear_default_mediator",
+            async_mock.CoroutineMock()
+        ) as mock_mgr_clear_default_record_by_id, async_mock.patch.object(
+            test_module.web, "json_response"
+        ) as json_response:
+            with self.assertRaises(test_module.web.HTTPBadRequest): 
+                await test_module.clear_default_mediator(self.request)
 
     async def test_register(self):
         mock_app = async_mock.MagicMock()
