@@ -574,24 +574,16 @@ class TestCoordinateMediationRoutes(AsyncTestCase):
         self.request.query = {}
         self.context.session = async_mock.CoroutineMock()
         with async_mock.patch.object(
-            test_module.MediationRecord,
-            "query",
-            async_mock.CoroutineMock(return_value=[self.mock_record]),
-        ) as mock_query, async_mock.patch.object(
             test_module.web, "json_response"
         ) as json_response, async_mock.patch.object(
-            BaseStorage, "get_record", async_mock.CoroutineMock()
-        ) as mock_get_record:
+            test_module.MediationManager,
+            "get_default_mediator",
+            async_mock.CoroutineMock(return_value=self.mock_record)
+        ) as mock_mgr_get_default_record:
             await test_module.get_default_mediator(self.request)
             json_response.assert_called_once_with(
-                self.mock_record.serialize.return_value
-            )
-            mock_query.assert_called_once_with(
-                self.context.session.return_value,
-                {
-                    "connection_id": "test-conn-id",
-                    "state": MediationRecord.STATE_GRANTED,
-                },
+                self.mock_record.serialize.return_value,
+                status=200,
             )
 
     async def test_set_default_mediator(self):
