@@ -243,7 +243,6 @@ async def main(
     multitenant: bool = False,
     wallet_type: str = None,
 ):
-
     genesis = await default_genesis_txns()
     if not genesis:
         print("Error retrieving ledger genesis transactions")
@@ -275,7 +274,9 @@ async def main(
 
         if multitenant:
             # create an initial managed sub-wallet
-            await agent.register_or_switch_wallet("Alice.initial")
+            await agent.register_or_switch_wallet(
+                "Alice.initial", webhook_port=agent.get_new_webhook_port()
+            )
 
         log_status("#9 Input faber.py invitation details")
         await input_invitation(agent)
@@ -295,7 +296,16 @@ async def main(
 
             elif option in "wW" and multitenant:
                 target_wallet_name = await prompt("Enter wallet name: ")
-                await agent.register_or_switch_wallet(target_wallet_name)
+                include_subwallet_webhook = await prompt(
+                    "(Y/N) Create sub-wallet webhook target: "
+                )
+                if include_subwallet_webhook.lower() == "y":
+                    await agent.register_or_switch_wallet(
+                        target_wallet_name,
+                        webhook_port=agent.get_new_webhook_port(),
+                    )
+                else:
+                    await agent.register_or_switch_wallet(target_wallet_name)
 
             elif option == "3":
                 msg = await prompt("Enter message: ")
