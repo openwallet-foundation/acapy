@@ -943,6 +943,27 @@ class MediationGroup(ArgumentGroup):
             help="Automatically updated mediator with newly created keys."
             " keylists. Default: false.",
         )
+        parser.add_argument(
+            "--mediator-invitation",
+            type=str,
+            metavar="<invite URL to mediator>",
+            env_var="ACAPY_MEDIATION_INVITATION",
+            help="Connect to mediator through provided connection invitation\
+            and send mediation request and set as default mediator.",
+        )
+        parser.add_argument(
+            "--default-mediator-id",
+            type=str,
+            metavar="<mediation id>",
+            env_var="ACAPY_DEFAULT_MEDIATION_ID",
+            help="Set the default mediator by ID",
+        )
+        parser.add_argument(
+            "--clear-default-mediator",
+            action="store_true",
+            env_var="ACAPY_CLEAR_DEFAULT_MEDIATOR",
+            help="Clear the stored default mediator.",
+        )
 
     def get_settings(self, args: Namespace):
         """Extract mediation settings."""
@@ -953,6 +974,18 @@ class MediationGroup(ArgumentGroup):
             settings["mediation.auto_send_keylist_update_in_create_invitation"] = True
         if args.open_mediation:
             settings["mediation.open"] = True
+        if args.mediator_invitation:
+            settings["mediation.invite"] = args.mediator_invitation
+        if args.default_mediator_id:
+            settings["mediation.default_id"] = args.default_mediator_id
+        if args.clear_default_mediator:
+            settings["mediation.clear"] = True
+
+        if args.clear_default_mediator and args.default_mediator_id:
+            raise ArgsParseError(
+                "Cannot both set and clear mediation at the same time."
+            )
+
         return settings
 
 
