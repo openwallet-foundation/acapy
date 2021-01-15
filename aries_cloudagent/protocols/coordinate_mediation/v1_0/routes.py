@@ -475,9 +475,7 @@ async def get_default_mediator(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     try:
         session = await context.session()
-        default_mediator = await MediationManager(
-            session
-        ).get_default_mediator()
+        default_mediator = await MediationManager(session).get_default_mediator()
         results = default_mediator.serialize() if default_mediator else {}
     except (StorageError, BaseModelError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
@@ -494,9 +492,7 @@ async def set_default_mediator(request: web.BaseRequest):
     try:
         session = await context.session()
         mediator_mgr = MediationManager(session)
-        await mediator_mgr.set_default_mediator_by_id(
-            mediation_id=mediation_id
-        )
+        await mediator_mgr.set_default_mediator_by_id(mediation_id=mediation_id)
         default_mediator = await mediator_mgr.get_default_mediator()
         results = default_mediator.serialize()
     except (StorageError, BaseModelError) as err:
@@ -548,10 +544,7 @@ async def register(app: web.Application):
                 send_keylist_query,
             ),
             web.get("/mediation/default-mediator", get_default_mediator),
-            web.put(
-                "/mediation/{mediation_id}/default-mediator",
-                set_default_mediator
-            ),
+            web.put("/mediation/{mediation_id}/default-mediator", set_default_mediator),
             web.delete("/mediation/default-mediator", clear_default_mediator),
         ]
     )
