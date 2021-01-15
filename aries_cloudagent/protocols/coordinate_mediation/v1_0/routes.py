@@ -543,7 +543,9 @@ async def register(app: web.Application):
                 "/mediation/keylists/{mediation_id}/send-keylist-query",
                 send_keylist_query,
             ),
-            web.get("/mediation/default-mediator", get_default_mediator),
+            web.get(
+                "/mediation/default-mediator", get_default_mediator, allow_head=False
+            ),
             web.put("/mediation/{mediation_id}/default-mediator", set_default_mediator),
             web.delete("/mediation/default-mediator", clear_default_mediator),
         ]
