@@ -2,7 +2,7 @@
 
 from typing import Sequence
 
-from marshmallow import EXCLUDE, fields, validate, validates_schema, ValidationError
+from marshmallow import EXCLUDE, fields, validates_schema, ValidationError
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 from .....messaging.decorators.attach_decorator import (
@@ -12,7 +12,7 @@ from .....messaging.decorators.attach_decorator import (
 
 from ..message_types import CRED_20_PROPOSAL, PROTOCOL_PACKAGE
 
-from .inner.cred_format import V20CredFormat, V20CredFormatSchema
+from .cred_format import V20CredFormat, V20CredFormatSchema
 from .inner.cred_preview import V20CredPreview, V20CredPreviewSchema
 
 HANDLER_CLASS = (
@@ -58,10 +58,10 @@ class V20CredProposal(AgentMessage):
 
     def filter(self, fmt: V20CredFormat.Format = None) -> dict:
         """
-        Retrieve and decode filter (dict) on input format from attachment list.
+        Return attached filter.
 
         Args:
-            format: format of attachment in list to decode and return
+            fmt: format of attachment in list to decode and return
 
         """
         return (fmt or V20CredFormat.Format.INDY).get_attachment_data(
@@ -98,7 +98,10 @@ class V20CredProposalSchema(AgentMessageSchema):
         AttachDecoratorSchema,
         data_key="filters~attach",
         required=True,
-        description="Credential filter per acceptable format at corresponding position",
+        description=(
+            "Credential filter per acceptable format "
+            "on corresponding identifier"
+        ),
         many=True,
     )
 

@@ -7,8 +7,8 @@ from .....didcomm_prefix import DIDCommPrefix
 from ...message_types import CRED_20_OFFER, PROTOCOL_PACKAGE
 
 from .. import cred_offer as test_module
+from ..cred_format import V20CredFormat
 from ..cred_offer import V20CredOffer
-from ..inner.cred_format import V20CredFormat
 from ..inner.cred_preview import V20CredAttrSpec, V20CredPreview
 
 

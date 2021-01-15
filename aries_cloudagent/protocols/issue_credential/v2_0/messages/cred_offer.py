@@ -2,7 +2,7 @@
 
 from typing import Sequence
 
-from marshmallow import EXCLUDE, fields, validate
+from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 from .....messaging.decorators.attach_decorator import (
@@ -13,7 +13,7 @@ from .....messaging.valid import UUIDFour
 
 from ..message_types import CRED_20_OFFER, PROTOCOL_PACKAGE
 
-from .inner.cred_format import V20CredFormat, V20CredFormatSchema
+from .cred_format import V20CredFormat, V20CredFormatSchema
 from .inner.cred_preview import V20CredPreview, V20CredPreviewSchema
 
 HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.cred_offer_handler.V20CredOfferHandler"
@@ -59,10 +59,10 @@ class V20CredOffer(AgentMessage):
 
     def offer(self, fmt: V20CredFormat.Format = None) -> dict:
         """
-        Retrieve and decode offer (dict) on input format from attachment list.
+        Return attached offer.
 
         Args:
-            format: format of attachment in list to decode and return
+            fmt: format of attachment in list to decode and return
 
         """
         return (fmt or V20CredFormat.Format.INDY).get_attachment_data(

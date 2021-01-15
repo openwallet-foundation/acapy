@@ -6,10 +6,10 @@ from uuid import uuid4
 
 from marshmallow import EXCLUDE, fields, validate, ValidationError
 
-from ......messaging.credential_definitions.util import CRED_DEF_TAGS
-from ......messaging.decorators.attach_decorator import AttachDecorator
-from ......messaging.models.base import BaseModel, BaseModelSchema
-from ......messaging.valid import UUIDFour
+from .....messaging.credential_definitions.util import CRED_DEF_TAGS
+from .....messaging.decorators.attach_decorator import AttachDecorator
+from .....messaging.models.base import BaseModel, BaseModelSchema
+from .....messaging.valid import UUIDFour
 
 
 class V20CredFormat(BaseModel):
@@ -75,7 +75,7 @@ class V20CredFormat(BaseModel):
         ).value
 
     @property
-    def format(self):
+    def format(self) -> str:
         """Return format."""
         return self.format_
 

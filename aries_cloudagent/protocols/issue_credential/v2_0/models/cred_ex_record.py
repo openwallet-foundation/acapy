@@ -9,6 +9,8 @@ from .....core.profile import ProfileSession
 from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
 from .....messaging.valid import INDY_CRED_DEF_ID, INDY_SCHEMA_ID, UUIDFour
 
+from ..messages.cred_format import V20CredFormat
+
 unencrypted_tags = environ.get("EXCH_UNENCRYPTED_TAGS", "False").upper() == "TRUE"
 
 
@@ -21,8 +23,8 @@ class V20CredExRecord(BaseExchangeRecord):
         schema_class = "V20CredExRecordSchema"
 
     RECORD_TYPE = "cred_ex_v20"
-    RECORD_ID_NAME = "cred_ex20_id"
-    WEBHOOK_TOPIC = "issue_credential_v2.0"
+    RECORD_ID_NAME = "cred_ex_id"
+    WEBHOOK_TOPIC = "issue_credential_v2_0"
     TAG_NAMES = {"~thread_id"} if unencrypted_tags else {"thread_id"}
 
     INITIATOR_SELF = "self"
@@ -43,26 +45,21 @@ class V20CredExRecord(BaseExchangeRecord):
     def __init__(
         self,
         *,
-        cred_ex20_id: str = None,
-        connection_id: str = None,
+        cred_ex_id: str = None,
+        conn_id: str = None,
         thread_id: str = None,
         parent_thread_id: str = None,
         initiator: str = None,
         role: str = None,
         state: str = None,
-        # ====
-        credential_definition_id: str = None,
-        schema_id: str = None,
-        credential_proposal_dict: dict = None,  # serialized credential proposal message
-        credential_offer_dict: dict = None,  # serialized credential offer message
-        credential_offer: dict = None,  # indy credential offer
-        credential_request: dict = None,  # indy credential request
-        credential_request_metadata: dict = None,
-        credential_id: str = None,
-        raw_credential: dict = None,  # indy credential as received
-        credential: dict = None,  # indy credential as stored
-        revoc_reg_id: str = None,
-        revocation_id: str = None,
+        cred_proposal: dict = None,  # serialized cred proposal message
+        cred_offer: dict = None, # serialized cred offer message
+        cred_request: dict = None, # serialized cred request message
+        cred_request_metadata: dict = None, # credential request metadata
+        cred_issue: dict = None, # serialized cred issue message
+        rev_reg_id: str = None,
+        cred_rev_id: str = None,
+        cred_id_stored: str = None,
         auto_offer: bool = False,
         auto_issue: bool = False,
         auto_remove: bool = True,
@@ -70,27 +67,23 @@ class V20CredExRecord(BaseExchangeRecord):
         trace: bool = False,
         **kwargs,
     ):
-        """Initialize a new V10CredentialExchange."""
-        super().__init__(credential_exchange_id, state, trace=trace, **kwargs)
-        self._id = credential_exchange_id
-        self.connection_id = connection_id
+        """Initialize a new V20CredExRecord."""
+        super().__init__(cred_ex_id, state, trace=trace, **kwargs)
+        self._id = cred_ex_id
+        self.conn_id = conn_id
         self.thread_id = thread_id
         self.parent_thread_id = parent_thread_id
         self.initiator = initiator
         self.role = role
         self.state = state
-        self.credential_definition_id = credential_definition_id
-        self.schema_id = schema_id
-        self.credential_proposal_dict = credential_proposal_dict
-        self.credential_offer_dict = credential_offer_dict
-        self.credential_offer = credential_offer
-        self.credential_request = credential_request
-        self.credential_request_metadata = credential_request_metadata
-        self.credential_id = credential_id
-        self.raw_credential = raw_credential
-        self.credential = credential
-        self.revoc_reg_id = revoc_reg_id
-        self.revocation_id = revocation_id
+        self.cred_proposal = cred_proposal
+        self.cred_offer = cred_offer
+        self.cred_request = cred_request
+        self.cred_request_metadata = cred_request_metadata
+        self.cred_issue = cred_issue
+        self.rev_reg_id = rev_reg_id
+        self.cred_rev_id = cred_rev_id
+        self.cred_id_stored = cred_id_stored
         self.auto_offer = auto_offer
         self.auto_issue = auto_issue
         self.auto_remove = auto_remove
@@ -98,7 +91,7 @@ class V20CredExRecord(BaseExchangeRecord):
         self.trace = trace
 
     @property
-    def credential_exchange_id(self) -> str:
+    def cred_ex_id(self) -> str:
         """Accessor for the ID associated with this exchange."""
         return self._id
 
@@ -108,35 +101,31 @@ class V20CredExRecord(BaseExchangeRecord):
         return {
             prop: getattr(self, prop)
             for prop in (
-                "connection_id",
-                "credential_proposal_dict",
-                "credential_offer_dict",
-                "credential_offer",
-                "credential_request",
-                "credential_request_metadata",
-                "error_msg",
+                "conn_id",
+                "parent_thread_id",
+                "initiator",
+                "role",
+                "state",
+                "cred_proposal",
+                "cred_offer",
+                "cred_request",
+                "cred_request_metadata",
+                "cred_issue",
+                "rev_reg_id",
+                "cred_rev_id",
+                "cred_id_stored",
                 "auto_offer",
                 "auto_issue",
                 "auto_remove",
-                "raw_credential",
-                "credential",
-                "parent_thread_id",
-                "initiator",
-                "credential_definition_id",
-                "schema_id",
-                "credential_id",
-                "revoc_reg_id",
-                "revocation_id",
-                "role",
-                "state",
+                "error_msg",
                 "trace",
             )
         }
 
     @classmethod
-    async def retrieve_by_connection_and_thread(
-        cls, session: ProfileSession, connection_id: str, thread_id: str
-    ) -> "V10CredentialExchange":
+    async def retrieve_by_conn_and_thread(
+        cls, session: ProfileSession, conn_id: str, thread_id: str
+    ) -> "V20CredExRecord":
         """Retrieve a credential exchange record by connection and thread ID."""
         cache_key = f"credential_exchange_ctidx::{connection_id}::{thread_id}"
         record_id = await cls.get_cached_key(session, cache_key)
@@ -146,9 +135,9 @@ class V20CredExRecord(BaseExchangeRecord):
             record = await cls.retrieve_by_tag_filter(
                 session,
                 {"thread_id": thread_id},
-                {"connection_id": connection_id} if connection_id else None,
+                {"conn_id": conn_id} if conn_id else None,
             )
-            await cls.set_cached_key(session, cache_key, record.credential_exchange_id)
+            await cls.set_cached_key(session, cache_key, record.cred_ex_id)
         return record
 
     def __eq__(self, other: Any) -> bool:
@@ -156,20 +145,20 @@ class V20CredExRecord(BaseExchangeRecord):
         return super().__eq__(other)
 
 
-class V10CredentialExchangeSchema(BaseExchangeSchema):
+class V20CredExRecordSchema(BaseExchangeSchema):
     """Schema to allow serialization/deserialization of credential exchange records."""
 
     class Meta:
-        """V10CredentialExchangeSchema metadata."""
+        """V20CredExSchema metadata."""
 
-        model_class = V10CredentialExchange
+        model_class = V20CredExRecord
 
-    credential_exchange_id = fields.Str(
+    cred_ex_id = fields.Str(
         required=False,
         description="Credential exchange identifier",
         example=UUIDFour.EXAMPLE,
     )
-    connection_id = fields.Str(
+    conn_id = fields.Str(
         required=False, description="Connection identifier", example=UUIDFour.EXAMPLE
     )
     thread_id = fields.Str(
@@ -181,51 +170,65 @@ class V10CredentialExchangeSchema(BaseExchangeSchema):
     initiator = fields.Str(
         required=False,
         description="Issue-credential exchange initiator: self or external",
-        example=V10CredentialExchange.INITIATOR_SELF,
-        validate=validate.OneOf(["self", "external"]),
+        example=V20CredExRecord.INITIATOR_SELF,
+        validate=validate.OneOf(
+            [
+                getattr(V20CredExRecord, m)
+                for m in vars(V20CredExRecord)
+                if m.startswith("INITIATOR_")
+            ]
+        ),
     )
     role = fields.Str(
         required=False,
         description="Issue-credential exchange role: holder or issuer",
-        example=V10CredentialExchange.ROLE_ISSUER,
-        validate=validate.OneOf(["holder", "issuer"]),
+        example=V20CredExRecord.ROLE_ISSUER,
+        validate=validate.OneOf(
+            [
+                getattr(V20CredExRecord, m)
+                for m in vars(V20CredExRecord)
+                if m.startswith("ROLE_")
+            ]
+        ),
     )
     state = fields.Str(
         required=False,
         description="Issue-credential exchange state",
-        example=V10CredentialExchange.STATE_ACKED,
+        example=V20CredExRecord.STATE_DONE,
+        validate=validate.OneOf(
+            [
+                getattr(V20CredExRecord, m)
+                for m in vars(V20CredExRecord)
+                if m.startswith("STATE_")
+            ]
+        ),
     )
-    credential_definition_id = fields.Str(
-        required=False,
-        description="Credential definition identifier",
-        **INDY_CRED_DEF_ID,
-    )
-    schema_id = fields.Str(
-        required=False, description="Schema identifier", **INDY_SCHEMA_ID
-    )
-    credential_proposal_dict = fields.Dict(
+    cred_proposal = fields.Dict(
         required=False, description="Serialized credential proposal message"
     )
-    credential_offer_dict = fields.Dict(
+    cred_offer = fields.Dict(
         required=False, description="Serialized credential offer message"
     )
-    credential_offer = fields.Dict(
-        required=False, description="(Indy) credential offer"
+    cred_request = fields.Dict(
+        required=False, description="Serialized credential request message"
     )
-    credential_request = fields.Dict(
-        required=False, description="(Indy) credential request"
-    )
-    credential_request_metadata = fields.Dict(
+    cred_request_metadata = fields.Dict(
         required=False, description="(Indy) credential request metadata"
     )
-    credential_id = fields.Str(
-        required=False, description="Credential identifier", example=UUIDFour.EXAMPLE
+    cred_issue = fields.Dict(
+        required=False, description="Serialized credential issue message"
     )
-    raw_credential = fields.Dict(
+    rev_reg_id = fields.Str(
+        required=False, description="Revocation registry identifier"
+    )
+    cred_rev_id = fields.Str(
+        required=False, description="Credential identifier within revocation registry"
+    )
+    cred_id_stored = fields.Str(
         required=False,
-        description="Credential as received, prior to storage in holder wallet",
+        description="Credential identifier stored in wallet",
+        example=UUIDFour.EXAMPLE,
     )
-    credential = fields.Dict(required=False, description="Credential as stored")
     auto_offer = fields.Bool(
         required=False,
         description="Holder choice to accept offer in this credential exchange",
@@ -248,10 +251,4 @@ class V10CredentialExchangeSchema(BaseExchangeSchema):
         required=False,
         description="Error message",
         example="credential definition identifier is not set in proposal",
-    )
-    revoc_reg_id = fields.Str(
-        required=False, description="Revocation registry identifier"
-    )
-    revocation_id = fields.Str(
-        required=False, description="Credential identifier within revocation registry"
     )

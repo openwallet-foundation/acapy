@@ -2,7 +2,7 @@
 
 from typing import Sequence
 
-from marshmallow import EXCLUDE, fields, validate
+from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 from .....messaging.decorators.attach_decorator import (
@@ -13,7 +13,7 @@ from .....messaging.valid import UUIDFour
 
 from ..message_types import CRED_20_ISSUE, PROTOCOL_PACKAGE
 
-from .inner.cred_format import V20CredFormat, V20CredFormatSchema
+from .cred_format import V20CredFormat, V20CredFormatSchema
 
 HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.credl_issue_handler.V20CredIssueHandler"
 
@@ -54,10 +54,10 @@ class V20CredIssue(AgentMessage):
 
     def cred(self, fmt: V20CredFormat.Format = None) -> dict:
         """
-        Retrieve and decode cred (dict) on input format from attachment list.
+        Return attached credential.
 
         Args:
-            format: format of attachment in list to decode and return
+            fmt: format of attachment in list to decode and return
 
         """
         return (fmt or V20CredFormat.Format.INDY).get_attachment_data(

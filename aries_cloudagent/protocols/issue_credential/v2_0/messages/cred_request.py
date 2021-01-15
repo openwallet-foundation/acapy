@@ -2,7 +2,7 @@
 
 from typing import Sequence
 
-from marshmallow import EXCLUDE, fields, validate
+from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 from .....messaging.decorators.attach_decorator import (
@@ -13,7 +13,7 @@ from .....messaging.valid import UUIDFour
 
 from ..message_types import CRED_20_REQUEST, PROTOCOL_PACKAGE
 
-from .inner.cred_format import V20CredFormat, V20CredFormatSchema
+from .cred_format import V20CredFormat, V20CredFormatSchema
 
 HANDLER_CLASS = (
     f"{PROTOCOL_PACKAGE}.handlers.cred_request_handler.V20CredRequestHandler"
@@ -34,7 +34,6 @@ class V20CredRequest(AgentMessage):
         self,
         _id: str = None,
         *,
-        replacement_id: str = None,
         comment: str = None,
         formats: Sequence[V20CredFormat] = None,
         requests_attach: Sequence[AttachDecorator] = None,
@@ -44,23 +43,21 @@ class V20CredRequest(AgentMessage):
         Initialize credential request object.
 
         Args:
-            replacement_id: unique to issuer, to coordinate credential replacement
             requests_attach: requests attachments
             comment: optional comment
 
         """
         super().__init__(_id=_id, **kwargs)
-        self.replacement_id = replacement_id
         self.comment = comment
         self.formats = list(formats) if formats else []
         self.requests_attach = list(requests_attach) if requests_attach else []
 
-    def cred_req(self, fmt: V20CredFormat.Format = None) -> dict:
+    def cred_request(self, fmt: V20CredFormat.Format = None) -> dict:
         """
-        Retrieve and decode cred request (dict) on input format from attachment list.
+        Return attached credential request.
 
         Args:
-            format: format of attachment in list to decode and return
+            fmt: format of attachment in list to decode and return
 
         """
         return (fmt or V20CredFormat.Format.INDY).get_attachment_data(
@@ -78,12 +75,6 @@ class V20CredRequestSchema(AgentMessageSchema):
         model_class = V20CredRequest
         unknown = EXCLUDE
 
-    replacement_id = fields.Str(
-        description="Issuer-unique identifier to coordinate credential replacement",
-        required=False,
-        allow_none=False,
-        example=UUIDFour.EXAMPLE,
-    )
     comment = fields.Str(
         description="Human-readable comment", required=False, allow_none=True
     )

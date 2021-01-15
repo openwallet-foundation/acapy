@@ -7,8 +7,8 @@ from .....didcomm_prefix import DIDCommPrefix
 from ...message_types import CRED_20_ISSUE, PROTOCOL_PACKAGE
 
 from .. import cred_issue as test_module
+from ..cred_format import V20CredFormat
 from ..cred_issue import V20CredIssue
-from ..inner.cred_format import V20CredFormat
 
 
 class TestV20CredIssue(AsyncTestCase):

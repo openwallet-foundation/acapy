@@ -9,8 +9,8 @@ from .....didcomm_prefix import DIDCommPrefix
 
 from ...message_types import CRED_20_PREVIEW, CRED_20_PROPOSAL
 
+from ..cred_format import V20CredFormat
 from ..cred_proposal import V20CredProposal, V20CredFormat
-from ..inner.cred_format import V20CredFormat
 from ..inner.cred_preview import V20CredAttrSpec, V20CredPreview
 
 

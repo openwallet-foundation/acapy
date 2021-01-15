@@ -2,10 +2,10 @@ import pytest
 
 from unittest import TestCase
 
-from .......messaging.decorators.attach_decorator import AttachDecorator
+from ......messaging.decorators.attach_decorator import AttachDecorator
 
 from ..cred_format import V20CredFormat
-from ..cred_preview import V20CredAttrSpec, V20CredPreview
+from ..inner.cred_preview import V20CredAttrSpec, V20CredPreview
 
 
 TEST_PREVIEW = V20CredPreview(

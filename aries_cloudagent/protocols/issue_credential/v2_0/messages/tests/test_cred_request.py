@@ -7,8 +7,8 @@ from .....didcomm_prefix import DIDCommPrefix
 from ...message_types import CRED_20_REQUEST, PROTOCOL_PACKAGE
 
 from .. import cred_request as test_module
+from ..cred_format import V20CredFormat
 from ..cred_request import V20CredRequest
-from ..inner.cred_format import V20CredFormat
 
 
 class TestV20CredRequest(AsyncTestCase):
@@ -47,7 +47,6 @@ class TestV20CredRequest(AsyncTestCase):
     async def test_init_type(self):
         """Test initializer and type."""
         cred_request = V20CredRequest(
-            replacement_id="0",
             comment="Test",
             formats=[
                 V20CredFormat(
@@ -66,7 +65,7 @@ class TestV20CredRequest(AsyncTestCase):
             cred_request.requests_attach[0].indy_dict
             == TestV20CredRequest.indy_cred_req
         )
-        assert cred_request.cred_req() == TestV20CredRequest.indy_cred_req
+        assert cred_request.cred_request() == TestV20CredRequest.indy_cred_req
         assert cred_request._type == DIDCommPrefix.qualify_current(CRED_20_REQUEST)
 
     async def test_deserialize(self):
