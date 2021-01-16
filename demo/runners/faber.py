@@ -209,7 +209,6 @@ async def main(
     use_did_exchange: bool = False,
     wallet_type: str = None,
 ):
-
     genesis = await default_genesis_txns()
     if not genesis:
         print("Error retrieving ledger genesis transactions")
@@ -243,7 +242,11 @@ async def main(
 
         if multitenant:
             # create an initial managed sub-wallet
-            await agent.register_or_switch_wallet("Faber.initial", public_did=True)
+            await agent.register_or_switch_wallet(
+                "Faber.initial",
+                public_did=True,
+                webhook_port=agent.get_new_webhook_port(),
+            )
 
         # Create a schema
         credential_definition_id = await create_schema_and_cred_def(agent, revocation)
@@ -280,9 +283,19 @@ async def main(
 
             elif option in "wW" and multitenant:
                 target_wallet_name = await prompt("Enter wallet name: ")
-                created = await agent.register_or_switch_wallet(
-                    target_wallet_name, public_did=True
+                include_subwallet_webhook = await prompt(
+                    "(Y/N) Create sub-wallet webhook target: "
                 )
+                if include_subwallet_webhook.lower() == "y":
+                    created = await agent.register_or_switch_wallet(
+                        target_wallet_name,
+                        webhook_port=agent.get_new_webhook_port(),
+                        public_did=True,
+                    )
+                else:
+                    created = await agent.register_or_switch_wallet(
+                        target_wallet_name, public_did=True
+                    )
                 # create a schema and cred def for the new wallet
                 # TODO check first in case we are switching between existing wallets
                 if created:
