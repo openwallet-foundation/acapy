@@ -545,9 +545,7 @@ class DemoAgent:
         )
 
     async def handle_endorse_transaction(self, message):
-        self.log(
-            f"Received endorse transaction: {message}\n", source="stderr"
-        )
+        self.log(f"Received endorse transaction: {message}\n", source="stderr")
 
     async def handle_revocation_registry(self, message):
         reg_id = message.get("revoc_reg_id", "(undetermined)")
