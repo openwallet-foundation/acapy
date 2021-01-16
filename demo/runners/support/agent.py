@@ -214,7 +214,7 @@ class DemoAgent:
             "attributes": schema_attrs,
         }
         schema_response = await self.admin_POST("/schemas", schema_body)
-        # log_json(json.dumps(schema_response), label="Schema:")
+        log_json(json.dumps(schema_response), label="Schema:")
         schema_id = schema_response["schema_id"]
         log_msg("Schema ID:", schema_id)
 
@@ -542,6 +542,11 @@ class DemoAgent:
     async def handle_problem_report(self, message):
         self.log(
             f"Received problem report: {message['explain-ltxt']}\n", source="stderr"
+        )
+
+    async def handle_endorse_transaction(self, message):
+        self.log(
+            f"Received endorse transaction: {message}\n", source="stderr"
         )
 
     async def handle_revocation_registry(self, message):
