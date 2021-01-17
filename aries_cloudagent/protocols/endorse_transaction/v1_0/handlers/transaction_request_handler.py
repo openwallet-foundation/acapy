@@ -25,8 +25,11 @@ class TransactionRequestHandler(BaseHandler):
         self._logger.debug(f"TransactionRequestHandler called with context {context}")
         assert isinstance(context.message, TransactionRequest)
 
-        mgr = TransactionManager(context, context.profile)
+        profile_session = await context.session()
+        mgr = TransactionManager(profile_session)
         try:
-            await mgr.receive_request(context.message)
+            await mgr.receive_request(
+                context.message, context.connection_record.connection_id
+            )
         except TransactionManagerError:
             self._logger.exception("Error receiving transaction request")

@@ -25,8 +25,11 @@ class TransactionCancelHandler(BaseHandler):
         self._logger.debug(f"TransactionCancelHandler called with context {context}")
         assert isinstance(context.message, CancelTransaction)
 
-        mgr = TransactionManager(context, context.profile)
+        profile_session = await context.session()
+        mgr = TransactionManager(profile_session)
         try:
-            await mgr.receive_cancel_transaction(context.message)
+            await mgr.receive_cancel_transaction(
+                context.message, context.connection_record.connection_id
+            )
         except TransactionManagerError:
             self._logger.exception("Error receiving cancel transaction request")

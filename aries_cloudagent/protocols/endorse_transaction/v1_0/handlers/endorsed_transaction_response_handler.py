@@ -27,7 +27,8 @@ class EndorsedTransactionResponseHandler(BaseHandler):
         )
         assert isinstance(context.message, EndorsedTransactionResponse)
 
-        mgr = TransactionManager(context, context.profile)
+        profile_session = await context.session()
+        mgr = TransactionManager(profile_session)
         try:
             await mgr.receive_endorse_response(context.message)
         except TransactionManagerError:

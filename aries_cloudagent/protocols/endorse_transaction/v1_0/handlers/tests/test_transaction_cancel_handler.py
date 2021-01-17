@@ -7,6 +7,7 @@ from ......messaging.responder import MockResponder
 
 from ...handlers import transaction_cancel_handler as handler
 from ...messages.cancel_transaction import CancelTransaction
+from ......connections.models.conn_record import ConnRecord
 
 
 @pytest.fixture()
@@ -28,9 +29,12 @@ class TestTransactionCancelHandler:
             async_mock.CoroutineMock()
         )
         request_context.message = CancelTransaction()
+        request_context.connection_record = ConnRecord(
+            connection_id="b5dc1636-a19a-4209-819f-e8f9984d9897"
+        )
         handler_inst = handler.TransactionCancelHandler()
         responder = MockResponder()
         await handler_inst.handle(request_context, responder)
         mock_tran_mgr.return_value.receive_cancel_transaction.assert_called_once_with(
-            request_context.message
+            request_context.message, request_context.connection_record.connection_id
         )

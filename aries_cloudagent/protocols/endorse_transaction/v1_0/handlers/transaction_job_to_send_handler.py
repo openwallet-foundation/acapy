@@ -25,8 +25,8 @@ class TransactionJobToSendHandler(BaseHandler):
         self._logger.debug(f"TransactionJobToSendHandler called with context {context}")
         assert isinstance(context.message, TransactionJobToSend)
 
-        session = await context.session()
-        mgr = TransactionManager(session, context.profile)
+        profile_session = await context.session()
+        mgr = TransactionManager(profile_session)
         try:
             await mgr.set_transaction_their_job(
                 context.message, context.message_receipt

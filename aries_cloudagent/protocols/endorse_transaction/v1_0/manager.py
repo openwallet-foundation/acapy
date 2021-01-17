@@ -17,7 +17,7 @@ from ....transport.inbound.receipt import MessageReceipt
 from ....storage.error import StorageNotFoundError
 
 from ....core.error import BaseError
-from ....core.profile import Profile, ProfileSession
+from ....core.profile import ProfileSession
 
 
 class TransactionManagerError(BaseError):
@@ -27,16 +27,14 @@ class TransactionManagerError(BaseError):
 class TransactionManager:
     """Class for managing transactions."""
 
-    def __init__(self, session: ProfileSession, profile: Profile):
+    def __init__(self, session: ProfileSession):
         """
         Initialize a TransactionManager.
 
         Args:
             session: The Profile Session for this transaction manager
-            profile: The Profile for this transaction manager
         """
         self._session = session
-        self._profile = profile
         self._logger = logging.getLogger(__name__)
 
     @property
@@ -49,17 +47,6 @@ class TransactionManager:
 
         """
         return self._session
-
-    @property
-    def profile(self) -> Profile:
-        """
-        Accessor for the current Profile.
-
-        Returns:
-            The Profile for this transaction manager
-
-        """
-        return self._profile
 
     async def create_record(
         self,
@@ -120,8 +107,9 @@ class TransactionManager:
         transaction.messages_attach.append(messages_attach_dict)
         transaction.state = TransactionRecord.STATE_TRANSACTION_CREATED
 
-        async with self._profile.session() as session:
-            await transaction.save(session, reason="Change it")
+        profile_session = await self.session
+        async with profile_session.profile.session() as session:
+            await transaction.save(session, reason="Created a Transaction Record")
 
         return transaction
 
@@ -146,7 +134,8 @@ class TransactionManager:
 
         transaction.state = TransactionRecord.STATE_REQUEST_SENT
         transaction.connection_id = connection_id
-        async with self._profile.session() as session:
+        profile_session = await self.session
+        async with profile_session.profile.session() as session:
             await transaction.save(session, reason="Change to requested state")
 
         transaction_request = TransactionRequest(
@@ -158,15 +147,15 @@ class TransactionManager:
 
         return transaction, transaction_request
 
-    async def receive_request(self, request: TransactionRequest):
+    async def receive_request(self, request: TransactionRequest, connection_id: str):
         """
         Receive a Transaction request.
 
         Args:
             request: A Transaction Request
+            connection_id: The connection id related to this transaction record
         """
 
-        connection_id = self.session.connection_record.connection_id
         transaction = TransactionRecord()
 
         transaction._type = TransactionRecord.SIGNATURE_REQUEST
@@ -187,7 +176,8 @@ class TransactionManager:
         transaction.connection_id = connection_id
         transaction.state = TransactionRecord.STATE_REQUEST_RECEIVED
 
-        async with self._profile.session() as session:
+        profile_session = await self.session
+        async with profile_session.profile.session() as session:
             await transaction.save(session, reason="Change it")
 
         return transaction
@@ -237,7 +227,8 @@ class TransactionManager:
 
         transaction.state = state
 
-        async with self._profile.session() as session:
+        profile_session = await self.session
+        async with profile_session.profile.session() as session:
             await transaction.save(session, reason="Change it")
 
         endorsed_transaction_response = EndorsedTransactionResponse(
@@ -258,7 +249,8 @@ class TransactionManager:
             response: The Endorsed Transaction Response
         """
 
-        async with self._profile.session() as session:
+        profile_session = await self.session
+        async with profile_session.profile.session() as session:
             transaction = await TransactionRecord.retrieve_by_id(
                 session, response.transaction_id
             )
@@ -274,7 +266,7 @@ class TransactionManager:
             "endorser"
         ] = response.endorser_did
 
-        async with self._profile.session() as session:
+        async with profile_session.profile.session() as session:
             await transaction.save(session, reason="Change it")
 
         return transaction
@@ -318,7 +310,8 @@ class TransactionManager:
 
         transaction.state = state
 
-        async with self._profile.session() as session:
+        profile_session = await self.session
+        async with profile_session.profile.session() as session:
             await transaction.save(session, reason="Change it")
 
         refused_transaction_response = RefusedTransactionResponse(
@@ -339,7 +332,8 @@ class TransactionManager:
             response: The refused transaction response
         """
 
-        async with self._profile.session() as session:
+        profile_session = await self.session
+        async with profile_session.profile.session() as session:
             transaction = await TransactionRecord.retrieve_by_id(
                 session, response.transaction_id
             )
@@ -354,7 +348,7 @@ class TransactionManager:
             "endorser"
         ] = response.endorser_did
 
-        async with self._profile.session() as session:
+        async with profile_session.profile.session() as session:
             await transaction.save(session, reason="Change it")
 
         return transaction
@@ -382,7 +376,8 @@ class TransactionManager:
             )
 
         transaction.state = state
-        async with self._profile.session() as session:
+        profile_session = await self.session
+        async with profile_session.profile.session() as session:
             await transaction.save(session, reason="Change it")
 
         cancelled_transaction_response = CancelTransaction(
@@ -391,21 +386,25 @@ class TransactionManager:
 
         return transaction, cancelled_transaction_response
 
-    async def receive_cancel_transaction(self, response: CancelTransaction):
+    async def receive_cancel_transaction(
+        self, response: CancelTransaction, connection_id: str
+    ):
         """
         Update the transaction record to cancel a transaction request.
 
         Args:
             response: The cancel transaction response
+            connection_id: The connection_id related to this Transaction Record
         """
-        connection_id = self.session.connection_record.connection_id
-        async with self._profile.session() as session:
+
+        profile_session = await self.session
+        async with profile_session.profile.session() as session:
             transaction = await TransactionRecord.retrieve_by_connection_and_thread(
                 session, connection_id, response.thread_id
             )
 
         transaction.state = response.state
-        async with self._profile.session() as session:
+        async with profile_session.profile.session() as session:
             await transaction.save(session, reason="Change it")
 
         return transaction
@@ -433,7 +432,8 @@ class TransactionManager:
             )
 
         transaction.state = state
-        async with self._profile.session() as session:
+        profile_session = await self.session
+        async with profile_session.profile.session() as session:
             await transaction.save(session, reason="Change it")
 
         resend_transaction_response = TransactionResend(
@@ -443,21 +443,25 @@ class TransactionManager:
 
         return transaction, resend_transaction_response
 
-    async def receive_transaction_resend(self, response: TransactionResend):
+    async def receive_transaction_resend(
+        self, response: TransactionResend, connection_id: str
+    ):
         """
         Update the transaction with a resend request.
 
         Args:
             response: The Resend transaction response
+            connection_id: The connection_id related to this Transaction Record
         """
-        connection_id = self.session.connection_record.connection_id
-        async with self._profile.session() as session:
+
+        profile_session = await self.session
+        async with profile_session.profile.session() as session:
             transaction = await TransactionRecord.retrieve_by_connection_and_thread(
                 session, connection_id, response.thread_id
             )
 
         transaction.state = response.state
-        async with self._profile.session() as session:
+        async with profile_session.profile.session() as session:
             await transaction.save(session, reason="Change it")
 
         return transaction

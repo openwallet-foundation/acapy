@@ -27,7 +27,8 @@ class RefusedTransactionResponseHandler(BaseHandler):
         )
         assert isinstance(context.message, RefusedTransactionResponse)
 
-        mgr = TransactionManager(context, context.profile)
+        profile_session = await context.session()
+        mgr = TransactionManager(profile_session)
         try:
             await mgr.receive_refuse_response(context.message)
         except TransactionManagerError:

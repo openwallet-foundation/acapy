@@ -25,8 +25,11 @@ class TransactionResendHandler(BaseHandler):
         self._logger.debug(f"TransactionResendHandler called with context {context}")
         assert isinstance(context.message, TransactionResend)
 
-        mgr = TransactionManager(context, context.profile)
+        profile_session = await context.session()
+        mgr = TransactionManager(profile_session)
         try:
-            await mgr.receive_transaction_resend(context.message)
+            await mgr.receive_transaction_resend(
+                context.message, context.connection_record.connection_id
+            )
         except TransactionManagerError:
             self._logger.exception("Error receiving resend transaction request")

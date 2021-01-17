@@ -170,13 +170,13 @@ async def transaction_create_request(request: web.BaseRequest):
     jobs = await connection_record.metadata_get(session, "transaction_jobs")
     if not jobs:
         raise web.HTTPForbidden(
-            reason="The transaction related jobs are not setup in"
+            reason="The transaction related jobs are not setup in "
             "connection metadata for this connection record"
         )
     if jobs["transaction_my_job"] != "TRANSACTION_AUTHOR":
         raise web.HTTPForbidden(reason="Only a TRANSACTION_AUTHOR can create a request")
 
-    transaction_mgr = TransactionManager(session, context.profile)
+    transaction_mgr = TransactionManager(session)
 
     (transaction_record, transaction_request) = await transaction_mgr.create_request(
         transaction=transaction_record, connection_id=connection_id
@@ -243,7 +243,7 @@ async def endorse_transaction_response(request: web.BaseRequest):
     jobs = await connection_record.metadata_get(session, "transaction_jobs")
     if not jobs:
         raise web.HTTPForbidden(
-            reason="The transaction related jobs are not setup in"
+            reason="The transaction related jobs are not setup in "
             "connection metadata for this connection record"
         )
     if jobs["transaction_my_job"] != "TRANSACTION_ENDORSER":
@@ -251,7 +251,7 @@ async def endorse_transaction_response(request: web.BaseRequest):
             reason="Only a TRANSACTION_ENDORSER can endorse a transaction"
         )
 
-    transaction_mgr = TransactionManager(session, context.profile)
+    transaction_mgr = TransactionManager(session)
     (
         transaction,
         endorsed_transaction_response,
@@ -322,7 +322,7 @@ async def refuse_transaction_response(request: web.BaseRequest):
     jobs = await connection_record.metadata_get(session, "transaction_jobs")
     if not jobs:
         raise web.HTTPForbidden(
-            reason="The transaction related jobs are not setup in"
+            reason="The transaction related jobs are not setup in "
             "connection metadata for this connection record"
         )
     if jobs["transaction_my_job"] != "TRANSACTION_ENDORSER":
@@ -330,7 +330,7 @@ async def refuse_transaction_response(request: web.BaseRequest):
             reason="Only a TRANSACTION_ENDORSER can refuse a transaction"
         )
 
-    transaction_mgr = TransactionManager(session, context.profile)
+    transaction_mgr = TransactionManager(session)
     (
         transaction,
         refused_transaction_response,
@@ -388,7 +388,7 @@ async def cancel_transaction(request: web.BaseRequest):
     jobs = await connection_record.metadata_get(session, "transaction_jobs")
     if not jobs:
         raise web.HTTPForbidden(
-            reason="The transaction related jobs are not setup in"
+            reason="The transaction related jobs are not setup in "
             "connection metadata for this connection record"
         )
     if jobs["transaction_my_job"] != "TRANSACTION_AUTHOR":
@@ -396,7 +396,7 @@ async def cancel_transaction(request: web.BaseRequest):
             reason="Only a TRANSACTION_AUTHOR can cancel a transaction"
         )
 
-    transaction_mgr = TransactionManager(session, context.profile)
+    transaction_mgr = TransactionManager(session)
     (
         transaction,
         cancelled_transaction_response,
@@ -452,7 +452,7 @@ async def transaction_resend(request: web.BaseRequest):
     jobs = await connection_record.metadata_get(session, "transaction_jobs")
     if not jobs:
         raise web.HTTPForbidden(
-            reason="The transaction related jobs are not setup in"
+            reason="The transaction related jobs are not setup in "
             "connection metadata for this connection record"
         )
     if jobs["transaction_my_job"] != "TRANSACTION_AUTHOR":
@@ -460,7 +460,7 @@ async def transaction_resend(request: web.BaseRequest):
             reason="Only a TRANSACTION_AUTHOR can resend a transaction"
         )
 
-    transaction_mgr = TransactionManager(session, context.profile)
+    transaction_mgr = TransactionManager(session)
     (
         transaction,
         resend_transaction_response,
@@ -507,7 +507,7 @@ async def set_transaction_jobs(request: web.BaseRequest):
     except BaseModelError as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-    transaction_mgr = TransactionManager(session, context.profile)
+    transaction_mgr = TransactionManager(session)
     tx_job_to_send = await transaction_mgr.set_transaction_my_job(
         record=record, transaction_my_job=transaction_my_job
     )

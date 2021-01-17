@@ -284,7 +284,7 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
         else:
             taaDigest = None
 
-        transaction_mgr = TransactionManager(session, context.profile)
+        transaction_mgr = TransactionManager(session)
 
         transaction = await transaction_mgr.create_record(
             author_did=author_did,
