@@ -99,8 +99,7 @@ class V20CredProposalSchema(AgentMessageSchema):
         data_key="filters~attach",
         required=True,
         description=(
-            "Credential filter per acceptable format "
-            "on corresponding identifier"
+            "Credential filter per acceptable format " "on corresponding identifier"
         ),
         many=True,
     )

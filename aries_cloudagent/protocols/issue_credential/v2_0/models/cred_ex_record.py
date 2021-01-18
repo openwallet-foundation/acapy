@@ -7,11 +7,9 @@ from marshmallow import fields, validate
 
 from .....core.profile import ProfileSession
 from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
-from .....messaging.valid import INDY_CRED_DEF_ID, INDY_SCHEMA_ID, UUIDFour
+from .....messaging.valid import UUIDFour
 
-from ..messages.cred_format import V20CredFormat
-
-unencrypted_tags = environ.get("EXCH_UNENCRYPTED_TAGS", "False").upper() == "TRUE"
+UNENCRYPTED_TAGS = environ.get("EXCH_UNENCRYPTED_TAGS", "False").upper() == "TRUE"
 
 
 class V20CredExRecord(BaseExchangeRecord):
@@ -25,7 +23,7 @@ class V20CredExRecord(BaseExchangeRecord):
     RECORD_TYPE = "cred_ex_v20"
     RECORD_ID_NAME = "cred_ex_id"
     WEBHOOK_TOPIC = "issue_credential_v2_0"
-    TAG_NAMES = {"~thread_id"} if unencrypted_tags else {"thread_id"}
+    TAG_NAMES = {"~thread_id"} if UNENCRYPTED_TAGS else {"thread_id"}
 
     INITIATOR_SELF = "self"
     INITIATOR_EXTERNAL = "external"
@@ -53,10 +51,10 @@ class V20CredExRecord(BaseExchangeRecord):
         role: str = None,
         state: str = None,
         cred_proposal: dict = None,  # serialized cred proposal message
-        cred_offer: dict = None, # serialized cred offer message
-        cred_request: dict = None, # serialized cred request message
-        cred_request_metadata: dict = None, # credential request metadata
-        cred_issue: dict = None, # serialized cred issue message
+        cred_offer: dict = None,  # serialized cred offer message
+        cred_request: dict = None,  # serialized cred request message
+        cred_request_metadata: dict = None,  # credential request metadata
+        cred_issue: dict = None,  # serialized cred issue message
         rev_reg_id: str = None,
         cred_rev_id: str = None,
         cred_id_stored: str = None,
@@ -127,7 +125,7 @@ class V20CredExRecord(BaseExchangeRecord):
         cls, session: ProfileSession, conn_id: str, thread_id: str
     ) -> "V20CredExRecord":
         """Retrieve a credential exchange record by connection and thread ID."""
-        cache_key = f"credential_exchange_ctidx::{connection_id}::{thread_id}"
+        cache_key = f"credential_exchange_ctidx::{conn_id}::{thread_id}"
         record_id = await cls.get_cached_key(session, cache_key)
         if record_id:
             record = await cls.retrieve_by_id(session, record_id)

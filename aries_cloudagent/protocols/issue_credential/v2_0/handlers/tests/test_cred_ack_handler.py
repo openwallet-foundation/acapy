@@ -20,7 +20,7 @@ class TestCredentialAckHandler(AsyncTestCase):
         with async_mock.patch.object(
             test_module, "V20CredManager", autospec=True
         ) as mock_cred_mgr:
-            mock_cred_mgr.return_value.receive_cred_ack = (
+            mock_cred_mgr.return_value.receive_credential_ack = (
                 async_mock.CoroutineMock()
             )
             request_context.message = V20CredAck()
@@ -44,9 +44,7 @@ class TestCredentialAckHandler(AsyncTestCase):
         with async_mock.patch.object(
             test_module, "V20CredManager", autospec=True
         ) as mock_cred_mgr:
-            mock_cred_mgr.return_value.receive_cred_ack = (
-                async_mock.CoroutineMock()
-            )
+            mock_cred_mgr.return_value.receive_cred_ack = async_mock.CoroutineMock()
             request_context.message = V20CredAck()
             request_context.connection_ready = False
             handler = test_module.V20CredAckHandler()

@@ -3,35 +3,38 @@ from asynctest import (
     TestCase as AsyncTestCase,
 )
 
+from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
 from ......transport.inbound.receipt import MessageReceipt
 
-from ...messages.credential_request import CredentialRequest
-from ...messages.inner.credential_preview import CredAttrSpec, CredentialPreview
-from ...models.credential_exchange import V10CredentialExchange
+from ...messages.cred_request import V20CredRequest
+from ...messages.cred_format import V20CredFormat
+from ...messages.cred_proposal import V20CredProposal
+from ...messages.inner.cred_preview import V20CredAttrSpec, V20CredPreview
+from ...models.cred_ex_record import V20CredExRecord
 
-from .. import credential_request_handler as handler
+from .. import cred_request_handler as test_module
 
 CD_ID = "LjgpST2rjsoxYegQDRm7EL:3:CL:18:tag"
 
 
-class TestCredentialRequestHandler(AsyncTestCase):
+class TestV20CredRequestHandler(AsyncTestCase):
     async def test_called(self):
         request_context = RequestContext.test_context()
         request_context.message_receipt = MessageReceipt()
         request_context.connection_record = async_mock.MagicMock()
 
         with async_mock.patch.object(
-            handler, "CredentialManager", autospec=True
+            test_module, "V20CredManager", autospec=True
         ) as mock_cred_mgr:
             mock_cred_mgr.return_value.receive_request = async_mock.CoroutineMock(
                 return_value=async_mock.MagicMock()
             )
             mock_cred_mgr.return_value.receive_request.return_value.auto_issue = False
-            request_context.message = CredentialRequest()
+            request_context.message = V20CredRequest()
             request_context.connection_ready = True
-            handler_inst = handler.CredentialRequestHandler()
+            handler_inst = test_module.V20CredRequestHandler()
             responder = MockResponder()
             await handler_inst.handle(request_context, responder)
 
@@ -46,29 +49,39 @@ class TestCredentialRequestHandler(AsyncTestCase):
         request_context.message_receipt = MessageReceipt()
         request_context.connection_record = async_mock.MagicMock()
 
-        ATTR_DICT = {"test": "123", "hello": "world"}
-        cred_ex_rec = V10CredentialExchange(
-            credential_proposal_dict={
-                "credential_proposal": CredentialPreview(
-                    attributes=(CredAttrSpec.list_plain(ATTR_DICT))
-                ).serialize(),
-                "cred_def_id": CD_ID,
-            },
+        attr_values = {"test": "123", "hello": "world"}
+        cred_preview = V20CredPreview(
+            attributes=[
+                V20CredAttrSpec(name=k, value=v) for (k, v) in attr_values.items()
+            ]
         )
+        cred_proposal = V20CredProposal(
+            credential_preview=cred_preview,
+            formats=[V20CredFormat(attach_id="0", format_=V20CredFormat.Format.INDY)],
+            filters_attach=[
+                AttachDecorator.from_indy_dict(
+                    {
+                        "cred_def_id": "LjgpST2rjsoxYegQDRm7EL:3:CL:12:tag1",
+                    },
+                    ident="0",
+                )
+            ],
+        )
+        cred_ex_rec = V20CredExRecord(cred_proposal=cred_proposal.serialize())
 
         with async_mock.patch.object(
-            handler, "CredentialManager", autospec=True
+            test_module, "V20CredManager", autospec=True
         ) as mock_cred_mgr:
             mock_cred_mgr.return_value.receive_request = async_mock.CoroutineMock(
                 return_value=cred_ex_rec
             )
             mock_cred_mgr.return_value.receive_request.return_value.auto_issue = True
             mock_cred_mgr.return_value.issue_credential = async_mock.CoroutineMock(
-                return_value=(None, "credential_issue_message")
+                return_value=(None, "cred_issue_message")
             )
-            request_context.message = CredentialRequest()
+            request_context.message = V20CredRequest()
             request_context.connection_ready = True
-            handler_inst = handler.CredentialRequestHandler()
+            handler_inst = test_module.V20CredRequestHandler()
             responder = MockResponder()
             await handler_inst.handle(request_context, responder)
             mock_cred_mgr.return_value.issue_credential.assert_called_once_with(
@@ -82,7 +95,7 @@ class TestCredentialRequestHandler(AsyncTestCase):
         messages = responder.messages
         assert len(messages) == 1
         (result, target) = messages[0]
-        assert result == "credential_issue_message"
+        assert result == "cred_issue_message"
         assert target == {}
 
     async def test_called_auto_issue_no_preview(self):
@@ -90,24 +103,34 @@ class TestCredentialRequestHandler(AsyncTestCase):
         request_context.message_receipt = MessageReceipt()
         request_context.connection_record = async_mock.MagicMock()
 
-        cred_ex_rec = V10CredentialExchange(
-            credential_proposal_dict={"cred_def_id": CD_ID}
+        cred_proposal = V20CredProposal(
+            credential_preview=None,
+            formats=[V20CredFormat(attach_id="0", format_=V20CredFormat.Format.INDY)],
+            filters_attach=[
+                AttachDecorator.from_indy_dict(
+                    {
+                        "cred_def_id": "LjgpST2rjsoxYegQDRm7EL:3:CL:12:tag1",
+                    },
+                    ident="0",
+                )
+            ],
         )
+        cred_ex_rec = V20CredExRecord(cred_proposal=cred_proposal.serialize())
 
         with async_mock.patch.object(
-            handler, "CredentialManager", autospec=True
+            test_module, "V20CredManager", autospec=True
         ) as mock_cred_mgr:
             mock_cred_mgr.return_value.receive_request = async_mock.CoroutineMock(
                 return_value=cred_ex_rec
             )
             mock_cred_mgr.return_value.receive_request.return_value.auto_issue = True
             mock_cred_mgr.return_value.issue_credential = async_mock.CoroutineMock(
-                return_value=(None, "credential_issue_message")
+                return_value=(None, "cred_issue_message")
             )
 
-            request_context.message = CredentialRequest()
+            request_context.message = V20CredRequest()
             request_context.connection_ready = True
-            handler_inst = handler.CredentialRequestHandler()
+            handler_inst = test_module.V20CredRequestHandler()
             responder = MockResponder()
             await handler_inst.handle(request_context, responder)
             mock_cred_mgr.return_value.issue_credential.assert_not_called()
@@ -124,14 +147,14 @@ class TestCredentialRequestHandler(AsyncTestCase):
         request_context.connection_record = async_mock.MagicMock()
 
         with async_mock.patch.object(
-            handler, "CredentialManager", autospec=True
+            test_module, "V20CredManager", autospec=True
         ) as mock_cred_mgr:
             mock_cred_mgr.return_value.receive_request = async_mock.CoroutineMock()
-            request_context.message = CredentialRequest()
+            request_context.message = V20CredRequest()
             request_context.connection_ready = False
-            handler_inst = handler.CredentialRequestHandler()
+            handler_inst = test_module.V20CredRequestHandler()
             responder = MockResponder()
-            with self.assertRaises(handler.HandlerException):
+            with self.assertRaises(test_module.HandlerException):
                 await handler_inst.handle(request_context, responder)
 
         assert not responder.messages

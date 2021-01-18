@@ -29,7 +29,7 @@ class V20CredAckHandler(BaseHandler):
         self._logger.debug("V20CredAckHandler called with context %s", context)
         assert isinstance(context.message, V20CredAck)
         self._logger.info(
-            "Received credential ack message: %s",
+            "Received v2.0 credential ack message: %s",
             context.message.serialize(as_string=True),
         )
 
@@ -37,7 +37,7 @@ class V20CredAckHandler(BaseHandler):
             raise HandlerException("No connection established for credential ack")
 
         cred_manager = V20CredManager(context.profile)
-        await cred_manager.receive_cred_ack(
+        await cred_manager.receive_credential_ack(
             context.message, context.connection_record.connection_id
         )
 

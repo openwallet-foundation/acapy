@@ -9,7 +9,6 @@ from .....messaging.decorators.attach_decorator import (
     AttachDecorator,
     AttachDecoratorSchema,
 )
-from .....messaging.valid import UUIDFour
 
 from ..message_types import CRED_20_REQUEST, PROTOCOL_PACKAGE
 

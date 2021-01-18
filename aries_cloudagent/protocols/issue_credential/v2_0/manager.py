@@ -12,10 +12,7 @@ from ....core.profile import Profile
 from ....indy.holder import IndyHolder, IndyHolderError
 from ....indy.issuer import IndyIssuer, IndyIssuerRevocationRegistryFullError
 from ....ledger.base import BaseLedger
-from ....messaging.credential_definitions.util import (
-    CRED_DEF_TAGS,
-    CRED_DEF_SENT_RECORD_TYPE,
-)
+from ....messaging.credential_definitions.util import CRED_DEF_SENT_RECORD_TYPE
 from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....revocation.indy import IndyRevocation
 from ....revocation.models.revocation_registry import RevocationRegistry
@@ -290,8 +287,6 @@ class V20CredManager:
         )
 
         cred_ex_record.thread_id = cred_offer_message._thread_id
-        cred_ex_record.schema_id = cred_offer["schema_id"]
-        cred_ex_record.credential_definition_id = cred_offer["cred_def_id"]
         cred_ex_record.state = V20CredExRecord.STATE_OFFER_SENT
         cred_ex_record.cred_offer = cred_offer_message.serialize()
 
@@ -323,9 +318,8 @@ class V20CredManager:
         offer = cred_offer_message.offer(
             V20CredFormat.Format.INDY
         )  # may change for DIF
-
-        schema_id = cred_offer_message.offer(V20CredFormat.Format.INDY)["schema_id"]
-        cred_def_id = cred_offer_message.offer(V20CredFormat.Format.INDY)["cred_def_id"]
+        schema_id = offer["schema_id"]
+        cred_def_id = offer["cred_def_id"]
 
         cred_proposal_ser = V20CredProposal(
             comment=cred_offer_message.comment,
@@ -334,12 +328,8 @@ class V20CredManager:
             filters_attach=[
                 AttachDecorator.from_indy_dict(
                     {
-                        "schema_id": cred_offer_message.offer(
-                            V20CredFormat.Format.INDY
-                        )["schema_id"],
-                        "cred_def_id": cred_offer_message.offer(
-                            V20CredFormat.Format.INDY
-                        )["cred_def_id"],
+                        "schema_id": schema_id,
+                        "cred_def_id": cred_def_id,
                     },
                     ident="0",
                 )
@@ -427,9 +417,7 @@ class V20CredManager:
         if "nonce" not in cred_offer:
             raise V20CredManagerError("Missing nonce in credential offer")
         nonce = cred_offer["nonce"]
-        cache_key = (
-            f"credential_request::{cred_def_id}::{holder_did}::{nonce}"
-        )
+        cache_key = f"credential_request::{cred_def_id}::{holder_did}::{nonce}"
         cred_req_result = None
         cache = self._profile.inject(BaseCache, required=False)
         if cache:
@@ -478,8 +466,7 @@ class V20CredManager:
             credential exchange record, retrieved and updated
 
         """
-        assert len(message.requests_attach or []) == 1
-        cred_request = cred_request_message.cred_request(V20CredFormat.Format.INDY)
+        assert len(cred_request_message.requests_attach or []) == 1
 
         async with self._profile.session() as session:
             cred_ex_record = await (
@@ -487,7 +474,7 @@ class V20CredManager:
                     session, conn_id, cred_request_message._thread_id
                 )
             )
-            cred_ex_record.cred_request = cred_request.serialize()
+            cred_ex_record.cred_request = cred_request_message.serialize()
             cred_ex_record.state = V20CredExRecord.STATE_REQUEST_RECEIVED
             await cred_ex_record.save(session, reason="receive v2.0 credential request")
 
@@ -515,7 +502,7 @@ class V20CredManager:
 
         if cred_ex_record.state != V20CredExRecord.STATE_REQUEST_RECEIVED:
             raise V20CredManagerError(
-                f"Credential exchange {cred_ex_record.credential_ex_id} "
+                f"Credential exchange {cred_ex_record.cred_ex_id} "
                 f"in {cred_ex_record.state} state "
                 f"(must be {V20CredExRecord.STATE_REQUEST_RECEIVED})"
             )
@@ -543,9 +530,7 @@ class V20CredManager:
         ledger = self._profile.inject(BaseLedger)
         async with ledger:
             schema = await ledger.get_schema(schema_id)
-            cred_def = await ledger.get_credential_definition(
-                cred_ex_record.credential_definition_id
-            )
+            cred_def = await ledger.get_credential_definition(cred_def_id)
 
         tails_path = None
         if cred_def["value"].get("revocation"):
@@ -556,7 +541,7 @@ class V20CredManager:
                         cred_def_id
                     )
                     rev_reg = await active_rev_reg_rec.get_registry()
-                    cred_ex_record.revoc_reg_id = active_rev_reg_rec.revoc_reg_id
+                    cred_ex_record.rev_reg_id = active_rev_reg_rec.revoc_reg_id
 
                     tails_path = rev_reg.tails_local_path
                     await rev_reg.get_or_fetch_local_tails_path()
@@ -692,7 +677,7 @@ class V20CredManager:
 
         return (cred_ex_record, cred_issue_message)
 
-    async def receive_cred(
+    async def receive_credential(
         self, cred_issue_message: V20CredIssue, conn_id: str
     ) -> V20CredExRecord:
         """
@@ -723,27 +708,30 @@ class V20CredManager:
         return cred_ex_record
 
     async def store_credential(
-        self, cred_ex_record: V20CredExRecord, credential_id: str = None
+        self, cred_ex_record: V20CredExRecord, cred_id: str = None
     ) -> Tuple[V20CredExRecord, V20CredAck]:
         """
         Store a credential in holder wallet; send ack to issuer.
 
         Args:
             cred_ex_record: credential exchange record with credential to store and ack
-            credential_id: optional credential identifier to override default on storage
+            cred_id: optional credential identifier to override default on storage
 
         Returns:
             Tuple: (Updated credential exchange record, credential ack message)
 
         """
         if cred_ex_record.state != (V20CredExRecord.STATE_CREDENTIAL_RECEIVED):
-            raise V20ManagerError(
+            raise V20CredManagerError(
                 f"Credential exchange {cred_ex_record.cred_ex_id} "
                 f"in {cred_ex_record.state} state "
                 f"(must be {V20CredExRecord.STATE_CREDENTIAL_RECEIVED})"
             )
 
-        cred = cred_issue_message.cred(V20CredFormat.Format.INDY)
+        cred = V20CredIssue.deserialize(cred_ex_record.cred_issue).cred(
+            V20CredFormat.Format.INDY
+        )
+
         rev_reg_def = None
         ledger = self._profile.inject(BaseLedger)
         async with ledger:
@@ -755,18 +743,17 @@ class V20CredManager:
         cred_proposal_message = V20CredProposal.deserialize(
             cred_ex_record.cred_proposal
         )
+        mime_types = None
         if cred_proposal_message and cred_proposal_message.credential_preview:
-            mime_types = cred_proposal_message.credential_preview.mime_types()
-        else:
-            mime_types = None
+            mime_types = cred_proposal_message.credential_preview.mime_types() or None
 
         if rev_reg_def:
             rev_reg = RevocationRegistry.from_definition(rev_reg_def, True)
             await rev_reg.get_or_fetch_local_tails_path()
         try:
-            cred_id = await holder.store_credential(
+            cred_id_stored = await holder.store_credential(
                 cred_def,
-                credential,
+                cred,
                 cred_ex_record.cred_request_metadata,
                 mime_types,
                 credential_id=cred_id,
@@ -776,11 +763,8 @@ class V20CredManager:
             LOGGER.error(f"Error storing credential: {e.error_code} - {e.message}")
             raise e
 
-        cred_json = await holder.get_credential(cred_id)
-        cred = json.loads(cred_json)
-
         cred_ex_record.state = V20CredExRecord.STATE_DONE
-        cred_ex_record.cred_id_stored = cred_id
+        cred_ex_record.cred_id_stored = cred_id_stored
         cred_ex_record.rev_reg_id = cred.get("rev_reg_id", None)
         cred_ex_record.cred_rev_id = cred.get("cred_rev_id", None)
 
@@ -802,7 +786,7 @@ class V20CredManager:
 
         return (cred_ex_record, cred_ack_message)
 
-    async def receive_cred_ack(
+    async def receive_credential_ack(
         self, cred_ack_message: V20CredAck, conn_id: str
     ) -> V20CredExRecord:
         """
@@ -822,7 +806,7 @@ class V20CredManager:
                 V20CredExRecord.retrieve_by_conn_and_thread(
                     session,
                     conn_id,
-                    message._thread_id,
+                    cred_ack_message._thread_id,
                 )
             )
 
