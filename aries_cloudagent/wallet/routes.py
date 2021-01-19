@@ -325,7 +325,7 @@ async def wallet_set_public_did(request: web.BaseRequest):
 
             # Add multitenant relay mapping so implicit invitations are still routed
             if multitenant_mgr and wallet_id:
-                await multitenant_mgr.add_wallet_route(
+                await multitenant_mgr.add_key(
                     wallet_id, info.verkey, skip_if_exists=True
                 )
 

@@ -346,7 +346,7 @@ class TestWalletRoutes(AsyncTestCase):
             )
             await test_module.wallet_set_public_did(self.request)
 
-            multitenant_mgr.add_wallet_route.assert_called_once_with(
+            multitenant_mgr.add_key.assert_called_once_with(
                 "test_wallet", self.test_verkey, skip_if_exists=True
             )
 

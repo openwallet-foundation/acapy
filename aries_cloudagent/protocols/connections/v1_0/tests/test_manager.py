@@ -1,3 +1,4 @@
+from unittest.mock import call
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
@@ -155,7 +156,7 @@ class TestConnectionManager(AsyncTestCase):
                 self.test_verkey, None
             )
             await self.manager.create_invitation()
-            self.multitenant_mgr.add_wallet_route.assert_called_once_with(
+            self.multitenant_mgr.add_key.assert_called_once_with(
                 "test_wallet", self.test_verkey
             )
 
@@ -175,7 +176,7 @@ class TestConnectionManager(AsyncTestCase):
                 self.test_did, self.test_verkey, None
             )
             await self.manager.create_invitation(public=True)
-            self.multitenant_mgr.add_wallet_route.assert_called_once_with(
+            self.multitenant_mgr.add_key.assert_called_once_with(
                 "test_wallet", self.test_verkey, skip_if_exists=True
             )
 
@@ -482,7 +483,7 @@ class TestConnectionManager(AsyncTestCase):
                     alias="Bob",
                 )
             )
-            self.multitenant_mgr.add_wallet_route.assert_called_once_with(
+            self.multitenant_mgr.add_key.assert_called_once_with(
                 "test_wallet", self.test_verkey
             )
 
@@ -529,7 +530,7 @@ class TestConnectionManager(AsyncTestCase):
                 did_info,
                 None,
                 [self.test_endpoint],
-                mediation_record=mediation_record,
+                mediation_records=[mediation_record],
             )
             mock_get_default_mediator.assert_not_called()
 
@@ -585,7 +586,7 @@ class TestConnectionManager(AsyncTestCase):
                 did_info,
                 None,
                 [self.test_endpoint],
-                mediation_record=mediation_record,
+                mediation_records=[mediation_record],
             )
             mock_get_default_mediator.assert_called_once()
 
@@ -692,7 +693,7 @@ class TestConnectionManager(AsyncTestCase):
             )
             await self.manager.receive_request(mock_request, receipt)
 
-            self.multitenant_mgr.add_wallet_route.assert_called_once_with(
+            self.multitenant_mgr.add_key.assert_called_once_with(
                 "test_wallet", new_info.verkey
             )
 
@@ -734,7 +735,7 @@ class TestConnectionManager(AsyncTestCase):
             )
             await self.manager.receive_request(mock_request, receipt)
 
-            self.multitenant_mgr.add_wallet_route.assert_called_once_with(
+            self.multitenant_mgr.add_key.assert_called_once_with(
                 "test_wallet", new_info.verkey
             )
 
@@ -995,7 +996,7 @@ class TestConnectionManager(AsyncTestCase):
                     state=ConnRecord.State.REQUEST,
                 )
             )
-            self.multitenant_mgr.add_wallet_route.assert_called_once_with(
+            self.multitenant_mgr.add_key.assert_called_once_with(
                 "test_wallet", self.test_verkey
             )
 
@@ -1316,6 +1317,8 @@ class TestConnectionManager(AsyncTestCase):
             {"wallet.id": "test_wallet", "multitenant.enabled": True}
         )
 
+        self.multitenant_mgr.get_default_mediator.return_value = None
+
         with async_mock.patch.object(
             ConnRecord, "save", autospec=True
         ), async_mock.patch.object(
@@ -1332,8 +1335,63 @@ class TestConnectionManager(AsyncTestCase):
                 their_endpoint=self.test_endpoint,
             )
 
-            self.multitenant_mgr.add_wallet_route.assert_called_once_with(
+            self.multitenant_mgr.add_key.assert_called_once_with(
                 "test_wallet", self.test_verkey
+            )
+
+    async def test_create_static_connection_multitenant_mediator(self):
+        self.context.update_settings(
+            {"wallet.id": "test_wallet", "multitenant.enabled": True}
+        )
+
+        default_mediator = async_mock.MagicMock()
+
+        with async_mock.patch.object(
+            ConnRecord, "save", autospec=True
+        ), async_mock.patch.object(
+            InMemoryWallet, "create_local_did", autospec=True
+        ) as mock_wallet_create_local_did, async_mock.patch.object(
+            ConnectionManager, "create_did_document"
+        ) as create_did_document, async_mock.patch.object(
+            ConnectionManager, "store_did_document"
+        ) as store_did_document:
+            mock_wallet_create_local_did.return_value = DIDInfo(
+                self.test_did, self.test_verkey, None
+            )
+
+            # With default mediator
+            self.multitenant_mgr.get_default_mediator.return_value = default_mediator
+            await self.manager.create_static_connection(
+                my_did=self.test_did,
+                their_did=self.test_target_did,
+                their_verkey=self.test_target_verkey,
+                their_endpoint=self.test_endpoint,
+            )
+
+            # Without default mediator
+            self.multitenant_mgr.get_default_mediator.return_value = None
+            await self.manager.create_static_connection(
+                my_did=self.test_did,
+                their_did=self.test_target_did,
+                their_verkey=self.test_target_verkey,
+                their_endpoint=self.test_endpoint,
+            )
+
+            assert self.multitenant_mgr.add_key.call_count is 2
+
+            their_info = DIDInfo(self.test_target_did, self.test_target_verkey, {})
+            create_did_document.assert_has_calls(
+                [
+                    call(
+                        their_info,
+                        None,
+                        [self.test_endpoint],
+                        mediation_records=[default_mediator],
+                    ),
+                    call(
+                        their_info, None, [self.test_endpoint], mediation_records=None
+                    ),
+                ]
             )
 
     async def test_create_static_connection_no_their(self):
@@ -1707,7 +1765,7 @@ class TestConnectionManager(AsyncTestCase):
             endpoint=self.test_mediator_endpoint,
         )
         doc = await self.manager.create_did_document(
-            did_info, mediation_record=mediation_record
+            did_info, mediation_records=[mediation_record]
         )
         assert doc.service
         services = list(doc.service.values())
@@ -1716,6 +1774,37 @@ class TestConnectionManager(AsyncTestCase):
         service_public_keys = service.routing_keys[0]
         assert service_public_keys.value == mediation_record.routing_keys[0]
         assert service.endpoint == mediation_record.endpoint
+
+    async def test_create_did_document_multiple_mediators(self):
+        did_info = DIDInfo(
+            self.test_did,
+            self.test_verkey,
+            None,
+        )
+        mediation_record1 = MediationRecord(
+            role=MediationRecord.ROLE_CLIENT,
+            state=MediationRecord.STATE_GRANTED,
+            connection_id=self.test_mediator_conn_id,
+            routing_keys=self.test_mediator_routing_keys,
+            endpoint=self.test_mediator_endpoint,
+        )
+        mediation_record2 = MediationRecord(
+            role=MediationRecord.ROLE_CLIENT,
+            state=MediationRecord.STATE_GRANTED,
+            connection_id="mediator-conn-id2",
+            routing_keys=["05e8afd1-b4f0-46b7-a285-7a08c8a37caf"],
+            endpoint="http://mediatorw.example.com",
+        )
+        doc = await self.manager.create_did_document(
+            did_info, mediation_records=[mediation_record1, mediation_record2]
+        )
+        assert doc.service
+        services = list(doc.service.values())
+        assert len(services) == 1
+        (service,) = services
+        assert service.routing_keys[0].value == mediation_record1.routing_keys[0]
+        assert service.routing_keys[1].value == mediation_record2.routing_keys[0]
+        assert service.endpoint == mediation_record2.endpoint
 
     async def test_create_did_document_mediation_svc_endpoints_overwritten(self):
         did_info = DIDInfo(
@@ -1733,7 +1822,7 @@ class TestConnectionManager(AsyncTestCase):
         doc = await self.manager.create_did_document(
             did_info,
             svc_endpoints=[self.test_endpoint],
-            mediation_record=mediation_record,
+            mediation_records=[mediation_record],
         )
         assert doc.service
         services = list(doc.service.values())

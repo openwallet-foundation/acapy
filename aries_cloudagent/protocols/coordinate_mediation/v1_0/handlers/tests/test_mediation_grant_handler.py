@@ -1,4 +1,12 @@
 """Test mediate grant message handler."""
+from aries_cloudagent.protocols.coordinate_mediation.v1_0.messages import keylist
+from aries_cloudagent.protocols.coordinate_mediation.v1_0.manager import (
+    MediationManager,
+)
+from typing import Coroutine
+from aries_cloudagent import multitenant
+from aries_cloudagent.multitenant.manager import MultitenantManager
+from aries_cloudagent.config.argparse import MultitenantGroup
 import pytest
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
@@ -70,6 +78,34 @@ class TestMediationGrantHandler(AsyncTestCase):
             await handler.handle(self.context, responder)
             mock_mediation_manager.return_value.set_default_mediator.assert_called_once_with(
                 record
+            )
+
+    async def test_handler_multitenant_base_mediation(self):
+        handler, responder = MediationGrantHandler(), async_mock.CoroutineMock()
+        responder.send = async_mock.CoroutineMock()
+
+        self.context.update_settings(
+            {"multitenant.enabled": True, "wallet.id": "test_wallet"}
+        )
+
+        multitenant_mgr = async_mock.CoroutineMock()
+        self.context.injector.bind_instance(MultitenantManager, multitenant_mgr)
+
+        default_base_mediator = MediationRecord(routing_keys=["key1", "key2"])
+        multitenant_mgr.get_default_mediator = async_mock.CoroutineMock()
+        multitenant_mgr.get_default_mediator.return_value = default_base_mediator
+
+        record = MediationRecord(connection_id=TEST_CONN_ID)
+        await record.save(self.session)
+        with async_mock.patch.object(MediationManager, "add_key") as add_key:
+            keylist_updates = async_mock.MagicMock()
+            add_key.return_value = keylist_updates
+
+            await handler.handle(self.context, responder)
+
+            add_key.assert_called_once_with("key2")
+            responder.send.assert_called_once_with(
+                keylist_updates, connection_id=TEST_CONN_ID
             )
 
     async def test_handler_connection_no_set_to_default(self):

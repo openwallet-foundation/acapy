@@ -8,6 +8,7 @@ from ..core.profile import (
     Profile,
     ProfileSession,
 )
+from ..messaging.responder import BaseResponder
 from ..config.wallet import wallet_config
 from ..config.injection_context import InjectionContext
 from ..wallet.models.wallet_record import WalletRecord
@@ -18,6 +19,10 @@ from ..protocols.routing.v1_0.models.route_record import RouteRecord
 from ..transport.wire_format import BaseWireFormat
 from ..storage.base import BaseStorage
 from ..storage.error import StorageNotFoundError
+from ..protocols.coordinate_mediation.v1_0.manager import (
+    MediationManager,
+    MediationRecord,
+)
 
 from .error import WalletKeyMissingError
 
@@ -54,6 +59,16 @@ class MultitenantManager:
 
         """
         return self._profile
+
+    async def get_default_mediator(self) -> Optional[MediationRecord]:
+        """Retrieve the default mediator used for subwallet routing.
+
+        Returns:
+            Optional[MediationRecord]: retrieved default mediator or None if not set
+
+        """
+        async with self.profile.session() as session:
+            return await MediationManager(session).get_default_mediator()
 
     async def _wallet_name_exists(
         self, session: ProfileSession, wallet_name: str
@@ -107,15 +122,6 @@ class MultitenantManager:
             # Extend base context
             context = base_context.copy()
 
-            # MTODO: take over or remove?
-            # wallet.local_did
-
-            # Settings to take over (for now)
-            # wallet.replace_public_did
-            # wallet.storage_type
-            # walet.storage_config
-            # wallet.storage_creds
-
             # Settings we don't want to use from base wallet
             reset_settings = {
                 "wallet.recreate": False,
@@ -123,6 +129,10 @@ class MultitenantManager:
                 "wallet.rekey": None,
                 "wallet.name": None,
                 "wallet.type": None,
+                "mediation.open": None,
+                "mediation.invite": None,
+                "mediation.default_id": None,
+                "mediation.clear": None,
             }
 
             dispatch_type = wallet_record.wallet_dispatch_type
@@ -206,7 +216,7 @@ class MultitenantManager:
             public_did_info = await wallet.get_public_did()
 
             if public_did_info:
-                await self.add_wallet_route(
+                await self.add_key(
                     wallet_record.wallet_id, public_did_info.verkey, skip_if_exists=True
                 )
 
@@ -252,15 +262,17 @@ class MultitenantManager:
 
             await wallet.delete_record(session)
 
-    async def add_wallet_route(
+    async def add_key(
         self, wallet_id: str, recipient_key: str, *, skip_if_exists: bool = False
     ):
         """
-        Add a wallet route to map incoming messages to specific subwallets.
+        Add a wallet key to map incoming messages to specific subwallets.
 
         Args:
             wallet_id: The wallet id the key corresponds to
             recipient_key: The recipient key belonging to the wallet
+            skip_if_exists: Whether to skip the action if the key is already registered
+                            for relaying / mediation
         """
 
         async with self.profile.session() as session:
@@ -268,6 +280,8 @@ class MultitenantManager:
                 f"Add route record for recipient {recipient_key} to wallet {wallet_id}"
             )
             routing_mgr = RoutingManager(session)
+            mediation_mgr = MediationManager(session)
+            mediation_record = await mediation_mgr.get_default_mediator()
 
             if skip_if_exists:
                 try:
@@ -281,6 +295,15 @@ class MultitenantManager:
             await routing_mgr.create_route_record(
                 recipient_key=recipient_key, internal_wallet_id=wallet_id
             )
+
+            # External mediation
+            if mediation_record:
+                keylist_updates = await mediation_mgr.add_key(recipient_key)
+
+                responder = session.inject(BaseResponder)
+                await responder.send(
+                    keylist_updates, connection_id=mediation_record.connection_id
+                )
 
     def create_auth_token(
         self, wallet_record: WalletRecord, wallet_key: str = None
