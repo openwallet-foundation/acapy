@@ -120,6 +120,7 @@ class DemoAgent:
         postgres: bool = None,
         revocation: bool = False,
         multitenant: bool = False,
+        mediation: bool = False,
         extra_args=None,
         **params,
     ):
@@ -142,6 +143,9 @@ class DemoAgent:
         self.trace_tag = TRACE_TAG
         self.multitenant = multitenant
         self.external_webhook_target = WEBHOOK_TARGET
+        self.mediation = mediation
+        self.mediator_connection_id = None
+        self.mediator_request_id = None
 
         self.admin_url = f"http://{self.internal_host}:{admin_port}"
         if AGENT_ENDPOINT:
@@ -314,6 +318,16 @@ class DemoAgent:
                     ("--trace-label", self.label + ".trace"),
                 ]
             )
+
+        if self.mediation:
+            result.extend(
+                [
+                    "--open-mediation",
+                    "--auto-send-keylist-update-in-requests",
+                    "--auto-send-keylist-update-in-create-invitation",
+                ]
+            )
+
         if self.extra_args:
             result.extend(self.extra_args)
 
@@ -853,3 +867,90 @@ class DemoAgent:
 
     def reset_postgres_stats(self):
         self.wallet_stats.clear()
+
+
+class MediatorAgent(DemoAgent):
+    def __init__(
+        self, http_port: int,
+        admin_port: int,
+        **kwargs
+    ):
+        super().__init__(
+            "Mediator.Agent",
+            http_port,
+            admin_port,
+            prefix="Mediator",
+            mediation=True,
+            extra_args=[
+                "--auto-accept-invites",
+                "--auto-accept-requests",
+            ],
+            seed=None,
+            **kwargs,
+        )
+        self.connection_id = None
+        self._connection_ready = asyncio.Future()
+        self.cred_state = {}
+
+    async def detect_connection(self):
+        await self._connection_ready
+
+    @property
+    def connection_ready(self):
+        return self._connection_ready.done() and self._connection_ready.result()
+
+    async def handle_connections(self, message):
+        if message["connection_id"] == self.mediator_connection_id:
+            if message["state"] == "active" and not self._connection_ready.done():
+                self.log("Mediator Connected")
+                self._connection_ready.set_result(True)
+
+    async def handle_basicmessages(self, message):
+        self.log("Received message:", message["content"])
+
+
+async def start_mediator_agent(start_port, genesis, agent):
+    # start mediator agent
+    mediator_agent = MediatorAgent(
+        start_port,
+        start_port + 1,
+        genesis_data=genesis,
+    )
+    await mediator_agent.listen_webhooks(start_port + 2)
+    await mediator_agent.start_process()
+
+    log_msg("Mediator Admin URL is at:", mediator_agent.admin_url)
+    log_msg("Mediator Endpoint URL is at:", mediator_agent.endpoint)
+
+    # we need to pre-connect the agent to its mediator
+    # Generate an invitation
+    log_msg("Generate mediation invite ...")
+    mediator_connection = await mediator_agent.admin_POST("/connections/create-invitation")
+    mediator_agent.mediator_connection_id = mediator_connection["connection_id"]
+
+    # accept the invitation
+    log_msg("Accept mediation invite ...")
+    connection = await agent.admin_POST("/connections/receive-invitation", mediator_connection["invitation"])
+    agent.mediator_connection_id = connection["connection_id"]
+
+    log_msg("Await mediation connection status ...")
+    await mediator_agent.detect_connection()
+    log_msg("Connected agent to mediator:", agent.ident, mediator_agent.ident)
+
+    # setup mediation on our connection
+    log_msg("Request mediation ...")
+    mediation_request = await agent.admin_POST("/mediation/request/" + agent.mediator_connection_id, {})
+    agent.mediator_request_id = mediation_request["mediation_id"]
+    log_msg("Mediation request id:", agent.mediator_request_id)
+
+    count = 3
+    while 0 < count:
+        await asyncio.sleep(1.0)
+        mediation_status = await agent.admin_GET("/mediation/requests/" + agent.mediator_request_id)
+        if mediation_status["state"] == "granted":
+            log_msg("Mediation setup successfully!", mediation_status)
+            return mediator_agent
+        count = count - 1
+
+    log_msg("Mediation setup FAILED :-(")
+    raise Exception("Mediation setup FAILED :-(")

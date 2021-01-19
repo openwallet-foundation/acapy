@@ -12,7 +12,11 @@ from aiohttp import ClientError
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from runners.support.agent import DemoAgent, default_genesis_txns  # noqa:E402
+from runners.support.agent import (  # noqa:E402
+    DemoAgent,
+    default_genesis_txns,
+    start_mediator_agent,
+)
 from runners.support.utils import (  # noqa:E402
     log_msg,
     log_status,
@@ -59,6 +63,7 @@ class FaberAgent(DemoAgent):
 
     async def detect_connection(self):
         await self._connection_ready
+        self._connection_ready = None
 
     @property
     def connection_ready(self):
@@ -68,6 +73,10 @@ class FaberAgent(DemoAgent):
         pass
 
     async def handle_connections(self, message):
+        # a bit of a hack, but for the mediator connection self._connection_ready will be None
+        if not self._connection_ready:
+            return
+
         conn_id = message["connection_id"]
         if message["state"] == "invitation":
             self.connection_id = conn_id
@@ -155,12 +164,19 @@ async def generate_invitation(agent, use_did_exchange: bool):
         # Generate an invitation
         log_status("#7 Create a connection to alice and print out the invite details")
         if use_did_exchange:
+            # TODO can mediation be used with DID exchange connections?
             invi_rec = await agent.admin_POST(
                 "/out-of-band/create-invitation",
                 {"include_handshake": True},
             )
         else:
-            invi_rec = await agent.admin_POST("/connections/create-invitation")
+            if agent.mediation:
+                invi_rec = await agent.admin_POST(
+                    "/connections/create-invitation",
+                    {"mediation_id": agent.mediator_request_id},
+                )
+            else:
+                invi_rec = await agent.admin_POST("/connections/create-invitation")
 
     qr = QRCode(border=1)
     qr.add_data(invi_rec["invitation_url"])
@@ -206,6 +222,7 @@ async def main(
     tails_server_base_url: str = None,
     show_timing: bool = False,
     multitenant: bool = False,
+    mediation: bool = False,
     use_did_exchange: bool = False,
     wallet_type: str = None,
 ):
@@ -215,6 +232,7 @@ async def main(
         sys.exit(1)
 
     agent = None
+    mediator_agent = None
 
     try:
         log_status(
@@ -230,6 +248,7 @@ async def main(
             tails_server_base_url=tails_server_base_url,
             timing=show_timing,
             multitenant=multitenant,
+            mediation=mediation,
             wallet_type=wallet_type,
         )
         await agent.listen_webhooks(start_port + 2)
@@ -248,15 +267,19 @@ async def main(
                 webhook_port=agent.get_new_webhook_port(),
             )
 
+        if mediation:
+            mediator_agent = await start_mediator_agent(start_port+4, genesis, agent)
+            if not mediator_agent:
+                raise Exception("Mediator agent returns None :-(")
+        else:
+            mediator_agent = None
+
         # Create a schema
         credential_definition_id = await create_schema_and_cred_def(agent, revocation)
 
         # TODO add an additional credential for Student ID
 
         await generate_invitation(agent, use_did_exchange)
-
-        log_msg("Waiting for connection...")
-        await agent.detect_connection()
 
         exchange_tracing = False
         options = (
@@ -458,7 +481,11 @@ async def main(
     finally:
         terminated = True
         try:
+            if mediator_agent:
+                log_msg("Shutting down mediator agent ...")
+                await mediator_agent.terminate()
             if agent:
+                log_msg("Shutting down faber agent ...")
                 await agent.terminate()
         except Exception:
             LOGGER.exception("Error terminating agent:")
@@ -502,6 +529,9 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--multitenant", action="store_true", help="Enable multitenancy options"
+    )
+    parser.add_argument(
+        "--mediation", action="store_true", help="Enable mediation functionality"
     )
     parser.add_argument(
         "--wallet-type",
@@ -557,6 +587,7 @@ if __name__ == "__main__":
                 tails_server_base_url,
                 args.timing,
                 args.multitenant,
+                args.mediation,
                 args.did_exchange,
                 args.wallet_type,
             )

@@ -11,7 +11,11 @@ from aiohttp import ClientError
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from runners.support.agent import DemoAgent, default_genesis_txns  # noqa:E402
+from runners.support.agent import (  # noqa:E402
+    DemoAgent,
+    default_genesis_txns,
+    start_mediator_agent,
+)
 from runners.support.utils import (  # noqa:E402
     log_json,
     log_msg,
@@ -56,6 +60,7 @@ class AliceAgent(DemoAgent):
 
     async def detect_connection(self):
         await self._connection_ready
+        self._connection_ready = None
 
     @property
     def connection_ready(self):
@@ -241,6 +246,7 @@ async def main(
     no_auto: bool = False,
     show_timing: bool = False,
     multitenant: bool = False,
+    mediation: bool = False,
     wallet_type: str = None,
 ):
     genesis = await default_genesis_txns()
@@ -249,6 +255,7 @@ async def main(
         sys.exit(1)
 
     agent = None
+    mediator_agent = None
 
     try:
         log_status(
@@ -263,6 +270,7 @@ async def main(
             no_auto=no_auto,
             timing=show_timing,
             multitenant=multitenant,
+            mediation=mediation,
             wallet_type=wallet_type,
         )
         await agent.listen_webhooks(start_port + 2)
@@ -277,6 +285,14 @@ async def main(
             await agent.register_or_switch_wallet(
                 "Alice.initial", webhook_port=agent.get_new_webhook_port()
             )
+
+        
+        if mediation:
+            mediator_agent = await start_mediator_agent(start_port+4, genesis, agent)
+            if not mediator_agent:
+                raise Exception("Mediator agent returns None :-(")
+        else:
+            mediator_agent = None
 
         log_status("#9 Input faber.py invitation details")
         await input_invitation(agent)
@@ -329,7 +345,11 @@ async def main(
     finally:
         terminated = True
         try:
+            if mediator_agent:
+                log_msg("Shutting down mediator agent ...")
+                await mediator_agent.terminate()
             if agent:
+                log_msg("Shutting down alice agent ...")
                 await agent.terminate()
         except Exception:
             LOGGER.exception("Error terminating agent:")
@@ -359,6 +379,9 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--multitenant", action="store_true", help="Enable multitenancy options"
+    )
+    parser.add_argument(
+        "--mediation", action="store_true", help="Enable mediation functionality"
     )
     parser.add_argument(
         "--wallet-type",
@@ -401,7 +424,12 @@ if __name__ == "__main__":
     try:
         asyncio.get_event_loop().run_until_complete(
             main(
-                args.port, args.no_auto, args.timing, args.multitenant, args.wallet_type
+                args.port,
+                args.no_auto,
+                args.timing,
+                args.multitenant,
+                args.mediation,
+                args.wallet_type
             )
         )
     except KeyboardInterrupt:
