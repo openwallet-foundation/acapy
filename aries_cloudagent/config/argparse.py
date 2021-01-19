@@ -930,20 +930,6 @@ class MediationGroup(ArgumentGroup):
                 forward messages on behalf of the recipient. See aries-rfc:0211.",
         )
         parser.add_argument(
-            "--auto-send-keylist-update-in-requests",
-            action="store_true",
-            env_var="ACAPY_AUTO_SEND_KEYLIST_UPDATE_IN_REQUESTS",
-            help="Automatically updated mediator with newly created keys."
-            " keylists. Default: false.",
-        )
-        parser.add_argument(
-            "--auto-send-keylist-update-in-create-invitation",
-            action="store_true",
-            env_var="ACAPY_AUTO_SEND_KEYLIST_UPDATE_IN_CREATE_INVITATION",
-            help="Automatically updated mediator with newly created keys."
-            " keylists. Default: false.",
-        )
-        parser.add_argument(
             "--mediator-invitation",
             type=str,
             metavar="<invite URL to mediator>",
@@ -968,10 +954,6 @@ class MediationGroup(ArgumentGroup):
     def get_settings(self, args: Namespace):
         """Extract mediation settings."""
         settings = {}
-        if args.auto_send_keylist_update_in_requests:
-            settings["mediation.auto_send_keylist_update_in_requests"] = True
-        if args.auto_send_keylist_update_in_create_invitation:
-            settings["mediation.auto_send_keylist_update_in_create_invitation"] = True
         if args.open_mediation:
             settings["mediation.open"] = True
         if args.mediator_invitation:
