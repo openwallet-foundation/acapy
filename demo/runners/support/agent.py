@@ -188,6 +188,11 @@ class DemoAgent:
         wallets = await self.admin_GET("/multitenancy/wallets")
         return wallets
 
+    def get_new_webhook_port(self):
+        """Get new webhook port for registering additional sub-wallets"""
+        self.webhook_port = self.webhook_port + 1
+        return self.webhook_port
+
     async def get_public_did(self):
         """Get public did of wallet (called for a sub-wallet)."""
         did = await self.admin_GET("/wallet/did/public")
@@ -349,7 +354,14 @@ class DemoAgent:
                     self.agency_wallet_did = self.did
         self.log(f"Registered DID: {self.did}")
 
-    async def register_or_switch_wallet(self, target_wallet_name, public_did=False):
+    async def register_or_switch_wallet(
+        self,
+        target_wallet_name,
+        public_did=False,
+        webhook_port: int = None,
+    ):
+        if webhook_port is not None:
+            await self.listen_webhooks(webhook_port)
         self.log(f"Register or switch to wallet {target_wallet_name}")
         if target_wallet_name == self.agency_wallet_name:
             self.ident = self.agency_ident
@@ -380,6 +392,8 @@ class DemoAgent:
             "wallet_name": target_wallet_name,
             "wallet_type": self.wallet_type,
             "label": target_wallet_name,
+            "wallet_webhook_urls": self.webhook_url,
+            "wallet_dispatch_type": "both",
         }
         self.wallet_name = target_wallet_name
         self.wallet_key = target_wallet_name
@@ -511,8 +525,9 @@ class DemoAgent:
             method = getattr(self, handler, None)
             if method:
                 EVENT_LOGGER.debug(
-                    "Agent called controller webhook: %s%s%s",
+                    "Agent called controller webhook: %s%s%s%s",
                     handler,
+                    f"\nPOST {self.webhook_url}/topic/{topic}/",
                     (f" for wallet: {wallet_id}" if wallet_id else ""),
                     (f" with payload: \n{repr_json(payload)}\n" if payload else ""),
                 )

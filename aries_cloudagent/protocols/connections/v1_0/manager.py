@@ -143,6 +143,11 @@ class ConnectionManager:
 
         """
         mediation_mgr = MediationManager(self._session)
+        # Mediation Record can still be None after this operation if no
+        # mediation id passed and no default
+        mediation_record = await self.mediation_record_if_id(
+            mediation_id or await mediation_mgr.get_default_mediator_id()
+        )
         keylist_updates = None
         image_url = self._session.context.settings.get("image_url")
 
@@ -234,7 +239,6 @@ class ConnectionManager:
 
         await connection.save(self._session, reason="Created new invitation")
 
-        mediation_record = await self.mediation_record_if_id(mediation_id)
         if mediation_record:
             routing_keys = mediation_record.routing_keys
             my_endpoint = mediation_record.endpoint
@@ -244,9 +248,7 @@ class ConnectionManager:
                 self._session, "mediation", {"id": mediation_id}
             )
 
-            if keylist_updates and self._session.settings.get(
-                "mediation.auto_send_keylist_update_in_create_invitation"
-            ):
+            if keylist_updates:
                 responder = self._session.inject(BaseResponder, required=False)
                 await responder.send(
                     keylist_updates, connection_id=mediation_record.connection_id
@@ -360,10 +362,14 @@ class ConnectionManager:
 
         # Mediation setup
         keylist_updates = None
-        mediation_record = await self.mediation_record_if_id(mediation_id)
         mediation_mgr = MediationManager(self._session)
 
-        # Multitenancy setup
+        # Mediation Record can still be None after this operation if no
+        # mediation id passed and no default
+        mediation_record = await self.mediation_record_if_id(
+            mediation_id or await mediation_mgr.get_default_mediator_id()
+        )
+
         multitenant_mgr = self._session.inject(MultitenantManager, required=False)
         wallet_id = self._session.settings.get("wallet.id")
 
@@ -415,13 +421,7 @@ class ConnectionManager:
         await connection.save(self._session, reason="Created connection request")
 
         # Notify mediator of keylist changes
-        if (
-            keylist_updates
-            and mediation_record
-            and self._session.settings.get(
-                "mediation.auto_send_keylist_update_in_requests"
-            )
-        ):
+        if keylist_updates and mediation_record:
             # send a update keylist message with new recipient keys.
             responder = self._session.inject(BaseResponder, required=False)
             await responder.send(
@@ -576,13 +576,7 @@ class ConnectionManager:
 
         # Send keylist updates to mediator
         mediation_record = await self.mediation_record_if_id(mediation_id)
-        if (
-            keylist_updates
-            and mediation_record
-            and self._session.settings.get(
-                "mediation.auto_send_keylist_update_in_requests"
-            )
-        ):
+        if keylist_updates and mediation_record:
             responder = self._session.inject(BaseResponder, required=False)
             await responder.send(
                 keylist_updates, connection_id=mediation_record.connection_id
@@ -699,6 +693,19 @@ class ConnectionManager:
                 keylist_updates, connection_id=mediation_record.connection_id
             )
 
+        # TODO It's possible the mediation request sent here might arrive
+        # before the connection response. This would result in an error condition
+        # difficult to accomodate for without modifying handlers for trust ping
+        # to ensure the connection is active.
+        send_mediation_request = await connection.metadata_get(
+            self._session, MediationManager.SEND_REQ_AFTER_CONNECTION
+        )
+        if send_mediation_request:
+            mgr = MediationManager(self._session)
+            _record, request = await mgr.prepare_request(connection.connection_id)
+            responder = self._session.inject(BaseResponder)
+            await responder.send(request, connection_id=connection.connection_id)
+
         return response
 
     async def accept_response(
@@ -773,6 +780,15 @@ class ConnectionManager:
         connection.state = ConnRecord.State.RESPONSE.rfc160
 
         await connection.save(self._session, reason="Accepted connection response")
+
+        send_mediation_request = await connection.metadata_get(
+            self._session, MediationManager.SEND_REQ_AFTER_CONNECTION
+        )
+        if send_mediation_request:
+            mgr = MediationManager(self._session)
+            _record, request = await mgr.prepare_request(connection.connection_id)
+            responder = self._session.inject(BaseResponder)
+            await responder.send(request, connection_id=connection.connection_id)
 
         return connection
 

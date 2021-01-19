@@ -22,9 +22,17 @@ from ..config.wallet import wallet_config
 from ..core.profile import Profile
 from ..ledger.error import LedgerConfigError, LedgerTransactionError
 from ..messaging.responder import BaseResponder
+from ..multitenant.manager import MultitenantManager
 from ..protocols.connections.v1_0.manager import (
     ConnectionManager,
     ConnectionManagerError,
+)
+from ..protocols.connections.v1_0.messages.connection_invitation import (
+    ConnectionInvitation,
+)
+from ..protocols.coordinate_mediation.v1_0.manager import MediationManager
+from ..protocols.coordinate_mediation.v1_0.models.mediation_record import (
+    MediationRecord,
 )
 from ..protocols.out_of_band.v1_0.manager import OutOfBandManager
 from ..protocols.out_of_band.v1_0.messages.invitation import InvitationMessage
@@ -35,7 +43,6 @@ from ..transport.outbound.manager import OutboundTransportManager, QueuedOutboun
 from ..transport.outbound.message import OutboundMessage
 from ..transport.wire_format import BaseWireFormat
 from ..utils.stats import Collector
-from ..multitenant.manager import MultitenantManager
 from ..utils.task_queue import CompletedTask, TaskQueue
 from ..wallet.base import DIDInfo
 from .dispatcher import Dispatcher
@@ -193,7 +200,7 @@ class Conductor:
             # This allows webhooks to be called when a connection is marked active,
             # for example
             responder = AdminResponder(
-                context,
+                self.root_profile,
                 self.admin_server.outbound_message_router,
                 self.admin_server.send_webhook,
             )
@@ -228,6 +235,27 @@ class Conductor:
                 print(" - Their endpoint:", their_endpoint)
                 print()
                 del mgr
+
+        # Clear default mediator
+        if context.settings.get("mediation.clear"):
+            async with self.root_profile.session() as session:
+                mediation_mgr = MediationManager(session)
+                await mediation_mgr.clear_default_mediator()
+                print("Default mediator cleared.")
+
+        # Set default mediator by id
+        default_mediator_id = context.settings.get("mediation.default_id")
+        if default_mediator_id:
+            async with self.root_profile.session() as session:
+                mediation_mgr = MediationManager(session)
+                try:
+                    record = await MediationRecord.retrieve_by_id(
+                        session, default_mediator_id
+                    )
+                    await mediation_mgr.set_default_mediator(record)
+                    print(f"Default mediator set to {default_mediator_id}")
+                except Exception:
+                    LOGGER.exception("Error retrieving mediation record")
 
         # Print an invitation to the terminal
         if context.settings.get("debug.print_invitation"):
@@ -272,6 +300,27 @@ class Conductor:
                     del mgr
             except Exception:
                 LOGGER.exception("Error creating invitation")
+
+        # Accept mediation invitation if specified
+        mediation_invitation = context.settings.get("mediation.invite")
+        if mediation_invitation:
+            try:
+                async with self.root_profile.session() as session:
+                    mgr = ConnectionManager(session)
+                    conn_record = await mgr.receive_invitation(
+                        invitation=ConnectionInvitation.from_url(mediation_invitation),
+                        auto_accept=True,
+                    )
+                    await conn_record.metadata_set(
+                        session, MediationManager.SEND_REQ_AFTER_CONNECTION, True
+                    )
+                    await conn_record.metadata_set(
+                        session, MediationManager.SET_TO_DEFAULT_ON_GRANTED, True
+                    )
+                    print("Attempting to connect to mediator...")
+                    del mgr
+            except Exception:
+                LOGGER.exception("Error accepting mediation invitation")
 
     async def stop(self, timeout=1.0):
         """Stop the agent."""

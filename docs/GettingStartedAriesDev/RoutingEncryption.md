@@ -1,4 +1,4 @@
-# Deeper Dive: DIDcomm Message Routing and Encryption
+# Deeper Dive: DIDComm Message Routing and Encryption
 
 Many Aries edge agents do not directly receive messages from a peer edge agent - they have agents in between that route messages to them. This is done for many reasons, such as: 
 
@@ -6,7 +6,7 @@ Many Aries edge agents do not directly receive messages from a peer edge agent -
 - The person does not want to allow correlation of their agent across relationships and so they use a shared, common endpoint (e.g. https://agents-R-Us.com) that they are "hidden in a crowd".
 - An enterprise wants a single gateway to the many enterprise agents they have in their organization.
 
-Thus, when a DIDcomm message is sent from one edge agent to another, it is routed per the instructions of the receiver and for the needs of the sender. For example, in the following picture, Alice might be told by Bob to send messages to his phone (agent 4) via agents 9 and 3, and Alice might always send out messages via agent 2.
+Thus, when a DIDComm message is sent from one edge agent to another, it is routed per the instructions of the receiver and for the needs of the sender. For example, in the following picture, Alice might be told by Bob to send messages to his phone (agent 4) via agents 9 and 3, and Alice might always send out messages via agent 2.
 
 ![image](https://github.com/hyperledger/aries-rfcs/raw/master/features/0067-didcomm-diddoc-conventions/domains.jpg)
 
@@ -32,6 +32,6 @@ Link: [Mediators and Relays](https://github.com/hyperledger/aries-rfcs/tree/mast
 
 ## Message Encryption
 
-The DIDcomm encryption handling is handling within the Aries agent, and not really something a developer building applications using an agent needs to worry about. Further, within an Aries agent, the handling of the encryption is left to libraries to handle - ultimately calling dependencies from Hyperledger Ursa. To encrypt a message, the agent code calls a `pack()` function to handle the encryption, and to decrypt a message, the agent code calls a corresponding `unpack()` function. The "wire messages" (as originally called) are described in [detail here](https://github.com/hyperledger/aries-rfcs/blob/master/features/0019-encryption-envelope/README.md), including variations for sender authenticated and anonymous encrypting. Wire messages were meant to indicate the handling of a message from one agent directly to another, versus the higher level concept of routing a message from an edge agent to a peer edge agent.
+The DIDComm encryption handling is handling within the Aries agent, and not really something a developer building applications using an agent needs to worry about. Further, within an Aries agent, the handling of the encryption is left to libraries to handle - ultimately calling dependencies from Hyperledger Ursa. To encrypt a message, the agent code calls a `pack()` function to handle the encryption, and to decrypt a message, the agent code calls a corresponding `unpack()` function. The "wire messages" (as originally called) are described in [detail here](https://github.com/hyperledger/aries-rfcs/blob/master/features/0019-encryption-envelope/README.md), including variations for sender authenticated and anonymous encrypting. Wire messages were meant to indicate the handling of a message from one agent directly to another, versus the higher level concept of routing a message from an edge agent to a peer edge agent.
 
 Much thought has also gone into repudiable and non-repudiable messaging, as [described here](https://github.com/hyperledger/aries-rfcs/tree/master/concepts/0049-repudiation).
