@@ -173,6 +173,16 @@ async def transaction_create_request(request: web.BaseRequest):
             reason="The transaction related jobs are not setup in "
             "connection metadata for this connection record"
         )
+    if "transaction_my_job" not in jobs.keys():
+        raise web.HTTPForbidden(
+            reason='The "transaction_my_job" is not set in "transaction_jobs"'
+            " in connection metadata for this connection record"
+        )
+    if "transaction_their_job" not in jobs.keys():
+        raise web.HTTPForbidden(
+            reason='Ask the other agent to set up "transaction_my_job" '
+            ' in "transaction_jobs" in connection metadata for their connection record'
+        )
     if jobs["transaction_my_job"] != "TRANSACTION_AUTHOR":
         raise web.HTTPForbidden(reason="Only a TRANSACTION_AUTHOR can create a request")
 
