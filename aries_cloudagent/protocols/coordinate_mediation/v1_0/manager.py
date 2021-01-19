@@ -468,11 +468,20 @@ class MediationManager:
                 )
                 continue
             if updated.action == KeylistUpdateRule.RULE_ADD:
-                record = RouteRecord(
-                    role=RouteRecord.ROLE_CLIENT,
-                    recipient_key=updated.recipient_key,
-                    connection_id=connection_id,
-                )
+                # Multi-tenancy uses route record for internal relaying of wallets
+                # So the record could already exist. We update in that case
+                try:
+                    record = await RouteRecord.retrieve_by_recipient_key(
+                        self.session, updated.recipient_key
+                    )
+                    record.connection_id = connection_id
+                    record.role = RouteRecord.ROLE_CLIENT
+                except StorageNotFoundError:
+                    record = RouteRecord(
+                        role=RouteRecord.ROLE_CLIENT,
+                        recipient_key=updated.recipient_key,
+                        connection_id=connection_id,
+                    )
                 to_save.append(record)
             elif updated.action == KeylistUpdateRule.RULE_REMOVE:
                 try:
