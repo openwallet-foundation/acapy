@@ -1,12 +1,4 @@
 """Test mediate grant message handler."""
-from aries_cloudagent.protocols.coordinate_mediation.v1_0.messages import keylist
-from aries_cloudagent.protocols.coordinate_mediation.v1_0.manager import (
-    MediationManager,
-)
-from typing import Coroutine
-from aries_cloudagent import multitenant
-from aries_cloudagent.multitenant.manager import MultitenantManager
-from aries_cloudagent.config.argparse import MultitenantGroup
 import pytest
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
@@ -17,8 +9,10 @@ from ......connections.models.conn_record import ConnRecord
 from ......messaging.base_handler import HandlerException
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
+from ......multitenant.manager import MultitenantManager
 from ...messages.mediate_grant import MediationGrant
 from ...models.mediation_record import MediationRecord
+from ...manager import MediationManager
 from ..mediation_grant_handler import MediationGrantHandler
 
 TEST_CONN_ID = "conn-id"

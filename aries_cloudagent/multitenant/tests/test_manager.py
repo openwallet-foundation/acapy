@@ -1,10 +1,3 @@
-from aries_cloudagent.messaging.responder import BaseResponder
-from aries_cloudagent.protocols.coordinate_mediation.v1_0.models.mediation_record import (
-    MediationRecord,
-)
-from aries_cloudagent.protocols.coordinate_mediation.v1_0.manager import (
-    MediationManager,
-)
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
@@ -12,6 +5,7 @@ import jwt
 
 from ...core.in_memory import InMemoryProfile
 from ...config.base import InjectionError
+from ...messaging.responder import BaseResponder
 from ...wallet.models.wallet_record import WalletRecord
 from ...wallet.in_memory import InMemoryWallet
 from ...wallet.base import DIDInfo
@@ -19,6 +13,10 @@ from ...storage.error import StorageNotFoundError
 from ...storage.in_memory import InMemoryStorage
 from ...protocols.routing.v1_0.manager import RoutingManager
 from ...protocols.routing.v1_0.models.route_record import RouteRecord
+from ...protocols.coordinate_mediation.v1_0.manager import (
+    MediationRecord,
+    MediationManager,
+)
 from ..manager import MultitenantManager, MultitenantManagerError
 from ..error import WalletKeyMissingError
 
