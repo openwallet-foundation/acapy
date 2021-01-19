@@ -301,9 +301,6 @@ class TestConnectionManager(AsyncTestCase):
             endpoint=self.test_mediator_endpoint,
         )
         await mediation_record.save(self.session)
-        self.session.settings[
-            "mediation.auto_send_keylist_update_in_create_invitation"
-        ] = True
         with async_mock.patch.object(
             MediationManager,
             "get_default_mediator_id",
@@ -326,9 +323,6 @@ class TestConnectionManager(AsyncTestCase):
             endpoint=self.test_mediator_endpoint,
         )
         await mediation_record.save(self.session)
-        self.session.settings[
-            "mediation.auto_send_keylist_update_in_create_invitation"
-        ] = True
         with async_mock.patch.object(
             MediationManager,
             "get_default_mediator_id",
@@ -506,8 +500,6 @@ class TestConnectionManager(AsyncTestCase):
         # Ensure the path with new did creation is hit
         record.my_did = None
 
-        self.session.settings["mediation.auto_send_keylist_update_in_requests"] = True
-
         with async_mock.patch.object(
             ConnectionManager, "create_did_document", autospec=True
         ) as create_did_document, async_mock.patch.object(
@@ -560,8 +552,6 @@ class TestConnectionManager(AsyncTestCase):
 
         # Ensure the path with new did creation is hit
         record.my_did = None
-
-        self.session.settings["mediation.auto_send_keylist_update_in_requests"] = True
 
         with async_mock.patch.object(
             ConnectionManager, "create_did_document", autospec=True
@@ -864,8 +854,6 @@ class TestConnectionManager(AsyncTestCase):
         record.accept = ConnRecord.ACCEPT_MANUAL
         await record.save(self.session)
 
-        self.session.settings["mediation.auto_send_keylist_update_in_requests"] = True
-
         with async_mock.patch.object(
             ConnRecord, "save", autospec=True
         ) as mock_conn_rec_save, async_mock.patch.object(
@@ -897,7 +885,6 @@ class TestConnectionManager(AsyncTestCase):
         receipt = MessageReceipt(
             recipient_did=self.test_did, recipient_did_public=False
         )
-        self.session.settings["mediation.auto_send_keylist_update_in_requests"] = True
         record, invite = await self.manager.create_invitation()
         with async_mock.patch.object(
             ConnRecord, "save", autospec=True
@@ -925,7 +912,6 @@ class TestConnectionManager(AsyncTestCase):
         receipt = MessageReceipt(
             recipient_did=self.test_did, recipient_did_public=False
         )
-        self.session.settings["mediation.auto_send_keylist_update_in_requests"] = True
         record, invite = await self.manager.create_invitation()
 
         mediation_record = MediationRecord(
