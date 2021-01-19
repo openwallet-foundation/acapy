@@ -261,9 +261,7 @@ class ConnectionManager:
                 self._session, "mediation", {"id": mediation_id}
             )
 
-            if keylist_updates and self._session.settings.get(
-                "mediation.auto_send_keylist_update_in_create_invitation"
-            ):
+            if keylist_updates:
                 responder = self._session.inject(BaseResponder, required=False)
                 await responder.send(
                     keylist_updates, connection_id=mediation_record.connection_id
@@ -442,13 +440,7 @@ class ConnectionManager:
         await connection.save(self._session, reason="Created connection request")
 
         # Notify mediator of keylist changes
-        if (
-            keylist_updates
-            and mediation_record
-            and self._session.settings.get(
-                "mediation.auto_send_keylist_update_in_requests"
-            )
-        ):
+        if keylist_updates and mediation_record:
             # send a update keylist message with new recipient keys.
             responder = self._session.inject(BaseResponder, required=False)
             await responder.send(
@@ -603,13 +595,7 @@ class ConnectionManager:
 
         # Send keylist updates to mediator
         mediation_record = await self.mediation_record_if_id(mediation_id)
-        if (
-            keylist_updates
-            and mediation_record
-            and self._session.settings.get(
-                "mediation.auto_send_keylist_update_in_requests"
-            )
-        ):
+        if keylist_updates and mediation_record:
             responder = self._session.inject(BaseResponder, required=False)
             await responder.send(
                 keylist_updates, connection_id=mediation_record.connection_id
