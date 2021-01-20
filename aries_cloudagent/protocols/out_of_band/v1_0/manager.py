@@ -336,13 +336,20 @@ class OutOfBandManager(BaseConnectionManager):
                 )
                 try:
                     await asyncio.wait_for(
-                        self.check_reuse_msg_state(handshake_reuse_msg._id),
+                        self.check_reuse_msg_state(
+                            reuse_msg_id=handshake_reuse_msg._id,
+                            session=self._session
+                        ),
                         30
                     )
                 except asyncio.TimeoutError:
                     # If no reuse_accepted or problem_report message was recieved within
                     # the 30s timeout then a new connection to be created
                     conn_rec = None
+                await self.remove_reuse_msg_record(
+                    reuse_msg_id=handshake_reuse_msg._id,
+                    session=self._session
+                )
             # The following cases requires a new connection to be created according to RFC
             elif not ((num_included_protocols == 0 and num_included_req_attachments >= 1) or
                       (num_included_protocols >= 1 and num_included_req_attachments >= 1)):
@@ -440,16 +447,28 @@ class OutOfBandManager(BaseConnectionManager):
     async def check_reuse_msg_state(
         self,
         reuse_msg_id: str,
+        session: ProfileSession,
     ):
         recieved = False
         while not recieved:
             reuse_msg_record = await self.find_reuse_msg_record(
                 reuse_msg_id=reuse_msg_id,
-                session=self._session
+                session=session
             )
             if not reuse_msg_record.state == ConnReuseMessageRecord.STATE_INITIAL:
                 recieved = True
         return
+
+    async def remove_reuse_msg_record(
+        self,
+        reuse_msg_id: str,
+        session: ProfileSession,
+    ):
+        reuse_msg_record = await self.find_reuse_msg_record(
+            reuse_msg_id=reuse_msg_id,
+            session=session,
+        )
+        await reuse_msg_record.delete_record(session=session)
 
     async def create_handshake_reuse_message(
         self,
@@ -618,7 +637,7 @@ class OutOfBandManager(BaseConnectionManager):
         try:
             invi_msg_id = problem_report._thread.pthid
             reuse_msg_id = problem_report._thread.thid
-            reuse_msg_record = self.find_reuse_msg_record(
+            reuse_msg_record = await self.find_reuse_msg_record(
                 session=self._session,
                 reuse_msg_id=reuse_msg_id,
             )
