@@ -323,8 +323,6 @@ class DemoAgent:
             result.extend(
                 [
                     "--open-mediation",
-                    "--auto-send-keylist-update-in-requests",
-                    "--auto-send-keylist-update-in-create-invitation",
                 ]
             )
 
