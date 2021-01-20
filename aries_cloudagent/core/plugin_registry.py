@@ -115,6 +115,13 @@ class PluginRegistry:
 
     def register_plugin(self, module_name: str) -> ModuleType:
         """Register a plugin module."""
+
+        '''
+        admin routes is general
+        if messagetype, definitions 
+            must be part of a protocol.
+        if dicom_type
+        '''
         if module_name in self._plugins:
             mod = self._plugins[module_name]
         else:
@@ -129,6 +136,11 @@ class PluginRegistry:
             if not mod:
                 LOGGER.error(f"Module doesn't exist: {module_name}")
                 return None
+
+            # Any plugin with a setup method is considered valid.
+            if hasattr(mod, "setup"):
+                self._plugins[module_name] = mod
+                return mod
 
             # Make an exception for non-protocol modules
             # that contain admin routes and for old-style protocol
