@@ -6,13 +6,13 @@ import logging
 from typing import Sequence, Tuple
 
 from ....connections.models.conn_record import ConnRecord
-from ....connections.models.connection_target import ConnectionTarget
 from ....connections.models.diddoc import (
     DIDDoc,
     PublicKey,
     PublicKeyType,
     Service,
 )
+from ...connections.v1_0.BaseConnectionManager import BaseConnectionManager
 from ....core.error import BaseError
 from ....core.profile import ProfileSession
 from ....messaging.decorators.attach_decorator import AttachDecorator
@@ -42,11 +42,8 @@ class DIDXManagerError(BaseError):
     """Connection error."""
 
 
-class DIDXManager:
+class DIDXManager(BaseConnectionManager):
     """Class for managing connections under RFC 23 (DID exchange)."""
-
-    RECORD_TYPE_DID_DOC = "did_doc"
-    RECORD_TYPE_DID_KEY = "did_key"
 
     def __init__(self, session: ProfileSession):
         """
@@ -57,6 +54,7 @@ class DIDXManager:
         """
         self._session = session
         self._logger = logging.getLogger(__name__)
+        super().__init__(self, self._session)
 
     @property
     def session(self) -> ProfileSession:
@@ -674,18 +672,6 @@ class DIDXManager:
 
         return did_doc
 
-    async def fetch_did_document(self, did: str) -> Tuple[DIDDoc, StorageRecord]:
-        """Retrieve a DID Document for a given DID.
-
-        Args:
-            did: The DID for which to search
-        """
-        storage = self._session.inject(BaseStorage)
-        record = await storage.find_record(
-            DIDXManager.RECORD_TYPE_DID_DOC, {"did": did}
-        )
-        return (DIDDoc.from_json(record.value), record)
-
     async def store_did_document(self, did_doc: DIDDoc):
         """Store a DID document.
 
@@ -698,7 +684,7 @@ class DIDXManager:
             stored_doc, record = await self.fetch_did_document(did_doc.did)
         except StorageNotFoundError:
             record = StorageRecord(
-                DIDXManager.RECORD_TYPE_DID_DOC,
+                self.RECORD_TYPE_DID_DOC,
                 did_doc.to_json(),
                 {"did": did_doc.did},
             )
@@ -718,7 +704,7 @@ class DIDXManager:
             key: The verkey to be added
         """
         record = StorageRecord(
-            DIDXManager.RECORD_TYPE_DID_KEY, key, {"did": did, "key": key}
+            self.RECORD_TYPE_DID_KEY, key, {"did": did, "key": key}
         )
         storage = self._session.inject(BaseStorage)
         await storage.add_record(record)
@@ -731,7 +717,7 @@ class DIDXManager:
         """
         storage = self._session.inject(BaseStorage)
         record = await storage.find_record(
-            DIDXManager.RECORD_TYPE_DID_KEY, {"key": key}
+            self.RECORD_TYPE_DID_KEY, {"key": key}
         )
         return record.tags["did"]
 
@@ -742,7 +728,7 @@ class DIDXManager:
             did: The DID for which to remove keys
         """
         storage = self._session.inject(BaseStorage)
-        await storage.delete_all_records(DIDXManager.RECORD_TYPE_DID_KEY, {"did": did})
+        await storage.delete_all_records(self.RECORD_TYPE_DID_KEY, {"did": did})
 
     async def verify_diddoc(
         self,
@@ -757,43 +743,3 @@ class DIDXManager:
             raise DIDXManagerError("DID doc attachment signature failed verification")
 
         return DIDDoc.deserialize(json.loads(signed_diddoc_bytes.decode()))
-
-    def diddoc_connection_targets(
-        self,
-        doc: DIDDoc,
-        sender_verkey: str,
-        their_label: str = None,
-    ) -> Sequence[ConnectionTarget]:
-        """Get a list of connection targets from a DID Document.
-
-        Args:
-            doc: The DID Document to create the target from
-            sender_verkey: The verkey we are using
-            their_label: The connection label they are using
-        """
-
-        if not doc:
-            raise DIDXManagerError("No DIDDoc provided for connection target")
-        if not doc.did:
-            raise DIDXManagerError("DIDDoc has no DID")
-        if not doc.service:
-            raise DIDXManagerError("No services defined by DIDDoc")
-
-        targets = []
-        for service in doc.service.values():
-            if service.recip_keys:
-                targets.append(
-                    ConnectionTarget(
-                        did=doc.did,
-                        endpoint=service.endpoint,
-                        label=their_label,
-                        recipient_keys=[
-                            key.value for key in (service.recip_keys or ())
-                        ],
-                        routing_keys=[
-                            key.value for key in (service.routing_keys or ())
-                        ],
-                        sender_key=sender_verkey,
-                    )
-                )
-        return targets

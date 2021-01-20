@@ -1,6 +1,7 @@
 """Classes to manage connections."""
 
 import logging
+import asyncio
 
 from typing import Mapping, Sequence, Optional
 
@@ -18,8 +19,16 @@ from ...present_proof.v1_0.message_types import PRESENTATION_REQUEST
 from ...present_proof.v1_0.models.presentation_exchange import V10PresentationExchange
 
 from .messages.invitation import InvitationMessage
+from .messages.reuse import HandshakeReuse
+from .messages.reuse_accept import HandshakeReuseAccept
+from .messages.problem_report import ProblemReportReason, ProblemReport
+from ...connections.v1_0.BaseConnectionManager import BaseConnectionManager
+from ....transport.inbound.receipt import MessageReceipt
+from ....storage.error import StorageNotFoundError
+
 from .messages.service import Service as ServiceMessage
 from .models.invitation import InvitationRecord
+from .models.reuse_msg import ConnReuseMessageRecord
 
 from ...connections.v1_0.manager import ConnectionManager
 from ...present_proof.v1_0.manager import PresentationManager
@@ -27,6 +36,7 @@ from ...present_proof.v1_0.manager import PresentationManager
 from ...connections.v1_0.messages.connection_invitation import ConnectionInvitation
 from ....ledger.base import BaseLedger
 from ....wallet.util import did_key_to_naked
+from ....messaging.responder import BaseResponder
 
 
 DIDX_INVITATION = "didexchange/1.0"
@@ -35,13 +45,15 @@ CONNECTION_INVITATION = "connections/1.0"
 
 class OutOfBandManagerError(BaseError):
     """Out of band error."""
+    originating_invi_msg_id = None
+    originating_reuse_msg_id = None
 
 
 class OutOfBandManagerNotImplementedError(BaseError):
     """Out of band error for unimplemented functionality."""
 
 
-class OutOfBandManager:
+class OutOfBandManager(BaseConnectionManager):
     """Class for managing out of band messages."""
 
     def __init__(self, session: ProfileSession):
@@ -53,6 +65,7 @@ class OutOfBandManager:
         """
         self._session = session
         self._logger = logging.getLogger(__name__)
+        super().__init__(self, self._session)
 
     @property
     def session(self) -> ProfileSession:
@@ -274,14 +287,15 @@ class OutOfBandManager:
             public_did = None
         else:
             # If it's in the did format, we need to convert to a full service block
-            # An existing connection can only be reused based on a public DID in an out-of-band message.
+            # An existing connection can only be reused based on a public DID 
+            # in an out-of-band message.
             # https://github.com/hyperledger/aries-rfcs/tree/master/features/0434-outofband
             service_did = invi_msg.service_dids[0]
             async with ledger:
                 verkey = await ledger.get_key_for_did(service_did)
                 did_key = naked_to_did_key(verkey)
                 endpoint = await ledger.get_endpoint_for_did(service_did)
-            public_did = service_did
+            public_did = service_did.split(":")[2]
             service = ServiceMessage.deserialize(
                 {
                     "id": "#inline",
@@ -301,27 +315,40 @@ class OutOfBandManager:
         # Only if started by an invitee with Public DID
         conn_rec = None
         if public_did is not None:
-            # If only handshake_protocols are included or
-            # if only request~attach is included
-            # Look for an exitsting connection [state: active]
-            if (len(unq_handshake_protos) >= 1 and len(invi_msg.request_attach) == 0):
-                # TODO: Message Reuse Handler
-                pass
-            elif ((len(unq_handshake_protos) == 0 and
-                  len(invi_msg.request_attach) >= 1) or
-                  (len(unq_handshake_protos) >= 1 and
-                  len(invi_msg.request_attach) >= 1)):
-                tag_filter = {}
-                post_filter = {}
-                post_filter["state"] = "active"
-                post_filter["their_public_did"] = public_did
-                conn_rec = await self.find_existing_connection(
-                    tag_filter=tag_filter,
-                    post_filter=post_filter
+            # Inviter has a public DID
+            # Looking for an existing connection
+            tag_filter = {}
+            post_filter = {}
+            post_filter["state"] = "active"
+            post_filter["their_public_did"] = public_did
+            conn_rec = await self.find_existing_connection(
+                tag_filter=tag_filter,
+                post_filter=post_filter
+            )
+        if conn_rec is not None:
+            num_included_protocols = len(unq_handshake_protos)
+            num_included_req_attachments = len(invi_msg.request_attach)
+            if num_included_protocols >= 1 and num_included_req_attachments == 0:
+                handshake_reuse_msg = await self.create_handshake_reuse_message(
+                    invi_msg=invi_msg,
+                    service=service,
+                    connection=conn_rec,
                 )
-
-        # Create new connection
+                try:
+                    await asyncio.wait_for(
+                        self.check_reuse_msg_state(handshake_reuse_msg._id),
+                        30
+                    )
+                except asyncio.TimeoutError:
+                    # If no reuse_accepted or problem_report message was recieved within
+                    # the 30s timeout then a new connection to be created
+                    conn_rec = None
+            # The following cases requires a new connection to be created according to RFC
+            elif not ((num_included_protocols == 0 and num_included_req_attachments >= 1) or
+                      (num_included_protocols >= 1 and num_included_req_attachments >= 1)):
+                conn_rec = None
         if conn_rec is None:
+            # Create a new connection
             for proto in unq_handshake_protos:
                 if proto == DIDX_INVITATION:
                     # Transform back to 'naked' verkey
@@ -398,3 +425,209 @@ class OutOfBandManager:
         else:
             conn_rec = conn_records[0]
         return conn_rec
+
+    async def find_reuse_msg_record(
+        self,
+        reuse_msg_id: str,
+        session: ProfileSession,
+    ) -> ConnReuseMessageRecord:
+        reuse_msg_record = await ConnReuseMessageRecord.retrieve_by_id(
+            session,
+            reuse_msg_id,
+        )
+        return reuse_msg_record
+
+    async def check_reuse_msg_state(
+        self,
+        reuse_msg_id: str,
+    ):
+        recieved = False
+        while not recieved:
+            reuse_msg_record = await self.find_reuse_msg_record(
+                reuse_msg_id=reuse_msg_id,
+                session=self._session
+            )
+            if not reuse_msg_record.state == ConnReuseMessageRecord.STATE_INITIAL:
+                recieved = True
+        return
+
+    async def create_handshake_reuse_message(
+        self,
+        invi_msg: InvitationMessage,
+        service: ServiceMessage,
+        conn_record: ConnRecord,
+    ) -> HandshakeReuse:
+        """
+        Create and Send a Handshake Reuse message under RFC 0434.
+
+        Args:
+            invi_msg: OOB Invitation Message
+            service: Service block extracted from the OOB invitation
+
+        Returns:
+
+        Raises:
+            OutOfBandManagerError: If there is an issue creating or
+            sending the OOB invitation
+        """
+        try:
+            # ID of Out-of-Band invitation to use as a pthid
+            pthid = invi_msg._decorators._id
+            reuse_msg = HandshakeReuse()
+            thid = reuse_msg._id
+            reuse_msg.assign_thread_id(thid=thid, pthid=pthid)
+            connection_targets = self.fetch_connection_targets(connection=conn_record)
+            responder = self._session.inject(BaseResponder, required=False)
+            if responder:
+                await responder.send(
+                   message=reuse_msg,
+                   target_list=connection_targets,
+                )
+
+            reuse_msg_record = ConnReuseMessageRecord(
+                state=ConnReuseMessageRecord.STATE_INITIAL,
+                invi_msg_id=invi_msg._decorators._id,
+                conn_rec_id=conn_record._id,
+                conn_reuse_msg_id=reuse_msg._id
+            )
+            await reuse_msg_record.save(self._session, reason="Created new reuse message record")
+            return reuse_msg
+        except Exception as err:
+            raise OutOfBandManagerError(f"Error on creating and sending a handshake reuse message: {err}")
+
+    async def receive_reuse_message(
+        self,
+        reuse_msg: HandshakeReuse,
+        reciept: MessageReceipt,
+    ):
+        """
+        Recieve and process a HandshakeReuse message under RFC 0434.
+
+        Process a `HandshakeReuse` message by looking up
+        the connection records using the MessageReciept sender DID.
+
+        Args:
+            reuse_msg: The `HandshakeReuse` to process
+            receipt: The message receipt
+
+        Returns:
+
+        Raises:
+            OutOfBandManagerError: If the existing connection is not active
+            or the connection does not exists
+        """
+        try:
+            invi_msg_id = reuse_msg._thread.pthid
+            reuse_msg_id = reuse_msg._thread.thid
+            tag_filter = {}
+            post_filter = {}
+            post_filter["state"] = "active"
+            tag_filter["their_did"] = reciept.sender_did
+            conn_record = await self.find_existing_connection(
+                tag_filter=tag_filter,
+                post_filter=post_filter
+            )
+            if conn_record is not None:
+                reuse_accept_msg = HandshakeReuseAccept()
+                reuse_accept_msg.assign_thread_id(thid=reuse_msg_id, pthid=invi_msg_id)
+                connection_targets = self.fetch_connection_targets(connection=conn_record)
+                responder = self._session.inject(BaseResponder, required=False)
+                if responder:
+                    await responder.send(
+                        message=reuse_accept_msg,
+                        target_list=connection_targets,
+                    )
+            else:
+                raise OutOfBandManagerError(
+                    (
+                        f"No active connection found for OOB Invitee {reciept.sender_did}"
+                    ),
+                    error_code=ProblemReportReason.EXISTING_CONNECTION_NOT_ACTIVE,
+                    originating_invi_msg_id=invi_msg_id,
+                    originating_reuse_msg_id=reuse_msg_id,
+                )
+        except StorageNotFoundError:
+            raise OutOfBandManagerError(
+                (
+                    f"No existing ConnRecord found for OOB Invitee {reciept.sender_did}"
+                ),
+                error_code=ProblemReportReason.EXISTING_CONNECTION_DOES_NOT_EXISTS,
+                originating_invi_msg_id=invi_msg_id,
+                originating_reuse_msg_id=reuse_msg_id,
+            )
+
+    async def receive_reuse_accepted_message(
+        self,
+        reuse_accepted_msg: HandshakeReuseAccept,
+        reciept: MessageReceipt,
+    ):
+        """
+        Recieve and process a HandshakeReuseAccept message under RFC 0434.
+
+        Process a `HandshakeReuseAccept` message by updating the state of
+        ConnReuseMessageRecord to STATE_ACCEPTED.
+
+        Args:
+            reuse_accepted_msg: The `HandshakeReuseAccept` to process
+            receipt: The message receipt
+
+        Returns:
+
+        Raises:
+            OutOfBandManagerError: if there is an error in processing the
+            HandshakeReuseAccept message
+        """
+        try:
+            invi_msg_id = reuse_accepted_msg._thread.pthid
+            reuse_msg_id = reuse_accepted_msg._thread.thid
+            reuse_msg_record = await self.find_reuse_msg_record(
+                session=self._session,
+                reuse_msg_id=reuse_msg_id,
+            )
+            assert invi_msg_id == reuse_msg_record.invi_msg_id
+            reuse_msg_record.state = ConnReuseMessageRecord.STATE_ACCEPTED
+            await reuse_msg_record.save(self._session, reason="Reuse message accepted by Inviter")
+        except StorageNotFoundError as e:
+            raise OutOfBandManagerError(
+                (
+                    f"Error processing reuse accepted message for OOB invitation {invi_msg_id}, {e}"
+                )            
+            )
+
+    async def receive_problem_report(
+        self,
+        problem_report: ProblemReport,
+        reciept: MessageReceipt,
+    ):
+        """
+        Recieve and process a ProblemReport message from the inviter to invitee.
+
+        Process a `ProblemReport` message by updating the state of
+        ConnReuseMessageRecord to STATE_NOT_ACCEPTED.
+
+        Args:
+            problem_report: The `ProblemReport` to process
+            receipt: The message receipt
+
+        Returns:
+
+        Raises:
+            OutOfBandManagerError: if there is an error in processing the
+            HandshakeReuseAccept message
+        """
+        try:
+            invi_msg_id = problem_report._thread.pthid
+            reuse_msg_id = problem_report._thread.thid
+            reuse_msg_record = self.find_reuse_msg_record(
+                session=self._session,
+                reuse_msg_id=reuse_msg_id,
+            )
+            assert invi_msg_id == reuse_msg_record.invi_msg_id
+            reuse_msg_record.state = ConnReuseMessageRecord.STATE_NOT_ACCEPTED
+            await reuse_msg_record.save(self._session, reason="Recieved problem report message from inviter")
+        except StorageNotFoundError:
+            raise OutOfBandManagerError(
+                (
+                    f"Error processing problem report message for OOB invitation {invi_msg_id}"
+                ) 
+            )

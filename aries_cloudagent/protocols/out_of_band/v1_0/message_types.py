@@ -9,9 +9,17 @@ SPEC_URI = (
 
 # Message types
 INVITATION = "out-of-band/1.0/invitation"
+MESSAGE_REUSE = "out-of-band/1.0/handshake-reuse"
+MESSAGE_REUSE_ACCEPT = "out-of-band/1.0/handshake-reuse-accepted"
+PROBLEM_REPORT = "out-of-band/1.0/problem_report"
 
 PROTOCOL_PACKAGE = "aries_cloudagent.protocols.out_of_band.v1_0"
 
 MESSAGE_TYPES = DIDCommPrefix.qualify_all(
-    {INVITATION: f"{PROTOCOL_PACKAGE}.messages.invitation.Invitation"}
+    {
+        INVITATION: f"{PROTOCOL_PACKAGE}.messages.invitation.Invitation",
+        MESSAGE_REUSE: f"{PROTOCOL_PACKAGE}.messages.reuse.Reuse",
+        MESSAGE_REUSE_ACCEPT: f"{PROTOCOL_PACKAGE}.messages.reuse_accept.Reuse_Accept",
+        PROBLEM_REPORT: f"{PROTOCOL_PACKAGE}.messages.problem_report.ProblemReport",
+    }
 )
