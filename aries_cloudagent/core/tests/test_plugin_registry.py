@@ -460,7 +460,7 @@ class TestPluginRegistry(AsyncTestCase):
                 None,  # definition without versions attr
             ]
             assert self.registry.register_plugin("dummy") is None
-    
+
     async def test_register_definitions_malformed(self):
         with async_mock.patch.object(
             ClassLoader, "load_module", async_mock.MagicMock()
