@@ -930,29 +930,44 @@ class MediationGroup(ArgumentGroup):
                 forward messages on behalf of the recipient. See aries-rfc:0211.",
         )
         parser.add_argument(
-            "--auto-send-keylist-update-in-requests",
-            action="store_true",
-            env_var="ACAPY_AUTO_SEND_KEYLIST_UPDATE_IN_REQUESTS",
-            help="Automatically updated mediator with newly created keys."
-            " keylists. Default: false.",
+            "--mediator-invitation",
+            type=str,
+            metavar="<invite URL to mediator>",
+            env_var="ACAPY_MEDIATION_INVITATION",
+            help="Connect to mediator through provided connection invitation\
+            and send mediation request and set as default mediator.",
         )
         parser.add_argument(
-            "--auto-send-keylist-update-in-create-invitation",
+            "--default-mediator-id",
+            type=str,
+            metavar="<mediation id>",
+            env_var="ACAPY_DEFAULT_MEDIATION_ID",
+            help="Set the default mediator by ID",
+        )
+        parser.add_argument(
+            "--clear-default-mediator",
             action="store_true",
-            env_var="ACAPY_AUTO_SEND_KEYLIST_UPDATE_IN_CREATE_INVITATION",
-            help="Automatically updated mediator with newly created keys."
-            " keylists. Default: false.",
+            env_var="ACAPY_CLEAR_DEFAULT_MEDIATOR",
+            help="Clear the stored default mediator.",
         )
 
     def get_settings(self, args: Namespace):
         """Extract mediation settings."""
         settings = {}
-        if args.auto_send_keylist_update_in_requests:
-            settings["mediation.auto_send_keylist_update_in_requests"] = True
-        if args.auto_send_keylist_update_in_create_invitation:
-            settings["mediation.auto_send_keylist_update_in_create_invitation"] = True
         if args.open_mediation:
             settings["mediation.open"] = True
+        if args.mediator_invitation:
+            settings["mediation.invite"] = args.mediator_invitation
+        if args.default_mediator_id:
+            settings["mediation.default_id"] = args.default_mediator_id
+        if args.clear_default_mediator:
+            settings["mediation.clear"] = True
+
+        if args.clear_default_mediator and args.default_mediator_id:
+            raise ArgsParseError(
+                "Cannot both set and clear mediation at the same time."
+            )
+
         return settings
 
 

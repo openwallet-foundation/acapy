@@ -1,3 +1,4 @@
+from unittest.mock import call
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
@@ -18,7 +19,9 @@ from .....wallet.error import WalletNotFoundError
 from .....wallet.in_memory import InMemoryWallet
 from .....wallet.util import naked_to_did_key
 from ....coordinate_mediation.v1_0.models.mediation_record import MediationRecord
+from ....coordinate_mediation.v1_0.manager import MediationManager
 from ....coordinate_mediation.v1_0.messages.keylist_update import KeylistUpdate
+from ....coordinate_mediation.v1_0.messages.mediate_request import MediationRequest
 from ....coordinate_mediation.v1_0.messages.inner.keylist_update_rule import (
     KeylistUpdateRule,
 )
@@ -153,7 +156,7 @@ class TestConnectionManager(AsyncTestCase):
                 self.test_verkey, None
             )
             await self.manager.create_invitation()
-            self.multitenant_mgr.add_wallet_route.assert_called_once_with(
+            self.multitenant_mgr.add_key.assert_called_once_with(
                 "test_wallet", self.test_verkey
             )
 
@@ -173,7 +176,7 @@ class TestConnectionManager(AsyncTestCase):
                 self.test_did, self.test_verkey, None
             )
             await self.manager.create_invitation(public=True)
-            self.multitenant_mgr.add_wallet_route.assert_called_once_with(
+            self.multitenant_mgr.add_key.assert_called_once_with(
                 "test_wallet", self.test_verkey, skip_if_exists=True
             )
 
@@ -290,189 +293,6 @@ class TestConnectionManager(AsyncTestCase):
         assert new_conn_rec != connect_record
         assert await new_conn_rec.metadata_get_all(self.session) == {"test": "value"}
 
-    async def test_create_invitation_mediation_id_kwargs(self):
-        mediation_record = MediationRecord(
-            role=MediationRecord.ROLE_CLIENT,
-            state=MediationRecord.STATE_GRANTED,
-            connection_id=self.test_mediator_conn_id,
-            routing_keys=self.test_mediator_routing_keys,
-            endpoint=self.test_mediator_endpoint,
-        )
-        await mediation_record.save(self.session)
-        self.session.settings[
-            "mediation.auto_send_keylist_update_in_create_invitation"
-        ] = True
-        record, invite = await self.manager.create_invitation(
-            mediation_id=mediation_record.mediation_id
-        )
-        assert invite.routing_keys == self.test_mediator_routing_keys
-        assert invite.endpoint == self.test_mediator_endpoint
-        assert len(self.responder.messages) == 1
-        message, used_kwargs = self.responder.messages[0]
-        assert isinstance(message, KeylistUpdate)
-        assert len(message.updates) == 1
-        assert message.updates[0].recipient_key == invite.recipient_keys[0]
-        assert (
-            "connection_id" in used_kwargs
-            and used_kwargs["connection_id"] == self.test_mediator_conn_id
-        )
-
-        assert await record.metadata_get(self.session, "mediation") == {
-            "id": mediation_record.mediation_id
-        }
-
-    async def test_create_invitation_mediation_id_args(self):
-        mediation_record = MediationRecord(
-            role=MediationRecord.ROLE_CLIENT,
-            state=MediationRecord.STATE_GRANTED,
-            connection_id=self.test_mediator_conn_id,
-            routing_keys=self.test_mediator_routing_keys,
-            endpoint=self.test_mediator_endpoint,
-        )
-        await mediation_record.save(self.session)
-        self.session.settings[
-            "mediation.auto_send_keylist_update_in_create_invitation"
-        ] = True
-        record, invite = await self.manager.create_invitation(
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            mediation_record.mediation_id,
-        )
-        assert invite.routing_keys == self.test_mediator_routing_keys
-        assert invite.endpoint == self.test_mediator_endpoint
-        assert len(self.responder.messages) == 1
-        message, used_kwargs = self.responder.messages[0]
-        assert isinstance(message, KeylistUpdate)
-        assert len(message.updates) == 1
-        assert message.updates[0].recipient_key == invite.recipient_keys[0]
-        assert (
-            "connection_id" in used_kwargs
-            and used_kwargs["connection_id"] == self.test_mediator_conn_id
-        )
-
-        assert await record.metadata_get(self.session, "mediation") == {
-            "id": mediation_record.mediation_id
-        }
-
-    async def test_create_invitation_mediation_id_partial_args(self):
-        mediation_record = MediationRecord(
-            role=MediationRecord.ROLE_CLIENT,
-            state=MediationRecord.STATE_GRANTED,
-            connection_id=self.test_mediator_conn_id,
-            routing_keys=self.test_mediator_routing_keys,
-            endpoint=self.test_mediator_endpoint,
-        )
-        await mediation_record.save(self.session)
-        self.session.settings[
-            "mediation.auto_send_keylist_update_in_create_invitation"
-        ] = True
-        record, invite = await self.manager.create_invitation(
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            mediation_record.mediation_id,
-        )
-        assert invite.routing_keys == self.test_mediator_routing_keys
-        assert invite.endpoint == self.test_mediator_endpoint
-        assert len(self.responder.messages) == 1
-        message, used_kwargs = self.responder.messages[0]
-        assert isinstance(message, KeylistUpdate)
-        assert len(message.updates) == 1
-        assert message.updates[0].recipient_key == invite.recipient_keys[0]
-        assert (
-            "connection_id" in used_kwargs
-            and used_kwargs["connection_id"] == self.test_mediator_conn_id
-        )
-
-        assert await record.metadata_get(self.session, "mediation") == {
-            "id": mediation_record.mediation_id
-        }
-
-    async def test_create_invitation_bad_mediation_id_kwargs(self):
-        with self.assertRaises(StorageNotFoundError):
-            _record, _invite = await self.manager.create_invitation(
-                mediation_id="not-a-mediation-id"
-            )
-
-    async def test_create_invitation_bad_mediation_id_args(self):
-        with self.assertRaises(StorageNotFoundError):
-            _record, _invite = await self.manager.create_invitation(
-                None,
-                None,
-                None,
-                None,
-                None,
-                None,
-                None,
-                None,
-                None,
-                "not-a-mediation-id",
-            )
-
-    async def test_create_invitation_mediation_not_granted_kwargs(self):
-        mediation_record = MediationRecord(
-            role=MediationRecord.ROLE_CLIENT,
-            state=MediationRecord.STATE_DENIED,
-            connection_id=self.test_mediator_conn_id,
-            routing_keys=self.test_mediator_routing_keys,
-            endpoint=self.test_mediator_endpoint,
-        )
-        await mediation_record.save(self.session)
-        with self.assertRaises(ConnectionManagerError):
-            await self.manager.create_invitation(
-                mediation_id=mediation_record.mediation_id
-            )
-
-        mediation_record.state = MediationRecord.STATE_REQUEST
-        await mediation_record.save(self.session)
-        with self.assertRaises(ConnectionManagerError):
-            await self.manager.create_invitation(
-                mediation_id=mediation_record.mediation_id
-            )
-
-    async def test_create_invitation_mediation_not_granted_args(self):
-        mediation_record = MediationRecord(
-            role=MediationRecord.ROLE_CLIENT,
-            state=MediationRecord.STATE_DENIED,
-            connection_id=self.test_mediator_conn_id,
-            routing_keys=self.test_mediator_routing_keys,
-            endpoint=self.test_mediator_endpoint,
-        )
-        await mediation_record.save(self.session)
-        with self.assertRaises(ConnectionManagerError):
-            await self.manager.create_invitation(
-                mediation_id=mediation_record.mediation_id
-            )
-
-        mediation_record.state = MediationRecord.STATE_REQUEST
-        await mediation_record.save(self.session)
-        with self.assertRaises(ConnectionManagerError):
-            await self.manager.create_invitation(
-                None,
-                None,
-                None,
-                None,
-                None,
-                None,
-                None,
-                None,
-                None,
-                mediation_record.mediation_id,
-            )
-
     async def test_create_invitation_mediation_overwrites_routing_and_endpoint(self):
         mediation_record = MediationRecord(
             role=MediationRecord.ROLE_CLIENT,
@@ -482,16 +302,40 @@ class TestConnectionManager(AsyncTestCase):
             endpoint=self.test_mediator_endpoint,
         )
         await mediation_record.save(self.session)
-        self.session.settings[
-            "mediation.auto_send_keylist_update_in_create_invitation"
-        ] = True
-        _, invite = await self.manager.create_invitation(
-            routing_keys=[self.test_verkey],
-            my_endpoint=self.test_endpoint,
-            mediation_id=mediation_record.mediation_id,
+        with async_mock.patch.object(
+            MediationManager,
+            "get_default_mediator_id",
+        ) as mock_get_default_mediator:
+            _, invite = await self.manager.create_invitation(
+                routing_keys=[self.test_verkey],
+                my_endpoint=self.test_endpoint,
+                mediation_id=mediation_record.mediation_id,
+            )
+            assert invite.routing_keys == self.test_mediator_routing_keys
+            assert invite.endpoint == self.test_mediator_endpoint
+            mock_get_default_mediator.assert_not_called()
+
+    async def test_create_invitation_mediation_using_default(self):
+        mediation_record = MediationRecord(
+            role=MediationRecord.ROLE_CLIENT,
+            state=MediationRecord.STATE_GRANTED,
+            connection_id=self.test_mediator_conn_id,
+            routing_keys=self.test_mediator_routing_keys,
+            endpoint=self.test_mediator_endpoint,
         )
-        assert invite.routing_keys == self.test_mediator_routing_keys
-        assert invite.endpoint == self.test_mediator_endpoint
+        await mediation_record.save(self.session)
+        with async_mock.patch.object(
+            MediationManager,
+            "get_default_mediator_id",
+            async_mock.CoroutineMock(return_value=mediation_record.mediation_id),
+        ) as mock_get_default_mediator:
+            _, invite = await self.manager.create_invitation(
+                routing_keys=[self.test_verkey],
+                my_endpoint=self.test_endpoint,
+            )
+            assert invite.routing_keys == self.test_mediator_routing_keys
+            assert invite.endpoint == self.test_mediator_endpoint
+            mock_get_default_mediator.assert_called_once()
 
     async def test_receive_invitation(self):
         (_, connect_invite) = await self.manager.create_invitation(
@@ -633,7 +477,7 @@ class TestConnectionManager(AsyncTestCase):
                     alias="Bob",
                 )
             )
-            self.multitenant_mgr.add_wallet_route.assert_called_once_with(
+            self.multitenant_mgr.add_key.assert_called_once_with(
                 "test_wallet", self.test_verkey
             )
 
@@ -657,13 +501,13 @@ class TestConnectionManager(AsyncTestCase):
         # Ensure the path with new did creation is hit
         record.my_did = None
 
-        self.session.settings["mediation.auto_send_keylist_update_in_requests"] = True
-
         with async_mock.patch.object(
             ConnectionManager, "create_did_document", autospec=True
         ) as create_did_document, async_mock.patch.object(
             self.session.wallet, "create_local_did"
-        ) as create_local_did:
+        ) as create_local_did, async_mock.patch.object(
+            MediationManager, "get_default_mediator_id"
+        ) as mock_get_default_mediator:
 
             did_info = DIDInfo(did=self.test_did, verkey=self.test_verkey, metadata={})
             create_local_did.return_value = did_info
@@ -678,8 +522,63 @@ class TestConnectionManager(AsyncTestCase):
                 did_info,
                 None,
                 [self.test_endpoint],
-                mediation_record=mediation_record,
+                mediation_records=[mediation_record],
             )
+            mock_get_default_mediator.assert_not_called()
+
+        assert len(self.responder.messages) == 1
+        message, used_kwargs = self.responder.messages[0]
+        assert isinstance(message, KeylistUpdate)
+        assert (
+            "connection_id" in used_kwargs
+            and used_kwargs["connection_id"] == self.test_mediator_conn_id
+        )
+
+    async def test_create_request_default_mediator(self):
+        mediation_record = MediationRecord(
+            role=MediationRecord.ROLE_CLIENT,
+            state=MediationRecord.STATE_GRANTED,
+            connection_id=self.test_mediator_conn_id,
+            routing_keys=self.test_mediator_routing_keys,
+            endpoint=self.test_mediator_endpoint,
+        )
+        await mediation_record.save(self.session)
+
+        record = ConnRecord(
+            invitation_key=self.test_verkey,
+            their_label="Hello",
+            their_role=ConnRecord.Role.RESPONDER.rfc160,
+            alias="Bob",
+        )
+
+        # Ensure the path with new did creation is hit
+        record.my_did = None
+
+        with async_mock.patch.object(
+            ConnectionManager, "create_did_document", autospec=True
+        ) as create_did_document, async_mock.patch.object(
+            self.session.wallet, "create_local_did"
+        ) as create_local_did, async_mock.patch.object(
+            MediationManager,
+            "get_default_mediator_id",
+            async_mock.CoroutineMock(return_value=mediation_record.mediation_id),
+        ) as mock_get_default_mediator:
+
+            did_info = DIDInfo(did=self.test_did, verkey=self.test_verkey, metadata={})
+            create_local_did.return_value = did_info
+            await self.manager.create_request(
+                record,
+                my_endpoint=self.test_endpoint,
+            )
+            create_local_did.assert_called_once_with()
+            create_did_document.assert_called_once_with(
+                self.manager,
+                did_info,
+                None,
+                [self.test_endpoint],
+                mediation_records=[mediation_record],
+            )
+            mock_get_default_mediator.assert_called_once()
 
         assert len(self.responder.messages) == 1
         message, used_kwargs = self.responder.messages[0]
@@ -730,6 +629,8 @@ class TestConnectionManager(AsyncTestCase):
 
         self.context.update_settings({"public_invites": True})
         with async_mock.patch.object(
+            ConnRecord, "connection_id", autospec=True
+        ), async_mock.patch.object(
             ConnRecord, "save", autospec=True
         ) as mock_conn_rec_save, async_mock.patch.object(
             ConnRecord, "attach_request", autospec=True
@@ -782,7 +683,7 @@ class TestConnectionManager(AsyncTestCase):
             )
             await self.manager.receive_request(mock_request, receipt)
 
-            self.multitenant_mgr.add_wallet_route.assert_called_once_with(
+            self.multitenant_mgr.add_key.assert_called_once_with(
                 "test_wallet", new_info.verkey
             )
 
@@ -824,7 +725,7 @@ class TestConnectionManager(AsyncTestCase):
             )
             await self.manager.receive_request(mock_request, receipt)
 
-            self.multitenant_mgr.add_wallet_route.assert_called_once_with(
+            self.multitenant_mgr.add_key.assert_called_once_with(
                 "test_wallet", new_info.verkey
             )
 
@@ -954,8 +855,6 @@ class TestConnectionManager(AsyncTestCase):
         record.accept = ConnRecord.ACCEPT_MANUAL
         await record.save(self.session)
 
-        self.session.settings["mediation.auto_send_keylist_update_in_requests"] = True
-
         with async_mock.patch.object(
             ConnRecord, "save", autospec=True
         ) as mock_conn_rec_save, async_mock.patch.object(
@@ -987,7 +886,6 @@ class TestConnectionManager(AsyncTestCase):
         receipt = MessageReceipt(
             recipient_did=self.test_did, recipient_did_public=False
         )
-        self.session.settings["mediation.auto_send_keylist_update_in_requests"] = True
         record, invite = await self.manager.create_invitation()
         with async_mock.patch.object(
             ConnRecord, "save", autospec=True
@@ -1015,7 +913,6 @@ class TestConnectionManager(AsyncTestCase):
         receipt = MessageReceipt(
             recipient_did=self.test_did, recipient_did_public=False
         )
-        self.session.settings["mediation.auto_send_keylist_update_in_requests"] = True
         record, invite = await self.manager.create_invitation()
 
         mediation_record = MediationRecord(
@@ -1060,7 +957,9 @@ class TestConnectionManager(AsyncTestCase):
             ConnRecord, "save", autospec=True
         ) as mock_conn_save, async_mock.patch.object(
             ConnectionResponse, "sign_field", autospec=True
-        ) as mock_sign:
+        ) as mock_sign, async_mock.patch.object(
+            conn_rec, "metadata_get", async_mock.CoroutineMock()
+        ):
             await self.manager.create_response(conn_rec, "http://10.20.30.40:5060/")
 
     async def test_create_response_multitenant(self):
@@ -1083,7 +982,7 @@ class TestConnectionManager(AsyncTestCase):
                     state=ConnRecord.State.REQUEST,
                 )
             )
-            self.multitenant_mgr.add_wallet_route.assert_called_once_with(
+            self.multitenant_mgr.add_key.assert_called_once_with(
                 "test_wallet", self.test_verkey
             )
 
@@ -1122,7 +1021,9 @@ class TestConnectionManager(AsyncTestCase):
             ConnRecord, "save", autospec=True
         ) as mock_conn_save, async_mock.patch.object(
             ConnectionResponse, "sign_field", autospec=True
-        ) as mock_sign:
+        ) as mock_sign, async_mock.patch.object(
+            conn_rec, "metadata_get", async_mock.CoroutineMock(return_value=False)
+        ):
             await self.manager.create_response(
                 conn_rec, mediation_id=mediation_record.mediation_id
             )
@@ -1169,6 +1070,30 @@ class TestConnectionManager(AsyncTestCase):
                     record, mediation_id=mediation_record.mediation_id
                 )
 
+    async def test_create_response_auto_send_mediation_request(self):
+        conn_rec = ConnRecord(
+            state=ConnRecord.State.REQUEST.rfc160,
+        )
+        conn_rec.my_did = None
+
+        with async_mock.patch.object(
+            ConnRecord, "log_state", autospec=True
+        ) as mock_conn_log_state, async_mock.patch.object(
+            ConnRecord, "retrieve_request", autospec=True
+        ) as mock_conn_retrieve_request, async_mock.patch.object(
+            ConnRecord, "save", autospec=True
+        ) as mock_conn_save, async_mock.patch.object(
+            ConnectionResponse, "sign_field", autospec=True
+        ) as mock_sign, async_mock.patch.object(
+            conn_rec, "metadata_get", async_mock.CoroutineMock(return_value=True)
+        ):
+            await self.manager.create_response(conn_rec)
+
+        assert len(self.responder.messages) == 1
+        message, target = self.responder.messages[0]
+        assert isinstance(message, MediationRequest)
+        assert target["connection_id"] == conn_rec.connection_id
+
     async def test_accept_response_find_by_thread_id(self):
         mock_response = async_mock.MagicMock()
         mock_response._thread = async_mock.MagicMock()
@@ -1183,12 +1108,16 @@ class TestConnectionManager(AsyncTestCase):
             ConnRecord, "save", autospec=True
         ) as mock_conn_rec_save, async_mock.patch.object(
             ConnRecord, "retrieve_by_request_id", async_mock.CoroutineMock()
-        ) as mock_conn_retrieve_by_req_id:
+        ) as mock_conn_retrieve_by_req_id, async_mock.patch.object(
+            MediationManager, "get_default_mediator_id", async_mock.CoroutineMock()
+        ):
             mock_conn_retrieve_by_req_id.return_value = async_mock.MagicMock(
                 did=self.test_target_did,
                 did_doc=async_mock.MagicMock(did=self.test_target_did),
                 state=ConnRecord.State.RESPONSE.rfc23,
                 save=async_mock.CoroutineMock(),
+                metadata_get=async_mock.CoroutineMock(),
+                connection_id="test-conn-id",
             )
             conn_rec = await self.manager.accept_response(mock_response, receipt)
             assert conn_rec.their_did == self.test_target_did
@@ -1210,18 +1139,24 @@ class TestConnectionManager(AsyncTestCase):
             ConnRecord, "retrieve_by_request_id", async_mock.CoroutineMock()
         ) as mock_conn_retrieve_by_req_id, async_mock.patch.object(
             ConnRecord, "retrieve_by_did", async_mock.CoroutineMock()
-        ) as mock_conn_retrieve_by_did:
+        ) as mock_conn_retrieve_by_did, async_mock.patch.object(
+            MediationManager, "get_default_mediator_id", async_mock.CoroutineMock()
+        ):
             mock_conn_retrieve_by_req_id.side_effect = StorageNotFoundError()
             mock_conn_retrieve_by_did.return_value = async_mock.MagicMock(
                 did=self.test_target_did,
                 did_doc=async_mock.MagicMock(did=self.test_target_did),
                 state=ConnRecord.State.RESPONSE.rfc23,
                 save=async_mock.CoroutineMock(),
+                metadata_get=async_mock.CoroutineMock(return_value=False),
+                connection_id="test-conn-id",
             )
 
             conn_rec = await self.manager.accept_response(mock_response, receipt)
             assert conn_rec.their_did == self.test_target_did
             assert ConnRecord.State.get(conn_rec.state) is ConnRecord.State.RESPONSE
+
+            assert not self.responder.messages
 
     async def test_accept_response_not_found_by_thread_id_nor_receipt_sender_did(self):
         mock_response = async_mock.MagicMock()
@@ -1315,6 +1250,40 @@ class TestConnectionManager(AsyncTestCase):
             with self.assertRaises(ConnectionManagerError):
                 await self.manager.accept_response(mock_response, receipt)
 
+    async def test_accept_response_auto_send_mediation_request(self):
+        mock_response = async_mock.MagicMock()
+        mock_response._thread = async_mock.MagicMock()
+        mock_response.connection = async_mock.MagicMock()
+        mock_response.connection.did = self.test_target_did
+        mock_response.connection.did_doc = async_mock.MagicMock()
+        mock_response.connection.did_doc.did = self.test_target_did
+
+        receipt = MessageReceipt(recipient_did=self.test_did, recipient_did_public=True)
+
+        with async_mock.patch.object(
+            ConnRecord, "save", autospec=True
+        ) as mock_conn_rec_save, async_mock.patch.object(
+            ConnRecord, "retrieve_by_request_id", async_mock.CoroutineMock()
+        ) as mock_conn_retrieve_by_req_id, async_mock.patch.object(
+            MediationManager, "get_default_mediator_id", async_mock.CoroutineMock()
+        ):
+            mock_conn_retrieve_by_req_id.return_value = async_mock.MagicMock(
+                did=self.test_target_did,
+                did_doc=async_mock.MagicMock(did=self.test_target_did),
+                state=ConnRecord.State.RESPONSE.rfc23,
+                save=async_mock.CoroutineMock(),
+                metadata_get=async_mock.CoroutineMock(return_value=True),
+                connection_id="test-conn-id",
+            )
+            conn_rec = await self.manager.accept_response(mock_response, receipt)
+            assert conn_rec.their_did == self.test_target_did
+            assert ConnRecord.State.get(conn_rec.state) is ConnRecord.State.RESPONSE
+
+            assert len(self.responder.messages) == 1
+            message, target = self.responder.messages[0]
+            assert isinstance(message, MediationRequest)
+            assert target["connection_id"] == conn_rec.connection_id
+
     async def test_create_static_connection(self):
         with async_mock.patch.object(
             ConnRecord, "save", autospec=True
@@ -1334,6 +1303,8 @@ class TestConnectionManager(AsyncTestCase):
             {"wallet.id": "test_wallet", "multitenant.enabled": True}
         )
 
+        self.multitenant_mgr.get_default_mediator.return_value = None
+
         with async_mock.patch.object(
             ConnRecord, "save", autospec=True
         ), async_mock.patch.object(
@@ -1350,8 +1321,63 @@ class TestConnectionManager(AsyncTestCase):
                 their_endpoint=self.test_endpoint,
             )
 
-            self.multitenant_mgr.add_wallet_route.assert_called_once_with(
+            self.multitenant_mgr.add_key.assert_called_once_with(
                 "test_wallet", self.test_verkey
+            )
+
+    async def test_create_static_connection_multitenant_mediator(self):
+        self.context.update_settings(
+            {"wallet.id": "test_wallet", "multitenant.enabled": True}
+        )
+
+        default_mediator = async_mock.MagicMock()
+
+        with async_mock.patch.object(
+            ConnRecord, "save", autospec=True
+        ), async_mock.patch.object(
+            InMemoryWallet, "create_local_did", autospec=True
+        ) as mock_wallet_create_local_did, async_mock.patch.object(
+            ConnectionManager, "create_did_document"
+        ) as create_did_document, async_mock.patch.object(
+            ConnectionManager, "store_did_document"
+        ) as store_did_document:
+            mock_wallet_create_local_did.return_value = DIDInfo(
+                self.test_did, self.test_verkey, None
+            )
+
+            # With default mediator
+            self.multitenant_mgr.get_default_mediator.return_value = default_mediator
+            await self.manager.create_static_connection(
+                my_did=self.test_did,
+                their_did=self.test_target_did,
+                their_verkey=self.test_target_verkey,
+                their_endpoint=self.test_endpoint,
+            )
+
+            # Without default mediator
+            self.multitenant_mgr.get_default_mediator.return_value = None
+            await self.manager.create_static_connection(
+                my_did=self.test_did,
+                their_did=self.test_target_did,
+                their_verkey=self.test_target_verkey,
+                their_endpoint=self.test_endpoint,
+            )
+
+            assert self.multitenant_mgr.add_key.call_count is 2
+
+            their_info = DIDInfo(self.test_target_did, self.test_target_verkey, {})
+            create_did_document.assert_has_calls(
+                [
+                    call(
+                        their_info,
+                        None,
+                        [self.test_endpoint],
+                        mediation_records=[default_mediator],
+                    ),
+                    call(
+                        their_info, None, [self.test_endpoint], mediation_records=None
+                    ),
+                ]
             )
 
     async def test_create_static_connection_no_their(self):
@@ -1725,7 +1751,7 @@ class TestConnectionManager(AsyncTestCase):
             endpoint=self.test_mediator_endpoint,
         )
         doc = await self.manager.create_did_document(
-            did_info, mediation_record=mediation_record
+            did_info, mediation_records=[mediation_record]
         )
         assert doc.service
         services = list(doc.service.values())
@@ -1734,6 +1760,37 @@ class TestConnectionManager(AsyncTestCase):
         service_public_keys = service.routing_keys[0]
         assert service_public_keys.value == mediation_record.routing_keys[0]
         assert service.endpoint == mediation_record.endpoint
+
+    async def test_create_did_document_multiple_mediators(self):
+        did_info = DIDInfo(
+            self.test_did,
+            self.test_verkey,
+            None,
+        )
+        mediation_record1 = MediationRecord(
+            role=MediationRecord.ROLE_CLIENT,
+            state=MediationRecord.STATE_GRANTED,
+            connection_id=self.test_mediator_conn_id,
+            routing_keys=self.test_mediator_routing_keys,
+            endpoint=self.test_mediator_endpoint,
+        )
+        mediation_record2 = MediationRecord(
+            role=MediationRecord.ROLE_CLIENT,
+            state=MediationRecord.STATE_GRANTED,
+            connection_id="mediator-conn-id2",
+            routing_keys=["05e8afd1-b4f0-46b7-a285-7a08c8a37caf"],
+            endpoint="http://mediatorw.example.com",
+        )
+        doc = await self.manager.create_did_document(
+            did_info, mediation_records=[mediation_record1, mediation_record2]
+        )
+        assert doc.service
+        services = list(doc.service.values())
+        assert len(services) == 1
+        (service,) = services
+        assert service.routing_keys[0].value == mediation_record1.routing_keys[0]
+        assert service.routing_keys[1].value == mediation_record2.routing_keys[0]
+        assert service.endpoint == mediation_record2.endpoint
 
     async def test_create_did_document_mediation_svc_endpoints_overwritten(self):
         did_info = DIDInfo(
@@ -1751,7 +1808,7 @@ class TestConnectionManager(AsyncTestCase):
         doc = await self.manager.create_did_document(
             did_info,
             svc_endpoints=[self.test_endpoint],
-            mediation_record=mediation_record,
+            mediation_records=[mediation_record],
         )
         assert doc.service
         services = list(doc.service.values())

@@ -468,6 +468,54 @@ async def send_keylist_update(request: web.BaseRequest):
     return web.json_response(results, status=201)
 
 
+@docs(tags=["mediation"], summary="Get default mediator")
+@response_schema(MediationRecordSchema(), 200)
+async def get_default_mediator(request: web.BaseRequest):
+    """Get default mediator."""
+    context: AdminRequestContext = request["context"]
+    try:
+        session = await context.session()
+        default_mediator = await MediationManager(session).get_default_mediator()
+        results = default_mediator.serialize() if default_mediator else {}
+    except (StorageError, BaseModelError) as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
+    return web.json_response(results, status=200)
+
+
+@docs(tags=["mediation"], summary="Set default mediator")
+@match_info_schema(MediationIdMatchInfoSchema())
+@response_schema(MediationRecordSchema(), 201)
+async def set_default_mediator(request: web.BaseRequest):
+    """Set default mediator."""
+    context: AdminRequestContext = request["context"]
+    mediation_id = request.match_info.get("mediation_id")
+    try:
+        session = await context.session()
+        mediator_mgr = MediationManager(session)
+        await mediator_mgr.set_default_mediator_by_id(mediation_id=mediation_id)
+        default_mediator = await mediator_mgr.get_default_mediator()
+        results = default_mediator.serialize()
+    except (StorageError, BaseModelError) as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
+    return web.json_response(results, status=201)
+
+
+@docs(tags=["mediation"], summary="Clear default mediator")
+@response_schema(MediationRecordSchema(), 201)
+async def clear_default_mediator(request: web.BaseRequest):
+    """Clear set default mediator."""
+    context: AdminRequestContext = request["context"]
+    try:
+        session = await context.session()
+        mediator_mgr = MediationManager(session)
+        default_mediator = await mediator_mgr.get_default_mediator()
+        await mediator_mgr.clear_default_mediator()
+        results = default_mediator.serialize()
+    except (StorageError, BaseModelError) as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
+    return web.json_response(results, status=201)
+
+
 async def register(app: web.Application):
     """Register routes."""
 
@@ -495,6 +543,11 @@ async def register(app: web.Application):
                 "/mediation/keylists/{mediation_id}/send-keylist-query",
                 send_keylist_query,
             ),
+            web.get(
+                "/mediation/default-mediator", get_default_mediator, allow_head=False
+            ),
+            web.put("/mediation/{mediation_id}/default-mediator", set_default_mediator),
+            web.delete("/mediation/default-mediator", clear_default_mediator),
         ]
     )
 

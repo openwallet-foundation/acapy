@@ -191,7 +191,7 @@ class OutOfBandManager(BaseConnectionManager):
 
             # Add mapping for multitenant relay.
             if multitenant_mgr and wallet_id:
-                await multitenant_mgr.add_wallet_route(
+                await multitenant_mgr.add_key(
                     wallet_id, public_did.verkey, skip_if_exists=True
                 )
 
@@ -210,7 +210,7 @@ class OutOfBandManager(BaseConnectionManager):
 
             # Add mapping for multitenant relay
             if multitenant_mgr and wallet_id:
-                await multitenant_mgr.add_wallet_route(wallet_id, connection_key.verkey)
+                await multitenant_mgr.add_key(wallet_id, connection_key.verkey)
 
             # Create connection invitation message
             # Note: Need to split this into two stages to support inbound routing

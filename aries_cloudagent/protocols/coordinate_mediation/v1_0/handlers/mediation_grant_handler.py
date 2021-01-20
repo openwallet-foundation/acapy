@@ -6,6 +6,7 @@ from .....messaging.base_handler import (
     HandlerException,
     RequestContext,
 )
+from .....multitenant.manager import MultitenantManager
 from .....storage.error import StorageNotFoundError
 from ..manager import MediationManager
 from ..messages.mediate_grant import MediationGrant
@@ -32,6 +33,34 @@ class MediationGrantHandler(BaseHandler):
                 session, context.connection_record.connection_id
             )
             await mgr.request_granted(record, context.message)
+
+            # Multitenancy setup
+            multitenant_mgr = session.inject(MultitenantManager, required=False)
+            wallet_id = session.settings.get("wallet.id")
+
+            if multitenant_mgr and wallet_id:
+                base_mediation_record = await multitenant_mgr.get_default_mediator()
+
+                # If we have a base mediator and sub wallet mediator
+                # we need to register the base mediator routing key at the
+                # sub wallet mediator
+                if base_mediation_record:
+                    # Last routing key needs to be registered at the mediator
+                    keylist_updates = await mgr.add_key(
+                        base_mediation_record.routing_keys[-1]
+                    )
+
+                    await responder.send(
+                        keylist_updates,
+                        connection_id=context.connection_record.connection_id,
+                    )
+
+            # Set to default if metdata set on connection to do so
+            if await context.connection_record.metadata_get(
+                session, MediationManager.SET_TO_DEFAULT_ON_GRANTED
+            ):
+                await mgr.set_default_mediator(record)
+
         except StorageNotFoundError as err:
             raise HandlerException(
                 "Received mediation grant from connection from which mediation "

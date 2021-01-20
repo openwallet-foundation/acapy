@@ -5,6 +5,7 @@ import pytest
 
 from asynctest import mock as async_mock
 
+from .....core.profile import ProfileSession
 from .....connections.models.conn_record import ConnRecord
 from .....messaging.request_context import RequestContext
 from .....storage.error import StorageNotFoundError
@@ -35,7 +36,7 @@ pytestmark = pytest.mark.asyncio
 
 
 @pytest.fixture
-async def session():
+async def session() -> ProfileSession:
     """Fixture for session used in tests."""
     # pylint: disable=W0621
     context = RequestContext.test_context()
@@ -45,14 +46,14 @@ async def session():
 
 
 @pytest.fixture
-async def manager(session):  # pylint: disable=W0621
+async def manager(session) -> MediationManager:  # pylint: disable=W0621
     """Fixture for manager used in tests."""
     yield MediationManager(session)
 
 
 @pytest.fixture
-def record():
-    """Fixture for record used in tets."""
+def record() -> MediationRecord:
+    """Fixture for record used in tests."""
     yield MediationRecord(
         state=MediationRecord.STATE_GRANTED, connection_id=TEST_CONN_ID
     )
@@ -169,6 +170,13 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
         assert results[0].action == KeylistUpdateRule.RULE_ADD
         assert results[0].result == KeylistUpdated.RESULT_NO_CHANGE
 
+    async def test_update_keylist_x_not_granted(
+        self, manager: MediationManager, record: MediationRecord
+    ):
+        record.state = MediationRecord.STATE_DENIED
+        with pytest.raises(MediationNotGrantedError):
+            await manager.update_keylist(record, [])
+
     async def test_get_keylist(self, session, manager, record):
         """test_get_keylist."""
         await RouteRecord(connection_id=TEST_CONN_ID, recipient_key=TEST_VERKEY).save(
@@ -216,6 +224,40 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
         assert response.keys[0].recipient_key
         response = await manager.create_keylist_query_response([])
         assert not response.keys
+
+    async def test_get_set_get_default_mediator(
+        self,
+        session: ProfileSession,
+        manager: MediationManager,
+        record: MediationRecord,
+    ):
+        await record.save(session)
+        assert await manager.get_default_mediator() == None
+        await manager.set_default_mediator(record)
+        assert await manager.get_default_mediator() == record
+
+    async def test_set_get_default_mediator_by_id(self, manager: MediationManager):
+        await manager.set_default_mediator_by_id("test")
+        assert await manager.get_default_mediator_id() == "test"
+
+    async def test_set_set_get_default_mediator_by_id(self, manager: MediationManager):
+        await manager.set_default_mediator_by_id("test")
+        await manager.set_default_mediator_by_id("updated")
+        assert await manager.get_default_mediator_id() == "updated"
+
+    async def test_clear_default_mediator(
+        self,
+        manager: MediationManager,
+    ):
+        await manager.set_default_mediator_by_id("test")
+        assert await manager.get_default_mediator_id()
+        await manager.clear_default_mediator()
+        assert not await manager.get_default_mediator_id()
+
+    async def test_clear_default_mediator_no_default_set(
+        self, manager: MediationManager
+    ):
+        await manager.clear_default_mediator()
 
     async def test_prepare_request(self, manager):
         """test_prepare_request."""
@@ -360,6 +402,29 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
 
             await manager.store_update_results(TEST_CONN_ID, results)
             mock_logger_error.assert_called_once()
+
+    async def test_store_update_results_exists_relay(self, session, manager):
+        """test_store_update_results_record_exists_relay."""
+        await RouteRecord(
+            role=RouteRecord.ROLE_CLIENT,
+            recipient_key=TEST_VERKEY,
+            wallet_id="test_wallet",
+        ).save(session)
+        results = [
+            KeylistUpdated(
+                recipient_key=TEST_VERKEY,
+                action=KeylistUpdateRule.RULE_ADD,
+                result=KeylistUpdated.RESULT_SUCCESS,
+            )
+        ]
+        await manager.store_update_results(TEST_CONN_ID, results)
+        routes = await RouteRecord.query(session)
+
+        assert len(routes) == 1
+        route = routes[0]
+        assert route.recipient_key == TEST_VERKEY
+        assert route.wallet_id == "test_wallet"
+        assert route.connection_id == TEST_CONN_ID
 
     async def test_store_update_results_errors(self, caplog, manager):
         """test_store_update_results with errors."""

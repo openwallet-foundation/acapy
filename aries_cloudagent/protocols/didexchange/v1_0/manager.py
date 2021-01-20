@@ -190,7 +190,7 @@ class DIDXManager(BaseConnectionManager):
 
             # Add mapping for multitenant relay
             if multitenant_mgr and wallet_id:
-                await multitenant_mgr.add_wallet_route(wallet_id, my_info.verkey)
+                await multitenant_mgr.add_key(wallet_id, my_info.verkey)
 
         # Create connection request message
         if my_endpoint:
@@ -313,7 +313,7 @@ class DIDXManager(BaseConnectionManager):
 
                 # Add mapping for multitenant relay
                 if multitenant_mgr and wallet_id:
-                    await multitenant_mgr.add_wallet_route(wallet_id, my_info.verkey)
+                    await multitenant_mgr.add_key(wallet_id, my_info.verkey)
 
         if not (request.did_doc_attach and request.did_doc_attach.data):
             raise DIDXManagerError(
@@ -364,7 +364,7 @@ class DIDXManager(BaseConnectionManager):
 
             # Add mapping for multitenant relay
             if multitenant_mgr and wallet_id:
-                await multitenant_mgr.add_wallet_route(wallet_id, my_info.verkey)
+                await multitenant_mgr.add_key(wallet_id, my_info.verkey)
         else:
             raise DIDXManagerError("Public invitations are not enabled")
 
@@ -426,7 +426,7 @@ class DIDXManager(BaseConnectionManager):
 
             # Add mapping for multitenant relay
             if multitenant_mgr and wallet_id:
-                await multitenant_mgr.add_wallet_route(wallet_id, my_info.verkey)
+                await multitenant_mgr.add_key(wallet_id, my_info.verkey)
 
         # Create connection response message
         if my_endpoint:
