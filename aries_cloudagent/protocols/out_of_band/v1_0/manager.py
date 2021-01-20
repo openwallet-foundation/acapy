@@ -266,9 +266,10 @@ class OutOfBandManager(BaseConnectionManager):
     async def receive_invitation(
         self,
         invi_msg: InvitationMessage,
+        use_existing_connection: bool = True,
         auto_accept: bool = None,
         alias: str = None,
-    ) -> ConnRecord:
+    ) -> dict:
         """Receive an out of band invitation message."""
 
         ledger: BaseLedger = self._session.inject(BaseLedger)
@@ -328,7 +329,8 @@ class OutOfBandManager(BaseConnectionManager):
         if conn_rec is not None:
             num_included_protocols = len(unq_handshake_protos)
             num_included_req_attachments = len(invi_msg.request_attach)
-            if num_included_protocols >= 1 and num_included_req_attachments == 0:
+            # Handshake_Protocol included Request_Attachment not included Use_Existing_Connection Yes
+            if num_included_protocols >= 1 and num_included_req_attachments == 0 and use_existing_connection:
                 handshake_reuse_msg = await self.create_handshake_reuse_message(
                     invi_msg=invi_msg,
                     service=service,
@@ -350,9 +352,11 @@ class OutOfBandManager(BaseConnectionManager):
                     reuse_msg_id=handshake_reuse_msg._id,
                     session=self._session
                 )
-            # The following cases requires a new connection to be created according to RFC
-            elif not ((num_included_protocols == 0 and num_included_req_attachments >= 1) or
-                      (num_included_protocols >= 1 and num_included_req_attachments >= 1)):
+            # Inverse of the following cases
+            # Handshake_Protocol not included Request_Attachment included Use_Existing_Connection Yes
+            # Handshake_Protocol included Request_Attachment included Use_Existing_Connection Yes
+            elif not ((num_included_protocols == 0 and num_included_req_attachments >= 1 and use_existing_connection) or
+                      (num_included_protocols >= 1 and num_included_req_attachments >= 1 and use_existing_connection)):
                 conn_rec = None
         if conn_rec is None:
             # Create a new connection
@@ -415,7 +419,7 @@ class OutOfBandManager(BaseConnectionManager):
                     presentation_exchange_record=presentation_exchange_record
                 )
 
-        return conn_rec
+        return conn_rec.serialize()
 
     async def find_existing_connection(
         self,
@@ -648,5 +652,5 @@ class OutOfBandManager(BaseConnectionManager):
             raise OutOfBandManagerError(
                 (
                     f"Error processing problem report message for OOB invitation {invi_msg_id}"
-                ) 
+                )
             )

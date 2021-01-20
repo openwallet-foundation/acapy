@@ -71,6 +71,10 @@ class InvitationReceiveQueryStringSchema(OpenAPISchema):
         description="Auto-accept connection (defaults to configuration)",
         required=False,
     )
+    use_existing_connection = fields.Boolean(
+        description="Use an existing connection, if possible",
+        required=False,
+    )
 
 
 class InvitationReceiveRequestSchema(InvitationMessageSchema):
@@ -155,15 +159,17 @@ async def invitation_receive(request: web.BaseRequest):
     body = await request.json()
     auto_accept = json.loads(request.query.get("auto_accept", "null"))
     alias = request.query.get("alias")
+    # By default, try to use an existing connection
+    use_existing_conn = json.loads(request.query.get("use_existing_connection", "true"))
 
     try:
         invitation = InvitationMessage.deserialize(body)
-        conn_rec = await oob_mgr.receive_invitation(
+        result = await oob_mgr.receive_invitation(
             invitation,
             auto_accept=auto_accept,
             alias=alias,
+            use_existing_connection=use_existing_conn,
         )
-        result = conn_rec.serialize()
     except (DIDXManagerError, StorageError, BaseModelError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
