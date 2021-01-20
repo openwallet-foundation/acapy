@@ -116,12 +116,6 @@ class PluginRegistry:
     def register_plugin(self, module_name: str) -> ModuleType:
         """Register a plugin module."""
 
-        '''
-        admin routes is general
-        if messagetype, definitions 
-            must be part of a protocol.
-        if dicom_type
-        '''
         if module_name in self._plugins:
             mod = self._plugins[module_name]
         else:
