@@ -3,7 +3,7 @@
 import json
 import logging
 
-from typing import Sequence, Tuple
+from typing import Sequence
 
 from ....connections.models.conn_record import ConnRecord
 from ....connections.models.diddoc import (
@@ -54,7 +54,7 @@ class DIDXManager(BaseConnectionManager):
         """
         self._session = session
         self._logger = logging.getLogger(__name__)
-        super().__init__(self, self._session)
+        super().__init__(self._session)
 
     @property
     def session(self) -> ProfileSession:
