@@ -30,6 +30,12 @@ class TestV20FormatFormat(TestCase):
             is V20CredFormat.Format.INDY
         )
         assert V20CredFormat.Format.get("no such format") is None
+        assert V20CredFormat.Format.get("Indy") is V20CredFormat.Format.INDY
+        assert V20CredFormat.Format.get("HL/INDY").aries == "hlindy-zkp-v1.0"
+        assert "indy" in V20CredFormat.Format.get("HL/INDY").aka
+        assert (
+            V20CredFormat.Format.get("JSON-LD").aries == "dif/credential-manifest@v1.0"
+        )
 
     def test_get_attachment_data(self):
         assert (

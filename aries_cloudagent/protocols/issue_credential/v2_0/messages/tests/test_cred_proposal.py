@@ -38,7 +38,7 @@ class TestV20CredProposal(AsyncTestCase):
             formats=[
                 V20CredFormat(
                     attach_id="abc",
-                    format_=V20CredFormat.Format.INDY.value,
+                    format_=V20CredFormat.Format.INDY.aries,
                 )
             ],
             filters_attach=[
@@ -78,7 +78,7 @@ class TestV20CredProposal(AsyncTestCase):
                 }
             ],
             "formats": [
-                {"attach_id": "abc", "format": V20CredFormat.Format.INDY.value}
+                {"attach_id": "abc", "format": V20CredFormat.Format.INDY.aries}
             ],
         }
         cred_proposal = V20CredProposal.deserialize(obj)
@@ -111,7 +111,7 @@ class TestV20CredProposal(AsyncTestCase):
             formats=[
                 V20CredFormat(
                     attach_id="abc",
-                    format_=V20CredFormat.Format.INDY.value,
+                    format_=V20CredFormat.Format.INDY.aries,
                 )
             ],
             filters_attach=[
@@ -134,7 +134,7 @@ class TestV20CredProposal(AsyncTestCase):
                 ],
             },
             "formats": [
-                {"attach_id": "abc", "format": V20CredFormat.Format.INDY.value}
+                {"attach_id": "abc", "format": V20CredFormat.Format.INDY.aries}
             ],
             "filters~attach": [
                 {
@@ -160,7 +160,7 @@ class TestV20CredProposal(AsyncTestCase):
             formats=[
                 V20CredFormat(
                     attach_id="abc",
-                    format_=V20CredFormat.Format.INDY.value,
+                    format_=V20CredFormat.Format.INDY.aries,
                 )
             ],
             filters_attach=[AttachDecorator.from_indy_dict({}, ident="abc")],
@@ -181,7 +181,7 @@ class TestV20CredProposal(AsyncTestCase):
             "formats": [
                 {
                     "attach_id": "abc",
-                    "format": V20CredFormat.Format.INDY.value,
+                    "format": V20CredFormat.Format.INDY.aries,
                 }
             ],
         }
@@ -197,7 +197,7 @@ class TestV20CredProposalSchema(AsyncTestCase):
             formats=[
                 V20CredFormat(
                     attach_id="abc",
-                    format_=V20CredFormat.Format.INDY.value,
+                    format_=V20CredFormat.Format.INDY.aries,
                 )
             ],
             filters_attach=[

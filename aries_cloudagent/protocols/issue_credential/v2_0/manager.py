@@ -541,7 +541,9 @@ class V20CredManager:
                         cred_def_id
                     )
                     rev_reg = await active_rev_reg_rec.get_registry()
-                    cred_ex_record.rev_reg_id = active_rev_reg_rec.revoc_reg_id
+                    cred_ex_record.detail["indy"][
+                        "rev_reg_id"
+                    ] = active_rev_reg_rec.revoc_reg_id
 
                     tails_path = rev_reg.tails_local_path
                     await rev_reg.get_or_fetch_local_tails_path()
@@ -601,18 +603,23 @@ class V20CredManager:
         ).credential_preview.attr_dict(decode=False)
         issuer = self._profile.inject(IndyIssuer)
         try:
-            (cred_json, cred_ex_record.cred_rev_id,) = await issuer.create_credential(
+            (
+                cred_json,
+                cred_ex_record.detail["indy"]["cred_rev_id"],
+            ) = await issuer.create_credential(
                 schema,
                 cred_offer,
                 cred_request,
                 cred_values,
                 cred_ex_record.cred_ex_id,
-                cred_ex_record.rev_reg_id,
+                cred_ex_record.detail["indy"]["rev_reg_id"],
                 tails_path,
             )
 
             # If the rev reg is now full
-            if rev_reg and rev_reg.max_creds == int(cred_ex_record.cred_rev_id):
+            if rev_reg and rev_reg.max_creds == int(
+                cred_ex_record.detail["indy"]["cred_rev_id"]
+            ):
                 async with self._profile.session() as session:
                     await active_rev_reg_rec.set_state(
                         session,
@@ -764,9 +771,9 @@ class V20CredManager:
             raise e
 
         cred_ex_record.state = V20CredExRecord.STATE_DONE
-        cred_ex_record.cred_id_stored = cred_id_stored
-        cred_ex_record.rev_reg_id = cred.get("rev_reg_id", None)
-        cred_ex_record.cred_rev_id = cred.get("cred_rev_id", None)
+        cred_ex_record.detail["indy"]["cred_id_stored"] = cred_id_stored
+        cred_ex_record.detail["indy"]["rev_reg_id"] = cred.get("rev_reg_id", None)
+        cred_ex_record.detail["indy"]["cred_rev_id"] = cred.get("cred_rev_id", None)
 
         async with self._profile.session() as session:
             # FIXME - re-fetch record to check state, apply transactional update

@@ -124,7 +124,7 @@ class TestV20CredManager(AsyncTestCase):
         self.manager = V20CredManager(self.profile)
         assert self.manager.profile
 
-    async def test_record_eq(self):
+    async def test_record(self):
         same = [
             V20CredExRecord(
                 cred_ex_id="dummy-0",
@@ -151,6 +151,16 @@ class TestV20CredManager(AsyncTestCase):
                 initiator=V20CredExRecord.INITIATOR_EXTERNAL,
                 role=V20CredExRecord.ROLE_ISSUER,
             ),
+            V20CredExRecord(
+                cred_ex_id="dummy-0",
+                thread_id="thread-1",
+                initiator=V20CredExRecord.INITIATOR_EXTERNAL,
+                detail={
+                    "indy": {"cred_id_stored": "abc123"},
+                    "dif": {"tbd": "123"},
+                },
+                role=V20CredExRecord.ROLE_ISSUER,
+            ),
         ]
 
         for i in range(len(same) - 1):
@@ -160,6 +170,8 @@ class TestV20CredManager(AsyncTestCase):
         for i in range(len(diff) - 1):
             for j in range(i, len(diff)):
                 assert diff[i] == diff[j] if i == j else diff[i] != diff[j]
+
+        assert same[0].connection_id == same[0].conn_id  # cover connection_id
 
     async def test_prepare_send(self):
         conn_id = "test_conn_id"
@@ -1207,7 +1219,7 @@ class TestV20CredManager(AsyncTestCase):
             cred_proposal=cred_proposal.serialize(),
             cred_offer=cred_offer.serialize(),
             cred_request=cred_request.serialize(),
-            cred_rev_id="1000",
+            detail={"indy": {"cred_rev_id": "1000"}},
             initiator=V20CredExRecord.INITIATOR_SELF,
             role=V20CredExRecord.ROLE_ISSUER,
             state=V20CredExRecord.STATE_REQUEST_RECEIVED,
@@ -1217,7 +1229,10 @@ class TestV20CredManager(AsyncTestCase):
         issuer = async_mock.MagicMock()
         indy_cred = {"indy": "credential"}
         issuer.create_credential = async_mock.CoroutineMock(
-            return_value=(json.dumps(indy_cred), stored_cx_rec.cred_rev_id)
+            return_value=(
+                json.dumps(indy_cred),
+                stored_cx_rec.detail["indy"]["cred_rev_id"],
+            ),
         )
         self.context.injector.bind_instance(IndyIssuer, issuer)
 
@@ -1747,7 +1762,7 @@ class TestV20CredManager(AsyncTestCase):
                 rev_reg_def=REV_REG_DEF,
             )
 
-            assert ret_cx_rec.cred_id_stored == cred_id
+            assert ret_cx_rec.detail["indy"]["cred_id_stored"] == cred_id
             assert V20CredIssue.deserialize(ret_cx_rec.cred_issue).cred() == indy_cred
             assert ret_cx_rec.state == V20CredExRecord.STATE_DONE
             assert ret_cred_ack._thread_id == thread_id
@@ -1898,6 +1913,7 @@ class TestV20CredManager(AsyncTestCase):
                 initiator=V20CredExRecord.INITIATOR_SELF,
                 role=V20CredExRecord.ROLE_ISSUER,
             )
+
             await cx_rec.save(self.session)
 
         for i in range(2):  # second pass gets from cache

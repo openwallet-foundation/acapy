@@ -1,6 +1,8 @@
 """Credential format inner object."""
 
+from collections import namedtuple
 from enum import Enum
+from re import sub
 from typing import Mapping, Sequence, Union
 from uuid import uuid4
 
@@ -10,6 +12,8 @@ from .....messaging.credential_definitions.util import CRED_DEF_TAGS
 from .....messaging.decorators.attach_decorator import AttachDecorator
 from .....messaging.models.base import BaseModel, BaseModelSchema
 from .....messaging.valid import UUIDFour
+
+FormatSpec = namedtuple("FormatSpec", "aries aka")  # Aries RFC value, further monikers
 
 
 class V20CredFormat(BaseModel):
@@ -23,19 +27,33 @@ class V20CredFormat(BaseModel):
     class Format(Enum):
         """Proposal credential format."""
 
-        INDY = "hlindy-zkp-v1.0"
-        DIF = "dif/credential-manifest@v1.0"  # placeholder for W3C
+        INDY = FormatSpec("hlindy-zkp-v1.0", {"indy", "hyperledgerindy", "hlindy"})
+        DIF = FormatSpec("dif/credential-manifest@v1.0", {"dif", "w3c", "jsonld"})
 
         @classmethod
         def get(cls, label: Union[str, "V20CredFormat.Format"]):
             """Get format enum for label."""
             if isinstance(label, str):
                 for fmt in V20CredFormat.Format:
-                    if fmt.value == label:
+                    if (
+                        fmt.aries == label
+                        or sub("[^a-zA-Z0-9]+", "", label.lower()) in fmt.aka
+                    ):
                         return fmt
             elif isinstance(label, V20CredFormat.Format):
                 return label
+
             return None
+
+        @property
+        def aries(self) -> str:
+            """Accessor for aries identifier."""
+            return self.value.aries
+
+        @property
+        def aka(self) -> str:
+            """Accessor for alternative identifier list."""
+            return self.value.aka
 
         def validate_filter(self, data: Mapping):
             """Raise ValidationError for wrong filtration criteria."""
@@ -72,7 +90,7 @@ class V20CredFormat(BaseModel):
         self.attach_id = attach_id or uuid4()
         self.format_ = (
             V20CredFormat.Format.get(format_) or V20CredFormat.Format.INDY
-        ).value
+        ).aries
 
     @property
     def format(self) -> str:
@@ -100,6 +118,6 @@ class V20CredFormatSchema(BaseModelSchema):
         allow_none=False,
         description="acceptable credential format specifier",
         data_key="format",
-        validate=validate.OneOf([f.value for f in V20CredFormat.Format]),
-        example=V20CredFormat.Format.INDY.value,
+        validate=validate.OneOf([f.aries for f in V20CredFormat.Format]),
+        example=V20CredFormat.Format.INDY.aries,
     )
