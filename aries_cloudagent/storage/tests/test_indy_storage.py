@@ -375,8 +375,9 @@ class TestIndySdkStorage(test_in_memory_storage.TestInMemoryStorage):
             ) as mock_indy_close_search, async_mock.patch.object(
                 asyncio, "get_event_loop", async_mock.MagicMock()
             ) as mock_get_event_loop:
+                coros = []
                 mock_get_event_loop.return_value = async_mock.MagicMock(
-                    create_task=async_mock.MagicMock(),
+                    create_task=lambda c: coros.append(c),
                     is_running=async_mock.MagicMock(return_value=False),
                     run_until_complete=async_mock.MagicMock(),
                 )
@@ -385,6 +386,14 @@ class TestIndySdkStorage(test_in_memory_storage.TestInMemoryStorage):
                 await search._open()
                 await search.close()
                 del search
+                assert (
+                    coros
+                    and len(coros)
+                    == mock_get_event_loop.return_value.run_until_complete.call_count
+                )
+                # now run the cleanup task
+                for coro in coros:
+                    await coro
 
     # TODO get these to run in docker ci/cd
     @pytest.mark.asyncio
