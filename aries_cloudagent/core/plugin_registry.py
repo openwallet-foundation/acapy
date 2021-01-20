@@ -48,7 +48,7 @@ class PluginRegistry:
                 "Versions list must define at least one version module"
             )
 
-        if not all(type(v) is dict for v in version_list):
+        if any(type(v) is not dict for v in version_list):
             raise ProtocolDefinitionValidationError(
                 "Element of versions definition list is not of type dict"
             )
@@ -91,10 +91,11 @@ class PluginRegistry:
 
             # There can only be one definition per major version
             major_version = version_dict["major_version"]
-            count = 0
-            for version_dict_outer in version_list:
-                if version_dict_outer["major_version"] == major_version:
-                    count += 1
+            count = sum(
+                version_dict_outer["major_version"] == major_version
+                for version_dict_outer in version_list
+            )
+
             if count > 1:
                 raise ProtocolDefinitionValidationError(
                     "There can only be one definition per major version. "
