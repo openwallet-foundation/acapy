@@ -48,17 +48,6 @@ class MultitenantManager:
 
         self._instances: dict[str, Profile] = {}
 
-    @property
-    def profile(self) -> Profile:
-        """
-        Accessor for the current profile.
-
-        Returns:
-            The profile for this manager
-
-        """
-        return self._profile
-
     async def get_default_mediator(self) -> Optional[MediationRecord]:
         """Retrieve the default mediator used for subwallet routing.
 
@@ -66,8 +55,7 @@ class MultitenantManager:
             Optional[MediationRecord]: retrieved default mediator or None if not set
 
         """
-        async with self.profile.session() as session:
-            return await MediationManager(session).get_default_mediator()
+        return await MediationManager(self._profile).get_default_mediator()
 
     async def _wallet_name_exists(
         self, session: ProfileSession, wallet_name: str
@@ -209,7 +197,7 @@ class MultitenantManager:
         wallet_name = settings.get("wallet.name")
 
         # base wallet context
-        async with self.profile.session() as session:
+        async with self._profile.session() as session:
             # Check if the wallet name already exists to avoid indy wallet errors
             if wallet_name and await self._wallet_name_exists(session, wallet_name):
                 raise MultitenantManagerError(
@@ -228,7 +216,7 @@ class MultitenantManager:
 
         # provision wallet
         profile = await self.get_wallet_profile(
-            self.profile.context,
+            self._profile.context,
             wallet_record,
             {
                 "wallet.key": wallet_key,
@@ -296,7 +284,7 @@ class MultitenantManager:
                 Only thrown for "unmanaged" wallets
 
         """
-        async with self.profile.session() as session:
+        async with self._profile.session() as session:
             wallet = cast(
                 WalletRecord,
                 await WalletRecord.retrieve_by_id(session, wallet_id),
@@ -307,7 +295,7 @@ class MultitenantManager:
                 raise WalletKeyMissingError("Missing key to open wallet")
 
             profile = await self.get_wallet_profile(
-                self.profile.context,
+                self._profile.context,
                 wallet,
                 {"wallet.key": wallet_key},
             )
@@ -336,35 +324,35 @@ class MultitenantManager:
                             for relaying / mediation
         """
 
-        async with self.profile.session() as session:
-            LOGGER.info(
-                f"Add route record for recipient {recipient_key} to wallet {wallet_id}"
-            )
-            routing_mgr = RoutingManager(session)
-            mediation_mgr = MediationManager(session)
-            mediation_record = await mediation_mgr.get_default_mediator()
+        LOGGER.info(
+            f"Add route record for recipient {recipient_key} to wallet {wallet_id}"
+        )
+        routing_mgr = RoutingManager(self._profile)
+        mediation_mgr = MediationManager(self._profile)
+        mediation_record = await mediation_mgr.get_default_mediator()
 
-            if skip_if_exists:
-                try:
+        if skip_if_exists:
+            try:
+                async with self._profile.session() as session:
                     await RouteRecord.retrieve_by_recipient_key(session, recipient_key)
 
-                    # If no error is thrown, it means there is already a record
-                    return
-                except (StorageNotFoundError):
-                    pass
+                # If no error is thrown, it means there is already a record
+                return
+            except (StorageNotFoundError):
+                pass
 
-            await routing_mgr.create_route_record(
-                recipient_key=recipient_key, internal_wallet_id=wallet_id
+        await routing_mgr.create_route_record(
+            recipient_key=recipient_key, internal_wallet_id=wallet_id
+        )
+
+        # External mediation
+        if mediation_record:
+            keylist_updates = await mediation_mgr.add_key(recipient_key)
+
+            responder = self._profile.inject(BaseResponder)
+            await responder.send(
+                keylist_updates, connection_id=mediation_record.connection_id
             )
-
-            # External mediation
-            if mediation_record:
-                keylist_updates = await mediation_mgr.add_key(recipient_key)
-
-                responder = session.inject(BaseResponder)
-                await responder.send(
-                    keylist_updates, connection_id=mediation_record.connection_id
-                )
 
     def create_auth_token(
         self, wallet_record: WalletRecord, wallet_key: str = None
@@ -386,7 +374,7 @@ class MultitenantManager:
         """
 
         jwt_payload = {"wallet_id": wallet_record.wallet_id}
-        jwt_secret = self.profile.settings.get("multitenant.jwt_secret")
+        jwt_secret = self._profile.settings.get("multitenant.jwt_secret")
 
         if wallet_record.requires_external_key:
             if not wallet_key:
@@ -415,7 +403,7 @@ class MultitenantManager:
             Profile associated with the token
 
         """
-        jwt_secret = self.profile.context.settings.get("multitenant.jwt_secret")
+        jwt_secret = self._profile.context.settings.get("multitenant.jwt_secret")
         extra_settings = {}
 
         token_body = jwt.decode(token, jwt_secret, algorithms=["HS256"])
@@ -423,7 +411,7 @@ class MultitenantManager:
         wallet_id = token_body.get("wallet_id")
         wallet_key = token_body.get("wallet_key")
 
-        async with self.profile.session() as session:
+        async with self._profile.session() as session:
             wallet = await WalletRecord.retrieve_by_id(session, wallet_id)
 
             if wallet.requires_external_key:
@@ -436,24 +424,22 @@ class MultitenantManager:
 
             return profile
 
-    async def _get_wallet_by_key(
-        self, session: ProfileSession, recipient_key: str
-    ) -> Optional[WalletRecord]:
+    async def _get_wallet_by_key(self, recipient_key: str) -> Optional[WalletRecord]:
         """Get the wallet record associated with the recipient key.
 
         Args:
-            session: The profile session to use
             recipient_key: The recipient key
         Returns:
             Wallet record associated with the recipient key
         """
-        routing_mgr = RoutingManager(session)
+        routing_mgr = RoutingManager(self._profile)
 
         try:
             routing_record = await routing_mgr.get_recipient(recipient_key)
-            wallet = await WalletRecord.retrieve_by_id(
-                session, routing_record.wallet_id
-            )
+            async with self._profile.session() as session:
+                wallet = await WalletRecord.retrieve_by_id(
+                    session, routing_record.wallet_id
+                )
 
             return wallet
         except (RouteNotFoundError):
@@ -472,16 +458,15 @@ class MultitenantManager:
             Wallet records associated with the message body
 
         """
-        async with self.profile.session() as session:
-            wire_format = wire_format or session.inject(BaseWireFormat)
+        wire_format = wire_format or self._profile.inject(BaseWireFormat)
 
-            recipient_keys = wire_format.get_recipient_keys(message_body)
-            wallets = []
+        recipient_keys = wire_format.get_recipient_keys(message_body)
+        wallets = []
 
-            for key in recipient_keys:
-                wallet = await self._get_wallet_by_key(session, key)
+        for key in recipient_keys:
+            wallet = await self._get_wallet_by_key(key)
 
-                if wallet:
-                    wallets.append(wallet)
+            if wallet:
+                wallets.append(wallet)
 
-            return wallets
+        return wallets

@@ -30,7 +30,6 @@ class TestMultitenantManager(AsyncTestCase):
         self.context.injector.bind_instance(BaseResponder, self.responder)
 
         self.manager = MultitenantManager(self.profile)
-        assert self.manager.profile
 
     async def test_init_throws_no_profile(self):
         with self.assertRaises(MultitenantManagerError):
@@ -275,41 +274,40 @@ class TestMultitenantManager(AsyncTestCase):
         assert wallet_name_exists is False
 
     async def test_get_wallet_by_key_routing_record_does_not_exist(self):
-        session = InMemoryProfile.test_session()
         recipient_key = "test"
 
         with async_mock.patch.object(WalletRecord, "retrieve_by_id") as retrieve_by_id:
-            wallet = await self.manager._get_wallet_by_key(session, recipient_key)
+            wallet = await self.manager._get_wallet_by_key(recipient_key)
 
             assert wallet is None
             retrieve_by_id.assert_not_called()
 
-        await self.manager._get_wallet_by_key(session, recipient_key)
+        await self.manager._get_wallet_by_key(recipient_key)
 
     async def test_get_wallet_by_key_wallet_record_does_not_exist(self):
-        session = InMemoryProfile.test_session()
         recipient_key = "test-recipient-key"
         wallet_id = "test-wallet-id"
 
         route_record = RouteRecord(wallet_id=wallet_id, recipient_key=recipient_key)
-        await route_record.save(session)
+        async with self.profile.session() as session:
+            await route_record.save(session)
 
         with self.assertRaises(StorageNotFoundError):
-            await self.manager._get_wallet_by_key(session, recipient_key)
+            await self.manager._get_wallet_by_key(recipient_key)
 
     async def test_get_wallet_by_key(self):
-        session = InMemoryProfile.test_session()
         recipient_key = "test-recipient-key"
 
         wallet_record = WalletRecord(settings={})
-        await wallet_record.save(session)
+        async with self.profile.session() as session:
+            await wallet_record.save(session)
 
-        route_record = RouteRecord(
-            wallet_id=wallet_record.wallet_id, recipient_key=recipient_key
-        )
-        await route_record.save(session)
+            route_record = RouteRecord(
+                wallet_id=wallet_record.wallet_id, recipient_key=recipient_key
+            )
+            await route_record.save(session)
 
-        wallet = await self.manager._get_wallet_by_key(session, recipient_key)
+        wallet = await self.manager._get_wallet_by_key(recipient_key)
 
         assert isinstance(wallet, WalletRecord)
 

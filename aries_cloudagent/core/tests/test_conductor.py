@@ -15,6 +15,9 @@ from ...connections.models.diddoc import (
 from ...core.in_memory import InMemoryProfileManager
 from ...core.profile import ProfileManager
 from ...core.protocol_registry import ProtocolRegistry
+from ...protocols.coordinate_mediation.v1_0.models.mediation_record import (
+    MediationRecord,
+)
 from ...multitenant.manager import MultitenantManager
 from ...transport.inbound.message import InboundMessage
 from ...transport.inbound.receipt import MessageReceipt
@@ -771,10 +774,10 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             test_module,
             "MediationManager",
             return_value=async_mock.MagicMock(
-                set_default_mediator=async_mock.CoroutineMock()
+                set_default_mediator_by_id=async_mock.CoroutineMock()
             ),
         ) as mock_mgr, async_mock.patch.object(
-            test_module.MediationRecord, "retrieve_by_id", async_mock.CoroutineMock()
+            MediationRecord, "retrieve_by_id", async_mock.CoroutineMock()
         ), async_mock.patch.object(
             test_module,
             "LOGGER",
@@ -786,7 +789,7 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
         ):
             await conductor.start()
             await conductor.stop()
-            mock_mgr.return_value.set_default_mediator.assert_called_once()
+            mock_mgr.return_value.set_default_mediator_by_id.assert_called_once()
 
     async def test_set_default_mediator_x(self):
         builder: ContextBuilder = StubContextBuilder(self.test_settings)
@@ -796,7 +799,7 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
         await conductor.setup()
 
         with async_mock.patch.object(
-            test_module.MediationRecord,
+            MediationRecord,
             "retrieve_by_id",
             async_mock.CoroutineMock(side_effect=Exception()),
         ), async_mock.patch.object(test_module, "LOGGER") as mock_logger:

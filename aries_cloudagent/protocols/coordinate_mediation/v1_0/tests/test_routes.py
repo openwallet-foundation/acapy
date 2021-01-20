@@ -404,7 +404,9 @@ class TestCoordinateMediationRoutes(AsyncTestCase):
             "query",
             async_mock.CoroutineMock(return_value=query_results),
         ) as mock_query, async_mock.patch.object(
-            self.context, "session", async_mock.CoroutineMock()
+            self.context,
+            "session",
+            async_mock.MagicMock(return_value=self.context.session()),
         ) as mock_session, async_mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
@@ -423,7 +425,9 @@ class TestCoordinateMediationRoutes(AsyncTestCase):
             "query",
             async_mock.CoroutineMock(return_value=[]),
         ) as mock_query, async_mock.patch.object(
-            self.context, "session", async_mock.CoroutineMock()
+            self.context,
+            "session",
+            async_mock.MagicMock(return_value=self.context.session()),
         ) as mock_session, async_mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
