@@ -354,8 +354,6 @@ class MediationManager:
         async with self._profile.session() as session:
             return await self._get_default_mediator_id(session)
 
-        return None
-
     async def set_default_mediator_by_id(self, mediation_id: str):
         """Set default mediator from ID."""
         async with self._profile.session() as session:
