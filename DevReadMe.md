@@ -12,10 +12,12 @@ See the [README](README.md) for details about this repository and information ab
   - [Locally Installed](#locally-installed)
   - [About ACA-Py Command Line Parameters](#about-aca-py-command-line-parameters)
   - [Provisioning a Wallet](#provisioning-a-wallet)
+  - [Multi-tenancy](#multi-tenancy)
 - [Developing](#developing)
   - [Prerequisites](#prerequisites)
   - [Running Locally](#running-locally)
   - [Running Tests](#running-tests)
+  - [Running Aries Agent Test Harness Tests](#running-aries-agent-test-harness-tests)
 - [Development Workflow](#development-workflow)
 - [Publishing Releases](#publishing-releases)
 - [Dynamic Injection of Services](#dynamic-injection-of-services)
@@ -104,6 +106,10 @@ aca-py provision --wallet-type indy --seed $SEED
 ```
 
 For additional `provision` options, execute `aca-py provision --help`.
+
+### Multi-tenancy
+
+ACA-Py can also be started in multi-tenant mode. This allows the agent to serve multiple tenants, that each have their own wallet. See the [docs on multi-tenancy](Multitenancy.md) for more info.
 
 ## Developing
 

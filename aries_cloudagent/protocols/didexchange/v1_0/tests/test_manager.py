@@ -212,7 +212,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 )
             )
 
-            self.multitenant_mgr.add_wallet_route.assert_called_once_with(
+            self.multitenant_mgr.add_key.assert_called_once_with(
                 "test_wallet", self.test_verkey
             )
 
@@ -664,7 +664,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             )
             await self.manager.receive_request(mock_request, receipt)
 
-            self.multitenant_mgr.add_wallet_route.assert_called_once_with(
+            self.multitenant_mgr.add_key.assert_called_once_with(
                 "test_wallet", new_info.verkey
             )
 
@@ -718,7 +718,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             )
             await self.manager.receive_request(mock_request, receipt)
 
-            self.multitenant_mgr.add_wallet_route.assert_called_once_with(
+            self.multitenant_mgr.add_key.assert_called_once_with(
                 "test_wallet", new_info.verkey
             )
 
@@ -819,7 +819,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             )
 
             await self.manager.create_response(conn_rec)
-            self.multitenant_mgr.add_wallet_route.assert_called_once_with(
+            self.multitenant_mgr.add_key.assert_called_once_with(
                 "test_wallet", TestConfig.test_verkey
             )
 

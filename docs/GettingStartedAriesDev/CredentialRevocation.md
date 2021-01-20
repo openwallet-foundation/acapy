@@ -2,7 +2,7 @@ These are the ACA-py steps and APIs involved to support credential revocation.
 
 Run ACA-Py with tails server support enabled. You will need to have the URL of an running instance of https://github.com/bcgov/indy-tails-server.
 
-Incude the command line parameter `--tails-server-base-url <indy-tails-server url>`
+Include the command line parameter `--tails-server-base-url <indy-tails-server url>`
 
 0.  Publish credential definition
 
