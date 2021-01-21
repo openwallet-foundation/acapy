@@ -20,16 +20,27 @@ class PluginRegistry:
     def __init__(self):
         """Initialize a `PluginRegistry` instance."""
         self._plugins = OrderedDict()
+        self._resolvers = OrderedDict()
 
     @property
     def plugin_names(self) -> Sequence[str]:
-        """Accessor for a list of all plugin modules."""
+        """Accessor for a list of all plugin names."""
         return list(self._plugins.keys())
 
     @property
     def plugins(self) -> Sequence[ModuleType]:
         """Accessor for a list of all plugin modules."""
         return list(self._plugins.values())
+
+    @property
+    def resolver_names(self) -> Sequence[str]:
+        """Accessor for a list of all resolver names."""
+        return list(self._resolvers.keys())
+
+    @property
+    def resolvers(self) -> Sequence[str]:
+        """Accessor for a list of all resolver modules."""
+        return list(self._resolvers.values())
 
     def validate_version(self, version_list, module_name):
         """Validate version dict format."""
@@ -119,6 +130,7 @@ class PluginRegistry:
 
         if module_name in self._plugins:
             mod = self._plugins[module_name]
+            return mod
         else:
             try:
                 mod = ClassLoader.load_module(module_name)
@@ -131,6 +143,11 @@ class PluginRegistry:
             if not mod:
                 LOGGER.error(f"Module doesn't exist: {module_name}")
                 return None
+
+            # Resolvers have supported_methods
+            if hasattr(mod, "supported_methods"):
+                self._resolvers[module_name] = mod
+                return mod
 
             # Any plugin with a setup method is considered valid.
             if hasattr(mod, "setup"):

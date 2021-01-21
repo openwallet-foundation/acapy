@@ -29,8 +29,11 @@ class TestPluginRegistry(AsyncTestCase):
         mod.__name__ = mod_name
         ctx = async_mock.MagicMock()
         self.registry._plugins[mod_name] = mod
+        self.registry._resolvers[mod_name] = mod
         assert list(self.registry.plugin_names) == [mod_name]
         assert list(self.registry.plugins) == [mod]
+        assert list(self.registry.resolver_names) == [mod_name]
+        assert list(self.registry.resolvers) == [mod]
         mod.setup = async_mock.CoroutineMock()
         await self.registry.init_context(ctx)
         mod.setup.assert_awaited_once_with(ctx)
@@ -450,16 +453,36 @@ class TestPluginRegistry(AsyncTestCase):
             assert self.registry.register_plugin("dummy") is None
 
     async def test_register_plugin_has_setup(self):
+        class MODULE:
+            supported_methods = "setup"
+
+        obj = MODULE()
         with async_mock.patch.object(
             ClassLoader, "load_module", async_mock.MagicMock()
         ) as load_module:
             load_module.side_effect = [
-                {"setup": "pressent"},  # module
+                obj,  # module
                 None,  # routes
                 None,  # message types
                 None,  # definition without versions attr
             ]
-            assert self.registry.register_plugin("dummy") is None
+            assert self.registry.register_plugin("dummy") == obj
+
+    async def test_register_has_supported_methods(self):
+        class MODULE:
+            supported_methods = "pressent"
+
+        obj = MODULE()
+        with async_mock.patch.object(
+            ClassLoader, "load_module", async_mock.MagicMock()
+        ) as load_module:
+            load_module.side_effect = [
+                obj,  # module
+                None,  # routes
+                None,  # message types
+                None,  # definition without versions attr
+            ]
+            assert self.registry.register_plugin("dummy") == obj
 
     async def test_register_definitions_malformed(self):
         with async_mock.patch.object(
