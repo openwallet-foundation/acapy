@@ -36,6 +36,9 @@ from ...connections.v1_0.messages.connection_invitation import ConnectionInvitat
 from ....ledger.base import BaseLedger
 from ....wallet.util import did_key_to_naked
 from ....messaging.responder import BaseResponder
+from ...present_proof.v1_0.messages.presentation_proposal import PresentationProposal
+from ...present_proof.v1_0.util.indy import indy_proof_req_preview2indy_requested_creds
+from ....indy.holder import IndyHolder
 
 
 DIDX_INVITATION = "didexchange/1.0"
@@ -136,15 +139,15 @@ class OutOfBandManager(BaseConnectionManager):
             a_type = atch.get("type")
             a_id = atch.get("id")
 
-            if a_type == "credential-offer":
-                cred_ex_rec = await V10CredentialExchange.retrieve_by_id(
-                    self._session,
-                    a_id,
-                )
-                message_attachments.append(
-                    InvitationMessage.wrap_message(cred_ex_rec.credential_offer_dict)
-                )
-            elif a_type == "present-proof":
+            # if a_type == "credential-offer":
+            #     cred_ex_rec = await V10CredentialExchange.retrieve_by_id(
+            #         self._session,
+            #         a_id,
+            #     )
+            #     message_attachments.append(
+            #         InvitationMessage.wrap_message(cred_ex_rec.credential_offer_dict)
+            #     )
+            if a_type == "present-proof":
                 pres_ex_rec = await V10PresentationExchange.retrieve_by_id(
                     self._session,
                     a_id,
@@ -402,15 +405,63 @@ class OutOfBandManager(BaseConnectionManager):
             req_attach_type = req_attach.data.json["@type"]
             if DIDCommPrefix.unqualify(req_attach_type) == PRESENTATION_REQUEST:
                 proof_present_mgr = PresentationManager(self._session)
+                indy_proof_request = req_attach.data.json["request_presentations~attach"][0].indy_dict
+                present_request_msg = req_attach.data.json
+                service_deco = {}
+                oob_invi_service = service.serialize()
+                service_deco["recipientKeys"] = oob_invi_service.get("recipientKeys")
+                service_deco["routingKeys"] = oob_invi_service.get("routingKeys")
+                service_deco["serviceEndpoint"] = oob_invi_service.get("serviceEndpoint")
+                present_request_msg["~service"] = service_deco
                 presentation_exchange_record = V10PresentationExchange(
                     connection_id=conn_rec.connection_id,
+                    thread_id=invi_msg._id,
                     initiator=V10PresentationExchange.INITIATOR_EXTERNAL,
                     role=V10PresentationExchange.ROLE_PROVER,
-                    presentation_request_dict=req_attach.data.json.serialize(),
+                    presentation_request=indy_proof_request,
+                    presentation_request_dict=present_request_msg,
+                    auto_present=self._session.context.settings.get(
+                        "debug.auto_respond_presentation_request"
+                    ),
+                    trace=(invi_msg._trace is not None),
                 )
+
+                presentation_exchange_record.presentation_request = indy_proof_request
                 presentation_exchange_record = await proof_present_mgr.receive_request(
-                    presentation_exchange_record=presentation_exchange_record
+                    presentation_exchange_record
                 )
+
+                if presentation_exchange_record.auto_present:
+                    presentation_preview = None
+                    if presentation_exchange_record.presentation_proposal_dict:
+                        exchange_pres_proposal = PresentationProposal.deserialize(
+                            presentation_exchange_record.presentation_proposal_dict
+                        )
+                        presentation_preview = exchange_pres_proposal.presentation_proposal
+
+                    try:
+                        req_creds = await indy_proof_req_preview2indy_requested_creds(
+                            indy_proof_request,
+                            presentation_preview,
+                            holder=self._session.inject(IndyHolder),
+                        )
+                    except ValueError as err:
+                        self._logger.warning(f"{err}")
+                        return
+
+                    (
+                        presentation_exchange_record,
+                        presentation_message,
+                    ) = await proof_present_mgr.create_presentation(
+                        presentation_exchange_record=presentation_exchange_record,
+                        requested_credentials=req_creds,
+                        comment="auto-presented for proof request nonce={}".format(
+                            indy_proof_request["nonce"]
+                        ),
+                    )
+                return presentation_message.serialize()
+            else:
+                raise OutOfBandManagerError("Unsupported request~attach type, only request-presentation is supported")
         else:
             return conn_rec.serialize()
 
