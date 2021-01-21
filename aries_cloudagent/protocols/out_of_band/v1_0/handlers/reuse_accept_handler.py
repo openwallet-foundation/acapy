@@ -27,6 +27,10 @@ class HandshakeReuseAcceptMessageHandler(BaseHandler):
         session = await context.session()
         mgr = OutOfBandManager(session)
         try:
-            await mgr.receive_reuse_accepted_message(context.message, context.message_receipt)
+            await mgr.receive_reuse_accepted_message(
+                reuse_accepted_msg=context.message,
+                reciept=context.message_receipt,
+                conn_record=context.connection_record,
+            )
         except OutOfBandManagerError as e:
             self._logger.exception(f"Error processing Handshake Reuse Accept message, {e}")

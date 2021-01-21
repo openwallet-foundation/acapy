@@ -28,6 +28,10 @@ class OOBProblemReportMessageHandler(BaseHandler):
         session = await context.session()
         mgr = OutOfBandManager(session)
         try:
-            await mgr.receive_problem_report(context.message, context.message_receipt)
+            await mgr.receive_problem_report(
+                problem_report=context.message,
+                reciept=context.message_receipt,
+                conn_record=context.connection_record,
+            )
         except OutOfBandManagerError:
             self._logger.exception("Error processing Problem Report message")

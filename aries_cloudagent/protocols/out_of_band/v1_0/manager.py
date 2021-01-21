@@ -28,7 +28,6 @@ from ....storage.error import StorageNotFoundError
 
 from .messages.service import Service as ServiceMessage
 from .models.invitation import InvitationRecord
-from .models.reuse_msg import ConnReuseMessageRecord
 
 from ...connections.v1_0.manager import ConnectionManager
 from ...present_proof.v1_0.manager import PresentationManager
@@ -331,16 +330,14 @@ class OutOfBandManager(BaseConnectionManager):
             num_included_req_attachments = len(invi_msg.request_attach)
             # Handshake_Protocol included Request_Attachment not included Use_Existing_Connection Yes
             if num_included_protocols >= 1 and num_included_req_attachments == 0 and use_existing_connection:
-                handshake_reuse_msg = await self.create_handshake_reuse_message(
+                await self.create_handshake_reuse_message(
                     invi_msg=invi_msg,
-                    service=service,
                     connection=conn_rec,
                 )
                 try:
                     await asyncio.wait_for(
                         self.check_reuse_msg_state(
-                            reuse_msg_id=handshake_reuse_msg._id,
-                            session=self._session
+                            conn_rec=conn_rec,
                         ),
                         30
                     )
@@ -348,10 +345,8 @@ class OutOfBandManager(BaseConnectionManager):
                     # If no reuse_accepted or problem_report message was recieved within
                     # the 30s timeout then a new connection to be created
                     conn_rec = None
-                await self.remove_reuse_msg_record(
-                    reuse_msg_id=handshake_reuse_msg._id,
-                    session=self._session
-                )
+                conn_rec.metadata_delete(session=self._session, key="reuse_msg_id")
+                conn_rec.metadata_delete(session=self._session, key="reuse_msg_state")
             # Inverse of the following cases
             # Handshake_Protocol not included Request_Attachment included Use_Existing_Connection Yes
             # Handshake_Protocol included Request_Attachment included Use_Existing_Connection Yes
@@ -402,9 +397,7 @@ class OutOfBandManager(BaseConnectionManager):
                     break
 
         # Request Attach
-        if len(invi_msg.request_attach) > 1:
-            raise OutOfBandManagerError("More than 1 request~attach included.")
-        elif len(invi_msg.request_attach) == 1:
+        if len(invi_msg.request_attach) >= 1:
             req_attach = invi_msg.request_attach[0]
             req_attach_type = req_attach.data.json["@type"]
             if DIDCommPrefix.unqualify(req_attach_type) == PRESENTATION_REQUEST:
@@ -418,8 +411,8 @@ class OutOfBandManager(BaseConnectionManager):
                 presentation_exchange_record = await proof_present_mgr.receive_request(
                     presentation_exchange_record=presentation_exchange_record
                 )
-
-        return conn_rec.serialize()
+        else:
+            return conn_rec.serialize()
 
     async def find_existing_connection(
         self,
@@ -437,49 +430,21 @@ class OutOfBandManager(BaseConnectionManager):
             conn_rec = conn_records[0]
         return conn_rec
 
-    async def find_reuse_msg_record(
-        self,
-        reuse_msg_id: str,
-        session: ProfileSession,
-    ) -> ConnReuseMessageRecord:
-        reuse_msg_record = await ConnReuseMessageRecord.retrieve_by_id(
-            session,
-            reuse_msg_id,
-        )
-        return reuse_msg_record
-
     async def check_reuse_msg_state(
         self,
-        reuse_msg_id: str,
-        session: ProfileSession,
+        conn_rec: ConnRecord,
     ):
         recieved = False
         while not recieved:
-            reuse_msg_record = await self.find_reuse_msg_record(
-                reuse_msg_id=reuse_msg_id,
-                session=session
-            )
-            if not reuse_msg_record.state == ConnReuseMessageRecord.STATE_INITIAL:
+            if not conn_rec.metadata_get(self._session, "reuse_msg_state") == "initial":
                 recieved = True
         return
-
-    async def remove_reuse_msg_record(
-        self,
-        reuse_msg_id: str,
-        session: ProfileSession,
-    ):
-        reuse_msg_record = await self.find_reuse_msg_record(
-            reuse_msg_id=reuse_msg_id,
-            session=session,
-        )
-        await reuse_msg_record.delete_record(session=session)
 
     async def create_handshake_reuse_message(
         self,
         invi_msg: InvitationMessage,
-        service: ServiceMessage,
         conn_record: ConnRecord,
-    ) -> HandshakeReuse:
+    ):
         """
         Create and Send a Handshake Reuse message under RFC 0434.
 
@@ -506,15 +471,8 @@ class OutOfBandManager(BaseConnectionManager):
                    message=reuse_msg,
                    target_list=connection_targets,
                 )
-
-            reuse_msg_record = ConnReuseMessageRecord(
-                state=ConnReuseMessageRecord.STATE_INITIAL,
-                invi_msg_id=invi_msg._decorators._id,
-                conn_rec_id=conn_record._id,
-                conn_reuse_msg_id=reuse_msg._id
-            )
-            await reuse_msg_record.save(self._session, reason="Created new reuse message record")
-            return reuse_msg
+                conn_record.metadata_set(session=self._session, key="reuse_msg_id", value=reuse_msg._id)
+                conn_record.metadata_set(session=self._session, key="reuse_msg_state", value="initial")
         except Exception as err:
             raise OutOfBandManagerError(f"Error on creating and sending a handshake reuse message: {err}")
 
@@ -560,6 +518,26 @@ class OutOfBandManager(BaseConnectionManager):
                         message=reuse_accept_msg,
                         target_list=connection_targets,
                     )
+                # Find corresponding OOB Invitation Record
+                try:
+                    invi_rec = await InvitationRecord.retrieve_by_tag_filter(
+                        self._session,
+                        tag_filter={"invi_msg_id": invi_msg_id},
+                    )
+                except StorageNotFoundError:
+                    raise OutOfBandManagerError(
+                        f"No record of invitation {invi_msg_id} "
+                    )
+                # If Invitation is single-use, then delete the ConnRecord
+                # created as the existing connection will be used.
+                if not invi_rec.multi_use:
+                    invi_id_post_filter = {}
+                    invi_id_post_filter["invitation_msg_id"] = invi_msg_id
+                    conn_record_to_delete = self.find_existing_connection(
+                        tag_filter={},
+                        post_filter=invi_id_post_filter,
+                    )
+                    conn_record_to_delete.delete_record(session=self._session)
             else:
                 raise OutOfBandManagerError(
                     (
@@ -583,12 +561,13 @@ class OutOfBandManager(BaseConnectionManager):
         self,
         reuse_accepted_msg: HandshakeReuseAccept,
         reciept: MessageReceipt,
+        conn_record: ConnRecord,
     ):
         """
         Recieve and process a HandshakeReuseAccept message under RFC 0434.
 
-        Process a `HandshakeReuseAccept` message by updating the state of
-        ConnReuseMessageRecord to STATE_ACCEPTED.
+        Process a `HandshakeReuseAccept` message by updating the ConnRecord metadata
+        state to `accepted`.
 
         Args:
             reuse_accepted_msg: The `HandshakeReuseAccept` to process
@@ -602,14 +581,10 @@ class OutOfBandManager(BaseConnectionManager):
         """
         try:
             invi_msg_id = reuse_accepted_msg._thread.pthid
-            reuse_msg_id = reuse_accepted_msg._thread.thid
-            reuse_msg_record = await self.find_reuse_msg_record(
-                session=self._session,
-                reuse_msg_id=reuse_msg_id,
-            )
-            assert invi_msg_id == reuse_msg_record.invi_msg_id
-            reuse_msg_record.state = ConnReuseMessageRecord.STATE_ACCEPTED
-            await reuse_msg_record.save(self._session, reason="Reuse message accepted by Inviter")
+            thread_reuse_msg_id = reuse_accepted_msg._thread.thid
+            conn_reuse_msg_id = conn_record.metadata_get(session=self._session, key="reuse_msg_id")
+            assert thread_reuse_msg_id == conn_reuse_msg_id
+            conn_record.metadata_set(session=self._session, key="reuse_msg_state", value="accepted")
         except StorageNotFoundError as e:
             raise OutOfBandManagerError(
                 (
@@ -621,12 +596,13 @@ class OutOfBandManager(BaseConnectionManager):
         self,
         problem_report: ProblemReport,
         reciept: MessageReceipt,
+        conn_record: ConnRecord,
     ):
         """
         Recieve and process a ProblemReport message from the inviter to invitee.
 
-        Process a `ProblemReport` message by updating the state of
-        ConnReuseMessageRecord to STATE_NOT_ACCEPTED.
+        Process a `ProblemReport` message by updating  the ConnRecord metadata
+        state to `not_accepted`.
 
         Args:
             problem_report: The `ProblemReport` to process
@@ -640,14 +616,10 @@ class OutOfBandManager(BaseConnectionManager):
         """
         try:
             invi_msg_id = problem_report._thread.pthid
-            reuse_msg_id = problem_report._thread.thid
-            reuse_msg_record = await self.find_reuse_msg_record(
-                session=self._session,
-                reuse_msg_id=reuse_msg_id,
-            )
-            assert invi_msg_id == reuse_msg_record.invi_msg_id
-            reuse_msg_record.state = ConnReuseMessageRecord.STATE_NOT_ACCEPTED
-            await reuse_msg_record.save(self._session, reason="Recieved problem report message from inviter")
+            thread_reuse_msg_id = problem_report._thread.thid
+            conn_reuse_msg_id = conn_record.metadata_get(session=self._session, key="reuse_msg_id")
+            assert thread_reuse_msg_id == conn_reuse_msg_id
+            conn_record.metadata_set(session=self._session, key="reuse_msg_state", value="not_accepted")
         except StorageNotFoundError:
             raise OutOfBandManagerError(
                 (
