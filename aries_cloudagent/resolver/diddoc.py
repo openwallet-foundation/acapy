@@ -8,12 +8,30 @@ January 2021:
 """
 
 import json
-from typing import Any, Dict, Sequence, Union
-from operator import attrgetter
+from typing import Sequence
+from operator import itemgetter
+from .did import DID, DIDUrl
 
 
-class ResolvedService:
-    """Service element embedded in resolved DID Documents."""
+class ExternalResourceError(Exception):
+    """Raised when dereference is not contained within the current document."""
+
+
+def _index_ids_of_doc(doc: dict):
+    index = {}
+
+    def _visit(value):
+        if isinstance(value, dict):
+            if "id" in value:
+                index[value["id"]] = value
+            for nested in value.values():
+                _visit(nested)
+        elif isinstance(value, list):
+            for nested in value:
+                _visit(nested)
+
+    _visit(doc)
+    return index
 
 
 class ResolvedDIDDoc:
@@ -22,50 +40,28 @@ class ResolvedDIDDoc:
     OLD_AGENT_SERVICE_TYPE = "IndyAgent"
     AGENT_SERVICE_TYPE = "did-communication"
 
-    def __init__(self, doc: Dict[str, Any]):
+    def __init__(self, doc: dict):
         """Initialize Resolved DID Doc.
 
         Args:
-            doc (Dict[str, Any]): DID Document as resolved in dictionary representation.
+            doc (dict): DID Document as resolved in dictionary representation.
 
         """
         self._doc = doc
-        # Required properties
-        self._id = doc["id"]
-
-        # Optional properties
-        if "service" in doc:
-            self._service = {service["id"]: service for service in doc["service"]}
-
-        if "verificationMethod" in doc:
-            self._verification_method = dict(
-                [(method["id"], method) for method in doc["verificationMethod"]]
-            )
+        self._did = DID(doc["id"])
+        self._index = _index_ids_of_doc(doc)
 
     @classmethod
     def from_json(cls, doc_json: str) -> "ResolvedDIDDoc":
         """Create ResolvedDIDDoc from json string."""
         return cls(json.loads(doc_json))
 
-    def get(self, key: str, default: Any = None) -> Union[str, Dict, Sequence]:
-        """Get a value from the DIDDoc.
+    @property
+    def did(self):
+        """Return the DID subject of this Document."""
+        return self._did
 
-        Args:
-            key (str): key to retrieve
-            default (Any): default value returned if key is absent
-
-        """
-        return self._doc.get(key, default)
-
-    def service(self, id_: str):
-        """Retrieve a service from the doc by ID."""
-        return self._service[id_]
-
-    def verification_method(self, id_: str):
-        """Retrieve a verification method from the doc by ID."""
-        return self._verification_method[id_]
-
-    def didcomm_services(self) -> Sequence[Dict]:
+    def didcomm_services(self) -> Sequence[dict]:
         """Return agent services in priority order."""
 
         def _valid_filter(service):
@@ -80,8 +76,8 @@ class ResolvedDIDDoc:
                 )
             )
 
-        # Filter out all but agent services with expected properties
-        services = filter(_valid_filter, self._service.values())
+        # Filter out all but didcomm services with expected properties
+        services = filter(_valid_filter, self._doc.get("service", []))
 
         didcomm = filter(
             lambda service: service["type"] == self.AGENT_SERVICE_TYPE, services
@@ -93,6 +89,22 @@ class ResolvedDIDDoc:
         # Prioritize agent service type over old agent service type
         # then sort by priority
         return [
-            *(sorted(didcomm, key=attrgetter("priority"))),
-            *(sorted(old, key=attrgetter("priority"))),
+            *(sorted(didcomm, key=itemgetter("priority"))),
+            *(sorted(old, key=itemgetter("priority"))),
         ]
+
+    def dereference(self, did_url: str):
+        """Dereference values contained in this DID Document."""
+        parsed = DIDUrl.parse(did_url)
+        if self.did != parsed.did:
+            raise ExternalResourceError(
+                "{} is not contained in this DID Document".format(did_url)
+            )
+
+        if parsed.path or parsed.query:
+            raise NotImplementedError(
+                "Dereferencing DID URLs with paths or query parameters is not \
+                supported yet."
+            )
+
+        return self._index.get(parsed.fragment)
