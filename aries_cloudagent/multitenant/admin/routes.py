@@ -2,7 +2,7 @@
 
 from marshmallow import fields, validate, validates_schema, ValidationError
 from aiohttp import web
-from aiohttp_apispec import docs, request_schema, match_info_schema, response_schema
+from aiohttp_apispec import docs, request_schema, match_info_schema, response_schema, querystring_schema
 
 from ...admin.request_context import AdminRequestContext
 from ...messaging.valid import JSONWebToken, UUIDFour
@@ -163,7 +163,14 @@ class WalletListSchema(OpenAPISchema):
     )
 
 
+class WalletListQueryStringSchema(OpenAPISchema):
+    """Parameters and validators for wallet list request query string."""
+
+    wallet_name = fields.Str(description="Wallet name", example="MyNewWallet")
+
+
 @docs(tags=["multitenancy"], summary="List all subwallets")
+@querystring_schema(WalletListQueryStringSchema())
 @response_schema(WalletListSchema(), 200, description="")
 async def wallets_list(request: web.BaseRequest):
     """
@@ -175,9 +182,14 @@ async def wallets_list(request: web.BaseRequest):
 
     context: AdminRequestContext = request["context"]
 
+    query = {}
+    wallet_name = request.query.get("wallet_name")
+    if wallet_name:
+        query["wallet_name"] = wallet_name
+
     async with context.session() as session:
         try:
-            records = await WalletRecord.query(session)
+            records = await WalletRecord.query(session, tag_filter=query)
             results = [format_wallet_record(record) for record in records]
             results.sort(key=lambda w: w["created_at"])
         except (StorageError, BaseModelError) as err:
