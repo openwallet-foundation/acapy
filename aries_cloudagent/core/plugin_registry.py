@@ -23,7 +23,7 @@ class PluginRegistry:
 
     @property
     def plugin_names(self) -> Sequence[str]:
-        """Accessor for a list of all plugin modules."""
+        """Accessor for a list of all plugin names."""
         return list(self._plugins.keys())
 
     @property
@@ -48,7 +48,7 @@ class PluginRegistry:
                 "Versions list must define at least one version module"
             )
 
-        if not all(type(v) is dict for v in version_list):
+        if any(type(v) is not dict for v in version_list):
             raise ProtocolDefinitionValidationError(
                 "Element of versions definition list is not of type dict"
             )
@@ -91,10 +91,11 @@ class PluginRegistry:
 
             # There can only be one definition per major version
             major_version = version_dict["major_version"]
-            count = 0
-            for version_dict_outer in version_list:
-                if version_dict_outer["major_version"] == major_version:
-                    count += 1
+            count = sum(
+                version_dict_outer["major_version"] == major_version
+                for version_dict_outer in version_list
+            )
+
             if count > 1:
                 raise ProtocolDefinitionValidationError(
                     "There can only be one definition per major version. "
@@ -115,8 +116,10 @@ class PluginRegistry:
 
     def register_plugin(self, module_name: str) -> ModuleType:
         """Register a plugin module."""
+
         if module_name in self._plugins:
             mod = self._plugins[module_name]
+            return mod
         else:
             try:
                 mod = ClassLoader.load_module(module_name)
@@ -129,6 +132,11 @@ class PluginRegistry:
             if not mod:
                 LOGGER.error(f"Module doesn't exist: {module_name}")
                 return None
+
+            # Any plugin with a setup method is considered valid.
+            if hasattr(mod, "setup"):
+                self._plugins[module_name] = mod
+                return mod
 
             # Make an exception for non-protocol modules
             # that contain admin routes and for old-style protocol
