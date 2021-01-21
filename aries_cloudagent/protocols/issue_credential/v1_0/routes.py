@@ -20,9 +20,7 @@ from ....messaging.credential_definitions.util import CRED_DEF_TAGS
 from ....messaging.models.base import BaseModelError, OpenAPISchema
 from ....messaging.valid import (
     INDY_CRED_DEF_ID,
-    INDY_CRED_REV_ID,
     INDY_DID,
-    INDY_REV_REG_ID,
     INDY_SCHEMA_ID,
     INDY_VERSION,
     UUIDFour,
@@ -256,21 +254,6 @@ class V10CredentialProblemReportRequestSchema(OpenAPISchema):
     """Request schema for sending problem report."""
 
     explain_ltxt = fields.Str(required=True)
-
-
-class V10PublishRevocationsSchema(OpenAPISchema):
-    """Request and result schema for revocation publication API call."""
-
-    rrid2crid = fields.Dict(
-        required=False,
-        keys=fields.Str(example=INDY_REV_REG_ID["example"]),  # marshmallow 3.0 ignores
-        values=fields.List(
-            fields.Str(
-                description="Credential revocation identifier", **INDY_CRED_REV_ID
-            )
-        ),
-        description="Credential revocation ids by revocation registry id",
-    )
 
 
 class CredIdMatchInfoSchema(OpenAPISchema):

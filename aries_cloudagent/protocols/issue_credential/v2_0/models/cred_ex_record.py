@@ -1,6 +1,5 @@
 """Aries#0036 v1.0 credential exchange information with non-secrets storage."""
 
-from os import environ
 from typing import Any, Mapping
 
 from marshmallow import fields, validate
@@ -9,7 +8,7 @@ from .....core.profile import ProfileSession
 from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
 from .....messaging.valid import UUIDFour
 
-UNENCRYPTED_TAGS = environ.get("EXCH_UNENCRYPTED_TAGS", "False").upper() == "TRUE"
+from . import UNENCRYPTED_TAGS
 
 
 class V20CredExRecord(BaseExchangeRecord):
@@ -55,7 +54,6 @@ class V20CredExRecord(BaseExchangeRecord):
         cred_request: Mapping = None,  # serialized cred request message
         cred_request_metadata: Mapping = None,  # credential request metadata
         cred_issue: Mapping = None,  # serialized cred issue message
-        detail: Mapping = None,  # serialized V20CredExDetail
         auto_offer: bool = False,
         auto_issue: bool = False,
         auto_remove: bool = True,
@@ -77,20 +75,6 @@ class V20CredExRecord(BaseExchangeRecord):
         self.cred_request = cred_request
         self.cred_request_metadata = cred_request_metadata
         self.cred_issue = cred_issue
-
-        self.detail = detail or {}  # ugly: must serialize to save as non-secrets record
-        if "indy" not in self.detail:
-            self.detail["indy"] = {}
-        if "cred_req_metadata" not in self.detail["indy"]:
-            self.detail["indy"]["cred_req_metadata"] = {}
-        for item in ("rev_reg_id", "cred_rev_id", "cred_id_stored"):
-            if item not in self.detail["indy"]:
-                self.detail["indy"][item] = None
-        if "dif" not in self.detail:
-            self.detail["dif"] = {}
-        if "tbd" not in self.detail["dif"]:
-            self.detail["dif"]["tbd"] = {}
-
         self.auto_offer = auto_offer
         self.auto_issue = auto_issue
         self.auto_remove = auto_remove
@@ -123,7 +107,6 @@ class V20CredExRecord(BaseExchangeRecord):
                 "cred_request",
                 "cred_request_metadata",
                 "cred_issue",
-                "detail",
                 "auto_offer",
                 "auto_issue",
                 "auto_remove",
@@ -227,10 +210,6 @@ class V20CredExRecordSchema(BaseExchangeSchema):
     )
     cred_issue = fields.Dict(
         required=False, description="Serialized credential issue message"
-    )
-    detail = fields.Dict(
-        required=False,
-        description="Credential exchange detail data per format ('indy', 'dif')",
     )
     auto_offer = fields.Bool(
         required=False,

@@ -27,6 +27,8 @@ from ..messages.cred_proposal import V20CredProposal
 from ..messages.cred_request import V20CredRequest
 from ..messages.inner.cred_preview import V20CredPreview, V20CredAttrSpec
 from ..models.cred_ex_record import V20CredExRecord
+from ..models.detail.dif import V20CredExRecordDIF
+from ..models.detail.indy import V20CredExRecordIndy
 
 
 TEST_DID = "LjgpST2rjsoxYegQDRm7EL"
@@ -124,54 +126,26 @@ class TestV20CredManager(AsyncTestCase):
         self.manager = V20CredManager(self.profile)
         assert self.manager.profile
 
-    async def test_record(self):
-        same = [
-            V20CredExRecord(
-                cred_ex_id="dummy-0",
-                thread_id="thread-0",
-                initiator=V20CredExRecord.INITIATOR_SELF,
-                role=V20CredExRecord.ROLE_ISSUER,
-            )
-        ] * 2
-        diff = [
-            V20CredExRecord(
-                cred_ex_id="dummy-1",
-                initiator=V20CredExRecord.INITIATOR_SELF,
-                role=V20CredExRecord.ROLE_ISSUER,
-            ),
-            V20CredExRecord(
-                cred_ex_id="dummy-0",
-                thread_id="thread-1",
-                initiator=V20CredExRecord.INITIATOR_SELF,
-                role=V20CredExRecord.ROLE_ISSUER,
-            ),
-            V20CredExRecord(
-                cred_ex_id="dummy-0",
-                thread_id="thread-1",
-                initiator=V20CredExRecord.INITIATOR_EXTERNAL,
-                role=V20CredExRecord.ROLE_ISSUER,
-            ),
-            V20CredExRecord(
-                cred_ex_id="dummy-0",
-                thread_id="thread-1",
-                initiator=V20CredExRecord.INITIATOR_EXTERNAL,
-                detail={
-                    "indy": {"cred_id_stored": "abc123"},
-                    "dif": {"tbd": "123"},
-                },
-                role=V20CredExRecord.ROLE_ISSUER,
-            ),
-        ]
+    async def test_get_indy_detail_record(self):
+        cred_ex_id = "dummy"
+        detail_indy = V20CredExRecordIndy(
+            cred_ex_id=cred_ex_id,
+            cred_id_stored="my-cred",
+        )
+        await detail_indy.save(self.session)
+        assert (
+            await self.manager._get_detail_record(cred_ex_id, V20CredFormat.Format.INDY)
+            == detail_indy
+        )
+        with self.assertRaises(V20CredManagerError) as context:
+            await self.manager._get_detail_record(cred_ex_id, V20CredFormat.Format.DIF)
+        assert "No credential exchange " in str(context.exception)
 
-        for i in range(len(same) - 1):
-            for j in range(i, len(same)):
-                assert same[i] == same[j]
-
-        for i in range(len(diff) - 1):
-            for j in range(i, len(diff)):
-                assert diff[i] == diff[j] if i == j else diff[i] != diff[j]
-
-        assert same[0].connection_id == same[0].conn_id  # cover connection_id
+    async def test_get_dif_detail_record(self):
+        cred_ex_id = "dummy"
+        detail_dif = V20CredExRecordDIF(cred_ex_id=cred_ex_id, item="my-item")
+        await detail_dif.save(self.session)
+        await self.manager._get_detail_record(cred_ex_id, V20CredFormat.Format.DIF)
 
     async def test_prepare_send(self):
         conn_id = "test_conn_id"
@@ -1184,6 +1158,7 @@ class TestV20CredManager(AsyncTestCase):
         }
         indy_cred_req = {"schema_id": SCHEMA_ID, "cred_def_id": CRED_DEF_ID}
         thread_id = "thread-id"
+        cred_rev_id = "1000"
 
         cred_preview = V20CredPreview(
             attributes=[
@@ -1219,7 +1194,6 @@ class TestV20CredManager(AsyncTestCase):
             cred_proposal=cred_proposal.serialize(),
             cred_offer=cred_offer.serialize(),
             cred_request=cred_request.serialize(),
-            detail={"indy": {"cred_rev_id": "1000"}},
             initiator=V20CredExRecord.INITIATOR_SELF,
             role=V20CredExRecord.ROLE_ISSUER,
             state=V20CredExRecord.STATE_REQUEST_RECEIVED,
@@ -1229,10 +1203,7 @@ class TestV20CredManager(AsyncTestCase):
         issuer = async_mock.MagicMock()
         indy_cred = {"indy": "credential"}
         issuer.create_credential = async_mock.CoroutineMock(
-            return_value=(
-                json.dumps(indy_cred),
-                stored_cx_rec.detail["indy"]["cred_rev_id"],
-            ),
+            return_value=(json.dumps(indy_cred), cred_rev_id)
         )
         self.context.injector.bind_instance(IndyIssuer, issuer)
 
@@ -1413,7 +1384,7 @@ class TestV20CredManager(AsyncTestCase):
             V20CredExRecord, "save", autospec=True
         ) as mock_save:
             revoc.return_value.get_active_issuer_rev_reg_record = (
-                async_mock.CoroutineMock(side_effect=test_module.StorageNotFoundError())
+                async_mock.CoroutineMock(side_effect=StorageNotFoundError())
             )
             revoc.return_value.init_issuer_registry = async_mock.CoroutineMock(
                 return_value=async_mock.MagicMock(  # pending_rev_reg_rec
@@ -1506,7 +1477,7 @@ class TestV20CredManager(AsyncTestCase):
             V20CredExRecord, "save", autospec=True
         ) as mock_save:
             revoc.return_value.get_active_issuer_rev_reg_record = (
-                async_mock.CoroutineMock(side_effect=test_module.StorageNotFoundError())
+                async_mock.CoroutineMock(side_effect=StorageNotFoundError())
             )
             issuer_rr_rec.query_by_cred_def_id = async_mock.CoroutineMock(
                 side_effect=[
@@ -1714,7 +1685,6 @@ class TestV20CredManager(AsyncTestCase):
             cred_proposal=cred_proposal.serialize(),
             cred_offer=cred_offer.serialize(),
             cred_request=cred_request.serialize(),
-            cred_request_metadata=cred_req_meta,
             cred_issue=cred_issue.serialize(),
             initiator=V20CredExRecord.INITIATOR_EXTERNAL,
             role=V20CredExRecord.ROLE_ISSUER,
@@ -1738,13 +1708,36 @@ class TestV20CredManager(AsyncTestCase):
             V20CredExRecord, "save", autospec=True
         ) as mock_save, async_mock.patch.object(
             V20CredExRecord, "delete_record", autospec=True
-        ) as delete_ex:
-
+        ) as mock_delete:
             mock_rev_reg.from_definition = async_mock.MagicMock(
                 return_value=async_mock.MagicMock(
                     get_or_fetch_local_tails_path=async_mock.CoroutineMock()
                 )
             )
+            with self.assertRaises(V20CredManagerError) as context:
+                await self.manager.store_credential(stored_cx_rec, cred_id=cred_id)
+            assert "No credential exchange " in str(context.exception)
+
+        with async_mock.patch.object(
+            test_module, "RevocationRegistry", autospec=True
+        ) as mock_rev_reg, async_mock.patch.object(
+            V20CredExRecord, "save", autospec=True
+        ) as mock_save, async_mock.patch.object(
+            test_module.V20CredManager, "delete_cred_ex_record", autospec=True
+        ) as mock_delete, async_mock.patch.object(
+            test_module.V20CredManager, "_get_detail_record", autospec=True
+        ) as mock_get_detail_record:
+            mock_rev_reg.from_definition = async_mock.MagicMock(
+                return_value=async_mock.MagicMock(
+                    get_or_fetch_local_tails_path=async_mock.CoroutineMock()
+                )
+            )
+            mock_get_detail_record.return_value = async_mock.MagicMock(
+                cred_request_metadata=cred_req_meta,
+                save=async_mock.CoroutineMock(),
+            )
+
+            self.ledger.get_credential_definition.reset_mock()
             ret_cx_rec, ret_cred_ack = await self.manager.store_credential(
                 stored_cx_rec, cred_id=cred_id
             )
@@ -1762,7 +1755,6 @@ class TestV20CredManager(AsyncTestCase):
                 rev_reg_def=REV_REG_DEF,
             )
 
-            assert ret_cx_rec.detail["indy"]["cred_id_stored"] == cred_id
             assert V20CredIssue.deserialize(ret_cx_rec.cred_issue).cred() == indy_cred
             assert ret_cx_rec.state == V20CredExRecord.STATE_DONE
             assert ret_cred_ack._thread_id == thread_id
@@ -1844,7 +1836,6 @@ class TestV20CredManager(AsyncTestCase):
             cred_proposal=cred_proposal.serialize(),
             cred_offer=cred_offer.serialize(),
             cred_request=cred_request.serialize(),
-            cred_request_metadata=cred_req_meta,
             cred_issue=cred_issue.serialize(),
             initiator=V20CredExRecord.INITIATOR_EXTERNAL,
             role=V20CredExRecord.ROLE_HOLDER,
@@ -1865,11 +1856,18 @@ class TestV20CredManager(AsyncTestCase):
         )
         self.context.injector.bind_instance(IndyHolder, holder)
 
-        with self.assertRaises(test_module.IndyHolderError) as context:
-            await self.manager.store_credential(
-                cred_ex_record=stored_cx_rec, cred_id=cred_id
+        with async_mock.patch.object(
+            test_module.V20CredManager, "_get_detail_record", autospec=True
+        ) as mock_get_detail_record:
+            mock_get_detail_record.return_value = async_mock.MagicMock(
+                cred_request_metadata=cred_req_meta,
+                save=async_mock.CoroutineMock(),
             )
-        assert "Nope" in str(context.exception)
+            with self.assertRaises(test_module.IndyHolderError) as context:
+                await self.manager.store_credential(
+                    cred_ex_record=stored_cx_rec, cred_id=cred_id
+                )
+            assert "Nope" in str(context.exception)
 
     async def test_credential_ack(self):
         conn_id = "conn-id"
@@ -1886,11 +1884,12 @@ class TestV20CredManager(AsyncTestCase):
             V20CredExRecord, "save", autospec=True
         ) as mock_save, async_mock.patch.object(
             V20CredExRecord, "delete_record", autospec=True
-        ) as delete_ex, async_mock.patch.object(
-            V20CredExRecord,
-            "retrieve_by_conn_and_thread",
-            async_mock.CoroutineMock(return_value=stored_cx_rec),
-        ) as mock_retrieve:
+        ) as mock_delete, async_mock.patch.object(
+            V20CredExRecord, "retrieve_by_conn_and_thread", async_mock.CoroutineMock()
+        ) as mock_retrieve, async_mock.patch.object(
+            test_module.V20CredManager, "delete_cred_ex_record", autospec=True
+        ) as mock_delete:
+            mock_retrieve.return_value = stored_cx_rec
             ret_cx_rec = await self.manager.receive_credential_ack(
                 ack,
                 conn_id,
@@ -1900,7 +1899,37 @@ class TestV20CredManager(AsyncTestCase):
             mock_save.assert_called_once()
 
             assert ret_cx_rec.state == V20CredExRecord.STATE_DONE
-            delete_ex.assert_called_once()
+            mock_delete.assert_called_once()
+
+    async def test_delete_cred_ex_record(self):
+        stored_cx_rec = async_mock.MagicMock(delete_record=async_mock.CoroutineMock())
+        stored_indy = async_mock.MagicMock(delete_record=async_mock.CoroutineMock())
+
+        with async_mock.patch.object(
+            V20CredExRecord, "delete_record", autospec=True
+        ) as mock_delete, async_mock.patch.object(
+            V20CredExRecord, "retrieve_by_id", async_mock.CoroutineMock()
+        ) as mock_retrieve, async_mock.patch.object(
+            test_module, "V20CredFormat", async_mock.MagicMock()
+        ) as mock_cred_format:
+            mock_retrieve.return_value = stored_cx_rec
+            mock_cred_format.Format = [
+                async_mock.MagicMock(
+                    detail=async_mock.MagicMock(
+                        retrieve_by_cred_ex_id=async_mock.CoroutineMock(
+                            return_value=stored_indy
+                        )
+                    )
+                ),
+                async_mock.MagicMock(
+                    detail=async_mock.MagicMock(
+                        retrieve_by_cred_ex_id=async_mock.CoroutineMock(
+                            side_effect=StorageNotFoundError()
+                        )
+                    )
+                ),
+            ]
+            await self.manager.delete_cred_ex_record("dummy")
 
     async def test_retrieve_records(self):
         self.cache = InMemoryCache()

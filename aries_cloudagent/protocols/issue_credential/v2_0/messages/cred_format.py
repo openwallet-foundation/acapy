@@ -13,7 +13,11 @@ from .....messaging.decorators.attach_decorator import AttachDecorator
 from .....messaging.models.base import BaseModel, BaseModelSchema
 from .....messaging.valid import UUIDFour
 
-FormatSpec = namedtuple("FormatSpec", "aries aka")  # Aries RFC value, further monikers
+from ..models.detail.dif import V20CredExRecordDIF
+from ..models.detail.indy import V20CredExRecordIndy
+
+# Aries RFC value, further monikers, cred ex detail record class
+FormatSpec = namedtuple("FormatSpec", "aries aka detail")
 
 
 class V20CredFormat(BaseModel):
@@ -27,8 +31,16 @@ class V20CredFormat(BaseModel):
     class Format(Enum):
         """Proposal credential format."""
 
-        INDY = FormatSpec("hlindy-zkp-v1.0", {"indy", "hyperledgerindy", "hlindy"})
-        DIF = FormatSpec("dif/credential-manifest@v1.0", {"dif", "w3c", "jsonld"})
+        INDY = FormatSpec(
+            "hlindy-zkp-v1.0",
+            {"indy", "hyperledgerindy", "hlindy"},
+            V20CredExRecordIndy,
+        )
+        DIF = FormatSpec(
+            "dif/credential-manifest@v1.0",
+            {"dif", "w3c", "jsonld"},
+            V20CredExRecordDIF,
+        )
 
         @classmethod
         def get(cls, label: Union[str, "V20CredFormat.Format"]):
@@ -54,6 +66,11 @@ class V20CredFormat(BaseModel):
         def aka(self) -> str:
             """Accessor for alternative identifier list."""
             return self.value.aka
+
+        @property
+        def detail(self) -> str:
+            """Accessor for credential exchange detail class."""
+            return self.value.detail
 
         def validate_filter(self, data: Mapping):
             """Raise ValidationError for wrong filtration criteria."""

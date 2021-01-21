@@ -22,9 +22,7 @@ from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....messaging.models.base import BaseModelError, OpenAPISchema
 from ....messaging.valid import (
     INDY_CRED_DEF_ID,
-    INDY_CRED_REV_ID,
     INDY_DID,
-    INDY_REV_REG_ID,
     INDY_SCHEMA_ID,
     INDY_VERSION,
     UUIDFour,
@@ -250,21 +248,6 @@ class V20CredIssueProblemReportRequestSchema(OpenAPISchema):
     """Request schema for sending problem report."""
 
     explain_ltxt = fields.Str(required=True)
-
-
-class V20PublishRevocationsSchema(OpenAPISchema):
-    """Request and result schema for revocation publication API call."""
-
-    rrid2crid = fields.Dict(
-        required=False,
-        keys=fields.Str(example=INDY_REV_REG_ID["example"]),  # marshmallow 3.0 ignores
-        values=fields.List(
-            fields.Str(
-                description="Credential revocation identifier", **INDY_CRED_REV_ID
-            )
-        ),
-        description="Credential revocation ids by revocation registry id",
-    )
 
 
 class V20CredIdMatchInfoSchema(OpenAPISchema):
@@ -1151,18 +1134,13 @@ async def credential_exchange_remove(request: web.BaseRequest):
     outbound_handler = request["outbound_message_router"]
 
     cred_ex_id = request.match_info["cred_ex_id"]
-    cred_ex_record = None
     try:
-        async with context.session() as session:
-            cred_ex_record = await V20CredExRecord.retrieve_by_id(
-                session,
-                cred_ex_id,
-            )
-            await cred_ex_record.delete_record(session)
+        cred_manager = V20CredManager(context.profile)
+        await cred_manager.delete_cred_ex_record(cred_ex_id)
     except StorageNotFoundError as err:
-        await internal_error(err, web.HTTPNotFound, cred_ex_record, outbound_handler)
+        await internal_error(err, web.HTTPNotFound, None, outbound_handler)
     except StorageError as err:
-        await internal_error(err, web.HTTPBadRequest, cred_ex_record, outbound_handler)
+        await internal_error(err, web.HTTPBadRequest, None, outbound_handler)
 
     return web.json_response({})
 

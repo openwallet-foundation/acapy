@@ -4,7 +4,7 @@ import asyncio
 import json
 import logging
 
-from typing import Mapping, Tuple
+from typing import Mapping, Tuple, Union
 
 from ....cache.base import BaseCache
 from ....core.error import BaseError
@@ -28,6 +28,8 @@ from .messages.cred_proposal import V20CredProposal
 from .messages.cred_request import V20CredRequest
 from .messages.inner.cred_preview import V20CredPreview
 from .models.cred_ex_record import V20CredExRecord
+from .models.detail.dif import V20CredExRecordDIF
+from .models.detail.indy import V20CredExRecordIndy
 
 LOGGER = logging.getLogger(__name__)
 
@@ -72,6 +74,25 @@ class V20CredManager:
                 f"Issuer has no operable cred def for proposal spec {tag_query}"
             )
         return max(found, key=lambda r: int(r.tags["epoch"])).tags["cred_def_id"]
+
+    async def _get_detail_record(
+        self,
+        cred_ex_id: str,
+        fmt: V20CredFormat.Format,
+    ) -> Union[V20CredExRecordIndy, V20CredExRecordDIF]:
+        """Retrieve credential exchange detail record by format."""
+
+        async with self._profile.session() as session:
+            detail_cls = fmt.detail
+            try:
+                record = await detail_cls.retrieve_by_cred_ex_id(session, cred_ex_id)
+            except StorageNotFoundError:
+                raise V20CredManagerError(
+                    f"No credential exchange {fmt.aries} detail record "
+                    f"found for cred ex id {cred_ex_id}"
+                )
+
+        return record
 
     async def prepare_send(
         self,
@@ -394,7 +415,7 @@ class V20CredManager:
         )  # will change for DIF
         cred_def_id = cred_offer["cred_def_id"]
 
-        async def _create():
+        async def _create_indy():
             ledger = self._profile.inject(BaseLedger)
             async with ledger:
                 cred_def = await ledger.get_credential_definition(cred_def_id)
@@ -425,20 +446,22 @@ class V20CredManager:
                 if entry.result:
                     cred_req_result = entry.result
                 else:
-                    cred_req_result = await _create()
+                    cred_req_result = await _create_indy()
                     await entry.set_result(cred_req_result, 3600)
         if not cred_req_result:
-            cred_req_result = await _create()
+            cred_req_result = await _create_indy()
 
-        (cred_request, cred_ex_record.cred_request_metadata) = (
-            cred_req_result["request"],
-            cred_req_result["metadata"],
+        detail_record = V20CredExRecordIndy(
+            cred_ex_id=cred_ex_record.cred_ex_id,
+            cred_request_metadata=cred_req_result["metadata"],
         )
 
         cred_request_message = V20CredRequest(
             comment=comment,
             formats=[V20CredFormat(attach_id="0", format_=V20CredFormat.Format.INDY)],
-            requests_attach=[AttachDecorator.from_indy_dict(cred_request, ident="0")],
+            requests_attach=[
+                AttachDecorator.from_indy_dict(cred_req_result["request"], ident="0")
+            ],
         )
 
         cred_request_message._thread = {"thid": cred_ex_record.thread_id}
@@ -449,6 +472,7 @@ class V20CredManager:
         cred_ex_record.state = V20CredExRecord.STATE_REQUEST_SENT
         async with self._profile.session() as session:
             await cred_ex_record.save(session, reason="create v2.0 credential request")
+            await detail_record.save(session, reason="create v2.0 credential request")
 
         return (cred_ex_record, cred_request_message)
 
@@ -519,6 +543,7 @@ class V20CredManager:
             V20CredFormat.Format.INDY
         )  # will change for DIF
 
+        rev_reg_id = None
         rev_reg = None
 
         if cred_ex_record.cred_issue:
@@ -541,9 +566,7 @@ class V20CredManager:
                         cred_def_id
                     )
                     rev_reg = await active_rev_reg_rec.get_registry()
-                    cred_ex_record.detail["indy"][
-                        "rev_reg_id"
-                    ] = active_rev_reg_rec.revoc_reg_id
+                    rev_reg_id = active_rev_reg_rec.revoc_reg_id
 
                     tails_path = rev_reg.tails_local_path
                     await rev_reg.get_or_fetch_local_tails_path()
@@ -603,23 +626,24 @@ class V20CredManager:
         ).credential_preview.attr_dict(decode=False)
         issuer = self._profile.inject(IndyIssuer)
         try:
-            (
-                cred_json,
-                cred_ex_record.detail["indy"]["cred_rev_id"],
-            ) = await issuer.create_credential(
+            (cred_json, cred_rev_id,) = await issuer.create_credential(
                 schema,
                 cred_offer,
                 cred_request,
                 cred_values,
                 cred_ex_record.cred_ex_id,
-                cred_ex_record.detail["indy"]["rev_reg_id"],
+                rev_reg_id,
                 tails_path,
             )
 
+            detail_record = V20CredExRecordIndy(
+                cred_ex_id=cred_ex_record.cred_ex_id,
+                rev_reg_id=rev_reg_id,
+                cred_rev_id=cred_rev_id,
+            )
+
             # If the rev reg is now full
-            if rev_reg and rev_reg.max_creds == int(
-                cred_ex_record.detail["indy"]["cred_rev_id"]
-            ):
+            if rev_reg and rev_reg.max_creds == int(cred_rev_id):
                 async with self._profile.session() as session:
                     await active_rev_reg_rec.set_state(
                         session,
@@ -676,6 +700,7 @@ class V20CredManager:
         async with self._profile.session() as session:
             # FIXME - re-fetch record to check state, apply transactional update
             await cred_ex_record.save(session, reason="v2.0 issue credential")
+            await detail_record.save(session, reason="v2.0 issue credential")
 
         cred_issue_message._thread = {"thid": cred_ex_record.thread_id}
         cred_issue_message.assign_trace_decorator(
@@ -758,10 +783,14 @@ class V20CredManager:
             rev_reg = RevocationRegistry.from_definition(rev_reg_def, True)
             await rev_reg.get_or_fetch_local_tails_path()
         try:
+            detail_record = await self._get_detail_record(
+                cred_ex_record.cred_ex_id,
+                V20CredFormat.Format.INDY,
+            )
             cred_id_stored = await holder.store_credential(
                 cred_def,
                 cred,
-                cred_ex_record.cred_request_metadata,
+                detail_record.cred_request_metadata,
                 mime_types,
                 credential_id=cred_id,
                 rev_reg_def=rev_reg_def,
@@ -771,13 +800,14 @@ class V20CredManager:
             raise e
 
         cred_ex_record.state = V20CredExRecord.STATE_DONE
-        cred_ex_record.detail["indy"]["cred_id_stored"] = cred_id_stored
-        cred_ex_record.detail["indy"]["rev_reg_id"] = cred.get("rev_reg_id", None)
-        cred_ex_record.detail["indy"]["cred_rev_id"] = cred.get("cred_rev_id", None)
+        detail_record.cred_id_stored = cred_id_stored
+        detail_record.rev_reg_id = cred.get("rev_reg_id", None)
+        detail_record.cred_rev_id = cred.get("cred_rev_id", None)
 
         async with self._profile.session() as session:
             # FIXME - re-fetch record to check state, apply transactional update
             await cred_ex_record.save(session, reason="store credential v2.0")
+            await detail_record.save(session, reason="store credential v2.0")
 
         cred_ack_message = V20CredAck()
         cred_ack_message.assign_thread_id(
@@ -788,8 +818,7 @@ class V20CredManager:
         )
 
         if cred_ex_record.auto_remove:
-            async with self._profile.session() as session:
-                await cred_ex_record.delete_record(session)  # all done: delete
+            await self.delete_cred_ex_record(cred_ex_record.cred_ex_id)
 
         return (cred_ex_record, cred_ack_message)
 
@@ -821,7 +850,23 @@ class V20CredManager:
             await cred_ex_record.save(session, reason="receive credential ack v2.0")
 
         if cred_ex_record.auto_remove:
-            async with self._profile.session() as session:
-                await cred_ex_record.delete_record(session)  # all done: delete
+            await self.delete_cred_ex_record(cred_ex_record.cred_ex_id)
 
         return cred_ex_record
+
+    async def delete_cred_ex_record(self, cred_ex_id: str) -> None:
+        """Delete credential exchange record and associated detail records."""
+
+        async with self._profile.session() as session:
+            for fmt in V20CredFormat.Format:  # details first: do not strand any orphans
+                try:
+                    detail_record = await fmt.detail.retrieve_by_cred_ex_id(
+                        session,
+                        cred_ex_id,
+                    )
+                    await detail_record.delete_record(session)
+                except StorageNotFoundError:
+                    pass
+
+            cred_ex_record = await V20CredExRecord.retrieve_by_id(session, cred_ex_id)
+            await cred_ex_record.delete_record(session)

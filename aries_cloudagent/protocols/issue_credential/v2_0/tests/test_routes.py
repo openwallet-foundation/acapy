@@ -214,6 +214,22 @@ class TestV20CredRoutes(AsyncTestCase):
             await test_module.credential_exchange_create(self.request)
         assert "credential_preview" in str(context.exception)
 
+    async def test_credential_exchange_create_no_filter(self):
+        conn_id = "connection-id"
+
+        self.request.json = async_mock.CoroutineMock(
+            return_value={
+                "connection_id": conn_id,
+                "credential_preview": {
+                    "attributes": [{"name": "hello", "value": "world"}]
+                },
+            }
+        )
+
+        with self.assertRaises(test_module.web.HTTPBadRequest) as context:
+            await test_module.credential_exchange_create(self.request)
+        assert "Missing filter" in str(context.exception)
+
     async def test_credential_exchange_send(self):
         self.request.json = async_mock.CoroutineMock()
 
@@ -310,6 +326,33 @@ class TestV20CredRoutes(AsyncTestCase):
             with self.assertRaises(test_module.web.HTTPForbidden):
                 await test_module.credential_exchange_send(self.request)
 
+    async def test_credential_exchange_send_x(self):
+        self.request.json = async_mock.CoroutineMock()
+
+        with async_mock.patch.object(
+            test_module, "ConnRecord", autospec=True
+        ) as mock_conn_rec, async_mock.patch.object(
+            test_module, "V20CredManager", autospec=True
+        ) as mock_cred_mgr, async_mock.patch.object(
+            test_module.V20CredPreview, "deserialize", autospec=True
+        ) as mock_cred_preview_deser:
+            mock_cred_mgr.return_value.create_offer = async_mock.CoroutineMock()
+
+            mock_cred_mgr.return_value.create_offer.return_value = (
+                async_mock.CoroutineMock(),
+                async_mock.CoroutineMock(),
+            )
+
+            mock_cx_rec = async_mock.MagicMock()
+            mock_cred_offer = async_mock.MagicMock()
+
+            mock_cred_mgr.return_value.prepare_send.side_effect = (
+                test_module.StorageError()
+            )
+
+            with self.assertRaises(test_module.web.HTTPBadRequest):
+                await test_module.credential_exchange_send(self.request)
+
     async def test_credential_exchange_send_proposal(self):
         conn_id = "connection-id"
         preview_spec = {"attributes": [{"name": "attr", "value": "value"}]}
@@ -341,6 +384,19 @@ class TestV20CredRoutes(AsyncTestCase):
             self.request["outbound_message_router"].assert_awaited_once_with(
                 mock_cred_proposal_deser.return_value, connection_id=conn_id
             )
+
+    async def test_credential_exchange_send_proposal_no_filter(self):
+        conn_id = "connection-id"
+        self.request.json = async_mock.CoroutineMock(
+            return_value={
+                "comment": "comment",
+                "connection_id": conn_id,
+            }
+        )
+
+        with self.assertRaises(test_module.web.HTTPBadRequest) as context:
+            await test_module.credential_exchange_send_proposal(self.request)
+        assert "Missing filter" in str(context.exception)
 
     async def test_credential_exchange_send_proposal_no_conn_record(self):
         self.request.json = async_mock.CoroutineMock()
@@ -1290,15 +1346,13 @@ class TestV20CredRoutes(AsyncTestCase):
         self.request.match_info = {"cred_ex_id": "dummy"}
 
         with async_mock.patch.object(
-            test_module, "V20CredExRecord", autospec=True
-        ) as mock_cx_rec, async_mock.patch.object(
+            test_module, "V20CredManager", autospec=True
+        ) as mock_cred_mgr, async_mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
-            mock_cx_rec.retrieve_by_id = async_mock.CoroutineMock()
-            mock_cx_rec.retrieve_by_id.return_value = mock_cx_rec
-
-            mock_cx_rec.delete_record = async_mock.CoroutineMock()
-
+            mock_cred_mgr.return_value = async_mock.MagicMock(
+                delete_cred_ex_record=async_mock.CoroutineMock()
+            )
             await test_module.credential_exchange_remove(self.request)
 
             mock_response.assert_called_once_with({})
@@ -1308,11 +1362,12 @@ class TestV20CredRoutes(AsyncTestCase):
         self.request.match_info = {"cred_ex_id": "dummy"}
 
         with async_mock.patch.object(
-            test_module, "V20CredExRecord", autospec=True
-        ) as mock_cx_rec:
-            # Emulate storage not found (bad cred ex id)
-            mock_cx_rec.retrieve_by_id = async_mock.CoroutineMock(
-                side_effect=test_module.StorageNotFoundError()
+            test_module, "V20CredManager", autospec=True
+        ) as mock_cred_mgr:
+            mock_cred_mgr.return_value = async_mock.MagicMock(
+                delete_cred_ex_record=async_mock.CoroutineMock(
+                    side_effect=test_module.StorageNotFoundError()
+                )
             )
 
             with self.assertRaises(test_module.web.HTTPNotFound):
@@ -1323,15 +1378,13 @@ class TestV20CredRoutes(AsyncTestCase):
         self.request.match_info = {"cred_ex_id": "dummy"}
 
         with async_mock.patch.object(
-            test_module, "V20CredExRecord", autospec=True
-        ) as mock_cx_rec:
-            # Emulate storage not found (bad cred ex id)
-            mock_rec = async_mock.MagicMock(
-                delete_record=async_mock.CoroutineMock(
+            test_module, "V20CredManager", autospec=True
+        ) as mock_cred_mgr:
+            mock_cred_mgr.return_value = async_mock.MagicMock(
+                delete_cred_ex_record=async_mock.CoroutineMock(
                     side_effect=test_module.StorageError()
                 )
             )
-            mock_cx_rec.retrieve_by_id = async_mock.CoroutineMock(return_value=mock_rec)
 
             with self.assertRaises(test_module.web.HTTPBadRequest):
                 await test_module.credential_exchange_remove(self.request)
