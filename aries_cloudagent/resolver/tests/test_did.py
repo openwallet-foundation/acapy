@@ -1,7 +1,7 @@
 """Test DID class."""
 
 import pytest
-from ..did import DID
+from ..did import DID, DIDUrl
 
 TEST_DID0 = "did:sov:Kkyqu7CJFuQSvBp468uaDe"
 TEST_DID1 = "did:btcr:8kyt-fzzq-qpqq-ljsc-5l"
@@ -77,17 +77,48 @@ def test_eq(did, next_did):
     assert did != next_did
 
 
-def test_did_url():
-    did = DID(TEST_DID0)
-    assert did.url(path="test") == TEST_DID0 + "/test"
-    assert did.url(path="/test") == TEST_DID0 + "/test"
-    assert did.url(query={"key": "value"}) == TEST_DID0 + "?key=value"
-    assert (
-        did.url(query={"key": "value", "another": "value"})
-        == TEST_DID0 + "?key=value&another=value"
-    )
-    assert did.url(fragment="fragment") == TEST_DID0 + "#fragment"
-    assert (
-        did.url("test", {"key": "value"}, "fragment")
-        == TEST_DID0 + "/test?key=value#fragment"
-    )
+@pytest.mark.parametrize(
+    "inputs, output",
+    [
+        ({"did": TEST_DID0, "path": "test"}, TEST_DID0 + "/test"),
+        ({"did": TEST_DID1, "path": "/test"}, TEST_DID1 + "/test"),
+        ({"did": TEST_DID2, "query": {"key": "value"}}, TEST_DID2 + "?key=value"),
+        (
+            {"did": TEST_DID3, "query": {"key": "value", "another": "value"}},
+            TEST_DID3 + "?key=value&another=value",
+        ),
+        ({"did": TEST_DID4, "fragment": "test"}, TEST_DID4 + "#test"),
+        (
+            {
+                "did": TEST_DID0,
+                "path": "test/path",
+                "query": {"key": "value", "another": "value"},
+                "fragment": "fragment",
+            },
+            TEST_DID0 + "/test/path?key=value&another=value#fragment",
+        ),
+    ],
+)
+def test_did_url(inputs, output):
+    assert str(DIDUrl(**inputs)) == output
+
+
+@pytest.mark.parametrize(
+    "url, parts",
+    [
+        (TEST_DID0 + "/test/path", {"did": TEST_DID0, "path": "/test/path"}),
+        (TEST_DID1 + "?key=value", {"did": TEST_DID1, "query": {"key": "value"}}),
+        (TEST_DID2 + "#fragment", {"did": TEST_DID2, "fragment": "fragment"}),
+        (
+            TEST_DID3 + "/test/path?key=value#fragment",
+            {
+                "did": TEST_DID3,
+                "path": "/test/path",
+                "query": {"key": "value"},
+                "fragment": "fragment"
+            }
+        ),
+    ]
+)
+def test_did_url_parse(url, parts):
+    assert DIDUrl.parse(url) == DIDUrl(**parts)
