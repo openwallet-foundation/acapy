@@ -268,7 +268,7 @@ async def main(
             )
 
         if mediation:
-            mediator_agent = await start_mediator_agent(start_port+4, genesis, agent)
+            mediator_agent = await start_mediator_agent(start_port + 4, genesis, agent)
             if not mediator_agent:
                 raise Exception("Mediator agent returns None :-(")
         else:

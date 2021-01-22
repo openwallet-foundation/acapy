@@ -286,9 +286,8 @@ async def main(
                 "Alice.initial", webhook_port=agent.get_new_webhook_port()
             )
 
-        
         if mediation:
-            mediator_agent = await start_mediator_agent(start_port+4, genesis, agent)
+            mediator_agent = await start_mediator_agent(start_port + 4, genesis, agent)
             if not mediator_agent:
                 raise Exception("Mediator agent returns None :-(")
         else:
@@ -429,7 +428,7 @@ if __name__ == "__main__":
                 args.timing,
                 args.multitenant,
                 args.mediation,
-                args.wallet_type
+                args.wallet_type,
             )
         )
     except KeyboardInterrupt:

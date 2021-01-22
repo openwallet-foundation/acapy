@@ -868,11 +868,7 @@ class DemoAgent:
 
 
 class MediatorAgent(DemoAgent):
-    def __init__(
-        self, http_port: int,
-        admin_port: int,
-        **kwargs
-    ):
+    def __init__(self, http_port: int, admin_port: int, **kwargs):
         super().__init__(
             "Mediator.Agent",
             http_port,
@@ -923,12 +919,16 @@ async def start_mediator_agent(start_port, genesis, agent):
     # we need to pre-connect the agent to its mediator
     # Generate an invitation
     log_msg("Generate mediation invite ...")
-    mediator_connection = await mediator_agent.admin_POST("/connections/create-invitation")
+    mediator_connection = await mediator_agent.admin_POST(
+        "/connections/create-invitation"
+    )
     mediator_agent.mediator_connection_id = mediator_connection["connection_id"]
 
     # accept the invitation
     log_msg("Accept mediation invite ...")
-    connection = await agent.admin_POST("/connections/receive-invitation", mediator_connection["invitation"])
+    connection = await agent.admin_POST(
+        "/connections/receive-invitation", mediator_connection["invitation"]
+    )
     agent.mediator_connection_id = connection["connection_id"]
 
     log_msg("Await mediation connection status ...")
@@ -937,14 +937,18 @@ async def start_mediator_agent(start_port, genesis, agent):
 
     # setup mediation on our connection
     log_msg("Request mediation ...")
-    mediation_request = await agent.admin_POST("/mediation/request/" + agent.mediator_connection_id, {})
+    mediation_request = await agent.admin_POST(
+        "/mediation/request/" + agent.mediator_connection_id, {}
+    )
     agent.mediator_request_id = mediation_request["mediation_id"]
     log_msg("Mediation request id:", agent.mediator_request_id)
 
     count = 3
     while 0 < count:
         await asyncio.sleep(1.0)
-        mediation_status = await agent.admin_GET("/mediation/requests/" + agent.mediator_request_id)
+        mediation_status = await agent.admin_GET(
+            "/mediation/requests/" + agent.mediator_request_id
+        )
         if mediation_status["state"] == "granted":
             log_msg("Mediation setup successfully!", mediation_status)
             return mediator_agent
