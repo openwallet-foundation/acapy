@@ -477,7 +477,9 @@ class ConnectionManager(BaseConnectionManager):
 
         """
         ConnRecord.log_state(
-            self._session, "Receiving connection request", {"request": request}
+            "Receiving connection request",
+            {"request": request},
+            settings=self._session.settings,
         )
 
         mediation_mgr = MediationManager(self._session.profile)
@@ -489,10 +491,10 @@ class ConnectionManager(BaseConnectionManager):
         # Multitenancy setup
         multitenant_mgr = self._session.inject(MultitenantManager, required=False)
         wallet_id = self._session.settings.get("wallet.id")
+        wallet = self._session.inject(BaseWallet)
 
         # Determine what key will need to sign the response
         if receipt.recipient_did_public:
-            wallet = self._session.inject(BaseWallet)
             my_info = await wallet.get_local_did(receipt.recipient_did)
             connection_key = my_info.verkey
         else:
@@ -513,7 +515,9 @@ class ConnectionManager(BaseConnectionManager):
             invitation = await connection.retrieve_invitation(self._session)
             connection_key = connection.invitation_key
             ConnRecord.log_state(
-                self._session, "Found invitation", {"invitation": invitation}
+                "Found invitation",
+                {"invitation": invitation},
+                settings=self._session.settings,
             )
 
             if connection.is_multiuse_invitation:
@@ -649,9 +653,9 @@ class ConnectionManager(BaseConnectionManager):
 
         """
         ConnRecord.log_state(
-            self._session,
             "Creating connection response",
             {"connection_id": connection.connection_id},
+            settings=self._session.settings,
         )
 
         keylist_updates = None
@@ -843,7 +847,7 @@ class ConnectionManager(BaseConnectionManager):
         their_endpoint: str = None,
         their_label: str = None,
         alias: str = None,
-    ) -> (DIDInfo, DIDInfo, ConnRecord):
+    ) -> Tuple[DIDInfo, DIDInfo, ConnRecord]:
         """
         Register a new static connection (for use by the test suite).
 

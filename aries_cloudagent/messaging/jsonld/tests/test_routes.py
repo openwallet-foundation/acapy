@@ -9,8 +9,7 @@ from .. import routes as test_module
 # TODO: Add tests
 class TestJSONLDRoutes(AsyncTestCase):
     async def setUp(self):
-        self.session_inject = {}
-        self.context = AdminRequestContext.test_context(self.session_inject)
+        self.context = AdminRequestContext.test_context()
         self.did_info = await (await self.context.session()).wallet.create_local_did()
         self.request_dict = {
             "context": self.context,
