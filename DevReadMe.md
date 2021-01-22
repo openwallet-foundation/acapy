@@ -12,6 +12,7 @@ See the [README](README.md) for details about this repository and information ab
   - [Locally Installed](#locally-installed)
   - [About ACA-Py Command Line Parameters](#about-aca-py-command-line-parameters)
   - [Provisioning a Wallet](#provisioning-a-wallet)
+  - [Mediation](#mediation)
   - [Multi-tenancy](#multi-tenancy)
 - [Developing](#developing)
   - [Prerequisites](#prerequisites)
@@ -106,6 +107,10 @@ aca-py provision --wallet-type indy --seed $SEED
 ```
 
 For additional `provision` options, execute `aca-py provision --help`.
+
+### Mediation
+
+ACA-Py can allso me run in a mediator mode - ACA-Py can be run *as* a mediator (it can mediate connections for other agents), or it can connect to an external mediator to mediate its own connections.  See the [docs on mediation](Mediation.md) for more info.
 
 ### Multi-tenancy
 
