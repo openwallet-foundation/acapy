@@ -20,6 +20,7 @@ There are several demos available for ACA-Py mostly (but not only) aimed at deve
     - [Issuing and Proving Credentials](#issuing-and-proving-credentials)
 - [Additional Options in the Alice/Faber demo](#additional-options-in-the-alicefaber-demo)
   - [Revocation](#revocation)
+  - [Mediation](#mediation)
   - [Multi-tenancy](#multi-tenancy)
   - [DID Exchange](#did-exchange)
 - [Learning about the Alice/Faber code](#learning-about-the-alicefaber-code)
@@ -236,6 +237,16 @@ You can enable DID Exchange using the `--did-exchange` parameter for the `alice`
 This will use the new DID Exchange protocol when establishing connections between the agents, rather than the older Connection protocol.  There is no other affect on the operation of the agents.
 
 Note that you can't (currently) use the DID Exchange protocol to connect with any of the available mobile agents.
+
+### Mediation
+
+To enable mediation, run the `alice` or `faber` demo with the `--mediation` option:
+
+```bash
+./run_demo faber --mediation
+```
+
+This will start up a second "mediator" agent and automatically set the alice/faber connection to use the mediator.
 
 ### Multi-tenancy
 
