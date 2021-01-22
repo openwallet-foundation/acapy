@@ -15,7 +15,7 @@ from ..message_types import CRED_20_ISSUE, PROTOCOL_PACKAGE
 
 from .cred_format import V20CredFormat, V20CredFormatSchema
 
-HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.credl_issue_handler.V20CredIssueHandler"
+HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.cred_issue_handler.V20CredIssueHandler"
 
 
 class V20CredIssue(AgentMessage):

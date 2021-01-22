@@ -70,40 +70,36 @@ class AliceAgent(DemoAgent):
             self.log("Connected")
             self._connection_ready.set_result(True)
 
-    async def handle_issue_credential(self, message):
+    async def handle_issue_credential_v2_0(self, message):
         state = message["state"]
-        credential_exchange_id = message["credential_exchange_id"]
-        prev_state = self.cred_state.get(credential_exchange_id)
+        cred_ex_id = message["cred_ex_id"]
+        prev_state = self.cred_state.get(cred_ex_id)
         if prev_state == state:
             return  # ignore
-        self.cred_state[credential_exchange_id] = state
+        self.cred_state[cred_ex_id] = state
 
-        self.log(
-            "Credential: state =",
-            state,
-            ", credential_exchange_id =",
-            credential_exchange_id,
-        )
+        self.log(f"Credential: state = {state}, cred_ex_id {cred_ex_id}")
 
-        if state == "offer_received":
+        if state == "offer-received":
             log_status("#15 After receiving credential offer, send credential request")
             await self.admin_POST(
-                f"/issue-credential/records/{credential_exchange_id}/send-request"
+                f"/issue-credential-2.0/records/{cred_ex_id}/send-request"
             )
 
-        elif state == "credential_acked":
-            cred_id = message["credential_id"]
+        elif state == "done":
+            cred_id = message["cred_id_stored"]
             self.log(f"Stored credential {cred_id} in wallet")
             log_status(f"#18.1 Stored credential {cred_id} in wallet")
-            resp = await self.admin_GET(f"/credential/{cred_id}")
-            log_json(resp, label="Credential details:")
-            log_json(
-                message["credential_request_metadata"],
-                label="Credential request metadata:",
+            cred_ex = await self.admin_GET(
+                f"/issue-credential-2.0/records/{cred_ex_id}"
             )
-            self.log("credential_id", message["credential_id"])
-            self.log("credential_definition_id", message["credential_definition_id"])
-            self.log("schema_id", message["schema_id"])
+            cred_req_metadata = cred_ex.get("indy", {}).get("cred_request_metadata", {})
+            cred = await self.admin_GET(f"/credential/{cred_id}")
+            log_json(cred, label="Credential details:")
+            log_json(cred_req_metadata, label="Credential request metadata:")
+            self.log("credential_id", cred_id)
+            self.log("cred_def_id", cred["cred_def_id"])
+            self.log("schema_id", cred["schema_id"])
 
     async def handle_present_proof(self, message):
         state = message["state"]

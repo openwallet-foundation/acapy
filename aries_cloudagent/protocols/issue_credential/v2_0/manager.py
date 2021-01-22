@@ -75,7 +75,7 @@ class V20CredManager:
             )
         return max(found, key=lambda r: int(r.tags["epoch"])).tags["cred_def_id"]
 
-    async def _get_detail_record(
+    async def get_detail_record(
         self,
         cred_ex_id: str,
         fmt: V20CredFormat.Format,
@@ -85,14 +85,9 @@ class V20CredManager:
         async with self._profile.session() as session:
             detail_cls = fmt.detail
             try:
-                record = await detail_cls.retrieve_by_cred_ex_id(session, cred_ex_id)
+                return await detail_cls.retrieve_by_cred_ex_id(session, cred_ex_id)
             except StorageNotFoundError:
-                raise V20CredManagerError(
-                    f"No credential exchange {fmt.aries} detail record "
-                    f"found for cred ex id {cred_ex_id}"
-                )
-
-        return record
+                return None
 
     async def prepare_send(
         self,
@@ -783,10 +778,15 @@ class V20CredManager:
             rev_reg = RevocationRegistry.from_definition(rev_reg_def, True)
             await rev_reg.get_or_fetch_local_tails_path()
         try:
-            detail_record = await self._get_detail_record(
+            detail_record = await self.get_detail_record(
                 cred_ex_record.cred_ex_id,
                 V20CredFormat.Format.INDY,
             )
+            if detail_record is None:
+                raise V20CredManagerError(
+                    f"No credential exchange {V20CredFormat.Format.INDY.aries} "
+                    f"detail record found for cred ex id {cred_ex_record.cred_ex_id}"
+                )
             cred_id_stored = await holder.store_credential(
                 cred_def,
                 cred,
@@ -800,7 +800,7 @@ class V20CredManager:
             raise e
 
         cred_ex_record.state = V20CredExRecord.STATE_DONE
-        detail_record.cred_id_stored = cred_id_stored
+        cred_ex_record.cred_id_stored = cred_id_stored
         detail_record.rev_reg_id = cred.get("rev_reg_id", None)
         detail_record.cred_rev_id = cred.get("cred_rev_id", None)
 

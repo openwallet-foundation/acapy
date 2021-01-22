@@ -44,6 +44,8 @@ from .messages.cred_offer import V20CredOfferSchema
 from .messages.cred_proposal import V20CredProposal
 from .messages.inner.cred_preview import V20CredPreview, V20CredPreviewSchema
 from .models.cred_ex_record import V20CredExRecord, V20CredExRecordSchema
+from .models.detail.dif import V20CredExRecordDIFSchema
+from .models.detail.indy import V20CredExRecordIndySchema
 
 
 class V20IssueCredentialModuleResponseSchema(OpenAPISchema):
@@ -87,12 +89,30 @@ class V20CredExRecordListQueryStringSchema(OpenAPISchema):
     )
 
 
+class V20CredExRecordDetailSchema(OpenAPISchema):
+    """Credential exchange record and any per-format details."""
+
+    cred_ex_record = fields.Nested(
+        V20CredExRecordSchema,
+        required=False,
+        description="Credential exchange record",
+    )
+    indy = fields.Nested(
+        V20CredExRecordIndySchema,
+        required=False,
+    )
+    dif = fields.Nested(
+        V20CredExRecordDIFSchema,
+        required=False,
+    )
+
+
 class V20CredExRecordListResultSchema(OpenAPISchema):
-    """Result schema for Aries#0453 v2.0 credential exchange query."""
+    """Result schema for credential exchange record list uery."""
 
     results = fields.List(
-        fields.Nested(V20CredExRecordSchema),
-        description="Aries#0453 v2.0 credential exchange records",
+        fields.Nested(V20CredExRecordDetailSchema),
+        description="Credential exchange records and corresponding detail records",
     )
 
 
@@ -310,12 +330,31 @@ async def credential_exchange_list(request: web.BaseRequest):
 
     try:
         async with context.session() as session:
-            records = await V20CredExRecord.query(
+            cred_ex_records = await V20CredExRecord.query(
                 session=session,
                 tag_filter=tag_filter,
                 post_filter_positive=post_filter,
             )
-        results = [record.serialize() for record in records]
+
+        results = []
+        cred_manager = V20CredManager(context.profile)
+        for cxr in cred_ex_records:
+            indy_record = await cred_manager.get_detail_record(
+                cxr.cred_ex_id,
+                V20CredFormat.Format.INDY,
+            )
+            dif_record = await cred_manager.get_detail_record(
+                cxr.cred_ex_id,
+                V20CredFormat.Format.DIF,
+            )
+            results.append(
+                {
+                    "cred_ex_record": cxr.serialize(),
+                    "indy": indy_record.serialize() if indy_record else None,
+                    "dif": dif_record.serialize() if dif_record else None,
+                }
+            )
+
     except (StorageError, BaseModelError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
@@ -327,7 +366,7 @@ async def credential_exchange_list(request: web.BaseRequest):
     summary="Fetch a single credential exchange record",
 )
 @match_info_schema(V20CredExIdMatchInfoSchema())
-@response_schema(V20CredExRecordSchema(), 200, description="")
+@response_schema(V20CredExRecordDetailSchema(), 200, description="")
 async def credential_exchange_retrieve(request: web.BaseRequest):
     """
     Request handler for fetching single credential exchange record.
@@ -347,7 +386,20 @@ async def credential_exchange_retrieve(request: web.BaseRequest):
     try:
         async with context.session() as session:
             cred_ex_record = await V20CredExRecord.retrieve_by_id(session, cred_ex_id)
-        result = cred_ex_record.serialize()
+
+        cred_manager = V20CredManager(context.profile)
+        indy_record = await cred_manager.get_detail_record(
+            cred_ex_id, V20CredFormat.Format.INDY
+        )
+        dif_record = await cred_manager.get_detail_record(
+            cred_ex_id, V20CredFormat.Format.DIF
+        )
+        result = {
+            "cred_ex_record": cred_ex_record.serialize(),
+            "indy": indy_record.serialize() if indy_record else None,
+            "dif": dif_record.serialize() if dif_record else None,
+        }
+
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
     except (BaseModelError, StorageError) as err:
@@ -977,7 +1029,7 @@ async def credential_exchange_send_request(request: web.BaseRequest):
 @docs(tags=["issue-credential v2.0"], summary="Send holder a credential")
 @match_info_schema(V20CredExIdMatchInfoSchema())
 @request_schema(V20CredIssueRequestSchema())
-@response_schema(V20CredExRecordSchema(), 200, description="")
+@response_schema(V20CredExRecordDetailSchema(), 200, description="")
 async def credential_exchange_issue(request: web.BaseRequest):
     """
     Request handler for sending credential.
@@ -1021,8 +1073,17 @@ async def credential_exchange_issue(request: web.BaseRequest):
             cred_ex_record,
             comment=comment,
         )
-
-        result = cred_ex_record.serialize()
+        indy_record = await cred_manager.get_detail_record(
+            cred_ex_id, V20CredFormat.Format.INDY
+        )
+        dif_record = await cred_manager.get_detail_record(
+            cred_ex_id, V20CredFormat.Format.DIF
+        )
+        result = {
+            "cred_ex_record": cred_ex_record.serialize(),
+            "indy": indy_record.serialize() if indy_record else None,
+            "dif": dif_record.serialize() if dif_record else None,
+        }
 
     except (BaseModelError, V20CredManagerError, IndyIssuerError, StorageError) as err:
         await internal_error(
@@ -1047,7 +1108,7 @@ async def credential_exchange_issue(request: web.BaseRequest):
 @docs(tags=["issue-credential v2.0"], summary="Store a received credential")
 @match_info_schema(V20CredExIdMatchInfoSchema())
 @request_schema(V20CredStoreRequestSchema())
-@response_schema(V20CredExRecordSchema(), 200, description="")
+@response_schema(V20CredExRecordDetailSchema(), 200, description="")
 async def credential_exchange_store(request: web.BaseRequest):
     """
     Request handler for storing credential.
@@ -1093,8 +1154,17 @@ async def credential_exchange_store(request: web.BaseRequest):
             cred_ex_record,
             cred_id,
         )
-
-        result = cred_ex_record.serialize()
+        indy_record = await cred_manager.get_detail_record(
+            cred_ex_id, V20CredFormat.Format.INDY
+        )
+        dif_record = await cred_manager.get_detail_record(
+            cred_ex_id, V20CredFormat.Format.DIF
+        )
+        result = {
+            "cred_ex_record": cred_ex_record.serialize(),
+            "indy": indy_record.serialize() if indy_record else None,
+            "dif": dif_record.serialize() if dif_record else None,
+        }
 
     except (StorageError, V20CredManagerError, BaseModelError) as err:
         await internal_error(

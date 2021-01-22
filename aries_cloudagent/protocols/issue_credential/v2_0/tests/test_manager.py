@@ -130,22 +130,24 @@ class TestV20CredManager(AsyncTestCase):
         cred_ex_id = "dummy"
         detail_indy = V20CredExRecordIndy(
             cred_ex_id=cred_ex_id,
-            cred_id_stored="my-cred",
+            rev_reg_id="rr-id",
+            cred_rev_id="0",
         )
         await detail_indy.save(self.session)
         assert (
-            await self.manager._get_detail_record(cred_ex_id, V20CredFormat.Format.INDY)
+            await self.manager.get_detail_record(cred_ex_id, V20CredFormat.Format.INDY)
             == detail_indy
         )
-        with self.assertRaises(V20CredManagerError) as context:
-            await self.manager._get_detail_record(cred_ex_id, V20CredFormat.Format.DIF)
-        assert "No credential exchange " in str(context.exception)
+        assert (
+            await self.manager.get_detail_record(cred_ex_id, V20CredFormat.Format.DIF)
+            is None
+        )
 
     async def test_get_dif_detail_record(self):
         cred_ex_id = "dummy"
         detail_dif = V20CredExRecordDIF(cred_ex_id=cred_ex_id, item="my-item")
         await detail_dif.save(self.session)
-        await self.manager._get_detail_record(cred_ex_id, V20CredFormat.Format.DIF)
+        await self.manager.get_detail_record(cred_ex_id, V20CredFormat.Format.DIF)
 
     async def test_prepare_send(self):
         conn_id = "test_conn_id"
@@ -1725,7 +1727,7 @@ class TestV20CredManager(AsyncTestCase):
         ) as mock_save, async_mock.patch.object(
             test_module.V20CredManager, "delete_cred_ex_record", autospec=True
         ) as mock_delete, async_mock.patch.object(
-            test_module.V20CredManager, "_get_detail_record", autospec=True
+            test_module.V20CredManager, "get_detail_record", autospec=True
         ) as mock_get_detail_record:
             mock_rev_reg.from_definition = async_mock.MagicMock(
                 return_value=async_mock.MagicMock(
@@ -1857,7 +1859,7 @@ class TestV20CredManager(AsyncTestCase):
         self.context.injector.bind_instance(IndyHolder, holder)
 
         with async_mock.patch.object(
-            test_module.V20CredManager, "_get_detail_record", autospec=True
+            test_module.V20CredManager, "get_detail_record", autospec=True
         ) as mock_get_detail_record:
             mock_get_detail_record.return_value = async_mock.MagicMock(
                 cred_request_metadata=cred_req_meta,

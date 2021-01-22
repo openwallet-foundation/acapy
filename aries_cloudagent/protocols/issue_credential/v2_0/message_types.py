@@ -19,18 +19,12 @@ PROTOCOL_PACKAGE = "aries_cloudagent.protocols.issue_credential.v2_0"
 MESSAGE_TYPES = DIDCommPrefix.qualify_all(
     {
         CRED_20_PROPOSAL: (
-            f"{PROTOCOL_PACKAGE}.messages.credential_proposal.CredentialProposal"
+            f"{PROTOCOL_PACKAGE}.messages.cred_proposal.V20CredProposal"
         ),
-        CRED_20_OFFER: (
-            f"{PROTOCOL_PACKAGE}.messages.credential_offer.CredentialOffer"
-        ),
-        CRED_20_REQUEST: (
-            f"{PROTOCOL_PACKAGE}.messages.credential_request.CredentialRequest"
-        ),
-        CRED_20_ISSUE: (
-            f"{PROTOCOL_PACKAGE}.messages.credential_issue.CredentialIssue"
-        ),
-        CRED_20_ACK: f"{PROTOCOL_PACKAGE}.messages.credential_ack.CredentialAck",
+        CRED_20_OFFER: (f"{PROTOCOL_PACKAGE}.messages.cred_offer.V20CredOffer"),
+        CRED_20_REQUEST: (f"{PROTOCOL_PACKAGE}.messages.cred_request.V20CredRequest"),
+        CRED_20_ISSUE: (f"{PROTOCOL_PACKAGE}.messages.cred_issue.V20CredIssue"),
+        CRED_20_ACK: f"{PROTOCOL_PACKAGE}.messages.cred_ack.V20CredAck",
     }
 )
 

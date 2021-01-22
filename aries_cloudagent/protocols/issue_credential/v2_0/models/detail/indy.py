@@ -31,7 +31,6 @@ class V20CredExRecordIndy(BaseRecord):
         cred_request_metadata: Mapping = None,
         rev_reg_id: str = None,
         cred_rev_id: str = None,
-        cred_id_stored: str = None,
         **kwargs,
     ):
         """Initialize indy credential exchange record details."""
@@ -41,7 +40,6 @@ class V20CredExRecordIndy(BaseRecord):
         self.cred_request_metadata = cred_request_metadata
         self.rev_reg_id = rev_reg_id
         self.cred_rev_id = cred_rev_id
-        self.cred_id_stored = cred_id_stored
 
     @property
     def cred_ex_indy_id(self) -> str:
@@ -57,7 +55,6 @@ class V20CredExRecordIndy(BaseRecord):
                 "cred_request_metadata",
                 "rev_reg_id",
                 "cred_rev_id",
-                "cred_id_stored",
             )
         }
 
@@ -110,9 +107,4 @@ class V20CredExRecordIndySchema(BaseRecordSchema):
         required=False,
         description="Credential revocation identifier within revocation registry",
         **INDY_CRED_REV_ID,
-    )
-    cred_id_stored = fields.Str(
-        required=False,
-        description="Credential identifier stored in wallet",
-        example=UUIDFour.EXAMPLE,
     )

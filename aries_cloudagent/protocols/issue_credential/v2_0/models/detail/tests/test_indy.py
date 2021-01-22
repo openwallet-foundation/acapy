@@ -12,7 +12,6 @@ class TestV20CredExRecordIndy(AsyncTestCase):
                 cred_request_metadata={"a": 1, "b": 2},
                 rev_reg_id=None,
                 cred_rev_id=None,
-                cred_id_stored="my-cred",
             )
         ] * 2
         diff = [
@@ -22,7 +21,6 @@ class TestV20CredExRecordIndy(AsyncTestCase):
                 cred_request_metadata={"a": 1, "b": 2},
                 rev_reg_id=None,
                 cred_rev_id=None,
-                cred_id_stored="my-cred",
             ),
             V20CredExRecordIndy(
                 cred_ex_indy_id="dummy-1",
@@ -30,7 +28,6 @@ class TestV20CredExRecordIndy(AsyncTestCase):
                 cred_request_metadata={"a": 1, "b": 2},
                 rev_reg_id=None,
                 cred_rev_id=None,
-                cred_id_stored="my-cred",
             ),
             V20CredExRecordIndy(
                 cred_ex_indy_id="dummy-1",
@@ -38,7 +35,6 @@ class TestV20CredExRecordIndy(AsyncTestCase):
                 cred_request_metadata={"a": 1, "b": 2},
                 rev_reg_id="rev-reg-id",
                 cred_rev_id="cred-rev-id",
-                cred_id_stored="my-cred",
             ),
         ]
 

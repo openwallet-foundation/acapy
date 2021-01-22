@@ -54,6 +54,7 @@ class V20CredExRecord(BaseExchangeRecord):
         cred_request: Mapping = None,  # serialized cred request message
         cred_request_metadata: Mapping = None,  # credential request metadata
         cred_issue: Mapping = None,  # serialized cred issue message
+        cred_id_stored: str = None,
         auto_offer: bool = False,
         auto_issue: bool = False,
         auto_remove: bool = True,
@@ -75,6 +76,7 @@ class V20CredExRecord(BaseExchangeRecord):
         self.cred_request = cred_request
         self.cred_request_metadata = cred_request_metadata
         self.cred_issue = cred_issue
+        self.cred_id_stored = cred_id_stored
         self.auto_offer = auto_offer
         self.auto_issue = auto_issue
         self.auto_remove = auto_remove
@@ -107,6 +109,7 @@ class V20CredExRecord(BaseExchangeRecord):
                 "cred_request",
                 "cred_request_metadata",
                 "cred_issue",
+                "cred_id_stored",
                 "auto_offer",
                 "auto_issue",
                 "auto_remove",
@@ -233,4 +236,9 @@ class V20CredExRecordSchema(BaseExchangeSchema):
         required=False,
         description="Error message",
         example="The front fell off",
+    )
+    cred_id_stored = fields.Str(
+        required=False,
+        description="Credential identifier stored in wallet",
+        example=UUIDFour.EXAMPLE,
     )

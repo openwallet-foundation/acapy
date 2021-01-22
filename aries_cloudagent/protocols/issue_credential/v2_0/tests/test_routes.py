@@ -59,18 +59,32 @@ class TestV20CredRoutes(AsyncTestCase):
 
         with async_mock.patch.object(
             test_module, "V20CredExRecord", autospec=True
-        ) as mock_cx_rec:
-            mock_cx_rec.query = async_mock.CoroutineMock()
-            mock_cx_rec.query.return_value = [mock_cx_rec]
-            mock_cx_rec.serialize = async_mock.MagicMock()
-            mock_cx_rec.serialize.return_value = {"hello": "world"}
+        ) as mock_cx_rec, async_mock.patch.object(
+            test_module, "V20CredManager", autospec=True
+        ) as mock_cred_mgr:
+            mock_cx_rec.query = async_mock.CoroutineMock(return_value=[mock_cx_rec])
+            mock_cx_rec.serialize = async_mock.MagicMock(
+                return_value={"hello": "world"}
+            )
+
+            mock_cred_mgr.return_value.get_detail_record = async_mock.CoroutineMock(
+                return_value=None
+            )
 
             with async_mock.patch.object(
                 test_module.web, "json_response"
             ) as mock_response:
                 await test_module.credential_exchange_list(self.request)
                 mock_response.assert_called_once_with(
-                    {"results": [mock_cx_rec.serialize.return_value]}
+                    {
+                        "results": [
+                            {
+                                "cred_ex_record": mock_cx_rec.serialize.return_value,
+                                "indy": None,
+                                "dif": None,
+                            }
+                        ]
+                    }
                 )
 
     async def test_credential_exchange_list_x(self):
@@ -97,7 +111,9 @@ class TestV20CredRoutes(AsyncTestCase):
 
         with async_mock.patch.object(
             test_module, "V20CredExRecord", autospec=True
-        ) as mock_cx_rec:
+        ) as mock_cx_rec, async_mock.patch.object(
+            test_module, "V20CredManager", autospec=True
+        ) as mock_cred_mgr:
             mock_cx_rec.conn_id = "conn-123"
             mock_cx_rec.thread_id = "conn-123"
             mock_cx_rec.retrieve_by_id = async_mock.CoroutineMock()
@@ -105,12 +121,25 @@ class TestV20CredRoutes(AsyncTestCase):
             mock_cx_rec.serialize = async_mock.MagicMock()
             mock_cx_rec.serialize.return_value = {"hello": "world"}
 
+            mock_cred_mgr.return_value.get_detail_record = async_mock.CoroutineMock(
+                side_effect=[
+                    async_mock.MagicMock(  # indy
+                        serialize=async_mock.MagicMock(return_value={"...": "..."})
+                    ),
+                    None,  # dif
+                ]
+            )
+
             with async_mock.patch.object(
                 test_module.web, "json_response"
             ) as mock_response:
                 await test_module.credential_exchange_retrieve(self.request)
                 mock_response.assert_called_once_with(
-                    mock_cx_rec.serialize.return_value
+                    {
+                        "cred_ex_record": mock_cx_rec.serialize.return_value,
+                        "indy": {"...": "..."},
+                        "dif": None,
+                    }
                 )
 
     async def test_credential_exchange_retrieve_not_found(self):
@@ -132,7 +161,9 @@ class TestV20CredRoutes(AsyncTestCase):
 
         with async_mock.patch.object(
             test_module, "V20CredExRecord", autospec=True
-        ) as mock_cx_rec:
+        ) as mock_cx_rec, async_mock.patch.object(
+            test_module, "V20CredManager", autospec=True
+        ) as mock_cred_mgr:
             mock_cx_rec.conn_id = "conn-123"
             mock_cx_rec.thread_id = "conn-123"
             mock_cx_rec.retrieve_by_id = async_mock.CoroutineMock()
@@ -140,6 +171,11 @@ class TestV20CredRoutes(AsyncTestCase):
             mock_cx_rec.serialize = async_mock.MagicMock(
                 side_effect=test_module.BaseModelError()
             )
+
+            mock_cred_mgr.return_value.get_detail_record = async_mock.CoroutineMock(
+                return_value=None
+            )
+
             with self.assertRaises(test_module.web.HTTPBadRequest):
                 await test_module.credential_exchange_retrieve(self.request)
 
@@ -820,12 +856,12 @@ class TestV20CredRoutes(AsyncTestCase):
             test_module, "V20CredManager", autospec=True
         ) as mock_cred_mgr, async_mock.patch.object(
             test_module, "V20CredExRecord", autospec=True
-        ) as mock_cx_rec, async_mock.patch.object(
+        ) as mock_cls_cx_rec, async_mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
 
-            mock_cx_rec.retrieve_by_id = async_mock.CoroutineMock()
-            mock_cx_rec.retrieve_by_id.return_value.state = (
+            mock_cls_cx_rec.retrieve_by_id = async_mock.CoroutineMock()
+            mock_cls_cx_rec.retrieve_by_id.return_value.state = (
                 test_module.V20CredExRecord.STATE_PROPOSAL_RECEIVED
             )
 
@@ -947,12 +983,12 @@ class TestV20CredRoutes(AsyncTestCase):
             test_module, "V20CredManager", autospec=True
         ) as mock_cred_mgr, async_mock.patch.object(
             test_module, "V20CredExRecord", autospec=True
-        ) as mock_cx_rec, async_mock.patch.object(
+        ) as mock_cls_cx_rec, async_mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
 
-            mock_cx_rec.retrieve_by_id = async_mock.CoroutineMock()
-            mock_cx_rec.retrieve_by_id.return_value.state = (
+            mock_cls_cx_rec.retrieve_by_id = async_mock.CoroutineMock()
+            mock_cls_cx_rec.retrieve_by_id.return_value.state = (
                 test_module.V20CredExRecord.STATE_OFFER_RECEIVED
             )
 
@@ -1055,16 +1091,23 @@ class TestV20CredRoutes(AsyncTestCase):
             test_module, "V20CredManager", autospec=True
         ) as mock_cred_mgr, async_mock.patch.object(
             test_module, "V20CredExRecord", autospec=True
-        ) as mock_cx_rec, async_mock.patch.object(
+        ) as mock_cls_cx_rec, async_mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
-
-            mock_cx_rec.retrieve_by_id = async_mock.CoroutineMock()
-            mock_cx_rec.retrieve_by_id.return_value.state = (
+            mock_cls_cx_rec.retrieve_by_id = async_mock.CoroutineMock()
+            mock_cls_cx_rec.retrieve_by_id.return_value.state = (
                 test_module.V20CredExRecord.STATE_REQUEST_RECEIVED
             )
-
             mock_cx_rec = async_mock.MagicMock()
+
+            mock_cred_mgr.return_value.get_detail_record = async_mock.CoroutineMock(
+                side_effect=[
+                    async_mock.MagicMock(  # indy
+                        serialize=async_mock.MagicMock(return_value={"...": "..."})
+                    ),
+                    None,  # dif
+                ]
+            )
 
             mock_cred_mgr.return_value.issue_credential.return_value = (
                 mock_cx_rec,
@@ -1073,7 +1116,13 @@ class TestV20CredRoutes(AsyncTestCase):
 
             await test_module.credential_exchange_issue(self.request)
 
-            mock_response.assert_called_once_with(mock_cx_rec.serialize.return_value)
+            mock_response.assert_called_once_with(
+                {
+                    "cred_ex_record": mock_cx_rec.serialize.return_value,
+                    "indy": {"...": "..."},
+                    "dif": None,
+                }
+            )
 
     async def test_credential_exchange_issue_bad_cred_ex_id(self):
         self.request.json = async_mock.CoroutineMock()
@@ -1193,14 +1242,24 @@ class TestV20CredRoutes(AsyncTestCase):
             test_module, "V20CredManager", autospec=True
         ) as mock_cred_mgr, async_mock.patch.object(
             test_module, "V20CredExRecord", autospec=True
-        ) as mock_v20_cx_rec:
-            mock_v20_cx_rec.retrieve_by_id = async_mock.CoroutineMock(
+        ) as mock_cls_cx_rec:
+            mock_cls_cx_rec.retrieve_by_id = async_mock.CoroutineMock(
                 return_value=mock_cx_rec
             )
             mock_cred_mgr.return_value.issue_credential.return_value = (
                 mock_cx_rec,
                 async_mock.MagicMock(),
             )
+
+            mock_cred_mgr.return_value.get_detail_record = async_mock.CoroutineMock(
+                side_effect=[
+                    async_mock.MagicMock(  # indy
+                        serialize=async_mock.MagicMock(return_value={"...": "..."})
+                    ),
+                    None,  # dif
+                ]
+            )
+
             with self.assertRaises(test_module.web.HTTPBadRequest):
                 await test_module.credential_exchange_issue(self.request)
 
@@ -1214,13 +1273,22 @@ class TestV20CredRoutes(AsyncTestCase):
             test_module, "V20CredManager", autospec=True
         ) as mock_cred_mgr, async_mock.patch.object(
             test_module, "V20CredExRecord", autospec=True
-        ) as mock_cx_rec, async_mock.patch.object(
+        ) as mock_cls_cx_rec, async_mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
 
-            mock_cx_rec.retrieve_by_id = async_mock.CoroutineMock()
-            mock_cx_rec.retrieve_by_id.return_value.state = (
+            mock_cls_cx_rec.retrieve_by_id = async_mock.CoroutineMock()
+            mock_cls_cx_rec.retrieve_by_id.return_value.state = (
                 test_module.V20CredExRecord.STATE_CREDENTIAL_RECEIVED
+            )
+
+            mock_cred_mgr.return_value.get_detail_record = async_mock.CoroutineMock(
+                side_effect=[
+                    async_mock.MagicMock(  # indy
+                        serialize=async_mock.MagicMock(return_value={"...": "..."})
+                    ),
+                    None,  # dif
+                ]
             )
 
             mock_cx_rec = async_mock.MagicMock()
@@ -1232,7 +1300,13 @@ class TestV20CredRoutes(AsyncTestCase):
 
             await test_module.credential_exchange_store(self.request)
 
-            mock_response.assert_called_once_with(mock_cx_rec.serialize.return_value)
+            mock_response.assert_called_once_with(
+                {
+                    "cred_ex_record": mock_cx_rec.serialize.return_value,
+                    "indy": {"...": "..."},
+                    "dif": None,
+                }
+            )
 
     async def test_credential_exchange_store_bad_cred_id_json(self):
         self.request.json = async_mock.CoroutineMock(
@@ -1246,16 +1320,25 @@ class TestV20CredRoutes(AsyncTestCase):
             test_module, "V20CredManager", autospec=True
         ) as mock_cred_mgr, async_mock.patch.object(
             test_module, "V20CredExRecord", autospec=True
-        ) as mock_cx_rec, async_mock.patch.object(
+        ) as mock_cls_cx_rec, async_mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
 
-            mock_cx_rec.retrieve_by_id = async_mock.CoroutineMock()
-            mock_cx_rec.retrieve_by_id.return_value.state = (
+            mock_cls_cx_rec.retrieve_by_id = async_mock.CoroutineMock()
+            mock_cls_cx_rec.retrieve_by_id.return_value.state = (
                 test_module.V20CredExRecord.STATE_CREDENTIAL_RECEIVED
             )
 
             mock_cx_rec = async_mock.MagicMock()
+
+            mock_cred_mgr.return_value.get_detail_record = async_mock.CoroutineMock(
+                side_effect=[
+                    async_mock.MagicMock(  # indy
+                        serialize=async_mock.MagicMock(return_value={"...": "..."})
+                    ),
+                    None,  # dif
+                ]
+            )
 
             mock_cred_mgr.return_value.store_credential.return_value = (
                 mock_cx_rec,
@@ -1264,7 +1347,13 @@ class TestV20CredRoutes(AsyncTestCase):
 
             await test_module.credential_exchange_store(self.request)
 
-            mock_response.assert_called_once_with(mock_cx_rec.serialize.return_value)
+            mock_response.assert_called_once_with(
+                {
+                    "cred_ex_record": mock_cx_rec.serialize.return_value,
+                    "indy": {"...": "..."},
+                    "dif": None,
+                }
+            )
 
     async def test_credential_exchange_store_bad_cred_ex_id(self):
         self.request.json = async_mock.CoroutineMock()

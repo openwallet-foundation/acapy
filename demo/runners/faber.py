@@ -23,7 +23,7 @@ from runners.support.utils import (  # noqa:E402
 )
 
 
-CRED_PREVIEW_TYPE = "https://didcomm.org/issue-credential/1.0/credential-preview"
+CRED_PREVIEW_TYPE = "https://didcomm.org/issue-credential/2.0/credential-preview"
 SELF_ATTESTED = os.getenv("SELF_ATTESTED")
 TAILS_FILE_COUNT = int(os.getenv("TAILS_FILE_COUNT", 100))
 
@@ -79,43 +79,26 @@ class FaberAgent(DemoAgent):
                 self.log("Connected")
                 self._connection_ready.set_result(True)
 
-    async def handle_issue_credential(self, message):
+    async def handle_issue_credential_v2_0(self, message):
         state = message["state"]
-        credential_exchange_id = message["credential_exchange_id"]
-        prev_state = self.cred_state.get(credential_exchange_id)
+        cred_ex_id = message["cred_ex_id"]
+        prev_state = self.cred_state.get(cred_ex_id)
         if prev_state == state:
             return  # ignore
-        self.cred_state[credential_exchange_id] = state
+        self.cred_state[cred_ex_id] = state
 
-        self.log(
-            "Credential: state = {}, credential_exchange_id = {}".format(
-                state,
-                credential_exchange_id,
-            )
-        )
+        self.log(f"Credential: state = {state}, cred_ex_id = {cred_ex_id}")
 
-        if state == "request_received":
+        if state == "request-received":
             log_status("#17 Issue credential to X")
-            # issue credentials based on the credential_definition_id
-            cred_attrs = self.cred_attrs[message["credential_definition_id"]]
-            cred_preview = {
-                "@type": CRED_PREVIEW_TYPE,
-                "attributes": [
-                    {"name": n, "value": v} for (n, v) in cred_attrs.items()
-                ],
-            }
+            # issue credential based on cred ex record content
             try:
                 cred_ex_rec = await self.admin_POST(
-                    f"/issue-credential/records/{credential_exchange_id}/issue",
-                    {
-                        "comment": (
-                            f"Issuing credential, exchange {credential_exchange_id}"
-                        ),
-                        "credential_preview": cred_preview,
-                    },
+                    f"/issue-credential-2.0/records/{cred_ex_id}/issue",
+                    {"comment": f"Issuing credential, exchange {cred_ex_id}"},
                 )
-                rev_reg_id = cred_ex_rec.get("revoc_reg_id")
-                cred_rev_id = cred_ex_rec.get("revocation_id")
+                rev_reg_id = cred_ex_rec.get("indy", {}).get("rev_reg_id")
+                cred_rev_id = cred_ex_rec.get("indy", {}).get("cred_rev_id")
                 if rev_reg_id:
                     self.log(f"Revocation registry ID: {rev_reg_id}")
                 if cred_rev_id:
@@ -333,13 +316,15 @@ async def main(
                 }
                 offer_request = {
                     "connection_id": agent.connection_id,
-                    "cred_def_id": credential_definition_id,
                     "comment": f"Offer on cred def id {credential_definition_id}",
                     "auto_remove": False,
                     "credential_preview": cred_preview,
+                    "filter": {"indy": {"cred_def_id": credential_definition_id}},
                     "trace": exchange_tracing,
                 }
-                await agent.admin_POST("/issue-credential/send-offer", offer_request)
+                await agent.admin_POST(
+                    "/issue-credential-2.0/send-offer", offer_request
+                )
                 # TODO issue an additional credential for Student ID
 
             elif option == "2":
@@ -414,7 +399,8 @@ async def main(
 
             elif option == "4":
                 log_msg(
-                    "Creating a new invitation, please Receive and Accept this invitation using Alice agent"
+                    "Creating a new invitation, please Receive and Accept "
+                    "this invitation using Alice agent"
                 )
                 await generate_invitation(agent, use_did_exchange)
 
