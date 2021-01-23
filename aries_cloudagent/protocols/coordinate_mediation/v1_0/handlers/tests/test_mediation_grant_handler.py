@@ -9,8 +9,10 @@ from ......connections.models.conn_record import ConnRecord
 from ......messaging.base_handler import HandlerException
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
+from ......multitenant.manager import MultitenantManager
 from ...messages.mediate_grant import MediationGrant
 from ...models.mediation_record import MediationRecord
+from ...manager import MediationManager
 from ..mediation_grant_handler import MediationGrantHandler
 
 TEST_CONN_ID = "conn-id"
@@ -70,6 +72,34 @@ class TestMediationGrantHandler(AsyncTestCase):
             await handler.handle(self.context, responder)
             mock_mediation_manager.return_value.set_default_mediator.assert_called_once_with(
                 record
+            )
+
+    async def test_handler_multitenant_base_mediation(self):
+        handler, responder = MediationGrantHandler(), async_mock.CoroutineMock()
+        responder.send = async_mock.CoroutineMock()
+
+        self.context.update_settings(
+            {"multitenant.enabled": True, "wallet.id": "test_wallet"}
+        )
+
+        multitenant_mgr = async_mock.CoroutineMock()
+        self.context.injector.bind_instance(MultitenantManager, multitenant_mgr)
+
+        default_base_mediator = MediationRecord(routing_keys=["key1", "key2"])
+        multitenant_mgr.get_default_mediator = async_mock.CoroutineMock()
+        multitenant_mgr.get_default_mediator.return_value = default_base_mediator
+
+        record = MediationRecord(connection_id=TEST_CONN_ID)
+        await record.save(self.session)
+        with async_mock.patch.object(MediationManager, "add_key") as add_key:
+            keylist_updates = async_mock.MagicMock()
+            add_key.return_value = keylist_updates
+
+            await handler.handle(self.context, responder)
+
+            add_key.assert_called_once_with("key2")
+            responder.send.assert_called_once_with(
+                keylist_updates, connection_id=TEST_CONN_ID
             )
 
     async def test_handler_connection_no_set_to_default(self):

@@ -123,7 +123,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             }
         )
 
-        self.multitenant_mgr.add_wallet_route = async_mock.CoroutineMock()
+        self.multitenant_mgr.add_key = async_mock.CoroutineMock()
 
         with async_mock.patch.object(
             InMemoryWallet, "create_signing_key", autospec=True
@@ -137,7 +137,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 multi_use=False,
             )
 
-            self.multitenant_mgr.add_wallet_route.assert_called_once_with(
+            self.multitenant_mgr.add_key.assert_called_once_with(
                 "test_wallet", TestConfig.test_verkey
             )
 
@@ -150,7 +150,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             }
         )
 
-        self.multitenant_mgr.add_wallet_route = async_mock.CoroutineMock()
+        self.multitenant_mgr.add_key = async_mock.CoroutineMock()
 
         with async_mock.patch.object(
             InMemoryWallet, "get_public_did", autospec=True
@@ -160,7 +160,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             )
             await self.manager.create_invitation(include_handshake=True, public=True)
 
-            self.multitenant_mgr.add_wallet_route.assert_called_once_with(
+            self.multitenant_mgr.add_key.assert_called_once_with(
                 "test_wallet", TestConfig.test_verkey, skip_if_exists=True
             )
 

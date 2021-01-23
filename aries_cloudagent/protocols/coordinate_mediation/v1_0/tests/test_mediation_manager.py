@@ -403,6 +403,29 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
             await manager.store_update_results(TEST_CONN_ID, results)
             mock_logger_error.assert_called_once()
 
+    async def test_store_update_results_exists_relay(self, session, manager):
+        """test_store_update_results_record_exists_relay."""
+        await RouteRecord(
+            role=RouteRecord.ROLE_CLIENT,
+            recipient_key=TEST_VERKEY,
+            wallet_id="test_wallet",
+        ).save(session)
+        results = [
+            KeylistUpdated(
+                recipient_key=TEST_VERKEY,
+                action=KeylistUpdateRule.RULE_ADD,
+                result=KeylistUpdated.RESULT_SUCCESS,
+            )
+        ]
+        await manager.store_update_results(TEST_CONN_ID, results)
+        routes = await RouteRecord.query(session)
+
+        assert len(routes) == 1
+        route = routes[0]
+        assert route.recipient_key == TEST_VERKEY
+        assert route.wallet_id == "test_wallet"
+        assert route.connection_id == TEST_CONN_ID
+
     async def test_store_update_results_errors(self, caplog, manager):
         """test_store_update_results with errors."""
         caplog.set_level(logging.WARNING)
