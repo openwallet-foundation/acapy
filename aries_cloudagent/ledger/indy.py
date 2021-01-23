@@ -1048,12 +1048,25 @@ class IndySdkLedger(BaseLedger):
         storage = self.get_indy_storage()
         await storage.add_record(record)
         if self.pool.cache:
-            cache_key = TAA_ACCEPTED_RECORD_TYPE + "::" + self.pool.name
+            # TAA acceptance must be set for each wallet and pool combination
+            cache_key = (
+                TAA_ACCEPTED_RECORD_TYPE
+                + "::"
+                + self.wallet.opened.name
+                + "::"
+                + self.pool.name
+            )
             await self.pool.cache.set(cache_key, acceptance, self.pool.cache_duration)
 
     async def get_latest_txn_author_acceptance(self) -> dict:
         """Look up the latest TAA acceptance."""
-        cache_key = TAA_ACCEPTED_RECORD_TYPE + "::" + self.pool.name
+        cache_key = (
+            TAA_ACCEPTED_RECORD_TYPE
+            + "::"
+            + self.wallet.opened.name
+            + "::"
+            + self.pool.name
+        )
         acceptance = self.pool.cache and await self.pool.cache.get(cache_key)
         if not acceptance:
             storage = self.get_indy_storage()
