@@ -42,7 +42,4 @@ class TestV20CredExRecord(AsyncTestCase):
                 assert diff[i] == diff[j] if i == j else diff[i] != diff[j]
 
         assert same[0].connection_id == same[0].conn_id  # cover connection_id
-<<<<<<< HEAD
         assert not same[0].cred_preview  # cover non-proposal's non-preview
-=======
->>>>>>> 5426c8aa7c10be2a3fa480b28d53be8989720ada
