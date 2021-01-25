@@ -280,7 +280,6 @@ async def main(
                 log_msg("Mediation setup FAILED :-(")
                 raise Exception("Mediation setup FAILED :-(")
 
-
         # Create a schema
         credential_definition_id = await create_schema_and_cred_def(agent, revocation)
 

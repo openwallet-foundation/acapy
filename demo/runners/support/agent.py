@@ -371,7 +371,7 @@ class DemoAgent:
         target_wallet_name,
         public_did=False,
         webhook_port: int = None,
-        mediator_agent = None,
+        mediator_agent=None,
     ):
         if webhook_port is not None:
             await self.listen_webhooks(webhook_port)
@@ -968,4 +968,4 @@ async def connect_wallet_to_mediator(agent, mediator_agent):
         count = count - 1
 
     log_msg("Mediation connection FAILED :-(")
-    raise Exception("Mediation connection FAILED :-(") 
+    raise Exception("Mediation connection FAILED :-(")
