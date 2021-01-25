@@ -371,6 +371,7 @@ class DemoAgent:
         target_wallet_name,
         public_did=False,
         webhook_port: int = None,
+        mediator_agent = None,
     ):
         if webhook_port is not None:
             await self.listen_webhooks(webhook_port)
@@ -421,6 +422,13 @@ class DemoAgent:
                 did=new_did["result"]["did"], verkey=new_did["result"]["verkey"]
             )
             await self.admin_POST("/wallet/did/public?did=" + self.did)
+
+        # if mediation, mediate the wallet connections
+        if mediator_agent:
+            if not await connect_wallet_to_mediator(self, mediator_agent):
+                log_msg("Mediation setup FAILED :-(")
+                raise Exception("Mediation setup FAILED :-(")
+
         self.log(f"Created NEW wallet {target_wallet_name}")
         return True
 
@@ -883,11 +891,12 @@ class MediatorAgent(DemoAgent):
             **kwargs,
         )
         self.connection_id = None
-        self._connection_ready = asyncio.Future()
+        self._connection_ready = None
         self.cred_state = {}
 
     async def detect_connection(self):
         await self._connection_ready
+        self._connection_ready = None
 
     @property
     def connection_ready(self):
@@ -903,7 +912,7 @@ class MediatorAgent(DemoAgent):
         self.log("Received message:", message["content"])
 
 
-async def start_mediator_agent(start_port, genesis, agent):
+async def start_mediator_agent(start_port, genesis):
     # start mediator agent
     mediator_agent = MediatorAgent(
         start_port,
@@ -916,9 +925,13 @@ async def start_mediator_agent(start_port, genesis, agent):
     log_msg("Mediator Admin URL is at:", mediator_agent.admin_url)
     log_msg("Mediator Endpoint URL is at:", mediator_agent.endpoint)
 
-    # we need to pre-connect the agent to its mediator
+    return mediator_agent
+
+
+async def connect_wallet_to_mediator(agent, mediator_agent):
     # Generate an invitation
     log_msg("Generate mediation invite ...")
+    mediator_agent._connection_ready = asyncio.Future()
     mediator_connection = await mediator_agent.admin_POST(
         "/connections/create-invitation"
     )
@@ -954,5 +967,5 @@ async def start_mediator_agent(start_port, genesis, agent):
             return mediator_agent
         count = count - 1
 
-    log_msg("Mediation setup FAILED :-(")
-    raise Exception("Mediation setup FAILED :-(")
+    log_msg("Mediation connection FAILED :-(")
+    raise Exception("Mediation connection FAILED :-(") 

@@ -259,20 +259,27 @@ async def main(
         log_msg("Admin URL is at:", agent.admin_url)
         log_msg("Endpoint URL is at:", agent.endpoint)
 
-        if multitenant:
-            # create an initial managed sub-wallet
-            await agent.register_or_switch_wallet(
-                "Faber.initial",
-                public_did=True,
-                webhook_port=agent.get_new_webhook_port(),
-            )
-
         if mediation:
-            mediator_agent = await start_mediator_agent(start_port + 4, genesis, agent)
+            mediator_agent = await start_mediator_agent(start_port + 4, genesis)
             if not mediator_agent:
                 raise Exception("Mediator agent returns None :-(")
         else:
             mediator_agent = None
+
+        if multitenant:
+            # create an initial managed sub-wallet (also mediates)
+            await agent.register_or_switch_wallet(
+                "Faber.initial",
+                public_did=True,
+                webhook_port=agent.get_new_webhook_port(),
+                mediator_agent=mediator_agent,
+            )
+        elif mediation:
+            # we need to pre-connect the agent to its mediator
+            if not await connect_wallet_to_mediator(agent, mediator_agent):
+                log_msg("Mediation setup FAILED :-(")
+                raise Exception("Mediation setup FAILED :-(")
+
 
         # Create a schema
         credential_definition_id = await create_schema_and_cred_def(agent, revocation)
@@ -314,10 +321,13 @@ async def main(
                         target_wallet_name,
                         webhook_port=agent.get_new_webhook_port(),
                         public_did=True,
+                        mediator_agent=mediator_agent,
                     )
                 else:
                     created = await agent.register_or_switch_wallet(
-                        target_wallet_name, public_did=True
+                        target_wallet_name,
+                        public_did=True,
+                        mediator_agent=mediator_agent,
                     )
                 # create a schema and cred def for the new wallet
                 # TODO check first in case we are switching between existing wallets
