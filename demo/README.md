@@ -330,7 +330,21 @@ Note that with multi-tenancy enabled:
 - The "sub-wallets" will have access to the "normal" aca-py admin API - to identify the sub-wallet, a JWT token must be provided, this token is created upon creation of the new wallet (see: [this code here](https://github.com/hyperledger/aries-cloudagent-python/blob/master/demo/runners/support/agent.py#L378))
 - "Sub-wallet" API calls are handled [here](https://github.com/hyperledger/aries-cloudagent-python/blob/244194e68330835e5e2e53cc6c2993899d2437fb/demo/runners/support/agent.py#L632)
 
-Documentation on aca-py's multi-tenancy support can be found [tbd here]().
+Documentation on aca-py's multi-tenancy support can be found [here](https://github.com/hyperledger/aries-cloudagent-python/blob/master/Multitenancy.md).
+
+### Multi-tenancy *with Mediation*!!!
+
+There are two options for configuring mediation with multi-tenancy, documented [here](https://github.com/hyperledger/aries-cloudagent-python/blob/master/Multitenancy.md#mediation).
+
+This demo implements option #2 - each sub-wallet is configured with a separate connection to the mediator.
+
+Run the demo (Alice or Faber) specifying *both* options:
+
+```bash
+./run_demo faber --multitenant --mediation
+```
+
+This works exactly as the *vanilla* multi-tenancy, except that all connections are mediated.
 
 ## Learning about the Alice/Faber code
 
