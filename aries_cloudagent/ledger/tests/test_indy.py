@@ -2902,7 +2902,6 @@ class TestIndySdkLedger(AsyncTestCase):
         self, mock_find_all_records, mock_add_record, mock_close, mock_open
     ):
         mock_wallet = async_mock.MagicMock()
-        mock_wallet.opened.name = "test_wallet"
 
         ledger = IndySdkLedger(
             IndySdkLedgerPool("name", checked=True, cache=InMemoryCache()), mock_wallet
@@ -2936,67 +2935,11 @@ class TestIndySdkLedger(AsyncTestCase):
             )
 
             await ledger.pool.cache.clear(
-                f"{TAA_ACCEPTED_RECORD_TYPE}::{mock_wallet.opened.name}::{ledger.pool_name}"
+                f"{TAA_ACCEPTED_RECORD_TYPE}::{ledger.pool_name}"
             )
             for i in range(2):  # populate, then get from, cache
                 response = await ledger.get_latest_txn_author_acceptance()
                 assert response == acceptance
-
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndySdkLedgerPool.context_open")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndySdkLedgerPool.context_close")
-    @async_mock.patch("aries_cloudagent.storage.indy.IndySdkStorage.add_record")
-    @async_mock.patch("aries_cloudagent.storage.indy.IndySdkStorage.find_all_records")
-    async def test_accept_and_get_latest_txn_author_agreement_multiple_wallets_same_pool(
-        self, mock_find_all_records, mock_add_record, mock_close, mock_open
-    ):
-        mock_wallet1 = async_mock.MagicMock()
-        mock_wallet1.opened.name = "test_wallet1"
-
-        mock_wallet2 = async_mock.MagicMock()
-        mock_wallet2.opened.name = "test_wallet2"
-
-        shared_pool = IndySdkLedgerPool("name", checked=True, cache=InMemoryCache())
-
-        ledger1 = IndySdkLedger(shared_pool, mock_wallet1)
-        ledger2 = IndySdkLedger(shared_pool, mock_wallet2)
-
-        accept_time = ledger1.taa_rough_timestamp()
-        taa_record = {
-            "text": "text",
-            "version": "1.0",
-            "digest": "abcd1234",
-        }
-        acceptance = {
-            "text": taa_record["text"],
-            "version": taa_record["version"],
-            "digest": taa_record["digest"],
-            "mechanism": "dummy",
-            "time": accept_time,
-        }
-
-        mock_find_all_records.return_value = [
-            StorageRecord(
-                TAA_ACCEPTED_RECORD_TYPE,
-                json.dumps(acceptance),
-                {"pool_name": shared_pool.name},
-            )
-        ]
-
-        async with ledger1, ledger2:
-            # Set cache for wallet1
-            await shared_pool.cache.set(
-                f"{TAA_ACCEPTED_RECORD_TYPE}::{mock_wallet1.opened.name}::{ledger1.pool_name}",
-                acceptance,
-            )
-
-            # Expect cache value returned
-            response = await ledger1.get_latest_txn_author_acceptance()
-            assert response == acceptance
-            mock_find_all_records.assert_not_called()
-
-            # Expect wallet2 value retrieved from stoage
-            response = await ledger2.get_latest_txn_author_acceptance()
-            mock_find_all_records.assert_called_once()
 
     @async_mock.patch("aries_cloudagent.ledger.indy.IndySdkLedgerPool.context_open")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndySdkLedgerPool.context_close")
@@ -3005,7 +2948,6 @@ class TestIndySdkLedger(AsyncTestCase):
         self, mock_find_all_records, mock_close, mock_open
     ):
         mock_wallet = async_mock.MagicMock()
-        mock_wallet.opened.name = "test_wallet"
 
         ledger = IndySdkLedger(
             IndySdkLedgerPool("name", checked=True, cache=InMemoryCache()), mock_wallet
@@ -3015,7 +2957,7 @@ class TestIndySdkLedger(AsyncTestCase):
 
         async with ledger:
             await ledger.pool.cache.clear(
-                f"{TAA_ACCEPTED_RECORD_TYPE}::{mock_wallet.opened.name} :: {ledger.pool_name}"
+                f"{TAA_ACCEPTED_RECORD_TYPE}::{ledger.pool_name}"
             )
             response = await ledger.get_latest_txn_author_acceptance()
             assert response == {}

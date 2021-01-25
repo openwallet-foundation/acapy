@@ -11,7 +11,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from runners.support.agent import DemoAgent, default_genesis_txns  # noqa:E402
 from runners.support.utils import log_timer, progress, require_indy  # noqa:E402
 
-
+CRED_PREVIEW_TYPE = "https://didcomm.org/issue-credential/2.0/credential-preview"
 LOGGER = logging.getLogger(__name__)
 TAILS_FILE_COUNT = int(os.getenv("TAILS_FILE_COUNT", 100))
 
@@ -56,7 +56,7 @@ class BaseAgent(DemoAgent):
 
     async def receive_invite(self, invite, auto_accept: bool = True):
         result = await self.admin_POST(
-            "/didexchange/receive-invitation",
+            "/out-of-band/receive-invitation",
             invite,
             params={"auto_accept": json.dumps(auto_accept)},
         )
@@ -88,15 +88,17 @@ class BaseAgent(DemoAgent):
                 self.log("Connected")
                 self._connection_ready.set_result(True)
 
-    async def handle_issue_credential(self, payload):
-        cred_ex_id = payload["credential_exchange_id"]
-        rev_reg_id = payload.get("revoc_reg_id")
-        cred_rev_id = payload.get("revocation_id")
-
+    async def handle_issue_credential_v2_0(self, payload):
+        cred_ex_id = payload["cred_ex_id"]
         self.credential_state[cred_ex_id] = payload["state"]
+        self.credential_event.set()
+
+    async def handle_issue_credential_v2_0_indy(self, payload):
+        cred_ex_id = payload["cred_ex_id"]
+        rev_reg_id = payload.get("rev_reg_id")
+        cred_rev_id = payload.get("cred_rev_id")
         if rev_reg_id and cred_rev_id:
             self.revocations.append((rev_reg_id, cred_rev_id))
-        self.credential_event.set()
 
     async def handle_ping(self, payload):
         thread_id = payload["thread_id"]
@@ -114,7 +116,7 @@ class BaseAgent(DemoAgent):
             pending = 0
             total = len(self.credential_state)
             for result in self.credential_state.values():
-                if result != "credential_acked":
+                if result != "done":
                     pending += 1
             if self.credential_event.is_set():
                 continue
@@ -222,23 +224,27 @@ class FaberAgent(BaseAgent):
         self, cred_attrs: dict, comment: str = None, auto_remove: bool = True
     ):
         cred_preview = {
+            "@type": CRED_PREVIEW_TYPE,
             "attributes": [{"name": n, "value": v} for (n, v) in cred_attrs.items()]
         }
         await self.admin_POST(
-            "/issue-credential/send",
+            "/issue-credential-2.0/send",
             {
-                "connection_id": self.connection_id,
-                "cred_def_id": self.credential_definition_id,
-                "credential_proposal": cred_preview,
-                "comment": comment,
+                "filter": {"indy": {"cred_def_id": self.credential_definition_id}},
                 "auto_remove": auto_remove,
-                "revoc_reg_id": self.revocation_registry_id,
+                "comment": comment,
+                "connection_id": self.connection_id,
+                "credential_preview": cred_preview,
             },
         )
 
     async def revoke_credential(self, cred_ex_id: str):
         await self.admin_POST(
-            f"/issue-credential/records/{cred_ex_id}/revoke?publish=true"
+            f"/revocation/revoke",
+            {
+                "cred_ex_id": cred_ex_id,
+                "publish": True,
+            }
         )
 
 

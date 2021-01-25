@@ -340,7 +340,7 @@ class ConnRecord(BaseRecord):
     async def attach_request(
         self,
         session: ProfileSession,
-        request: ConnectionRequest,  # will be Union[ConnectionRequest, DIDEx Request]
+        request: Union[ConnectionRequest, DIDXRequest],
     ):
         """Persist the related connection request to storage.
 
