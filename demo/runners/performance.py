@@ -225,7 +225,7 @@ class FaberAgent(BaseAgent):
     ):
         cred_preview = {
             "@type": CRED_PREVIEW_TYPE,
-            "attributes": [{"name": n, "value": v} for (n, v) in cred_attrs.items()]
+            "attributes": [{"name": n, "value": v} for (n, v) in cred_attrs.items()],
         }
         await self.admin_POST(
             "/issue-credential-2.0/send",
@@ -244,7 +244,7 @@ class FaberAgent(BaseAgent):
             {
                 "cred_ex_id": cred_ex_id,
                 "publish": True,
-            }
+            },
         )
 
 

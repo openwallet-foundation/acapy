@@ -164,10 +164,7 @@ async def create_schema_and_cred_def(agent, revocation):
                 random.randint(1, 101),
             )
         )
-        (
-            _,  # schema id
-            cred_def_id,
-        ) = await agent.register_schema_and_creddef(
+        (_, cred_def_id,) = await agent.register_schema_and_creddef(  # schema id
             "degree schema",
             version,
             ["name", "date", "degree", "age", "timestamp"],
@@ -278,9 +275,7 @@ async def main(
                 # TODO check first in case we are switching between existing wallets
                 if created:
                     # TODO this fails because the new wallet doesn't get a public DID
-                    cred_def_id = await create_schema_and_cred_def(
-                        agent, revocation
-                    )
+                    cred_def_id = await create_schema_and_cred_def(agent, revocation)
 
             elif option in "tT":
                 exchange_tracing = not exchange_tracing
