@@ -304,7 +304,10 @@ def _formats_filters(filt_spec: Mapping) -> Mapping:
     }
 
 
-@docs(tags=["issue-credential v2.0"], summary="Fetch all credential exchange records")
+@docs(
+    tags=["issue-credential v2.0"],
+    summary="Fetch all credential exchange records",
+)
 @querystring_schema(V20CredExRecordListQueryStringSchema)
 @response_schema(V20CredExRecordListResultSchema(), 200, description="")
 async def credential_exchange_list(request: web.BaseRequest):
@@ -574,7 +577,10 @@ async def credential_exchange_send(request: web.BaseRequest):
     return web.json_response(result)
 
 
-@docs(tags=["issue-credential v2.0"], summary="Send issuer a credential proposal")
+@docs(
+    tags=["issue-credential v2.0"],
+    summary="Send issuer a credential proposal",
+)
 @request_schema(V20CredProposalRequestPreviewOptSchema())
 @response_schema(V20CredExRecordSchema(), 200, description="")
 async def credential_exchange_send_proposal(request: web.BaseRequest):
@@ -960,7 +966,10 @@ async def credential_exchange_send_bound_offer(request: web.BaseRequest):
     return web.json_response(result)
 
 
-@docs(tags=["issue-credential v2.0"], summary="Send issuer a credential request")
+@docs(
+    tags=["issue-credential v2.0"],
+    summary="Send issuer a credential request",
+)
 @match_info_schema(V20CredExIdMatchInfoSchema())
 @response_schema(V20CredExRecordSchema(), 200, description="")
 async def credential_exchange_send_request(request: web.BaseRequest):
@@ -1026,7 +1035,10 @@ async def credential_exchange_send_request(request: web.BaseRequest):
     return web.json_response(result)
 
 
-@docs(tags=["issue-credential v2.0"], summary="Send holder a credential")
+@docs(
+    tags=["issue-credential v2.0"],
+    summary="Send holder a credential",
+)
 @match_info_schema(V20CredExIdMatchInfoSchema())
 @request_schema(V20CredIssueRequestSchema())
 @response_schema(V20CredExRecordDetailSchema(), 200, description="")
@@ -1105,7 +1117,10 @@ async def credential_exchange_issue(request: web.BaseRequest):
     return web.json_response(result)
 
 
-@docs(tags=["issue-credential v2.0"], summary="Store a received credential")
+@docs(
+    tags=["issue-credential v2.0"],
+    summary="Store a received credential",
+)
 @match_info_schema(V20CredExIdMatchInfoSchema())
 @request_schema(V20CredStoreRequestSchema())
 @response_schema(V20CredExRecordDetailSchema(), 200, description="")

@@ -92,19 +92,17 @@ class FaberAgent(DemoAgent):
         if state == "request-received":
             log_status("#17 Issue credential to X")
             # issue credential based on offer preview in cred ex record
-            try:
-                cred_ex_rec = await self.admin_POST(
-                    f"/issue-credential-2.0/records/{cred_ex_id}/issue",
-                    {"comment": f"Issuing credential, exchange {cred_ex_id}"},
-                )
-                rev_reg_id = cred_ex_rec.get("indy", {}).get("rev_reg_id")
-                cred_rev_id = cred_ex_rec.get("indy", {}).get("cred_rev_id")
-                if rev_reg_id:
-                    self.log(f"Revocation registry ID: {rev_reg_id}")
-                if cred_rev_id:
-                    self.log(f"Credential revocation ID: {cred_rev_id}")
-            except ClientError:
-                pass
+            await self.admin_POST(
+                f"/issue-credential-2.0/records/{cred_ex_id}/issue",
+                {"comment": f"Issuing credential, exchange {cred_ex_id}"},
+            )
+
+    async def handle_issue_credential_v2_0_indy(self, message):
+        rev_reg_id = message.get("rev_reg_id")
+        cred_rev_id = message.get("cred_rev_id")
+        if rev_reg_id and cred_rev_id:
+            self.log(f"Revocation registry ID: {rev_reg_id}")
+            self.log(f"Credential revocation ID: {cred_rev_id}")
 
     async def handle_issuer_cred_rev(self, message):
         pass

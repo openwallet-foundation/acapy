@@ -30,7 +30,7 @@ class V20CredIssueHandler(BaseHandler):
         self._logger.debug("V20CredIssueHandler called with context %s", context)
         assert isinstance(context.message, V20CredIssue)
         self._logger.info(
-            "Received v2.0 credential message: %s",
+            "Received v2.0 credential issue message: %s",
             context.message.serialize(as_string=True),
         )
 

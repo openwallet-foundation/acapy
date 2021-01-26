@@ -93,16 +93,16 @@ class AliceAgent(DemoAgent):
             cred_id = message["cred_id_stored"]
             self.log(f"Stored credential {cred_id} in wallet")
             log_status(f"#18.1 Stored credential {cred_id} in wallet")
-            cred_ex = await self.admin_GET(
-                f"/issue-credential-2.0/records/{cred_ex_id}"
-            )
-            cred_req_metadata = cred_ex.get("indy", {}).get("cred_request_metadata", {})
             cred = await self.admin_GET(f"/credential/{cred_id}")
             log_json(cred, label="Credential details:")
-            log_json(cred_req_metadata, label="Credential request metadata:")
             self.log("credential_id", cred_id)
             self.log("cred_def_id", cred["cred_def_id"])
             self.log("schema_id", cred["schema_id"])
+
+    async def handle_issue_credential_v2_0_indy(self, message):
+        cred_req_metadata = message.get("cred_request_metadata")
+        if cred_req_metadata:
+            log_json(cred_req_metadata, label="Credential request metadata:")
 
     async def handle_present_proof(self, message):
         state = message["state"]
