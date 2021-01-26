@@ -1,4 +1,4 @@
-"""In memmory storage for registering did resolvers"""
+"""In memmory storage for registering did resolvers."""
 
 import logging
 from typing import Sequence
