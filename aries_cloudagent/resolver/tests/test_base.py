@@ -10,11 +10,14 @@ class ExampleDIDResolver(BaseDIDResolver):
     def __init__(self):
         super().__init__()
 
+    async def setup(self, session):
+        pass
+
     @property
     def supported_methods(self):
         return ["test"]
 
-    def resolve(self, did: str) -> ResolvedDIDDoc:
+    async def resolve(self, session, did: str) -> ResolvedDIDDoc:
         return ResolvedDIDDoc({"id": "did:example:123"})
 
 

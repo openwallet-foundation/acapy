@@ -104,6 +104,17 @@ class DIDUrl:
             parts.fragment or None,
         )
 
+    @classmethod
+    def as_str(
+        cls,
+        did: str,
+        path: str = None,
+        query: Dict[str, str] = None,
+        fragment: str = None,
+    ):
+        """Form a DID URL from parts and return the string representation."""
+        return str(cls(did, path, query, fragment))
+
 
 class DID:
     """DID Representation and helpers."""
@@ -146,4 +157,8 @@ class DID:
 
     def url(self, path: str = None, query: Dict[str, str] = None, fragment: str = None):
         """Return a DID URL for this DID."""
-        return DIDUrl(str(self), path, query, fragment)
+        return DIDUrl(self._raw, path, query, fragment)
+
+    def ref(self, ident: str):
+        """Return a DID reference (URL) for use as an ID in a DID Doc section."""
+        return DIDUrl.as_str(self._raw, fragment=ident)
