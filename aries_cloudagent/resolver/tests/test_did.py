@@ -115,10 +115,10 @@ def test_did_url(inputs, output):
                 "did": TEST_DID3,
                 "path": "/test/path",
                 "query": {"key": "value"},
-                "fragment": "fragment"
-            }
+                "fragment": "fragment",
+            },
         ),
-    ]
+    ],
 )
 def test_did_url_parse(url, parts):
     assert DIDUrl.parse(url) == DIDUrl(**parts)
