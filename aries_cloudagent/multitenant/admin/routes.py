@@ -2,7 +2,13 @@
 
 from marshmallow import fields, validate, validates_schema, ValidationError
 from aiohttp import web
-from aiohttp_apispec import docs, request_schema, match_info_schema, response_schema, querystring_schema
+from aiohttp_apispec import (
+    docs,
+    request_schema,
+    match_info_schema,
+    response_schema,
+    querystring_schema,
+)
 
 from ...admin.request_context import AdminRequestContext
 from ...messaging.valid import JSONWebToken, UUIDFour
@@ -340,7 +346,9 @@ async def wallet_update(request: web.BaseRequest):
     label = body.get("label")
     image_url = body.get("image_url")
 
-    if all(v is None for v in (wallet_webhook_urls, wallet_dispatch_type, label, image_url)):
+    if all(
+        v is None for v in (wallet_webhook_urls, wallet_dispatch_type, label, image_url)
+    ):
         raise web.HTTPBadRequest(reason="At least one parameter is required.")
 
     # adjust wallet_dispatch_type according to wallet_webhook_urls

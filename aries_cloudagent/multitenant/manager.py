@@ -158,7 +158,9 @@ class MultitenantManager:
                 "mediation.default_id": None,
                 "mediation.clear": None,
             }
-            extra_settings["admin.webhook_urls"] = self.get_webhook_urls(base_context, wallet_record)
+            extra_settings["admin.webhook_urls"] = self.get_webhook_urls(
+                base_context, wallet_record
+            )
 
             context.settings = (
                 context.settings.extend(reset_settings)
@@ -264,7 +266,9 @@ class MultitenantManager:
             profile.settings.update(wallet_record.settings)
 
             extra_settings = {
-                "admin.webhook_urls": self.get_webhook_urls(self.profile.context, wallet_record),
+                "admin.webhook_urls": self.get_webhook_urls(
+                    self.profile.context, wallet_record
+                ),
             }
             profile.settings.update(extra_settings)
 
