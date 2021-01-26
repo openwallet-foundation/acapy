@@ -89,9 +89,7 @@ class TestOutOfBandRoutes(AsyncTestCase):
             test_module.web, "json_response", async_mock.Mock()
         ) as mock_json_response:
             mock_oob_mgr.return_value.receive_invitation = async_mock.CoroutineMock(
-                return_value=async_mock.MagicMock(
-                    serialize=async_mock.MagicMock(return_value={"abc": "123"})
-                )
+                return_value={"abc": "123"}
             )
 
             result = await test_module.invitation_receive(self.request)

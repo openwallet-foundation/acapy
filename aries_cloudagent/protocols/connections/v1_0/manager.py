@@ -32,7 +32,7 @@ from .messages.connection_request import ConnectionRequest
 from .messages.connection_response import ConnectionResponse
 from .messages.problem_report import ProblemReportReason
 from .models.connection_detail import ConnectionDetail
-from .BaseConnectionManager import BaseConnectionManager
+from .base_manager import BaseConnectionManager
 
 
 class ConnectionManagerError(BaseError):
@@ -286,7 +286,7 @@ class ConnectionManager(BaseConnectionManager):
     async def receive_invitation(
         self,
         invitation: ConnectionInvitation,
-        their_public_did: str,
+        their_public_did: str = None,
         auto_accept: bool = None,
         alias: str = None,
         mediation_id: str = None,

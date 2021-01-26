@@ -7,12 +7,15 @@ from .....messaging.base_handler import (
 )
 
 from ..manager import OutOfBandManager, OutOfBandManagerError
-from ..messages.reuse import HandshakeReuse
+from ..messages.problem_report import ProblemReport
 
 
 class OOBProblemReportMessageHandler(BaseHandler):
-    """Handler class for OOB Problem Report Message to update the state of the \
-    ConnReuseMessage Record to STATE_NOT_ACCEPTED."""
+    """
+    Handler class for OOB Problem Report Message.
+
+    Updates the ConnRecord Metadata state.
+    """
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
         """
@@ -22,8 +25,10 @@ class OOBProblemReportMessageHandler(BaseHandler):
             context: Request context
             responder: Responder callback
         """
-        self._logger.debug(f"OOBProblemReportMessageHandler called with context {context}")
-        assert isinstance(context.message, HandshakeReuse)
+        self._logger.debug(
+            f"OOBProblemReportMessageHandler called with context {context}"
+        )
+        assert isinstance(context.message, ProblemReport)
 
         session = await context.session()
         mgr = OutOfBandManager(session)

@@ -21,7 +21,9 @@ class HandshakeReuseAcceptMessageHandler(BaseHandler):
             context: Request context
             responder: Responder callback
         """
-        self._logger.debug(f"HandshakeReuseAcceptMessageHandler called with context {context}")
+        self._logger.debug(
+            f"HandshakeReuseAcceptMessageHandler called with context {context}"
+        )
         assert isinstance(context.message, HandshakeReuseAccept)
 
         session = await context.session()
@@ -30,7 +32,9 @@ class HandshakeReuseAcceptMessageHandler(BaseHandler):
             await mgr.receive_reuse_accepted_message(
                 reuse_accepted_msg=context.message,
                 reciept=context.message_receipt,
-                conn_record=context.connection_record,
+                conn_record=context.connection_record
             )
         except OutOfBandManagerError as e:
-            self._logger.exception(f"Error processing Handshake Reuse Accept message, {e}")
+            self._logger.exception(
+                f"Error processing Handshake Reuse Accept message, {e}"
+            )

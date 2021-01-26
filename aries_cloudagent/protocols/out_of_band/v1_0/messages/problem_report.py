@@ -27,7 +27,10 @@ class ProblemReport(AgentMessage):
         message_type = PROBLEM_REPORT
         schema_class = "ProblemReportSchema"
 
-    def __init__(self, *, problem_code: str = None, explain: str = None, **kwargs):
+    def __init__(self, *,
+                 problem_code: str = None,
+                 explain: str = None,
+                 **kwargs):
         """
         Initialize a ProblemReport message instance.
 

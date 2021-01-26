@@ -1,3 +1,9 @@
+"""
+Class to provide some common utilities.
+
+For Connection, DIDExchange and OutOfBand Manager.
+"""
+
 from ....core.profile import ProfileSession
 from ....connections.models.conn_record import ConnRecord
 from ....wallet.base import BaseWallet
@@ -18,10 +24,18 @@ class BaseConnectionManagerError(BaseError):
 
 
 class BaseConnectionManager:
+    """Class to provide utilities regarding connection_targets."""
+
     RECORD_TYPE_DID_DOC = "did_doc"
     RECORD_TYPE_DID_KEY = "did_key"
 
     def __init__(self, session: ProfileSession):
+        """
+        Initialize a BaseConnectionManager.
+
+        Args:
+            session: The profile session for this presentation
+        """
         self._logger = logging.getLogger(__name__)
         self._session = session
 
@@ -78,7 +92,9 @@ class BaseConnectionManager:
                             invitation.service_dids[0]
                         )
                         recipient_keys = [
-                            await ledger.get_key_for_did(invitation.service_dids[0])
+                            await ledger.get_key_for_did(
+                                invitation.service_dids[0]
+                            )
                         ]
                         routing_keys = []
                 else:

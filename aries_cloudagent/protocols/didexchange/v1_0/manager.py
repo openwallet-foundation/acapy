@@ -12,7 +12,7 @@ from ....connections.models.diddoc import (
     PublicKeyType,
     Service,
 )
-from ...connections.v1_0.BaseConnectionManager import BaseConnectionManager
+from ...connections.v1_0.base_manager import BaseConnectionManager
 from ....core.error import BaseError
 from ....core.profile import ProfileSession
 from ....messaging.decorators.attach_decorator import AttachDecorator
@@ -70,7 +70,7 @@ class DIDXManager(BaseConnectionManager):
     async def receive_invitation(
         self,
         invitation: OOBInvitationMessage,
-        their_public_did: str,
+        their_public_did: str = None,
         auto_accept: bool = None,
         alias: str = None,
     ) -> ConnRecord:  # leave in didexchange as it uses a responder: not out-of-band

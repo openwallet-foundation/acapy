@@ -22,6 +22,7 @@ from ....out_of_band.v1_0.models.invitation import InvitationRecord
 from .....multitenant.manager import MultitenantManager
 from .....wallet.base import DIDInfo
 from .....wallet.in_memory import InMemoryWallet
+from ....connections.v1_0.base_manager import BaseConnectionManager, BaseConnectionManagerError
 
 from ....out_of_band.v1_0.manager import OutOfBandManager
 from ....out_of_band.v1_0.messages.invitation import InvitationMessage
@@ -1342,16 +1343,16 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
         assert isinstance(targets[0], ConnectionTarget)
 
     async def test_diddoc_connection_targets_diddoc_underspecified(self):
-        with self.assertRaises(DIDXManagerError):
+        with self.assertRaises(BaseConnectionManagerError):
             self.manager.diddoc_connection_targets(None, TestConfig.test_verkey)
 
         x_did_doc = DIDDoc(did=None)
-        with self.assertRaises(DIDXManagerError):
+        with self.assertRaises(BaseConnectionManagerError):
             self.manager.diddoc_connection_targets(x_did_doc, TestConfig.test_verkey)
 
         x_did_doc = self.make_did_doc(
             did=TestConfig.test_target_did, verkey=TestConfig.test_target_verkey
         )
         x_did_doc._service = {}
-        with self.assertRaises(DIDXManagerError):
+        with self.assertRaises(BaseConnectionManagerError):
             self.manager.diddoc_connection_targets(x_did_doc, TestConfig.test_verkey)

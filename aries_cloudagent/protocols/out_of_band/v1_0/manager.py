@@ -14,7 +14,6 @@ from ....wallet.util import naked_to_did_key
 
 from ...didexchange.v1_0.manager import DIDXManager
 from ...didcomm_prefix import DIDCommPrefix
-from ...issue_credential.v1_0.models.credential_exchange import V10CredentialExchange
 from ...present_proof.v1_0.message_types import PRESENTATION_REQUEST
 from ...present_proof.v1_0.models.presentation_exchange import V10PresentationExchange
 
@@ -22,7 +21,7 @@ from .messages.invitation import InvitationMessage
 from .messages.reuse import HandshakeReuse
 from .messages.reuse_accept import HandshakeReuseAccept
 from .messages.problem_report import ProblemReportReason, ProblemReport
-from ...connections.v1_0.BaseConnectionManager import BaseConnectionManager
+from ...connections.v1_0.base_manager import BaseConnectionManager
 from ....transport.inbound.receipt import MessageReceipt
 from ....storage.error import StorageNotFoundError
 
@@ -47,8 +46,6 @@ CONNECTION_INVITATION = "connections/1.0"
 
 class OutOfBandManagerError(BaseError):
     """Out of band error."""
-    originating_invi_msg_id = None
-    originating_reuse_msg_id = None
 
 
 class OutOfBandManagerNotImplementedError(BaseError):
@@ -290,7 +287,7 @@ class OutOfBandManager(BaseConnectionManager):
             public_did = None
         else:
             # If it's in the did format, we need to convert to a full service block
-            # An existing connection can only be reused based on a public DID 
+            # An existing connection can only be reused based on a public DID
             # in an out-of-band message.
             # https://github.com/hyperledger/aries-rfcs/tree/master/features/0434-outofband
             service_did = invi_msg.service_dids[0]
@@ -298,7 +295,10 @@ class OutOfBandManager(BaseConnectionManager):
                 verkey = await ledger.get_key_for_did(service_did)
                 did_key = naked_to_did_key(verkey)
                 endpoint = await ledger.get_endpoint_for_did(service_did)
-            public_did = service_did.split(":")[2]
+            if "did:" in service_did and len(service_did.split(":")) == 3:
+                public_did = service_did.split(":")[2]
+            else:
+                public_did = service_did
             service = ServiceMessage.deserialize(
                 {
                     "id": "#inline",
@@ -331,8 +331,11 @@ class OutOfBandManager(BaseConnectionManager):
         if conn_rec is not None:
             num_included_protocols = len(unq_handshake_protos)
             num_included_req_attachments = len(invi_msg.request_attach)
-            # Handshake_Protocol included Request_Attachment not included Use_Existing_Connection Yes
-            if num_included_protocols >= 1 and num_included_req_attachments == 0 and use_existing_connection:
+            # Handshake_Protocol included Request_Attachment
+            # not included Use_Existing_Connection Yes
+            if (num_included_protocols >= 1 and
+               num_included_req_attachments == 0 and
+               use_existing_connection):
                 await self.create_handshake_reuse_message(
                     invi_msg=invi_msg,
                     connection=conn_rec,
@@ -351,10 +354,18 @@ class OutOfBandManager(BaseConnectionManager):
                 conn_rec.metadata_delete(session=self._session, key="reuse_msg_id")
                 conn_rec.metadata_delete(session=self._session, key="reuse_msg_state")
             # Inverse of the following cases
-            # Handshake_Protocol not included Request_Attachment included Use_Existing_Connection Yes
-            # Handshake_Protocol included Request_Attachment included Use_Existing_Connection Yes
-            elif not ((num_included_protocols == 0 and num_included_req_attachments >= 1 and use_existing_connection) or
-                      (num_included_protocols >= 1 and num_included_req_attachments >= 1 and use_existing_connection)):
+            # Handshake_Protocol not included
+            # Request_Attachment included
+            # Use_Existing_Connection Yes
+            # Handshake_Protocol included
+            # Request_Attachment included
+            # Use_Existing_Connection Yes
+            elif not ((num_included_protocols == 0 and
+                      num_included_req_attachments >= 1 and
+                      use_existing_connection) or
+                      (num_included_protocols >= 1 and
+                      num_included_req_attachments >= 1 and
+                      use_existing_connection)):
                 conn_rec = None
         if conn_rec is None:
             # Create a new connection
@@ -400,68 +411,93 @@ class OutOfBandManager(BaseConnectionManager):
                     break
 
         # Request Attach
-        if len(invi_msg.request_attach) >= 1:
+        if len(invi_msg.request_attach) >= 1 and conn_rec is not None:
             req_attach = invi_msg.request_attach[0]
-            req_attach_type = req_attach.data.json["@type"]
-            if DIDCommPrefix.unqualify(req_attach_type) == PRESENTATION_REQUEST:
-                proof_present_mgr = PresentationManager(self._session)
-                indy_proof_request = req_attach.data.json["request_presentations~attach"][0].indy_dict
-                present_request_msg = req_attach.data.json
-                service_deco = {}
-                oob_invi_service = service.serialize()
-                service_deco["recipientKeys"] = oob_invi_service.get("recipientKeys")
-                service_deco["routingKeys"] = oob_invi_service.get("routingKeys")
-                service_deco["serviceEndpoint"] = oob_invi_service.get("serviceEndpoint")
-                present_request_msg["~service"] = service_deco
-                presentation_exchange_record = V10PresentationExchange(
-                    connection_id=conn_rec.connection_id,
-                    thread_id=invi_msg._id,
-                    initiator=V10PresentationExchange.INITIATOR_EXTERNAL,
-                    role=V10PresentationExchange.ROLE_PROVER,
-                    presentation_request=indy_proof_request,
-                    presentation_request_dict=present_request_msg,
-                    auto_present=self._session.context.settings.get(
-                        "debug.auto_respond_presentation_request"
-                    ),
-                    trace=(invi_msg._trace is not None),
-                )
-
-                presentation_exchange_record.presentation_request = indy_proof_request
-                presentation_exchange_record = await proof_present_mgr.receive_request(
-                    presentation_exchange_record
-                )
-
-                if presentation_exchange_record.auto_present:
-                    presentation_preview = None
-                    if presentation_exchange_record.presentation_proposal_dict:
-                        exchange_pres_proposal = PresentationProposal.deserialize(
-                            presentation_exchange_record.presentation_proposal_dict
-                        )
-                        presentation_preview = exchange_pres_proposal.presentation_proposal
-
-                    try:
-                        req_creds = await indy_proof_req_preview2indy_requested_creds(
-                            indy_proof_request,
-                            presentation_preview,
-                            holder=self._session.inject(IndyHolder),
-                        )
-                    except ValueError as err:
-                        self._logger.warning(f"{err}")
-                        return
-
-                    (
-                        presentation_exchange_record,
-                        presentation_message,
-                    ) = await proof_present_mgr.create_presentation(
-                        presentation_exchange_record=presentation_exchange_record,
-                        requested_credentials=req_creds,
-                        comment="auto-presented for proof request nonce={}".format(
-                            indy_proof_request["nonce"]
-                        ),
+            if "data" in req_attach:
+                req_attach_type = req_attach.data.json["@type"]
+                if DIDCommPrefix.unqualify(req_attach_type) == PRESENTATION_REQUEST:
+                    proof_present_mgr = PresentationManager(self._session)
+                    indy_proof_request = (
+                        req_attach.data.json["request_presentations~attach"][0].indy_dict
                     )
-                return presentation_message.serialize()
+                    present_request_msg = req_attach.data.json
+                    service_deco = {}
+                    oob_invi_service = service.serialize()
+                    service_deco["recipientKeys"] = oob_invi_service.get("recipientKeys")
+                    service_deco["routingKeys"] = oob_invi_service.get("routingKeys")
+                    service_deco["serviceEndpoint"] = oob_invi_service.get(
+                        "serviceEndpoint"
+                    )
+                    present_request_msg["~service"] = service_deco
+                    presentation_exchange_record = V10PresentationExchange(
+                        connection_id=conn_rec.connection_id,
+                        thread_id=invi_msg._id,
+                        initiator=V10PresentationExchange.INITIATOR_EXTERNAL,
+                        role=V10PresentationExchange.ROLE_PROVER,
+                        presentation_request=indy_proof_request,
+                        presentation_request_dict=present_request_msg,
+                        auto_present=self._session.context.settings.get(
+                            "debug.auto_respond_presentation_request"
+                        ),
+                        trace=(invi_msg._trace is not None),
+                    )
+
+                    presentation_exchange_record.presentation_request = indy_proof_request
+                    presentation_exchange_record = (
+                        await proof_present_mgr.receive_request(
+                                presentation_exchange_record
+                        )
+                    )
+
+                    if presentation_exchange_record.auto_present:
+                        presentation_preview = None
+                        if presentation_exchange_record.presentation_proposal_dict:
+                            exchange_pres_proposal = PresentationProposal.deserialize(
+                                presentation_exchange_record.presentation_proposal_dict
+                            )
+                            presentation_preview = (
+                                exchange_pres_proposal.presentation_proposal
+                            )
+
+                        try:
+                            req_creds = await indy_proof_req_preview2indy_requested_creds(
+                                indy_proof_request,
+                                presentation_preview,
+                                holder=self._session.inject(IndyHolder),
+                            )
+                        except ValueError as err:
+                            self._logger.warning(f"{err}")
+                            return
+
+                        (
+                            presentation_exchange_record,
+                            presentation_message,
+                        ) = await proof_present_mgr.create_presentation(
+                            presentation_exchange_record=presentation_exchange_record,
+                            requested_credentials=req_creds,
+                            comment="auto-presented for proof request nonce={}".format(
+                                indy_proof_request["nonce"]
+                            ),
+                        )
+                    responder = self._session.inject(BaseResponder, required=False)
+                    connection_targets = self.fetch_connection_targets(
+                        connection=conn_rec
+                    )
+                    if responder:
+                        await responder.send(
+                            message=presentation_message,
+                            target_list=connection_targets,
+                        )
+                    return presentation_message.serialize()
+                else:
+                    raise OutOfBandManagerError(
+                        "Unsupported request~attach type, \
+                            only request-presentation is supported"
+                    )
             else:
-                raise OutOfBandManagerError("Unsupported request~attach type, only request-presentation is supported")
+                raise OutOfBandManagerError(
+                    "request~attach is not properly formatted as data is missing"
+                )
         else:
             return conn_rec.serialize()
 
@@ -470,6 +506,18 @@ class OutOfBandManager(BaseConnectionManager):
         tag_filter: dict,
         post_filter: dict,
     ) -> Optional[ConnRecord]:
+        """
+        Find existing ConnRecord.
+
+        Args:
+            tag_filter: The filter dictionary to apply
+            post_filter: Additional value filters to apply matching positively,
+                with sequence values specifying alternatives to match (hit any)
+
+        Returns:
+            ConnRecord or None
+
+        """
         conn_records = await ConnRecord.query(
             self._session,
             tag_filter,
@@ -485,6 +533,15 @@ class OutOfBandManager(BaseConnectionManager):
         self,
         conn_rec: ConnRecord,
     ):
+        """
+        Check reuse message state from the ConnRecord Metadata.
+
+        Args:
+            conn_rec: The required ConnRecord with updated metadata
+
+        Returns:
+
+        """
         recieved = False
         while not recieved:
             if not conn_rec.metadata_get(self._session, "reuse_msg_state") == "initial":
@@ -508,6 +565,7 @@ class OutOfBandManager(BaseConnectionManager):
         Raises:
             OutOfBandManagerError: If there is an issue creating or
             sending the OOB invitation
+
         """
         try:
             # ID of Out-of-Band invitation to use as a pthid
@@ -522,10 +580,20 @@ class OutOfBandManager(BaseConnectionManager):
                    message=reuse_msg,
                    target_list=connection_targets,
                 )
-                conn_record.metadata_set(session=self._session, key="reuse_msg_id", value=reuse_msg._id)
-                conn_record.metadata_set(session=self._session, key="reuse_msg_state", value="initial")
+                conn_record.metadata_set(
+                    session=self._session,
+                    key="reuse_msg_id",
+                    value=reuse_msg._id
+                )
+                conn_record.metadata_set(
+                    session=self._session,
+                    key="reuse_msg_state",
+                    value="initial"
+                )
         except Exception as err:
-            raise OutOfBandManagerError(f"Error on creating and sending a handshake reuse message: {err}")
+            raise OutOfBandManagerError(
+                f"Error on creating and sending a handshake reuse message: {err}"
+            )
 
     async def receive_reuse_message(
         self,
@@ -547,6 +615,7 @@ class OutOfBandManager(BaseConnectionManager):
         Raises:
             OutOfBandManagerError: If the existing connection is not active
             or the connection does not exists
+
         """
         try:
             invi_msg_id = reuse_msg._thread.pthid
@@ -588,24 +657,61 @@ class OutOfBandManager(BaseConnectionManager):
                         tag_filter={},
                         post_filter=invi_id_post_filter,
                     )
-                    conn_record_to_delete.delete_record(session=self._session)
+                    if conn_record.connection_id != conn_record_to_delete.connection_id:
+                        conn_record_to_delete.delete_record(session=self._session)
             else:
-                raise OutOfBandManagerError(
-                    (
-                        f"No active connection found for OOB Invitee {reciept.sender_did}"
-                    ),
-                    error_code=ProblemReportReason.EXISTING_CONNECTION_NOT_ACTIVE,
-                    originating_invi_msg_id=invi_msg_id,
-                    originating_reuse_msg_id=reuse_msg_id,
+                targets = None
+                if reuse_msg.did_doc_attach:
+                    try:
+                        targets = self.diddoc_connection_targets(
+                            reuse_msg.did_doc_attach,
+                            reciept.recipient_verkey,
+                        )
+                    except OutOfBandManagerError:
+                        self._logger.exception(
+                            "Error parsing DIDDoc for problem report"
+                        )
+                problem_report = ProblemReport(
+                    problem_code=ProblemReportReason.EXISTING_CONNECTION_NOT_ACTIVE,
+                    explain=f"No active connection found for Invitee {reciept.sender_did}"
+                )
+                problem_report.assign_thread_id(
+                    thid=invi_msg_id,
+                    pthid=reuse_msg_id
+                )
+                await responder.send_reply(
+                    problem_report,
+                    target_list=targets,
                 )
         except StorageNotFoundError:
+            targets = None
+            if reuse_msg.did_doc_attach:
+                try:
+                    targets = self.diddoc_connection_targets(
+                        reuse_msg.did_doc_attach,
+                        reciept.recipient_verkey,
+                    )
+                except OutOfBandManagerError:
+                    self._logger.exception(
+                        "Error parsing DIDDoc for problem report"
+                    )
+            problem_report = ProblemReport(
+                problem_code=ProblemReportReason.EXISTING_CONNECTION_DOES_NOT_EXISTS,
+                explain=f"No existing connection for Invitee {reciept.sender_did}"
+            )
+            problem_report.assign_thread_id(
+                thid=invi_msg_id,
+                pthid=reuse_msg_id
+            )
+            await responder.send_reply(
+                problem_report,
+                target_list=targets,
+            )
+        except Exception as e:
             raise OutOfBandManagerError(
                 (
-                    f"No existing ConnRecord found for OOB Invitee {reciept.sender_did}"
+                    f"No existing ConnRecord found for OOB Invitee, {e}"
                 ),
-                error_code=ProblemReportReason.EXISTING_CONNECTION_DOES_NOT_EXISTS,
-                originating_invi_msg_id=invi_msg_id,
-                originating_reuse_msg_id=reuse_msg_id,
             )
 
     async def receive_reuse_accepted_message(
@@ -629,18 +735,27 @@ class OutOfBandManager(BaseConnectionManager):
         Raises:
             OutOfBandManagerError: if there is an error in processing the
             HandshakeReuseAccept message
+
         """
         try:
             invi_msg_id = reuse_accepted_msg._thread.pthid
             thread_reuse_msg_id = reuse_accepted_msg._thread.thid
-            conn_reuse_msg_id = conn_record.metadata_get(session=self._session, key="reuse_msg_id")
+            conn_reuse_msg_id = conn_record.metadata_get(
+                session=self._session,
+                key="reuse_msg_id"
+            )
             assert thread_reuse_msg_id == conn_reuse_msg_id
-            conn_record.metadata_set(session=self._session, key="reuse_msg_state", value="accepted")
+            conn_record.metadata_set(
+                session=self._session,
+                key="reuse_msg_state",
+                value="accepted"
+            )
         except StorageNotFoundError as e:
             raise OutOfBandManagerError(
                 (
-                    f"Error processing reuse accepted message for OOB invitation {invi_msg_id}, {e}"
-                )            
+                    f"Error processing reuse accepted message \
+                        for OOB invitation {invi_msg_id}, {e}"
+                )
             )
 
     async def receive_problem_report(
@@ -664,16 +779,25 @@ class OutOfBandManager(BaseConnectionManager):
         Raises:
             OutOfBandManagerError: if there is an error in processing the
             HandshakeReuseAccept message
+
         """
         try:
             invi_msg_id = problem_report._thread.pthid
             thread_reuse_msg_id = problem_report._thread.thid
-            conn_reuse_msg_id = conn_record.metadata_get(session=self._session, key="reuse_msg_id")
+            conn_reuse_msg_id = conn_record.metadata_get(
+                session=self._session,
+                key="reuse_msg_id"
+            )
             assert thread_reuse_msg_id == conn_reuse_msg_id
-            conn_record.metadata_set(session=self._session, key="reuse_msg_state", value="not_accepted")
+            conn_record.metadata_set(
+                session=self._session,
+                key="reuse_msg_state",
+                value="not_accepted"
+            )
         except StorageNotFoundError:
             raise OutOfBandManagerError(
                 (
-                    f"Error processing problem report message for OOB invitation {invi_msg_id}"
+                    f"Error processing problem report message \
+                        for OOB invitation {invi_msg_id}"
                 )
             )
