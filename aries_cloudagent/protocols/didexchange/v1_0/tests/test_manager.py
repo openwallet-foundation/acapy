@@ -22,7 +22,10 @@ from ....out_of_band.v1_0.models.invitation import InvitationRecord
 from .....multitenant.manager import MultitenantManager
 from .....wallet.base import DIDInfo
 from .....wallet.in_memory import InMemoryWallet
-from ....connections.v1_0.base_manager import BaseConnectionManager, BaseConnectionManagerError
+from ....connections.v1_0.base_manager import (
+    BaseConnectionManager,
+    BaseConnectionManagerError,
+)
 
 from ....out_of_band.v1_0.manager import OutOfBandManager
 from ....out_of_band.v1_0.messages.invitation import InvitationMessage

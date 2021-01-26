@@ -4,6 +4,7 @@ from asynctest import TestCase as AsyncTestCase
 from ......messaging.models.base import BaseModelError
 from ..reuse_accept import HandshakeReuseAccept, HandshakeReuseAcceptSchema
 
+
 class TestReuseAcceptMessage(TestCase):
     """Test request schema."""
 
@@ -22,4 +23,3 @@ class TestReuseAcceptMessage(TestCase):
         data = self.reuse_accept_msg.serialize()
         model_instance = HandshakeReuseAccept.deserialize(data)
         assert isinstance(model_instance, HandshakeReuseAccept)
-

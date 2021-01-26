@@ -703,9 +703,7 @@ class DIDXManager(BaseConnectionManager):
             did: The DID to associate with this key
             key: The verkey to be added
         """
-        record = StorageRecord(
-            self.RECORD_TYPE_DID_KEY, key, {"did": did, "key": key}
-        )
+        record = StorageRecord(self.RECORD_TYPE_DID_KEY, key, {"did": did, "key": key})
         storage = self._session.inject(BaseStorage)
         await storage.add_record(record)
 
@@ -716,9 +714,7 @@ class DIDXManager(BaseConnectionManager):
             key: The verkey to look up
         """
         storage = self._session.inject(BaseStorage)
-        record = await storage.find_record(
-            self.RECORD_TYPE_DID_KEY, {"key": key}
-        )
+        record = await storage.find_record(self.RECORD_TYPE_DID_KEY, {"key": key})
         return record.tags["did"]
 
     async def remove_keys_for_did(self, did: str):

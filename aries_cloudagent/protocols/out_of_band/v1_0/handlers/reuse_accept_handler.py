@@ -32,7 +32,7 @@ class HandshakeReuseAcceptMessageHandler(BaseHandler):
             await mgr.receive_reuse_accepted_message(
                 reuse_accepted_msg=context.message,
                 reciept=context.message_receipt,
-                conn_record=context.connection_record
+                conn_record=context.connection_record,
             )
         except OutOfBandManagerError as e:
             self._logger.exception(

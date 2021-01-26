@@ -92,9 +92,7 @@ class BaseConnectionManager:
                             invitation.service_dids[0]
                         )
                         recipient_keys = [
-                            await ledger.get_key_for_did(
-                                invitation.service_dids[0]
-                            )
+                            await ledger.get_key_for_did(invitation.service_dids[0])
                         ]
                         routing_keys = []
                 else:

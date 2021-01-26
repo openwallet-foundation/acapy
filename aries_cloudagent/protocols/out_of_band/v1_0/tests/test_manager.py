@@ -446,7 +446,10 @@ class TestOOBManager(AsyncTestCase, TestConfig):
 
             with self.assertRaises(OutOfBandManagerError) as context:
                 await self.manager.receive_invitation(mock_oob_invi)
-                assert "request~attach is not properly formatted as data is missing" in str(context.exception)
+                assert (
+                    "request~attach is not properly formatted as data is missing"
+                    in str(context.exception)
+                )
 
     async def test_receive_invitation_req_pres_attachment_x(self):
         self.manager.session.context.update_settings({"public_invites": True})
@@ -486,7 +489,10 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             with self.assertRaises(OutOfBandManagerError) as context:
                 result = await self.manager.receive_invitation(mock_oob_invi)
                 conn_id = UUID(result.get("connection_id"), version=4)
-                assert conn_id.hex == result.get("connection_id") and len(result.get("connection_id")) > 5
+                assert (
+                    conn_id.hex == result.get("connection_id")
+                    and len(result.get("connection_id")) > 5
+                )
 
     async def test_receive_invitation_invalid_request_type_x(self):
         self.manager.session.context.update_settings({"public_invites": True})
@@ -521,7 +527,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
     #     mock_conn.is_ready = False
     #     mock_conn.save = async_mock.CoroutineMock()
 
-
     #     with async_mock.patch.object(
     #         ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
     #     ) as mock_conn_rec_retrieve_by_id, async_mock.patch(
@@ -550,5 +555,4 @@ class TestOOBManager(AsyncTestCase, TestConfig):
     #         )
     #         inv_message_cls.deserialize.return_value = mock_oob_invi
     #         result = await self.manager.receive_invitation(mock_oob_invi)
-    #         assert result == mock_conn
-            
+    #         assert result == mock_conn       

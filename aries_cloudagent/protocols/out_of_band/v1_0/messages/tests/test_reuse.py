@@ -4,6 +4,7 @@ from asynctest import TestCase as AsyncTestCase
 from ......messaging.models.base import BaseModelError
 from ..reuse import HandshakeReuse, HandshakeReuseSchema
 
+
 class TestReuseMessage(TestCase):
     """Test request schema."""
 

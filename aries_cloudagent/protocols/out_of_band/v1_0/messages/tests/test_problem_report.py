@@ -4,12 +4,13 @@ from asynctest import TestCase as AsyncTestCase
 from ......messaging.models.base import BaseModelError
 from ..problem_report import ProblemReport, ProblemReportReason
 
+
 class TestProblemReportMessage(TestCase):
     """Test request schema."""
 
     problem_report = ProblemReport(
         problem_code=ProblemReportReason.EXISTING_CONNECTION_NOT_ACTIVE.value,
-        explain="Test"
+        explain="Test",
     )
 
     def test_init(self):
