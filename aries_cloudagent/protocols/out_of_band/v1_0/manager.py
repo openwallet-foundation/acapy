@@ -689,7 +689,9 @@ class OutOfBandManager(BaseConnectionManager):
                         )
                 problem_report = ProblemReport(
                     problem_code=ProblemReportReason.EXISTING_CONNECTION_NOT_ACTIVE,
-                    explain=f"No active connection found for Invitee {reciept.sender_did}",
+                    explain=(
+                        f"No active connection found for Invitee {reciept.sender_did}"
+                    ),
                 )
                 problem_report.assign_thread_id(thid=invi_msg_id, pthid=reuse_msg_id)
                 await responder.send_reply(
