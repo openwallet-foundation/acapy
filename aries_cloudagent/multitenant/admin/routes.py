@@ -204,7 +204,7 @@ class WalletListQueryStringSchema(OpenAPISchema):
     wallet_name = fields.Str(description="Wallet name", example="MyNewWallet")
 
 
-@docs(tags=["multitenancy"], summary="List all subwallets")
+@docs(tags=["multitenancy"], summary="Query subwallets")
 @querystring_schema(WalletListQueryStringSchema())
 @response_schema(WalletListSchema(), 200, description="")
 async def wallets_list(request: web.BaseRequest):
