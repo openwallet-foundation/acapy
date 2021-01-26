@@ -116,6 +116,41 @@ class CreateWalletRequestSchema(OpenAPISchema):
                     raise ValidationError("Missing required field", field)
 
 
+class UpdateWalletRequestSchema(OpenAPISchema):
+    """Request schema for updating a existing wallet which will be updated by the agent."""
+
+    wallet_dispatch_type = fields.Str(
+        description="Webhook target dispatch type for this wallet. \
+            default - Dispatch only to webhooks associated with this wallet. \
+            base - Dispatch only to webhooks associated with the base wallet. \
+            both - Dispatch to both webhook targets.",
+        example="default",
+        default="default",
+        validate=validate.OneOf(["default", "both", "base"]),
+    )
+
+    wallet_webhook_urls = fields.List(
+        fields.Str(
+            description="Optional webhook URL to receive webhook messages",
+            example="http://localhost:8022/webhooks",
+        ),
+        required=False,
+        description="List of Webhook URLs associated with this subwallet",
+    )
+
+    label = fields.Str(
+        description="Label for this wallet. This label is publicized\
+            (self-attested) to other agents as part of forming a connection.",
+        example="Alice",
+    )
+
+    image_url = fields.Str(
+        description="Image url for this wallet. This image url is publicized\
+            (self-attested) to other agents as part of forming a connection.",
+        example="https://aries.ca/images/sample.png",
+    )
+
+
 class CreateWalletResponseSchema(WalletRecordSchema):
     """Response schema for creating a wallet."""
 
@@ -284,6 +319,60 @@ async def wallet_create(request: web.BaseRequest):
     return web.json_response(result)
 
 
+@docs(tags=["multitenancy"], summary="Update a subwallet")
+@match_info_schema(WalletIdMatchInfoSchema())
+@request_schema(UpdateWalletRequestSchema)
+@response_schema(WalletRecordSchema(), 200, description="")
+async def wallet_update(request: web.BaseRequest):
+    """
+    Request handler for updating a existing subwallet for handling by the agent.
+
+    Args:
+        request: aiohttp request object
+    """
+
+    context: AdminRequestContext = request["context"]
+    wallet_id = request.match_info["wallet_id"]
+
+    body = await request.json()
+    wallet_webhook_urls = body.get("wallet_webhook_urls")
+    wallet_dispatch_type = body.get("wallet_dispatch_type")
+    label = body.get("label")
+    image_url = body.get("image_url")
+
+    if all(v is None for v in (wallet_webhook_urls, wallet_dispatch_type, label, image_url)):
+        raise web.HTTPBadRequest(reason="At least one parameter is required.")
+
+    # adjust wallet_dispatch_type according to wallet_webhook_urls
+    if wallet_webhook_urls and wallet_dispatch_type is None:
+        wallet_dispatch_type = "default"
+    if wallet_webhook_urls == []:
+        wallet_dispatch_type = "base"
+
+    # only parameters that are not none are updated
+    settings = {}
+    if wallet_webhook_urls is not None:
+        settings["wallet.webhook_urls"] = wallet_webhook_urls
+    if wallet_dispatch_type is not None:
+        settings["wallet.dispatch_type"] = wallet_dispatch_type
+    if label is not None:
+        settings["default_label"] = label
+    if image_url is not None:
+        settings["image_url"] = image_url
+
+    async with context.session() as session:
+        try:
+            multitenant_mgr = session.inject(MultitenantManager)
+            wallet_record = await multitenant_mgr.update_wallet(wallet_id, settings)
+            result = format_wallet_record(wallet_record)
+        except StorageNotFoundError as err:
+            raise web.HTTPNotFound(reason=err.roll_up) from err
+        except WalletKeyMissingError as err:
+            raise web.HTTPUnauthorized(reason=err.roll_up) from err
+
+    return web.json_response(result)
+
+
 @docs(tags=["multitenancy"], summary="Get auth token for a subwallet")
 @request_schema(CreateWalletTokenRequestSchema)
 @response_schema(CreateWalletTokenResponseSchema(), 200, description="")
@@ -366,6 +455,7 @@ async def register(app: web.Application):
             web.get("/multitenancy/wallets", wallets_list, allow_head=False),
             web.post("/multitenancy/wallet", wallet_create),
             web.get("/multitenancy/wallet/{wallet_id}", wallet_get, allow_head=False),
+            web.put("/multitenancy/wallet/{wallet_id}", wallet_update),
             web.post("/multitenancy/wallet/{wallet_id}/token", wallet_create_token),
             web.post("/multitenancy/wallet/{wallet_id}/remove", wallet_remove),
         ]

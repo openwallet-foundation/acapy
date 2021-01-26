@@ -66,7 +66,7 @@ class WalletRecord(BaseRecord):
         return self.settings.get("wallet.type")
 
     @property
-    def wallet_webhook_urls(self) -> str:
+    def wallet_webhook_urls(self) -> list:
         """Accessor for webhook_urls of the wallet."""
         return self.settings.get("wallet.webhook_urls")
 
@@ -105,6 +105,12 @@ class WalletRecord(BaseRecord):
         # All other cases the key is required
         else:
             return True
+
+    async def update_settings(self, settings: dict):
+        """Update settings."""
+        if "wallet.id" in settings:
+            del settings["wallet.id"]
+        self._settings.update(settings)
 
     def __eq__(self, other: Any) -> bool:
         """Comparison between records."""

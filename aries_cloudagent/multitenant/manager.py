@@ -97,6 +97,30 @@ class MultitenantManager:
 
         return False
 
+    def get_webhook_urls(
+        self,
+        base_context: InjectionContext,
+        wallet_record: WalletRecord,
+    ) -> list:
+        """Get the webhook urls according to dispatch_type.
+
+        Args:
+            base_context: Base context to get base_webhook_urls
+            wallet_record: Wallet record to get dispatch_type and webhook_urls
+        Returns:
+            webhook urls according to dispatch_type
+        """
+        dispatch_type = wallet_record.wallet_dispatch_type
+        webhook_urls = wallet_record.wallet_webhook_urls
+        base_webhook_urls = base_context.settings.get("admin.webhook_urls") or []
+
+        if dispatch_type == "base":
+            return base_webhook_urls
+        elif dispatch_type == "both":
+            return webhook_urls + base_webhook_urls
+        else:
+            return webhook_urls
+
     async def get_wallet_profile(
         self,
         base_context: InjectionContext,
@@ -134,24 +158,12 @@ class MultitenantManager:
                 "mediation.default_id": None,
                 "mediation.clear": None,
             }
-
-            dispatch_type = wallet_record.wallet_dispatch_type
-            webhook_urls = wallet_record.wallet_webhook_urls
-            base_webhook_urls = context.settings.get("admin.webhook_urls")
-            if dispatch_type == "both":
-                target_urls = list(set(base_webhook_urls) | set(webhook_urls))
-                extra_settings["admin.webhook_urls"] = target_urls
-            elif dispatch_type == "default":
-                extra_settings["admin.webhook_urls"] = webhook_urls
+            extra_settings["admin.webhook_urls"] = self.get_webhook_urls(base_context, wallet_record)
 
             context.settings = (
                 context.settings.extend(reset_settings)
                 .extend(wallet_record.settings)
                 .extend(extra_settings)
-            )
-
-            context.settings = context.settings.extend(wallet_record.settings).extend(
-                extra_settings
             )
 
             # MTODO: add ledger config
@@ -219,6 +231,42 @@ class MultitenantManager:
                 await self.add_key(
                     wallet_record.wallet_id, public_did_info.verkey, skip_if_exists=True
                 )
+
+        return wallet_record
+
+    async def update_wallet(
+        self,
+        wallet_id: str,
+        new_settings: dict,
+    ) -> WalletRecord:
+        """Update a existing wallet and wallet record.
+
+        Args:
+            wallet_id: The wallet id of the wallet record
+            new_settings: The context settings to be updated for this wallet
+
+        Returns:
+            WalletRecord: The updated wallet record
+
+        """
+        # update wallet_record
+        async with self.profile.session() as session:
+            wallet_record = await WalletRecord.retrieve_by_id(session, wallet_id)
+
+            settings = wallet_record.settings
+            settings.update(new_settings)
+            await wallet_record.update_settings(settings)
+            await wallet_record.save(session)
+
+        # update profile only if loaded
+        if wallet_id in self._instances:
+            profile = self._instances[wallet_id]
+            profile.settings.update(wallet_record.settings)
+
+            extra_settings = {
+                "admin.webhook_urls": self.get_webhook_urls(self.profile.context, wallet_record),
+            }
+            profile.settings.update(extra_settings)
 
         return wallet_record
 
