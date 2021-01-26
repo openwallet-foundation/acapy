@@ -6,9 +6,7 @@ from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 
 from ..message_types import MESSAGE_REUSE_ACCEPT, PROTOCOL_PACKAGE
 
-HANDLER_CLASS = (
-    f"{PROTOCOL_PACKAGE}.handlers.reuse_accept_handler.HandshakeReuseAcceptMessageHandler"
-)
+HANDLER_CLASS =  f"{PROTOCOL_PACKAGE}.handlers.reuse_accept_handler.HandshakeReuseAcceptMessageHandler"
 
 
 class HandshakeReuseAccept(AgentMessage):

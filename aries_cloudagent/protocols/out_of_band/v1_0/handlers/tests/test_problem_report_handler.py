@@ -36,7 +36,6 @@ async def session(request_context) -> ProfileSession:
 
 
 class TestProblemReportHandler:
-
     @pytest.mark.asyncio
     @async_mock.patch.object(handler, "OutOfBandManager")
     async def test_called(self, mock_oob_mgr, request_context, connection_record):

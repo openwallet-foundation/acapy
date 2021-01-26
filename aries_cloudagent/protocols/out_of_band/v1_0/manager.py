@@ -277,7 +277,7 @@ class OutOfBandManager(BaseConnectionManager):
         if len(invi_msg.service_blocks) + len(invi_msg.service_dids) != 1:
             raise OutOfBandManagerError("service array must have exactly one element")
 
-        if (len(invi_msg.request_attach) < 1 and len(invi_msg.handshake_protocols) < 1):
+        if len(invi_msg.request_attach) < 1 and len(invi_msg.handshake_protocols) < 1:
             raise OutOfBandManagerError(
                 "Either handshake_protocols or request_attach \
                 or both needs to be specified"
@@ -337,7 +337,7 @@ class OutOfBandManager(BaseConnectionManager):
             # Handshake_Protocol included Request_Attachment
             # not included Use_Existing_Connection Yes
             if (
-                num_included_protocols >= 1 
+                num_included_protocols >= 1
                 and num_included_req_attachments == 0
                 and use_existing_connection
             ):
@@ -367,12 +367,12 @@ class OutOfBandManager(BaseConnectionManager):
             # Use_Existing_Connection Yes
             elif not (
                 (
-                    num_included_protocols == 0 
+                    num_included_protocols == 0
                     and num_included_req_attachments >= 1
                     and use_existing_connection
-                ) 
+                )
                 or (
-                    num_included_protocols >= 1 
+                    num_included_protocols >= 1
                     and num_included_req_attachments >= 1
                     and use_existing_connection
                 )
@@ -708,12 +708,9 @@ class OutOfBandManager(BaseConnectionManager):
                     self._logger.exception("Error parsing DIDDoc for problem report")
             problem_report = ProblemReport(
                 problem_code=ProblemReportReason.EXISTING_CONNECTION_DOES_NOT_EXISTS,
-                explain=f"No existing connection for Invitee {reciept.sender_did}"
+                explain=f"No existing connection for Invitee {reciept.sender_did}",
             )
-            problem_report.assign_thread_id(
-                thid=invi_msg_id,
-                pthid=reuse_msg_id
-            )
+            problem_report.assign_thread_id(thid=invi_msg_id, pthid=reuse_msg_id)
             await responder.send_reply(
                 problem_report,
                 target_list=targets,

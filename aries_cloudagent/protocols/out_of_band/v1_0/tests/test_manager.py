@@ -555,4 +555,4 @@ class TestOOBManager(AsyncTestCase, TestConfig):
     #         )
     #         inv_message_cls.deserialize.return_value = mock_oob_invi
     #         result = await self.manager.receive_invitation(mock_oob_invi)
-    #         assert result == mock_conn       
+    #         assert result == mock_conn
