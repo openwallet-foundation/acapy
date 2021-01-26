@@ -94,7 +94,6 @@ class BaseAgent(DemoAgent):
         self.credential_event.set()
 
     async def handle_issue_credential_v2_0_indy(self, payload):
-        cred_ex_id = payload["cred_ex_id"]
         rev_reg_id = payload.get("rev_reg_id")
         cred_rev_id = payload.get("cred_rev_id")
         if rev_reg_id and cred_rev_id:
