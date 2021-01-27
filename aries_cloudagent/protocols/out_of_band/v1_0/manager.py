@@ -8,6 +8,7 @@ from ....connections.models.conn_record import ConnRecord
 from ....core.error import BaseError
 from ....core.profile import ProfileSession
 from ....multitenant.manager import MultitenantManager
+from ....storage.error import StorageNotFoundError
 from ....wallet.base import BaseWallet
 from ....wallet.util import naked_to_did_key
 
@@ -15,6 +16,8 @@ from ...didexchange.v1_0.message_types import ARIES_PROTOCOL as DIDX_PROTO
 from ...didexchange.v1_0.manager import DIDXManager
 from ...didcomm_prefix import DIDCommPrefix
 from ...issue_credential.v1_0.models.credential_exchange import V10CredentialExchange
+from ...issue_credential.v2_0.models.cred_ex_record import V20CredExRecord
+from ...issue_credential.v2_0.messages.cred_offer import V20CredOffer
 from ...present_proof.v1_0.message_types import PRESENTATION_REQUEST
 from ...present_proof.v1_0.models.presentation_exchange import V10PresentationExchange
 
@@ -115,13 +118,28 @@ class OutOfBandManager:
             a_id = atch.get("id")
 
             if a_type == "credential-offer":
-                cred_ex_rec = await V10CredentialExchange.retrieve_by_id(
-                    self._session,
-                    a_id,
-                )
-                message_attachments.append(
-                    InvitationMessage.wrap_message(cred_ex_rec.credential_offer_dict)
-                )
+                try:
+                    cred_ex_rec = await V10CredentialExchange.retrieve_by_id(
+                        self._session,
+                        a_id,
+                    )
+                    message_attachments.append(
+                        InvitationMessage.wrap_message(
+                            cred_ex_rec.credential_offer_dict
+                        )
+                    )
+                except StorageNotFoundError:
+                    cred_ex_rec = await V20CredExRecord.retrieve_by_id(
+                        self._session,
+                        a_id,
+                    )
+                    message_attachments.append(
+                        InvitationMessage.wrap_message(
+                            V20CredOffer.deserialize(
+                                cred_ex_rec.cred_offer
+                            ).offer()  # default to indy format: will change for DIF
+                        )
+                    )
             elif a_type == "present-proof":
                 pres_ex_rec = await V10PresentationExchange.retrieve_by_id(
                     self._session,
