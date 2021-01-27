@@ -8,12 +8,14 @@ from ....connections.models.conn_record import ConnRecord
 from ....core.error import BaseError
 from ....core.profile import ProfileSession
 from ....multitenant.manager import MultitenantManager
+from ....storage.error import StorageNotFoundError
 from ....wallet.base import BaseWallet
 from ....wallet.util import naked_to_did_key
 
 from ...didexchange.v1_0.manager import DIDXManager
 from ...didcomm_prefix import DIDCommPrefix
 from ...issue_credential.v1_0.models.credential_exchange import V10CredentialExchange
+# from ...issue_credential.v2_0.models.cred_ex_record import V20CredExRecord
 from ...present_proof.v1_0.message_types import PRESENTATION_REQUEST
 from ...present_proof.v1_0.models.presentation_exchange import V10PresentationExchange
 
@@ -101,6 +103,8 @@ class OutOfBandManager:
         # Multitenancy setup
         multitenant_mgr = self._session.inject(MultitenantManager, required=False)
         wallet_id = self._session.settings.get("wallet.id")
+        invi_rec = None
+        public_did = None
 
         accept = bool(
             auto_accept
@@ -109,6 +113,10 @@ class OutOfBandManager:
                 and self._session.settings.get("debug.auto_accept_requests")
             )
         )
+        if accept and public:
+            raise OutOfBandManagerError(
+                "Cannot create public invitation with auto-accept"
+            )
 
         message_attachments = []
         for atch in attachments or []:
@@ -116,12 +124,34 @@ class OutOfBandManager:
             a_id = atch.get("id")
 
             if a_type == "credential-offer":
+                '''
+                try:
+                    cred_ex_rec = await V10CredentialExchange.retrieve_by_id(
+                        self._session,
+                        a_id,
+                    )
+                    message_attachments.append(
+                        InvitationMessage.wrap_message(
+                            cred_ex_rec.credential_offer_dict
+                        )
+                    )
+                except StorageNotFoundError:
+                    cred_ex_rec = await V20CredExRecord.retrieve_by_id(
+                        self._session,
+                        a_id,
+                    )
+                    message_attachments.append(
+                        InvitationMessage.wrap_message(cred_ex_rec.cred_offer)
+                    )
+                '''
                 cred_ex_rec = await V10CredentialExchange.retrieve_by_id(
                     self._session,
                     a_id,
                 )
                 message_attachments.append(
-                    InvitationMessage.wrap_message(cred_ex_rec.credential_offer_dict)
+                    InvitationMessage.wrap_message(
+                        cred_ex_rec.credential_offer_dict
+                    )
                 )
             elif a_type == "present-proof":
                 pres_ex_rec = await V10PresentationExchange.retrieve_by_id(
@@ -146,9 +176,13 @@ class OutOfBandManager:
                     "Cannot create public invitation with no public DID"
                 )
 
-            if multi_use:
+            if not multi_use:
+                # RFC 434: pthid in invi-req should be invitation thid
+                # RFC 23: pthid in invi-req must be DID in attached DID doc
+                # hence, cannot correlate request to OOB invitation; must
+                # re-use one permanent public DID invitation for all requests
                 raise OutOfBandManagerError(
-                    "Cannot use public and multi_use at the same time"
+                    "Cannot create public invitation without multi_use"
                 )
 
             if metadata:
@@ -156,16 +190,25 @@ class OutOfBandManager:
                     "Cannot store metadata on public invitations"
                 )
 
-            invi_msg = InvitationMessage(
-                label=my_label or self._session.settings.get("default_label"),
-                handshake_protocols=(
-                    [DIDCommPrefix.qualify_current(DIDX_INVITATION)]
-                    if include_handshake
-                    else None
-                ),
-                request_attach=message_attachments,
-                service=[f"did:sov:{public_did.did}"],
-            )
+            try:
+                invi_rec = InvitationRecord.retrieve_by_public_did(
+                    self._session, public_did
+                )  # reuse existing one if we have it
+                invi_msg = InvitationMessage.deserialize(invi_rec).invitation
+                self._logger.info(
+                    f"Re-using existing invitation record for public DID {public_did}"
+                )
+            except StorageNotFoundError:
+                invi_msg = InvitationMessage(
+                    label=my_label or self._session.settings.get("default_label"),
+                    handshake_protocols=(
+                        [DIDCommPrefix.qualify_current(DIDX_INVITATION)]
+                        if include_handshake
+                        else None
+                    ),
+                    request_attach=message_attachments,
+                    service=[f"did:sov:{public_did.did}"],
+                )
 
             # Add mapping for multitenant relay.
             if multitenant_mgr and wallet_id:
@@ -230,15 +273,18 @@ class OutOfBandManager:
                 for key, value in metadata.items():
                     await conn_rec.metadata_set(self._session, key, value)
 
-        # Create invitation record
-        invi_rec = InvitationRecord(
-            state=InvitationRecord.STATE_INITIAL,
-            invi_msg_id=invi_msg._id,
-            invitation=invi_msg.serialize(),
-            auto_accept=accept,
-            multi_use=multi_use,
-        )
-        await invi_rec.save(self._session, reason="Created new invitation")
+        if not invi_rec:
+            # Create invitation record
+            invi_rec = InvitationRecord(
+                state=InvitationRecord.STATE_INITIAL,
+                invi_msg_id=invi_msg._id,
+                invitation=invi_msg.serialize(),
+                public_did=public_did,
+                auto_accept=accept,
+                multi_use=multi_use,
+            )
+            await invi_rec.save(self._session, reason="Created new invitation")
+
         return invi_rec
 
     async def receive_invitation(

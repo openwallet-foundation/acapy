@@ -102,11 +102,13 @@ async def invitation_create(request: web.BaseRequest):
     body = await request.json() if request.body_exists else {}
     attachments = body.get("attachments")
     include_handshake = body.get("include_handshake")
-    use_public_did = body.get("use_public_did")
+    use_public_did = body.get("use_public_did", False)
     metadata = body.get("metadata")
 
-    multi_use = json.loads(request.query.get("multi_use", "false"))
-    auto_accept = json.loads(request.query.get("auto_accept", "null"))
+    multi_use = json.loads(request.query.get("multi_use", json.dumps(use_public_did)))
+    auto_accept = json.loads(
+        request.query.get("auto_accept", "false" if use_public_did else "null")
+    )
     session = await context.session()
     oob_mgr = OutOfBandManager(session)
     try:
