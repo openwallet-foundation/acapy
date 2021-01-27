@@ -616,7 +616,7 @@ class IndySdkLedger(BaseLedger):
                         raise LedgerError(
                             f"Credential definition {credential_definition_id} is on "
                             f"ledger {self.pool.name} but not in wallet "
-                            f"{self.wallet.name}"
+                            f"{self.wallet.opened.name}"
                         )
                 except IndyIssuerError as err:
                     raise LedgerError(err.message) from err
@@ -629,7 +629,7 @@ class IndySdkLedger(BaseLedger):
                 ):
                     raise LedgerError(
                         f"Credential definition {credential_definition_id} is in "
-                        f"wallet {self.wallet.name} but not on ledger "
+                        f"wallet {self.wallet.opened.name} but not on ledger "
                         f"{self.pool.name}"
                     )
             except IndyIssuerError as err:
@@ -886,7 +886,7 @@ class IndySdkLedger(BaseLedger):
         public_info = await self.wallet.get_public_did()
         if not public_info:
             raise WalletNotFoundError(
-                f"Cannot register NYM to ledger: wallet {self.wallet.name} "
+                f"Cannot register NYM to ledger: wallet {self.wallet.opened.name} "
                 "has no public DID"
             )
 
@@ -953,7 +953,7 @@ class IndySdkLedger(BaseLedger):
         data = json.loads((json.loads(response_json))["result"]["data"])
         if not data:
             raise BadLedgerRequestError(
-                f"Ledger has no public DID for wallet {self.wallet.name}"
+                f"Ledger has no public DID for wallet {self.wallet.opened.name}"
             )
         seq_no = data["seqNo"]
 
@@ -1048,12 +1048,25 @@ class IndySdkLedger(BaseLedger):
         storage = self.get_indy_storage()
         await storage.add_record(record)
         if self.pool.cache:
-            cache_key = TAA_ACCEPTED_RECORD_TYPE + "::" + self.pool.name
+            # TAA acceptance must be set for each wallet and pool combination
+            cache_key = (
+                TAA_ACCEPTED_RECORD_TYPE
+                + "::"
+                + self.wallet.opened.name
+                + "::"
+                + self.pool.name
+            )
             await self.pool.cache.set(cache_key, acceptance, self.pool.cache_duration)
 
     async def get_latest_txn_author_acceptance(self) -> dict:
         """Look up the latest TAA acceptance."""
-        cache_key = TAA_ACCEPTED_RECORD_TYPE + "::" + self.pool.name
+        cache_key = (
+            TAA_ACCEPTED_RECORD_TYPE
+            + "::"
+            + self.wallet.opened.name
+            + "::"
+            + self.pool.name
+        )
         acceptance = self.pool.cache and await self.pool.cache.get(cache_key)
         if not acceptance:
             storage = self.get_indy_storage()
