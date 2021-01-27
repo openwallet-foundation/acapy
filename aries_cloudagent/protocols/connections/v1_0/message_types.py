@@ -6,12 +6,13 @@ SPEC_URI = (
     "https://github.com/hyperledger/aries-rfcs/tree/"
     "9b0aaa39df7e8bd434126c4b33c097aae78d65bf/features/0160-connection-protocol"
 )
+ARIES_PROTOCOL = "connections/1.0"
 
 # Message types
-CONNECTION_INVITATION = "connections/1.0/invitation"
-CONNECTION_REQUEST = "connections/1.0/request"
-CONNECTION_RESPONSE = "connections/1.0/response"
-PROBLEM_REPORT = "connections/1.0/problem_report"
+CONNECTION_INVITATION = f"{ARIES_PROTOCOL}/invitation"
+CONNECTION_REQUEST = f"{ARIES_PROTOCOL}/request"
+CONNECTION_RESPONSE = f"{ARIES_PROTOCOL}/response"
+PROBLEM_REPORT = f"{ARIES_PROTOCOL}/problem_report"
 
 PROTOCOL_PACKAGE = "aries_cloudagent.protocols.connections.v1_0"
 
