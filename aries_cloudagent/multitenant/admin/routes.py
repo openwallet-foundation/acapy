@@ -123,7 +123,7 @@ class CreateWalletRequestSchema(OpenAPISchema):
 
 
 class UpdateWalletRequestSchema(OpenAPISchema):
-    """Request schema for updating a existing wallet which will be updated by the agent."""
+    """Request schema for updating a existing wallet."""
 
     wallet_dispatch_type = fields.Str(
         description="Webhook target dispatch type for this wallet. \
