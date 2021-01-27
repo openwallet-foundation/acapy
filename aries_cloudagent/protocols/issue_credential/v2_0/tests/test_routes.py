@@ -229,9 +229,6 @@ class TestV20CredRoutes(AsyncTestCase):
                 async_mock.CoroutineMock(),
             )
 
-            mock_cx_rec = async_mock.MagicMock()
-            mock_cred_offer = async_mock.MagicMock()
-
             mock_cred_mgr.return_value.prepare_send.side_effect = (
                 test_module.StorageError()
             )
@@ -378,9 +375,6 @@ class TestV20CredRoutes(AsyncTestCase):
                 async_mock.CoroutineMock(),
                 async_mock.CoroutineMock(),
             )
-
-            mock_cx_rec = async_mock.MagicMock()
-            mock_cred_offer = async_mock.MagicMock()
 
             mock_cred_mgr.return_value.prepare_send.side_effect = (
                 test_module.StorageError()
@@ -720,7 +714,6 @@ class TestV20CredRoutes(AsyncTestCase):
             test_module, "V20CredManager", autospec=True
         ) as mock_cred_mgr:
             mock_cred_mgr.return_value.create_offer = async_mock.CoroutineMock()
-            mock_cx_rec = async_mock.MagicMock()
             mock_cred_mgr.return_value.create_offer.side_effect = (
                 test_module.BaseModelError()
             )
@@ -1447,7 +1440,6 @@ class TestV20CredRoutes(AsyncTestCase):
             mock_response.assert_called_once_with({})
 
     async def test_credential_exchange_remove_bad_cred_ex_id(self):
-        mock = async_mock.MagicMock()
         self.request.match_info = {"cred_ex_id": "dummy"}
 
         with async_mock.patch.object(
@@ -1463,7 +1455,6 @@ class TestV20CredRoutes(AsyncTestCase):
                 await test_module.credential_exchange_remove(self.request)
 
     async def test_credential_exchange_remove_x(self):
-        mock = async_mock.MagicMock()
         self.request.match_info = {"cred_ex_id": "dummy"}
 
         with async_mock.patch.object(

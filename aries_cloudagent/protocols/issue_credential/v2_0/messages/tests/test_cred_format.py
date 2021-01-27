@@ -1,5 +1,3 @@
-import pytest
-
 from unittest import TestCase
 
 from ......messaging.decorators.attach_decorator import AttachDecorator

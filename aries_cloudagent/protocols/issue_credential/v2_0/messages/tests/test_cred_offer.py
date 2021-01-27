@@ -4,7 +4,7 @@ from ......messaging.decorators.attach_decorator import AttachDecorator
 
 from .....didcomm_prefix import DIDCommPrefix
 
-from ...message_types import CRED_20_OFFER, PROTOCOL_PACKAGE
+from ...message_types import CRED_20_OFFER
 
 from .. import cred_offer as test_module
 from ..cred_format import V20CredFormat

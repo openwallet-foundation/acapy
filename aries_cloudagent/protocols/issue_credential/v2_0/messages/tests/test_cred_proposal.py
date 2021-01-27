@@ -1,6 +1,4 @@
-from asynctest import mock as async_mock, TestCase as AsyncTestCase
-
-from unittest import TestCase
+from asynctest import TestCase as AsyncTestCase
 
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......messaging.models.base import BaseModelError

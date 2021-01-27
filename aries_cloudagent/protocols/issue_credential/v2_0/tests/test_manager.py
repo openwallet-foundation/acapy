@@ -248,7 +248,6 @@ class TestV20CredManager(AsyncTestCase):
 
     async def test_receive_proposal(self):
         conn_id = "test_conn_id"
-        comment = "comment"
 
         cred_preview = V20CredPreview(
             attributes=(
@@ -353,7 +352,7 @@ class TestV20CredManager(AsyncTestCase):
                 replacement_id="0",
                 comment=comment,
             )
-            assert ret_cx_rec is cx_rec
+            assert ret_cx_rec == cx_rec
             mock_save.assert_called_once()
 
             issuer.create_credential_offer.assert_called_once_with(CRED_DEF_ID)
@@ -503,7 +502,7 @@ class TestV20CredManager(AsyncTestCase):
             (ret_cx_rec, ret_offer) = await self.manager.create_offer(
                 cred_ex_record=cx_rec, comment=comment
             )
-            assert ret_cx_rec is cx_rec
+            assert ret_cx_rec == cx_rec
             mock_save.assert_called_once()
 
             issuer.create_credential_offer.assert_called_once_with(CRED_DEF_ID)
@@ -522,8 +521,6 @@ class TestV20CredManager(AsyncTestCase):
             assert ret_offer.credential_preview.attributes == cred_preview.attributes
 
     async def test_create_bound_offer_no_matching_sent_cred_def(self):
-        TEST_DID = "LjgpST2rjsoxYegQDRm7EL"
-        schema_id_parts = SCHEMA_ID.split(":")
         comment = "comment"
 
         cred_preview = V20CredPreview(
@@ -856,11 +853,6 @@ class TestV20CredManager(AsyncTestCase):
     async def test_create_request_no_offer_nonce(self):
         conn_id = "test_conn_id"
         indy_offer = {"schema_id": SCHEMA_ID, "cred_def_id": CRED_DEF_ID, "...": "..."}
-        indy_cred_req = {
-            "schema_id": SCHEMA_ID,
-            "cred_def_id": CRED_DEF_ID,
-            "...": "...",
-        }
         thread_id = "thread-id"
         holder_did = "did"
 
@@ -1268,12 +1260,6 @@ class TestV20CredManager(AsyncTestCase):
             "legalName": "value",
             "jurisdictionId": "value",
             "incorporationDate": "value",
-        }
-        indy_offer = {
-            "schema_id": SCHEMA_ID,
-            "cred_def_id": CRED_DEF_ID,
-            "nonce": "0",
-            "...": "...",
         }
         thread_id = "thread-id"
 
@@ -1763,7 +1749,6 @@ class TestV20CredManager(AsyncTestCase):
             assert ret_cred_ack._thread_id == thread_id
 
     async def test_store_credential_bad_state(self):
-        conn_id = "test_conn_id"
         thread_id = "thread-id"
         cred_id = "cred-id"
 
