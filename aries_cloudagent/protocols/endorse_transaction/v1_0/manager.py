@@ -81,17 +81,6 @@ class TransactionManager:
         messages_attach_dict = messages_attach.__dict__
 
         transaction = TransactionRecord()
-        transaction._type = TransactionRecord.SIGNATURE_REQUEST
-
-        signature_request = {
-            "context": TransactionRecord.SIGNATURE_CONTEXT,
-            "method": TransactionRecord.ADD_SIGNATURE,
-            "signature_type": TransactionRecord.SIGNATURE_TYPE,
-            "signer_goal_code": TransactionRecord.ENDORSE_TRANSACTION,
-            "author_goal_code": TransactionRecord.WRITE_TRANSACTION,
-        }
-        transaction.signature_request.clear()
-        transaction.signature_request.append(signature_request)
 
         timing = {"expires_time": expires_time}
         transaction.timing = timing
@@ -131,6 +120,17 @@ class TransactionManager:
                 f"Cannot create a request for transaction record"
                 f" in state: {transaction.state}"
             )
+
+        transaction._type = TransactionRecord.SIGNATURE_REQUEST
+        signature_request = {
+            "context": TransactionRecord.SIGNATURE_CONTEXT,
+            "method": TransactionRecord.ADD_SIGNATURE,
+            "signature_type": TransactionRecord.SIGNATURE_TYPE,
+            "signer_goal_code": TransactionRecord.ENDORSE_TRANSACTION,
+            "author_goal_code": TransactionRecord.WRITE_TRANSACTION,
+        }
+        transaction.signature_request.clear()
+        transaction.signature_request.append(signature_request)
 
         transaction.state = TransactionRecord.STATE_REQUEST_SENT
         transaction.connection_id = connection_id
