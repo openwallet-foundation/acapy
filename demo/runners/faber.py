@@ -27,7 +27,7 @@ from runners.support.utils import (  # noqa:E402
 )
 
 
-CRED_PREVIEW_TYPE = "https://didcomm.org/issue-credential/1.0/credential-preview"
+CRED_PREVIEW_TYPE = "https://didcomm.org/issue-credential/2.0/credential-preview"
 SELF_ATTESTED = os.getenv("SELF_ATTESTED")
 TAILS_FILE_COUNT = int(os.getenv("TAILS_FILE_COUNT", 100))
 
@@ -58,7 +58,7 @@ class FaberAgent(DemoAgent):
         self._connection_ready = None
         self.cred_state = {}
         # TODO define a dict to hold credential attributes
-        # based on credential_definition_id
+        # based on cred_def_id
         self.cred_attrs = {}
 
     async def detect_connection(self):
@@ -82,55 +82,36 @@ class FaberAgent(DemoAgent):
             self.connection_id = conn_id
         if conn_id == self.connection_id:
             if (
-                message["state"] in ["active", "response"]
+                message["rfc23_state"] in ["completed", "response-sent"]
                 and not self._connection_ready.done()
             ):
                 self.log("Connected")
                 self._connection_ready.set_result(True)
 
-    async def handle_issue_credential(self, message):
+    async def handle_issue_credential_v2_0(self, message):
         state = message["state"]
-        credential_exchange_id = message["credential_exchange_id"]
-        prev_state = self.cred_state.get(credential_exchange_id)
+        cred_ex_id = message["cred_ex_id"]
+        prev_state = self.cred_state.get(cred_ex_id)
         if prev_state == state:
             return  # ignore
-        self.cred_state[credential_exchange_id] = state
+        self.cred_state[cred_ex_id] = state
 
-        self.log(
-            "Credential: state = {}, credential_exchange_id = {}".format(
-                state,
-                credential_exchange_id,
-            )
-        )
+        self.log(f"Credential: state = {state}, cred_ex_id = {cred_ex_id}")
 
-        if state == "request_received":
+        if state == "request-received":
             log_status("#17 Issue credential to X")
-            # issue credentials based on the credential_definition_id
-            cred_attrs = self.cred_attrs[message["credential_definition_id"]]
-            cred_preview = {
-                "@type": CRED_PREVIEW_TYPE,
-                "attributes": [
-                    {"name": n, "value": v} for (n, v) in cred_attrs.items()
-                ],
-            }
-            try:
-                cred_ex_rec = await self.admin_POST(
-                    f"/issue-credential/records/{credential_exchange_id}/issue",
-                    {
-                        "comment": (
-                            f"Issuing credential, exchange {credential_exchange_id}"
-                        ),
-                        "credential_preview": cred_preview,
-                    },
-                )
-                rev_reg_id = cred_ex_rec.get("revoc_reg_id")
-                cred_rev_id = cred_ex_rec.get("revocation_id")
-                if rev_reg_id:
-                    self.log(f"Revocation registry ID: {rev_reg_id}")
-                if cred_rev_id:
-                    self.log(f"Credential revocation ID: {cred_rev_id}")
-            except ClientError:
-                pass
+            # issue credential based on offer preview in cred ex record
+            await self.admin_POST(
+                f"/issue-credential-2.0/records/{cred_ex_id}/issue",
+                {"comment": f"Issuing credential, exchange {cred_ex_id}"},
+            )
+
+    async def handle_issue_credential_v2_0_indy(self, message):
+        rev_reg_id = message.get("rev_reg_id")
+        cred_rev_id = message.get("cred_rev_id")
+        if rev_reg_id and cred_rev_id:
+            self.log(f"Revocation registry ID: {rev_reg_id}")
+            self.log(f"Credential revocation ID: {cred_rev_id}")
 
     async def handle_issuer_cred_rev(self, message):
         pass
@@ -138,19 +119,14 @@ class FaberAgent(DemoAgent):
     async def handle_present_proof(self, message):
         state = message["state"]
 
-        presentation_exchange_id = message["presentation_exchange_id"]
-        self.log(
-            "Presentation: state =",
-            state,
-            ", presentation_exchange_id =",
-            presentation_exchange_id,
-        )
+        pres_ex_id = message["presentation_exchange_id"]
+        self.log(f"Presentation: state = {state}, pres_ex_id = {pres_ex_id}")
 
         if state == "presentation_received":
             log_status("#27 Process the proof provided by X")
             log_status("#28 Check if proof is valid")
             proof = await self.admin_POST(
-                f"/present-proof/records/{presentation_exchange_id}/verify-presentation"
+                f"/present-proof/records/{pres_ex_id}/verify-presentation"
             )
             self.log("Proof =", proof["verified"])
 
@@ -202,17 +178,14 @@ async def create_schema_and_cred_def(agent, revocation):
                 random.randint(1, 101),
             )
         )
-        (
-            _,  # schema id
-            credential_definition_id,
-        ) = await agent.register_schema_and_creddef(
+        (_, cred_def_id,) = await agent.register_schema_and_creddef(  # schema id
             "degree schema",
             version,
             ["name", "date", "degree", "age", "timestamp"],
             support_revocation=revocation,
             revocation_registry_size=TAILS_FILE_COUNT if revocation else None,
         )
-        return credential_definition_id
+        return cred_def_id
 
 
 async def main(
@@ -281,7 +254,7 @@ async def main(
                 raise Exception("Mediation setup FAILED :-(")
 
         # Create a schema
-        credential_definition_id = await create_schema_and_cred_def(agent, revocation)
+        cred_def_id = await create_schema_and_cred_def(agent, revocation)
 
         # TODO add an additional credential for Student ID
 
@@ -332,9 +305,7 @@ async def main(
                 # TODO check first in case we are switching between existing wallets
                 if created:
                     # TODO this fails because the new wallet doesn't get a public DID
-                    credential_definition_id = await create_schema_and_cred_def(
-                        agent, revocation
-                    )
+                    cred_def_id = await create_schema_and_cred_def(agent, revocation)
 
             elif option in "tT":
                 exchange_tracing = not exchange_tracing
@@ -348,7 +319,7 @@ async def main(
                 log_status("#13 Issue credential offer to X")
 
                 # TODO define attributes to send for credential
-                agent.cred_attrs[credential_definition_id] = {
+                agent.cred_attrs[cred_def_id] = {
                     "name": "Alice Smith",
                     "date": "2018-05-28",
                     "degree": "Maths",
@@ -360,18 +331,20 @@ async def main(
                     "@type": CRED_PREVIEW_TYPE,
                     "attributes": [
                         {"name": n, "value": v}
-                        for (n, v) in agent.cred_attrs[credential_definition_id].items()
+                        for (n, v) in agent.cred_attrs[cred_def_id].items()
                     ],
                 }
                 offer_request = {
                     "connection_id": agent.connection_id,
-                    "cred_def_id": credential_definition_id,
-                    "comment": f"Offer on cred def id {credential_definition_id}",
+                    "comment": f"Offer on cred def id {cred_def_id}",
                     "auto_remove": False,
                     "credential_preview": cred_preview,
+                    "filter": {"indy": {"cred_def_id": cred_def_id}},
                     "trace": exchange_tracing,
                 }
-                await agent.admin_POST("/issue-credential/send-offer", offer_request)
+                await agent.admin_POST(
+                    "/issue-credential-2.0/send-offer", offer_request
+                )
                 # TODO issue an additional credential for Student ID
 
             elif option == "2":
@@ -446,7 +419,8 @@ async def main(
 
             elif option == "4":
                 log_msg(
-                    "Creating a new invitation, please Receive and Accept this invitation using Alice agent"
+                    "Creating a new invitation, please Receive and Accept "
+                    "this invitation using Alice agent"
                 )
                 await generate_invitation(agent, use_did_exchange)
 
