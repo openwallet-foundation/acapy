@@ -16,6 +16,7 @@ from runners.support.agent import (  # noqa:E402
     DemoAgent,
     default_genesis_txns,
     start_mediator_agent,
+    connect_wallet_to_mediator,
 )
 from runners.support.utils import (  # noqa:E402
     log_msg,
@@ -523,6 +524,11 @@ if __name__ == "__main__":
         help="Set the agent wallet type",
     )
     args = parser.parse_args()
+
+    if args.did_exchange and args.mediation:
+        raise Exception(
+            "DID-Exchange connection protocol is not (yet) compatible with mediation"
+        )
 
     ENABLE_PYDEVD_PYCHARM = os.getenv("ENABLE_PYDEVD_PYCHARM", "").lower()
     ENABLE_PYDEVD_PYCHARM = ENABLE_PYDEVD_PYCHARM and ENABLE_PYDEVD_PYCHARM not in (

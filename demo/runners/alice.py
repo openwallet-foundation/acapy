@@ -15,6 +15,7 @@ from runners.support.agent import (  # noqa:E402
     DemoAgent,
     default_genesis_txns,
     start_mediator_agent,
+    connect_wallet_to_mediator,
 )
 from runners.support.utils import (  # noqa:E402
     log_json,
