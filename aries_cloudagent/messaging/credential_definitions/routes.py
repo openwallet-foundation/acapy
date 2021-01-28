@@ -290,6 +290,7 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
             author_did=author_did,
             author_verkey=author_verkey,
             transaction_message=transaction_message,
+            transaction_type="102",
             mechanism=mechanism,
             taaDigest=taaDigest,
             time=time,

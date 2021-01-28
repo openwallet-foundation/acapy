@@ -214,6 +214,7 @@ async def schemas_send_schema(request: web.BaseRequest):
             author_did=author_did,
             author_verkey=author_verkey,
             transaction_message=transaction_message,
+            transaction_type="101",
             mechanism=mechanism,
             taaDigest=taaDigest,
             time=time,

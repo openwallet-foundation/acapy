@@ -1,5 +1,6 @@
 """Endorse Transaction handling admin routes."""
 
+from asyncio import shield, ensure_future
 from aiohttp import web
 from aiohttp_apispec import (
     docs,
@@ -22,6 +23,13 @@ from ....storage.error import StorageError, StorageNotFoundError
 from .transaction_jobs import TransactionJob
 
 from ....wallet.base import BaseWallet
+
+from ....ledger.base import BaseLedger
+from ....ledger.error import LedgerError
+from ....indy.issuer import IndyIssuer, IndyIssuerError
+from ....revocation.indy import IndyRevocation
+from ....revocation.error import RevocationNotSupportedError, RevocationError
+from ....tails.base import BaseTailsServer
 
 
 class TransactionListSchema(OpenAPISchema):
@@ -527,6 +535,176 @@ async def set_transaction_jobs(request: web.BaseRequest):
     return web.json_response(jobs)
 
 
+@docs(
+    tags=["endorse-transaction"],
+    summary="For Author to write an endorsed transaction to the ledger",
+)
+@match_info_schema(TranIdMatchInfoSchema())
+@response_schema(TransactionRecordSchema(), 200)
+async def transaction_write(request: web.BaseRequest):
+    """
+    Request handler for writing an endorsed transaction to the ledger.
+
+    Args:
+        request: aiohttp request object
+
+    Returns:
+        The returned ledger response
+
+    """
+
+    context: AdminRequestContext = request["context"]
+
+    transaction_id = request.match_info["tran_id"]
+    try:
+        async with context.session() as session:
+            transaction = await TransactionRecord.retrieve_by_id(
+                session, transaction_id
+            )
+    except StorageNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
+
+    try:
+        async with context.session() as session:
+            connection_record = await ConnRecord.retrieve_by_id(
+                session, transaction.connection_id
+            )
+    except StorageNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
+    session = await context.session()
+    jobs = await connection_record.metadata_get(session, "transaction_jobs")
+    if not jobs:
+        raise web.HTTPForbidden(
+            reason="The transaction related jobs are not setup in "
+            "connection metadata for this connection record"
+        )
+    if jobs["transaction_my_job"] != "TRANSACTION_AUTHOR":
+        raise web.HTTPForbidden(
+            reason="Only a TRANSACTION_AUTHOR can write a transaction to the ledger"
+        )
+
+    if transaction.state != TransactionRecord.STATE_TRANSACTION_ENDORSED:
+        raise web.HTTPForbidden(
+            reason="Only an endorsed transaction can be written to the ledger"
+        )
+
+    body = transaction.messages_attach[0]["data"]["json"]["operation"]["data"]
+
+    if transaction.messages_attach[0]["data"]["json"]["operation"]["type"] == "101":
+
+        schema_name = body.get("schema_name")
+        schema_version = body.get("schema_version")
+        attributes = body.get("attributes")
+
+        ledger = context.inject(BaseLedger, required=False)
+        if not ledger:
+            reason = "No ledger available"
+            if not context.settings.get_value("wallet.type"):
+                reason += ": missing wallet-type?"
+            raise web.HTTPForbidden(reason=reason)
+
+        issuer = context.inject(IndyIssuer)
+        async with ledger:
+            try:
+                schema_id, schema_def = await shield(
+                    ledger.create_and_send_schema(
+                        issuer, schema_name, schema_version, attributes
+                    )
+                )
+            except (IndyIssuerError, LedgerError) as err:
+                raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+        return web.json_response({"schema_id": schema_id, "schema": schema_def})
+
+    else:
+
+        schema_id = body.get("schema_id")
+        support_revocation = bool(body.get("support_revocation"))
+        tag = body.get("tag")
+        rev_reg_size = body.get("revocation_registry_size")
+
+        ledger = context.inject(BaseLedger, required=False)
+        if not ledger:
+            reason = "No ledger available"
+            if not context.settings.get_value("wallet.type"):
+                reason += ": missing wallet-type?"
+            raise web.HTTPForbidden(reason=reason)
+
+        issuer = context.inject(IndyIssuer)
+        try:  # even if in wallet, send it and raise if erroneously so
+            async with ledger:
+                (cred_def_id, cred_def, novel) = await shield(
+                    ledger.create_and_send_credential_definition(
+                        issuer,
+                        schema_id,
+                        signature_type=None,
+                        tag=tag,
+                        support_revocation=support_revocation,
+                    )
+                )
+        except LedgerError as e:
+            raise web.HTTPBadRequest(reason=e.message) from e
+
+        # If revocation is requested and cred def is novel, create revocation registry
+        if support_revocation and novel:
+            session = (
+                await context.session()
+            )  # FIXME - will update to not require session here
+            tails_base_url = session.settings.get("tails_server_base_url")
+            if not tails_base_url:
+                raise web.HTTPBadRequest(reason="tails_server_base_url not configured")
+            try:
+                # Create registry
+                revoc = IndyRevocation(session)
+                registry_record = await revoc.init_issuer_registry(
+                    cred_def_id,
+                    max_cred_num=rev_reg_size,
+                )
+
+            except RevocationNotSupportedError as e:
+                raise web.HTTPBadRequest(reason=e.message) from e
+            await shield(registry_record.generate_registry(session))
+            try:
+                await registry_record.set_tails_file_public_uri(
+                    session, f"{tails_base_url}/{registry_record.revoc_reg_id}"
+                )
+                await registry_record.send_def(session)
+                await registry_record.send_entry(session)
+
+                # stage pending registry independent of whether tails server is OK
+                pending_registry_record = await revoc.init_issuer_registry(
+                    registry_record.cred_def_id,
+                    max_cred_num=registry_record.max_cred_num,
+                )
+                ensure_future(
+                    pending_registry_record.stage_pending_registry(
+                        session, max_attempts=16
+                    )
+                )
+
+                tails_server = session.inject(BaseTailsServer)
+                (upload_success, reason) = await tails_server.upload_tails_file(
+                    session,
+                    registry_record.revoc_reg_id,
+                    registry_record.tails_local_path,
+                    interval=0.8,
+                    backoff=-0.5,
+                    max_attempts=5,  # heuristic: respect HTTP timeout
+                )
+                if not upload_success:
+                    raise web.HTTPInternalServerError(
+                        reason=(
+                            f"Tails file for rev reg {registry_record.revoc_reg_id} "
+                            f"failed to upload: {reason}"
+                        )
+                    )
+
+            except RevocationError as e:
+                raise web.HTTPBadRequest(reason=e.message) from e
+
+        return web.json_response({"credential_definition_id": cred_def_id})
+
+
 async def register(app: web.Application):
     """Register routes."""
 
@@ -542,6 +720,7 @@ async def register(app: web.Application):
             web.post(
                 "/transactions/{conn_id}/set-transaction-jobs", set_transaction_jobs
             ),
+            web.post("/transactions/{tran_id}/write", transaction_write),
         ]
     )
 

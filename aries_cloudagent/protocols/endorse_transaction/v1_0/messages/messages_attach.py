@@ -27,6 +27,7 @@ class MessagesAttach(AgentMessage):
         author_verkey: str = None,
         endorser_did: str = None,
         transaction_message: dict = {},
+        transaction_type: str = None,
         mechanism: str = None,
         taaDigest: str = None,
         time: int = None,
@@ -55,7 +56,7 @@ class MessagesAttach(AgentMessage):
                 "identifier": author_did,
                 "operation": {
                     "data": transaction_message,
-                    "type": SCHEMA_TYPE,
+                    "type": transaction_type,
                 },
                 "protocol_version": PROTOCOL_VERSION,
                 "reqId": 1597766666168851000,
