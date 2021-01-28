@@ -375,8 +375,6 @@ async def wallet_update(request: web.BaseRequest):
             result = format_wallet_record(wallet_record)
         except StorageNotFoundError as err:
             raise web.HTTPNotFound(reason=err.roll_up) from err
-        except WalletKeyMissingError as err:
-            raise web.HTTPUnauthorized(reason=err.roll_up) from err
 
     return web.json_response(result)
 
