@@ -405,13 +405,6 @@ class OutOfBandManager(BaseConnectionManager):
             # Create a new connection
             for proto in unq_handshake_protos:
                 if proto == DIDX_INVITATION:
-                    # Transform back to 'naked' verkey
-                    service.recipient_keys = [
-                        did_key_to_naked(key) for key in service.recipient_keys or []
-                    ]
-                    service.routing_keys = [
-                        did_key_to_naked(key) for key in service.routing_keys
-                    ] or []
                     didx_mgr = DIDXManager(self._session)
                     conn_rec = await didx_mgr.receive_invitation(
                         invitation=invi_msg,
@@ -419,12 +412,6 @@ class OutOfBandManager(BaseConnectionManager):
                         auto_accept=True,
                     )
                 elif proto == CONNECTION_INVITATION:
-                    service.recipient_keys = [
-                        did_key_to_naked(key) for key in service.recipient_keys or []
-                    ]
-                    service.routing_keys = [
-                        did_key_to_naked(key) for key in service.routing_keys
-                    ] or []
                     connection_invitation = ConnectionInvitation.deserialize(
                         {
                             "@id": invi_msg._id,
