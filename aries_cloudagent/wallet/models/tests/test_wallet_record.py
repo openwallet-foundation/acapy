@@ -85,7 +85,7 @@ class TestWalletRecord(AsyncTestCase):
             "wallet.id": "my-wallet-id",
             "wallet.type": "indy",
         }
-        await wallet_record.update_settings(settings)
+        wallet_record.update_settings(settings)
 
         assert wallet_record.settings.get("wallet.type") == "indy"
         assert wallet_record.settings.get("wallet.id") is None

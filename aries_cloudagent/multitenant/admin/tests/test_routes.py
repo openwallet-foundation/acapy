@@ -104,6 +104,39 @@ class TestMultitenantRoutes(AsyncTestCase):
             with self.assertRaises(test_module.web.HTTPBadRequest):
                 await test_module.wallets_list(self.request)
 
+    async def test_wallets_list_query(self):
+        self.request.query = {"wallet_name": "test"}
+
+        with async_mock.patch.object(
+            test_module, "WalletRecord", autospec=True
+        ) as mock_wallet_record, async_mock.patch.object(
+            test_module.web, "json_response"
+        ) as mock_response:
+            wallets = [
+                async_mock.MagicMock(
+                    serialize=async_mock.MagicMock(
+                        return_value={
+                            "wallet_id": "wallet_id",
+                            "created_at": "1234567890",
+                            "settings": {"wallet.name": "test"},
+                        }
+                    )
+                ),
+            ]
+            mock_wallet_record.query = async_mock.CoroutineMock()
+            mock_wallet_record.query.return_value = wallets
+
+            await test_module.wallets_list(self.request)
+            mock_response.assert_called_once_with(
+                {"results": [
+                    {
+                        "wallet_id": "wallet_id",
+                        "created_at": "1234567890",
+                        "settings": {"wallet.name": "test"},
+                    }
+                ]}
+            )
+
     async def test_wallet_create(self):
         body = {
             "wallet_name": "test",
@@ -200,6 +233,66 @@ class TestMultitenantRoutes(AsyncTestCase):
                 },
                 WalletRecord.MODE_MANAGED,
             )
+
+    async def test_wallet_update(self):
+        self.request.match_info = {"wallet_id": "test-wallet-id"}
+        body = {
+            "wallet_webhook_urls": ["test-webhook-url"],
+            "wallet_dispatch_type": "default",
+            "label": "test-label",
+            "image_url": "test-image-url",
+        }
+        self.request.json = async_mock.CoroutineMock(return_value=body)
+        mock_multitenant_mgr = self.session_inject[MultitenantManager]
+
+        with async_mock.patch.object(test_module.web, "json_response") as mock_response:
+            settings = {
+                "wallet.webhook_urls": body["wallet_webhook_urls"],
+                "wallet.dispatch_type": body["wallet_dispatch_type"],
+                "default_label": body["label"],
+                "image_url": body["image_url"],
+            }
+            wallet_mock = async_mock.MagicMock(
+                serialize=async_mock.MagicMock(
+                    return_value={
+                        "wallet_id": "test-wallet-id",
+                        "settings": settings,
+                    }
+                )
+            )
+            mock_multitenant_mgr.update_wallet = async_mock.CoroutineMock(
+                return_value=wallet_mock
+            )
+
+            await test_module.wallet_update(self.request)
+
+            mock_multitenant_mgr.update_wallet.assert_called_once_with(
+                "test-wallet-id",
+                settings,
+            )
+            mock_response.assert_called_once_with(
+                {"wallet_id": "test-wallet-id", "settings": settings}
+            )
+
+    async def test_wallet_update_no_params(self):
+        self.request.match_info = {"wallet_id": "test-wallet-id"}
+        body = {}
+        self.request.json = async_mock.CoroutineMock(return_value=body)
+
+        with self.assertRaises(test_module.web.HTTPBadRequest):
+            await test_module.wallet_update(self.request)
+
+    async def test_wallet_update_not_found(self):
+        self.request.match_info = {"wallet_id": "test-wallet-id"}
+        body = {"label": "test-label"}
+        self.request.json = async_mock.CoroutineMock(return_value=body)
+        mock_multitenant_mgr = self.session_inject[MultitenantManager]
+        mock_multitenant_mgr.update_wallet = async_mock.CoroutineMock(
+            side_effect=StorageNotFoundError()
+        )
+
+        with self.assertRaises(test_module.web.HTTPNotFound):
+            await test_module.wallet_update(self.request)
 
     async def test_wallet_get(self):
         self.request.match_info = {"wallet_id": "dummy"}
