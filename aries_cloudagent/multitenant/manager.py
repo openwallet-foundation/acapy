@@ -257,7 +257,7 @@ class MultitenantManager:
 
             settings = wallet_record.settings
             settings.update(new_settings)
-            await wallet_record.update_settings(settings)
+            wallet_record.update_settings(settings)
             await wallet_record.save(session)
 
         # update profile only if loaded

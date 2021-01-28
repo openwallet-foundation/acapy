@@ -106,7 +106,7 @@ class WalletRecord(BaseRecord):
         else:
             return True
 
-    async def update_settings(self, settings: dict):
+    def update_settings(self, settings: dict):
         """Update settings."""
         if "wallet.id" in settings:
             del settings["wallet.id"]
