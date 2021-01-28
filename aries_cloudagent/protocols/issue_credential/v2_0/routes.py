@@ -108,7 +108,7 @@ class V20CredExRecordDetailSchema(OpenAPISchema):
 
 
 class V20CredExRecordListResultSchema(OpenAPISchema):
-    """Result schema for credential exchange record list uery."""
+    """Result schema for credential exchange record list query."""
 
     results = fields.List(
         fields.Nested(V20CredExRecordDetailSchema),
