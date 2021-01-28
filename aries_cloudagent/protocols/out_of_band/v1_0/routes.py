@@ -105,7 +105,7 @@ async def invitation_create(request: web.BaseRequest):
     use_public_did = body.get("use_public_did", False)
     metadata = body.get("metadata")
 
-    multi_use = json.loads(request.query.get("multi_use", json.dumps(use_public_did)))
+    multi_use = json.loads(request.query.get("multi_use", False))
     auto_accept = json.loads(
         request.query.get("auto_accept", "false" if use_public_did else "null")
     )

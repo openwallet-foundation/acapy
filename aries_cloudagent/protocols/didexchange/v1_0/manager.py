@@ -3,6 +3,7 @@
 import json
 import logging
 
+from re import match
 from typing import Sequence, Tuple
 
 from ....connections.models.conn_record import ConnRecord
@@ -17,6 +18,7 @@ from ....core.error import BaseError
 from ....core.profile import ProfileSession
 from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....messaging.responder import BaseResponder
+from ....messaging.valid import IndyDID
 from ....storage.base import BaseStorage
 from ....storage.error import StorageNotFoundError
 from ....storage.record import StorageRecord
@@ -257,17 +259,25 @@ class DIDXManager:
         # Multitenancy setup
         multitenant_mgr = self._session.inject(MultitenantManager, required=False)
         wallet_id = self._session.settings.get("wallet.id")
+        implicit = bool(match(IndyDID.PATTERN, request._thread.pthid))
 
         try:
             invi_rec = await OOBInvitationRecord.retrieve_by_tag_filter(
                 self._session,
-                tag_filter={"invi_msg_id": request._thread.pthid},
+                tag_filter=(
+                    {
+                        "public_did" if implicit else "invi_msg_id": (
+                            request._thread.pthid
+                        )
+                    }
+                ),
             )
         except StorageNotFoundError:
-            raise DIDXManagerError(
-                f"No record of invitation {request._thread.pthid} "
-                f"for request {request._id}"
-            )
+            if not implicit:  # OK to have no invitation record for implicit invitation
+                raise DIDXManagerError(
+                    f"No record of invitation {request._thread.pthid} "
+                    f"for request {request._id} on peer DID"
+                )
 
         # Determine what key will need to sign the response
         if receipt.recipient_did_public:
@@ -342,7 +352,13 @@ class DIDXManager:
                 self._session, reason="Received connection request from invitation"
             )
         elif self._session.settings.get("public_invites"):
+            # request from public DID
             my_info = await wallet.create_local_did()
+
+            # Add mapping for multitenant relay
+            if multitenant_mgr and wallet_id:
+                await multitenant_mgr.add_key(wallet_id, my_info.verkey)
+
             conn_rec = ConnRecord(
                 my_did=my_info.did,
                 their_did=request.did,
@@ -353,7 +369,7 @@ class DIDXManager:
                 state=ConnRecord.State.REQUEST.rfc23,
                 accept=(
                     ConnRecord.ACCEPT_AUTO
-                    if invi_rec.auto_accept
+                    if invi_rec and invi_rec.auto_accept
                     else ConnRecord.ACCEPT_MANUAL
                 ),  # oob manager calculates (including config) at conn record creation
             )
@@ -362,16 +378,13 @@ class DIDXManager:
                 self._session, reason="Received connection request from public DID"
             )
 
-            # Add mapping for multitenant relay
-            if multitenant_mgr and wallet_id:
-                await multitenant_mgr.add_key(wallet_id, my_info.verkey)
         else:
             raise DIDXManagerError("Public invitations are not enabled")
 
         # Attach the connection request so it can be found and responded to
         await conn_rec.attach_request(self._session, request)
 
-        if invi_rec.auto_accept:
+        if invi_rec and invi_rec.auto_accept:
             response = await self.create_response(conn_rec)
             responder = self._session.inject(BaseResponder, required=False)
             if responder:

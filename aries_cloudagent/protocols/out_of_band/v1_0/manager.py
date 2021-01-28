@@ -15,7 +15,6 @@ from ....wallet.util import naked_to_did_key
 from ...didexchange.v1_0.manager import DIDXManager
 from ...didcomm_prefix import DIDCommPrefix
 from ...issue_credential.v1_0.models.credential_exchange import V10CredentialExchange
-# from ...issue_credential.v2_0.models.cred_ex_record import V20CredExRecord
 from ...present_proof.v1_0.message_types import PRESENTATION_REQUEST
 from ...present_proof.v1_0.models.presentation_exchange import V10PresentationExchange
 
@@ -83,7 +82,7 @@ class OutOfBandManager:
             auto_accept: auto-accept a corresponding connection request
                 (None to use config)
             public: set to create an invitation from the public DID
-            multi_use: set to True to create an invitation for multiple use
+            multi_use: set to True to create an invitation for multiple-use connection
             alias: optional alias to apply to connection for later use
             include_handshake: whether to include handshake protocols
             attachments: list of dicts in form of {"id": ..., "type": ...}
@@ -113,9 +112,10 @@ class OutOfBandManager:
                 and self._session.settings.get("debug.auto_accept_requests")
             )
         )
-        if accept and public:
+        if public and (attachments or accept or multi_use):
             raise OutOfBandManagerError(
-                "Cannot create public invitation with auto-accept"
+                "Cannot create public invitation with "
+                "attachments, multi_use, or auto-accept"
             )
 
         message_attachments = []
@@ -124,26 +124,6 @@ class OutOfBandManager:
             a_id = atch.get("id")
 
             if a_type == "credential-offer":
-                '''
-                try:
-                    cred_ex_rec = await V10CredentialExchange.retrieve_by_id(
-                        self._session,
-                        a_id,
-                    )
-                    message_attachments.append(
-                        InvitationMessage.wrap_message(
-                            cred_ex_rec.credential_offer_dict
-                        )
-                    )
-                except StorageNotFoundError:
-                    cred_ex_rec = await V20CredExRecord.retrieve_by_id(
-                        self._session,
-                        a_id,
-                    )
-                    message_attachments.append(
-                        InvitationMessage.wrap_message(cred_ex_rec.cred_offer)
-                    )
-                '''
                 cred_ex_rec = await V10CredentialExchange.retrieve_by_id(
                     self._session,
                     a_id,
@@ -176,22 +156,13 @@ class OutOfBandManager:
                     "Cannot create public invitation with no public DID"
                 )
 
-            if not multi_use:
-                # RFC 434: pthid in invi-req should be invitation thid
-                # RFC 23: pthid in invi-req must be DID in attached DID doc
-                # hence, cannot correlate request to OOB invitation; must
-                # re-use one permanent public DID invitation for all requests
-                raise OutOfBandManagerError(
-                    "Cannot create public invitation without multi_use"
-                )
-
             if metadata:
                 raise OutOfBandManagerError(
                     "Cannot store metadata on public invitations"
                 )
 
             try:
-                invi_rec = InvitationRecord.retrieve_by_public_did(
+                invi_rec = await InvitationRecord.retrieve_by_public_did(
                     self._session, public_did
                 )  # reuse existing one if we have it
                 invi_msg = InvitationMessage.deserialize(invi_rec).invitation
@@ -308,6 +279,7 @@ class OutOfBandManager:
             conn_rec = await didx_mgr.receive_invitation(
                 invi_msg,
                 auto_accept=auto_accept,
+                alias=alias,
             )
 
         elif (

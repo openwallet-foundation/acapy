@@ -249,15 +249,19 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             assert didx_req
 
     async def test_receive_request_public_did(self):
-        mock_request = async_mock.MagicMock()
-        mock_request.did = TestConfig.test_did
-        mock_request.did_doc_attach = async_mock.MagicMock(
-            data=async_mock.MagicMock(
-                verify=async_mock.CoroutineMock(return_value=True),
-                signed=async_mock.MagicMock(
-                    decode=async_mock.MagicMock(return_value="dummy-did-doc")
-                ),
-            )
+        mock_request = async_mock.MagicMock(
+            did = TestConfig.test_did
+            did_doc_attach = async_mock.MagicMock(
+                data=async_mock.MagicMock(
+                    verify=async_mock.CoroutineMock(return_value=True),
+                    signed=async_mock.MagicMock(
+                        decode=async_mock.MagicMock(return_value="dummy-did-doc")
+                    ),
+                )
+            ),
+            _thread=async_mock.MagicMock(
+                pthid="did:sov:publicdid0000000000000"
+            ),
         )
         receipt = MessageReceipt(
             recipient_did=TestConfig.test_did,
@@ -326,9 +330,13 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
         assert "connection_id" in target
 
     async def test_receive_request_invi_not_found(self):
-        mock_request = async_mock.MagicMock()
-        mock_request.did = TestConfig.test_did
-        mock_request.did_doc_attach = None
+        mock_request = async_mock.MagicMock(
+            did=TestConfig.test_did,
+            did_doc_attach=None,
+            _thread=async_mock.MagicMock(
+                pthid="explicit-not-a-did"
+            ),
+        )
 
         receipt = MessageReceipt(
             recipient_did=TestConfig.test_did,

@@ -566,7 +566,7 @@ class ConnectionManager:
             raise ConnectionManagerError("Public invitations are not enabled")
         else:  # request from public did
             my_info = await wallet.create_local_did()
-            # send a update keylist message with new recipient keys.
+            # send update-keylist message with new recipient keys
             keylist_updates = await mediation_mgr.add_key(
                 my_info.verkey, keylist_updates
             )
