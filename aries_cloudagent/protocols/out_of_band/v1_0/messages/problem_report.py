@@ -5,9 +5,12 @@ from marshmallow import EXCLUDE, fields, validate, pre_dump, ValidationError
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 
-from ..message_types import PROBLEM_REPORT
+from ..message_types import PROBLEM_REPORT, PROTOCOL_PACKAGE
 
-HANDLER_CLASS = "aries_cloudagent.messaging.problem_report.handler.ProblemReportHandler"
+HANDLER_CLASS = (
+    f"{PROTOCOL_PACKAGE}.handlers"
+    ".problem_report_handler.OOBProblemReportMessageHandler"
+)
 
 
 class ProblemReportReason(str, Enum):

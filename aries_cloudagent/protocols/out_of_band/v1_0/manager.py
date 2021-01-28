@@ -2,6 +2,7 @@
 
 import logging
 import asyncio
+import json
 
 from typing import Mapping, Sequence, Optional
 
@@ -10,7 +11,7 @@ from ....core.error import BaseError
 from ....core.profile import ProfileSession
 from ....multitenant.manager import MultitenantManager
 from ....wallet.base import BaseWallet
-from ....wallet.util import naked_to_did_key
+from ....wallet.util import naked_to_did_key, b64_to_bytes
 
 from ...didexchange.v1_0.manager import DIDXManager
 from ...didcomm_prefix import DIDCommPrefix
@@ -84,6 +85,7 @@ class OutOfBandManager(BaseConnectionManager):
         auto_accept: bool = None,
         public: bool = False,
         include_handshake: bool = False,
+        use_connections: bool = False,
         multi_use: bool = False,
         alias: str = None,
         attachments: Sequence[Mapping] = None,
@@ -176,14 +178,17 @@ class OutOfBandManager(BaseConnectionManager):
                 raise OutOfBandManagerError(
                     "Cannot store metadata on public invitations"
                 )
-
+            if include_handshake and not use_connections:
+                handshake_protocol = [DIDCommPrefix.qualify_current(DIDX_INVITATION)]
+            elif include_handshake and use_connections:
+                handshake_protocol = [
+                    DIDCommPrefix.qualify_current(CONNECTION_INVITATION)
+                ]
+            else:
+                handshake_protocol = None
             invi_msg = InvitationMessage(
                 label=my_label or self._session.settings.get("default_label"),
-                handshake_protocols=(
-                    [DIDCommPrefix.qualify_current(DIDX_INVITATION)]
-                    if include_handshake
-                    else None
-                ),
+                handshake_protocols=handshake_protocol,
                 request_attach=message_attachments,
                 service=[f"did:sov:{public_did.did}"],
             )
@@ -326,7 +331,7 @@ class OutOfBandManager(BaseConnectionManager):
             # Looking for an existing connection
             tag_filter = {}
             post_filter = {}
-            post_filter["state"] = "active"
+            # post_filter["state"] = ConnRecord.State.COMPLETED.rfc160
             post_filter["their_public_did"] = public_did
             conn_rec = await self.find_existing_connection(
                 tag_filter=tag_filter, post_filter=post_filter
@@ -343,21 +348,39 @@ class OutOfBandManager(BaseConnectionManager):
             ):
                 await self.create_handshake_reuse_message(
                     invi_msg=invi_msg,
-                    connection=conn_rec,
+                    conn_record=conn_rec,
                 )
                 try:
                     await asyncio.wait_for(
                         self.check_reuse_msg_state(
                             conn_rec=conn_rec,
                         ),
-                        30,
+                        15,
                     )
+                    await conn_rec.metadata_delete(
+                        session=self._session, key="reuse_msg_id"
+                    )
+                    if (
+                        await conn_rec.metadata_get(self._session, "reuse_msg_state")
+                        == "not_accepted"
+                    ):
+                        conn_rec = None
+                    else:
+                        await conn_rec.metadata_delete(
+                            session=self._session, key="reuse_msg_state"
+                        )
                 except asyncio.TimeoutError:
                     # If no reuse_accepted or problem_report message was recieved within
-                    # the 30s timeout then a new connection to be created
+                    # the 15s timeout then a new connection to be created
+                    await conn_rec.metadata_delete(
+                        session=self._session, key="reuse_msg_id"
+                    )
+                    await conn_rec.metadata_delete(
+                        session=self._session, key="reuse_msg_state"
+                    )
+                    conn_rec.state = ConnRecord.State.ABANDONED.rfc160
+                    await conn_rec.save(self._session, reason="Sent connection request")
                     conn_rec = None
-                conn_rec.metadata_delete(session=self._session, key="reuse_msg_id")
-                conn_rec.metadata_delete(session=self._session, key="reuse_msg_state")
             # Inverse of the following cases
             # Handshake_Protocol not included
             # Request_Attachment included
@@ -426,13 +449,17 @@ class OutOfBandManager(BaseConnectionManager):
         # Request Attach
         if len(invi_msg.request_attach) >= 1 and conn_rec is not None:
             req_attach = invi_msg.request_attach[0]
-            if "data" in req_attach:
+            if req_attach.data is not None:
                 req_attach_type = req_attach.data.json["@type"]
                 if DIDCommPrefix.unqualify(req_attach_type) == PRESENTATION_REQUEST:
                     proof_present_mgr = PresentationManager(self._session)
-                    indy_proof_request = req_attach.data.json[
-                        "request_presentations~attach"
-                    ][0].indy_dict
+                    indy_proof_request = json.loads(
+                        b64_to_bytes(
+                            req_attach.data.json["request_presentations~attach"][0][
+                                "data"
+                            ]["base64"]
+                        )
+                    )
                     present_request_msg = req_attach.data.json
                     service_deco = {}
                     oob_invi_service = service.serialize()
@@ -446,7 +473,7 @@ class OutOfBandManager(BaseConnectionManager):
                     present_request_msg["~service"] = service_deco
                     presentation_exchange_record = V10PresentationExchange(
                         connection_id=conn_rec.connection_id,
-                        thread_id=invi_msg._id,
+                        thread_id=present_request_msg["@id"],
                         initiator=V10PresentationExchange.INITIATOR_EXTERNAL,
                         role=V10PresentationExchange.ROLE_PROVER,
                         presentation_request=indy_proof_request,
@@ -499,7 +526,7 @@ class OutOfBandManager(BaseConnectionManager):
                             ),
                         )
                     responder = self._session.inject(BaseResponder, required=False)
-                    connection_targets = self.fetch_connection_targets(
+                    connection_targets = await self.fetch_connection_targets(
                         connection=conn_rec
                     )
                     if responder:
@@ -539,14 +566,17 @@ class OutOfBandManager(BaseConnectionManager):
         """
         conn_records = await ConnRecord.query(
             self._session,
-            tag_filter,
+            tag_filter=tag_filter,
             post_filter_positive=post_filter,
+            alt=True,
         )
         if len(conn_records) == 0:
-            conn_rec = None
+            return None
         else:
-            conn_rec = conn_records[0]
-        return conn_rec
+            for conn_rec in conn_records:
+                if conn_rec.state == "active":
+                    return conn_rec
+            return None
 
     async def check_reuse_msg_state(
         self,
@@ -563,7 +593,10 @@ class OutOfBandManager(BaseConnectionManager):
         """
         recieved = False
         while not recieved:
-            if not conn_rec.metadata_get(self._session, "reuse_msg_state") == "initial":
+            if (
+                not await conn_rec.metadata_get(self._session, "reuse_msg_state")
+                == "initial"
+            ):
                 recieved = True
         return
 
@@ -571,7 +604,7 @@ class OutOfBandManager(BaseConnectionManager):
         self,
         invi_msg: InvitationMessage,
         conn_record: ConnRecord,
-    ):
+    ) -> None:
         """
         Create and Send a Handshake Reuse message under RFC 0434.
 
@@ -588,21 +621,23 @@ class OutOfBandManager(BaseConnectionManager):
         """
         try:
             # ID of Out-of-Band invitation to use as a pthid
-            pthid = invi_msg._decorators._id
+            pthid = invi_msg._id
             reuse_msg = HandshakeReuse()
             thid = reuse_msg._id
             reuse_msg.assign_thread_id(thid=thid, pthid=pthid)
-            connection_targets = self.fetch_connection_targets(connection=conn_record)
+            connection_targets = await self.fetch_connection_targets(
+                connection=conn_record
+            )
             responder = self._session.inject(BaseResponder, required=False)
             if responder:
                 await responder.send(
                     message=reuse_msg,
                     target_list=connection_targets,
                 )
-                conn_record.metadata_set(
+                await conn_record.metadata_set(
                     session=self._session, key="reuse_msg_id", value=reuse_msg._id
                 )
-                conn_record.metadata_set(
+                await conn_record.metadata_set(
                     session=self._session, key="reuse_msg_state", value="initial"
                 )
         except Exception as err:
@@ -637,18 +672,18 @@ class OutOfBandManager(BaseConnectionManager):
             reuse_msg_id = reuse_msg._thread.thid
             tag_filter = {}
             post_filter = {}
-            post_filter["state"] = "active"
+            # post_filter["state"] = "active"
             tag_filter["their_did"] = reciept.sender_did
             conn_record = await self.find_existing_connection(
                 tag_filter=tag_filter, post_filter=post_filter
             )
+            responder = self._session.inject(BaseResponder, required=False)
             if conn_record is not None:
                 reuse_accept_msg = HandshakeReuseAccept()
                 reuse_accept_msg.assign_thread_id(thid=reuse_msg_id, pthid=invi_msg_id)
-                connection_targets = self.fetch_connection_targets(
+                connection_targets = await self.fetch_connection_targets(
                     connection=conn_record
                 )
-                responder = self._session.inject(BaseResponder, required=False)
                 if responder:
                     await responder.send(
                         message=reuse_accept_msg,
@@ -669,57 +704,56 @@ class OutOfBandManager(BaseConnectionManager):
                 if not invi_rec.multi_use:
                     invi_id_post_filter = {}
                     invi_id_post_filter["invitation_msg_id"] = invi_msg_id
-                    conn_record_to_delete = self.find_existing_connection(
+                    conn_rec_to_delete = await self.find_existing_connection(
                         tag_filter={},
                         post_filter=invi_id_post_filter,
                     )
-                    if conn_record.connection_id != conn_record_to_delete.connection_id:
-                        conn_record_to_delete.delete_record(session=self._session)
+                    if conn_rec_to_delete is not None:
+                        if (
+                            conn_record.connection_id
+                            != conn_rec_to_delete.connection_id
+                        ):
+                            conn_rec_to_delete.delete_record(session=self._session)
             else:
+                try:
+                    conn_records = await ConnRecord.query(
+                        self._session,
+                        tag_filter={"their_did": reciept.sender_did},
+                        post_filter_positive={},
+                    )
+                    all_conn_rec_by_sender = conn_records[0]
+                except StorageNotFoundError:
+                    all_conn_rec_by_sender = None
                 targets = None
-                if reuse_msg.did_doc_attach:
-                    try:
-                        targets = self.diddoc_connection_targets(
-                            reuse_msg.did_doc_attach,
-                            reciept.recipient_verkey,
-                        )
-                    except OutOfBandManagerError:
-                        self._logger.exception(
-                            "Error parsing DIDDoc for problem report"
-                        )
+                if all_conn_rec_by_sender is not None:
+                    targets = await self.fetch_connection_targets(
+                        connection=conn_record
+                    )
+                else:
+                    if reuse_msg.did_doc_attach:
+                        try:
+                            targets = self.diddoc_connection_targets(
+                                reuse_msg.did_doc_attach,
+                                reciept.recipient_verkey,
+                            )
+                        except OutOfBandManagerError:
+                            self._logger.exception(
+                                "Error parsing DIDDoc for problem report"
+                            )
                 problem_report = ProblemReport(
-                    problem_code=ProblemReportReason.EXISTING_CONNECTION_NOT_ACTIVE,
+                    problem_code=ProblemReportReason.EXISTING_CONNECTION_NOT_ACTIVE.value,
                     explain=(
                         f"No active connection found for Invitee {reciept.sender_did}"
                     ),
                 )
-                problem_report.assign_thread_id(thid=invi_msg_id, pthid=reuse_msg_id)
+                problem_report.assign_thread_id(thid=reuse_msg_id, pthid=invi_msg_id)
                 await responder.send_reply(
                     problem_report,
                     target_list=targets,
                 )
         except StorageNotFoundError:
-            targets = None
-            if reuse_msg.did_doc_attach:
-                try:
-                    targets = self.diddoc_connection_targets(
-                        reuse_msg.did_doc_attach,
-                        reciept.recipient_verkey,
-                    )
-                except OutOfBandManagerError:
-                    self._logger.exception("Error parsing DIDDoc for problem report")
-            problem_report = ProblemReport(
-                problem_code=ProblemReportReason.EXISTING_CONNECTION_DOES_NOT_EXISTS,
-                explain=f"No existing connection for Invitee {reciept.sender_did}",
-            )
-            problem_report.assign_thread_id(thid=invi_msg_id, pthid=reuse_msg_id)
-            await responder.send_reply(
-                problem_report,
-                target_list=targets,
-            )
-        except Exception as e:
             raise OutOfBandManagerError(
-                (f"No existing ConnRecord found for OOB Invitee, {e}"),
+                (f"No existing ConnRecord found for OOB Invitee, {reciept.sender_did}"),
             )
 
     async def receive_reuse_accepted_message(
@@ -748,11 +782,11 @@ class OutOfBandManager(BaseConnectionManager):
         try:
             invi_msg_id = reuse_accepted_msg._thread.pthid
             thread_reuse_msg_id = reuse_accepted_msg._thread.thid
-            conn_reuse_msg_id = conn_record.metadata_get(
+            conn_reuse_msg_id = await conn_record.metadata_get(
                 session=self._session, key="reuse_msg_id"
             )
             assert thread_reuse_msg_id == conn_reuse_msg_id
-            conn_record.metadata_set(
+            await conn_record.metadata_set(
                 session=self._session, key="reuse_msg_state", value="accepted"
             )
         except StorageNotFoundError as e:
@@ -789,11 +823,11 @@ class OutOfBandManager(BaseConnectionManager):
         try:
             invi_msg_id = problem_report._thread.pthid
             thread_reuse_msg_id = problem_report._thread.thid
-            conn_reuse_msg_id = conn_record.metadata_get(
+            conn_reuse_msg_id = await conn_record.metadata_get(
                 session=self._session, key="reuse_msg_id"
             )
             assert thread_reuse_msg_id == conn_reuse_msg_id
-            conn_record.metadata_set(
+            await conn_record.metadata_set(
                 session=self._session, key="reuse_msg_state", value="not_accepted"
             )
         except StorageNotFoundError:

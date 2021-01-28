@@ -38,6 +38,11 @@ class InvitationCreateQueryStringSchema(OpenAPISchema):
         description="Create invitation for multiple use (default false)",
         required=False,
     )
+    use_connections_rfc160 = fields.Boolean(
+        description="Use the RFC 0160 over did-exchange",
+        required=False,
+        default=False,
+    )
 
 
 class InvitationCreateRequestSchema(OpenAPISchema):
@@ -74,6 +79,7 @@ class InvitationReceiveQueryStringSchema(OpenAPISchema):
     use_existing_connection = fields.Boolean(
         description="Use an existing connection, if possible",
         required=False,
+        default=True,
     )
 
 
@@ -111,6 +117,7 @@ async def invitation_create(request: web.BaseRequest):
 
     multi_use = json.loads(request.query.get("multi_use", "false"))
     auto_accept = json.loads(request.query.get("auto_accept", "null"))
+    use_connections = json.loads(request.query.get("use_connections_rfc160", "false"))
     session = await context.session()
     oob_mgr = OutOfBandManager(session)
     try:
@@ -121,6 +128,7 @@ async def invitation_create(request: web.BaseRequest):
             multi_use=multi_use,
             attachments=attachments,
             metadata=metadata,
+            use_connections=use_connections,
         )
     except (StorageNotFoundError, ValidationError, OutOfBandManagerError) as e:
         raise web.HTTPBadRequest(reason=str(e))

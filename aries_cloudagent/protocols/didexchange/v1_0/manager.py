@@ -205,13 +205,14 @@ class DIDXManager(BaseConnectionManager):
             my_info, conn_rec.inbound_connection_id, my_endpoints
         )
         invitation = await conn_rec.retrieve_invitation(self._session)
-        if invitation.service_blocks:
-            pthid = invitation._id  # explicit
-        else:
-            """# early try: keep around until logic in code is proven sound
-            pthid = did_doc.service[[s for s in did_doc.service][0]].id
-            """
-            pthid = invitation.service_dids[0]  # should look like did:sov:abc...123
+        pthid = invitation._id
+        # if invitation.service_blocks:
+        #     pthid = invitation._id  # explicit
+        # else:
+        #     """# early try: keep around until logic in code is proven sound
+        #     pthid = did_doc.service[[s for s in did_doc.service][0]].id
+        #     """
+        #     pthid = invitation.service_dids[0]  # should look like did:sov:abc...123
         attach = AttachDecorator.from_indy_dict(did_doc.serialize())
         await attach.data.sign(my_info.verkey, wallet)
         if not my_label:

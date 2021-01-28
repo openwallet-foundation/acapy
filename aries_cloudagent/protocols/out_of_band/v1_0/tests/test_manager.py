@@ -9,12 +9,14 @@ from .....ledger.base import BaseLedger
 from .....messaging.responder import BaseResponder, MockResponder
 from .....multitenant.manager import MultitenantManager
 from .....protocols.didexchange.v1_0.manager import DIDXManager
+from .....protocols.connections.v1_0.manager import ConnectionManager
 from .....protocols.present_proof.v1_0.message_types import PRESENTATION_REQUEST
 from .....wallet.base import DIDInfo, KeyInfo
 from .....wallet.in_memory import InMemoryWallet
 from .....wallet.util import did_key_to_naked
 from ....didcomm_prefix import DIDCommPrefix
 from .. import manager as test_module
+from ..messages.invitation import InvitationMessage, InvitationMessageSchema
 from ..manager import (
     OutOfBandManager,
     OutOfBandManagerError,
@@ -24,6 +26,7 @@ from .....multitenant.manager import MultitenantManager
 from ..message_types import INVITATION
 from uuid import UUID
 from ....issue_credential.v1_0.models.credential_exchange import V10CredentialExchange
+from .....wallet.util import naked_to_did_key
 
 
 class TestConfig:
@@ -34,6 +37,7 @@ class TestConfig:
     DIDX_INVITATION = "didexchange/1.0"
     CONNECTION_INVITATION = "connections/1.0"
     test_target_did = "GbuDUYXaUZRfHD2jeDuQuP"
+    their_public_did = "Test123"
 
     def make_did_doc(self, did, verkey):
         doc = DIDDoc(did=did)
@@ -88,7 +92,8 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             my_did=TestConfig.test_did,
             their_did=TestConfig.test_target_did,
             their_role=None,
-            state=ConnRecord.State.COMPLETED.rfc23,
+            state=ConnRecord.State.COMPLETED,
+            their_public_did=self.their_public_did,
         )
 
     async def test_create_invitation_handshake_succeeds(self):
@@ -346,7 +351,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 )
             assert "Cannot store metadata on public" in str(context.exception)
 
-    async def test_receive_invitation_service_block(self):
+    async def test_receive_invitation_didx_service_block(self):
         self.manager.session.context.update_settings({"public_invites": True})
         with async_mock.patch.object(
             test_module, "DIDXManager", autospec=True
@@ -374,6 +379,81 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             invi_msg_cls.deserialize.return_value = mock_oob_invi
 
             await self.manager.receive_invitation(mock_oob_invi)
+
+    async def test_receive_invitation_connection(self):
+        self.manager.session.context.update_settings({"public_invites": True})
+        with async_mock.patch.object(
+            test_module, "ConnectionManager", autospec=True
+        ) as conn_mgr_cls, async_mock.patch.object(
+            test_module,
+            "InvitationMessage",
+            autospec=True,
+        ) as invi_msg_cls:
+            conn_mgr_cls.return_value = async_mock.MagicMock(
+                receive_invitation=async_mock.CoroutineMock()
+            )
+            mock_oob_invi = async_mock.MagicMock(
+                handshake_protocols=[
+                    pfx.qualify(test_module.CONNECTION_INVITATION)
+                    for pfx in DIDCommPrefix
+                ],
+                service_dids=[],
+                label="test",
+                _id="test123",
+                service_blocks=[
+                    async_mock.MagicMock(
+                        recipient_keys=[
+                            naked_to_did_key(
+                                "9WCgWKUaAJj3VWxxtzvvMQN3AoFxoBtBDo9ntwJnVVCC"
+                            )
+                        ],
+                        routing_keys=[],
+                        service_endpoint="http://localhost",
+                    )
+                ],
+                request_attach=[],
+            )
+            invi_msg_cls.deserialize.return_value = mock_oob_invi
+            with self.assertRaises(OutOfBandManagerError):
+                result = await self.manager.receive_invitation(mock_oob_invi)
+                assert len(result["connection_id"]) > 5
+
+    async def test_receive_invitation_req_attach_request_presentation(self):
+        self.manager.session.context.update_settings({"public_invites": True})
+        oob_invi = {
+            "request~attach": [
+                {
+                    "data": {
+                        "json": {
+                            "@type": DIDCommPrefix.qualify_current(
+                                PRESENTATION_REQUEST
+                            ),
+                            "request_presentations~attach": [
+                                {
+                                    "@id": "libindy-request-presentation-0",
+                                    "mime-type": "application/json",
+                                    "data": {"base64": "<bytes for base64>"},
+                                }
+                            ],
+                        }
+                    }
+                }
+            ],
+            "handshake_protocols": [
+                pfx.qualify(test_module.DIDX_INVITATION) for pfx in DIDCommPrefix
+            ],
+            "service": [
+                {
+                    "id": "#inline",
+                    "type": "did-communication",
+                    "recipient_keys": ["dummy"],
+                    "routing_keys": [],
+                    "service_endpoint": "http://localhost.com",
+                }
+            ],
+        }
+        invi_msg = InvitationMessage.deserialize(oob_invi)
+        await self.manager.receive_invitation(invi_msg)
 
     async def test_receive_invitation_no_service_blocks_nor_dids(self):
         self.manager.session.context.update_settings({"public_invites": True})
@@ -519,3 +599,54 @@ class TestOOBManager(AsyncTestCase, TestConfig):
 
             with self.assertRaises(OutOfBandManagerError):
                 await self.manager.receive_invitation(mock_oob_invi)
+
+    async def test_find_existing_connection(self):
+        test_conn_rec = ConnRecord(
+            my_did=TestConfig.test_did,
+            their_did=TestConfig.test_target_did,
+            their_role=None,
+            state=ConnRecord.State.COMPLETED,
+            their_public_did=self.their_public_did,
+        )
+        await test_conn_rec.save(self.session)
+
+        tag_filter = {}
+        post_filter = {}
+        post_filter["their_public_did"] = "not_addded"
+        conn_record = await self.manager.find_existing_connection(
+            tag_filter, post_filter
+        )
+        assert conn_record == None
+
+        post_filter["their_public_did"] = self.their_public_did
+        post_filter["state"] = "active"
+        conn_record = await self.manager.find_existing_connection(
+            tag_filter, post_filter
+        )
+        assert conn_record == test_conn_rec
+        await test_conn_rec.delete_record(self.session)
+
+    async def test_find_existing_connection(self):
+        test_conn_rec = ConnRecord(
+            my_did=TestConfig.test_did,
+            their_did=TestConfig.test_target_did,
+            their_role=None,
+            state=ConnRecord.State.COMPLETED,
+            their_public_did=self.their_public_did,
+        )
+        await test_conn_rec.save(self.session)
+
+        tag_filter = {}
+        post_filter = {}
+        post_filter["their_public_did"] = "not_addded"
+        conn_record = await self.manager.find_existing_connection(
+            tag_filter, post_filter
+        )
+        assert conn_record == None
+
+        post_filter["their_public_did"] = self.their_public_did
+        post_filter["state"] = "active"
+        conn_record = await self.manager.find_existing_connection(
+            tag_filter, post_filter
+        )
+        assert conn_record == test_conn_rec
