@@ -52,6 +52,40 @@ class TestMultitenantManager(AsyncTestCase):
             default_mediator = await self.manager.get_default_mediator()
             assert default_mediator is None
 
+    async def test_get_webhook_urls_dispatch_type_base(self):
+        wallet_record = WalletRecord(
+            settings={
+                "wallet.dispatch_type": "base",
+                "wallet.webhook_urls": ["subwallet-webhook-url"],
+            },
+        )
+        self.context.update_settings({"admin.webhook_urls": ["base-webhook-url"]})
+        webhook_urls = self.manager.get_webhook_urls(self.context, wallet_record)
+        assert webhook_urls == ["base-webhook-url"]
+
+    async def test_get_webhook_urls_dispatch_type_default(self):
+        wallet_record = WalletRecord(
+            settings={
+                "wallet.dispatch_type": "default",
+                "wallet.webhook_urls": ["subwallet-webhook-url"],
+            },
+        )
+        self.context.update_settings({"admin.webhook_urls": ["base-webhook-url"]})
+        webhook_urls = self.manager.get_webhook_urls(self.context, wallet_record)
+        assert webhook_urls == ["subwallet-webhook-url"]
+
+    async def test_get_webhook_urls_dispatch_type_both(self):
+        wallet_record = WalletRecord(
+            settings={
+                "wallet.dispatch_type": "both",
+                "wallet.webhook_urls": ["subwallet-webhook-url"],
+            },
+        )
+        self.context.update_settings({"admin.webhook_urls": ["base-webhook-url"]})
+        webhook_urls = self.manager.get_webhook_urls(self.context, wallet_record)
+        assert "base-webhook-url" in webhook_urls
+        assert "subwallet-webhook-url" in webhook_urls
+
     async def test_get_wallet_profile_returns_from_cache(self):
         wallet_record = WalletRecord(wallet_id="test")
         self.manager._instances["test"] = InMemoryProfile.test_profile()
@@ -351,6 +385,38 @@ class TestMultitenantManager(AsyncTestCase):
             assert wallet_record.wallet_name == "test_wallet"
             assert wallet_record.key_management_mode == WalletRecord.MODE_MANAGED
             assert wallet_record.wallet_key == "test_key"
+
+    async def test_update_wallet_update_wallet_profile(self):
+        with async_mock.patch.object(
+            WalletRecord, "retrieve_by_id"
+        ) as retrieve_by_id, async_mock.patch.object(
+            WalletRecord, "save"
+        ) as wallet_record_save:
+            wallet_id = "test-wallet-id"
+            wallet_profile = InMemoryProfile.test_profile()
+            self.manager._instances["test-wallet-id"] = wallet_profile
+            retrieve_by_id.return_value = WalletRecord(
+                wallet_id=wallet_id,
+                settings={
+                    "wallet.webhook_urls": ["test-webhook-url"],
+                    "wallet.dispatch_type": "both",
+                },
+            )
+
+            new_settings = {
+                "wallet.webhook_urls": ["new-webhook-url"],
+                "wallet.dispatch_type": "default",
+            }
+            wallet_record = await self.manager.update_wallet(wallet_id, new_settings)
+
+            wallet_record_save.assert_called_once()
+
+            assert isinstance(wallet_record, WalletRecord)
+            assert wallet_record.wallet_webhook_urls == ["new-webhook-url"]
+            assert wallet_record.wallet_dispatch_type == "default"
+
+            assert wallet_profile.settings.get("wallet.webhook_urls") == ["new-webhook-url"]
+            assert wallet_profile.settings.get("wallet.dispatch_type") == "default"
 
     async def test_remove_wallet_fails_no_wallet_key_but_required(self):
         with async_mock.patch.object(WalletRecord, "retrieve_by_id") as retrieve_by_id:
