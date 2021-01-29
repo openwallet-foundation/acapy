@@ -1,5 +1,5 @@
 """Multitenant admin routes."""
-
+from aries_cloudagent.wallet.error import WalletSettingsError
 from marshmallow import fields, validate, validates_schema, ValidationError
 from aiohttp import web
 from aiohttp_apispec import (
@@ -375,6 +375,8 @@ async def wallet_update(request: web.BaseRequest):
             result = format_wallet_record(wallet_record)
         except StorageNotFoundError as err:
             raise web.HTTPNotFound(reason=err.roll_up) from err
+        except WalletSettingsError as err:
+            raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     return web.json_response(result)
 

@@ -2,6 +2,7 @@
 
 from typing import Any, Optional
 
+from aries_cloudagent.wallet.error import WalletSettingsError
 from marshmallow import fields
 from marshmallow import validate
 from marshmallow.utils import EXCLUDE
@@ -109,7 +110,7 @@ class WalletRecord(BaseRecord):
     def update_settings(self, settings: dict):
         """Update settings."""
         if "wallet.id" in settings:
-            del settings["wallet.id"]
+            raise WalletSettingsError("wallet.id cannot be saved in settings.")
         self._settings.update(settings)
 
     def __eq__(self, other: Any) -> bool:

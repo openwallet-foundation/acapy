@@ -1,3 +1,4 @@
+from aries_cloudagent.wallet.error import WalletSettingsError
 from asynctest import TestCase as AsyncTestCase
 
 from ..wallet_record import WalletRecord
@@ -82,10 +83,16 @@ class TestWalletRecord(AsyncTestCase):
             settings={"wallet.type": "in_memory"},
         )
         settings = {
-            "wallet.id": "my-wallet-id",
             "wallet.type": "indy",
         }
         wallet_record.update_settings(settings)
 
         assert wallet_record.settings.get("wallet.type") == "indy"
-        assert wallet_record.settings.get("wallet.id") is None
+
+    async def test_update_settings(self):
+        wallet_record = WalletRecord()
+        settings = {
+            "wallet.id": "my-wallet-id",
+        }
+        with self.assertRaises(WalletSettingsError):
+            wallet_record.update_settings(settings)

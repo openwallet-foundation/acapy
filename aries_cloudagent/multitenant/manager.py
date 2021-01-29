@@ -256,6 +256,8 @@ class MultitenantManager:
             wallet_record = await WalletRecord.retrieve_by_id(session, wallet_id)
 
             settings = wallet_record.settings
+            if "wallet.id" in settings:
+                del settings["wallet.id"]
             settings.update(new_settings)
             wallet_record.update_settings(settings)
             await wallet_record.save(session)
