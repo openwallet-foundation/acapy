@@ -44,7 +44,7 @@ class AliceAgent(DemoAgent):
             if no_auto
             else [
                 "--auto-accept-invites",
-                "--auto-accept-requests",
+                "--auto-accept-requests-peer",
                 "--auto-store-credential",
             ],
             seed=None,

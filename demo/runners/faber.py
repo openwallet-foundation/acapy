@@ -47,7 +47,7 @@ class FaberAgent(DemoAgent):
             prefix="Faber",
             extra_args=[]
             if no_auto
-            else ["--auto-accept-invites", "--auto-accept-requests"],
+            else ["--auto-accept-invites", "--auto-accept-requests-peer"],
             **kwargs,
         )
         self.connection_id = None
@@ -414,7 +414,9 @@ async def main(
 
             elif option == "4":
                 log_msg(
-                    "Creating a new invitation, please Receive and Accept this invitation using Alice agent"
+                    "Creating a new invitation, "
+                    "please receive and accept this "
+                    "invitation using Alice agent"
                 )
                 await generate_invitation(agent, use_did_exchange)
 
