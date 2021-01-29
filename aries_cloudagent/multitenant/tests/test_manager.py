@@ -414,7 +414,9 @@ class TestMultitenantManager(AsyncTestCase):
             assert isinstance(wallet_record, WalletRecord)
             assert wallet_record.wallet_webhook_urls == ["new-webhook-url"]
             assert wallet_record.wallet_dispatch_type == "default"
-            assert wallet_profile.settings.get("wallet.webhook_urls") == ["new-webhook-url"]
+            assert wallet_profile.settings.get("wallet.webhook_urls") == [
+                "new-webhook-url"
+            ]
             assert wallet_profile.settings.get("wallet.dispatch_type") == "default"
 
     async def test_remove_wallet_fails_no_wallet_key_but_required(self):
