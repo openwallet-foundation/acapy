@@ -8,7 +8,6 @@ from ....connections.models.conn_record import ConnRecord
 from ....core.error import BaseError
 from ....core.profile import ProfileSession
 from ....multitenant.manager import MultitenantManager
-from ....storage.error import StorageNotFoundError
 from ....wallet.base import BaseWallet
 from ....wallet.util import naked_to_did_key
 
@@ -102,20 +101,31 @@ class OutOfBandManager:
         # Multitenancy setup
         multitenant_mgr = self._session.inject(MultitenantManager, required=False)
         wallet_id = self._session.settings.get("wallet.id")
-        invi_rec = None
         public_did = None
 
         accept = bool(
             auto_accept
             or (
                 auto_accept is None
-                and self._session.settings.get("debug.auto_accept_requests")
+                and self._session.settings.get(
+                    "debug.auto_accept_requests_public"
+                    if public
+                    else "debug.auto_accept_requests_peer"
+                )
             )
         )
-        if public and (attachments or accept or multi_use):
+        if public and (attachments or multi_use):
             raise OutOfBandManagerError(
                 "Cannot create public invitation with "
-                "attachments, multi_use, or auto-accept"
+                "attachments, multi_use, or auto_accept"
+            )
+        if public and accept != self._session.settings.get(
+            "debug.auto_accept_requests_public",
+            False,
+        ):
+            raise OutOfBandManagerError(
+                "Cannot override auto-acceptance configuration for "
+                "requests to invitations on public DIDs"
             )
 
         message_attachments = []
@@ -129,9 +139,7 @@ class OutOfBandManager:
                     a_id,
                 )
                 message_attachments.append(
-                    InvitationMessage.wrap_message(
-                        cred_ex_rec.credential_offer_dict
-                    )
+                    InvitationMessage.wrap_message(cred_ex_rec.credential_offer_dict)
                 )
             elif a_type == "present-proof":
                 pres_ex_rec = await V10PresentationExchange.retrieve_by_id(
@@ -161,25 +169,16 @@ class OutOfBandManager:
                     "Cannot store metadata on public invitations"
                 )
 
-            try:
-                invi_rec = await InvitationRecord.retrieve_by_public_did(
-                    self._session, public_did
-                )  # reuse existing one if we have it
-                invi_msg = InvitationMessage.deserialize(invi_rec).invitation
-                self._logger.info(
-                    f"Re-using existing invitation record for public DID {public_did}"
-                )
-            except StorageNotFoundError:
-                invi_msg = InvitationMessage(
-                    label=my_label or self._session.settings.get("default_label"),
-                    handshake_protocols=(
-                        [DIDCommPrefix.qualify_current(DIDX_INVITATION)]
-                        if include_handshake
-                        else None
-                    ),
-                    request_attach=message_attachments,
-                    service=[f"did:sov:{public_did.did}"],
-                )
+            invi_msg = InvitationMessage(
+                label=my_label or self._session.settings.get("default_label"),
+                handshake_protocols=(
+                    [DIDCommPrefix.qualify_current(DIDX_INVITATION)]
+                    if include_handshake
+                    else None
+                ),
+                request_attach=message_attachments,
+                service=[f"did:sov:{public_did.did}"],
+            )
 
             # Add mapping for multitenant relay.
             if multitenant_mgr and wallet_id:
@@ -244,17 +243,16 @@ class OutOfBandManager:
                 for key, value in metadata.items():
                     await conn_rec.metadata_set(self._session, key, value)
 
-        if not invi_rec:
-            # Create invitation record
-            invi_rec = InvitationRecord(
-                state=InvitationRecord.STATE_INITIAL,
-                invi_msg_id=invi_msg._id,
-                invitation=invi_msg.serialize(),
-                public_did=public_did,
-                auto_accept=accept,
-                multi_use=multi_use,
+        # Create invitation record
+        invi_rec = InvitationRecord(
+            state=InvitationRecord.STATE_INITIAL,
+            invi_msg_id=invi_msg._id,
+            invitation=invi_msg.serialize(),
+        )
+        if not public:  # re-use same public invitation, only save for peer DID
+            await invi_rec.save(
+                self._session, reason="Created new invitation on peer DID"
             )
-            await invi_rec.save(self._session, reason="Created new invitation")
 
         return invi_rec
 

@@ -3,7 +3,6 @@
 import json
 import logging
 
-from re import match
 from typing import Sequence, Tuple
 
 from ....connections.models.conn_record import ConnRecord
@@ -18,7 +17,6 @@ from ....core.error import BaseError
 from ....core.profile import ProfileSession
 from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....messaging.responder import BaseResponder
-from ....messaging.valid import IndyDID
 from ....storage.base import BaseStorage
 from ....storage.error import StorageNotFoundError
 from ....storage.record import StorageRecord
@@ -29,9 +27,6 @@ from ....multitenant.manager import MultitenantManager
 
 from ...out_of_band.v1_0.messages.invitation import (
     InvitationMessage as OOBInvitationMessage,
-)
-from ...out_of_band.v1_0.models.invitation import (
-    InvitationRecord as OOBInvitationRecord,
 )
 
 from .messages.complete import DIDXComplete
@@ -110,7 +105,11 @@ class DIDXManager:
                 auto_accept
                 or (
                     auto_accept is None
-                    and self._session.settings.get("debug.auto_accept_invites")
+                    and self._session.settings.get(
+                        "debug.auto_accept_requests_public"
+                        if invitation.service_dids
+                        else "debug.auto_accept_requests_peer"
+                    )
                 )
             )
             else ConnRecord.ACCEPT_MANUAL
@@ -210,9 +209,6 @@ class DIDXManager:
         if invitation.service_blocks:
             pthid = invitation._id  # explicit
         else:
-            """# early try: keep around until logic in code is proven sound
-            pthid = did_doc.service[[s for s in did_doc.service][0]].id
-            """
             pthid = invitation.service_dids[0]  # should look like did:sov:abc...123
         attach = AttachDecorator.from_indy_dict(did_doc.serialize())
         await attach.data.sign(my_info.verkey, wallet)
@@ -251,7 +247,6 @@ class DIDXManager:
         )
 
         conn_rec = None
-        invi_rec = None
         connection_key = None
         my_info = None
         wallet = self._session.inject(BaseWallet)
@@ -259,25 +254,6 @@ class DIDXManager:
         # Multitenancy setup
         multitenant_mgr = self._session.inject(MultitenantManager, required=False)
         wallet_id = self._session.settings.get("wallet.id")
-        implicit = bool(match(IndyDID.PATTERN, request._thread.pthid))
-
-        try:
-            invi_rec = await OOBInvitationRecord.retrieve_by_tag_filter(
-                self._session,
-                tag_filter=(
-                    {
-                        "public_did" if implicit else "invi_msg_id": (
-                            request._thread.pthid
-                        )
-                    }
-                ),
-            )
-        except StorageNotFoundError:
-            if not implicit:  # OK to have no invitation record for implicit invitation
-                raise DIDXManagerError(
-                    f"No record of invitation {request._thread.pthid} "
-                    f"for request {request._id} on peer DID"
-                )
 
         # Determine what key will need to sign the response
         if receipt.recipient_did_public:
@@ -294,7 +270,7 @@ class DIDXManager:
             except StorageNotFoundError:
                 raise DIDXManagerError("No invitation found for pairwise connection")
 
-        if conn_rec:
+        if conn_rec:  # OOB mgr saves conn record only for explicit invite (public DID)
             connection_key = conn_rec.invitation_key
             if conn_rec.is_multiuse_invitation:
                 wallet = self._session.inject(BaseWallet)
@@ -343,7 +319,9 @@ class DIDXManager:
             )
         await self.store_did_document(conn_did_doc)
 
-        if conn_rec:
+        if conn_rec:  # request necessarily against explicit invitation (peer DID)
+            auto_accept = conn_rec.accept == ConnRecord.ACCEPT_AUTO  # null=manual
+
             conn_rec.their_label = request.label
             conn_rec.their_did = request.did
             conn_rec.state = ConnRecord.State.REQUEST.rfc23
@@ -352,13 +330,16 @@ class DIDXManager:
                 self._session, reason="Received connection request from invitation"
             )
         elif self._session.settings.get("public_invites"):
-            # request from public DID
+            # request from public DID (implicit invitation)
             my_info = await wallet.create_local_did()
 
             # Add mapping for multitenant relay
             if multitenant_mgr and wallet_id:
                 await multitenant_mgr.add_key(wallet_id, my_info.verkey)
 
+            auto_accept = self._session.settings.get(
+                "debug.auto_accept_requests_public", False
+            )
             conn_rec = ConnRecord(
                 my_did=my_info.did,
                 their_did=request.did,
@@ -368,12 +349,9 @@ class DIDXManager:
                 request_id=request._id,
                 state=ConnRecord.State.REQUEST.rfc23,
                 accept=(
-                    ConnRecord.ACCEPT_AUTO
-                    if invi_rec and invi_rec.auto_accept
-                    else ConnRecord.ACCEPT_MANUAL
-                ),  # oob manager calculates (including config) at conn record creation
+                    ConnRecord.ACCEPT_AUTO if auto_accept else ConnRecord.ACCEPT_MANUAL
+                ),
             )
-
             await conn_rec.save(
                 self._session, reason="Received connection request from public DID"
             )
@@ -384,7 +362,7 @@ class DIDXManager:
         # Attach the connection request so it can be found and responded to
         await conn_rec.attach_request(self._session, request)
 
-        if invi_rec and invi_rec.auto_accept:
+        if auto_accept:
             response = await self.create_response(conn_rec)
             responder = self._session.inject(BaseResponder, required=False)
             if responder:

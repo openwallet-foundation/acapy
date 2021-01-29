@@ -17,23 +17,10 @@ class TestInvitationRecord(AsyncTestCase):
             "invitation_url": None,
             "state": None,
             "trace": False,
-            "auto_accept": False,
-            "multi_use": False,
         }
 
         another = InvitationRecord(invi_msg_id="99999")
         assert invi_rec != another
-
-    async def test_retrieve_by_public_did(self):
-        """Test retrieve by public DID."""
-        TEST_DID = "55GkHamhTU1ZbTbV2ab9DE"
-        session = InMemoryProfile.test_session()
-        invi_rec = InvitationRecord(invi_msg_id="12345", public_did=TEST_DID)
-        await invi_rec.save(session)
-        result = await InvitationRecord.retrieve_by_public_did(
-            session=session, public_did=TEST_DID
-        )
-        assert result == invi_rec
 
 
 class TestInvitationRecordSchema(AsyncTestCase):

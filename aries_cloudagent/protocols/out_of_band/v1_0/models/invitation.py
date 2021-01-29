@@ -4,9 +4,8 @@ from typing import Any
 
 from marshmallow import fields
 
-from .....core.profile import ProfileSession
 from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
-from .....messaging.valid import INDY_DID, UUIDFour
+from .....messaging.valid import UUIDFour
 
 from ..messages.invitation import InvitationMessage
 
@@ -22,7 +21,7 @@ class InvitationRecord(BaseExchangeRecord):
     RECORD_TYPE = "oob_invitation"
     RECORD_ID_NAME = "invitation_id"
     WEBHOOK_TOPIC = "oob_invitation"
-    TAG_NAMES = {"invi_msg_id", "public_did"}
+    TAG_NAMES = {"invi_msg_id"}
 
     STATE_INITIAL = "initial"
     STATE_AWAIT_RESPONSE = "await_response"
@@ -36,10 +35,7 @@ class InvitationRecord(BaseExchangeRecord):
         state: str = None,
         invi_msg_id: str = None,
         invitation: dict = None,  # serialized invitation message
-        public_did: str = None,
         trace: bool = False,
-        auto_accept: bool = False,
-        multi_use: bool = False,
         **kwargs,
     ):
         """Initialize a new InvitationRecord."""
@@ -48,10 +44,7 @@ class InvitationRecord(BaseExchangeRecord):
         self.state = state
         self.invi_msg_id = invi_msg_id
         self.invitation = invitation
-        self.public_did = public_did
         self.trace = trace
-        self.auto_accept = auto_accept
-        self.multi_use = multi_use
 
     @property
     def invitation_id(self) -> str:
@@ -77,19 +70,8 @@ class InvitationRecord(BaseExchangeRecord):
                 "invitation_url",
                 "state",
                 "trace",
-                "auto_accept",
-                "multi_use",
             )
         }
-
-    @classmethod
-    async def retrieve_by_public_did(
-        cls, session: ProfileSession, public_did: str
-    ) -> "InvitationRecord":
-        """Retrieve an invitation record by its public DID."""
-        return await cls.retrieve_by_tag_filter(
-            session, {"public_did": public_did}, None
-        )
 
     def __eq__(self, other: Any) -> bool:
         """Comparison between records."""
@@ -123,11 +105,6 @@ class InvitationRecordSchema(BaseExchangeSchema):
         required=False,
         description="Out of band invitation object",
     )
-    public_did = fields.Str(
-        required=False,
-        description="Public DID in invitation, if applicable",
-        **INDY_DID,
-    )
     invitation_url = fields.Str(
         required=False,
         dump_only=True,
@@ -136,12 +113,4 @@ class InvitationRecordSchema(BaseExchangeSchema):
             "https://example.com/endpoint?"
             "c_i=eyJAdHlwZSI6ICIuLi4iLCAiLi4uIjogIi4uLiJ9XX0="
         ),
-    )
-    auto_accept = fields.Bool(
-        required=False,
-        description="Whether to auto-accept connection request",
-    )
-    multi_use = fields.Bool(
-        required=False,
-        description="Whether invitation is for multiple use",
     )
