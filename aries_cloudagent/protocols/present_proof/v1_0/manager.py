@@ -289,12 +289,6 @@ class PresentationManager:
             requested_referents[reft] = {"cred_id": preds_creds[reft]["cred_id"]}
             if reft in req_preds and reft in non_revoc_intervals:
                 requested_referents[reft]["non_revoked"] = non_revoc_intervals[reft]
-            """
-            if referent in req_preds and "non_revoked" in req_preds[referent]:
-                requested_referents[referent]["non_revoked"] = req_preds[referent][
-                    "non_revoked"
-                ]
-            """
 
         # extract mapping of presentation referents to credential ids
         for reft in requested_referents:
@@ -335,13 +329,6 @@ class PresentationManager:
         # of the presentation request or attributes
         epoch_now = int(time.time())
 
-        """
-        non_revoc_interval = {"from": 0, "to": epoch_now}
-        non_revoc_interval.update(
-            presentation_exchange_record.presentation_request.get("non_revoked") or {}
-        )
-        """
-
         revoc_reg_deltas = {}
         async with ledger:
             for precis in requested_referents.values():  # cred_id, non-revoc interval
@@ -374,34 +361,6 @@ class PresentationManager:
                         # often one cred satisfies many requested attrs/preds
                         if stamp_me["cred_id"] == credential_id:
                             stamp_me["timestamp"] = revoc_reg_deltas[key][3]
-
-                """
-                referent_non_revoc_interval = precis.get(
-                    "non_revoked", non_revoc_interval
-                )
-
-                if referent_non_revoc_interval:
-                    key = (
-                        f"{rev_reg_id}_{referent_non_revoc_interval.get('from', 0)}_"
-                        f"{referent_non_revoc_interval.get('to', epoch_now)}"
-                    )
-                    if key not in revoc_reg_deltas:
-                        (delta, delta_timestamp) = await ledger.get_revoc_reg_delta(
-                            rev_reg_id,
-                            referent_non_revoc_interval.get("from", 0),
-                            referent_non_revoc_interval.get("to", epoch_now),
-                        )
-                        revoc_reg_deltas[key] = (
-                            rev_reg_id,
-                            credential_id,
-                            delta,
-                            delta_timestamp,
-                        )
-                    for stamp_me in requested_referents.values():
-                        # often one cred satisfies many requested attrs/preds
-                        if stamp_me["cred_id"] == credential_id:
-                            stamp_me["timestamp"] = revoc_reg_deltas[key][3]
-                """
 
         # Get revocation states to prove non-revoked
         revocation_states = {}
