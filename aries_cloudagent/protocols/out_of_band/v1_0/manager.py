@@ -522,7 +522,14 @@ class OutOfBandManager(BaseConnectionManager):
                                 message=presentation_message,
                                 target_list=connection_targets,
                             )
-                        return presentation_message.serialize()
+                        if presentation_message is None:
+                            raise OutOfBandManagerError(
+                                "No presentation for proof request nonce={}".format(
+                                    indy_proof_request["nonce"]
+                                )
+                            )
+                        else:
+                            return presentation_message.serialize()
                     else:
                         raise OutOfBandManagerError(
                             "Unsupported request~attach type, \
