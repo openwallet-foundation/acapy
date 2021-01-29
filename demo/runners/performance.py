@@ -288,10 +288,14 @@ async def main(
             await faber.start_process()
 
             if mediation:
-                alice_mediator_agent = await start_mediator_agent(start_port + 8, genesis)
+                alice_mediator_agent = await start_mediator_agent(
+                    start_port + 8, genesis
+                )
                 if not alice_mediator_agent:
                     raise Exception("Mediator agent returns None :-(")
-                faber_mediator_agent = await start_mediator_agent(start_port + 11, genesis)
+                faber_mediator_agent = await start_mediator_agent(
+                    start_port + 11, genesis
+                )
                 if not faber_mediator_agent:
                     raise Exception("Mediator agent returns None :-(")
             else:
