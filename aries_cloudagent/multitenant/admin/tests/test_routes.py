@@ -133,7 +133,7 @@ class TestMultitenantRoutes(AsyncTestCase):
                         {
                             "wallet_id": "wallet_id",
                             "created_at": "1234567890",
-                            "settings": {"wallet.name": "test"}
+                            "settings": {"wallet.name": "test"},
                         }
                     ]
                 }
