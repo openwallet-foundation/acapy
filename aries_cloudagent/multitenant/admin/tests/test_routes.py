@@ -128,13 +128,15 @@ class TestMultitenantRoutes(AsyncTestCase):
 
             await test_module.wallets_list(self.request)
             mock_response.assert_called_once_with(
-                {"results": [
-                    {
-                        "wallet_id": "wallet_id",
-                        "created_at": "1234567890",
-                        "settings": {"wallet.name": "test"},
-                    }
-                ]}
+                {
+                    "results": [
+                        {
+                            "wallet_id": "wallet_id",
+                            "created_at": "1234567890",
+                            "settings": {"wallet.name": "test"}
+                        }
+                    ]
+                }
             )
 
     async def test_wallet_create(self):

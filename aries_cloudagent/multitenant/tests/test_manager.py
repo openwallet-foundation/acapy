@@ -412,7 +412,9 @@ class TestMultitenantManager(AsyncTestCase):
             wallet_record_save.assert_called_once()
 
             assert isinstance(wallet_record, WalletRecord)
-            assert wallet_record.wallet_webhook_urls == ["new-webhook-url"]
+            assert wallet_record.wallet_webhook_urls == [
+                "new-webhook-url"
+            ]
             assert wallet_record.wallet_dispatch_type == "default"
 
             assert wallet_profile.settings.get("wallet.webhook_urls") == ["new-webhook-url"]
