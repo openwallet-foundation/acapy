@@ -68,8 +68,10 @@ class AliceAgent(DemoAgent):
         return self._connection_ready.done() and self._connection_ready.result()
 
     async def handle_connections(self, message):
+        print(self.ident, "handle_connections", message["state"], message["rfc23_state"])
         conn_id = message["connection_id"]
         if (not self.connection_id) and message["rfc23_state"] == "invitation-received":
+            print(self.ident, "set connection id", conn_id)
             self.connection_id = conn_id
         if (
             message["connection_id"] == self.connection_id
@@ -227,15 +229,7 @@ async def input_invitation(agent):
                 log_msg("Invalid invitation:", str(e))
 
     with log_timer("Connect duration:"):
-        if "/out-of-band/" in details.get("@type", ""):
-            connection = await agent.admin_POST(
-                "/out-of-band/receive-invitation", details
-            )
-        else:
-            connection = await agent.admin_POST(
-                "/connections/receive-invitation", details
-            )
-        agent.connection_id = connection["connection_id"]
+        connection = await agent.receive_invite(details)
         log_json(connection, label="Invitation response:")
 
         await agent.detect_connection()
@@ -288,7 +282,7 @@ async def main(
             mediator_agent = None
 
         if multitenant:
-            # create an initial managed sub-wallet (also mediates)
+            # create an initial managed sub-wallet (also mediated)
             await agent.register_or_switch_wallet(
                 "Alice.initial",
                 webhook_port=agent.get_new_webhook_port(),

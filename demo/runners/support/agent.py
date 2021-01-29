@@ -623,8 +623,6 @@ class DemoAgent:
                 headers["Authorization"] = (
                     "Bearer " + self.managed_wallet_params["token"]
                 )
-                self.log("GET:", path)
-                self.log("Headers:", headers)
             response = await self.admin_request(
                 "GET", path, None, text, params, headers=headers
             )
@@ -679,8 +677,6 @@ class DemoAgent:
                 headers["Authorization"] = (
                     "Bearer " + self.managed_wallet_params["token"]
                 )
-                self.log("POST:", path)
-                self.log("Headers:", headers)
             response = await self.admin_request(
                 "POST", path, data, text, params, headers=headers
             )
@@ -874,11 +870,45 @@ class DemoAgent:
     def reset_postgres_stats(self):
         self.wallet_stats.clear()
 
+    async def get_invite(self, use_did_exchange: bool, auto_accept: bool = True):
+        self.connection_id = None
+        if use_did_exchange:
+            # TODO can mediation be used with DID exchange connections?
+            invi_rec = await self.admin_POST(
+                "/out-of-band/create-invitation",
+                {"include_handshake": True},
+                params={"auto_accept": json.dumps(auto_accept)},
+            )
+        else:
+            if self.mediation:
+                invi_rec = await self.admin_POST(
+                    "/connections/create-invitation",
+                    {"mediation_id": self.mediator_request_id},
+                    params={"auto_accept": json.dumps(auto_accept)},
+                )
+            else:
+                invi_rec = await self.admin_POST("/connections/create-invitation")
+
+        return invi_rec
+
+    async def receive_invite(self, invite, auto_accept: bool = True):
+        if "/out-of-band/" in invite.get("@type", ""):
+            connection = await self.admin_POST(
+                "/out-of-band/receive-invitation", invite
+            )
+        else:
+            connection = await self.admin_POST(
+                "/connections/receive-invitation", invite
+            )
+
+        self.connection_id = connection["connection_id"]
+        return connection
+
 
 class MediatorAgent(DemoAgent):
     def __init__(self, http_port: int, admin_port: int, **kwargs):
         super().__init__(
-            "Mediator.Agent",
+            "Mediator.Agent." + str(admin_port),
             http_port,
             admin_port,
             prefix="Mediator",

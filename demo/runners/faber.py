@@ -135,25 +135,12 @@ class FaberAgent(DemoAgent):
         self.log("Received message:", message["content"])
 
 
-async def generate_invitation(agent, use_did_exchange: bool):
+async def generate_invitation(agent, use_did_exchange: bool, auto_accept: bool = True):
     agent._connection_ready = asyncio.Future()
     with log_timer("Generate invitation duration:"):
         # Generate an invitation
         log_status("#7 Create a connection to alice and print out the invite details")
-        if use_did_exchange:
-            # TODO can mediation be used with DID exchange connections?
-            invi_rec = await agent.admin_POST(
-                "/out-of-band/create-invitation",
-                {"include_handshake": True},
-            )
-        else:
-            if agent.mediation:
-                invi_rec = await agent.admin_POST(
-                    "/connections/create-invitation",
-                    {"mediation_id": agent.mediator_request_id},
-                )
-            else:
-                invi_rec = await agent.admin_POST("/connections/create-invitation")
+        invi_rec = await agent.get_invite(use_did_exchange, auto_accept)
 
     qr = QRCode(border=1)
     qr.add_data(invi_rec["invitation_url"])
@@ -241,7 +228,7 @@ async def main(
             mediator_agent = None
 
         if multitenant:
-            # create an initial managed sub-wallet (also mediates)
+            # create an initial managed sub-wallet (also mediated)
             await agent.register_or_switch_wallet(
                 "Faber.initial",
                 public_did=True,
