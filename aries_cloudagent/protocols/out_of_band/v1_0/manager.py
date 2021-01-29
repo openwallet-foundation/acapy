@@ -459,7 +459,7 @@ class OutOfBandManager(BaseConnectionManager):
                             "serviceEndpoint"
                         )
                         present_request_msg["~service"] = service_deco
-                        presentation_exchange_record = V10PresentationExchange(
+                        presentation_ex_record = V10PresentationExchange(
                             connection_id=conn_rec.connection_id,
                             thread_id=present_request_msg["@id"],
                             initiator=V10PresentationExchange.INITIATOR_EXTERNAL,
@@ -472,21 +472,18 @@ class OutOfBandManager(BaseConnectionManager):
                             trace=(invi_msg._trace is not None),
                         )
 
-                        presentation_exchange_record.presentation_request = (
-                            indy_proof_request
-                        )
-                        presentation_exchange_record = (
+                        presentation_ex_record.presentation_request = indy_proof_request
+                        presentation_ex_record = (
                             await proof_present_mgr.receive_request(
-                                presentation_exchange_record
+                                presentation_ex_record
                             )
                         )
 
-                        if presentation_exchange_record.auto_present:
+                        if presentation_ex_record.auto_present:
                             presentation_preview = None
-                            if presentation_exchange_record.presentation_proposal_dict:
+                            if presentation_ex_record.presentation_proposal_dict:
                                 exchange_pres_proposal = PresentationProposal.deserialize(
-                                    presentation_exchange_record.
-                                    presentation_proposal_dict
+                                    presentation_ex_record.presentation_proposal_dict
                                 )
                                 presentation_preview = (
                                     exchange_pres_proposal.presentation_proposal
@@ -505,10 +502,10 @@ class OutOfBandManager(BaseConnectionManager):
                                 return
 
                             (
-                                presentation_exchange_record,
+                                presentation_ex_record,
                                 presentation_message,
                             ) = await proof_present_mgr.create_presentation(
-                                presentation_exchange_record=presentation_exchange_record,
+                                presentation_exchange_record=presentation_ex_record,
                                 requested_credentials=req_creds,
                                 comment=(
                                     "auto-presented for proof request nonce={}".format(
