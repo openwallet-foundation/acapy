@@ -249,11 +249,6 @@ class OutOfBandManager:
             invi_msg_id=invi_msg._id,
             invitation=invi_msg.serialize(),
         )
-        if not public:  # re-use same public invitation, only save for peer DID
-            await invi_rec.save(
-                self._session, reason="Created new invitation on peer DID"
-            )
-
         return invi_rec
 
     async def receive_invitation(
