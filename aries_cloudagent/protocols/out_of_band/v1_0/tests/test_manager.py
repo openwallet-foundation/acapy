@@ -110,7 +110,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             assert not invi_rec.invitation.get("request~attach")
             assert invi_rec.invitation["label"] == "This guy"
             assert (
-                DIDCommPrefix.qualify_current(test_module.DIDX_INVITATION)
+                DIDCommPrefix.qualify_current(test_module.DIDX_PROTO)
                 in invi_rec.invitation["handshake_protocols"]
             )
             assert invi_rec.invitation["service"] == [f"did:sov:{TestConfig.test_did}"]
@@ -174,7 +174,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             )
             assert "Invitation must include" in str(context.exception)
 
-    async def test_create_invitation_attachment_cred_offer(self):
+    async def test_create_invitation_attachment_v1_0_cred_offer(self):
         self.manager.session.context.update_settings({"public_invites": True})
         with async_mock.patch.object(
             InMemoryWallet, "get_public_did", autospec=True
@@ -199,6 +199,38 @@ class TestOOBManager(AsyncTestCase, TestConfig):
 
             assert invi_rec.invitation["request~attach"]
             mock_retrieve_cxid.assert_called_once_with(self.manager.session, "dummy-id")
+
+    async def test_create_invitation_attachment_v2_0_cred_offer(self):
+        self.manager.session.context.update_settings({"public_invites": True})
+        with async_mock.patch.object(
+            InMemoryWallet, "get_public_did", autospec=True
+        ) as mock_wallet_get_public_did, async_mock.patch.object(
+            test_module.V20CredOffer, "deserialize", autospec=True
+        ) as mock_v20_cred_offer_deser, async_mock.patch.object(
+            test_module.V10CredentialExchange,
+            "retrieve_by_id",
+            async_mock.CoroutineMock(),
+        ) as mock_retrieve_cxid_v1, async_mock.patch.object(
+            test_module.V20CredExRecord,
+            "retrieve_by_id",
+            async_mock.CoroutineMock(),
+        ) as mock_retrieve_cxid_v2:
+            mock_wallet_get_public_did.return_value = DIDInfo(
+                TestConfig.test_did, TestConfig.test_verkey, None
+            )
+            mock_v20_cred_offer_deser.return_value = async_mock.MagicMock(
+                offer=async_mock.MagicMock(return_value={"cred": "offer"})
+            )
+            mock_retrieve_cxid_v1.side_effect = test_module.StorageNotFoundError()
+            invi_rec = await self.manager.create_invitation(
+                my_endpoint=TestConfig.test_endpoint,
+                public=True,
+                include_handshake=True,
+                multi_use=False,
+                attachments=[{"type": "credential-offer", "id": "dummy-id"}],
+            )
+
+            assert invi_rec.invitation["request~attach"]
 
     async def test_create_invitation_attachment_present_proof(self):
         self.session.context.update_settings({"public_invites": True})
@@ -306,7 +338,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         assert not invi_rec.invitation.get("request~attach")
         assert invi_rec.invitation["label"] == "That guy"
         assert (
-            DIDCommPrefix.qualify_current(test_module.DIDX_INVITATION)
+            DIDCommPrefix.qualify_current(test_module.DIDX_PROTO)
             in invi_rec.invitation["handshake_protocols"]
         )
         service = invi_rec.invitation["service"][0]
@@ -359,7 +391,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             mock_oob_invi = async_mock.MagicMock(
                 request_attach=[],
                 handshake_protocols=[
-                    pfx.qualify(test_module.DIDX_INVITATION) for pfx in DIDCommPrefix
+                    pfx.qualify(test_module.DIDX_PROTO) for pfx in DIDCommPrefix
                 ],
                 service_dids=[],
                 service_blocks=[
@@ -406,7 +438,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             )
             mock_oob_invi = async_mock.MagicMock(
                 handshake_protocols=[
-                    pfx.qualify(test_module.DIDX_INVITATION) for pfx in DIDCommPrefix
+                    pfx.qualify(test_module.DIDX_PROTO) for pfx in DIDCommPrefix
                 ],
                 service_dids=[TestConfig.test_did],
                 service_blocks=[],
@@ -436,7 +468,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 service_blocks=[],
                 service_dids=[TestConfig.test_did],
                 handshake_protocols=[
-                    pfx.qualify(test_module.DIDX_INVITATION) for pfx in DIDCommPrefix
+                    pfx.qualify(test_module.DIDX_PROTO) for pfx in DIDCommPrefix
                 ],
                 request_attach=[{"having": "attachment", "is": "no", "good": "here"}],
             )

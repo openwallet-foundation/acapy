@@ -8,20 +8,22 @@ from ....connections.models.conn_record import ConnRecord
 from ....core.error import BaseError
 from ....core.profile import ProfileSession
 from ....multitenant.manager import MultitenantManager
+from ....storage.error import StorageNotFoundError
 from ....wallet.base import BaseWallet
 from ....wallet.util import naked_to_did_key
 
+from ...didexchange.v1_0.message_types import ARIES_PROTOCOL as DIDX_PROTO
 from ...didexchange.v1_0.manager import DIDXManager
 from ...didcomm_prefix import DIDCommPrefix
 from ...issue_credential.v1_0.models.credential_exchange import V10CredentialExchange
+from ...issue_credential.v2_0.models.cred_ex_record import V20CredExRecord
+from ...issue_credential.v2_0.messages.cred_offer import V20CredOffer
 from ...present_proof.v1_0.message_types import PRESENTATION_REQUEST
 from ...present_proof.v1_0.models.presentation_exchange import V10PresentationExchange
 
 from .messages.invitation import InvitationMessage
 from .messages.service import Service as ServiceMessage
 from .models.invitation import InvitationRecord
-
-DIDX_INVITATION = "didexchange/v1.0"
 
 
 class OutOfBandManagerError(BaseError):
@@ -116,13 +118,28 @@ class OutOfBandManager:
             a_id = atch.get("id")
 
             if a_type == "credential-offer":
-                cred_ex_rec = await V10CredentialExchange.retrieve_by_id(
-                    self._session,
-                    a_id,
-                )
-                message_attachments.append(
-                    InvitationMessage.wrap_message(cred_ex_rec.credential_offer_dict)
-                )
+                try:
+                    cred_ex_rec = await V10CredentialExchange.retrieve_by_id(
+                        self._session,
+                        a_id,
+                    )
+                    message_attachments.append(
+                        InvitationMessage.wrap_message(
+                            cred_ex_rec.credential_offer_dict
+                        )
+                    )
+                except StorageNotFoundError:
+                    cred_ex_rec = await V20CredExRecord.retrieve_by_id(
+                        self._session,
+                        a_id,
+                    )
+                    message_attachments.append(
+                        InvitationMessage.wrap_message(
+                            V20CredOffer.deserialize(
+                                cred_ex_rec.cred_offer
+                            ).offer()  # default to indy format: will change for DIF
+                        )
+                    )
             elif a_type == "present-proof":
                 pres_ex_rec = await V10PresentationExchange.retrieve_by_id(
                     self._session,
@@ -159,7 +176,7 @@ class OutOfBandManager:
             invi_msg = InvitationMessage(
                 label=my_label or self._session.settings.get("default_label"),
                 handshake_protocols=(
-                    [DIDCommPrefix.qualify_current(DIDX_INVITATION)]
+                    [DIDCommPrefix.qualify_current(DIDX_PROTO)]
                     if include_handshake
                     else None
                 ),
@@ -197,7 +214,7 @@ class OutOfBandManager:
             invi_msg = InvitationMessage(
                 label=my_label or self._session.settings.get("default_label"),
                 handshake_protocols=(
-                    [DIDCommPrefix.qualify_current(DIDX_INVITATION)]
+                    [DIDCommPrefix.qualify_current(DIDX_PROTO)]
                     if include_handshake
                     else None
                 ),
@@ -249,10 +266,14 @@ class OutOfBandManager:
     ) -> ConnRecord:
         """Receive an out of band invitation message."""
 
-        unq_handshake_protos = {
-            DIDCommPrefix.unqualify(proto) for proto in invi_msg.handshake_protocols
-        }
-        if unq_handshake_protos == {DIDX_INVITATION}:
+        unq_handshake_protos = list(
+            dict.fromkeys(
+                [DIDCommPrefix.unqualify(hsp) for hsp in invi_msg.handshake_protocols]
+            )
+        )  # retain order while removing duplicate protocols modulo DIDComm prefix
+
+        # connections/1.0 protocol can't take oob invitation message in any case
+        if DIDX_PROTO in unq_handshake_protos:
             if len(invi_msg.request_attach) != 0:
                 raise OutOfBandManagerError(
                     "request block must be empty for invitation message type."
@@ -263,7 +284,6 @@ class OutOfBandManager:
                 invi_msg,
                 auto_accept=auto_accept,
             )
-
         elif (
             len(invi_msg.request_attach) == 1
             and DIDCommPrefix.unqualify(invi_msg.request_attach[0].data.json["@type"])
