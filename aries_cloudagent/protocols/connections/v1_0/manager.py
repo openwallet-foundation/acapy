@@ -32,7 +32,7 @@ from .messages.connection_request import ConnectionRequest
 from .messages.connection_response import ConnectionResponse
 from .messages.problem_report import ProblemReportReason
 from .models.connection_detail import ConnectionDetail
-from .base_manager import BaseConnectionManager
+from ....connections.base_manager import BaseConnectionManager
 
 
 class ConnectionManagerError(BaseError):

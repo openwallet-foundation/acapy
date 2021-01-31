@@ -7,7 +7,10 @@ from .....cache.in_memory import InMemoryCache
 from .....config.base import InjectionError
 from .....connections.models.conn_record import ConnRecord
 from .....connections.models.connection_target import ConnectionTarget
-from ..base_manager import BaseConnectionManager, BaseConnectionManagerError
+from .....connections.base_manager import (
+    BaseConnectionManager,
+    BaseConnectionManagerError,
+)
 from .....connections.models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
 from .....core.in_memory import InMemoryProfile
 from .....ledger.base import BaseLedger

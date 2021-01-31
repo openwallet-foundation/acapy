@@ -12,7 +12,7 @@ from ....connections.models.diddoc import (
     PublicKeyType,
     Service,
 )
-from ...connections.v1_0.base_manager import BaseConnectionManager
+from ....connections.base_manager import BaseConnectionManager
 from ....core.error import BaseError
 from ....core.profile import ProfileSession
 from ....messaging.decorators.attach_decorator import AttachDecorator

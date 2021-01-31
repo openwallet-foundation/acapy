@@ -4,19 +4,21 @@ Class to provide some common utilities.
 For Connection, DIDExchange and OutOfBand Manager.
 """
 
-from ....core.profile import ProfileSession
-from ....connections.models.conn_record import ConnRecord
-from ....wallet.base import BaseWallet
-from .messages.connection_invitation import ConnectionInvitation
-from ....ledger.base import BaseLedger
-from ....core.error import BaseError
-from ....connections.models.connection_target import ConnectionTarget
-from ....wallet.util import did_key_to_naked
+from ..core.profile import ProfileSession
+from .models.conn_record import ConnRecord
+from ..wallet.base import BaseWallet
+from ..protocols.connections.v1_0.messages.connection_invitation import (
+    ConnectionInvitation,
+)
+from ..ledger.base import BaseLedger
+from ..core.error import BaseError
+from .models.connection_target import ConnectionTarget
+from ..wallet.util import did_key_to_naked
 import logging
 from typing import Sequence, Tuple
-from ....connections.models.diddoc import DIDDoc
-from ....storage.base import BaseStorage
-from ....storage.record import StorageRecord
+from .models.diddoc import DIDDoc
+from ..storage.base import BaseStorage
+from ..storage.record import StorageRecord
 
 
 class BaseConnectionManagerError(BaseError):

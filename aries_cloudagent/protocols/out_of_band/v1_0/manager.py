@@ -28,7 +28,7 @@ from .messages.invitation import InvitationMessage
 from .messages.reuse import HandshakeReuse
 from .messages.reuse_accept import HandshakeReuseAccept
 from .messages.problem_report import ProblemReportReason, ProblemReport
-from ...connections.v1_0.base_manager import BaseConnectionManager
+from ....connections.base_manager import BaseConnectionManager
 from ....transport.inbound.receipt import MessageReceipt
 
 from .messages.service import Service as ServiceMessage
