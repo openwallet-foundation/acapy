@@ -4,6 +4,9 @@ Class to provide some common utilities.
 For Connection, DIDExchange and OutOfBand Manager.
 """
 
+import logging
+from typing import Sequence, Tuple
+
 from ..core.profile import ProfileSession
 from .models.conn_record import ConnRecord
 from ..wallet.base import BaseWallet
@@ -14,8 +17,6 @@ from ..ledger.base import BaseLedger
 from ..core.error import BaseError
 from .models.connection_target import ConnectionTarget
 from ..wallet.util import did_key_to_naked
-import logging
-from typing import Sequence, Tuple
 from .models.diddoc import DIDDoc
 from ..storage.base import BaseStorage
 from ..storage.record import StorageRecord
