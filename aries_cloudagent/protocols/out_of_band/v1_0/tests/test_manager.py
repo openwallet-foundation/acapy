@@ -41,8 +41,6 @@ class TestConfig:
     test_did = "55GkHamhTU1ZbTbV2ab9DE"
     test_verkey = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
     test_endpoint = "http://localhost"
-    DIDX_INVITATION = "didexchange/1.0"
-    CONNECTION_INVITATION = "connections/1.0"
     test_target_did = "GbuDUYXaUZRfHD2jeDuQuP"
     their_public_did = "55GkHamhTU1ZbTbV2ab9DE"
 
@@ -204,15 +202,15 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             mock_retrieve_cxid.return_value = async_mock.MagicMock(
                 credential_offer_dict={"cred": "offer"}
             )
-            with self.assertRaises(OutOfBandManagerError) as context:
-                invi_rec = await self.manager.create_invitation(
-                    my_endpoint=TestConfig.test_endpoint,
-                    public=True,
-                    include_handshake=True,
-                    multi_use=False,
-                    attachments=[{"type": "credential-offer", "id": "dummy-id"}],
-                )
-                assert "Unknown attachment type" in str(context.exception)
+            invi_rec = await self.manager.create_invitation(
+                my_endpoint=TestConfig.test_endpoint,
+                public=True,
+                include_handshake=True,
+                multi_use=False,
+                attachments=[{"type": "credential-offer", "id": "dummy-id"}],
+            )
+
+            assert isinstance(invi_rec, InvitationRecord)
 
     async def test_create_invitation_attachment_v2_0_cred_offer(self):
         self.manager.session.context.update_settings({"public_invites": True})
@@ -438,8 +436,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             )
             mock_oob_invi = async_mock.MagicMock(
                 handshake_protocols=[
-                    pfx.qualify(test_module.CONNECTION_INVITATION)
-                    for pfx in DIDCommPrefix
+                    pfx.qualify(test_module.CONN_PROTO) for pfx in DIDCommPrefix
                 ],
                 service_dids=[],
                 label="test",
@@ -575,7 +572,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
 
             mock_oob_invi = async_mock.MagicMock(
                 handshake_protocols=[
-                    pfx.qualify(test_module.DIDX_INVITATION) for pfx in DIDCommPrefix
+                    pfx.qualify(test_module.DIDX_PROTO) for pfx in DIDCommPrefix
                 ],
                 service_dids=[TestConfig.test_did],
                 service_blocks=[],
