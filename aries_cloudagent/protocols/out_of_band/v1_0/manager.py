@@ -10,11 +10,17 @@ from ....connections.models.conn_record import ConnRecord
 from ....core.error import BaseError
 from ....core.profile import ProfileSession
 from ....multitenant.manager import MultitenantManager
+from ....storage.error import StorageNotFoundError
 from ....wallet.base import BaseWallet
 from ....wallet.util import naked_to_did_key, b64_to_bytes, did_key_to_naked
 
+from ...didexchange.v1_0.message_types import ARIES_PROTOCOL as DIDX_PROTO
+from ...connections.v1_0.message_types import ARIES_PROTOCOL as CONN_PROTO
 from ...didexchange.v1_0.manager import DIDXManager
 from ...didcomm_prefix import DIDCommPrefix
+from ...issue_credential.v1_0.models.credential_exchange import V10CredentialExchange
+from ...issue_credential.v2_0.models.cred_ex_record import V20CredExRecord
+from ...issue_credential.v2_0.messages.cred_offer import V20CredOffer
 from ...present_proof.v1_0.message_types import PRESENTATION_REQUEST
 from ...present_proof.v1_0.models.presentation_exchange import V10PresentationExchange
 
@@ -24,7 +30,6 @@ from .messages.reuse_accept import HandshakeReuseAccept
 from .messages.problem_report import ProblemReportReason, ProblemReport
 from ...connections.v1_0.base_manager import BaseConnectionManager
 from ....transport.inbound.receipt import MessageReceipt
-from ....storage.error import StorageNotFoundError
 
 from .messages.service import Service as ServiceMessage
 from .models.invitation import InvitationRecord
@@ -39,10 +44,6 @@ from ...present_proof.v1_0.messages.presentation_proposal import PresentationPro
 from ...present_proof.v1_0.util.indy import indy_proof_req_preview2indy_requested_creds
 from ....indy.holder import IndyHolder
 from ....messaging.decorators.attach_decorator import AttachDecorator
-
-
-DIDX_INVITATION = "didexchange/1.0"
-CONNECTION_INVITATION = "connections/1.0"
 
 
 class OutOfBandManagerError(BaseError):
@@ -138,15 +139,30 @@ class OutOfBandManager(BaseConnectionManager):
             a_type = atch.get("type")
             a_id = atch.get("id")
 
-            # if a_type == "credential-offer":
-            #     cred_ex_rec = await V10CredentialExchange.retrieve_by_id(
-            #         self._session,
-            #         a_id,
-            #     )
-            #     message_attachments.append(
-            #         InvitationMessage.wrap_message(cred_ex_rec.credential_offer_dict)
-            #     )
-            if a_type == "present-proof":
+            if a_type == "credential-offer":
+                try:
+                    cred_ex_rec = await V10CredentialExchange.retrieve_by_id(
+                        self._session,
+                        a_id,
+                    )
+                    message_attachments.append(
+                        InvitationMessage.wrap_message(
+                            cred_ex_rec.credential_offer_dict
+                        )
+                    )
+                except StorageNotFoundError:
+                    cred_ex_rec = await V20CredExRecord.retrieve_by_id(
+                        self._session,
+                        a_id,
+                    )
+                    message_attachments.append(
+                        InvitationMessage.wrap_message(
+                            V20CredOffer.deserialize(
+                                cred_ex_rec.cred_offer
+                            ).offer()  # default to indy format: will change for DIF
+                        )
+                    )
+            elif a_type == "present-proof":
                 pres_ex_rec = await V10PresentationExchange.retrieve_by_id(
                     self._session,
                     a_id,
@@ -159,9 +175,9 @@ class OutOfBandManager(BaseConnectionManager):
             else:
                 raise OutOfBandManagerError(f"Unknown attachment type: {a_type}")
         if include_handshake and not use_connections:
-            handshake_protocol = [DIDCommPrefix.qualify_current(DIDX_INVITATION)]
+            handshake_protocol = [DIDCommPrefix.qualify_current(DIDX_PROTO)]
         elif include_handshake and use_connections:
-            handshake_protocol = [DIDCommPrefix.qualify_current(CONNECTION_INVITATION)]
+            handshake_protocol = [DIDCommPrefix.qualify_current(CONN_PROTO)]
         else:
             handshake_protocol = None
         if public:
@@ -394,16 +410,21 @@ class OutOfBandManager(BaseConnectionManager):
             ):
                 conn_rec = None
         if conn_rec is None:
+            if len(unq_handshake_protos) == 0:
+                raise OutOfBandManagerError(
+                    "No existing connection exists and \
+                        handshake_protocol is missing"
+                )
             # Create a new connection
             for proto in unq_handshake_protos:
-                if proto == DIDX_INVITATION:
+                if proto == DIDX_PROTO:
                     didx_mgr = DIDXManager(self._session)
                     conn_rec = await didx_mgr.receive_invitation(
                         invitation=invi_msg,
                         their_public_did=public_did,
                         auto_accept=True,
                     )
-                elif proto == CONNECTION_INVITATION:
+                elif proto == CONN_PROTO:
                     service.recipient_keys = [
                         did_key_to_naked(key) for key in service.recipient_keys or []
                     ]
@@ -413,9 +434,7 @@ class OutOfBandManager(BaseConnectionManager):
                     connection_invitation = ConnectionInvitation.deserialize(
                         {
                             "@id": invi_msg._id,
-                            "@type": DIDCommPrefix.qualify_current(
-                                CONNECTION_INVITATION
-                            ),
+                            "@type": DIDCommPrefix.qualify_current(CONN_PROTO),
                             "label": invi_msg.label,
                             "recipientKeys": service.recipient_keys,
                             "serviceEndpoint": service.service_endpoint,
