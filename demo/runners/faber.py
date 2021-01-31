@@ -12,7 +12,12 @@ from aiohttp import ClientError
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from runners.support.agent import DemoAgent, default_genesis_txns  # noqa:E402
+from runners.support.agent import (  # noqa:E402
+    DemoAgent,
+    default_genesis_txns,
+    start_mediator_agent,
+    connect_wallet_to_mediator,
+)
 from runners.support.utils import (  # noqa:E402
     log_msg,
     log_status,
@@ -59,6 +64,7 @@ class FaberAgent(DemoAgent):
 
     async def detect_connection(self):
         await self._connection_ready
+        self._connection_ready = None
 
     @property
     def connection_ready(self):
@@ -68,6 +74,10 @@ class FaberAgent(DemoAgent):
         pass
 
     async def handle_connections(self, message):
+        # a bit of a hack, but for the mediator connection self._connection_ready will be None
+        if not self._connection_ready:
+            return
+
         conn_id = message["connection_id"]
         if message["state"] == "invitation":
             self.connection_id = conn_id
@@ -125,18 +135,12 @@ class FaberAgent(DemoAgent):
         self.log("Received message:", message["content"])
 
 
-async def generate_invitation(agent, use_did_exchange: bool):
+async def generate_invitation(agent, use_did_exchange: bool, auto_accept: bool = True):
     agent._connection_ready = asyncio.Future()
     with log_timer("Generate invitation duration:"):
         # Generate an invitation
         log_status("#7 Create a connection to alice and print out the invite details")
-        if use_did_exchange:
-            invi_rec = await agent.admin_POST(
-                "/out-of-band/create-invitation",
-                {"include_handshake": True},
-            )
-        else:
-            invi_rec = await agent.admin_POST("/connections/create-invitation")
+        invi_rec = await agent.get_invite(use_did_exchange, auto_accept)
 
     qr = QRCode(border=1)
     qr.add_data(invi_rec["invitation_url"])
@@ -179,6 +183,7 @@ async def main(
     tails_server_base_url: str = None,
     show_timing: bool = False,
     multitenant: bool = False,
+    mediation: bool = False,
     use_did_exchange: bool = False,
     wallet_type: str = None,
 ):
@@ -188,6 +193,7 @@ async def main(
         sys.exit(1)
 
     agent = None
+    mediator_agent = None
 
     try:
         log_status(
@@ -203,6 +209,7 @@ async def main(
             tails_server_base_url=tails_server_base_url,
             timing=show_timing,
             multitenant=multitenant,
+            mediation=mediation,
             wallet_type=wallet_type,
         )
         await agent.listen_webhooks(start_port + 2)
@@ -213,13 +220,26 @@ async def main(
         log_msg("Admin URL is at:", agent.admin_url)
         log_msg("Endpoint URL is at:", agent.endpoint)
 
+        if mediation:
+            mediator_agent = await start_mediator_agent(start_port + 4, genesis)
+            if not mediator_agent:
+                raise Exception("Mediator agent returns None :-(")
+        else:
+            mediator_agent = None
+
         if multitenant:
-            # create an initial managed sub-wallet
+            # create an initial managed sub-wallet (also mediated)
             await agent.register_or_switch_wallet(
                 "Faber.initial",
                 public_did=True,
                 webhook_port=agent.get_new_webhook_port(),
+                mediator_agent=mediator_agent,
             )
+        elif mediation:
+            # we need to pre-connect the agent to its mediator
+            if not await connect_wallet_to_mediator(agent, mediator_agent):
+                log_msg("Mediation setup FAILED :-(")
+                raise Exception("Mediation setup FAILED :-(")
 
         # Create a schema
         cred_def_id = await create_schema_and_cred_def(agent, revocation)
@@ -227,9 +247,6 @@ async def main(
         # TODO add an additional credential for Student ID
 
         await generate_invitation(agent, use_did_exchange)
-
-        log_msg("Waiting for connection...")
-        await agent.detect_connection()
 
         exchange_tracing = False
         options = (
@@ -264,10 +281,13 @@ async def main(
                         target_wallet_name,
                         webhook_port=agent.get_new_webhook_port(),
                         public_did=True,
+                        mediator_agent=mediator_agent,
                     )
                 else:
                     created = await agent.register_or_switch_wallet(
-                        target_wallet_name, public_did=True
+                        target_wallet_name,
+                        public_did=True,
+                        mediator_agent=mediator_agent,
                     )
                 # create a schema and cred def for the new wallet
                 # TODO check first in case we are switching between existing wallets
@@ -432,7 +452,11 @@ async def main(
     finally:
         terminated = True
         try:
+            if mediator_agent:
+                log_msg("Shutting down mediator agent ...")
+                await mediator_agent.terminate()
             if agent:
+                log_msg("Shutting down faber agent ...")
                 await agent.terminate()
         except Exception:
             LOGGER.exception("Error terminating agent:")
@@ -478,12 +502,20 @@ if __name__ == "__main__":
         "--multitenant", action="store_true", help="Enable multitenancy options"
     )
     parser.add_argument(
+        "--mediation", action="store_true", help="Enable mediation functionality"
+    )
+    parser.add_argument(
         "--wallet-type",
         type=str,
         metavar="<wallet-type>",
         help="Set the agent wallet type",
     )
     args = parser.parse_args()
+
+    if args.did_exchange and args.mediation:
+        raise Exception(
+            "DID-Exchange connection protocol is not (yet) compatible with mediation"
+        )
 
     ENABLE_PYDEVD_PYCHARM = os.getenv("ENABLE_PYDEVD_PYCHARM", "").lower()
     ENABLE_PYDEVD_PYCHARM = ENABLE_PYDEVD_PYCHARM and ENABLE_PYDEVD_PYCHARM not in (
@@ -531,6 +563,7 @@ if __name__ == "__main__":
                 tails_server_base_url,
                 args.timing,
                 args.multitenant,
+                args.mediation,
                 args.did_exchange,
                 args.wallet_type,
             )
