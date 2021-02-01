@@ -7,6 +7,10 @@ from .....cache.in_memory import InMemoryCache
 from .....config.base import InjectionError
 from .....connections.models.conn_record import ConnRecord
 from .....connections.models.connection_target import ConnectionTarget
+from .....connections.base_manager import (
+    BaseConnectionManager,
+    BaseConnectionManagerError,
+)
 from .....connections.models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
 from .....core.in_memory import InMemoryProfile
 from .....ledger.base import BaseLedger
@@ -1994,7 +1998,7 @@ class TestConnectionManager(AsyncTestCase):
             retrieve_invitation=async_mock.CoroutineMock(return_value=conn_invite),
         )
 
-        with self.assertRaises(ConnectionManagerError):
+        with self.assertRaises(BaseConnectionManagerError):
             await self.manager.fetch_connection_targets(mock_conn)
 
     async def test_fetch_connection_targets_conn_invitation_did_ledger(self):
@@ -2051,7 +2055,7 @@ class TestConnectionManager(AsyncTestCase):
             their_role=ConnRecord.Role.RESPONDER.rfc23,
         )
 
-        with self.assertRaises(ConnectionManagerError):
+        with self.assertRaises(BaseConnectionManagerError):
             await self.manager.fetch_connection_targets(mock_conn)
 
     async def test_fetch_connection_targets_oob_invitation_svc_did_ledger(self):
@@ -2176,18 +2180,18 @@ class TestConnectionManager(AsyncTestCase):
         assert target.sender_key == local_did.verkey
 
     async def test_diddoc_connection_targets_diddoc_underspecified(self):
-        with self.assertRaises(ConnectionManagerError):
+        with self.assertRaises(BaseConnectionManagerError):
             self.manager.diddoc_connection_targets(None, self.test_verkey)
 
         x_did_doc = DIDDoc(did=None)
-        with self.assertRaises(ConnectionManagerError):
+        with self.assertRaises(BaseConnectionManagerError):
             self.manager.diddoc_connection_targets(x_did_doc, self.test_verkey)
 
         x_did_doc = self.make_did_doc(
             did=self.test_target_did, verkey=self.test_target_verkey
         )
         x_did_doc._service = {}
-        with self.assertRaises(ConnectionManagerError):
+        with self.assertRaises(BaseConnectionManagerError):
             self.manager.diddoc_connection_targets(x_did_doc, self.test_verkey)
 
     async def test_establish_inbound(self):

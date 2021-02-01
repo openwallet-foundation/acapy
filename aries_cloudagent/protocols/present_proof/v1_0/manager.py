@@ -13,6 +13,7 @@ from ....ledger.base import BaseLedger
 from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....messaging.responder import BaseResponder
 from ....revocation.models.revocation_registry import RevocationRegistry
+from ....storage.error import StorageNotFoundError
 
 from .models.presentation_exchange import V10PresentationExchange
 from .messages.presentation_ack import PresentationAck
@@ -451,16 +452,25 @@ class PresentationManager:
         presentation = message.indy_proof()
 
         thread_id = message._thread_id
-        connection_id_filter = (
-            {"connection_id": connection_record.connection_id}
-            if connection_record is not None
-            else None
-        )
-        (
-            presentation_exchange_record
-        ) = await V10PresentationExchange.retrieve_by_tag_filter(
-            self._session, {"thread_id": thread_id}, connection_id_filter
-        )
+        try:
+            connection_id_filter = (
+                {"connection_id": connection_record.connection_id}
+                if connection_record is not None
+                else None
+            )
+            (
+                presentation_exchange_record
+            ) = await V10PresentationExchange.retrieve_by_tag_filter(
+                self._session, {"thread_id": thread_id}, connection_id_filter
+            )
+        except StorageNotFoundError:
+            # Proof Request not bound to any connection
+            # Was requested as a request_attach in OOB Message
+            (
+                presentation_exchange_record
+            ) = await V10PresentationExchange.retrieve_by_tag_filter(
+                self._session, {"thread_id": thread_id}, None
+            )
 
         # Check for bait-and-switch in presented attribute values vs. proposal
         if presentation_exchange_record.presentation_proposal_dict:
