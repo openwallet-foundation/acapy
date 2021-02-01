@@ -78,10 +78,14 @@ TEST_RESOLVERS = [
     test_resolver_3,
     test_resolver_4,
 ]
-for resolver in TEST_RESOLVERS:
-    did_resolver_registry.register(resolver)
 
-resolver = DIDResolver(did_resolver_registry)
+
+@pytest.fixture
+def resolver():
+    for resolver in TEST_RESOLVERS:
+        did_resolver_registry.register(resolver)
+    return DIDResolver(did_resolver_registry)
+
 
 DOC = {
     "@context": "https://w3id.org/did/v1",
@@ -124,37 +128,36 @@ DOC = {
     ],
 }
 
-def test_create_resolver():
+
+def test_create_resolver(resolver):
     assert len(resolver.did_resolver_registery.did_resolvers) == len(TEST_RESOLVERS)
 
 
 @pytest.mark.parametrize("did, method", zip(TEST_DIDS, TEST_DID_METHODS))
-def test_match_did_to_resolver(did, method):
+def test_match_did_to_resolver(resolver, did, method):
     did = DID(did)
     base_resolver = next(resolver._match_did_to_resolver(did))
     assert base_resolver.supports(method)
 
 
-def test_match_did_to_resolver_native_priority():
-    # TODO: implement this
-    pass
+def test_match_did_to_resolver_native_priority(resolver):
+    pytest.skip("need more work")
 
-@pytest.mark.parametrize("did",TEST_DIDS)
-def test_dereference_external(did):
+
+@pytest.mark.parametrize("did", TEST_DIDS)
+def test_dereference_external(resolver, did):
     with async_mock.patch.object(
-            resolver, "resolve",
-            async_mock.MagicMock(return_value="resolved did doc")
-        ) as mock_resolver:
+        resolver, "resolve", async_mock.MagicMock(return_value="resolved did doc")
+    ) as mock_resolver:
         result = mock_resolver.dereference_external(did)
         assert result
 
 
-@pytest.mark.parametrize("doc",DOC)
-def test_fully_dereference(doc):
-    pass
+def test_fully_dereference(resolver):
+    pytest.skip("need more work")
 
 
-#@pytest.mark.parametrize("did", TEST_DIDS)
-#def test_resolve(did):
-#    did_doc = await resolver.resolve(did)
-#    assert did_doc
+@pytest.mark.parametrize("did", TEST_DIDS)
+async def test_resolve(resolver, did):
+    did_doc = await resolver.resolve(did)
+    assert did_doc

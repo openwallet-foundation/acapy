@@ -9,8 +9,8 @@ from ..cache.in_memory import InMemoryCache
 from ..core.plugin_registry import PluginRegistry
 from ..core.profile import ProfileManager, ProfileManagerProvider
 from ..core.protocol_registry import ProtocolRegistry
-from ..core.did_resolver import DIDResolver
-from ..core.did_resolver_registry import DIDResolverRegistry
+from ..resolver.did_resolver import DIDResolver
+from ..resolver.did_resolver_registry import DIDResolverRegistry
 from ..tails.base import BaseTailsServer
 from ..ledger.indy import IndySdkLedgerPool, IndySdkLedgerPoolProvider
 

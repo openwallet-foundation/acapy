@@ -83,4 +83,5 @@ class DIDResolver:
                     did_str = await _visit(did_str, doc)
                 return did_str
             return value
+
         return await _visit(doc._doc, doc)

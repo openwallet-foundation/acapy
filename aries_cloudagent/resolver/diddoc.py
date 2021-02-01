@@ -93,9 +93,7 @@ class ResolvedDIDDoc:
 
     def dereference(self, did_url: Union[str, DIDUrl]):
         """Dereference values contained in this DID Document."""
-        if isinstance(did_url, str):
-            parsed = DIDUrl.parse(did_url)
-
+        parsed = DIDUrl.parse(did_url) if isinstance(did_url, str) else did_url
         if self.did != parsed.did:
             raise ExternalResourceError(
                 "{} is not contained in this DID Document".format(did_url)
