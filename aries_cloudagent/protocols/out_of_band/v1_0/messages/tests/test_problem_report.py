@@ -19,9 +19,7 @@ class TestProblemReportMessage(TestCase):
 
     def test_init(self):
         """Test initialization of Handshake Reuse message."""
-        self.problem_report.assign_thread_id(
-            thid="test_thid", pthid="test_pthid"
-        )
+        self.problem_report.assign_thread_id(thid="test_thid", pthid="test_pthid")
         assert isinstance(self.problem_report, ProblemReport)
         assert isinstance(self.problem_report._id, str)
         assert len(self.problem_report._id) > 4
@@ -30,9 +28,7 @@ class TestProblemReportMessage(TestCase):
 
     def test_make_model(self):
         """Make problem report model."""
-        self.problem_report.assign_thread_id(
-            thid="test_thid", pthid="test_pthid"
-        )
+        self.problem_report.assign_thread_id(thid="test_thid", pthid="test_pthid")
         data = self.problem_report.serialize()
         model_instance = ProblemReport.deserialize(data)
         assert isinstance(model_instance, ProblemReport)

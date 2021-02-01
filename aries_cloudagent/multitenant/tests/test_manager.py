@@ -69,9 +69,7 @@ class TestMultitenantManager(AsyncTestCase):
         wallet_record = WalletRecord(wallet_id="test", settings={})
         self.manager._instances["test"] = InMemoryProfile.test_profile()
         self.profile.context.update_settings(
-            {
-                "admin.webhook_urls": ["http://localhost:8020"]
-            }
+            {"admin.webhook_urls": ["http://localhost:8020"]}
         )
 
         with async_mock.patch(
@@ -88,23 +86,24 @@ class TestMultitenantManager(AsyncTestCase):
         all_wallet_record_settings = [
             {
                 "wallet_record_settings": "wallet_record_settings",
-                "wallet.dispatch_type": "default"
+                "wallet.dispatch_type": "default",
             },
             {
                 "wallet_record_settings": "wallet_record_settings",
                 "wallet.dispatch_type": "default",
-                "wallet.webhook_urls": ["https://localhost:8090"]
-            },
-            {
-                "wallet_record_settings": "wallet_record_settings",
-                "wallet.dispatch_type": "both"
+                "wallet.webhook_urls": ["https://localhost:8090"],
             },
             {
                 "wallet_record_settings": "wallet_record_settings",
                 "wallet.dispatch_type": "both",
-                "wallet.webhook_urls": ["https://localhost:8090"]
+            },
+            {
+                "wallet_record_settings": "wallet_record_settings",
+                "wallet.dispatch_type": "both",
+                "wallet.webhook_urls": ["https://localhost:8090"],
             },
         ]
+
         def side_effect(context, provision):
             return (InMemoryProfile(context=context), None)
 

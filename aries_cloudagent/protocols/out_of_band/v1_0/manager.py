@@ -716,9 +716,7 @@ class OutOfBandManager(BaseConnectionManager):
                 )
                 if conn_rec_to_delete is not None:
                     if conn_record.connection_id != conn_rec_to_delete.connection_id:
-                        await conn_rec_to_delete.delete_record(
-                            session=self._session
-                        )
+                        await conn_rec_to_delete.delete_record(session=self._session)
             else:
                 try:
                     conn_records = await ConnRecord.query(
