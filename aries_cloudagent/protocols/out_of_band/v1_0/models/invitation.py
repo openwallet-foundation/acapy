@@ -34,10 +34,8 @@ class InvitationRecord(BaseExchangeRecord):
         invitation_url: str = None,
         state: str = None,
         invi_msg_id: str = None,
-        invitation: dict = None,
+        invitation: dict = None,  # serialized invitation message
         trace: bool = False,
-        auto_accept: bool = False,
-        multi_use: bool = False,
         **kwargs,
     ):
         """Initialize a new InvitationRecord."""
@@ -47,12 +45,6 @@ class InvitationRecord(BaseExchangeRecord):
         self.invi_msg_id = invi_msg_id
         self.invitation = invitation
         self.trace = trace
-        self.auto_accept = auto_accept
-        self.multi_use = multi_use
-
-    def __eq__(self, other: Any) -> bool:
-        """Comparison between records."""
-        return super().__eq__(other)
 
     @property
     def invitation_id(self) -> str:
@@ -78,10 +70,12 @@ class InvitationRecord(BaseExchangeRecord):
                 "invitation_url",
                 "state",
                 "trace",
-                "auto_accept",
-                "multi_use",
             )
         }
+
+    def __eq__(self, other: Any) -> bool:
+        """Comparison between records."""
+        return super().__eq__(other)
 
 
 class InvitationRecordSchema(BaseExchangeSchema):
@@ -119,12 +113,4 @@ class InvitationRecordSchema(BaseExchangeSchema):
             "https://example.com/endpoint?"
             "c_i=eyJAdHlwZSI6ICIuLi4iLCAiLi4uIjogIi4uLiJ9XX0="
         ),
-    )
-    auto_accept = fields.Bool(
-        required=False,
-        description="Whether to auto-accept connection request",
-    )
-    multi_use = fields.Bool(
-        required=False,
-        description="Whether invitation is for multiple use",
     )

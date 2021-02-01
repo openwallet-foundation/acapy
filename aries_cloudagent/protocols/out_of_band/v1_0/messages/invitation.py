@@ -17,6 +17,7 @@ from .....messaging.decorators.attach_decorator import (
     AttachDecorator,
     AttachDecoratorSchema,
 )
+from .....messaging.valid import INDY_DID
 from .....wallet.util import bytes_to_b64, b64_to_bytes
 
 from .service import Service, ServiceSchema
@@ -128,13 +129,20 @@ class InvitationMessageSchema(AgentMessageSchema):
         unknown = EXCLUDE
 
     label = fields.Str(required=False, description="Optional label", example="Bob")
-    handshake_protocols = fields.List(fields.String, required=False, many=True)
+    handshake_protocols = fields.List(
+        fields.Str(example="https://didcomm.org/didexchange/v1.0"),
+        required=False,
+    )
     request_attach = fields.Nested(
-        AttachDecoratorSchema, required=False, many=True, data_key="request~attach"
+        AttachDecoratorSchema,
+        required=False,
+        many=True,
+        data_key="request~attach",
+        description="Optional request attachment",
     )
 
     service_blocks = fields.Nested(ServiceSchema, many=True)
-    service_dids = fields.List(fields.String, many=True)
+    service_dids = fields.List(fields.Str(description="Service DID", **INDY_DID))
 
     @validates_schema
     def validate_fields(self, data, **kwargs):

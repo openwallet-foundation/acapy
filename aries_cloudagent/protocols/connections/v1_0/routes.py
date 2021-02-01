@@ -200,7 +200,9 @@ class CreateInvitationQueryStringSchema(OpenAPISchema):
         example="Barry",
     )
     auto_accept = fields.Boolean(
-        description="Auto-accept connection (default as per configuration)",
+        description=(
+            "Auto-accept connection (defaults to configuration by peer or public DID)"
+        ),
         required=False,
     )
     public = fields.Boolean(
@@ -220,7 +222,9 @@ class ReceiveInvitationQueryStringSchema(OpenAPISchema):
         example="Barry",
     )
     auto_accept = fields.Boolean(
-        description="Auto-accept connection (defaults to configuration)",
+        description=(
+            "Auto-accept connection (defaults to configuration by peer or public DID)"
+        ),
         required=False,
     )
     mediation_id = fields.Str(
