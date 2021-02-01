@@ -254,12 +254,7 @@ class MultitenantManager:
         # update wallet_record
         async with self.profile.session() as session:
             wallet_record = await WalletRecord.retrieve_by_id(session, wallet_id)
-
-            settings = wallet_record.settings
-            if "wallet.id" in settings:
-                del settings["wallet.id"]
-            settings.update(new_settings)
-            wallet_record.update_settings(settings)
+            wallet_record.update_settings(new_settings)
             await wallet_record.save(session)
 
         # update profile only if loaded

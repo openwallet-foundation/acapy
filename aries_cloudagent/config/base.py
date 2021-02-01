@@ -94,10 +94,6 @@ class BaseSettings(Mapping[str, object]):
     def extend(self, other: Mapping[str, object]) -> "BaseSettings":
         """Merge another mapping to produce a new settings instance."""
 
-    @abstractmethod
-    def update(self, other: Mapping[str, object]):
-        """Merge another mapping to update a existing settings instance."""
-
     def __repr__(self) -> str:
         """Provide a human readable representation of this object."""
         items = ("{}={}".format(k, self[k]) for k in self)
