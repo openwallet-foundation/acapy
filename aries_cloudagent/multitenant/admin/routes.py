@@ -1,5 +1,5 @@
 """Multitenant admin routes."""
-from aries_cloudagent.wallet.error import WalletSettingsError
+
 from marshmallow import fields, validate, validates_schema, ValidationError
 from aiohttp import web
 from aiohttp_apispec import (
@@ -16,6 +16,7 @@ from ...messaging.models.base import BaseModelError
 from ...messaging.models.openapi import OpenAPISchema
 from ...storage.error import StorageError, StorageNotFoundError
 from ...wallet.models.wallet_record import WalletRecord, WalletRecordSchema
+from ...wallet.error import WalletSettingsError
 from ...core.error import BaseError
 from ...core.profile import ProfileManagerProvider
 from ..manager import MultitenantManager

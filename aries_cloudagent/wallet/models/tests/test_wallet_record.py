@@ -1,7 +1,7 @@
-from aries_cloudagent.wallet.error import WalletSettingsError
 from asynctest import TestCase as AsyncTestCase
 
 from ..wallet_record import WalletRecord
+from ...error import WalletSettingsError
 
 
 class TestWalletRecord(AsyncTestCase):

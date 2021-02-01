@@ -1,8 +1,7 @@
 """Wallet record."""
 
-from typing import Any, Optional
+from typing import Any, Optional, Sequence
 
-from aries_cloudagent.wallet.error import WalletSettingsError
 from marshmallow import fields
 from marshmallow import validate
 from marshmallow.utils import EXCLUDE
@@ -12,6 +11,7 @@ from ...messaging.models.base_record import (
     BaseRecordSchema,
 )
 from ...messaging.valid import UUIDFour
+from ..error import WalletSettingsError
 
 
 class WalletRecord(BaseRecord):
@@ -67,7 +67,7 @@ class WalletRecord(BaseRecord):
         return self.settings.get("wallet.type")
 
     @property
-    def wallet_webhook_urls(self) -> list:
+    def wallet_webhook_urls(self) -> Sequence[str]:
         """Accessor for webhook_urls of the wallet."""
         return self.settings.get("wallet.webhook_urls")
 
