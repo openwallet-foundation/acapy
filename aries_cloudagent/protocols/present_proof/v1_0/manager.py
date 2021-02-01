@@ -454,9 +454,9 @@ class PresentationManager:
         thread_id = message._thread_id
         try:
             connection_id_filter = (
-                {"connection_id": connection_record.connection_id}
-                if connection_record is not None
-                else None
+                None
+                if connection_record is None
+                else {"connection_id": connection_record.connection_id}
             )
             (
                 presentation_exchange_record

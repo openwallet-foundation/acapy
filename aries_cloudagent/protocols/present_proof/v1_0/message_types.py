@@ -1,4 +1,4 @@
-"""Message and inner object type identifiers for Connections."""
+"""Message and inner object type identifiers for present-proof protocol v1.0."""
 
 from ...didcomm_prefix import DIDCommPrefix
 

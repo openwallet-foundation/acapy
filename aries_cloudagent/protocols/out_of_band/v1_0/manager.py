@@ -412,8 +412,7 @@ class OutOfBandManager(BaseConnectionManager):
         if conn_rec is None:
             if len(unq_handshake_protos) == 0:
                 raise OutOfBandManagerError(
-                    "No existing connection exists and \
-                        handshake_protocol is missing"
+                    "No existing connection exists and handshake_protocol is missing"
                 )
             # Create a new connection
             for proto in unq_handshake_protos:

@@ -783,6 +783,89 @@ class TestPresentationManager(AsyncTestCase):
                 V10PresentationExchange.STATE_PRESENTATION_RECEIVED
             )
 
+    async def test_receive_presentation_oob(self):
+        connection_record = async_mock.MagicMock(connection_id=CONN_ID)
+
+        exchange_dummy = V10PresentationExchange(
+            presentation_proposal_dict={
+                "presentation_proposal": {
+                    "@type": DIDCommPrefix.qualify_current(
+                        "present-proof/1.0/presentation-preview"
+                    ),
+                    "attributes": [
+                        {"name": "favourite", "cred_def_id": CD_ID, "value": "potato"},
+                        {"name": "icon", "cred_def_id": CD_ID, "value": "cG90YXRv"},
+                    ],
+                    "predicates": [],
+                }
+            },
+            presentation_request={
+                "name": "proof-request",
+                "version": "1.0",
+                "nonce": "1234567890",
+                "requested_attributes": {
+                    "0_favourite_uuid": {
+                        "name": "favourite",
+                        "restrictions": [{"cred_def_id": CD_ID}],
+                    },
+                    "1_icon_uuid": {
+                        "name": "icon",
+                        "restrictions": [{"cred_def_id": CD_ID}],
+                    },
+                },
+            },
+            presentation={
+                "proof": {
+                    "proofs": [],
+                    "requested_proof": {
+                        "revealed_attrs": {
+                            "0_favourite_uuid": {
+                                "sub_proof_index": 0,
+                                "raw": "potato",
+                                "encoded": "12345678901234567890",
+                            },
+                            "1_icon_uuid": {
+                                "sub_proof_index": 1,
+                                "raw": "cG90YXRv",
+                                "encoded": "12345678901234567890",
+                            },
+                        },
+                        "self_attested_attrs": {},
+                        "unrevealed_attrs": {},
+                        "predicates": {},
+                    },
+                },
+                "identifiers": [
+                    {
+                        "schema_id": S_ID,
+                        "cred_def_id": CD_ID,
+                        "rev_reg_id": None,
+                        "timestamp": None,
+                    },
+                    {
+                        "schema_id": S_ID,
+                        "cred_def_id": CD_ID,
+                        "rev_reg_id": None,
+                        "timestamp": None,
+                    },
+                ],
+            },
+        )
+        message = async_mock.MagicMock()
+
+        with async_mock.patch.object(
+            V10PresentationExchange, "save", autospec=True
+        ) as save_ex, async_mock.patch.object(
+            V10PresentationExchange, "retrieve_by_tag_filter", autospec=True
+        ) as retrieve_ex:
+            retrieve_ex.side_effect = [StorageNotFoundError(), exchange_dummy]
+            exchange_out = await self.manager.receive_presentation(
+                message, connection_record
+            )
+            assert exchange_out.state == (
+                V10PresentationExchange.STATE_PRESENTATION_RECEIVED
+            )
+
     async def test_receive_presentation_bait_and_switch(self):
         connection_record = async_mock.MagicMock(connection_id=CONN_ID)
 

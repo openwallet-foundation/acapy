@@ -6,5 +6,11 @@ versions = [
         "minimum_minor_version": 0,
         "current_minor_version": 0,
         "path": "v1_0",
+    },
+    {
+        "major_version": 2,
+        "minimum_minor_version": 0,
+        "current_minor_version": 0,
+        "path": "v2_0",
     }
 ]
