@@ -428,7 +428,7 @@ class OutOfBandManager(BaseConnectionManager):
                     conn_rec = await didx_mgr.receive_invitation(
                         invitation=invi_msg,
                         their_public_did=public_did,
-                        auto_accept=True,
+                        auto_accept=auto_accept,
                     )
                 elif proto == CONN_PROTO:
                     service.recipient_keys = [
@@ -451,7 +451,7 @@ class OutOfBandManager(BaseConnectionManager):
                     conn_rec = await conn_mgr.receive_invitation(
                         invitation=connection_invitation,
                         their_public_did=public_did,
-                        auto_accept=True,
+                        auto_accept=auto_accept,
                     )
                 if conn_rec is not None:
                     break
