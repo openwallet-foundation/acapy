@@ -8,7 +8,7 @@ January 2021:
 """
 
 import re
-from typing import Dict
+from typing import Dict, Union
 from urllib.parse import urlparse, parse_qsl, urlencode
 
 DID_PATTERN = re.compile("did:([a-z]+):((?:[a-zA-Z0-9._-]*:)*[a-zA-Z0-9._-]+)")
@@ -30,7 +30,7 @@ class DIDUrl:
         did: str,
         path: str = None,
         query: Dict[str, str] = None,
-        fragment: str = None,
+        fragment: Union[str, int] = None,
     ):
         """Initialize DID URL.
 
@@ -42,7 +42,7 @@ class DIDUrl:
         self.path = path
 
         self.query = query
-        self.fragment = fragment
+        self.fragment = str(fragment) if fragment else None
         self.url = self._stringify()
 
     def _stringify(self):
@@ -76,15 +76,11 @@ class DIDUrl:
 
     def __eq__(self, other):
         """Check equality."""
+        if isinstance(other, str):
+            return self.url == other
         if not isinstance(other, DIDUrl):
             return False
-        return (
-            self.did == other.did
-            and self.path == other.path
-            and self.query == other.query
-            and self.fragment == other.fragment
-            and self.url == other.url
-        )
+        return self.url == other.url
 
     @classmethod
     def parse(cls, url: str):
@@ -95,8 +91,14 @@ class DIDUrl:
             raise InvalidDIDUrlError("DID could not be parsed from URL {}.".format(url))
 
         did = matches.group(0)
-        _, url = url.split(did)
-        parts = urlparse(url)
+        _, url_component = url.split(did)
+
+        if not url_component:
+            raise InvalidDIDUrlError(
+                "No path, query, or fragment found in URL {}".format(url)
+            )
+
+        parts = urlparse(url_component)
         return cls(
             did,
             parts.path or None,
@@ -122,7 +124,7 @@ class DID:
     def __init__(self, did: str):
         """Validate and parse raw DID str."""
         self._raw = did
-        matched = DID_PATTERN.match(did)
+        matched = DID_PATTERN.fullmatch(did)
         if not matched:
             raise InvalidDIDError("Unable to parse DID {}".format(did))
         self._method = matched.group(1)
