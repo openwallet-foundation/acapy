@@ -8,7 +8,7 @@ January 2021:
 """
 
 import json
-from typing import Sequence
+from typing import Sequence, Union
 from operator import itemgetter
 from .did import DID, DIDUrl
 
@@ -70,10 +70,8 @@ class ResolvedDIDDoc:
                 and "recipientKeys" in service
                 and "serviceEndpoint" in service
                 and "type" in service
-                and (
-                    service["type"] == self.OLD_AGENT_SERVICE_TYPE
-                    or service["type"] == self.AGENT_SERVICE_TYPE
-                )
+                and service["type"]
+                in (self.OLD_AGENT_SERVICE_TYPE, self.AGENT_SERVICE_TYPE)
             )
 
         # Filter out all but didcomm services with expected properties
@@ -93,9 +91,11 @@ class ResolvedDIDDoc:
             *(sorted(old, key=itemgetter("priority"))),
         ]
 
-    def dereference(self, did_url: str):
+    def dereference(self, did_url: Union[str, DIDUrl]):
         """Dereference values contained in this DID Document."""
-        parsed = DIDUrl.parse(did_url)
+        if isinstance(did_url, str):
+            parsed = DIDUrl.parse(did_url)
+
         if self.did != parsed.did:
             raise ExternalResourceError(
                 "{} is not contained in this DID Document".format(did_url)
