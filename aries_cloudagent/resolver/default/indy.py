@@ -44,24 +44,28 @@ class IndyDIDResolver(BaseDIDResolver):
             endpoint = await ledger.get_endpoint_for_did(str(did))
             recipient_key = await ledger.get_key_for_did(str(did))
 
-        doc = ResolvedDIDDoc({
-            "id": str(did),
-            "verificationMethod": [{
-                "id": did.ref(1),
-                "type": self.VERIFICATION_METHOD_TYPE,
-                "controller": str(did),
-                "publicKeyBase58": recipient_key
-            }],
-            "authentication": [did.ref(1)],
-            "service": [
-                {
-                    "id": did.ref(ResolvedDIDDoc.AGENT_SERVICE_TYPE),
-                    "type": ResolvedDIDDoc.AGENT_SERVICE_TYPE,
-                    "priority": 0,
-                    "recipientKeys": [did.ref(1)],
-                    "routingKeys": [],
-                    "serviceEndpoint": endpoint
-                }
-            ]
-        })
+        doc = ResolvedDIDDoc(
+            {
+                "id": str(did),
+                "verificationMethod": [
+                    {
+                        "id": did.ref(1),
+                        "type": self.VERIFICATION_METHOD_TYPE,
+                        "controller": str(did),
+                        "publicKeyBase58": recipient_key,
+                    }
+                ],
+                "authentication": [did.ref(1)],
+                "service": [
+                    {
+                        "id": did.ref(ResolvedDIDDoc.AGENT_SERVICE_TYPE),
+                        "type": ResolvedDIDDoc.AGENT_SERVICE_TYPE,
+                        "priority": 0,
+                        "recipientKeys": [did.ref(1)],
+                        "routingKeys": [],
+                        "serviceEndpoint": endpoint,
+                    }
+                ],
+            }
+        )
         return doc

@@ -13,10 +13,12 @@ from ...base import ResolverError
 
 # pylint: disable=W0621
 
+
 @pytest.fixture
 def resolver():
     """Resolver fixture."""
     yield IndyDIDResolver()
+
 
 @pytest.fixture
 def ledger():
@@ -26,6 +28,7 @@ def ledger():
     ledger.get_key_for_did = async_mock.CoroutineMock(return_value="key")
     yield ledger
 
+
 @pytest.fixture
 def session(ledger):
     """Session fixture."""
@@ -33,15 +36,18 @@ def session(ledger):
     session.context.injector.bind_instance(IndySdkLedger, ledger)
     yield session
 
+
 def test_supported_methods(resolver: IndyDIDResolver):
     """Test the supported_methods."""
     assert resolver.supported_methods == ["sov"]
     assert resolver.supports("sov")
 
+
 @pytest.mark.asyncio
 async def test_resolve(resolver: IndyDIDResolver, session: ProfileSession):
     """Test resolve mtehod."""
     assert await resolver.resolve(session, TEST_DID0)
+
 
 @pytest.mark.asyncio
 async def test_resolve_x(resolver: IndyDIDResolver, session: ProfileSession):

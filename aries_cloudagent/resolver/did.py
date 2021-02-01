@@ -103,7 +103,7 @@ class DIDUrl:
             did,
             parts.path or None,
             dict(parse_qsl(parts.query)) if parts.query else None,
-            parts.fragment or None
+            parts.fragment or None,
         )
 
     @classmethod

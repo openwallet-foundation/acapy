@@ -68,8 +68,18 @@ TEST_DID_URL_PARTS1 = {"did": TEST_DID1, "query": {"key": "value"}}
 TEST_DID_URL_PARTS2 = {"did": TEST_DID2, "fragment": "fragment"}
 TEST_DID_URL_PARTS3 = {"did": TEST_DID3, "path": "test/path", "query": {"key": "value"}}
 TEST_DID_URL_PARTS4 = {"did": TEST_DID4, "path": "test/path", "fragment": "fragment"}
-TEST_DID_URL_PARTS5 = {"did": TEST_DID0, "path": "test/path", "query": {"key": "value"}, "fragment": "fragment"}
-TEST_DID_URL_PARTS6 = {"did": TEST_DID1, "path": "/test/path", "query": {"key": "value", "another": "thing"}, "fragment": 1}
+TEST_DID_URL_PARTS5 = {
+    "did": TEST_DID0,
+    "path": "test/path",
+    "query": {"key": "value"},
+    "fragment": "fragment",
+}
+TEST_DID_URL_PARTS6 = {
+    "did": TEST_DID1,
+    "path": "/test/path",
+    "query": {"key": "value", "another": "thing"},
+    "fragment": 1,
+}
 TEST_DID_URL_PARTS = [
     TEST_DID_URL_PARTS0,
     TEST_DID_URL_PARTS1,
@@ -80,26 +90,33 @@ TEST_DID_URL_PARTS = [
     TEST_DID_URL_PARTS6,
 ]
 
+
 @pytest.mark.parametrize("did", TEST_DIDS)
 def test_can_parse_dids(did):
     did = DID(did)
     assert repr(did)
 
 
-@pytest.mark.parametrize("bad_did", [
-    "did:nomethodspecificidentifier",
-    "did:invalid-chars-in-method:method-specific-id",
-    "bad-prefix:method:method-specific-id",
-    *TEST_DID_URLS
-])
+@pytest.mark.parametrize(
+    "bad_did",
+    [
+        "did:nomethodspecificidentifier",
+        "did:invalid-chars-in-method:method-specific-id",
+        "bad-prefix:method:method-specific-id",
+        *TEST_DID_URLS,
+    ],
+)
 def test_parse_x(bad_did):
     with pytest.raises(InvalidDIDError):
         DID(bad_did)
 
+
 @pytest.mark.parametrize("did, parts", zip(cycle(TEST_DIDS), TEST_DID_URL_PARTS))
 def test_url_method(did, parts):
     did = DID(did)
-    assert did.url(parts.get("path"), parts.get("query"), parts.get("fragment")) == DIDUrl(**parts)
+    assert did.url(
+        parts.get("path"), parts.get("query"), parts.get("fragment")
+    ) == DIDUrl(**parts)
 
 
 @pytest.mark.parametrize("did, method", zip(TEST_DIDS, TEST_DID_METHODS))
@@ -129,22 +146,17 @@ def test_eq(did, next_did):
     assert did != {"not a": "did"}
 
 
-@pytest.mark.parametrize(
-    "inputs, output",
-    zip(TEST_DID_URL_PARTS, TEST_DID_URLS)
-)
+@pytest.mark.parametrize("inputs, output", zip(TEST_DID_URL_PARTS, TEST_DID_URLS))
 def test_did_url(inputs, output):
     url = DIDUrl(**inputs)
     assert str(url) == output
     assert repr(url)
 
 
-@pytest.mark.parametrize(
-    "url, parts",
-    zip(TEST_DID_URLS, TEST_DID_URL_PARTS)
-)
+@pytest.mark.parametrize("url, parts", zip(TEST_DID_URLS, TEST_DID_URL_PARTS))
 def test_did_url_parse(url, parts):
     assert DIDUrl.parse(url) == DIDUrl(**parts)
+
 
 @pytest.mark.parametrize("lhs, rhs", zip(TEST_DID_URLS, TEST_DID_URLS[1:]))
 def test_did_url_neq(lhs, rhs):
@@ -154,12 +166,13 @@ def test_did_url_neq(lhs, rhs):
     assert lhs != rhs
     assert lhs != {"not a": "DIDUrl"}
 
+
 @pytest.mark.parametrize(
     "bad_url",
     [
         TEST_DID0,
         "not://a/did?url=value",
-    ]
+    ],
 )
 def test_did_url_parse_x(bad_url):
     with pytest.raises(InvalidDIDUrlError):
