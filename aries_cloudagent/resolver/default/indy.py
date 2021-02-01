@@ -45,7 +45,7 @@ class IndyDIDResolver(BaseDIDResolver):
             recipient_key = await ledger.get_key_for_did(str(did))
 
         doc = ResolvedDIDDoc({
-            "id": did,
+            "id": str(did),
             "verificationMethod": [{
                 "id": did.ref(1),
                 "type": self.VERIFICATION_METHOD_TYPE,

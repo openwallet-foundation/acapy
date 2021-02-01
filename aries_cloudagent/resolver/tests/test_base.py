@@ -1,7 +1,7 @@
 """Test Base DID Resolver methods."""
 
 import pytest
-from ..base import BaseDIDResolver, ResolvedDIDDoc
+from ..base import BaseDIDResolver, ResolverType, ResolvedDIDDoc
 
 
 class ExampleDIDResolver(BaseDIDResolver):
@@ -24,7 +24,7 @@ class ExampleDIDResolver(BaseDIDResolver):
 @pytest.fixture
 def native_resolver():
     resolver = ExampleDIDResolver()
-    resolver.type = BaseDIDResolver.Type.NATIVE
+    resolver.type = ResolverType.NATIVE
     yield resolver
 
 
