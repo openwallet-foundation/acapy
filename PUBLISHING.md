@@ -1,6 +1,6 @@
 # How to Publish a New Version
 
-0. The code to be published should be in the `master` branch.
+0. The code to be published should be in the `main` branch.
 
 1. Update CHANGELOG.md to include details of the closed PRs included in this release.
 
