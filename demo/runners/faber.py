@@ -12,7 +12,12 @@ from aiohttp import ClientError
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from runners.support.agent import DemoAgent, default_genesis_txns  # noqa:E402
+from runners.support.agent import (  # noqa:E402
+    DemoAgent,
+    default_genesis_txns,
+    start_mediator_agent,
+    connect_wallet_to_mediator,
+)
 from runners.support.utils import (  # noqa:E402
     log_msg,
     log_status,
@@ -23,7 +28,7 @@ from runners.support.utils import (  # noqa:E402
 )
 
 
-CRED_PREVIEW_TYPE = "https://didcomm.org/issue-credential/1.0/credential-preview"
+CRED_PREVIEW_TYPE = "https://didcomm.org/issue-credential/2.0/credential-preview"
 SELF_ATTESTED = os.getenv("SELF_ATTESTED")
 TAILS_FILE_COUNT = int(os.getenv("TAILS_FILE_COUNT", 100))
 
@@ -54,11 +59,12 @@ class FaberAgent(DemoAgent):
         self._connection_ready = None
         self.cred_state = {}
         # TODO define a dict to hold credential attributes
-        # based on credential_definition_id
+        # based on cred_def_id
         self.cred_attrs = {}
 
     async def detect_connection(self):
         await self._connection_ready
+        self._connection_ready = None
 
     @property
     def connection_ready(self):
@@ -68,60 +74,45 @@ class FaberAgent(DemoAgent):
         pass
 
     async def handle_connections(self, message):
+        # a bit of a hack, but for the mediator connection self._connection_ready will be None
+        if not self._connection_ready:
+            return
+
         conn_id = message["connection_id"]
         if message["state"] == "invitation":
             self.connection_id = conn_id
         if conn_id == self.connection_id:
             if (
-                message["state"] in ["active", "response"]
+                message["rfc23_state"] in ["completed", "response-sent"]
                 and not self._connection_ready.done()
             ):
                 self.log("Connected")
                 self._connection_ready.set_result(True)
 
-    async def handle_issue_credential(self, message):
+    async def handle_issue_credential_v2_0(self, message):
         state = message["state"]
-        credential_exchange_id = message["credential_exchange_id"]
-        prev_state = self.cred_state.get(credential_exchange_id)
+        cred_ex_id = message["cred_ex_id"]
+        prev_state = self.cred_state.get(cred_ex_id)
         if prev_state == state:
             return  # ignore
-        self.cred_state[credential_exchange_id] = state
+        self.cred_state[cred_ex_id] = state
 
-        self.log(
-            "Credential: state = {}, credential_exchange_id = {}".format(
-                state,
-                credential_exchange_id,
-            )
-        )
+        self.log(f"Credential: state = {state}, cred_ex_id = {cred_ex_id}")
 
-        if state == "request_received":
+        if state == "request-received":
             log_status("#17 Issue credential to X")
-            # issue credentials based on the credential_definition_id
-            cred_attrs = self.cred_attrs[message["credential_definition_id"]]
-            cred_preview = {
-                "@type": CRED_PREVIEW_TYPE,
-                "attributes": [
-                    {"name": n, "value": v} for (n, v) in cred_attrs.items()
-                ],
-            }
-            try:
-                cred_ex_rec = await self.admin_POST(
-                    f"/issue-credential/records/{credential_exchange_id}/issue",
-                    {
-                        "comment": (
-                            f"Issuing credential, exchange {credential_exchange_id}"
-                        ),
-                        "credential_preview": cred_preview,
-                    },
-                )
-                rev_reg_id = cred_ex_rec.get("revoc_reg_id")
-                cred_rev_id = cred_ex_rec.get("revocation_id")
-                if rev_reg_id:
-                    self.log(f"Revocation registry ID: {rev_reg_id}")
-                if cred_rev_id:
-                    self.log(f"Credential revocation ID: {cred_rev_id}")
-            except ClientError:
-                pass
+            # issue credential based on offer preview in cred ex record
+            await self.admin_POST(
+                f"/issue-credential-2.0/records/{cred_ex_id}/issue",
+                {"comment": f"Issuing credential, exchange {cred_ex_id}"},
+            )
+
+    async def handle_issue_credential_v2_0_indy(self, message):
+        rev_reg_id = message.get("rev_reg_id")
+        cred_rev_id = message.get("cred_rev_id")
+        if rev_reg_id and cred_rev_id:
+            self.log(f"Revocation registry ID: {rev_reg_id}")
+            self.log(f"Credential revocation ID: {cred_rev_id}")
 
     async def handle_issuer_cred_rev(self, message):
         pass
@@ -129,19 +120,14 @@ class FaberAgent(DemoAgent):
     async def handle_present_proof(self, message):
         state = message["state"]
 
-        presentation_exchange_id = message["presentation_exchange_id"]
-        self.log(
-            "Presentation: state =",
-            state,
-            ", presentation_exchange_id =",
-            presentation_exchange_id,
-        )
+        pres_ex_id = message["presentation_exchange_id"]
+        self.log(f"Presentation: state = {state}, pres_ex_id = {pres_ex_id}")
 
         if state == "presentation_received":
             log_status("#27 Process the proof provided by X")
             log_status("#28 Check if proof is valid")
             proof = await self.admin_POST(
-                f"/present-proof/records/{presentation_exchange_id}/verify-presentation"
+                f"/present-proof/records/{pres_ex_id}/verify-presentation"
             )
             self.log("Proof =", proof["verified"])
 
@@ -149,18 +135,12 @@ class FaberAgent(DemoAgent):
         self.log("Received message:", message["content"])
 
 
-async def generate_invitation(agent, use_did_exchange: bool):
+async def generate_invitation(agent, use_did_exchange: bool, auto_accept: bool = True):
     agent._connection_ready = asyncio.Future()
     with log_timer("Generate invitation duration:"):
         # Generate an invitation
         log_status("#7 Create a connection to alice and print out the invite details")
-        if use_did_exchange:
-            invi_rec = await agent.admin_POST(
-                "/out-of-band/create-invitation",
-                {"include_handshake": True},
-            )
-        else:
-            invi_rec = await agent.admin_POST("/connections/create-invitation")
+        invi_rec = await agent.get_invite(use_did_exchange, auto_accept)
 
     qr = QRCode(border=1)
     qr.add_data(invi_rec["invitation_url"])
@@ -186,17 +166,14 @@ async def create_schema_and_cred_def(agent, revocation):
                 random.randint(1, 101),
             )
         )
-        (
-            _,  # schema id
-            credential_definition_id,
-        ) = await agent.register_schema_and_creddef(
+        (_, cred_def_id,) = await agent.register_schema_and_creddef(  # schema id
             "degree schema",
             version,
             ["name", "date", "degree", "age", "timestamp"],
             support_revocation=revocation,
             revocation_registry_size=TAILS_FILE_COUNT if revocation else None,
         )
-        return credential_definition_id
+        return cred_def_id
 
 
 async def main(
@@ -206,6 +183,7 @@ async def main(
     tails_server_base_url: str = None,
     show_timing: bool = False,
     multitenant: bool = False,
+    mediation: bool = False,
     use_did_exchange: bool = False,
     wallet_type: str = None,
 ):
@@ -215,6 +193,7 @@ async def main(
         sys.exit(1)
 
     agent = None
+    mediator_agent = None
 
     try:
         log_status(
@@ -230,6 +209,7 @@ async def main(
             tails_server_base_url=tails_server_base_url,
             timing=show_timing,
             multitenant=multitenant,
+            mediation=mediation,
             wallet_type=wallet_type,
         )
         await agent.listen_webhooks(start_port + 2)
@@ -240,23 +220,33 @@ async def main(
         log_msg("Admin URL is at:", agent.admin_url)
         log_msg("Endpoint URL is at:", agent.endpoint)
 
+        if mediation:
+            mediator_agent = await start_mediator_agent(start_port + 4, genesis)
+            if not mediator_agent:
+                raise Exception("Mediator agent returns None :-(")
+        else:
+            mediator_agent = None
+
         if multitenant:
-            # create an initial managed sub-wallet
+            # create an initial managed sub-wallet (also mediated)
             await agent.register_or_switch_wallet(
                 "Faber.initial",
                 public_did=True,
                 webhook_port=agent.get_new_webhook_port(),
+                mediator_agent=mediator_agent,
             )
+        elif mediation:
+            # we need to pre-connect the agent to its mediator
+            if not await connect_wallet_to_mediator(agent, mediator_agent):
+                log_msg("Mediation setup FAILED :-(")
+                raise Exception("Mediation setup FAILED :-(")
 
         # Create a schema
-        credential_definition_id = await create_schema_and_cred_def(agent, revocation)
+        cred_def_id = await create_schema_and_cred_def(agent, revocation)
 
         # TODO add an additional credential for Student ID
 
         await generate_invitation(agent, use_did_exchange)
-
-        log_msg("Waiting for connection...")
-        await agent.detect_connection()
 
         exchange_tracing = False
         options = (
@@ -291,18 +281,19 @@ async def main(
                         target_wallet_name,
                         webhook_port=agent.get_new_webhook_port(),
                         public_did=True,
+                        mediator_agent=mediator_agent,
                     )
                 else:
                     created = await agent.register_or_switch_wallet(
-                        target_wallet_name, public_did=True
+                        target_wallet_name,
+                        public_did=True,
+                        mediator_agent=mediator_agent,
                     )
                 # create a schema and cred def for the new wallet
                 # TODO check first in case we are switching between existing wallets
                 if created:
                     # TODO this fails because the new wallet doesn't get a public DID
-                    credential_definition_id = await create_schema_and_cred_def(
-                        agent, revocation
-                    )
+                    cred_def_id = await create_schema_and_cred_def(agent, revocation)
 
             elif option in "tT":
                 exchange_tracing = not exchange_tracing
@@ -316,7 +307,7 @@ async def main(
                 log_status("#13 Issue credential offer to X")
 
                 # TODO define attributes to send for credential
-                agent.cred_attrs[credential_definition_id] = {
+                agent.cred_attrs[cred_def_id] = {
                     "name": "Alice Smith",
                     "date": "2018-05-28",
                     "degree": "Maths",
@@ -328,18 +319,20 @@ async def main(
                     "@type": CRED_PREVIEW_TYPE,
                     "attributes": [
                         {"name": n, "value": v}
-                        for (n, v) in agent.cred_attrs[credential_definition_id].items()
+                        for (n, v) in agent.cred_attrs[cred_def_id].items()
                     ],
                 }
                 offer_request = {
                     "connection_id": agent.connection_id,
-                    "cred_def_id": credential_definition_id,
-                    "comment": f"Offer on cred def id {credential_definition_id}",
+                    "comment": f"Offer on cred def id {cred_def_id}",
                     "auto_remove": False,
                     "credential_preview": cred_preview,
+                    "filter": {"indy": {"cred_def_id": cred_def_id}},
                     "trace": exchange_tracing,
                 }
-                await agent.admin_POST("/issue-credential/send-offer", offer_request)
+                await agent.admin_POST(
+                    "/issue-credential-2.0/send-offer", offer_request
+                )
                 # TODO issue an additional credential for Student ID
 
             elif option == "2":
@@ -414,9 +407,8 @@ async def main(
 
             elif option == "4":
                 log_msg(
-                    "Creating a new invitation, "
-                    "please receive and accept this "
-                    "invitation using Alice agent"
+                    "Creating a new invitation, please receive "
+                    "and accept this invitation using Alice agent"
                 )
                 await generate_invitation(agent, use_did_exchange)
 
@@ -460,7 +452,11 @@ async def main(
     finally:
         terminated = True
         try:
+            if mediator_agent:
+                log_msg("Shutting down mediator agent ...")
+                await mediator_agent.terminate()
             if agent:
+                log_msg("Shutting down faber agent ...")
                 await agent.terminate()
         except Exception:
             LOGGER.exception("Error terminating agent:")
@@ -506,12 +502,20 @@ if __name__ == "__main__":
         "--multitenant", action="store_true", help="Enable multitenancy options"
     )
     parser.add_argument(
+        "--mediation", action="store_true", help="Enable mediation functionality"
+    )
+    parser.add_argument(
         "--wallet-type",
         type=str,
         metavar="<wallet-type>",
         help="Set the agent wallet type",
     )
     args = parser.parse_args()
+
+    if args.did_exchange and args.mediation:
+        raise Exception(
+            "DID-Exchange connection protocol is not (yet) compatible with mediation"
+        )
 
     ENABLE_PYDEVD_PYCHARM = os.getenv("ENABLE_PYDEVD_PYCHARM", "").lower()
     ENABLE_PYDEVD_PYCHARM = ENABLE_PYDEVD_PYCHARM and ENABLE_PYDEVD_PYCHARM not in (
@@ -559,6 +563,7 @@ if __name__ == "__main__":
                 tails_server_base_url,
                 args.timing,
                 args.multitenant,
+                args.mediation,
                 args.did_exchange,
                 args.wallet_type,
             )

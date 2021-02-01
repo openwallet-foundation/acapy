@@ -20,6 +20,7 @@ There are several demos available for ACA-Py mostly (but not only) aimed at deve
     - [Issuing and Proving Credentials](#issuing-and-proving-credentials)
 - [Additional Options in the Alice/Faber demo](#additional-options-in-the-alicefaber-demo)
   - [Revocation](#revocation)
+  - [Mediation](#mediation)
   - [Multi-tenancy](#multi-tenancy)
   - [DID Exchange](#did-exchange)
 - [Learning about the Alice/Faber code](#learning-about-the-alicefaber-code)
@@ -237,6 +238,16 @@ This will use the new DID Exchange protocol when establishing connections betwee
 
 Note that you can't (currently) use the DID Exchange protocol to connect with any of the available mobile agents.
 
+### Mediation
+
+To enable mediation, run the `alice` or `faber` demo with the `--mediation` option:
+
+```bash
+./run_demo faber --mediation
+```
+
+This will start up a second "mediator" agent and automatically set the alice/faber connection to use the mediator.
+
 ### Multi-tenancy
 
 To enable support for multi-tenancy, run the `alice` or `faber` demo with the `--multitenant` option:
@@ -319,7 +330,21 @@ Note that with multi-tenancy enabled:
 - The "sub-wallets" will have access to the "normal" aca-py admin API - to identify the sub-wallet, a JWT token must be provided, this token is created upon creation of the new wallet (see: [this code here](https://github.com/hyperledger/aries-cloudagent-python/blob/master/demo/runners/support/agent.py#L378))
 - "Sub-wallet" API calls are handled [here](https://github.com/hyperledger/aries-cloudagent-python/blob/244194e68330835e5e2e53cc6c2993899d2437fb/demo/runners/support/agent.py#L632)
 
-Documentation on aca-py's multi-tenancy support can be found [tbd here]().
+Documentation on aca-py's multi-tenancy support can be found [here](https://github.com/hyperledger/aries-cloudagent-python/blob/master/Multitenancy.md).
+
+### Multi-tenancy *with Mediation*!!!
+
+There are two options for configuring mediation with multi-tenancy, documented [here](https://github.com/hyperledger/aries-cloudagent-python/blob/master/Multitenancy.md#mediation).
+
+This demo implements option #2 - each sub-wallet is configured with a separate connection to the mediator.
+
+Run the demo (Alice or Faber) specifying *both* options:
+
+```bash
+./run_demo faber --multitenant --mediation
+```
+
+This works exactly as the *vanilla* multi-tenancy, except that all connections are mediated.
 
 ## Learning about the Alice/Faber code
 

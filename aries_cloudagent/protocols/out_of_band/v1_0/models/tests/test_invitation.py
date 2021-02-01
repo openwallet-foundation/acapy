@@ -11,6 +11,7 @@ class TestInvitationRecord(AsyncTestCase):
     def test_invitation_record(self):
         """Test invitation record."""
         invi_rec = InvitationRecord(invi_msg_id="12345")
+        assert invi_rec.invitation_id is None  # not saved
         assert isinstance(invi_rec, InvitationRecord)
         assert invi_rec.record_value == {
             "invitation": None,

@@ -68,6 +68,11 @@ class TestMultitenantManager(AsyncTestCase):
     async def test_get_wallet_profile_not_in_cache(self):
         wallet_record = WalletRecord(wallet_id="test", settings={})
         self.manager._instances["test"] = InMemoryProfile.test_profile()
+        self.profile.context.update_settings(
+            {
+                "admin.webhook_urls": ["http://localhost:8020"]
+            }
+        )
 
         with async_mock.patch(
             "aries_cloudagent.config.wallet.wallet_config"
@@ -80,30 +85,48 @@ class TestMultitenantManager(AsyncTestCase):
 
     async def test_get_wallet_profile_settings(self):
         extra_settings = {"extra_settings": "extra_settings"}
-        wallet_record_settings = {"wallet_record_settings": "wallet_record_settings"}
-        wallet_record = WalletRecord(
-            wallet_id="test",
-            settings=wallet_record_settings,
-        )
+        all_wallet_record_settings = [
+            {
+                "wallet_record_settings": "wallet_record_settings",
+                "wallet.dispatch_type": "default"
+            },
+            {
+                "wallet_record_settings": "wallet_record_settings",
+                "wallet.dispatch_type": "default",
+                "wallet.webhook_urls": ["https://localhost:8090"]
+            },
+            {
+                "wallet_record_settings": "wallet_record_settings",
+                "wallet.dispatch_type": "both"
+            },
+            {
+                "wallet_record_settings": "wallet_record_settings",
+                "wallet.dispatch_type": "both",
+                "wallet.webhook_urls": ["https://localhost:8090"]
+            },
+        ]
+        def side_effect(context, provision):
+            return (InMemoryProfile(context=context), None)
 
-        with async_mock.patch(
-            "aries_cloudagent.multitenant.manager.wallet_config"
-        ) as wallet_config:
-
-            def side_effect(context, provision):
-                return (InMemoryProfile(context=context), None)
-
-            wallet_config.side_effect = side_effect
-
-            profile = await self.manager.get_wallet_profile(
-                self.profile.context, wallet_record, extra_settings
+        for idx, wallet_record_settings in enumerate(all_wallet_record_settings):
+            wallet_record = WalletRecord(
+                wallet_id=f"test.{idx}",
+                settings=wallet_record_settings,
             )
 
-            assert (
-                profile.settings.get("wallet_record_settings")
-                == "wallet_record_settings"
-            )
-            assert profile.settings.get("extra_settings") == "extra_settings"
+            with async_mock.patch(
+                "aries_cloudagent.multitenant.manager.wallet_config"
+            ) as wallet_config:
+                wallet_config.side_effect = side_effect
+                profile = await self.manager.get_wallet_profile(
+                    self.profile.context, wallet_record, extra_settings
+                )
+
+                assert (
+                    profile.settings.get("wallet_record_settings")
+                    == "wallet_record_settings"
+                )
+                assert profile.settings.get("extra_settings") == "extra_settings"
 
     async def test_get_wallet_profile_settings_reset(self):
         wallet_record = WalletRecord(

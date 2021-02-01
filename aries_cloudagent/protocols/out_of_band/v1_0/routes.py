@@ -41,6 +41,11 @@ class InvitationCreateQueryStringSchema(OpenAPISchema):
         description="Create invitation for multiple use (default false)",
         required=False,
     )
+    use_connections_rfc160 = fields.Boolean(
+        description="Use the RFC 0160 over did-exchange",
+        required=False,
+        default=False,
+    )
 
 
 class InvitationCreateRequestSchema(OpenAPISchema):
@@ -98,6 +103,11 @@ class InvitationReceiveQueryStringSchema(OpenAPISchema):
         ),
         required=False,
     )
+    use_existing_connection = fields.Boolean(
+        description="Use an existing connection, if possible",
+        required=False,
+        default=True,
+    )
 
 
 class InvitationReceiveRequestSchema(InvitationMessageSchema):
@@ -134,6 +144,7 @@ async def invitation_create(request: web.BaseRequest):
 
     multi_use = json.loads(request.query.get("multi_use", "false"))
     auto_accept = json.loads(request.query.get("auto_accept", "null"))
+    use_connections = json.loads(request.query.get("use_connections_rfc160", "false"))
     session = await context.session()
     oob_mgr = OutOfBandManager(session)
     try:
@@ -144,6 +155,7 @@ async def invitation_create(request: web.BaseRequest):
             multi_use=multi_use,
             attachments=attachments,
             metadata=metadata,
+            use_connections=use_connections,
         )
     except (StorageNotFoundError, ValidationError, OutOfBandManagerError) as e:
         raise web.HTTPBadRequest(reason=str(e))
@@ -182,15 +194,17 @@ async def invitation_receive(request: web.BaseRequest):
     body = await request.json()
     auto_accept = json.loads(request.query.get("auto_accept", "null"))
     alias = request.query.get("alias")
+    # By default, try to use an existing connection
+    use_existing_conn = json.loads(request.query.get("use_existing_connection", "true"))
 
     try:
         invitation = InvitationMessage.deserialize(body)
-        conn_rec = await oob_mgr.receive_invitation(
+        result = await oob_mgr.receive_invitation(
             invitation,
             auto_accept=auto_accept,
             alias=alias,
+            use_existing_connection=use_existing_conn,
         )
-        result = conn_rec.serialize()
     except (DIDXManagerError, StorageError, BaseModelError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 

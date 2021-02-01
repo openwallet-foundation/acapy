@@ -270,8 +270,10 @@ class IndySdkVerifier(IndyVerifier):
 
         for (uuid, req_pred) in pres_req["requested_predicates"].items():
             pred_spec = preds.get(uuid)
-            if pred_spec is None or "sub_proof_index" not in pred_spec:
-                f"Presentation predicates mismatch requested predicate {uuid}"
+            if not (pred_spec and "sub_proof_index" in pred_spec):
+                raise ValueError(
+                    f"Presentation predicates mismatch requested predicate {uuid}"
+                )
             index = pred_spec["sub_proof_index"]
             timestamp = pres["identifiers"][index].get("timestamp")
             if (timestamp is not None) ^ bool(non_revoc_intervals.get(uuid)):

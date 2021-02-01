@@ -26,7 +26,6 @@ from ..protocols.coordinate_mediation.v1_0.manager import (
 
 from .error import WalletKeyMissingError
 
-
 LOGGER = logging.getLogger(__name__)
 
 
@@ -117,7 +116,6 @@ class MultitenantManager:
 
         """
         wallet_id = wallet_record.wallet_id
-
         if wallet_id not in self._instances:
             # Extend base context
             context = base_context.copy()
@@ -136,13 +134,26 @@ class MultitenantManager:
             }
 
             dispatch_type = wallet_record.wallet_dispatch_type
-            webhook_urls = wallet_record.wallet_webhook_urls
-            base_webhook_urls = context.settings.get("admin.webhook_urls")
+            webhook_urls = wallet_record.wallet_webhook_urls or []
+            base_webhook_urls = context.settings.get("admin.webhook_urls", [])
             if dispatch_type == "both":
                 target_urls = list(set(base_webhook_urls) | set(webhook_urls))
-                extra_settings["admin.webhook_urls"] = target_urls
+                if target_urls:
+                    extra_settings["admin.webhook_urls"] = target_urls
+                else:
+                    LOGGER.warning(
+                        "No webhook URLs in context configuration "
+                        f"nor wallet record {wallet_id}, but wallet record "
+                        f"configures dispatch type {dispatch_type}"
+                    )
             elif dispatch_type == "default":
-                extra_settings["admin.webhook_urls"] = webhook_urls
+                if webhook_urls:
+                    extra_settings["admin.webhook_urls"] = webhook_urls
+                else:
+                    LOGGER.warning(
+                        f"No webhook URLs in nor wallet record {wallet_id}, but "
+                        f"wallet record configures dispatch type {dispatch_type}"
+                    )
 
             context.settings = (
                 context.settings.extend(reset_settings)

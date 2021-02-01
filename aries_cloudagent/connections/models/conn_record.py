@@ -180,6 +180,7 @@ class ConnRecord(BaseRecord):
         accept: str = None,
         invitation_mode: str = None,
         alias: str = None,
+        their_public_did: str = None,
         **kwargs,
     ):
         """Initialize a new ConnRecord."""
@@ -207,6 +208,7 @@ class ConnRecord(BaseRecord):
         self.accept = accept or self.ACCEPT_MANUAL
         self.invitation_mode = invitation_mode or self.INVITATION_MODE_ONCE
         self.alias = alias
+        self.their_public_did = their_public_did
 
     @property
     def connection_id(self) -> str:
@@ -234,6 +236,7 @@ class ConnRecord(BaseRecord):
                 "error_msg",
                 "their_label",
                 "state",
+                "their_public_did",
             )
         }
 
@@ -339,7 +342,9 @@ class ConnRecord(BaseRecord):
         ).deserialize(ser)
 
     async def attach_request(
-        self, session: ProfileSession, request: Union[ConnectionRequest, DIDXRequest]
+        self,
+        session: ProfileSession,
+        request: Union[ConnectionRequest, DIDXRequest],
     ):
         """Persist the related connection request to storage.
 
@@ -590,4 +595,9 @@ class ConnRecordSchema(BaseRecordSchema):
         required=False,
         description="Optional alias to apply to connection for later use",
         example="Bob, providing quotes",
+    )
+    their_public_did = fields.Str(
+        required=False,
+        description="Other agent's public DID for connection",
+        example="2cpBmR3FqGKWi5EyUbpRY8",
     )

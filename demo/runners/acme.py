@@ -33,7 +33,7 @@ class AcmeAgent(DemoAgent):
         self._connection_ready = asyncio.Future()
         self.cred_state = {}
         # TODO define a dict to hold credential attributes based on
-        # the credential_definition_id
+        # the cred_def_id
         self.cred_attrs = {}
 
     async def detect_connection(self):
@@ -48,42 +48,35 @@ class AcmeAgent(DemoAgent):
 
     async def handle_connections(self, message):
         conn_id = message["connection_id"]
-        if (not self.connection_id) and message["state"] == "invitation":
+        if message["rfc23_state"] == "invitation-sent":
             self.connection_id = conn_id
         if conn_id == self.connection_id:
-            if message["state"] == "active" and not self._connection_ready.done():
+            if (
+                message["rfc23_state"] in ["completed", "response-sent"]
+                and not self._connection_ready.done()
+            ):
                 self.log("Connected")
                 self._connection_ready.set_result(True)
 
-    async def handle_issue_credential(self, message):
+    async def handle_issue_credential_v2_0(self, message):
         state = message["state"]
-        credential_exchange_id = message["credential_exchange_id"]
-        prev_state = self.cred_state.get(credential_exchange_id)
+        cred_ex_id = message["cred_ex_id"]
+        prev_state = self.cred_state.get(cred_ex_id)
         if prev_state == state:
             return  # ignore
-        self.cred_state[credential_exchange_id] = state
+        self.cred_state[cred_ex_id] = state
 
-        self.log(
-            "Credential: state =",
-            state,
-            ", credential_exchange_id =",
-            credential_exchange_id,
-        )
+        self.log(f"Credential: state = {state}, cred_ex_id = {cred_ex_id}")
 
-        if state == "request_received":
-            # TODO issue credentials based on the credential_definition_id
+        if state == "request-received":
+            # TODO issue credentials based on offer preview in cred ex record
             pass
 
     async def handle_present_proof(self, message):
         state = message["state"]
 
-        presentation_exchange_id = message["presentation_exchange_id"]
-        self.log(
-            "Presentation: state =",
-            state,
-            ", presentation_exchange_id =",
-            presentation_exchange_id,
-        )
+        pres_ex_id = message["presentation_exchange_id"]
+        self.log(f"Presentation: state = {state}, pres_ex_id = {pres_ex_id}")
 
         if state == "presentation_received":
             # TODO handle received presentations
@@ -122,16 +115,13 @@ async def main(start_port: int, show_timing: bool = False):
             # TODO define schema
             # version = format(
             #     "%d.%d.%d"
-            #     % (
+            #      % (
             #         random.randint(1, 101),
             #         random.randint(1, 101),
             #         random.randint(1, 101),
             #     )
             # )
-            # (
-            #     schema_id,
-            #     credential_definition_id,
-            # ) = await agent.register_schema_and_creddef(
+            # (schema_id, cred_def_id) = await agent.register_schema_and_creddef(
             #     "employee id schema",
             #     version,
             #     ["employee_id", "name", "date", "position"],
