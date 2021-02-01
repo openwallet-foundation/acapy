@@ -17,7 +17,7 @@ class DIDResolverRegistry:
     @property
     def did_resolvers(
         self,
-    ) -> Sequence[str]:  # Todo: add priority filtering and return copy
+    ) -> Sequence[str]:
         """Accessor for a list of all did resolvers."""
         return self._resolvers
 

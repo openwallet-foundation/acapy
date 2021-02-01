@@ -7,6 +7,14 @@ from typing import Sequence
 from .diddoc import ResolvedDIDDoc
 
 
+class DidMethodNotSupported(Exception):
+    """Raised when no resolver is registered for a given did method."""
+
+
+class DidNotFound(Exception):
+    """Raised when DID not found by resolver."""
+
+
 class BaseDIDResolver(ABC):
     """Base Class for DID Resolvers."""
 
