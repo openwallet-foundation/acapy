@@ -138,7 +138,7 @@ class TransactionManager:
         transaction.connection_id = connection_id
         profile_session = await self.session
         async with profile_session.profile.session() as session:
-            await transaction.save(session, reason="Change to requested state")
+            await transaction.save(session, reason="Created an endorsement request")
 
         transaction_request = TransactionRequest(
             transaction_id=transaction._id,
@@ -180,7 +180,7 @@ class TransactionManager:
 
         profile_session = await self.session
         async with profile_session.profile.session() as session:
-            await transaction.save(session, reason="Change it")
+            await transaction.save(session, reason="Received an endorsement request")
 
         return transaction
 
@@ -231,7 +231,7 @@ class TransactionManager:
 
         profile_session = await self.session
         async with profile_session.profile.session() as session:
-            await transaction.save(session, reason="Change it")
+            await transaction.save(session, reason="Created an endorsed response")
 
         endorsed_transaction_response = EndorsedTransactionResponse(
             transaction_id=transaction.thread_id,
@@ -269,7 +269,7 @@ class TransactionManager:
         ] = response.endorser_did
 
         async with profile_session.profile.session() as session:
-            await transaction.save(session, reason="Change it")
+            await transaction.save(session, reason="Received an endorsed response")
 
         return transaction
 
@@ -314,7 +314,7 @@ class TransactionManager:
 
         profile_session = await self.session
         async with profile_session.profile.session() as session:
-            await transaction.save(session, reason="Change it")
+            await transaction.save(session, reason="Created a refused response")
 
         refused_transaction_response = RefusedTransactionResponse(
             transaction_id=transaction.thread_id,
@@ -351,7 +351,7 @@ class TransactionManager:
         ] = response.endorser_did
 
         async with profile_session.profile.session() as session:
-            await transaction.save(session, reason="Change it")
+            await transaction.save(session, reason="Received a refused response")
 
         return transaction
 
@@ -380,7 +380,7 @@ class TransactionManager:
         transaction.state = state
         profile_session = await self.session
         async with profile_session.profile.session() as session:
-            await transaction.save(session, reason="Change it")
+            await transaction.save(session, reason="Cancelled the transaction")
 
         cancelled_transaction_response = CancelTransaction(
             state=state, thread_id=transaction._id
@@ -407,7 +407,7 @@ class TransactionManager:
 
         transaction.state = response.state
         async with profile_session.profile.session() as session:
-            await transaction.save(session, reason="Change it")
+            await transaction.save(session, reason="Received a cancel request")
 
         return transaction
 
@@ -436,7 +436,7 @@ class TransactionManager:
         transaction.state = state
         profile_session = await self.session
         async with profile_session.profile.session() as session:
-            await transaction.save(session, reason="Change it")
+            await transaction.save(session, reason="Resends the transaction request")
 
         resend_transaction_response = TransactionResend(
             state=TransactionRecord.STATE_TRANSACTION_RESENT_RECEIEVED,
@@ -464,7 +464,7 @@ class TransactionManager:
 
         transaction.state = response.state
         async with profile_session.profile.session() as session:
-            await transaction.save(session, reason="Change it")
+            await transaction.save(session, reason="Receives a transaction request")
 
         return transaction
 

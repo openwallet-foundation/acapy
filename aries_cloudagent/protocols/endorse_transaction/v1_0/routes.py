@@ -13,7 +13,7 @@ from marshmallow import fields, validate
 from ....admin.request_context import AdminRequestContext
 from .manager import TransactionManager
 from .models.transaction_record import TransactionRecord, TransactionRecordSchema
-from ....connections.models.conn_record import ConnRecord, ConnRecordSchema
+from ....connections.models.conn_record import ConnRecord
 
 from ....messaging.models.openapi import OpenAPISchema
 from ....messaging.valid import UUIDFour
@@ -499,7 +499,6 @@ async def transaction_resend(request: web.BaseRequest):
 )
 @querystring_schema(AssignTransactionJobsSchema())
 @match_info_schema(ConnIdMatchInfoSchema())
-@response_schema(ConnRecordSchema(), 200, description="")
 async def set_transaction_jobs(request: web.BaseRequest):
     """
     Request handler for assigning transaction jobs.
