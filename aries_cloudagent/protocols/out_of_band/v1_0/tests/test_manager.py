@@ -73,7 +73,8 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 "default_label": "This guy",
                 "additional_endpoints": ["http://aries.ca/another-endpoint"],
                 "debug.auto_accept_invites": True,
-                "debug.auto_accept_requests": True,
+                "debug.auto_accept_requests_peer": True,
+                "debug.auto_accept_requests_public": True,
             }
         )
         self.session.context.injector.bind_instance(BaseResponder, self.responder)
@@ -114,7 +115,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 my_endpoint=TestConfig.test_endpoint,
                 public=True,
                 include_handshake=True,
-                multi_use=False,
             )
 
             assert invi_rec.invitation["@type"] == DIDCommPrefix.qualify_current(
@@ -127,6 +127,18 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 in invi_rec.invitation["handshake_protocols"]
             )
             assert invi_rec.invitation["service"] == [f"did:sov:{TestConfig.test_did}"]
+
+    async def test_create_invitation_public_auto_accept_override_x(self):
+        self.manager.session.context.update_settings({"public_invites": True})
+
+        with self.assertRaises(OutOfBandManagerError) as context:
+            await self.manager.create_invitation(
+                my_endpoint=TestConfig.test_endpoint,
+                public=True,
+                include_handshake=True,
+                auto_accept=False,
+            )
+        assert "Cannot override auto-acceptance" in str(context.exception)
 
     async def test_create_invitation_multitenant_local(self):
         self.manager.session.context.update_settings(
@@ -171,7 +183,11 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             mock_wallet_get_public_did.return_value = DIDInfo(
                 self.test_did, self.test_verkey, None
             )
-            await self.manager.create_invitation(include_handshake=True, public=True)
+            await self.manager.create_invitation(
+                include_handshake=True,
+                public=True,
+                multi_use=False,
+            )
 
             self.multitenant_mgr.add_key.assert_called_once_with(
                 "test_wallet", TestConfig.test_verkey, skip_if_exists=True
@@ -204,13 +220,39 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             )
             invi_rec = await self.manager.create_invitation(
                 my_endpoint=TestConfig.test_endpoint,
-                public=True,
+                public=False,
                 include_handshake=True,
                 multi_use=False,
                 attachments=[{"type": "credential-offer", "id": "dummy-id"}],
             )
 
             assert isinstance(invi_rec, InvitationRecord)
+
+    async def test_create_invitation_attachment_v1_0_cred_offer_no_handshake(self):
+        self.manager.session.context.update_settings({"public_invites": True})
+        with async_mock.patch.object(
+            InMemoryWallet, "get_public_did", autospec=True
+        ) as mock_wallet_get_public_did, async_mock.patch.object(
+            V10CredentialExchange,
+            "retrieve_by_id",
+            async_mock.CoroutineMock(),
+        ) as mock_retrieve_cxid:
+            mock_wallet_get_public_did.return_value = DIDInfo(
+                TestConfig.test_did, TestConfig.test_verkey, None
+            )
+            mock_retrieve_cxid.return_value = async_mock.MagicMock(
+                credential_offer_dict={"cred": "offer"}
+            )
+            invi_rec = await self.manager.create_invitation(
+                my_endpoint=TestConfig.test_endpoint,
+                public=False,
+                include_handshake=False,
+                multi_use=False,
+                attachments=[{"type": "credential-offer", "id": "dummy-id"}],
+            )
+
+            assert isinstance(invi_rec, InvitationRecord)
+            assert not invi_rec.invitation["handshake_protocols"]
 
     async def test_create_invitation_attachment_v2_0_cred_offer(self):
         self.manager.session.context.update_settings({"public_invites": True})
@@ -261,7 +303,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             )
             invi_rec = await self.manager.create_invitation(
                 my_endpoint=TestConfig.test_endpoint,
-                public=True,
+                public=False,
                 include_handshake=True,
                 multi_use=False,
                 attachments=[{"type": "present-proof", "id": "dummy-id"}],
@@ -278,8 +320,21 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 public=True,
                 my_endpoint="testendpoint",
                 include_handshake=True,
+                multi_use=False,
             )
-        assert "Public invitations" in str(context.exception)
+        assert "Public invitations are not enabled" in str(context.exception)
+
+    async def test_create_invitation_public_x_multi_use(self):
+        self.session.context.update_settings({"public_invites": True})
+
+        with self.assertRaises(OutOfBandManagerError) as context:
+            await self.manager.create_invitation(
+                public=True,
+                my_endpoint="testendpoint",
+                include_handshake=True,
+                multi_use=True,
+            )
+        assert "Cannot create public invitation with" in str(context.exception)
 
     async def test_create_invitation_public_x_no_public_did(self):
         self.session.context.update_settings({"public_invites": True})
@@ -293,24 +348,11 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                     public=True,
                     my_endpoint="testendpoint",
                     include_handshake=True,
+                    multi_use=False,
                 )
-        assert "Cannot create public invitation" in str(context.exception)
-
-    async def test_create_invitation_x_public_multi_use(self):
-        self.session.context.update_settings({"public_invites": True})
-        with async_mock.patch.object(
-            InMemoryWallet, "get_public_did", autospec=True
-        ) as mock_wallet_get_public_did:
-            mock_wallet_get_public_did.return_value = DIDInfo(
-                TestConfig.test_did, TestConfig.test_verkey, None
-            )
-            with self.assertRaises(OutOfBandManagerError) as context:
-                await self.manager.create_invitation(
-                    public=True,
-                    include_handshake=True,
-                    multi_use=True,
-                )
-            assert "Cannot use public and multi_use" in str(context.exception)
+        assert "Cannot create public invitation with no public DID" in str(
+            context.exception
+        )
 
     async def test_create_invitation_attachment_x(self):
         self.manager.session.context.update_settings({"public_invites": True})
@@ -323,9 +365,9 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             with self.assertRaises(OutOfBandManagerError) as context:
                 await self.manager.create_invitation(
                     my_endpoint=TestConfig.test_endpoint,
-                    public=True,
+                    public=False,
                     include_handshake=True,
-                    multi_use=False,
+                    multi_use=True,
                     attachments=[{"having": "attachment", "is": "no", "good": "here"}],
                 )
             assert "Unknown attachment type" in str(context.exception)
@@ -385,6 +427,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                     public=True,
                     include_handshake=True,
                     metadata={"hello": "world"},
+                    multi_use=False,
                 )
             assert "Cannot store metadata on public" in str(context.exception)
 
@@ -739,9 +782,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 sender_key=TestConfig.test_verkey,
             )
             oob_invi = InvitationMessage()
-            retrieve_invi_rec.return_value = InvitationRecord(
-                invi_msg_id="test_123", multi_use=False
-            )
+            retrieve_invi_rec.return_value = InvitationRecord(invi_msg_id="test_123")
             await self.manager.receive_reuse_message(reuse_msg, receipt)
             assert (
                 len(
@@ -804,9 +845,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 sender_key=TestConfig.test_verkey,
             )
             oob_invi = InvitationMessage()
-            retrieve_invi_rec.return_value = InvitationRecord(
-                invi_msg_id="test_123", multi_use=False
-            )
+            retrieve_invi_rec.return_value = InvitationRecord(invi_msg_id="test_123")
             await self.manager.receive_reuse_message(reuse_msg, receipt)
 
     async def test_recieve_reuse_accepeted(self):

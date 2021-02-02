@@ -133,7 +133,6 @@ async def didx_accept_request(request: web.BaseRequest):
     except (StorageError, WalletError, DIDXManagerError, BaseModelError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-    # TODO check if conn rec state is correct here? Maybe pass outbound into conn mgr
     await outbound_handler(response, connection_id=conn_rec.connection_id)
     return web.json_response(result)
 

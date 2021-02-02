@@ -243,6 +243,7 @@ class Conductor:
                 await mediation_mgr.clear_default_mediator()
                 print("Default mediator cleared.")
 
+        # Clear default mediator
         # Set default mediator by id
         default_mediator_id = context.settings.get("mediation.default_id")
         if default_mediator_id:
