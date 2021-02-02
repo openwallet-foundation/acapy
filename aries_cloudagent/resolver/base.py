@@ -12,6 +12,10 @@ class ResolverError(Exception):
     """Base class for resolver exceptions."""
 
 
+class DidNotFound(ResolverError):
+    """Raised when DID is not found in verifiable data registry."""
+
+
 class ResolverType(Enum):
     """Resolver Type declarations."""
 
