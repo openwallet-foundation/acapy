@@ -384,7 +384,7 @@ class OutOfBandManager(BaseConnectionManager):
                             session=self._session, key="reuse_msg_state"
                         )
                 except asyncio.TimeoutError:
-                    # If no reuse_accepted or problem_report message was recieved within
+                    # If no reuse_accepted or problem_report message was received within
                     # the 15s timeout then a new connection to be created
                     await conn_rec.metadata_delete(
                         session=self._session, key="reuse_msg_id"
@@ -418,8 +418,10 @@ class OutOfBandManager(BaseConnectionManager):
         if conn_rec is None:
             if len(unq_handshake_protos) == 0:
                 raise OutOfBandManagerError(
-                    "No existing connection exists and \
-                        handshake_protocol is missing"
+                    (
+                        "No existing connection exists and "
+                        "handshake_protocol is missing"
+                    )
                 )
             # Create a new connection
             for proto in unq_handshake_protos:
@@ -428,7 +430,7 @@ class OutOfBandManager(BaseConnectionManager):
                     conn_rec = await didx_mgr.receive_invitation(
                         invitation=invi_msg,
                         their_public_did=public_did,
-                        auto_accept=True,
+                        auto_accept=auto_accept,
                     )
                 elif proto == CONN_PROTO:
                     service.recipient_keys = [
@@ -451,7 +453,7 @@ class OutOfBandManager(BaseConnectionManager):
                     conn_rec = await conn_mgr.receive_invitation(
                         invitation=connection_invitation,
                         their_public_did=public_did,
-                        auto_accept=True,
+                        auto_accept=auto_accept,
                     )
                 if conn_rec is not None:
                     break
@@ -503,7 +505,6 @@ class OutOfBandManager(BaseConnectionManager):
                                 presentation_ex_record
                             )
                         )
-
                         if presentation_ex_record.auto_present:
                             presentation_preview = None
                             if presentation_ex_record.presentation_proposal_dict:
@@ -538,27 +539,39 @@ class OutOfBandManager(BaseConnectionManager):
                                     )
                                 ),
                             )
-                        responder = self._session.inject(BaseResponder, required=False)
-                        connection_targets = await self.fetch_connection_targets(
-                            connection=conn_rec
-                        )
-                        if responder:
-                            await responder.send(
-                                message=presentation_message,
-                                target_list=connection_targets,
+                            responder = self._session.inject(
+                                BaseResponder, required=False
                             )
-                        if presentation_message is None:
+                            connection_targets = await self.fetch_connection_targets(
+                                connection=conn_rec
+                            )
+                            if presentation_message is None:
+                                raise OutOfBandManagerError(
+                                    "No presentation for proof request nonce={}".format(
+                                        indy_proof_request["nonce"]
+                                    )
+                                )
+                            else:
+                                if responder:
+                                    await responder.send(
+                                        message=presentation_message,
+                                        target_list=connection_targets,
+                                    )
+                                return presentation_message.serialize()
+                        else:
                             raise OutOfBandManagerError(
-                                "No presentation for proof request nonce={}".format(
-                                    indy_proof_request["nonce"]
+                                (
+                                    "auto_present setting in configuration is"
+                                    " set to false. Cannot respond automatically"
+                                    " to presentation requests, building"
                                 )
                             )
-                        else:
-                            return presentation_message.serialize()
                     else:
                         raise OutOfBandManagerError(
-                            "Unsupported request~attach type, \
-                                only request-presentation is supported"
+                            (
+                                "Unsupported request~attach type, "
+                                "only request-presentation is supported"
+                            )
                         )
             else:
                 raise OutOfBandManagerError("request~attach is not properly formatted")
@@ -609,13 +622,13 @@ class OutOfBandManager(BaseConnectionManager):
         Returns:
 
         """
-        recieved = False
-        while not recieved:
+        received = False
+        while not received:
             if (
                 not await conn_rec.metadata_get(self._session, "reuse_msg_state")
                 == "initial"
             ):
-                recieved = True
+                received = True
         return
 
     async def create_handshake_reuse_message(
@@ -667,9 +680,9 @@ class OutOfBandManager(BaseConnectionManager):
         self,
         reuse_msg: HandshakeReuse,
         receipt: MessageReceipt,
-    ):
+    ) -> None:
         """
-        Recieve and process a HandshakeReuse message under RFC 0434.
+        Receive and process a HandshakeReuse message under RFC 0434.
 
         Process a `HandshakeReuse` message by looking up
         the connection records using the MessageReceipt sender DID.
@@ -765,9 +778,9 @@ class OutOfBandManager(BaseConnectionManager):
         reuse_accepted_msg: HandshakeReuseAccept,
         receipt: MessageReceipt,
         conn_record: ConnRecord,
-    ):
+    ) -> None:
         """
-        Recieve and process a HandshakeReuseAccept message under RFC 0434.
+        Receive and process a HandshakeReuseAccept message under RFC 0434.
 
         Process a `HandshakeReuseAccept` message by updating the ConnRecord metadata
         state to `accepted`.
@@ -796,8 +809,10 @@ class OutOfBandManager(BaseConnectionManager):
         except StorageNotFoundError as e:
             raise OutOfBandManagerError(
                 (
-                    f"Error processing reuse accepted message \
-                        for OOB invitation {invi_msg_id}, {e}"
+                    (
+                        "Error processing reuse accepted message "
+                        f"for OOB invitation {invi_msg_id}, {e}"
+                    )
                 )
             )
 
@@ -806,9 +821,9 @@ class OutOfBandManager(BaseConnectionManager):
         problem_report: ProblemReport,
         receipt: MessageReceipt,
         conn_record: ConnRecord,
-    ):
+    ) -> None:
         """
-        Recieve and process a ProblemReport message from the inviter to invitee.
+        Receive and process a ProblemReport message from the inviter to invitee.
 
         Process a `ProblemReport` message by updating  the ConnRecord metadata
         state to `not_accepted`.
@@ -837,7 +852,9 @@ class OutOfBandManager(BaseConnectionManager):
         except StorageNotFoundError:
             raise OutOfBandManagerError(
                 (
-                    f"Error processing problem report message \
-                        for OOB invitation {invi_msg_id}"
+                    (
+                        "Error processing problem report message "
+                        f"for OOB invitation {invi_msg_id}"
+                    )
                 )
             )

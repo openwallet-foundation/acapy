@@ -42,7 +42,9 @@ class InvitationCreateQueryStringSchema(OpenAPISchema):
         required=False,
     )
     use_connections_rfc160 = fields.Boolean(
-        description="Use the RFC 0160 over did-exchange",
+        description=(
+            "Use RFC 0160 connection invitation over RFC 0023 did exchange protocol"
+        ),
         required=False,
         default=False,
     )
