@@ -6,7 +6,8 @@ from typing import Sequence
 
 from ...core.profile import ProfileSession
 from ...ledger.indy import IndySdkLedger
-from ..base import BaseDIDResolver, ResolverError, ResolverType
+from ...ledger.error import LedgerError
+from ..base import BaseDIDResolver, DidNotFound, ResolverError, ResolverType
 from ..did import DID
 from ..diddoc import ResolvedDIDDoc
 
@@ -40,9 +41,12 @@ class IndyDIDResolver(BaseDIDResolver):
 
         did = DID(did)
 
-        async with ledger:
-            endpoint = await ledger.get_endpoint_for_did(str(did))
-            recipient_key = await ledger.get_key_for_did(str(did))
+        try:
+            async with ledger:
+                recipient_key = await ledger.get_key_for_did(str(did))
+                endpoint = await ledger.get_endpoint_for_did(str(did))
+        except LedgerError as err:
+            raise DidNotFound(f"DID {did} could not be resolved") from err
 
         doc = ResolvedDIDDoc(
             {

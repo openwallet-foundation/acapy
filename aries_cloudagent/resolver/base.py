@@ -12,12 +12,9 @@ class DidMethodNotSupported(Exception):
     """Raised when no resolver is registered for a given did method."""
 
 
-class DidNotFound(Exception):
-    """Raised when DID not found by resolver."""
+class DidNotFound(ResolverError):
+    """Raised when DID is not found in verifiable data registry."""
 
-
-class BaseDIDResolver(ABC):
-    """Base Class for DID Resolvers."""
 
 class ResolverType(Enum):
     """Resolver Type declarations."""
