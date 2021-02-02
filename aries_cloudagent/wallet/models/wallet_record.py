@@ -1,6 +1,6 @@
 """Wallet record."""
 
-from typing import Any, Optional
+from typing import Any, Optional, Sequence
 
 from marshmallow import fields
 from marshmallow import validate
@@ -11,6 +11,7 @@ from ...messaging.models.base_record import (
     BaseRecordSchema,
 )
 from ...messaging.valid import UUIDFour
+from ..error import WalletSettingsError
 
 
 class WalletRecord(BaseRecord):
@@ -66,7 +67,7 @@ class WalletRecord(BaseRecord):
         return self.settings.get("wallet.type")
 
     @property
-    def wallet_webhook_urls(self) -> str:
+    def wallet_webhook_urls(self) -> Sequence[str]:
         """Accessor for webhook_urls of the wallet."""
         return self.settings.get("wallet.webhook_urls")
 
@@ -105,6 +106,12 @@ class WalletRecord(BaseRecord):
         # All other cases the key is required
         else:
             return True
+
+    def update_settings(self, settings: dict):
+        """Update settings."""
+        if "wallet.id" in settings:
+            raise WalletSettingsError("wallet.id cannot be saved in settings.")
+        self._settings.update(settings)
 
     def __eq__(self, other: Any) -> bool:
         """Comparison between records."""
