@@ -180,6 +180,7 @@ class ConnRecord(BaseRecord):
         accept: str = None,
         invitation_mode: str = None,
         alias: str = None,
+        their_public_did: str = None,
         **kwargs,
     ):
         """Initialize a new ConnRecord."""
@@ -207,6 +208,7 @@ class ConnRecord(BaseRecord):
         self.accept = accept or self.ACCEPT_MANUAL
         self.invitation_mode = invitation_mode or self.INVITATION_MODE_ONCE
         self.alias = alias
+        self.their_public_did = their_public_did
 
     @property
     def connection_id(self) -> str:
@@ -234,6 +236,7 @@ class ConnRecord(BaseRecord):
                 "error_msg",
                 "their_label",
                 "state",
+                "their_public_did",
             )
         }
 
@@ -310,7 +313,7 @@ class ConnRecord(BaseRecord):
         """
         assert self.connection_id
         record = StorageRecord(
-            self.RECORD_TYPE_INVITATION,
+            self.RECORD_TYPE_INVITATION,  # conn- or oob-invitation, to retrieve easily
             invitation.to_json(),
             {"connection_id": self.connection_id},
         )
@@ -328,7 +331,8 @@ class ConnRecord(BaseRecord):
         assert self.connection_id
         storage = session.inject(BaseStorage)
         result = await storage.find_record(
-            self.RECORD_TYPE_INVITATION, {"connection_id": self.connection_id}
+            self.RECORD_TYPE_INVITATION,
+            {"connection_id": self.connection_id},
         )
         ser = json.loads(result.value)
         return (
@@ -350,7 +354,7 @@ class ConnRecord(BaseRecord):
         """
         assert self.connection_id
         record = StorageRecord(
-            self.RECORD_TYPE_REQUEST,
+            self.RECORD_TYPE_REQUEST,  # conn- or didx-request, to retrieve easily
             request.to_json(),
             {"connection_id": self.connection_id},
         )
@@ -591,4 +595,9 @@ class ConnRecordSchema(BaseRecordSchema):
         required=False,
         description="Optional alias to apply to connection for later use",
         example="Bob, providing quotes",
+    )
+    their_public_did = fields.Str(
+        required=False,
+        description="Other agent's public DID for connection",
+        example="2cpBmR3FqGKWi5EyUbpRY8",
     )

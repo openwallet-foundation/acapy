@@ -1,0 +1,34 @@
+"""Handshake Reuse Message Handler under RFC 0434."""
+
+from .....messaging.base_handler import (
+    BaseHandler,
+    BaseResponder,
+    RequestContext,
+)
+
+from ..manager import OutOfBandManager, OutOfBandManagerError
+from ..messages.reuse import HandshakeReuse
+
+
+class HandshakeReuseMessageHandler(BaseHandler):
+    """Handler class for Handshake Reuse Message Handler under RFC 0434."""
+
+    async def handle(self, context: RequestContext, responder: BaseResponder):
+        """
+        Handle Handshake Reuse Message Handler under RFC 0434.
+
+        Args:
+            context: Request context
+            responder: Responder callback
+        """
+        self._logger.debug(
+            f"HandshakeReuseMessageHandler called with context {context}"
+        )
+        assert isinstance(context.message, HandshakeReuse)
+
+        session = await context.session()
+        mgr = OutOfBandManager(session)
+        try:
+            await mgr.receive_reuse_message(context.message, context.message_receipt)
+        except OutOfBandManagerError as e:
+            self._logger.exception(f"Error processing Handshake Reuse message, {e}")

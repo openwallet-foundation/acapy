@@ -3,16 +3,16 @@
 import json
 import logging
 
-from typing import Sequence, Tuple
+from typing import Sequence
 
 from ....connections.models.conn_record import ConnRecord
-from ....connections.models.connection_target import ConnectionTarget
 from ....connections.models.diddoc import (
     DIDDoc,
     PublicKey,
     PublicKeyType,
     Service,
 )
+from ....connections.base_manager import BaseConnectionManager
 from ....core.error import BaseError
 from ....core.profile import ProfileSession
 from ....messaging.decorators.attach_decorator import AttachDecorator
@@ -28,9 +28,6 @@ from ....multitenant.manager import MultitenantManager
 from ...out_of_band.v1_0.messages.invitation import (
     InvitationMessage as OOBInvitationMessage,
 )
-from ...out_of_band.v1_0.models.invitation import (
-    InvitationRecord as OOBInvitationRecord,
-)
 
 from .messages.complete import DIDXComplete
 from .messages.request import DIDXRequest
@@ -42,11 +39,8 @@ class DIDXManagerError(BaseError):
     """Connection error."""
 
 
-class DIDXManager:
+class DIDXManager(BaseConnectionManager):
     """Class for managing connections under RFC 23 (DID exchange)."""
-
-    RECORD_TYPE_DID_DOC = "did_doc"
-    RECORD_TYPE_DID_KEY = "did_key"
 
     def __init__(self, session: ProfileSession):
         """
@@ -57,6 +51,7 @@ class DIDXManager:
         """
         self._session = session
         self._logger = logging.getLogger(__name__)
+        super().__init__(self._session)
 
     @property
     def session(self) -> ProfileSession:
@@ -72,6 +67,7 @@ class DIDXManager:
     async def receive_invitation(
         self,
         invitation: OOBInvitationMessage,
+        their_public_did: str = None,
         auto_accept: bool = None,
         alias: str = None,
     ) -> ConnRecord:  # leave in didexchange as it uses a responder: not out-of-band
@@ -108,7 +104,11 @@ class DIDXManager:
                 auto_accept
                 or (
                     auto_accept is None
-                    and self._session.settings.get("debug.auto_accept_invites")
+                    and self._session.settings.get(
+                        "debug.auto_accept_requests_public"
+                        if invitation.service_dids
+                        else "debug.auto_accept_requests_peer"
+                    )
                 )
             )
             else ConnRecord.ACCEPT_MANUAL
@@ -128,6 +128,7 @@ class DIDXManager:
             state=ConnRecord.State.INVITATION.rfc23,
             accept=accept,
             alias=alias,
+            their_public_did=their_public_did,
         )
 
         await conn_rec.save(
@@ -205,13 +206,12 @@ class DIDXManager:
             my_info, conn_rec.inbound_connection_id, my_endpoints
         )
         invitation = await conn_rec.retrieve_invitation(self._session)
-        if invitation.service_blocks:
-            pthid = invitation._id  # explicit
-        else:
-            """# early try: keep around until logic in code is proven sound
-            pthid = did_doc.service[[s for s in did_doc.service][0]].id
-            """
-            pthid = invitation.service_dids[0]  # should look like did:sov:abc...123
+        pthid = invitation._id
+        # WAS
+        # if invitation.service_blocks:
+        #     pthid = invitation._id  # explicit
+        # else:
+        #     pthid = invitation.service_dids[0]  # should look like did:sov:abc...123
         attach = AttachDecorator.from_indy_dict(did_doc.serialize())
         await attach.data.sign(my_info.verkey, wallet)
         if not my_label:
@@ -249,7 +249,6 @@ class DIDXManager:
         )
 
         conn_rec = None
-        invi_rec = None
         connection_key = None
         my_info = None
         wallet = self._session.inject(BaseWallet)
@@ -257,17 +256,6 @@ class DIDXManager:
         # Multitenancy setup
         multitenant_mgr = self._session.inject(MultitenantManager, required=False)
         wallet_id = self._session.settings.get("wallet.id")
-
-        try:
-            invi_rec = await OOBInvitationRecord.retrieve_by_tag_filter(
-                self._session,
-                tag_filter={"invi_msg_id": request._thread.pthid},
-            )
-        except StorageNotFoundError:
-            raise DIDXManagerError(
-                f"No record of invitation {request._thread.pthid} "
-                f"for request {request._id}"
-            )
 
         # Determine what key will need to sign the response
         if receipt.recipient_did_public:
@@ -284,7 +272,7 @@ class DIDXManager:
             except StorageNotFoundError:
                 raise DIDXManagerError("No invitation found for pairwise connection")
 
-        if conn_rec:
+        if conn_rec:  # OOB mgr saves conn record only for explicit invite (public DID)
             connection_key = conn_rec.invitation_key
             if conn_rec.is_multiuse_invitation:
                 wallet = self._session.inject(BaseWallet)
@@ -333,7 +321,9 @@ class DIDXManager:
             )
         await self.store_did_document(conn_did_doc)
 
-        if conn_rec:
+        if conn_rec:  # request necessarily against explicit invitation (peer DID)
+            auto_accept = conn_rec.accept == ConnRecord.ACCEPT_AUTO  # null=manual
+
             conn_rec.their_label = request.label
             conn_rec.their_did = request.did
             conn_rec.state = ConnRecord.State.REQUEST.rfc23
@@ -342,7 +332,16 @@ class DIDXManager:
                 self._session, reason="Received connection request from invitation"
             )
         elif self._session.settings.get("public_invites"):
+            # request from public DID (implicit invitation)
             my_info = await wallet.create_local_did()
+
+            # Add mapping for multitenant relay
+            if multitenant_mgr and wallet_id:
+                await multitenant_mgr.add_key(wallet_id, my_info.verkey)
+
+            auto_accept = self._session.settings.get(
+                "debug.auto_accept_requests_public", False
+            )
             conn_rec = ConnRecord(
                 my_did=my_info.did,
                 their_did=request.did,
@@ -352,26 +351,20 @@ class DIDXManager:
                 request_id=request._id,
                 state=ConnRecord.State.REQUEST.rfc23,
                 accept=(
-                    ConnRecord.ACCEPT_AUTO
-                    if invi_rec.auto_accept
-                    else ConnRecord.ACCEPT_MANUAL
-                ),  # oob manager calculates (including config) at conn record creation
+                    ConnRecord.ACCEPT_AUTO if auto_accept else ConnRecord.ACCEPT_MANUAL
+                ),
             )
-
             await conn_rec.save(
                 self._session, reason="Received connection request from public DID"
             )
 
-            # Add mapping for multitenant relay
-            if multitenant_mgr and wallet_id:
-                await multitenant_mgr.add_key(wallet_id, my_info.verkey)
         else:
             raise DIDXManagerError("Public invitations are not enabled")
 
         # Attach the connection request so it can be found and responded to
         await conn_rec.attach_request(self._session, request)
 
-        if invi_rec.auto_accept:
+        if auto_accept:
             response = await self.create_response(conn_rec)
             responder = self._session.inject(BaseResponder, required=False)
             if responder:
@@ -672,18 +665,6 @@ class DIDXManager:
 
         return did_doc
 
-    async def fetch_did_document(self, did: str) -> Tuple[DIDDoc, StorageRecord]:
-        """Retrieve a DID Document for a given DID.
-
-        Args:
-            did: The DID for which to search
-        """
-        storage = self._session.inject(BaseStorage)
-        record = await storage.find_record(
-            DIDXManager.RECORD_TYPE_DID_DOC, {"did": did}
-        )
-        return (DIDDoc.from_json(record.value), record)
-
     async def store_did_document(self, did_doc: DIDDoc):
         """Store a DID document.
 
@@ -696,7 +677,7 @@ class DIDXManager:
             stored_doc, record = await self.fetch_did_document(did_doc.did)
         except StorageNotFoundError:
             record = StorageRecord(
-                DIDXManager.RECORD_TYPE_DID_DOC,
+                self.RECORD_TYPE_DID_DOC,
                 did_doc.to_json(),
                 {"did": did_doc.did},
             )
@@ -715,9 +696,7 @@ class DIDXManager:
             did: The DID to associate with this key
             key: The verkey to be added
         """
-        record = StorageRecord(
-            DIDXManager.RECORD_TYPE_DID_KEY, key, {"did": did, "key": key}
-        )
+        record = StorageRecord(self.RECORD_TYPE_DID_KEY, key, {"did": did, "key": key})
         storage = self._session.inject(BaseStorage)
         await storage.add_record(record)
 
@@ -728,9 +707,7 @@ class DIDXManager:
             key: The verkey to look up
         """
         storage = self._session.inject(BaseStorage)
-        record = await storage.find_record(
-            DIDXManager.RECORD_TYPE_DID_KEY, {"key": key}
-        )
+        record = await storage.find_record(self.RECORD_TYPE_DID_KEY, {"key": key})
         return record.tags["did"]
 
     async def remove_keys_for_did(self, did: str):
@@ -740,7 +717,7 @@ class DIDXManager:
             did: The DID for which to remove keys
         """
         storage = self._session.inject(BaseStorage)
-        await storage.delete_all_records(DIDXManager.RECORD_TYPE_DID_KEY, {"did": did})
+        await storage.delete_all_records(self.RECORD_TYPE_DID_KEY, {"did": did})
 
     async def verify_diddoc(
         self,
@@ -755,43 +732,3 @@ class DIDXManager:
             raise DIDXManagerError("DID doc attachment signature failed verification")
 
         return DIDDoc.deserialize(json.loads(signed_diddoc_bytes.decode()))
-
-    def diddoc_connection_targets(
-        self,
-        doc: DIDDoc,
-        sender_verkey: str,
-        their_label: str = None,
-    ) -> Sequence[ConnectionTarget]:
-        """Get a list of connection targets from a DID Document.
-
-        Args:
-            doc: The DID Document to create the target from
-            sender_verkey: The verkey we are using
-            their_label: The connection label they are using
-        """
-
-        if not doc:
-            raise DIDXManagerError("No DIDDoc provided for connection target")
-        if not doc.did:
-            raise DIDXManagerError("DIDDoc has no DID")
-        if not doc.service:
-            raise DIDXManagerError("No services defined by DIDDoc")
-
-        targets = []
-        for service in doc.service.values():
-            if service.recip_keys:
-                targets.append(
-                    ConnectionTarget(
-                        did=doc.did,
-                        endpoint=service.endpoint,
-                        label=their_label,
-                        recipient_keys=[
-                            key.value for key in (service.recip_keys or ())
-                        ],
-                        routing_keys=[
-                            key.value for key in (service.routing_keys or ())
-                        ],
-                        sender_key=sender_verkey,
-                    )
-                )
-        return targets
