@@ -252,7 +252,7 @@ class MultitenantManager:
 
         """
         # update wallet_record
-        async with self.profile.session() as session:
+        async with self._profile.session() as session:
             wallet_record = await WalletRecord.retrieve_by_id(session, wallet_id)
             wallet_record.update_settings(new_settings)
             await wallet_record.save(session)
@@ -264,7 +264,7 @@ class MultitenantManager:
 
             extra_settings = {
                 "admin.webhook_urls": self.get_webhook_urls(
-                    self.profile.context, wallet_record
+                    self._profile.context, wallet_record
                 ),
             }
             profile.settings.update(extra_settings)
