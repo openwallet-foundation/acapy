@@ -4,9 +4,9 @@ from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 
-from ..message_types import PRESENTATION_PROPOSAL, PROTOCOL_PACKAGE
+from ..message_types import PRES_PROPOSAL, PROTOCOL_PACKAGE
 
-from .inner.presentation_preview import PresentationPreview, PresentationPreviewSchema
+from .inner.pres_preview import PresentationPreview, PresentationPreviewSchema
 
 HANDLER_CLASS = (
     f"{PROTOCOL_PACKAGE}.handlers."

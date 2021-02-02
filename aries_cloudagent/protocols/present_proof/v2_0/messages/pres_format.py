@@ -1,4 +1,4 @@
-"""Issue-credential protocol message attachment format."""
+"""Credential format inner object."""
 
 from collections import namedtuple
 from enum import Enum
@@ -13,20 +13,17 @@ from .....messaging.decorators.attach_decorator import AttachDecorator
 from .....messaging.models.base import BaseModel, BaseModelSchema
 from .....messaging.valid import UUIDFour
 
-from ..models.detail.dif import V20CredExRecordDIF
-from ..models.detail.indy import V20CredExRecordIndy
-
-# Aries RFC value, further monikers, cred ex detail record class
-FormatSpec = namedtuple("FormatSpec", "aries aka detail")
+# Aries RFC value, further monikers
+FormatSpec = namedtuple("FormatSpec", "aries aka")
 
 
-class V20CredFormat(BaseModel):
-    """Issue-credential protocol message attachment format."""
+class V20PresFormat(BaseModel):
+    """Present-proof protocol message attachment format."""
 
     class Meta:
-        """Issue-credential protocol message attachment format metadata."""
+        """Present-proof protocol message attachment format metadata."""
 
-        schema_class = "V20CredFormatSchema"
+        schema_class = "V20PresFormatSchema"
 
     class Format(Enum):
         """Attachment format."""
@@ -34,25 +31,23 @@ class V20CredFormat(BaseModel):
         INDY = FormatSpec(
             "hlindy-zkp-v1.0",
             {"indy", "hyperledgerindy", "hlindy"},
-            V20CredExRecordIndy,
         )
         DIF = FormatSpec(
-            "dif/credential-manifest@v1.0",
+            "dif/presentation-exchange/definitions@v1.0",
             {"dif", "w3c", "jsonld"},
-            V20CredExRecordDIF,
         )
 
         @classmethod
-        def get(cls, label: Union[str, "V20CredFormat.Format"]):
+        def get(cls, label: Union[str, "V20PresFormat.Format"]):
             """Get format enum for label."""
             if isinstance(label, str):
-                for fmt in V20CredFormat.Format:
+                for fmt in V20PresFormat.Format:
                     if (
                         fmt.aries == label
                         or sub("[^a-zA-Z0-9]+", "", label.lower()) in fmt.aka
                     ):
                         return fmt
-            elif isinstance(label, V20CredFormat.Format):
+            elif isinstance(label, V20PresFormat.Format):
                 return label
 
             return None
@@ -67,25 +62,20 @@ class V20CredFormat(BaseModel):
             """Accessor for alternative identifier list."""
             return self.value.aka
 
-        @property
-        def detail(self) -> str:
-            """Accessor for credential exchange detail class."""
-            return self.value.detail
-
-        def validate_filter(self, data: Mapping):
-            """Raise ValidationError for wrong filtration criteria."""
-            if self is V20CredFormat.Format.INDY:
+        def validate_proposal_attach(self, data: Mapping):
+            """Raise ValidationError for wrong proposal~attach content."""
+            if self is V20PredFormat.Format.INDY:
                 if data.keys() - set(CRED_DEF_TAGS):
                     raise ValidationError(f"Bad indy credential filter: {data}")
 
         def get_attachment_data(
             self,
-            formats: Sequence["V20CredFormat"],
+            formats: Sequence["V20PresFormat"],
             attachments: Sequence[AttachDecorator],
         ):
             """Find attachment of current format, base64-decode and return its data."""
             for fmt in formats:
-                if V20CredFormat.Format.get(fmt.format) is self:
+                if V20PresFormat.Format.get(fmt.format) is self:
                     attach_id = fmt.attach_id
                     break
             else:
@@ -101,12 +91,12 @@ class V20CredFormat(BaseModel):
         self,
         *,
         attach_id: str = None,
-        format_: Union[str, "V20CredFormat.Format"] = None,
+        format_: Union[str, "V20PresFormat.Format"] = None,
     ):
-        """Initialize issue-credential protocol message attachment format."""
+        """Initialize present-proof protocol message attachment format."""
         self.attach_id = attach_id or uuid4()
         self.format_ = (
-            V20CredFormat.Format.get(format_) or V20CredFormat.Format.INDY
+            V20PresFormat.Format.get(format_) or V20PresFormat.Format.INDY
         ).aries
 
     @property
@@ -115,13 +105,13 @@ class V20CredFormat(BaseModel):
         return self.format_
 
 
-class V20CredFormatSchema(BaseModelSchema):
-    """Issue-credential protocol message attachment format schema."""
+class V20PresFormatSchema(BaseModelSchema):
+    """Present-proof protocol message attachment format schema."""
 
     class Meta:
-        """Issue-credential protocol message attachment format schema metadata."""
+        """Present-proof protocol message attachment format schema metadata."""
 
-        model_class = V20CredFormat
+        model_class = V20PresFormat
         unknown = EXCLUDE
 
     attach_id = fields.Str(
@@ -133,8 +123,8 @@ class V20CredFormatSchema(BaseModelSchema):
     format_ = fields.Str(
         required=True,
         allow_none=False,
-        description="acceptable issue-credential message attachment format specifier",
+        description="acceptable present-proof message attachment format specifier",
         data_key="format",
-        validate=validate.OneOf([f.aries for f in V20CredFormat.Format]),
-        example=V20CredFormat.Format.INDY.aries,
+        validate=validate.OneOf([f.aries for f in V20PresFormat.Format]),
+        example=V20PresFormat.Format.INDY.aries,
     )
