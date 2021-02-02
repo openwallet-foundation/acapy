@@ -6,7 +6,7 @@ For significant changes, please open an issue first to discuss the proposed chan
 
 (If you are new to GitHub, you might start with a [basic tutorial](https://help.github.com/articles/set-up-git) and check out a more detailed guide to [pull requests](https://help.github.com/articles/using-pull-requests/).)
 
-Pull requests will be evaluated by the repository guardians on a schedule and if deemed beneficial will be committed to the master. Pull requests should have a descriptive name and include an summary of all changes made in the pull request description.
+Pull requests will be evaluated by the repository guardians on a schedule and if deemed beneficial will be committed to the `main` branch. Pull requests should have a descriptive name and include an summary of all changes made in the pull request description.
 
 If you would like to propose a significant change, please open an issue first to discuss the work with the community.
 

@@ -176,7 +176,7 @@ To run the tests including [Indy SDK](https://github.com/hyperledger/indy-sdk) a
 
 You can run a full suite of integration tests using the [Aries Agent Test Harness (AATH)](https://github.com/hyperledger/aries-agent-test-harness).
 
-Check out and run AATH tests as follows (this tests the aca-py `master` branch):
+Check out and run AATH tests as follows (this tests the aca-py `main` branch):
 
 ```bash
 git clone https://github.com/hyperledger/aries-agent-test-harness.git
