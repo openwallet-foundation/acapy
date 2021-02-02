@@ -75,6 +75,7 @@ def test_eq(did, next_did):
     next_did = DID(next_did)
     assert did == same
     assert did != next_did
+    assert did != "did"
 
 
 @pytest.mark.parametrize(

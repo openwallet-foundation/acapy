@@ -46,14 +46,16 @@ class DIDResolver:
             lambda resolver: resolver.supports(did.method),
             self.did_resolver_registery.did_resolvers,
         )
-        if not valid_resolvers:
-            raise DidMethodNotSupported(f"{did.method} not supported")
-
         native_resolvers = filter(lambda resolver: resolver.native, valid_resolvers)
         non_native_resolvers = filter(
             lambda resolver: not resolver.nateive, valid_resolvers
         )
-        yield from chain(native_resolvers, non_native_resolvers)
+        resolvers = chain(native_resolvers, non_native_resolvers)
+        try:
+            yield next(resolvers)
+        except StopIteration:
+            raise DidMethodNotSupported(f"{did.method} not supported")
+        yield from resolvers
 
     async def dereference_external(self, did_url: str) -> ResolvedDIDDoc:
         """Retrieve an external did in doc service from a public registry."""

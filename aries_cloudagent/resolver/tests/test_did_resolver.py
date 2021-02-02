@@ -6,6 +6,7 @@ from asynctest import mock as async_mock
 from ..did_resolver_registry import DIDResolverRegistry
 from ..did_resolver import DIDResolver
 from ...resolver.diddoc import ResolvedDIDDoc
+from ...resolver.base import BaseDIDResolver, DidMethodNotSupported, DidNotFound
 from ...resolver.did import DID
 
 
@@ -50,7 +51,6 @@ TEST_METHOD_SPECIFIC_IDS = [
     TEST_METHOD_SPECIFIC_ID3,
     TEST_METHOD_SPECIFIC_ID4,
 ]
-did_resolver_registry = DIDResolverRegistry()
 test_resolver_0 = unittest.mock.MagicMock()
 test_resolver_0.supported_methods.return_value = [TEST_DID_METHOD0]
 test_resolver_0.native.return_value = False
@@ -82,6 +82,7 @@ TEST_RESOLVERS = [
 
 @pytest.fixture
 def resolver():
+    did_resolver_registry = DIDResolverRegistry()
     for resolver in TEST_RESOLVERS:
         did_resolver_registry.register(resolver)
     return DIDResolver(did_resolver_registry)
@@ -140,8 +141,15 @@ def test_match_did_to_resolver(resolver, did, method):
     assert base_resolver.supports(method)
 
 
+def test_match_did_to_resolver_error(resolver):
+    did = unittest.mock.MagicMock()
+    did.method.return_value = "cow-say"
+    with pytest.raises(DidMethodNotSupported):
+        resolver._match_did_to_resolver(did)
+
+
 def test_match_did_to_resolver_native_priority(resolver):
-    pytest.skip("need more work")
+    pytest.skip("need to test native priority filtering")
 
 
 @pytest.mark.parametrize("did", TEST_DIDS)
@@ -160,4 +168,11 @@ def test_fully_dereference(resolver):
 @pytest.mark.parametrize("did", TEST_DIDS)
 async def test_resolve(resolver, did):
     did_doc = await resolver.resolve(did)
-    assert did_doc
+    assert isinstance(did_doc, ResolvedDIDDoc)
+
+
+@pytest.mark.parametrize("did", TEST_DIDS)
+async def test_resolve_did(resolver, did):
+    did = DID(did)
+    did_doc = await resolver.resolve(did)
+    assert isinstance(did_doc, ResolvedDIDDoc)
