@@ -49,7 +49,7 @@ class TestHandshakeReuseAcceptHandler:
         await handler_inst.handle(context=request_context, responder=responder)
         mock_oob_mgr.return_value.receive_reuse_accepted_message.assert_called_once_with(
             reuse_accepted_msg=request_context.message,
-            reciept=request_context.message_receipt,
+            receipt=request_context.message_receipt,
             conn_record=connection_record,
         )
 

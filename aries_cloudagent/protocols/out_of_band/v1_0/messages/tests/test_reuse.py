@@ -1,18 +1,22 @@
 import pytest
+
 from unittest import mock, TestCase
 from asynctest import TestCase as AsyncTestCase
+
 from ......messaging.models.base import BaseModelError
+
 from ..reuse import HandshakeReuse, HandshakeReuseSchema
 
 
 class TestReuseMessage(TestCase):
     """Test request schema."""
 
-    reuse_msg = HandshakeReuse()
-    reuse_msg.assign_thread_id(thid="test_thid", pthid="test_pthid")
+    def setUp(self):
+        self.reuse_msg = HandshakeReuse()
 
     def test_init(self):
         """Test initialization of Handshake Reuse message."""
+        self.reuse_msg.assign_thread_id(thid="test_thid", pthid="test_pthid")
         assert isinstance(self.reuse_msg, HandshakeReuse)
         assert isinstance(self.reuse_msg._id, str)
         assert len(self.reuse_msg._id) > 4
@@ -20,6 +24,13 @@ class TestReuseMessage(TestCase):
         assert self.reuse_msg._thread.pthid == "test_pthid"
 
     def test_make_model(self):
+        """Make reuse model."""
+        self.reuse_msg.assign_thread_id(thid="test_thid", pthid="test_pthid")
         data = self.reuse_msg.serialize()
         model_instance = HandshakeReuse.deserialize(data)
         assert isinstance(model_instance, HandshakeReuse)
+
+    def test_pre_dump_x(self):
+        """Exercise pre-dump serialization requirements."""
+        with pytest.raises(BaseModelError):
+            data = self.reuse_msg.serialize()

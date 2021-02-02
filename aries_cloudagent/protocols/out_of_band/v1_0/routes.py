@@ -19,6 +19,7 @@ from ...didexchange.v1_0.manager import DIDXManagerError
 from .manager import OutOfBandManager, OutOfBandManagerError
 from .messages.invitation import InvitationMessage, InvitationMessageSchema
 from .message_types import SPEC_URI
+from .models.invitation import InvitationRecordSchema
 
 LOGGER = logging.getLogger(__name__)
 
@@ -31,7 +32,9 @@ class InvitationCreateQueryStringSchema(OpenAPISchema):
     """Parameters and validators for create invitation request query string."""
 
     auto_accept = fields.Boolean(
-        description="Auto-accept connection (default as per configuration)",
+        description=(
+            "Auto-accept connection (defaults to configuration by peer or public DID)"
+        ),
         required=False,
     )
     multi_use = fields.Boolean(
@@ -39,7 +42,9 @@ class InvitationCreateQueryStringSchema(OpenAPISchema):
         required=False,
     )
     use_connections_rfc160 = fields.Boolean(
-        description="Use the RFC 0160 over did-exchange",
+        description=(
+            "Use RFC 0160 connection invitation over RFC 0023 did exchange protocol"
+        ),
         required=False,
         default=False,
     )
@@ -51,15 +56,37 @@ class InvitationCreateRequestSchema(OpenAPISchema):
     class AttachmentDefSchema(OpenAPISchema):
         """Attachment Schema."""
 
-        _id = fields.String(data_key="id")
-        _type = fields.String(data_key="type")
+        _id = fields.Str(
+            data_key="id",
+            description="Attachment identifier",
+            example="attachment-0",
+        )
+        _type = fields.Str(
+            data_key="type",
+            description="Attachment type",
+            example="credential-offer",
+        )
 
-    attachments = fields.Nested(AttachmentDefSchema, many=True, required=False)
-    include_handshake = fields.Boolean(default=False)
-    use_public_did = fields.Boolean(default=False)
+    attachments = fields.Nested(
+        AttachmentDefSchema,
+        many=True,
+        required=False,
+        description="Optional invitation attachments",
+    )
+    include_handshake = fields.Boolean(
+        default=True,
+        description="Whether to include handshake protocols",
+    )
+    use_public_did = fields.Boolean(
+        default=False,
+        description="Whether to use public DID in invitation",
+        example=False,
+    )
     metadata = fields.Dict(
-        description="Optional metadata to attach to the connection created with "
-        "the invitation",
+        description=(
+            "Optional metadata to attach to the connection created with "
+            "the invitation"
+        ),
         required=False,
     )
 
@@ -73,7 +100,9 @@ class InvitationReceiveQueryStringSchema(OpenAPISchema):
         example="Barry",
     )
     auto_accept = fields.Boolean(
-        description="Auto-accept connection (defaults to configuration)",
+        description=(
+            "Auto-accept connection (defaults to configuration by peer or public DID)"
+        ),
         required=False,
     )
     use_existing_connection = fields.Boolean(
@@ -95,7 +124,7 @@ class InvitationReceiveRequestSchema(InvitationMessageSchema):
 )
 @querystring_schema(InvitationCreateQueryStringSchema())
 @request_schema(InvitationCreateRequestSchema())
-@response_schema(OutOfBandModuleResponseSchema(), description="")
+@response_schema(InvitationRecordSchema(), description="")
 async def invitation_create(request: web.BaseRequest):
     """
     Request handler for creating a new connection invitation.
@@ -111,8 +140,8 @@ async def invitation_create(request: web.BaseRequest):
 
     body = await request.json() if request.body_exists else {}
     attachments = body.get("attachments")
-    include_handshake = body.get("include_handshake")
-    use_public_did = body.get("use_public_did")
+    include_handshake = body.get("include_handshake", True)
+    use_public_did = body.get("use_public_did", False)
     metadata = body.get("metadata")
 
     multi_use = json.loads(request.query.get("multi_use", "false"))
@@ -121,7 +150,7 @@ async def invitation_create(request: web.BaseRequest):
     session = await context.session()
     oob_mgr = OutOfBandManager(session)
     try:
-        invitation = await oob_mgr.create_invitation(
+        invi_rec = await oob_mgr.create_invitation(
             auto_accept=auto_accept,
             public=use_public_did,
             include_handshake=include_handshake,
@@ -133,7 +162,7 @@ async def invitation_create(request: web.BaseRequest):
     except (StorageNotFoundError, ValidationError, OutOfBandManagerError) as e:
         raise web.HTTPBadRequest(reason=str(e))
 
-    return web.json_response(invitation.serialize())
+    return web.json_response(invi_rec.serialize())
 
 
 @docs(

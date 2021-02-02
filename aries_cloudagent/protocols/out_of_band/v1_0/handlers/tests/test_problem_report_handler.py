@@ -48,7 +48,7 @@ class TestProblemReportHandler:
         await handler_inst.handle(context=request_context, responder=responder)
         mock_oob_mgr.return_value.receive_problem_report.assert_called_once_with(
             problem_report=request_context.message,
-            reciept=request_context.message_receipt,
+            receipt=request_context.message_receipt,
             conn_record=connection_record,
         )
 
