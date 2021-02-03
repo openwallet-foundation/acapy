@@ -64,7 +64,7 @@ class InvitationCreateRequestSchema(OpenAPISchema):
         _type = fields.Str(
             data_key="type",
             description="Attachment type",
-            example="credential-offer",
+            example="present-proof",
         )
 
     attachments = fields.Nested(

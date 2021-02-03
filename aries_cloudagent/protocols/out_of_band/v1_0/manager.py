@@ -36,7 +36,7 @@ from ...present_proof.v1_0.models.presentation_exchange import V10PresentationEx
 from ...present_proof.v1_0.util.indy import indy_proof_req_preview2indy_requested_creds
 
 from .messages.invitation import InvitationMessage
-from .messages.problem_report import ProblemReportReason, ProblemReport
+from .messages.problem_report import ProblemReport
 from .messages.reuse import HandshakeReuse
 from .messages.reuse_accept import HandshakeReuseAccept
 from .messages.service import Service as ServiceMessage
@@ -709,6 +709,7 @@ class OutOfBandManager(BaseConnectionManager):
             )
             responder = self._session.inject(BaseResponder, required=False)
             if conn_record is not None:
+                # For ConnRecords created using did-exchange
                 reuse_accept_msg = HandshakeReuseAccept()
                 reuse_accept_msg.assign_thread_id(thid=reuse_msg_id, pthid=invi_msg_id)
                 connection_targets = await self.fetch_connection_targets(
@@ -736,31 +737,22 @@ class OutOfBandManager(BaseConnectionManager):
                 conn_record = await self.find_existing_connection(
                     tag_filter={"their_did": receipt.sender_did}, post_filter={}
                 )
-                targets = None
+                # Problem Report is redundant in this case as with no active
+                # connection, it cannot reach the invitee any way
                 if conn_record is not None:
-                    targets = await self.fetch_connection_targets(
-                        connection=conn_record
-                    )
-                    problem_report = ProblemReport(
-                        problem_code=(
-                            ProblemReportReason.EXISTING_CONNECTION_DOES_NOT_EXISTS.value
-                        ),
-                        explain=(
-                            "No existing connection found "
-                            f"for invitation {invi_msg_id}"
-                        ),
-                    )
-                    problem_report.assign_thread_id(
+                    # For ConnRecords created using RFC 0160 connections
+                    reuse_accept_msg = HandshakeReuseAccept()
+                    reuse_accept_msg.assign_thread_id(
                         thid=reuse_msg_id, pthid=invi_msg_id
                     )
-                    await responder.send_reply(
-                        problem_report,
-                        target_list=targets,
+                    connection_targets = await self.fetch_connection_targets(
+                        connection=conn_record
                     )
-                else:
-                    raise OutOfBandManagerError(
-                        (f"No existing ConnRecord found, {receipt.sender_did}"),
-                    )
+                    if responder:
+                        await responder.send(
+                            message=reuse_accept_msg,
+                            target_list=connection_targets,
+                        )
         except StorageNotFoundError:
             raise OutOfBandManagerError(
                 (f"No existing ConnRecord found for OOB Invitee, {receipt.sender_did}"),

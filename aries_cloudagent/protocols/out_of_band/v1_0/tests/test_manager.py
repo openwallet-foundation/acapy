@@ -1017,9 +1017,8 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             )
             oob_invi = InvitationMessage()
             retrieve_invi_rec.return_value = InvitationRecord(invi_msg_id="test_123")
-            with self.assertRaises(OutOfBandManagerError) as context:
-                await self.manager.receive_reuse_message(reuse_msg, receipt)
-                assert "No existing ConnRecord found" in str(context.exception)
+            await self.manager.receive_reuse_message(reuse_msg, receipt)
+            assert len(self.responder.messages) == 0
 
     async def test_receive_reuse_message_storage_not_found(self):
         self.session.context.update_settings({"public_invites": True})
