@@ -51,41 +51,6 @@ TEST_METHOD_SPECIFIC_IDS = [
     TEST_METHOD_SPECIFIC_ID3,
     TEST_METHOD_SPECIFIC_ID4,
 ]
-test_resolver_0 = unittest.mock.MagicMock()
-test_resolver_0.supported_methods.return_value = [TEST_DID_METHOD0]
-test_resolver_0.native.return_value = False
-test_resolver_0.resolve.return_value = unittest.mock.MagicMock()
-test_resolver_1 = unittest.mock.MagicMock()
-test_resolver_1.supported_methods.return_value = [TEST_DID_METHOD1]
-test_resolver_1.native.return_value = False
-test_resolver_1.resolve.return_value = unittest.mock.MagicMock()
-test_resolver_2 = unittest.mock.MagicMock()
-test_resolver_2.supported_methods.return_value = [TEST_DID_METHOD2]
-test_resolver_2.native.return_value = False
-test_resolver_2.resolve.return_value = unittest.mock.MagicMock()
-test_resolver_3 = unittest.mock.MagicMock()
-test_resolver_3.supported_methods.return_value = [TEST_DID_METHOD3]
-test_resolver_3.native.return_value = False
-test_resolver_3.resolve.return_value = unittest.mock.MagicMock()
-test_resolver_4 = unittest.mock.MagicMock()
-test_resolver_4.supported_methods.return_value = [TEST_DID_METHOD4]
-test_resolver_4.native.return_value = False
-test_resolver_4.resolve.return_value = unittest.mock.MagicMock()
-TEST_RESOLVERS = [
-    test_resolver_0,
-    test_resolver_1,
-    test_resolver_2,
-    test_resolver_3,
-    test_resolver_4,
-]
-
-
-@pytest.fixture
-def resolver():
-    did_resolver_registry = DIDResolverRegistry()
-    for resolver in TEST_RESOLVERS:
-        did_resolver_registry.register(resolver)
-    return DIDResolver(did_resolver_registry)
 
 
 DOC = {
@@ -130,8 +95,20 @@ DOC = {
 }
 
 
+@pytest.fixture
+def resolver():
+    did_resolver_registry = DIDResolverRegistry()
+    for method in TEST_DID_METHODS:
+        resolver = unittest.mock.MagicMock()
+        resolver.supported_methods.return_value = [method]
+        resolver.native.return_value = False
+        resolver.resolve.return_value = unittest.mock.MagicMock()
+        did_resolver_registry.register(resolver)
+    return DIDResolver(did_resolver_registry)
+
+
 def test_create_resolver(resolver):
-    assert len(resolver.did_resolver_registery.did_resolvers) == len(TEST_RESOLVERS)
+    assert len(resolver.did_resolver_registery.did_resolvers) == len(TEST_DID_METHODS)
 
 
 @pytest.mark.parametrize("did, method", zip(TEST_DIDS, TEST_DID_METHODS))
@@ -142,8 +119,10 @@ def test_match_did_to_resolver(resolver, did, method):
 
 
 def test_match_did_to_resolver_error(resolver):
-    did = unittest.mock.MagicMock()
-    did.method.return_value = "cow-say"
+    pytest.skip("need to test error path")
+    did = DID("did:cowsay:EiDahaOGH-liLLdDtTxEAdc8i-cfCz-WUcQdRJheMVNn3A")
+    resolver._match_did_to_resolver = async_mock.MagicMock()
+    resolver._match_did_to_resolver.resolvers.side_effect = [StopIteration()]
     with pytest.raises(DidMethodNotSupported):
         resolver._match_did_to_resolver(did)
 
@@ -176,3 +155,11 @@ async def test_resolve_did(resolver, did):
     did = DID(did)
     did_doc = await resolver.resolve(did)
     assert isinstance(did_doc, ResolvedDIDDoc)
+
+
+async def test_resolve_did_error(resolver):
+    did = DID("did:cowsay:EiDahaOGH-liLLdDtTxEAdc8i-cfCz-WUcQdRJheMVNn3A")
+    with async_mock.patch.object(
+        resolver, "_match_did_to_resolver", async_mock.MagicMock(return_value=[])
+    ) as mock_resolver, pytest.raises(DidMethodNotSupported):
+        await mock_resolver.resolve(did)
