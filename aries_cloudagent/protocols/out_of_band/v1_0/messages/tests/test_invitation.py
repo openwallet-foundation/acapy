@@ -33,7 +33,7 @@ class TestHSProto(TestCase):
         assert HSProto.get(DIDCommPrefix.qualify_current(CONN_PROTO)) is HSProto.RFC160
         assert HSProto.get(DIDX_PROTO) is HSProto.RFC23
         assert HSProto.get("did-exchange") is HSProto.RFC23
-        assert HSProto.get("did-exchange") is HSProto.RFC23
+        assert HSProto.get("RFC-23") is HSProto.RFC23
         assert HSProto.get("no such protocol") is None
         assert HSProto.get(None) is None
 
