@@ -60,10 +60,12 @@ def test_dereference():
     doc = ResolvedDIDDoc(DOC)
     assert doc.dereference("did:example:1234abcd#4") == DOC["verificationMethod"][1]
 
+
 def test_dereference_x():
     doc = ResolvedDIDDoc(DOC)
     with pytest.raises(ExternalResourceError):
         doc.dereference("did:example:different#4")
+
 
 def test_basic():
     doc = ResolvedDIDDoc(DOC)
