@@ -14,10 +14,11 @@ from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
 from ....storage.error import StorageError, StorageNotFoundError
 
+from ...didcomm_prefix import DIDCommPrefix
 from ...didexchange.v1_0.manager import DIDXManagerError
 
 from .manager import OutOfBandManager, OutOfBandManagerError
-from .messages.invitation import InvitationMessage, InvitationMessageSchema
+from .messages.invitation import HSProto, InvitationMessage, InvitationMessageSchema
 from .message_types import SPEC_URI
 from .models.invitation import InvitationRecordSchema
 
@@ -40,13 +41,6 @@ class InvitationCreateQueryStringSchema(OpenAPISchema):
     multi_use = fields.Boolean(
         description="Create invitation for multiple use (default false)",
         required=False,
-    )
-    use_connections_rfc160 = fields.Boolean(
-        description=(
-            "Use RFC 0160 connection invitation over RFC 0023 did exchange protocol"
-        ),
-        required=False,
-        default=False,
     )
 
 
@@ -73,9 +67,13 @@ class InvitationCreateRequestSchema(OpenAPISchema):
         required=False,
         description="Optional invitation attachments",
     )
-    include_handshake = fields.Boolean(
-        default=True,
-        description="Whether to include handshake protocols",
+    handshake_protocols = fields.List(
+        fields.Str(
+            description="Handshake protocol to specify in invitation",
+            example=DIDCommPrefix.qualify_current(HSProto.RFC23.name),
+            validate=lambda hsp: HSProto.get(hsp) is not None,
+        ),
+        required=False,
     )
     use_public_did = fields.Boolean(
         default=False,
@@ -140,24 +138,24 @@ async def invitation_create(request: web.BaseRequest):
 
     body = await request.json() if request.body_exists else {}
     attachments = body.get("attachments")
-    include_handshake = body.get("include_handshake", True)
+    handshake_protocols = body.get("handshake_protocols", [])
     use_public_did = body.get("use_public_did", False)
     metadata = body.get("metadata")
 
     multi_use = json.loads(request.query.get("multi_use", "false"))
     auto_accept = json.loads(request.query.get("auto_accept", "null"))
-    use_connections = json.loads(request.query.get("use_connections_rfc160", "false"))
     session = await context.session()
     oob_mgr = OutOfBandManager(session)
     try:
         invi_rec = await oob_mgr.create_invitation(
             auto_accept=auto_accept,
             public=use_public_did,
-            include_handshake=include_handshake,
+            hs_protos=[
+                h for h in [HSProto.get(hsp) for hsp in handshake_protocols] if h
+            ],
             multi_use=multi_use,
             attachments=attachments,
             metadata=metadata,
-            use_connections=use_connections,
         )
     except (StorageNotFoundError, ValidationError, OutOfBandManagerError) as e:
         raise web.HTTPBadRequest(reason=str(e))

@@ -7,11 +7,14 @@ from asynctest import TestCase as AsyncTestCase
 from ......messaging.models.base import BaseModelError
 from ......wallet.util import naked_to_did_key
 
+from .....connections.v1_0.message_types import ARIES_PROTOCOL as CONN_PROTO
 from .....didcomm_prefix import DIDCommPrefix
+from .....didexchange.v1_0.message_types import ARIES_PROTOCOL as DIDX_PROTO
 
 from ...message_types import INVITATION, PROTOCOL_PACKAGE
 
 from .. import invitation as test_module
+from ..invitation import HSProto, InvitationMessage, InvitationMessageSchema
 from ..invitation import InvitationMessage, InvitationMessageSchema
 from ..service import Service
 
@@ -20,13 +23,32 @@ TEST_VERKEY = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
 DID_COMM = "did-communication"
 
 
+class TestHSProto(TestCase):
+    """Test handshake protocol enum."""
+
+    def test_get(self):
+        assert HSProto.get(HSProto.RFC160) is HSProto.RFC160
+        assert HSProto.get(23) is HSProto.RFC23
+        assert HSProto.get("Old") is HSProto.RFC160
+        assert HSProto.get(DIDCommPrefix.qualify_current(CONN_PROTO)) is HSProto.RFC160
+        assert HSProto.get(DIDX_PROTO) is HSProto.RFC23
+        assert HSProto.get("did-exchange") is HSProto.RFC23
+        assert HSProto.get("did-exchange") is HSProto.RFC23
+        assert HSProto.get("no such protocol") is None
+        assert HSProto.get(None) is None
+
+    def test_properties(self):
+        assert HSProto.RFC160.rfc == 160
+        assert HSProto.RFC23.name == DIDX_PROTO
+
+
 class TestInvitationMessage(TestCase):
     def test_init(self):
         """Test initialization message."""
         invi = InvitationMessage(
             comment="Hello",
             label="A label",
-            handshake_protocols=[DIDCommPrefix.qualify_current(INVITATION)],
+            handshake_protocols=[DIDCommPrefix.qualify_current(DIDX_PROTO)],
             service=[TEST_DID],
         )
         assert invi.service_dids == [TEST_DID]
@@ -37,7 +59,7 @@ class TestInvitationMessage(TestCase):
         invi_msg = InvitationMessage(
             comment="Hello",
             label="A label",
-            handshake_protocols=[DIDCommPrefix.qualify_current(INVITATION)],
+            handshake_protocols=[DIDCommPrefix.qualify_current(DIDX_PROTO)],
             service=[service],
         )
         assert invi_msg.service_blocks == [service]
@@ -98,7 +120,7 @@ class TestInvitationMessage(TestCase):
         invi_msg = InvitationMessage(
             comment="Hello",
             label="A label",
-            handshake_protocols=[DIDCommPrefix.qualify_current(INVITATION)],
+            handshake_protocols=[DIDCommPrefix.qualify_current(DIDX_PROTO)],
             service=[service],
         )
 

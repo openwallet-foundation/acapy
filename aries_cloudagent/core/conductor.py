@@ -35,7 +35,7 @@ from ..protocols.coordinate_mediation.v1_0.models.mediation_record import (
     MediationRecord,
 )
 from ..protocols.out_of_band.v1_0.manager import OutOfBandManager
-from ..protocols.out_of_band.v1_0.messages.invitation import InvitationMessage
+from ..protocols.out_of_band.v1_0.messages.invitation import HSProto, InvitationMessage
 from ..transport.inbound.manager import InboundTransportManager
 from ..transport.inbound.message import InboundMessage
 from ..transport.outbound.base import OutboundDeliveryError
@@ -267,7 +267,7 @@ class Conductor:
                         my_label=context.settings.get("debug.invite_label"),
                         public=context.settings.get("debug.invite_public", False),
                         multi_use=context.settings.get("debug.invite_multi_use", False),
-                        include_handshake=True,
+                        hs_protos=[HSProto.RFC23],
                         metadata=json.loads(
                             context.settings.get("debug.invite_metadata_json", "{}")
                         ),

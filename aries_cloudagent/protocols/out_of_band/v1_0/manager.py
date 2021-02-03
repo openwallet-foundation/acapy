@@ -6,28 +6,26 @@ import logging
 
 from typing import Mapping, Sequence, Optional
 
-from ....connections.models.conn_record import ConnRecord
 from ....connections.base_manager import BaseConnectionManager
+from ....connections.models.conn_record import ConnRecord
 from ....core.error import BaseError
 from ....core.profile import ProfileSession
 from ....indy.holder import IndyHolder
 from ....messaging.responder import BaseResponder
 from ....messaging.decorators.attach_decorator import AttachDecorator
-from ....multitenant.manager import MultitenantManager
 from ....ledger.base import BaseLedger
+from ....multitenant.manager import MultitenantManager
 from ....storage.error import StorageNotFoundError
 from ....transport.inbound.receipt import MessageReceipt
 from ....wallet.base import BaseWallet
 from ....wallet.util import naked_to_did_key, b64_to_bytes, did_key_to_naked
 
-from ...connections.v1_0.messages.connection_invitation import ConnectionInvitation
 from ...connections.v1_0.manager import ConnectionManager
-from ...connections.v1_0.message_types import ARIES_PROTOCOL as CONN_PROTO
+from ...connections.v1_0.messages.connection_invitation import ConnectionInvitation
 from ...didcomm_prefix import DIDCommPrefix
-from ...didexchange.v1_0.message_types import ARIES_PROTOCOL as DIDX_PROTO
 from ...didexchange.v1_0.manager import DIDXManager
-from ...issue_credential.v2_0.messages.cred_offer import V20CredOffer
 from ...issue_credential.v1_0.models.credential_exchange import V10CredentialExchange
+from ...issue_credential.v2_0.messages.cred_offer import V20CredOffer
 from ...issue_credential.v2_0.models.cred_ex_record import V20CredExRecord
 from ...present_proof.v1_0.manager import PresentationManager
 from ...present_proof.v1_0.message_types import PRESENTATION_REQUEST
@@ -35,7 +33,7 @@ from ...present_proof.v1_0.messages.presentation_proposal import PresentationPro
 from ...present_proof.v1_0.models.presentation_exchange import V10PresentationExchange
 from ...present_proof.v1_0.util.indy import indy_proof_req_preview2indy_requested_creds
 
-from .messages.invitation import InvitationMessage
+from .messages.invitation import HSProto, InvitationMessage
 from .messages.problem_report import ProblemReport
 from .messages.reuse import HandshakeReuse
 from .messages.reuse_accept import HandshakeReuseAccept
@@ -82,8 +80,7 @@ class OutOfBandManager(BaseConnectionManager):
         my_endpoint: str = None,
         auto_accept: bool = None,
         public: bool = False,
-        include_handshake: bool = False,
-        use_connections: bool = False,
+        hs_protos: Sequence[HSProto] = None,
         multi_use: bool = False,
         alias: str = None,
         attachments: Sequence[Mapping] = None,
@@ -102,17 +99,16 @@ class OutOfBandManager(BaseConnectionManager):
             auto_accept: auto-accept a corresponding connection request
                 (None to use config)
             public: set to create an invitation from the public DID
-            use_connections: use (old) RFC 160 connections protocol, not RFC 23
+            hs_protos: list of handshake protocols to include
             multi_use: set to True to create an invitation for multiple-use connection
             alias: optional alias to apply to connection for later use
-            include_handshake: whether to include handshake protocols
             attachments: list of dicts in form of {"id": ..., "type": ...}
 
         Returns:
             Invitation record
 
         """
-        if not (include_handshake or attachments):
+        if not (hs_protos or attachments):
             raise OutOfBandManagerError(
                 "Invitation must include handshake protocols, "
                 "request attachments, or both"
@@ -189,12 +185,10 @@ class OutOfBandManager(BaseConnectionManager):
                 )
             else:
                 raise OutOfBandManagerError(f"Unknown attachment type: {a_type}")
-        if include_handshake and not use_connections:
-            handshake_protocol = [DIDCommPrefix.qualify_current(DIDX_PROTO)]
-        elif include_handshake and use_connections:
-            handshake_protocol = [DIDCommPrefix.qualify_current(CONN_PROTO)]
-        else:
-            handshake_protocol = None
+
+        handshake_protocols = [
+            DIDCommPrefix.qualify_current(hsp.name) for hsp in hs_protos or []
+        ] or None
         if public:
             if not self._session.settings.get("public_invites"):
                 raise OutOfBandManagerError("Public invitations are not enabled")
@@ -211,7 +205,7 @@ class OutOfBandManager(BaseConnectionManager):
                 )
             invi_msg = InvitationMessage(
                 label=my_label or self._session.settings.get("default_label"),
-                handshake_protocols=handshake_protocol,
+                handshake_protocols=handshake_protocols,
                 request_attach=message_attachments,
                 service=[f"did:sov:{public_did.did}"],
             )
@@ -244,7 +238,7 @@ class OutOfBandManager(BaseConnectionManager):
             # Would want to reuse create_did_document and convert the result
             invi_msg = InvitationMessage(
                 label=my_label or self._session.settings.get("default_label"),
-                handshake_protocols=handshake_protocol,
+                handshake_protocols=handshake_protocols,
                 request_attach=message_attachments,
                 service=[
                     ServiceMessage(
@@ -297,7 +291,7 @@ class OutOfBandManager(BaseConnectionManager):
         if len(invi_msg.service_blocks) + len(invi_msg.service_dids) != 1:
             raise OutOfBandManagerError("service array must have exactly one element")
 
-        if len(invi_msg.request_attach) < 1 and len(invi_msg.handshake_protocols) < 1:
+        if not (invi_msg.request_attach or invi_msg.handshake_protocols):
             raise OutOfBandManagerError(
                 "Invitation must specify handshake_protocols, request_attach, or both"
             )
@@ -326,14 +320,15 @@ class OutOfBandManager(BaseConnectionManager):
                 }
             )
 
-        unq_handshake_protos = list(
-            dict.fromkeys(
+        unq_handshake_protos = [
+            HSProto.get(hsp)
+            for hsp in dict.fromkeys(
                 [
                     DIDCommPrefix.unqualify(proto)
                     for proto in invi_msg.handshake_protocols
                 ]
             )
-        )
+        ]
         # Reuse Connection
         # Only if started by an invitee with Public DID
         conn_rec = None
@@ -413,7 +408,7 @@ class OutOfBandManager(BaseConnectionManager):
             ):
                 conn_rec = None
         if conn_rec is None:
-            if len(unq_handshake_protos) == 0:
+            if not unq_handshake_protos:
                 raise OutOfBandManagerError(
                     (
                         "No existing connection exists and "
@@ -422,14 +417,14 @@ class OutOfBandManager(BaseConnectionManager):
                 )
             # Create a new connection
             for proto in unq_handshake_protos:
-                if proto == DIDX_PROTO:
+                if proto is HSProto.RFC23:
                     didx_mgr = DIDXManager(self._session)
                     conn_rec = await didx_mgr.receive_invitation(
                         invitation=invi_msg,
                         their_public_did=public_did,
                         auto_accept=auto_accept,
                     )
-                elif proto == CONN_PROTO:
+                elif proto is HSProto.RFC160:
                     service.recipient_keys = [
                         did_key_to_naked(key) for key in service.recipient_keys or []
                     ]
@@ -439,7 +434,7 @@ class OutOfBandManager(BaseConnectionManager):
                     connection_invitation = ConnectionInvitation.deserialize(
                         {
                             "@id": invi_msg._id,
-                            "@type": DIDCommPrefix.qualify_current(CONN_PROTO),
+                            "@type": DIDCommPrefix.qualify_current(proto.name),
                             "label": invi_msg.label,
                             "recipientKeys": service.recipient_keys,
                             "serviceEndpoint": service.service_endpoint,

@@ -1,9 +1,9 @@
 """Test OOB Manager."""
 import asyncio
 import json
+from uuid import UUID
 
-from asynctest import TestCase as AsyncTestCase
-from asynctest import mock as async_mock
+from asynctest import mock as async_mock, TestCase as AsyncTestCase
 from copy import deepcopy
 from datetime import datetime, timezone
 from uuid import UUID
@@ -35,6 +35,7 @@ from .....protocols.present_proof.v1_0.messages.presentation import (
 from .....protocols.present_proof.v1_0.models.presentation_exchange import (
     V10PresentationExchange,
 )
+from .....protocols.present_proof.v1_0.message_types import PRESENTATION_REQUEST
 from .....protocols.present_proof.v1_0.messages.presentation_proposal import (
     PresentationProposal,
 )
@@ -48,6 +49,7 @@ from .....protocols.present_proof.v1_0.messages.inner.presentation_preview impor
     PresPredSpec,
 )
 from .....storage.error import StorageError, StorageNotFoundError
+from .....multitenant.manager import MultitenantManager
 from .....transport.inbound.receipt import MessageReceipt
 from .....wallet.base import DIDInfo, KeyInfo
 from .....wallet.in_memory import InMemoryWallet
@@ -63,13 +65,10 @@ from ..manager import (
     OutOfBandManagerNotImplementedError,
 )
 from ..message_types import INVITATION
-from ..messages.invitation import (
-    InvitationMessage,
-    InvitationMessageSchema,
-)
-from ..messages.problem_report import ProblemReport, ProblemReportReason
+from ..messages.invitation import HSProto, InvitationMessage, InvitationMessageSchema
 from ..messages.reuse import HandshakeReuse
 from ..messages.reuse_accept import HandshakeReuseAccept
+from ..messages.problem_report import ProblemReport, ProblemReportReason
 from ..models.invitation import InvitationRecord
 
 
@@ -250,7 +249,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             invi_rec = await self.manager.create_invitation(
                 my_endpoint=TestConfig.test_endpoint,
                 public=True,
-                include_handshake=True,
+                hs_protos=[HSProto.RFC23],
             )
 
             assert invi_rec.invitation["@type"] == DIDCommPrefix.qualify_current(
@@ -259,7 +258,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             assert not invi_rec.invitation.get("request~attach")
             assert invi_rec.invitation["label"] == "This guy"
             assert (
-                DIDCommPrefix.qualify_current(test_module.DIDX_PROTO)
+                DIDCommPrefix.qualify_current(HSProto.RFC23.name)
                 in invi_rec.invitation["handshake_protocols"]
             )
             assert invi_rec.invitation["service"] == [f"did:sov:{TestConfig.test_did}"]
@@ -271,7 +270,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             await self.manager.create_invitation(
                 my_endpoint=TestConfig.test_endpoint,
                 public=True,
-                include_handshake=True,
+                hs_protos=[HSProto.RFC23],
                 auto_accept=False,
             )
         assert "Cannot override auto-acceptance" in str(context.exception)
@@ -294,7 +293,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             )
             await self.manager.create_invitation(
                 my_endpoint=TestConfig.test_endpoint,
-                include_handshake=True,
+                hs_protos=[HSProto.RFC23],
                 multi_use=False,
             )
 
@@ -320,7 +319,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 self.test_did, self.test_verkey, None
             )
             await self.manager.create_invitation(
-                include_handshake=True,
+                hs_protos=[HSProto.RFC23],
                 public=True,
                 multi_use=False,
             )
@@ -334,7 +333,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             await self.manager.create_invitation(
                 my_endpoint=TestConfig.test_endpoint,
                 public=True,
-                include_handshake=False,
+                hs_protos=None,
                 multi_use=False,
             )
             assert "Invitation must include" in str(context.exception)
@@ -357,7 +356,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             invi_rec = await self.manager.create_invitation(
                 my_endpoint=TestConfig.test_endpoint,
                 public=False,
-                include_handshake=True,
+                hs_protos=[HSProto.RFC23],
                 multi_use=False,
                 attachments=[{"type": "credential-offer", "id": "dummy-id"}],
             )
@@ -382,7 +381,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             invi_rec = await self.manager.create_invitation(
                 my_endpoint=TestConfig.test_endpoint,
                 public=False,
-                include_handshake=False,
+                hs_protos=None,
                 multi_use=False,
                 attachments=[{"type": "credential-offer", "id": "dummy-id"}],
             )
@@ -415,7 +414,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             invi_rec = await self.manager.create_invitation(
                 my_endpoint=TestConfig.test_endpoint,
                 public=True,
-                include_handshake=True,
+                hs_protos=None,
                 multi_use=False,
                 attachments=[{"type": "credential-offer", "id": "dummy-id"}],
             )
@@ -440,7 +439,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             invi_rec = await self.manager.create_invitation(
                 my_endpoint=TestConfig.test_endpoint,
                 public=False,
-                include_handshake=True,
+                hs_protos=[test_module.HSProto.RFC23],
                 multi_use=False,
                 attachments=[{"type": "present-proof", "id": "dummy-id"}],
             )
@@ -455,7 +454,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             await self.manager.create_invitation(
                 public=True,
                 my_endpoint="testendpoint",
-                include_handshake=True,
+                hs_protos=[test_module.HSProto.RFC23],
                 multi_use=False,
             )
         assert "Public invitations are not enabled" in str(context.exception)
@@ -467,7 +466,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             await self.manager.create_invitation(
                 public=True,
                 my_endpoint="testendpoint",
-                include_handshake=True,
+                hs_protos=[test_module.HSProto.RFC23],
                 multi_use=True,
             )
         assert "Cannot create public invitation with" in str(context.exception)
@@ -483,7 +482,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 await self.manager.create_invitation(
                     public=True,
                     my_endpoint="testendpoint",
-                    include_handshake=True,
+                    hs_protos=[test_module.HSProto.RFC23],
                     multi_use=False,
                 )
         assert "Cannot create public invitation with no public DID" in str(
@@ -502,7 +501,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 await self.manager.create_invitation(
                     my_endpoint=TestConfig.test_endpoint,
                     public=False,
-                    include_handshake=True,
+                    hs_protos=[test_module.HSProto.RFC23],
                     multi_use=True,
                     attachments=[{"having": "attachment", "is": "no", "good": "here"}],
                 )
@@ -520,7 +519,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             my_label="That guy",
             my_endpoint=None,
             public=False,
-            include_handshake=True,
+            hs_protos=[test_module.HSProto.RFC23],
             multi_use=False,
         )
 
@@ -528,7 +527,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         assert not invi_rec.invitation.get("request~attach")
         assert invi_rec.invitation["label"] == "That guy"
         assert (
-            DIDCommPrefix.qualify_current(test_module.DIDX_PROTO)
+            DIDCommPrefix.qualify_current(HSProto.RFC23.name)
             in invi_rec.invitation["handshake_protocols"]
         )
         service = invi_rec.invitation["service"][0]
@@ -540,7 +539,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
 
     async def test_create_invitation_metadata_assigned(self):
         invi_rec = await self.manager.create_invitation(
-            include_handshake=True,
+            hs_protos=[test_module.HSProto.RFC23],
             metadata={"hello": "world"},
         )
         service = invi_rec.invitation["service"][0]
@@ -561,7 +560,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             with self.assertRaises(OutOfBandManagerError) as context:
                 await self.manager.create_invitation(
                     public=True,
-                    include_handshake=True,
+                    hs_protos=[test_module.HSProto.RFC23],
                     metadata={"hello": "world"},
                     multi_use=False,
                 )
@@ -582,7 +581,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             mock_oob_invi = async_mock.MagicMock(
                 request_attach=[],
                 handshake_protocols=[
-                    pfx.qualify(test_module.DIDX_PROTO) for pfx in DIDCommPrefix
+                    pfx.qualify(HSProto.RFC23.name) for pfx in DIDCommPrefix
                 ],
                 service_dids=[],
                 service_blocks=[
@@ -615,7 +614,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             )
             mock_oob_invi = async_mock.MagicMock(
                 handshake_protocols=[
-                    pfx.qualify(test_module.CONN_PROTO) for pfx in DIDCommPrefix
+                    pfx.qualify(HSProto.RFC160.name) for pfx in DIDCommPrefix
                 ],
                 service_dids=[],
                 label="test",
@@ -642,8 +641,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         oob_invi_rec = await self.manager.create_invitation(
             auto_accept=True,
             public=False,
-            include_handshake=True,
-            use_connections=True,
+            hs_protos=[test_module.HSProto.RFC160],
             multi_use=False,
         )
 
@@ -691,7 +689,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             )
             mock_oob_invi = async_mock.MagicMock(
                 handshake_protocols=[
-                    pfx.qualify(test_module.DIDX_PROTO) for pfx in DIDCommPrefix
+                    pfx.qualify(HSProto.RFC23.name) for pfx in DIDCommPrefix
                 ],
                 service_dids=[TestConfig.test_did],
                 service_blocks=[],
@@ -721,7 +719,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 service_blocks=[],
                 service_dids=[TestConfig.test_did],
                 handshake_protocols=[
-                    pfx.qualify(test_module.DIDX_PROTO) for pfx in DIDCommPrefix
+                    pfx.qualify(HSProto.RFC23.name) for pfx in DIDCommPrefix
                 ],
                 request_attach=[{"having": "attachment", "is": "no", "good": "here"}],
             )
@@ -751,7 +749,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
 
             mock_oob_invi = async_mock.MagicMock(
                 handshake_protocols=[
-                    pfx.qualify(test_module.DIDX_PROTO) for pfx in DIDCommPrefix
+                    pfx.qualify(HSProto.RFC23.name) for pfx in DIDCommPrefix
                 ],
                 service_dids=[TestConfig.test_did],
                 service_blocks=[],
@@ -1450,7 +1448,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             )
             mock_oob_invi = async_mock.MagicMock(
                 handshake_protocols=[
-                    pfx.qualify(test_module.DIDX_PROTO) for pfx in DIDCommPrefix
+                    pfx.qualify(HSProto.RFC23.name) for pfx in DIDCommPrefix
                 ],
                 service_dids=[TestConfig.test_target_did],
                 service_blocks=[],
@@ -1564,7 +1562,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             didx_mgr_receive_invitation.return_value = test_new_conn
             mock_oob_invi = async_mock.MagicMock(
                 handshake_protocols=[
-                    pfx.qualify(test_module.DIDX_PROTO) for pfx in DIDCommPrefix
+                    pfx.qualify(HSProto.RFC23.name) for pfx in DIDCommPrefix
                 ],
                 service_dids=[TestConfig.test_target_did],
                 service_blocks=[],
@@ -1640,7 +1638,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             didx_mgr_receive_invitation.return_value = self.test_conn_rec
             mock_oob_invi = async_mock.MagicMock(
                 handshake_protocols=[
-                    pfx.qualify(test_module.DIDX_PROTO) for pfx in DIDCommPrefix
+                    pfx.qualify(HSProto.RFC23.name) for pfx in DIDCommPrefix
                 ],
                 service_dids=[TestConfig.test_target_did],
                 service_blocks=[],
@@ -1709,7 +1707,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             oob_mgr_check_reuse_state.side_effect = asyncio.TimeoutError
             mock_oob_invi = async_mock.MagicMock(
                 handshake_protocols=[
-                    pfx.qualify(test_module.DIDX_PROTO) for pfx in DIDCommPrefix
+                    pfx.qualify(HSProto.RFC23.name) for pfx in DIDCommPrefix
                 ],
                 service_dids=[TestConfig.test_target_did],
                 service_blocks=[],
@@ -1847,7 +1845,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
 
             mock_oob_invi = async_mock.MagicMock(
                 handshake_protocols=[
-                    pfx.qualify(test_module.DIDX_PROTO) for pfx in DIDCommPrefix
+                    pfx.qualify(HSProto.RFC23.name) for pfx in DIDCommPrefix
                 ],
                 service_dids=[TestConfig.test_target_did],
                 service_blocks=[],
@@ -1970,7 +1968,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             self.session.context.injector.bind_instance(IndyHolder, holder)
             mock_oob_invi = async_mock.MagicMock(
                 handshake_protocols=[
-                    pfx.qualify(test_module.DIDX_PROTO) for pfx in DIDCommPrefix
+                    pfx.qualify(HSProto.RFC23.name) for pfx in DIDCommPrefix
                 ],
                 service_dids=[TestConfig.test_target_did],
                 service_blocks=[],
@@ -2092,7 +2090,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             self.session.context.injector.bind_instance(IndyHolder, holder)
             mock_oob_invi = async_mock.MagicMock(
                 handshake_protocols=[
-                    pfx.qualify(test_module.DIDX_PROTO) for pfx in DIDCommPrefix
+                    pfx.qualify(HSProto.RFC23.name) for pfx in DIDCommPrefix
                 ],
                 service_dids=[TestConfig.test_target_did],
                 service_blocks=[],
@@ -2205,7 +2203,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             self.session.context.injector.bind_instance(IndyHolder, holder)
             mock_oob_invi = async_mock.MagicMock(
                 handshake_protocols=[
-                    pfx.qualify(test_module.DIDX_PROTO) for pfx in DIDCommPrefix
+                    pfx.qualify(HSProto.RFC23.name) for pfx in DIDCommPrefix
                 ],
                 service_dids=[TestConfig.test_target_did],
                 service_blocks=[],
@@ -2306,7 +2304,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             )
             mock_oob_invi = async_mock.MagicMock(
                 handshake_protocols=[
-                    pfx.qualify(test_module.DIDX_PROTO) for pfx in DIDCommPrefix
+                    pfx.qualify(HSProto.RFC23.name) for pfx in DIDCommPrefix
                 ],
                 service_dids=[TestConfig.test_target_did],
                 service_blocks=[],
