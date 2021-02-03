@@ -1,49 +1,46 @@
 """Classes to manage connections."""
 
-import logging
 import asyncio
 import json
+import logging
 
 from typing import Mapping, Sequence, Optional
 
 from ....connections.models.conn_record import ConnRecord
+from ....connections.base_manager import BaseConnectionManager
 from ....core.error import BaseError
 from ....core.profile import ProfileSession
+from ....indy.holder import IndyHolder
+from ....messaging.responder import BaseResponder
+from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....multitenant.manager import MultitenantManager
+from ....ledger.base import BaseLedger
 from ....storage.error import StorageNotFoundError
+from ....transport.inbound.receipt import MessageReceipt
 from ....wallet.base import BaseWallet
 from ....wallet.util import naked_to_did_key, b64_to_bytes, did_key_to_naked
 
-from ...didexchange.v1_0.message_types import ARIES_PROTOCOL as DIDX_PROTO
+from ...connections.v1_0.messages.connection_invitation import ConnectionInvitation
+from ...connections.v1_0.manager import ConnectionManager
 from ...connections.v1_0.message_types import ARIES_PROTOCOL as CONN_PROTO
-from ...didexchange.v1_0.manager import DIDXManager
 from ...didcomm_prefix import DIDCommPrefix
+from ...didexchange.v1_0.message_types import ARIES_PROTOCOL as DIDX_PROTO
+from ...didexchange.v1_0.manager import DIDXManager
+from ...issue_credential.v2_0.messages.cred_offer import V20CredOffer
 from ...issue_credential.v1_0.models.credential_exchange import V10CredentialExchange
 from ...issue_credential.v2_0.models.cred_ex_record import V20CredExRecord
-from ...issue_credential.v2_0.messages.cred_offer import V20CredOffer
+from ...present_proof.v1_0.manager import PresentationManager
 from ...present_proof.v1_0.message_types import PRESENTATION_REQUEST
+from ...present_proof.v1_0.messages.presentation_proposal import PresentationProposal
 from ...present_proof.v1_0.models.presentation_exchange import V10PresentationExchange
+from ...present_proof.v1_0.util.indy import indy_proof_req_preview2indy_requested_creds
 
 from .messages.invitation import InvitationMessage
+from .messages.problem_report import ProblemReportReason, ProblemReport
 from .messages.reuse import HandshakeReuse
 from .messages.reuse_accept import HandshakeReuseAccept
-from .messages.problem_report import ProblemReportReason, ProblemReport
-from ....connections.base_manager import BaseConnectionManager
-from ....transport.inbound.receipt import MessageReceipt
-
 from .messages.service import Service as ServiceMessage
 from .models.invitation import InvitationRecord
-
-from ...connections.v1_0.manager import ConnectionManager
-from ...present_proof.v1_0.manager import PresentationManager
-
-from ...connections.v1_0.messages.connection_invitation import ConnectionInvitation
-from ....ledger.base import BaseLedger
-from ....messaging.responder import BaseResponder
-from ...present_proof.v1_0.messages.presentation_proposal import PresentationProposal
-from ...present_proof.v1_0.util.indy import indy_proof_req_preview2indy_requested_creds
-from ....indy.holder import IndyHolder
-from ....messaging.decorators.attach_decorator import AttachDecorator
 
 
 class OutOfBandManagerError(BaseError):

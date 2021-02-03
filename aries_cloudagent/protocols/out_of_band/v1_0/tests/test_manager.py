@@ -1,21 +1,25 @@
 """Test OOB Manager."""
 import asyncio
 import json
+
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
-from datetime import datetime, timezone
 from copy import deepcopy
+from datetime import datetime, timezone
+from uuid import UUID
 
 from .....connections.models.conn_record import ConnRecord
+from .....connections.models.connection_target import ConnectionTarget
 from .....connections.models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
 from .....core.in_memory import InMemoryProfile
+from .....indy.holder import IndyHolder
 from .....ledger.base import BaseLedger
-from .....messaging.responder import BaseResponder, MockResponder
 from .....messaging.decorators.attach_decorator import AttachDecorator
+from .....messaging.responder import BaseResponder, MockResponder
 from .....messaging.util import str_to_datetime, str_to_epoch
 from .....multitenant.manager import MultitenantManager
-from .....protocols.didexchange.v1_0.manager import DIDXManager
 from .....protocols.connections.v1_0.manager import ConnectionManager
+from .....protocols.didexchange.v1_0.manager import DIDXManager
 from .....protocols.issue_credential.v1_0.message_types import (
     CREDENTIAL_OFFER,
 )
@@ -25,11 +29,14 @@ from .....protocols.present_proof.v1_0.message_types import (
     ATTACH_DECO_IDS,
     PRESENTATION_PREVIEW,
 )
-from .....protocols.present_proof.v1_0.messages.presentation_proposal import (
-    PresentationProposal,
-)
 from .....protocols.present_proof.v1_0.messages.presentation import (
     Presentation,
+)
+from .....protocols.present_proof.v1_0.models.presentation_exchange import (
+    V10PresentationExchange,
+)
+from .....protocols.present_proof.v1_0.messages.presentation_proposal import (
+    PresentationProposal,
 )
 from .....protocols.present_proof.v1_0.messages.presentation_request import (
     PresentationRequest,
@@ -40,33 +47,30 @@ from .....protocols.present_proof.v1_0.messages.inner.presentation_preview impor
     PresentationPreview,
     PresPredSpec,
 )
-from .....protocols.present_proof.v1_0.models.presentation_exchange import (
-    V10PresentationExchange,
-)
+from .....storage.error import StorageError, StorageNotFoundError
+from .....transport.inbound.receipt import MessageReceipt
 from .....wallet.base import DIDInfo, KeyInfo
 from .....wallet.in_memory import InMemoryWallet
-from .....wallet.util import did_key_to_naked
-from .....storage.error import StorageError, StorageNotFoundError
-from .....indy.holder import IndyHolder
+from .....wallet.util import did_key_to_naked, naked_to_did_key
+
 from ....didcomm_prefix import DIDCommPrefix
+from ....issue_credential.v1_0.models.credential_exchange import V10CredentialExchange
+
 from .. import manager as test_module
-from ..messages.invitation import InvitationMessage, InvitationMessageSchema
-from ..messages.reuse import HandshakeReuse
-from ..messages.reuse_accept import HandshakeReuseAccept
-from ..messages.problem_report import ProblemReport, ProblemReportReason
 from ..manager import (
     OutOfBandManager,
     OutOfBandManagerError,
     OutOfBandManagerNotImplementedError,
 )
-from ..models.invitation import InvitationRecord
-from .....multitenant.manager import MultitenantManager
 from ..message_types import INVITATION
-from uuid import UUID
-from ....issue_credential.v1_0.models.credential_exchange import V10CredentialExchange
-from .....wallet.util import naked_to_did_key
-from .....connections.models.connection_target import ConnectionTarget
-from .....transport.inbound.receipt import MessageReceipt
+from ..messages.invitation import (
+    InvitationMessage,
+    InvitationMessageSchema,
+)
+from ..messages.problem_report import ProblemReport, ProblemReportReason
+from ..messages.reuse import HandshakeReuse
+from ..messages.reuse_accept import HandshakeReuseAccept
+from ..models.invitation import InvitationRecord
 
 
 class TestConfig:
