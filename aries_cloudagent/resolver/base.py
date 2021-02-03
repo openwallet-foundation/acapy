@@ -19,6 +19,7 @@ class DidNotFound(ResolverError):
 class DidMethodNotSupported(ResolverError):
     """Raised when no resolver is registered for a given did method."""
 
+
 class ResolverType(Enum):
     """Resolver Type declarations."""
 

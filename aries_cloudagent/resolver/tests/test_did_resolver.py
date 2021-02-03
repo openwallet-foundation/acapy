@@ -6,7 +6,7 @@ from asynctest import mock as async_mock
 from ..did_resolver_registry import DIDResolverRegistry
 from ..did_resolver import DIDResolver
 from ...resolver.diddoc import ResolvedDIDDoc
-from ...resolver.base import BaseDIDResolver, DidMethodNotSupported, DidNotFound
+from ...resolver.base import BaseDIDResolver, DidMethodNotSupported, DidNotFound, ResolverType
 from ...resolver.did import DID
 
 
@@ -95,14 +95,28 @@ DOC = {
 }
 
 
+class MockResolver(BaseDIDResolver):
+    def __init__(self, supported_methods, resolved = None, native: bool = False):
+        super().__init__(ResolverType.NATIVE if native else ResolverType.NON_NATIVE)
+        self._supported_methods = supported_methods
+        self.resolved = resolved
+
+    async def setup(self, session):
+        pass
+
+    @property
+    def supported_methods(self):
+        return self._supported_methods
+
+    async def resolve(self, session, did):
+        return self.resolved
+
+
 @pytest.fixture
 def resolver():
     did_resolver_registry = DIDResolverRegistry()
     for method in TEST_DID_METHODS:
-        resolver = unittest.mock.MagicMock()
-        resolver.supported_methods.return_value = [method]
-        resolver.native.return_value = False
-        resolver.resolve.return_value = unittest.mock.MagicMock()
+        resolver = MockResolver(method)
         did_resolver_registry.register(resolver)
     return DIDResolver(did_resolver_registry)
 
@@ -114,21 +128,28 @@ def test_create_resolver(resolver):
 @pytest.mark.parametrize("did, method", zip(TEST_DIDS, TEST_DID_METHODS))
 def test_match_did_to_resolver(resolver, did, method):
     did = DID(did)
-    base_resolver = next(resolver._match_did_to_resolver(did))
+    base_resolver, *_ = resolver._match_did_to_resolver(did)
     assert base_resolver.supports(method)
 
 
-def test_match_did_to_resolver_error(resolver):
-    pytest.skip("need to test error path")
+def test_match_did_to_resolver_x_not_supported(resolver):
     did = DID("did:cowsay:EiDahaOGH-liLLdDtTxEAdc8i-cfCz-WUcQdRJheMVNn3A")
-    resolver._match_did_to_resolver = async_mock.MagicMock()
-    resolver._match_did_to_resolver.resolvers.side_effect = [StopIteration()]
     with pytest.raises(DidMethodNotSupported):
         resolver._match_did_to_resolver(did)
 
 
-def test_match_did_to_resolver_native_priority(resolver):
-    pytest.skip("need to test native priority filtering")
+def test_match_did_to_resolver_native_priority():
+    registry = DIDResolverRegistry()
+    native = MockResolver(["sov"], native=True)
+    non_native = MockResolver(["sov"], native=False)
+    registry.register(native)
+    registry.register(non_native)
+    resolver = DIDResolver(registry)
+    assert [native, non_native] == resolver._match_did_to_resolver(DID(TEST_DID0))
+
+
+def test_match_did_to_resolver_registration_order():
+    pytest.fail("Not implemented yet")
 
 
 @pytest.mark.parametrize("did", TEST_DIDS)
@@ -144,12 +165,14 @@ def test_fully_dereference(resolver):
     pytest.skip("need more work")
 
 
+@pytest.mark.asyncio
 @pytest.mark.parametrize("did", TEST_DIDS)
 async def test_resolve(resolver, did):
     did_doc = await resolver.resolve(did)
     assert isinstance(did_doc, ResolvedDIDDoc)
 
 
+@pytest.mark.asyncio
 @pytest.mark.parametrize("did", TEST_DIDS)
 async def test_resolve_did(resolver, did):
     did = DID(did)
@@ -157,9 +180,14 @@ async def test_resolve_did(resolver, did):
     assert isinstance(did_doc, ResolvedDIDDoc)
 
 
-async def test_resolve_did_error(resolver):
+@pytest.mark.asyncio
+async def test_resolve_did_x_not_supported(resolver):
     did = DID("did:cowsay:EiDahaOGH-liLLdDtTxEAdc8i-cfCz-WUcQdRJheMVNn3A")
     with async_mock.patch.object(
         resolver, "_match_did_to_resolver", async_mock.MagicMock(return_value=[])
     ) as mock_resolver, pytest.raises(DidMethodNotSupported):
         await mock_resolver.resolve(did)
+
+@pytest.mark.asyncio
+async def test_resolve_did_x_not_found(resolver):
+    pytest.fail("did not found test not implemented yet")

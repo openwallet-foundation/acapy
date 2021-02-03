@@ -42,20 +42,18 @@ class DIDResolver:
         Native resolvers are yielded first, in registered order followed by
         non-native resolvers in registered order.
         """
-        valid_resolvers = filter(
+        valid_resolvers = list(filter(
             lambda resolver: resolver.supports(did.method),
             self.did_resolver_registery.did_resolvers,
-        )
+        ))
         native_resolvers = filter(lambda resolver: resolver.native, valid_resolvers)
         non_native_resolvers = filter(
             lambda resolver: not resolver.native, valid_resolvers
         )
-        resolvers = chain(native_resolvers, non_native_resolvers)
-        try:
-            yield next(resolvers)
-        except StopIteration:
+        resolvers = list(chain(native_resolvers, non_native_resolvers))
+        if not resolvers:
             raise DidMethodNotSupported(f"{did.method} not supported")
-        yield from resolvers
+        return resolvers
 
     async def dereference_external(self, did_url: str) -> ResolvedDIDDoc:
         """Retrieve an external did in doc service from a public registry."""
