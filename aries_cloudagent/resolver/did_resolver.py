@@ -8,9 +8,9 @@ retrieving did's from different sources provided by the method type.
 import logging
 from typing import Union
 from itertools import chain
-from ..resolver.diddoc import ResolvedDIDDoc, ExternalResourceError
+from ..resolver.diddoc import ResolvedDIDDoc  # , ExternalResourceError
 from ..resolver.base import BaseDIDResolver, DidMethodNotSupported, DidNotFound
-from ..resolver.did import DID, DIDUrl, DID_PATTERN
+from ..resolver.did import DID, DIDUrl  # , DID_PATTERN
 from .did_resolver_registry import DIDResolverRegistry
 
 LOGGER = logging.getLogger(__name__)
@@ -48,7 +48,7 @@ class DIDResolver:
         )
         native_resolvers = filter(lambda resolver: resolver.native, valid_resolvers)
         non_native_resolvers = filter(
-            lambda resolver: not resolver.nateive, valid_resolvers
+            lambda resolver: not resolver.native, valid_resolvers
         )
         resolvers = chain(native_resolvers, non_native_resolvers)
         try:
@@ -63,7 +63,7 @@ class DIDResolver:
         doc = await self.resolve(did_url.did)
         return doc.dereference(did_url)
 
-    async def fully_dereference(self, doc: ResolvedDIDDoc):
+    '''async def fully_dereference(self, doc: ResolvedDIDDoc):
         """Recursivly retrieve all doc service dids from public registries."""
 
         async def _visit(value, doc):
@@ -86,4 +86,4 @@ class DIDResolver:
                 return did_str
             return value
 
-        return await _visit(doc._doc, doc)
+        return await _visit(doc._doc, doc)'''
