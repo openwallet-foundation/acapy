@@ -4,6 +4,7 @@ import json
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 from datetime import datetime, timezone
+from copy import deepcopy
 
 from .....connections.models.conn_record import ConnRecord
 from .....connections.models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
@@ -15,6 +16,9 @@ from .....messaging.util import str_to_datetime, str_to_epoch
 from .....multitenant.manager import MultitenantManager
 from .....protocols.didexchange.v1_0.manager import DIDXManager
 from .....protocols.connections.v1_0.manager import ConnectionManager
+from .....protocols.issue_credential.v1_0.message_types import (
+    CREDENTIAL_OFFER,
+)
 from .....protocols.present_proof.v1_0.manager import PresentationManager
 from .....protocols.present_proof.v1_0.message_types import (
     PRESENTATION_REQUEST,
@@ -42,6 +46,7 @@ from .....protocols.present_proof.v1_0.models.presentation_exchange import (
 from .....wallet.base import DIDInfo, KeyInfo
 from .....wallet.in_memory import InMemoryWallet
 from .....wallet.util import did_key_to_naked
+from .....storage.error import StorageError, StorageNotFoundError
 from .....indy.holder import IndyHolder
 from ....didcomm_prefix import DIDCommPrefix
 from .. import manager as test_module
@@ -71,6 +76,105 @@ class TestConfig:
     test_endpoint = "http://localhost"
     test_target_did = "GbuDUYXaUZRfHD2jeDuQuP"
     their_public_did = "55GkHamhTU1ZbTbV2ab9DE"
+    NOW_8601 = datetime.utcnow().replace(tzinfo=timezone.utc).isoformat(" ", "seconds")
+    NOW_EPOCH = str_to_epoch(NOW_8601)
+    CD_ID = "GMm4vMw8LLrLJjp81kRRLp:3:CL:12:tag"
+    INDY_PROOF_REQ = json.loads(
+        f"""{{
+        "name": "proof-req",
+        "version": "1.0",
+        "nonce": "12345",
+        "requested_attributes": {{
+            "0_player_uuid": {{
+                "name": "player",
+                "restrictions": [
+                    {{
+                        "cred_def_id": "{CD_ID}"
+                    }}
+                ],
+                "non_revoked": {{
+                    "from": {NOW_EPOCH},
+                    "to": {NOW_EPOCH}
+                }}
+            }},
+            "0_screencapture_uuid": {{
+                "name": "screenCapture",
+                "restrictions": [
+                    {{
+                        "cred_def_id": "{CD_ID}"
+                    }}
+                ],
+                "non_revoked": {{
+                    "from": {NOW_EPOCH},
+                    "to": {NOW_EPOCH}
+                }}
+            }}
+        }},
+        "requested_predicates": {{
+            "0_highscore_GE_uuid": {{
+                "name": "highScore",
+                "p_type": ">=",
+                "p_value": 1000000,
+                "restrictions": [
+                    {{
+                        "cred_def_id": "{CD_ID}"
+                    }}
+                ],
+                "non_revoked": {{
+                    "from": {NOW_EPOCH},
+                    "to": {NOW_EPOCH}
+                }}
+            }}
+        }}
+    }}"""
+    )
+
+    PRES_PREVIEW = PresentationPreview(
+        attributes=[
+            PresAttrSpec(name="player", cred_def_id=CD_ID, value="Richie Knucklez"),
+            PresAttrSpec(
+                name="screenCapture",
+                cred_def_id=CD_ID,
+                mime_type="image/png",
+                value="aW1hZ2luZSBhIHNjcmVlbiBjYXB0dXJl",
+            ),
+        ],
+        predicates=[
+            PresPredSpec(
+                name="highScore", cred_def_id=CD_ID, predicate=">=", threshold=1000000
+            )
+        ],
+    )
+
+    PRES_REQ = PresentationRequest(
+        comment="Test",
+        request_presentations_attach=[
+            AttachDecorator.from_indy_dict(
+                indy_dict=INDY_PROOF_REQ,
+                ident=ATTACH_DECO_IDS[PRESENTATION_REQUEST],
+            )
+        ],
+    )
+
+    pres_req_dict = PRES_REQ.request_presentations_attach[0].serialize()
+    req_attach = {
+        "@id": "request-0",
+        "mime-type": "application/json",
+        "data": {
+            "json": {
+                "@type": DIDCommPrefix.qualify_current(PRESENTATION_REQUEST),
+                "@id": "12345678-1234-5678-1234-567812345678",
+                "comment": "some comment",
+                "request_presentations~attach": [pres_req_dict],
+            }
+        },
+    }
+
+    indy_cred_req = {
+        "schema_id": f"{test_did}:2:bc-reg:1.0",
+        "cred_def_id": f"{test_did}:3:CL:12:tag1",
+    }
+    cred_req_meta = {}
 
     def make_did_doc(self, did, verkey):
         doc = DIDDoc(did=did)
@@ -714,12 +818,23 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         assert conn_record == None
 
         post_filter["their_public_did"] = self.their_public_did
-        post_filter["state"] = "active"
         conn_record = await self.manager.find_existing_connection(
             tag_filter, post_filter
         )
         assert conn_record == test_conn_rec
         await test_conn_rec.delete_record(self.session)
+
+    async def test_find_existing_connection_no_active(self):
+        self.test_conn_rec.invitation_msg_id = "test_123"
+        self.test_conn_rec.state = ConnRecord.State.REQUEST.rfc160
+        await self.test_conn_rec.save(self.session)
+        tag_filter = {}
+        post_filter = {}
+        post_filter["invitation_msg_id"] = "test_123"
+        conn_record = await self.manager.find_existing_connection(
+            tag_filter, post_filter
+        )
+        assert conn_record is None
 
     async def test_check_reuse_msg_state(self):
         await self.test_conn_rec.save(self.session)
@@ -767,7 +882,36 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 == "initial"
             )
 
-    async def test_recieve_reuse_message_existing_found(self):
+    async def test_create_handshake_reuse_msg_catch_exception(self):
+        self.session.context.update_settings({"public_invites": True})
+        await self.test_conn_rec.save(self.session)
+        with async_mock.patch.object(
+            self.ledger, "get_key_for_did", async_mock.CoroutineMock()
+        ) as mock_ledger_get_key_for_did, async_mock.patch.object(
+            self.ledger, "get_endpoint_for_did", async_mock.CoroutineMock()
+        ) as mock_ledger_get_endpoint_for_did, async_mock.patch.object(
+            DIDXManager, "receive_invitation", autospec=True
+        ) as didx_mgr_receive_invitation, async_mock.patch(
+            "aries_cloudagent.protocols.out_of_band.v1_0.manager.InvitationMessage",
+            autospec=True,
+        ) as inv_message_cls, async_mock.patch.object(
+            OutOfBandManager,
+            "fetch_connection_targets",
+            autospec=True,
+        ) as oob_mgr_fetch_conn:
+            mock_ledger_get_key_for_did.return_value = TestConfig.test_verkey
+            mock_ledger_get_endpoint_for_did.return_value = TestConfig.test_endpoint
+            oob_mgr_fetch_conn.side_effect = StorageNotFoundError()
+            oob_invi = InvitationMessage()
+            with self.assertRaises(OutOfBandManagerError) as context:
+                await self.manager.create_handshake_reuse_message(
+                    oob_invi, self.test_conn_rec
+                )
+                assert "Error on creating and sending a handshake reuse message" in str(
+                    context.exception
+                )
+
+    async def test_receive_reuse_message_existing_found(self):
         self.session.context.update_settings({"public_invites": True})
         receipt = MessageReceipt(
             recipient_did=TestConfig.test_did,
@@ -824,7 +968,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 == 1
             )
 
-    async def test_recieve_reuse_message_existing_not_found(self):
+    async def test_receive_reuse_message_existing_not_found(self):
         self.session.context.update_settings({"public_invites": True})
         receipt = MessageReceipt(
             recipient_did=TestConfig.test_did,
@@ -850,10 +994,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             "fetch_connection_targets",
             autospec=True,
         ) as oob_mgr_fetch_conn, async_mock.patch.object(
-            ConnRecord,
-            "query",
-            autospec=True,
-        ) as conn_rec_query, async_mock.patch.object(
             InvitationRecord,
             "retrieve_by_tag_filter",
             autospec=True,
@@ -864,7 +1004,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         ) as oob_mgr_find_existing_conn:
             mock_ledger_get_key_for_did.return_value = TestConfig.test_verkey
             mock_ledger_get_endpoint_for_did.return_value = TestConfig.test_endpoint
-            conn_rec_query.return_value = [self.test_conn_rec]
             oob_mgr_find_existing_conn.return_value = None
             oob_mgr_fetch_conn.return_value = ConnectionTarget(
                 did=TestConfig.test_did,
@@ -874,9 +1013,84 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             )
             oob_invi = InvitationMessage()
             retrieve_invi_rec.return_value = InvitationRecord(invi_msg_id="test_123")
+            with self.assertRaises(OutOfBandManagerError) as context:
+                await self.manager.receive_reuse_message(reuse_msg, receipt)
+                assert "No existing ConnRecord found" in str(context.exception)
+
+    async def test_receive_reuse_message_storage_not_found(self):
+        self.session.context.update_settings({"public_invites": True})
+        receipt = MessageReceipt(
+            recipient_did=TestConfig.test_did,
+            recipient_did_public=False,
+            sender_did="test_did",
+        )
+        reuse_msg = HandshakeReuse()
+        reuse_msg.assign_thread_id(thid="test_123", pthid="test_123")
+
+        with async_mock.patch.object(
+            self.ledger, "get_key_for_did", async_mock.CoroutineMock()
+        ) as mock_ledger_get_key_for_did, async_mock.patch.object(
+            self.ledger, "get_endpoint_for_did", async_mock.CoroutineMock()
+        ) as mock_ledger_get_endpoint_for_did, async_mock.patch.object(
+            DIDXManager, "receive_invitation", autospec=True
+        ) as didx_mgr_receive_invitation, async_mock.patch(
+            "aries_cloudagent.protocols.out_of_band.v1_0.manager.InvitationMessage",
+            autospec=True,
+        ) as inv_message_cls, async_mock.patch.object(
+            OutOfBandManager,
+            "fetch_connection_targets",
+            autospec=True,
+        ) as oob_mgr_fetch_conn, async_mock.patch.object(
+            InvitationRecord,
+            "retrieve_by_tag_filter",
+            autospec=True,
+        ) as retrieve_invi_rec, async_mock.patch.object(
+            OutOfBandManager,
+            "find_existing_connection",
+            autospec=True,
+        ) as oob_mgr_find_existing_conn:
+            mock_ledger_get_key_for_did.return_value = TestConfig.test_verkey
+            mock_ledger_get_endpoint_for_did.return_value = TestConfig.test_endpoint
+            oob_mgr_find_existing_conn.side_effect = StorageNotFoundError()
+            with self.assertRaises(OutOfBandManagerError) as context:
+                await self.manager.receive_reuse_message(reuse_msg, receipt)
+                assert "No existing ConnRecord found for OOB Invitee" in str(
+                    context.exception
+                )
+
+    async def test_receive_reuse_message_problem_report_logic(self):
+        self.session.context.update_settings({"public_invites": True})
+        receipt = MessageReceipt(
+            recipient_did=TestConfig.test_did,
+            recipient_did_public=False,
+            sender_did="test_did",
+        )
+        reuse_msg = HandshakeReuse()
+        reuse_msg.assign_thread_id(thid="test_123", pthid="test_123")
+        self.test_conn_rec.invitation_msg_id = "test_456"
+        self.test_conn_rec.their_did = "test_did"
+        self.test_conn_rec.state = ConnRecord.State.COMPLETED.rfc160
+        await self.test_conn_rec.save(self.session)
+        with async_mock.patch.object(
+            self.ledger, "get_key_for_did", async_mock.CoroutineMock()
+        ) as mock_ledger_get_key_for_did, async_mock.patch.object(
+            self.ledger, "get_endpoint_for_did", async_mock.CoroutineMock()
+        ) as mock_ledger_get_endpoint_for_did, async_mock.patch.object(
+            OutOfBandManager,
+            "fetch_connection_targets",
+            autospec=True,
+        ) as oob_mgr_fetch_conn:
+            mock_ledger_get_key_for_did.return_value = TestConfig.test_verkey
+            mock_ledger_get_endpoint_for_did.return_value = TestConfig.test_endpoint
+            oob_mgr_fetch_conn.return_value = ConnectionTarget(
+                did=TestConfig.test_did,
+                endpoint=TestConfig.test_endpoint,
+                recipient_keys=TestConfig.test_verkey,
+                sender_key=TestConfig.test_verkey,
+            )
             await self.manager.receive_reuse_message(reuse_msg, receipt)
 
-    async def test_recieve_reuse_accepeted(self):
+    async def test_receive_reuse_accepted(self):
         self.session.context.update_settings({"public_invites": True})
         receipt = MessageReceipt(
             recipient_did=TestConfig.test_did,
@@ -917,7 +1131,48 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 == "accepted"
             )
 
-    async def test_recieve_reuse_accepeted_invalid_conn(self):
+    async def test_receive_reuse_accepted(self):
+        self.session.context.update_settings({"public_invites": True})
+        receipt = MessageReceipt(
+            recipient_did=TestConfig.test_did,
+            recipient_did_public=False,
+            sender_did="test_did",
+        )
+        reuse_msg_accepted = HandshakeReuseAccept()
+        reuse_msg_accepted.assign_thread_id(thid="test_123", pthid="test_123")
+        self.test_conn_rec.invitation_msg_id = "test_123"
+        self.test_conn_rec.state = ConnRecord.State.COMPLETED.rfc160
+        await self.test_conn_rec.save(self.session)
+        await self.test_conn_rec.metadata_set(self.session, "reuse_msg_id", "test_123")
+        await self.test_conn_rec.metadata_set(
+            self.session, "reuse_msg_state", "initial"
+        )
+        with async_mock.patch.object(
+            self.ledger, "get_key_for_did", async_mock.CoroutineMock()
+        ) as mock_ledger_get_key_for_did, async_mock.patch.object(
+            self.ledger, "get_endpoint_for_did", async_mock.CoroutineMock()
+        ) as mock_ledger_get_endpoint_for_did, async_mock.patch.object(
+            DIDXManager, "receive_invitation", autospec=True
+        ) as didx_mgr_receive_invitation, async_mock.patch(
+            "aries_cloudagent.protocols.out_of_band.v1_0.manager.InvitationMessage",
+            autospec=True,
+        ) as inv_message_cls, async_mock.patch.object(
+            OutOfBandManager,
+            "fetch_connection_targets",
+            autospec=True,
+        ) as oob_mgr_fetch_conn:
+            mock_ledger_get_key_for_did.return_value = TestConfig.test_verkey
+            mock_ledger_get_endpoint_for_did.return_value = TestConfig.test_endpoint
+
+            await self.manager.receive_reuse_accepted_message(
+                reuse_msg_accepted, receipt, self.test_conn_rec
+            )
+            assert (
+                await self.test_conn_rec.metadata_get(self.session, "reuse_msg_state")
+                == "accepted"
+            )
+
+    async def test_receive_reuse_accepted_invalid_conn(self):
         self.session.context.update_settings({"public_invites": True})
         receipt = MessageReceipt(
             recipient_did=TestConfig.test_did,
@@ -948,9 +1203,48 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         ) as oob_mgr_fetch_conn:
             mock_ledger_get_key_for_did.return_value = TestConfig.test_verkey
             mock_ledger_get_endpoint_for_did.return_value = TestConfig.test_endpoint
-            with self.assertRaises(AssertionError) as context:
+            with self.assertRaises(OutOfBandManagerError) as context:
                 await self.manager.receive_reuse_accepted_message(
                     reuse_msg_accepted, receipt, test_invalid_conn
+                )
+                assert "Error processing reuse accepted message" in str(
+                    context.exception
+                )
+
+    async def test_receive_reuse_accepted_message_catch_exception(self):
+        self.session.context.update_settings({"public_invites": True})
+        receipt = MessageReceipt(
+            recipient_did=TestConfig.test_did,
+            recipient_did_public=False,
+            sender_did="test_did",
+        )
+        reuse_msg_accepted = HandshakeReuseAccept()
+        reuse_msg_accepted.assign_thread_id(thid="test_123", pthid="test_123")
+        self.test_conn_rec.invitation_msg_id = "test_123"
+        self.test_conn_rec.state = ConnRecord.State.COMPLETED.rfc160
+        await self.test_conn_rec.save(self.session)
+        await self.test_conn_rec.metadata_set(self.session, "reuse_msg_id", "test_123")
+        await self.test_conn_rec.metadata_set(
+            self.session, "reuse_msg_state", "initial"
+        )
+
+        with async_mock.patch.object(
+            self.ledger, "get_key_for_did", async_mock.CoroutineMock()
+        ) as mock_ledger_get_key_for_did, async_mock.patch.object(
+            self.ledger, "get_endpoint_for_did", async_mock.CoroutineMock()
+        ) as mock_ledger_get_endpoint_for_did, async_mock.patch.object(
+            self.test_conn_rec,
+            "metadata_set",
+            async_mock.CoroutineMock(side_effect=StorageNotFoundError),
+        ):
+            mock_ledger_get_key_for_did.return_value = TestConfig.test_verkey
+            mock_ledger_get_endpoint_for_did.return_value = TestConfig.test_endpoint
+            with self.assertRaises(OutOfBandManagerError) as context:
+                await self.manager.receive_reuse_accepted_message(
+                    reuse_msg_accepted, receipt, self.test_conn_rec
+                )
+                assert "Error processing reuse accepted message" in str(
+                    context.exception
                 )
 
     async def test_problem_report_received_not_active(self):
@@ -1076,9 +1370,12 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             mock_ledger_get_key_for_did.return_value = TestConfig.test_verkey
             mock_ledger_get_endpoint_for_did.return_value = TestConfig.test_endpoint
 
-            with self.assertRaises(AssertionError) as context:
+            with self.assertRaises(OutOfBandManagerError) as context:
                 await self.manager.receive_problem_report(
                     problem_report, receipt, test_invalid_conn
+                )
+                assert "Error processing problem report message" in str(
+                    context.exception
                 )
 
     async def test_existing_conn_record_public_did(self):
@@ -1428,7 +1725,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             )
             assert retrieved_conn_records[0].state == ConnRecord.State.ABANDONED.rfc160
 
-    async def test_req_attach_presentation_existing_conn_no_auto_present(self):
+    async def test_existing_conn_record_public_did_timeout_no_handshake_protocol(self):
         self.session.context.update_settings({"public_invites": True})
         test_exist_conn = ConnRecord(
             my_did=TestConfig.test_did,
@@ -1446,83 +1743,57 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             sender_did=TestConfig.test_target_did,
         )
 
-        NOW_8601 = (
-            datetime.utcnow().replace(tzinfo=timezone.utc).isoformat(" ", "seconds")
-        )
-        NOW_EPOCH = str_to_epoch(NOW_8601)
-        CD_ID = "GMm4vMw8LLrLJjp81kRRLp:3:CL:12:tag"
-        INDY_PROOF_REQ = json.loads(
-            f"""{{
-            "name": "proof-req",
-            "version": "1.0",
-            "nonce": "12345",
-            "requested_attributes": {{
-                "0_player_uuid": {{
-                    "name": "player",
-                    "restrictions": [
-                        {{
-                            "cred_def_id": "{CD_ID}"
-                        }}
-                    ],
-                    "non_revoked": {{
-                        "from": {NOW_EPOCH},
-                        "to": {NOW_EPOCH}
-                    }}
-                }},
-                "0_screencapture_uuid": {{
-                    "name": "screenCapture",
-                    "restrictions": [
-                        {{
-                            "cred_def_id": "{CD_ID}"
-                        }}
-                    ],
-                    "non_revoked": {{
-                        "from": {NOW_EPOCH},
-                        "to": {NOW_EPOCH}
-                    }}
-                }}
-            }},
-            "requested_predicates": {{
-                "0_highscore_GE_uuid": {{
-                    "name": "highScore",
-                    "p_type": ">=",
-                    "p_value": 1000000,
-                    "restrictions": [
-                        {{
-                            "cred_def_id": "{CD_ID}"
-                        }}
-                    ],
-                    "non_revoked": {{
-                        "from": {NOW_EPOCH},
-                        "to": {NOW_EPOCH}
-                    }}
-                }}
-            }}
-        }}"""
-        )
-
-        PRES_REQ = PresentationRequest(
-            comment="Test",
-            request_presentations_attach=[
-                AttachDecorator.from_indy_dict(
-                    indy_dict=INDY_PROOF_REQ,
-                    ident=ATTACH_DECO_IDS[PRESENTATION_REQUEST],
+        with async_mock.patch.object(
+            self.ledger, "get_key_for_did", async_mock.CoroutineMock()
+        ) as mock_ledger_get_key_for_did, async_mock.patch.object(
+            self.ledger, "get_endpoint_for_did", async_mock.CoroutineMock()
+        ) as mock_ledger_get_endpoint_for_did, async_mock.patch.object(
+            DIDXManager, "receive_invitation", autospec=True
+        ) as didx_mgr_receive_invitation, async_mock.patch(
+            "aries_cloudagent.protocols.out_of_band.v1_0.manager.InvitationMessage",
+            autospec=True,
+        ) as inv_message_cls, async_mock.patch.object(
+            OutOfBandManager,
+            "fetch_connection_targets",
+            autospec=True,
+        ) as oob_mgr_fetch_conn, async_mock.patch.object(
+            OutOfBandManager,
+            "find_existing_connection",
+            autospec=True,
+        ) as oob_mgr_find_existing_conn:
+            mock_ledger_get_key_for_did.return_value = TestConfig.test_verkey
+            mock_ledger_get_endpoint_for_did.return_value = TestConfig.test_endpoint
+            oob_mgr_find_existing_conn.return_value = test_exist_conn
+            mock_oob_invi = async_mock.MagicMock(
+                handshake_protocols=[],
+                service_dids=[TestConfig.test_target_did],
+                service_blocks=[],
+                request_attach=[{"having": "attachment", "is": "no", "good": "here"}],
+            )
+            inv_message_cls.deserialize.return_value = mock_oob_invi
+            with self.assertRaises(OutOfBandManagerError) as context:
+                result = await self.manager.receive_invitation(
+                    mock_oob_invi, use_existing_connection=False
                 )
-            ],
+                assert "No existing connection exists and " in str(context.exception)
+
+    async def test_req_attach_presentation_existing_conn_no_auto_present(self):
+        self.session.context.update_settings({"public_invites": True})
+        test_exist_conn = ConnRecord(
+            my_did=TestConfig.test_did,
+            their_did=TestConfig.test_target_did,
+            their_public_did=TestConfig.test_target_did,
+            invitation_msg_id="12345678-1234-5678-1234-567812345678",
+            their_role=ConnRecord.Role.REQUESTER,
         )
-        pres_req_dict = PRES_REQ.request_presentations_attach[0].serialize()
-        req_attach = {
-            "@id": "request-0",
-            "mime-type": "application/json",
-            "data": {
-                "json": {
-                    "@type": DIDCommPrefix.qualify_current(PRESENTATION_REQUEST),
-                    "@id": "12345678-1234-5678-1234-567812345678",
-                    "comment": "some comment",
-                    "request_presentations~attach": [pres_req_dict],
-                }
-            },
-        }
+        await test_exist_conn.save(self.session)
+        await test_exist_conn.metadata_set(self.session, "reuse_msg_state", "initial")
+        await test_exist_conn.metadata_set(self.session, "reuse_msg_id", "test_123")
+        receipt = MessageReceipt(
+            recipient_did=TestConfig.test_did,
+            recipient_did_public=False,
+            sender_did=TestConfig.test_target_did,
+        )
 
         exchange_rec = V10PresentationExchange()
 
@@ -1577,7 +1848,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 ],
                 service_dids=[TestConfig.test_target_did],
                 service_blocks=[],
-                request_attach=[AttachDecorator.deserialize(req_attach)],
+                request_attach=[AttachDecorator.deserialize(TestConfig.req_attach)],
             )
 
             inv_message_cls.deserialize.return_value = mock_oob_invi
@@ -1611,94 +1882,14 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             sender_did=TestConfig.test_target_did,
         )
 
-        NOW_8601 = (
-            datetime.utcnow().replace(tzinfo=timezone.utc).isoformat(" ", "seconds")
-        )
-        NOW_EPOCH = str_to_epoch(NOW_8601)
-        CD_ID = "GMm4vMw8LLrLJjp81kRRLp:3:CL:12:tag"
-        INDY_PROOF_REQ = json.loads(
-            f"""{{
-            "name": "proof-req",
-            "version": "1.0",
-            "nonce": "12345",
-            "requested_attributes": {{
-                "0_player_uuid": {{
-                    "name": "player",
-                    "restrictions": [
-                        {{
-                            "cred_def_id": "{CD_ID}"
-                        }}
-                    ],
-                    "non_revoked": {{
-                        "from": {NOW_EPOCH},
-                        "to": {NOW_EPOCH}
-                    }}
-                }},
-                "0_screencapture_uuid": {{
-                    "name": "screenCapture",
-                    "restrictions": [
-                        {{
-                            "cred_def_id": "{CD_ID}"
-                        }}
-                    ],
-                    "non_revoked": {{
-                        "from": {NOW_EPOCH},
-                        "to": {NOW_EPOCH}
-                    }}
-                }}
-            }},
-            "requested_predicates": {{
-                "0_highscore_GE_uuid": {{
-                    "name": "highScore",
-                    "p_type": ">=",
-                    "p_value": 1000000,
-                    "restrictions": [
-                        {{
-                            "cred_def_id": "{CD_ID}"
-                        }}
-                    ],
-                    "non_revoked": {{
-                        "from": {NOW_EPOCH},
-                        "to": {NOW_EPOCH}
-                    }}
-                }}
-            }}
-        }}"""
-        )
-
-        PRES_REQ = PresentationRequest(
-            comment="Test",
-            request_presentations_attach=[
-                AttachDecorator.from_indy_dict(
-                    indy_dict=INDY_PROOF_REQ,
-                    ident=ATTACH_DECO_IDS[PRESENTATION_REQUEST],
-                )
-            ],
-        )
-        pres_req_dict = PRES_REQ.request_presentations_attach[0].serialize()
-        req_attach = {
-            "@id": "request-0",
-            "mime-type": "application/json",
-            "data": {
-                "json": {
-                    "@type": DIDCommPrefix.qualify_current(PRESENTATION_REQUEST),
-                    "@id": "12345678-1234-5678-1234-567812345678",
-                    "comment": "some comment",
-                    "request_presentations~attach": [pres_req_dict],
-                }
-            },
-        }
-
-        indy_cred_req = {
-            "schema_id": f"{TestConfig.test_did}:2:bc-reg:1.0",
-            "cred_def_id": f"{TestConfig.test_did}:3:CL:12:tag1",
-        }
-        cred_req_meta = {}
-
         exchange_rec = V10PresentationExchange()
         exchange_rec.auto_present = True
-        exchange_rec.presentation_request = INDY_PROOF_REQ
-        exchange_rec.presentation_proposal_dict = {}
+        exchange_rec.presentation_request = TestConfig.INDY_PROOF_REQ
+
+        presentation_proposal = PresentationProposal(
+            comment="Hello World", presentation_proposal=TestConfig.PRES_PREVIEW
+        )
+        exchange_rec.presentation_proposal_dict = presentation_proposal.serialize()
 
         with async_mock.patch.object(
             self.ledger, "get_key_for_did", async_mock.CoroutineMock()
@@ -1768,7 +1959,10 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             )
             holder.get_credentials_for_presentation_request_by_referent = get_creds
             holder.create_credential_request = async_mock.CoroutineMock(
-                return_value=(json.dumps(indy_cred_req), json.dumps(cred_req_meta))
+                return_value=(
+                    json.dumps(TestConfig.indy_cred_req),
+                    json.dumps(TestConfig.cred_req_meta),
+                )
             )
             self.session.context.injector.bind_instance(IndyHolder, holder)
             mock_oob_invi = async_mock.MagicMock(
@@ -1777,7 +1971,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 ],
                 service_dids=[TestConfig.test_target_did],
                 service_blocks=[],
-                request_attach=[AttachDecorator.deserialize(req_attach)],
+                request_attach=[AttachDecorator.deserialize(TestConfig.req_attach)],
             )
 
             inv_message_cls.deserialize.return_value = mock_oob_invi
@@ -1811,93 +2005,9 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             sender_did=TestConfig.test_target_did,
         )
 
-        NOW_8601 = (
-            datetime.utcnow().replace(tzinfo=timezone.utc).isoformat(" ", "seconds")
-        )
-        NOW_EPOCH = str_to_epoch(NOW_8601)
-        CD_ID = "GMm4vMw8LLrLJjp81kRRLp:3:CL:12:tag"
-        INDY_PROOF_REQ = json.loads(
-            f"""{{
-            "name": "proof-req",
-            "version": "1.0",
-            "nonce": "12345",
-            "requested_attributes": {{
-                "0_player_uuid": {{
-                    "name": "player",
-                    "restrictions": [
-                        {{
-                            "cred_def_id": "{CD_ID}"
-                        }}
-                    ],
-                    "non_revoked": {{
-                        "from": {NOW_EPOCH},
-                        "to": {NOW_EPOCH}
-                    }}
-                }},
-                "0_screencapture_uuid": {{
-                    "name": "screenCapture",
-                    "restrictions": [
-                        {{
-                            "cred_def_id": "{CD_ID}"
-                        }}
-                    ],
-                    "non_revoked": {{
-                        "from": {NOW_EPOCH},
-                        "to": {NOW_EPOCH}
-                    }}
-                }}
-            }},
-            "requested_predicates": {{
-                "0_highscore_GE_uuid": {{
-                    "name": "highScore",
-                    "p_type": ">=",
-                    "p_value": 1000000,
-                    "restrictions": [
-                        {{
-                            "cred_def_id": "{CD_ID}"
-                        }}
-                    ],
-                    "non_revoked": {{
-                        "from": {NOW_EPOCH},
-                        "to": {NOW_EPOCH}
-                    }}
-                }}
-            }}
-        }}"""
-        )
-
-        PRES_REQ = PresentationRequest(
-            comment="Test",
-            request_presentations_attach=[
-                AttachDecorator.from_indy_dict(
-                    indy_dict=INDY_PROOF_REQ,
-                    ident=ATTACH_DECO_IDS[PRESENTATION_REQUEST],
-                )
-            ],
-        )
-        pres_req_dict = PRES_REQ.request_presentations_attach[0].serialize()
-        req_attach = {
-            "@id": "request-0",
-            "mime-type": "application/json",
-            "data": {
-                "json": {
-                    "@type": DIDCommPrefix.qualify_current(PRESENTATION_REQUEST),
-                    "@id": "12345678-1234-5678-1234-567812345678",
-                    "comment": "some comment",
-                    "request_presentations~attach": [pres_req_dict],
-                }
-            },
-        }
-
-        indy_cred_req = {
-            "schema_id": f"{TestConfig.test_did}:2:bc-reg:1.0",
-            "cred_def_id": f"{TestConfig.test_did}:3:CL:12:tag1",
-        }
-        cred_req_meta = {}
-
         exchange_rec = V10PresentationExchange()
         exchange_rec.auto_present = True
-        exchange_rec.presentation_request = INDY_PROOF_REQ
+        exchange_rec.presentation_request = TestConfig.INDY_PROOF_REQ
         exchange_rec.presentation_proposal_dict = {}
 
         with async_mock.patch.object(
@@ -1971,7 +2081,10 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             )
             holder.get_credentials_for_presentation_request_by_referent = get_creds
             holder.create_credential_request = async_mock.CoroutineMock(
-                return_value=(json.dumps(indy_cred_req), json.dumps(cred_req_meta))
+                return_value=(
+                    json.dumps(TestConfig.indy_cred_req),
+                    json.dumps(TestConfig.cred_req_meta),
+                )
             )
             self.session.context.injector.bind_instance(IndyHolder, holder)
             mock_oob_invi = async_mock.MagicMock(
@@ -1980,7 +2093,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 ],
                 service_dids=[TestConfig.test_target_did],
                 service_blocks=[],
-                request_attach=[AttachDecorator.deserialize(req_attach)],
+                request_attach=[AttachDecorator.deserialize(TestConfig.req_attach)],
             )
 
             inv_message_cls.deserialize.return_value = mock_oob_invi
@@ -1989,3 +2102,216 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 mock_oob_invi, use_existing_connection=True
             )
             assert result.get("comment") == "this is test"
+
+    async def test_req_attach_presentation_catch_value_error(self):
+        self.session.context.update_settings({"public_invites": True})
+        self.session.context.update_settings(
+            {"debug.auto_respond_presentation_request": True}
+        )
+        test_exist_conn = ConnRecord(
+            my_did=TestConfig.test_did,
+            their_did=TestConfig.test_target_did,
+            their_public_did=TestConfig.test_target_did,
+            invitation_msg_id="12345678-1234-5678-1234-567812345678",
+            their_role=ConnRecord.Role.REQUESTER,
+        )
+        await test_exist_conn.save(self.session)
+        await test_exist_conn.metadata_set(self.session, "reuse_msg_state", "initial")
+        await test_exist_conn.metadata_set(self.session, "reuse_msg_id", "test_123")
+        receipt = MessageReceipt(
+            recipient_did=TestConfig.test_did,
+            recipient_did_public=False,
+            sender_did=TestConfig.test_target_did,
+        )
+
+        exchange_rec = V10PresentationExchange()
+        exchange_rec.auto_present = True
+        exchange_rec.presentation_request = TestConfig.INDY_PROOF_REQ
+        exchange_rec.presentation_proposal_dict = {}
+
+        with async_mock.patch.object(
+            self.ledger, "get_key_for_did", async_mock.CoroutineMock()
+        ) as mock_ledger_get_key_for_did, async_mock.patch.object(
+            self.ledger, "get_endpoint_for_did", async_mock.CoroutineMock()
+        ) as mock_ledger_get_endpoint_for_did, async_mock.patch.object(
+            DIDXManager,
+            "receive_invitation",
+            autospec=True,
+        ) as didx_mgr_receive_invitation, async_mock.patch.object(
+            PresentationManager,
+            "receive_request",
+            autospec=True,
+        ) as proof_mgr_receive_request, async_mock.patch(
+            "aries_cloudagent.protocols.out_of_band.v1_0.manager.InvitationMessage",
+            autospec=True,
+        ) as inv_message_cls, async_mock.patch.object(
+            OutOfBandManager,
+            "fetch_connection_targets",
+            autospec=True,
+        ) as oob_mgr_fetch_conn, async_mock.patch.object(
+            OutOfBandManager,
+            "find_existing_connection",
+            autospec=True,
+        ) as oob_mgr_find_existing_conn, async_mock.patch.object(
+            OutOfBandManager,
+            "check_reuse_msg_state",
+            autospec=True,
+        ) as oob_mgr_check_reuse_state, async_mock.patch.object(
+            OutOfBandManager,
+            "create_handshake_reuse_message",
+            autospec=True,
+        ) as oob_mgr_create_reuse_msg, async_mock.patch.object(
+            OutOfBandManager,
+            "receive_reuse_message",
+            autospec=True,
+        ) as oob_mgr_receive_reuse_msg, async_mock.patch.object(
+            OutOfBandManager,
+            "receive_reuse_accepted_message",
+            autospec=True,
+        ) as oob_mgr_receive_accept_msg, async_mock.patch.object(
+            OutOfBandManager,
+            "receive_problem_report",
+            autospec=True,
+        ) as oob_mgr_receive_problem_report, async_mock.patch.object(
+            PresentationManager,
+            "create_presentation",
+            autospec=True,
+        ) as proof_mgr_create_presentation, async_mock.patch.object(
+            PresentationProposal,
+            "deserialize",
+            autospec=True,
+        ) as present_proposal_deserialize:
+            mock_ledger_get_key_for_did.return_value = TestConfig.test_verkey
+            mock_ledger_get_endpoint_for_did.return_value = TestConfig.test_endpoint
+            oob_mgr_find_existing_conn.return_value = test_exist_conn
+            proof_mgr_receive_request.return_value = exchange_rec
+            proof_mgr_create_presentation.return_value = (
+                exchange_rec,
+                Presentation(comment="this is test"),
+            )
+            present_proposal_deserialize.return_value = PresentationProposal()
+            holder = async_mock.MagicMock(IndyHolder, autospec=True)
+            get_creds = async_mock.CoroutineMock(return_value=())
+            holder.get_credentials_for_presentation_request_by_referent = get_creds
+            holder.create_credential_request = async_mock.CoroutineMock(
+                return_value=(
+                    json.dumps(TestConfig.indy_cred_req),
+                    json.dumps(TestConfig.cred_req_meta),
+                )
+            )
+            self.session.context.injector.bind_instance(IndyHolder, holder)
+            mock_oob_invi = async_mock.MagicMock(
+                handshake_protocols=[
+                    pfx.qualify(test_module.DIDX_PROTO) for pfx in DIDCommPrefix
+                ],
+                service_dids=[TestConfig.test_target_did],
+                service_blocks=[],
+                request_attach=[AttachDecorator.deserialize(TestConfig.req_attach)],
+            )
+
+            inv_message_cls.deserialize.return_value = mock_oob_invi
+            result = await self.manager.receive_invitation(
+                mock_oob_invi, use_existing_connection=True
+            )
+            assert result is None
+
+    async def test_req_attach_presentation_cred_offer(self):
+        self.session.context.update_settings({"public_invites": True})
+        self.session.context.update_settings(
+            {"debug.auto_respond_presentation_request": True}
+        )
+        test_exist_conn = ConnRecord(
+            my_did=TestConfig.test_did,
+            their_did=TestConfig.test_target_did,
+            their_public_did=TestConfig.test_target_did,
+            invitation_msg_id="12345678-1234-5678-1234-567812345678",
+            their_role=ConnRecord.Role.REQUESTER,
+        )
+        await test_exist_conn.save(self.session)
+        await test_exist_conn.metadata_set(self.session, "reuse_msg_state", "initial")
+        await test_exist_conn.metadata_set(self.session, "reuse_msg_id", "test_123")
+
+        receipt = MessageReceipt(
+            recipient_did=TestConfig.test_did,
+            recipient_did_public=False,
+            sender_did=TestConfig.test_target_did,
+        )
+        req_attach = deepcopy(TestConfig.req_attach)
+        req_attach["data"]["json"]["@type"] = DIDCommPrefix.qualify_current(
+            CREDENTIAL_OFFER
+        )
+
+        exchange_rec = V10PresentationExchange()
+        exchange_rec.auto_present = True
+        exchange_rec.presentation_request = TestConfig.INDY_PROOF_REQ
+        exchange_rec.presentation_proposal_dict = {}
+
+        with async_mock.patch.object(
+            self.ledger, "get_key_for_did", async_mock.CoroutineMock()
+        ) as mock_ledger_get_key_for_did, async_mock.patch.object(
+            self.ledger, "get_endpoint_for_did", async_mock.CoroutineMock()
+        ) as mock_ledger_get_endpoint_for_did, async_mock.patch.object(
+            DIDXManager,
+            "receive_invitation",
+            autospec=True,
+        ) as didx_mgr_receive_invitation, async_mock.patch.object(
+            PresentationManager,
+            "receive_request",
+            autospec=True,
+        ) as proof_mgr_receive_request, async_mock.patch(
+            "aries_cloudagent.protocols.out_of_band.v1_0.manager.InvitationMessage",
+            autospec=True,
+        ) as inv_message_cls, async_mock.patch.object(
+            OutOfBandManager,
+            "fetch_connection_targets",
+            autospec=True,
+        ) as oob_mgr_fetch_conn, async_mock.patch.object(
+            OutOfBandManager,
+            "find_existing_connection",
+            autospec=True,
+        ) as oob_mgr_find_existing_conn, async_mock.patch.object(
+            OutOfBandManager,
+            "check_reuse_msg_state",
+            autospec=True,
+        ) as oob_mgr_check_reuse_state, async_mock.patch.object(
+            OutOfBandManager,
+            "create_handshake_reuse_message",
+            autospec=True,
+        ) as oob_mgr_create_reuse_msg, async_mock.patch.object(
+            OutOfBandManager,
+            "receive_reuse_message",
+            autospec=True,
+        ) as oob_mgr_receive_reuse_msg, async_mock.patch.object(
+            OutOfBandManager,
+            "receive_reuse_accepted_message",
+            autospec=True,
+        ) as oob_mgr_receive_accept_msg, async_mock.patch.object(
+            OutOfBandManager,
+            "receive_problem_report",
+            autospec=True,
+        ) as oob_mgr_receive_problem_report, async_mock.patch.object(
+            PresentationManager,
+            "create_presentation",
+            autospec=True,
+        ) as proof_mgr_create_presentation:
+            mock_ledger_get_key_for_did.return_value = TestConfig.test_verkey
+            mock_ledger_get_endpoint_for_did.return_value = TestConfig.test_endpoint
+            oob_mgr_find_existing_conn.return_value = test_exist_conn
+            proof_mgr_create_presentation.return_value = (
+                exchange_rec,
+                Presentation(comment="this is test"),
+            )
+            mock_oob_invi = async_mock.MagicMock(
+                handshake_protocols=[
+                    pfx.qualify(test_module.DIDX_PROTO) for pfx in DIDCommPrefix
+                ],
+                service_dids=[TestConfig.test_target_did],
+                service_blocks=[],
+                request_attach=[AttachDecorator.deserialize(req_attach)],
+            )
+            inv_message_cls.deserialize.return_value = mock_oob_invi
+            with self.assertRaises(OutOfBandManagerError) as context:
+                result = await self.manager.receive_invitation(
+                    mock_oob_invi, use_existing_connection=True
+                )
+                assert "Unsupported request~attach type," in str(context.exception)

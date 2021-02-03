@@ -652,7 +652,8 @@ class OutOfBandManager(BaseConnectionManager):
         """
         try:
             # ID of Out-of-Band invitation to use as a pthid
-            pthid = invi_msg._id
+            # pthid = invi_msg._id
+            pthid = conn_record.invitation_msg_id
             reuse_msg = HandshakeReuse()
             thid = reuse_msg._id
             reuse_msg.assign_thread_id(thid=thid, pthid=pthid)
@@ -704,7 +705,8 @@ class OutOfBandManager(BaseConnectionManager):
             tag_filter = {}
             post_filter = {}
             # post_filter["state"] = "active"
-            tag_filter["their_did"] = receipt.sender_did
+            # tag_filter["their_did"] = receipt.sender_did
+            post_filter["invitation_msg_id"] = invi_msg_id
             conn_record = await self.find_existing_connection(
                 tag_filter=tag_filter, post_filter=post_filter
             )
@@ -720,41 +722,35 @@ class OutOfBandManager(BaseConnectionManager):
                         message=reuse_accept_msg,
                         target_list=connection_targets,
                     )
+                # This is not required as now we attaching the invitation_msg_id
+                # using original invitation [from existing connection]
+                #
                 # Delete the ConnRecord created; re-use existing connection
-                invi_id_post_filter = {}
-                invi_id_post_filter["invitation_msg_id"] = invi_msg_id
-                conn_rec_to_delete = await self.find_existing_connection(
-                    tag_filter={},
-                    post_filter=invi_id_post_filter,
-                )
-                if conn_rec_to_delete is not None:
-                    if conn_record.connection_id != conn_rec_to_delete.connection_id:
-                        await conn_rec_to_delete.delete_record(session=self._session)
+                # invi_id_post_filter = {}
+                # invi_id_post_filter["invitation_msg_id"] = invi_msg_id
+                # conn_rec_to_delete = await self.find_existing_connection(
+                #     tag_filter={},
+                #     post_filter=invi_id_post_filter,
+                # )
+                # if conn_rec_to_delete is not None:
+                #     if conn_record.connection_id != conn_rec_to_delete.connection_id:
+                #         await conn_rec_to_delete.delete_record(session=self._session)
             else:
-                try:
-                    conn_records = await ConnRecord.query(
-                        self._session,
-                        tag_filter={"their_did": receipt.sender_did},
-                        post_filter_positive={},
-                    )
-                    if len(conn_records) >= 1:
-                        all_conn_rec_by_sender = conn_records[0]
-                    else:
-                        all_conn_rec_by_sender = None
-                except StorageNotFoundError:
-                    all_conn_rec_by_sender = None
+                conn_record = await self.find_existing_connection(
+                    tag_filter={"their_did": receipt.sender_did}, post_filter={}
+                )
                 targets = None
-                if all_conn_rec_by_sender is not None:
+                if conn_record is not None:
                     targets = await self.fetch_connection_targets(
                         connection=conn_record
                     )
                     problem_report = ProblemReport(
                         problem_code=(
-                            ProblemReportReason.EXISTING_CONNECTION_NOT_ACTIVE.value
+                            ProblemReportReason.EXISTING_CONNECTION_DOES_NOT_EXISTS.value
                         ),
                         explain=(
-                            "No active connection found "
-                            f"for invitee {receipt.sender_did}"
+                            "No existing connection found "
+                            f"for invitation {invi_msg_id}"
                         ),
                     )
                     problem_report.assign_thread_id(
@@ -806,7 +802,7 @@ class OutOfBandManager(BaseConnectionManager):
             await conn_record.metadata_set(
                 session=self._session, key="reuse_msg_state", value="accepted"
             )
-        except StorageNotFoundError as e:
+        except Exception as e:
             raise OutOfBandManagerError(
                 (
                     (
@@ -849,12 +845,12 @@ class OutOfBandManager(BaseConnectionManager):
             await conn_record.metadata_set(
                 session=self._session, key="reuse_msg_state", value="not_accepted"
             )
-        except StorageNotFoundError:
+        except Exception as e:
             raise OutOfBandManagerError(
                 (
                     (
                         "Error processing problem report message "
-                        f"for OOB invitation {invi_msg_id}"
+                        f"for OOB invitation {invi_msg_id}, {e}"
                     )
                 )
             )
