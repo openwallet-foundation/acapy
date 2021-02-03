@@ -5,37 +5,46 @@ from enum import Enum
 from typing import Sequence
 
 from .diddoc import ResolvedDIDDoc
+from ..core.profile import ProfileSession
 
 
-class DidMethodNotSupported(Exception):
+class ResolverError(Exception):
+    """Base class for resolver exceptions."""
+
+
+class DidNotFound(ResolverError):
+    """Raised when DID is not found in verifiable data registry."""
+
+
+class DidMethodNotSupported(ResolverError):
     """Raised when no resolver is registered for a given did method."""
 
+class ResolverType(Enum):
+    """Resolver Type declarations."""
 
-class DidNotFound(Exception):
-    """Raised when DID not found by resolver."""
+    NATIVE = "native"
+    NON_NATIVE = "non-native"
 
 
 class BaseDIDResolver(ABC):
     """Base Class for DID Resolvers."""
 
-    class Type(Enum):
-        """Resolver Type declarations."""
-
-        NATIVE = "native"
-        NON_NATIVE = "non-native"
-
-    def __init__(self, type_: Type = None):
+    def __init__(self, type_: ResolverType = None):
         """Initialize BaseDIDResolver.
 
         Args:
             type_ (Type): Type of resolver, native or non-native
         """
-        self.type = type_ or self.Type.NON_NATIVE
+        self.type = type_ or ResolverType.NON_NATIVE
+
+    @abstractmethod
+    async def setup(self, session: ProfileSession):
+        """Do asynchronous resolver setup."""
 
     @property
     def native(self):
         """Return if this resolver is native."""
-        return self.type == self.Type.NATIVE
+        return self.type == ResolverType.NATIVE
 
     @property
     @abstractmethod
@@ -47,5 +56,5 @@ class BaseDIDResolver(ABC):
         return method in self.supported_methods
 
     @abstractmethod
-    def resolve(self, did: str) -> ResolvedDIDDoc:
+    async def resolve(self, session: ProfileSession, did: str) -> ResolvedDIDDoc:
         """Resolve a DID using this resolver."""
