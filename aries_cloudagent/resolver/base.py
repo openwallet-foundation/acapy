@@ -7,13 +7,16 @@ from typing import Sequence
 from .diddoc import ResolvedDIDDoc
 from ..core.profile import ProfileSession
 
-
-class DidMethodNotSupported(Exception):
-    """Raised when no resolver is registered for a given did method."""
+class ResolverError(Exception):
+    """Base Resolver Error."""
 
 
 class DidNotFound(ResolverError):
     """Raised when DID is not found in verifiable data registry."""
+
+
+class DidMethodNotSupported(ResolverError):
+    """Raised when no resolver is registered for a given did method."""
 
 
 class ResolverType(Enum):
