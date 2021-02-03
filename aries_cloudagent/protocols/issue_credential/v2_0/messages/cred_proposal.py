@@ -46,7 +46,7 @@ class V20CredProposal(AgentMessage):
         Args:
             comment: optional human-readable comment
             credential_proposal: proposed credential preview
-            formats: acceptable credential formats
+            formats: acceptable attachment formats
             filter_attach: list of attachments filtering credential proposal
 
         """
@@ -92,14 +92,14 @@ class V20CredProposalSchema(AgentMessageSchema):
         V20CredFormatSchema,
         many=True,
         required=True,
-        description="Acceptable credential formats",
+        description="Acceptable attachment formats",
     )
     filters_attach = fields.Nested(
         AttachDecoratorSchema,
         data_key="filters~attach",
         required=True,
         description=(
-            "Credential filter per acceptable format " "on corresponding identifier"
+            "Credential filter per acceptable format on corresponding identifier"
         ),
         many=True,
     )

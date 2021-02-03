@@ -8,10 +8,10 @@ SPEC_URI = (
 )
 
 # Message types
-PRES_PROPOSAL = "present-proof/2.0/propose-presentation"
-PRES_REQUEST = "present-proof/2.0/request-presentation"
-PRES = "present-proof/2.0/presentation"
-PRES_ACK = "present-proof/2.0/ack"
+PRES_20_PROPOSAL = "present-proof/2.0/propose-presentation"
+PRES_20_REQUEST = "present-proof/2.0/request-presentation"
+PRES_20 = "present-proof/2.0/presentation"
+PRES_20_ACK = "present-proof/2.0/ack"
 
 PROTOCOL_PACKAGE = "aries_cloudagent.protocols.present_proof.v2_0"
 
@@ -31,4 +31,4 @@ MESSAGE_TYPES = DIDCommPrefix.qualify_all(
 )
 
 # Inner object types
-PRES_PREVIEW = "present-proof/2.0/presentation-preview"
+PRES_20_PREVIEW = "present-proof/2.0/presentation-preview"

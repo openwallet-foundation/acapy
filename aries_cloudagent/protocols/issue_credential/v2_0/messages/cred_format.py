@@ -127,13 +127,13 @@ class V20CredFormatSchema(BaseModelSchema):
     attach_id = fields.Str(
         required=True,
         allow_none=False,
-        description="attachment identifier",
+        description="Attachment identifier",
         example=UUIDFour.EXAMPLE,
     )
     format_ = fields.Str(
         required=True,
         allow_none=False,
-        description="acceptable issue-credential message attachment format specifier",
+        description="Acceptable issue-credential message attachment format specifier",
         data_key="format",
         validate=validate.OneOf([f.aries for f in V20CredFormat.Format]),
         example=V20CredFormat.Format.INDY.aries,

@@ -41,7 +41,7 @@ from ...connections.v1_0.messages.connection_invitation import ConnectionInvitat
 from ....ledger.base import BaseLedger
 from ....messaging.responder import BaseResponder
 from ...present_proof.v1_0.messages.presentation_proposal import PresentationProposal
-from ...present_proof.v1_0.util.indy import indy_proof_req_preview2indy_requested_creds
+from ...present_proof.util.indy import indy_proof_req_preview2indy_requested_creds
 from ....indy.holder import IndyHolder
 from ....messaging.decorators.attach_decorator import AttachDecorator
 

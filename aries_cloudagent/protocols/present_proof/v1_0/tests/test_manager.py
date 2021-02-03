@@ -18,6 +18,8 @@ from .....indy.sdk.verifier import IndySdkVerifier
 
 from ....didcomm_prefix import DIDCommPrefix
 
+from ...util.indy import indy_proof_req_preview2indy_requested_creds
+
 from .. import manager as test_module
 from ..manager import PresentationManager, PresentationManagerError
 from ..messages.presentation import Presentation
@@ -30,7 +32,6 @@ from ..messages.inner.presentation_preview import (
     PresPredSpec,
 )
 from ..models.presentation_exchange import V10PresentationExchange
-from ..util.indy import indy_proof_req_preview2indy_requested_creds
 
 
 CONN_ID = "connection_id"

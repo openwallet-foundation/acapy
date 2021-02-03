@@ -8,10 +8,11 @@ from uuid import uuid4
 
 from marshmallow import EXCLUDE, fields, validate, ValidationError
 
-from .....messaging.credential_definitions.util import CRED_DEF_TAGS
 from .....messaging.decorators.attach_decorator import AttachDecorator
-from .....messaging.models.base import BaseModel, BaseModelSchema
+from .....messaging.models.base import BaseModelError, BaseModel, BaseModelSchema
 from .....messaging.valid import UUIDFour
+
+from .inner.pres_preview import PresPreview, PresPreviewSchema
 
 # Aries RFC value, further monikers
 FormatSpec = namedtuple("FormatSpec", "aries aka")
@@ -65,8 +66,10 @@ class V20PresFormat(BaseModel):
         def validate_proposal_attach(self, data: Mapping):
             """Raise ValidationError for wrong proposal~attach content."""
             if self is V20PredFormat.Format.INDY:
-                if data.keys() - set(CRED_DEF_TAGS):
-                    raise ValidationError(f"Bad indy credential filter: {data}")
+                try:
+                    V20PredProposal.deserialize(data)
+                except BaseModelError as x:
+                    raise ValidationError("Invalid presentation proposal") from x
 
         def get_attachment_data(
             self,
@@ -117,13 +120,13 @@ class V20PresFormatSchema(BaseModelSchema):
     attach_id = fields.Str(
         required=True,
         allow_none=False,
-        description="attachment identifier",
+        description="Attachment identifier",
         example=UUIDFour.EXAMPLE,
     )
     format_ = fields.Str(
         required=True,
         allow_none=False,
-        description="acceptable present-proof message attachment format specifier",
+        description="Acceptable present-proof message attachment format specifier",
         data_key="format",
         validate=validate.OneOf([f.aries for f in V20PresFormat.Format]),
         example=V20PresFormat.Format.INDY.aries,

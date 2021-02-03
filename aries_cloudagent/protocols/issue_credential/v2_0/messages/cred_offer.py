@@ -47,6 +47,7 @@ class V20CredOffer(AgentMessage):
             replacement_id: unique to issuer, to coordinate credential replacement
             comment: optional human-readable comment
             credential_preview: credential preview
+            formats: acceptable attachment formats
             offers_attach: list of offer attachments
 
         """
@@ -99,5 +100,9 @@ class V20CredOfferSchema(AgentMessageSchema):
         description="Acceptable credential formats",
     )
     offers_attach = fields.Nested(
-        AttachDecoratorSchema, required=True, many=True, data_key="offers~attach"
+        AttachDecoratorSchema,
+        required=True,
+        many=True,
+        data_key="offers~attach",
+        description="Offer attachments",
     )

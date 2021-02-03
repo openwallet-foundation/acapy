@@ -44,6 +44,8 @@ class V20CredIssue(AgentMessage):
         Args:
             comment: optional comment
             credentials_attach: credentials attachments
+            formats: acceptable attachment formats
+            filter_attach: list of credential attachments
 
         """
         super().__init__(_id=_id, **kwargs)
@@ -88,8 +90,12 @@ class V20CredIssueSchema(AgentMessageSchema):
         V20CredFormatSchema,
         many=True,
         required=True,
-        description="Acceptable credential formats",
+        description="Acceptable attachment formats",
     )
     credentials_attach = fields.Nested(
-        AttachDecoratorSchema, many=True, required=True, data_key="credentials~attach"
+        AttachDecoratorSchema,
+        many=True,
+        required=True,
+        data_key="credentials~attach",
+        description="Credential attachments",
     )

@@ -11,7 +11,7 @@ from indy.error import IndyError
 
 from ...ledger.indy import IndySdkLedger
 from ...messaging.util import canon, encode
-from ...protocols.present_proof.v1_0.util.indy import indy_proof_req2non_revoc_intervals
+from ...protocols.present_proof.util.indy import indy_proof_req2non_revoc_intervals
 
 from ..verifier import IndyVerifier
 

@@ -44,6 +44,8 @@ class V20CredRequest(AgentMessage):
         Args:
             requests_attach: requests attachments
             comment: optional comment
+            formats: acceptable attachment formats
+            requests_attach: list of request attachments
 
         """
         super().__init__(_id=_id, **kwargs)
@@ -81,8 +83,12 @@ class V20CredRequestSchema(AgentMessageSchema):
         V20CredFormatSchema,
         many=True,
         required=True,
-        description="Acceptable credential formats",
+        description="Acceptable attachment formats",
     )
     requests_attach = fields.Nested(
-        AttachDecoratorSchema, required=True, many=True, data_key="requests~attach"
+        AttachDecoratorSchema,
+        required=True,
+        many=True,
+        data_key="requests~attach",
+        description="Request attachments",
     )

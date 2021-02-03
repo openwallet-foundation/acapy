@@ -4,22 +4,22 @@ from marshmallow import EXCLUDE
 
 from .....messaging.ack.message import Ack, AckSchema
 
-from ..message_types import PRES_ACK, PROTOCOL_PACKAGE
+from ..message_types import PRES_20_ACK, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = (
-    f"{PROTOCOL_PACKAGE}.handlers.pres_ack_handler.PresAckHandler"
+    f"{PROTOCOL_PACKAGE}.handlers.pres_ack_handler.V20PresAckHandler"
 )
 
 
-class PresAck(Ack):
+class V20PresAck(Ack):
     """Base class representing an explicit ack message for present-proof protocol."""
 
     class Meta:
-        """PresAck metadata."""
+        """V20PresAck metadata."""
 
         handler_class = HANDLER_CLASS
-        message_type = PRES_ACK
-        schema_class = "PresAckSchema"
+        message_type = PRES_20_ACK
+        schema_class = "V20PresAckSchema"
 
     def __init__(self, status: str = None, **kwargs):
         """
@@ -32,11 +32,11 @@ class PresAck(Ack):
         super().__init__(status, **kwargs)
 
 
-class PresAckSchema(AckSchema):
-    """Schema for PresAck class."""
+class V20PresAckSchema(AckSchema):
+    """Schema for V20PresAck class."""
 
     class Meta:
-        """PresAck schema metadata."""
+        """V20PresAck schema metadata."""
 
-        model_class = PresAck
+        model_class = V20PresAck
         unknown = EXCLUDE
