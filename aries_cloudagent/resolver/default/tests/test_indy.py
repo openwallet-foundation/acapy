@@ -5,11 +5,11 @@ from asynctest import mock as async_mock
 
 from ..indy import IndyDIDResolver
 from ....core.in_memory import InMemoryProfile
-from ....core.profile import ProfileSession
+from ....core.profile import Profile
 from ....ledger.indy import IndySdkLedger
 from ....ledger.error import LedgerError
 from ...tests.test_did import TEST_DID0
-from ...base import ResolverError, DidNotFound
+from ...base import ResolverError, DIDNotFound
 
 # pylint: disable=W0621
 
@@ -30,11 +30,11 @@ def ledger():
 
 
 @pytest.fixture
-def session(ledger):
-    """Session fixture."""
-    session = InMemoryProfile.test_session()
-    session.context.injector.bind_instance(IndySdkLedger, ledger)
-    yield session
+def profile(ledger):
+    """Profile fixture."""
+    profile = InMemoryProfile.test_profile()
+    profile.context.injector.bind_instance(IndySdkLedger, ledger)
+    yield profile
 
 
 def test_supported_methods(resolver: IndyDIDResolver):
@@ -44,24 +44,24 @@ def test_supported_methods(resolver: IndyDIDResolver):
 
 
 @pytest.mark.asyncio
-async def test_resolve(resolver: IndyDIDResolver, session: ProfileSession):
+async def test_resolve(resolver: IndyDIDResolver, profile: Profile):
     """Test resolve method."""
-    assert await resolver.resolve(session, TEST_DID0)
+    assert await resolver.resolve(profile, TEST_DID0)
 
 
 @pytest.mark.asyncio
-async def test_resolve_x_no_ledger(resolver: IndyDIDResolver, session: ProfileSession):
+async def test_resolve_x_no_ledger(resolver: IndyDIDResolver, profile: Profile):
     """Test resolve method with no ledger."""
-    session.context.injector.clear_binding(IndySdkLedger)
+    profile.context.injector.clear_binding(IndySdkLedger)
     with pytest.raises(ResolverError):
-        await resolver.resolve(session, TEST_DID0)
+        await resolver.resolve(profile, TEST_DID0)
 
 
 @pytest.mark.asyncio
 async def test_resolve_x_did_not_found(
-    resolver: IndyDIDResolver, ledger: IndySdkLedger, session: ProfileSession
+    resolver: IndyDIDResolver, ledger: IndySdkLedger, profile: Profile
 ):
     """Test resolve method when no did is found."""
     ledger.get_key_for_did.side_effect = LedgerError
-    with pytest.raises(DidNotFound):
-        await resolver.resolve(session, TEST_DID0)
+    with pytest.raises(DIDNotFound):
+        await resolver.resolve(profile, TEST_DID0)

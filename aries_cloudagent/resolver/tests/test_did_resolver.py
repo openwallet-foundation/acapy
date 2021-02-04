@@ -1,19 +1,20 @@
-"""Test did resolver registery."""
+"""Test did resolver registry."""
+
+import unittest
 
 import pytest
-import unittest
 from asynctest import mock as async_mock
-from ..did_resolver_registry import DIDResolverRegistry
-from ..did_resolver import DIDResolver
-from ...resolver.diddoc import ResolvedDIDDoc
+
 from ...resolver.base import (
     BaseDIDResolver,
-    DidMethodNotSupported,
-    DidNotFound,
+    DIDMethodNotSupported,
+    DIDNotFound,
     ResolverType,
 )
 from ...resolver.did import DID
-
+from ...resolver.diddoc import ResolvedDIDDoc
+from ..did_resolver import DIDResolver
+from ..did_resolver_registry import DIDResolverRegistry
 
 TEST_DID0 = "did:sov:Kkyqu7CJFuQSvBp468uaDe"
 TEST_DID1 = "did:btcr:8kyt-fzzq-qpqq-ljsc-5l"
@@ -41,6 +42,7 @@ TEST_DID_METHODS = [
     TEST_DID_METHOD2,
     TEST_DID_METHOD3,
     TEST_DID_METHOD4,
+    "example",
 ]
 
 TEST_METHOD_SPECIFIC_ID0 = "Kkyqu7CJFuQSvBp468uaDe"
@@ -106,14 +108,16 @@ class MockResolver(BaseDIDResolver):
         self._supported_methods = supported_methods
         self.resolved = resolved
 
-    async def setup(self, session):
+    async def setup(self, profile):
         pass
 
     @property
     def supported_methods(self):
         return self._supported_methods
 
-    async def resolve(self, did):
+    async def resolve(self, profile, did):
+        if isinstance(self.resolved, Exception):
+            raise self.resolved
         return self.resolved
 
 
@@ -121,13 +125,18 @@ class MockResolver(BaseDIDResolver):
 def resolver():
     did_resolver_registry = DIDResolverRegistry()
     for method in TEST_DID_METHODS:
-        resolver = MockResolver(method, ResolvedDIDDoc(DOC))
+        resolver = MockResolver([method], ResolvedDIDDoc(DOC))
         did_resolver_registry.register(resolver)
     return DIDResolver(did_resolver_registry)
 
 
+@pytest.fixture
+def profile():
+    yield async_mock.MagicMock()
+
+
 def test_create_resolver(resolver):
-    assert len(resolver.did_resolver_registery.did_resolvers) == len(TEST_DID_METHODS)
+    assert len(resolver.did_resolver_registry.resolvers) == len(TEST_DID_METHODS)
 
 
 @pytest.mark.parametrize("did, method", zip(TEST_DIDS, TEST_DID_METHODS))
@@ -139,7 +148,7 @@ def test_match_did_to_resolver(resolver, did, method):
 
 def test_match_did_to_resolver_x_not_supported(resolver):
     did = DID("did:cowsay:EiDahaOGH-liLLdDtTxEAdc8i-cfCz-WUcQdRJheMVNn3A")
-    with pytest.raises(DidMethodNotSupported):
+    with pytest.raises(DIDMethodNotSupported):
         resolver._match_did_to_resolver(did)
 
 
@@ -147,8 +156,8 @@ def test_match_did_to_resolver_native_priority():
     registry = DIDResolverRegistry()
     native = MockResolver(["sov"], native=True)
     non_native = MockResolver(["sov"], native=False)
-    registry.register(native)
     registry.register(non_native)
+    registry.register(native)
     resolver = DIDResolver(registry)
     assert [native, non_native] == resolver._match_did_to_resolver(DID(TEST_DID0))
 
@@ -169,43 +178,42 @@ def test_match_did_to_resolver_registration_order():
     )
 
 
-@pytest.mark.parametrize("did", TEST_DIDS)
-def test_dereference_external(resolver, did):
-    with async_mock.patch.object(
-        resolver, "resolve", async_mock.MagicMock(return_value="resolved did doc")
-    ) as mock_resolver:
-        result = mock_resolver.dereference_external(did)
-        assert result
-
-
-def test_fully_dereference(resolver):
-    pytest.skip("need more work")
+@pytest.mark.asyncio
+async def test_dereference(resolver, profile):
+    url = "did:example:1234abcd#4"
+    assert DOC["verificationMethod"][1] == await resolver.dereference(
+        profile, url
+    )
 
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("did", TEST_DIDS)
-async def test_resolve(resolver, did):
-    did_doc = await resolver.resolve(did)
+async def test_resolve(resolver, profile, did):
+    did_doc = await resolver.resolve(profile, did)
     assert isinstance(did_doc, ResolvedDIDDoc)
 
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("did", TEST_DIDS)
-async def test_resolve_did(resolver, did):
+async def test_resolve_did(resolver, profile, did):
     did = DID(did)
-    did_doc = await resolver.resolve(did)
+    did_doc = await resolver.resolve(profile, did)
     assert isinstance(did_doc, ResolvedDIDDoc)
 
 
 @pytest.mark.asyncio
-async def test_resolve_did_x_not_supported(resolver):
+async def test_resolve_did_x_not_supported(resolver, profile):
     did = DID("did:cowsay:EiDahaOGH-liLLdDtTxEAdc8i-cfCz-WUcQdRJheMVNn3A")
-    with pytest.raises(DidMethodNotSupported):
-        await resolver.resolve(did)
+    with pytest.raises(DIDMethodNotSupported):
+        await resolver.resolve(profile, did)
 
 
 @pytest.mark.asyncio
-async def test_resolve_did_x_not_found(resolver):
+async def test_resolve_did_x_not_found(profile):
     did = DID("did:cowsay:EiDahaOGH-liLLdDtTxEAdc8i-cfCz-WUcQdRJheMVNn3A")
-    with pytest.raises(DidMethodNotSupported):
-        await resolver.resolve(did)
+    cowsay_resolver_not_found = MockResolver("cowsay", resolved=DIDNotFound())
+    registry = DIDResolverRegistry()
+    registry.register(cowsay_resolver_not_found)
+    resolver = DIDResolver(registry)
+    with pytest.raises(DIDNotFound):
+        await resolver.resolve(profile, did)

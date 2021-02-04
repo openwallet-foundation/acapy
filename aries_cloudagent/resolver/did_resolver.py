@@ -6,11 +6,13 @@ retrieving did's from different sources provided by the method type.
 """
 
 import logging
-from typing import Union
 from itertools import chain
-from ..resolver.diddoc import ResolvedDIDDoc  # , ExternalResourceError
-from ..resolver.base import BaseDIDResolver, DidMethodNotSupported, DidNotFound
+from typing import Union
+
+from ..core.profile import Profile
+from ..resolver.base import BaseDIDResolver, DIDMethodNotSupported, DIDNotFound
 from ..resolver.did import DID, DIDUrl  # , DID_PATTERN
+from ..resolver.diddoc import ResolvedDIDDoc  # , ExternalResourceError
 from .did_resolver_registry import DIDResolverRegistry
 
 LOGGER = logging.getLogger(__name__)
@@ -21,20 +23,23 @@ class DIDResolver:
 
     def __init__(self, registry: DIDResolverRegistry):
         """Initialize a `didresolver` instance."""
-        self.did_resolver_registery = registry
+        self.did_resolver_registry = registry
 
-    async def resolve(self, did: Union[str, DID]) -> ResolvedDIDDoc:
+    async def resolve(
+        self, profile: Profile, did: Union[str, DID]
+    ) -> ResolvedDIDDoc:
         """Retrieve did doc from public registry."""
+        # TODO Cache results
         if isinstance(did, str):
             did = DID(did)
         for resolver in self._match_did_to_resolver(did):
             try:
                 LOGGER.debug("Resolving DID %s with %s", did, resolver)
-                return await resolver.resolve(did)
-            except DidNotFound:
+                return await resolver.resolve(profile, did)
+            except DIDNotFound:
                 LOGGER.debug("DID %s not found by resolver %s", did, resolver)
 
-        raise DidNotFound(f"DID {did} could not be resolved.")
+        raise DIDNotFound(f"DID {did} could not be resolved.")
 
     def _match_did_to_resolver(self, did: DID) -> BaseDIDResolver:
         """Generate supported DID Resolvers.
@@ -45,7 +50,7 @@ class DIDResolver:
         valid_resolvers = list(
             filter(
                 lambda resolver: resolver.supports(did.method),
-                self.did_resolver_registery.did_resolvers,
+                self.did_resolver_registry.resolvers,
             )
         )
         native_resolvers = filter(lambda resolver: resolver.native, valid_resolvers)
@@ -54,36 +59,14 @@ class DIDResolver:
         )
         resolvers = list(chain(native_resolvers, non_native_resolvers))
         if not resolvers:
-            raise DidMethodNotSupported(f"{did.method} not supported")
+            raise DIDMethodNotSupported(f"{did.method} not supported")
         return resolvers
 
-    async def dereference_external(self, did_url: str) -> ResolvedDIDDoc:
-        """Retrieve an external did in doc service from a public registry."""
+    async def dereference(
+        self, profile: Profile, did_url: str
+    ) -> ResolvedDIDDoc:
+        """Dereference a DID URL to its corresponding DID Doc object."""
+        # TODO Use cached DID Docs when possible
         did_url = DIDUrl.parse(did_url)
-        doc = await self.resolve(did_url.did)
+        doc = await self.resolve(profile, did_url.did)
         return doc.dereference(did_url)
-
-    '''async def fully_dereference(self, doc: ResolvedDIDDoc):
-        """Recursivly retrieve all doc service dids from public registries."""
-
-        async def _visit(value, doc):
-            if isinstance(value, dict):
-                doc_dict = {}
-                for key, value in value.items():
-                    doc_dict[key] = await _visit(value, doc)
-                return doc
-            elif isinstance(value, list):
-                return [await _visit(item, doc) for item in value]
-            elif isinstance(value, str):
-                if DID_PATTERN.match(value):  # string is a did_url pattern
-                    did_url = DIDUrl.parse(value)
-                    did_str = ""
-                    try:  # dereference from diddoc
-                        did_str = doc.dereference(did_url)
-                    except ExternalResourceError:  # dereference from a resolver
-                        did_str = await self.dereference_external(did_url)
-                    did_str = await _visit(did_str, doc)
-                return did_str
-            return value
-
-        return await _visit(doc._doc, doc)'''

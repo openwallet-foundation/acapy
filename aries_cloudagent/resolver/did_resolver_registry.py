@@ -12,10 +12,9 @@ class DIDResolverRegistry:
     def __init__(self):
         """Initialize list for did resolvers."""
         self._resolvers = []
-        LOGGER.debug("Resolvers listed")
 
     @property
-    def did_resolvers(
+    def resolvers(
         self,
     ) -> Sequence[str]:
         """Accessor for a list of all did resolvers."""
