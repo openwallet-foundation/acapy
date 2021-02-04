@@ -1,19 +1,20 @@
 """Test did resolver registry."""
 
-import pytest
 import unittest
+
+import pytest
 from asynctest import mock as async_mock
-from ..did_resolver_registry import DIDResolverRegistry
-from ..did_resolver import DIDResolver
-from ...resolver.diddoc import ResolvedDIDDoc
+
 from ...resolver.base import (
     BaseDIDResolver,
-    DidMethodNotSupported,
-    DidNotFound,
+    DIDMethodNotSupported,
+    DIDNotFound,
     ResolverType,
 )
 from ...resolver.did import DID
-
+from ...resolver.diddoc import ResolvedDIDDoc
+from ..did_resolver import DIDResolver
+from ..did_resolver_registry import DIDResolverRegistry
 
 TEST_DID0 = "did:sov:Kkyqu7CJFuQSvBp468uaDe"
 TEST_DID1 = "did:btcr:8kyt-fzzq-qpqq-ljsc-5l"
@@ -147,7 +148,7 @@ def test_match_did_to_resolver(resolver, did, method):
 
 def test_match_did_to_resolver_x_not_supported(resolver):
     did = DID("did:cowsay:EiDahaOGH-liLLdDtTxEAdc8i-cfCz-WUcQdRJheMVNn3A")
-    with pytest.raises(DidMethodNotSupported):
+    with pytest.raises(DIDMethodNotSupported):
         resolver._match_did_to_resolver(did)
 
 
@@ -203,16 +204,16 @@ async def test_resolve_did(resolver, session, did):
 @pytest.mark.asyncio
 async def test_resolve_did_x_not_supported(resolver, session):
     did = DID("did:cowsay:EiDahaOGH-liLLdDtTxEAdc8i-cfCz-WUcQdRJheMVNn3A")
-    with pytest.raises(DidMethodNotSupported):
+    with pytest.raises(DIDMethodNotSupported):
         await resolver.resolve(session, did)
 
 
 @pytest.mark.asyncio
 async def test_resolve_did_x_not_found(session):
     did = DID("did:cowsay:EiDahaOGH-liLLdDtTxEAdc8i-cfCz-WUcQdRJheMVNn3A")
-    cowsay_resolver_not_found = MockResolver("cowsay", resolved=DidNotFound())
+    cowsay_resolver_not_found = MockResolver("cowsay", resolved=DIDNotFound())
     registry = DIDResolverRegistry()
     registry.register(cowsay_resolver_not_found)
     resolver = DIDResolver(registry)
-    with pytest.raises(DidNotFound):
+    with pytest.raises(DIDNotFound):
         await resolver.resolve(session, did)

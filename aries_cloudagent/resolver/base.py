@@ -11,11 +11,11 @@ class ResolverError(Exception):
     """Base Resolver Error."""
 
 
-class DidNotFound(ResolverError):
+class DIDNotFound(ResolverError):
     """Raised when DID is not found in verifiable data registry."""
 
 
-class DidMethodNotSupported(ResolverError):
+class DIDMethodNotSupported(ResolverError):
     """Raised when no resolver is registered for a given did method."""
 
 

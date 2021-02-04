@@ -9,7 +9,7 @@ from ....core.profile import ProfileSession
 from ....ledger.indy import IndySdkLedger
 from ....ledger.error import LedgerError
 from ...tests.test_did import TEST_DID0
-from ...base import ResolverError, DidNotFound
+from ...base import ResolverError, DIDNotFound
 
 # pylint: disable=W0621
 
@@ -63,5 +63,5 @@ async def test_resolve_x_did_not_found(
 ):
     """Test resolve method when no did is found."""
     ledger.get_key_for_did.side_effect = LedgerError
-    with pytest.raises(DidNotFound):
+    with pytest.raises(DIDNotFound):
         await resolver.resolve(session, TEST_DID0)
