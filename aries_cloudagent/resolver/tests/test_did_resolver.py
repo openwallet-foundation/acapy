@@ -108,14 +108,14 @@ class MockResolver(BaseDIDResolver):
         self._supported_methods = supported_methods
         self.resolved = resolved
 
-    async def setup(self, session):
+    async def setup(self, profile):
         pass
 
     @property
     def supported_methods(self):
         return self._supported_methods
 
-    async def resolve(self, session, did):
+    async def resolve(self, profile, did):
         if isinstance(self.resolved, Exception):
             raise self.resolved
         return self.resolved
@@ -131,7 +131,7 @@ def resolver():
 
 
 @pytest.fixture
-def session():
+def profile():
     yield async_mock.MagicMock()
 
 
@@ -179,41 +179,41 @@ def test_match_did_to_resolver_registration_order():
 
 
 @pytest.mark.asyncio
-async def test_dereference_external(resolver, session):
+async def test_dereference_external(resolver, profile):
     url = "did:example:1234abcd#4"
     assert DOC["verificationMethod"][1] == await resolver.dereference_external(
-        session, url
+        profile, url
     )
 
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("did", TEST_DIDS)
-async def test_resolve(resolver, session, did):
-    did_doc = await resolver.resolve(session, did)
+async def test_resolve(resolver, profile, did):
+    did_doc = await resolver.resolve(profile, did)
     assert isinstance(did_doc, ResolvedDIDDoc)
 
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("did", TEST_DIDS)
-async def test_resolve_did(resolver, session, did):
+async def test_resolve_did(resolver, profile, did):
     did = DID(did)
-    did_doc = await resolver.resolve(session, did)
+    did_doc = await resolver.resolve(profile, did)
     assert isinstance(did_doc, ResolvedDIDDoc)
 
 
 @pytest.mark.asyncio
-async def test_resolve_did_x_not_supported(resolver, session):
+async def test_resolve_did_x_not_supported(resolver, profile):
     did = DID("did:cowsay:EiDahaOGH-liLLdDtTxEAdc8i-cfCz-WUcQdRJheMVNn3A")
     with pytest.raises(DIDMethodNotSupported):
-        await resolver.resolve(session, did)
+        await resolver.resolve(profile, did)
 
 
 @pytest.mark.asyncio
-async def test_resolve_did_x_not_found(session):
+async def test_resolve_did_x_not_found(profile):
     did = DID("did:cowsay:EiDahaOGH-liLLdDtTxEAdc8i-cfCz-WUcQdRJheMVNn3A")
     cowsay_resolver_not_found = MockResolver("cowsay", resolved=DIDNotFound())
     registry = DIDResolverRegistry()
     registry.register(cowsay_resolver_not_found)
     resolver = DIDResolver(registry)
     with pytest.raises(DIDNotFound):
-        await resolver.resolve(session, did)
+        await resolver.resolve(profile, did)

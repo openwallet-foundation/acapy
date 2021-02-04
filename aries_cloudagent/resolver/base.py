@@ -5,7 +5,7 @@ from enum import Enum
 from typing import Sequence
 
 from .diddoc import ResolvedDIDDoc
-from ..core.profile import ProfileSession
+from ..core.profile import Profile
 
 
 class ResolverError(Exception):
@@ -39,7 +39,7 @@ class BaseDIDResolver(ABC):
         self.type = type_ or ResolverType.NON_NATIVE
 
     @abstractmethod
-    async def setup(self, session: ProfileSession):
+    async def setup(self, profile: Profile):
         """Do asynchronous resolver setup."""
 
     @property
@@ -57,5 +57,5 @@ class BaseDIDResolver(ABC):
         return method in self.supported_methods
 
     @abstractmethod
-    async def resolve(self, session: ProfileSession, did: str) -> ResolvedDIDDoc:
+    async def resolve(self, profile: Profile, did: str) -> ResolvedDIDDoc:
         """Resolve a DID using this resolver."""
