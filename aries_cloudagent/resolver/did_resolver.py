@@ -9,7 +9,7 @@ import logging
 from itertools import chain
 from typing import Union
 
-from ..core.profile import ProfileSession
+from ..core.profile import Profile
 from ..resolver.base import BaseDIDResolver, DIDMethodNotSupported, DIDNotFound
 from ..resolver.did import DID, DIDUrl  # , DID_PATTERN
 from ..resolver.diddoc import ResolvedDIDDoc  # , ExternalResourceError
@@ -26,7 +26,7 @@ class DIDResolver:
         self.did_resolver_registry = registry
 
     async def resolve(
-        self, session: ProfileSession, did: Union[str, DID]
+        self, profile: Profile, did: Union[str, DID]
     ) -> ResolvedDIDDoc:
         """Retrieve did doc from public registry."""
         if isinstance(did, str):
@@ -34,7 +34,7 @@ class DIDResolver:
         for resolver in self._match_did_to_resolver(did):
             try:
                 LOGGER.debug("Resolving DID %s with %s", did, resolver)
-                return await resolver.resolve(session, did)
+                return await resolver.resolve(profile, did)
             except DIDNotFound:
                 LOGGER.debug("DID %s not found by resolver %s", did, resolver)
 
@@ -62,9 +62,9 @@ class DIDResolver:
         return resolvers
 
     async def dereference_external(
-        self, session: ProfileSession, did_url: str
+        self, profile: Profile, did_url: str
     ) -> ResolvedDIDDoc:
         """Retrieve an external did in doc service from a public registry."""
         did_url = DIDUrl.parse(did_url)
-        doc = await self.resolve(session, did_url.did)
+        doc = await self.resolve(profile, did_url.did)
         return doc.dereference(did_url)

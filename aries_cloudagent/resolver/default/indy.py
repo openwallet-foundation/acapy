@@ -4,7 +4,7 @@ Resolution is performed using the IndyLedger class.
 """
 from typing import Sequence
 
-from ...core.profile import ProfileSession
+from ...core.profile import Profile
 from ...ledger.indy import IndySdkLedger
 from ...ledger.error import LedgerError
 from ..base import BaseDIDResolver, DIDNotFound, ResolverError, ResolverType
@@ -25,7 +25,7 @@ class IndyDIDResolver(BaseDIDResolver):
         """Initialize Indy Resolver."""
         super().__init__(ResolverType.NATIVE)
 
-    async def setup(self, session: ProfileSession):
+    async def setup(self, profile: Profile):
         """Perform required setup for Indy DID resolution."""
 
     @property
@@ -33,9 +33,9 @@ class IndyDIDResolver(BaseDIDResolver):
         """Return supported methods of Indy DID Resolver."""
         return ["sov"]
 
-    async def resolve(self, session: ProfileSession, did: str) -> ResolvedDIDDoc:
+    async def resolve(self, profile: Profile, did: str) -> ResolvedDIDDoc:
         """Resolve an indy DID."""
-        ledger = session.inject(IndySdkLedger, required=False)
+        ledger = profile.inject(IndySdkLedger, required=False)
         if not ledger:
             raise NoIndyLedger("No Indy ledger isntance is configured.")
 
