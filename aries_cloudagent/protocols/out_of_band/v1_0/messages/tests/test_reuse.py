@@ -1,7 +1,8 @@
+"""Test Reuse Message."""
 import pytest
 
-from unittest import mock, TestCase
 from asynctest import TestCase as AsyncTestCase
+from unittest import mock, TestCase
 
 from ......messaging.models.base import BaseModelError
 

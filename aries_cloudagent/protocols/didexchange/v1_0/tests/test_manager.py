@@ -27,7 +27,7 @@ from .....connections.base_manager import (
 )
 
 from ....out_of_band.v1_0.manager import OutOfBandManager
-from ....out_of_band.v1_0.messages.invitation import InvitationMessage
+from ....out_of_band.v1_0.messages.invitation import HSProto, InvitationMessage
 from ....out_of_band.v1_0.messages.service import Service as OOBService
 
 from .. import manager as test_module
@@ -113,7 +113,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
     async def test_receive_invitation(self):
         invi_rec = await self.oob_manager.create_invitation(
             my_endpoint="testendpoint",
-            include_handshake=True,
+            hs_protos=[HSProto.RFC23],
         )
 
         invitee_record = await self.manager.receive_invitation(
@@ -124,7 +124,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
     async def test_receive_invitation_no_auto_accept(self):
         invi_rec = await self.oob_manager.create_invitation(
             my_endpoint="testendpoint",
-            include_handshake=True,
+            hs_protos=[HSProto.RFC23],
         )
 
         invitee_record = await self.manager.receive_invitation(
