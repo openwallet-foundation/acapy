@@ -9,4 +9,4 @@ def test_create_registry():
     did_resolver_registry = DIDResolverRegistry()
     test_resolver = unittest.mock.MagicMock()
     did_resolver_registry.register(test_resolver)
-    assert did_resolver_registry.did_resolvers == [test_resolver]
+    assert did_resolver_registry.resolvers == [test_resolver]
