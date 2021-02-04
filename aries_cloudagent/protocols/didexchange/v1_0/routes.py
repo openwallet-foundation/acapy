@@ -21,6 +21,11 @@ from ....wallet.error import WalletError
 from .manager import DIDXManager, DIDXManagerError
 from .message_types import SPEC_URI
 
+MEDIATION_ID_SCHEMA = {
+    "validate": UUIDFour(),
+    "example": UUIDFour.EXAMPLE,
+}
+
 
 class DIDXAcceptInvitationQueryStringSchema(OpenAPISchema):
     """Parameters and validators for accept invitation request query string."""
@@ -29,12 +34,23 @@ class DIDXAcceptInvitationQueryStringSchema(OpenAPISchema):
     my_label = fields.Str(
         description="Label for connection", required=False, example="Broker"
     )
+    mediation_id = fields.Str(
+        required=False,
+        description="Identifier for active mediation record to be used",
+        **MEDIATION_ID_SCHEMA
+    )
 
 
 class DIDXAcceptRequestQueryStringSchema(OpenAPISchema):
     """Parameters and validators for accept conn-request web-request query string."""
 
     my_endpoint = fields.Str(description="My URL endpoint", required=False, **ENDPOINT)
+    mediation_id = fields.Str(
+        required=False,
+        description="Identifier for active mediation record to be used",
+        **MEDIATION_ID_SCHEMA
+    )
+    
 
 
 class DIDXConnIdMatchInfoSchema(OpenAPISchema):
@@ -87,7 +103,8 @@ async def didx_accept_invitation(request: web.BaseRequest):
         didx_mgr = DIDXManager(session)
         my_label = request.query.get("my_label") or None
         my_endpoint = request.query.get("my_endpoint") or None
-        request = await didx_mgr.create_request(conn_rec, my_label, my_endpoint)
+        mediation_id = request.query.get("mediation_id") or None
+        request = await didx_mgr.create_request(conn_rec, my_label, my_endpoint, mediation_id=mediation_id)
         result = conn_rec.serialize()
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
@@ -126,7 +143,8 @@ async def didx_accept_request(request: web.BaseRequest):
         conn_rec = await ConnRecord.retrieve_by_id(session, connection_id)
         didx_mgr = DIDXManager(session)
         my_endpoint = request.query.get("my_endpoint") or None
-        response = await didx_mgr.create_response(conn_rec, my_endpoint)
+        mediation_id = request.query.get("mediation_id") or None
+        response = await didx_mgr.create_response(conn_rec, my_endpoint, mediation_id=mediation_id)
         result = conn_rec.serialize()
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
