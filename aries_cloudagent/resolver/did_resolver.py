@@ -62,28 +62,3 @@ class DIDResolver:
         did_url = DIDUrl.parse(did_url)
         doc = await self.resolve(did_url.did)
         return doc.dereference(did_url)
-
-    '''async def fully_dereference(self, doc: ResolvedDIDDoc):
-        """Recursivly retrieve all doc service dids from public registries."""
-
-        async def _visit(value, doc):
-            if isinstance(value, dict):
-                doc_dict = {}
-                for key, value in value.items():
-                    doc_dict[key] = await _visit(value, doc)
-                return doc
-            elif isinstance(value, list):
-                return [await _visit(item, doc) for item in value]
-            elif isinstance(value, str):
-                if DID_PATTERN.match(value):  # string is a did_url pattern
-                    did_url = DIDUrl.parse(value)
-                    did_str = ""
-                    try:  # dereference from diddoc
-                        did_str = doc.dereference(did_url)
-                    except ExternalResourceError:  # dereference from a resolver
-                        did_str = await self.dereference_external(did_url)
-                    did_str = await _visit(did_str, doc)
-                return did_str
-            return value
-
-        return await _visit(doc._doc, doc)'''

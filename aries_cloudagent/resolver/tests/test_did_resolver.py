@@ -178,10 +178,6 @@ def test_dereference_external(resolver, did):
         assert result
 
 
-def test_fully_dereference(resolver):
-    pytest.skip("need more work")
-
-
 @pytest.mark.asyncio
 @pytest.mark.parametrize("did", TEST_DIDS)
 async def test_resolve(resolver, did):
