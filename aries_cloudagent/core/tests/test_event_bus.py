@@ -7,6 +7,7 @@ from ..event_bus import EventBus, Event
 
 # pylint: disable=redefined-outer-name
 
+
 @pytest.fixture
 def event_bus():
     yield EventBus()
@@ -53,26 +54,26 @@ def test_event(event):
 
 def test_sub_unsub(event_bus: EventBus, processor):
     """Test subscribe and unsubscribe."""
-    event_bus.subscribe(re.compile('.*'), processor)
+    event_bus.subscribe(re.compile(".*"), processor)
     assert event_bus.topic_patterns_to_subscribers
-    assert event_bus.topic_patterns_to_subscribers[re.compile('.*')] == [processor]
-    event_bus.unsubscribe(re.compile('.*'), processor)
+    assert event_bus.topic_patterns_to_subscribers[re.compile(".*")] == [processor]
+    event_bus.unsubscribe(re.compile(".*"), processor)
     assert not event_bus.topic_patterns_to_subscribers
 
 
 def test_unsub_idempotency(event_bus: EventBus, processor):
     """Test unsubscribe idempotency."""
-    event_bus.subscribe(re.compile('.*'), processor)
-    event_bus.unsubscribe(re.compile('.*'), processor)
+    event_bus.subscribe(re.compile(".*"), processor)
+    event_bus.unsubscribe(re.compile(".*"), processor)
     assert not event_bus.topic_patterns_to_subscribers
-    event_bus.unsubscribe(re.compile('.*'), processor)
+    event_bus.unsubscribe(re.compile(".*"), processor)
     assert not event_bus.topic_patterns_to_subscribers
 
 
 @pytest.mark.asyncio
 async def test_sub_notify(event_bus: EventBus, profile, event, processor):
     """Test subscriber receives event."""
-    event_bus.subscribe(re.compile('.*'), processor)
+    event_bus.subscribe(re.compile(".*"), processor)
     await event_bus.notify(profile, event)
     assert processor.profile == profile
     assert processor.event == event
@@ -84,15 +85,11 @@ async def test_sub_notify(event_bus: EventBus, profile, event, processor):
         ("test", "test"),
         (".*", "test"),
         ("topic::with::namespace", "topic::with::namespace::like::pieces"),
-    ]
+    ],
 )
 @pytest.mark.asyncio
 async def test_sub_notify_regex_filtering(
-    event_bus: EventBus,
-    profile,
-    processor,
-    pattern,
-    topic
+    event_bus: EventBus, profile, processor, pattern, topic
 ):
     """Test events are filtered correctly."""
     event = Event(topic)
@@ -103,12 +100,7 @@ async def test_sub_notify_regex_filtering(
 
 
 @pytest.mark.asyncio
-async def test_sub_notify_no_match(
-    event_bus: EventBus,
-    profile,
-    event,
-    processor
-):
+async def test_sub_notify_no_match(event_bus: EventBus, profile, event, processor):
     """Test event not given to processor when pattern doesn't match."""
     event_bus.subscribe(re.compile("^$"), processor)
     await event_bus.notify(profile, event)
@@ -117,12 +109,7 @@ async def test_sub_notify_no_match(
 
 
 @pytest.mark.asyncio
-async def test_sub_notify_only_one(
-    event_bus: EventBus,
-    profile,
-    event,
-    processor
-):
+async def test_sub_notify_only_one(event_bus: EventBus, profile, event, processor):
     """Test only one subscriber is called when pattern matches only one."""
     processor1 = TestProcessor()
     event_bus.subscribe(re.compile(".*"), processor)
@@ -135,12 +122,7 @@ async def test_sub_notify_only_one(
 
 
 @pytest.mark.asyncio
-async def test_sub_notify_both(
-    event_bus: EventBus,
-    profile,
-    event,
-    processor
-):
+async def test_sub_notify_both(event_bus: EventBus, profile, event, processor):
     """Test both subscribers are called when pattern matches both."""
     processor1 = TestProcessor()
     event_bus.subscribe(re.compile(".*"), processor)

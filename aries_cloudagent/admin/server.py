@@ -18,6 +18,7 @@ import jwt
 from marshmallow import fields
 
 from ..config.injection_context import InjectionContext
+from ..core.event_bus import EventBus, Event
 from ..core.profile import Profile
 from ..core.plugin_registry import PluginRegistry
 from ..ledger.error import LedgerConfigError, LedgerTransactionError
@@ -106,6 +107,8 @@ class AdminResponder(BaseResponder):
             topic: the webhook topic identifier
             payload: the webhook payload value
         """
+        event_bus = self._profile.inject(EventBus)
+        await event_bus.notify(self._profile, Event(topic, payload))
         await self._webhook(self._profile, topic, payload)
 
 

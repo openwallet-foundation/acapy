@@ -13,6 +13,7 @@ from typing import Callable, Coroutine, Union
 from aiohttp.web import HTTPException
 
 from ..core.profile import Profile
+from ..core.event_bus import EventBus, Event
 from ..messaging.agent_message import AgentMessage
 from ..messaging.error import MessageParseError
 from ..messaging.models.base import BaseModelError
@@ -306,5 +307,7 @@ class DispatcherResponder(BaseResponder):
             topic: the webhook topic identifier
             payload: the webhook payload value
         """
+        bus: EventBus = self._context.inject(EventBus)
+        await bus.notify(self._context.profile, Event(topic, payload))
         if self._webhook:
             await self._webhook(self._context.profile, topic, payload)
