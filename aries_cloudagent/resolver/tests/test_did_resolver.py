@@ -179,9 +179,9 @@ def test_match_did_to_resolver_registration_order():
 
 
 @pytest.mark.asyncio
-async def test_dereference_external(resolver, profile):
+async def test_dereference(resolver, profile):
     url = "did:example:1234abcd#4"
-    assert DOC["verificationMethod"][1] == await resolver.dereference_external(
+    assert DOC["verificationMethod"][1] == await resolver.dereference(
         profile, url
     )
 

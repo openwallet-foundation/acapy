@@ -29,6 +29,7 @@ class DIDResolver:
         self, profile: Profile, did: Union[str, DID]
     ) -> ResolvedDIDDoc:
         """Retrieve did doc from public registry."""
+        # TODO Cache results
         if isinstance(did, str):
             did = DID(did)
         for resolver in self._match_did_to_resolver(did):
@@ -61,10 +62,11 @@ class DIDResolver:
             raise DIDMethodNotSupported(f"{did.method} not supported")
         return resolvers
 
-    async def dereference_external(
+    async def dereference(
         self, profile: Profile, did_url: str
     ) -> ResolvedDIDDoc:
-        """Retrieve an external did in doc service from a public registry."""
+        """Dereference a DID URL to its corresponding DID Doc object."""
+        # TODO Use cached DID Docs when possible
         did_url = DIDUrl.parse(did_url)
         doc = await self.resolve(profile, did_url.did)
         return doc.dereference(did_url)
