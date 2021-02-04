@@ -15,10 +15,11 @@ from ....messaging.models.openapi import OpenAPISchema
 from ....messaging.valid import UUIDFour
 from ....storage.error import StorageError, StorageNotFoundError
 
+from ...didcomm_prefix import DIDCommPrefix
 from ...didexchange.v1_0.manager import DIDXManagerError
 
 from .manager import OutOfBandManager, OutOfBandManagerError
-from .messages.invitation import InvitationMessage, InvitationMessageSchema
+from .messages.invitation import HSProto, InvitationMessage, InvitationMessageSchema
 from .message_types import SPEC_URI
 from .models.invitation import InvitationRecordSchema
 
@@ -27,6 +28,7 @@ MEDIATION_ID_SCHEMA = {
     "validate": UUIDFour(),
     "example": UUIDFour.EXAMPLE,
 }
+
 
 class OutOfBandModuleResponseSchema(OpenAPISchema):
     """Response schema for Out of Band Module."""
@@ -45,13 +47,6 @@ class InvitationCreateQueryStringSchema(OpenAPISchema):
         description="Create invitation for multiple use (default false)",
         required=False,
     )
-    use_connections_rfc160 = fields.Boolean(
-        description=(
-            "Use RFC 0160 connection invitation over RFC 0023 did exchange protocol"
-        ),
-        required=False,
-        default=False,
-    )
 
 
 class InvitationCreateRequestSchema(OpenAPISchema):
@@ -68,7 +63,7 @@ class InvitationCreateRequestSchema(OpenAPISchema):
         _type = fields.Str(
             data_key="type",
             description="Attachment type",
-            example="credential-offer",
+            example="present-proof",
         )
 
     attachments = fields.Nested(
@@ -77,9 +72,13 @@ class InvitationCreateRequestSchema(OpenAPISchema):
         required=False,
         description="Optional invitation attachments",
     )
-    include_handshake = fields.Boolean(
-        default=True,
-        description="Whether to include handshake protocols",
+    handshake_protocols = fields.List(
+        fields.Str(
+            description="Handshake protocol to specify in invitation",
+            example=DIDCommPrefix.qualify_current(HSProto.RFC23.name),
+            validate=lambda hsp: HSProto.get(hsp) is not None,
+        ),
+        required=False,
     )
     use_public_did = fields.Boolean(
         default=False,
@@ -154,13 +153,12 @@ async def invitation_create(request: web.BaseRequest):
 
     body = await request.json() if request.body_exists else {}
     attachments = body.get("attachments")
-    include_handshake = body.get("include_handshake", True)
+    handshake_protocols = body.get("handshake_protocols", [])
     use_public_did = body.get("use_public_did", False)
     metadata = body.get("metadata")
 
     multi_use = json.loads(request.query.get("multi_use", "false"))
     auto_accept = json.loads(request.query.get("auto_accept", "null"))
-    use_connections = json.loads(request.query.get("use_connections_rfc160", "false"))
     mediation_id = body.get("mediation_id")
     session = await context.session()
     oob_mgr = OutOfBandManager(session)
@@ -168,11 +166,12 @@ async def invitation_create(request: web.BaseRequest):
         invi_rec = await oob_mgr.create_invitation(
             auto_accept=auto_accept,
             public=use_public_did,
-            include_handshake=include_handshake,
+            hs_protos=[
+                h for h in [HSProto.get(hsp) for hsp in handshake_protocols] if h
+            ],
             multi_use=multi_use,
             attachments=attachments,
             metadata=metadata,
-            use_connections=use_connections,
             mediation_id=mediation_id,
         )
     except (StorageNotFoundError, ValidationError, OutOfBandManagerError) as e:
@@ -214,7 +213,7 @@ async def invitation_receive(request: web.BaseRequest):
     alias = request.query.get("alias")
     # By default, try to use an existing connection
     use_existing_conn = json.loads(request.query.get("use_existing_connection", "true"))
-
+    mediation_id = request.query.get("mediation_id")
     try:
         invitation = InvitationMessage.deserialize(body)
         result = await oob_mgr.receive_invitation(
@@ -222,6 +221,7 @@ async def invitation_receive(request: web.BaseRequest):
             auto_accept=auto_accept,
             alias=alias,
             use_existing_connection=use_existing_conn,
+            mediation_id=mediation_id,
         )
     except (DIDXManagerError, StorageError, BaseModelError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err

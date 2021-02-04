@@ -50,7 +50,6 @@ class DIDXAcceptRequestQueryStringSchema(OpenAPISchema):
         description="Identifier for active mediation record to be used",
         **MEDIATION_ID_SCHEMA
     )
-    
 
 
 class DIDXConnIdMatchInfoSchema(OpenAPISchema):
@@ -104,7 +103,9 @@ async def didx_accept_invitation(request: web.BaseRequest):
         my_label = request.query.get("my_label") or None
         my_endpoint = request.query.get("my_endpoint") or None
         mediation_id = request.query.get("mediation_id") or None
-        request = await didx_mgr.create_request(conn_rec, my_label, my_endpoint, mediation_id=mediation_id)
+        request = await didx_mgr.create_request(
+            conn_rec, my_label, my_endpoint, mediation_id=mediation_id
+        )
         result = conn_rec.serialize()
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
@@ -144,7 +145,9 @@ async def didx_accept_request(request: web.BaseRequest):
         didx_mgr = DIDXManager(session)
         my_endpoint = request.query.get("my_endpoint") or None
         mediation_id = request.query.get("mediation_id") or None
-        response = await didx_mgr.create_response(conn_rec, my_endpoint, mediation_id=mediation_id)
+        response = await didx_mgr.create_response(
+            conn_rec, my_endpoint, mediation_id=mediation_id
+        )
         result = conn_rec.serialize()
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err

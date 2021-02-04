@@ -190,7 +190,8 @@ class DIDXManager(BaseConnectionManager):
         mediation_mgr = MediationManager(self._session)
         keylist_updates = None
         mediation_record = await mediation_record_if_id(
-            mediation_id or await mediation_mgr.get_default_mediator_id()
+            self._session,
+            mediation_id or await mediation_mgr.get_default_mediator_id(),
         )
         base_mediation_record = None
         # Multitenancy setup
@@ -262,7 +263,8 @@ class DIDXManager(BaseConnectionManager):
         return request
 
     async def receive_request(
-        self, request: DIDXRequest,
+        self,
+        request: DIDXRequest,
         receipt: MessageReceipt,
         mediation_id: str = None,
     ) -> ConnRecord:
@@ -413,7 +415,7 @@ class DIDXManager(BaseConnectionManager):
         await conn_rec.attach_request(self._session, request)
 
         # Send keylist updates to mediator
-        mediation_record = await mediation_record_if_id(mediation_id)
+        mediation_record = await mediation_record_if_id(self._session, mediation_id)
         if keylist_updates and mediation_record:
             responder = self._session.inject(BaseResponder, required=False)
             await responder.send(
@@ -461,7 +463,7 @@ class DIDXManager(BaseConnectionManager):
 
         mediation_mgr = MediationManager(self._session)
         keylist_updates = None
-        mediation_record = await mediation_record_if_id(mediation_id)
+        mediation_record = await mediation_record_if_id(self._session, mediation_id)
         base_mediation_record = None
 
         # Multitenancy setup
@@ -504,7 +506,7 @@ class DIDXManager(BaseConnectionManager):
             my_endpoints,
             mediation_record=list(
                 filter(None, [base_mediation_record, mediation_record])
-            )
+            ),
         )
         attach = AttachDecorator.from_indy_dict(did_doc.serialize())
         await attach.data.sign(conn_rec.invitation_key, wallet)
@@ -538,11 +540,11 @@ class DIDXManager(BaseConnectionManager):
         )
         if send_mediation_request:
             temp_mediation_mgr = MediationManager(self._session)
-            _record, request = await temp_mediation_mgr.prepare_request(conn_rec.connection_id)
-            responder = self._session.inject(BaseResponder)
-            await responder.send(
-                request, connection_id=conn_rec.connection_id
+            _record, request = await temp_mediation_mgr.prepare_request(
+                conn_rec.connection_id
             )
+            responder = self._session.inject(BaseResponder)
+            await responder.send(request, connection_id=conn_rec.connection_id)
 
         return response
 
@@ -628,11 +630,11 @@ class DIDXManager(BaseConnectionManager):
         )
         if send_mediation_request:
             temp_mediation_mgr = MediationManager(self._session)
-            _record, request = await temp_mediation_mgr.prepare_request(conn_rec.connection_id)
-            responder = self._session.inject(BaseResponder)
-            await responder.send(
-                request, connection_id=conn_rec.connection_id
+            _record, request = await temp_mediation_mgr.prepare_request(
+                conn_rec.connection_id
             )
+            responder = self._session.inject(BaseResponder)
+            await responder.send(request, connection_id=conn_rec.connection_id)
 
         # create and send connection-complete message
         complete = DIDXComplete()
