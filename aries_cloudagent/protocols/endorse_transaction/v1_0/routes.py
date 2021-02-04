@@ -30,6 +30,7 @@ from ....indy.issuer import IndyIssuer, IndyIssuerError
 from ....revocation.indy import IndyRevocation
 from ....revocation.error import RevocationNotSupportedError, RevocationError
 from ....tails.base import BaseTailsServer
+import json
 
 
 class TransactionListSchema(OpenAPISchema):
@@ -136,6 +137,8 @@ async def transactions_retrieve(request: web.BaseRequest):
     return web.json_response(result)
 
 
+# todo - implementing changes for writing final transaction to the ledger
+# (For Sign Transaction Protocol)
 @docs(
     tags=["endorse-transaction"],
     summary="For author to send a transaction request",
@@ -196,6 +199,57 @@ async def transaction_create_request(request: web.BaseRequest):
 
     transaction_mgr = TransactionManager(session)
 
+    if (
+        transaction_record.messages_attach[0]["data"]["json"]["operation"]["type"]
+        == "101"
+    ):
+
+        issuer = context.inject(IndyIssuer)
+        ledger = context.inject(BaseLedger, required=False)
+
+        schema_name = transaction_record.messages_attach[0]["data"]["json"][
+            "operation"
+        ]["data"]["schema_name"]
+        schema_version = transaction_record.messages_attach[0]["data"]["json"][
+            "operation"
+        ]["data"]["schema_version"]
+        attributes = transaction_record.messages_attach[0]["data"]["json"]["operation"][
+            "data"
+        ]["attributes"]
+
+        async with ledger:
+            try:
+                schema_request = await shield(
+                    ledger.create_schema(
+                        issuer, schema_name, schema_version, attributes
+                    )
+                )
+            except (IndyIssuerError, LedgerError) as err:
+                raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+        schema_request = json.loads(schema_request)
+
+        (
+            transaction_record,
+            transaction_request,
+        ) = await transaction_mgr.create_request(
+            transaction=transaction_record,
+            connection_id=connection_id,
+            signature=schema_request["signature"],
+            signed_request=schema_request,
+        )
+
+        await outbound_handler(
+            transaction_request, connection_id=connection_record.connection_id
+        )
+
+        return web.json_response(transaction_record.serialize())
+
+    else:
+        pass
+
+    transaction_mgr = TransactionManager(session)
+
     (transaction_record, transaction_request) = await transaction_mgr.create_request(
         transaction=transaction_record, connection_id=connection_id
     )
@@ -207,6 +261,8 @@ async def transaction_create_request(request: web.BaseRequest):
     return web.json_response(transaction_record.serialize())
 
 
+# todo - implementing changes for writing final transaction to the ledger
+# (For Sign Transaction Protocol)
 @docs(
     tags=["endorse-transaction"],
     summary="For Endorser to endorse a particular transaction record",
@@ -270,6 +326,44 @@ async def endorse_transaction_response(request: web.BaseRequest):
         )
 
     transaction_mgr = TransactionManager(session)
+
+    if transaction.messages_attach[0]["data"]["json"]["operation"]["type"] == "101":
+
+        ledger = context.inject(BaseLedger, required=False)
+
+        schema_json = transaction.messages_attach[0]["data"]["json"]
+
+        del schema_json["taaAcceptance"]
+        del schema_json["endorser"]
+
+        async with ledger:
+            try:
+                signed_schema_request = await shield(
+                    ledger.create_schema(signed_request=schema_json)
+                )
+            except (IndyIssuerError, LedgerError) as err:
+                raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+        (
+            transaction,
+            endorsed_transaction_response,
+        ) = await transaction_mgr.create_endorse_response(
+            transaction=transaction,
+            state=TransactionRecord.STATE_TRANSACTION_ENDORSED,
+            endorser_did=endorser_did,
+            endorser_verkey=endorser_verkey,
+            signature=signed_schema_request["signature"],
+        )
+
+        await outbound_handler(
+            endorsed_transaction_response, connection_id=transaction.connection_id
+        )
+
+        return web.json_response(transaction.serialize())
+
+    else:
+        pass
+
     (
         transaction,
         endorsed_transaction_response,

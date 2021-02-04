@@ -353,6 +353,73 @@ class IndySdkLedger(BaseLedger):
                 f"Unexpected operation code from ledger: {operation}"
             )
 
+    # todo - implementing changes for writing final transaction to the ledger
+    # (For Sign Transaction Protocol)
+    async def create_schema(
+        self,
+        issuer: IndyIssuer = None,
+        schema_name: str = None,
+        schema_version: str = None,
+        attribute_names: Sequence[str] = None,
+        signed_request: dict = None,
+    ) -> Tuple[str, dict]:
+        """
+        Send schema to ledger.
+
+        Args:
+            issuer: The issuer instance creating the schema
+            schema_name: The schema name
+            schema_version: The schema version
+            attribute_names: A list of schema attributes
+
+        """
+
+        public_info = await self.wallet.get_public_did()
+        if not public_info:
+            raise BadLedgerRequestError("Cannot publish schema without a public DID")
+
+        # Error here while signing the already signed request from transaction author
+        if signed_request:
+            signed_request_json = await indy.ledger.sign_request(
+                self.wallet.opened.handle, public_info.did, signed_request
+            )
+            return signed_request_json
+
+        else:
+
+            schema_info = await self.check_existing_schema(
+                public_info.did, schema_name, schema_version, attribute_names
+            )
+            if schema_info:
+                LOGGER.warning("Schema already exists on ledger. Returning details.")
+                schema_id, schema_def = schema_info
+            else:
+                if self.pool.read_only:
+                    raise LedgerError(
+                        "Error cannot write schema when ledger is in read only mode"
+                    )
+
+                try:
+                    schema_id, schema_json = await issuer.create_schema(
+                        public_info.did,
+                        schema_name,
+                        schema_version,
+                        attribute_names,
+                    )
+                except IndyIssuerError as err:
+                    raise LedgerError(err.message) from err
+
+                with IndyErrorHandler("Exception building schema request", LedgerError):
+                    request_json = await indy.ledger.build_schema_request(
+                        public_info.did, schema_json
+                    )
+
+                signed_request_json = await indy.ledger.sign_request(
+                    self.wallet.opened.handle, public_info.did, request_json
+                )
+
+            return signed_request_json
+
     async def create_and_send_schema(
         self,
         issuer: IndyIssuer,
