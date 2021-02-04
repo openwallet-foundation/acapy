@@ -111,15 +111,23 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             await self.manager.verify_diddoc(self.session.wallet, did_doc_attach)
 
     async def test_receive_invitation(self):
-        invi_rec = await self.oob_manager.create_invitation(
-            my_endpoint="testendpoint",
-            hs_protos=[HSProto.RFC23],
-        )
+        self.session.context.update_settings({"public_invites": True})
+        with async_mock.patch.object(
+            test_module, "AttachDecorator", autospec=True
+        ) as mock_attach_deco:
+            mock_attach_deco.from_indy_dict = async_mock.MagicMock(
+                return_value=async_mock.MagicMock(
+                    data=async_mock.MagicMock(sign=async_mock.CoroutineMock())
+                )
+            )
+            invi_rec = await self.oob_manager.create_invitation(
+                my_endpoint="testendpoint",
+                hs_protos=[HSProto.RFC23],
+            )
+            invi_msg = InvitationMessage.deserialize(invi_rec.invitation)
 
-        invitee_record = await self.manager.receive_invitation(
-            InvitationMessage.deserialize(invi_rec.invitation)
-        )
-        assert invitee_record.state == ConnRecord.State.REQUEST.rfc23
+            invitee_record = await self.manager.receive_invitation(invi_msg)
+            assert invitee_record.state == ConnRecord.State.REQUEST.rfc23
 
     async def test_receive_invitation_no_auto_accept(self):
         invi_rec = await self.oob_manager.create_invitation(
@@ -304,6 +312,8 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 attach_request=async_mock.CoroutineMock(),
                 retrieve_request=async_mock.CoroutineMock(),
                 save=async_mock.CoroutineMock(),
+                metadata_get=async_mock.CoroutineMock(),
+                connection_id="test-conn-id",
             )
             mock_did_doc.from_json = async_mock.MagicMock(
                 return_value=async_mock.MagicMock(did=TestConfig.test_did)
@@ -912,6 +922,8 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 ),
                 state=ConnRecord.State.REQUEST.rfc23,
                 save=async_mock.CoroutineMock(),
+                metadata_get=async_mock.CoroutineMock(),
+                connection_id="test-conn-id",
             )
             mock_conn_retrieve_by_id.return_value = async_mock.MagicMock(
                 their_did=TestConfig.test_target_did,
@@ -966,6 +978,8 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 ),
                 state=ConnRecord.State.REQUEST.rfc23,
                 save=async_mock.CoroutineMock(),
+                metadata_get=async_mock.CoroutineMock(return_value=False),
+                connection_id="test-conn-id",
             )
 
             conn_rec = await self.manager.accept_response(mock_response, receipt)
@@ -1188,7 +1202,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
         ) as mock_conn_rec_retrieve_by_id:
             mock_conn_rec_retrieve_by_id.return_value = mock_conn
 
-            with self.assertRaises(DIDXManagerError):
+            with self.assertRaises(BaseConnectionManagerError):
                 await self.manager.create_did_document(
                     did_info=did_info,
                     inbound_connection_id="dummy",
@@ -1221,7 +1235,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
         ) as mock_conn_rec_retrieve_by_id:
             mock_conn_rec_retrieve_by_id.return_value = mock_conn
 
-            with self.assertRaises(DIDXManagerError):
+            with self.assertRaises(BaseConnectionManagerError):
                 await self.manager.create_did_document(
                     did_info=did_info,
                     inbound_connection_id="dummy",
@@ -1257,7 +1271,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
         ) as mock_conn_rec_retrieve_by_id:
             mock_conn_rec_retrieve_by_id.return_value = mock_conn
 
-            with self.assertRaises(DIDXManagerError):
+            with self.assertRaises(BaseConnectionManagerError):
                 await self.manager.create_did_document(
                     did_info=did_info,
                     inbound_connection_id="dummy",
@@ -1301,7 +1315,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
         ) as mock_conn_rec_retrieve_by_id:
             mock_conn_rec_retrieve_by_id.return_value = mock_conn
 
-            with self.assertRaises(DIDXManagerError):
+            with self.assertRaises(BaseConnectionManagerError):
                 await self.manager.create_did_document(
                     did_info=did_info,
                     inbound_connection_id="dummy",

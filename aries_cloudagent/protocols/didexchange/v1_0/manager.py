@@ -3,31 +3,21 @@
 import json
 import logging
 
-from typing import Sequence
-
 from ....connections.models.conn_record import ConnRecord
-from ....connections.models.diddoc import (
-    DIDDoc,
-    PublicKey,
-    PublicKeyType,
-    Service,
-)
+from ....connections.models.diddoc import DIDDoc
 from ....connections.base_manager import BaseConnectionManager
 from ....connections.util import mediation_record_if_id
 from ....core.error import BaseError
 from ....core.profile import ProfileSession
 from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....messaging.responder import BaseResponder
-from ....storage.base import BaseStorage
 from ....storage.error import StorageNotFoundError
-from ....storage.record import StorageRecord
 from ....transport.inbound.receipt import MessageReceipt
-from ....wallet.base import BaseWallet, DIDInfo
+from ....wallet.base import BaseWallet
 from ....wallet.util import did_key_to_naked
 from ....multitenant.manager import MultitenantManager
 
 from ...coordinate_mediation.v1_0.manager import MediationManager
-from ...coordinate_mediation.v1_0.models.mediation_record import MediationRecord
 from ...out_of_band.v1_0.messages.invitation import (
     InvitationMessage as OOBInvitationMessage,
 )
@@ -194,6 +184,7 @@ class DIDXManager(BaseConnectionManager):
             mediation_id or await mediation_mgr.get_default_mediator_id(),
         )
         base_mediation_record = None
+
         # Multitenancy setup
         multitenant_mgr = self._session.inject(MultitenantManager, required=False)
         wallet_id = self._session.settings.get("wallet.id")
@@ -227,7 +218,7 @@ class DIDXManager(BaseConnectionManager):
             my_info,
             conn_rec.inbound_connection_id,
             my_endpoints,
-            mediation_record=list(
+            mediation_records=list(
                 filter(None, [base_mediation_record, mediation_record])
             ),
         )
@@ -504,7 +495,7 @@ class DIDXManager(BaseConnectionManager):
             my_info,
             conn_rec.inbound_connection_id,
             my_endpoints,
-            mediation_record=list(
+            mediation_records=list(
                 filter(None, [base_mediation_record, mediation_record])
             ),
         )
@@ -688,140 +679,6 @@ class DIDXManager(BaseConnectionManager):
         await conn_rec.save(self._session, reason="Received connection complete")
 
         return conn_rec
-
-    async def create_did_document(
-        self,
-        did_info: DIDInfo,
-        inbound_connection_id: str = None,
-        svc_endpoints: Sequence[str] = None,
-    ) -> DIDDoc:
-        """Create our DID doc for a given DID.
-
-        Args:
-            did_info: The DID information (DID and verkey) used in the connection
-            inbound_connection_id: The ID of the inbound routing connection to use
-            svc_endpoints: Custom endpoints for the DID Document
-
-        Returns:
-            The prepared `DIDDoc` instance
-
-        """
-
-        did_doc = DIDDoc(did=did_info.did)
-        did_controller = did_info.did
-        did_key = did_info.verkey
-        pk = PublicKey(
-            did_info.did,
-            "1",
-            did_key,
-            PublicKeyType.ED25519_SIG_2018,
-            did_controller,
-            True,
-        )
-        did_doc.set(pk)
-
-        router_id = inbound_connection_id
-        routing_keys = []
-        router_idx = 1
-        while router_id:
-            # look up routing connection information
-            router = await ConnRecord.retrieve_by_id(self._session, router_id)
-            if ConnRecord.State.get(router.state) is not ConnRecord.State.COMPLETED:
-                raise DIDXManagerError(f"Router connection not completed: {router_id}")
-            routing_doc, _ = await self.fetch_did_document(router.their_did)
-            if not routing_doc.service:
-                raise DIDXManagerError(
-                    f"No services defined by routing DIDDoc: {router_id}"
-                )
-            for service in routing_doc.service.values():
-                if not service.endpoint:
-                    raise DIDXManagerError(
-                        "Routing DIDDoc service has no service endpoint"
-                    )
-                if not service.recip_keys:
-                    raise DIDXManagerError(
-                        "Routing DIDDoc service has no recipient key(s)"
-                    )
-                rk = PublicKey(
-                    did_info.did,
-                    f"routing-{router_idx}",
-                    service.recip_keys[0].value,
-                    PublicKeyType.ED25519_SIG_2018,
-                    did_controller,
-                    True,
-                )
-                routing_keys.append(rk)
-                svc_endpoints = [service.endpoint]
-                break
-            router_id = router.inbound_connection_id
-
-        for (endpoint_index, svc_endpoint) in enumerate(svc_endpoints or []):
-            endpoint_ident = "indy" if endpoint_index == 0 else f"indy{endpoint_index}"
-            service = Service(
-                did_info.did,
-                endpoint_ident,
-                "IndyAgent",
-                [pk],
-                routing_keys,
-                svc_endpoint,
-            )
-            did_doc.set(service)
-
-        return did_doc
-
-    async def store_did_document(self, did_doc: DIDDoc):
-        """Store a DID document.
-
-        Args:
-            did_doc: The `DIDDoc` instance to persist
-        """
-        assert did_doc.did
-        storage: BaseStorage = self._session.inject(BaseStorage)
-        try:
-            stored_doc, record = await self.fetch_did_document(did_doc.did)
-        except StorageNotFoundError:
-            record = StorageRecord(
-                self.RECORD_TYPE_DID_DOC,
-                did_doc.to_json(),
-                {"did": did_doc.did},
-            )
-            await storage.add_record(record)
-        else:
-            await storage.update_record(record, did_doc.to_json(), {"did": did_doc.did})
-        await self.remove_keys_for_did(did_doc.did)
-        for key in did_doc.pubkey.values():
-            if key.controller == did_doc.did:
-                await self.add_key_for_did(did_doc.did, key.value)
-
-    async def add_key_for_did(self, did: str, key: str):
-        """Store a verkey for lookup against a DID.
-
-        Args:
-            did: The DID to associate with this key
-            key: The verkey to be added
-        """
-        record = StorageRecord(self.RECORD_TYPE_DID_KEY, key, {"did": did, "key": key})
-        storage = self._session.inject(BaseStorage)
-        await storage.add_record(record)
-
-    async def find_did_for_key(self, key: str) -> str:
-        """Find the DID previously associated with a key.
-
-        Args:
-            key: The verkey to look up
-        """
-        storage = self._session.inject(BaseStorage)
-        record = await storage.find_record(self.RECORD_TYPE_DID_KEY, {"key": key})
-        return record.tags["did"]
-
-    async def remove_keys_for_did(self, did: str):
-        """Remove all keys associated with a DID.
-
-        Args:
-            did: The DID for which to remove keys
-        """
-        storage = self._session.inject(BaseStorage)
-        await storage.delete_all_records(self.RECORD_TYPE_DID_KEY, {"did": did})
 
     async def verify_diddoc(
         self,

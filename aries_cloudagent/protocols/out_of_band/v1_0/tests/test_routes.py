@@ -55,6 +55,7 @@ class TestOutOfBandRoutes(AsyncTestCase):
                 hs_protos=[test_module.HSProto.RFC23],
                 attachments=body["attachments"],
                 metadata=body["metadata"],
+                mediation_id=None,
             )
             mock_json_response.assert_called_once_with({"abc": "123"})
 

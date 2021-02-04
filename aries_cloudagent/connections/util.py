@@ -1,4 +1,4 @@
-"""Class for providing base utilities for Mediator support"""
+"""Class for providing base utilities for Mediator support."""
 
 from ..protocols.coordinate_mediation.v1_0.models.mediation_record import (
     MediationRecord,
