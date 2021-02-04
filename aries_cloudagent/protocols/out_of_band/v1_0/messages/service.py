@@ -54,9 +54,9 @@ class ServiceSchema(BaseModelSchema):
         model_class = Service
         unknown = EXCLUDE
 
-    _id = fields.Str(required=True, description="", data_key="id")
-    _type = fields.Str(required=True, description="", data_key="type")
-    did = fields.Str(required=False, description="", **INDY_DID)
+    _id = fields.Str(required=True, description="Service identifier", data_key="id")
+    _type = fields.Str(required=True, description="Service type", data_key="type")
+    did = fields.Str(required=False, description="Service DID", **INDY_DID)
 
     recipient_keys = fields.List(
         fields.Str(description="Recipient public key", **DID_KEY),

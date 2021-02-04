@@ -313,7 +313,7 @@ class ConnRecord(BaseRecord):
         """
         assert self.connection_id
         record = StorageRecord(
-            self.RECORD_TYPE_INVITATION,
+            self.RECORD_TYPE_INVITATION,  # conn- or oob-invitation, to retrieve easily
             invitation.to_json(),
             {"connection_id": self.connection_id},
         )
@@ -331,7 +331,8 @@ class ConnRecord(BaseRecord):
         assert self.connection_id
         storage = session.inject(BaseStorage)
         result = await storage.find_record(
-            self.RECORD_TYPE_INVITATION, {"connection_id": self.connection_id}
+            self.RECORD_TYPE_INVITATION,
+            {"connection_id": self.connection_id},
         )
         ser = json.loads(result.value)
         return (
@@ -353,7 +354,7 @@ class ConnRecord(BaseRecord):
         """
         assert self.connection_id
         record = StorageRecord(
-            self.RECORD_TYPE_REQUEST,
+            self.RECORD_TYPE_REQUEST,  # conn- or didx-request, to retrieve easily
             request.to_json(),
             {"connection_id": self.connection_id},
         )

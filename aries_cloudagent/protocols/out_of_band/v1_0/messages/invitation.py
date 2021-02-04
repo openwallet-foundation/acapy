@@ -1,5 +1,8 @@
 """An invitation content message."""
 
+from collections import namedtuple
+from enum import Enum
+from re import sub
 from typing import Sequence, Text, Union
 from urllib.parse import parse_qs, urljoin, urlparse
 
@@ -17,11 +20,70 @@ from .....messaging.decorators.attach_decorator import (
     AttachDecorator,
     AttachDecoratorSchema,
 )
+from .....messaging.valid import INDY_DID
 from .....wallet.util import bytes_to_b64, b64_to_bytes
+
+from ....didcomm_prefix import DIDCommPrefix
+from ....didexchange.v1_0.message_types import ARIES_PROTOCOL as DIDX_PROTO
+from ....connections.v1_0.message_types import ARIES_PROTOCOL as CONN_PROTO
+
+from ..message_types import INVITATION
 
 from .service import Service, ServiceSchema
 
-from ..message_types import INVITATION
+HSProtoSpec = namedtuple("HSProtoSpec", "rfc name aka")
+
+
+class HSProto(Enum):
+    """Handshake protocol enum for invitation message."""
+
+    RFC160 = HSProtoSpec(
+        160,
+        CONN_PROTO,
+        {"connection", "connections", "conn", "conns", "rfc160", "160", "old"},
+    )
+    RFC23 = HSProtoSpec(
+        23,
+        DIDX_PROTO,
+        {"didexchange", "didx", "didex", "rfc23", "23", "new"},
+    )
+
+    @classmethod
+    def get(cls, label: Union[str, "HSProto"]) -> "HSProto":
+        """Get handshake protocol enum for label."""
+
+        if isinstance(label, str):
+            for hsp in HSProto:
+                if (
+                    DIDCommPrefix.unqualify(label) == hsp.name
+                    or sub("[^a-zA-Z0-9]+", "", label.lower()) in hsp.aka
+                ):
+                    return hsp
+
+        elif isinstance(label, HSProto):
+            return label
+
+        elif isinstance(label, int):
+            for hsp in HSProto:
+                if hsp.rfc == label:
+                    return hsp
+
+        return None
+
+    @property
+    def rfc(self) -> int:
+        """Accessor for RFC."""
+        return self.value.rfc
+
+    @property
+    def name(self) -> str:
+        """Accessor for name."""
+        return self.value.name
+
+    @property
+    def aka(self) -> int:
+        """Accessor for also-known-as."""
+        return self.value.aka
 
 
 class InvitationMessage(AgentMessage):
@@ -128,13 +190,26 @@ class InvitationMessageSchema(AgentMessageSchema):
         unknown = EXCLUDE
 
     label = fields.Str(required=False, description="Optional label", example="Bob")
-    handshake_protocols = fields.List(fields.String, required=False, many=True)
+    handshake_protocols = fields.List(
+        fields.Str(
+            description="Handshake protocol",
+            example=DIDCommPrefix.qualify_current(HSProto.RFC23.name),
+            validate=lambda hsp: (
+                DIDCommPrefix.unqualify(hsp) in [p.name for p in HSProto]
+            ),
+        ),
+        required=False,
+    )
     request_attach = fields.Nested(
-        AttachDecoratorSchema, required=False, many=True, data_key="request~attach"
+        AttachDecoratorSchema,
+        required=False,
+        many=True,
+        data_key="request~attach",
+        description="Optional request attachment",
     )
 
     service_blocks = fields.Nested(ServiceSchema, many=True)
-    service_dids = fields.List(fields.String, many=True)
+    service_dids = fields.List(fields.Str(description="Service DID", **INDY_DID))
 
     @validates_schema
     def validate_fields(self, data, **kwargs):

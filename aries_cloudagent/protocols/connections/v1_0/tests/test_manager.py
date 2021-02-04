@@ -72,7 +72,8 @@ class TestConnectionManager(AsyncTestCase):
                 "default_label": "This guy",
                 "additional_endpoints": ["http://aries.ca/another-endpoint"],
                 "debug.auto_accept_invites": True,
-                "debug.auto_accept_requests": True,
+                "debug.auto_accept_requests_public": True,
+                "debug.auto_accept_requests_peer": True,
             },
             bind={BaseResponder: self.responder, BaseCache: InMemoryCache()},
         )
@@ -706,7 +707,7 @@ class TestConnectionManager(AsyncTestCase):
                 "wallet.id": "test_wallet",
                 "multitenant.enabled": True,
                 "public_invites": True,
-                "debug.auto_accept_requests": False,
+                "debug.auto_accept_requests_public": False,
             }
         )
 
@@ -816,7 +817,7 @@ class TestConnectionManager(AsyncTestCase):
         await self.session.wallet.create_local_did(seed=None, did=self.test_did)
 
         self.context.update_settings(
-            {"public_invites": True, "debug.auto_accept_requests": False}
+            {"public_invites": True, "debug.auto_accept_requests_public": False}
         )
         with async_mock.patch.object(
             ConnRecord, "save", autospec=True
