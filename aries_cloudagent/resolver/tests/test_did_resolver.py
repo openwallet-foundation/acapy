@@ -41,6 +41,7 @@ TEST_DID_METHODS = [
     TEST_DID_METHOD2,
     TEST_DID_METHOD3,
     TEST_DID_METHOD4,
+    "example",
 ]
 
 TEST_METHOD_SPECIFIC_ID0 = "Kkyqu7CJFuQSvBp468uaDe"
@@ -123,7 +124,7 @@ class MockResolver(BaseDIDResolver):
 def resolver():
     did_resolver_registry = DIDResolverRegistry()
     for method in TEST_DID_METHODS:
-        resolver = MockResolver(method, ResolvedDIDDoc(DOC))
+        resolver = MockResolver([method], ResolvedDIDDoc(DOC))
         did_resolver_registry.register(resolver)
     return DIDResolver(did_resolver_registry)
 
@@ -176,13 +177,12 @@ def test_match_did_to_resolver_registration_order():
     )
 
 
-@pytest.mark.parametrize("did", TEST_DIDS)
-def test_dereference_external(resolver, did):
-    with async_mock.patch.object(
-        resolver, "resolve", async_mock.MagicMock(return_value="resolved did doc")
-    ) as mock_resolver:
-        result = mock_resolver.dereference_external(did)
-        assert result
+@pytest.mark.asyncio
+async def test_dereference_external(resolver, session):
+    url = "did:example:1234abcd#4"
+    assert DOC["verificationMethod"][1] == await resolver.dereference_external(
+        session, url
+    )
 
 
 @pytest.mark.asyncio
