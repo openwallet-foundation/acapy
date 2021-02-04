@@ -6,7 +6,7 @@ from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 
 from ..message_types import PRESENTATION_PROPOSAL, PROTOCOL_PACKAGE
 
-from .inner.presentation_preview import PresentationPreview, PresentationPreviewSchema
+from ...util.presentation_preview import PresentationPreview, PresentationPreviewSchema
 
 HANDLER_CLASS = (
     f"{PROTOCOL_PACKAGE}.handlers."

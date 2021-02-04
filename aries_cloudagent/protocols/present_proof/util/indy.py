@@ -1,8 +1,8 @@
 """Utilities for dealing with indy conventions."""
 
-from .....indy.holder import IndyHolder
+from ....indy.holder import IndyHolder
 
-from ..messages.inner.presentation_preview import PresentationPreview
+from .presentation_preview import PresentationPreview
 
 
 async def indy_proof_req_preview2indy_requested_creds(

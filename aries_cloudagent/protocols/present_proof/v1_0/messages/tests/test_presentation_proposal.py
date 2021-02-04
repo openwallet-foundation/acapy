@@ -2,10 +2,16 @@ from unittest import TestCase
 
 from .....didcomm_prefix import DIDCommPrefix
 
-from ...message_types import PRESENTATION_PREVIEW, PRESENTATION_PROPOSAL
+from ....util.presentation_preview import (
+    PresAttrSpec,
+    PresPredSpec,
+    PRESENTATION_PREVIEW, 
+    PresentationPreview,
+)
+
+from ...message_types import PRESENTATION_PROPOSAL
 
 from ..presentation_proposal import PresentationProposal
-from ..inner.presentation_preview import PresAttrSpec, PresPredSpec, PresentationPreview
 
 
 S_ID = "NcYxiDXkpYi6ov5FcYDi1e:2:vidya:1.0"

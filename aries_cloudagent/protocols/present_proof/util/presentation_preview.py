@@ -6,18 +6,19 @@ from typing import Mapping, Sequence
 
 from marshmallow import fields
 
-from ......ledger.indy import IndySdkLedger
-from ......messaging.models.base import BaseModel, BaseModelSchema
-from ......messaging.util import canon
-from ......messaging.valid import INDY_CRED_DEF_ID, INDY_PREDICATE
-from ......revocation.models.indy import NonRevocationInterval
-from ......wallet.util import b64_to_str
-from ......indy.util import generate_pr_nonce
+from ....ledger.indy import IndySdkLedger
+from ....messaging.models.base import BaseModel, BaseModelSchema
+from ....messaging.util import canon
+from ....messaging.valid import INDY_CRED_DEF_ID, INDY_PREDICATE
+from ....revocation.models.indy import NonRevocationInterval
+from ....wallet.util import b64_to_str
+from ....indy.util import generate_pr_nonce
 
-from .....didcomm_prefix import DIDCommPrefix
+from ...didcomm_prefix import DIDCommPrefix
 
-from ...message_types import PRESENTATION_PREVIEW
-from ...util.predicate import Predicate
+from .predicate import Predicate
+
+PRESENTATION_PREVIEW = "present-proof/1.0/presentation-preview"  # message type
 
 
 class PresPredSpec(BaseModel):

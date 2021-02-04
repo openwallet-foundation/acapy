@@ -12,10 +12,9 @@ from .....messaging.decorators.attach_decorator import AttachDecorator
 from .....messaging.models.base import BaseModelError, BaseModel, BaseModelSchema
 from .....messaging.valid import UUIDFour
 
-from .inner.pres_preview import PresPreview, PresPreviewSchema
+from ...util.presentation_preview import PresentationPreview, PresentationPreviewSchema
 
-# Aries RFC value, further monikers
-FormatSpec = namedtuple("FormatSpec", "aries aka")
+FormatSpec = namedtuple("FormatSpec", "aries aka")  # Aries RFC value, further monikers
 
 
 class V20PresFormat(BaseModel):

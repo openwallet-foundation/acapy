@@ -30,9 +30,6 @@ MESSAGE_TYPES = DIDCommPrefix.qualify_all(
     }
 )
 
-# Inner object types
-PRESENTATION_PREVIEW = "present-proof/1.0/presentation-preview"
-
 # Identifiers to use in attachment decorators
 ATTACH_DECO_IDS = {
     PRESENTATION_REQUEST: "libindy-request-presentation-0",

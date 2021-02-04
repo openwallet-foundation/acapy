@@ -42,12 +42,13 @@ from ....wallet.error import WalletNotFoundError
 
 from ...problem_report.v1_0 import internal_error
 
-from .manager import PresentationManager
-from .message_types import ATTACH_DECO_IDS, PRESENTATION_REQUEST, SPEC_URI
-from .messages.inner.presentation_preview import (
+from ..util.presentation_preview import (
     PresentationPreview,
     PresentationPreviewSchema,
 )
+
+from .manager import PresentationManager
+from .message_types import ATTACH_DECO_IDS, PRESENTATION_REQUEST, SPEC_URI
 from .messages.presentation_proposal import PresentationProposal
 from .messages.presentation_request import PresentationRequest
 from .models.presentation_exchange import (

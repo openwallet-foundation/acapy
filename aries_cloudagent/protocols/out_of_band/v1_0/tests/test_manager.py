@@ -23,19 +23,17 @@ from .....protocols.didexchange.v1_0.manager import DIDXManager
 from .....protocols.issue_credential.v1_0.message_types import (
     CREDENTIAL_OFFER,
 )
+from .....protocols.present_proof.util.presentation_preview import (
+    PresAttrSpec,
+    PresentationPreview,
+    PresPredSpec,
+)
 from .....protocols.present_proof.v1_0.manager import PresentationManager
 from .....protocols.present_proof.v1_0.message_types import (
     PRESENTATION_REQUEST,
     ATTACH_DECO_IDS,
-    PRESENTATION_PREVIEW,
 )
-from .....protocols.present_proof.v1_0.messages.presentation import (
-    Presentation,
-)
-from .....protocols.present_proof.v1_0.models.presentation_exchange import (
-    V10PresentationExchange,
-)
-from .....protocols.present_proof.v1_0.message_types import PRESENTATION_REQUEST
+from .....protocols.present_proof.v1_0.messages.presentation import Presentation
 from .....protocols.present_proof.v1_0.messages.presentation_proposal import (
     PresentationProposal,
 )
@@ -43,10 +41,8 @@ from .....protocols.present_proof.v1_0.messages.presentation_request import (
     PresentationRequest,
     PresentationRequestSchema,
 )
-from .....protocols.present_proof.v1_0.messages.inner.presentation_preview import (
-    PresAttrSpec,
-    PresentationPreview,
-    PresPredSpec,
+from .....protocols.present_proof.v1_0.models.presentation_exchange import (
+    V10PresentationExchange,
 )
 from .....storage.error import StorageError, StorageNotFoundError
 from .....multitenant.manager import MultitenantManager

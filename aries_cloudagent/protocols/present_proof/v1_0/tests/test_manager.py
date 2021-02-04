@@ -19,6 +19,7 @@ from .....indy.sdk.verifier import IndySdkVerifier
 from ....didcomm_prefix import DIDCommPrefix
 
 from ...util.indy import indy_proof_req_preview2indy_requested_creds
+from ...util.presentation_preview import PresAttrSpec, PresentationPreview, PresPredSpec
 
 from .. import manager as test_module
 from ..manager import PresentationManager, PresentationManagerError
@@ -26,11 +27,6 @@ from ..messages.presentation import Presentation
 from ..messages.presentation_ack import PresentationAck
 from ..messages.presentation_proposal import PresentationProposal
 from ..messages.presentation_request import PresentationRequest
-from ..messages.inner.presentation_preview import (
-    PresAttrSpec,
-    PresentationPreview,
-    PresPredSpec,
-)
 from ..models.presentation_exchange import V10PresentationExchange
 
 

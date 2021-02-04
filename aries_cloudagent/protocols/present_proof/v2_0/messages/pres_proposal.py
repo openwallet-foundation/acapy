@@ -44,13 +44,14 @@ class V20PresProposal(AgentMessage):
         Args:
             comment: optional human-readable comment
             formats: acceptable attachment formats
-            pres_proposal: proposed pres preview
+            proposal_attach: proposal attachments specifying criteria by format
         """
         super().__init__(_id, **kwargs)
         self.comment = comment
-        self.pres_proposal = pres_proposal
+        self.proposal_attach = proposal_attach or []
+        print(f'** MESSAGE stored {self.proposal_attach}')
 
-    def proposal(self, fmt: V20PredFormat.Format = None) -> dict:
+    def proposal(self, fmt: V20PresFormat.Format = None) -> dict:
         """
         Return attached proposal item.
 
@@ -58,7 +59,7 @@ class V20PresProposal(AgentMessage):
             fmt: format of attachment in list to decode and return
 
         """
-        return (fmt or V20PredFormat.Format.INDY).get_attachment_data(
+        return (fmt or V20PresFormat.Format.INDY).get_attachment_data(
             self.formats,
             self.proposal_attach,
         )
@@ -76,24 +77,24 @@ class V20PresProposalSchema(AgentMessageSchema):
         description="Human-readable comment", required=False, allow_none=True
     )
     formats = fields.Nested(
-        V20PredFormatSchema,
+        V20PresFormatSchema,
         many=True,
         required=True,
         descrption="Acceptable attachment formats",
     )
     proposal_attach = fields.Nested(
         AttachDecoratorSchema,
-        data_key="filters~attach",
+        data_key="proposal~attach",
         required=True,
         description="Attachment per acceptable format on corresponding identifier",
     )
 
     @validates_schema
     def validate_fields(self, data, **kwargs):
-        """Validate filter per format."""
+        """Validate proposal attachment per format."""
 
         def get_proposal_attach_by_id(attach_id):
-            """Return filter with input attachment identifier."""
+            """Return proposal attachment  with input attachment identifier."""
             for p in proposal_attach:
                 if p.ident == attach_id:
                     return p

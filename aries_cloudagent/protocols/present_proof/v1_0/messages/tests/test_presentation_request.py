@@ -7,7 +7,9 @@ from ......messaging.util import str_to_datetime, str_to_epoch
 
 from .....didcomm_prefix import DIDCommPrefix
 
-from ...message_types import ATTACH_DECO_IDS, PRESENTATION_PREVIEW, PRESENTATION_REQUEST
+from ....util.presentation_preview import PRESENTATION_PREVIEW
+
+from ...message_types import ATTACH_DECO_IDS, PRESENTATION_REQUEST
 
 from ..presentation_request import PresentationRequest, PresentationRequestSchema
 
