@@ -3,6 +3,7 @@
 from ..protocols.coordinate_mediation.v1_0.models.mediation_record import (
     MediationRecord,
 )
+from ..core.profile import ProfileSession
 
 from .base_manager import BaseConnectionManagerError
 
