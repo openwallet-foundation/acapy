@@ -293,7 +293,7 @@ class DebugGroup(ArgumentGroup):
         parser.add_argument(
             "--auto-accept-requests-public",
             action="store_true",
-            env_var="ACAPY_AUTO_ACCEPT_REQUESTS_PEER",
+            env_var="ACAPY_AUTO_ACCEPT_REQUESTS_PUBLIC",
             help="Automatically accept connection and did-exchange requests\
             against public DIDs without firing a webhook event\
             or waiting for an admin request. Default: false.",
