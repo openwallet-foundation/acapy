@@ -42,10 +42,12 @@ class DIDResolver:
         Native resolvers are yielded first, in registered order followed by
         non-native resolvers in registered order.
         """
-        valid_resolvers = list(filter(
-            lambda resolver: resolver.supports(did.method),
-            self.did_resolver_registery.did_resolvers,
-        ))
+        valid_resolvers = list(
+            filter(
+                lambda resolver: resolver.supports(did.method),
+                self.did_resolver_registery.did_resolvers,
+            )
+        )
         native_resolvers = filter(lambda resolver: resolver.native, valid_resolvers)
         non_native_resolvers = filter(
             lambda resolver: not resolver.native, valid_resolvers

@@ -56,6 +56,7 @@ async def test_resolve_x_no_ledger(resolver: IndyDIDResolver, session: ProfileSe
     with pytest.raises(ResolverError):
         await resolver.resolve(session, TEST_DID0)
 
+
 @pytest.mark.asyncio
 async def test_resolve_x_did_not_found(
     resolver: IndyDIDResolver, ledger: IndySdkLedger, session: ProfileSession
