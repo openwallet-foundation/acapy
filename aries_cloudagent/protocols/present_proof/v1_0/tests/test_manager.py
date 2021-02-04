@@ -768,15 +768,14 @@ class TestPresentationManager(AsyncTestCase):
         ) as save_ex, async_mock.patch.object(
             V10PresentationExchange, "retrieve_by_tag_filter", autospec=True
         ) as retrieve_ex:
-            retrieve_ex.return_value = exchange_dummy
+            retrieve_ex.side_effect = [
+                StorageNotFoundError("no such record"),
+                exchange_dummy,
+            ]
             exchange_out = await self.manager.receive_presentation(
                 message, connection_record
             )
-            retrieve_ex.assert_called_once_with(
-                self.session,
-                {"thread_id": message._thread_id},
-                {"connection_id": CONN_ID},
-            )
+            assert retrieve_ex.call_count == 2
             save_ex.assert_called_once()
 
             assert exchange_out.state == (
