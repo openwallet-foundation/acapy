@@ -15,7 +15,7 @@ class DIDResolverRegistry:
         LOGGER.debug("Resolvers listed")
 
     @property
-    def did_resolvers(
+    def resolvers(
         self,
     ) -> Sequence[str]:
         """Accessor for a list of all did resolvers."""

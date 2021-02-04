@@ -1,4 +1,4 @@
-"""Test did resolver registery."""
+"""Test did resolver registry."""
 
 import pytest
 import unittest
@@ -127,7 +127,7 @@ def resolver():
 
 
 def test_create_resolver(resolver):
-    assert len(resolver.did_resolver_registery.did_resolvers) == len(TEST_DID_METHODS)
+    assert len(resolver.did_resolver_registry.resolvers) == len(TEST_DID_METHODS)
 
 
 @pytest.mark.parametrize("did, method", zip(TEST_DIDS, TEST_DID_METHODS))

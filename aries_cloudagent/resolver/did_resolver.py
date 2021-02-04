@@ -21,7 +21,7 @@ class DIDResolver:
 
     def __init__(self, registry: DIDResolverRegistry):
         """Initialize a `didresolver` instance."""
-        self.did_resolver_registery = registry
+        self.did_resolver_registry = registry
 
     async def resolve(self, did: Union[str, DID]) -> ResolvedDIDDoc:
         """Retrieve did doc from public registry."""
@@ -45,7 +45,7 @@ class DIDResolver:
         valid_resolvers = list(
             filter(
                 lambda resolver: resolver.supports(did.method),
-                self.did_resolver_registery.did_resolvers,
+                self.did_resolver_registry.resolvers,
             )
         )
         native_resolvers = filter(lambda resolver: resolver.native, valid_resolvers)
