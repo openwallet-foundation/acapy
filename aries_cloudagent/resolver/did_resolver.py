@@ -6,11 +6,13 @@ retrieving did's from different sources provided by the method type.
 """
 
 import logging
-from typing import Union
 from itertools import chain
-from ..resolver.diddoc import ResolvedDIDDoc  # , ExternalResourceError
+from typing import Union
+
+from ..core.profile import ProfileSession
 from ..resolver.base import BaseDIDResolver, DidMethodNotSupported, DidNotFound
 from ..resolver.did import DID, DIDUrl  # , DID_PATTERN
+from ..resolver.diddoc import ResolvedDIDDoc  # , ExternalResourceError
 from .did_resolver_registry import DIDResolverRegistry
 
 LOGGER = logging.getLogger(__name__)
@@ -23,14 +25,16 @@ class DIDResolver:
         """Initialize a `didresolver` instance."""
         self.did_resolver_registry = registry
 
-    async def resolve(self, did: Union[str, DID]) -> ResolvedDIDDoc:
+    async def resolve(
+        self, session: ProfileSession, did: Union[str, DID]
+    ) -> ResolvedDIDDoc:
         """Retrieve did doc from public registry."""
         if isinstance(did, str):
             did = DID(did)
         for resolver in self._match_did_to_resolver(did):
             try:
                 LOGGER.debug("Resolving DID %s with %s", did, resolver)
-                return await resolver.resolve(did)
+                return await resolver.resolve(session, did)
             except DidNotFound:
                 LOGGER.debug("DID %s not found by resolver %s", did, resolver)
 
@@ -57,8 +61,10 @@ class DIDResolver:
             raise DidMethodNotSupported(f"{did.method} not supported")
         return resolvers
 
-    async def dereference_external(self, did_url: str) -> ResolvedDIDDoc:
+    async def dereference_external(
+        self, session: ProfileSession, did_url: str
+    ) -> ResolvedDIDDoc:
         """Retrieve an external did in doc service from a public registry."""
         did_url = DIDUrl.parse(did_url)
-        doc = await self.resolve(did_url.did)
+        doc = await self.resolve(session, did_url.did)
         return doc.dereference(did_url)
