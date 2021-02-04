@@ -1,4 +1,4 @@
-"""In memmory storage for registering did resolvers"""
+"""In memmory storage for registering did resolvers."""
 
 import logging
 from typing import Sequence
@@ -12,12 +12,11 @@ class DIDResolverRegistry:
     def __init__(self):
         """Initialize list for did resolvers."""
         self._resolvers = []
-        LOGGER.debug("Resolvers listed")
 
     @property
-    def did_resolvers(
+    def resolvers(
         self,
-    ) -> Sequence[str]:  # Todo: add priority filtering and return copy
+    ) -> Sequence[str]:
         """Accessor for a list of all did resolvers."""
         return self._resolvers
 
