@@ -10,7 +10,7 @@ from itertools import chain
 from typing import Union
 
 from ..core.profile import ProfileSession
-from ..resolver.base import BaseDIDResolver, DidMethodNotSupported, DidNotFound
+from ..resolver.base import BaseDIDResolver, DIDMethodNotSupported, DIDNotFound
 from ..resolver.did import DID, DIDUrl  # , DID_PATTERN
 from ..resolver.diddoc import ResolvedDIDDoc  # , ExternalResourceError
 from .did_resolver_registry import DIDResolverRegistry
@@ -35,10 +35,10 @@ class DIDResolver:
             try:
                 LOGGER.debug("Resolving DID %s with %s", did, resolver)
                 return await resolver.resolve(session, did)
-            except DidNotFound:
+            except DIDNotFound:
                 LOGGER.debug("DID %s not found by resolver %s", did, resolver)
 
-        raise DidNotFound(f"DID {did} could not be resolved.")
+        raise DIDNotFound(f"DID {did} could not be resolved.")
 
     def _match_did_to_resolver(self, did: DID) -> BaseDIDResolver:
         """Generate supported DID Resolvers.
@@ -58,7 +58,7 @@ class DIDResolver:
         )
         resolvers = list(chain(native_resolvers, non_native_resolvers))
         if not resolvers:
-            raise DidMethodNotSupported(f"{did.method} not supported")
+            raise DIDMethodNotSupported(f"{did.method} not supported")
         return resolvers
 
     async def dereference_external(
