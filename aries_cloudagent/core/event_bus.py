@@ -63,7 +63,10 @@ class EventBus:
         ]
 
         for processor in chain(*matched):
-            await processor(profile, event)
+            try:
+                await processor(profile, event)
+            except Exception:
+                LOGGER.exception("Error occurred while processing event")
 
     def subscribe(self, pattern: Pattern, processor: Callable):
         """Subscribe to an event.
