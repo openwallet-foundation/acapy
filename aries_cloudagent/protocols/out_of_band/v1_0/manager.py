@@ -284,7 +284,7 @@ class OutOfBandManager(BaseConnectionManager):
             if metadata:
                 for key, value in metadata.items():
                     await conn_rec.metadata_set(self._session, key, value)
-
+            routing_keys = []
             # The base wallet can act as a mediator for all tenants
             if multitenant_mgr and wallet_id:
                 base_mediation_record = await multitenant_mgr.get_default_mediator()
@@ -367,8 +367,9 @@ class OutOfBandManager(BaseConnectionManager):
             )
 
         if mediation_id:
-            mediation_record = await mediation_record_if_id(self._session, mediation_id)
-            if mediation_record is None:
+            try:
+                await mediation_record_if_id(self._session, mediation_id)
+            except StorageNotFoundError:
                 mediation_id = None
 
         unq_handshake_protos = [

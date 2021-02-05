@@ -410,7 +410,7 @@ class DIDXManager(BaseConnectionManager):
         if keylist_updates and mediation_record:
             responder = self._session.inject(BaseResponder, required=False)
             await responder.send(
-                keylist_updates, connection_id=mediation_record.inbound_connection_id
+                keylist_updates, connection_id=mediation_record.connection_id
             )
 
         if auto_accept:
