@@ -154,8 +154,7 @@ class InvitationMessage(AgentMessage):
         c_json = self.to_json()
         oob = bytes_to_b64(c_json.encode("ascii"), urlsafe=True)
         result = urljoin(
-            base_url
-            or (self.service_blocks[0].service_endpoint if self.service_blocks else ""),
+            (base_url if base_url else self.service_blocks[0].service_endpoint),
             "?oob={}".format(oob),
         )
         return result
