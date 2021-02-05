@@ -262,42 +262,17 @@ class OutOfBandManager(BaseConnectionManager):
             if multitenant_mgr and wallet_id:
                 await multitenant_mgr.add_key(wallet_id, connection_key.verkey)
 
-            # Create connection invitation message
-            # Note: Need to split this into two stages to support inbound routing
-            # of invitations
-            # Would want to reuse create_did_document and convert the result
-            invi_msg = InvitationMessage(
-                label=my_label or self._session.settings.get("default_label"),
-                handshake_protocols=handshake_protocols,
-                request_attach=message_attachments,
-                service=[
-                    ServiceMessage(
-                        _id="#inline",
-                        _type="did-communication",
-                        recipient_keys=[naked_to_did_key(connection_key.verkey)],
-                        service_endpoint=my_endpoint,
-                    )
-                ],
-            )
-            invi_url = invi_msg.to_url()
-
             # Create connection record
             conn_rec = ConnRecord(
                 invitation_key=connection_key.verkey,
-                invitation_msg_id=invi_msg._id,
                 their_role=ConnRecord.Role.REQUESTER.rfc23,
                 state=ConnRecord.State.INVITATION.rfc23,
                 accept=ConnRecord.ACCEPT_AUTO if accept else ConnRecord.ACCEPT_MANUAL,
                 invitation_mode=invitation_mode,
                 alias=alias,
             )
-
             await conn_rec.save(self._session, reason="Created new invitation")
-            await conn_rec.attach_invitation(self._session, invi_msg)
 
-            if metadata:
-                for key, value in metadata.items():
-                    await conn_rec.metadata_set(self._session, key, value)
             routing_keys = []
             # The base wallet can act as a mediator for all tenants
             if multitenant_mgr and wallet_id:
@@ -327,6 +302,35 @@ class OutOfBandManager(BaseConnectionManager):
                         keylist_updates, connection_id=mediation_record.connection_id
                     )
 
+            # Create connection invitation message
+            # Note: Need to split this into two stages to support inbound routing
+            # of invitations
+            # Would want to reuse create_did_document and convert the result
+            invi_msg = InvitationMessage(
+                label=my_label or self._session.settings.get("default_label"),
+                handshake_protocols=handshake_protocols,
+                request_attach=message_attachments,
+                service=[
+                    ServiceMessage(
+                        _id="#inline",
+                        _type="did-communication",
+                        recipient_keys=[naked_to_did_key(connection_key.verkey)],
+                        service_endpoint=my_endpoint,
+                        routing_keys=routing_keys,
+                    )
+                ],
+            )
+            invi_url = invi_msg.to_url()
+
+            # Update connection record
+            conn_rec.invitation_msg_id = invi_msg._id
+            await conn_rec.save(self._session, reason="Added Invitation")
+            await conn_rec.attach_invitation(self._session, invi_msg)
+
+            if metadata:
+                for key, value in metadata.items():
+                    await conn_rec.metadata_set(self._session, key, value)
+
         # Create invitation record
         invi_rec = InvitationRecord(
             state=InvitationRecord.STATE_INITIAL,
@@ -347,6 +351,12 @@ class OutOfBandManager(BaseConnectionManager):
         """Receive an out of band invitation message."""
 
         ledger: BaseLedger = self._session.inject(BaseLedger)
+
+        if mediation_id:
+            try:
+                await mediation_record_if_id(self._session, mediation_id)
+            except StorageNotFoundError:
+                mediation_id = None
 
         # There must be exactly 1 service entry
         if len(invi_msg.service_blocks) + len(invi_msg.service_dids) != 1:
@@ -380,12 +390,6 @@ class OutOfBandManager(BaseConnectionManager):
                     "serviceEndpoint": endpoint,
                 }
             )
-
-        if mediation_id:
-            try:
-                await mediation_record_if_id(self._session, mediation_id)
-            except StorageNotFoundError:
-                mediation_id = None
 
         unq_handshake_protos = [
             HSProto.get(hsp)

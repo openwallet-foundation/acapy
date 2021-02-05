@@ -245,7 +245,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         )
 
         self.test_mediator_routing_keys = [
-            "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRR"
+            naked_to_did_key("3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRR")
         ]
         self.test_mediator_conn_id = "mediator-conn-id"
         self.test_mediator_endpoint = "http://mediator.example.com"
@@ -353,10 +353,13 @@ class TestOOBManager(AsyncTestCase, TestConfig):
 
         with async_mock.patch.object(
             InMemoryWallet, "create_signing_key", autospec=True
-        ) as mock_wallet_create_signing_key:
+        ) as mock_wallet_create_signing_key, async_mock.patch.object(
+            self.multitenant_mgr, "get_default_mediator"
+        ) as mock_get_default_mediator:
             mock_wallet_create_signing_key.return_value = KeyInfo(
                 TestConfig.test_verkey, None
             )
+            mock_get_default_mediator.return_value = MediationRecord()
             await self.manager.create_invitation(
                 my_endpoint=TestConfig.test_endpoint,
                 hs_protos=[HSProto.RFC23],
@@ -580,28 +583,41 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 "wallet.id": "my-wallet",
             }
         )
-
-        invi_rec = await self.manager.create_invitation(
-            my_label="That guy",
-            my_endpoint=None,
-            public=False,
-            hs_protos=[test_module.HSProto.RFC23],
-            multi_use=False,
+        mediation_record = MediationRecord(
+            role=MediationRecord.ROLE_CLIENT,
+            state=MediationRecord.STATE_GRANTED,
+            connection_id=self.test_mediator_conn_id,
+            routing_keys=self.test_mediator_routing_keys,
+            endpoint=self.test_mediator_endpoint,
         )
+        await mediation_record.save(self.session)
+        with async_mock.patch.object(
+            self.multitenant_mgr, "get_default_mediator"
+        ) as mock_get_default_mediator:
+            mock_get_default_mediator.return_value = mediation_record
+            invi_rec = await self.manager.create_invitation(
+                my_label="That guy",
+                my_endpoint=None,
+                public=False,
+                hs_protos=[test_module.HSProto.RFC23],
+                multi_use=False,
+            )
 
-        assert invi_rec.invitation["@type"] == DIDCommPrefix.qualify_current(INVITATION)
-        assert not invi_rec.invitation.get("request~attach")
-        assert invi_rec.invitation["label"] == "That guy"
-        assert (
-            DIDCommPrefix.qualify_current(HSProto.RFC23.name)
-            in invi_rec.invitation["handshake_protocols"]
-        )
-        service = invi_rec.invitation["service"][0]
-        assert service["id"] == "#inline"
-        assert service["type"] == "did-communication"
-        assert len(service["recipientKeys"]) == 1
-        assert not service.get("routingKeys")
-        assert service["serviceEndpoint"] == TestConfig.test_endpoint
+            assert invi_rec.invitation["@type"] == DIDCommPrefix.qualify_current(
+                INVITATION
+            )
+            assert not invi_rec.invitation.get("request~attach")
+            assert invi_rec.invitation["label"] == "That guy"
+            assert (
+                DIDCommPrefix.qualify_current(HSProto.RFC23.name)
+                in invi_rec.invitation["handshake_protocols"]
+            )
+            service = invi_rec.invitation["service"][0]
+            assert service["id"] == "#inline"
+            assert service["type"] == "did-communication"
+            assert len(service["recipientKeys"]) == 1
+            assert service["routingKeys"] == self.test_mediator_routing_keys
+            assert service["serviceEndpoint"] == self.test_mediator_endpoint
 
     async def test_create_invitation_metadata_assigned(self):
         invi_rec = await self.manager.create_invitation(

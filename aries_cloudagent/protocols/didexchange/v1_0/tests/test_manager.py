@@ -21,6 +21,7 @@ from .....transport.inbound.receipt import MessageReceipt
 from .....multitenant.manager import MultitenantManager
 from .....wallet.base import DIDInfo
 from .....wallet.in_memory import InMemoryWallet
+from .....wallet.util import naked_to_did_key
 from .....connections.base_manager import (
     BaseConnectionManager,
     BaseConnectionManagerError,
@@ -102,7 +103,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
         assert self.manager.session
         self.oob_manager = OutOfBandManager(self.session)
         self.test_mediator_routing_keys = [
-            "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRR"
+            naked_to_did_key("3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRR")
         ]
         self.test_mediator_conn_id = "mediator-conn-id"
         self.test_mediator_endpoint = "http://mediator.example.com"
@@ -126,33 +127,56 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
 
     async def test_receive_invitation(self):
         self.session.context.update_settings({"public_invites": True})
+        mediation_record = MediationRecord(
+            role=MediationRecord.ROLE_CLIENT,
+            state=MediationRecord.STATE_GRANTED,
+            connection_id=self.test_mediator_conn_id,
+            routing_keys=self.test_mediator_routing_keys,
+            endpoint=self.test_mediator_endpoint,
+        )
+        await mediation_record.save(self.session)
+
         with async_mock.patch.object(
             test_module, "AttachDecorator", autospec=True
-        ) as mock_attach_deco:
-            mock_attach_deco.from_indy_dict = async_mock.MagicMock(
-                return_value=async_mock.MagicMock(
-                    data=async_mock.MagicMock(sign=async_mock.CoroutineMock())
-                )
-            )
+        ) as mock_attach_deco, async_mock.patch.object(
+            self.multitenant_mgr, "get_default_mediator"
+        ) as mock_get_default_mediator:
+            mock_get_default_mediator.return_value = mediation_record
             invi_rec = await self.oob_manager.create_invitation(
                 my_endpoint="testendpoint",
                 hs_protos=[HSProto.RFC23],
             )
             invi_msg = InvitationMessage.deserialize(invi_rec.invitation)
-
+            mock_attach_deco.from_indy_dict = async_mock.MagicMock(
+                return_value=async_mock.MagicMock(
+                    data=async_mock.MagicMock(sign=async_mock.CoroutineMock())
+                )
+            )
             invitee_record = await self.manager.receive_invitation(invi_msg)
             assert invitee_record.state == ConnRecord.State.REQUEST.rfc23
 
     async def test_receive_invitation_no_auto_accept(self):
-        invi_rec = await self.oob_manager.create_invitation(
-            my_endpoint="testendpoint",
-            hs_protos=[HSProto.RFC23],
+        mediation_record = MediationRecord(
+            role=MediationRecord.ROLE_CLIENT,
+            state=MediationRecord.STATE_GRANTED,
+            connection_id=self.test_mediator_conn_id,
+            routing_keys=self.test_mediator_routing_keys,
+            endpoint=self.test_mediator_endpoint,
         )
+        await mediation_record.save(self.session)
+        with async_mock.patch.object(
+            self.multitenant_mgr, "get_default_mediator"
+        ) as mock_get_default_mediator:
+            mock_get_default_mediator.return_value = mediation_record
+            invi_rec = await self.oob_manager.create_invitation(
+                my_endpoint="testendpoint",
+                hs_protos=[HSProto.RFC23],
+            )
 
-        invitee_record = await self.manager.receive_invitation(
-            InvitationMessage.deserialize(invi_rec.invitation), auto_accept=False
-        )
-        assert invitee_record.state == ConnRecord.State.INVITATION.rfc23
+            invitee_record = await self.manager.receive_invitation(
+                InvitationMessage.deserialize(invi_rec.invitation), auto_accept=False
+            )
+            assert invitee_record.state == ConnRecord.State.INVITATION.rfc23
 
     async def test_receive_invitation_bad_invitation(self):
         x_invites = [
