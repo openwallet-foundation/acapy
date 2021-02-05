@@ -25,9 +25,7 @@ class DIDResolver:
         """Initialize a `didresolver` instance."""
         self.did_resolver_registry = registry
 
-    async def resolve(
-        self, profile: Profile, did: Union[str, DID]
-    ) -> ResolvedDIDDoc:
+    async def resolve(self, profile: Profile, did: Union[str, DID]) -> ResolvedDIDDoc:
         """Retrieve did doc from public registry."""
         # TODO Cache results
         if isinstance(did, str):
@@ -62,9 +60,7 @@ class DIDResolver:
             raise DIDMethodNotSupported(f"{did.method} not supported")
         return resolvers
 
-    async def dereference(
-        self, profile: Profile, did_url: str
-    ) -> ResolvedDIDDoc:
+    async def dereference(self, profile: Profile, did_url: str) -> ResolvedDIDDoc:
         """Dereference a DID URL to its corresponding DID Doc object."""
         # TODO Use cached DID Docs when possible
         did_url = DIDUrl.parse(did_url)

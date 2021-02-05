@@ -15,16 +15,29 @@ from ....admin.request_context import AdminRequestContext
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
 from ....storage.error import StorageError, StorageNotFoundError
+from .did_resolver import Resolver
+from ..messaging.valid import UUIDFour
 
 
 class DIDDocSchema(OpenAPISchema):
     """Result schema for did document query."""
+
     pass
+
+
+class DIDMatchInfoSchema(OpenAPISchema):
+    """Path parameters and validators for request taking DID."""
+
+    did = fields.Str(
+        description="decentralize identifier(DID)",
+        required=True,
+        example=UUIDFour.EXAMPLE,
+    )
 
 
 @docs(tags=["resolver"], summary="Retrieve doc for requested did")
 @match_info_schema(DIDMatchInfoSchema())
-@response_schema(DIDDocSchema(), 200)
+#  @response_schema(DIDDocSchema(), 200)
 async def resolve_did(request: web.BaseRequest):
     """Retrieve a did document."""
     context: AdminRequestContext = request["context"]
@@ -32,7 +45,7 @@ async def resolve_did(request: web.BaseRequest):
     did = request.match_info["did"]
     try:
         session = await context.session()
-        # TODO: get resolver from
+        resolver = session.inject(Resolver)
         document = await resolver.resolve(did)
         result = document.serialize()
     except StorageNotFoundError as err:
