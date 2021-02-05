@@ -19,6 +19,7 @@ from ....indy.holder import IndyHolder
 from ....messaging.responder import BaseResponder
 from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....ledger.base import BaseLedger
+from ....ledger.error import LedgerError
 from ....multitenant.manager import MultitenantManager
 from ....storage.error import StorageNotFoundError
 from ....transport.inbound.receipt import MessageReceipt
@@ -215,6 +216,7 @@ class OutOfBandManager(BaseConnectionManager):
                 raise OutOfBandManagerError(
                     "Cannot store metadata on public invitations"
                 )
+
             invi_msg = InvitationMessage(
                 label=my_label or self._session.settings.get("default_label"),
                 handshake_protocols=handshake_protocols,
@@ -224,6 +226,17 @@ class OutOfBandManager(BaseConnectionManager):
             keylist_updates = await mediation_mgr.add_key(
                 public_did.verkey, keylist_updates
             )
+            ledger = self._session.inject(BaseLedger)
+            async with ledger:
+                try:
+                    base_url = await ledger.get_endpoint_for_did(public_did.did)
+                except LedgerError as ledger_x:
+                    raise OutOfBandManagerError(
+                        "Error getting endpoint for public DID "
+                        f"{public_did.did}: {ledger_x}"
+                    )
+                invi_url = invi_msg.to_url(base_url)
+
             # Add mapping for multitenant relay.
             if multitenant_mgr and wallet_id:
                 await multitenant_mgr.add_key(
@@ -266,6 +279,7 @@ class OutOfBandManager(BaseConnectionManager):
                     )
                 ],
             )
+            invi_url = invi_msg.to_url()
 
             # Create connection record
             conn_rec = ConnRecord(
@@ -318,6 +332,7 @@ class OutOfBandManager(BaseConnectionManager):
             state=InvitationRecord.STATE_INITIAL,
             invi_msg_id=invi_msg._id,
             invitation=invi_msg.serialize(),
+            invitation_url=invi_url,
         )
         return invi_rec
 

@@ -7,8 +7,6 @@ from marshmallow import fields
 from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
 from .....messaging.valid import UUIDFour
 
-from ..messages.invitation import InvitationMessage
-
 
 class InvitationRecord(BaseExchangeRecord):
     """Represents an out of band invitation record."""
@@ -31,10 +29,10 @@ class InvitationRecord(BaseExchangeRecord):
         self,
         *,
         invitation_id: str = None,
-        invitation_url: str = None,
         state: str = None,
         invi_msg_id: str = None,
         invitation: dict = None,  # serialized invitation message
+        invitation_url: str = None,
         trace: bool = False,
         **kwargs,
     ):
@@ -44,21 +42,13 @@ class InvitationRecord(BaseExchangeRecord):
         self.state = state
         self.invi_msg_id = invi_msg_id
         self.invitation = invitation
+        self.invitation_url = invitation_url
         self.trace = trace
 
     @property
     def invitation_id(self) -> str:
         """Accessor for the ID associated with this exchange."""
         return self._id
-
-    @property
-    def invitation_url(self) -> str:
-        """Accessor to the invitation url."""
-        return (
-            InvitationMessage.deserialize(self.invitation).to_url()
-            if self.invitation
-            else None
-        )
 
     @property
     def record_value(self) -> dict:
@@ -107,7 +97,6 @@ class InvitationRecordSchema(BaseExchangeSchema):
     )
     invitation_url = fields.Str(
         required=False,
-        dump_only=True,
         description="Invitation message URL",
         example=(
             "https://example.com/endpoint?"
