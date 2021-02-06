@@ -384,7 +384,6 @@ class TestIndySdkStorage(test_in_memory_storage.TestInMemoryStorage):
                 mock_indy_open_search.return_value = 1
                 search = storage.search_records("connection")
                 await search._open()
-                await search.close()
                 del search
                 assert (
                     coros
