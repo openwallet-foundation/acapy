@@ -25,4 +25,12 @@ aries\_cloudagent\.messaging\.models\.base\_record module
     :undoc-members:
     :show-inheritance:
 
+aries\_cloudagent\.messaging\.models\.openapi module
+----------------------------------------------------
+
+.. automodule:: aries_cloudagent.messaging.models.openapi
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 
