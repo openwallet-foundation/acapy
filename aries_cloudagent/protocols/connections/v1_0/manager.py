@@ -216,7 +216,11 @@ class ConnectionManager(BaseConnectionManager):
                 auto_accept
                 or (
                     auto_accept is None
-                    and self._session.settings.get("debug.auto_accept_requests")
+                    and self._session.settings.get(
+                        "debug.auto_accept_requests_public"
+                        if public
+                        else "debug.auto_accept_requests_peer"
+                    )
                 )
             )
             else ConnRecord.ACCEPT_MANUAL
@@ -566,7 +570,7 @@ class ConnectionManager(BaseConnectionManager):
             raise ConnectionManagerError("Public invitations are not enabled")
         else:  # request from public did
             my_info = await wallet.create_local_did()
-            # send a update keylist message with new recipient keys.
+            # send update-keylist message with new recipient keys
             keylist_updates = await mediation_mgr.add_key(
                 my_info.verkey, keylist_updates
             )
@@ -581,10 +585,13 @@ class ConnectionManager(BaseConnectionManager):
                 their_role=ConnRecord.Role.RESPONDER.rfc160,
                 their_did=request.connection.did,
                 their_label=request.label,
+                accept=(
+                    ConnRecord.ACCEPT_AUTO
+                    if self._session.settings.get("debug.auto_accept_requests_public")
+                    else ConnRecord.ACCEPT_MANUAL
+                ),
                 state=ConnRecord.State.REQUEST.rfc160,
             )
-            if self._session.settings.get("debug.auto_accept_requests"):
-                connection.accept = ConnRecord.ACCEPT_AUTO
 
             await connection.save(
                 self._session, reason="Received connection request from public DID"

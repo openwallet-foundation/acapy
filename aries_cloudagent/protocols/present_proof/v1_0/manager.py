@@ -464,8 +464,7 @@ class PresentationManager:
                 self._session, {"thread_id": thread_id}, connection_id_filter
             )
         except StorageNotFoundError:
-            # Proof Request not bound to any connection
-            # Was requested as a request_attach in OOB Message
+            # Proof Request not bound to any connection: request_attach in OOB message
             (
                 presentation_exchange_record
             ) = await V10PresentationExchange.retrieve_by_tag_filter(

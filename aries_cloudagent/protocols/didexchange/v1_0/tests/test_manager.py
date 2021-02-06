@@ -18,7 +18,6 @@ from .....messaging.decorators.attach_decorator import AttachDecorator
 from .....multitenant.manager import MultitenantManager
 from .....storage.error import StorageNotFoundError
 from .....transport.inbound.receipt import MessageReceipt
-from ....out_of_band.v1_0.models.invitation import InvitationRecord
 from .....multitenant.manager import MultitenantManager
 from .....wallet.base import DIDInfo
 from .....wallet.in_memory import InMemoryWallet
@@ -28,7 +27,7 @@ from .....connections.base_manager import (
 )
 
 from ....out_of_band.v1_0.manager import OutOfBandManager
-from ....out_of_band.v1_0.messages.invitation import InvitationMessage
+from ....out_of_band.v1_0.messages.invitation import HSProto, InvitationMessage
 from ....out_of_band.v1_0.messages.service import Service as OOBService
 
 from .. import manager as test_module
@@ -74,7 +73,8 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 "default_label": "This guy",
                 "additional_endpoints": ["http://aries.ca/another-endpoint"],
                 "debug.auto_accept_invites": True,
-                "debug.auto_accept_requests": True,
+                "debug.auto_accept_requests_public": True,
+                "debug.auto_accept_requests_peer": True,
                 "multitenant.enabled": True,
                 "wallet.id": True,
             },
@@ -113,7 +113,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
     async def test_receive_invitation(self):
         invi_rec = await self.oob_manager.create_invitation(
             my_endpoint="testendpoint",
-            include_handshake=True,
+            hs_protos=[HSProto.RFC23],
         )
 
         invitee_record = await self.manager.receive_invitation(
@@ -124,7 +124,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
     async def test_receive_invitation_no_auto_accept(self):
         invi_rec = await self.oob_manager.create_invitation(
             my_endpoint="testendpoint",
-            include_handshake=True,
+            hs_protos=[HSProto.RFC23],
         )
 
         invitee_record = await self.manager.receive_invitation(
@@ -253,15 +253,17 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             assert didx_req
 
     async def test_receive_request_public_did(self):
-        mock_request = async_mock.MagicMock()
-        mock_request.did = TestConfig.test_did
-        mock_request.did_doc_attach = async_mock.MagicMock(
-            data=async_mock.MagicMock(
-                verify=async_mock.CoroutineMock(return_value=True),
-                signed=async_mock.MagicMock(
-                    decode=async_mock.MagicMock(return_value="dummy-did-doc")
-                ),
-            )
+        mock_request = async_mock.MagicMock(
+            did=TestConfig.test_did,
+            did_doc_attach=async_mock.MagicMock(
+                data=async_mock.MagicMock(
+                    verify=async_mock.CoroutineMock(return_value=True),
+                    signed=async_mock.MagicMock(
+                        decode=async_mock.MagicMock(return_value="dummy-did-doc")
+                    ),
+                )
+            ),
+            _thread=async_mock.MagicMock(pthid="did:sov:publicdid0000000000000"),
         )
         receipt = MessageReceipt(
             recipient_did=TestConfig.test_did,
@@ -270,15 +272,12 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
 
         await self.session.wallet.create_local_did(seed=None, did=TestConfig.test_did)
 
-        mock_conn_rec_state_request = ConnRecord.State.REQUEST
+        STATE_REQUEST = ConnRecord.State.REQUEST
         self.session.context.update_settings({"public_invites": True})
+        ACCEPT_AUTO = ConnRecord.ACCEPT_AUTO
         with async_mock.patch.object(
             test_module, "ConnRecord", async_mock.MagicMock()
-        ) as mock_conn_rec, async_mock.patch.object(
-            test_module.OOBInvitationRecord,
-            "retrieve_by_tag_filter",
-            async_mock.CoroutineMock(),
-        ) as mock_oob_invi_rec_retrieve, async_mock.patch.object(
+        ) as mock_conn_rec_cls, async_mock.patch.object(
             test_module, "DIDDoc", autospec=True
         ) as mock_did_doc, async_mock.patch.object(
             test_module, "AttachDecorator", autospec=True
@@ -290,23 +289,21 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             mock_create_did_doc.return_value = async_mock.MagicMock(
                 serialize=async_mock.MagicMock(return_value={})
             )
-            mock_conn_rec.State.REQUEST = mock_conn_rec_state_request
-            mock_conn_rec.State.get = async_mock.MagicMock(
-                return_value=mock_conn_rec_state_request
+
+            mock_conn_rec_cls.State.REQUEST = STATE_REQUEST
+            mock_conn_rec_cls.State.get = async_mock.MagicMock(
+                return_value=STATE_REQUEST
             )
-            mock_conn_rec.retrieve_by_id = async_mock.CoroutineMock(
+            mock_conn_rec_cls.retrieve_by_id = async_mock.CoroutineMock(
                 return_value=async_mock.MagicMock(save=async_mock.CoroutineMock())
             )
-            mock_conn_rec.return_value = async_mock.MagicMock(
-                accept=ConnRecord.ACCEPT_AUTO,
+            mock_conn_rec_cls.return_value = async_mock.MagicMock(
+                accept=ACCEPT_AUTO,
                 my_did=None,
-                state=mock_conn_rec_state_request.rfc23,
+                state=STATE_REQUEST.rfc23,
                 attach_request=async_mock.CoroutineMock(),
                 retrieve_request=async_mock.CoroutineMock(),
                 save=async_mock.CoroutineMock(),
-            )
-            mock_oob_invi_rec_retrieve.return_value = async_mock.MagicMock(
-                auto_accept=True,
             )
             mock_did_doc.from_json = async_mock.MagicMock(
                 return_value=async_mock.MagicMock(did=TestConfig.test_did)
@@ -330,9 +327,11 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
         assert "connection_id" in target
 
     async def test_receive_request_invi_not_found(self):
-        mock_request = async_mock.MagicMock()
-        mock_request.did = TestConfig.test_did
-        mock_request.did_doc_attach = None
+        mock_request = async_mock.MagicMock(
+            did=TestConfig.test_did,
+            did_doc_attach=None,
+            _thread=async_mock.MagicMock(pthid="explicit-not-a-did"),
+        )
 
         receipt = MessageReceipt(
             recipient_did=TestConfig.test_did,
@@ -343,20 +342,20 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
 
         with async_mock.patch.object(
             test_module, "ConnRecord", async_mock.MagicMock()
-        ) as mock_conn_rec, async_mock.patch.object(
-            test_module.OOBInvitationRecord,
-            "retrieve_by_tag_filter",
-            async_mock.CoroutineMock(),
-        ) as mock_oob_invi_rec_retrieve:
-            mock_oob_invi_rec_retrieve.side_effect = StorageNotFoundError()
+        ) as mock_conn_rec:
+            mock_conn_rec.retrieve_by_invitation_key = async_mock.CoroutineMock(
+                side_effect=StorageNotFoundError()
+            )
             with self.assertRaises(DIDXManagerError) as context:
                 await self.manager.receive_request(mock_request, receipt)
-            assert "No record of invitation" in str(context.exception)
+            assert "No invitation found" in str(context.exception)
 
     async def test_receive_request_public_did_no_did_doc_attachment(self):
-        mock_request = async_mock.MagicMock()
-        mock_request.did = TestConfig.test_did
-        mock_request.did_doc_attach = None
+        mock_request = async_mock.MagicMock(
+            did=TestConfig.test_did,
+            did_doc_attach=None,
+            _thread=async_mock.MagicMock(pthid="did:sov:publicdid0000000000000"),
+        )
 
         receipt = MessageReceipt(
             recipient_did=TestConfig.test_did,
@@ -368,25 +367,23 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
         self.session.context.update_settings({"public_invites": True})
         with async_mock.patch.object(
             test_module, "ConnRecord", async_mock.MagicMock()
-        ) as mock_conn_rec, async_mock.patch.object(
-            test_module.OOBInvitationRecord,
-            "retrieve_by_tag_filter",
-            async_mock.CoroutineMock(),
-        ) as mock_oob_invi_rec_retrieve:
+        ) as mock_conn_rec:
             with self.assertRaises(DIDXManagerError) as context:
                 await self.manager.receive_request(mock_request, receipt)
             assert "DID Doc attachment missing or has no data" in str(context.exception)
 
     async def test_receive_request_public_did_x_wrong_did(self):
-        mock_request = async_mock.MagicMock()
-        mock_request.did = TestConfig.test_did
-        mock_request.did_doc_attach = async_mock.MagicMock(
-            data=async_mock.MagicMock(
-                verify=async_mock.CoroutineMock(return_value=True),
-                signed=async_mock.MagicMock(
-                    decode=async_mock.MagicMock(return_value="dummy-did-doc")
-                ),
-            )
+        mock_request = async_mock.MagicMock(
+            did=TestConfig.test_did,
+            did_doc_attach=async_mock.MagicMock(
+                data=async_mock.MagicMock(
+                    verify=async_mock.CoroutineMock(return_value=True),
+                    signed=async_mock.MagicMock(
+                        decode=async_mock.MagicMock(return_value="dummy-did-doc")
+                    ),
+                )
+            ),
+            _thread=async_mock.MagicMock(pthid="did:sov:publicdid0000000000000"),
         )
 
         receipt = MessageReceipt(
@@ -400,10 +397,6 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
         with async_mock.patch.object(
             test_module, "ConnRecord", async_mock.MagicMock()
         ) as mock_conn_rec, async_mock.patch.object(
-            test_module.OOBInvitationRecord,
-            "retrieve_by_tag_filter",
-            async_mock.CoroutineMock(),
-        ) as mock_oob_invi_rec_retrieve, async_mock.patch.object(
             test_module.DIDDoc, "from_json", async_mock.MagicMock()
         ) as mock_did_doc_from_json:
             mock_did_doc_from_json.return_value = async_mock.MagicMock(did="wrong-did")
@@ -412,14 +405,15 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             assert "does not match" in str(context.exception)
 
     async def test_receive_request_public_did_x_did_doc_attach_bad_sig(self):
-        mock_request = async_mock.MagicMock()
-        mock_request.did = TestConfig.test_did
-        mock_request.did_doc_attach = async_mock.MagicMock(
-            data=async_mock.MagicMock(
-                verify=async_mock.CoroutineMock(return_value=False)
-            )
+        mock_request = async_mock.MagicMock(
+            did=TestConfig.test_did,
+            did_doc_attach=async_mock.MagicMock(
+                data=async_mock.MagicMock(
+                    verify=async_mock.CoroutineMock(return_value=False)
+                )
+            ),
+            _thread=async_mock.MagicMock(pthid="did:sov:publicdid0000000000000"),
         )
-
         receipt = MessageReceipt(
             recipient_did=TestConfig.test_did,
             recipient_did_public=True,
@@ -430,25 +424,23 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
         self.session.context.update_settings({"public_invites": True})
         with async_mock.patch.object(
             test_module, "ConnRecord", async_mock.MagicMock()
-        ) as mock_conn_rec, async_mock.patch.object(
-            test_module.OOBInvitationRecord,
-            "retrieve_by_tag_filter",
-            async_mock.CoroutineMock(),
-        ) as mock_oob_invi_rec_retrieve:
+        ) as mock_conn_rec:
             with self.assertRaises(DIDXManagerError) as context:
                 await self.manager.receive_request(mock_request, receipt)
             assert "DID Doc signature failed" in str(context.exception)
 
     async def test_receive_request_public_did_no_public_invites(self):
-        mock_request = async_mock.MagicMock()
-        mock_request.did = TestConfig.test_did
-        mock_request.did_doc_attach = async_mock.MagicMock(
-            data=async_mock.MagicMock(
-                verify=async_mock.CoroutineMock(return_value=True),
-                signed=async_mock.MagicMock(
-                    decode=async_mock.MagicMock(return_value="dummy-did-doc")
-                ),
-            )
+        mock_request = async_mock.MagicMock(
+            did=TestConfig.test_did,
+            did_doc_attach=async_mock.MagicMock(
+                data=async_mock.MagicMock(
+                    verify=async_mock.CoroutineMock(return_value=True),
+                    signed=async_mock.MagicMock(
+                        decode=async_mock.MagicMock(return_value="dummy-did-doc")
+                    ),
+                )
+            ),
+            _thread=async_mock.MagicMock(pthid="did:sov:publicdid0000000000000"),
         )
 
         receipt = MessageReceipt(
@@ -462,10 +454,6 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
         with async_mock.patch.object(
             test_module, "ConnRecord", async_mock.MagicMock()
         ) as mock_conn_rec, async_mock.patch.object(
-            test_module.OOBInvitationRecord,
-            "retrieve_by_tag_filter",
-            async_mock.CoroutineMock(),
-        ) as mock_oob_invi_rec_retrieve, async_mock.patch.object(
             test_module, "AttachDecorator", autospec=True
         ) as mock_attach_deco, async_mock.patch.object(
             test_module, "DIDXResponse", autospec=True
@@ -482,15 +470,17 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             assert "Public invitations are not enabled" in str(context.exception)
 
     async def test_receive_request_public_did_no_auto_accept(self):
-        mock_request = async_mock.MagicMock()
-        mock_request.did = TestConfig.test_did
-        mock_request.did_doc_attach = async_mock.MagicMock(
-            data=async_mock.MagicMock(
-                verify=async_mock.CoroutineMock(return_value=True),
-                signed=async_mock.MagicMock(
-                    decode=async_mock.MagicMock(return_value="dummy-did-doc")
-                ),
-            )
+        mock_request = async_mock.MagicMock(
+            did=TestConfig.test_did,
+            did_doc_attach=async_mock.MagicMock(
+                data=async_mock.MagicMock(
+                    verify=async_mock.CoroutineMock(return_value=True),
+                    signed=async_mock.MagicMock(
+                        decode=async_mock.MagicMock(return_value="dummy-did-doc")
+                    ),
+                )
+            ),
+            _thread=async_mock.MagicMock(pthid="did:sov:publicdid0000000000000"),
         )
 
         receipt = MessageReceipt(
@@ -501,16 +491,12 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
         await self.session.wallet.create_local_did(seed=None, did=TestConfig.test_did)
 
         self.session.context.update_settings(
-            {"public_invites": True, "debug.auto_accept_requests": False}
+            {"public_invites": True, "debug.auto_accept_requests_public": False}
         )
         mock_conn_rec_state_request = ConnRecord.State.REQUEST
         with async_mock.patch.object(
             test_module, "ConnRecord", async_mock.MagicMock()
         ) as mock_conn_rec, async_mock.patch.object(
-            test_module.OOBInvitationRecord,
-            "retrieve_by_tag_filter",
-            async_mock.CoroutineMock(),
-        ) as mock_oob_invi_rec_retrieve, async_mock.patch.object(
             test_module, "DIDDoc", autospec=True
         ) as mock_did_doc, async_mock.patch.object(
             test_module, "AttachDecorator", autospec=True
@@ -527,9 +513,6 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 retrieve_request=async_mock.CoroutineMock(),
                 save=async_mock.CoroutineMock(),
             )
-            mock_oob_invi_rec_retrieve.return_value = async_mock.MagicMock(
-                auto_accept=False,
-            )
             mock_did_doc.from_json = async_mock.MagicMock(
                 return_value=async_mock.MagicMock(did=TestConfig.test_did)
             )
@@ -540,16 +523,19 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
         assert not messages
 
     async def test_receive_request_peer_did(self):
-        mock_request = async_mock.MagicMock()
-        mock_request.did = TestConfig.test_did
-        mock_request.did_doc_attach = async_mock.MagicMock(
-            data=async_mock.MagicMock(
-                verify=async_mock.CoroutineMock(return_value=True),
-                signed=async_mock.MagicMock(
-                    decode=async_mock.MagicMock(return_value="dummy-did-doc")
-                ),
-            )
+        mock_request = async_mock.MagicMock(
+            did=TestConfig.test_did,
+            did_doc_attach=async_mock.MagicMock(
+                data=async_mock.MagicMock(
+                    verify=async_mock.CoroutineMock(return_value=True),
+                    signed=async_mock.MagicMock(
+                        decode=async_mock.MagicMock(return_value="dummy-did-doc")
+                    ),
+                )
+            ),
+            _thread=async_mock.MagicMock(pthid="dummy-pthid"),
         )
+
         receipt = MessageReceipt(
             recipient_did=TestConfig.test_did,
             recipient_did_public=False,
@@ -576,10 +562,6 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
         with async_mock.patch.object(
             test_module, "ConnRecord", async_mock.MagicMock()
         ) as mock_conn_rec, async_mock.patch.object(
-            test_module.OOBInvitationRecord,
-            "retrieve_by_tag_filter",
-            async_mock.CoroutineMock(),
-        ) as mock_oob_invi_rec_retrieve, async_mock.patch.object(
             test_module, "DIDDoc", autospec=True
         ) as mock_did_doc, async_mock.patch.object(
             test_module, "AttachDecorator", autospec=True
@@ -597,9 +579,6 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 retrieve_request=async_mock.CoroutineMock(),
                 save=async_mock.CoroutineMock(),
                 metadata_set=async_mock.CoroutineMock(),
-            )
-            mock_oob_invi_rec_retrieve.return_value = async_mock.MagicMock(
-                auto_accept=False,
             )
             mock_did_doc.from_json = async_mock.MagicMock(
                 return_value=async_mock.MagicMock(did=TestConfig.test_did)
@@ -624,47 +603,50 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
         multiuse_info = await self.session.wallet.create_local_did()
         new_info = await self.session.wallet.create_local_did()
 
-        mock_request = async_mock.MagicMock()
-        mock_request.did = TestConfig.test_did
-        mock_request.did_doc_attach = async_mock.MagicMock(
-            data=async_mock.MagicMock(
-                verify=async_mock.CoroutineMock(return_value=True),
-                signed=async_mock.MagicMock(
-                    decode=async_mock.MagicMock(return_value="dummy-did-doc")
-                ),
-            )
+        mock_request = async_mock.MagicMock(
+            did=TestConfig.test_did,
+            did_doc_attach=async_mock.MagicMock(
+                data=async_mock.MagicMock(
+                    verify=async_mock.CoroutineMock(return_value=True),
+                    signed=async_mock.MagicMock(
+                        decode=async_mock.MagicMock(return_value="dummy-did-doc")
+                    ),
+                )
+            ),
+            _thread=async_mock.MagicMock(pthid="dummy-pthid"),
         )
         receipt = MessageReceipt(recipient_verkey=multiuse_info.verkey)
 
         self.context.update_settings(
             {"wallet.id": "test_wallet", "multitenant.enabled": True}
         )
+        ACCEPT_MANUAL = ConnRecord.ACCEPT_MANUAL
         with async_mock.patch.object(
-            ConnRecord, "attach_request", autospec=True
-        ), async_mock.patch.object(
-            ConnRecord, "save", autospec=True
-        ), async_mock.patch.object(
-            ConnRecord, "retrieve_by_invitation_key"
-        ) as mock_conn_retrieve_by_invitation_key, async_mock.patch.object(
-            InvitationRecord, "retrieve_by_tag_filter"
-        ) as mock_inv_retrieve_by_tag_filter, async_mock.patch.object(
+            test_module, "ConnRecord", autospec=True
+        ) as mock_conn_rec_cls, async_mock.patch.object(
             InMemoryWallet, "create_local_did", autospec=True
         ) as mock_wallet_create_local_did, async_mock.patch.object(
             test_module, "DIDDoc", autospec=True
         ) as mock_did_doc:
+            mock_conn_rec = async_mock.CoroutineMock(
+                connection_id="dummy",
+                accept=ACCEPT_MANUAL,
+                is_multiuse_invitation=True,
+                attach_request=async_mock.CoroutineMock(),
+                save=async_mock.CoroutineMock(),
+                retrieve_invitation=async_mock.CoroutineMock(return_value={}),
+                metadata_get_all=async_mock.CoroutineMock(return_value={}),
+                retrieve_request=async_mock.CoroutineMock(),
+            )
+            mock_conn_rec_cls.return_value = mock_conn_rec
+            mock_conn_rec_cls.retrieve_by_invitation_key = async_mock.CoroutineMock(
+                return_value=mock_conn_rec
+            )
             mock_wallet_create_local_did.return_value = DIDInfo(
                 new_info.did, new_info.verkey, None
             )
             mock_did_doc.from_json = async_mock.MagicMock(
                 return_value=async_mock.MagicMock(did=TestConfig.test_did)
-            )
-            mock_conn_retrieve_by_invitation_key.return_value = async_mock.MagicMock(
-                connection_id="dummy",
-                retrieve_invitation=async_mock.CoroutineMock(return_value={}),
-                metadata_get_all=async_mock.CoroutineMock(return_value={}),
-            )
-            mock_inv_retrieve_by_tag_filter.return_value = async_mock.MagicMock(
-                auto_accept=False
             )
             await self.manager.receive_request(mock_request, receipt)
 
@@ -675,15 +657,17 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
     async def test_receive_request_public_multitenant(self):
         new_info = await self.session.wallet.create_local_did()
 
-        mock_request = async_mock.MagicMock()
-        mock_request.did = TestConfig.test_did
-        mock_request.did_doc_attach = async_mock.MagicMock(
-            data=async_mock.MagicMock(
-                verify=async_mock.CoroutineMock(return_value=True),
-                signed=async_mock.MagicMock(
-                    decode=async_mock.MagicMock(return_value="dummy-did-doc")
-                ),
-            )
+        mock_request = async_mock.MagicMock(
+            did=TestConfig.test_did,
+            did_doc_attach=async_mock.MagicMock(
+                data=async_mock.MagicMock(
+                    verify=async_mock.CoroutineMock(return_value=True),
+                    signed=async_mock.MagicMock(
+                        decode=async_mock.MagicMock(return_value="dummy-did-doc")
+                    ),
+                )
+            ),
+            _thread=async_mock.MagicMock(pthid="did:sov:publicdid0000000000000"),
         )
         receipt = MessageReceipt(recipient_did_public=True)
 
@@ -692,22 +676,35 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 "wallet.id": "test_wallet",
                 "multitenant.enabled": True,
                 "public_invites": True,
+                "debug.auto_accept_requests_public": False,
             }
         )
 
+        ACCEPT_MANUAL = ConnRecord.ACCEPT_MANUAL
         with async_mock.patch.object(
-            ConnRecord, "attach_request", autospec=True
-        ), async_mock.patch.object(
-            ConnRecord, "save", autospec=True
-        ), async_mock.patch.object(
+            test_module, "ConnRecord", autospec=True
+        ) as mock_conn_rec_cls, async_mock.patch.object(
             InMemoryWallet, "create_local_did", autospec=True
         ) as mock_wallet_create_local_did, async_mock.patch.object(
             InMemoryWallet, "get_local_did", autospec=True
         ) as mock_wallet_get_local_did, async_mock.patch.object(
-            InvitationRecord, "retrieve_by_tag_filter"
-        ) as mock_inv_retrieve_by_tag_filter, async_mock.patch.object(
             test_module, "DIDDoc", autospec=True
         ) as mock_did_doc:
+            mock_conn_rec = async_mock.CoroutineMock(
+                connection_id="dummy",
+                accept=ACCEPT_MANUAL,
+                is_multiuse_invitation=False,
+                attach_request=async_mock.CoroutineMock(),
+                save=async_mock.CoroutineMock(),
+                retrieve_invitation=async_mock.CoroutineMock(return_value={}),
+                metadata_get_all=async_mock.CoroutineMock(return_value={}),
+                retrieve_request=async_mock.CoroutineMock(),
+            )
+            mock_conn_rec_cls.return_value = mock_conn_rec
+            mock_conn_rec_cls.retrieve_by_invitation_key = async_mock.CoroutineMock(
+                return_value=mock_conn_rec
+            )
+
             mock_wallet_create_local_did.return_value = DIDInfo(
                 new_info.did, new_info.verkey, None
             )
@@ -717,9 +714,6 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             mock_wallet_get_local_did.return_value = DIDInfo(
                 self.test_did, self.test_verkey, None
             )
-            mock_inv_retrieve_by_tag_filter.return_value = async_mock.MagicMock(
-                auto_accept=False
-            )
             await self.manager.receive_request(mock_request, receipt)
 
             self.multitenant_mgr.add_key.assert_called_once_with(
@@ -727,16 +721,19 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             )
 
     async def test_receive_request_peer_did_not_found_x(self):
-        mock_request = async_mock.MagicMock()
-        mock_request.did = TestConfig.test_did
-        mock_request.did_doc_attach = async_mock.MagicMock(
-            data=async_mock.MagicMock(
-                verify=async_mock.CoroutineMock(return_value=True),
-                signed=async_mock.MagicMock(
-                    decode=async_mock.MagicMock(return_value="dummy-did-doc")
-                ),
-            )
+        mock_request = async_mock.MagicMock(
+            did=TestConfig.test_did,
+            did_doc_attach=async_mock.MagicMock(
+                data=async_mock.MagicMock(
+                    verify=async_mock.CoroutineMock(return_value=True),
+                    signed=async_mock.MagicMock(
+                        decode=async_mock.MagicMock(return_value="dummy-did-doc")
+                    ),
+                )
+            ),
+            _thread=async_mock.MagicMock(pthid="dummy-pthid"),
         )
+
         receipt = MessageReceipt(
             recipient_did=TestConfig.test_did,
             recipient_did_public=False,
@@ -747,11 +744,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
 
         with async_mock.patch.object(
             test_module, "ConnRecord", async_mock.MagicMock()
-        ) as mock_conn_rec, async_mock.patch.object(
-            test_module.OOBInvitationRecord,
-            "retrieve_by_tag_filter",
-            async_mock.CoroutineMock(),
-        ) as mock_oob_invi_rec_retrieve:
+        ) as mock_conn_rec:
             mock_conn_rec.retrieve_by_invitation_key = async_mock.CoroutineMock(
                 side_effect=StorageNotFoundError()
             )
