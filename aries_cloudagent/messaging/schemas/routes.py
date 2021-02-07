@@ -131,33 +131,54 @@ async def schemas_send_schema(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     auto_endorse = json.loads(request.query.get("auto_endorse", "true"))
 
-    if auto_endorse:
-        body = await request.json()
+    body = await request.json()
 
-        schema_name = body.get("schema_name")
-        schema_version = body.get("schema_version")
-        attributes = body.get("attributes")
+    schema_name = body.get("schema_name")
+    schema_version = body.get("schema_version")
+    attributes = body.get("attributes")
 
-        ledger = context.inject(BaseLedger, required=False)
-        if not ledger:
-            reason = "No ledger available"
-            if not context.settings.get_value("wallet.type"):
-                reason += ": missing wallet-type?"
-            raise web.HTTPForbidden(reason=reason)
+    ledger = context.inject(BaseLedger, required=False)
+    if not ledger:
+        reason = "No ledger available"
+        if not context.settings.get_value("wallet.type"):
+            reason += ": missing wallet-type?"
+        raise web.HTTPForbidden(reason=reason)
 
-        issuer = context.inject(IndyIssuer)
-        async with ledger:
-            try:
-                schema_id, schema_def = await shield(
-                    ledger.create_and_send_schema(
-                        issuer, schema_name, schema_version, attributes
-                    )
+    issuer = context.inject(IndyIssuer)
+    async with ledger:
+        try:
+            # if not auto_endorse, then the returned "schema_def" is actually the signed transaction
+            schema_id, schema_def = await shield(
+                ledger.create_and_send_schema(
+                    issuer, schema_name, schema_version, attributes, write_ledger=auto_endorse,
                 )
-            except (IndyIssuerError, LedgerError) as err:
-                raise web.HTTPBadRequest(reason=err.roll_up) from err
+            )
+        except (IndyIssuerError, LedgerError) as err:
+            raise web.HTTPBadRequest(reason=err.roll_up) from err
 
+    if auto_endorse:
         return web.json_response({"schema_id": schema_id, "schema": schema_def})
+    else:
+        session = await context.session()
 
+        print("creating transaction with:", schema_def)
+        transaction_mgr = TransactionManager(session)
+
+        # ignore all parameters except the last one (which is the signed ledger transaction)
+        transaction = await transaction_mgr.create_record(
+            author_did="",
+            author_verkey="",
+            transaction_message={},
+            transaction_type="101",
+            mechanism="",
+            taaDigest={},
+            time=0,
+            expires_time="1597708800",
+            messages_attach=schema_def,
+        )
+
+        return web.json_response(transaction.serialize())
+    """
     else:
         transaction_message = await request.json()
         session = await context.session()
@@ -222,7 +243,7 @@ async def schemas_send_schema(request: web.BaseRequest):
         )
 
         return web.json_response(transaction.serialize())
-
+    """
 
 @docs(
     tags=["schema"],

@@ -167,6 +167,7 @@ class IndySdkLedgerPool:
         with IndyErrorHandler(
             f"Exception opening pool ledger {self.name}", LedgerConfigError
         ):
+            print(">>> Open pool ledger")
             self.handle = await indy.pool.open_pool_ledger(self.name, "{}")
         self.opened = True
 
@@ -176,6 +177,7 @@ class IndySdkLedgerPool:
             exc = None
             for attempt in range(3):
                 try:
+                    print(">>> Closing pool ledger")
                     await indy.pool.close_pool_ledger(self.handle)
                 except IndyError as err:
                     await asyncio.sleep(0.01)
@@ -202,6 +204,7 @@ class IndySdkLedgerPool:
                 self.close_task.cancel()
             if not self.opened:
                 LOGGER.debug("Opening the pool ledger")
+                print(">>> Opening the pool ledger")
                 await self.open()
             self.ref_count += 1
 
@@ -214,6 +217,7 @@ class IndySdkLedgerPool:
             async with self.ref_lock:
                 if not self.ref_count:
                     LOGGER.debug("Closing pool ledger after timeout")
+                    print(">>> Closing pool ledger after timeout")
                     await self.close()
 
         async with self.ref_lock:
@@ -277,12 +281,32 @@ class IndySdkLedger(BaseLedger):
         await self.pool.context_close()
         await super().__aexit__(exc_type, exc, tb)
 
+    async def _endorse(
+        self,
+        request_json: str,
+    ) -> str:
+
+        if not self.pool.handle:
+            raise ClosedPoolError(
+                f"Cannot endorse request with closed pool '{self.pool.name}'"
+            )
+
+        public_info = await self.wallet.get_public_did()
+        if not public_info:
+            raise BadLedgerRequestError("Cannot endorse transaction without a public DID")
+
+        endorsed_request_json = await indy.ledger.multi_sign_request(
+            self.wallet.opened.handle, public_info.did, request_json
+        )
+        return json.loads(endorsed_request_json)
+
     async def _submit(
         self,
         request_json: str,
         sign: bool = None,
         taa_accept: bool = None,
         sign_did: DIDInfo = sentinel,
+        write_ledger: bool = True,
     ) -> str:
         """
         Sign and submit request to ledger.
@@ -325,16 +349,29 @@ class IndySdkLedger(BaseLedger):
                             acceptance["time"],
                         )
                     )
-            submit_op = indy.ledger.sign_and_submit_request(
-                self.pool.handle, self.wallet.opened.handle, sign_did.did, request_json
-            )
+            if write_ledger:
+                print("Signing and Submitting:", request_json)
+                submit_op = indy.ledger.sign_and_submit_request(
+                    self.pool.handle, self.wallet.opened.handle, sign_did.did, request_json
+                )
+            else:
+                # multi-sign, since we expect this to get endorsed later
+                print("Signing:", request_json)
+                submit_op = indy.ledger.multi_sign_request(
+                    self.wallet.opened.handle, sign_did.did, request_json
+                )
         else:
+            print("Submitting:", request_json)
             submit_op = indy.ledger.submit_request(self.pool.handle, request_json)
 
         with IndyErrorHandler(
             "Exception raised by ledger transaction", LedgerTransactionError
         ):
             request_result_json = await submit_op
+
+        if sign and not write_ledger:
+            print("returning signed result:", request_result_json)
+            return request_result_json
 
         request_result = json.loads(request_result_json)
 
@@ -352,6 +389,21 @@ class IndySdkLedger(BaseLedger):
             raise LedgerTransactionError(
                 f"Unexpected operation code from ledger: {operation}"
             )
+
+    async def txn_endorse(
+        self,
+        request_json: str,
+    ) -> str:
+        return await self._endorse(request_json)
+
+    async def txn_submit(
+        self,
+        request_json: str,
+        sign: bool = None,
+        taa_accept: bool = None,
+        sign_did: DIDInfo = sentinel,
+    ) -> str:
+        return await self._submit(request_json, sign=sign, taa_accept=taa_accept, sign_did=sign_did)
 
     # todo - implementing changes for writing final transaction to the ledger
     # (For Sign Transaction Protocol)
@@ -380,13 +432,12 @@ class IndySdkLedger(BaseLedger):
 
         # Error here while signing the already signed request from transaction author
         if signed_request:
-            signed_request_json = await indy.ledger.sign_request(
-                self.wallet.opened.handle, public_info.did, signed_request
+            signed_request_json = await indy.ledger.multi_sign_request(
+                self.wallet.opened.handle, public_info.did, json.dumps(signed_request)
             )
-            return signed_request_json
+            return json.loads(signed_request_json)
 
         else:
-
             schema_info = await self.check_existing_schema(
                 public_info.did, schema_name, schema_version, attribute_names
             )
@@ -426,6 +477,7 @@ class IndySdkLedger(BaseLedger):
         schema_name: str,
         schema_version: str,
         attribute_names: Sequence[str],
+        write_ledger: bool = True,
     ) -> Tuple[str, dict]:
         """
         Send schema to ledger.
@@ -471,7 +523,9 @@ class IndySdkLedger(BaseLedger):
                 )
 
             try:
-                resp = await self._submit(request_json, True, sign_did=public_info)
+                resp = await self._submit(request_json, True, sign_did=public_info, write_ledger=write_ledger)
+                if not write_ledger:
+                    return schema_id, json.loads(resp)
                 try:
                     # parse sequence number out of response
                     seq_no = json.loads(resp)["result"]["txnMetadata"]["seqNo"]

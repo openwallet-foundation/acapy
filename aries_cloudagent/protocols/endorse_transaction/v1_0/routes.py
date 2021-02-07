@@ -199,6 +199,8 @@ async def transaction_create_request(request: web.BaseRequest):
 
     transaction_mgr = TransactionManager(session)
 
+    """
+    # we already have a signed transaction attached, we just need to send it to the issuer
     if (
         transaction_record.messages_attach[0]["data"]["json"]["operation"]["type"]
         == "101"
@@ -247,12 +249,16 @@ async def transaction_create_request(request: web.BaseRequest):
 
     else:
         pass
+    """
 
     transaction_mgr = TransactionManager(session)
 
     (transaction_record, transaction_request) = await transaction_mgr.create_request(
         transaction=transaction_record, connection_id=connection_id
     )
+
+    print(":transaction_record", transaction_record)
+    print("transaction_request:", transaction_request)
 
     await outbound_handler(
         transaction_request, connection_id=connection_record.connection_id
@@ -327,6 +333,8 @@ async def endorse_transaction_response(request: web.BaseRequest):
 
     transaction_mgr = TransactionManager(session)
 
+    """
+    # don't do any transaction_type-specific logic, just endorse the transaction
     if transaction.messages_attach[0]["data"]["json"]["operation"]["type"] == "101":
 
         ledger = context.inject(BaseLedger, required=False)
@@ -341,6 +349,7 @@ async def endorse_transaction_response(request: web.BaseRequest):
                 signed_schema_request = await shield(
                     ledger.create_schema(signed_request=schema_json)
                 )
+                print("signed_schema_request:", signed_schema_request)
             except (IndyIssuerError, LedgerError) as err:
                 raise web.HTTPBadRequest(reason=err.roll_up) from err
 
@@ -352,7 +361,7 @@ async def endorse_transaction_response(request: web.BaseRequest):
             state=TransactionRecord.STATE_TRANSACTION_ENDORSED,
             endorser_did=endorser_did,
             endorser_verkey=endorser_verkey,
-            signature=signed_schema_request["signature"],
+            signature=signed_schema_request["signatures"][endorser_did],
         )
 
         await outbound_handler(
@@ -363,6 +372,20 @@ async def endorse_transaction_response(request: web.BaseRequest):
 
     else:
         pass
+    """
+
+    ledger = context.inject(BaseLedger, required=False)
+
+    transaction_json = transaction.messages_attach[0]["data"]["json"]
+
+    async with ledger:
+        try:
+            endorsed_transaction_request = await shield(
+                ledger.txn_endorse(json.dumps(transaction_json))
+            )
+            print("endorsed_transaction_request:", endorsed_transaction_request)
+        except (IndyIssuerError, LedgerError) as err:
+            raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     (
         transaction,
@@ -372,6 +395,7 @@ async def endorse_transaction_response(request: web.BaseRequest):
         state=TransactionRecord.STATE_TRANSACTION_ENDORSED,
         endorser_did=endorser_did,
         endorser_verkey=endorser_verkey,
+        signature=endorsed_transaction_request["signatures"][endorser_did],
     )
 
     await outbound_handler(
@@ -681,6 +705,34 @@ async def transaction_write(request: web.BaseRequest):
             reason="Only an endorsed transaction can be written to the ledger"
         )
 
+    ledger_transaction = transaction.messages_attach[0]["data"]["json"]
+    print("ledger_transaction:", ledger_transaction)
+    endorsed_signature = transaction.signature_response[0]
+    print("endorsed_signature:", endorsed_signature)
+    for endorser_did in endorsed_signature["signature"].keys():
+        ledger_transaction["signatures"][endorser_did] = endorsed_signature["signature"][endorser_did]
+    print("signed ledger_transaction:", ledger_transaction)
+
+    ledger = context.inject(BaseLedger, required=False)
+    if not ledger:
+        reason = "No ledger available"
+        if not context.settings.get_value("wallet.type"):
+            reason += ": missing wallet-type?"
+        raise web.HTTPForbidden(reason=reason)
+
+    async with ledger:
+        try:
+            print("Writing to ledger ...", json.dumps(ledger_transaction))
+            ledger_response = await shield(
+                ledger.txn_submit(json.dumps(ledger_transaction), sign=False, taa_accept=False)
+            )
+            print("ledger_response:", ledger_response)
+        except (IndyIssuerError, LedgerError) as err:
+            raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+    return web.json_response(json.loads(ledger_response))
+
+    """
     body = transaction.messages_attach[0]["data"]["json"]["operation"]["data"]
 
     if transaction.messages_attach[0]["data"]["json"]["operation"]["type"] == "101":
@@ -796,7 +848,7 @@ async def transaction_write(request: web.BaseRequest):
                 raise web.HTTPBadRequest(reason=e.message) from e
 
         return web.json_response({"credential_definition_id": cred_def_id})
-
+    """
 
 async def register(app: web.Application):
     """Register routes."""

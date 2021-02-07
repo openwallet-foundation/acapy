@@ -2,6 +2,7 @@
 
 from aiohttp import web
 import logging
+import uuid
 
 from .models.transaction_record import TransactionRecord
 from .messages.transaction_request import TransactionRequest
@@ -58,6 +59,7 @@ class TransactionManager:
         taaDigest: str,
         time: int,
         expires_time: str,
+        messages_attach: dict,
     ):
         """
         Create a new Transaction Record.
@@ -71,6 +73,7 @@ class TransactionManager:
 
         """
 
+        """
         messages_attach = MessagesAttach(
             author_did=author_did,
             author_verkey=author_verkey,
@@ -80,7 +83,9 @@ class TransactionManager:
             taaDigest=taaDigest,
             time=time,
         )
-        messages_attach_dict = messages_attach.__dict__
+        """
+        messages_attach["_id"] = str(uuid.uuid4())
+        messages_attach_dict = {"data": {"json": messages_attach}}
 
         transaction = TransactionRecord()
 
@@ -88,7 +93,7 @@ class TransactionManager:
         transaction.timing = timing
 
         formats = {
-            "attach_id": messages_attach._id,
+            "attach_id": messages_attach["_id"],
             "format": TransactionRecord.FORMAT_VERSION,
         }
         transaction.formats.clear()
@@ -176,6 +181,8 @@ class TransactionManager:
             connection_id: The connection id related to this transaction record
         """
 
+        print("Request received:", request)
+
         transaction = TransactionRecord()
 
         transaction._type = TransactionRecord.SIGNATURE_REQUEST
@@ -184,7 +191,7 @@ class TransactionManager:
         transaction.timing = request.timing
 
         format = {
-            "attach_id": request.messages_attach["_message_id"],
+            "attach_id": request.messages_attach["data"]["json"]["_id"],
             "format": TransactionRecord.FORMAT_VERSION,
         }
         transaction.formats.clear()
@@ -235,15 +242,17 @@ class TransactionManager:
 
         transaction._type = TransactionRecord.SIGNATURE_RESPONSE
 
-        transaction.messages_attach[0]["data"]["json"]["endorser"] = endorser_did
+        # don't modify the transaction payload
+        #transaction.messages_attach[0]["data"]["json"]["endorser"] = endorser_did
 
         if signature:
-            author_did = transaction.messages_attach[0]["data"]["json"]["identifier"]
-            transaction.messages_attach[0]["data"]["json"]["signature"][
-                author_did
-            ] = signature
+            # don't modify the transaction payload
+            #author_did = transaction.messages_attach[0]["data"]["json"]["identifier"]
+            #transaction.messages_attach[0]["data"]["json"]["signatures"][
+            #    author_did
+            #] = signature
             signature_response = {
-                "message_id": transaction.messages_attach[0]["_message_id"],
+                "message_id": transaction.messages_attach[0]["data"]["json"]["_id"],
                 "context": TransactionRecord.SIGNATURE_CONTEXT,
                 "method": TransactionRecord.ADD_SIGNATURE,
                 "signer_goal_code": TransactionRecord.ENDORSE_TRANSACTION,
@@ -253,7 +262,7 @@ class TransactionManager:
 
         else:
             signature_response = {
-                "message_id": transaction.messages_attach[0]["_message_id"],
+                "message_id": transaction.messages_attach[0]["data"]["json"]["_id"],
                 "context": TransactionRecord.SIGNATURE_CONTEXT,
                 "method": TransactionRecord.ADD_SIGNATURE,
                 "signer_goal_code": TransactionRecord.ENDORSE_TRANSACTION,
@@ -309,8 +318,8 @@ class TransactionManager:
 
         author_did = transaction.messages_attach[0]["data"]["json"]["identifier"]
         endorser_did = response.endorser_did
-        transaction.messages_attach[0]["data"]["json"]["signature"][
-            author_did
+        transaction.messages_attach[0]["data"]["json"]["signatures"][
+            endorser_did
         ] = response.signature_response["signature"][endorser_did]
 
         async with profile_session.profile.session() as session:
@@ -347,7 +356,7 @@ class TransactionManager:
         transaction._type = TransactionRecord.SIGNATURE_RESPONSE
 
         signature_response = {
-            "message_id": transaction.messages_attach[0]["_message_id"],
+            "message_id": transaction.messages_attach[0]["data"]["json"]["_id"],
             "context": TransactionRecord.SIGNATURE_CONTEXT,
             "method": TransactionRecord.ADD_SIGNATURE,
             "signer_goal_code": TransactionRecord.REFUSE_TRANSACTION,

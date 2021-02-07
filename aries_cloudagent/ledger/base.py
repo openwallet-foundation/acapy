@@ -3,10 +3,12 @@
 import re
 
 from abc import ABC, abstractmethod, ABCMeta
+from collections import namedtuple
 from enum import Enum
 from typing import Sequence, Tuple, Union
 
 from ..indy.issuer import IndyIssuer
+from ..utils import sentinel
 
 from .endpoint_type import EndpointType
 
@@ -132,12 +134,32 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         """Generate the digest of a TAA record."""
 
     @abstractmethod
+    async def txn_endorse(
+        self,
+        request_json: str,
+    ) -> str:
+        """
+        """
+
+    @abstractmethod
+    async def txn_submit(
+        self,
+        request_json: str,
+        sign: bool,
+        taa_accept: bool,
+        sign_did: namedtuple("DIDInfo", "did verkey metadata"),
+    ) -> str:
+        """
+        """
+
+    @abstractmethod
     async def create_and_send_schema(
         self,
         issuer: IndyIssuer,
         schema_name: str,
         schema_version: str,
         attribute_names: Sequence[str],
+        write_ledger: bool = True,
     ) -> Tuple[str, dict]:
         """
         Send schema to ledger.
