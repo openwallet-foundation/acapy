@@ -17,10 +17,10 @@ aries\_cloudagent\.cache\.base module
     :undoc-members:
     :show-inheritance:
 
-aries\_cloudagent\.cache\.basic module
---------------------------------------
+aries\_cloudagent\.cache\.in\_memory module
+-------------------------------------------
 
-.. automodule:: aries_cloudagent.cache.basic
+.. automodule:: aries_cloudagent.cache.in_memory
     :members:
     :undoc-members:
     :show-inheritance:

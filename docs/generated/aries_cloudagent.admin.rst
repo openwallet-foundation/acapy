@@ -25,6 +25,14 @@ aries\_cloudagent\.admin\.error module
     :undoc-members:
     :show-inheritance:
 
+aries\_cloudagent\.admin\.request\_context module
+-------------------------------------------------
+
+.. automodule:: aries_cloudagent.admin.request_context
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 aries\_cloudagent\.admin\.server module
 ---------------------------------------
 
