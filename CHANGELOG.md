@@ -2,19 +2,19 @@
 
 ## February 5, 2021
 
-This is a significant release of ACA-py with several new features, as well as changes to the internal architecture in order to set the groundwork for using the new shared component libraries: [indy-vdr](https://github.com/hyperledger/indy-vdr), [indy-credx](https://github.com/hyperledger/indy-shared-rs), and [aries-askar](https://github.com/hyperledger/aries-askar).
+This is a significant release of ACA-Py with several new features, as well as changes to the internal architecture in order to set the groundwork for using the new shared component libraries: [indy-vdr](https://github.com/hyperledger/indy-vdr), [indy-credx](https://github.com/hyperledger/indy-shared-rs), and [aries-askar](https://github.com/hyperledger/aries-askar).
 
 ### Mediator support
 
-While ACA-py had previous support for a basic routing protocol, this was never fully developed or used in practice. Starting with this release, inbound and outbound connections can be established through a mediator agent using the Aries (Mediator Coordination Protocol)[https://github.com/hyperledger/aries-rfcs/tree/master/features/0211-route-coordination]. This work was initially contributed by Adam Burdett and Daniel Bluhm on behalf of SICPA. [Read more about mediation support](./Mediation.md).
+While ACA-Py had previous support for a basic routing protocol, this was never fully developed or used in practice. Starting with this release, inbound and outbound connections can be established through a mediator agent using the Aries (Mediator Coordination Protocol)[https://github.com/hyperledger/aries-rfcs/tree/master/features/0211-route-coordination]. This work was initially contributed by Adam Burdett and Daniel Bluhm of [Indicio](https://indicio.tech/) on behalf of [SICPA](https://sicpa.com/). [Read more about mediation support](./Mediation.md).
 
 ### Multi-Tenancy support
 
-Initially contributed by ANIMO Solutions, this feature allows for a single ACA-py instance to host multiple wallet instances. This can greatly reduce the resources required when many identities are being handled. [Read more about multi-tenancy support](./Multitenancy.md).
+Started by [BMW](https://bmw.com/) and completed by [Animo Solutions](https://animo.id/) and [Anon Solutions](https://anon-solutions.ca/) on behalf of [SICPA](https://sicpa.com/), this feature allows for a single ACA-Py instance to host multiple wallet instances. This can greatly reduce the resources required when many identities are being handled. [Read more about multi-tenancy support](./Multitenancy.md).
 
 ### New connection protocol(s)
 
-In addition to the Aries 0160 Connections RFC, ACA-py now supports the Aries [DID Exchange Protocol](https://github.com/hyperledger/aries-rfcs/tree/master/features/0023-did-exchange) for connection establishment and reuse, as well as the Aries [Out-of-Band Protocol](https://github.com/hyperledger/aries-rfcs/tree/master/features/0434-outofband) for representing connection invitations and other pre-connection requests.
+In addition to the Aries 0160 Connections RFC, ACA-Py now supports the Aries [DID Exchange Protocol](https://github.com/hyperledger/aries-rfcs/tree/master/features/0023-did-exchange) for connection establishment and reuse, as well as the Aries [Out-of-Band Protocol](https://github.com/hyperledger/aries-rfcs/tree/master/features/0434-outofband) for representing connection invitations and other pre-connection requests.
 
 ### Issue-Credential v2
 
@@ -31,6 +31,8 @@ This release includes an initial implementation of the Aries [Issue Credential v
 - The logic around revocation intervals has been tightened up in accordance with [Present Proof Best Practices](https://github.com/hyperledger/aries-rfcs/tree/master/concepts/0441-present-proof-best-practices).
 
 ### Notable changes for plugin writers
+
+The following are breaking changes to the internal APIs which may impact Python code extensions.
 
 - Manager classes generally accept a `Profile` instance, where previously they accepted a `RequestContext`.
 
