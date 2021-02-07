@@ -221,11 +221,11 @@ async def transaction_create_request(request: web.BaseRequest):
 
         async with ledger:
             try:
-                schema_request = await shield(
-                    ledger.create_schema(
-                        issuer, schema_name, schema_version, attributes
-                    )
-                )
+                #schema_request = await shield(
+                #    ledger.create_schema(
+                #        issuer, schema_name, schema_version, attributes
+                #    )
+                #)
             except (IndyIssuerError, LedgerError) as err:
                 raise web.HTTPBadRequest(reason=err.roll_up) from err
 
@@ -346,10 +346,10 @@ async def endorse_transaction_response(request: web.BaseRequest):
 
         async with ledger:
             try:
-                signed_schema_request = await shield(
-                    ledger.create_schema(signed_request=schema_json)
-                )
-                print("signed_schema_request:", signed_schema_request)
+                #signed_schema_request = await shield(
+                #    ledger.create_schema(signed_request=schema_json)
+                #)
+                #print("signed_schema_request:", signed_schema_request)
             except (IndyIssuerError, LedgerError) as err:
                 raise web.HTTPBadRequest(reason=err.roll_up) from err
 
@@ -381,7 +381,7 @@ async def endorse_transaction_response(request: web.BaseRequest):
     async with ledger:
         try:
             endorsed_transaction_request = await shield(
-                ledger.txn_endorse(json.dumps(transaction_json))
+                ledger.txn_endorse(transaction_json)
             )
             print("endorsed_transaction_request:", endorsed_transaction_request)
         except (IndyIssuerError, LedgerError) as err:
@@ -395,7 +395,8 @@ async def endorse_transaction_response(request: web.BaseRequest):
         state=TransactionRecord.STATE_TRANSACTION_ENDORSED,
         endorser_did=endorser_did,
         endorser_verkey=endorser_verkey,
-        signature=endorsed_transaction_request["signatures"][endorser_did],
+        endorsed_msg=endorsed_transaction_request,
+        signature=endorsed_transaction_request,
     )
 
     await outbound_handler(
@@ -709,8 +710,9 @@ async def transaction_write(request: web.BaseRequest):
     print("ledger_transaction:", ledger_transaction)
     endorsed_signature = transaction.signature_response[0]
     print("endorsed_signature:", endorsed_signature)
-    for endorser_did in endorsed_signature["signature"].keys():
-        ledger_transaction["signatures"][endorser_did] = endorsed_signature["signature"][endorser_did]
+    # the returned attachment is updated with the signature
+    #for endorser_did in endorsed_signature["signature"].keys():
+    #    ledger_transaction["signatures"][endorser_did] = endorsed_signature["signature"][endorser_did]
     print("signed ledger_transaction:", ledger_transaction)
 
     ledger = context.inject(BaseLedger, required=False)
@@ -722,9 +724,9 @@ async def transaction_write(request: web.BaseRequest):
 
     async with ledger:
         try:
-            print("Writing to ledger ...", json.dumps(ledger_transaction))
+            print("Writing to ledger ...", ledger_transaction)
             ledger_response = await shield(
-                ledger.txn_submit(json.dumps(ledger_transaction), sign=False, taa_accept=False)
+                ledger.txn_submit(ledger_transaction, sign=False, taa_accept=False)
             )
             print("ledger_response:", ledger_response)
         except (IndyIssuerError, LedgerError) as err:

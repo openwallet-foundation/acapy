@@ -59,7 +59,7 @@ class TransactionManager:
         taaDigest: str,
         time: int,
         expires_time: str,
-        messages_attach: dict,
+        messages_attach: str,
     ):
         """
         Create a new Transaction Record.
@@ -84,8 +84,11 @@ class TransactionManager:
             time=time,
         )
         """
-        messages_attach["_id"] = str(uuid.uuid4())
-        messages_attach_dict = {"data": {"json": messages_attach}}
+        messages_attach_dict = {
+            "@id": str(uuid.uuid4()),
+            "mime-type": "application/json",
+            "data": {"json": messages_attach},
+        }
 
         transaction = TransactionRecord()
 
@@ -93,7 +96,7 @@ class TransactionManager:
         transaction.timing = timing
 
         formats = {
-            "attach_id": messages_attach["_id"],
+            "attach_id": messages_attach_dict["@id"],
             "format": TransactionRecord.FORMAT_VERSION,
         }
         transaction.formats.clear()
@@ -150,6 +153,8 @@ class TransactionManager:
         transaction.state = TransactionRecord.STATE_REQUEST_SENT
         transaction.connection_id = connection_id
 
+        """
+        # don't try to introspect the attached message, it's already signed we just need to forward along for endorsement
         if signature:
             author_did = transaction.messages_attach[0]["data"]["json"]["identifier"]
             transaction.messages_attach[0]["data"]["json"]["signatures"][
@@ -158,6 +163,7 @@ class TransactionManager:
             transaction.messages_attach[0]["data"]["json"]["reqId"] = signed_request[
                 "reqId"
             ]
+        """
 
         profile_session = await self.session
         async with profile_session.profile.session() as session:
@@ -191,7 +197,7 @@ class TransactionManager:
         transaction.timing = request.timing
 
         format = {
-            "attach_id": request.messages_attach["data"]["json"]["_id"],
+            "attach_id": request.messages_attach["@id"],
             "format": TransactionRecord.FORMAT_VERSION,
         }
         transaction.formats.clear()
@@ -217,6 +223,7 @@ class TransactionManager:
         state: str,
         endorser_did: str,
         endorser_verkey: str,
+        endorsed_msg: str = None,
         signature: str = None,
     ):
         """
@@ -242,8 +249,10 @@ class TransactionManager:
 
         transaction._type = TransactionRecord.SIGNATURE_RESPONSE
 
-        # don't modify the transaction payload
-        #transaction.messages_attach[0]["data"]["json"]["endorser"] = endorser_did
+        # don't modify the transaction payload?
+        if endorsed_msg:
+            # update - need to return the endorsed msg or else the ledger will reject the eventual write
+            transaction.messages_attach[0]["data"]["json"] = endorsed_msg
 
         if signature:
             # don't modify the transaction payload
@@ -252,7 +261,7 @@ class TransactionManager:
             #    author_did
             #] = signature
             signature_response = {
-                "message_id": transaction.messages_attach[0]["data"]["json"]["_id"],
+                "message_id": transaction.messages_attach[0]["@id"],
                 "context": TransactionRecord.SIGNATURE_CONTEXT,
                 "method": TransactionRecord.ADD_SIGNATURE,
                 "signer_goal_code": TransactionRecord.ENDORSE_TRANSACTION,
@@ -262,7 +271,7 @@ class TransactionManager:
 
         else:
             signature_response = {
-                "message_id": transaction.messages_attach[0]["data"]["json"]["_id"],
+                "message_id": transaction.messages_attach[0]["@id"],
                 "context": TransactionRecord.SIGNATURE_CONTEXT,
                 "method": TransactionRecord.ADD_SIGNATURE,
                 "signer_goal_code": TransactionRecord.ENDORSE_TRANSACTION,
@@ -299,6 +308,8 @@ class TransactionManager:
             response: The Endorsed Transaction Response
         """
 
+        print("received endorse response:", response)
+
         profile_session = await self.session
         async with profile_session.profile.session() as session:
             transaction = await TransactionRecord.retrieve_by_id(
@@ -312,15 +323,17 @@ class TransactionManager:
         transaction.signature_response.append(response.signature_response)
 
         transaction.thread_id = response.thread_id
-        transaction.messages_attach[0]["data"]["json"][
-            "endorser"
-        ] = response.endorser_did
+        #transaction.messages_attach[0]["data"]["json"][
+        #    "endorser"
+        #] = response.endorser_did
 
-        author_did = transaction.messages_attach[0]["data"]["json"]["identifier"]
+        #author_did = transaction.messages_attach[0]["data"]["json"]["identifier"]
         endorser_did = response.endorser_did
-        transaction.messages_attach[0]["data"]["json"]["signatures"][
-            endorser_did
-        ] = response.signature_response["signature"][endorser_did]
+        #transaction.messages_attach[0]["data"]["json"]["signatures"][
+        #    endorser_did
+        #] = response.signature_response["signature"][endorser_did]
+        # the returned signature is actually the endorsed ledger transaction
+        transaction.messages_attach[0]["data"]["json"] = response.signature_response["signature"][endorser_did]
 
         async with profile_session.profile.session() as session:
             await transaction.save(session, reason="Received an endorsed response")

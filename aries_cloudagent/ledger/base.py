@@ -160,6 +160,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         schema_version: str,
         attribute_names: Sequence[str],
         write_ledger: bool = True,
+        endorser_did: str = None,
     ) -> Tuple[str, dict]:
         """
         Send schema to ledger.

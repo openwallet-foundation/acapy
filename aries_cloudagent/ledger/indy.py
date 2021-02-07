@@ -298,7 +298,7 @@ class IndySdkLedger(BaseLedger):
         endorsed_request_json = await indy.ledger.multi_sign_request(
             self.wallet.opened.handle, public_info.did, request_json
         )
-        return json.loads(endorsed_request_json)
+        return endorsed_request_json
 
     async def _submit(
         self,
@@ -407,6 +407,7 @@ class IndySdkLedger(BaseLedger):
 
     # todo - implementing changes for writing final transaction to the ledger
     # (For Sign Transaction Protocol)
+    # note this function is NOT USED
     async def create_schema(
         self,
         issuer: IndyIssuer = None,
@@ -414,7 +415,7 @@ class IndySdkLedger(BaseLedger):
         schema_version: str = None,
         attribute_names: Sequence[str] = None,
         signed_request: dict = None,
-    ) -> Tuple[str, dict]:
+    ) -> str:
         """
         Send schema to ledger.
 
@@ -478,6 +479,7 @@ class IndySdkLedger(BaseLedger):
         schema_version: str,
         attribute_names: Sequence[str],
         write_ledger: bool = True,
+        endorser_did: str = None,
     ) -> Tuple[str, dict]:
         """
         Send schema to ledger.
@@ -523,9 +525,11 @@ class IndySdkLedger(BaseLedger):
                 )
 
             try:
+                if endorser_did and not write_ledger:
+                    request_json = await indy.ledger.append_request_endorser(request_json, endorser_did)
                 resp = await self._submit(request_json, True, sign_did=public_info, write_ledger=write_ledger)
                 if not write_ledger:
-                    return schema_id, json.loads(resp)
+                    return schema_id, {"signed_txn": resp}
                 try:
                     # parse sequence number out of response
                     seq_no = json.loads(resp)["result"]["txnMetadata"]["seqNo"]
