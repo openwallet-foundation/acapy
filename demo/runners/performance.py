@@ -141,7 +141,7 @@ class AliceAgent(BaseAgent):
         super().__init__("Alice", port, seed=None, **kwargs)
         self.extra_args = [
             "--auto-accept-invites",
-            "--auto-accept-requests",
+            "--auto-accept-requests-peer",
             "--auto-respond-credential-offer",
             "--auto-store-credential",
             "--monitor-ping",
@@ -157,7 +157,7 @@ class FaberAgent(BaseAgent):
         super().__init__("Faber", port, **kwargs)
         self.extra_args = [
             "--auto-accept-invites",
-            "--auto-accept-requests",
+            "--auto-accept-requests-peer",
             "--monitor-ping",
         ]
         self.schema_id = None
