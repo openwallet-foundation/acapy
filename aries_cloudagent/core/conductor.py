@@ -298,20 +298,41 @@ class Conductor:
         mediation_invitation = context.settings.get("mediation.invite")
         if mediation_invitation:
             try:
-                async with self.root_profile.session() as session:
-                    mgr = ConnectionManager(session)
-                    conn_record = await mgr.receive_invitation(
-                        invitation=ConnectionInvitation.from_url(mediation_invitation),
-                        auto_accept=True,
-                    )
-                    await conn_record.metadata_set(
-                        session, MediationManager.SEND_REQ_AFTER_CONNECTION, True
-                    )
-                    await conn_record.metadata_set(
-                        session, MediationManager.SET_TO_DEFAULT_ON_GRANTED, True
-                    )
-                    print("Attempting to connect to mediator...")
-                    del mgr
+                mediation_connections_invite = context.settings.get(
+                    "mediation.connections_invite", False
+                )
+                if mediation_connections_invite:
+                    async with self.root_profile.session() as session:
+                        mgr = ConnectionManager(session)
+                        conn_record = await mgr.receive_invitation(
+                            invitation=ConnectionInvitation.from_url(
+                                mediation_invitation
+                            ),
+                            auto_accept=True,
+                        )
+                        await conn_record.metadata_set(
+                            session, MediationManager.SEND_REQ_AFTER_CONNECTION, True
+                        )
+                        await conn_record.metadata_set(
+                            session, MediationManager.SET_TO_DEFAULT_ON_GRANTED, True
+                        )
+                        print("Attempting to connect to mediator...")
+                        del mgr
+                else:
+                    async with self.root_profile.session() as session:
+                        mgr = OutOfBandManager(session)
+                        conn_record = await mgr.receive_invitation(
+                            invi_msg=InvitationMessage.from_url(mediation_invitation),
+                            auto_accept=True,
+                        )
+                        await conn_record.metadata_set(
+                            session, MediationManager.SEND_REQ_AFTER_CONNECTION, True
+                        )
+                        await conn_record.metadata_set(
+                            session, MediationManager.SET_TO_DEFAULT_ON_GRANTED, True
+                        )
+                        print("Attempting to connect to mediator...")
+                        del mgr
             except Exception:
                 LOGGER.exception("Error accepting mediation invitation")
 
