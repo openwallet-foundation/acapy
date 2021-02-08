@@ -259,7 +259,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 INVITATION
             )
             assert not invi_rec.invitation.get("request~attach")
-            assert invi_rec.invitation["label"] == "This guy"
             assert (
                 DIDCommPrefix.qualify_current(HSProto.RFC23.name)
                 in invi_rec.invitation["handshake_protocols"]
@@ -300,6 +299,21 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 auto_accept=False,
             )
         assert "Cannot override auto-acceptance" in str(context.exception)
+
+    async def test_create_invitation_public_attach_x(self):
+        self.session.context.update_settings({"public_invites": True})
+
+        with self.assertRaises(OutOfBandManagerError) as context:
+            await self.manager.create_invitation(
+                my_endpoint=TestConfig.test_endpoint,
+                public=True,
+                hs_protos=[HSProto.RFC23],
+                auto_accept=None,
+                attachments=[{"type": "credential-offer", "id": "dummy-id"}],
+            )
+        assert "Cannot create public invitation with attachments" in str(
+            context.exception
+        )
 
     async def test_create_invitation_multitenant_local(self):
         self.session.context.update_settings(
@@ -439,7 +453,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             mock_retrieve_cxid_v1.side_effect = test_module.StorageNotFoundError()
             invi_rec = await self.manager.create_invitation(
                 my_endpoint=TestConfig.test_endpoint,
-                public=True,
+                public=False,
                 hs_protos=None,
                 multi_use=False,
                 attachments=[{"type": "credential-offer", "id": "dummy-id"}],

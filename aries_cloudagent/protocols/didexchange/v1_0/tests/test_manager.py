@@ -13,6 +13,8 @@ from .....connections.models.diddoc import (
     Service,
 )
 from .....core.in_memory import InMemoryProfile
+from .....ledger.base import BaseLedger
+from .....ledger.error import LedgerError
 from .....messaging.responder import BaseResponder, MockResponder
 from .....messaging.decorators.attach_decorator import AttachDecorator
 from .....multitenant.manager import MultitenantManager
@@ -83,6 +85,13 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
         self.context = self.session.context
 
         self.did_info = await self.session.wallet.create_local_did()
+
+        self.ledger = async_mock.create_autospec(BaseLedger)
+        self.ledger.__aenter__ = async_mock.CoroutineMock(return_value=self.ledger)
+        self.ledger.get_endpoint_for_did = async_mock.CoroutineMock(
+            return_value=TestConfig.test_endpoint
+        )
+        self.session.context.injector.bind_instance(BaseLedger, self.ledger)
 
         self.multitenant_mgr = async_mock.MagicMock(MultitenantManager, autospec=True)
         self.session.context.injector.bind_instance(
@@ -325,6 +334,80 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
         assert len(messages) == 1
         (result, target) = messages[0]
         assert "connection_id" in target
+
+    async def test_receive_request_implicit_no_invi_rec_ledger_x(self):
+        mock_request = async_mock.MagicMock(
+            did=TestConfig.test_did,
+            did_doc_attach=async_mock.MagicMock(
+                data=async_mock.MagicMock(
+                    verify=async_mock.CoroutineMock(return_value=True),
+                    signed=async_mock.MagicMock(
+                        decode=async_mock.MagicMock(return_value="dummy-did-doc")
+                    ),
+                )
+            ),
+            _thread=async_mock.MagicMock(pthid="did:sov:publicdid0000000000000"),
+        )
+        receipt = MessageReceipt(
+            recipient_did=TestConfig.test_did,
+            recipient_did_public=True,
+        )
+
+        await self.session.wallet.create_local_did(seed=None, did=TestConfig.test_did)
+
+        STATE_REQUEST = ConnRecord.State.REQUEST
+        self.session.context.update_settings({"public_invites": True})
+        ACCEPT_AUTO = ConnRecord.ACCEPT_AUTO
+        with async_mock.patch.object(
+            test_module, "ConnRecord", async_mock.MagicMock()
+        ) as mock_conn_rec_cls, async_mock.patch.object(
+            test_module, "DIDDoc", autospec=True
+        ) as mock_did_doc, async_mock.patch.object(
+            test_module, "AttachDecorator", autospec=True
+        ) as mock_attach_deco, async_mock.patch.object(
+            test_module, "DIDXResponse", autospec=True
+        ) as mock_response, async_mock.patch.object(
+            self.manager, "create_did_document", async_mock.CoroutineMock()
+        ) as mock_create_did_doc, async_mock.patch.object(
+            test_module, "OOBInvitationRecord", autospec=True
+        ) as mock_oob_invi_rec:
+            mock_oob_invi_rec.retrieve_by_public_did = async_mock.CoroutineMock(
+                side_effect=StorageNotFoundError()
+            )
+            mock_oob_invi_rec.create_and_save_public = async_mock.CoroutineMock(
+                side_effect=LedgerError()
+            )
+
+            mock_create_did_doc.return_value = async_mock.MagicMock(
+                serialize=async_mock.MagicMock(return_value={})
+            )
+
+            mock_conn_rec_cls.State.REQUEST = STATE_REQUEST
+            mock_conn_rec_cls.State.get = async_mock.MagicMock(
+                return_value=STATE_REQUEST
+            )
+            mock_conn_rec_cls.retrieve_by_id = async_mock.CoroutineMock(
+                return_value=async_mock.MagicMock(save=async_mock.CoroutineMock())
+            )
+            mock_conn_rec_cls.return_value = async_mock.MagicMock(
+                accept=ACCEPT_AUTO,
+                my_did=None,
+                state=STATE_REQUEST.rfc23,
+                attach_request=async_mock.CoroutineMock(),
+                retrieve_request=async_mock.CoroutineMock(),
+                save=async_mock.CoroutineMock(),
+            )
+            mock_did_doc.from_json = async_mock.MagicMock(
+                return_value=async_mock.MagicMock(did=TestConfig.test_did)
+            )
+            mock_attach_deco.from_indy_dict = async_mock.MagicMock(
+                return_value=async_mock.MagicMock(
+                    data=async_mock.MagicMock(sign=async_mock.CoroutineMock())
+                )
+            )
+            with self.assertRaises(DIDXManagerError) as context:
+                await self.manager.receive_request(mock_request, receipt)
+            assert "Error getting endpoint" in str(context.exception)
 
     async def test_receive_request_invi_not_found(self):
         mock_request = async_mock.MagicMock(

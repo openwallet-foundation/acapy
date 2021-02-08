@@ -9,6 +9,8 @@ from .....ledger.base import BaseLedger
 from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
 from .....messaging.valid import INDY_DID, UUIDFour
 
+from ....didcomm_prefix import DIDCommPrefix
+
 from ..messages.invitation import HSProto, InvitationMessage
 
 
@@ -90,8 +92,11 @@ class InvitationRecord(BaseExchangeRecord):
     ) -> "InvitationRecord":
         """Create and save invitation record for public DID."""
         invi_msg = InvitationMessage(
-            label=f"invitation for public DID {public_did}",
-            handshake_protocols=[HSProto.RFC23.name, HSProto.RFC160.name],
+            label=f"Invitation for public DID {public_did}",
+            handshake_protocols=[
+                DIDCommPrefix.qualify_current(HSProto.RFC23.name),
+                DIDCommPrefix.qualify_current(HSProto.RFC160.name),
+            ],
             request_attach=None,
             service=[f"did:sov:{public_did}"],
         )

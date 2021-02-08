@@ -225,37 +225,6 @@ class OutOfBandManager(BaseConnectionManager):
                         "Error getting endpoint for public DID "
                         f"{public_did.did}: {ledger_x}"
                     )
-                """  DEAD CODE, we hope
-                invi_msg = InvitationMessage(
-                    label=my_label or self._session.settings.get("default_label"),
-                    handshake_protocols=handshake_protocols,
-                    request_attach=message_attachments,
-                    service=[f"did:sov:{public_did.did}"],
-                )
-                ledger = self._session.inject(BaseLedger)
-                async with ledger:
-                    try:
-                        base_url = await ledger.get_endpoint_for_did(public_did.did)
-                    except LedgerError as ledger_x:
-                        raise OutOfBandManagerError(
-                            "Error getting endpoint for public DID "
-                            f"{public_did.did}: {ledger_x}"
-                        )
-                    invi_url = invi_msg.to_url(base_url)
-
-                invi_rec = InvitationRecord(  # create public invitation record
-                    state=InvitationRecord.STATE_INITIAL,
-                    invi_msg_id=invi_msg._id,
-                    invitation=invi_msg.serialize(),
-                    invitation_url=invi_url,
-                    public_did=public_did.did,
-                )
-                await invi_rec.save(
-                    self._session,
-                    reason=f"Created new public invitation for DID {public_did.did}"
-                )
-                print(f'\n\n>> OOB mgr saved invi rec {invi_rec.serialize()}')
-                """
 
             if multitenant_mgr and wallet_id:  # add mapping for multitenant relay
                 await multitenant_mgr.add_key(

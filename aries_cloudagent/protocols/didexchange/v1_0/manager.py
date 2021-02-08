@@ -15,6 +15,7 @@ from ....connections.models.diddoc import (
 from ....connections.base_manager import BaseConnectionManager
 from ....core.error import BaseError
 from ....core.profile import ProfileSession
+from ....ledger.error import LedgerError
 from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....messaging.responder import BaseResponder
 from ....storage.base import BaseStorage
@@ -346,7 +347,7 @@ class DIDXManager(BaseConnectionManager):
                     session=self._session,
                     public_did=receipt.recipient_did,
                 )
-            except StorageNotFoundError as x:
+            except StorageNotFoundError:
                 try:
                     invi_rec = await OOBInvitationRecord.create_and_save_public(
                         self._session, public_did=receipt.recipient_did
