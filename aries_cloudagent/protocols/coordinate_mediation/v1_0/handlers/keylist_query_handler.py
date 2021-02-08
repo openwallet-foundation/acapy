@@ -26,12 +26,12 @@ class KeylistQueryHandler(BaseHandler):
         if not context.connection_ready:
             raise HandlerException("Invalid keylist query: no active connection")
 
-        session = await context.session()
-        mgr = MediationManager(session)
+        mgr = MediationManager(context.profile)
         try:
-            record = await MediationRecord.retrieve_by_connection_id(
-                session, context.connection_record.connection_id
-            )
+            async with context.session() as session:
+                record = await MediationRecord.retrieve_by_connection_id(
+                    session, context.connection_record.connection_id
+                )
             keylist = await mgr.get_keylist(record)
             keylist_response = await mgr.create_keylist_query_response(keylist)
             await responder.send_reply(keylist_response)

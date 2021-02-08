@@ -26,17 +26,17 @@ class MediationGrantHandler(BaseHandler):
         if not context.connection_ready:
             raise HandlerException("Received mediation grant from inactive connection")
 
-        session = await context.session()
-        mgr = MediationManager(session)
+        mgr = MediationManager(context.profile)
         try:
-            record = await MediationRecord.retrieve_by_connection_id(
-                session, context.connection_record.connection_id
-            )
+            async with context.session() as session:
+                record = await MediationRecord.retrieve_by_connection_id(
+                    session, context.connection_record.connection_id
+                )
             await mgr.request_granted(record, context.message)
 
             # Multitenancy setup
-            multitenant_mgr = session.inject(MultitenantManager, required=False)
-            wallet_id = session.settings.get("wallet.id")
+            multitenant_mgr = context.profile.inject(MultitenantManager, required=False)
+            wallet_id = context.profile.settings.get("wallet.id")
 
             if multitenant_mgr and wallet_id:
                 base_mediation_record = await multitenant_mgr.get_default_mediator()
@@ -55,11 +55,12 @@ class MediationGrantHandler(BaseHandler):
                         connection_id=context.connection_record.connection_id,
                     )
 
-            # Set to default if metdata set on connection to do so
-            if await context.connection_record.metadata_get(
-                session, MediationManager.SET_TO_DEFAULT_ON_GRANTED
-            ):
-                await mgr.set_default_mediator(record)
+            # Set to default if metadata set on connection to do so
+            async with context.session() as session:
+                if await context.connection_record.metadata_get(
+                    session, MediationManager.SET_TO_DEFAULT_ON_GRANTED
+                ):
+                    await mgr.set_default_mediator(record)
 
         except StorageNotFoundError as err:
             raise HandlerException(

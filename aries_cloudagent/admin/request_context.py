@@ -82,9 +82,11 @@ class AdminRequestContext:
         self._context.update_settings(settings)
 
     @classmethod
-    def test_context(cls, session_inject: dict = None) -> "AdminRequestContext":
+    def test_context(
+        cls, session_inject: dict = None, profile: Profile = None
+    ) -> "AdminRequestContext":
         """Quickly set up a new admin request context for tests."""
-        ctx = AdminRequestContext(IN_MEM.resolved.test_profile())
+        ctx = AdminRequestContext(profile or IN_MEM.resolved.test_profile())
         setattr(
             ctx, "session_inject", dict() if session_inject is None else session_inject
         )

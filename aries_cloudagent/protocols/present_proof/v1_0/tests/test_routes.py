@@ -14,8 +14,8 @@ from .. import routes as test_module
 
 class TestProofRoutes(AsyncTestCase):
     def setUp(self):
-        self.session_inject = {}
-        self.context = AdminRequestContext.test_context(self.session_inject)
+        self.context = AdminRequestContext.test_context()
+        self.profile = self.context.profile
         self.request_dict = {
             "context": self.context,
             "outbound_message_router": async_mock.CoroutineMock(),
@@ -130,10 +130,13 @@ class TestProofRoutes(AsyncTestCase):
         }
         self.request.query = {"extra_query": {}}
         returned_credentials = [{"name": "Credential1"}, {"name": "Credential2"}]
-        self.session_inject[IndyHolder] = async_mock.MagicMock(
-            get_credentials_for_presentation_request_by_referent=(
-                async_mock.CoroutineMock(side_effect=test_module.IndyHolderError())
-            )
+        self.profile.context.injector.bind_instance(
+            IndyHolder,
+            async_mock.MagicMock(
+                get_credentials_for_presentation_request_by_referent=(
+                    async_mock.CoroutineMock(side_effect=test_module.IndyHolderError())
+                )
+            ),
         )
 
         with async_mock.patch(
@@ -159,10 +162,13 @@ class TestProofRoutes(AsyncTestCase):
         self.request.query = {"extra_query": {}}
 
         returned_credentials = [{"name": "Credential1"}, {"name": "Credential2"}]
-        self.session_inject[IndyHolder] = async_mock.MagicMock(
-            get_credentials_for_presentation_request_by_referent=async_mock.CoroutineMock(
-                return_value=returned_credentials
-            )
+        self.profile.context.injector.bind_instance(
+            IndyHolder,
+            async_mock.MagicMock(
+                get_credentials_for_presentation_request_by_referent=async_mock.CoroutineMock(
+                    return_value=returned_credentials
+                )
+            ),
         )
 
         with async_mock.patch(
@@ -191,10 +197,13 @@ class TestProofRoutes(AsyncTestCase):
         self.request.query = {"extra_query": {}}
 
         returned_credentials = [{"name": "Credential1"}, {"name": "Credential2"}]
-        self.session_inject[IndyHolder] = async_mock.MagicMock(
-            get_credentials_for_presentation_request_by_referent=async_mock.CoroutineMock(
-                return_value=returned_credentials
-            )
+        self.profile.context.injector.bind_instance(
+            IndyHolder,
+            async_mock.MagicMock(
+                get_credentials_for_presentation_request_by_referent=async_mock.CoroutineMock(
+                    return_value=returned_credentials
+                )
+            ),
         )
 
         with async_mock.patch(
@@ -633,12 +642,18 @@ class TestProofRoutes(AsyncTestCase):
         self.request.json = async_mock.CoroutineMock(return_value={"trace": False})
         self.request.match_info = {"pres_ex_id": "dummy"}
 
-        self.session_inject[BaseLedger] = async_mock.MagicMock(
-            __aenter__=async_mock.CoroutineMock(),
-            __aexit__=async_mock.CoroutineMock(),
+        self.profile.context.injector.bind_instance(
+            BaseLedger,
+            async_mock.MagicMock(
+                __aenter__=async_mock.CoroutineMock(),
+                __aexit__=async_mock.CoroutineMock(),
+            ),
         )
-        self.session_inject[IndyVerifier] = async_mock.MagicMock(
-            verify_presentation=async_mock.CoroutineMock(),
+        self.profile.context.injector.bind_instance(
+            IndyVerifier,
+            async_mock.MagicMock(
+                verify_presentation=async_mock.CoroutineMock(),
+            ),
         )
 
         with async_mock.patch(
@@ -869,12 +884,18 @@ class TestProofRoutes(AsyncTestCase):
             }
         )
         self.request.match_info = {"pres_ex_id": "dummy"}
-        self.session_inject[BaseLedger] = async_mock.MagicMock(
-            __aenter__=async_mock.CoroutineMock(),
-            __aexit__=async_mock.CoroutineMock(),
+        self.profile.context.injector.bind_instance(
+            BaseLedger,
+            async_mock.MagicMock(
+                __aenter__=async_mock.CoroutineMock(),
+                __aexit__=async_mock.CoroutineMock(),
+            ),
         )
-        self.session_inject[IndyVerifier] = async_mock.MagicMock(
-            verify_presentation=async_mock.CoroutineMock(),
+        self.profile.context.injector.bind_instance(
+            IndyVerifier,
+            async_mock.MagicMock(
+                verify_presentation=async_mock.CoroutineMock(),
+            ),
         )
 
         with async_mock.patch(
@@ -1149,12 +1170,18 @@ class TestProofRoutes(AsyncTestCase):
 
     async def test_presentation_exchange_verify_presentation_not_found(self):
         self.request.match_info = {"pres_ex_id": "dummy"}
-        self.session_inject[BaseLedger] = async_mock.MagicMock(
-            __aenter__=async_mock.CoroutineMock(),
-            __aexit__=async_mock.CoroutineMock(),
+        self.profile.context.injector.bind_instance(
+            BaseLedger,
+            async_mock.MagicMock(
+                __aenter__=async_mock.CoroutineMock(),
+                __aexit__=async_mock.CoroutineMock(),
+            ),
         )
-        self.session_inject[IndyVerifier] = async_mock.MagicMock(
-            verify_presentation=async_mock.CoroutineMock(),
+        self.profile.context.injector.bind_instance(
+            IndyVerifier,
+            async_mock.MagicMock(
+                verify_presentation=async_mock.CoroutineMock(),
+            ),
         )
 
         with async_mock.patch(
@@ -1245,12 +1272,18 @@ class TestProofRoutes(AsyncTestCase):
 
     async def test_presentation_exchange_verify_presentation_x(self):
         self.request.match_info = {"pres_ex_id": "dummy"}
-        self.session_inject[BaseLedger] = async_mock.MagicMock(
-            __aenter__=async_mock.CoroutineMock(),
-            __aexit__=async_mock.CoroutineMock(),
+        self.profile.context.injector.bind_instance(
+            BaseLedger,
+            async_mock.MagicMock(
+                __aenter__=async_mock.CoroutineMock(),
+                __aexit__=async_mock.CoroutineMock(),
+            ),
         )
-        self.session_inject[IndyVerifier] = async_mock.MagicMock(
-            verify_presentation=async_mock.CoroutineMock(),
+        self.profile.context.injector.bind_instance(
+            IndyVerifier,
+            async_mock.MagicMock(
+                verify_presentation=async_mock.CoroutineMock(),
+            ),
         )
 
         with async_mock.patch(

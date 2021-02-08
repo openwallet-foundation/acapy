@@ -26,10 +26,9 @@ class TestRoutingManager(AsyncTestCase):
     async def setUp(self):
         self.context = RequestContext.test_context()
         self.context.message_receipt = MessageReceipt(sender_verkey=TEST_VERKEY)
-        self.session = await self.context.session()
         self.transaction = await self.context.transaction()  # for coverage
-        self.manager = RoutingManager(self.session)
-        assert self.manager.session
+        self.profile = self.context.profile
+        self.manager = RoutingManager(self.profile)
 
     async def test_create_manager_no_context(self):
         with self.assertRaises(RoutingManagerError):
@@ -155,11 +154,12 @@ class TestRoutingManager(AsyncTestCase):
 
     async def test_get_routes_client_routes_not_returned(self):
         await self.manager.create_route_record(TEST_CONN_ID, TEST_ROUTE_VERKEY)
-        await RouteRecord(
-            role=RouteRecord.ROLE_CLIENT,
-            connection_id=TEST_CONN_ID,
-            recipient_key=TEST_ROUTE_VERKEY,
-        ).save(self.session)
+        async with self.profile.session() as session:
+            await RouteRecord(
+                role=RouteRecord.ROLE_CLIENT,
+                connection_id=TEST_CONN_ID,
+                recipient_key=TEST_ROUTE_VERKEY,
+            ).save(session)
         results = await self.manager.get_routes()
         assert len(results) == 1
         assert results[0].connection_id == TEST_CONN_ID
@@ -171,11 +171,12 @@ class TestRoutingManager(AsyncTestCase):
             connection_id=TEST_CONN_ID,
             recipient_key=TEST_ROUTE_VERKEY,
         )
-        await route_rec.save(self.session)
-        by_conn_id = await RouteRecord.retrieve_by_connection_id(
-            session=self.session,
-            connection_id=TEST_CONN_ID,
-        )
+        async with self.profile.session() as session:
+            await route_rec.save(session)
+            by_conn_id = await RouteRecord.retrieve_by_connection_id(
+                session=session,
+                connection_id=TEST_CONN_ID,
+            )
         assert by_conn_id == route_rec
         assert route_rec != ValueError()
 

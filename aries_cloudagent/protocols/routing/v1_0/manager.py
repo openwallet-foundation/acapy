@@ -3,7 +3,7 @@
 from typing import Coroutine, Sequence
 
 from ....core.error import BaseError
-from ....core.profile import ProfileSession
+from ....core.profile import Profile
 from ....storage.error import (
     StorageError,
     StorageDuplicateError,
@@ -29,27 +29,16 @@ class RoutingManager:
 
     RECORD_TYPE = "forward_route"
 
-    def __init__(self, session: ProfileSession):
+    def __init__(self, profile: Profile):
         """
         Initialize a RoutingManager.
 
         Args:
-            session: The session for this manager
+            profile: The profile instance for this manager
         """
-        self._session = session
-        if not session:
-            raise RoutingManagerError("Missing profile session")
-
-    @property
-    def session(self) -> ProfileSession:
-        """
-        Accessor for the current profile session.
-
-        Returns:
-            The profile session for this connection
-
-        """
-        return self._session
+        self._profile = profile
+        if not profile:
+            raise RoutingManagerError("Missing profile")
 
     async def get_recipient(self, recip_verkey: str) -> RouteRecord:
         """
@@ -66,9 +55,10 @@ class RoutingManager:
             raise RoutingManagerError("Must pass non-empty recip_verkey")
 
         try:
-            record = await RouteRecord.retrieve_by_recipient_key(
-                self.session, recip_verkey
-            )
+            async with self._profile.session() as session:
+                record = await RouteRecord.retrieve_by_recipient_key(
+                    session, recip_verkey
+                )
         except StorageDuplicateError:
             raise RouteNotFoundError(
                 f"More than one route record found with recipient key: {recip_verkey}"
@@ -112,13 +102,15 @@ class RoutingManager:
                         "Unsupported tag filter: '{}' = {}".format(key, val)
                     )
 
-        results = await RouteRecord.query(self.session, tag_filter=filters)
+        async with self._profile.session() as session:
+            results = await RouteRecord.query(session, tag_filter=filters)
 
         return results
 
     async def delete_route_record(self, route: RouteRecord):
         """Remove an existing route record."""
-        await route.delete_record(self.session)
+        async with self._profile.session() as session:
+            await route.delete_record(session)
 
     async def create_route_record(
         self,
@@ -149,7 +141,8 @@ class RoutingManager:
             wallet_id=internal_wallet_id,
             recipient_key=recipient_key,
         )
-        await route.save(self.session, reason="Created new route")
+        async with self._profile.session() as session:
+            await route.save(session, reason="Created new route")
         return route
 
     async def update_routes(

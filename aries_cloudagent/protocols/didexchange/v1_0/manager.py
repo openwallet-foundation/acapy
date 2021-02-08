@@ -272,7 +272,9 @@ class DIDXManager(BaseConnectionManager):
 
         """
         ConnRecord.log_state(
-            self._session, "Receiving connection request", {"request": request}
+            "Receiving connection request",
+            {"request": request},
+            settings=self._session.settings,
         )
 
         mediation_mgr = MediationManager(self._session)
@@ -447,9 +449,9 @@ class DIDXManager(BaseConnectionManager):
 
         """
         ConnRecord.log_state(
-            self._session,
             "Creating connection response",
             {"connection_id": conn_rec.connection_id},
+            settings=self._session.settings,
         )
 
         mediation_mgr = MediationManager(self._session)
