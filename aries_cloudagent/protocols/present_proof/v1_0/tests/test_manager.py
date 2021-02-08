@@ -82,8 +82,8 @@ NOW = int(time())
 
 class TestPresentationManager(AsyncTestCase):
     async def setUp(self):
-        self.session = InMemoryProfile.test_session()
-        injector = self.session.context.injector
+        self.profile = InMemoryProfile.test_profile()
+        injector = self.profile.context.injector
 
         Ledger = async_mock.MagicMock(BaseLedger, autospec=True)
         self.ledger = Ledger()
@@ -175,8 +175,7 @@ class TestPresentationManager(AsyncTestCase):
         )
         injector.bind_instance(IndyVerifier, self.verifier)
 
-        self.manager = PresentationManager(self.session)
-        assert self.manager.session
+        self.manager = PresentationManager(self.profile)
 
     async def test_record_eq(self):
         same = [
@@ -442,7 +441,7 @@ class TestPresentationManager(AsyncTestCase):
         self.ledger.get_credential_definition = async_mock.CoroutineMock(
             return_value={"value": {"revocation": None}}
         )
-        self.session.context.injector.bind_instance(BaseLedger, self.ledger)
+        self.profile.context.injector.bind_instance(BaseLedger, self.ledger)
 
         exchange_in = V10PresentationExchange()
         indy_proof_req = await PRES_PREVIEW.indy_proof_request(
@@ -480,7 +479,7 @@ class TestPresentationManager(AsyncTestCase):
             )
         )
         self.holder.create_presentation = async_mock.CoroutineMock(return_value="{}")
-        self.session.context.injector.bind_instance(IndyHolder, self.holder)
+        self.profile.context.injector.bind_instance(IndyHolder, self.holder)
 
         with async_mock.patch.object(
             V10PresentationExchange, "save", autospec=True
@@ -543,7 +542,7 @@ class TestPresentationManager(AsyncTestCase):
         self.holder.create_revocation_state = async_mock.CoroutineMock(
             side_effect=test_module.IndyHolderError("Problem", {"message": "Nope"})
         )
-        self.session.context.injector.bind_instance(IndyHolder, self.holder)
+        self.profile.context.injector.bind_instance(IndyHolder, self.holder)
 
         more_magic_rr = async_mock.MagicMock(
             get_or_fetch_local_tails_path=async_mock.CoroutineMock(
@@ -630,7 +629,7 @@ class TestPresentationManager(AsyncTestCase):
                 }
             )
         )
-        self.session.context.injector.bind_instance(IndyHolder, self.holder)
+        self.profile.context.injector.bind_instance(IndyHolder, self.holder)
 
         more_magic_rr = async_mock.MagicMock(
             get_or_fetch_local_tails_path=async_mock.CoroutineMock(
@@ -767,7 +766,11 @@ class TestPresentationManager(AsyncTestCase):
             V10PresentationExchange, "save", autospec=True
         ) as save_ex, async_mock.patch.object(
             V10PresentationExchange, "retrieve_by_tag_filter", autospec=True
-        ) as retrieve_ex:
+        ) as retrieve_ex, async_mock.patch.object(
+            self.profile,
+            "session",
+            async_mock.MagicMock(return_value=self.profile.session()),
+        ) as session:
             retrieve_ex.side_effect = [
                 StorageNotFoundError("no such record"),
                 exchange_dummy,
@@ -777,7 +780,6 @@ class TestPresentationManager(AsyncTestCase):
             )
             assert retrieve_ex.call_count == 2
             save_ex.assert_called_once()
-
             assert exchange_out.state == (
                 V10PresentationExchange.STATE_PRESENTATION_RECEIVED
             )
@@ -874,11 +876,15 @@ class TestPresentationManager(AsyncTestCase):
             V10PresentationExchange, "save", autospec=True
         ) as save_ex, async_mock.patch.object(
             V10PresentationExchange, "retrieve_by_tag_filter", autospec=True
-        ) as retrieve_ex:
+        ) as retrieve_ex, async_mock.patch.object(
+            self.profile,
+            "session",
+            async_mock.MagicMock(return_value=self.profile.session()),
+        ) as session:
             retrieve_ex.return_value = exchange_dummy
             exchange_out = await self.manager.receive_presentation(message, None)
             retrieve_ex.assert_called_once_with(
-                self.session, {"thread_id": message._thread_id}, None
+                session.return_value, {"thread_id": message._thread_id}, None
             )
             save_ex.assert_called_once()
 
@@ -931,7 +937,7 @@ class TestPresentationManager(AsyncTestCase):
         exchange = V10PresentationExchange()
 
         responder = MockResponder()
-        self.session.context.injector.bind_instance(BaseResponder, responder)
+        self.profile.context.injector.bind_instance(BaseResponder, responder)
 
         await self.manager.send_presentation_ack(exchange)
         messages = responder.messages
@@ -940,7 +946,7 @@ class TestPresentationManager(AsyncTestCase):
     async def test_send_presentation_ack_no_responder(self):
         exchange = V10PresentationExchange()
 
-        self.session.context.injector.clear_binding(BaseResponder)
+        self.profile.context.injector.clear_binding(BaseResponder)
         await self.manager.send_presentation_ack(exchange)
 
     async def test_receive_presentation_ack(self):

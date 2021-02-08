@@ -406,6 +406,12 @@ async def wallet_create_token(request: web.BaseRequest):
             multitenant_mgr = session.inject(MultitenantManager)
             wallet_record = await WalletRecord.retrieve_by_id(session, wallet_id)
 
+            if (not wallet_record.requires_external_key) and wallet_key:
+                raise web.HTTPBadRequest(
+                    reason=f"Wallet {wallet_id} doesn't require"
+                    " the wallet key to be provided"
+                )
+
             token = multitenant_mgr.create_auth_token(wallet_record, wallet_key)
         except StorageNotFoundError as err:
             raise web.HTTPNotFound(reason=err.roll_up) from err
@@ -442,6 +448,14 @@ async def wallet_remove(request: web.BaseRequest):
     async with context.session() as session:
         try:
             multitenant_mgr = session.inject(MultitenantManager)
+            wallet_record = await WalletRecord.retrieve_by_id(session, wallet_id)
+
+            if (not wallet_record.requires_external_key) and wallet_key:
+                raise web.HTTPBadRequest(
+                    reason=f"Wallet {wallet_id} doesn't require"
+                    " the wallet key to be provided"
+                )
+
             await multitenant_mgr.remove_wallet(wallet_id, wallet_key)
         except StorageNotFoundError as err:
             raise web.HTTPNotFound(reason=err.roll_up) from err
