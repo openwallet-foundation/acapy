@@ -272,7 +272,7 @@ class DIDXManager(BaseConnectionManager):
             except StorageNotFoundError:
                 raise DIDXManagerError("No invitation found for pairwise connection")
 
-        if conn_rec:  # OOB mgr saves conn record only for explicit invite (public DID)
+        if conn_rec:  # OOB mgr saves conn record only for explicit invite (peer DID)
             connection_key = conn_rec.invitation_key
             if conn_rec.is_multiuse_invitation:
                 wallet = self._session.inject(BaseWallet)
