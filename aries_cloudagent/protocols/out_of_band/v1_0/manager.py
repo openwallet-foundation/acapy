@@ -225,7 +225,7 @@ class OutOfBandManager(BaseConnectionManager):
                         "Error getting endpoint for public DID "
                         f"{public_did.did}: {ledger_x}"
                     )
-                '''  DEAD CODE, we hope
+                """  DEAD CODE, we hope
                 invi_msg = InvitationMessage(
                     label=my_label or self._session.settings.get("default_label"),
                     handshake_protocols=handshake_protocols,
@@ -255,7 +255,7 @@ class OutOfBandManager(BaseConnectionManager):
                     reason=f"Created new public invitation for DID {public_did.did}"
                 )
                 print(f'\n\n>> OOB mgr saved invi rec {invi_rec.serialize()}')
-                '''
+                """
 
             if multitenant_mgr and wallet_id:  # add mapping for multitenant relay
                 await multitenant_mgr.add_key(

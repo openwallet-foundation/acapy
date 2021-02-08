@@ -349,8 +349,7 @@ class DIDXManager(BaseConnectionManager):
             except StorageNotFoundError as x:
                 try:
                     invi_rec = await OOBInvitationRecord.create_and_save_public(
-                        self._session,
-                        public_did=receipt.recipient_did
+                        self._session, public_did=receipt.recipient_did
                     )
                 except LedgerError as ledger_x:
                     raise DIDXManagerError(

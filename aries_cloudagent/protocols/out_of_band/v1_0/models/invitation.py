@@ -86,9 +86,7 @@ class InvitationRecord(BaseExchangeRecord):
 
     @classmethod
     async def create_and_save_public(
-        cls,
-        session: ProfileSession,
-        public_did: str
+        cls, session: ProfileSession, public_did: str
     ) -> "InvitationRecord":
         """Create and save invitation record for public DID."""
         invi_msg = InvitationMessage(
@@ -157,7 +155,5 @@ class InvitationRecordSchema(BaseExchangeSchema):
         ),
     )
     public_did = fields.Str(
-        description="Public DID, if applicable",
-        required=False,
-        **INDY_DID
+        description="Public DID, if applicable", required=False, **INDY_DID
     )
