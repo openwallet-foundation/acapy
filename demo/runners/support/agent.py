@@ -915,7 +915,8 @@ class MediatorAgent(DemoAgent):
             mediation=True,
             extra_args=[
                 "--auto-accept-invites",
-                "--auto-accept-requests",
+                "--auto-accept-requests-peer",
+                "--auto-accept-requests-public",
             ],
             seed=None,
             **kwargs,
