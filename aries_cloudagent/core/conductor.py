@@ -31,9 +31,6 @@ from ..protocols.connections.v1_0.messages.connection_invitation import (
     ConnectionInvitation,
 )
 from ..protocols.coordinate_mediation.v1_0.manager import MediationManager
-from ..protocols.coordinate_mediation.v1_0.models.mediation_record import (
-    MediationRecord,
-)
 from ..protocols.out_of_band.v1_0.manager import OutOfBandManager
 from ..protocols.out_of_band.v1_0.messages.invitation import HSProto, InvitationMessage
 from ..transport.inbound.manager import InboundTransportManager
@@ -238,25 +235,20 @@ class Conductor:
 
         # Clear default mediator
         if context.settings.get("mediation.clear"):
-            async with self.root_profile.session() as session:
-                mediation_mgr = MediationManager(session)
-                await mediation_mgr.clear_default_mediator()
-                print("Default mediator cleared.")
+            mediation_mgr = MediationManager(self.root_profile)
+            await mediation_mgr.clear_default_mediator()
+            print("Default mediator cleared.")
 
         # Clear default mediator
         # Set default mediator by id
         default_mediator_id = context.settings.get("mediation.default_id")
         if default_mediator_id:
-            async with self.root_profile.session() as session:
-                mediation_mgr = MediationManager(session)
-                try:
-                    record = await MediationRecord.retrieve_by_id(
-                        session, default_mediator_id
-                    )
-                    await mediation_mgr.set_default_mediator(record)
-                    print(f"Default mediator set to {default_mediator_id}")
-                except Exception:
-                    LOGGER.exception("Error retrieving mediation record")
+            mediation_mgr = MediationManager(self.root_profile)
+            try:
+                await mediation_mgr.set_default_mediator_by_id(default_mediator_id)
+                print(f"Default mediator set to {default_mediator_id}")
+            except Exception:
+                LOGGER.exception("Error updating default mediator")
 
         # Print an invitation to the terminal
         if context.settings.get("debug.print_invitation"):

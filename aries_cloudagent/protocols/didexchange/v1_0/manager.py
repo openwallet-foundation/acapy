@@ -245,7 +245,9 @@ class DIDXManager(BaseConnectionManager):
 
         """
         ConnRecord.log_state(
-            self._session, "Receiving connection request", {"request": request}
+            "Receiving connection request",
+            {"request": request},
+            settings=self._session.settings,
         )
 
         conn_rec = None
@@ -395,9 +397,9 @@ class DIDXManager(BaseConnectionManager):
 
         """
         ConnRecord.log_state(
-            self._session,
             "Creating connection response",
             {"connection_id": conn_rec.connection_id},
+            settings=self._session.settings,
         )
 
         # Multitenancy setup
