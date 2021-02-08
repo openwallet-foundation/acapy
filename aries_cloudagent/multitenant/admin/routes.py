@@ -408,7 +408,8 @@ async def wallet_create_token(request: web.BaseRequest):
 
             if (not wallet_record.requires_external_key) and wallet_key:
                 raise web.HTTPBadRequest(
-                    reason=f"Wallet {wallet_id} doesn't require the wallet key to be provided"
+                    reason=f"Wallet {wallet_id} doesn't require"
+                    " the wallet key to be provided"
                 )
 
             token = multitenant_mgr.create_auth_token(wallet_record, wallet_key)
@@ -451,7 +452,8 @@ async def wallet_remove(request: web.BaseRequest):
 
             if (not wallet_record.requires_external_key) and wallet_key:
                 raise web.HTTPBadRequest(
-                    reason=f"Wallet {wallet_id} doesn't require the wallet key to be provided"
+                    reason=f"Wallet {wallet_id} doesn't require"
+                    " the wallet key to be provided"
                 )
 
             await multitenant_mgr.remove_wallet(wallet_id, wallet_key)
