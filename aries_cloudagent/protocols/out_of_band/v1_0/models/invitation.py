@@ -4,8 +4,12 @@ from typing import Any
 
 from marshmallow import fields
 
+from .....core.profile import ProfileSession
+from .....ledger.base import BaseLedger
 from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
-from .....messaging.valid import UUIDFour
+from .....messaging.valid import INDY_DID, UUIDFour
+
+from ..messages.invitation import HSProto, InvitationMessage
 
 
 class InvitationRecord(BaseExchangeRecord):
@@ -19,7 +23,7 @@ class InvitationRecord(BaseExchangeRecord):
     RECORD_TYPE = "oob_invitation"
     RECORD_ID_NAME = "invitation_id"
     WEBHOOK_TOPIC = "oob_invitation"
-    TAG_NAMES = {"invi_msg_id"}
+    TAG_NAMES = {"invi_msg_id", "public_did"}
 
     STATE_INITIAL = "initial"
     STATE_AWAIT_RESPONSE = "await_response"
@@ -33,6 +37,7 @@ class InvitationRecord(BaseExchangeRecord):
         invi_msg_id: str = None,
         invitation: dict = None,  # serialized invitation message
         invitation_url: str = None,
+        public_did: str = None,  # public DID in invitation; none if peer DID
         trace: bool = False,
         **kwargs,
     ):
@@ -42,6 +47,7 @@ class InvitationRecord(BaseExchangeRecord):
         self.state = state
         self.invi_msg_id = invi_msg_id
         self.invitation = invitation
+        self.public_did = public_did
         self.invitation_url = invitation_url
         self.trace = trace
 
@@ -62,6 +68,53 @@ class InvitationRecord(BaseExchangeRecord):
                 "trace",
             )
         }
+
+    @classmethod
+    async def retrieve_by_public_did(cls, session: ProfileSession, public_did: str):
+        """Retrieve by public DID."""
+        cache_key = f"oob_invi_rec::{public_did}"
+        record_id = await cls.get_cached_key(session, cache_key)
+        if record_id:
+            record = await cls.retrieve_by_id(session, record_id)
+        else:
+            record = await cls.retrieve_by_tag_filter(
+                session=session,
+                tag_filter={"public_did": public_did},
+            )
+            await cls.set_cached_key(session, cache_key, record.invitation_id)
+        return record
+
+    @classmethod
+    async def create_and_save_public(
+        cls,
+        session: ProfileSession,
+        public_did: str
+    ) -> "InvitationRecord":
+        """Create and save invitation record for public DID."""
+        invi_msg = InvitationMessage(
+            label=f"invitation for public DID {public_did}",
+            handshake_protocols=[HSProto.RFC23.name, HSProto.RFC160.name],
+            request_attach=None,
+            service=[f"did:sov:{public_did}"],
+        )
+        ledger = session.inject(BaseLedger)
+        async with ledger:
+            base_url = await ledger.get_endpoint_for_did(public_did)
+            invi_url = invi_msg.to_url(base_url)
+
+        invi_rec = InvitationRecord(
+            state=InvitationRecord.STATE_INITIAL,
+            invi_msg_id=invi_msg._id,
+            invitation=invi_msg.serialize(),
+            invitation_url=invi_url,
+            public_did=public_did,
+        )
+        await invi_rec.save(
+            session,
+            reason=f"Created public invitation for DID {public_did}",
+        )
+
+        return invi_rec
 
     def __eq__(self, other: Any) -> bool:
         """Comparison between records."""
@@ -102,4 +155,9 @@ class InvitationRecordSchema(BaseExchangeSchema):
             "https://example.com/endpoint?"
             "c_i=eyJAdHlwZSI6ICIuLi4iLCAiLi4uIjogIi4uLiJ9XX0="
         ),
+    )
+    public_did = fields.Str(
+        description="Public DID, if applicable",
+        required=False,
+        **INDY_DID
     )

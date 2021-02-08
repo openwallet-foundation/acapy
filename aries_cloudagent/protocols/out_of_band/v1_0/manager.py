@@ -137,6 +137,10 @@ class OutOfBandManager(BaseConnectionManager):
             raise OutOfBandManagerError(
                 "Cannot create public invitation with multi_use"
             )
+        if public and attachments:
+            raise OutOfBandManagerError(
+                "Cannot create public invitation with attachments"
+            )
         if public and accept != self._session.settings.get(
             "debug.auto_accept_requests_public",
             False,
@@ -205,25 +209,55 @@ class OutOfBandManager(BaseConnectionManager):
                     "Cannot store metadata on public invitations"
                 )
 
-            invi_msg = InvitationMessage(
-                label=my_label or self._session.settings.get("default_label"),
-                handshake_protocols=handshake_protocols,
-                request_attach=message_attachments,
-                service=[f"did:sov:{public_did.did}"],
-            )
-            ledger = self._session.inject(BaseLedger)
-            async with ledger:
+            try:  # store one invitation per public DID
+                invi_rec = await InvitationRecord.retrieve_by_public_did(
+                    session=self._session,
+                    public_did=public_did.did,
+                )
+            except StorageNotFoundError:  # not present yet: create and save it
                 try:
-                    base_url = await ledger.get_endpoint_for_did(public_did.did)
+                    invi_rec = await InvitationRecord.create_and_save_public(
+                        self._session,
+                        public_did.did,
+                    )
                 except LedgerError as ledger_x:
                     raise OutOfBandManagerError(
                         "Error getting endpoint for public DID "
                         f"{public_did.did}: {ledger_x}"
                     )
-                invi_url = invi_msg.to_url(base_url)
+                '''  DEAD CODE, we hope
+                invi_msg = InvitationMessage(
+                    label=my_label or self._session.settings.get("default_label"),
+                    handshake_protocols=handshake_protocols,
+                    request_attach=message_attachments,
+                    service=[f"did:sov:{public_did.did}"],
+                )
+                ledger = self._session.inject(BaseLedger)
+                async with ledger:
+                    try:
+                        base_url = await ledger.get_endpoint_for_did(public_did.did)
+                    except LedgerError as ledger_x:
+                        raise OutOfBandManagerError(
+                            "Error getting endpoint for public DID "
+                            f"{public_did.did}: {ledger_x}"
+                        )
+                    invi_url = invi_msg.to_url(base_url)
 
-            # Add mapping for multitenant relay.
-            if multitenant_mgr and wallet_id:
+                invi_rec = InvitationRecord(  # create public invitation record
+                    state=InvitationRecord.STATE_INITIAL,
+                    invi_msg_id=invi_msg._id,
+                    invitation=invi_msg.serialize(),
+                    invitation_url=invi_url,
+                    public_did=public_did.did,
+                )
+                await invi_rec.save(
+                    self._session,
+                    reason=f"Created new public invitation for DID {public_did.did}"
+                )
+                print(f'\n\n>> OOB mgr saved invi rec {invi_rec.serialize()}')
+                '''
+
+            if multitenant_mgr and wallet_id:  # add mapping for multitenant relay
                 await multitenant_mgr.add_key(
                     wallet_id, public_did.verkey, skip_if_exists=True
                 )
@@ -282,13 +316,14 @@ class OutOfBandManager(BaseConnectionManager):
                 for key, value in metadata.items():
                     await conn_rec.metadata_set(self._session, key, value)
 
-        # Create invitation record
-        invi_rec = InvitationRecord(
-            state=InvitationRecord.STATE_INITIAL,
-            invi_msg_id=invi_msg._id,
-            invitation=invi_msg.serialize(),
-            invitation_url=invi_url,
-        )
+            # Create invitation record and do not store it: nobody will ever retrieve it
+            invi_rec = InvitationRecord(
+                state=InvitationRecord.STATE_INITIAL,
+                invi_msg_id=invi_msg._id,
+                invitation=invi_msg.serialize(),
+                invitation_url=invi_url,
+            )
+
         return invi_rec
 
     async def receive_invitation(

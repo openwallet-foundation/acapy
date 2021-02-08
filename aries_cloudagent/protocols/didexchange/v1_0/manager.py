@@ -28,6 +28,9 @@ from ....multitenant.manager import MultitenantManager
 from ...out_of_band.v1_0.messages.invitation import (
     InvitationMessage as OOBInvitationMessage,
 )
+from ...out_of_band.v1_0.models.invitation import (
+    InvitationRecord as OOBInvitationRecord,
+)
 
 from .messages.complete import DIDXComplete
 from .messages.request import DIDXRequest
@@ -104,11 +107,7 @@ class DIDXManager(BaseConnectionManager):
                 auto_accept
                 or (
                     auto_accept is None
-                    and self._session.settings.get(
-                        "debug.auto_accept_requests_public"
-                        if invitation.service_dids
-                        else "debug.auto_accept_requests_peer"
-                    )
+                    and self._session.settings.get("debug.auto_accept_invites")
                 )
             )
             else ConnRecord.ACCEPT_MANUAL
@@ -342,12 +341,30 @@ class DIDXManager(BaseConnectionManager):
             auto_accept = self._session.settings.get(
                 "debug.auto_accept_requests_public", False
             )
+            try:
+                invi_rec = await OOBInvitationRecord.retrieve_by_public_did(
+                    session=self._session,
+                    public_did=receipt.recipient_did,
+                )
+            except StorageNotFoundError as x:
+                try:
+                    invi_rec = await OOBInvitationRecord.create_and_save_public(
+                        self._session,
+                        public_did=receipt.recipient_did
+                    )
+                except LedgerError as ledger_x:
+                    raise DIDXManagerError(
+                        "Error getting endpoint for public DID "
+                        f"{receipt.recipient_did}: {ledger_x}"
+                    )
+
             conn_rec = ConnRecord(
                 my_did=my_info.did,
                 their_did=request.did,
                 their_label=request.label,
                 their_role=ConnRecord.Role.REQUESTER.rfc23,
                 invitation_key=connection_key,
+                invitation_msg_id=invi_rec.invi_msg_id,
                 request_id=request._id,
                 state=ConnRecord.State.REQUEST.rfc23,
                 accept=(
