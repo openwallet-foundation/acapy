@@ -177,11 +177,12 @@ class DIDXManager(BaseConnectionManager):
 
         """
         # Mediation Support
-        mediation_mgr = MediationManager(self._session)
+        mediation_mgr = MediationManager(self._session.profile)
         keylist_updates = None
         mediation_record = await mediation_record_if_id(
             self._session,
-            mediation_id or await mediation_mgr.get_default_mediator_id(),
+            mediation_id,
+            or_default=True,
         )
         base_mediation_record = None
 
@@ -277,7 +278,7 @@ class DIDXManager(BaseConnectionManager):
             settings=self._session.settings,
         )
 
-        mediation_mgr = MediationManager(self._session)
+        mediation_mgr = MediationManager(self._session.profile)
         keylist_updates = None
         conn_rec = None
         connection_key = None
@@ -454,7 +455,7 @@ class DIDXManager(BaseConnectionManager):
             settings=self._session.settings,
         )
 
-        mediation_mgr = MediationManager(self._session)
+        mediation_mgr = MediationManager(self._session.profile)
         keylist_updates = None
         mediation_record = await mediation_record_if_id(self._session, mediation_id)
         base_mediation_record = None
@@ -532,7 +533,7 @@ class DIDXManager(BaseConnectionManager):
             self._session, MediationManager.SEND_REQ_AFTER_CONNECTION
         )
         if send_mediation_request:
-            temp_mediation_mgr = MediationManager(self._session)
+            temp_mediation_mgr = MediationManager(self._session.profile)
             _record, request = await temp_mediation_mgr.prepare_request(
                 conn_rec.connection_id
             )
@@ -622,7 +623,7 @@ class DIDXManager(BaseConnectionManager):
             self._session, MediationManager.SEND_REQ_AFTER_CONNECTION
         )
         if send_mediation_request:
-            temp_mediation_mgr = MediationManager(self._session)
+            temp_mediation_mgr = MediationManager(self._session.profile)
             _record, request = await temp_mediation_mgr.prepare_request(
                 conn_rec.connection_id
             )

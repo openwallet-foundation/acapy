@@ -115,9 +115,11 @@ class OutOfBandManager(BaseConnectionManager):
             Invitation record
 
         """
-        mediation_mgr = MediationManager(self._session)
+        mediation_mgr = MediationManager(self._session.profile)
         mediation_record = await mediation_record_if_id(
-            self._session, mediation_id or await mediation_mgr.get_default_mediator_id()
+            self._session,
+            mediation_id,
+            or_default=True,
         )
         keylist_updates = None
 
