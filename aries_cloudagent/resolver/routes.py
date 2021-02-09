@@ -1,43 +1,77 @@
 """resolve did document admin routes."""
 
 
+import re
 from aiohttp import web
 from aiohttp_apispec import (
     docs,
     match_info_schema,
-    querystring_schema,
-    request_schema,
     response_schema,
 )
 from marshmallow import fields, validate
 
-from ....admin.request_context import AdminRequestContext
-from ....messaging.models.base import BaseModelError
-from ....messaging.models.openapi import OpenAPISchema
-from ....storage.error import StorageError, StorageNotFoundError
-from .did_resolver import Resolver
-from ..messaging.valid import UUIDFour
+from ..admin.request_context import AdminRequestContext
+from ..messaging.models.base import BaseModelError
+from ..messaging.models.openapi import OpenAPISchema
+from ..storage.error import StorageError, StorageNotFoundError
+from .did_resolver import DIDResolver
+
+
+class W3cDIDDoc(validate.Regexp):
+    """Validate value against w3c DID document."""
+
+    EXAMPLE = "*"
+    PATTERN = re.compile(r"[a-zA-Z0-9._-]*")
+
+    def __init__(self):
+        """Initializer."""
+
+        super().__init__(
+            W3cDIDDoc.PATTERN,
+            error="Value {input} is not a w3c decentralized identifier (DID) doc.",
+        )
+
+
+_W3cDIDDoc = {"validate": W3cDIDDoc(), "example": W3cDIDDoc.EXAMPLE}
 
 
 class DIDDocSchema(OpenAPISchema):
     """Result schema for did document query."""
 
-    pass
+    did_doc = fields.Str(
+        description="decentralize identifier(DID) document", required=True, **_W3cDIDDoc
+    )
+
+
+class W3cDID(validate.Regexp):
+    """Validate value against w3c DID."""
+
+    EXAMPLE = "did:ted:WgWxqztrNooG92RXvxSTWv"
+    PATTERN = re.compile(r"did:([a-z]+):((?:[a-zA-Z0-9._-]*:)*[a-zA-Z0-9._-]+)")
+
+    def __init__(self):
+        """Initializer."""
+
+        super().__init__(
+            W3cDID.PATTERN,
+            error="Value {input} is not a w3c decentralized identifier (DID)",
+        )
+
+
+_W3cDID = {"validate": W3cDID(), "example": W3cDID.EXAMPLE}
 
 
 class DIDMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking DID."""
 
     did = fields.Str(
-        description="decentralize identifier(DID)",
-        required=True,
-        example=UUIDFour.EXAMPLE,
+        description="decentralize identifier(DID)", required=True, **_W3cDID
     )
 
 
 @docs(tags=["resolver"], summary="Retrieve doc for requested did")
 @match_info_schema(DIDMatchInfoSchema())
-#  @response_schema(DIDDocSchema(), 200)
+@response_schema(DIDDocSchema(), 200)
 async def resolve_did(request: web.BaseRequest):
     """Retrieve a did document."""
     context: AdminRequestContext = request["context"]
@@ -45,8 +79,8 @@ async def resolve_did(request: web.BaseRequest):
     did = request.match_info["did"]
     try:
         session = await context.session()
-        resolver = session.inject(Resolver)
-        document = await resolver.resolve(did)
+        resolver = session.inject(DIDResolver)
+        document = await resolver.resolve(context.profile, did)
         result = document.serialize()
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err

@@ -113,6 +113,7 @@ class DefaultContextBuilder(ContextBuilder):
         plugin_registry.register_plugin("aries_cloudagent.messaging.schemas")
         plugin_registry.register_plugin("aries_cloudagent.messaging.jsonld")
         plugin_registry.register_plugin("aries_cloudagent.revocation")
+        plugin_registry.register_plugin("aries_cloudagent.resolver")
         plugin_registry.register_plugin("aries_cloudagent.wallet")
 
         if context.settings.get("multitenant.admin_enabled"):
@@ -121,7 +122,6 @@ class DefaultContextBuilder(ContextBuilder):
         # Register external plugins
         for plugin_path in self.settings.get("external_plugins", []):
             plugin_registry.register_plugin(plugin_path)
-        plugin_registry.register_plugin("aries_cloudagent.resolver")
 
         # Register message protocols
         await plugin_registry.init_context(context)
