@@ -112,6 +112,7 @@ class AutoEndorseOptionSchema(OpenAPISchema):
         required=False,
     )
 
+
 class EndorserDIDOptionSchema(OpenAPISchema):
     endorser_did = fields.Str(
         description="Endorser DID",
@@ -158,7 +159,12 @@ async def schemas_send_schema(request: web.BaseRequest):
             # if not auto_endorse, then the returned "schema_def" is actually the signed transaction
             schema_id, schema_def = await shield(
                 ledger.create_and_send_schema(
-                    issuer, schema_name, schema_version, attributes, write_ledger=auto_endorse, endorser_did=endorser_did,
+                    issuer,
+                    schema_name,
+                    schema_version,
+                    attributes,
+                    write_ledger=auto_endorse,
+                    endorser_did=endorser_did,
                 )
             )
         except (IndyIssuerError, LedgerError) as err:
@@ -169,7 +175,6 @@ async def schemas_send_schema(request: web.BaseRequest):
     else:
         session = await context.session()
 
-        print("creating transaction with:", schema_def)
         transaction_mgr = TransactionManager(session)
 
         # ignore all parameters except the last one (which is the signed ledger transaction)
@@ -252,6 +257,7 @@ async def schemas_send_schema(request: web.BaseRequest):
 
         return web.json_response(transaction.serialize())
     """
+
 
 @docs(
     tags=["schema"],

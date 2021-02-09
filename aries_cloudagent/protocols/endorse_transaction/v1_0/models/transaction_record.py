@@ -182,26 +182,26 @@ class TransactionRecordSchema(BaseExchangeSchema):
                 "mime-type": "application/json",
                 "data": {
                     "json": "{"
-                        "\"endorser\": \"V4SGRU86Z58d6TV7PBUe6f\","
-                        "\"identifier\": \"LjgpST2rjsoxYegQDRm7EL\","
-                        "\"operation\": {"
-                            "\"data\": {"
-                                "\"attr_names\": [\"first_name\", \"last_name\"],"
-                                "\"name\": \"test_schema\","
-                                "\"version\": \"2.1\","
-                            "},"
-                            "\"type\": \"101\","
-                        "},"
-                        "\"protocolVersion\": 2,"
-                        "\"reqId\": 1597766666168851000,"
-                        "\"signatures\": {"
-                            "\"LjgpST2rjsox\": \"4ATKMn6Y9sTgwqaGTm7py2c2M8x1EVDTWKZArwyuPgjU\""
-                        "},"
-                        "\"taaAcceptance\": {"
-                            "\"mechanism\": \"manual\","
-                            "\"taaDigest\": \"f50fe2c2ab977006761d36bd6f23e4c6a7e0fc2feb9f62\","
-                            "\"time\": 1597708800,"
-                        "}"
+                    '"endorser": "V4SGRU86Z58d6TV7PBUe6f",'
+                    '"identifier": "LjgpST2rjsoxYegQDRm7EL",'
+                    '"operation": {'
+                    '"data": {'
+                    '"attr_names": ["first_name", "last_name"],'
+                    '"name": "test_schema",'
+                    '"version": "2.1",'
+                    "},"
+                    '"type": "101",'
+                    "},"
+                    '"protocolVersion": 2,'
+                    '"reqId": 1597766666168851000,'
+                    '"signatures": {'
+                    '"LjgpST2rjsox": "4ATKMn6Y9sTgwqaGTm7py2c2M8x1EVDTWKZArwyuPgjU"'
+                    "},"
+                    '"taaAcceptance": {'
+                    '"mechanism": "manual",'
+                    '"taaDigest": "f50fe2c2ab977006761d36bd6f23e4c6a7e0fc2feb9f62",'
+                    '"time": 1597708800,'
+                    "}"
                     "}"
                 },
             }

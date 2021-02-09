@@ -138,8 +138,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         self,
         request_json: str,
     ) -> str:
-        """
-        """
+        """"""
 
     @abstractmethod
     async def txn_submit(
@@ -149,8 +148,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         taa_accept: bool,
         sign_did: namedtuple("DIDInfo", "did verkey metadata"),
     ) -> str:
-        """
-        """
+        """"""
 
     @abstractmethod
     async def create_and_send_schema(

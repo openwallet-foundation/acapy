@@ -153,18 +153,6 @@ class TransactionManager:
         transaction.state = TransactionRecord.STATE_REQUEST_SENT
         transaction.connection_id = connection_id
 
-        """
-        # don't try to introspect the attached message, it's already signed we just need to forward along for endorsement
-        if signature:
-            author_did = transaction.messages_attach[0]["data"]["json"]["identifier"]
-            transaction.messages_attach[0]["data"]["json"]["signatures"][
-                author_did
-            ] = signature
-            transaction.messages_attach[0]["data"]["json"]["reqId"] = signed_request[
-                "reqId"
-            ]
-        """
-
         profile_session = await self.session
         async with profile_session.profile.session() as session:
             await transaction.save(session, reason="Created an endorsement request")
@@ -186,8 +174,6 @@ class TransactionManager:
             request: A Transaction Request
             connection_id: The connection id related to this transaction record
         """
-
-        print("Request received:", request)
 
         transaction = TransactionRecord()
 
@@ -256,10 +242,10 @@ class TransactionManager:
 
         if signature:
             # don't modify the transaction payload
-            #author_did = transaction.messages_attach[0]["data"]["json"]["identifier"]
-            #transaction.messages_attach[0]["data"]["json"]["signatures"][
+            # author_did = transaction.messages_attach[0]["data"]["json"]["identifier"]
+            # transaction.messages_attach[0]["data"]["json"]["signatures"][
             #    author_did
-            #] = signature
+            # ] = signature
             signature_response = {
                 "message_id": transaction.messages_attach[0]["@id"],
                 "context": TransactionRecord.SIGNATURE_CONTEXT,
@@ -308,8 +294,6 @@ class TransactionManager:
             response: The Endorsed Transaction Response
         """
 
-        print("received endorse response:", response)
-
         profile_session = await self.session
         async with profile_session.profile.session() as session:
             transaction = await TransactionRecord.retrieve_by_id(
@@ -323,17 +307,11 @@ class TransactionManager:
         transaction.signature_response.append(response.signature_response)
 
         transaction.thread_id = response.thread_id
-        #transaction.messages_attach[0]["data"]["json"][
-        #    "endorser"
-        #] = response.endorser_did
 
-        #author_did = transaction.messages_attach[0]["data"]["json"]["identifier"]
         endorser_did = response.endorser_did
-        #transaction.messages_attach[0]["data"]["json"]["signatures"][
-        #    endorser_did
-        #] = response.signature_response["signature"][endorser_did]
-        # the returned signature is actually the endorsed ledger transaction
-        transaction.messages_attach[0]["data"]["json"] = response.signature_response["signature"][endorser_did]
+        transaction.messages_attach[0]["data"]["json"] = response.signature_response[
+            "signature"
+        ][endorser_did]
 
         async with profile_session.profile.session() as session:
             await transaction.save(session, reason="Received an endorsed response")

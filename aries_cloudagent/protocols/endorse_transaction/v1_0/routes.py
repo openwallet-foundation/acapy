@@ -199,66 +199,11 @@ async def transaction_create_request(request: web.BaseRequest):
 
     transaction_mgr = TransactionManager(session)
 
-    """
-    # we already have a signed transaction attached, we just need to send it to the issuer
-    if (
-        transaction_record.messages_attach[0]["data"]["json"]["operation"]["type"]
-        == "101"
-    ):
-
-        issuer = context.inject(IndyIssuer)
-        ledger = context.inject(BaseLedger, required=False)
-
-        schema_name = transaction_record.messages_attach[0]["data"]["json"][
-            "operation"
-        ]["data"]["schema_name"]
-        schema_version = transaction_record.messages_attach[0]["data"]["json"][
-            "operation"
-        ]["data"]["schema_version"]
-        attributes = transaction_record.messages_attach[0]["data"]["json"]["operation"][
-            "data"
-        ]["attributes"]
-
-        async with ledger:
-            try:
-                #schema_request = await shield(
-                #    ledger.create_schema(
-                #        issuer, schema_name, schema_version, attributes
-                #    )
-                #)
-            except (IndyIssuerError, LedgerError) as err:
-                raise web.HTTPBadRequest(reason=err.roll_up) from err
-
-        schema_request = json.loads(schema_request)
-
-        (
-            transaction_record,
-            transaction_request,
-        ) = await transaction_mgr.create_request(
-            transaction=transaction_record,
-            connection_id=connection_id,
-            signature=schema_request["signature"],
-            signed_request=schema_request,
-        )
-
-        await outbound_handler(
-            transaction_request, connection_id=connection_record.connection_id
-        )
-
-        return web.json_response(transaction_record.serialize())
-
-    else:
-        pass
-    """
-
     transaction_mgr = TransactionManager(session)
 
     (transaction_record, transaction_request) = await transaction_mgr.create_request(
         transaction=transaction_record, connection_id=connection_id
     )
-
-    print(":transaction_record", transaction_record)
-    print("transaction_request:", transaction_request)
 
     await outbound_handler(
         transaction_request, connection_id=connection_record.connection_id
@@ -333,47 +278,6 @@ async def endorse_transaction_response(request: web.BaseRequest):
 
     transaction_mgr = TransactionManager(session)
 
-    """
-    # don't do any transaction_type-specific logic, just endorse the transaction
-    if transaction.messages_attach[0]["data"]["json"]["operation"]["type"] == "101":
-
-        ledger = context.inject(BaseLedger, required=False)
-
-        schema_json = transaction.messages_attach[0]["data"]["json"]
-
-        del schema_json["taaAcceptance"]
-        del schema_json["endorser"]
-
-        async with ledger:
-            try:
-                #signed_schema_request = await shield(
-                #    ledger.create_schema(signed_request=schema_json)
-                #)
-                #print("signed_schema_request:", signed_schema_request)
-            except (IndyIssuerError, LedgerError) as err:
-                raise web.HTTPBadRequest(reason=err.roll_up) from err
-
-        (
-            transaction,
-            endorsed_transaction_response,
-        ) = await transaction_mgr.create_endorse_response(
-            transaction=transaction,
-            state=TransactionRecord.STATE_TRANSACTION_ENDORSED,
-            endorser_did=endorser_did,
-            endorser_verkey=endorser_verkey,
-            signature=signed_schema_request["signatures"][endorser_did],
-        )
-
-        await outbound_handler(
-            endorsed_transaction_response, connection_id=transaction.connection_id
-        )
-
-        return web.json_response(transaction.serialize())
-
-    else:
-        pass
-    """
-
     ledger = context.inject(BaseLedger, required=False)
 
     transaction_json = transaction.messages_attach[0]["data"]["json"]
@@ -383,7 +287,6 @@ async def endorse_transaction_response(request: web.BaseRequest):
             endorsed_transaction_request = await shield(
                 ledger.txn_endorse(transaction_json)
             )
-            print("endorsed_transaction_request:", endorsed_transaction_request)
         except (IndyIssuerError, LedgerError) as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err
 
@@ -707,13 +610,7 @@ async def transaction_write(request: web.BaseRequest):
         )
 
     ledger_transaction = transaction.messages_attach[0]["data"]["json"]
-    print("ledger_transaction:", ledger_transaction)
     endorsed_signature = transaction.signature_response[0]
-    print("endorsed_signature:", endorsed_signature)
-    # the returned attachment is updated with the signature
-    #for endorser_did in endorsed_signature["signature"].keys():
-    #    ledger_transaction["signatures"][endorser_did] = endorsed_signature["signature"][endorser_did]
-    print("signed ledger_transaction:", ledger_transaction)
 
     ledger = context.inject(BaseLedger, required=False)
     if not ledger:
@@ -724,133 +621,14 @@ async def transaction_write(request: web.BaseRequest):
 
     async with ledger:
         try:
-            print("Writing to ledger ...", ledger_transaction)
             ledger_response = await shield(
                 ledger.txn_submit(ledger_transaction, sign=False, taa_accept=False)
             )
-            print("ledger_response:", ledger_response)
         except (IndyIssuerError, LedgerError) as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     return web.json_response(json.loads(ledger_response))
 
-    """
-    body = transaction.messages_attach[0]["data"]["json"]["operation"]["data"]
-
-    if transaction.messages_attach[0]["data"]["json"]["operation"]["type"] == "101":
-
-        schema_name = body.get("schema_name")
-        schema_version = body.get("schema_version")
-        attributes = body.get("attributes")
-
-        ledger = context.inject(BaseLedger, required=False)
-        if not ledger:
-            reason = "No ledger available"
-            if not context.settings.get_value("wallet.type"):
-                reason += ": missing wallet-type?"
-            raise web.HTTPForbidden(reason=reason)
-
-        issuer = context.inject(IndyIssuer)
-        async with ledger:
-            try:
-                schema_id, schema_def = await shield(
-                    ledger.create_and_send_schema(
-                        issuer, schema_name, schema_version, attributes
-                    )
-                )
-            except (IndyIssuerError, LedgerError) as err:
-                raise web.HTTPBadRequest(reason=err.roll_up) from err
-
-        return web.json_response({"schema_id": schema_id, "schema": schema_def})
-
-    else:
-
-        schema_id = body.get("schema_id")
-        support_revocation = bool(body.get("support_revocation"))
-        tag = body.get("tag")
-        rev_reg_size = body.get("revocation_registry_size")
-
-        ledger = context.inject(BaseLedger, required=False)
-        if not ledger:
-            reason = "No ledger available"
-            if not context.settings.get_value("wallet.type"):
-                reason += ": missing wallet-type?"
-            raise web.HTTPForbidden(reason=reason)
-
-        issuer = context.inject(IndyIssuer)
-        try:  # even if in wallet, send it and raise if erroneously so
-            async with ledger:
-                (cred_def_id, cred_def, novel) = await shield(
-                    ledger.create_and_send_credential_definition(
-                        issuer,
-                        schema_id,
-                        signature_type=None,
-                        tag=tag,
-                        support_revocation=support_revocation,
-                    )
-                )
-        except LedgerError as e:
-            raise web.HTTPBadRequest(reason=e.message) from e
-
-        # If revocation is requested and cred def is novel, create revocation registry
-        if support_revocation and novel:
-            session = (
-                await context.session()
-            )  # FIXME - will update to not require session here
-            tails_base_url = session.settings.get("tails_server_base_url")
-            if not tails_base_url:
-                raise web.HTTPBadRequest(reason="tails_server_base_url not configured")
-            try:
-                # Create registry
-                revoc = IndyRevocation(session)
-                registry_record = await revoc.init_issuer_registry(
-                    cred_def_id,
-                    max_cred_num=rev_reg_size,
-                )
-
-            except RevocationNotSupportedError as e:
-                raise web.HTTPBadRequest(reason=e.message) from e
-            await shield(registry_record.generate_registry(session))
-            try:
-                await registry_record.set_tails_file_public_uri(
-                    session, f"{tails_base_url}/{registry_record.revoc_reg_id}"
-                )
-                await registry_record.send_def(session)
-                await registry_record.send_entry(session)
-
-                # stage pending registry independent of whether tails server is OK
-                pending_registry_record = await revoc.init_issuer_registry(
-                    registry_record.cred_def_id,
-                    max_cred_num=registry_record.max_cred_num,
-                )
-                ensure_future(
-                    pending_registry_record.stage_pending_registry(
-                        session, max_attempts=16
-                    )
-                )
-
-                tails_server = session.inject(BaseTailsServer)
-                (upload_success, reason) = await tails_server.upload_tails_file(
-                    session,
-                    registry_record.revoc_reg_id,
-                    registry_record.tails_local_path,
-                    interval=0.8,
-                    backoff=-0.5,
-                    max_attempts=5,  # heuristic: respect HTTP timeout
-                )
-                if not upload_success:
-                    raise web.HTTPInternalServerError(
-                        reason=(
-                            f"Tails file for rev reg {registry_record.revoc_reg_id} "
-                            f"failed to upload: {reason}"
-                        )
-                    )
-
-            except RevocationError as e:
-                raise web.HTTPBadRequest(reason=e.message) from e
-
-        return web.json_response({"credential_definition_id": cred_def_id})
-    """
 
 async def register(app: web.Application):
     """Register routes."""
