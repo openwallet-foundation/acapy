@@ -14,7 +14,12 @@ from runners.support.agent import (  # noqa:E402
     start_mediator_agent,
     connect_wallet_to_mediator,
 )
-from runners.support.utils import log_msg, log_timer, progress, require_indy  # noqa:E402
+from runners.support.utils import (
+    log_msg,
+    log_timer,
+    progress,
+    require_indy,
+)  # noqa:E402
 
 CRED_PREVIEW_TYPE = "https://didcomm.org/issue-credential/2.0/credential-preview"
 LOGGER = logging.getLogger(__name__)
