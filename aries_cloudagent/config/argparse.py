@@ -576,7 +576,7 @@ class LedgerGroup(ArgumentGroup):
                 raise ArgsParseError(
                     "One of --genesis-url --genesis-file or --genesis-transactions "
                     + "must be specified (unless --no-ledger is specified to "
-                    + "explicitely configure aca-py to run with no ledger)."
+                    + "explicitly configure aca-py to run with no ledger)."
                 )
             if args.ledger_pool_name:
                 settings["ledger.pool_name"] = args.ledger_pool_name

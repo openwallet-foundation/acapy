@@ -52,7 +52,7 @@ class FaberAgent(DemoAgent):
             prefix="Faber",
             extra_args=[]
             if no_auto
-            else ["--auto-accept-invites", "--auto-accept-requests-explicit"],
+            else ["--auto-accept-invites", "--auto-accept-requests"],
             **kwargs,
         )
         self.connection_id = None
@@ -74,7 +74,8 @@ class FaberAgent(DemoAgent):
         pass
 
     async def handle_connections(self, message):
-        # a bit of a hack, but for the mediator connection self._connection_ready will be None
+        # a bit of a hack, but for the mediator connection self._connection_ready
+        # will be None
         if not self._connection_ready:
             return
 

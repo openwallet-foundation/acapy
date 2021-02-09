@@ -394,7 +394,7 @@ class DemoAgent:
                 # assume wallet key is wallet name
                 self.wallet_key = target_wallet_name
                 self.ident = target_wallet_name
-                # we can't recover the seed so let's set it to None and see what happens ...
+                # we can't recover the seed so let's set it to None and see what happens
                 self.seed = None
                 self.log(f"Switching to EXISTING wallet {target_wallet_name}")
                 return False
@@ -915,7 +915,7 @@ class MediatorAgent(DemoAgent):
             mediation=True,
             extra_args=[
                 "--auto-accept-invites",
-                "--auto-accept-requests-explicit",
+                "--auto-accept-requests",
             ],
             seed=None,
             **kwargs,

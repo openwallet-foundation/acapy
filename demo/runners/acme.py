@@ -26,7 +26,7 @@ class AcmeAgent(DemoAgent):
             http_port,
             admin_port,
             prefix="Acme",
-            extra_args=["--auto-accept-invites", "--auto-accept-requests-explicit"],
+            extra_args=["--auto-accept-invites", "--auto-accept-requests"],
             **kwargs,
         )
         self.connection_id = None
