@@ -230,6 +230,7 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
         except RevocationError as e:
             raise web.HTTPBadRequest(reason=e.message) from e
 
+    if auto_endorse:
         return web.json_response({"credential_definition_id": cred_def_id})
 
     else:
@@ -293,6 +294,7 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
             taaDigest=taaDigest,
             time=time,
             expires_time="1597708800",
+            messages_attach={}, # TODO
         )
 
         return web.json_response(transaction.serialize())

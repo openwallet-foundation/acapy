@@ -79,6 +79,9 @@ class BaseAgent(DemoAgent):
         if rev_reg_id and cred_rev_id:
             self.revocations.append((rev_reg_id, cred_rev_id))
 
+    async def handle_issuer_cred_rev(self, message):
+        pass
+
     async def handle_ping(self, payload):
         thread_id = payload["thread_id"]
         if thread_id in self.sent_pings or (
