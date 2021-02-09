@@ -5,6 +5,7 @@ from asynctest import mock as async_mock
 from ...admin.base_server import BaseAdminServer
 from ...config.base_context import ContextBuilder
 from ...config.injection_context import InjectionContext
+from ...connections.models.conn_record import ConnRecord
 from ...connections.models.connection_target import ConnectionTarget
 from ...connections.models.diddoc import (
     DIDDoc,
@@ -734,8 +735,15 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
 
         await conductor.setup()
 
-        mock_conn_record = async_mock.MagicMock()
-
+        conn_record = ConnRecord(
+            invitation_key="3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx",
+            their_label="Hello",
+            their_role=ConnRecord.Role.RESPONDER.rfc160,
+            alias="Bob",
+        )
+        conn_record.accept = ConnRecord.ACCEPT_MANUAL
+        await conn_record.save(await conductor.root_profile.session())
+        conn_record_dict = conn_record.serialize()
         with async_mock.patch.object(
             test_module.InvitationMessage, "from_url"
         ) as mock_from_url, async_mock.patch.object(
@@ -744,13 +752,11 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             async_mock.MagicMock(
                 return_value=async_mock.MagicMock(
                     receive_invitation=async_mock.CoroutineMock(
-                        return_value=mock_conn_record
+                        return_value=conn_record_dict
                     )
                 )
             ),
         ) as mock_mgr, async_mock.patch.object(
-            mock_conn_record, "metadata_set", async_mock.CoroutineMock()
-        ), async_mock.patch.object(
             test_module,
             "LOGGER",
             async_mock.MagicMock(

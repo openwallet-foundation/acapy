@@ -952,7 +952,7 @@ class MediationGroup(ArgumentGroup):
             "--mediator-connections-invite",
             action="store_true",
             env_var="ACAPY_MEDIATION_CONNECTIONS_INVITE",
-            help="Connect to mediator through a Connections invitation. \
+            help="Connect to mediator through a connection invitation. \
                 If not specified, connect using an OOB invitation. \
                 Default: false.",
         )

@@ -245,7 +245,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         )
 
         self.test_mediator_routing_keys = [
-            naked_to_did_key("3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRR")
+            "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRR"
         ]
         self.test_mediator_conn_id = "mediator-conn-id"
         self.test_mediator_endpoint = "http://mediator.example.com"
@@ -616,7 +616,9 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             assert service["id"] == "#inline"
             assert service["type"] == "did-communication"
             assert len(service["recipientKeys"]) == 1
-            assert service["routingKeys"] == self.test_mediator_routing_keys
+            assert service["routingKeys"][0] == naked_to_did_key(
+                self.test_mediator_routing_keys[0]
+            )
             assert service["serviceEndpoint"] == self.test_mediator_endpoint
 
     async def test_create_invitation_metadata_assigned(self):

@@ -303,7 +303,10 @@ class OutOfBandManager(BaseConnectionManager):
                     await responder.send(
                         keylist_updates, connection_id=mediation_record.connection_id
                     )
-
+            routing_keys = [
+                key if len(key.split(":")) == 3 else naked_to_did_key(key)
+                for key in routing_keys
+            ]
             # Create connection invitation message
             # Note: Need to split this into two stages to support inbound routing
             # of invitations
