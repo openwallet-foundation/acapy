@@ -42,21 +42,21 @@ class PresentationRequestHandler(BaseHandler):
         if not context.connection_ready:
             raise HandlerException("No connection established for presentation request")
 
-        session = await context.session()
-        presentation_manager = PresentationManager(session)
+        presentation_manager = PresentationManager(context.profile)
 
         indy_proof_request = context.message.indy_proof_request(0)
 
         # Get presentation exchange record (holder initiated via proposal)
         # or create it (verifier sent request first)
         try:
-            (
-                presentation_exchange_record
-            ) = await V10PresentationExchange.retrieve_by_tag_filter(
-                session,
-                {"thread_id": context.message._thread_id},
-                {"connection_id": context.connection_record.connection_id},
-            )  # holder initiated via proposal
+            async with context.session() as session:
+                (
+                    presentation_exchange_record
+                ) = await V10PresentationExchange.retrieve_by_tag_filter(
+                    session,
+                    {"thread_id": context.message._thread_id},
+                    {"connection_id": context.connection_record.connection_id},
+                )  # holder initiated via proposal
         except StorageNotFoundError:  # verifier sent this request free of any proposal
             presentation_exchange_record = V10PresentationExchange(
                 connection_id=context.connection_record.connection_id,

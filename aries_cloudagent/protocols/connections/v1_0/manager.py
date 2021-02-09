@@ -64,7 +64,9 @@ class ConnectionManager(BaseConnectionManager):
         """
         return self._session
 
-    async def mediation_record_if_id(self, mediation_id: str = None):
+    async def mediation_record_if_id(
+        self, mediation_id: str = None, or_default: bool = False
+    ):
         """Validate mediation and return record.
 
         If mediation_id is not None,
@@ -76,6 +78,11 @@ class ConnectionManager(BaseConnectionManager):
             mediation_record = await MediationRecord.retrieve_by_id(
                 self._session, mediation_id
             )
+        elif or_default:
+            mediation_record = await MediationManager(
+                self.session.profile
+            ).get_default_mediator()
+
         if mediation_record:
             if mediation_record.state != MediationRecord.STATE_GRANTED:
                 raise ConnectionManagerError(
@@ -140,11 +147,10 @@ class ConnectionManager(BaseConnectionManager):
             A tuple of the new `ConnRecord` and `ConnectionInvitation` instances
 
         """
-        mediation_mgr = MediationManager(self._session)
         # Mediation Record can still be None after this operation if no
         # mediation id passed and no default
         mediation_record = await self.mediation_record_if_id(
-            mediation_id or await mediation_mgr.get_default_mediator_id()
+            mediation_id, or_default=True
         )
         keylist_updates = None
         image_url = self._session.context.settings.get("image_url")
@@ -203,6 +209,7 @@ class ConnectionManager(BaseConnectionManager):
             invitation_signing_key = await wallet.create_signing_key()
             invitation_key = invitation_signing_key.verkey
             recipient_keys = [invitation_key]
+            mediation_mgr = MediationManager(self._session.profile)
             keylist_updates = await mediation_mgr.add_key(
                 invitation_key, keylist_updates
             )
@@ -377,14 +384,12 @@ class ConnectionManager(BaseConnectionManager):
 
         """
 
-        # Mediation setup
         keylist_updates = None
-        mediation_mgr = MediationManager(self._session)
 
         # Mediation Record can still be None after this operation if no
         # mediation id passed and no default
         mediation_record = await self.mediation_record_if_id(
-            mediation_id or await mediation_mgr.get_default_mediator_id()
+            mediation_id, or_default=True
         )
 
         multitenant_mgr = self._session.inject(MultitenantManager, required=False)
@@ -402,6 +407,7 @@ class ConnectionManager(BaseConnectionManager):
             # Create new DID for connection
             my_info = await wallet.create_local_did()
             connection.my_did = my_info.did
+            mediation_mgr = MediationManager(self._session.profile)
             keylist_updates = await mediation_mgr.add_key(
                 my_info.verkey, keylist_updates
             )
@@ -471,10 +477,12 @@ class ConnectionManager(BaseConnectionManager):
 
         """
         ConnRecord.log_state(
-            self._session, "Receiving connection request", {"request": request}
+            "Receiving connection request",
+            {"request": request},
+            settings=self._session.settings,
         )
 
-        mediation_mgr = MediationManager(self._session)
+        mediation_mgr = MediationManager(self._session.profile)
         keylist_updates = None
         connection = None
         connection_key = None
@@ -483,10 +491,10 @@ class ConnectionManager(BaseConnectionManager):
         # Multitenancy setup
         multitenant_mgr = self._session.inject(MultitenantManager, required=False)
         wallet_id = self._session.settings.get("wallet.id")
+        wallet = self._session.inject(BaseWallet)
 
         # Determine what key will need to sign the response
         if receipt.recipient_did_public:
-            wallet = self._session.inject(BaseWallet)
             my_info = await wallet.get_local_did(receipt.recipient_did)
             connection_key = my_info.verkey
         else:
@@ -507,7 +515,9 @@ class ConnectionManager(BaseConnectionManager):
             invitation = await connection.retrieve_invitation(self._session)
             connection_key = connection.invitation_key
             ConnRecord.log_state(
-                self._session, "Found invitation", {"invitation": invitation}
+                "Found invitation",
+                {"invitation": invitation},
+                settings=self._session.settings,
             )
 
             if connection.is_multiuse_invitation:
@@ -643,12 +653,11 @@ class ConnectionManager(BaseConnectionManager):
 
         """
         ConnRecord.log_state(
-            self._session,
             "Creating connection response",
             {"connection_id": connection.connection_id},
+            settings=self._session.settings,
         )
 
-        mediation_mgr = MediationManager(self._session)
         keylist_updates = None
         mediation_record = await self.mediation_record_if_id(mediation_id)
 
@@ -675,6 +684,7 @@ class ConnectionManager(BaseConnectionManager):
         else:
             my_info = await wallet.create_local_did()
             connection.my_did = my_info.did
+            mediation_mgr = MediationManager(self._session.profile)
             keylist_updates = await mediation_mgr.add_key(
                 my_info.verkey, keylist_updates
             )
@@ -736,7 +746,7 @@ class ConnectionManager(BaseConnectionManager):
             self._session, MediationManager.SEND_REQ_AFTER_CONNECTION
         )
         if send_mediation_request:
-            mgr = MediationManager(self._session)
+            mgr = MediationManager(self._session.profile)
             _record, request = await mgr.prepare_request(connection.connection_id)
             responder = self._session.inject(BaseResponder)
             await responder.send(request, connection_id=connection.connection_id)
@@ -820,7 +830,7 @@ class ConnectionManager(BaseConnectionManager):
             self._session, MediationManager.SEND_REQ_AFTER_CONNECTION
         )
         if send_mediation_request:
-            mgr = MediationManager(self._session)
+            mgr = MediationManager(self._session.profile)
             _record, request = await mgr.prepare_request(connection.connection_id)
             responder = self._session.inject(BaseResponder)
             await responder.send(request, connection_id=connection.connection_id)
@@ -837,7 +847,7 @@ class ConnectionManager(BaseConnectionManager):
         their_endpoint: str = None,
         their_label: str = None,
         alias: str = None,
-    ) -> (DIDInfo, DIDInfo, ConnRecord):
+    ) -> Tuple[DIDInfo, DIDInfo, ConnRecord]:
         """
         Register a new static connection (for use by the test suite).
 
@@ -1272,7 +1282,7 @@ class ConnectionManager(BaseConnectionManager):
             )
         connection.inbound_connection_id = inbound_connection_id
 
-        route_mgr = RoutingManager(self._session)
+        route_mgr = RoutingManager(self._session.profile)
 
         await route_mgr.send_create_route(
             inbound_connection_id, my_info.verkey, outbound_handler
