@@ -126,17 +126,13 @@ class OutOfBandManager(BaseConnectionManager):
             auto_accept
             or (
                 auto_accept is None
-                and self._session.settings.get("debug.auto_accept_requests_explicit")
+                and self._session.settings.get("debug.auto_accept_requests")
             )
         )
         if public:
             if multi_use:
                 raise OutOfBandManagerError(
                     "Cannot create public invitation with multi_use"
-                )
-            if attachments:
-                raise OutOfBandManagerError(
-                    "Cannot create public invitation with attachments"
                 )
             if metadata:
                 raise OutOfBandManagerError(
@@ -200,6 +196,7 @@ class OutOfBandManager(BaseConnectionManager):
             invi_msg = InvitationMessage(  # create invitation message
                 label=my_label or self._session.settings.get("default_label"),
                 handshake_protocols=handshake_protocols,
+                request_attach=message_attachments,
                 service=[f"did:sov:{public_did.did}"],
             )
 

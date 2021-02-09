@@ -157,7 +157,7 @@ class DIDXManager(BaseConnectionManager):
 
     async def create_request(
         self,
-        conn_rec: ConnRecord,  # TODO: allow None (implicit invite); do admin API route
+        conn_rec: ConnRecord,
         my_label: str = None,
         my_endpoint: str = None,
     ) -> DIDXRequest:
@@ -344,7 +344,7 @@ class DIDXManager(BaseConnectionManager):
                 await multitenant_mgr.add_key(wallet_id, my_info.verkey)
 
             auto_accept = self._session.settings.get(
-                "debug.auto_accept_requests_implicit", False
+                "debug.auto_accept_requests", False
             )
 
             conn_rec = ConnRecord(
@@ -442,11 +442,6 @@ class DIDXManager(BaseConnectionManager):
         # Assign thread information
         response.assign_thread_from(request)
         response.assign_trace_from(request)
-        """  # TODO - re-evaluate what code signs? With what key?
-        # Sign connection field using the invitation key
-        wallet = self._session.inject(BaseWallet)
-        await response.sign_field("connection", connection.invitation_key, wallet)
-        """
 
         # Update connection state
         conn_rec.state = ConnRecord.State.RESPONSE.rfc23
@@ -513,7 +508,6 @@ class DIDXManager(BaseConnectionManager):
                 error_code=ProblemReportReason.RESPONSE_NOT_ACCEPTED,
             )
 
-        # TODO: RFC 160 impl included STATE_RESPONSE: why?
         if ConnRecord.State.get(conn_rec.state) is not ConnRecord.State.REQUEST:
             raise DIDXManagerError(
                 "Cannot accept connection response for connection"

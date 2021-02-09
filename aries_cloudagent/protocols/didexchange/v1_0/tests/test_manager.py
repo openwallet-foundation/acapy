@@ -75,8 +75,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 "default_label": "This guy",
                 "additional_endpoints": ["http://aries.ca/another-endpoint"],
                 "debug.auto_accept_invites": True,
-                "debug.auto_accept_requests_explicit": True,
-                "debug.auto_accept_requests_implicit": True,
+                "debug.auto_accept_requests": True,
                 "multitenant.enabled": True,
                 "wallet.id": True,
             },
@@ -550,7 +549,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
         await self.session.wallet.create_local_did(seed=None, did=TestConfig.test_did)
 
         self.session.context.update_settings(
-            {"public_invites": True, "debug.auto_accept_requests_explicit": False}
+            {"public_invites": True, "debug.auto_accept_requests": False}
         )
         mock_conn_rec_state_request = ConnRecord.State.REQUEST
         with async_mock.patch.object(
@@ -741,7 +740,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 "wallet.id": "test_wallet",
                 "multitenant.enabled": True,
                 "public_invites": True,
-                "debug.auto_accept_requests_implicit": False,
+                "debug.auto_accept_requests": False,
             }
         )
 

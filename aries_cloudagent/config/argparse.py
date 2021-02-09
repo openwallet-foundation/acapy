@@ -283,21 +283,11 @@ class DebugGroup(ArgumentGroup):
             waiting for an admin request. Default: false.",
         )
         parser.add_argument(
-            "--auto-accept-requests-explicit",
+            "--auto-accept-requests",
             action="store_true",
-            env_var="ACAPY_AUTO_ACCEPT_REQUESTS_EXPLICIT",
-            help="Automatically accept connection (RFC 0160) and \
-            did-exchange (RFC 0023) requests against \
-            explicit invitations without firing a webhook event\
-            or waiting for an admin request. Default: false.",
-        )
-        parser.add_argument(
-            "--auto-accept-requests-implicit",
-            action="store_true",
-            env_var="ACAPY_AUTO_ACCEPT_REQUESTS_IMPLICIT",
-            help="Automatically accept did-exchange (RFC 0023) requests\
-            against implicit invitations without firing a webhook event\
-            or waiting for an admin request. Default: false.",
+            env_var="ACAPY_AUTO_ACCEPT_REQUESTS",
+            help="Automatically accept connection requests without firing\
+            a webhook event or waiting for an admin request. Default: false.",
         )
         parser.add_argument(
             "--auto-respond-messages",
@@ -400,10 +390,8 @@ class DebugGroup(ArgumentGroup):
             settings["debug.auto_verify_presentation"] = True
         if args.auto_accept_invites:
             settings["debug.auto_accept_invites"] = True
-        if args.auto_accept_requests_explicit:
-            settings["debug.auto_accept_requests_explicit"] = True
-        if args.auto_accept_requests_implicit:
-            settings["debug.auto_accept_requests_implicit"] = True
+        if args.auto_accept_requests:
+            settings["debug.auto_accept_requests"] = True
         if args.auto_respond_messages:
             settings["debug.auto_respond_messages"] = True
         return settings
