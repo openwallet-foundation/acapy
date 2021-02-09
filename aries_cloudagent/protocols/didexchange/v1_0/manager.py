@@ -104,11 +104,7 @@ class DIDXManager(BaseConnectionManager):
                 auto_accept
                 or (
                     auto_accept is None
-                    and self._session.settings.get(
-                        "debug.auto_accept_requests_public"
-                        if invitation.service_dids
-                        else "debug.auto_accept_requests_peer"
-                    )
+                    and self._session.settings.get("debug.auto_accept_invites")
                 )
             )
             else ConnRecord.ACCEPT_MANUAL
@@ -207,11 +203,6 @@ class DIDXManager(BaseConnectionManager):
         )
         invitation = await conn_rec.retrieve_invitation(self._session)
         pthid = invitation._id
-        # WAS
-        # if invitation.service_blocks:
-        #     pthid = invitation._id  # explicit
-        # else:
-        #     pthid = invitation.service_dids[0]  # should look like did:sov:abc...123
         attach = AttachDecorator.from_indy_dict(did_doc.serialize())
         await attach.data.sign(my_info.verkey, wallet)
         if not my_label:
@@ -261,20 +252,28 @@ class DIDXManager(BaseConnectionManager):
 
         # Determine what key will need to sign the response
         if receipt.recipient_did_public:
+            if not self._session.settings.get("public_invites"):
+                raise DIDXManagerError(
+                    "Public invitations are not enabled: connection request refused"
+                )
             my_info = await wallet.get_local_did(receipt.recipient_did)
             connection_key = my_info.verkey
         else:
             connection_key = receipt.recipient_verkey
-            try:
-                conn_rec = await ConnRecord.retrieve_by_invitation_key(
-                    session=self._session,
-                    invitation_key=connection_key,
-                    their_role=ConnRecord.Role.REQUESTER.rfc23,
-                )
-            except StorageNotFoundError:
-                raise DIDXManagerError("No invitation found for pairwise connection")
 
-        if conn_rec:  # OOB mgr saves conn record only for explicit invite (public DID)
+        try:
+            conn_rec = await ConnRecord.retrieve_by_invitation_key(
+                session=self._session,
+                invitation_key=connection_key,
+                their_role=ConnRecord.Role.REQUESTER.rfc23,
+            )
+        except StorageNotFoundError:
+            if not receipt.recipient_did_public:
+                raise DIDXManagerError(
+                    "No explicit invitation found for pairwise connection"
+                )
+
+        if conn_rec:  # invitation was explicit
             connection_key = conn_rec.invitation_key
             if conn_rec.is_multiuse_invitation:
                 wallet = self._session.inject(BaseWallet)
@@ -305,6 +304,7 @@ class DIDXManager(BaseConnectionManager):
                 if multitenant_mgr and wallet_id:
                     await multitenant_mgr.add_key(wallet_id, my_info.verkey)
 
+        # request DID doc describes requester DID
         if not (request.did_doc_attach and request.did_doc_attach.data):
             raise DIDXManagerError(
                 "DID Doc attachment missing or has no data: "
@@ -323,8 +323,10 @@ class DIDXManager(BaseConnectionManager):
             )
         await self.store_did_document(conn_did_doc)
 
-        if conn_rec:  # request necessarily against explicit invitation (peer DID)
-            auto_accept = conn_rec.accept == ConnRecord.ACCEPT_AUTO  # null=manual
+        if conn_rec:  # request is against explicit invitation
+            auto_accept = (
+                conn_rec.accept == ConnRecord.ACCEPT_AUTO
+            )  # null=manual; oob-manager calculated at conn rec creation
 
             conn_rec.their_label = request.label
             conn_rec.their_did = request.did
@@ -333,8 +335,8 @@ class DIDXManager(BaseConnectionManager):
             await conn_rec.save(
                 self._session, reason="Received connection request from invitation"
             )
-        elif self._session.settings.get("public_invites"):
-            # request from public DID (implicit invitation)
+        else:
+            # request is against implicit invitation on public DID
             my_info = await wallet.create_local_did()
 
             # Add mapping for multitenant relay
@@ -342,14 +344,16 @@ class DIDXManager(BaseConnectionManager):
                 await multitenant_mgr.add_key(wallet_id, my_info.verkey)
 
             auto_accept = self._session.settings.get(
-                "debug.auto_accept_requests_public", False
+                "debug.auto_accept_requests", False
             )
+
             conn_rec = ConnRecord(
                 my_did=my_info.did,
                 their_did=request.did,
                 their_label=request.label,
                 their_role=ConnRecord.Role.REQUESTER.rfc23,
                 invitation_key=connection_key,
+                invitation_msg_id=None,
                 request_id=request._id,
                 state=ConnRecord.State.REQUEST.rfc23,
                 accept=(
@@ -359,9 +363,6 @@ class DIDXManager(BaseConnectionManager):
             await conn_rec.save(
                 self._session, reason="Received connection request from public DID"
             )
-
-        else:
-            raise DIDXManagerError("Public invitations are not enabled")
 
         # Attach the connection request so it can be found and responded to
         await conn_rec.attach_request(self._session, request)
@@ -441,11 +442,6 @@ class DIDXManager(BaseConnectionManager):
         # Assign thread information
         response.assign_thread_from(request)
         response.assign_trace_from(request)
-        """  # TODO - re-evaluate what code signs? With what key?
-        # Sign connection field using the invitation key
-        wallet = self._session.inject(BaseWallet)
-        await response.sign_field("connection", connection.invitation_key, wallet)
-        """
 
         # Update connection state
         conn_rec.state = ConnRecord.State.RESPONSE.rfc23
@@ -512,7 +508,6 @@ class DIDXManager(BaseConnectionManager):
                 error_code=ProblemReportReason.RESPONSE_NOT_ACCEPTED,
             )
 
-        # TODO: RFC 160 impl included STATE_RESPONSE: why?
         if ConnRecord.State.get(conn_rec.state) is not ConnRecord.State.REQUEST:
             raise DIDXManagerError(
                 "Cannot accept connection response for connection"

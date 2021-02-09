@@ -5,7 +5,7 @@ import logging
 
 from aiohttp import web
 from aiohttp_apispec import docs, querystring_schema, request_schema, response_schema
-from marshmallow import fields
+from marshmallow import fields, validate
 from marshmallow.exceptions import ValidationError
 
 from ....admin.request_context import AdminRequestContext
@@ -59,6 +59,7 @@ class InvitationCreateRequestSchema(OpenAPISchema):
             data_key="type",
             description="Attachment type",
             example="present-proof",
+            validate=validate.OneOf(["credential-offer", "present-proof"]),
         )
 
     attachments = fields.Nested(

@@ -208,8 +208,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 "default_label": "This guy",
                 "additional_endpoints": ["http://aries.ca/another-endpoint"],
                 "debug.auto_accept_invites": True,
-                "debug.auto_accept_requests_peer": True,
-                "debug.auto_accept_requests_public": True,
+                "debug.auto_accept_requests": True,
             }
         )
         self.session.context.injector.bind_instance(BaseResponder, self.responder)
@@ -259,7 +258,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 INVITATION
             )
             assert not invi_rec.invitation.get("request~attach")
-            assert invi_rec.invitation["label"] == "This guy"
             assert (
                 DIDCommPrefix.qualify_current(HSProto.RFC23.name)
                 in invi_rec.invitation["handshake_protocols"]
@@ -288,18 +286,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                     hs_protos=[HSProto.RFC23],
                 )
             assert "Error getting endpoint" in str(context.exception)
-
-    async def test_create_invitation_public_auto_accept_override_x(self):
-        self.session.context.update_settings({"public_invites": True})
-
-        with self.assertRaises(OutOfBandManagerError) as context:
-            await self.manager.create_invitation(
-                my_endpoint=TestConfig.test_endpoint,
-                public=True,
-                hs_protos=[HSProto.RFC23],
-                auto_accept=False,
-            )
-        assert "Cannot override auto-acceptance" in str(context.exception)
 
     async def test_create_invitation_multitenant_local(self):
         self.session.context.update_settings(
@@ -381,7 +367,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             )
             invi_rec = await self.manager.create_invitation(
                 my_endpoint=TestConfig.test_endpoint,
-                public=False,
+                public=True,
                 hs_protos=[HSProto.RFC23],
                 multi_use=False,
                 attachments=[{"type": "credential-offer", "id": "dummy-id"}],
@@ -406,7 +392,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             )
             invi_rec = await self.manager.create_invitation(
                 my_endpoint=TestConfig.test_endpoint,
-                public=False,
+                public=True,
                 hs_protos=None,
                 multi_use=False,
                 attachments=[{"type": "credential-offer", "id": "dummy-id"}],
@@ -416,7 +402,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             assert not invi_rec.invitation["handshake_protocols"]
 
     async def test_create_invitation_attachment_v2_0_cred_offer(self):
-        self.session.context.update_settings({"public_invites": True})
         with async_mock.patch.object(
             InMemoryWallet, "get_public_did", autospec=True
         ) as mock_wallet_get_public_did, async_mock.patch.object(
@@ -439,7 +424,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             mock_retrieve_cxid_v1.side_effect = test_module.StorageNotFoundError()
             invi_rec = await self.manager.create_invitation(
                 my_endpoint=TestConfig.test_endpoint,
-                public=True,
+                public=False,
                 hs_protos=None,
                 multi_use=False,
                 attachments=[{"type": "credential-offer", "id": "dummy-id"}],
@@ -464,7 +449,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             )
             invi_rec = await self.manager.create_invitation(
                 my_endpoint=TestConfig.test_endpoint,
-                public=False,
+                public=True,
                 hs_protos=[test_module.HSProto.RFC23],
                 multi_use=False,
                 attachments=[{"type": "present-proof", "id": "dummy-id"}],
