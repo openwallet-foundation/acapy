@@ -4,7 +4,7 @@ import os
 import random
 import sys
 
-import json
+from typing import Tuple
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -14,7 +14,12 @@ from runners.support.agent import (  # noqa:E402
     start_mediator_agent,
     connect_wallet_to_mediator,
 )
-from runners.support.utils import log_timer, progress, require_indy  # noqa:E402
+from runners.support.utils import (
+    log_msg,
+    log_timer,
+    progress,
+    require_indy,
+)  # noqa:E402
 
 CRED_PREVIEW_TYPE = "https://didcomm.org/issue-credential/2.0/credential-preview"
 LOGGER = logging.getLogger(__name__)
@@ -79,6 +84,9 @@ class BaseAgent(DemoAgent):
         if rev_reg_id and cred_rev_id:
             self.revocations.append((rev_reg_id, cred_rev_id))
 
+    async def handle_issuer_cred_rev(self, message):
+        pass
+
     async def handle_ping(self, payload):
         thread_id = payload["thread_id"]
         if thread_id in self.sent_pings or (
@@ -89,7 +97,7 @@ class BaseAgent(DemoAgent):
             self.ping_state[thread_id] = payload["state"]
             self.ping_event.set()
 
-    async def check_received_creds(self) -> (int, int):
+    async def check_received_creds(self) -> Tuple[int, int]:
         while True:
             self.credential_event.clear()
             pending = 0
@@ -104,7 +112,7 @@ class BaseAgent(DemoAgent):
     async def update_creds(self):
         await self.credential_event.wait()
 
-    async def check_received_pings(self) -> (int, int):
+    async def check_received_pings(self) -> Tuple[int, int]:
         while True:
             self.ping_event.clear()
             result = {}
@@ -226,7 +234,7 @@ class FaberAgent(BaseAgent):
 
     async def revoke_credential(self, cred_ex_id: str):
         await self.admin_POST(
-            f"/revocation/revoke",
+            "/revocation/revoke",
             {
                 "cred_ex_id": cred_ex_id,
                 "publish": True,
@@ -317,7 +325,8 @@ async def main(
                     mediator_agent=faber_mediator_agent,
                 )
             elif mediation:
-                # we need to pre-connect the agent(s) to their mediator (use the same mediator for both)
+                # we need to pre-connect the agent(s) to their mediator (use the same
+                # mediator for both)
                 if not await connect_wallet_to_mediator(alice, alice_mediator_agent):
                     log_msg("Mediation setup FAILED :-(")
                     raise Exception("Mediation setup FAILED :-(")

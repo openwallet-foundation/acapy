@@ -17,14 +17,6 @@ aries\_cloudagent\.storage\.base module
     :undoc-members:
     :show-inheritance:
 
-aries\_cloudagent\.storage\.basic module
-----------------------------------------
-
-.. automodule:: aries_cloudagent.storage.basic
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 aries\_cloudagent\.storage\.error module
 ----------------------------------------
 
@@ -33,18 +25,18 @@ aries\_cloudagent\.storage\.error module
     :undoc-members:
     :show-inheritance:
 
-aries\_cloudagent\.storage\.indy module
----------------------------------------
+aries\_cloudagent\.storage\.in\_memory module
+---------------------------------------------
 
-.. automodule:: aries_cloudagent.storage.indy
+.. automodule:: aries_cloudagent.storage.in_memory
     :members:
     :undoc-members:
     :show-inheritance:
 
-aries\_cloudagent\.storage\.provider module
--------------------------------------------
+aries\_cloudagent\.storage\.indy module
+---------------------------------------
 
-.. automodule:: aries_cloudagent.storage.provider
+.. automodule:: aries_cloudagent.storage.indy
     :members:
     :undoc-members:
     :show-inheritance:

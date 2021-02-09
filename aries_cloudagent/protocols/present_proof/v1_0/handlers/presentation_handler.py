@@ -33,8 +33,7 @@ class PresentationHandler(BaseHandler):
             context.message.serialize(as_string=True),
         )
 
-        session = await context.session()
-        presentation_manager = PresentationManager(session)
+        presentation_manager = PresentationManager(context.profile)
 
         presentation_exchange_record = await presentation_manager.receive_presentation(
             context.message, context.connection_record

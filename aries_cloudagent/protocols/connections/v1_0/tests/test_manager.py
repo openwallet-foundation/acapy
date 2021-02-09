@@ -72,8 +72,7 @@ class TestConnectionManager(AsyncTestCase):
                 "default_label": "This guy",
                 "additional_endpoints": ["http://aries.ca/another-endpoint"],
                 "debug.auto_accept_invites": True,
-                "debug.auto_accept_requests_public": True,
-                "debug.auto_accept_requests_peer": True,
+                "debug.auto_accept_requests": True,
             },
             bind={BaseResponder: self.responder, BaseCache: InMemoryCache()},
         )
@@ -309,7 +308,7 @@ class TestConnectionManager(AsyncTestCase):
         await mediation_record.save(self.session)
         with async_mock.patch.object(
             MediationManager,
-            "get_default_mediator_id",
+            "get_default_mediator",
         ) as mock_get_default_mediator:
             _, invite = await self.manager.create_invitation(
                 routing_keys=[self.test_verkey],
@@ -331,8 +330,8 @@ class TestConnectionManager(AsyncTestCase):
         await mediation_record.save(self.session)
         with async_mock.patch.object(
             MediationManager,
-            "get_default_mediator_id",
-            async_mock.CoroutineMock(return_value=mediation_record.mediation_id),
+            "get_default_mediator",
+            async_mock.CoroutineMock(return_value=mediation_record),
         ) as mock_get_default_mediator:
             _, invite = await self.manager.create_invitation(
                 routing_keys=[self.test_verkey],
@@ -511,7 +510,7 @@ class TestConnectionManager(AsyncTestCase):
         ) as create_did_document, async_mock.patch.object(
             self.session.wallet, "create_local_did"
         ) as create_local_did, async_mock.patch.object(
-            MediationManager, "get_default_mediator_id"
+            MediationManager, "get_default_mediator"
         ) as mock_get_default_mediator:
 
             did_info = DIDInfo(did=self.test_did, verkey=self.test_verkey, metadata={})
@@ -565,8 +564,8 @@ class TestConnectionManager(AsyncTestCase):
             self.session.wallet, "create_local_did"
         ) as create_local_did, async_mock.patch.object(
             MediationManager,
-            "get_default_mediator_id",
-            async_mock.CoroutineMock(return_value=mediation_record.mediation_id),
+            "get_default_mediator",
+            async_mock.CoroutineMock(return_value=mediation_record),
         ) as mock_get_default_mediator:
 
             did_info = DIDInfo(did=self.test_did, verkey=self.test_verkey, metadata={})
@@ -707,7 +706,7 @@ class TestConnectionManager(AsyncTestCase):
                 "wallet.id": "test_wallet",
                 "multitenant.enabled": True,
                 "public_invites": True,
-                "debug.auto_accept_requests_public": False,
+                "debug.auto_accept_requests": False,
             }
         )
 
@@ -817,7 +816,7 @@ class TestConnectionManager(AsyncTestCase):
         await self.session.wallet.create_local_did(seed=None, did=self.test_did)
 
         self.context.update_settings(
-            {"public_invites": True, "debug.auto_accept_requests_public": False}
+            {"public_invites": True, "debug.auto_accept_requests": False}
         )
         with async_mock.patch.object(
             ConnRecord, "save", autospec=True
@@ -1114,7 +1113,7 @@ class TestConnectionManager(AsyncTestCase):
         ) as mock_conn_rec_save, async_mock.patch.object(
             ConnRecord, "retrieve_by_request_id", async_mock.CoroutineMock()
         ) as mock_conn_retrieve_by_req_id, async_mock.patch.object(
-            MediationManager, "get_default_mediator_id", async_mock.CoroutineMock()
+            MediationManager, "get_default_mediator", async_mock.CoroutineMock()
         ):
             mock_conn_retrieve_by_req_id.return_value = async_mock.MagicMock(
                 did=self.test_target_did,
@@ -1145,7 +1144,7 @@ class TestConnectionManager(AsyncTestCase):
         ) as mock_conn_retrieve_by_req_id, async_mock.patch.object(
             ConnRecord, "retrieve_by_did", async_mock.CoroutineMock()
         ) as mock_conn_retrieve_by_did, async_mock.patch.object(
-            MediationManager, "get_default_mediator_id", async_mock.CoroutineMock()
+            MediationManager, "get_default_mediator", async_mock.CoroutineMock()
         ):
             mock_conn_retrieve_by_req_id.side_effect = StorageNotFoundError()
             mock_conn_retrieve_by_did.return_value = async_mock.MagicMock(
@@ -1270,7 +1269,7 @@ class TestConnectionManager(AsyncTestCase):
         ) as mock_conn_rec_save, async_mock.patch.object(
             ConnRecord, "retrieve_by_request_id", async_mock.CoroutineMock()
         ) as mock_conn_retrieve_by_req_id, async_mock.patch.object(
-            MediationManager, "get_default_mediator_id", async_mock.CoroutineMock()
+            MediationManager, "get_default_mediator", async_mock.CoroutineMock()
         ):
             mock_conn_retrieve_by_req_id.return_value = async_mock.MagicMock(
                 did=self.test_target_did,

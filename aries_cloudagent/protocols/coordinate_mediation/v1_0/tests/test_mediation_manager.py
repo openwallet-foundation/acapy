@@ -5,7 +5,7 @@ import pytest
 
 from asynctest import mock as async_mock
 
-from .....core.profile import ProfileSession
+from .....core.profile import Profile, ProfileSession
 from .....connections.models.conn_record import ConnRecord
 from .....messaging.request_context import RequestContext
 from .....storage.error import StorageNotFoundError
@@ -36,19 +36,25 @@ pytestmark = pytest.mark.asyncio
 
 
 @pytest.fixture
-async def session() -> ProfileSession:
-    """Fixture for session used in tests."""
+async def profile() -> Profile:
+    """Fixture for profile used in tests."""
     # pylint: disable=W0621
     context = RequestContext.test_context()
     context.message_receipt = MessageReceipt(sender_verkey=TEST_VERKEY)
     context.connection_record = ConnRecord(connection_id=TEST_CONN_ID)
-    yield await context.session()
+    yield context.profile
 
 
 @pytest.fixture
-async def manager(session) -> MediationManager:  # pylint: disable=W0621
+async def session(profile) -> ProfileSession:  # pylint: disable=W0621
+    """Fixture for profile session used in tests."""
+    yield await profile.session()
+
+
+@pytest.fixture
+async def manager(profile) -> MediationManager:  # pylint: disable=W0621
     """Fixture for manager used in tests."""
-    yield MediationManager(session)
+    yield MediationManager(profile)
 
 
 @pytest.fixture
@@ -62,21 +68,21 @@ def record() -> MediationRecord:
 class TestMediationManager:  # pylint: disable=R0904,W0621
     """Test MediationManager."""
 
-    async def test_create_manager_no_session(self):
-        """test_create_manager_no_session."""
+    async def test_create_manager_no_profile(self):
+        """test_create_manager_no_profile."""
         with pytest.raises(MediationManagerError):
             await MediationManager(None)
 
-    async def test_create_did(self, manager):
+    async def test_create_did(self, manager, session):
         """test_create_did."""
         # pylint: disable=W0212
-        await manager._create_routing_did()
-        assert await manager._retrieve_routing_did()
+        await manager._create_routing_did(session)
+        assert await manager._retrieve_routing_did(session)
 
-    async def test_retrieve_did_when_absent(self, manager):
+    async def test_retrieve_did_when_absent(self, manager, session):
         """test_retrieve_did_when_absent."""
         # pylint: disable=W0212
-        assert await manager._retrieve_routing_did() is None
+        assert await manager._retrieve_routing_did(session) is None
 
     async def test_receive_request_no_terms(self, manager):
         """test_receive_request_no_terms."""
@@ -103,16 +109,18 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
         request = MediationRequest()
         record = await manager.receive_request(TEST_CONN_ID, request)
         assert record.connection_id == TEST_CONN_ID
-        grant = await manager.grant_request(record)
+        record, grant = await manager.grant_request(record.mediation_id)
         assert grant.endpoint == session.settings.get("default_endpoint")
-        assert grant.routing_keys == [(await manager._retrieve_routing_did()).verkey]
+        assert grant.routing_keys == [
+            (await manager._retrieve_routing_did(session)).verkey
+        ]
 
     async def test_deny_request(self, manager):
         """test_deny_request."""
         request = MediationRequest()
         record = await manager.receive_request(TEST_CONN_ID, request)
         assert record.connection_id == TEST_CONN_ID
-        deny = await manager.deny_request(record)
+        record, deny = await manager.deny_request(record.mediation_id)
         assert deny.mediator_terms == []
         assert deny.recipient_terms == []
 
@@ -236,20 +244,21 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
         await manager.set_default_mediator(record)
         assert await manager.get_default_mediator() == record
 
-    async def test_set_get_default_mediator_by_id(self, manager: MediationManager):
-        await manager.set_default_mediator_by_id("test")
+    async def test_set_get_default_mediator_by_id(
+        self, manager: MediationManager, session
+    ):
+        await manager._set_default_mediator_id("test", session)
         assert await manager.get_default_mediator_id() == "test"
 
-    async def test_set_set_get_default_mediator_by_id(self, manager: MediationManager):
-        await manager.set_default_mediator_by_id("test")
-        await manager.set_default_mediator_by_id("updated")
+    async def test_set_set_get_default_mediator_by_id(
+        self, manager: MediationManager, session
+    ):
+        await manager._set_default_mediator_id("test", session)
+        await manager._set_default_mediator_id("updated", session)
         assert await manager.get_default_mediator_id() == "updated"
 
-    async def test_clear_default_mediator(
-        self,
-        manager: MediationManager,
-    ):
-        await manager.set_default_mediator_by_id("test")
+    async def test_clear_default_mediator(self, manager: MediationManager, session):
+        await manager._set_default_mediator_id("test", session)
         assert await manager.get_default_mediator_id()
         await manager.clear_default_mediator()
         assert not await manager.get_default_mediator_id()
