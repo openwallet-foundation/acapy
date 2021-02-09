@@ -5,13 +5,8 @@ from typing import Any
 from marshmallow import fields
 
 from .....core.profile import ProfileSession
-from .....ledger.base import BaseLedger
 from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
 from .....messaging.valid import INDY_DID, UUIDFour
-
-from ....didcomm_prefix import DIDCommPrefix
-
-from ..messages.invitation import HSProto, InvitationMessage
 
 
 class InvitationRecord(BaseExchangeRecord):
@@ -85,39 +80,6 @@ class InvitationRecord(BaseExchangeRecord):
             )
             await cls.set_cached_key(session, cache_key, record.invitation_id)
         return record
-
-    @classmethod
-    async def create_and_save_public(
-        cls, session: ProfileSession, public_did: str
-    ) -> "InvitationRecord":
-        """Create and save invitation record for public DID."""
-        invi_msg = InvitationMessage(
-            label=f"Invitation for public DID {public_did}",
-            handshake_protocols=[
-                DIDCommPrefix.qualify_current(HSProto.RFC23.name),
-                DIDCommPrefix.qualify_current(HSProto.RFC160.name),
-            ],
-            request_attach=None,
-            service=[f"did:sov:{public_did}"],
-        )
-        ledger = session.inject(BaseLedger)
-        async with ledger:
-            base_url = await ledger.get_endpoint_for_did(public_did)
-            invi_url = invi_msg.to_url(base_url)
-
-        invi_rec = InvitationRecord(
-            state=InvitationRecord.STATE_INITIAL,
-            invi_msg_id=invi_msg._id,
-            invitation=invi_msg.serialize(),
-            invitation_url=invi_url,
-            public_did=public_did,
-        )
-        await invi_rec.save(
-            session,
-            reason=f"Created public invitation for DID {public_did}",
-        )
-
-        return invi_rec
 
     def __eq__(self, other: Any) -> bool:
         """Comparison between records."""

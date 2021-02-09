@@ -876,7 +876,7 @@ class DemoAgent:
             # TODO can mediation be used with DID exchange connections?
             invi_rec = await self.admin_POST(
                 "/out-of-band/create-invitation",
-                {"include_handshake": True},
+                {"handshake_protocols": ["rfc23"]},
                 params={"auto_accept": json.dumps(auto_accept)},
             )
         else:
@@ -915,7 +915,7 @@ class MediatorAgent(DemoAgent):
             mediation=True,
             extra_args=[
                 "--auto-accept-invites",
-                "--auto-accept-requests",
+                "--auto-accept-requests-explicit",
             ],
             seed=None,
             **kwargs,

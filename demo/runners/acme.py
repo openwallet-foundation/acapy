@@ -26,7 +26,7 @@ class AcmeAgent(DemoAgent):
             http_port,
             admin_port,
             prefix="Acme",
-            extra_args=["--auto-accept-invites", "--auto-accept-requests-peer"],
+            extra_args=["--auto-accept-invites", "--auto-accept-requests-explicit"],
             **kwargs,
         )
         self.connection_id = None
@@ -136,7 +136,7 @@ async def main(start_port: int, show_timing: bool = False):
             )
             invi_msg = await agent.admin_POST(
                 "/out-of-band/create-invitation",
-                {"include_handshake": True},
+                {"handshake_protocols": ["rfc23"]},
             )
 
         log_msg(

@@ -126,29 +126,22 @@ class OutOfBandManager(BaseConnectionManager):
             auto_accept
             or (
                 auto_accept is None
-                and self._session.settings.get(
-                    "debug.auto_accept_requests_public"
-                    if public
-                    else "debug.auto_accept_requests_peer"
-                )
+                and self._session.settings.get("debug.auto_accept_requests_explicit")
             )
         )
-        if public and multi_use:
-            raise OutOfBandManagerError(
-                "Cannot create public invitation with multi_use"
-            )
-        if public and attachments:
-            raise OutOfBandManagerError(
-                "Cannot create public invitation with attachments"
-            )
-        if public and accept != self._session.settings.get(
-            "debug.auto_accept_requests_public",
-            False,
-        ):
-            raise OutOfBandManagerError(
-                "Cannot override auto-acceptance configuration for "
-                "requests to invitations on public DIDs"
-            )
+        if public:
+            if multi_use:
+                raise OutOfBandManagerError(
+                    "Cannot create public invitation with multi_use"
+                )
+            if attachments:
+                raise OutOfBandManagerError(
+                    "Cannot create public invitation with attachments"
+                )
+            if metadata:
+                raise OutOfBandManagerError(
+                    "Cannot store metadata on public invitations"
+                )
 
         message_attachments = []
         for atch in attachments or []:
@@ -204,27 +197,34 @@ class OutOfBandManager(BaseConnectionManager):
                     "Cannot create public invitation with no public DID"
                 )
 
-            if metadata:
+            invi_msg = InvitationMessage(  # create invitation message
+                label=my_label or self._session.settings.get("default_label"),
+                handshake_protocols=handshake_protocols,
+                service=[f"did:sov:{public_did.did}"],
+            )
+
+            ledger = self._session.inject(BaseLedger)
+            try:
+                async with ledger:
+                    base_url = await ledger.get_endpoint_for_did(public_did.did)
+                    invi_url = invi_msg.to_url(base_url)
+            except LedgerError as ledger_x:
                 raise OutOfBandManagerError(
-                    "Cannot store metadata on public invitations"
+                    "Error getting endpoint for public DID "
+                    f"{public_did.did}: {ledger_x}"
                 )
 
-            try:  # store one invitation per public DID
-                invi_rec = await InvitationRecord.retrieve_by_public_did(
-                    session=self._session,
-                    public_did=public_did.did,
-                )
-            except StorageNotFoundError:  # not present yet: create and save it
-                try:
-                    invi_rec = await InvitationRecord.create_and_save_public(
-                        self._session,
-                        public_did.did,
-                    )
-                except LedgerError as ledger_x:
-                    raise OutOfBandManagerError(
-                        "Error getting endpoint for public DID "
-                        f"{public_did.did}: {ledger_x}"
-                    )
+            conn_rec = ConnRecord(  # create connection record
+                invitation_key=public_did.verkey,
+                invitation_msg_id=invi_msg._id,
+                their_role=ConnRecord.Role.REQUESTER.rfc23,
+                state=ConnRecord.State.INVITATION.rfc23,
+                accept=ConnRecord.ACCEPT_AUTO if accept else ConnRecord.ACCEPT_MANUAL,
+                alias=alias,
+            )
+
+            await conn_rec.save(self._session, reason="Created new invitation")
+            await conn_rec.attach_invitation(self._session, invi_msg)
 
             if multitenant_mgr and wallet_id:  # add mapping for multitenant relay
                 await multitenant_mgr.add_key(
@@ -267,8 +267,7 @@ class OutOfBandManager(BaseConnectionManager):
             )
             invi_url = invi_msg.to_url()
 
-            # Create connection record
-            conn_rec = ConnRecord(
+            conn_rec = ConnRecord(  # create connection record
                 invitation_key=connection_key.verkey,
                 invitation_msg_id=invi_msg._id,
                 their_role=ConnRecord.Role.REQUESTER.rfc23,
@@ -285,15 +284,13 @@ class OutOfBandManager(BaseConnectionManager):
                 for key, value in metadata.items():
                     await conn_rec.metadata_set(self._session, key, value)
 
-            # Create invitation record and do not store it: nobody will ever retrieve it
-            invi_rec = InvitationRecord(
-                state=InvitationRecord.STATE_INITIAL,
-                invi_msg_id=invi_msg._id,
-                invitation=invi_msg.serialize(),
-                invitation_url=invi_url,
-            )
-
-        return invi_rec
+        return InvitationRecord(  # for return via admin API, not storage
+            state=InvitationRecord.STATE_INITIAL,
+            invi_msg_id=invi_msg._id,
+            invitation=invi_msg.serialize(),
+            invitation_url=invi_url,
+            public_did=public_did,
+        )
 
     async def receive_invitation(
         self,
@@ -348,12 +345,10 @@ class OutOfBandManager(BaseConnectionManager):
                 ]
             )
         ]
-        # Reuse Connection
-        # Only if started by an invitee with Public DID
+
+        # Reuse Connection - only if started by an invitation with Public DID
         conn_rec = None
-        if public_did is not None:
-            # Inviter has a public DID
-            # Looking for an existing connection
+        if public_did is not None:  # invite has public DID: seek existing connection
             tag_filter = {}
             post_filter = {}
             # post_filter["state"] = ConnRecord.State.COMPLETED.rfc160

@@ -52,7 +52,7 @@ class FaberAgent(DemoAgent):
             prefix="Faber",
             extra_args=[]
             if no_auto
-            else ["--auto-accept-invites", "--auto-accept-requests-peer"],
+            else ["--auto-accept-invites", "--auto-accept-requests-explicit"],
             **kwargs,
         )
         self.connection_id = None

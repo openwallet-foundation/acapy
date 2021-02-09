@@ -224,9 +224,7 @@ class ConnectionManager(BaseConnectionManager):
                 or (
                     auto_accept is None
                     and self._session.settings.get(
-                        "debug.auto_accept_requests_public"
-                        if public
-                        else "debug.auto_accept_requests_peer"
+                        "debug.auto_accept_requests_explicit"
                     )
                 )
             )
@@ -597,7 +595,9 @@ class ConnectionManager(BaseConnectionManager):
                 their_label=request.label,
                 accept=(
                     ConnRecord.ACCEPT_AUTO
-                    if self._session.settings.get("debug.auto_accept_requests_public")
+                    if self._session.settings.get(
+                        "debug.auto_accept_requests_explicit"
+                    )
                     else ConnRecord.ACCEPT_MANUAL
                 ),
                 state=ConnRecord.State.REQUEST.rfc160,

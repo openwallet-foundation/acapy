@@ -208,8 +208,8 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 "default_label": "This guy",
                 "additional_endpoints": ["http://aries.ca/another-endpoint"],
                 "debug.auto_accept_invites": True,
-                "debug.auto_accept_requests_peer": True,
-                "debug.auto_accept_requests_public": True,
+                "debug.auto_accept_requests_explicit": True,
+                "debug.auto_accept_requests_implicit": True,
             }
         )
         self.session.context.injector.bind_instance(BaseResponder, self.responder)
@@ -287,18 +287,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                     hs_protos=[HSProto.RFC23],
                 )
             assert "Error getting endpoint" in str(context.exception)
-
-    async def test_create_invitation_public_auto_accept_override_x(self):
-        self.session.context.update_settings({"public_invites": True})
-
-        with self.assertRaises(OutOfBandManagerError) as context:
-            await self.manager.create_invitation(
-                my_endpoint=TestConfig.test_endpoint,
-                public=True,
-                hs_protos=[HSProto.RFC23],
-                auto_accept=False,
-            )
-        assert "Cannot override auto-acceptance" in str(context.exception)
 
     async def test_create_invitation_public_attach_x(self):
         self.session.context.update_settings({"public_invites": True})
