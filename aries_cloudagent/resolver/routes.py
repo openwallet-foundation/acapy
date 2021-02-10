@@ -1,5 +1,33 @@
-"""resolve did document admin routes."""
+"""
+Resolve did document admin routes.
 
+"/resolver/resolve/{did}": {
+    "get": {
+        "responses": {
+            "200": {
+                "schema": {
+                    "$ref": "#/definitions/DIDDoc"
+                },
+                "description": null
+            }
+        },
+        "parameters": [
+            {
+                "in": "path",
+                "name": "did",
+                "required": true,
+                "type": "string",
+                "pattern": "did:([a-z]+):((?:[a-zA-Z0-9._-]*:)*[a-zA-Z0-9._-]+)",
+                "description": "decentralize identifier(DID)",
+                "example": "did:ted:WgWxqztrNooG92RXvxSTWv"
+            }
+        ],
+        "tags": [ "resolver" ],
+        "summary": "Retrieve doc for requested did",
+        "produces": [ "application/json" ]
+    }
+}
+"""
 
 import re
 from aiohttp import web
@@ -86,7 +114,6 @@ async def resolve_did(request: web.BaseRequest):
         raise web.HTTPNotFound(reason=err.roll_up) from err
     except (BaseModelError, StorageError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
-
     return web.json_response(result)
 
 
