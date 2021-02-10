@@ -24,7 +24,9 @@ class WsTransport(BaseOutboundTransport):
     async def start(self):
         """Start the outbound transport."""
         trust_env = os.environ.get("TRUST_ENV", False)
-        self.client_session = ClientSession(cookie_jar=DummyCookieJar(), trust_env=trust_env)
+        self.client_session = ClientSession(
+            cookie_jar=DummyCookieJar(), trust_env=trust_env
+        )
         return self
 
     async def stop(self):
