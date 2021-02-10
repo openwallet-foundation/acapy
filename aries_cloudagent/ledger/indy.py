@@ -634,6 +634,8 @@ class IndySdkLedger(BaseLedger):
         signature_type: str = None,
         tag: str = None,
         support_revocation: bool = False,
+        write_ledger: bool = True,
+        endorser_did: str = None,
     ) -> Tuple[str, dict, bool]:
         """
         Send credential definition to ledger and store relevant key matter in wallet.
@@ -727,7 +729,13 @@ class IndySdkLedger(BaseLedger):
                 request_json = await indy.ledger.build_cred_def_request(
                     public_info.did, credential_definition_json
                 )
-            await self._submit(request_json, True, sign_did=public_info)
+            if endorser_did and not write_ledger:
+                request_json = await indy.ledger.append_request_endorser(
+                    request_json, endorser_did
+                )
+            resp = await self._submit(request_json, True, sign_did=public_info, write_ledger=write_ledger)
+            if not write_ledger:
+                return (credential_definition_id, {"signed_txn": resp}, novel)
 
             # Add non-secrets record
             storage = self.get_indy_storage()

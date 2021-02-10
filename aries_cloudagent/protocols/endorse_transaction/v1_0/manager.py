@@ -51,15 +51,8 @@ class TransactionManager:
 
     async def create_record(
         self,
-        author_did: str,
-        author_verkey: str,
-        transaction_message: dict,
-        transaction_type: str,
-        mechanism: str,
-        taaDigest: str,
-        time: int,
-        expires_time: str,
         messages_attach: str,
+        expires_time: str,
     ):
         """
         Create a new Transaction Record.
@@ -73,17 +66,6 @@ class TransactionManager:
 
         """
 
-        """
-        messages_attach = MessagesAttach(
-            author_did=author_did,
-            author_verkey=author_verkey,
-            transaction_message=transaction_message,
-            transaction_type=transaction_type,
-            mechanism=mechanism,
-            taaDigest=taaDigest,
-            time=time,
-        )
-        """
         messages_attach_dict = {
             "@id": str(uuid.uuid4()),
             "mime-type": "application/json",
@@ -241,11 +223,6 @@ class TransactionManager:
             transaction.messages_attach[0]["data"]["json"] = endorsed_msg
 
         if signature:
-            # don't modify the transaction payload
-            # author_did = transaction.messages_attach[0]["data"]["json"]["identifier"]
-            # transaction.messages_attach[0]["data"]["json"]["signatures"][
-            #    author_did
-            # ] = signature
             signature_response = {
                 "message_id": transaction.messages_attach[0]["@id"],
                 "context": TransactionRecord.SIGNATURE_CONTEXT,
@@ -284,8 +261,6 @@ class TransactionManager:
 
         return transaction, endorsed_transaction_response
 
-    # todo - implementing changes for writing final transaction to the ledger
-    # (For Sign Transaction Protocol)
     async def receive_endorse_response(self, response: EndorsedTransactionResponse):
         """
         Update the transaction record with the endorsed response.
@@ -308,6 +283,7 @@ class TransactionManager:
 
         transaction.thread_id = response.thread_id
 
+        # the returned signature is actually the endorsed ledger transaction
         endorser_did = response.endorser_did
         transaction.messages_attach[0]["data"]["json"] = response.signature_response[
             "signature"
