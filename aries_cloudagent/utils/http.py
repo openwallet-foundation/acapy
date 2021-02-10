@@ -49,7 +49,9 @@ async def fetch_stream(
     limit = max_attempts if retry else 1
     trust_env = os.environ.get("TRUST_ENV", False)
     if not session:
-        session = ClientSession(connector=connector, connector_owner=(not connector), trust_env=trust_env)
+        session = ClientSession(
+            connector=connector, connector_owner=(not connector), trust_env=trust_env
+        )
     async with session:
         async for attempt in RepeatSequence(limit, interval, backoff):
             try:
@@ -97,7 +99,9 @@ async def fetch(
     limit = max_attempts if retry else 1
     trust_env = os.environ.get("TRUST_ENV", False)
     if not session:
-        session = ClientSession(connector=connector, connector_owner=(not connector), trust_env=trust_env)
+        session = ClientSession(
+            connector=connector, connector_owner=(not connector), trust_env=trust_env
+        )
     async with session:
         async for attempt in RepeatSequence(limit, interval, backoff):
             try:
@@ -150,7 +154,9 @@ async def put(
     limit = max_attempts if retry else 1
     trust_env = os.environ.get("TRUST_ENV", False)
     if not session:
-        session = ClientSession(connector=connector, connector_owner=(not connector), trust_env=trust_env)
+        session = ClientSession(
+            connector=connector, connector_owner=(not connector), trust_env=trust_env
+        )
     async with session:
         async for attempt in RepeatSequence(limit, interval, backoff):
             try:
