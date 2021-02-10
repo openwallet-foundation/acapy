@@ -13,6 +13,7 @@ from ....connections.models.diddoc import (
     Service,
 )
 from ....connections.base_manager import BaseConnectionManager
+from ....connections.util import mediation_record_if_id
 from ....core.error import BaseError
 from ....core.profile import ProfileSession
 from ....messaging.decorators.attach_decorator import AttachDecorator
@@ -25,6 +26,8 @@ from ....wallet.base import BaseWallet, DIDInfo
 from ....wallet.util import did_key_to_naked
 from ....multitenant.manager import MultitenantManager
 
+from ...coordinate_mediation.v1_0.manager import MediationManager
+from ...coordinate_mediation.v1_0.models.mediation_record import MediationRecord
 from ...out_of_band.v1_0.messages.invitation import (
     InvitationMessage as OOBInvitationMessage,
 )
@@ -70,6 +73,7 @@ class DIDXManager(BaseConnectionManager):
         their_public_did: str = None,
         auto_accept: bool = None,
         alias: str = None,
+        mediation_id: str = None,
     ) -> ConnRecord:  # leave in didexchange as it uses a responder: not out-of-band
         """
         Create a new connection record to track a received invitation.
@@ -78,6 +82,8 @@ class DIDXManager(BaseConnectionManager):
             invitation: The invitation to store
             auto_accept: set to auto-accept the invitation (None to use config)
             alias: optional alias to set on the record
+            mediation_id: The record id for mediation that contains routing_keys and
+                service endpoint
 
         Returns:
             The new `ConnRecord` instance
@@ -140,7 +146,7 @@ class DIDXManager(BaseConnectionManager):
         await conn_rec.attach_invitation(self._session, invitation)
 
         if conn_rec.accept == ConnRecord.ACCEPT_AUTO:
-            request = await self.create_request(conn_rec)
+            request = await self.create_request(conn_rec, mediation_id=mediation_id)
             responder = self._session.inject(BaseResponder, required=False)
             if responder:
                 await responder.send_reply(
@@ -160,6 +166,7 @@ class DIDXManager(BaseConnectionManager):
         conn_rec: ConnRecord,
         my_label: str = None,
         my_endpoint: str = None,
+        mediation_id: str = None,
     ) -> DIDXRequest:
         """
         Create a new connection request for a previously-received invitation.
@@ -168,23 +175,36 @@ class DIDXManager(BaseConnectionManager):
             conn_rec: The `ConnRecord` representing the invitation to accept
             my_label: My label
             my_endpoint: My endpoint
+            mediation_id: The record id for mediation that contains routing_keys and
+                service endpoint
 
         Returns:
             A new `DIDXRequest` message to send to the other agent
 
         """
+        # Mediation Support
+        mediation_mgr = MediationManager(self._session)
+        keylist_updates = None
+        mediation_record = await mediation_record_if_id(
+            mediation_id or await mediation_mgr.get_default_mediator_id()
+        )
+        base_mediation_record = None
         # Multitenancy setup
         multitenant_mgr = self._session.inject(MultitenantManager, required=False)
         wallet_id = self._session.settings.get("wallet.id")
-
+        if multitenant_mgr and wallet_id:
+            base_mediation_record = await multitenant_mgr.get_default_mediator()
         wallet = self._session.inject(BaseWallet)
+
         if conn_rec.my_did:
             my_info = await wallet.get_local_did(conn_rec.my_did)
         else:
             # Create new DID for connection
             my_info = await wallet.create_local_did()
             conn_rec.my_did = my_info.did
-
+            keylist_updates = await mediation_mgr.add_key(
+                my_info.verkey, keylist_updates
+            )
             # Add mapping for multitenant relay
             if multitenant_mgr and wallet_id:
                 await multitenant_mgr.add_key(wallet_id, my_info.verkey)
@@ -199,7 +219,12 @@ class DIDXManager(BaseConnectionManager):
                 my_endpoints.append(default_endpoint)
             my_endpoints.extend(self._session.settings.get("additional_endpoints", []))
         did_doc = await self.create_did_document(
-            my_info, conn_rec.inbound_connection_id, my_endpoints
+            my_info,
+            conn_rec.inbound_connection_id,
+            my_endpoints,
+            mediation_record=list(
+                filter(None, [base_mediation_record, mediation_record])
+            ),
         )
         invitation = await conn_rec.retrieve_invitation(self._session)
         pthid = invitation._id
@@ -219,10 +244,18 @@ class DIDXManager(BaseConnectionManager):
         conn_rec.state = ConnRecord.State.REQUEST.rfc23
         await conn_rec.save(self._session, reason="Created connection request")
 
+        # Notify Mediator
+        if keylist_updates and mediation_record:
+            responder = self._session.inject(BaseResponder, required=False)
+            await responder.send(
+                keylist_updates, connection_id=mediation_record.connection_id
+            )
         return request
 
     async def receive_request(
-        self, request: DIDXRequest, receipt: MessageReceipt
+        self, request: DIDXRequest,
+        receipt: MessageReceipt,
+        mediation_id: str = None,
     ) -> ConnRecord:
         """
         Receive and store a connection request.
@@ -230,7 +263,8 @@ class DIDXManager(BaseConnectionManager):
         Args:
             request: The `DIDXRequest` to accept
             receipt: The message receipt
-
+            mediation_id: The record id for mediation that contains routing_keys and
+                service endpoint
         Returns:
             The new or updated `ConnRecord` instance
 
@@ -241,6 +275,8 @@ class DIDXManager(BaseConnectionManager):
             settings=self._session.settings,
         )
 
+        mediation_mgr = MediationManager(self._session)
+        keylist_updates = None
         conn_rec = None
         connection_key = None
         my_info = None
@@ -278,6 +314,10 @@ class DIDXManager(BaseConnectionManager):
             if conn_rec.is_multiuse_invitation:
                 wallet = self._session.inject(BaseWallet)
                 my_info = await wallet.create_local_did()
+                keylist_updates = await mediation_mgr.add_key(
+                    my_info.verkey, keylist_updates
+                )
+
                 new_conn_rec = ConnRecord(
                     invitation_key=connection_key,
                     my_did=my_info.did,
@@ -303,6 +343,10 @@ class DIDXManager(BaseConnectionManager):
                 # Add mapping for multitenant relay
                 if multitenant_mgr and wallet_id:
                     await multitenant_mgr.add_key(wallet_id, my_info.verkey)
+            else:
+                keylist_updates = await mediation_mgr.remove_key(
+                    connection_key, keylist_updates
+                )
 
         # request DID doc describes requester DID
         if not (request.did_doc_attach and request.did_doc_attach.data):
@@ -339,6 +383,10 @@ class DIDXManager(BaseConnectionManager):
             # request is against implicit invitation on public DID
             my_info = await wallet.create_local_did()
 
+            keylist_updates = await mediation_mgr.add_key(
+                my_info.verkey, keylist_updates
+            )
+
             # Add mapping for multitenant relay
             if multitenant_mgr and wallet_id:
                 await multitenant_mgr.add_key(wallet_id, my_info.verkey)
@@ -367,8 +415,16 @@ class DIDXManager(BaseConnectionManager):
         # Attach the connection request so it can be found and responded to
         await conn_rec.attach_request(self._session, request)
 
+        # Send keylist updates to mediator
+        mediation_record = await mediation_record_if_id(mediation_id)
+        if keylist_updates and mediation_record:
+            responder = self._session.inject(BaseResponder, required=False)
+            await responder.send(
+                keylist_updates, connection_id=mediation_record.inbound_connection_id
+            )
+
         if auto_accept:
-            response = await self.create_response(conn_rec)
+            response = await self.create_response(conn_rec, mediation_id=mediation_id)
             responder = self._session.inject(BaseResponder, required=False)
             if responder:
                 await responder.send_reply(
@@ -385,6 +441,7 @@ class DIDXManager(BaseConnectionManager):
         self,
         conn_rec: ConnRecord,
         my_endpoint: str = None,
+        mediation_id: str = None,
     ) -> DIDXResponse:
         """
         Create a connection response for a received connection request.
@@ -392,6 +449,8 @@ class DIDXManager(BaseConnectionManager):
         Args:
             conn_rec: The `ConnRecord` with a pending connection request
             my_endpoint: Current agent endpoint
+            mediation_id: The record id for mediation that contains routing_keys and
+                service endpoint
 
         Returns:
             New `DIDXResponse` message
@@ -403,9 +462,16 @@ class DIDXManager(BaseConnectionManager):
             settings=self._session.settings,
         )
 
+        mediation_mgr = MediationManager(self._session)
+        keylist_updates = None
+        mediation_record = await mediation_record_if_id(mediation_id)
+        base_mediation_record = None
+
         # Multitenancy setup
         multitenant_mgr = self._session.inject(MultitenantManager, required=False)
         wallet_id = self._session.settings.get("wallet.id")
+        if multitenant_mgr and wallet_id:
+            base_mediation_record = await multitenant_mgr.get_default_mediator()
 
         if ConnRecord.State.get(conn_rec.state) is not ConnRecord.State.REQUEST:
             raise DIDXManagerError(
@@ -419,7 +485,9 @@ class DIDXManager(BaseConnectionManager):
         else:
             my_info = await wallet.create_local_did()
             conn_rec.my_did = my_info.did
-
+            keylist_updates = await mediation_mgr.add_key(
+                my_info.verkey, keylist_updates
+            )
             # Add mapping for multitenant relay
             if multitenant_mgr and wallet_id:
                 await multitenant_mgr.add_key(wallet_id, my_info.verkey)
@@ -434,7 +502,12 @@ class DIDXManager(BaseConnectionManager):
                 my_endpoints.append(default_endpoint)
             my_endpoints.extend(self._session.settings.get("additional_endpoints", []))
         did_doc = await self.create_did_document(
-            my_info, conn_rec.inbound_connection_id, my_endpoints
+            my_info,
+            conn_rec.inbound_connection_id,
+            my_endpoints,
+            mediation_record=list(
+                filter(None, [base_mediation_record, mediation_record])
+            )
         )
         attach = AttachDecorator.from_indy_dict(did_doc.serialize())
         await attach.data.sign(conn_rec.invitation_key, wallet)
@@ -450,6 +523,24 @@ class DIDXManager(BaseConnectionManager):
             reason="Created connection response",
             log_params={"response": response},
         )
+
+        # Update Mediator if necessary
+        if keylist_updates and mediation_record:
+            responder = self._session.inject(BaseResponder, required=False)
+            await responder.send(
+                keylist_updates, connection_id=mediation_record.connection_id
+            )
+
+        send_mediation_request = await conn_rec.metadata_get(
+            self._session, MediationManager.SEND_REQ_AFTER_CONNECTION
+        )
+        if send_mediation_request:
+            temp_mediation_mgr = MediationManager(self._session)
+            _record, request = await temp_mediation_mgr.prepare_request(conn_rec.connection_id)
+            responder = self._session.inject(BaseResponder)
+            await responder.send(
+                request, connection_id=conn_rec.connection_id
+            )
 
         return response
 
@@ -528,6 +619,17 @@ class DIDXManager(BaseConnectionManager):
         conn_rec.their_did = their_did
         conn_rec.state = ConnRecord.State.RESPONSE.rfc23
         await conn_rec.save(self._session, reason="Accepted connection response")
+
+        send_mediation_request = await conn_rec.metadata_get(
+            self._session, MediationManager.SEND_REQ_AFTER_CONNECTION
+        )
+        if send_mediation_request:
+            temp_mediation_mgr = MediationManager(self._session)
+            _record, request = await temp_mediation_mgr.prepare_request(conn_rec.connection_id)
+            responder = self._session.inject(BaseResponder)
+            await responder.send(
+                request, connection_id=conn_rec.connection_id
+            )
 
         # create and send connection-complete message
         complete = DIDXComplete()

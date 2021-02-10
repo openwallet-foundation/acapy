@@ -1,18 +1,20 @@
 """Classes to manage connections."""
 
 import logging
+
 from typing import Coroutine, List, Sequence, Tuple
 
 from aries_cloudagent.protocols.coordinate_mediation.v1_0.manager import (
     MediationManager,
 )
 
-
 from ....cache.base import BaseCache
 from ....config.base import InjectionError
+from ....connections.base_manager import BaseConnectionManager
 from ....connections.models.conn_record import ConnRecord
 from ....connections.models.connection_target import ConnectionTarget
 from ....connections.models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
+from ....connections.util import mediation_record_if_id
 from ....core.error import BaseError
 from ....core.profile import ProfileSession
 from ....messaging.responder import BaseResponder
@@ -26,13 +28,14 @@ from ....wallet.crypto import create_keypair, seed_to_did
 from ....wallet.error import WalletNotFoundError
 from ....wallet.util import bytes_to_b58
 from ....multitenant.manager import MultitenantManager
+
 from ...coordinate_mediation.v1_0.models.mediation_record import MediationRecord
+
 from .messages.connection_invitation import ConnectionInvitation
 from .messages.connection_request import ConnectionRequest
 from .messages.connection_response import ConnectionResponse
 from .messages.problem_report import ProblemReportReason
 from .models.connection_detail import ConnectionDetail
-from ....connections.base_manager import BaseConnectionManager
 
 
 class ConnectionManagerError(BaseError):
@@ -63,33 +66,6 @@ class ConnectionManager(BaseConnectionManager):
 
         """
         return self._session
-
-    async def mediation_record_if_id(
-        self, mediation_id: str = None, or_default: bool = False
-    ):
-        """Validate mediation and return record.
-
-        If mediation_id is not None,
-        validate medation record state and return record
-        else, return None
-        """
-        mediation_record = None
-        if mediation_id:
-            mediation_record = await MediationRecord.retrieve_by_id(
-                self._session, mediation_id
-            )
-        elif or_default:
-            mediation_record = await MediationManager(
-                self.session.profile
-            ).get_default_mediator()
-
-        if mediation_record:
-            if mediation_record.state != MediationRecord.STATE_GRANTED:
-                raise ConnectionManagerError(
-                    "Mediation is not granted for mediation identified by "
-                    f"{mediation_record.mediation_id}"
-                )
-        return mediation_record
 
     async def create_invitation(
         self,
@@ -607,7 +583,7 @@ class ConnectionManager(BaseConnectionManager):
         await connection.attach_request(self._session, request)
 
         # Send keylist updates to mediator
-        mediation_record = await self.mediation_record_if_id(mediation_id)
+        mediation_record = await mediation_record_if_id(mediation_id)
         if keylist_updates and mediation_record:
             responder = self._session.inject(BaseResponder, required=False)
             await responder.send(
@@ -655,7 +631,7 @@ class ConnectionManager(BaseConnectionManager):
         )
 
         keylist_updates = None
-        mediation_record = await self.mediation_record_if_id(mediation_id)
+        mediation_record = await mediation_record_if_id(mediation_id)
 
         # Multitenancy setup
         multitenant_mgr = self._session.inject(MultitenantManager, required=False)
