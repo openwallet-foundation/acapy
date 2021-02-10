@@ -12,7 +12,7 @@ from .....messaging.decorators.attach_decorator import AttachDecorator
 from .....messaging.models.base import BaseModelError, BaseModel, BaseModelSchema
 from .....messaging.valid import UUIDFour
 
-from ...util.presentation_preview import PresentationPreview, PresentationPreviewSchema
+from ...util.presentation_preview import PresentationPreview
 
 FormatSpec = namedtuple("FormatSpec", "aries aka")  # Aries RFC value, further monikers
 
@@ -66,9 +66,11 @@ class V20PresFormat(BaseModel):
             """Raise ValidationError for wrong proposal~attach content."""
             if self is V20PredFormat.Format.INDY:
                 try:
-                    V20PredProposal.deserialize(data)
+                    PresentationPreview.deserialize(data)
                 except BaseModelError as x:
-                    raise ValidationError("Invalid presentation proposal") from x
+                    raise ValidationError(
+                        "Invalid presentation proposal attachment: {x.message}"
+                    )
 
         def get_attachment_data(
             self,

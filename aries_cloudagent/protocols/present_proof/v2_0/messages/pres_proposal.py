@@ -48,10 +48,10 @@ class V20PresProposal(AgentMessage):
         """
         super().__init__(_id, **kwargs)
         self.comment = comment
+        self.formats = formats
         self.proposal_attach = proposal_attach or []
-        print(f'** MESSAGE stored {self.proposal_attach}')
 
-    def proposal(self, fmt: V20PresFormat.Format = None) -> dict:
+    def attachment(self, fmt: V20PresFormat.Format = None) -> dict:
         """
         Return attached proposal item.
 
@@ -74,7 +74,7 @@ class V20PresProposalSchema(AgentMessageSchema):
         unknown = EXCLUDE
 
     comment = fields.Str(
-        description="Human-readable comment", required=False, allow_none=True
+        description="Human-readable comment", required=False
     )
     formats = fields.Nested(
         V20PresFormatSchema,
@@ -93,8 +93,8 @@ class V20PresProposalSchema(AgentMessageSchema):
     def validate_fields(self, data, **kwargs):
         """Validate proposal attachment per format."""
 
-        def get_proposal_attach_by_id(attach_id):
-            """Return proposal attachment  with input attachment identifier."""
+        def get_attach_by_id(attach_id):
+            """Return attachment with input attachment identifier."""
             for p in proposal_attach:
                 if p.ident == attach_id:
                     return p
@@ -108,7 +108,7 @@ class V20PresProposalSchema(AgentMessageSchema):
             raise ValidationError("Formats vs. proposal attachments length mismatch")
 
         for fmt in formats:
-            proposal_atch = get_proposal_attach_by_id(fmt.attach_id)
+            proposal_atch = get_attach_by_id(fmt.attach_id)
             V20PresFormat.Format.get(fmt.format).validate_proposal_attach(
                 proposal_atch.indy_dict
             )

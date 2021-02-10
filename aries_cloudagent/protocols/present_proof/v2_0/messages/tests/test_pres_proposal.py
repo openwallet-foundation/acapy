@@ -41,8 +41,8 @@ PRES_PREVIEW = PresentationPreview(
 class TestV20PresProposal(TestCase):
     """Presentation proposal tests."""
 
-    def test_init_type(self):
-        """Test initializer and type."""
+    def test_init_type_attachment(self):
+        """Test initializer, type, attachment."""
         pres_proposal = V20PresProposal(
             comment="Hello World",
             formats=[
@@ -56,6 +56,10 @@ class TestV20PresProposal(TestCase):
             ],
         )
         assert pres_proposal._type == DIDCommPrefix.qualify_current(PRES_20_PROPOSAL)
+        assert (
+            pres_proposal.attachment(V20PresFormat.Format.INDY)
+            == PRES_PREVIEW.serialize()
+        )
 
     def test_serde(self):
         """Test de/serialization."""
@@ -72,8 +76,6 @@ class TestV20PresProposal(TestCase):
             ],
         )
         pres_proposal_ser = pres_proposal.serialize()
-        print(f'\n>> pp {pres_proposal}')
-        print(f'>> pp-ser {pres_proposal_ser}')
         pres_proposal_deser = V20PresProposal.deserialize(pres_proposal_ser)
         assert type(pres_proposal_deser) == V20PresProposal
 
