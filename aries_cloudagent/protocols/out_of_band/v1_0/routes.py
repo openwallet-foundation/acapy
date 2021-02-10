@@ -29,6 +29,7 @@ MEDIATION_ID_SCHEMA = {
     "example": UUIDFour.EXAMPLE,
 }
 
+
 class OutOfBandModuleResponseSchema(OpenAPISchema):
     """Response schema for Out of Band Module."""
 
@@ -213,7 +214,7 @@ async def invitation_receive(request: web.BaseRequest):
     alias = request.query.get("alias")
     # By default, try to use an existing connection
     use_existing_conn = json.loads(request.query.get("use_existing_connection", "true"))
-
+    mediation_id = request.query.get("mediation_id")
     try:
         invitation = InvitationMessage.deserialize(body)
         result = await oob_mgr.receive_invitation(
@@ -221,6 +222,7 @@ async def invitation_receive(request: web.BaseRequest):
             auto_accept=auto_accept,
             alias=alias,
             use_existing_connection=use_existing_conn,
+            mediation_id=mediation_id,
         )
     except (DIDXManagerError, StorageError, BaseModelError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
