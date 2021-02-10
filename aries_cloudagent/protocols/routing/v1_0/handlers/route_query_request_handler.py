@@ -25,8 +25,7 @@ class RouteQueryRequestHandler(BaseHandler):
         if not context.connection_ready:
             raise HandlerException("Cannot query routes: no active connection")
 
-        session = await context.session()
-        mgr = RoutingManager(session)
+        mgr = RoutingManager(context.profile)
         result = await mgr.get_routes(
             context.connection_record.connection_id, context.message.filter
         )

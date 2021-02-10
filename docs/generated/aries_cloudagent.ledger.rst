@@ -17,6 +17,14 @@ aries\_cloudagent\.ledger\.base module
     :undoc-members:
     :show-inheritance:
 
+aries\_cloudagent\.ledger\.endpoint\_type module
+------------------------------------------------
+
+.. automodule:: aries_cloudagent.ledger.endpoint_type
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 aries\_cloudagent\.ledger\.error module
 ---------------------------------------
 
@@ -29,14 +37,6 @@ aries\_cloudagent\.ledger\.indy module
 --------------------------------------
 
 .. automodule:: aries_cloudagent.ledger.indy
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-aries\_cloudagent\.ledger\.provider module
-------------------------------------------
-
-.. automodule:: aries_cloudagent.ledger.provider
     :members:
     :undoc-members:
     :show-inheritance:

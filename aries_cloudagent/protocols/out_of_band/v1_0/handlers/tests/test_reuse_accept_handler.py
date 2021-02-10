@@ -1,19 +1,22 @@
+"""Test Reuse Accept Message Handler."""
 import pytest
+
 from asynctest import mock as async_mock
 
 from ......connections.models import connection_target
 from ......connections.models.conn_record import ConnRecord
 from ......connections.models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
+from ......core.profile import ProfileSession
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
-from ......transport.inbound.receipt import MessageReceipt
 from ......storage.base import BaseStorage
 from ......storage.error import StorageNotFoundError
+from ......transport.inbound.receipt import MessageReceipt
+
 from ...handlers import reuse_accept_handler as handler
 from ...manager import OutOfBandManagerError, OutOfBandManager
 from ...messages.reuse import HandshakeReuse
 from ...messages.reuse_accept import HandshakeReuseAccept
-from ......core.profile import ProfileSession
 
 
 @pytest.fixture()
@@ -49,7 +52,7 @@ class TestHandshakeReuseAcceptHandler:
         await handler_inst.handle(context=request_context, responder=responder)
         mock_oob_mgr.return_value.receive_reuse_accepted_message.assert_called_once_with(
             reuse_accepted_msg=request_context.message,
-            reciept=request_context.message_receipt,
+            receipt=request_context.message_receipt,
             conn_record=connection_record,
         )
 

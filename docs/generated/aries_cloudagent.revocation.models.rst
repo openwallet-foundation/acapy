@@ -17,6 +17,14 @@ aries\_cloudagent\.revocation\.models\.indy module
     :undoc-members:
     :show-inheritance:
 
+aries\_cloudagent\.revocation\.models\.issuer\_cred\_rev\_record module
+-----------------------------------------------------------------------
+
+.. automodule:: aries_cloudagent.revocation.models.issuer_cred_rev_record
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 aries\_cloudagent\.revocation\.models\.issuer\_rev\_reg\_record module
 ----------------------------------------------------------------------
 

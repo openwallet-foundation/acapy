@@ -37,6 +37,7 @@ class DIDXRequest(AgentMessage):
 
         Args:
             label: Label for this request
+            did: DID for this request
             did_doc_attach: signed DID doc attachment
         """
         super().__init__(**kwargs)

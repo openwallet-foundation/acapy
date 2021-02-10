@@ -5,22 +5,29 @@ import logging
 
 from aiohttp import web
 from aiohttp_apispec import docs, querystring_schema, request_schema, response_schema
-from marshmallow import fields
+from marshmallow import fields, validate
 from marshmallow.exceptions import ValidationError
 
 from ....admin.request_context import AdminRequestContext
 from ....connections.models.conn_record import ConnRecordSchema
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
+from ....messaging.valid import UUIDFour
 from ....storage.error import StorageError, StorageNotFoundError
 
+from ...didcomm_prefix import DIDCommPrefix
 from ...didexchange.v1_0.manager import DIDXManagerError
 
 from .manager import OutOfBandManager, OutOfBandManagerError
-from .messages.invitation import InvitationMessage, InvitationMessageSchema
+from .messages.invitation import HSProto, InvitationMessage, InvitationMessageSchema
 from .message_types import SPEC_URI
+from .models.invitation import InvitationRecordSchema
 
 LOGGER = logging.getLogger(__name__)
+MEDIATION_ID_SCHEMA = {
+    "validate": UUIDFour(),
+    "example": UUIDFour.EXAMPLE,
+}
 
 
 class OutOfBandModuleResponseSchema(OpenAPISchema):
@@ -31,17 +38,14 @@ class InvitationCreateQueryStringSchema(OpenAPISchema):
     """Parameters and validators for create invitation request query string."""
 
     auto_accept = fields.Boolean(
-        description="Auto-accept connection (default as per configuration)",
+        description=(
+            "Auto-accept connection (defaults to configuration by peer or public DID)"
+        ),
         required=False,
     )
     multi_use = fields.Boolean(
         description="Create invitation for multiple use (default false)",
         required=False,
-    )
-    use_connections_rfc160 = fields.Boolean(
-        description="Use the RFC 0160 over did-exchange",
-        required=False,
-        default=False,
     )
 
 
@@ -51,16 +55,48 @@ class InvitationCreateRequestSchema(OpenAPISchema):
     class AttachmentDefSchema(OpenAPISchema):
         """Attachment Schema."""
 
-        _id = fields.String(data_key="id")
-        _type = fields.String(data_key="type")
+        _id = fields.Str(
+            data_key="id",
+            description="Attachment identifier",
+            example="attachment-0",
+        )
+        _type = fields.Str(
+            data_key="type",
+            description="Attachment type",
+            example="present-proof",
+            validate=validate.OneOf(["credential-offer", "present-proof"]),
+        )
 
-    attachments = fields.Nested(AttachmentDefSchema, many=True, required=False)
-    include_handshake = fields.Boolean(default=False)
-    use_public_did = fields.Boolean(default=False)
-    metadata = fields.Dict(
-        description="Optional metadata to attach to the connection created with "
-        "the invitation",
+    attachments = fields.Nested(
+        AttachmentDefSchema,
+        many=True,
         required=False,
+        description="Optional invitation attachments",
+    )
+    handshake_protocols = fields.List(
+        fields.Str(
+            description="Handshake protocol to specify in invitation",
+            example=DIDCommPrefix.qualify_current(HSProto.RFC23.name),
+            validate=lambda hsp: HSProto.get(hsp) is not None,
+        ),
+        required=False,
+    )
+    use_public_did = fields.Boolean(
+        default=False,
+        description="Whether to use public DID in invitation",
+        example=False,
+    )
+    metadata = fields.Dict(
+        description=(
+            "Optional metadata to attach to the connection created with "
+            "the invitation"
+        ),
+        required=False,
+    )
+    mediation_id = fields.Str(
+        required=False,
+        description="Identifier for active mediation record to be used",
+        **MEDIATION_ID_SCHEMA
     )
 
 
@@ -73,13 +109,20 @@ class InvitationReceiveQueryStringSchema(OpenAPISchema):
         example="Barry",
     )
     auto_accept = fields.Boolean(
-        description="Auto-accept connection (defaults to configuration)",
+        description=(
+            "Auto-accept connection (defaults to configuration by peer or public DID)"
+        ),
         required=False,
     )
     use_existing_connection = fields.Boolean(
         description="Use an existing connection, if possible",
         required=False,
         default=True,
+    )
+    mediation_id = fields.Str(
+        required=False,
+        description="Identifier for active mediation record to be used",
+        **MEDIATION_ID_SCHEMA
     )
 
 
@@ -95,7 +138,7 @@ class InvitationReceiveRequestSchema(InvitationMessageSchema):
 )
 @querystring_schema(InvitationCreateQueryStringSchema())
 @request_schema(InvitationCreateRequestSchema())
-@response_schema(OutOfBandModuleResponseSchema(), description="")
+@response_schema(InvitationRecordSchema(), description="")
 async def invitation_create(request: web.BaseRequest):
     """
     Request handler for creating a new connection invitation.
@@ -111,29 +154,31 @@ async def invitation_create(request: web.BaseRequest):
 
     body = await request.json() if request.body_exists else {}
     attachments = body.get("attachments")
-    include_handshake = body.get("include_handshake")
-    use_public_did = body.get("use_public_did")
+    handshake_protocols = body.get("handshake_protocols", [])
+    use_public_did = body.get("use_public_did", False)
     metadata = body.get("metadata")
 
     multi_use = json.loads(request.query.get("multi_use", "false"))
     auto_accept = json.loads(request.query.get("auto_accept", "null"))
-    use_connections = json.loads(request.query.get("use_connections_rfc160", "false"))
+    mediation_id = body.get("mediation_id")
     session = await context.session()
     oob_mgr = OutOfBandManager(session)
     try:
-        invitation = await oob_mgr.create_invitation(
+        invi_rec = await oob_mgr.create_invitation(
             auto_accept=auto_accept,
             public=use_public_did,
-            include_handshake=include_handshake,
+            hs_protos=[
+                h for h in [HSProto.get(hsp) for hsp in handshake_protocols] if h
+            ],
             multi_use=multi_use,
             attachments=attachments,
             metadata=metadata,
-            use_connections=use_connections,
+            mediation_id=mediation_id,
         )
     except (StorageNotFoundError, ValidationError, OutOfBandManagerError) as e:
         raise web.HTTPBadRequest(reason=str(e))
 
-    return web.json_response(invitation.serialize())
+    return web.json_response(invi_rec.serialize())
 
 
 @docs(
@@ -169,7 +214,7 @@ async def invitation_receive(request: web.BaseRequest):
     alias = request.query.get("alias")
     # By default, try to use an existing connection
     use_existing_conn = json.loads(request.query.get("use_existing_connection", "true"))
-
+    mediation_id = request.query.get("mediation_id")
     try:
         invitation = InvitationMessage.deserialize(body)
         result = await oob_mgr.receive_invitation(
@@ -177,6 +222,7 @@ async def invitation_receive(request: web.BaseRequest):
             auto_accept=auto_accept,
             alias=alias,
             use_existing_connection=use_existing_conn,
+            mediation_id=mediation_id,
         )
     except (DIDXManagerError, StorageError, BaseModelError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err

@@ -510,21 +510,19 @@ class CredentialManager:
 
             tails_path = None
             if credential_definition["value"].get("revocation"):
-                async with self._profile.session() as session:
-                    revoc = IndyRevocation(session)
-                    try:
-                        active_rev_reg_rec = (
-                            await revoc.get_active_issuer_rev_reg_record(
-                                cred_ex_record.credential_definition_id
-                            )
-                        )
-                        rev_reg = await active_rev_reg_rec.get_registry()
-                        cred_ex_record.revoc_reg_id = active_rev_reg_rec.revoc_reg_id
+                revoc = IndyRevocation(self._profile)
+                try:
+                    active_rev_reg_rec = await revoc.get_active_issuer_rev_reg_record(
+                        cred_ex_record.credential_definition_id
+                    )
+                    rev_reg = await active_rev_reg_rec.get_registry()
+                    cred_ex_record.revoc_reg_id = active_rev_reg_rec.revoc_reg_id
 
-                        tails_path = rev_reg.tails_local_path
-                        await rev_reg.get_or_fetch_local_tails_path()
+                    tails_path = rev_reg.tails_local_path
+                    await rev_reg.get_or_fetch_local_tails_path()
 
-                    except StorageNotFoundError:
+                except StorageNotFoundError:
+                    async with self._profile.session() as session:
                         posted_rev_reg_recs = (
                             await IssuerRevRegRecord.query_by_cred_def_id(
                                 session,
@@ -532,46 +530,47 @@ class CredentialManager:
                                 state=IssuerRevRegRecord.STATE_POSTED,
                             )
                         )
-                        if not posted_rev_reg_recs:
-                            # Send next 2 rev regs, publish tails files in background
+                    if not posted_rev_reg_recs:
+                        # Send next 2 rev regs, publish tails files in background
+                        async with self._profile.session() as session:
                             old_rev_reg_recs = sorted(
                                 await IssuerRevRegRecord.query_by_cred_def_id(
                                     session,
                                     cred_ex_record.credential_definition_id,
                                 )
                             )  # prefer to reuse prior rev reg size
-                            for _ in range(2):
-                                pending_rev_reg_rec = await revoc.init_issuer_registry(
-                                    cred_ex_record.credential_definition_id,
-                                    max_cred_num=(
-                                        old_rev_reg_recs[0].max_cred_num
-                                        if old_rev_reg_recs
-                                        else None
-                                    ),
-                                )
-                                asyncio.ensure_future(
-                                    pending_rev_reg_rec.stage_pending_registry(
-                                        session,
-                                        max_attempts=3,  # fail both in < 2s at worst
-                                    )
-                                )
-                        if retries > 0:
-                            LOGGER.info(
-                                "Waiting 2s on posted rev reg for cred def %s, retrying",
+                        for _ in range(2):
+                            pending_rev_reg_rec = await revoc.init_issuer_registry(
                                 cred_ex_record.credential_definition_id,
+                                max_cred_num=(
+                                    old_rev_reg_recs[0].max_cred_num
+                                    if old_rev_reg_recs
+                                    else None
+                                ),
                             )
-                            await asyncio.sleep(2)
-                            return await self.issue_credential(
-                                cred_ex_record=cred_ex_record,
-                                comment=comment,
-                                retries=retries - 1,
+                            asyncio.ensure_future(
+                                pending_rev_reg_rec.stage_pending_registry(
+                                    self._profile,
+                                    max_attempts=3,  # fail both in < 2s at worst
+                                )
                             )
-
-                        raise CredentialManagerError(
-                            f"Cred def id {cred_ex_record.credential_definition_id} "
-                            "has no active revocation registry"
+                    if retries > 0:
+                        LOGGER.info(
+                            "Waiting 2s on posted rev reg for cred def %s, retrying",
+                            cred_ex_record.credential_definition_id,
                         )
-                    del revoc
+                        await asyncio.sleep(2)
+                        return await self.issue_credential(
+                            cred_ex_record=cred_ex_record,
+                            comment=comment,
+                            retries=retries - 1,
+                        )
+
+                    raise CredentialManagerError(
+                        f"Cred def id {cred_ex_record.credential_definition_id} "
+                        "has no active revocation registry"
+                    )
+                del revoc
 
             credential_values = CredentialProposal.deserialize(
                 cred_ex_record.credential_proposal_dict
@@ -599,18 +598,18 @@ class CredentialManager:
                             IssuerRevRegRecord.STATE_FULL,
                         )
 
-                        # Send next 1 rev reg, publish tails file in background
-                        revoc = IndyRevocation(session)
-                        pending_rev_reg_rec = await revoc.init_issuer_registry(
-                            active_rev_reg_rec.cred_def_id,
-                            max_cred_num=active_rev_reg_rec.max_cred_num,
+                    # Send next 1 rev reg, publish tails file in background
+                    revoc = IndyRevocation(self._profile)
+                    pending_rev_reg_rec = await revoc.init_issuer_registry(
+                        active_rev_reg_rec.cred_def_id,
+                        max_cred_num=active_rev_reg_rec.max_cred_num,
+                    )
+                    asyncio.ensure_future(
+                        pending_rev_reg_rec.stage_pending_registry(
+                            self._profile,
+                            max_attempts=16,
                         )
-                        asyncio.ensure_future(
-                            pending_rev_reg_rec.stage_pending_registry(
-                                session,
-                                max_attempts=16,
-                            )
-                        )
+                    )
 
             except IndyIssuerRevocationRegistryFullError:
                 # unlucky: duelling instance issued last cred near same time as us
