@@ -3,7 +3,6 @@
 import asyncio
 import functools
 import logging
-import os
 import signal
 from configargparse import ArgumentParser
 from typing import Coroutine, Sequence
