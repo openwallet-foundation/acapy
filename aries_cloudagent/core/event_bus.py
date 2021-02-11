@@ -2,11 +2,15 @@
 
 from itertools import chain
 import logging
-from typing import Any, Callable, Dict, Pattern, Sequence
-from .profile import Profile
+from typing import Any, Callable, Dict, Pattern, Sequence, Union
+from ..messaging.request_context import RequestContext
+from ..admin.request_context import AdminRequestContext
 
 
 LOGGER = logging.getLogger(__name__)
+
+
+EventContext = Union[RequestContext, AdminRequestContext]
 
 
 class Event:
@@ -34,6 +38,7 @@ class Event:
         return self._topic == other._topic and self._payload == other._payload
 
     def __repr__(self):
+        """Return debug representation."""
         return "<Event topic={}, payload={}>".format(self._topic, self._payload)
 
 
@@ -41,13 +46,18 @@ class EventBus:
     """A simple event bus implementation."""
 
     def __init__(self):
+        """Initialize Event Bus."""
         self.topic_patterns_to_subscribers: Dict[Pattern, Sequence[Callable]] = {}
 
-    async def notify(self, profile: Profile, event: Event):
+    async def notify(
+        self,
+        context: EventContext,
+        event: Event
+    ):
         """Notify subscribers of event.
 
         Args:
-            profile (Profile): profile of the event
+            context (EventContext): context of the event
             event (Event): event to emit
 
         """
@@ -64,7 +74,7 @@ class EventBus:
 
         for processor in chain(*matched):
             try:
-                await processor(profile, event)
+                await processor(context, event)
             except Exception:
                 LOGGER.exception("Error occurred while processing event")
 

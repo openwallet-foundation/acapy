@@ -14,7 +14,7 @@ def event_bus():
 
 
 @pytest.fixture
-def profile():
+def context():
     yield async_mock.MagicMock()
 
 
@@ -26,11 +26,11 @@ def event():
 
 class TestProcessor:
     def __init__(self):
-        self.profile = None
+        self.context = None
         self.event = None
 
-    async def __call__(self, profile, event):
-        self.profile = profile
+    async def __call__(self, context, event):
+        self.context = context
         self.event = event
 
 
@@ -78,29 +78,29 @@ def test_unsub_unsubbed_processor(event_bus: EventBus, processor):
 
 
 @pytest.mark.asyncio
-async def test_sub_notify(event_bus: EventBus, profile, event, processor):
+async def test_sub_notify(event_bus: EventBus, context, event, processor):
     """Test subscriber receives event."""
     event_bus.subscribe(re.compile(".*"), processor)
-    await event_bus.notify(profile, event)
-    assert processor.profile == profile
+    await event_bus.notify(context, event)
+    assert processor.context == context
     assert processor.event == event
 
 
 
 @pytest.mark.asyncio
 async def test_sub_notify_error_logged_and_exec_continues(
-    event_bus: EventBus, profile, event, caplog
+    event_bus: EventBus, context, event, caplog
 ):
     """Test subscriber errors are logged but do not halt execution."""
-    def _raise_exception(profile, event):
+    def _raise_exception(context, event):
         raise Exception()
     processor = TestProcessor()
     bad_processor = _raise_exception
     event_bus.subscribe(re.compile(".*"), bad_processor)
     event_bus.subscribe(re.compile(".*"), processor)
-    await event_bus.notify(profile, event)
+    await event_bus.notify(context, event)
     assert "Error occurred while processing event" in caplog.text
-    assert processor.profile == profile
+    assert processor.context == context
     assert processor.event == event
 
 
@@ -114,46 +114,46 @@ async def test_sub_notify_error_logged_and_exec_continues(
 )
 @pytest.mark.asyncio
 async def test_sub_notify_regex_filtering(
-    event_bus: EventBus, profile, processor, pattern, topic
+    event_bus: EventBus, context, processor, pattern, topic
 ):
     """Test events are filtered correctly."""
     event = Event(topic)
     event_bus.subscribe(re.compile(pattern), processor)
-    await event_bus.notify(profile, event)
-    assert processor.profile == profile
+    await event_bus.notify(context, event)
+    assert processor.context == context
     assert processor.event == event
 
 
 @pytest.mark.asyncio
-async def test_sub_notify_no_match(event_bus: EventBus, profile, event, processor):
+async def test_sub_notify_no_match(event_bus: EventBus, context, event, processor):
     """Test event not given to processor when pattern doesn't match."""
     event_bus.subscribe(re.compile("^$"), processor)
-    await event_bus.notify(profile, event)
-    assert processor.profile is None
+    await event_bus.notify(context, event)
+    assert processor.context is None
     assert processor.event is None
 
 
 @pytest.mark.asyncio
-async def test_sub_notify_only_one(event_bus: EventBus, profile, event, processor):
+async def test_sub_notify_only_one(event_bus: EventBus, context, event, processor):
     """Test only one subscriber is called when pattern matches only one."""
     processor1 = TestProcessor()
     event_bus.subscribe(re.compile(".*"), processor)
     event_bus.subscribe(re.compile("^$"), processor1)
-    await event_bus.notify(profile, event)
-    assert processor.profile == profile
+    await event_bus.notify(context, event)
+    assert processor.context == context
     assert processor.event == event
-    assert processor1.profile is None
+    assert processor1.context is None
     assert processor1.event is None
 
 
 @pytest.mark.asyncio
-async def test_sub_notify_both(event_bus: EventBus, profile, event, processor):
+async def test_sub_notify_both(event_bus: EventBus, context, event, processor):
     """Test both subscribers are called when pattern matches both."""
     processor1 = TestProcessor()
     event_bus.subscribe(re.compile(".*"), processor)
     event_bus.subscribe(re.compile("anything"), processor1)
-    await event_bus.notify(profile, event)
-    assert processor.profile == profile
+    await event_bus.notify(context, event)
+    assert processor.context == context
     assert processor.event == event
-    assert processor1.profile == profile
+    assert processor1.context == context
     assert processor1.event == event

@@ -108,7 +108,7 @@ class AdminResponder(BaseResponder):
             payload: the webhook payload value
         """
         event_bus = self._profile.inject(EventBus)
-        await event_bus.notify(self._profile, Event(topic, payload))
+        await event_bus.notify(self._profile.context, Event(topic, payload))
         await self._webhook(self._profile, topic, payload)
 
 

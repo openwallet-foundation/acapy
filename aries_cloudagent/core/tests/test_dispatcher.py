@@ -7,6 +7,7 @@ from marshmallow import EXCLUDE
 
 from ...config.injection_context import InjectionContext
 from ...connections.models.conn_record import ConnRecord
+from ...core.event_bus import EventBus
 from ...core.in_memory import InMemoryProfile
 from ...core.profile import Profile
 from ...core.protocol_registry import ProtocolRegistry
@@ -30,6 +31,7 @@ def make_profile() -> Profile:
     profile = InMemoryProfile.test_profile()
     profile.context.injector.bind_instance(ProtocolRegistry, ProtocolRegistry())
     profile.context.injector.bind_instance(Collector, Collector())
+    profile.context.injector.bind_instance(EventBus, EventBus())
     return profile
 
 
