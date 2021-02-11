@@ -72,6 +72,73 @@ class TestDIDExchangeConnRoutes(AsyncTestCase):
             with self.assertRaises(test_module.web.HTTPBadRequest):
                 await test_module.didx_accept_invitation(self.request)
 
+    async def test_didx_create_request_implicit(self):
+        self.request.query = {
+            "their_public_did": "public-did",
+            "my_label": "label baby junior",
+            "my_endpoint": "http://endpoint.ca",
+        }
+
+        with async_mock.patch.object(
+            test_module, "DIDXManager", autospec=True
+        ) as mock_didx_mgr, async_mock.patch.object(
+            test_module.web, "json_response"
+        ) as mock_response:
+            mock_didx_mgr.return_value.create_request_implicit = (
+                async_mock.CoroutineMock(
+                    return_value=async_mock.MagicMock(
+                        serialize=async_mock.MagicMock(
+                            return_value="mock serialization"
+                        )
+                    )
+                )
+            )
+
+            await test_module.didx_request_implicit(self.request)
+            mock_response.assert_called_once_with("mock serialization")
+
+    async def test_didx_create_request_implicit_not_found_x(self):
+        self.request.query = {
+            "their_public_did": "public-did",
+            "my_label": "label baby junior",
+            "my_endpoint": "http://endpoint.ca",
+        }
+
+        with async_mock.patch.object(
+            test_module, "DIDXManager", autospec=True
+        ) as mock_didx_mgr, async_mock.patch.object(
+            test_module.web, "json_response"
+        ) as mock_response:
+            mock_didx_mgr.return_value.create_request_implicit = (
+                async_mock.CoroutineMock(side_effect=StorageNotFoundError("not found"))
+            )
+
+            with self.assertRaises(test_module.web.HTTPNotFound) as context:
+                await test_module.didx_request_implicit(self.request)
+            assert "not found" in str(context.exception)
+
+    async def test_didx_request_wallet_x(self):
+        self.request.query = {
+            "their_public_did": "public-did",
+            "my_label": "label baby junior",
+            "my_endpoint": "http://endpoint.ca",
+        }
+
+        with async_mock.patch.object(
+            test_module, "DIDXManager", autospec=True
+        ) as mock_didx_mgr, async_mock.patch.object(
+            test_module.web, "json_response"
+        ) as mock_response:
+            mock_didx_mgr.return_value.create_request_implicit = (
+                async_mock.CoroutineMock(
+                    side_effect=test_module.WalletError("wallet error")
+                )
+            )
+
+            with self.assertRaises(test_module.web.HTTPBadRequest) as context:
+                await test_module.didx_request_implicit(self.request)
+            assert "wallet error" in str(context.exception)
+
     async def test_didx_accept_request(self):
         self.request.match_info = {"conn_id": "dummy"}
         self.request.query = {

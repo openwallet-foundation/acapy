@@ -57,7 +57,10 @@ class TestDIDXRequestHandler(AsyncTestCase):
 
     async def setUp(self):
         self.ctx = RequestContext.test_context()
-        self.ctx.message_receipt = MessageReceipt()
+        self.ctx.message_receipt = MessageReceipt(
+            recipient_did="dummy",
+            recipient_did_public=True,
+        )
 
         wallet = (await self.ctx.session()).wallet
         self.did_info = await wallet.create_local_did()
@@ -80,7 +83,9 @@ class TestDIDXRequestHandler(AsyncTestCase):
         await handler_inst.handle(self.ctx, responder)
 
         mock_didx_mgr.return_value.receive_request.assert_called_once_with(
-            self.ctx.message, self.ctx.message_receipt
+            request=self.ctx.message,
+            recipient_did=self.ctx.message_receipt.recipient_did,
+            recipient_verkey=None,
         )
         assert not responder.messages
 

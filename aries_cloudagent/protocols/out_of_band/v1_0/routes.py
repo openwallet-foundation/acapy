@@ -33,9 +33,7 @@ class InvitationCreateQueryStringSchema(OpenAPISchema):
     """Parameters and validators for create invitation request query string."""
 
     auto_accept = fields.Boolean(
-        description=(
-            "Auto-accept connection (defaults to configuration by peer or public DID)"
-        ),
+        description="Auto-accept connection (defaults to configuration)",
         required=False,
     )
     multi_use = fields.Boolean(
@@ -88,20 +86,28 @@ class InvitationCreateRequestSchema(OpenAPISchema):
         ),
         required=False,
     )
+    my_label = fields.Str(
+        description="Label for connection invitation",
+        required=False,
+        example="Invitation to Barry",
+    )
+    alias = fields.Str(
+        description="Alias for connection",
+        required=False,
+        example="Barry",
+    )
 
 
 class InvitationReceiveQueryStringSchema(OpenAPISchema):
     """Parameters and validators for receive invitation request query string."""
 
     alias = fields.Str(
-        description="Alias",
+        description="Alias for connection",
         required=False,
         example="Barry",
     )
     auto_accept = fields.Boolean(
-        description=(
-            "Auto-accept connection (defaults to configuration by peer or public DID)"
-        ),
+        description="Auto-accept connection (defaults to configuration)",
         required=False,
     )
     use_existing_connection = fields.Boolean(
@@ -142,6 +148,8 @@ async def invitation_create(request: web.BaseRequest):
     handshake_protocols = body.get("handshake_protocols", [])
     use_public_did = body.get("use_public_did", False)
     metadata = body.get("metadata")
+    my_label = request.query.get("my_label")
+    alias = request.query.get("alias")
 
     multi_use = json.loads(request.query.get("multi_use", "false"))
     auto_accept = json.loads(request.query.get("auto_accept", "null"))
@@ -149,6 +157,7 @@ async def invitation_create(request: web.BaseRequest):
     oob_mgr = OutOfBandManager(session)
     try:
         invi_rec = await oob_mgr.create_invitation(
+            my_label=my_label,
             auto_accept=auto_accept,
             public=use_public_did,
             hs_protos=[
@@ -157,6 +166,7 @@ async def invitation_create(request: web.BaseRequest):
             multi_use=multi_use,
             attachments=attachments,
             metadata=metadata,
+            alias=alias,
         )
     except (StorageNotFoundError, ValidationError, OutOfBandManagerError) as e:
         raise web.HTTPBadRequest(reason=str(e))

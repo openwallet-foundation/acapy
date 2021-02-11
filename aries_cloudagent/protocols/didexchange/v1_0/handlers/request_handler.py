@@ -25,7 +25,15 @@ class DIDXRequestHandler(BaseHandler):
         session = await context.session()
         mgr = DIDXManager(session)
         try:
-            await mgr.receive_request(context.message, context.message_receipt)
+            await mgr.receive_request(
+                request=context.message,
+                recipient_did=context.message_receipt.recipient_did,
+                recipient_verkey=(
+                    None
+                    if context.message_receipt.recipient_did_public
+                    else context.message_receipt.recipient_verkey
+                ),
+            )
         except DIDXManagerError as e:
             self._logger.exception("Error receiving RFC 23 connection request")
             if e.error_code:
