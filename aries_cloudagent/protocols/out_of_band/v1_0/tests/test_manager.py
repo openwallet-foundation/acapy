@@ -19,6 +19,10 @@ from .....messaging.responder import BaseResponder, MockResponder
 from .....messaging.util import str_to_datetime, str_to_epoch
 from .....multitenant.manager import MultitenantManager
 from .....protocols.connections.v1_0.manager import ConnectionManager
+from .....protocols.coordinate_mediation.v1_0.models.mediation_record import (
+    MediationRecord,
+)
+from .....protocols.coordinate_mediation.v1_0.manager import MediationManager
 from .....protocols.didexchange.v1_0.manager import DIDXManager
 from .....protocols.issue_credential.v1_0.message_types import (
     CREDENTIAL_OFFER,
@@ -208,8 +212,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 "default_label": "This guy",
                 "additional_endpoints": ["http://aries.ca/another-endpoint"],
                 "debug.auto_accept_invites": True,
-                "debug.auto_accept_requests_peer": True,
-                "debug.auto_accept_requests_public": True,
+                "debug.auto_accept_requests": True,
             }
         )
         self.session.context.injector.bind_instance(BaseResponder, self.responder)
@@ -240,6 +243,12 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             their_public_did=self.their_public_did,
         )
 
+        self.test_mediator_routing_keys = [
+            "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRR"
+        ]
+        self.test_mediator_conn_id = "mediator-conn-id"
+        self.test_mediator_endpoint = "http://mediator.example.com"
+
     async def test_create_invitation_handshake_succeeds(self):
         self.session.context.update_settings({"public_invites": True})
 
@@ -259,12 +268,41 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 INVITATION
             )
             assert not invi_rec.invitation.get("request~attach")
-            assert invi_rec.invitation["label"] == "This guy"
             assert (
                 DIDCommPrefix.qualify_current(HSProto.RFC23.name)
                 in invi_rec.invitation["handshake_protocols"]
             )
             assert invi_rec.invitation["service"] == [f"did:sov:{TestConfig.test_did}"]
+
+    async def test_create_invitation_mediation_overwrites_routing_and_endpoint(self):
+        mock_conn_rec = async_mock.MagicMock()
+
+        mediation_record = MediationRecord(
+            role=MediationRecord.ROLE_CLIENT,
+            state=MediationRecord.STATE_GRANTED,
+            connection_id=self.test_mediator_conn_id,
+            routing_keys=self.test_mediator_routing_keys,
+            endpoint=self.test_mediator_endpoint,
+        )
+        await mediation_record.save(self.session)
+        with async_mock.patch.object(
+            MediationManager,
+            "get_default_mediator_id",
+        ) as mock_get_default_mediator, async_mock.patch.object(
+            mock_conn_rec, "metadata_set", async_mock.CoroutineMock()
+        ) as mock_metadata_set:
+            invite = await self.manager.create_invitation(
+                my_endpoint=TestConfig.test_endpoint,
+                my_label="test123",
+                hs_protos=[HSProto.RFC23],
+                mediation_id=mediation_record.mediation_id,
+            )
+            assert isinstance(invite, InvitationRecord)
+            assert invite.invitation["@type"] == DIDCommPrefix.qualify_current(
+                INVITATION
+            )
+            assert invite.invitation["label"] == "test123"
+            mock_get_default_mediator.assert_not_called()
 
     async def test_create_invitation_ledger_x(self):
         self.session.context.update_settings({"public_invites": True})
@@ -289,18 +327,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 )
             assert "Error getting endpoint" in str(context.exception)
 
-    async def test_create_invitation_public_auto_accept_override_x(self):
-        self.session.context.update_settings({"public_invites": True})
-
-        with self.assertRaises(OutOfBandManagerError) as context:
-            await self.manager.create_invitation(
-                my_endpoint=TestConfig.test_endpoint,
-                public=True,
-                hs_protos=[HSProto.RFC23],
-                auto_accept=False,
-            )
-        assert "Cannot override auto-acceptance" in str(context.exception)
-
     async def test_create_invitation_multitenant_local(self):
         self.session.context.update_settings(
             {
@@ -313,10 +339,13 @@ class TestOOBManager(AsyncTestCase, TestConfig):
 
         with async_mock.patch.object(
             InMemoryWallet, "create_signing_key", autospec=True
-        ) as mock_wallet_create_signing_key:
+        ) as mock_wallet_create_signing_key, async_mock.patch.object(
+            self.multitenant_mgr, "get_default_mediator"
+        ) as mock_get_default_mediator:
             mock_wallet_create_signing_key.return_value = KeyInfo(
                 TestConfig.test_verkey, None
             )
+            mock_get_default_mediator.return_value = MediationRecord()
             await self.manager.create_invitation(
                 my_endpoint=TestConfig.test_endpoint,
                 hs_protos=[HSProto.RFC23],
@@ -381,7 +410,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             )
             invi_rec = await self.manager.create_invitation(
                 my_endpoint=TestConfig.test_endpoint,
-                public=False,
+                public=True,
                 hs_protos=[HSProto.RFC23],
                 multi_use=False,
                 attachments=[{"type": "credential-offer", "id": "dummy-id"}],
@@ -406,7 +435,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             )
             invi_rec = await self.manager.create_invitation(
                 my_endpoint=TestConfig.test_endpoint,
-                public=False,
+                public=True,
                 hs_protos=None,
                 multi_use=False,
                 attachments=[{"type": "credential-offer", "id": "dummy-id"}],
@@ -416,7 +445,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             assert not invi_rec.invitation["handshake_protocols"]
 
     async def test_create_invitation_attachment_v2_0_cred_offer(self):
-        self.session.context.update_settings({"public_invites": True})
         with async_mock.patch.object(
             InMemoryWallet, "get_public_did", autospec=True
         ) as mock_wallet_get_public_did, async_mock.patch.object(
@@ -439,7 +467,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             mock_retrieve_cxid_v1.side_effect = test_module.StorageNotFoundError()
             invi_rec = await self.manager.create_invitation(
                 my_endpoint=TestConfig.test_endpoint,
-                public=True,
+                public=False,
                 hs_protos=None,
                 multi_use=False,
                 attachments=[{"type": "credential-offer", "id": "dummy-id"}],
@@ -464,7 +492,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             )
             invi_rec = await self.manager.create_invitation(
                 my_endpoint=TestConfig.test_endpoint,
-                public=False,
+                public=True,
                 hs_protos=[test_module.HSProto.RFC23],
                 multi_use=False,
                 attachments=[{"type": "present-proof", "id": "dummy-id"}],
@@ -540,28 +568,43 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 "wallet.id": "my-wallet",
             }
         )
-
-        invi_rec = await self.manager.create_invitation(
-            my_label="That guy",
-            my_endpoint=None,
-            public=False,
-            hs_protos=[test_module.HSProto.RFC23],
-            multi_use=False,
+        mediation_record = MediationRecord(
+            role=MediationRecord.ROLE_CLIENT,
+            state=MediationRecord.STATE_GRANTED,
+            connection_id=self.test_mediator_conn_id,
+            routing_keys=self.test_mediator_routing_keys,
+            endpoint=self.test_mediator_endpoint,
         )
+        await mediation_record.save(self.session)
+        with async_mock.patch.object(
+            self.multitenant_mgr, "get_default_mediator"
+        ) as mock_get_default_mediator:
+            mock_get_default_mediator.return_value = mediation_record
+            invi_rec = await self.manager.create_invitation(
+                my_label="That guy",
+                my_endpoint=None,
+                public=False,
+                hs_protos=[test_module.HSProto.RFC23],
+                multi_use=False,
+            )
 
-        assert invi_rec.invitation["@type"] == DIDCommPrefix.qualify_current(INVITATION)
-        assert not invi_rec.invitation.get("request~attach")
-        assert invi_rec.invitation["label"] == "That guy"
-        assert (
-            DIDCommPrefix.qualify_current(HSProto.RFC23.name)
-            in invi_rec.invitation["handshake_protocols"]
-        )
-        service = invi_rec.invitation["service"][0]
-        assert service["id"] == "#inline"
-        assert service["type"] == "did-communication"
-        assert len(service["recipientKeys"]) == 1
-        assert not service.get("routingKeys")
-        assert service["serviceEndpoint"] == TestConfig.test_endpoint
+            assert invi_rec.invitation["@type"] == DIDCommPrefix.qualify_current(
+                INVITATION
+            )
+            assert not invi_rec.invitation.get("request~attach")
+            assert invi_rec.invitation["label"] == "That guy"
+            assert (
+                DIDCommPrefix.qualify_current(HSProto.RFC23.name)
+                in invi_rec.invitation["handshake_protocols"]
+            )
+            service = invi_rec.invitation["service"][0]
+            assert service["id"] == "#inline"
+            assert service["type"] == "did-communication"
+            assert len(service["recipientKeys"]) == 1
+            assert service["routingKeys"][0] == naked_to_did_key(
+                self.test_mediator_routing_keys[0]
+            )
+            assert service["serviceEndpoint"] == self.test_mediator_endpoint
 
     async def test_create_invitation_metadata_assigned(self):
         invi_rec = await self.manager.create_invitation(
@@ -591,6 +634,58 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                     multi_use=False,
                 )
             assert "Cannot store metadata on public" in str(context.exception)
+
+    async def test_receive_invitation_with_valid_meditation(self):
+        self.session.context.update_settings({"public_invites": True})
+        mediation_record = MediationRecord(
+            role=MediationRecord.ROLE_CLIENT,
+            state=MediationRecord.STATE_GRANTED,
+            connection_id=self.test_mediator_conn_id,
+            routing_keys=self.test_mediator_routing_keys,
+            endpoint=self.test_mediator_endpoint,
+        )
+        await mediation_record.save(self.session)
+        with async_mock.patch.object(
+            DIDXManager, "receive_invitation"
+        ) as create_request:
+            invite = await self.manager.create_invitation(
+                my_endpoint=TestConfig.test_endpoint,
+                my_label="test123",
+                hs_protos=[HSProto.RFC23],
+            )
+            invi_msg = InvitationMessage.deserialize(invite.invitation)
+            invitee_record = await self.manager.receive_invitation(
+                invi_msg=invi_msg,
+                mediation_id=mediation_record._id,
+            )
+            create_request.assert_called_once_with(
+                invitation=invi_msg,
+                mediation_id=mediation_record._id,
+                their_public_did=None,
+                auto_accept=None,
+            )
+
+    async def test_receive_invitation_with_invalid_meditation(self):
+        self.session.context.update_settings({"public_invites": True})
+        with async_mock.patch.object(
+            DIDXManager, "receive_invitation"
+        ) as create_request:
+            invite = await self.manager.create_invitation(
+                my_endpoint=TestConfig.test_endpoint,
+                my_label="test123",
+                hs_protos=[HSProto.RFC23],
+            )
+            invi_msg = InvitationMessage.deserialize(invite.invitation)
+            invitee_record = await self.manager.receive_invitation(
+                invi_msg,
+                mediation_id="test-mediation-id",
+            )
+            create_request.assert_called_once_with(
+                invitation=invi_msg,
+                mediation_id=None,
+                their_public_did=None,
+                auto_accept=None,
+            )
 
     async def test_receive_invitation_didx_service_block(self):
         self.session.context.update_settings({"public_invites": True})
