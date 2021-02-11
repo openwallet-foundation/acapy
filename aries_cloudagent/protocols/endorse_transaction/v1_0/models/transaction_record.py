@@ -51,6 +51,7 @@ class TransactionRecord(BaseExchangeRecord):
     STATE_TRANSACTION_RESENT = "transaction_resent"
     STATE_TRANSACTION_RESENT_RECEIEVED = "transaction_resent_received"
     STATE_TRANSACTION_CANCELLED = "transaction_cancelled"
+    STATE_TRANSACTION_COMPLETED = "transaction_completed"
 
     def __init__(
         self,

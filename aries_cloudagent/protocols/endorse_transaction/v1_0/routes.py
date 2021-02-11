@@ -9,16 +9,20 @@ from aiohttp_apispec import (
     match_info_schema,
 )
 from marshmallow import fields, validate
+from time import time
 
 from ....admin.request_context import AdminRequestContext
 from .manager import TransactionManager
 from .models.transaction_record import TransactionRecord, TransactionRecordSchema
 from ....connections.models.conn_record import ConnRecord
 
+from ....messaging.credential_definitions.util import CRED_DEF_SENT_RECORD_TYPE
 from ....messaging.models.openapi import OpenAPISchema
+from ....messaging.schemas.util import SCHEMA_SENT_RECORD_TYPE
 from ....messaging.valid import UUIDFour
 from ....messaging.models.base import BaseModelError
 
+from ....storage.base import StorageRecord
 from ....storage.error import StorageError, StorageNotFoundError
 from .transaction_jobs import TransactionJob
 
@@ -621,13 +625,86 @@ async def transaction_write(request: web.BaseRequest):
 
     async with ledger:
         try:
-            ledger_response = await shield(
+            ledger_response_json = await shield(
                 ledger.txn_submit(ledger_transaction, sign=False, taa_accept=False)
             )
         except (IndyIssuerError, LedgerError) as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-    return web.json_response(json.loads(ledger_response))
+    print("After writing to ledger:")
+    ledger_response = json.loads(ledger_response_json)
+    print("ledger_response:", ledger_response)
+    message_attach = json.loads(transaction.messages_attach[0]["data"]["json"])
+    print("message_attach:", message_attach)
+
+    # write the wallet non-secrets record
+    # TODO refactor this code (duplicated from ledger.indy.py)
+    print("ledger txn type:", ledger_response["result"]["txn"]["type"])
+    if ledger_response["result"]["txn"]["type"] == "101":
+        # schema transaction
+        print("Adding schema record ...")
+        schema_id = ledger_response["result"]["txnMetadata"]["txnId"]
+        schema_id_parts = schema_id.split(":")
+        public_did = ledger_response["result"]["txn"]["metadata"]["from"]
+        schema_tags = {
+            "schema_id": schema_id,
+            "schema_issuer_did": public_did,
+            "schema_name": schema_id_parts[-2],
+            "schema_version": schema_id_parts[-1],
+            "epoch": str(int(time())),
+        }
+        record = StorageRecord(SCHEMA_SENT_RECORD_TYPE, schema_id, schema_tags)
+        print("Adding storage record:", record)
+        # TODO refactor this code?
+        async with ledger:
+            storage = ledger.get_indy_storage()
+            await storage.add_record(record)
+        print(">>> done")
+
+    elif ledger_response["result"]["txn"]["type"] == "102":
+        # cred def transaction
+        print("Adding cred def record ...")
+        async with ledger:
+            try:
+                schema_seq_no = str(ledger_response["result"]["txn"]["data"]["ref"])
+                schema_response = await shield(ledger.get_schema(schema_seq_no))
+            except (IndyIssuerError, LedgerError) as err:
+                raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+        print("schema_response:", schema_response)
+
+        schema_id = schema_response["id"]
+        schema_id_parts = schema_id.split(":")
+        public_did = ledger_response["result"]["txn"]["metadata"]["from"]
+        credential_definition_id = ledger_response["result"]["txnMetadata"]["txnId"]
+        cred_def_tags = {
+            "schema_id": schema_id,
+            "schema_issuer_did": schema_id_parts[0],
+            "schema_name": schema_id_parts[-2],
+            "schema_version": schema_id_parts[-1],
+            "issuer_did": public_did,
+            "cred_def_id": credential_definition_id,
+            "epoch": str(int(time())),
+        }
+        record = StorageRecord(
+            CRED_DEF_SENT_RECORD_TYPE, credential_definition_id, cred_def_tags
+        )
+        print("Adding storage record:", record)
+        # TODO refactor this code?
+        async with ledger:
+            storage = ledger.get_indy_storage()
+            await storage.add_record(record)
+        print(">>> done")
+
+    else:
+        # TODO unknown ledger transaction type, just ignore for now ...
+        pass
+
+    # update the final transaction status
+    transaction_mgr = TransactionManager(session)
+    tx_completed = await transaction_mgr.complete_transaction(transaction=transaction)
+
+    return web.json_response(tx_completed.__dict__)
 
 
 async def register(app: web.Application):

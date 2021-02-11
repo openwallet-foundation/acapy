@@ -500,6 +500,8 @@ class IndySdkLedger(BaseLedger):
                 else:
                     raise
 
+            # TODO refactor this code (duplicated in endorser transaction manager)
+            # Add non-secrets record
             schema_id_parts = schema_id.split(":")
             schema_tags = {
                 "schema_id": schema_id,
@@ -733,10 +735,13 @@ class IndySdkLedger(BaseLedger):
                 request_json = await indy.ledger.append_request_endorser(
                     request_json, endorser_did
                 )
-            resp = await self._submit(request_json, True, sign_did=public_info, write_ledger=write_ledger)
+            resp = await self._submit(
+                request_json, True, sign_did=public_info, write_ledger=write_ledger
+            )
             if not write_ledger:
                 return (credential_definition_id, {"signed_txn": resp}, novel)
 
+            # TODO refactor this code (duplicated in endorser transaction manager)
             # Add non-secrets record
             storage = self.get_indy_storage()
             schema_id_parts = schema_id.split(":")

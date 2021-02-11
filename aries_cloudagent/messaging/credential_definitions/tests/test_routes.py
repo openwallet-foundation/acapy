@@ -144,16 +144,12 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
                 "tag": "tag",
             }
         )
-<<<<<<< HEAD
 
         self.request.query = {"auto_endorse": "true"}
 
-        self.context.settings.set_value("tails_server_base_url", "http://1.2.3.4:8222")
-=======
         self.context.profile.settings.set_value(
             "tails_server_base_url", "http://1.2.3.4:8222"
         )
->>>>>>> upstream/main
 
         with async_mock.patch.object(
             test_module, "IndyRevocation", async_mock.MagicMock()
@@ -176,16 +172,12 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
                 "tag": "tag",
             }
         )
-<<<<<<< HEAD
 
         self.request.query = {"auto_endorse": "true"}
 
-        self.context.settings.set_value("tails_server_base_url", "http://1.2.3.4:8222")
-=======
         self.context.profile.settings.set_value(
             "tails_server_base_url", "http://1.2.3.4:8222"
         )
->>>>>>> upstream/main
 
         mock_tails_server = async_mock.MagicMock(
             upload_tails_file=async_mock.CoroutineMock(
@@ -221,16 +213,12 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
                 "tag": "tag",
             }
         )
-<<<<<<< HEAD
 
         self.request.query = {"auto_endorse": "true"}
 
-        self.context.settings.set_value("tails_server_base_url", "http://1.2.3.4:8222")
-=======
         self.context.profile.settings.set_value(
             "tails_server_base_url", "http://1.2.3.4:8222"
         )
->>>>>>> upstream/main
 
         mock_tails_server = async_mock.MagicMock(
             upload_tails_file=async_mock.CoroutineMock(return_value=(True, None))

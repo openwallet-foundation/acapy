@@ -294,6 +294,23 @@ class TransactionManager:
 
         return transaction
 
+    async def complete_transaction(self, transaction: TransactionRecord):
+        """
+        Complete a transaction (final state after the received ledger transaction is written to the ledger).
+
+        Args:
+            transaction: The transaction record which would be completed
+
+        Returns:
+            The updated transaction
+        """
+        transaction.state = TransactionRecord.STATE_TRANSACTION_COMPLETED
+        profile_session = await self.session
+        async with profile_session.profile.session() as session:
+            await transaction.save(session, reason="Completed transaction")
+
+        return transaction
+
     async def create_refuse_response(
         self, transaction: TransactionRecord, state: str, refuser_did: str
     ):
