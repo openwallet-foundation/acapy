@@ -43,13 +43,13 @@ from ..messaging.models.base import BaseModelError
 from ..messaging.models.openapi import OpenAPISchema
 from ..storage.error import StorageError, StorageNotFoundError
 from .did_resolver import DIDResolver
-
+from .did import DID_PATTERN
 
 class W3cDIDDoc(validate.Regexp):
     """Validate value against w3c DID document."""
 
     EXAMPLE = "*"
-    PATTERN = re.compile(r"[a-zA-Z0-9._-]*")
+    PATTERN = DID_PATTERN
 
     def __init__(self):
         """Initializer."""
