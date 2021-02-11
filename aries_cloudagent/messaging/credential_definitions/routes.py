@@ -10,6 +10,7 @@ from aiohttp_apispec import (
     request_schema,
     response_schema,
 )
+import json
 
 from marshmallow import fields
 
@@ -30,8 +31,6 @@ from ...ledger.error import LedgerError
 from .util import CredDefQueryStringSchema, CRED_DEF_TAGS, CRED_DEF_SENT_RECORD_TYPE
 
 from ...protocols.endorse_transaction.v1_0.manager import TransactionManager
-from ...wallet.base import BaseWallet
-import json
 
 
 class CredentialDefinitionSendRequestSchema(OpenAPISchema):
@@ -184,8 +183,6 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
                     endorser_did=endorser_did,
                 )
             )
-
-            ## TODO if not auto_endorse deal with the response transaction
 
     except LedgerError as e:
         raise web.HTTPBadRequest(reason=e.message) from e

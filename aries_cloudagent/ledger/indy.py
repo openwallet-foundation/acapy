@@ -391,9 +391,7 @@ class IndySdkLedger(BaseLedger):
         self,
         request_json: str,
     ) -> str:
-        """
-        Endorse a (signed) ledger transaction.
-        """
+        """Endorse a (signed) ledger transaction."""
         return await self._endorse(request_json)
 
     async def txn_submit(
@@ -403,9 +401,7 @@ class IndySdkLedger(BaseLedger):
         taa_accept: bool = None,
         sign_did: DIDInfo = sentinel,
     ) -> str:
-        """
-        Submit a signed (and endorsed) transaction to the ledger.
-        """
+        """Submit a signed (and endorsed) transaction to the ledger."""
         return await self._submit(
             request_json, sign=sign, taa_accept=taa_accept, sign_did=sign_did
         )

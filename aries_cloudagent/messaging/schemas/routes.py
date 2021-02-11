@@ -10,6 +10,7 @@ from aiohttp_apispec import (
     request_schema,
     response_schema,
 )
+import json
 
 from marshmallow import fields
 from marshmallow.validate import Regexp
@@ -24,8 +25,6 @@ from ..valid import B58, NATURAL_NUM, INDY_SCHEMA_ID, INDY_VERSION
 from .util import SchemaQueryStringSchema, SCHEMA_SENT_RECORD_TYPE, SCHEMA_TAGS
 
 from ...protocols.endorse_transaction.v1_0.manager import TransactionManager
-from ...wallet.base import BaseWallet
-import json
 
 
 class SchemaSendRequestSchema(OpenAPISchema):
@@ -158,7 +157,8 @@ async def schemas_send_schema(request: web.BaseRequest):
     issuer = context.inject(IndyIssuer)
     async with ledger:
         try:
-            # if not auto_endorse, then the returned "schema_def" is actually the signed transaction
+            # if not auto_endorse, then the returned "schema_def" is actually
+            # the signed transaction
             schema_id, schema_def = await shield(
                 ledger.create_and_send_schema(
                     issuer,
@@ -179,7 +179,6 @@ async def schemas_send_schema(request: web.BaseRequest):
 
         transaction_mgr = TransactionManager(session)
 
-        # ignore all parameters except the last one (which is the signed ledger transaction)
         transaction = await transaction_mgr.create_record(
             messages_attach=schema_def["signed_txn"],
             expires_time="1597708800",

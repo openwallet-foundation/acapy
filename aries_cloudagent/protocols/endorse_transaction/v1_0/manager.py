@@ -11,7 +11,6 @@ from .messages.refused_transaction_response import RefusedTransactionResponse
 from .messages.cancel_transaction import CancelTransaction
 from .messages.transaction_resend import TransactionResend
 from .messages.transaction_job_to_send import TransactionJobToSend
-from .messages.messages_attach import MessagesAttach
 
 from ....connections.models.conn_record import ConnRecord
 from ....transport.inbound.receipt import MessageReceipt
@@ -219,7 +218,8 @@ class TransactionManager:
 
         # don't modify the transaction payload?
         if endorsed_msg:
-            # update - need to return the endorsed msg or else the ledger will reject the eventual write
+            # need to return the endorsed msg or else the ledger will reject the
+            # eventual transaction write
             transaction.messages_attach[0]["data"]["json"] = endorsed_msg
 
         if signature:
@@ -296,14 +296,19 @@ class TransactionManager:
 
     async def complete_transaction(self, transaction: TransactionRecord):
         """
-        Complete a transaction (final state after the received ledger transaction is written to the ledger).
+        Complete a transaction.
+
+        This is the final state after the received ledger transaction
+        is written to the ledger.
 
         Args:
             transaction: The transaction record which would be completed
 
         Returns:
             The updated transaction
+
         """
+
         transaction.state = TransactionRecord.STATE_TRANSACTION_COMPLETED
         profile_session = await self.session
         async with profile_session.profile.session() as session:

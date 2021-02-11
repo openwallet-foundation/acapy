@@ -13,6 +13,10 @@ from ..utils import sentinel
 from .endpoint_type import EndpointType
 
 
+# TODO duplicated from ..wallet.base due to recursive import
+DIDInfo = namedtuple("DIDInfo", "did verkey metadata")
+
+
 class BaseLedger(ABC, metaclass=ABCMeta):
     """Base class for ledger."""
 
@@ -138,7 +142,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         self,
         request_json: str,
     ) -> str:
-        """"""
+        """Endorse (sign) the provided transaction."""
 
     @abstractmethod
     async def txn_submit(
@@ -146,9 +150,9 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         request_json: str,
         sign: bool,
         taa_accept: bool,
-        sign_did: namedtuple("DIDInfo", "did verkey metadata"),
+        sign_did: DIDInfo = sentinel,
     ) -> str:
-        """"""
+        """Write the provided (signed and possibly endorsed) transaction to the ledger."""
 
     @abstractmethod
     async def create_and_send_schema(

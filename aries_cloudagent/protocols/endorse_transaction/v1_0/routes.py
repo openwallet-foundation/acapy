@@ -1,6 +1,6 @@
 """Endorse Transaction handling admin routes."""
 
-from asyncio import shield, ensure_future
+from asyncio import shield
 from aiohttp import web
 from aiohttp_apispec import (
     docs,
@@ -8,6 +8,7 @@ from aiohttp_apispec import (
     querystring_schema,
     match_info_schema,
 )
+import json
 from marshmallow import fields, validate
 from time import time
 
@@ -16,6 +17,7 @@ from .manager import TransactionManager
 from .models.transaction_record import TransactionRecord, TransactionRecordSchema
 from ....connections.models.conn_record import ConnRecord
 
+from ....indy.issuer import IndyIssuerError
 from ....messaging.credential_definitions.util import CRED_DEF_SENT_RECORD_TYPE
 from ....messaging.models.openapi import OpenAPISchema
 from ....messaging.schemas.util import SCHEMA_SENT_RECORD_TYPE
@@ -30,11 +32,6 @@ from ....wallet.base import BaseWallet
 
 from ....ledger.base import BaseLedger
 from ....ledger.error import LedgerError
-from ....indy.issuer import IndyIssuer, IndyIssuerError
-from ....revocation.indy import IndyRevocation
-from ....revocation.error import RevocationNotSupportedError, RevocationError
-from ....tails.base import BaseTailsServer
-import json
 
 
 class TransactionListSchema(OpenAPISchema):
@@ -614,7 +611,6 @@ async def transaction_write(request: web.BaseRequest):
         )
 
     ledger_transaction = transaction.messages_attach[0]["data"]["json"]
-    endorsed_signature = transaction.signature_response[0]
 
     ledger = context.inject(BaseLedger, required=False)
     if not ledger:
