@@ -24,8 +24,18 @@ class DIDXRequestHandler(BaseHandler):
 
         session = await context.session()
         mgr = DIDXManager(session)
+        if context.connection_record:
+            mediation_metadata = await context.connection_record.metadata_get(
+                session, "mediation", {}
+            )
+        else:
+            mediation_metadata = {}
         try:
-            await mgr.receive_request(context.message, context.message_receipt)
+            await mgr.receive_request(
+                context.message,
+                context.message_receipt,
+                mediation_id=mediation_metadata.get("id"),
+            )
         except DIDXManagerError as e:
             self._logger.exception("Error receiving RFC 23 connection request")
             if e.error_code:

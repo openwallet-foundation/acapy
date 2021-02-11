@@ -1,18 +1,21 @@
+"""Test Problem Report Handler."""
 import pytest
+
 from asynctest import mock as async_mock
 
 from ......connections.models import connection_target
 from ......connections.models.conn_record import ConnRecord
 from ......connections.models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
+from ......core.profile import ProfileSession
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
-from ......transport.inbound.receipt import MessageReceipt
 from ......storage.base import BaseStorage
 from ......storage.error import StorageNotFoundError
+from ......transport.inbound.receipt import MessageReceipt
+
 from ...handlers import problem_report_handler as handler
 from ...manager import OutOfBandManagerError, OutOfBandManager
 from ...messages.problem_report import ProblemReport, ProblemReportReason
-from ......core.profile import ProfileSession
 
 
 @pytest.fixture()

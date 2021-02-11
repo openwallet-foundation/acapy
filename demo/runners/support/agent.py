@@ -394,7 +394,7 @@ class DemoAgent:
                 # assume wallet key is wallet name
                 self.wallet_key = target_wallet_name
                 self.ident = target_wallet_name
-                # we can't recover the seed so let's set it to None and see what happens ...
+                # we can't recover the seed so let's set it to None and see what happens
                 self.seed = None
                 self.log(f"Switching to EXISTING wallet {target_wallet_name}")
                 return False
@@ -876,7 +876,7 @@ class DemoAgent:
             # TODO can mediation be used with DID exchange connections?
             invi_rec = await self.admin_POST(
                 "/out-of-band/create-invitation",
-                {"include_handshake": True},
+                {"handshake_protocols": ["rfc23"]},
                 params={"auto_accept": json.dumps(auto_accept)},
             )
         else:

@@ -161,15 +161,13 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
 
     # If revocation is requested and cred def is novel, create revocation registry
     if support_revocation and novel:
-        session = (
-            await context.session()
-        )  # FIXME - will update to not require session here
-        tails_base_url = session.settings.get("tails_server_base_url")
+        profile = context.profile
+        tails_base_url = profile.settings.get("tails_server_base_url")
         if not tails_base_url:
             raise web.HTTPBadRequest(reason="tails_server_base_url not configured")
         try:
             # Create registry
-            revoc = IndyRevocation(session)
+            revoc = IndyRevocation(profile)
             registry_record = await revoc.init_issuer_registry(
                 cred_def_id,
                 max_cred_num=rev_reg_size,
@@ -177,13 +175,13 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
 
         except RevocationNotSupportedError as e:
             raise web.HTTPBadRequest(reason=e.message) from e
-        await shield(registry_record.generate_registry(session))
+        await shield(registry_record.generate_registry(profile))
         try:
             await registry_record.set_tails_file_public_uri(
-                session, f"{tails_base_url}/{registry_record.revoc_reg_id}"
+                profile, f"{tails_base_url}/{registry_record.revoc_reg_id}"
             )
-            await registry_record.send_def(session)
-            await registry_record.send_entry(session)
+            await registry_record.send_def(profile)
+            await registry_record.send_entry(profile)
 
             # stage pending registry independent of whether tails server is OK
             pending_registry_record = await revoc.init_issuer_registry(
@@ -191,12 +189,12 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
                 max_cred_num=registry_record.max_cred_num,
             )
             ensure_future(
-                pending_registry_record.stage_pending_registry(session, max_attempts=16)
+                pending_registry_record.stage_pending_registry(profile, max_attempts=16)
             )
 
-            tails_server = session.inject(BaseTailsServer)
+            tails_server = profile.inject(BaseTailsServer)
             (upload_success, reason) = await tails_server.upload_tails_file(
-                session,
+                profile,
                 registry_record.revoc_reg_id,
                 registry_record.tails_local_path,
                 interval=0.8,

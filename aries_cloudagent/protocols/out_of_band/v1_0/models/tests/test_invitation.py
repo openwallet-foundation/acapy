@@ -2,8 +2,6 @@ import json
 
 from asynctest import TestCase as AsyncTestCase, mock as async_mock
 
-from ......core.in_memory import InMemoryProfile
-
 from ..invitation import InvitationRecord, InvitationRecordSchema
 
 

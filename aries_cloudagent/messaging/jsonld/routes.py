@@ -40,20 +40,19 @@ async def sign(request: web.BaseRequest):
     response = {}
     try:
         context: AdminRequestContext = request["context"]
-        session = await context.session()
-        wallet = session.inject(BaseWallet, required=False)
-        if not wallet:
-            raise web.HTTPForbidden()
-
         body = await request.json()
         verkey = body.get("verkey")
         doc = body.get("doc")
         credential = doc["credential"]
         signature_options = doc["options"]
 
-        document_with_proof = await sign_credential(
-            credential, signature_options, verkey, wallet
-        )
+        async with context.session() as session:
+            wallet = session.inject(BaseWallet, required=False)
+            if not wallet:
+                raise web.HTTPForbidden()
+            document_with_proof = await sign_credential(
+                credential, signature_options, verkey, wallet
+            )
 
         response["signed_doc"] = document_with_proof
     except Exception as e:
@@ -89,16 +88,15 @@ async def verify(request: web.BaseRequest):
     response = {"valid": False}
     try:
         context: AdminRequestContext = request["context"]
-        session = await context.session()
-        wallet = session.inject(BaseWallet, required=False)
-        if not wallet:
-            raise web.HTTPForbidden()
-
         body = await request.json()
         verkey = body.get("verkey")
         doc = body.get("doc")
 
-        valid = await verify_credential(doc, verkey, wallet)
+        async with context.session() as session:
+            wallet = session.inject(BaseWallet, required=False)
+            if not wallet:
+                raise web.HTTPForbidden()
+            valid = await verify_credential(doc, verkey, wallet)
 
         response["valid"] = valid
     except Exception as e:
