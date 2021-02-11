@@ -61,6 +61,10 @@ class ResolvedDIDDoc:
         """Return the DID subject of this Document."""
         return self._did
 
+    def serialize(self):
+        """Return the did document."""
+        return self._doc
+
     def didcomm_services(self) -> Sequence[dict]:
         """Return agent services in priority order."""
 

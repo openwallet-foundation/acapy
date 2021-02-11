@@ -111,7 +111,9 @@ class DefaultContextBuilder(ContextBuilder):
             "aries_cloudagent.messaging.credential_definitions"
         )
         plugin_registry.register_plugin("aries_cloudagent.messaging.schemas")
+        # plugin_registry.register_plugin("aries_cloudagent.messaging.jsonld")
         plugin_registry.register_plugin("aries_cloudagent.revocation")
+        plugin_registry.register_plugin("aries_cloudagent.resolver")
         plugin_registry.register_plugin("aries_cloudagent.wallet")
 
         if context.settings.get("multitenant.admin_enabled"):
