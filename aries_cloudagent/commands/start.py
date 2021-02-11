@@ -52,13 +52,6 @@ def execute(argv: Sequence[str] = None):
     # set ledger to read only if explicitely specified
     settings["ledger.read_only"] = settings.get("read_only_ledger", False)
 
-    # Support WEBHOOK_URL environment variable
-    webhook_url = os.environ.get("WEBHOOK_URL")
-    if webhook_url:
-        webhook_urls = list(settings.get("admin.webhook_urls") or [])
-        webhook_urls.append(webhook_url)
-        settings["admin.webhook_urls"] = webhook_urls
-
     # Create the Conductor instance
     context_builder = DefaultContextBuilder(settings)
     conductor = Conductor(context_builder)
