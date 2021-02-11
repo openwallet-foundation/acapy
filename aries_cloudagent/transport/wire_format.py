@@ -14,6 +14,9 @@ from .error import MessageParseError
 
 LOGGER = logging.getLogger(__name__)
 
+DIDCOMM_V0_MIME_TYPE = "application/ssi-agent-wire"
+DIDCOMM_V1_MIME_TYPE = "application/didcomm-envelope-enc"
+
 
 class BaseWireFormat:
     """Abstract messaging wire format."""
