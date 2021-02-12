@@ -669,7 +669,9 @@ class TestOOBManager(AsyncTestCase, TestConfig):
     async def test_receive_invitation_with_invalid_mediation(self):
         self.session.context.update_settings({"public_invites": True})
         with async_mock.patch.object(
-            DIDXManager, "receive_invitation", async_mock.CoroutineMock(),
+            DIDXManager,
+            "receive_invitation",
+            async_mock.CoroutineMock(),
         ) as mock_didx_recv_invi:
             invite = await self.manager.create_invitation(
                 my_endpoint=TestConfig.test_endpoint,
