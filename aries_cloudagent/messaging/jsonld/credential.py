@@ -10,6 +10,7 @@ from ...wallet.util import (
     bytes_to_b64,
     str_to_b64,
 )
+from ...wallet.base import BaseWallet
 
 from .create_verify_data import create_verify_data
 
@@ -93,20 +94,22 @@ async def jws_verify(verify_data, signature, public_key, wallet):
     return verified
 
 
-async def sign_credential(credential, signature_options, verkey, wallet):
+async def sign_credential(credential, signature_options, verkey, session):
     """Sign Credential."""
 
     framed, verify_data_hex_string = create_verify_data(credential, signature_options)
     verify_data_bytes = bytes.fromhex(verify_data_hex_string)
+    wallet = session.inject(BaseWallet, required=False)
     jws = await jws_sign(verify_data_bytes, verkey, wallet)
     document_with_proof = {**credential, "proof": {**signature_options, "jws": jws}}
     return document_with_proof
 
 
-async def verify_credential(doc, verkey, wallet):
+async def verify_credential(doc, verkey, session):
     """Verify credential."""
 
     framed, verify_data_hex_string = create_verify_data(doc, doc["proof"])
     verify_data_bytes = bytes.fromhex(verify_data_hex_string)
+    wallet = session.inject(BaseWallet, required=False)
     valid = await jws_verify(verify_data_bytes, framed["proof"]["jws"], verkey, wallet)
     return valid

@@ -45,6 +45,7 @@ from ..storage.error import StorageError, StorageNotFoundError
 from .did_resolver import DIDResolver
 from .did import DID_PATTERN
 
+
 class W3cDIDDoc(validate.Regexp):
     """Validate value against w3c DID document."""
 
@@ -140,7 +141,7 @@ def post_process_routes(app: web.Application):
     app._state["swagger_dict"]["tags"].append(
         {
             "name": "resolver",
-            "description": "universal resolvers",
+            "description": "did resolver interface.",
             "externalDocs": {"description": "Specification"},  # , "url": SPEC_URI},
         }
     )
