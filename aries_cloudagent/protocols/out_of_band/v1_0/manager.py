@@ -134,7 +134,6 @@ class OutOfBandManager(BaseConnectionManager):
         # Multitenancy setup
         multitenant_mgr = self._session.inject(MultitenantManager, required=False)
         wallet_id = self._session.settings.get("wallet.id")
-        public_did = None
 
         accept = bool(
             auto_accept
@@ -340,7 +339,6 @@ class OutOfBandManager(BaseConnectionManager):
             invi_msg_id=invi_msg._id,
             invitation=invi_msg.serialize(),
             invitation_url=invi_url,
-            public_did=public_did,
         )
 
     async def receive_invitation(

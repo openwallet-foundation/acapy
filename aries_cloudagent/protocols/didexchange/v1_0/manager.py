@@ -13,7 +13,7 @@ from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....messaging.responder import BaseResponder
 from ....storage.error import StorageNotFoundError
 from ....transport.inbound.receipt import MessageReceipt
-from ....wallet.base import BaseWallet, DIDInfo
+from ....wallet.base import BaseWallet
 from ....wallet.did_posture import DIDPosture
 from ....wallet.util import did_key_to_naked
 from ....multitenant.manager import MultitenantManager

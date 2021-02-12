@@ -273,7 +273,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 serialize=async_mock.MagicMock(return_value={})
             )
             mock_wallet_create_local_did.return_value = DIDInfo(
-                self.test_did, self.test_verkey, None
+                TestConfig.test_did, TestConfig.test_verkey, None
             )
             mock_attach_deco.from_indy_dict = async_mock.MagicMock(
                 return_value=async_mock.MagicMock(
@@ -283,7 +283,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
 
             await self.manager.create_request(
                 async_mock.MagicMock(
-                    invitation_key=self.test_verkey,
+                    invitation_key=TestConfig.test_verkey,
                     their_label="Hello",
                     their_role=ConnRecord.Role.RESPONDER.rfc160,
                     alias="Bob",
@@ -299,7 +299,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             )
 
             self.multitenant_mgr.add_key.assert_called_once_with(
-                "test_wallet", self.test_verkey
+                "test_wallet", TestConfig.test_verkey
             )
 
     async def test_create_request_mediation_id(self):
@@ -317,10 +317,10 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             handshake_protocols=[
                 pfx.qualify(HSProto.RFC23.name) for pfx in DIDCommPrefix
             ],
-            service_dids=[self.test_did],
+            service_dids=[TestConfig.test_did],
         )
         record = ConnRecord(
-            invitation_key=self.test_verkey,
+            invitation_key=TestConfig.test_verkey,
             invitation_msg_id=invi._id,
             their_label="Hello",
             their_role=ConnRecord.Role.RESPONDER.rfc160,
@@ -474,9 +474,13 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             )
 
             conn_rec = await self.manager.receive_request(
-                mock_request,
-                TestConfig.test_did,
-                None,
+                request=mock_request,
+                recipient_did=TestConfig.test_did,
+                recipient_verkey=None,
+                my_endpoint=None,
+                alias=None,
+                auto_accept_implicit=None,
+                mediation_id=None,
             )
             assert conn_rec
 
@@ -502,9 +506,13 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             )
             with self.assertRaises(DIDXManagerError) as context:
                 await self.manager.receive_request(
-                    mock_request,
-                    TestConfig.test_did,
-                    TestConfig.test_verkey,
+                    request=mock_request,
+                    recipient_did=TestConfig.test_did,
+                    recipient_verkey=TestConfig.test_verkey,
+                    my_endpoint=None,
+                    alias=None,
+                    auto_accept_implicit=None,
+                    mediation_id=None,
                 )
             assert "No explicit invitation found" in str(context.exception)
 
@@ -522,9 +530,9 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
         mock_request.connection = async_mock.MagicMock(
             is_multiuse_invitation=False, invitation_key=multiuse_info.verkey
         )
-        mock_request.connection.did = self.test_did
+        mock_request.connection.did = TestConfig.test_did
         mock_request.connection.did_doc = async_mock.MagicMock()
-        mock_request.connection.did_doc.did = self.test_did
+        mock_request.connection.did_doc.did = TestConfig.test_did
         mock_request.did = self.test_target_did
         mock_request.did_doc_attach = async_mock.MagicMock(
             data=async_mock.MagicMock(
@@ -534,11 +542,8 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 ),
             )
         )
-        receipt = MessageReceipt(
-            recipient_did=self.test_did, recipient_did_public=False
-        )
 
-        await self.session.wallet.create_local_did(seed=None, did=self.test_did)
+        await self.session.wallet.create_local_did(seed=None, did=TestConfig.test_did)
 
         mediation_record = MediationRecord(
             role=MediationRecord.ROLE_CLIENT,
@@ -550,7 +555,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
         await mediation_record.save(self.session)
 
         record = ConnRecord(
-            invitation_key=self.test_verkey,
+            invitation_key=TestConfig.test_verkey,
             their_label="Hello",
             their_role=ConnRecord.Role.RESPONDER.rfc160,
             alias="Bob",
@@ -569,7 +574,13 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
         ):
             mock_conn_retrieve_by_invitation_key.return_value = record
             conn_rec = await self.manager.receive_request(
-                mock_request, receipt, mediation_id=mediation_record.mediation_id
+                request=mock_request,
+                recipient_did=TestConfig.test_did,
+                recipient_verkey=TestConfig.test_verkey,
+                my_endpoint=None,
+                alias=None,
+                auto_accept_implicit=None,
+                mediation_id=mediation_record.mediation_id,
             )
 
         assert len(self.responder.messages) == 1
@@ -596,9 +607,9 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
         mock_request.connection = async_mock.MagicMock(
             is_multiuse_invitation=False, invitation_key=multiuse_info.verkey
         )
-        mock_request.connection.did = self.test_did
+        mock_request.connection.did = TestConfig.test_did
         mock_request.connection.did_doc = async_mock.MagicMock()
-        mock_request.connection.did_doc.did = self.test_did
+        mock_request.connection.did_doc.did = TestConfig.test_did
         mock_request.did_doc_attach = async_mock.MagicMock(
             data=async_mock.MagicMock(
                 verify=async_mock.CoroutineMock(return_value=True),
@@ -607,11 +618,8 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 ),
             )
         )
-        receipt = MessageReceipt(
-            recipient_did=self.test_did, recipient_did_public=False
-        )
 
-        await self.session.wallet.create_local_did(seed=None, did=self.test_did)
+        await self.session.wallet.create_local_did(seed=None, did=TestConfig.test_did)
 
         mediation_record = MediationRecord(
             role=MediationRecord.ROLE_CLIENT,
@@ -623,7 +631,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
         await mediation_record.save(self.session)
 
         record = ConnRecord(
-            invitation_key=self.test_verkey,
+            invitation_key=TestConfig.test_verkey,
             their_label="Hello",
             their_role=ConnRecord.Role.RESPONDER.rfc160,
             alias="Bob",
@@ -643,7 +651,13 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             mock_conn_retrieve_by_invitation_key.return_value = record
             with self.assertRaises(DIDXManagerError) as context:
                 conn_rec = await self.manager.receive_request(
-                    mock_request, receipt, mediation_id=mediation_record.mediation_id
+                    request=mock_request,
+                    recipient_did=TestConfig.test_did,
+                    recipient_verkey=TestConfig.test_verkey,
+                    my_endpoint=None,
+                    alias=None,
+                    auto_accept_implicit=None,
+                    mediation_id=mediation_record.mediation_id,
                 )
                 assert "does not match" in str(context.exception)
 
@@ -683,9 +697,13 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
 
             with self.assertRaises(DIDXManagerError) as context:
                 await self.manager.receive_request(
-                    mock_request,
-                    TestConfig.test_did,
-                    None,
+                    request=mock_request,
+                    recipient_did=TestConfig.test_did,
+                    recipient_verkey=None,
+                    my_endpoint=TestConfig.test_endpoint,
+                    alias="Alias",
+                    auto_accept_implicit=None,
+                    mediation_id=None,
                 )
             assert "DID Doc attachment missing or has no data" in str(context.exception)
 
@@ -716,9 +734,13 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
 
             with self.assertRaises(DIDXManagerError) as context:
                 await self.manager.receive_request(
-                    mock_request,
-                    TestConfig.test_did,
-                    None,
+                    request=mock_request,
+                    recipient_did=TestConfig.test_did,
+                    recipient_verkey=None,
+                    my_endpoint=TestConfig.test_endpoint,
+                    alias="Alias",
+                    auto_accept_implicit=False,
+                    mediation_id=None,
                 )
 
             assert "is not public" in str(context.exception)
@@ -769,9 +791,13 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
 
             with self.assertRaises(DIDXManagerError) as context:
                 await self.manager.receive_request(
-                    mock_request,
-                    TestConfig.test_did,
-                    None,
+                    request=mock_request,
+                    recipient_did=TestConfig.test_did,
+                    recipient_verkey=None,
+                    my_endpoint=TestConfig.test_endpoint,
+                    alias="Alias",
+                    auto_accept_implicit=False,
+                    mediation_id=None,
                 )
 
             assert "does not match" in str(context.exception)
@@ -816,9 +842,13 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
 
             with self.assertRaises(DIDXManagerError) as context:
                 await self.manager.receive_request(
-                    mock_request,
-                    TestConfig.test_did,
-                    None,
+                    request=mock_request,
+                    recipient_did=TestConfig.test_did,
+                    recipient_verkey=None,
+                    my_endpoint=TestConfig.test_endpoint,
+                    alias="Alias",
+                    auto_accept_implicit=False,
+                    mediation_id=None,
                 )
             assert "DID Doc signature failed" in str(context.exception)
 
@@ -855,9 +885,13 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             )
             with self.assertRaises(DIDXManagerError) as context:
                 await self.manager.receive_request(
-                    mock_request,
-                    TestConfig.test_did,
-                    None,
+                    request=mock_request,
+                    recipient_did=TestConfig.test_did,
+                    recipient_verkey=None,
+                    my_endpoint=TestConfig.test_endpoint,
+                    alias="Alias",
+                    auto_accept_implicit=False,
+                    mediation_id=None,
                 )
             assert "Public invitations are not enabled" in str(context.exception)
 
@@ -916,9 +950,13 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 return_value=async_mock.MagicMock(did=TestConfig.test_did)
             )
             conn_rec = await self.manager.receive_request(
-                mock_request,
-                TestConfig.test_did,
-                None,
+                request=mock_request,
+                recipient_did=TestConfig.test_did,
+                recipient_verkey=None,
+                my_endpoint=TestConfig.test_endpoint,
+                alias="Alias",
+                auto_accept_implicit=False,
+                mediation_id=None,
             )
             assert conn_rec
 
@@ -992,9 +1030,13 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             )
 
             conn_rec = await self.manager.receive_request(
-                mock_request,
-                TestConfig.test_did,
-                TestConfig.test_verkey,
+                request=mock_request,
+                recipient_did=TestConfig.test_did,
+                recipient_verkey=TestConfig.test_verkey,
+                my_endpoint=TestConfig.test_endpoint,
+                alias="Alias",
+                auto_accept_implicit=False,
+                mediation_id=None,
             )
             assert conn_rec
             mock_conn_rec_cls.return_value.metadata_set.assert_called()
@@ -1050,9 +1092,13 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 return_value=async_mock.MagicMock(did=TestConfig.test_did)
             )
             await self.manager.receive_request(
-                mock_request,
-                TestConfig.test_did,
-                TestConfig.test_verkey,
+                request=mock_request,
+                recipient_did=TestConfig.test_did,
+                recipient_verkey=TestConfig.test_verkey,
+                my_endpoint=TestConfig.test_endpoint,
+                alias="Alias",
+                auto_accept_implicit=False,
+                mediation_id=None,
             )
 
             self.multitenant_mgr.add_key.assert_called_once_with(
@@ -1122,12 +1168,16 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 return_value=async_mock.MagicMock(did=TestConfig.test_did)
             )
             mock_wallet_get_local_did.return_value = DIDInfo(
-                self.test_did, self.test_verkey, None
+                TestConfig.test_did, TestConfig.test_verkey, None
             )
             await self.manager.receive_request(
-                mock_request,
-                TestConfig.test_did,
-                None,
+                request=mock_request,
+                recipient_did=TestConfig.test_did,
+                recipient_verkey=None,
+                my_endpoint=TestConfig.test_endpoint,
+                alias="Alias",
+                auto_accept_implicit=False,
+                mediation_id=None,
             )
 
             self.multitenant_mgr.add_key.assert_called_once_with(
@@ -1158,7 +1208,13 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             )
             with self.assertRaises(DIDXManagerError):
                 await self.manager.receive_request(
-                    mock_request, TestConfig.test_did, TestConfig.test_verkey
+                    request=mock_request,
+                    recipient_did=TestConfig.test_did,
+                    recipient_verkey=TestConfig.test_verkey,
+                    my_endpoint=TestConfig.test_endpoint,
+                    alias="Alias",
+                    auto_accept_implicit=False,
+                    mediation_id=None,
                 )
 
     async def test_create_response(self):
@@ -1205,10 +1261,10 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             handshake_protocols=[
                 pfx.qualify(HSProto.RFC23.name) for pfx in DIDCommPrefix
             ],
-            service_dids=[self.test_did],
+            service_dids=[TestConfig.test_did],
         )
         record = ConnRecord(
-            invitation_key=self.test_verkey,
+            invitation_key=TestConfig.test_verkey,
             invitation_msg_id=invi._id,
             their_label="Hello",
             their_role=ConnRecord.Role.RESPONDER.rfc160,
@@ -1263,10 +1319,10 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             handshake_protocols=[
                 pfx.qualify(HSProto.RFC23.name) for pfx in DIDCommPrefix
             ],
-            service_dids=[self.test_did],
+            service_dids=[TestConfig.test_did],
         )
         record = ConnRecord(
-            invitation_key=self.test_verkey,
+            invitation_key=TestConfig.test_verkey,
             invitation_msg_id=invi._id,
             their_label="Hello",
             their_role=ConnRecord.Role.RESPONDER.rfc160,

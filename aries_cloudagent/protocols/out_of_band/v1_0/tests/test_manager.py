@@ -635,7 +635,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 )
             assert "Cannot store metadata on public" in str(context.exception)
 
-    async def test_receive_invitation_with_valid_meditation(self):
+    async def test_receive_invitation_with_valid_mediation(self):
         self.session.context.update_settings({"public_invites": True})
         mediation_record = MediationRecord(
             role=MediationRecord.ROLE_CLIENT,
@@ -646,8 +646,8 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         )
         await mediation_record.save(self.session)
         with async_mock.patch.object(
-            DIDXManager, "receive_invitation"
-        ) as create_request:
+            DIDXManager, "receive_invitation", async_mock.CoroutineMock()
+        ) as mock_didx_recv_invi:
             invite = await self.manager.create_invitation(
                 my_endpoint=TestConfig.test_endpoint,
                 my_label="test123",
@@ -658,18 +658,19 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 invi_msg=invi_msg,
                 mediation_id=mediation_record._id,
             )
-            create_request.assert_called_once_with(
+            mock_didx_recv_invi.assert_called_once_with(
                 invitation=invi_msg,
-                mediation_id=mediation_record._id,
                 their_public_did=None,
                 auto_accept=None,
+                alias=None,
+                mediation_id=mediation_record._id,
             )
 
-    async def test_receive_invitation_with_invalid_meditation(self):
+    async def test_receive_invitation_with_invalid_mediation(self):
         self.session.context.update_settings({"public_invites": True})
         with async_mock.patch.object(
-            DIDXManager, "receive_invitation"
-        ) as create_request:
+            DIDXManager, "receive_invitation", async_mock.CoroutineMock(),
+        ) as mock_didx_recv_invi:
             invite = await self.manager.create_invitation(
                 my_endpoint=TestConfig.test_endpoint,
                 my_label="test123",
@@ -680,11 +681,12 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 invi_msg,
                 mediation_id="test-mediation-id",
             )
-            create_request.assert_called_once_with(
+            mock_didx_recv_invi.assert_called_once_with(
                 invitation=invi_msg,
-                mediation_id=None,
                 their_public_did=None,
                 auto_accept=None,
+                alias=None,
+                mediation_id=None,
             )
 
     async def test_receive_invitation_didx_service_block(self):

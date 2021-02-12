@@ -131,8 +131,9 @@ class TestDIDXRequestHandler(AsyncTestCase):
         responder = MockResponder()
         await handler_inst.handle(self.ctx, responder)
         mock_didx_mgr.return_value.receive_request.assert_called_once_with(
-            self.ctx.message,
-            self.ctx.message_receipt,
+            request=self.ctx.message,
+            recipient_did=self.ctx.message_receipt.recipient_did,
+            recipient_verkey=None,
             mediation_id=None,
         )
         assert not responder.messages

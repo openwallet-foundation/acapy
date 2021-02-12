@@ -95,7 +95,7 @@ class TestDIDExchangeConnRoutes(AsyncTestCase):
                 )
             )
 
-            await test_module.didx_request_implicit(self.request)
+            await test_module.didx_create_request_implicit(self.request)
             mock_response.assert_called_once_with("mock serialization")
 
     async def test_didx_create_request_implicit_not_found_x(self):
@@ -116,10 +116,10 @@ class TestDIDExchangeConnRoutes(AsyncTestCase):
             )
 
             with self.assertRaises(test_module.web.HTTPNotFound) as context:
-                await test_module.didx_request_implicit(self.request)
+                await test_module.didx_create_request_implicit(self.request)
             assert "not found" in str(context.exception)
 
-    async def test_didx_request_wallet_x(self):
+    async def test_didx_create_request_implicit_wallet_x(self):
         self.request.query = {
             "their_public_did": "public-did",
             "my_label": "label baby junior",
@@ -138,8 +138,76 @@ class TestDIDExchangeConnRoutes(AsyncTestCase):
             )
 
             with self.assertRaises(test_module.web.HTTPBadRequest) as context:
-                await test_module.didx_request_implicit(self.request)
+                await test_module.didx_create_request_implicit(self.request)
             assert "wallet error" in str(context.exception)
+
+    async def test_didx_receive_request_implicit(self):
+        self.request.query = {
+            "alias": "Jimmy",
+            "my_endpoint": "http://endpoint.ca",
+        }
+        self.request._thread.pthid = "did:sov:0000000000000000000000"
+        self.request.json = async_mock.CoroutineMock()
+
+        mock_conn_rec = async_mock.MagicMock()
+        mock_conn_rec.serialize = async_mock.MagicMock()
+
+        with async_mock.patch.object(
+            test_module.DIDXRequest, "deserialize", async_mock.MagicMock()
+        ) as mock_didx_req_deser, async_mock.patch.object(
+            test_module, "DIDXManager", autospec=True
+        ) as mock_didx_mgr, async_mock.patch.object(
+            test_module.web, "json_response"
+        ) as mock_response:
+            mock_didx_mgr.return_value.receive_request = async_mock.CoroutineMock(
+                return_value=mock_conn_rec
+            )
+
+            await test_module.didx_receive_request_implicit(self.request)
+            mock_response.assert_called_once_with(mock_conn_rec.serialize.return_value)
+
+    async def test_didx_receive_request_implicit_not_found_x(self):
+        self.request.query = {
+            "alias": "Jimmy",
+            "my_endpoint": "http://endpoint.ca",
+        }
+        self.request._thread.pthid = "did:sov:0000000000000000000000"
+        self.request.json = async_mock.CoroutineMock()
+
+        with async_mock.patch.object(
+            test_module.DIDXRequest, "deserialize", async_mock.MagicMock()
+        ) as mock_didx_req_deser, async_mock.patch.object(
+            test_module, "DIDXManager", autospec=True
+        ) as mock_didx_mgr, async_mock.patch.object(
+            test_module.web, "json_response"
+        ) as mock_response:
+            mock_didx_mgr.return_value.receive_request = async_mock.CoroutineMock(
+                side_effect=StorageNotFoundError("tricorder must be broken")
+            )
+
+            with self.assertRaises(test_module.web.HTTPNotFound) as context:
+                await test_module.didx_receive_request_implicit(self.request)
+            assert "tricorder must be broken" in str(context.exception)
+
+    async def test_didx_receive_request_implicit_bad_request_x(self):
+        self.request.query = {
+            "alias": "Jimmy",
+            "my_endpoint": "http://endpoint.ca",
+        }
+        self.request._thread.pthid = "did:sov:0000000000000000000000"
+        self.request.json = async_mock.CoroutineMock()
+
+        with async_mock.patch.object(
+            test_module.DIDXRequest, "deserialize", async_mock.MagicMock()
+        ) as mock_didx_req_deser, async_mock.patch.object(
+            test_module, "DIDXManager", autospec=True
+        ) as mock_didx_mgr, async_mock.patch.object(
+            test_module.web, "json_response"
+        ) as mock_response:
+            mock_didx_req_deser.side_effect = test_module.BaseModelError("bad bits")
+            with self.assertRaises(test_module.web.HTTPBadRequest) as context:
+                await test_module.didx_receive_request_implicit(self.request)
+            assert "bad bits" in str(context.exception)
 
     async def test_didx_accept_request(self):
         self.request.match_info = {"conn_id": "dummy"}
