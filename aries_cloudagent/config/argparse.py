@@ -724,6 +724,14 @@ class ProtocolGroup(ArgumentGroup):
             'did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/'.",
         )
         parser.add_argument(
+            "--emit-new-didcomm-mime-type",
+            action="store_true",
+            env_var="ACAPY_EMIT_NEW_DIDCOMM_MIME_TYPE",
+            help="Send packed agent messages with the DIDComm MIME type\
+            as of RFC 0044; i.e., 'application/didcomm-envelope-enc'\
+            instead of 'application/ssi-agent-wire'.",
+        )
+        parser.add_argument(
             "--exch-use-unencrypted-tags",
             action="store_true",
             env_var="ACAPY_EXCH_USE_UNENCRYPTED_TAGS",
@@ -780,6 +788,8 @@ class ProtocolGroup(ArgumentGroup):
             settings["preserve_exchange_records"] = True
         if args.emit_new_didcomm_prefix:
             settings["emit_new_didcomm_prefix"] = True
+        if args.emit_new_didcomm_mime_type:
+            settings["emit_new_didcomm_mime_type"] = True
         if args.exch_use_unencrypted_tags:
             settings["exch_use_unencrypted_tags"] = True
             environ["EXCH_UNENCRYPTED_TAGS"] = "True"
