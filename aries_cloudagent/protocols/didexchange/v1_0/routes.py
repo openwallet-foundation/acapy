@@ -17,7 +17,7 @@ from ....admin.request_context import AdminRequestContext
 from ....connections.models.conn_record import ConnRecord, ConnRecordSchema
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
-from ....messaging.valid import ENDPOINT, INDY_DID, UUIDFour
+from ....messaging.valid import ENDPOINT, INDY_DID, UUIDFour, UUID4
 from ....storage.error import StorageError, StorageNotFoundError
 from ....wallet.error import WalletError
 
@@ -36,7 +36,7 @@ class DIDXAcceptInvitationQueryStringSchema(OpenAPISchema):
 
 
 class DIDXCreateRequestImplicitQueryStringSchema(OpenAPISchema):
-    """Parameters and validators for didx-request-implicit request query string."""
+    """Parameters and validators for create-request-implicit request query string."""
 
     their_public_did = fields.Str(
         description="Public DID to which to request connection",
@@ -45,6 +45,11 @@ class DIDXCreateRequestImplicitQueryStringSchema(OpenAPISchema):
     my_endpoint = fields.Str(description="My URL endpoint", required=False, **ENDPOINT)
     my_label = fields.Str(
         description="Label for connection request", required=False, example="Broker"
+    )
+    mediation_id = fields.Str(
+        required=False,
+        description="Identifier for active mediation record to be used",
+        **UUID4,
     )
 
 
@@ -61,12 +66,22 @@ class DIDXReceiveRequestImplicitQueryStringSchema(OpenAPISchema):
         description="Auto-accept connection (defaults to configuration)",
         required=False,
     )
+    mediation_id = fields.Str(
+        required=False,
+        description="Identifier for active mediation record to be used",
+        **UUID4,
+    )
 
 
 class DIDXAcceptRequestQueryStringSchema(OpenAPISchema):
     """Parameters and validators for accept-request request query string."""
 
     my_endpoint = fields.Str(description="My URL endpoint", required=False, **ENDPOINT)
+    mediation_id = fields.Str(
+        required=False,
+        description="Identifier for active mediation record to be used",
+        **UUID4,
+    )
 
 
 class DIDXConnIdMatchInfoSchema(OpenAPISchema):
@@ -114,12 +129,19 @@ async def didx_accept_invitation(request: web.BaseRequest):
     connection_id = request.match_info["conn_id"]
     session = await context.session()
 
+    my_label = request.query.get("my_label") or None
+    my_endpoint = request.query.get("my_endpoint") or None
+    mediation_id = request.query.get("mediation_id") or None
+
+    didx_mgr = DIDXManager(session)
     try:
         conn_rec = await ConnRecord.retrieve_by_id(session, connection_id)
-        didx_mgr = DIDXManager(session)
-        my_label = request.query.get("my_label") or None
-        my_endpoint = request.query.get("my_endpoint") or None
-        request = await didx_mgr.create_request(conn_rec, my_label, my_endpoint)
+        request = await didx_mgr.create_request(
+            conn_rec=conn_rec,
+            my_label=my_label,
+            my_endpoint=my_endpoint,
+            mediation_id=mediation_id,
+        )
         result = conn_rec.serialize()
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
@@ -151,15 +173,18 @@ async def didx_create_request_implicit(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     session = await context.session()
 
+    their_public_did = request.query.get("their_public_did")
+    my_label = request.query.get("my_label") or None
+    my_endpoint = request.query.get("my_endpoint") or None
+    mediation_id = request.query.get("mediation_id") or None
+
+    didx_mgr = DIDXManager(session)
     try:
-        didx_mgr = DIDXManager(session)
-        their_public_did = request.query.get("their_public_did")
-        my_label = request.query.get("my_label") or None
-        my_endpoint = request.query.get("my_endpoint") or None
         request = await didx_mgr.create_request_implicit(
-            their_public_did,
-            my_label,
-            my_endpoint,
+            their_public_did=their_public_did,
+            my_label=my_label,
+            my_endpoint=my_endpoint,
+            mediation_id=mediation_id,
         )
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
@@ -189,13 +214,15 @@ async def didx_receive_request_implicit(request: web.BaseRequest):
     """
     context: AdminRequestContext = request["context"]
     session = await context.session()
+
     body = await request.json()
     alias = request.query.get("alias")
     my_endpoint = request.query.get("my_endpoint")
     auto_accept = json.loads(request.query.get("auto_accept", "null"))
+    mediation_id = request.query.get("mediation_id") or None
 
+    didx_mgr = DIDXManager(session)
     try:
-        didx_mgr = DIDXManager(session)
         request = DIDXRequest.deserialize(body)
         conn_rec = await didx_mgr.receive_request(
             request=request,
@@ -203,6 +230,7 @@ async def didx_receive_request_implicit(request: web.BaseRequest):
             alias=alias,
             my_endpoint=my_endpoint,
             auto_accept_implicit=auto_accept,
+            mediation_id=mediation_id,
         )
         result = conn_rec.serialize()
     except StorageNotFoundError as err:
@@ -236,11 +264,17 @@ async def didx_accept_request(request: web.BaseRequest):
     connection_id = request.match_info["conn_id"]
     session = await context.session()
 
+    my_endpoint = request.query.get("my_endpoint") or None
+    mediation_id = request.query.get("mediation_id") or None
+
+    didx_mgr = DIDXManager(session)
     try:
         conn_rec = await ConnRecord.retrieve_by_id(session, connection_id)
-        didx_mgr = DIDXManager(session)
-        my_endpoint = request.query.get("my_endpoint") or None
-        response = await didx_mgr.create_response(conn_rec, my_endpoint)
+        response = await didx_mgr.create_response(
+            conn_rec=conn_rec,
+            my_endpoint=my_endpoint,
+            mediation_id=mediation_id,
+        )
         result = conn_rec.serialize()
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err

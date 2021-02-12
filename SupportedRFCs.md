@@ -23,6 +23,8 @@
   - The agent supports Connection/DID exchange initiated from both plaintext invitations and public DIDs that enable bypassing the invitation message.
   - Note that the [did:peer DID Method](https://github.com/openssi/peer-did-method-spec) is not yet supported. We are currently exploring the specification and considering the impact of how the agent will support the specification.
   - The [0030-sync-connection](https://github.com/hyperledger/aries-rfcs/tree/master/features/0030-sync-connection) protocol is also not yet supported, meaning that a pairwise DID, once exchanged, cannot be updated.
+- [0023-did-exchange](https://github.com/hyperledger/aries-rfcs/tree/master/features/0023-did-exchange)
+- [0434-outofband](https://github.com/hyperledger/aries-rfcs/tree/master/features/0434-outofband)
 - [0035-didcomm-transports](https://github.com/hyperledger/aries-rfcs/tree/master/features/0025-didcomm-transports)
   - The agent currently supports HTTP and WebSockets for both inbound and outbound messaging. Transports are pluggable and an agent instance can use multiple inbound and outbound transports.
 - [0031-discover-features](https://github.com/hyperledger/aries-rfcs/tree/master/features/0031-discover-features)
@@ -30,14 +32,16 @@
 - [0035-report-problem](https://github.com/hyperledger/aries-rfcs/tree/master/features/0035-report-problem)
   - Claiming support for this protocol is tricky. The intention of this protocol is that it define a standard mechanism for handling errors in executing a protocol. However, the error handling is in the context of each protocol. Thus, while this protocol is technically supported in the agent, it is adopted by each protocol and thus it's handling is specific to each protocol.
 - [0036-issue-credential](https://github.com/hyperledger/aries-rfcs/tree/master/features/0036-issue-credential) - see [PR #60](https://github.com/hyperledger/aries-cloudagent-python/pull/60)
-  - This agent (along with a number of other agents in the community) also has deprecated support for [Version 0.1](https://hackmd.io/s/HkklVzww4) of the issue credential protocol.
+- [0453-issue-credential-v2](https://github.com/hyperledger/aries-rfcs/tree/master/features/0453-issue-credential-v2)
 - [0037-present-proof](https://github.com/hyperledger/aries-rfcs/tree/master/features/0037-present-proof)
   - This agent (along with a number of other agents in the community) also has deprecated support for [Version 0.1](https://hackmd.io/s/HkklVzww4) of the present proof protocol.
+- [0441-present-proof-best-practices](https://github.com/hyperledger/aries-rfcs/tree/master/concepts/0441-present-proof-best-practices)
 - [0048-trust-ping](https://github.com/hyperledger/aries-rfcs/tree/master/features/0048-trust-ping)
 - [0067-didcomm-diddoc-conventions](https://github.com/hyperledger/aries-rfcs/tree/master/features/0067-didcomm-diddoc-conventions)
 - [0092-transport-return-route](https://github.com/hyperledger/aries-rfcs/tree/master/features/0092-transport-return-route)
   - Support for this RFC makes ACA-Py a great candidate to be the persistent endpoint cloud agent for a mobile agent.
 - [0095-basic-message](https://github.com/hyperledger/aries-rfcs/tree/master/features/0095-basic-message)
+- [0211-route-coordination](https://github.com/hyperledger/aries-rfcs/tree/master/features/0211-route-coordination)
 
 ## Other Capabilities
 

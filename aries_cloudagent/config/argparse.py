@@ -934,8 +934,16 @@ class MediationGroup(ArgumentGroup):
             type=str,
             metavar="<invite URL to mediator>",
             env_var="ACAPY_MEDIATION_INVITATION",
-            help="Connect to mediator through provided connection invitation\
+            help="Connect to mediator through provided invitation\
             and send mediation request and set as default mediator.",
+        )
+        parser.add_argument(
+            "--mediator-connections-invite",
+            action="store_true",
+            env_var="ACAPY_MEDIATION_CONNECTIONS_INVITE",
+            help="Connect to mediator through a connection invitation. \
+                If not specified, connect using an OOB invitation. \
+                Default: false.",
         )
         parser.add_argument(
             "--default-mediator-id",
@@ -962,6 +970,8 @@ class MediationGroup(ArgumentGroup):
             settings["mediation.default_id"] = args.default_mediator_id
         if args.clear_default_mediator:
             settings["mediation.clear"] = True
+        if args.mediator_connections_invite:
+            settings["mediation.connections_invite"] = True
 
         if args.clear_default_mediator and args.default_mediator_id:
             raise ArgsParseError(
