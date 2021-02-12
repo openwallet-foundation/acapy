@@ -181,6 +181,7 @@ class ConnRecord(BaseRecord):
         invitation_mode: str = None,
         alias: str = None,
         their_public_did: str = None,
+        initiator: str = None,  # for backward compatibility with old ConnectionRecord
         **kwargs,
     ):
         """Initialize a new ConnRecord."""

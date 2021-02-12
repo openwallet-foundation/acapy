@@ -133,6 +133,12 @@ class TestConnRecord(AsyncTestCase):
         )
         assert result == record
 
+    async def test_from_storage_with_initiator_old(self):
+        record = ConnRecord(my_did=self.test_did, state=ConnRecord.State.COMPLETED)
+        record.initiator = "self"  # old-style ConnectionRecord
+        connection_id = await record.save(self.session)
+        fetched = await ConnRecord.retrieve_by_id(self.session, connection_id)
+
     async def test_retrieve_by_invitation_key(self):
         record = ConnRecord(
             my_did=self.test_did,
