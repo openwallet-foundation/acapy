@@ -134,7 +134,6 @@ class OutOfBandManager(BaseConnectionManager):
         # Multitenancy setup
         multitenant_mgr = self._session.inject(MultitenantManager, required=False)
         wallet_id = self._session.settings.get("wallet.id")
-        public_did = None
 
         accept = bool(
             auto_accept
@@ -340,7 +339,6 @@ class OutOfBandManager(BaseConnectionManager):
             invi_msg_id=invi_msg._id,
             invitation=invi_msg.serialize(),
             invitation_url=invi_url,
-            public_did=public_did,
         )
 
     async def receive_invitation(
@@ -376,8 +374,7 @@ class OutOfBandManager(BaseConnectionManager):
         else:
             # If it's in the did format, we need to convert to a full service block
             # An existing connection can only be reused based on a public DID
-            # in an out-of-band message.
-            # https://github.com/hyperledger/aries-rfcs/tree/master/features/0434-outofband
+            # in an out-of-band message (RFC 0434).
             service_did = invi_msg.service_dids[0]
             async with ledger:
                 verkey = await ledger.get_key_for_did(service_did)
@@ -417,8 +414,7 @@ class OutOfBandManager(BaseConnectionManager):
         if conn_rec is not None:
             num_included_protocols = len(unq_handshake_protos)
             num_included_req_attachments = len(invi_msg.request_attach)
-            # Handshake_Protocol included Request_Attachment
-            # not included Use_Existing_Connection Yes
+            # With handshake protocol, request attachment; use existing connection
             if (
                 num_included_protocols >= 1
                 and num_included_req_attachments == 0
@@ -495,6 +491,7 @@ class OutOfBandManager(BaseConnectionManager):
                         invitation=invi_msg,
                         their_public_did=public_did,
                         auto_accept=auto_accept,
+                        alias=alias,
                         mediation_id=mediation_id,
                     )
                 elif proto is HSProto.RFC160:
@@ -519,6 +516,7 @@ class OutOfBandManager(BaseConnectionManager):
                         invitation=connection_invitation,
                         their_public_did=public_did,
                         auto_accept=auto_accept,
+                        alias=alias,
                         mediation_id=mediation_id,
                     )
                 if conn_rec is not None:

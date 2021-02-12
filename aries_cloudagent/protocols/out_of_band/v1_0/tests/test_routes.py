@@ -49,12 +49,14 @@ class TestOutOfBandRoutes(AsyncTestCase):
 
             result = await test_module.invitation_create(self.request)
             mock_oob_mgr.return_value.create_invitation.assert_called_once_with(
+                my_label=None,
                 auto_accept=True,
                 public=True,
                 multi_use=True,
                 hs_protos=[test_module.HSProto.RFC23],
                 attachments=body["attachments"],
                 metadata=body["metadata"],
+                alias=None,
                 mediation_id=None,
             )
             mock_json_response.assert_called_once_with({"abc": "123"})
