@@ -50,8 +50,6 @@ for how to contribute to ACA-Py, including for how to submit issues about ACA-Py
    :caption: Aries Cloud Agent Python - Modules
 
    generated/aries_cloudagent
-   generated/aries_cloudagent.connections.rst
-   generated/aries_cloudagent.protocols.rst
 
 
 Indices and tables
