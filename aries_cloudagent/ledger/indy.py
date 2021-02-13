@@ -277,12 +277,34 @@ class IndySdkLedger(BaseLedger):
         await self.pool.context_close()
         await super().__aexit__(exc_type, exc, tb)
 
+    async def _endorse(
+        self,
+        request_json: str,
+    ) -> str:
+
+        if not self.pool.handle:
+            raise ClosedPoolError(
+                f"Cannot endorse request with closed pool '{self.pool.name}'"
+            )
+
+        public_info = await self.wallet.get_public_did()
+        if not public_info:
+            raise BadLedgerRequestError(
+                "Cannot endorse transaction without a public DID"
+            )
+
+        endorsed_request_json = await indy.ledger.multi_sign_request(
+            self.wallet.opened.handle, public_info.did, request_json
+        )
+        return endorsed_request_json
+
     async def _submit(
         self,
         request_json: str,
         sign: bool = None,
         taa_accept: bool = None,
         sign_did: DIDInfo = sentinel,
+        write_ledger: bool = True,
     ) -> str:
         """
         Sign and submit request to ledger.
@@ -325,9 +347,18 @@ class IndySdkLedger(BaseLedger):
                             acceptance["time"],
                         )
                     )
-            submit_op = indy.ledger.sign_and_submit_request(
-                self.pool.handle, self.wallet.opened.handle, sign_did.did, request_json
-            )
+            if write_ledger:
+                submit_op = indy.ledger.sign_and_submit_request(
+                    self.pool.handle,
+                    self.wallet.opened.handle,
+                    sign_did.did,
+                    request_json,
+                )
+            else:
+                # multi-sign, since we expect this to get endorsed later
+                submit_op = indy.ledger.multi_sign_request(
+                    self.wallet.opened.handle, sign_did.did, request_json
+                )
         else:
             submit_op = indy.ledger.submit_request(self.pool.handle, request_json)
 
@@ -335,6 +366,9 @@ class IndySdkLedger(BaseLedger):
             "Exception raised by ledger transaction", LedgerTransactionError
         ):
             request_result_json = await submit_op
+
+        if sign and not write_ledger:
+            return request_result_json
 
         request_result = json.loads(request_result_json)
 
@@ -353,72 +387,24 @@ class IndySdkLedger(BaseLedger):
                 f"Unexpected operation code from ledger: {operation}"
             )
 
-    # todo - implementing changes for writing final transaction to the ledger
-    # (For Sign Transaction Protocol)
-    async def create_schema(
+    async def txn_endorse(
         self,
-        issuer: IndyIssuer = None,
-        schema_name: str = None,
-        schema_version: str = None,
-        attribute_names: Sequence[str] = None,
-        signed_request: dict = None,
-    ) -> Tuple[str, dict]:
-        """
-        Send schema to ledger.
+        request_json: str,
+    ) -> str:
+        """Endorse a (signed) ledger transaction."""
+        return await self._endorse(request_json)
 
-        Args:
-            issuer: The issuer instance creating the schema
-            schema_name: The schema name
-            schema_version: The schema version
-            attribute_names: A list of schema attributes
-
-        """
-
-        public_info = await self.wallet.get_public_did()
-        if not public_info:
-            raise BadLedgerRequestError("Cannot publish schema without a public DID")
-
-        # Error here while signing the already signed request from transaction author
-        if signed_request:
-            signed_request_json = await indy.ledger.sign_request(
-                self.wallet.opened.handle, public_info.did, signed_request
-            )
-            return signed_request_json
-
-        else:
-
-            schema_info = await self.check_existing_schema(
-                public_info.did, schema_name, schema_version, attribute_names
-            )
-            if schema_info:
-                LOGGER.warning("Schema already exists on ledger. Returning details.")
-                schema_id, schema_def = schema_info
-            else:
-                if self.pool.read_only:
-                    raise LedgerError(
-                        "Error cannot write schema when ledger is in read only mode"
-                    )
-
-                try:
-                    schema_id, schema_json = await issuer.create_schema(
-                        public_info.did,
-                        schema_name,
-                        schema_version,
-                        attribute_names,
-                    )
-                except IndyIssuerError as err:
-                    raise LedgerError(err.message) from err
-
-                with IndyErrorHandler("Exception building schema request", LedgerError):
-                    request_json = await indy.ledger.build_schema_request(
-                        public_info.did, schema_json
-                    )
-
-                signed_request_json = await indy.ledger.sign_request(
-                    self.wallet.opened.handle, public_info.did, request_json
-                )
-
-            return signed_request_json
+    async def txn_submit(
+        self,
+        request_json: str,
+        sign: bool = None,
+        taa_accept: bool = None,
+        sign_did: DIDInfo = sentinel,
+    ) -> str:
+        """Submit a signed (and endorsed) transaction to the ledger."""
+        return await self._submit(
+            request_json, sign=sign, taa_accept=taa_accept, sign_did=sign_did
+        )
 
     async def create_and_send_schema(
         self,
@@ -426,6 +412,8 @@ class IndySdkLedger(BaseLedger):
         schema_name: str,
         schema_version: str,
         attribute_names: Sequence[str],
+        write_ledger: bool = True,
+        endorser_did: str = None,
     ) -> Tuple[str, dict]:
         """
         Send schema to ledger.
@@ -471,7 +459,15 @@ class IndySdkLedger(BaseLedger):
                 )
 
             try:
-                resp = await self._submit(request_json, True, sign_did=public_info)
+                if endorser_did and not write_ledger:
+                    request_json = await indy.ledger.append_request_endorser(
+                        request_json, endorser_did
+                    )
+                resp = await self._submit(
+                    request_json, True, sign_did=public_info, write_ledger=write_ledger
+                )
+                if not write_ledger:
+                    return schema_id, {"signed_txn": resp}
                 try:
                     # parse sequence number out of response
                     seq_no = json.loads(resp)["result"]["txnMetadata"]["seqNo"]
@@ -500,6 +496,8 @@ class IndySdkLedger(BaseLedger):
                 else:
                     raise
 
+            # TODO refactor this code (duplicated in endorser transaction manager)
+            # Add non-secrets record
             schema_id_parts = schema_id.split(":")
             schema_tags = {
                 "schema_id": schema_id,
@@ -634,6 +632,8 @@ class IndySdkLedger(BaseLedger):
         signature_type: str = None,
         tag: str = None,
         support_revocation: bool = False,
+        write_ledger: bool = True,
+        endorser_did: str = None,
     ) -> Tuple[str, dict, bool]:
         """
         Send credential definition to ledger and store relevant key matter in wallet.
@@ -727,8 +727,17 @@ class IndySdkLedger(BaseLedger):
                 request_json = await indy.ledger.build_cred_def_request(
                     public_info.did, credential_definition_json
                 )
-            await self._submit(request_json, True, sign_did=public_info)
+            if endorser_did and not write_ledger:
+                request_json = await indy.ledger.append_request_endorser(
+                    request_json, endorser_did
+                )
+            resp = await self._submit(
+                request_json, True, sign_did=public_info, write_ledger=write_ledger
+            )
+            if not write_ledger:
+                return (credential_definition_id, {"signed_txn": resp}, novel)
 
+            # TODO refactor this code (duplicated in endorser transaction manager)
             # Add non-secrets record
             storage = self.get_indy_storage()
             schema_id_parts = schema_id.split(":")

@@ -6,14 +6,20 @@ import logging
 
 from typing import Mapping, Sequence, Optional
 
+from aries_cloudagent.protocols.coordinate_mediation.v1_0.manager import (
+    MediationManager,
+)
+
 from ....connections.base_manager import BaseConnectionManager
 from ....connections.models.conn_record import ConnRecord
+from ....connections.util import mediation_record_if_id
 from ....core.error import BaseError
 from ....core.profile import ProfileSession
 from ....indy.holder import IndyHolder
 from ....messaging.responder import BaseResponder
 from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....ledger.base import BaseLedger
+from ....ledger.error import LedgerError
 from ....multitenant.manager import MultitenantManager
 from ....storage.error import StorageNotFoundError
 from ....transport.inbound.receipt import MessageReceipt
@@ -85,6 +91,7 @@ class OutOfBandManager(BaseConnectionManager):
         alias: str = None,
         attachments: Sequence[Mapping] = None,
         metadata: dict = None,
+        mediation_id: str = None,
     ) -> InvitationRecord:
         """
         Generate new connection invitation.
@@ -108,6 +115,14 @@ class OutOfBandManager(BaseConnectionManager):
             Invitation record
 
         """
+        mediation_mgr = MediationManager(self._session.profile)
+        mediation_record = await mediation_record_if_id(
+            self._session,
+            mediation_id,
+            or_default=True,
+        )
+        keylist_updates = None
+
         if not (hs_protos or attachments):
             raise OutOfBandManagerError(
                 "Invitation must include handshake protocols, "
@@ -125,25 +140,18 @@ class OutOfBandManager(BaseConnectionManager):
             auto_accept
             or (
                 auto_accept is None
-                and self._session.settings.get(
-                    "debug.auto_accept_requests_public"
-                    if public
-                    else "debug.auto_accept_requests_peer"
-                )
+                and self._session.settings.get("debug.auto_accept_requests")
             )
         )
-        if public and multi_use:
-            raise OutOfBandManagerError(
-                "Cannot create public invitation with multi_use"
-            )
-        if public and accept != self._session.settings.get(
-            "debug.auto_accept_requests_public",
-            False,
-        ):
-            raise OutOfBandManagerError(
-                "Cannot override auto-acceptance configuration for "
-                "requests to invitations on public DIDs"
-            )
+        if public:
+            if multi_use:
+                raise OutOfBandManagerError(
+                    "Cannot create public invitation with multi_use"
+                )
+            if metadata:
+                raise OutOfBandManagerError(
+                    "Cannot store metadata on public invitations"
+                )
 
         message_attachments = []
         for atch in attachments or []:
@@ -199,18 +207,39 @@ class OutOfBandManager(BaseConnectionManager):
                     "Cannot create public invitation with no public DID"
                 )
 
-            if metadata:
-                raise OutOfBandManagerError(
-                    "Cannot store metadata on public invitations"
-                )
-            invi_msg = InvitationMessage(
+            invi_msg = InvitationMessage(  # create invitation message
                 label=my_label or self._session.settings.get("default_label"),
                 handshake_protocols=handshake_protocols,
                 request_attach=message_attachments,
                 service=[f"did:sov:{public_did.did}"],
             )
-            # Add mapping for multitenant relay.
-            if multitenant_mgr and wallet_id:
+            keylist_updates = await mediation_mgr.add_key(
+                public_did.verkey, keylist_updates
+            )
+            ledger = self._session.inject(BaseLedger)
+            try:
+                async with ledger:
+                    base_url = await ledger.get_endpoint_for_did(public_did.did)
+                    invi_url = invi_msg.to_url(base_url)
+            except LedgerError as ledger_x:
+                raise OutOfBandManagerError(
+                    "Error getting endpoint for public DID "
+                    f"{public_did.did}: {ledger_x}"
+                )
+
+            conn_rec = ConnRecord(  # create connection record
+                invitation_key=public_did.verkey,
+                invitation_msg_id=invi_msg._id,
+                their_role=ConnRecord.Role.REQUESTER.rfc23,
+                state=ConnRecord.State.INVITATION.rfc23,
+                accept=ConnRecord.ACCEPT_AUTO if accept else ConnRecord.ACCEPT_MANUAL,
+                alias=alias,
+            )
+
+            await conn_rec.save(self._session, reason="Created new invitation")
+            await conn_rec.attach_invitation(self._session, invi_msg)
+
+            if multitenant_mgr and wallet_id:  # add mapping for multitenant relay
                 await multitenant_mgr.add_key(
                     wallet_id, public_did.verkey, skip_if_exists=True
                 )
@@ -227,11 +256,56 @@ class OutOfBandManager(BaseConnectionManager):
 
             # Create and store new invitation key
             connection_key = await wallet.create_signing_key()
-
+            keylist_updates = await mediation_mgr.add_key(
+                connection_key.verkey, keylist_updates
+            )
             # Add mapping for multitenant relay
             if multitenant_mgr and wallet_id:
                 await multitenant_mgr.add_key(wallet_id, connection_key.verkey)
 
+            # Create connection record
+            conn_rec = ConnRecord(
+                invitation_key=connection_key.verkey,
+                their_role=ConnRecord.Role.REQUESTER.rfc23,
+                state=ConnRecord.State.INVITATION.rfc23,
+                accept=ConnRecord.ACCEPT_AUTO if accept else ConnRecord.ACCEPT_MANUAL,
+                invitation_mode=invitation_mode,
+                alias=alias,
+            )
+            await conn_rec.save(self._session, reason="Created new connection")
+
+            routing_keys = []
+            # The base wallet can act as a mediator for all tenants
+            if multitenant_mgr and wallet_id:
+                base_mediation_record = await multitenant_mgr.get_default_mediator()
+
+                if base_mediation_record:
+                    routing_keys = base_mediation_record.routing_keys
+                    my_endpoint = base_mediation_record.endpoint
+
+                    # If we use a mediator for the base wallet we don't
+                    # need to register the key at the subwallet mediator
+                    # because it only needs to know the key of the base mediator
+                    # sub wallet mediator -> base wallet mediator -> agent
+                    keylist_updates = None
+            if mediation_record:
+                routing_keys = [*routing_keys, *mediation_record.routing_keys]
+                my_endpoint = mediation_record.endpoint
+
+                # Save that this invitation was created with mediation
+                await conn_rec.metadata_set(
+                    self._session, "mediation", {"id": mediation_id}
+                )
+
+                if keylist_updates:
+                    responder = self._session.inject(BaseResponder, required=False)
+                    await responder.send(
+                        keylist_updates, connection_id=mediation_record.connection_id
+                    )
+            routing_keys = [
+                key if len(key.split(":")) == 3 else naked_to_did_key(key)
+                for key in routing_keys
+            ]
             # Create connection invitation message
             # Note: Need to split this into two stages to support inbound routing
             # of invitations
@@ -246,35 +320,28 @@ class OutOfBandManager(BaseConnectionManager):
                         _type="did-communication",
                         recipient_keys=[naked_to_did_key(connection_key.verkey)],
                         service_endpoint=my_endpoint,
+                        routing_keys=routing_keys,
                     )
                 ],
             )
+            invi_url = invi_msg.to_url()
 
-            # Create connection record
-            conn_rec = ConnRecord(
-                invitation_key=connection_key.verkey,
-                invitation_msg_id=invi_msg._id,
-                their_role=ConnRecord.Role.REQUESTER.rfc23,
-                state=ConnRecord.State.INVITATION.rfc23,
-                accept=ConnRecord.ACCEPT_AUTO if accept else ConnRecord.ACCEPT_MANUAL,
-                invitation_mode=invitation_mode,
-                alias=alias,
-            )
-
-            await conn_rec.save(self._session, reason="Created new invitation")
+            # Update connection record
+            conn_rec.invitation_msg_id = invi_msg._id
+            await conn_rec.save(self._session, reason="Added Invitation")
             await conn_rec.attach_invitation(self._session, invi_msg)
 
             if metadata:
                 for key, value in metadata.items():
                     await conn_rec.metadata_set(self._session, key, value)
 
-        # Create invitation record
-        invi_rec = InvitationRecord(
+        return InvitationRecord(  # for return via admin API, not storage
             state=InvitationRecord.STATE_INITIAL,
             invi_msg_id=invi_msg._id,
             invitation=invi_msg.serialize(),
+            invitation_url=invi_url,
+            public_did=public_did,
         )
-        return invi_rec
 
     async def receive_invitation(
         self,
@@ -282,10 +349,17 @@ class OutOfBandManager(BaseConnectionManager):
         use_existing_connection: bool = True,
         auto_accept: bool = None,
         alias: str = None,
+        mediation_id: str = None,
     ) -> dict:
         """Receive an out of band invitation message."""
 
         ledger: BaseLedger = self._session.inject(BaseLedger)
+
+        if mediation_id:
+            try:
+                await mediation_record_if_id(self._session, mediation_id)
+            except StorageNotFoundError:
+                mediation_id = None
 
         # There must be exactly 1 service entry
         if len(invi_msg.service_blocks) + len(invi_msg.service_dids) != 1:
@@ -329,12 +403,10 @@ class OutOfBandManager(BaseConnectionManager):
                 ]
             )
         ]
-        # Reuse Connection
-        # Only if started by an invitee with Public DID
+
+        # Reuse Connection - only if started by an invitation with Public DID
         conn_rec = None
-        if public_did is not None:
-            # Inviter has a public DID
-            # Looking for an existing connection
+        if public_did is not None:  # invite has public DID: seek existing connection
             tag_filter = {}
             post_filter = {}
             # post_filter["state"] = ConnRecord.State.COMPLETED.rfc160
@@ -423,6 +495,7 @@ class OutOfBandManager(BaseConnectionManager):
                         invitation=invi_msg,
                         their_public_did=public_did,
                         auto_accept=auto_accept,
+                        mediation_id=mediation_id,
                     )
                 elif proto is HSProto.RFC160:
                     service.recipient_keys = [
@@ -446,6 +519,7 @@ class OutOfBandManager(BaseConnectionManager):
                         invitation=connection_invitation,
                         their_public_did=public_did,
                         auto_accept=auto_accept,
+                        mediation_id=mediation_id,
                     )
                 if conn_rec is not None:
                     break

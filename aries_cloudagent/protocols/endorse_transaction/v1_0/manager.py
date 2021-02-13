@@ -2,6 +2,7 @@
 
 from aiohttp import web
 import logging
+import uuid
 
 from .models.transaction_record import TransactionRecord
 from .messages.transaction_request import TransactionRequest
@@ -10,7 +11,6 @@ from .messages.refused_transaction_response import RefusedTransactionResponse
 from .messages.cancel_transaction import CancelTransaction
 from .messages.transaction_resend import TransactionResend
 from .messages.transaction_job_to_send import TransactionJobToSend
-from .messages.messages_attach import MessagesAttach
 
 from ....connections.models.conn_record import ConnRecord
 from ....transport.inbound.receipt import MessageReceipt
@@ -50,13 +50,7 @@ class TransactionManager:
 
     async def create_record(
         self,
-        author_did: str,
-        author_verkey: str,
-        transaction_message: dict,
-        transaction_type: str,
-        mechanism: str,
-        taaDigest: str,
-        time: int,
+        messages_attach: str,
         expires_time: str,
     ):
         """
@@ -71,16 +65,11 @@ class TransactionManager:
 
         """
 
-        messages_attach = MessagesAttach(
-            author_did=author_did,
-            author_verkey=author_verkey,
-            transaction_message=transaction_message,
-            transaction_type=transaction_type,
-            mechanism=mechanism,
-            taaDigest=taaDigest,
-            time=time,
-        )
-        messages_attach_dict = messages_attach.__dict__
+        messages_attach_dict = {
+            "@id": str(uuid.uuid4()),
+            "mime-type": "application/json",
+            "data": {"json": messages_attach},
+        }
 
         transaction = TransactionRecord()
 
@@ -88,7 +77,7 @@ class TransactionManager:
         transaction.timing = timing
 
         formats = {
-            "attach_id": messages_attach._id,
+            "attach_id": messages_attach_dict["@id"],
             "format": TransactionRecord.FORMAT_VERSION,
         }
         transaction.formats.clear()
@@ -145,15 +134,6 @@ class TransactionManager:
         transaction.state = TransactionRecord.STATE_REQUEST_SENT
         transaction.connection_id = connection_id
 
-        if signature:
-            author_did = transaction.messages_attach[0]["data"]["json"]["identifier"]
-            transaction.messages_attach[0]["data"]["json"]["signatures"][
-                author_did
-            ] = signature
-            transaction.messages_attach[0]["data"]["json"]["reqId"] = signed_request[
-                "reqId"
-            ]
-
         profile_session = await self.session
         async with profile_session.profile.session() as session:
             await transaction.save(session, reason="Created an endorsement request")
@@ -184,7 +164,7 @@ class TransactionManager:
         transaction.timing = request.timing
 
         format = {
-            "attach_id": request.messages_attach["_message_id"],
+            "attach_id": request.messages_attach["@id"],
             "format": TransactionRecord.FORMAT_VERSION,
         }
         transaction.formats.clear()
@@ -210,6 +190,7 @@ class TransactionManager:
         state: str,
         endorser_did: str,
         endorser_verkey: str,
+        endorsed_msg: str = None,
         signature: str = None,
     ):
         """
@@ -235,15 +216,15 @@ class TransactionManager:
 
         transaction._type = TransactionRecord.SIGNATURE_RESPONSE
 
-        transaction.messages_attach[0]["data"]["json"]["endorser"] = endorser_did
+        # don't modify the transaction payload?
+        if endorsed_msg:
+            # need to return the endorsed msg or else the ledger will reject the
+            # eventual transaction write
+            transaction.messages_attach[0]["data"]["json"] = endorsed_msg
 
         if signature:
-            author_did = transaction.messages_attach[0]["data"]["json"]["identifier"]
-            transaction.messages_attach[0]["data"]["json"]["signature"][
-                author_did
-            ] = signature
             signature_response = {
-                "message_id": transaction.messages_attach[0]["_message_id"],
+                "message_id": transaction.messages_attach[0]["@id"],
                 "context": TransactionRecord.SIGNATURE_CONTEXT,
                 "method": TransactionRecord.ADD_SIGNATURE,
                 "signer_goal_code": TransactionRecord.ENDORSE_TRANSACTION,
@@ -253,7 +234,7 @@ class TransactionManager:
 
         else:
             signature_response = {
-                "message_id": transaction.messages_attach[0]["_message_id"],
+                "message_id": transaction.messages_attach[0]["@id"],
                 "context": TransactionRecord.SIGNATURE_CONTEXT,
                 "method": TransactionRecord.ADD_SIGNATURE,
                 "signer_goal_code": TransactionRecord.ENDORSE_TRANSACTION,
@@ -280,8 +261,6 @@ class TransactionManager:
 
         return transaction, endorsed_transaction_response
 
-    # todo - implementing changes for writing final transaction to the ledger
-    # (For Sign Transaction Protocol)
     async def receive_endorse_response(self, response: EndorsedTransactionResponse):
         """
         Update the transaction record with the endorsed response.
@@ -303,18 +282,37 @@ class TransactionManager:
         transaction.signature_response.append(response.signature_response)
 
         transaction.thread_id = response.thread_id
-        transaction.messages_attach[0]["data"]["json"][
-            "endorser"
-        ] = response.endorser_did
 
-        author_did = transaction.messages_attach[0]["data"]["json"]["identifier"]
+        # the returned signature is actually the endorsed ledger transaction
         endorser_did = response.endorser_did
-        transaction.messages_attach[0]["data"]["json"]["signature"][
-            author_did
-        ] = response.signature_response["signature"][endorser_did]
+        transaction.messages_attach[0]["data"]["json"] = response.signature_response[
+            "signature"
+        ][endorser_did]
 
         async with profile_session.profile.session() as session:
             await transaction.save(session, reason="Received an endorsed response")
+
+        return transaction
+
+    async def complete_transaction(self, transaction: TransactionRecord):
+        """
+        Complete a transaction.
+
+        This is the final state after the received ledger transaction
+        is written to the ledger.
+
+        Args:
+            transaction: The transaction record which would be completed
+
+        Returns:
+            The updated transaction
+
+        """
+
+        transaction.state = TransactionRecord.STATE_TRANSACTION_COMPLETED
+        profile_session = await self.session
+        async with profile_session.profile.session() as session:
+            await transaction.save(session, reason="Completed transaction")
 
         return transaction
 
@@ -347,7 +345,7 @@ class TransactionManager:
         transaction._type = TransactionRecord.SIGNATURE_RESPONSE
 
         signature_response = {
-            "message_id": transaction.messages_attach[0]["_message_id"],
+            "message_id": transaction.messages_attach[0]["data"]["json"]["_id"],
             "context": TransactionRecord.SIGNATURE_CONTEXT,
             "method": TransactionRecord.ADD_SIGNATURE,
             "signer_goal_code": TransactionRecord.REFUSE_TRANSACTION,

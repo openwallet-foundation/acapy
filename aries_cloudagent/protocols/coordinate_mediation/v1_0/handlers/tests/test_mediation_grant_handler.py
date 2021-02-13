@@ -77,13 +77,14 @@ class TestMediationGrantHandler(AsyncTestCase):
     async def test_handler_multitenant_base_mediation(self):
         handler, responder = MediationGrantHandler(), async_mock.CoroutineMock()
         responder.send = async_mock.CoroutineMock()
+        profile = self.context.profile
 
-        self.context.update_settings(
+        profile.context.update_settings(
             {"multitenant.enabled": True, "wallet.id": "test_wallet"}
         )
 
         multitenant_mgr = async_mock.CoroutineMock()
-        self.context.injector.bind_instance(MultitenantManager, multitenant_mgr)
+        profile.context.injector.bind_instance(MultitenantManager, multitenant_mgr)
 
         default_base_mediator = MediationRecord(routing_keys=["key1", "key2"])
         multitenant_mgr.get_default_mediator = async_mock.CoroutineMock()

@@ -10,6 +10,7 @@ from aiohttp_apispec import (
     request_schema,
     response_schema,
 )
+import json
 
 from marshmallow import fields
 from marshmallow.validate import Regexp
@@ -24,8 +25,6 @@ from ..valid import B58, NATURAL_NUM, INDY_SCHEMA_ID, INDY_VERSION
 from .util import SchemaQueryStringSchema, SCHEMA_SENT_RECORD_TYPE, SCHEMA_TAGS
 
 from ...protocols.endorse_transaction.v1_0.manager import TransactionManager
-from ...wallet.base import BaseWallet
-import json
 
 
 class SchemaSendRequestSchema(OpenAPISchema):
@@ -113,9 +112,19 @@ class AutoEndorseOptionSchema(OpenAPISchema):
     )
 
 
+class EndorserDIDOptionSchema(OpenAPISchema):
+    """Class for user to input the DID associated with the requested endorser."""
+
+    endorser_did = fields.Str(
+        description="Endorser DID",
+        required=False,
+    )
+
+
 @docs(tags=["schema"], summary="Sends a schema to the ledger")
 @request_schema(SchemaSendRequestSchema())
 @querystring_schema(AutoEndorseOptionSchema())
+@querystring_schema(EndorserDIDOptionSchema())
 @response_schema(SchemaSendResultsSchema(), 200, description="")
 async def schemas_send_schema(request: web.BaseRequest):
     """
@@ -130,94 +139,48 @@ async def schemas_send_schema(request: web.BaseRequest):
     """
     context: AdminRequestContext = request["context"]
     auto_endorse = json.loads(request.query.get("auto_endorse", "true"))
+    endorser_did = request.query.get("endorser_did", None)
+
+    body = await request.json()
+
+    schema_name = body.get("schema_name")
+    schema_version = body.get("schema_version")
+    attributes = body.get("attributes")
+
+    ledger = context.inject(BaseLedger, required=False)
+    if not ledger:
+        reason = "No ledger available"
+        if not context.settings.get_value("wallet.type"):
+            reason += ": missing wallet-type?"
+        raise web.HTTPForbidden(reason=reason)
+
+    issuer = context.inject(IndyIssuer)
+    async with ledger:
+        try:
+            # if not auto_endorse, then the returned "schema_def" is actually
+            # the signed transaction
+            schema_id, schema_def = await shield(
+                ledger.create_and_send_schema(
+                    issuer,
+                    schema_name,
+                    schema_version,
+                    attributes,
+                    write_ledger=auto_endorse,
+                    endorser_did=endorser_did,
+                )
+            )
+        except (IndyIssuerError, LedgerError) as err:
+            raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     if auto_endorse:
-        body = await request.json()
-
-        schema_name = body.get("schema_name")
-        schema_version = body.get("schema_version")
-        attributes = body.get("attributes")
-
-        ledger = context.inject(BaseLedger, required=False)
-        if not ledger:
-            reason = "No ledger available"
-            if not context.settings.get_value("wallet.type"):
-                reason += ": missing wallet-type?"
-            raise web.HTTPForbidden(reason=reason)
-
-        issuer = context.inject(IndyIssuer)
-        async with ledger:
-            try:
-                schema_id, schema_def = await shield(
-                    ledger.create_and_send_schema(
-                        issuer, schema_name, schema_version, attributes
-                    )
-                )
-            except (IndyIssuerError, LedgerError) as err:
-                raise web.HTTPBadRequest(reason=err.roll_up) from err
-
         return web.json_response({"schema_id": schema_id, "schema": schema_def})
-
     else:
-        transaction_message = await request.json()
         session = await context.session()
-
-        wallet: BaseWallet = session.inject(BaseWallet, required=False)
-        if not wallet:
-            raise web.HTTPForbidden(reason="No wallet available")
-        author_did_info = await wallet.get_public_did()
-        if not author_did_info:
-            raise web.HTTPForbidden(
-                reason="Transaction cannot be created as there is no Public DID in wallet"
-            )
-        author_did = author_did_info.did
-        author_verkey = author_did_info.verkey
-
-        ledger: BaseLedger = session.inject(BaseLedger, required=False)
-
-        if not ledger:
-            reason = "No indy ledger available"
-            if not session.settings.get_value("wallet.type"):
-                reason += ": missing wallet-type?"
-            raise web.HTTPForbidden(reason=reason)
-
-        async with ledger:
-            try:
-                taa_info = await ledger.get_txn_author_agreement()
-                accepted = None
-                if taa_info["taa_required"]:
-                    accept_record = await ledger.get_latest_txn_author_acceptance()
-                    if accept_record:
-                        accepted = {
-                            "mechanism": accept_record["mechanism"],
-                            "time": accept_record["time"],
-                        }
-                taa_info["taa_accepted"] = accepted
-            except LedgerError as err:
-                raise web.HTTPBadRequest(reason=err.roll_up) from err
-
-        if taa_info["taa_accepted"] is not None:
-            mechanism = taa_info["taa_accepted"]["mechanism"]
-            time = taa_info["taa_accepted"]["time"]
-        else:
-            mechanism = None
-            time = None
-
-        if taa_info["taa_record"] is not None:
-            taaDigest = taa_info["taa_record"]["digest"]
-        else:
-            taaDigest = None
 
         transaction_mgr = TransactionManager(session)
 
         transaction = await transaction_mgr.create_record(
-            author_did=author_did,
-            author_verkey=author_verkey,
-            transaction_message=transaction_message,
-            transaction_type="101",
-            mechanism=mechanism,
-            taaDigest=taaDigest,
-            time=time,
+            messages_attach=schema_def["signed_txn"],
             expires_time="1597708800",
         )
 

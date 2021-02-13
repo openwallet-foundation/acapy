@@ -524,6 +524,7 @@ class TestIndySdkLedger(AsyncTestCase):
                 mock_build_schema_req.return_value,
                 True,
                 sign_did=mock_wallet.get_public_did.return_value,
+                write_ledger=True,
             )
 
             assert schema_id == issuer.create_schema.return_value[0]

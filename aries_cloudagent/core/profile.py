@@ -137,6 +137,8 @@ class ProfileSession(ABC):
     ):
         """Initialize a base profile session."""
         self._active = False
+        self._awaited = False
+        self._entered = 0
         self._context = (context or profile.context).start_scope("session", settings)
         self._profile = profile
 
@@ -157,6 +159,7 @@ class ProfileSession(ABC):
             if not self._active:
                 await self._setup()
                 self._active = True
+            self._awaited = True
             return self
 
         return _init().__await__()
@@ -166,11 +169,13 @@ class ProfileSession(ABC):
         if not self._active:
             await self._setup()
             self._active = True
+        self._entered += 1
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         """Async context manager exit."""
-        if self._active:
+        self._entered -= 1
+        if not self._awaited and not self._entered:
             await self._teardown()
             self._active = False
 
