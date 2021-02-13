@@ -16,10 +16,10 @@ Subpackages
 Submodules
 ----------
 
-aries\_cloudagent\.connections\.models\.connection\_record module
------------------------------------------------------------------
+aries\_cloudagent\.connections\.models\.conn\_record module
+-----------------------------------------------------------
 
-.. automodule:: aries_cloudagent.connections.models.connection_record
+.. automodule:: aries_cloudagent.connections.models.conn_record
     :members:
     :undoc-members:
     :show-inheritance:

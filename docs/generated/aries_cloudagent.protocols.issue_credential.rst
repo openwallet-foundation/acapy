@@ -12,6 +12,7 @@ Subpackages
 .. toctree::
 
     aries_cloudagent.protocols.issue_credential.v1_0
+    aries_cloudagent.protocols.issue_credential.v2_0
 
 Submodules
 ----------
