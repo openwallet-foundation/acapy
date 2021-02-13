@@ -57,14 +57,6 @@ aries\_cloudagent\.utils\.task\_queue module
     :undoc-members:
     :show-inheritance:
 
-aries\_cloudagent\.utils\.temp module
--------------------------------------
-
-.. automodule:: aries_cloudagent.utils.temp
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 aries\_cloudagent\.utils\.tracing module
 ----------------------------------------
 

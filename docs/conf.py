@@ -43,7 +43,7 @@ autodoc_mock_imports = [
 # -- Project information -----------------------------------------------------
 
 project = "Aries Cloud Agent - Python"
-copyright = "2019, Province of British Columbia"
+copyright = "2021, Province of British Columbia"
 author = "Province of British Columbia"
 
 # The short X.Y version
@@ -156,7 +156,6 @@ latex_documents = [
         master_doc,
         "AriesCloudAgentPython.tex",
         "Aries Cloud Agent Python Documentation",
-        "Nicholas Rempel, Andrew Whitehead, Ian Costanzo, Stephen Klump",
         "manual",
     )
 ]
