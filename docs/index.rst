@@ -52,6 +52,9 @@ for how to contribute to ACA-Py, including for how to submit issues about ACA-Py
    generated/aries_cloudagent
    generated/aries_cloudagent.connections.rst
    generated/aries_cloudagent.protocols.rst
+   generated/aries_cloudagent.issuer.rst
+   generated/aries_cloudagent.verifier.rst
+   generated/modules.rst
 
 
 Indices and tables

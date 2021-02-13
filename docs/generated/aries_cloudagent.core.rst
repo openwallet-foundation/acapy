@@ -33,10 +33,26 @@ aries\_cloudagent\.core\.error module
     :undoc-members:
     :show-inheritance:
 
+aries\_cloudagent\.core\.in\_memory module
+------------------------------------------
+
+.. automodule:: aries_cloudagent.core.in_memory
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 aries\_cloudagent\.core\.plugin\_registry module
 ------------------------------------------------
 
 .. automodule:: aries_cloudagent.core.plugin_registry
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+aries\_cloudagent\.core\.profile module
+---------------------------------------
+
+.. automodule:: aries_cloudagent.core.profile
     :members:
     :undoc-members:
     :show-inheritance:
