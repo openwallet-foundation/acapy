@@ -10,6 +10,7 @@ from typing import Any, Mapping, Sequence, Union
 from marshmallow import fields
 
 from ...cache.base import BaseCache
+from ...config.settings import BaseSettings
 from ...core.profile import ProfileSession
 from ...storage.base import BaseStorage, StorageDuplicateError, StorageNotFoundError
 from ...storage.record import StorageRecord
@@ -331,7 +332,9 @@ class BaseRecord(BaseModel):
                 params.update(log_params)
             if new_record is None:
                 log_reason = f"FAILED: {log_reason}"
-            self.log_state(session, log_reason, params, override=log_override)
+            self.log_state(
+                log_reason, params, override=log_override, settings=session.settings
+            )
 
         await self.post_save(session, new_record, self._last_state, webhook)
         self._last_state = self.state
@@ -405,14 +408,14 @@ class BaseRecord(BaseModel):
     @classmethod
     def log_state(
         cls,
-        session: ProfileSession,
         msg: str,
         params: dict = None,
+        settings: BaseSettings = None,
         override: bool = False,
     ):
         """Print a message with increased visibility (for testing)."""
         if override or (
-            cls.LOG_STATE_FLAG and session.context.settings.get(cls.LOG_STATE_FLAG)
+            cls.LOG_STATE_FLAG and settings and settings.get(cls.LOG_STATE_FLAG)
         ):
             out = msg + "\n"
             if params:

@@ -308,7 +308,7 @@ class TestConnectionManager(AsyncTestCase):
         await mediation_record.save(self.session)
         with async_mock.patch.object(
             MediationManager,
-            "get_default_mediator_id",
+            "get_default_mediator",
         ) as mock_get_default_mediator:
             _, invite = await self.manager.create_invitation(
                 routing_keys=[self.test_verkey],
@@ -330,8 +330,8 @@ class TestConnectionManager(AsyncTestCase):
         await mediation_record.save(self.session)
         with async_mock.patch.object(
             MediationManager,
-            "get_default_mediator_id",
-            async_mock.CoroutineMock(return_value=mediation_record.mediation_id),
+            "get_default_mediator",
+            async_mock.CoroutineMock(return_value=mediation_record),
         ) as mock_get_default_mediator:
             _, invite = await self.manager.create_invitation(
                 routing_keys=[self.test_verkey],
@@ -414,14 +414,14 @@ class TestConnectionManager(AsyncTestCase):
             endpoint=self.test_mediator_endpoint,
         )
         await mediation_record.save(self.session)
-        with self.assertRaises(ConnectionManagerError):
+        with self.assertRaises(BaseConnectionManagerError):
             await self.manager.receive_invitation(
                 connect_invite, mediation_id=mediation_record.mediation_id
             )
 
         mediation_record.state = MediationRecord.STATE_REQUEST
         await mediation_record.save(self.session)
-        with self.assertRaises(ConnectionManagerError):
+        with self.assertRaises(BaseConnectionManagerError):
             await self.manager.receive_invitation(
                 connect_invite, mediation_id=mediation_record.mediation_id
             )
@@ -510,7 +510,7 @@ class TestConnectionManager(AsyncTestCase):
         ) as create_did_document, async_mock.patch.object(
             self.session.wallet, "create_local_did"
         ) as create_local_did, async_mock.patch.object(
-            MediationManager, "get_default_mediator_id"
+            MediationManager, "get_default_mediator"
         ) as mock_get_default_mediator:
 
             did_info = DIDInfo(did=self.test_did, verkey=self.test_verkey, metadata={})
@@ -564,8 +564,8 @@ class TestConnectionManager(AsyncTestCase):
             self.session.wallet, "create_local_did"
         ) as create_local_did, async_mock.patch.object(
             MediationManager,
-            "get_default_mediator_id",
-            async_mock.CoroutineMock(return_value=mediation_record.mediation_id),
+            "get_default_mediator",
+            async_mock.CoroutineMock(return_value=mediation_record),
         ) as mock_get_default_mediator:
 
             did_info = DIDInfo(did=self.test_did, verkey=self.test_verkey, metadata={})
@@ -608,14 +608,14 @@ class TestConnectionManager(AsyncTestCase):
             endpoint=self.test_mediator_endpoint,
         )
         await mediation_record.save(self.session)
-        with self.assertRaises(ConnectionManagerError):
+        with self.assertRaises(BaseConnectionManagerError):
             await self.manager.create_request(
                 record, mediation_id=mediation_record.mediation_id
             )
 
         mediation_record.state = MediationRecord.STATE_REQUEST
         await mediation_record.save(self.session)
-        with self.assertRaises(ConnectionManagerError):
+        with self.assertRaises(BaseConnectionManagerError):
             await self.manager.create_request(
                 record, mediation_id=mediation_record.mediation_id
             )
@@ -938,14 +938,14 @@ class TestConnectionManager(AsyncTestCase):
             ConnRecord, "retrieve_request", autospec=True
         ):
             mock_conn_retrieve_by_invitation_key.return_value = record
-            with self.assertRaises(ConnectionManagerError):
+            with self.assertRaises(BaseConnectionManagerError):
                 await self.manager.receive_request(
                     mock_request, receipt, mediation_id=mediation_record.mediation_id
                 )
 
             mediation_record.state = MediationRecord.STATE_REQUEST
             await mediation_record.save(self.session)
-            with self.assertRaises(ConnectionManagerError):
+            with self.assertRaises(BaseConnectionManagerError):
                 await self.manager.receive_request(
                     mock_request, receipt, mediation_id=mediation_record.mediation_id
                 )
@@ -1062,14 +1062,14 @@ class TestConnectionManager(AsyncTestCase):
                 endpoint=self.test_mediator_endpoint,
             )
             await mediation_record.save(self.session)
-            with self.assertRaises(ConnectionManagerError):
+            with self.assertRaises(BaseConnectionManagerError):
                 await self.manager.create_response(
                     record, mediation_id=mediation_record.mediation_id
                 )
 
             mediation_record.state = MediationRecord.STATE_REQUEST
             await mediation_record.save(self.session)
-            with self.assertRaises(ConnectionManagerError):
+            with self.assertRaises(BaseConnectionManagerError):
                 await self.manager.create_response(
                     record, mediation_id=mediation_record.mediation_id
                 )
@@ -1113,7 +1113,7 @@ class TestConnectionManager(AsyncTestCase):
         ) as mock_conn_rec_save, async_mock.patch.object(
             ConnRecord, "retrieve_by_request_id", async_mock.CoroutineMock()
         ) as mock_conn_retrieve_by_req_id, async_mock.patch.object(
-            MediationManager, "get_default_mediator_id", async_mock.CoroutineMock()
+            MediationManager, "get_default_mediator", async_mock.CoroutineMock()
         ):
             mock_conn_retrieve_by_req_id.return_value = async_mock.MagicMock(
                 did=self.test_target_did,
@@ -1144,7 +1144,7 @@ class TestConnectionManager(AsyncTestCase):
         ) as mock_conn_retrieve_by_req_id, async_mock.patch.object(
             ConnRecord, "retrieve_by_did", async_mock.CoroutineMock()
         ) as mock_conn_retrieve_by_did, async_mock.patch.object(
-            MediationManager, "get_default_mediator_id", async_mock.CoroutineMock()
+            MediationManager, "get_default_mediator", async_mock.CoroutineMock()
         ):
             mock_conn_retrieve_by_req_id.side_effect = StorageNotFoundError()
             mock_conn_retrieve_by_did.return_value = async_mock.MagicMock(
@@ -1269,7 +1269,7 @@ class TestConnectionManager(AsyncTestCase):
         ) as mock_conn_rec_save, async_mock.patch.object(
             ConnRecord, "retrieve_by_request_id", async_mock.CoroutineMock()
         ) as mock_conn_retrieve_by_req_id, async_mock.patch.object(
-            MediationManager, "get_default_mediator_id", async_mock.CoroutineMock()
+            MediationManager, "get_default_mediator", async_mock.CoroutineMock()
         ):
             mock_conn_retrieve_by_req_id.return_value = async_mock.MagicMock(
                 did=self.test_target_did,
@@ -1621,7 +1621,7 @@ class TestConnectionManager(AsyncTestCase):
         ) as mock_conn_rec_retrieve_by_id:
             mock_conn_rec_retrieve_by_id.return_value = mock_conn
 
-            with self.assertRaises(ConnectionManagerError):
+            with self.assertRaises(BaseConnectionManagerError):
                 await self.manager.create_did_document(
                     did_info=did_info,
                     inbound_connection_id="dummy",
@@ -1654,7 +1654,7 @@ class TestConnectionManager(AsyncTestCase):
         ) as mock_conn_rec_retrieve_by_id:
             mock_conn_rec_retrieve_by_id.return_value = mock_conn
 
-            with self.assertRaises(ConnectionManagerError):
+            with self.assertRaises(BaseConnectionManagerError):
                 await self.manager.create_did_document(
                     did_info=did_info,
                     inbound_connection_id="dummy",
@@ -1690,7 +1690,7 @@ class TestConnectionManager(AsyncTestCase):
         ) as mock_conn_rec_retrieve_by_id:
             mock_conn_rec_retrieve_by_id.return_value = mock_conn
 
-            with self.assertRaises(ConnectionManagerError):
+            with self.assertRaises(BaseConnectionManagerError):
                 await self.manager.create_did_document(
                     did_info=did_info,
                     inbound_connection_id="dummy",
@@ -1734,7 +1734,7 @@ class TestConnectionManager(AsyncTestCase):
         ) as mock_conn_rec_retrieve_by_id:
             mock_conn_rec_retrieve_by_id.return_value = mock_conn
 
-            with self.assertRaises(ConnectionManagerError):
+            with self.assertRaises(BaseConnectionManagerError):
                 await self.manager.create_did_document(
                     did_info=did_info,
                     inbound_connection_id="dummy",

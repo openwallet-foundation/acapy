@@ -41,8 +41,7 @@ class PresentationProposalHandler(BaseHandler):
                 "No connection established for presentation proposal"
             )
 
-        session = await context.session()
-        presentation_manager = PresentationManager(session)
+        presentation_manager = PresentationManager(context.profile)
         presentation_exchange_record = await presentation_manager.receive_proposal(
             context.message, context.connection_record
         )

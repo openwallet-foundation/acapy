@@ -6,6 +6,8 @@ from aiohttp import web
 
 from ...messaging.error import MessageParseError
 
+from ..wire_format import DIDCOMM_V0_MIME_TYPE, DIDCOMM_V1_MIME_TYPE
+
 from .base import BaseInboundTransport, InboundTransportSetupError
 
 LOGGER = logging.getLogger(__name__)
@@ -106,7 +108,13 @@ class HttpTransport(BaseInboundTransport):
                         return web.Response(
                             body=response,
                             status=200,
-                            headers={"Content-Type": "application/ssi-agent-wire"},
+                            headers={
+                                "Content-Type": DIDCOMM_V1_MIME_TYPE
+                                if session.profile.settings.get(
+                                    "emit_new_didcomm_mime_type"
+                                )
+                                else DIDCOMM_V0_MIME_TYPE
+                            },
                         )
                     else:
                         return web.Response(

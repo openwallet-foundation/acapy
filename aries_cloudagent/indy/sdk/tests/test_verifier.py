@@ -461,6 +461,18 @@ class TestIndySdkVerifier(AsyncTestCase):
             )
         assert "is superfluous vs. requested predicate" in str(context.exception)
 
+        # predicate mismatch
+        proof_req_x = deepcopy(INDY_PROOF_REQ_PRED_NAMES)
+        proof_x = deepcopy(INDY_PROOF_PRED_NAMES)
+        proof_x["requested_proof"]["predicates"].pop("18_id_GE_uuid")
+        with self.assertRaises(ValueError) as context:
+            await self.verifier.check_timestamps(
+                proof_req_x,
+                proof_x,
+                REV_REG_DEFS,
+            )
+        assert "predicates mismatch requested predicate" in str(context.exception)
+
     @async_mock.patch("indy.anoncreds.verifier_verify_proof")
     async def test_verify_presentation(self, mock_verify):
         mock_verify.return_value = "val"

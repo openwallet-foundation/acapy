@@ -13,3 +13,7 @@ class WalletNotFoundError(WalletError):
 
 class WalletDuplicateError(WalletError):
     """Duplicate record exception."""
+
+
+class WalletSettingsError(WalletError):
+    """Invalid settings exception."""
