@@ -237,19 +237,21 @@ class TestBaseRecord(AsyncTestCase):
     @async_mock.patch("builtins.print")
     def test_log_state(self, mock_print):
         test_param = "test.log"
-        session = InMemoryProfile.test_session(settings={test_param: 1})
         with async_mock.patch.object(
             BaseRecordImpl, "LOG_STATE_FLAG", test_param
         ) as cls:
             record = BaseRecordImpl()
-            record.log_state(session, msg="state", params={"a": "1", "b": "2"})
+            record.log_state(
+                msg="state",
+                params={"a": "1", "b": "2"},
+                settings=async_mock.MagicMock(get={test_param: 1}.get),
+            )
         mock_print.assert_called_once()
 
     @async_mock.patch("builtins.print")
     def test_skip_log(self, mock_print):
-        session = InMemoryProfile.test_session()
         record = BaseRecordImpl()
-        record.log_state(session, "state")
+        record.log_state("state", settings=None)
         mock_print.assert_not_called()
 
     async def test_webhook(self):

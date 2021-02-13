@@ -22,8 +22,7 @@ class KeylistUpdateResponseHandler(BaseHandler):
         if not context.connection_ready:
             raise HandlerException("Invalid mediation request: no active connection")
 
-        session = await context.session()
-        mgr = MediationManager(session)
+        mgr = MediationManager(context.profile)
         await mgr.store_update_results(
             context.connection_record.connection_id, context.message.updated
         )

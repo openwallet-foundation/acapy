@@ -286,8 +286,8 @@ class DebugGroup(ArgumentGroup):
             "--auto-accept-requests",
             action="store_true",
             env_var="ACAPY_AUTO_ACCEPT_REQUESTS",
-            help="Automatically connection requests without firing a webhook event\
-            or waiting for an admin request. Default: false.",
+            help="Automatically accept connection requests without firing\
+            a webhook event or waiting for an admin request. Default: false.",
         )
         parser.add_argument(
             "--auto-respond-messages",
@@ -576,7 +576,7 @@ class LedgerGroup(ArgumentGroup):
                 raise ArgsParseError(
                     "One of --genesis-url --genesis-file or --genesis-transactions "
                     + "must be specified (unless --no-ledger is specified to "
-                    + "explicitely configure aca-py to run with no ledger)."
+                    + "explicitly configure aca-py to run with no ledger)."
                 )
             if args.ledger_pool_name:
                 settings["ledger.pool_name"] = args.ledger_pool_name
@@ -724,6 +724,14 @@ class ProtocolGroup(ArgumentGroup):
             'did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/'.",
         )
         parser.add_argument(
+            "--emit-new-didcomm-mime-type",
+            action="store_true",
+            env_var="ACAPY_EMIT_NEW_DIDCOMM_MIME_TYPE",
+            help="Send packed agent messages with the DIDComm MIME type\
+            as of RFC 0044; i.e., 'application/didcomm-envelope-enc'\
+            instead of 'application/ssi-agent-wire'.",
+        )
+        parser.add_argument(
             "--exch-use-unencrypted-tags",
             action="store_true",
             env_var="ACAPY_EXCH_USE_UNENCRYPTED_TAGS",
@@ -780,6 +788,8 @@ class ProtocolGroup(ArgumentGroup):
             settings["preserve_exchange_records"] = True
         if args.emit_new_didcomm_prefix:
             settings["emit_new_didcomm_prefix"] = True
+        if args.emit_new_didcomm_mime_type:
+            settings["emit_new_didcomm_mime_type"] = True
         if args.exch_use_unencrypted_tags:
             settings["exch_use_unencrypted_tags"] = True
             environ["EXCH_UNENCRYPTED_TAGS"] = "True"
@@ -934,8 +944,16 @@ class MediationGroup(ArgumentGroup):
             type=str,
             metavar="<invite URL to mediator>",
             env_var="ACAPY_MEDIATION_INVITATION",
-            help="Connect to mediator through provided connection invitation\
+            help="Connect to mediator through provided invitation\
             and send mediation request and set as default mediator.",
+        )
+        parser.add_argument(
+            "--mediator-connections-invite",
+            action="store_true",
+            env_var="ACAPY_MEDIATION_CONNECTIONS_INVITE",
+            help="Connect to mediator through a connection invitation. \
+                If not specified, connect using an OOB invitation. \
+                Default: false.",
         )
         parser.add_argument(
             "--default-mediator-id",
@@ -962,6 +980,8 @@ class MediationGroup(ArgumentGroup):
             settings["mediation.default_id"] = args.default_mediator_id
         if args.clear_default_mediator:
             settings["mediation.clear"] = True
+        if args.mediator_connections_invite:
+            settings["mediation.connections_invite"] = True
 
         if args.clear_default_mediator and args.default_mediator_id:
             raise ArgsParseError(

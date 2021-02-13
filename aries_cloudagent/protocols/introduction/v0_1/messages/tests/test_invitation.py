@@ -5,6 +5,7 @@ from unittest import mock, TestCase
 from ......wallet.util import naked_to_did_key
 from .....out_of_band.v1_0.message_types import INVITATION as OOB_INVITATION
 from .....out_of_band.v1_0.messages.invitation import (
+    HSProto,
     InvitationMessage as OOBInvitationMessage,
 )
 from .....out_of_band.v1_0.messages.service import Service as OOBService
@@ -26,7 +27,7 @@ class TestInvitation(AsyncTestCase):
 
         self.oob_invi_msg = OOBInvitationMessage(
             label=self.label,
-            handshake_protocols=[DIDCommPrefix.qualify_current(OOB_INVITATION)],
+            handshake_protocols=[DIDCommPrefix.qualify_current(HSProto.RFC23.name)],
             service=[
                 OOBService(
                     _id="#inline",

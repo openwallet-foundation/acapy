@@ -35,7 +35,7 @@ class OOBProblemReportMessageHandler(BaseHandler):
         try:
             await mgr.receive_problem_report(
                 problem_report=context.message,
-                reciept=context.message_receipt,
+                receipt=context.message_receipt,
                 conn_record=context.connection_record,
             )
         except OutOfBandManagerError:
