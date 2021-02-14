@@ -51,7 +51,6 @@ for how to contribute to ACA-Py, including for how to submit issues about ACA-Py
 
    generated/aries_cloudagent
 
-
 Indices and tables
 ==================
 
