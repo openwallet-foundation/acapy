@@ -340,12 +340,10 @@ class TransactionManager:
                 f" in state: {transaction.state}"
             )
 
-        transaction.messages_attach[0]["data"]["json"]["endorser"] = refuser_did
-
         transaction._type = TransactionRecord.SIGNATURE_RESPONSE
 
         signature_response = {
-            "message_id": transaction.messages_attach[0]["data"]["json"]["_id"],
+            "message_id": transaction.messages_attach[0]["@id"],
             "context": TransactionRecord.SIGNATURE_CONTEXT,
             "method": TransactionRecord.ADD_SIGNATURE,
             "signer_goal_code": TransactionRecord.REFUSE_TRANSACTION,
@@ -389,9 +387,6 @@ class TransactionManager:
         transaction.signature_response.clear()
         transaction.signature_response.append(response.signature_response)
         transaction.thread_id = response.thread_id
-        transaction.messages_attach[0]["data"]["json"][
-            "endorser"
-        ] = response.endorser_did
 
         async with profile_session.profile.session() as session:
             await transaction.save(session, reason="Received a refused response")
