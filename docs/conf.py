@@ -159,6 +159,7 @@ latex_documents = [
         master_doc,
         "AriesCloudAgentPython.tex",
         "Aries Cloud Agent Python Documentation",
+        "See Contributors list on GitHub",
         "manual",
     )
 ]
