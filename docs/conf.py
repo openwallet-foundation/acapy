@@ -13,7 +13,7 @@
 import os
 import sys
 
-sys.path.insert(0, os.path.abspath("../.."))
+sys.path.insert(0, os.path.abspath(".."))
 
 autodoc_mock_imports = [
     "setup",
@@ -31,6 +31,9 @@ autodoc_mock_imports = [
     "prompt_toolkit",
     "aries_cloudagent.base_handler",
     "aries_cloudagent.logging",
+    "multicodec",
+    "configargparse",
+    "pyld",
 ]
 
 #    "aries_cloudagent.tests.test_conductor",
@@ -43,7 +46,7 @@ autodoc_mock_imports = [
 # -- Project information -----------------------------------------------------
 
 project = "Aries Cloud Agent - Python"
-copyright = "2019, Province of British Columbia"
+copyright = "2021, Province of British Columbia"
 author = "Province of British Columbia"
 
 # The short X.Y version
@@ -156,7 +159,7 @@ latex_documents = [
         master_doc,
         "AriesCloudAgentPython.tex",
         "Aries Cloud Agent Python Documentation",
-        "Nicholas Rempel, Andrew Whitehead, Ian Costanzo, Stephen Klump",
+        "See Contributors list on GitHub",
         "manual",
     )
 ]
