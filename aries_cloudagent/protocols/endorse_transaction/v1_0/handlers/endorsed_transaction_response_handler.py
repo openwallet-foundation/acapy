@@ -3,6 +3,7 @@
 from .....messaging.base_handler import (
     BaseHandler,
     BaseResponder,
+    HandlerException,
     RequestContext,
 )
 
@@ -26,6 +27,9 @@ class EndorsedTransactionResponseHandler(BaseHandler):
             f"EndorsedTransactionResponseHandler called with context {context}"
         )
         assert isinstance(context.message, EndorsedTransactionResponse)
+
+        if not context.connection_ready:
+            raise HandlerException("No connection established")
 
         profile_session = await context.session()
         mgr = TransactionManager(profile_session)

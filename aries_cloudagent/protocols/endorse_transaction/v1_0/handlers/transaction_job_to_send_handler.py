@@ -3,6 +3,7 @@
 from .....messaging.base_handler import (
     BaseHandler,
     BaseResponder,
+    HandlerException,
     RequestContext,
 )
 
@@ -24,6 +25,9 @@ class TransactionJobToSendHandler(BaseHandler):
 
         self._logger.debug(f"TransactionJobToSendHandler called with context {context}")
         assert isinstance(context.message, TransactionJobToSend)
+
+        if not context.connection_ready:
+            raise HandlerException("No connection established")
 
         profile_session = await context.session()
         mgr = TransactionManager(profile_session)

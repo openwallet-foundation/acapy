@@ -1,34 +1,55 @@
-import pytest
-from asynctest import mock as async_mock
+from asynctest import (
+    mock as async_mock,
+    TestCase as AsyncTestCase,
+)
 
 from ......messaging.request_context import RequestContext
-from ......core.profile import Profile
 from ......messaging.responder import MockResponder
+from ......transport.inbound.receipt import MessageReceipt
 
 from ...handlers import refused_transaction_response_handler as handler
 from ...messages.refused_transaction_response import RefusedTransactionResponse
 
 
-@pytest.fixture()
-async def request_context() -> RequestContext:
-    ctx = RequestContext.test_context()
-    yield ctx
+class TestRefusedTransactionResponseHandler(AsyncTestCase):
+    async def test_called(self):
+        request_context = RequestContext.test_context()
+        request_context.message_receipt = MessageReceipt()
+        request_context.connection_record = async_mock.MagicMock()
 
+        with async_mock.patch.object(
+            handler, "TransactionManager", autospec=True
+        ) as mock_tran_mgr:
+            mock_tran_mgr.return_value.receive_refuse_response = (
+                async_mock.CoroutineMock()
+            )
+            request_context.message = RefusedTransactionResponse()
+            request_context.connection_ready = True
+            handler_inst = handler.RefusedTransactionResponseHandler()
+            responder = MockResponder()
+            await handler_inst.handle(request_context, responder)
 
-@pytest.fixture()
-async def profile(request_context) -> Profile:
-    yield await request_context.profile
-
-
-class TestRefusedTransactionResponseHandler:
-    @pytest.mark.asyncio
-    @async_mock.patch.object(handler, "TransactionManager")
-    async def test_called(self, mock_tran_mgr, request_context):
-        mock_tran_mgr.return_value.receive_refuse_response = async_mock.CoroutineMock()
-        request_context.message = RefusedTransactionResponse()
-        handler_inst = handler.RefusedTransactionResponseHandler()
-        responder = MockResponder()
-        await handler_inst.handle(request_context, responder)
         mock_tran_mgr.return_value.receive_refuse_response.assert_called_once_with(
             request_context.message
         )
+        assert not responder.messages
+
+    async def test_called_not_ready(self):
+        request_context = RequestContext.test_context()
+        request_context.message_receipt = MessageReceipt()
+        request_context.connection_record = async_mock.MagicMock()
+
+        with async_mock.patch.object(
+            handler, "TransactionManager", autospec=True
+        ) as mock_tran_mgr:
+            mock_tran_mgr.return_value.receive_refuse_response = (
+                async_mock.CoroutineMock()
+            )
+            request_context.message = RefusedTransactionResponse()
+            request_context.connection_ready = False
+            handler_inst = handler.RefusedTransactionResponseHandler()
+            responder = MockResponder()
+            with self.assertRaises(handler.HandlerException):
+                await handler_inst.handle(request_context, responder)
+
+            assert not responder.messages
