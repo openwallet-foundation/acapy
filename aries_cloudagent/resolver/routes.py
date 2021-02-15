@@ -45,6 +45,7 @@ from ..storage.error import StorageError, StorageNotFoundError
 from .did_resolver import DIDResolver
 from .did import DID_PATTERN
 
+
 class W3cDIDDoc(validate.Regexp):
     """Validate value against w3c DID document."""
 
