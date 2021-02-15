@@ -32,7 +32,6 @@ class TestStart(AsyncTestCase):
         ) as shutdown_app, async_mock.patch.object(
             test_module, "uvloop", async_mock.MagicMock()
         ) as mock_uvloop:
-            test_module.os.environ["WEBHOOK_URL"] = "http://localhost"
             mock_uvloop.install = async_mock.MagicMock()
             test_module.execute(
                 [

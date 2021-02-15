@@ -137,8 +137,8 @@ elif [ "$AGENT" = "acme" ]; then
   AGENT_PORT_RANGE=8040-8047
 elif [ "$AGENT" = "performance" ]; then
   AGENT_MODULE="performance"
-  AGENT_PORT=8030
-  AGENT_PORT_RANGE=8030-8038
+  AGENT_PORT=8050
+  AGENT_PORT_RANGE=8050-8068
 else
   echo "Please specify which agent you want to run. Choose from 'faber', 'alice', 'acme', or 'performance'."
   exit 1

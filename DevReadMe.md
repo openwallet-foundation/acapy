@@ -12,6 +12,7 @@ See the [README](README.md) for details about this repository and information ab
   - [Locally Installed](#locally-installed)
   - [About ACA-Py Command Line Parameters](#about-aca-py-command-line-parameters)
   - [Provisioning a Wallet](#provisioning-a-wallet)
+  - [Mediation](#mediation)
   - [Multi-tenancy](#multi-tenancy)
 - [Developing](#developing)
   - [Prerequisites](#prerequisites)
@@ -107,6 +108,10 @@ aca-py provision --wallet-type indy --seed $SEED
 
 For additional `provision` options, execute `aca-py provision --help`.
 
+### Mediation
+
+ACA-Py can also run in mediator mode - ACA-Py can be run *as* a mediator (it can mediate connections for other agents), or it can connect to an external mediator to mediate its own connections.  See the [docs on mediation](Mediation.md) for more info.
+
 ### Multi-tenancy
 
 ACA-Py can also be started in multi-tenant mode. This allows the agent to serve multiple tenants, that each have their own wallet. See the [docs on multi-tenancy](Multitenancy.md) for more info.
@@ -171,7 +176,7 @@ To run the tests including [Indy SDK](https://github.com/hyperledger/indy-sdk) a
 
 You can run a full suite of integration tests using the [Aries Agent Test Harness (AATH)](https://github.com/hyperledger/aries-agent-test-harness).
 
-Check out and run AATH tests as follows (this tests the aca-py `master` branch):
+Check out and run AATH tests as follows (this tests the aca-py `main` branch):
 
 ```bash
 git clone https://github.com/hyperledger/aries-agent-test-harness.git

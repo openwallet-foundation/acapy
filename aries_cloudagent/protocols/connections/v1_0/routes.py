@@ -138,10 +138,10 @@ class ConnectionStaticRequestSchema(OpenAPISchema):
     their_did = fields.Str(description="Remote DID", required=False, **INDY_DID)
     their_verkey = fields.Str(description="Remote verification key", required=False)
     their_endpoint = fields.Str(
-        description="URL endpoint for the other party", required=False, **ENDPOINT
+        description="URL endpoint for other party", required=False, **ENDPOINT
     )
     their_label = fields.Str(
-        description="Label to assign to this connection", required=False
+        description="Other party's label for this connection", required=False
     )
     alias = fields.Str(description="Alias to assign to this connection", required=False)
 
@@ -200,7 +200,7 @@ class CreateInvitationQueryStringSchema(OpenAPISchema):
         example="Barry",
     )
     auto_accept = fields.Boolean(
-        description="Auto-accept connection (default as per configuration)",
+        description="Auto-accept connection (defaults to configuration)",
         required=False,
     )
     public = fields.Boolean(

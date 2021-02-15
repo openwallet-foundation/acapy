@@ -47,12 +47,21 @@ class InMemoryProfile(Profile):
         return InMemoryProfileSession(self, context=context)
 
     @classmethod
-    def test_profile(cls) -> "InMemoryProfile":
+    def test_profile(
+        cls, settings: Mapping[str, Any] = None, bind: Mapping[Type, Any] = None
+    ) -> "InMemoryProfile":
         """Used in tests to create a standard InMemoryProfile."""
-        return InMemoryProfile(
-            context=InjectionContext(enforce_typing=False),
+        profile = InMemoryProfile(
+            context=InjectionContext(enforce_typing=False, settings=settings),
             name=InMemoryProfile.TEST_PROFILE_NAME,
         )
+        if bind:
+            for k, v in bind.items():
+                if v:
+                    profile.context.injector.bind_instance(k, v)
+                else:
+                    profile.context.injector.clear_binding(k)
+        return profile
 
     @classmethod
     def test_session(

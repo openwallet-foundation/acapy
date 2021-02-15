@@ -6,12 +6,13 @@ SPEC_URI = (
     "https://github.com/hyperledger/aries-rfcs/tree/"
     "25464a5c8f8a17b14edaa4310393df6094ace7b0/features/0023-did-exchange"
 )
+ARIES_PROTOCOL = "didexchange/1.0"
 
 # Message types
-DIDX_REQUEST = "didexchange/1.0/request"
-DIDX_RESPONSE = "didexchange/1.0/response"
-DIDX_COMPLETE = "didexchange/1.0/complete"
-PROBLEM_REPORT = "didexchange/1.0/problem_report"
+DIDX_REQUEST = f"{ARIES_PROTOCOL}/request"
+DIDX_RESPONSE = f"{ARIES_PROTOCOL}/response"
+DIDX_COMPLETE = f"{ARIES_PROTOCOL}/complete"
+PROBLEM_REPORT = f"{ARIES_PROTOCOL}/problem_report"
 
 PROTOCOL_PACKAGE = "aries_cloudagent.protocols.didexchange.v1_0"
 

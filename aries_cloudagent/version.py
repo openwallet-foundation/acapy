@@ -1,3 +1,3 @@
 """Library version information."""
 
-__version__ = "0.6.0-pre"
+__version__ = "0.6.0-rc0"
