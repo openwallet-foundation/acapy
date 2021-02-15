@@ -3,36 +3,19 @@
 from aiohttp import web
 from aiohttp_apispec import docs, request_schema, response_schema
 
-from marshmallow import Schema, fields
-
 from ...admin.request_context import AdminRequestContext
-
-from ..models.openapi import OpenAPISchema
 
 from .credential import sign_credential, verify_credential
 from ...storage.error import StorageError, StorageNotFoundError
 from ...messaging.models.base import BaseModelError
 from ...wallet.error import WalletError
 from ...resolver.did import DID
-
-
-class SignRequestSchema(OpenAPISchema):
-    """Request schema for signing a jsonld doc."""
-
-    verkey = fields.Str(required=True, description="verkey to use for signing")
-    doc_schema = Schema.from_dict(
-        {
-            "credential": fields.Dict(required=False),
-            "options": fields.Dict(required=False),
-        }
-    )
-    doc = fields.Nested(doc_schema(), required=True, description="JSON-LD Doc to sign")
-
-
-class SignResponseSchema(OpenAPISchema):
-    """Response schema for a signed jsonld doc."""
-
-    signed_doc = fields.Dict(required=True)
+from .api_schemas import (
+    SignRequestSchema,
+    SignResponseSchema,
+    VerifyRequestSchema,
+    VerifyResponseSchema,
+)
 
 
 @docs(tags=["jsonld"], summary="Sign a JSON-LD structure and return it")
@@ -64,19 +47,6 @@ async def sign(request: web.BaseRequest):
     except (BaseModelError, WalletError, StorageError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
     return web.json_response(response)
-
-
-class VerifyRequestSchema(OpenAPISchema):
-    """Request schema for signing a jsonld doc."""
-
-    verkey = fields.Str(required=False, description="verkey to use for doc verification")
-    doc = fields.Dict(required=True, description="JSON-LD Doc to verify")
-
-
-class VerifyResponseSchema(OpenAPISchema):
-    """Response schema for verification result."""
-
-    valid = fields.Bool(required=True)
 
 
 @docs(tags=["jsonld"], summary="Verify a JSON-LD structure.")

@@ -19,7 +19,7 @@ MULTIBASE_B58_BTC = "z"
 MULTICODEC_ED25519_PUB = b"\xed"
 
 
-def did_key(verkey: str) -> str:
+def did_key(verkey: str) -> str:  # Warning: duplicate function in attach_decorator.py
     """Qualify verkey into DID key if need be."""
 
     if verkey.startswith(f"did:key:{MULTIBASE_B58_BTC}"):
