@@ -1,0 +1,48 @@
+{
+   "Data_DL_MaxValues":{
+      "cred_name":"Data_DL_Revoc_MaxValues",
+      "schema_name":"Schema_DriversLicense_revoc",
+      "schema_version":"1.1.0",
+      "attributes":[
+         {
+            "name":"address",
+            "value":"947 this street, Kingston Ontario Canada, K9O 3R5"
+         },
+         {
+            "name":"DL_number",
+            "value":"09385029529385"
+         },
+         {
+            "name":"expiry",
+            "value":"10/12/2022"
+         },
+         {
+            "name":"age",
+            "value":"30"
+         }
+      ]
+   },
+   "Data_DL_MinValues":{
+      "cred_name":"Data_DL_Revoc_MinValues",
+      "schema_name":"Schema_DriversLicense_revoc",
+      "schema_version":"1.1.0",
+      "attributes":[
+         {
+            "name":"address",
+            "value":"9 6 st, Q Ontario Canada, K9O 3R5"
+         },
+         {
+            "name":"DL_number",
+            "value":"09"
+         },
+         {
+            "name":"expiry",
+            "value":"1/1/22"
+         },
+         {
+            "name":"age",
+            "value":"15"
+         }
+      ]
+   }
+}

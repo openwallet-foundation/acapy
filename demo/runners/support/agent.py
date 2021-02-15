@@ -361,6 +361,7 @@ class DemoAgent:
                 raise Exception(f"Error registering DID, response code {resp.status}")
             nym_info = await resp.json()
             self.did = nym_info["did"]
+            self.log(f"nym_info: {nym_info}")
             if self.multitenant:
                 if not self.agency_wallet_did:
                     self.agency_wallet_did = self.did
