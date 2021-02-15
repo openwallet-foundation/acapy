@@ -14,12 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from marshmallow import Schema, fields, post_load, pre_load, post_dump, validate
-from .verificationmethodschema import VerificationMethodSchema
+from marshmallow import Schema, fields, post_dump, post_load, pre_load, validate
+
+from .....resolver.did import DID_PATTERN
 from .serviceschema import ServiceSchema
 from .unionfield import ListOrStringField, PublicKeyField
-from ...resolver.did import DID_PATTERN
-import re
+from .verificationmethodschema import VerificationMethodSchema
 
 
 class DIDDocSchema(Schema):

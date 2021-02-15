@@ -16,7 +16,7 @@ limitations under the License.
 
 from marshmallow import Schema, fields, post_load, post_dump, pre_load, validate
 from .unionfield import ListOrStringField, ListOrStringOrDictField
-from ...resolver.did import DID_PATTERN
+from .....resolver.did import DID_PATTERN
 import re
 
 DID_PATTERN = re.compile("{}#[a-zA-Z0-9._-]+".format(DID_PATTERN.pattern))

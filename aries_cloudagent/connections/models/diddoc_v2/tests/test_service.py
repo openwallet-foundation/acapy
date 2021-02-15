@@ -15,10 +15,9 @@ limitations under the License.
 """
 
 from asynctest import TestCase as AsyncTestCase
-
-from .. import Service
-
 from marshmallow.exceptions import ValidationError
+
+from ..service import Service
 
 
 class TestService(AsyncTestCase):

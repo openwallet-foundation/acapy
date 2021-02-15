@@ -19,7 +19,7 @@ from typing import Sequence, Union
 
 from .schemas.verificationmethodschema import VerificationMethodSchema
 from .publickeytype import PublicKeyType
-from ...resolver.did import DIDUrl
+from ....resolver.did import DIDUrl
 
 
 class PublicKey:

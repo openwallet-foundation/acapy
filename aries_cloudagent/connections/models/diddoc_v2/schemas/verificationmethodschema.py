@@ -14,10 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from marshmallow import Schema, fields, post_load, validate
-from .unionfield import ListOrStringField
-from ...resolver.did import DID_PATTERN
 import re
+
+from marshmallow import Schema, fields, post_load, validate
+
+from .....resolver.did import DID_PATTERN
+from .unionfield import ListOrStringField
 
 DID_PATTERN = re.compile("{}#[a-zA-Z0-9._-]+".format(DID_PATTERN.pattern))
 
@@ -55,7 +57,8 @@ class VerificationMethodSchema(Schema):
     publicKeyBase58 = fields.Str()
 
     @post_load
-    def make_publicKey(self, data, **kwargs):
+    def make_public_key(self, data, **_kwargs):
+        """Create public key on load from schema."""
         from ..publickey import PublicKey
 
         return PublicKey(**data)

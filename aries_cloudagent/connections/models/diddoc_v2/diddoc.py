@@ -20,7 +20,7 @@ from typing import Union
 from .publickey import PublicKey
 from .service import Service
 from .schemas.diddocschema import DIDDocSchema
-from ...resolver.did import DIDUrl
+from ....resolver.did import DIDUrl
 
 LOGGER = logging.getLogger(__name__)
 

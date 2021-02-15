@@ -17,7 +17,7 @@ limitations under the License.
 from typing import List, Sequence, Union
 from .publickey import PublicKey
 from .schemas.serviceschema import ServiceSchema
-from ...resolver.did import DIDUrl
+from ....resolver.did import DIDUrl
 
 
 class Service:
