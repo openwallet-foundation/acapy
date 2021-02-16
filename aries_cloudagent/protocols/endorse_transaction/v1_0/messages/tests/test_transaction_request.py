@@ -68,6 +68,12 @@ class TestTransactionRequest(TestCase, TestConfig):
         assert self.transaction_request.transaction_type == self.test_transaction_type
         assert self.transaction_request.messages_attach == self.test_messages_attach
 
+    def test_type(self):
+        """Test type."""
+        assert self.transaction_request._type == DIDCommPrefix.qualify_current(
+            TRANSACTION_REQUEST
+        )
+
     @mock.patch(
         "aries_cloudagent.protocols.endorse_transaction.v1_0.messages."
         "transaction_request.TransactionRequestSchema.load"
@@ -76,7 +82,7 @@ class TestTransactionRequest(TestCase, TestConfig):
         """
         Test deserialization.
         """
-        obj = {"obj": "obj"}
+        obj = self.transaction_request
 
         transaction_request = TransactionRequest.deserialize(obj)
         mock_transaction_request_schema_load.assert_called_once_with(obj)

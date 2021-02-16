@@ -25,6 +25,12 @@ class TestCancelTransaction(TestCase, TestConfig):
         assert self.cancel_transaction.thread_id == self.test_thread_id
         assert self.cancel_transaction.state == self.test_state
 
+    def test_type(self):
+        """Test type."""
+        assert self.cancel_transaction._type == DIDCommPrefix.qualify_current(
+            CANCEL_TRANSACTION
+        )
+
     @mock.patch(
         "aries_cloudagent.protocols.endorse_transaction.v1_0.messages."
         "cancel_transaction.CancelTransactionSchema.load"
@@ -33,7 +39,7 @@ class TestCancelTransaction(TestCase, TestConfig):
         """
         Test deserialization.
         """
-        obj = {"obj": "obj"}
+        obj = self.cancel_transaction
 
         cancel_transaction = CancelTransaction.deserialize(obj)
         mock_cancel_transaction_schema_load.assert_called_once_with(obj)

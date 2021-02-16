@@ -50,6 +50,13 @@ class TestEndorsedTransactionResponse(TestCase, TestConfig):
         assert self.endorsed_transaction_response.state == self.test_state
         assert self.endorsed_transaction_response.endorser_did == self.test_endorser_did
 
+    def test_type(self):
+        """Test type."""
+        assert (
+            self.endorsed_transaction_response._type
+            == DIDCommPrefix.qualify_current(ENDORSED_TRANSACTION_RESPONSE)
+        )
+
     @mock.patch(
         "aries_cloudagent.protocols.endorse_transaction.v1_0.messages."
         "endorsed_transaction_response.EndorsedTransactionResponseSchema.load"
@@ -58,7 +65,7 @@ class TestEndorsedTransactionResponse(TestCase, TestConfig):
         """
         Test deserialization.
         """
-        obj = {"obj": "obj"}
+        obj = self.endorsed_transaction_response
 
         endorsed_transaction_response = EndorsedTransactionResponse.deserialize(obj)
         mock_endorsed_transaction_response_schema_load.assert_called_once_with(obj)

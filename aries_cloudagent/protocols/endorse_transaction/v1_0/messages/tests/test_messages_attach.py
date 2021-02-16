@@ -58,6 +58,12 @@ class TestMessagesAttach(TestCase, TestConfig):
             self.messages_attach.data["json"]["taaAcceptance"]["time"] == self.test_time
         )
 
+    def test_type(self):
+        """Test type."""
+        assert self.messages_attach._type == DIDCommPrefix.qualify_current(
+            ATTACHED_MESSAGE
+        )
+
     @mock.patch(
         "aries_cloudagent.protocols.endorse_transaction.v1_0.messages."
         "messages_attach.MessagesAttachSchema.load"
@@ -66,7 +72,7 @@ class TestMessagesAttach(TestCase, TestConfig):
         """
         Test deserialization.
         """
-        obj = {"obj": "obj"}
+        obj = self.messages_attach
 
         messages_attach = MessagesAttach.deserialize(obj)
         mock_messages_attach_schema_load.assert_called_once_with(obj)

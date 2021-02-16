@@ -21,6 +21,12 @@ class TestTransactionJobToSend(TestCase, TestConfig):
         """Test initialization."""
         assert self.transaction_job_to_send.job == self.test_job
 
+    def test_type(self):
+        """Test type."""
+        assert self.transaction_job_to_send._type == DIDCommPrefix.qualify_current(
+            TRANSACTION_JOB_TO_SEND
+        )
+
     @mock.patch(
         "aries_cloudagent.protocols.endorse_transaction.v1_0.messages."
         "transaction_job_to_send.TransactionJobToSendSchema.load"
@@ -29,7 +35,7 @@ class TestTransactionJobToSend(TestCase, TestConfig):
         """
         Test deserialization.
         """
-        obj = {"obj": "obj"}
+        obj = self.transaction_job_to_send
 
         transaction_job_to_send = TransactionJobToSend.deserialize(obj)
         mock_transaction_job_to_send_schema_load.assert_called_once_with(obj)

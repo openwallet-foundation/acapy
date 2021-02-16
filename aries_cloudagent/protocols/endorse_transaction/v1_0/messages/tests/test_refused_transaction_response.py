@@ -45,6 +45,12 @@ class TestRefusedTransactionResponse(TestCase, TestConfig):
         assert self.refused_transaction_response.state == self.test_state
         assert self.refused_transaction_response.endorser_did == self.test_endorser_did
 
+    def test_type(self):
+        """Test type."""
+        assert self.refused_transaction_response._type == DIDCommPrefix.qualify_current(
+            REFUSED_TRANSACTION_RESPONSE
+        )
+
     @mock.patch(
         "aries_cloudagent.protocols.endorse_transaction.v1_0.messages."
         "refused_transaction_response.RefusedTransactionResponseSchema.load"
@@ -53,7 +59,7 @@ class TestRefusedTransactionResponse(TestCase, TestConfig):
         """
         Test deserialization.
         """
-        obj = {"obj": "obj"}
+        obj = self.refused_transaction_response
 
         refused_transaction_response = RefusedTransactionResponse.deserialize(obj)
         mock_refused_transaction_response_schema_load.assert_called_once_with(obj)
