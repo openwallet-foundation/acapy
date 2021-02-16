@@ -31,15 +31,6 @@ class SignResponseSchema(OpenAPISchema):
     signed_doc = fields.Dict(required=True)
 
 
-class VerifyRequestSchema(OpenAPISchema):
-    """Request schema for signing a jsonld doc."""
-
-    verkey = fields.Str(
-        required=False, description="verkey to use for doc verification"
-    )
-    doc = fields.Dict(required=True, description="JSON-LD Doc to verify")
-
-
 class VerifyResponseSchema(OpenAPISchema):
     """Response schema for verification result."""
 

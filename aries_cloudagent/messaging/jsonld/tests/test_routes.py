@@ -4,6 +4,7 @@ import asyncio
 import pytest
 from asynctest import mock as async_mock
 from ....messaging.models.base import BaseModelError
+from ....wallet.error import WalletError
 from ....storage.error import StorageError, StorageNotFoundError
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
@@ -107,7 +108,7 @@ async def test_sign(mock_sign_credential, mock_request, mock_response):
 
 @pytest.mark.asyncio
 async def test_sign_key_not_found_error(
-    mock_sign_credential, mock_request, mock_response
+    mock_request, mock_response
 ):
     test_module.sign_credential = async_mock.CoroutineMock(side_effect=StorageNotFoundError())
     with pytest.raises(test_module.web.HTTPNotFound):
@@ -117,11 +118,30 @@ async def test_sign_key_not_found_error(
 @pytest.mark.parametrize("error", [BaseModelError, StorageError])
 @pytest.mark.asyncio
 async def test_sign_bad_req_error(
-    mock_sign_credential, mock_request, mock_response, error
+    mock_request, mock_response, error
 ):
     test_module.sign_credential = async_mock.CoroutineMock(side_effect=error())
     with pytest.raises(test_module.web.HTTPBadRequest):
         await test_module.sign(mock_request)
+
+
+@pytest.mark.asyncio
+async def test_verfy_key_not_found_error(  # will this ever happen?
+    mock_request, mock_response
+):
+    test_module.verify_credential = async_mock.CoroutineMock(side_effect=StorageNotFoundError())
+    with pytest.raises(test_module.web.HTTPNotFound):
+        await test_module.verify(mock_request)
+
+
+@pytest.mark.parametrize("error", [BaseModelError, WalletError, StorageError])
+@pytest.mark.asyncio
+async def test_verify_bad_req_error(
+    mock_request, mock_response, error
+):
+    test_module.verify_credential = async_mock.CoroutineMock(side_effect=error())
+    with pytest.raises(test_module.web.HTTPBadRequest):
+        await test_module.verify(mock_request)
 
 
 @pytest.mark.asyncio

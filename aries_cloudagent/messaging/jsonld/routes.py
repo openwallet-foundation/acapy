@@ -9,12 +9,11 @@ from .credential import sign_credential, verify_credential
 from ...storage.error import StorageError, StorageNotFoundError
 from ...messaging.models.base import BaseModelError
 from ...wallet.error import WalletError
-from ...resolver.did import DID
 from .api_schemas import (
     SignRequestSchema,
     SignResponseSchema,
-    VerifyRequestSchema,
     VerifyResponseSchema,
+    TenBasicDocumentSchema,
 )
 
 
@@ -50,7 +49,7 @@ async def sign(request: web.BaseRequest):
 
 
 @docs(tags=["jsonld"], summary="Verify a JSON-LD structure.")
-@request_schema(VerifyRequestSchema())
+@request_schema(TenBasicDocumentSchema())
 @response_schema(VerifyResponseSchema(), 200, description="")
 async def verify(request: web.BaseRequest):
     """
@@ -67,8 +66,9 @@ async def verify(request: web.BaseRequest):
     verkey = body.get("verkey")
     doc = body.get("doc")
     try:
-        if not verkey and "issuer" in doc.keys():
-            verkey = DID(doc["issuer"]).method_specific_id()
+        ver_meth: str = doc.get("proof", {}).get("verificationMethod", "no#key")
+        # verification method must be in expanded form with key after '#'
+        verkey = ver_meth.split('#')[1]
         valid = await verify_credential(doc, verkey, session)
         response["valid"] = valid
     except StorageNotFoundError as err:
