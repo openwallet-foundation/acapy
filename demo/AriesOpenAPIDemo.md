@@ -223,7 +223,7 @@ We’ll start the demo by establishing a connection between the Alice and Faber 
 
 ### Use the Faber Agent to Create an Invitation
 
-In the Faber browser tab, execute the **`POST /connections/create-invitation`** endpoint. No input data is needed to be added for this call. If successful, you should see a connection Id, an invitation, and the invitation URL. The Ids will be different on each run.
+In the Faber browser tab, navigate to the **`POST /connections/create-invitation`** endpoint. Replace the sample body with and empty production (`{}`) and execute the call. If successful, you should see a connection id, an invitation, and the invitation URL. The connection ids will be different on each run.
 
 **Hint: set an Alias on the Invitation, this makes it easier to find the Connection later on**
 
