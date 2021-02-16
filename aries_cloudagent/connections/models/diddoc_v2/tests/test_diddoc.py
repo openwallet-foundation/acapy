@@ -15,10 +15,16 @@ limitations under the License.
 """
 
 from asynctest import TestCase as AsyncTestCase
-
-from .. import DIDDoc, PublicKey, Service
+import copy
+from aries_cloudagent.connections.models.diddoc_v2 import (
+    DIDDoc,
+    VerificationMethod,
+    Service,
+)
 
 from marshmallow.exceptions import ValidationError
+
+from aries_cloudagent.resolver.did import InvalidDIDUrlError
 
 publicKey = {
     "id": "did:sov:LjgpST2rjsoxYegQDRm7EL#3",
@@ -68,7 +74,7 @@ class TestDIDDoc(AsyncTestCase):
             DIDDoc.deserialize(did)
 
     def test_deserialize_wrong_service(self):
-        service2 = service
+        service2 = copy.copy(service)
         service2.pop("id")
 
         did = {
@@ -82,7 +88,7 @@ class TestDIDDoc(AsyncTestCase):
             DIDDoc.deserialize(did)
 
     def test_deserialize_wrong_publicKey(self):
-        publicKey2 = publicKey
+        publicKey2 = copy.copy(publicKey)
         publicKey2.pop("id")
 
         did = {
@@ -114,7 +120,7 @@ class TestDIDDoc(AsyncTestCase):
         assert did_instance.service[0].serialize() == service
         assert did_instance.service[0] == service_instance
 
-        service2 = service
+        service2 = copy.copy(service)
         service2["id"] = "did:sov:LjgpST2rjsoxYegQDRm7EL#5"
         service_instance2 = Service.deserialize(service2)
         did_instance.set(service_instance2)
@@ -136,50 +142,50 @@ class TestDIDDoc(AsyncTestCase):
 
     async def test_add_new_verification_method(self):
         did = {"id": "did:sov:LjgpST2rjsoxYegQDRm7EL", "publicKey": [publicKey]}
-        publicKey_instance = PublicKey.deserialize(publicKey)
+        publicKey_instance = VerificationMethod.deserialize(publicKey)
         did_instance = DIDDoc(id=did["id"], publicKey=[publicKey_instance])
         assert did_instance.id == did["id"]
         assert len(did_instance.publicKey) == 1
         assert did_instance.publicKey[0].serialize() == publicKey
         assert did_instance.publicKey[0] == publicKey_instance
 
-        publicKey2 = publicKey
+        publicKey2 = copy.copy(publicKey)
         publicKey2["id"] = "did:sov:LjgpST2rjsoxYegQDRm7EL#5"
-        publicKey_instance2 = PublicKey.deserialize(publicKey2)
+        publicKey_instance2 = VerificationMethod.deserialize(publicKey2)
         did_instance.set(publicKey_instance2)
         assert len(did_instance.publicKey) == 2
 
     async def test_add_new_verification_method(self):
         did = {"id": "did:sov:LjgpST2rjsoxYegQDRm7EL", "publicKey": [publicKey]}
-        publicKey_instance = PublicKey.deserialize(publicKey)
+        publicKey_instance = VerificationMethod.deserialize(publicKey)
         did_instance = DIDDoc(id=did["id"], publicKey=[publicKey_instance])
         assert did_instance.id == did["id"]
         assert len(did_instance.publicKey) == 1
         assert did_instance.publicKey[0].serialize() == publicKey
         assert did_instance.publicKey[0] == publicKey_instance
 
-        publicKey2 = publicKey
+        publicKey2 = copy.copy(publicKey)
         publicKey2["id"] = "did:sov:LjgpST2rjsoxYegQDRm7EL#5"
-        publicKey_instance2 = PublicKey.deserialize(publicKey2)
+        publicKey_instance2 = VerificationMethod.deserialize(publicKey2)
         did_instance.set(publicKey_instance2)
         assert len(did_instance.publicKey) == 2
 
     async def test_add_new_verification_method(self):
         did = {"id": "did:sov:LjgpST2rjsoxYegQDRm7EL", "publicKey": [publicKey]}
-        publicKey_instance = PublicKey.deserialize(publicKey)
-        did_instance = DIDDoc(id=did["id"], publicKey=[publicKey_instance])
+        publicKey_instance = VerificationMethod.deserialize(publicKey)
+        did_instance = DIDDoc(id=did["id"], public_key=[publicKey_instance])
         assert did_instance.id == did["id"]
-        assert len(did_instance.publicKey) == 1
-        assert did_instance.publicKey[0].serialize() == publicKey
-        assert did_instance.publicKey[0] == publicKey_instance
+        assert len(did_instance.public_key) == 1
+        assert did_instance.public_key[0].serialize() == publicKey
+        assert did_instance.public_key[0] == publicKey_instance
 
-        publicKey2 = publicKey
+        publicKey2 = copy.copy(publicKey)
         publicKey2["id"] = "did:sov:LjgpST2rjsoxYegQDRm7EL#5"
-        publicKey_instance2 = PublicKey.deserialize(publicKey2)
+        publicKey_instance2 = VerificationMethod.deserialize(publicKey2)
         did_instance.set(publicKey_instance2)
-        assert len(did_instance.publicKey) == 2
+        assert len(did_instance.public_key) == 2
 
-    async def test_deserialize_ok(self):
+    async def test_dereference_ok(self):
         did = {
             "id": "did:sov:LjgpST2rjsoxYegQDRm7EL",
             "service": [service],
@@ -193,3 +199,29 @@ class TestDIDDoc(AsyncTestCase):
         publicKey_instance = result.dereference("did:sov:LjgpST2rjsoxYegQDRm7EL#3")
         assert service_instance.serialize() == service
         assert publicKey_instance.serialize() == publicKey
+        assert isinstance(service_instance, Service)
+        assert isinstance(publicKey_instance, VerificationMethod)
+
+    async def test_dereference_bad_id(self):
+        did = {
+            "id": "did:sov:LjgpST2rjsoxYegQDRm7EL",
+            "service": [service],
+            "publicKey": [publicKey],
+            "authentication": [publicKey],
+        }
+
+        result = DIDDoc.deserialize(did)
+        with self.assertRaises(InvalidDIDUrlError):
+            result.dereference("did:sovLjgpST2rjsoxYegQDRm7EL#2")
+
+    async def test_dereference_missing_id(self):
+        did = {
+            "id": "did:sov:LjgpST2rjsoxYegQDRm7EL",
+            "service": [service],
+            "publicKey": [publicKey],
+            "authentication": [publicKey],
+        }
+
+        result = DIDDoc.deserialize(did)
+
+        assert not result.dereference("did:sov:LjgpST2rjsoxYegQDRm7EL#10")

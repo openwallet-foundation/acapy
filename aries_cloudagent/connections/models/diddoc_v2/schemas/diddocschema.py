@@ -18,8 +18,8 @@ from marshmallow import Schema, fields, post_dump, post_load, pre_load, validate
 
 from .....resolver.did import DID_PATTERN
 from .serviceschema import ServiceSchema
-from .unionfield import ListOrStringField, PublicKeyField
-from .verificationmethodschema import VerificationMethodSchema
+from .unionfield import ListOrStringField
+from .verificationmethodschema import VerificationMethodSchema, PublicKeyField
 
 
 class DIDDocSchema(Schema):
@@ -66,15 +66,17 @@ class DIDDocSchema(Schema):
     """
 
     id = fields.Str(required=True, validate=validate.Regexp(DID_PATTERN))
-    alsoKnownAs = fields.List(fields.Str())
+    also_known_as = fields.List(fields.Str(), data_key="alsoKnownAs")
     controller = ListOrStringField()
-    verificationMethod = fields.List(fields.Nested(VerificationMethodSchema))
+    verification_method = fields.List(
+        fields.Nested(VerificationMethodSchema), data_key="verificationMethod"
+    )
     authentication = PublicKeyField()
-    assertionMethod = PublicKeyField()
-    keyAgreement = PublicKeyField()
-    capabilityInvocation = PublicKeyField()
-    capabilityDelegation = PublicKeyField()
-    publicKey = PublicKeyField()
+    assertion_method = PublicKeyField(data_key="assertionMethod")
+    key_agreement = PublicKeyField(data_key="keyAgreement")
+    capability_invocation = PublicKeyField(data_key="capabilityInvocation")
+    capability_delegation = PublicKeyField(data_key="capabilityDelegation")
+    public_key = PublicKeyField(data_key="publicKey")
     service = fields.List(fields.Nested(ServiceSchema))
 
     @pre_load

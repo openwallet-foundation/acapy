@@ -15,7 +15,7 @@ limitations under the License.
 """
 
 from typing import List, Sequence, Union
-from .publickey import PublicKey
+from .verification_method import VerificationMethod
 from .schemas.serviceschema import ServiceSchema
 from ....resolver.did import DIDUrl
 
@@ -31,11 +31,11 @@ class Service:
     def __init__(
         self,
         id: str,
-        type: Union[str, List] = None,
-        recipientKeys: Union[Sequence, PublicKey] = None,
-        routingKeys: Union[Sequence, PublicKey] = None,
-        serviceEndpoint: Union[str, Sequence, dict] = None,
-        priority: str = None,
+        type: Union[str, List],
+        service_endpoint: Union[str, Sequence, dict],
+        recipient_keys: Union[Sequence, VerificationMethod] = None,
+        routing_keys: Union[Sequence, VerificationMethod] = None,
+        priority: int = 0,
     ):
         """
         Initialize the Service instance.
@@ -46,9 +46,9 @@ class Service:
             id: DID of DID document embedding service, specified raw
                 (operation converts to URI)
             type: service type
-            recipientKeys: recipient key or keys
-            routingKeys: routing key or keys
-            serviceEndpoint: service endpoint
+            service_endpoint: service endpoint
+            recipient_keys: recipient key or keys
+            routing_keys: routing key or keys
             priority: service priority
 
         Raises:
@@ -56,20 +56,19 @@ class Service:
 
         """
 
-        if not id:
-            raise ValueError("Missing ID in the Service instantation")
+        # Validation process
+        DIDUrl.parse(id)
 
-        args = (id, type, serviceEndpoint)
-
+        args = (type, service_endpoint)
         if any(param is None for param in args):
             raise ValueError("Missing args in the Service instantation")
 
         self._id = id
-        self._type = type
-        self._endpoint = serviceEndpoint
-        self._recip_keys = recipientKeys
-        self._routing_keys = routingKeys
-        self._priority = priority
+        self._type = type or ""
+        self._endpoint = service_endpoint or ""
+        self._recip_keys = recipient_keys or []
+        self._routing_keys = routing_keys or []
+        self._priority = priority or 0
 
     @property
     def id(self) -> str:
@@ -98,37 +97,37 @@ class Service:
         self._type = value
 
     @property
-    def recipientKeys(self) -> List[PublicKey]:
+    def recipient_keys(self) -> List[VerificationMethod]:
         """Service Recipient Key getter"""
 
         return self._recip_keys
 
-    @recipientKeys.setter
-    def recipientKeys(self, value: list):
+    @recipient_keys.setter
+    def recipient_keys(self, value: list):
         """Service Recipient Key setter"""
 
         self._recip_keys = value
 
     @property
-    def routingKeys(self) -> List[PublicKey]:
+    def routing_keys(self) -> List[VerificationMethod]:
         """Service Routing Keys getter"""
 
         return self._routing_keys
 
-    @routingKeys.setter
-    def routingKeys(self, value: list):
+    @routing_keys.setter
+    def routing_keys(self, value: list):
         """Service Routing Keys setter"""
 
         self._routing_keys = value
 
     @property
-    def serviceEndpoint(self) -> str:
+    def service_endpoint(self) -> str:
         """Service Endpoint getter"""
 
         return self._endpoint
 
-    @serviceEndpoint.setter
-    def serviceEndpoint(self, value: Union[str, dict, list]):
+    @service_endpoint.setter
+    def service_endpoint(self, value: Union[str, dict, list]):
         """Service Endpoint setter"""
 
         self._endpoint = value

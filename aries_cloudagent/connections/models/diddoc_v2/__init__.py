@@ -15,8 +15,8 @@ limitations under the License.
 """
 
 from .diddoc import DIDDoc
-from .publickey import PublicKey, PublicKeyType
+from .verification_method import VerificationMethod, PublicKeyType
 from .publickeytype import LinkedDataKeySpec
 from .service import Service
 
-__all__ = ["DIDDoc", "LinkedDataKeySpec", "PublicKey", "PublicKeyType", "Service"]
+__all__ = ["DIDDoc", "LinkedDataKeySpec", "VerificationMethod", "PublicKeyType", "Service"]

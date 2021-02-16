@@ -16,7 +16,7 @@ limitations under the License.
 
 import re
 
-from marshmallow import Schema, fields, post_load, validate
+from marshmallow import Schema, fields, post_load, validate, ValidationError
 
 from .....resolver.did import DID_PATTERN
 from .unionfield import ListOrStringField
@@ -59,6 +59,42 @@ class VerificationMethodSchema(Schema):
     @post_load
     def make_public_key(self, data, **_kwargs):
         """Create public key on load from schema."""
-        from ..publickey import PublicKey
+        from ..verification_method import VerificationMethod
 
-        return PublicKey(**data)
+        return VerificationMethod(**data)
+
+
+class PublicKeyField(fields.Field):
+    """
+    Public Key field for Marshmallow
+    """
+
+    def _serialize(self, value, attr, obj, **kwargs):
+        if value is None:
+            return ""
+        if isinstance(value, list):
+            for idx, val in enumerate(value):
+                if not isinstance(val, str):
+                    value[idx] = val.serialize()
+            return value
+        else:
+            return "".join(str(d) for d in value)
+
+    def _deserialize(self, value, attr, data, **kwargs):
+        from aries_cloudagent.connections.models.diddoc_v2 import VerificationMethod
+
+        if isinstance(value, list):
+            for idx, val in enumerate(value):
+                if isinstance(val, dict):
+                    if (
+                        (not val.get("id"))
+                        or (not val.get("type"))
+                        or (not val.get("controller"))
+                    ):
+                        raise ValidationError(
+                            "VerificationMethod Map must have id, type & controler"
+                        )
+                    value[idx] = VerificationMethod(**val)
+            return value
+        else:
+            raise ValidationError("Field should be str, list or dict")

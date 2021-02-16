@@ -17,7 +17,7 @@ limitations under the License.
 from asynctest import TestCase as AsyncTestCase
 from marshmallow.exceptions import ValidationError
 
-from ..service import Service
+from aries_cloudagent.connections.models.diddoc_v2 import Service
 
 
 class TestService(AsyncTestCase):
@@ -34,9 +34,9 @@ class TestService(AsyncTestCase):
         assert result.type == test_service["type"]
         assert result.id == test_service["id"]
         assert result.priority == test_service["priority"]
-        assert result.recipientKeys == test_service["recipientKeys"]
-        assert result.routingKeys == test_service["routingKeys"]
-        assert result.serviceEndpoint == test_service["serviceEndpoint"]
+        assert result.recipient_keys == test_service["recipientKeys"]
+        assert result.routing_keys == test_service["routingKeys"]
+        assert result.service_endpoint == test_service["serviceEndpoint"]
 
     def test_deserialize_wrong_id(self):
         test_service = {
@@ -77,17 +77,17 @@ class TestService(AsyncTestCase):
             id=test_service["id"],
             type=test_service["type"],
             priority=test_service["priority"],
-            recipientKeys=test_service["recipientKeys"],
-            routingKeys=test_service["routingKeys"],
-            serviceEndpoint=test_service["serviceEndpoint"],
+            recipient_keys=test_service["recipientKeys"],
+            routing_keys=test_service["routingKeys"],
+            service_endpoint=test_service["serviceEndpoint"],
         )
 
         assert result.type == test_service["type"]
         assert result.id == test_service["id"]
         assert result.priority == test_service["priority"]
-        assert result.recipientKeys == test_service["recipientKeys"]
-        assert result.routingKeys == test_service["routingKeys"]
-        assert result.serviceEndpoint == test_service["serviceEndpoint"]
+        assert result.recipient_keys == test_service["recipientKeys"]
+        assert result.routing_keys == test_service["routingKeys"]
+        assert result.service_endpoint == test_service["serviceEndpoint"]
 
         serialized_service = result.serialize()
 

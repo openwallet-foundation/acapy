@@ -17,7 +17,7 @@ limitations under the License.
 
 from asynctest import TestCase as AsyncTestCase
 
-from .. import PublicKey
+from aries_cloudagent.connections.models.diddoc_v2 import VerificationMethod
 
 from marshmallow.exceptions import ValidationError
 
@@ -41,7 +41,7 @@ class TestPublicKey(AsyncTestCase):
             },
         }
 
-        result = PublicKey.deserialize(pub_key)
+        result = VerificationMethod.deserialize(pub_key)
         assert result.type == pub_key["type"]
         assert result.id == pub_key["id"]
         assert result.controller == pub_key["controller"]
@@ -67,7 +67,7 @@ class TestPublicKey(AsyncTestCase):
         }
 
         with self.assertRaises(ValidationError):
-            PublicKey.deserialize(pub_key)
+            VerificationMethod.deserialize(pub_key)
 
     def test_deserialize_missing_type(self):
         pub_key = {
@@ -87,7 +87,7 @@ class TestPublicKey(AsyncTestCase):
         }
 
         with self.assertRaises(ValidationError):
-            PublicKey.deserialize(pub_key)
+            VerificationMethod.deserialize(pub_key)
 
     async def test_serialize_ok(self):
         pub_key = {
@@ -98,7 +98,7 @@ class TestPublicKey(AsyncTestCase):
             "usage": "signing",
         }
 
-        result = PublicKey(
+        result = VerificationMethod(
             id=pub_key["id"],
             type=pub_key["type"],
             controller=pub_key["controller"],

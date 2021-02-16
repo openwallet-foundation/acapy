@@ -22,7 +22,7 @@ from .publickeytype import PublicKeyType
 from ....resolver.did import DIDUrl
 
 
-class PublicKey:
+class VerificationMethod:
     """
     Public key specification to embed in DID document.
 
@@ -56,6 +56,8 @@ class PublicKey:
             ValueError: on any bad input DID.
 
         """
+        # Validation process
+        DIDUrl.parse(id)
 
         self._id = id
         self._type = type
@@ -67,6 +69,9 @@ class PublicKey:
         self._fill_key(value)
 
     def _fill_key(self, value: str):
+        if isinstance(self._type, PublicKeyType):
+            self._type = self._type.ver_type
+
         if self._type == "RsaVerificationKey2018":
             self.publicKeyPem = value
 

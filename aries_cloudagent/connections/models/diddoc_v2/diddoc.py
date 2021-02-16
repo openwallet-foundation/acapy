@@ -15,12 +15,12 @@ limitations under the License.
 """
 
 import logging
-
+import copy
 from typing import Union
-from .publickey import PublicKey
+from .verification_method import VerificationMethod
 from .service import Service
 from .schemas.diddocschema import DIDDocSchema
-from ....resolver.did import DIDUrl
+from ....resolver.did import DID_PATTERN, DIDUrl
 
 LOGGER = logging.getLogger(__name__)
 
@@ -38,16 +38,16 @@ class DIDDoc:
     def __init__(
         self,
         id: str,
-        alsoKnownAs: list = None,
+        also_known_as: list = None,
         controller=None,
-        verificationMethod: list = [],
-        authentication: list = [],
-        assertionMethod: list = [],
-        keyAgreement: list = [],
-        capabilityInvocation: list = [],
-        capabilityDelegation: list = [],
-        publicKey: list = [],
-        service: list = [],
+        verification_method: list = None,
+        authentication: list = None,
+        assertion_method: list = None,
+        key_agreement: list = None,
+        capability_invocation: list = None,
+        capability_delegation: list = None,
+        public_key: list = None,
+        service: list = None,
     ) -> None:
 
         """
@@ -57,39 +57,40 @@ class DIDDoc:
         and services to empty lists.
 
         Args:
-            did: DID for current DIDDoc.
             id: DIDDoc id.
-            alsoKnownAs: One or more other identifiers of the DIDDoc.
+            also_known_as: One or more other identifiers of the DIDDoc.
             controller: Contain verification relationships of the DIDDoc.
-            verificationMethod: Specific verification method of the DIDDoc.
+            verification_method: Specific verification method of the DIDDoc.
             authentication: Specific verification method of the DIDDoc.
-            assertionMethod: Specific verification method of the DIDDoc.
-            keyAgreement: Specific verification method of the DIDDoc.
-            capabilityInvocation: Specific verification method of the DIDDoc.
-            capabilityDelegation: Specific verification method of the DIDDoc.,
-            publicKey: Specific verification method of the DIDDoc.
+            assertion_method: Specific verification method of the DIDDoc.
+            key_agreement: Specific verification method of the DIDDoc.
+            capability_invocation: Specific verification method of the DIDDoc.
+            capability_delegation: Specific verification method of the DIDDoc.,
+            public_key: Specific verification method of the DIDDoc.
             service: Communicating of the DID subject or associated entities.
 
         Raises:
             ValueError: for bad input DID.
 
         """
+        # Validation process
+        DIDDoc.validate_id(id)
 
         self._id = id
-        self._alsoKnownAs = alsoKnownAs
+        self._also_known_as = also_known_as
         self._controller = controller
         self._index = {}
         self._ref_content = {}
 
         params = (
-            ("verificationMethod", verificationMethod),
-            ("authentication", authentication),
-            ("assertionMethod", assertionMethod),
-            ("keyAgreement", keyAgreement),
-            ("capabilityInvocation", capabilityInvocation),
-            ("capabilityDelegation", capabilityDelegation),
-            ("publicKey", publicKey),
-            ("service", service),
+            ("verificationMethod", verification_method or []),
+            ("authentication", authentication or []),
+            ("assertionMethod", assertion_method or []),
+            ("keyAgreement", key_agreement or []),
+            ("capabilityInvocation", capability_invocation or []),
+            ("capabilityDelegation", capability_delegation or []),
+            ("publicKey", public_key or []),
+            ("service", service or []),
         )
 
         for param in params:
@@ -112,6 +113,11 @@ class DIDDoc:
             self._ref_content[param[0]] = aux_content
 
     @classmethod
+    def validate_id(self, id):
+        if not DID_PATTERN.match(id):
+            raise ValueError("Not valid DID")
+
+    @classmethod
     def deserialize(cls, json: dict):
         """
         Deserialize a dict into a DIDDoc object.
@@ -131,7 +137,7 @@ class DIDDoc:
         Returns: Dict
         """
         schema = DIDDocSchema()
-        did_doc = schema.dump(self)
+        did_doc = schema.dump(copy.deepcopy(self))
         did_doc["@context"] = self.CONTEXT
         return did_doc
 
@@ -143,11 +149,11 @@ class DIDDoc:
         return self._id
 
     @property
-    def alsoKnownAs(self):
+    def also_known_as(self):
         """
         Getter for DIDDoc alsoKnownAs
         """
-        return self._alsoKnownAs
+        return self._also_known_as
 
     @property
     def controller(self):
@@ -157,7 +163,7 @@ class DIDDoc:
         return self._controller
 
     @property
-    def verificationMethod(self):
+    def verification_method(self):
         """
         Getter for DIDDoc verificationMethod
         """
@@ -179,7 +185,7 @@ class DIDDoc:
         return aux_ids
 
     @property
-    def assertionMethod(self):
+    def assertion_method(self):
         """
         Getter for DIDDoc assertionMethod
         """
@@ -190,7 +196,7 @@ class DIDDoc:
         return aux_ids
 
     @property
-    def keyAgreement(self):
+    def key_agreement(self):
         """
         Getter for DIDDoc keyAgreement
         """
@@ -201,7 +207,7 @@ class DIDDoc:
         return aux_ids
 
     @property
-    def capabilityInvocation(self):
+    def capability_invocation(self):
         """
         Getter for DIDDoc capabilityInvocation
         """
@@ -212,7 +218,7 @@ class DIDDoc:
         return aux_ids
 
     @property
-    def capabilityDelegation(self):
+    def capability_delegation(self):
         """
         Getter for DIDDoc capabilityDelegation
         """
@@ -223,7 +229,7 @@ class DIDDoc:
         return aux_ids
 
     @property
-    def publicKey(self):
+    def public_key(self):
         """
         Getter for DIDDoc publicKey
         """
@@ -258,13 +264,13 @@ class DIDDoc:
         """
 
         # Validation process
-        DIDUrl.parse(value)
+        DIDDoc.validate_id(id)
 
         self._id = value
 
     def set(
         self,
-        item: Union[Service, PublicKey],
+        item: Union[Service, VerificationMethod],
         upsert=False,
         verification_type="publicKey",
     ) -> "DIDDoc":
@@ -290,10 +296,10 @@ class DIDDoc:
         self._index[item.id] = item
 
         if isinstance(item, Service):
-            if not item.id in self._ref_content["service"]:
+            if item.id not in self._ref_content["service"]:
                 self._ref_content["service"].append(item.id)
         else:
-            if not item.id in self._ref_content[verification_type]:
+            if item.id not in self._ref_content[verification_type]:
                 self._ref_content[verification_type].append(item.id)
 
     def dereference(self, did_url: str):
