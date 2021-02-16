@@ -31,6 +31,15 @@ class SignResponseSchema(OpenAPISchema):
     signed_doc = fields.Dict(required=True)
 
 
+class VerifyRequestSchema(OpenAPISchema):
+    """Request schema for signing a jsonld doc."""
+
+    # verkey = fields.Str(
+    #    required=False, description="verkey to use for doc verification"
+    # )
+    doc = fields.Dict(required=True, description="JSON-LD Doc to verify")
+
+
 class VerifyResponseSchema(OpenAPISchema):
     """Response schema for verification result."""
 
@@ -80,11 +89,11 @@ class TenBasicDocumentSchema(OpenAPISchema):
         }
     )
     proof = Schema.from_dict(
-            {
-                "type": fields.Str(required=True),
-                "created": fields.Str(required=True),
-                "verificationMethod": fields.Str(required=True),
-                "proofPurpose": fields.Str(required=True),
-                "jws": fields.Str(required=True),
-            },
+        {
+            "type": fields.Str(required=True),
+            "created": fields.Str(required=True),
+            "verificationMethod": fields.Str(required=True),
+            "proofPurpose": fields.Str(required=True),
+            "jws": fields.Str(required=True),
+        },
     )

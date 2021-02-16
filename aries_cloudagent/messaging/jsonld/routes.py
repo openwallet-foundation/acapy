@@ -13,8 +13,9 @@ from .api_schemas import (
     SignRequestSchema,
     SignResponseSchema,
     VerifyResponseSchema,
-    TenBasicDocumentSchema,
+    VerifyRequestSchema,
 )
+from ...resolver.did_resolver import DIDResolver
 
 
 @docs(tags=["jsonld"], summary="Sign a JSON-LD structure and return it")
@@ -30,7 +31,6 @@ async def sign(request: web.BaseRequest):
     """
     context: AdminRequestContext = request["context"]
     session = await context.session()
-    response = {}
     body = await request.json()
     verkey = body.get("verkey")
     doc = body.get("doc")
@@ -40,16 +40,16 @@ async def sign(request: web.BaseRequest):
         document_with_proof = await sign_credential(
             credential, signature_options, verkey, session
         )
-        response["signed_doc"] = document_with_proof
+        result = document_with_proof
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
     except (BaseModelError, WalletError, StorageError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
-    return web.json_response(response)
+    return web.json_response(result)
 
 
 @docs(tags=["jsonld"], summary="Verify a JSON-LD structure.")
-@request_schema(TenBasicDocumentSchema())
+@request_schema(VerifyRequestSchema())
 @response_schema(VerifyResponseSchema(), 200, description="")
 async def verify(request: web.BaseRequest):
     """
@@ -59,23 +59,20 @@ async def verify(request: web.BaseRequest):
         request: aiohttp request object
 
     """
-    response = {"valid": False}
     context: AdminRequestContext = request["context"]
     session = await context.session()
     body = await request.json()
-    verkey = body.get("verkey")
     doc = body.get("doc")
     try:
         ver_meth: str = doc.get("proof", {}).get("verificationMethod", "no#key")
-        # verification method must be in expanded form with key after '#'
-        verkey = ver_meth.split('#')[1]
-        valid = await verify_credential(doc, verkey, session)
-        response["valid"] = valid
+        resolver = session.inject(DIDResolver)
+        ver_did_doc = resolver.dereference(ver_meth)
+        result = await verify_credential(doc, ver_did_doc.did, session)
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
     except (BaseModelError, WalletError, StorageError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
-    return web.json_response(response)
+    return web.json_response(result)
 
 
 async def register(app: web.Application):
