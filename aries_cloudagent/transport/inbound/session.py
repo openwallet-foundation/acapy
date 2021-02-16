@@ -4,7 +4,9 @@ import asyncio
 import logging
 from typing import Callable, Sequence, Union
 
+from ...admin.server import AdminResponder
 from ...core.profile import Profile
+from ...messaging.responder import BaseResponder
 from ...multitenant.manager import MultitenantManager
 
 from ..error import WireFormatError
@@ -168,6 +170,11 @@ class InboundSession:
                 profile = await multitenant_mgr.get_wallet_profile(
                     self.profile.context, wallet
                 )
+
+                # Update a responder profile with wallet profile
+                responder: AdminResponder = profile.inject(BaseResponder)
+                responder._profile = profile
+                profile.context.injector.bind_instance(BaseResponder, responder)
 
                 # overwrite session profile with wallet profile
                 self.profile = profile
