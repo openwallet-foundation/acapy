@@ -124,9 +124,7 @@ class TestInboundSession(TestCase):
         )
         self.profile.context.update_settings({"multitenant.enabled": True})
         self.base_responder = async_mock.MagicMock(AdminResponder, autospec=True)
-        self.profile.context.injector.bind_instance(
-            BaseResponder, self.base_responder
-        )
+        self.profile.context.injector.bind_instance(BaseResponder, self.base_responder)
 
         sess = InboundSession(
             profile=self.profile,
