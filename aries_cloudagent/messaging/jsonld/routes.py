@@ -15,7 +15,6 @@ from .api_schemas import (
     VerifyResponseSchema,
     VerifyRequestSchema,
 )
-from ...resolver.did_resolver import DIDResolver
 
 
 @docs(tags=["jsonld"], summary="Sign a JSON-LD structure and return it")
@@ -45,7 +44,7 @@ async def sign(request: web.BaseRequest):
         raise web.HTTPNotFound(reason=err.roll_up) from err
     except (BaseModelError, WalletError, StorageError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
-    return web.json_response(result)
+    return web.json_response({"signed_doc": result})
 
 
 @docs(tags=["jsonld"], summary="Verify a JSON-LD structure.")
@@ -63,16 +62,14 @@ async def verify(request: web.BaseRequest):
     session = await context.session()
     body = await request.json()
     doc = body.get("doc")
+    verkey = body.get("verkey")
     try:
-        ver_meth: str = doc.get("proof", {}).get("verificationMethod", "no#key")
-        resolver = session.inject(DIDResolver)
-        ver_did_doc = resolver.dereference(ver_meth)
-        result = await verify_credential(doc, ver_did_doc.did, session)
+        result = await verify_credential(doc, verkey, session)
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
     except (BaseModelError, WalletError, StorageError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
-    return web.json_response(result)
+    return web.json_response({"valid": result})
 
 
 async def register(app: web.Application):

@@ -119,7 +119,7 @@ def mock_response():
 @pytest.mark.asyncio
 async def test_sign(mock_sign_request, mock_response):
     await test_module.sign(mock_sign_request)
-    mock_response.assert_called_once_with("fake_signage")
+    mock_response.assert_called_once_with({"signed_doc": "fake_signage"})
 
 
 @pytest.mark.asyncio
@@ -142,7 +142,7 @@ async def test_sign_bad_req_error(mock_sign_request, mock_response, error):
 @pytest.mark.asyncio
 async def test_verify(mock_verify_request, mock_response):
     await test_module.verify(mock_verify_request)
-    mock_response.assert_called_once_with("fake_verify")
+    mock_response.assert_called_once_with({"valid": "fake_verify"})
 
 
 @pytest.mark.asyncio

@@ -15,6 +15,10 @@ from ...wallet.base import BaseWallet
 from .create_verify_data import create_verify_data
 
 
+class InvalidJWSHeader(Exception):
+    """Invalid jws header provided."""
+
+
 MULTIBASE_B58_BTC = "z"
 MULTICODEC_ED25519_PUB = b"\xed"
 
@@ -74,7 +78,9 @@ def verify_jws_header(header):
         )
         and len(header) == 3
     ):
-        raise Exception("Invalid JWS header parameters for Ed25519Signature2018.")
+        raise InvalidJWSHeader(
+            "Invalid JWS header parameters for Ed25519Signature2018."
+        )
 
 
 async def jws_verify(verify_data, signature, public_key, wallet):
