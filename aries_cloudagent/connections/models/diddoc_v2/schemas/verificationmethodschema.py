@@ -26,7 +26,7 @@ DID_PATTERN = re.compile("{}#[a-zA-Z0-9._-]+".format(DID_PATTERN.pattern))
 
 class VerificationMethodSchema(Schema):
     """
-    Based on https://w3c.github.io/did-core/#verification-method-properties
+    Based on https://w3c.github.io/did-core/#verification-method-properties spec.
 
     Example:
 
@@ -65,13 +65,9 @@ class VerificationMethodSchema(Schema):
 
 
 class PublicKeyField(fields.Field):
-    """
-    Public Key field for Marshmallow
-    """
+    """Public Key field for Marshmallow."""
 
     def _serialize(self, value, attr, obj, **kwargs):
-        if value is None:
-            return ""
         if isinstance(value, list):
             for idx, val in enumerate(value):
                 if not isinstance(val, str):
@@ -83,7 +79,9 @@ class PublicKeyField(fields.Field):
     def _deserialize(self, value, attr, data, **kwargs):
         from aries_cloudagent.connections.models.diddoc_v2 import VerificationMethod
 
-        if isinstance(value, list):
+        if isinstance(value, str):
+            return value
+        elif isinstance(value, list):
             for idx, val in enumerate(value):
                 if isinstance(val, dict):
                     if (

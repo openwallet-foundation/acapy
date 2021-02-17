@@ -19,9 +19,7 @@ from marshmallow.exceptions import ValidationError
 
 
 class ListOrStringField(fields.Field):
-    """
-    List or String field for Marshmallow
-    """
+    """List or String field for Marshmallow."""
 
     def _deserialize(self, value, attr, data, **kwargs):
         if isinstance(value, str) or isinstance(value, list):
@@ -31,9 +29,7 @@ class ListOrStringField(fields.Field):
 
 
 class ListOrStringOrDictField(fields.Field):
-    """
-    List, String or Dict field for Marshmallow
-    """
+    """List, String or Dict field for Marshmallow."""
 
     def _deserialize(self, value, attr, data, **kwargs):
         if isinstance(value, str) or isinstance(value, list) or isinstance(value, dict):

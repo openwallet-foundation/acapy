@@ -14,8 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from marshmallow import Schema, fields, post_load, validate, ValidationError
-from ..verification_method import VerificationMethod
+from marshmallow import Schema, fields, post_load, validate
 from .unionfield import ListOrStringField, ListOrStringOrDictField
 from .verificationmethodschema import PublicKeyField
 from .....resolver.did import DID_PATTERN
@@ -27,7 +26,7 @@ DID_PATTERN = re.compile("{}#[a-zA-Z0-9._-]+".format(DID_PATTERN.pattern))
 
 class ServiceSchema(Schema):
     """
-    Based on https://w3c.github.io/did-core/#service-properties
+    Based on https://w3c.github.io/did-core/#service-properties spec.
 
     Example:
 
@@ -52,41 +51,8 @@ class ServiceSchema(Schema):
 
     @post_load
     def make_service(self, data, **kwargs):
+        """Post load function."""
         from ..service import Service
 
         service = Service(**data)
         return service
-
-
-class PublicKeyField(fields.Field):
-    """
-    Public Key field for Marshmallow
-    """
-
-    def _serialize(self, value, attr, obj, **kwargs):
-        if value is None:
-            return ""
-        if isinstance(value, list):
-            for idx, val in enumerate(value):
-                if not isinstance(val, str):
-                    value[idx] = val.serialize()
-            return value
-        else:
-            return "".join(str(d) for d in value)
-
-    def _deserialize(self, value, attr, data, **kwargs):
-        if isinstance(value, list):
-            for idx, val in enumerate(value):
-                if isinstance(val, dict):
-                    if (
-                        (not val.get("id"))
-                        or (not val.get("type"))
-                        or (not val.get("controller"))
-                    ):
-                        raise ValidationError(
-                            "VerificationMethod Map must have id, type & controler"
-                        )
-                    value[idx] = VerificationMethod(**val)
-            return value
-        else:
-            raise ValidationError("Field should be str, list or dict")

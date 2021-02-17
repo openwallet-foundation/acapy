@@ -49,7 +49,6 @@ class DIDDoc:
         public_key: list = None,
         service: list = None,
     ) -> None:
-
         """
         Initialize the DIDDoc instance.
 
@@ -92,14 +91,26 @@ class DIDDoc:
             ("publicKey", public_key or []),
             ("service", service or []),
         )
+        self._index_params(params)
 
+    def _index_params(self, params):
+        """
+        Process to index the DID Doc parameters.
+
+        Args:
+            params: Sequence with tuples that contains the name of the variable and the
+            content.
+        Raises:
+            ValueError: Due to the duplication of the id with different content
+
+        """
         for param in params:
             aux_content = []
             for item in param[1]:
                 if not isinstance(item, str):
                     did_item = self._index.get(item)
                     if not self._index.get(item):
-                        self._index[item.id] = item  # {id: <kind of param>}
+                        self._index[item.id] = item  # {id: <param object>}
                         aux_content.append(item.id)
                     else:
                         if not (did_item.serialize() == item.serialize()):
@@ -109,11 +120,17 @@ class DIDDoc:
                 else:
                     if not self._index.get(item):
                         self._index[item] = param[0]
-                        aux_content.append(item.id)
-            self._ref_content[param[0]] = aux_content
+                        aux_content.append(item)
+            self._ref_content[param[0]] = aux_content  # {param: [<List of Ids>]}
 
     @classmethod
-    def validate_id(self, id):
+    def validate_id(self, id: str):
+        """
+        Validate the ID by a RegEx.
+
+        Args:
+            id: DID Doc id to validate
+        """
         if not DID_PATTERN.match(id):
             raise ValueError("Not valid DID")
 
@@ -143,30 +160,22 @@ class DIDDoc:
 
     @property
     def id(self) -> str:
-        """
-        Getter for DIDDoc id
-        """
+        """Getter for DIDDoc id."""
         return self._id
 
     @property
     def also_known_as(self):
-        """
-        Getter for DIDDoc alsoKnownAs
-        """
+        """Getter for DIDDoc alsoKnownAs."""
         return self._also_known_as
 
     @property
     def controller(self):
-        """
-        Getter for DIDDoc controller
-        """
+        """Getter for DIDDoc controller."""
         return self._controller
 
     @property
     def verification_method(self):
-        """
-        Getter for DIDDoc verificationMethod
-        """
+        """Getter for DIDDoc verificationMethod."""
         aux_ids = []
         ids = self._ref_content.get("verificationMethod")
         for item in ids:
@@ -175,9 +184,7 @@ class DIDDoc:
 
     @property
     def authentication(self):
-        """
-        Getter for DIDDoc authentication
-        """
+        """Getter for DIDDoc authentication."""
         aux_ids = []
         ids = self._ref_content.get("authentication")
         for item in ids:
@@ -186,9 +193,7 @@ class DIDDoc:
 
     @property
     def assertion_method(self):
-        """
-        Getter for DIDDoc assertionMethod
-        """
+        """Getter for DIDDoc assertionMethod."""
         aux_ids = []
         ids = self._ref_content.get("assertionMethod")
         for item in ids:
@@ -197,9 +202,7 @@ class DIDDoc:
 
     @property
     def key_agreement(self):
-        """
-        Getter for DIDDoc keyAgreement
-        """
+        """Getter for DIDDoc keyAgreement."""
         aux_ids = []
         ids = self._ref_content.get("keyAgreement")
         for item in ids:
@@ -208,9 +211,7 @@ class DIDDoc:
 
     @property
     def capability_invocation(self):
-        """
-        Getter for DIDDoc capabilityInvocation
-        """
+        """Getter for DIDDoc capabilityInvocation."""
         aux_ids = []
         ids = self._ref_content.get("capabilityInvocation")
         for item in ids:
@@ -219,9 +220,7 @@ class DIDDoc:
 
     @property
     def capability_delegation(self):
-        """
-        Getter for DIDDoc capabilityDelegation
-        """
+        """Getter for DIDDoc capabilityDelegation."""
         aux_ids = []
         ids = self._ref_content.get("capabilityDelegation")
         for item in ids:
@@ -230,9 +229,7 @@ class DIDDoc:
 
     @property
     def public_key(self):
-        """
-        Getter for DIDDoc publicKey
-        """
+        """Getter for DIDDoc publicKey."""
         aux_ids = []
         ids = self._ref_content.get("publicKey")
         for item in ids:
@@ -241,9 +238,7 @@ class DIDDoc:
 
     @property
     def service(self):
-        """
-        Getter for DIDDoc service
-        """
+        """Getter for DIDDoc service."""
         aux_ids = []
         ids = self._ref_content.get("service")
         for item in ids:
@@ -264,7 +259,7 @@ class DIDDoc:
         """
 
         # Validation process
-        DIDDoc.validate_id(id)
+        DIDDoc.validate_id(value)
 
         self._id = value
 
@@ -276,14 +271,16 @@ class DIDDoc:
     ) -> "DIDDoc":
         """
         Add or replace service or verification method; return current DIDDoc.
+
         Raises:
             ValueError: if input item is neither service nor public key.
+
         Args:
             item: service or public key to set
             upsert: True for overwrite if the ID exists
             verification_type: verification atribute choosen to insert the item
             if it is a verification method.
-        Returns: None
+
         """
 
         # Verification did url
@@ -305,10 +302,12 @@ class DIDDoc:
     def dereference(self, did_url: str):
         """
         Retrieve a verification method or service by it id.
+
         Raises:
             ValueError: if input did_url is not good defined.
         Args:
             did_url: verification method or service id.
+
         """
 
         # Verification did url

@@ -24,7 +24,7 @@ from .verificationmethodschema import VerificationMethodSchema, PublicKeyField
 
 class DIDDocSchema(Schema):
     """
-        Based on https://w3c.github.io/did-core/#did-document-properties
+        Based on https://w3c.github.io/did-core/#did-document-properties spec.
 
         Example:
     {
@@ -81,6 +81,7 @@ class DIDDocSchema(Schema):
 
     @pre_load
     def pre_load_did_doc(self, in_data, **kwargs):
+        """Preload function."""
         verification = in_data.get("verificationMethod")
         if isinstance(verification, dict):
             in_data["verificationMethod"] = [verification]
@@ -90,12 +91,14 @@ class DIDDocSchema(Schema):
 
     @post_load
     def post_load_did_doc(self, data, **kwargs):
+        """Post load function."""
         from ..diddoc import DIDDoc
 
         return DIDDoc(**data)
 
     @post_dump
     def post_dump_did_doc(self, data, many, **kwargs):
+        """Post dump function."""
         for key in tuple(data.keys()):
             if not data.get(key):
                 data.pop(key)

@@ -19,4 +19,10 @@ from .verification_method import VerificationMethod, PublicKeyType
 from .publickeytype import LinkedDataKeySpec
 from .service import Service
 
-__all__ = ["DIDDoc", "LinkedDataKeySpec", "VerificationMethod", "PublicKeyType", "Service"]
+__all__ = [
+    "DIDDoc",
+    "LinkedDataKeySpec",
+    "VerificationMethod",
+    "PublicKeyType",
+    "Service",
+]

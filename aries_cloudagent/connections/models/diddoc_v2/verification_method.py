@@ -40,7 +40,6 @@ class VerificationMethod:
         authn: bool = False,
         **kwargs
     ) -> None:
-
         """
         Retain key specification particulars.
 
@@ -84,7 +83,7 @@ class VerificationMethod:
         elif self._type == "EcdsaSecp256k1RecoveryMethod2020":
             try:
                 value = dict(value)
-            except:
+            except Exception:
                 value = json.loads(value)
             self.publicKeyJwk = value
 
@@ -99,7 +98,7 @@ class VerificationMethod:
             return self.publicKeyHex
 
         elif self._type == "EcdsaSecp256k1RecoveryMethod2020":
-            return str(self.publicKeyJwk)
+            return self.publicKeyJwk
 
     @property
     def id(self) -> str:
@@ -124,11 +123,13 @@ class VerificationMethod:
     @type.setter
     def type(self, value: PublicKeyType):
         """Setter for the public key type."""
-
-        self._type = value
+        if isinstance(value, PublicKeyType):
+            self._type = value.ver_type
+        else:
+            self._type = value
 
     @property
-    def value(self) -> str:
+    def value(self):
         """Getter for the public key value."""
 
         return self._get_key()
@@ -137,7 +138,7 @@ class VerificationMethod:
     def value(self, value: str):
         """Setter for the public key value."""
 
-        self.__fill_key__(value)
+        self._fill_key(value)
 
     @property
     def usage(self) -> PublicKeyType:
@@ -190,9 +191,12 @@ class VerificationMethod:
 
     @classmethod
     def deserialize(cls, value: dict):
-        """Return a PublicKey object to embed in DIDDoc object.
+        """
+        Return a PublicKey object to embed in DIDDoc object.
+
         Args:
-            value: dict representation of a publicKey"""
+            value: dict representation of a publicKey
+        """
         schema = VerificationMethodSchema()
         pub_key = schema.load(value)
         return pub_key

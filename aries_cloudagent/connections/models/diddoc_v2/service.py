@@ -59,10 +59,6 @@ class Service:
         # Validation process
         DIDUrl.parse(id)
 
-        args = (type, service_endpoint)
-        if any(param is None for param in args):
-            raise ValueError("Missing args in the Service instantation")
-
         self._id = id
         self._type = type or ""
         self._endpoint = service_endpoint or ""
@@ -72,13 +68,13 @@ class Service:
 
     @property
     def id(self) -> str:
-        """Service identifier getter"""
+        """Service identifier getter."""
 
         return self._id
 
     @id.setter
     def id(self, value: str):
-        """Service identifier setter"""
+        """Service identifier setter."""
 
         # Validation process
         DIDUrl.parse(value)
@@ -86,61 +82,61 @@ class Service:
 
     @property
     def type(self) -> Union[str, list]:
-        """Service type getter"""
+        """Service type getter."""
 
         return self._type
 
     @type.setter
     def type(self, value: Union[str, list]):
-        """Service type setter"""
+        """Service type setter."""
 
         self._type = value
 
     @property
     def recipient_keys(self) -> List[VerificationMethod]:
-        """Service Recipient Key getter"""
+        """Service Recipient Key getter."""
 
         return self._recip_keys
 
     @recipient_keys.setter
     def recipient_keys(self, value: list):
-        """Service Recipient Key setter"""
+        """Service Recipient Key setter."""
 
         self._recip_keys = value
 
     @property
     def routing_keys(self) -> List[VerificationMethod]:
-        """Service Routing Keys getter"""
+        """Service Routing Keys getter."""
 
         return self._routing_keys
 
     @routing_keys.setter
     def routing_keys(self, value: list):
-        """Service Routing Keys setter"""
+        """Service Routing Keys setter."""
 
         self._routing_keys = value
 
     @property
     def service_endpoint(self) -> str:
-        """Service Endpoint getter"""
+        """Service Endpoint getter."""
 
         return self._endpoint
 
     @service_endpoint.setter
     def service_endpoint(self, value: Union[str, dict, list]):
-        """Service Endpoint setter"""
+        """Service Endpoint setter."""
 
         self._endpoint = value
 
     @property
     def priority(self) -> int:
-        """Service Priority getter"""
+        """Service Priority getter."""
 
         return self._priority
 
     @priority.setter
     def priority(self, value: int):
-        """Service Priority setter"""
+        """Service Priority setter."""
         self._priority = value
 
     def serialize(self) -> dict:
@@ -153,6 +149,7 @@ class Service:
     @classmethod
     def deserialize(cls, value: dict):
         """Return a Service object to embed in DID document.
+
         Args:
             value: dict representation of service
         """
