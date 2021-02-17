@@ -1,3 +1,4 @@
+import argparse
 import asyncio
 import json
 import logging
@@ -19,6 +20,7 @@ from runners.support.agent import (  # noqa:E402
     connect_wallet_to_mediator,
 )
 from runners.support.utils import (  # noqa:E402
+    log_json,
     log_msg,
     log_status,
     log_timer,
@@ -158,6 +160,16 @@ class AriesAgent(DemoAgent):
 
         return invi_rec
 
+    async def input_invitation(self, invite_details: dict, wait: bool = False):
+        self._connection_ready = asyncio.Future()
+        with log_timer("Connect duration:"):
+            connection = await self.receive_invite(invite_details)
+            log_json(connection, label="Invitation response:")
+
+        if wait:
+            log_msg("Waiting for connection...")
+            await agent.detect_connection()
+
     async def create_schema_and_cred_def(self, schema_name, schema_attrs, revocation):
         with log_timer("Publish schema/cred def duration:"):
             log_status("#3/4 Create a new schema/cred def on the ledger")
@@ -193,6 +205,7 @@ class AgentContainer():
         mediation: bool = False,
         use_did_exchange: bool = False,
         wallet_type: str = None,
+        public_did: bool = True,
         seed: str = "random",
     ):
         # configuration parameters
@@ -207,6 +220,7 @@ class AgentContainer():
         self.mediation = mediation
         self.use_did_exchange = use_did_exchange
         self.wallet_type = wallet_type
+        self.public_did = public_did
         self.seed = seed
 
         # local agent(s)
@@ -216,7 +230,6 @@ class AgentContainer():
     async def initialize(
         self,
         the_agent: DemoAgent = None,
-        public_did: bool = False,
         schema_name: str = None,
         schema_attrs: list = None,
     ):
@@ -246,7 +259,7 @@ class AgentContainer():
 
         await self.agent.listen_webhooks(self.start_port + 2)
 
-        if public_did:
+        if self.public_did:
             await self.agent.register_did()
 
         with log_timer("Startup duration:"):
@@ -266,7 +279,7 @@ class AgentContainer():
             # create an initial managed sub-wallet (also mediated)
             await self.agent.register_or_switch_wallet(
                 self.ident + ".initial",
-                public_did=public_did,
+                public_did=self.public_did,
                 webhook_port=self.agent.get_new_webhook_port(),
                 mediator_agent=self.mediator_agent,
             )
@@ -276,7 +289,7 @@ class AgentContainer():
                 raise Exception("Mediation setup FAILED :-(")
 
         if schema_name and schema_attrs:
-            if not public_did:
+            if not self.public_did:
                 raise Exception("Can't create a schema/cred def without a public DID :-(")
             # Create a schema
             self.cred_def_id = await self.agent.create_schema_and_cred_def(schema_name, schema_attrs, self.revocation)
@@ -296,109 +309,38 @@ class AgentContainer():
             LOGGER.exception("Error terminating agent:")
             terminated = False
 
+        await asyncio.sleep(3.0)
+        
         return terminated
 
+    async def generate_invitation(self, auto_accept: bool = True, display_qr: bool = False, wait: bool = False):
+        return await self.agent.generate_invitation(self.use_did_exchange, auto_accept, display_qr, wait)
 
-async def test_main(
-    start_port: int,
-    no_auto: bool = False,
-    revocation: bool = False,
-    tails_server_base_url: str = None,
-    show_timing: bool = False,
-    multitenant: bool = False,
-    mediation: bool = False,
-    use_did_exchange: bool = False,
-    wallet_type: str = None,
-):
-    """Test to startup a couple of agents."""
+    async def input_invitation(self, invite_details: dict, wait: bool = False):
+        return await self.agent.input_invitation(invite_details, wait)
 
-    genesis = await default_genesis_txns()
-    if not genesis:
-        print("Error retrieving ledger genesis transactions")
-        sys.exit(1)
-
-    faber_container = None
-    alice_container = None
-    try:
-        # initialize the containers
-        faber_container = AgentContainer(
-            genesis,
-            "Faber.agent",
-            start_port,
-            no_auto = no_auto,
-            revocation = revocation,
-            tails_server_base_url = tails_server_base_url,
-            show_timing = show_timing,
-            multitenant = multitenant,
-            mediation = mediation,
-            use_did_exchange = use_did_exchange,
-            wallet_type = wallet_type,
-        )
-        alice_container = AgentContainer(
-            genesis,
-            "Alice.agent",
-            start_port+10,
-            no_auto = no_auto,
-            revocation = False,
-            show_timing = show_timing,
-            multitenant = multitenant,
-            mediation = mediation,
-            use_did_exchange = use_did_exchange,
-            wallet_type = wallet_type,
-            seed = None,
-        )
-
-        # start the agents - faber gets a public DID and schema/cred def
-        await faber_container.initialize(
-            public_did = True,
-            schema_name = "degree schema",
-            schema_attrs = ["name", "date", "degree", "grade",],
-        )
-        await alice_container.initialize(
-            public_did = False,
-        )
-
-        # TODO faber create invitation
-        # TODO alice accept invitation
-        # TODO wait for faber connection to activate
-        # TODO faber issue credential to alice
-        # TODO alice check for received credential
-
-        log_msg("Sleeping ...")
-        await asyncio.sleep(3.0)
-
-    except Exception as e:
-            LOGGER.exception("Error initializing agent:", e)
-            raise(e)
-
-    finally:
-        terminated = True
-        try:
-            # shut down containers at the end of the test
-            if alice_container:
-                log_msg("Shutting down alice agent ...")
-                await alice_container.terminate()
-            if faber_container:
-                log_msg("Shutting down faber agent ...")
-                await faber_container.terminate()
-        except Exception as e:
-            LOGGER.exception("Error terminating agent:", e)
-            terminated = False
-
-    await asyncio.sleep(0.1)
-
-    if not terminated:
-        os._exit(1)
-
-    await asyncio.sleep(2.0)
-    os._exit(1)
+    async def detect_connection(self):
+        await self.agent.detect_connection()
 
 
-if __name__ == "__main__":
-    import argparse
-
+def arg_parser():
     parser = argparse.ArgumentParser(description="Runs an Aries demo agent.")
-    parser.add_argument("--no-auto", action="store_true", help="Disable auto issuance")
+    parser.add_argument(
+        "--ident",
+        type=str,
+        metavar="<ident>",
+        help="Agent identity (label)",
+    )
+    parser.add_argument(
+        "--no-auto",
+        action="store_true",
+        help="Disable auto issuance",
+    )
+    parser.add_argument(
+        "--public-did",
+        action="store_true",
+        help="Create a public DID for the agent",
+    )
     parser.add_argument(
         "-p",
         "--port",
@@ -436,6 +378,156 @@ if __name__ == "__main__":
         metavar="<wallet-type>",
         help="Set the agent wallet type",
     )
+    return parser
+
+
+async def create_agent_with_args(in_args: list):
+    parser = arg_parser()
+    args = parser.parse_args(in_args)
+
+    if args.did_exchange and args.mediation:
+        raise Exception(
+            "DID-Exchange connection protocol is not (yet) compatible with mediation"
+        )
+
+    require_indy()
+
+    tails_server_base_url = args.tails_server_base_url or os.getenv("PUBLIC_TAILS_URL")
+
+    if args.revocation and not tails_server_base_url:
+        raise Exception(
+            "If revocation is enabled, --tails-server-base-url must be provided"
+        )
+
+    genesis = await default_genesis_txns()
+    if not genesis:
+        print("Error retrieving ledger genesis transactions")
+        sys.exit(1)
+
+    agent = AgentContainer(
+            genesis,
+            args.ident + ".agent",
+            args.port,
+            no_auto = args.no_auto,
+            revocation = args.revocation,
+            tails_server_base_url = tails_server_base_url,
+            show_timing = args.timing,
+            multitenant = args.multitenant,
+            mediation = args.mediation,
+            use_did_exchange = args.did_exchange,
+            wallet_type = args.wallet_type,
+            public_did = args.public_did,
+            seed = "random" if args.public_did else None,
+        )
+
+    return agent
+
+
+async def test_main(
+    start_port: int,
+    no_auto: bool = False,
+    revocation: bool = False,
+    tails_server_base_url: str = None,
+    show_timing: bool = False,
+    multitenant: bool = False,
+    mediation: bool = False,
+    use_did_exchange: bool = False,
+    wallet_type: str = None,
+):
+    """Test to startup a couple of agents."""
+
+    genesis = await default_genesis_txns()
+    if not genesis:
+        print("Error retrieving ledger genesis transactions")
+        sys.exit(1)
+
+    faber_container = None
+    alice_container = None
+    try:
+        # initialize the containers
+        faber_container = AgentContainer(
+            genesis,
+            "Faber.agent",
+            start_port,
+            no_auto = no_auto,
+            revocation = revocation,
+            tails_server_base_url = tails_server_base_url,
+            show_timing = show_timing,
+            multitenant = multitenant,
+            mediation = mediation,
+            use_did_exchange = use_did_exchange,
+            wallet_type = wallet_type,
+            public_did = True,
+            seed = "random",
+        )
+        alice_container = AgentContainer(
+            genesis,
+            "Alice.agent",
+            start_port+10,
+            no_auto = no_auto,
+            revocation = False,
+            show_timing = show_timing,
+            multitenant = multitenant,
+            mediation = mediation,
+            use_did_exchange = use_did_exchange,
+            wallet_type = wallet_type,
+            public_did = False,
+            seed = None,
+        )
+
+        # start the agents - faber gets a public DID and schema/cred def
+        await faber_container.initialize(
+            schema_name = "degree schema",
+            schema_attrs = ["name", "date", "degree", "grade",],
+        )
+        await alice_container.initialize()
+
+        # faber create invitation
+        invite = await faber_container.generate_invitation()
+
+        # alice accept invitation
+        invite_details = invite["invitation"]
+        connection = await alice_container.input_invitation(invite_details)
+
+        # wait for faber connection to activate
+        await faber_container.detect_connection()
+        await alice_container.detect_connection()
+
+        # TODO faber issue credential to alice
+        # TODO alice check for received credential
+
+        log_msg("Sleeping ...")
+        await asyncio.sleep(3.0)
+
+    except Exception as e:
+            LOGGER.exception("Error initializing agent:", e)
+            raise(e)
+
+    finally:
+        terminated = True
+        try:
+            # shut down containers at the end of the test
+            if alice_container:
+                log_msg("Shutting down alice agent ...")
+                await alice_container.terminate()
+            if faber_container:
+                log_msg("Shutting down faber agent ...")
+                await faber_container.terminate()
+        except Exception as e:
+            LOGGER.exception("Error terminating agent:", e)
+            terminated = False
+
+    await asyncio.sleep(0.1)
+
+    if not terminated:
+        os._exit(1)
+
+    await asyncio.sleep(2.0)
+    os._exit(1)
+
+
+if __name__ == "__main__":
+    parser = arg_parser()
     args = parser.parse_args()
 
     if args.did_exchange and args.mediation:

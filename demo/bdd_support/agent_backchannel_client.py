@@ -10,35 +10,98 @@ from aiohttp import (
 import json
 from time import sleep
 
+from runners.agent_container import AgentContainer, create_agent_with_args
+from runners.support.agent import DemoAgent
+
 
 ######################################################################
 # coroutine utilities
 ######################################################################
 
 def run_coroutine(coroutine):
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
+    loop = asyncio.get_event_loop()
+    if not loop:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
     try:
         return loop.run_until_complete(coroutine())
     finally:
-        loop.close()
+        pass
+        #loop.close()
 
 def run_coroutine_with_args(coroutine, *args):
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
+    loop = asyncio.get_event_loop()
+    if not loop:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
     try:
         return loop.run_until_complete(coroutine(*args))
     finally:
-        loop.close()
+        pass
+        #loop.close()
 
 def run_coroutine_with_kwargs(coroutine, *args, **kwargs):
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
+    loop = asyncio.get_event_loop()
+    if not loop:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
     try:
         return loop.run_until_complete(coroutine(*args, **kwargs))
     finally:
-        loop.close()
+        pass
+        #loop.close()
 
+
+######################################################################
+# aries agent
+######################################################################
+def create_agent_container_with_args(in_args: list):
+    return run_coroutine_with_args(
+        create_agent_with_args,
+        in_args
+    )
+
+def aries_container_initialize(
+    the_container: AgentContainer,
+    schema_name: str = None,
+    schema_attrs: list = None,
+):
+    run_coroutine_with_kwargs(
+        the_container.initialize,
+        schema_name = schema_name,
+        schema_attrs = schema_attrs,
+    )
+
+def aries_container_terminate(
+    the_container: AgentContainer,
+):
+    return run_coroutine(the_container.terminate)
+
+def aries_container_generate_invitation(
+    the_container: AgentContainer,
+):
+    return run_coroutine_with_kwargs(
+        the_container.generate_invitation,
+    )
+
+def aries_container_receive_invitation(
+    the_container: AgentContainer,
+    invite_details: dict,
+):
+    return run_coroutine_with_kwargs(
+        the_container.input_invitation,
+        invite_details,
+    )
+
+def aries_container_detect_connection(
+    the_container: AgentContainer,
+):
+    run_coroutine(the_container.detect_connection)
+
+
+######################################################################
+# probably obsolete ...
+######################################################################
 
 async def make_agent_backchannel_request(
     method, path, data=None, text=False, params=None

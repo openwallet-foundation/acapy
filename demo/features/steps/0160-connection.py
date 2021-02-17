@@ -10,18 +10,34 @@
 
 from behave import given, when, then
 import json
-from bdd_support.agent_backchannel_client import agent_backchannel_GET, agent_backchannel_POST, expected_agent_state
+from bdd_support.agent_backchannel_client import (
+    create_agent_container_with_args,
+    aries_container_initialize,
+    aries_container_generate_invitation,
+    aries_container_receive_invitation,
+    aries_container_detect_connection,
+    agent_backchannel_GET,
+    agent_backchannel_POST,
+    expected_agent_state
+)
+from runners.agent_container import AgentContainer
+
 
 @given('{n} agents')
 @given(u'we have {n} agents')
 def step_impl(context, n):
     """Startup 'n' agents based on the options provided in the context table parameters."""
     
+    start_port = 8020
+
     context.active_agents = {}
     for row in context.table:
         agent_name = row['name']
         agent_role = row['role']
         agent_params = row['capabilities']
+        in_args = ['--ident', agent_name, '--port', str(start_port),]
+        if agent_params and 0 < len(agent_params):
+            in_args.extend(agent_params.split(" "))
 
         context.active_agents[agent_name] = {
             'name': agent_name,
@@ -30,207 +46,44 @@ def step_impl(context, n):
         }
 
         # startup an agent with the provided params
-        agent = None
-        # TODO
+        print("Create agent with:", in_args)
+        agent = create_agent_container_with_args(in_args)
 
         # keep reference to the agent so we can shut it down later
         context.active_agents[agent_name]['agent'] = agent
 
+        aries_container_initialize(
+            agent,
+        )
+        start_port = start_port + 10
+
 
 @when('"{inviter}" generates a connection invitation')
 def step_impl(context, inviter):
-    inviter_url = context.config.userdata.get(inviter)
+    agent = context.active_agents[inviter]
 
-    (resp_status, resp_text) = agent_backchannel_POST(inviter_url + "/agent/command/", "connection", operation="create-invitation")
-    assert resp_status == 200, f'resp_status {resp_status} is not 200; {resp_text}'
-
-    resp_json = json.loads(resp_text)
-    context.inviter_invitation = resp_json["invitation"]
-
-    # check and see if the connection_id_dict exists
-    # if it does, it was probably used to create another connection in a 3+ agent scenario
-    # so that means we need to keep the connection ids around for use in the scenario
-    # so we will not create a new dict which will reset the dict
-    if hasattr(context, 'temp_connection_id_dict'):
-        context.temp_connection_id_dict[inviter] = resp_json["connection_id"]
-    else:
-        context.temp_connection_id_dict = {inviter: resp_json["connection_id"]}
-
-    # Check to see if the inviter_name exists in context. If not, antother suite is using it so set the inviter name and url
-    if not hasattr(context, 'inviter_name') or context.inviter_name != inviter:
-        context.inviter_url = inviter_url
-        context.inviter_name = inviter
+    invitation = aries_container_generate_invitation(agent['agent'])
+    context.inviter_invitation = invitation["invitation"]
 
     # get connection and verify status
-    assert expected_agent_state(inviter_url, "connection", context.temp_connection_id_dict[inviter], "invited")
+    #assert expected_agent_state(inviter_url, "connection", context.temp_connection_id_dict[inviter], "invited")
 
-@given('"{invitee}" receives the connection invitation')
 @when('"{invitee}" receives the connection invitation')
 def step_impl(context, invitee):
-    invitee_url = context.config.userdata.get(invitee)
+    agent = context.active_agents[invitee]
 
-    data = context.inviter_invitation
-    (resp_status, resp_text) = agent_backchannel_POST(invitee_url + "/agent/command/", "connection", operation="receive-invitation", data=data)
-    assert resp_status == 200, f'resp_status {resp_status} is not 200; {resp_text}'
-
-    resp_json = json.loads(resp_text)
-
-    if not hasattr(context, 'connection_id_dict'):
-        context.connection_id_dict = {}
-        context.connection_id_dict[invitee] = {}
-    
-    context.connection_id_dict[invitee][context.inviter_name] = resp_json["connection_id"]
-
-    # Also add the inviter into the main connection_id_dict. if the len is 0 that means its already been cleared and this may be Mallory.
-    if len(context.temp_connection_id_dict) != 0:
-        context.connection_id_dict[context.inviter_name] = {invitee: context.temp_connection_id_dict[context.inviter_name]}
-        #clear the temp connection id dict used in the initial step. We don't need it anymore.
-        context.temp_connection_id_dict.clear()
-
-    # Check to see if the invitee_name exists in context. If not, antother suite is using it so set the invitee name and url
-    if not hasattr(context, 'invitee_name'):
-        context.invitee_url = invitee_url
-        context.invitee_name = invitee
+    invite_data = context.inviter_invitation
+    connection = aries_container_receive_invitation(agent['agent'], invite_data)
 
     # get connection and verify status
-    assert expected_agent_state(invitee_url, "connection", context.connection_id_dict[invitee][context.inviter_name], "invited")
+    #assert expected_agent_state(invitee_url, "connection", context.connection_id_dict[invitee][context.inviter_name], "invited")
 
-@when('"{inviter}" sends a connection response to "{invitee}"')
-@given('"{inviter}" sends a connection response to "{invitee}"')
-@then('"{inviter}" sends a connection response to "{invitee}"')
-def step_impl(context, inviter, invitee):
-    inviter_url = context.config.userdata.get(inviter)
-    #inviter_connection_id = context.connection_id_dict[inviter]
-    inviter_connection_id = context.connection_id_dict[inviter][invitee]
-    invitee_url = context.config.userdata.get(invitee)
-    invitee_connection_id = context.connection_id_dict[invitee][inviter]
+@then('"{agent_name}" has an active connection')
+def step_impl(context, agent_name):
+    agent = context.active_agents[agent_name]
 
-    # get connection and verify status
-    assert expected_agent_state(inviter_url, "connection", inviter_connection_id, "requested")
-    assert expected_agent_state(invitee_url, "connection", invitee_connection_id, "requested")
-
-    (resp_status, resp_text) = agent_backchannel_POST(inviter_url + "/agent/command/", "connection", operation="accept-request", id=inviter_connection_id)
-    assert resp_status == 200, f'resp_status {resp_status} is not 200; {resp_text}'
-
-    # get connection and verify status
-    assert expected_agent_state(inviter_url, "connection", inviter_connection_id, "responded")
-
-@when('"{invitee}" receives the connection response')
-@given('"{invitee}" receives the connection response')
-def step_impl(context, invitee):
-    invitee_url = context.config.userdata.get(invitee)
-    invitee_connection_id = context.connection_id_dict[invitee][context.inviter_name]
-
-    # invitee already recieved the connection response in the accept-request call so get connection and verify status=responded.
-    assert expected_agent_state(invitee_url, "connection", invitee_connection_id, "responded")
-
-@given('"{invitee}" sends a connection request to "{inviter}"')
-@when('"{invitee}" sends a connection request to "{inviter}"')
-def step_impl(context, invitee, inviter):
-    invitee_url = context.config.userdata.get(invitee)
-    invitee_connection_id = context.connection_id_dict[invitee][inviter]
-    inviter_url = context.config.userdata.get(inviter)
-    inviter_connection_id = context.connection_id_dict[inviter][invitee]
-
-    # get connection and verify status
-    assert expected_agent_state(invitee_url, "connection", invitee_connection_id, "invited")
-    assert expected_agent_state(inviter_url, "connection", inviter_connection_id, "invited")
-
-    (resp_status, resp_text) = agent_backchannel_POST(invitee_url + "/agent/command/", "connection", operation="accept-invitation", id=invitee_connection_id)
-    assert resp_status == 200, f'resp_status {resp_status} is not 200; {resp_text}'
-
-    # get connection and verify status
-    assert expected_agent_state(invitee_url, "connection", invitee_connection_id, "requested")
-
-
-@when('"{inviter}" receives the connection request')
-@given('"{inviter}" receives the connection request')
-def step_impl(context, inviter):
-    inviter_url = context.config.userdata.get(inviter)
-    inviter_connection_id = context.connection_id_dict[inviter][context.invitee_name]
-
-    # inviter already recieved the connection request in the accept-invitation call so get connection and verify status=requested.
-    assert expected_agent_state(inviter_url, "connection", inviter_connection_id, "requested")
-
-
-@when('"{inviter}" accepts the connection response to "{invitee}"')
-def step_impl(context, inviter, invitee):
-    inviter_url = context.config.userdata.get(inviter)
-    inviter_connection_id = context.connection_id_dict[inviter][invitee]
-    invitee_url = context.config.userdata.get(invitee)
-    invitee_connection_id = context.connection_id_dict[invitee][inviter]
-
-    # get connection and verify status
-    assert expected_agent_state(inviter_url, "connection", inviter_connection_id, "requested")
-    assert expected_agent_state(invitee_url, "connection", invitee_connection_id, "requested")
-
-    (resp_status, resp_text) = agent_backchannel_POST(inviter_url + "/agent/command/", "connection", operation="accept-request", id=inviter_connection_id)
-    assert resp_status == 200, f'resp_status {resp_status} is not 200; {resp_text}'
-
-    # get connection and verify status
-    assert expected_agent_state(inviter_url, "connection", inviter_connection_id, "responded")
-    assert expected_agent_state(invitee_url, "connection", invitee_connection_id, "complete")
-
-@when('"{invitee}" sends a response ping')
-def step_impl(context, invitee):
-    invitee_url = context.config.userdata.get(invitee)
-    invitee_connection_id = context.connection_id_dict[invitee][context.inviter_name]
-
-    # get connection and verify status
-    assert expected_agent_state(invitee_url, "connection", invitee_connection_id, "responded")
-
-    data = {"comment": "Hello from " + invitee}
-    (resp_status, resp_text) = agent_backchannel_POST(invitee_url + "/agent/command/", "connection", operation="send-ping", id=invitee_connection_id, data=data)
-    assert resp_status == 200, f'resp_status {resp_status} is not 200; {resp_text}'
-
-    # get connection and verify status
-    assert expected_agent_state(invitee_url, "connection", invitee_connection_id, "complete")
-
-@when('"{inviter}" receives the response ping')
-def step_impl(context, inviter):
-    # extra step to force status to 'active' for VCX
-    inviter_url = context.config.userdata.get(inviter)
-    inviter_connection_id = context.connection_id_dict[inviter][context.invitee_name]
-
-    data = {"comment": "Hello from " + inviter}
-    (resp_status, resp_text) = agent_backchannel_POST(inviter_url + "/agent/command/", "connection", operation="send-ping", id=inviter_connection_id, data=data)
-    assert resp_status == 200, f'resp_status {resp_status} is not 200; {resp_text}'
-
-    # get connection and verify status
-    assert expected_agent_state(inviter_url, "connection", inviter_connection_id, "complete")
-
-@then('"{inviter}" and "{invitee}" still have a completed connection')
-@then('"{inviter}" and "{invitee}" have a connection')
-def step_impl(context, inviter, invitee):
-    inviter_url = context.config.userdata.get(inviter)
-    inviter_connection_id = context.connection_id_dict[inviter][invitee]
-    invitee_url = context.config.userdata.get(invitee)
-    invitee_connection_id = context.connection_id_dict[invitee][inviter]
-
-    # Check to see if this is a DID Exchange connection to set the state to check appropriatly for that protocol.
-    if "responder_url" in context:
-        state_to_assert = "completed"
-    else:
-        state_to_assert = "complete"
-
-    # get connection and verify status for inviter
-    assert expected_agent_state(inviter_url, "connection", inviter_connection_id, state_to_assert)
-
-    # get connection and verify status for invitee
-    assert expected_agent_state(invitee_url, "connection", invitee_connection_id, state_to_assert)
-
-@then('"{invitee}" is connected to "{inviter}"')
-def step_impl(context, inviter, invitee):
-    inviter_url = context.config.userdata.get(inviter)
-    inviter_connection_id = context.connection_id_dict[inviter][invitee]
-    invitee_url = context.config.userdata.get(invitee)
-    invitee_connection_id = context.connection_id_dict[invitee][inviter]
-
-    # get connection and verify status for inviter
-    assert expected_agent_state(inviter_url, "connection", inviter_connection_id, "responded")
-
-    # get connection and verify status for invitee
-    assert expected_agent_state(invitee_url, "connection", invitee_connection_id, "complete")
+    # throws an exception if the connection isn't established in time
+    aries_container_detect_connection(agent['agent'])
 
 @given('"{sender}" and "{receiver}" have an existing connection')
 def step_impl(context, sender, receiver):
