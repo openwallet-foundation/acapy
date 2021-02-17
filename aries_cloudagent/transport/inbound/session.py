@@ -171,14 +171,13 @@ class InboundSession:
                     self.profile.context, wallet
                 )
 
-
                 base_responder: AdminResponder = profile.inject(BaseResponder)
-            
+
                 # Create new responder based on base responder
                 responder = AdminResponder(
                     profile,
-                    base_responder._send,
-                    base_responder._webhook,
+                    base_responder.send,
+                    base_responder.webhook,
                 )
                 profile.context.injector.bind_instance(BaseResponder, responder)
 
