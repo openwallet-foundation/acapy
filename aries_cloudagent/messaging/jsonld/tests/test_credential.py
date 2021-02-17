@@ -14,7 +14,7 @@ TEST_SEED = "testseed000000000000000000000001"
 TEST_DID = "55GkHamhTU1ZbTbV2ab9DE"
 TEST_VERKEY = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
 
-TEST_SIGN_OJB0 = {
+TEST_SIGN_OBJ0 = {
     "doc": {
         "@context": [
             "https://www.w3.org/2018/credentials/v1",
@@ -40,7 +40,7 @@ TEST_SIGN_OJB0 = {
         "challenge": "d436f0c8-fbd9-4e48-bbb2-55fc5d0920a8",
     },
 }
-TEST_SIGN_OJB1 = {
+TEST_SIGN_OBJ1 = {
     "doc": {
         "@context": [
             "https://www.w3.org/2018/credentials/v1",
@@ -66,7 +66,7 @@ TEST_SIGN_OJB1 = {
         "challenge": "d436f0c8-fbd9-4e48-bbb2-55fc5d0920a8",
     },
 }
-TEST_SIGN_OJB2 = {
+TEST_SIGN_OBJ2 = {
     "doc": {
         "@context": [
             "https://www.w3.org/2018/credentials/v1",
@@ -123,12 +123,12 @@ TEST_SIGN_OJB2 = {
     },
 }
 TEST_SIGN_OBJS = [
-    TEST_SIGN_OJB0,
-    TEST_SIGN_OJB1,
-    TEST_SIGN_OJB2,
+    TEST_SIGN_OBJ0,
+    TEST_SIGN_OBJ1,
+    TEST_SIGN_OBJ2,
 ]
 
-TEST_VERIFY_OJB0 = {
+TEST_VERIFY_OBJ0 = {
     "verkey": ("5yKdnU7ToTjAoRNDzfuzVTfWBH38qyhE1b9xh4v8JaWF"),
     "doc": {
         "@context": [
@@ -165,7 +165,7 @@ TEST_VERIFY_OJB0 = {
         },
     },
 }
-TEST_VERIFY_OJB1 = {
+TEST_VERIFY_OBJ1 = {
     "doc": {
         "@context": [
             "https://www.w3.org/2018/credentials/v1",
@@ -194,7 +194,7 @@ TEST_VERIFY_OJB1 = {
     },
     "verkey": "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx",
 }
-TEST_VERIFY_OJB2 = {
+TEST_VERIFY_OBJ2 = {
     "doc": {
         "@context": [
             "https://www.w3.org/2018/credentials/v1",
@@ -245,9 +245,9 @@ TEST_VERIFY_OJB2 = {
     "verkey": "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx",
 }
 TEST_VERIFY_OBJS = [
-    TEST_VERIFY_OJB0,
-    TEST_VERIFY_OJB1,
-    TEST_VERIFY_OJB2,
+    TEST_VERIFY_OBJ0,
+    TEST_VERIFY_OBJ1,
+    TEST_VERIFY_OBJ2,
 ]
 TEST_VERIFY_ERROR = {
     "verkey": ("5yKdnU7ToTjAoRNDzfuzVTfWBH38qyhE1b9xh4v8JaWF"),
