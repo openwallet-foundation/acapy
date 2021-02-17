@@ -62,7 +62,7 @@ from uuid import uuid4
 ```
 TAILS_FILE_COUNT = int(os.getenv("TAILS_FILE_COUNT", 100))
 CRED_PREVIEW_TYPE = (
-    "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/issue-credential/1.0/credential-preview"
+    "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/issue-credential/2.0/credential-preview"
 )
 ```
 
@@ -128,7 +128,7 @@ then replace the ```# TODO``` comment and the ```pass``` statement:
             log_status("#27 Process the proof provided by X")
             log_status("#28 Check if proof is valid")
             proof = await self.admin_POST(
-                f"/present-proof/records/{presentation_exchange_id}/verify-presentation"
+                f"/present-proof/records/{pres_ex_id}/verify-presentation"
             )
             self.log("Proof = ", proof["verified"])
 
@@ -173,7 +173,7 @@ We're going to do option (a), but you can try to implement option (b) as homewor
 First though we need to register a schema and credential definition.  Find this code:
 
 ```
-        with log_timer("Publish schema duration:"):
+        with log_timer("Publish schema and cred def duration:"):
             pass
             # TODO define schema
             # version = format(
@@ -184,10 +184,7 @@ First though we need to register a schema and credential definition.  Find this 
             #         random.randint(1, 101),
             #     )
             # )
-            # (
-            #     schema_id,
-            #     credential_definition_id,
-            # ) = await agent.register_schema_and_creddef(
+            # (schema_id, cred_def_id) = await agent.register_schema_and_creddef(
             #     "employee id schema",
             #     version,
             #     ["employee_id", "name", "date", "position"],
@@ -199,7 +196,7 @@ First though we need to register a schema and credential definition.  Find this 
 ... and just remove the ```pass``` statement and ```TODO ```, then uncommment the rest.  Easy, no?
 
 ```
-        with log_timer("Publish schema duration:"):
+        with log_timer("Publish schema and cred def duration:"):
             # define schema
             version = format(
                 "%d.%d.%d"
@@ -209,10 +206,7 @@ First though we need to register a schema and credential definition.  Find this 
                     random.randint(1, 101),
                 )
             )
-            (
-                schema_id,
-                credential_definition_id,
-            ) = await agent.register_schema_and_creddef(
+            # (schema_id, cred_def_id) = await agent.register_schema_and_creddef(
                 "employee id schema",
                 version,
                 ["employee_id", "name", "date", "position"],
@@ -232,7 +226,7 @@ For option (1) we want to replace the ```# TODO``` comment here:
 with the following code:
 
 ```
-                agent.cred_attrs[credential_definition_id] = {
+                agent.cred_attrs[cred_def_id] = {
                     "employee_id": "ACME0009",
                     "name": "Alice Smith",
                     "date": date.isoformat(date.today()),
@@ -242,46 +236,33 @@ with the following code:
                     "@type": CRED_PREVIEW_TYPE,
                     "attributes": [
                         {"name": n, "value": v}
-                        for (n, v) in agent.cred_attrs[credential_definition_id].items()
+                        for (n, v) in agent.cred_attrs[cred_def_id].items()
                     ],
                 }
                 offer_request = {
                     "connection_id": agent.connection_id,
-                    "cred_def_id": credential_definition_id,
-                    "comment": f"Offer on cred def id {credential_definition_id}",
+                    "comment": f"Offer on cred def id {cred_def_id}",
                     "credential_preview": cred_preview,
+                    "filter": {"indy": {"cred_def_id": cred_def_id}},
                 }
-                await agent.admin_POST(
-                    "/issue-credential/send-offer",
-                    offer_request
-                )
+                await agent.admin_POST("/issue-credential-2.0/send-offer", offer_request)
 ```
 
 ... and then locate the code that handles the credential request callback:
 
 ```
-        if state == "request_received":
-            # TODO issue credentials based on the credential_definition_id
+        if state == "request-received":
+            # TODO issue credentials based on offer preview in cred ex record
             pass
 ```
 
-... and replace the ```# TODO``` comment and ```pass``` statement with the following code:
+... and replace the ```# TODO``` comment and ```pass``` statement with the following code to issue the credential as Acme offered it:
 
 ```
-            # issue credentials based on the credential_definition_id
-            cred_attrs = self.cred_attrs[message["credential_definition_id"]]
-            cred_preview = {
-                "@type": CRED_PREVIEW_TYPE,
-                "attributes": [
-                    {"name": n, "value": v} for (n, v) in cred_attrs.items()
-                ],
-            }
+            # issue credentials based on offer preview in cred ex record
             await self.admin_POST(
-                f"/issue-credential/records/{credential_exchange_id}/issue",
-                {
-                    "comment": f"Issuing credential, exchange {credential_exchange_id}",
-                    "credential_preview": cred_preview
-                }
+                f"/issue-credential-2.0/records/{cred_ex_id}/issue",
+                {"comment": f"Issuing credential, exchange {cred_ex_id}"},
             )
 ```
 

@@ -20,9 +20,7 @@ class TestPresentationHandler(AsyncTestCase):
 
         with async_mock.patch.object(
             handler, "PresentationManager", autospec=True
-        ) as mock_pres_mgr, async_mock.patch.object(
-            request_context, "session", async_mock.CoroutineMock()
-        ) as mock_session:
+        ) as mock_pres_mgr:
             mock_pres_mgr.return_value.receive_presentation = async_mock.CoroutineMock()
             request_context.message = Presentation()
             request_context.connection_ready = True
@@ -31,7 +29,7 @@ class TestPresentationHandler(AsyncTestCase):
             responder = MockResponder()
             await handler_inst.handle(request_context, responder)
 
-        mock_pres_mgr.assert_called_once_with(mock_session.return_value)
+        mock_pres_mgr.assert_called_once_with(request_context.profile)
         mock_pres_mgr.return_value.receive_presentation.assert_called_once_with(
             request_context.message, request_context.connection_record
         )
@@ -44,9 +42,7 @@ class TestPresentationHandler(AsyncTestCase):
 
         with async_mock.patch.object(
             handler, "PresentationManager", autospec=True
-        ) as mock_pres_mgr, async_mock.patch.object(
-            request_context, "session", async_mock.CoroutineMock()
-        ) as mock_session:
+        ) as mock_pres_mgr:
             mock_pres_mgr.return_value.receive_presentation = async_mock.CoroutineMock()
             mock_pres_mgr.return_value.verify_presentation = async_mock.CoroutineMock()
             request_context.message = Presentation()
@@ -56,7 +52,7 @@ class TestPresentationHandler(AsyncTestCase):
             responder = MockResponder()
             await handler_inst.handle(request_context, responder)
 
-        mock_pres_mgr.assert_called_once_with(mock_session.return_value)
+        mock_pres_mgr.assert_called_once_with(request_context.profile)
         mock_pres_mgr.return_value.receive_presentation.assert_called_once_with(
             request_context.message, request_context.connection_record
         )

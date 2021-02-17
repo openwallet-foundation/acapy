@@ -34,9 +34,8 @@ TAILS_LOCAL = f"{TAILS_DIR}/{TAILS_HASH}"
 
 class TestRevocationManager(AsyncTestCase):
     async def setUp(self):
-        self.session = InMemoryProfile.test_session()
-        self.manager = RevocationManager(self.session)
-        assert self.manager.session
+        self.profile = InMemoryProfile.test_profile()
+        self.manager = RevocationManager(self.profile)
 
     async def test_revoke_credential_publish(self):
         CRED_EX_ID = "dummy-cxid"
@@ -83,7 +82,7 @@ class TestRevocationManager(AsyncTestCase):
                     [],
                 )
             )
-            self.session.context.injector.bind_instance(IndyIssuer, issuer)
+            self.profile.context.injector.bind_instance(IndyIssuer, issuer)
 
             await self.manager.revoke_credential_by_cred_ex_id(CRED_EX_ID, publish=True)
 
@@ -99,7 +98,7 @@ class TestRevocationManager(AsyncTestCase):
             mock_retrieve.side_effect = test_module.StorageNotFoundError("no such rec")
 
             issuer = async_mock.MagicMock(IndyIssuer, autospec=True)
-            self.session.context.injector.bind_instance(IndyIssuer, issuer)
+            self.profile.context.injector.bind_instance(IndyIssuer, issuer)
 
             with self.assertRaises(RevocationManagerError):
                 await self.manager.revoke_credential_by_cred_ex_id(CRED_EX_ID)
@@ -122,7 +121,7 @@ class TestRevocationManager(AsyncTestCase):
             )
 
             issuer = async_mock.MagicMock(IndyIssuer, autospec=True)
-            self.session.context.injector.bind_instance(IndyIssuer, issuer)
+            self.profile.context.injector.bind_instance(IndyIssuer, issuer)
 
             with self.assertRaises(RevocationManagerError):
                 await self.manager.revoke_credential(REV_REG_ID, CRED_REV_ID)
@@ -131,7 +130,11 @@ class TestRevocationManager(AsyncTestCase):
         CRED_REV_ID = "1"
         with async_mock.patch.object(
             test_module, "IndyRevocation", autospec=True
-        ) as revoc:
+        ) as revoc, async_mock.patch.object(
+            self.profile,
+            "session",
+            async_mock.MagicMock(return_value=self.profile.session()),
+        ) as session:
             mock_issuer_rev_reg_record = async_mock.MagicMock(
                 mark_pending=async_mock.CoroutineMock()
             )
@@ -140,11 +143,11 @@ class TestRevocationManager(AsyncTestCase):
             )
 
             issuer = async_mock.MagicMock(IndyIssuer, autospec=True)
-            self.session.context.injector.bind_instance(IndyIssuer, issuer)
+            self.profile.context.injector.bind_instance(IndyIssuer, issuer)
 
             await self.manager.revoke_credential(REV_REG_ID, CRED_REV_ID, False)
             mock_issuer_rev_reg_record.mark_pending.assert_called_once_with(
-                self.session, CRED_REV_ID
+                session.return_value, CRED_REV_ID
             )
 
     async def test_publish_pending_revocations(self):
@@ -183,7 +186,7 @@ class TestRevocationManager(AsyncTestCase):
             issuer.revoke_credentials = async_mock.CoroutineMock(
                 side_effect=[(json.dumps(delta), []) for delta in deltas]
             )
-            self.session.context.injector.bind_instance(IndyIssuer, issuer)
+            self.profile.context.injector.bind_instance(IndyIssuer, issuer)
 
             result = await self.manager.publish_pending_revocations()
             assert result == {REV_REG_ID: ["1", "2"]}
@@ -234,7 +237,7 @@ class TestRevocationManager(AsyncTestCase):
             issuer.revoke_credentials = async_mock.CoroutineMock(
                 side_effect=[(json.dumps(delta), []) for delta in deltas]
             )
-            self.session.context.injector.bind_instance(IndyIssuer, issuer)
+            self.profile.context.injector.bind_instance(IndyIssuer, issuer)
 
             result = await self.manager.publish_pending_revocations({REV_REG_ID: None})
             assert result == {REV_REG_ID: ["1", "2"]}
@@ -286,7 +289,7 @@ class TestRevocationManager(AsyncTestCase):
             issuer.revoke_credentials = async_mock.CoroutineMock(
                 side_effect=[(json.dumps(delta), []) for delta in deltas]
             )
-            self.session.context.injector.bind_instance(IndyIssuer, issuer)
+            self.profile.context.injector.bind_instance(IndyIssuer, issuer)
 
             result = await self.manager.publish_pending_revocations({REV_REG_ID: "2"})
             assert result == {REV_REG_ID: ["2"]}
@@ -369,6 +372,7 @@ class TestRevocationManager(AsyncTestCase):
             }
 
     async def test_retrieve_records(self):
+        session = await self.profile.session()
         for index in range(2):
             exchange_record = V10CredentialExchange(
                 connection_id=str(index),
@@ -376,12 +380,12 @@ class TestRevocationManager(AsyncTestCase):
                 initiator=V10CredentialExchange.INITIATOR_SELF,
                 role=V10CredentialExchange.ROLE_ISSUER,
             )
-            await exchange_record.save(self.session)
+            await exchange_record.save(session)
 
         for i in range(2):  # second pass gets from cache
             for index in range(2):
                 ret_ex = await V10CredentialExchange.retrieve_by_connection_and_thread(
-                    self.session, str(index), str(1000 + index)
+                    session, str(index), str(1000 + index)
                 )
                 assert ret_ex.connection_id == str(index)
                 assert ret_ex.thread_id == str(1000 + index)

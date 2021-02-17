@@ -1,36 +1,18 @@
-aries\_cloudagent\.holder package
-=================================
+aries\_cloudagent.holder package
+================================
 
 .. automodule:: aries_cloudagent.holder
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
 Submodules
 ----------
 
-aries\_cloudagent\.holder\.base module
+aries\_cloudagent.holder.routes module
 --------------------------------------
-
-.. automodule:: aries_cloudagent.holder.base
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-aries\_cloudagent\.holder\.indy module
---------------------------------------
-
-.. automodule:: aries_cloudagent.holder.indy
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-aries\_cloudagent\.holder\.routes module
-----------------------------------------
 
 .. automodule:: aries_cloudagent.holder.routes
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-
+   :members:
+   :undoc-members:
+   :show-inheritance:

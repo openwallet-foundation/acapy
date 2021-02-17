@@ -20,12 +20,9 @@ from ....messaging.credential_definitions.util import CRED_DEF_TAGS
 from ....messaging.models.base import BaseModelError, OpenAPISchema
 from ....messaging.valid import (
     INDY_CRED_DEF_ID,
-    INDY_CRED_REV_ID,
     INDY_DID,
-    INDY_REV_REG_ID,
     INDY_SCHEMA_ID,
     INDY_VERSION,
-    NATURAL_NUM,
     UUIDFour,
     UUID4,
 )
@@ -259,62 +256,6 @@ class V10CredentialProblemReportRequestSchema(OpenAPISchema):
     explain_ltxt = fields.Str(required=True)
 
 
-class V10PublishRevocationsSchema(OpenAPISchema):
-    """Request and result schema for revocation publication API call."""
-
-    rrid2crid = fields.Dict(
-        required=False,
-        keys=fields.Str(example=INDY_REV_REG_ID["example"]),  # marshmallow 3.0 ignores
-        values=fields.List(
-            fields.Str(
-                description="Credential revocation identifier", **INDY_CRED_REV_ID
-            )
-        ),
-        description="Credential revocation ids by revocation registry id",
-    )
-
-
-class V10ClearPendingRevocationsRequestSchema(OpenAPISchema):
-    """Request schema for clear pending revocations API call."""
-
-    purge = fields.Dict(
-        required=False,
-        keys=fields.Str(example=INDY_REV_REG_ID["example"]),  # marshmallow 3.0 ignores
-        values=fields.List(
-            fields.Str(
-                description="Credential revocation identifier", **INDY_CRED_REV_ID
-            )
-        ),
-        description=(
-            "Credential revocation ids by revocation registry id: omit for all, "
-            "specify null or empty list for all pending per revocation registry"
-        ),
-    )
-
-
-class RevokeQueryStringSchema(OpenAPISchema):
-    """Parameters and validators for revocation request."""
-
-    rev_reg_id = fields.Str(
-        description="Revocation registry identifier",
-        required=True,
-        **INDY_REV_REG_ID,
-    )
-    cred_rev_id = fields.Int(
-        description="Credential revocation identifier",
-        required=True,
-        strict=True,
-        **NATURAL_NUM,
-    )
-    publish = fields.Boolean(
-        description=(
-            "(True) publish revocation to ledger immediately, or "
-            "(False) mark it pending (default value)"
-        ),
-        required=False,
-    )
-
-
 class CredIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking credential id."""
 
@@ -331,12 +272,15 @@ class CredExIdMatchInfoSchema(OpenAPISchema):
     )
 
 
-@docs(tags=["issue-credential"], summary="Fetch all credential exchange records")
+@docs(
+    tags=["issue-credential v1.0"],
+    summary="Fetch all credential exchange records",
+)
 @querystring_schema(V10CredentialExchangeListQueryStringSchema)
 @response_schema(V10CredentialExchangeListResultSchema(), 200, description="")
 async def credential_exchange_list(request: web.BaseRequest):
     """
-    Request handler for searching connection records.
+    Request handler for searching credential exchange records.
 
     Args:
         request: aiohttp request object
@@ -369,12 +313,15 @@ async def credential_exchange_list(request: web.BaseRequest):
     return web.json_response({"results": results})
 
 
-@docs(tags=["issue-credential"], summary="Fetch a single credential exchange record")
+@docs(
+    tags=["issue-credential v1.0"],
+    summary="Fetch a single credential exchange record",
+)
 @match_info_schema(CredExIdMatchInfoSchema())
 @response_schema(V10CredentialExchangeSchema(), 200, description="")
 async def credential_exchange_retrieve(request: web.BaseRequest):
     """
-    Request handler for fetching single connection record.
+    Request handler for fetching single credential exchange record.
 
     Args:
         request: aiohttp request object
@@ -403,7 +350,7 @@ async def credential_exchange_retrieve(request: web.BaseRequest):
 
 
 @docs(
-    tags=["issue-credential"],
+    tags=["issue-credential v1.0"],
     summary="Send holder a credential, automating entire flow",
 )
 @request_schema(V10CredentialCreateSchema())
@@ -479,7 +426,7 @@ async def credential_exchange_create(request: web.BaseRequest):
 
 
 @docs(
-    tags=["issue-credential"],
+    tags=["issue-credential v1.0"],
     summary="Send holder a credential, automating entire flow",
 )
 @request_schema(V10CredentialProposalRequestMandSchema())
@@ -572,7 +519,10 @@ async def credential_exchange_send(request: web.BaseRequest):
     return web.json_response(result)
 
 
-@docs(tags=["issue-credential"], summary="Send issuer a credential proposal")
+@docs(
+    tags=["issue-credential v1.0"],
+    summary="Send issuer a credential proposal",
+)
 @request_schema(V10CredentialProposalRequestOptSchema())
 @response_schema(V10CredentialExchangeSchema(), 200, description="")
 async def credential_exchange_send_proposal(request: web.BaseRequest):
@@ -692,7 +642,7 @@ async def _create_free_offer(
 
 
 @docs(
-    tags=["issue-credential"],
+    tags=["issue-credential v1.0"],
     summary="Create a credential offer, independent of any proposal",
 )
 @request_schema(V10CredentialOfferRequestSchema())
@@ -795,7 +745,7 @@ async def credential_exchange_create_free_offer(request: web.BaseRequest):
 
 
 @docs(
-    tags=["issue-credential"],
+    tags=["issue-credential v1.0"],
     summary="Send holder a credential offer, independent of any proposal",
 )
 @request_schema(V10CredentialOfferRequestSchema())
@@ -883,7 +833,7 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
 
 
 @docs(
-    tags=["issue-credential"],
+    tags=["issue-credential v1.0"],
     summary="Send holder a credential offer in reference to a proposal with preview",
 )
 @match_info_schema(CredExIdMatchInfoSchema())
@@ -961,7 +911,10 @@ async def credential_exchange_send_bound_offer(request: web.BaseRequest):
     return web.json_response(result)
 
 
-@docs(tags=["issue-credential"], summary="Send issuer a credential request")
+@docs(
+    tags=["issue-credential v1.0"],
+    summary="Send issuer a credential request",
+)
 @match_info_schema(CredExIdMatchInfoSchema())
 @response_schema(V10CredentialExchangeSchema(), 200, description="")
 async def credential_exchange_send_request(request: web.BaseRequest):
@@ -1028,7 +981,10 @@ async def credential_exchange_send_request(request: web.BaseRequest):
     return web.json_response(result)
 
 
-@docs(tags=["issue-credential"], summary="Send holder a credential")
+@docs(
+    tags=["issue-credential v1.0"],
+    summary="Send holder a credential",
+)
 @match_info_schema(CredExIdMatchInfoSchema())
 @request_schema(V10CredentialIssueRequestSchema())
 @response_schema(V10CredentialExchangeSchema(), 200, description="")
@@ -1102,7 +1058,10 @@ async def credential_exchange_issue(request: web.BaseRequest):
     return web.json_response(result)
 
 
-@docs(tags=["issue-credential"], summary="Store a received credential")
+@docs(
+    tags=["issue-credential v1.0"],
+    summary="Store a received credential",
+)
 @match_info_schema(CredExIdMatchInfoSchema())
 @request_schema(V10CredentialStoreRequestSchema())
 @response_schema(V10CredentialExchangeSchema(), 200, description="")
@@ -1175,7 +1134,8 @@ async def credential_exchange_store(request: web.BaseRequest):
 
 
 @docs(
-    tags=["issue-credential"], summary="Remove an existing credential exchange record"
+    tags=["issue-credential v1.0"],
+    summary="Remove an existing credential exchange record",
 )
 @match_info_schema(CredExIdMatchInfoSchema())
 @response_schema(IssueCredentialModuleResponseSchema(), 200, description="")
@@ -1207,7 +1167,8 @@ async def credential_exchange_remove(request: web.BaseRequest):
 
 
 @docs(
-    tags=["issue-credential"], summary="Send a problem report for credential exchange"
+    tags=["issue-credential v1.0"],
+    summary="Send a problem report for credential exchange",
 )
 @match_info_schema(CredExIdMatchInfoSchema())
 @request_schema(V10CredentialProblemReportRequestSchema())
@@ -1308,8 +1269,8 @@ def post_process_routes(app: web.Application):
         app._state["swagger_dict"]["tags"] = []
     app._state["swagger_dict"]["tags"].append(
         {
-            "name": "issue-credential",
-            "description": "Credential issue",
+            "name": "issue-credential v1.0",
+            "description": "Credential issue v1.0",
             "externalDocs": {"description": "Specification", "url": SPEC_URI},
         }
     )

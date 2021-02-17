@@ -1,3 +1,52 @@
+# 0.6.0
+
+## February 5, 2021
+
+This is a significant release of ACA-Py with several new features, as well as changes to the internal architecture in order to set the groundwork for using the new shared component libraries: [indy-vdr](https://github.com/hyperledger/indy-vdr), [indy-credx](https://github.com/hyperledger/indy-shared-rs), and [aries-askar](https://github.com/hyperledger/aries-askar).
+
+### Mediator support
+
+While ACA-Py had previous support for a basic routing protocol, this was never fully developed or used in practice. Starting with this release, inbound and outbound connections can be established through a mediator agent using the Aries (Mediator Coordination Protocol)[https://github.com/hyperledger/aries-rfcs/tree/master/features/0211-route-coordination]. This work was initially contributed by Adam Burdett and Daniel Bluhm of [Indicio](https://indicio.tech/) on behalf of [SICPA](https://sicpa.com/). [Read more about mediation support](./Mediation.md).
+
+### Multi-Tenancy support
+
+Started by [BMW](https://bmw.com/) and completed by [Animo Solutions](https://animo.id/) and [Anon Solutions](https://anon-solutions.ca/) on behalf of [SICPA](https://sicpa.com/), this feature allows for a single ACA-Py instance to host multiple wallet instances. This can greatly reduce the resources required when many identities are being handled. [Read more about multi-tenancy support](./Multitenancy.md).
+
+### New connection protocol(s)
+
+In addition to the Aries 0160 Connections RFC, ACA-Py now supports the Aries [DID Exchange Protocol](https://github.com/hyperledger/aries-rfcs/tree/master/features/0023-did-exchange) for connection establishment and reuse, as well as the Aries [Out-of-Band Protocol](https://github.com/hyperledger/aries-rfcs/tree/master/features/0434-outofband) for representing connection invitations and other pre-connection requests.
+
+### Issue-Credential v2
+
+This release includes an initial implementation of the Aries [Issue Credential v2](https://github.com/hyperledger/aries-rfcs/tree/master/features/0453-issue-credential-v2) protocol.
+
+### Notable changes for administrators
+
+- There are several new endpoints available for controllers as well as new startup parameters related to the multi-tenancy and mediator features, see the feature description pages above in order to make use of these features. Additional admin endpoints are introduced for the DID Exchange, Issue Credential v2, and Out-of-Band protocols.
+
+- When running `aca-py start`, a new wallet will no longer be created unless the `--auto-provision` argument is provided. It is recommended to always use `aca-py provision` to initialize the wallet rather than relying on automatic behaviour, as this removes the need for repeatedly providing the wallet seed value (if any). This is a breaking change from previous versions.
+
+- When running `aca-py provision`, an existing wallet will not be removed and re-created unless the `--recreate-wallet` argument is provided. This is a breaking change from previous versions.
+
+- The logic around revocation intervals has been tightened up in accordance with [Present Proof Best Practices](https://github.com/hyperledger/aries-rfcs/tree/master/concepts/0441-present-proof-best-practices).
+
+### Notable changes for plugin writers
+
+The following are breaking changes to the internal APIs which may impact Python code extensions.
+
+- Manager classes generally accept a `Profile` instance, where previously they accepted a `RequestContext`.
+
+- Admin request handlers now receive an `AdminRequestContext` as `app["context"]`. The current profile is available as `app["context"].profile`. The admin server now generates a unique context instance per request in order to facilitate multi-tenancy, rather than reusing the same instance for each handler.
+
+- In order to inject the `BaseStorage` or `BaseWallet` interfaces, a `ProfileSession` must be used. Other interfaces can be injected at the `Profile` or `ProfileSession` level. This is obtained by awaiting `profile.session()` for the current `Profile` instance, or (preferably) using it as an async context manager:
+
+```python=
+async with profile.session() as session:
+   storage = session.inject(BaseStorage)
+```
+
+- The `inject` method of a context is no longer `async`.
+
 # 0.5.6
 
 ## October 19, 2020

@@ -6,13 +6,14 @@ import time
 
 from ....connections.models.conn_record import ConnRecord
 from ....core.error import BaseError
-from ....core.profile import ProfileSession
+from ....core.profile import Profile
 from ....indy.holder import IndyHolder, IndyHolderError
 from ....indy.verifier import IndyVerifier
 from ....ledger.base import BaseLedger
 from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....messaging.responder import BaseResponder
 from ....revocation.models.revocation_registry import RevocationRegistry
+from ....storage.error import StorageNotFoundError
 
 from .models.presentation_exchange import V10PresentationExchange
 from .messages.presentation_ack import PresentationAck
@@ -32,26 +33,15 @@ class PresentationManagerError(BaseError):
 class PresentationManager:
     """Class for managing presentations."""
 
-    def __init__(self, session: ProfileSession):
+    def __init__(self, profile: Profile):
         """
         Initialize a PresentationManager.
 
         Args:
-            session: The profile session for this presentation
+            profile: The profile instance for this presentation manager
         """
 
-        self._session = session
-
-    @property
-    def session(self) -> ProfileSession:
-        """
-        Accessor for the current profile session.
-
-        Returns:
-            The profile session for this presentation manager
-
-        """
-        return self._session
+        self._profile = profile
 
     async def create_exchange_for_proposal(
         self,
@@ -83,9 +73,10 @@ class PresentationManager:
             auto_present=auto_present,
             trace=(presentation_proposal_message._trace is not None),
         )
-        await presentation_exchange_record.save(
-            self._session, reason="create presentation proposal"
-        )
+        async with self._profile.session() as session:
+            await presentation_exchange_record.save(
+                session, reason="create presentation proposal"
+            )
 
         return presentation_exchange_record
 
@@ -108,9 +99,10 @@ class PresentationManager:
             presentation_proposal_dict=message.serialize(),
             trace=(message._trace is not None),
         )
-        await presentation_exchange_record.save(
-            self._session, reason="receive presentation request"
-        )
+        async with self._profile.session() as session:
+            await presentation_exchange_record.save(
+                session, reason="receive presentation request"
+            )
 
         return presentation_exchange_record
 
@@ -145,7 +137,7 @@ class PresentationManager:
             name=name,
             version=version,
             nonce=nonce,
-            ledger=self._session.inject(BaseLedger),
+            ledger=self._profile.inject(BaseLedger),
         )
         presentation_request_message = PresentationRequest(
             comment=comment,
@@ -160,15 +152,16 @@ class PresentationManager:
             "thid": presentation_exchange_record.thread_id
         }
         presentation_request_message.assign_trace_decorator(
-            self._session.settings, presentation_exchange_record.trace
+            self._profile.settings, presentation_exchange_record.trace
         )
 
         presentation_exchange_record.thread_id = presentation_request_message._thread_id
         presentation_exchange_record.state = V10PresentationExchange.STATE_REQUEST_SENT
         presentation_exchange_record.presentation_request = indy_proof_request
-        await presentation_exchange_record.save(
-            self._session, reason="create (bound) presentation request"
-        )
+        async with self._profile.session() as session:
+            await presentation_exchange_record.save(
+                session, reason="create (bound) presentation request"
+            )
 
         return presentation_exchange_record, presentation_request_message
 
@@ -197,9 +190,10 @@ class PresentationManager:
             presentation_request_dict=presentation_request_message.serialize(),
             trace=(presentation_request_message._trace is not None),
         )
-        await presentation_exchange_record.save(
-            self._session, reason="create (free) presentation request"
-        )
+        async with self._profile.session() as session:
+            await presentation_exchange_record.save(
+                session, reason="create (free) presentation request"
+            )
 
         return presentation_exchange_record
 
@@ -220,9 +214,10 @@ class PresentationManager:
         presentation_exchange_record.state = (
             V10PresentationExchange.STATE_REQUEST_RECEIVED
         )
-        await presentation_exchange_record.save(
-            self._session, reason="receive presentation request"
-        )
+        async with self._profile.session() as session:
+            await presentation_exchange_record.save(
+                session, reason="receive presentation request"
+            )
 
         return presentation_exchange_record
 
@@ -269,7 +264,7 @@ class PresentationManager:
         """
 
         # Get all credentials for this presentation
-        holder = self._session.inject(IndyHolder)
+        holder = self._profile.inject(IndyHolder)
         credentials = {}
 
         # extract credential ids and non_revoked
@@ -289,12 +284,6 @@ class PresentationManager:
             requested_referents[reft] = {"cred_id": preds_creds[reft]["cred_id"]}
             if reft in req_preds and reft in non_revoc_intervals:
                 requested_referents[reft]["non_revoked"] = non_revoc_intervals[reft]
-            """
-            if referent in req_preds and "non_revoked" in req_preds[referent]:
-                requested_referents[referent]["non_revoked"] = req_preds[referent][
-                    "non_revoked"
-                ]
-            """
 
         # extract mapping of presentation referents to credential ids
         for reft in requested_referents:
@@ -305,7 +294,7 @@ class PresentationManager:
                 )
 
         # Get all schemas, credential definitions, and revocation registries in use
-        ledger = self._session.inject(BaseLedger)
+        ledger = self._profile.inject(BaseLedger)
         schemas = {}
         credential_definitions = {}
         revocation_registries = {}
@@ -334,13 +323,6 @@ class PresentationManager:
         # Get delta with non-revocation interval defined in "non_revoked"
         # of the presentation request or attributes
         epoch_now = int(time.time())
-
-        """
-        non_revoc_interval = {"from": 0, "to": epoch_now}
-        non_revoc_interval.update(
-            presentation_exchange_record.presentation_request.get("non_revoked") or {}
-        )
-        """
 
         revoc_reg_deltas = {}
         async with ledger:
@@ -374,34 +356,6 @@ class PresentationManager:
                         # often one cred satisfies many requested attrs/preds
                         if stamp_me["cred_id"] == credential_id:
                             stamp_me["timestamp"] = revoc_reg_deltas[key][3]
-
-                """
-                referent_non_revoc_interval = precis.get(
-                    "non_revoked", non_revoc_interval
-                )
-
-                if referent_non_revoc_interval:
-                    key = (
-                        f"{rev_reg_id}_{referent_non_revoc_interval.get('from', 0)}_"
-                        f"{referent_non_revoc_interval.get('to', epoch_now)}"
-                    )
-                    if key not in revoc_reg_deltas:
-                        (delta, delta_timestamp) = await ledger.get_revoc_reg_delta(
-                            rev_reg_id,
-                            referent_non_revoc_interval.get("from", 0),
-                            referent_non_revoc_interval.get("to", epoch_now),
-                        )
-                        revoc_reg_deltas[key] = (
-                            rev_reg_id,
-                            credential_id,
-                            delta,
-                            delta_timestamp,
-                        )
-                    for stamp_me in requested_referents.values():
-                        # often one cred satisfies many requested attrs/preds
-                        if stamp_me["cred_id"] == credential_id:
-                            stamp_me["timestamp"] = revoc_reg_deltas[key][3]
-                """
 
         # Get revocation states to prove non-revoked
         revocation_states = {}
@@ -465,7 +419,7 @@ class PresentationManager:
 
         presentation_message._thread = {"thid": presentation_exchange_record.thread_id}
         presentation_message.assign_trace_decorator(
-            self._session.settings, presentation_exchange_record.trace
+            self._profile.settings, presentation_exchange_record.trace
         )
 
         # save presentation exchange state
@@ -473,9 +427,10 @@ class PresentationManager:
             V10PresentationExchange.STATE_PRESENTATION_SENT
         )
         presentation_exchange_record.presentation = indy_proof
-        await presentation_exchange_record.save(
-            self._session, reason="create presentation"
-        )
+        async with self._profile.session() as session:
+            await presentation_exchange_record.save(
+                session, reason="create presentation"
+            )
 
         return presentation_exchange_record, presentation_message
 
@@ -497,11 +452,20 @@ class PresentationManager:
             if connection_record is not None
             else None
         )
-        (
-            presentation_exchange_record
-        ) = await V10PresentationExchange.retrieve_by_tag_filter(
-            self._session, {"thread_id": thread_id}, connection_id_filter
-        )
+        async with self._profile.session() as session:
+            try:
+                (
+                    presentation_exchange_record
+                ) = await V10PresentationExchange.retrieve_by_tag_filter(
+                    session, {"thread_id": thread_id}, connection_id_filter
+                )
+            except StorageNotFoundError:
+                # Proof Request not bound to any connection: request_attach in OOB message
+                (
+                    presentation_exchange_record
+                ) = await V10PresentationExchange.retrieve_by_tag_filter(
+                    session, {"thread_id": thread_id}, None
+                )
 
         # Check for bait-and-switch in presented attribute values vs. proposal
         if presentation_exchange_record.presentation_proposal_dict:
@@ -532,9 +496,10 @@ class PresentationManager:
             V10PresentationExchange.STATE_PRESENTATION_RECEIVED
         )
 
-        await presentation_exchange_record.save(
-            self._session, reason="receive presentation"
-        )
+        async with self._profile.session() as session:
+            await presentation_exchange_record.save(
+                session, reason="receive presentation"
+            )
 
         return presentation_exchange_record
 
@@ -564,7 +529,7 @@ class PresentationManager:
         rev_reg_entries = {}
 
         identifiers = indy_proof["identifiers"]
-        ledger = self._session.inject(BaseLedger)
+        ledger = self._profile.inject(BaseLedger)
         async with ledger:
             for identifier in identifiers:
                 schema_ids.append(identifier["schema_id"])
@@ -606,7 +571,7 @@ class PresentationManager:
                                 identifier["timestamp"]
                             ] = found_rev_reg_entry
 
-        verifier = self._session.inject(IndyVerifier)
+        verifier = self._profile.inject(IndyVerifier)
         presentation_exchange_record.verified = json.dumps(  # tag: needs string value
             await verifier.verify_presentation(
                 indy_proof_request,
@@ -619,9 +584,10 @@ class PresentationManager:
         )
         presentation_exchange_record.state = V10PresentationExchange.STATE_VERIFIED
 
-        await presentation_exchange_record.save(
-            self._session, reason="verify presentation"
-        )
+        async with self._profile.session() as session:
+            await presentation_exchange_record.save(
+                session, reason="verify presentation"
+            )
 
         await self.send_presentation_ack(presentation_exchange_record)
         return presentation_exchange_record
@@ -636,7 +602,7 @@ class PresentationManager:
             presentation_exchange_record: presentation exchange record with thread id
 
         """
-        responder = self._session.inject(BaseResponder, required=False)
+        responder = self._profile.inject(BaseResponder, required=False)
 
         if responder:
             presentation_ack_message = PresentationAck()
@@ -644,7 +610,7 @@ class PresentationManager:
                 "thid": presentation_exchange_record.thread_id
             }
             presentation_ack_message.assign_trace_decorator(
-                self._session.settings, presentation_exchange_record.trace
+                self._profile.settings, presentation_exchange_record.trace
             )
 
             await responder.send_reply(
@@ -667,20 +633,21 @@ class PresentationManager:
             presentation exchange record, retrieved and updated
 
         """
-        (
-            presentation_exchange_record
-        ) = await V10PresentationExchange.retrieve_by_tag_filter(
-            self._session,
-            {"thread_id": message._thread_id},
-            {"connection_id": connection_record.connection_id},
-        )
+        async with self._profile.session() as session:
+            (
+                presentation_exchange_record
+            ) = await V10PresentationExchange.retrieve_by_tag_filter(
+                session,
+                {"thread_id": message._thread_id},
+                {"connection_id": connection_record.connection_id},
+            )
 
-        presentation_exchange_record.state = (
-            V10PresentationExchange.STATE_PRESENTATION_ACKED
-        )
+            presentation_exchange_record.state = (
+                V10PresentationExchange.STATE_PRESENTATION_ACKED
+            )
 
-        await presentation_exchange_record.save(
-            self._session, reason="receive presentation ack"
-        )
+            await presentation_exchange_record.save(
+                session, reason="receive presentation ack"
+            )
 
         return presentation_exchange_record

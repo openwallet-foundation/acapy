@@ -16,7 +16,6 @@ class TestPresentationAckHandler(AsyncTestCase):
         request_context = RequestContext.test_context()
         request_context.message_receipt = MessageReceipt()
         session = request_context.session()
-        setattr(request_context, "session", async_mock.MagicMock(return_value=session))
 
         with async_mock.patch.object(
             handler, "PresentationManager", autospec=True
@@ -31,7 +30,7 @@ class TestPresentationAckHandler(AsyncTestCase):
             responder = MockResponder()
             await handler_inst.handle(request_context, responder)
 
-        mock_pres_mgr.assert_called_once_with(session)
+        mock_pres_mgr.assert_called_once_with(request_context.profile)
         mock_pres_mgr.return_value.receive_presentation_ack.assert_called_once_with(
             request_context.message, request_context.connection_record
         )

@@ -24,10 +24,13 @@ class TestOutOfBandRoutes(AsyncTestCase):
         )
 
     async def test_invitation_create(self):
-        self.request.query = {"multi_use": "true", "auto_accept": "true"}
+        self.request.query = {
+            "multi_use": "true",
+            "auto_accept": "true",
+        }
         body = {
             "attachments": async_mock.MagicMock(),
-            "include_handshake": True,
+            "handshake_protocols": [test_module.HSProto.RFC23.name],
             "use_public_did": True,
             "metadata": {"hello": "world"},
         }
@@ -46,12 +49,15 @@ class TestOutOfBandRoutes(AsyncTestCase):
 
             result = await test_module.invitation_create(self.request)
             mock_oob_mgr.return_value.create_invitation.assert_called_once_with(
+                my_label=None,
                 auto_accept=True,
                 public=True,
                 multi_use=True,
-                include_handshake=True,
+                hs_protos=[test_module.HSProto.RFC23],
                 attachments=body["attachments"],
                 metadata=body["metadata"],
+                alias=None,
+                mediation_id=None,
             )
             mock_json_response.assert_called_once_with({"abc": "123"})
 
@@ -60,7 +66,7 @@ class TestOutOfBandRoutes(AsyncTestCase):
         self.request.json = async_mock.CoroutineMock(
             return_value={
                 "attachments": async_mock.MagicMock(),
-                "include_handshake": True,
+                "handshake_protocols": [23],
                 "use_public_did": True,
             }
         )
@@ -89,9 +95,7 @@ class TestOutOfBandRoutes(AsyncTestCase):
             test_module.web, "json_response", async_mock.Mock()
         ) as mock_json_response:
             mock_oob_mgr.return_value.receive_invitation = async_mock.CoroutineMock(
-                return_value=async_mock.MagicMock(
-                    serialize=async_mock.MagicMock(return_value={"abc": "123"})
-                )
+                return_value={"abc": "123"}
             )
 
             result = await test_module.invitation_receive(self.request)

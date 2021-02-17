@@ -2,6 +2,7 @@ from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
 from ....admin.request_context import AdminRequestContext
+from ....core.in_memory import InMemoryProfile
 from ....indy.issuer import IndyIssuer
 from ....ledger.base import BaseLedger
 from ....storage.base import BaseStorage
@@ -17,7 +18,31 @@ CRED_DEF_ID = "WgWxqztrNooG92RXvxSTWv:3:CL:20:tag"
 class TestCredentialDefinitionRoutes(AsyncTestCase):
     def setUp(self):
         self.session_inject = {}
-        self.context = AdminRequestContext.test_context(self.session_inject)
+        self.profile = InMemoryProfile.test_profile()
+        self.profile_injector = self.profile.context.injector
+
+        self.ledger = async_mock.create_autospec(BaseLedger)
+        self.ledger.__aenter__ = async_mock.CoroutineMock(return_value=self.ledger)
+        self.ledger.create_and_send_credential_definition = async_mock.CoroutineMock(
+            return_value=(CRED_DEF_ID, {"cred": "def"}, True)
+        )
+        self.ledger.get_credential_definition = async_mock.CoroutineMock(
+            return_value={"cred": "def"}
+        )
+        self.profile_injector.bind_instance(BaseLedger, self.ledger)
+
+        self.issuer = async_mock.create_autospec(IndyIssuer)
+        self.profile_injector.bind_instance(IndyIssuer, self.issuer)
+
+        self.storage = async_mock.create_autospec(BaseStorage)
+        self.storage.find_all_records = async_mock.CoroutineMock(
+            return_value=[async_mock.MagicMock(value=CRED_DEF_ID)]
+        )
+        self.session_inject[BaseStorage] = self.storage
+
+        self.context = AdminRequestContext.test_context(
+            self.session_inject, profile=self.profile
+        )
         self.request_dict = {
             "context": self.context,
             "outbound_message_router": async_mock.CoroutineMock(),
@@ -28,25 +53,6 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
             query={},
             __getitem__=lambda _, k: self.request_dict[k],
         )
-
-        self.ledger = async_mock.create_autospec(BaseLedger)
-        self.ledger.__aenter__ = async_mock.CoroutineMock(return_value=self.ledger)
-        self.ledger.create_and_send_credential_definition = async_mock.CoroutineMock(
-            return_value=(CRED_DEF_ID, {"cred": "def"}, True)
-        )
-        self.ledger.get_credential_definition = async_mock.CoroutineMock(
-            return_value={"cred": "def"}
-        )
-        self.context.injector.bind_instance(BaseLedger, self.ledger)
-
-        self.issuer = async_mock.create_autospec(IndyIssuer)
-        self.context.injector.bind_instance(IndyIssuer, self.issuer)
-
-        self.storage = async_mock.create_autospec(BaseStorage)
-        self.storage.find_all_records = async_mock.CoroutineMock(
-            return_value=[async_mock.MagicMock(value=CRED_DEF_ID)]
-        )
-        self.session_inject[BaseStorage] = self.storage
 
     async def test_send_credential_definition(self):
         self.request.json = async_mock.CoroutineMock(
@@ -76,12 +82,14 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
                 "tag": "tag",
             }
         )
-        self.context.settings.set_value("tails_server_base_url", "http://1.2.3.4:8222")
+        self.context.profile.settings.set_value(
+            "tails_server_base_url", "http://1.2.3.4:8222"
+        )
 
         mock_tails_server = async_mock.MagicMock(
             upload_tails_file=async_mock.CoroutineMock(return_value=(True, None))
         )
-        self.context.injector.bind_instance(BaseTailsServer, mock_tails_server)
+        self.profile_injector.bind_instance(BaseTailsServer, mock_tails_server)
 
         with async_mock.patch.object(
             test_module, "IndyRevocation", async_mock.MagicMock()
@@ -129,7 +137,9 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
                 "tag": "tag",
             }
         )
-        self.context.settings.set_value("tails_server_base_url", "http://1.2.3.4:8222")
+        self.context.profile.settings.set_value(
+            "tails_server_base_url", "http://1.2.3.4:8222"
+        )
 
         with async_mock.patch.object(
             test_module, "IndyRevocation", async_mock.MagicMock()
@@ -152,14 +162,16 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
                 "tag": "tag",
             }
         )
-        self.context.settings.set_value("tails_server_base_url", "http://1.2.3.4:8222")
+        self.context.profile.settings.set_value(
+            "tails_server_base_url", "http://1.2.3.4:8222"
+        )
 
         mock_tails_server = async_mock.MagicMock(
             upload_tails_file=async_mock.CoroutineMock(
                 return_value=(False, "Down for maintenance")
             )
         )
-        self.context.injector.bind_instance(BaseTailsServer, mock_tails_server)
+        self.profile_injector.bind_instance(BaseTailsServer, mock_tails_server)
 
         with async_mock.patch.object(
             test_module, "IndyRevocation", async_mock.MagicMock()
@@ -188,12 +200,14 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
                 "tag": "tag",
             }
         )
-        self.context.settings.set_value("tails_server_base_url", "http://1.2.3.4:8222")
+        self.context.profile.settings.set_value(
+            "tails_server_base_url", "http://1.2.3.4:8222"
+        )
 
         mock_tails_server = async_mock.MagicMock(
             upload_tails_file=async_mock.CoroutineMock(return_value=(True, None))
         )
-        self.context.injector.bind_instance(BaseTailsServer, mock_tails_server)
+        self.profile_injector.bind_instance(BaseTailsServer, mock_tails_server)
 
         with async_mock.patch.object(
             test_module, "IndyRevocation", async_mock.MagicMock()
@@ -226,6 +240,7 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
         )
 
         self.context.injector.clear_binding(BaseLedger)
+        self.profile_injector.clear_binding(BaseLedger)
         with self.assertRaises(test_module.web.HTTPForbidden):
             await test_module.credential_definitions_send_credential_definition(
                 self.request
@@ -274,6 +289,7 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
         self.request.match_info = {"cred_def_id": CRED_DEF_ID}
 
         self.context.injector.clear_binding(BaseLedger)
+        self.profile_injector.clear_binding(BaseLedger)
         with self.assertRaises(test_module.web.HTTPForbidden):
             await test_module.credential_definitions_get_credential_definition(
                 self.request
