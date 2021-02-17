@@ -18,7 +18,7 @@ from ..presentation_preview import (
     PresAttrSpec,
     PresPredSpec,
     PRESENTATION_PREVIEW,
-    PresentationPreview, 
+    PresentationPreview,
 )
 
 S_ID = {

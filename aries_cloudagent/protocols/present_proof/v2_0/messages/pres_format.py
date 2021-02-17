@@ -6,13 +6,14 @@ from re import sub
 from typing import Mapping, Sequence, Union
 from uuid import uuid4
 
-from marshmallow import EXCLUDE, fields, validate, ValidationError
+from marshmallow import EXCLUDE, fields, validate
 
 from .....messaging.decorators.attach_decorator import AttachDecorator
-from .....messaging.models.base import BaseModelError, BaseModel, BaseModelSchema
+from .....messaging.models.base import BaseModel, BaseModelSchema
 from .....messaging.valid import UUIDFour
 
-from ...util.presentation_preview import PresentationPreview
+from ...indy.presentation_preview import IndyPresentationPreviewSchema
+from ...indy.proof_request import IndyProofRequestSchema
 
 FormatSpec = namedtuple("FormatSpec", "aries aka")  # Aries RFC value, further monikers
 
@@ -64,13 +65,13 @@ class V20PresFormat(BaseModel):
 
         def validate_proposal_attach(self, data: Mapping):
             """Raise ValidationError for wrong proposal~attach content."""
-            if self is V20PredFormat.Format.INDY:
-                try:
-                    PresentationPreview.deserialize(data)
-                except BaseModelError as x:
-                    raise ValidationError(
-                        "Invalid presentation proposal attachment: {x.message}"
-                    )
+            if self is V20PresFormat.Format.INDY:
+                IndyPresentationPreviewSchema().load(data)
+
+        def validate_request_attach(self, data: Mapping):
+            """Raise ValidationError for wrong request_presentations~attach content."""
+            if self is V20PresFormat.Format.INDY:
+                IndyProofRequestSchema().load(data)
 
         def get_attachment_data(
             self,

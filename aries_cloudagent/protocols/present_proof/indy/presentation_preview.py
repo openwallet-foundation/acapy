@@ -21,13 +21,13 @@ from .predicate import Predicate
 PRESENTATION_PREVIEW = "present-proof/1.0/presentation-preview"  # message type
 
 
-class PresPredSpec(BaseModel):
+class IndyPresPredSpec(BaseModel):
     """Class representing a predicate specification within a presentation preview."""
 
     class Meta:
         """Pred spec metadata."""
 
-        schema_class = "PresPredSpecSchema"
+        schema_class = "IndyPresPredSpecSchema"
 
     def __init__(
         self,
@@ -69,13 +69,13 @@ class PresPredSpec(BaseModel):
         return self.threshold == other.threshold
 
 
-class PresPredSpecSchema(BaseModelSchema):
+class IndyPresPredSpecSchema(BaseModelSchema):
     """Predicate specifiation schema."""
 
     class Meta:
         """Predicate specifiation schema metadata."""
 
-        model_class = PresPredSpec
+        model_class = IndyPresPredSpec
 
     name = fields.Str(description="Attribute name", required=True, example="high_score")
     cred_def_id = fields.Str(
@@ -91,13 +91,13 @@ class PresPredSpecSchema(BaseModelSchema):
     threshold = fields.Int(description="Threshold value", required=True, strict=True)
 
 
-class PresAttrSpec(BaseModel):
+class IndyPresAttrSpec(BaseModel):
     """Class representing an attibute specification within a presentation preview."""
 
     class Meta:
         """Attr spec metadata."""
 
-        schema_class = "PresAttrSpecSchema"
+        schema_class = "IndyPresAttrSpecSchema"
 
     class Posture(Enum):
         """Attribute posture: self-attested, revealed claim or unrevealed claim."""
@@ -138,7 +138,7 @@ class PresAttrSpec(BaseModel):
     @staticmethod
     def list_plain(plain: dict, cred_def_id: str, referent: str = None):
         """
-        Return a list of `PresAttrSpec` on input cred def id.
+        Return a list of `IndyPresAttrSpec` on input cred def id.
 
         Args:
             plain: dict mapping names to values
@@ -146,26 +146,26 @@ class PresAttrSpec(BaseModel):
             referent: single referent to use, omit for none
 
         Returns:
-            List of PresAttrSpec on input cred def id with no MIME types
+            List of IndyPresAttrSpec on input cred def id with no MIME types
 
         """
         return [
-            PresAttrSpec(
+            IndyPresAttrSpec(
                 name=k, cred_def_id=cred_def_id, value=plain[k], referent=referent
             )
             for k in plain
         ]
 
     @property
-    def posture(self) -> "PresAttrSpec.Posture":
+    def posture(self) -> "IndyPresAttrSpec.Posture":
         """Attribute posture: self-attested, revealed claim, or unrevealed claim."""
 
         if self.cred_def_id:
             if self.value:
-                return PresAttrSpec.Posture.REVEALED_CLAIM
-            return PresAttrSpec.Posture.UNREVEALED_CLAIM
+                return IndyPresAttrSpec.Posture.REVEALED_CLAIM
+            return IndyPresAttrSpec.Posture.UNREVEALED_CLAIM
         if self.value:
-            return PresAttrSpec.Posture.SELF_ATTESTED
+            return IndyPresAttrSpec.Posture.SELF_ATTESTED
 
         return None
 
@@ -174,7 +174,7 @@ class PresAttrSpec(BaseModel):
 
         return b64_to_str(self.value) if self.value and self.mime_type else self.value
 
-    def satisfies(self, pred_spec: PresPredSpec):
+    def satisfies(self, pred_spec: IndyPresPredSpec):
         """Whether current specified attribute satisfies input specified predicate."""
 
         return bool(
@@ -206,13 +206,13 @@ class PresAttrSpec(BaseModel):
         return self.b64_decoded_value() == other.b64_decoded_value()
 
 
-class PresAttrSpecSchema(BaseModelSchema):
+class IndyPresAttrSpecSchema(BaseModelSchema):
     """Attribute specifiation schema."""
 
     class Meta:
         """Attribute specifiation schema metadata."""
 
-        model_class = PresAttrSpec
+        model_class = IndyPresAttrSpec
 
     name = fields.Str(
         description="Attribute name", required=True, example="favourite_drink"
@@ -230,21 +230,21 @@ class PresAttrSpecSchema(BaseModelSchema):
     )
 
 
-class PresentationPreview(BaseModel):
+class IndyPresentationPreview(BaseModel):
     """Class representing presentation preview."""
 
     class Meta:
         """Presentation preview metadata."""
 
-        schema_class = "PresentationPreviewSchema"
+        schema_class = "IndyPresentationPreviewSchema"
         message_type = PRESENTATION_PREVIEW
 
     def __init__(
         self,
         *,
         _type: str = None,
-        attributes: Sequence[PresAttrSpec] = None,
-        predicates: Sequence[PresPredSpec] = None,
+        attributes: Sequence[IndyPresAttrSpec] = None,
+        predicates: Sequence[IndyPresPredSpec] = None,
         **kwargs,
     ):
         """
@@ -264,7 +264,7 @@ class PresentationPreview(BaseModel):
     def _type(self):
         """Accessor for message type."""
 
-        return DIDCommPrefix.qualify_current(PresentationPreview.Meta.message_type)
+        return DIDCommPrefix.qualify_current(IndyPresentationPreview.Meta.message_type)
 
     def has_attr_spec(self, cred_def_id: str, name: str, value: str) -> bool:
         """
@@ -335,7 +335,7 @@ class PresentationPreview(BaseModel):
 
         attr_specs_names = {}
         for attr_spec in self.attributes:
-            if attr_spec.posture == PresAttrSpec.Posture.SELF_ATTESTED:
+            if attr_spec.posture == IndyPresAttrSpec.Posture.SELF_ATTESTED:
                 proof_req["requested_attributes"][
                     "self_{}_uuid".format(canon(attr_spec.name))
                 ] = {"name": attr_spec.name}
@@ -427,13 +427,13 @@ class PresentationPreview(BaseModel):
         return True
 
 
-class PresentationPreviewSchema(BaseModelSchema):
+class IndyPresentationPreviewSchema(BaseModelSchema):
     """Presentation preview schema."""
 
     class Meta:
         """Presentation preview schema metadata."""
 
-        model_class = PresentationPreview
+        model_class = IndyPresentationPreview
 
     _type = fields.Str(
         description="Message type identifier",
@@ -441,5 +441,5 @@ class PresentationPreviewSchema(BaseModelSchema):
         example=DIDCommPrefix.qualify_current(PRESENTATION_PREVIEW),
         data_key="@type",
     )
-    attributes = fields.Nested(PresAttrSpecSchema, required=True, many=True)
-    predicates = fields.Nested(PresPredSpecSchema, required=True, many=True)
+    attributes = fields.Nested(IndyPresAttrSpecSchema, required=True, many=True)
+    predicates = fields.Nested(IndyPresPredSpecSchema, required=True, many=True)

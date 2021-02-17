@@ -18,8 +18,12 @@ from .....indy.sdk.verifier import IndySdkVerifier
 
 from ....didcomm_prefix import DIDCommPrefix
 
-from ...util.indy import indy_proof_req_preview2indy_requested_creds
-from ...util.presentation_preview import PresAttrSpec, PresentationPreview, PresPredSpec
+from ...indy.xform import indy_proof_req_preview2indy_requested_creds
+from ...indy.presentation_preview import (
+    IndyPresAttrSpec,
+    IndyPresentationPreview,
+    IndyPresPredSpec,
+)
 
 from .. import manager as test_module
 from ..manager import PresentationManager, PresentationManagerError
@@ -35,10 +39,10 @@ ISSUER_DID = "NcYxiDXkpYi6ov5FcYDi1e"
 S_ID = f"{ISSUER_DID}:2:vidya:1.0"
 CD_ID = f"{ISSUER_DID}:3:CL:{S_ID}:tag1"
 RR_ID = f"{ISSUER_DID}:4:{CD_ID}:CL_ACCUM:0"
-PRES_PREVIEW = PresentationPreview(
+PRES_PREVIEW = IndyPresentationPreview(
     attributes=[
-        PresAttrSpec(name="player", cred_def_id=CD_ID, value="Richie Knucklez"),
-        PresAttrSpec(
+        IndyPresAttrSpec(name="player", cred_def_id=CD_ID, value="Richie Knucklez"),
+        IndyPresAttrSpec(
             name="screenCapture",
             cred_def_id=CD_ID,
             mime_type="image/png",
@@ -46,17 +50,17 @@ PRES_PREVIEW = PresentationPreview(
         ),
     ],
     predicates=[
-        PresPredSpec(
+        IndyPresPredSpec(
             name="highScore", cred_def_id=CD_ID, predicate=">=", threshold=1000000
         )
     ],
 )
-PRES_PREVIEW_NAMES = PresentationPreview(
+PRES_PREVIEW_NAMES = IndyPresentationPreview(
     attributes=[
-        PresAttrSpec(
+        IndyPresAttrSpec(
             name="player", cred_def_id=CD_ID, value="Richie Knucklez", referent="0"
         ),
-        PresAttrSpec(
+        IndyPresAttrSpec(
             name="screenCapture",
             cred_def_id=CD_ID,
             mime_type="image/png",
@@ -65,7 +69,7 @@ PRES_PREVIEW_NAMES = PresentationPreview(
         ),
     ],
     predicates=[
-        PresPredSpec(
+        IndyPresPredSpec(
             name="highScore", cred_def_id=CD_ID, predicate=">=", threshold=1000000
         )
     ],
@@ -369,17 +373,17 @@ class TestPresentationManager(AsyncTestCase):
             assert exchange_out.state == V10PresentationExchange.STATE_PRESENTATION_SENT
 
     async def test_create_presentation_self_asserted(self):
-        PRES_PREVIEW_SELFIE = PresentationPreview(
+        PRES_PREVIEW_SELFIE = IndyPresentationPreview(
             attributes=[
-                PresAttrSpec(name="player", value="Richie Knucklez"),
-                PresAttrSpec(
+                IndyPresAttrSpec(name="player", value="Richie Knucklez"),
+                IndyPresAttrSpec(
                     name="screenCapture",
                     mime_type="image/png",
                     value="aW1hZ2luZSBhIHNjcmVlbiBjYXB0dXJl",
                 ),
             ],
             predicates=[
-                PresPredSpec(
+                IndyPresPredSpec(
                     name="highScore",
                     cred_def_id=None,
                     predicate=">=",

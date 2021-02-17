@@ -1,6 +1,4 @@
-"""Utilities for dealing with indy conventions."""
-
-from ....indy.holder import IndyHolder
+"""Utilities to deal with indy."""
 
 from .presentation_preview import PresentationPreview
 

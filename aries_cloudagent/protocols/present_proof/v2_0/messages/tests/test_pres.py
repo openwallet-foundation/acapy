@@ -1,17 +1,21 @@
 import json
+import pytest
+
 from datetime import datetime, timezone
 from unittest import TestCase
 
 from ......messaging.decorators.attach_decorator import AttachDecorator
+from ......messaging.models.base import BaseModelError
 from ......messaging.util import str_to_datetime, str_to_epoch
 
 from .....didcomm_prefix import DIDCommPrefix
 
 from ....indy.presentation_preview import PRESENTATION_PREVIEW
 
-from ...message_types import ATTACH_DECO_IDS, PRESENTATION
+from ...message_types import PRES_20
 
-from ..presentation import Presentation, PresentationSchema
+from ..pres_format import V20PresFormat
+from ..pres import V20Pres, V20PresSchema
 
 
 INDY_PROOF = json.loads(
@@ -1661,12 +1665,18 @@ INDY_PROOF = json.loads(
 }"""
 )
 
-PRES = Presentation(
+PRES = V20Pres(
     comment="Test",
+    formats=[
+        V20PresFormat(
+            attach_id="abc",
+            format_=V20PresFormat.Format.INDY.aries,
+        )
+    ],
     presentations_attach=[
         AttachDecorator.from_indy_dict(
             indy_dict=INDY_PROOF,
-            ident=ATTACH_DECO_IDS[PRESENTATION],
+            ident="abc",
         )
     ],
 )
@@ -1675,51 +1685,101 @@ PRES = Presentation(
 class TestPresentation(TestCase):
     """Presentation tests."""
 
-    def test_init(self):
-        """Test initializer."""
+    def test_init_type(self):
+        """Test initializer, type."""
         assert PRES.presentations_attach[0].indy_dict == INDY_PROOF
-        assert PRES.indy_proof(0) == INDY_PROOF
-
-    def test_type(self):
-        """Test type."""
-        assert PRES._type == DIDCommPrefix.qualify_current(PRESENTATION)
+        assert len(PRES.formats) == len(PRES.presentations_attach)
+        assert PRES.attachment(V20PresFormat.Format.INDY) == INDY_PROOF
+        assert PRES._type == DIDCommPrefix.qualify_current(PRES_20)
 
     def test_deserialize(self):
         """Test deserialization."""
         dump = json.dumps(
             {
-                "@type": DIDCommPrefix.qualify_current(PRESENTATION),
+                "@type": DIDCommPrefix.qualify_current(PRES_20),
                 "comment": "Hello World",
+                "formats": [
+                    {
+                        "attach_id": "abc",
+                        "format": V20PresFormat.Format.INDY.aries,
+                    }
+                ],
                 "presentations~attach": [
                     AttachDecorator.from_indy_dict(
                         indy_dict=INDY_PROOF,
-                        ident=ATTACH_DECO_IDS[PRESENTATION],
+                        ident="abc",
                     ).serialize()
                 ],
             }
         )
 
-        presentation = Presentation.deserialize(dump)
-        assert type(presentation) == Presentation
+        pres = V20Pres.deserialize(dump)
+        assert type(pres) == V20Pres
+
+    def test_deserialize_x(self):
+        """Test deserialization failures."""
+        dump_x = json.dumps(
+            {
+                "@type": DIDCommPrefix.qualify_current(PRES_20),
+                "comment": "Hello World",
+                "formats": [
+                    {
+                        "attach_id": "abc",
+                        "format": V20PresFormat.Format.INDY.aries,
+                    }
+                ],
+                "presentations~attach": [],
+            }
+        )
+        with pytest.raises(BaseModelError):
+            V20Pres.deserialize(dump_x)
+
+        dump_x = json.dumps(
+            {
+                "@type": DIDCommPrefix.qualify_current(PRES_20),
+                "comment": "Hello World",
+                "formats": [
+                    {
+                        "attach_id": "abc",
+                        "format": V20PresFormat.Format.INDY.aries,
+                    }
+                ],
+                "presentations~attach": [
+                    AttachDecorator.from_indy_dict(
+                        indy_dict=INDY_PROOF,
+                        ident="def",
+                    ).serialize()
+                ],
+            }
+        )
+        with pytest.raises(BaseModelError):
+            V20Pres.deserialize(dump_x)
 
     def test_serialize(self):
         """Test serialization."""
         pres_dict = PRES.serialize()
         pres_dict.pop("@id")
 
-        assert pres_dict == {
-            "@type": DIDCommPrefix.qualify_current(PRESENTATION),
+        serialized = {
+            "@type": DIDCommPrefix.qualify_current(PRES_20),
+            "formats": [
+                {
+                    "attach_id": "abc",
+                    "format": V20PresFormat.Format.INDY.aries,
+                }
+            ],
             "presentations~attach": [
                 AttachDecorator.from_indy_dict(
                     indy_dict=INDY_PROOF,
-                    ident=ATTACH_DECO_IDS[PRESENTATION],
+                    ident="abc",
                 ).serialize()
             ],
             "comment": "Test",
         }
+        assert pres_dict == serialized
 
 
-class TestPresentationSchema(TestCase):
+class TestV20PresSchema(TestCase):
     """Test presentation schema"""
 
     def test_make_model(self):
@@ -1730,6 +1790,12 @@ class TestPresentationSchema(TestCase):
             "@type": ".../present-proof/1.0/presentation",
             "@id": "f49773e3-bd56-4868-a5f1-456d1e6d1a16",
             "comment": "Test",
+            "formats": [
+                {
+                    "attach_id": "abc",
+                    "format": "hlindy-zkp-v1.0"
+                }
+            ],
             "presentations~attach": [
                 {
                     "mime-type": "application/json",
@@ -1742,4 +1808,4 @@ class TestPresentationSchema(TestCase):
         """
 
         model_instance = PRES.deserialize(pres_dict)
-        assert isinstance(model_instance, Presentation)
+        assert isinstance(model_instance, V20Pres)

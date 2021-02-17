@@ -64,6 +64,7 @@ class V20PresProposal(AgentMessage):
             self.proposal_attach,
         )
 
+
 class V20PresProposalSchema(AgentMessageSchema):
     """Presentation proposal schema."""
 
@@ -73,9 +74,7 @@ class V20PresProposalSchema(AgentMessageSchema):
         model_class = V20PresProposal
         unknown = EXCLUDE
 
-    comment = fields.Str(
-        description="Human-readable comment", required=False
-    )
+    comment = fields.Str(description="Human-readable comment", required=False)
     formats = fields.Nested(
         V20PresFormatSchema,
         many=True,
@@ -84,8 +83,9 @@ class V20PresProposalSchema(AgentMessageSchema):
     )
     proposal_attach = fields.Nested(
         AttachDecoratorSchema,
-        data_key="proposal~attach",
+        many=True,
         required=True,
+        data_key="proposal~attach",
         description="Attachment per acceptable format on corresponding identifier",
     )
 

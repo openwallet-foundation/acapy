@@ -6,9 +6,7 @@ from .....messaging.ack.message import Ack, AckSchema
 
 from ..message_types import PRES_20_ACK, PROTOCOL_PACKAGE
 
-HANDLER_CLASS = (
-    f"{PROTOCOL_PACKAGE}.handlers.pres_ack_handler.V20PresAckHandler"
-)
+HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.pres_ack_handler.V20PresAckHandler"
 
 
 class V20PresAck(Ack):

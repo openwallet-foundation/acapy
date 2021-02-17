@@ -2,11 +2,11 @@ from unittest import TestCase
 
 from .....didcomm_prefix import DIDCommPrefix
 
-from ....util.presentation_preview import (
-    PresAttrSpec,
-    PresPredSpec,
-    PRESENTATION_PREVIEW, 
-    PresentationPreview,
+from ....indy.presentation_preview import (
+    IndyPresAttrSpec,
+    IndyPresPredSpec,
+    IndyPresentationPreview,
+    PRESENTATION_PREVIEW,
 )
 
 from ...message_types import PRESENTATION_PROPOSAL
@@ -16,10 +16,10 @@ from ..presentation_proposal import PresentationProposal
 
 S_ID = "NcYxiDXkpYi6ov5FcYDi1e:2:vidya:1.0"
 CD_ID = f"NcYxiDXkpYi6ov5FcYDi1e:3:CL:{S_ID}:tag1"
-PRES_PREVIEW = PresentationPreview(
+PRES_PREVIEW = IndyPresentationPreview(
     attributes=[
-        PresAttrSpec(name="player", cred_def_id=CD_ID, value="Richie Knucklez"),
-        PresAttrSpec(
+        IndyPresAttrSpec(name="player", cred_def_id=CD_ID, value="Richie Knucklez"),
+        IndyPresAttrSpec(
             name="screenCapture",
             cred_def_id=CD_ID,
             mime_type="image/png",
@@ -27,7 +27,7 @@ PRES_PREVIEW = PresentationPreview(
         ),
     ],
     predicates=[
-        PresPredSpec(
+        IndyPresPredSpec(
             name="highScore", cred_def_id=CD_ID, predicate=">=", threshold=1000000
         )
     ],

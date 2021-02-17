@@ -2,7 +2,7 @@
 
 from typing import Sequence
 
-from marshmallow import EXCLUDE, fields
+from marshmallow import EXCLUDE, fields, validates_schema, ValidationError
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 from .....messaging.decorators.attach_decorator import (
@@ -55,7 +55,6 @@ class V20PresRequest(AgentMessage):
             list(request_presentations_attach) if request_presentations_attach else []
         )
 
-
     def attachment(self, fmt: V20PresFormat.Format = None) -> dict:
         """
         Return attached presentation request item.
@@ -79,9 +78,7 @@ class V20PresRequestSchema(AgentMessageSchema):
         model_class = V20PresRequest
         unknown = EXCLUDE
 
-    comment = fields.Str(
-        required=False, description="Human-readable comment"
-    )
+    comment = fields.Str(required=False, description="Human-readable comment")
     will_confirm = fields.Bool(
         required=False, description="Whether verifier will send confirmation ack"
     )
@@ -93,7 +90,32 @@ class V20PresRequestSchema(AgentMessageSchema):
     )
     request_presentations_attach = fields.Nested(
         AttachDecoratorSchema,
-        data_key="request_presentations~attach",
+        many=True,
         required=True,
         description="Attachment per acceptable format on corresponding identifier",
+        data_key="request_presentations~attach",
     )
+
+    @validates_schema
+    def validate_fields(self, data, **kwargs):
+        """Validate attachment per format."""
+
+        def get_attach_by_id(attach_id):
+            """Return attachment with input attachment identifier."""
+            for a in request_presentations_attach:
+                if a.ident == attach_id:
+                    return a
+            raise ValidationError(
+                f"No attachment matches attach_id {attach_id} in format"
+            )
+
+        formats = data.get("formats") or []
+        request_presentations_attach = data.get("request_presentations_attach") or []
+        if len(formats) != len(request_presentations_attach):
+            raise ValidationError("Formats vs. attachments length mismatch")
+
+        for fmt in formats:
+            request_atch = get_attach_by_id(fmt.attach_id)
+            V20PresFormat.Format.get(fmt.format).validate_request_attach(
+                request_atch.indy_dict
+            )

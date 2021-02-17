@@ -4,16 +4,21 @@ from marshmallow import ValidationError
 
 from ......messaging.decorators.attach_decorator import AttachDecorator
 
+from ....indy.presentation_preview import (
+    IndyPresAttrSpec,
+    IndyPresentationPreview,
+    IndyPresPredSpec,
+)
+
 from ..pres_format import V20PresFormat
-from ....util.presentation_preview import PresentationPreview
 
 
 S_ID = "NcYxiDXkpYi6ov5FcYDi1e:2:vidya:1.0"
 CD_ID = f"NcYxiDXkpYi6ov5FcYDi1e:3:CL:{S_ID}:tag1"
-PRES_PREVIEW = PresentationPreview(
+PRES_PREVIEW = IndyPresentationPreview(
     attributes=[
-        PresAttrSpec(name="player", cred_def_id=CD_ID, value="Richie Knucklez"),
-        PresAttrSpec(
+        IndyPresAttrSpec(name="player", cred_def_id=CD_ID, value="Richie Knucklez"),
+        IndyPresAttrSpec(
             name="screenCapture",
             cred_def_id=CD_ID,
             mime_type="image/png",
@@ -21,7 +26,7 @@ PRES_PREVIEW = PresentationPreview(
         ),
     ],
     predicates=[
-        PresPredSpec(
+        IndyPresPredSpec(
             name="highScore", cred_def_id=CD_ID, predicate=">=", threshold=1000000
         )
     ],
@@ -47,10 +52,7 @@ class TestV20FormatFormat(TestCase):
 
     def test_validate_proposal_attach_x(self):
         with self.assertRaises(ValidationError) as context:
-            V20PresFormat.INDY.validate_proposal_attach(
-                data="not even close"
-            )
-        assert "Invalid presentation proposal attachment" in str(context.exception)
+            V20PresFormat.Format.INDY.validate_proposal_attach(data="not even close")
 
     def test_get_attachment_data(self):
         assert (
@@ -65,7 +67,7 @@ class TestV20FormatFormat(TestCase):
                     )
                 ],
             )
-            == PRES_PREVIEW
+            == PRES_PREVIEW.serialize()
         )
 
         assert (
