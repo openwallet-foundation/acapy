@@ -6,9 +6,11 @@ from typing import Sequence
 
 from .diddoc import ResolvedDIDDoc
 from ..core.profile import Profile
+from ..core.error import BaseError
 
-class ResolverError(Exception):
-    """Base Resolver Error."""
+
+class ResolverError(BaseError):
+    """Base class for resolver exceptions."""
 
 
 class DIDNotFound(ResolverError):

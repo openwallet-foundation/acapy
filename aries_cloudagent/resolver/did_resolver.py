@@ -57,7 +57,7 @@ class DIDResolver:
         )
         resolvers = list(chain(native_resolvers, non_native_resolvers))
         if not resolvers:
-            raise DIDMethodNotSupported(f"{did.method} not supported")
+            raise DIDMethodNotSupported(f"DID method '{did.method}' not supported")
         return resolvers
 
     async def dereference(self, profile: Profile, did_url: str) -> ResolvedDIDDoc:
