@@ -4,21 +4,42 @@ from aiohttp import web
 from aiohttp_apispec import docs, request_schema, response_schema
 
 from ...admin.request_context import AdminRequestContext
+from ...messaging.models.openapi import OpenAPISchema
+from marshmallow import fields
 
-from .credential import sign_credential, verify_credential
 from ...storage.error import StorageError, StorageNotFoundError
 from ...messaging.models.base import BaseModelError
+from ...config.base import InjectionError
 from ...wallet.error import WalletError
-from .api_schemas import (
-    SignRequestSchema,
-    SignResponseSchema,
-    VerifyResponseSchema,
-    VerifyRequestSchema,
-)
+from ...resolver.did_resolver import DIDResolver
+from ...resolver.base import ResolverError
+from ...resolver.did import DIDError
+from .credential import sign_credential, verify_credential
+
+
+class JsonLDRequestSchema(OpenAPISchema):
+    """Request schema for signing a jsonld doc."""
+
+    verification_method = fields.Str(
+        required=True, data_key="verificationMethod", description="key"
+    )
+    document = fields.Dict(required=True, description="JSON-LD Doc to sign")
+
+
+class SignResponseSchema(OpenAPISchema):
+    """Response schema for a signed jsonld doc."""
+
+    signed_doc = fields.Dict(required=True)
+
+
+class VerifyResponseSchema(OpenAPISchema):
+    """Response schema for verification result."""
+
+    valid = fields.Bool(required=True)
 
 
 @docs(tags=["jsonld"], summary="Sign a JSON-LD structure and return it")
-@request_schema(SignRequestSchema())
+@request_schema(JsonLDRequestSchema())
 @response_schema(SignResponseSchema(), 200, description="")
 async def sign(request: web.BaseRequest):
     """
@@ -31,24 +52,28 @@ async def sign(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     session = await context.session()
     body = await request.json()
-    verkey = body.get("verkey")
-    doc = body.get("doc")
-    credential = doc.get("credential")
-    signature_options = doc.get("options")
+    ver_meth = body.get("verificationMethod")
+    doc = body.get("document")
     try:
-        document_with_proof = await sign_credential(
-            credential, signature_options, verkey, session
+        resolver = session.inject(DIDResolver)
+        # TODO: make this work in the wild.
+        ver_meth_expanded = await resolver.dereference(session, ver_meth)
+        if ver_meth_expanded is None:
+            raise ResolverError(f"Verification method {ver_meth} not found.")
+        verkey = ver_meth_expanded.get("publicKeyBase58")
+        doc_with_proof = await sign_credential(
+            session,
+            doc,
+            {"verificationMethod": ver_meth},
+            verkey
         )
-        result = document_with_proof
-    except StorageNotFoundError as err:
-        raise web.HTTPNotFound(reason=err.roll_up) from err
-    except (BaseModelError, WalletError, StorageError) as err:
+    except (DIDError, ResolverError, WalletError, InjectionError, AttributeError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
-    return web.json_response({"signed_doc": result})
+    return web.json_response({"signed_doc": doc_with_proof})
 
 
 @docs(tags=["jsonld"], summary="Verify a JSON-LD structure.")
-@request_schema(VerifyRequestSchema())
+@request_schema(JsonLDRequestSchema())
 @response_schema(VerifyResponseSchema(), 200, description="")
 async def verify(request: web.BaseRequest):
     """
@@ -64,7 +89,7 @@ async def verify(request: web.BaseRequest):
     doc = body.get("doc")
     verkey = body.get("verkey")
     try:
-        result = await verify_credential(doc, verkey, session)
+        result = await verify_credential(session, doc, verkey)
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
     except (BaseModelError, WalletError, StorageError) as err:

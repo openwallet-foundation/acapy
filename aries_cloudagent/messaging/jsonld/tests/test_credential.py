@@ -299,7 +299,6 @@ async def wallet():
     profile = InMemoryProfile.test_profile()
     wallet = InMemoryWallet(profile)
     await wallet.create_signing_key(TEST_SEED)
-    print("only create key once!")
     yield wallet
 
 
@@ -315,7 +314,7 @@ async def mock_session(wallet):
 @pytest.mark.asyncio
 async def test_verify_credential(input, mock_session):
     result = await verify_credential(
-        input.get("doc"), input.get("verkey"), mock_session
+        mock_session, input.get("doc"), input.get("verkey") 
     )
     assert result
 
@@ -324,7 +323,7 @@ async def test_verify_credential(input, mock_session):
 @pytest.mark.asyncio
 async def test_sign_credential(input, mock_session):
     result = await sign_credential(
-        input.get("doc"), input.get("options"), TEST_VERKEY, mock_session
+        mock_session, input.get("doc"), input.get("options"), TEST_VERKEY
     )
     assert "proof" in result.keys()
     assert "jws" in result.get("proof", {}).keys()
@@ -334,7 +333,7 @@ async def test_sign_credential(input, mock_session):
 async def test_Invalid_JWS_header(mock_session):
     with pytest.raises(InvalidJWSHeader):
         await verify_credential(
-            TEST_VERIFY_ERROR.get("doc"), TEST_VERIFY_ERROR.get("verkey"), mock_session
+            mock_session, TEST_VERIFY_ERROR.get("doc"), TEST_VERIFY_ERROR.get("verkey")
         )
 
 
