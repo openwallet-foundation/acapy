@@ -864,6 +864,20 @@ class TestProofRoutes(AsyncTestCase):
             with self.assertRaises(test_module.web.HTTPForbidden):
                 await test_module.presentation_exchange_send_bound_request(self.request)
 
+    async def test_presentation_exchange_send_bound_request_px_rec_not_found(self):
+        self.request.json = async_mock.CoroutineMock(return_value={"trace": False})
+        self.request.match_info = {"pres_ex_id": "dummy"}
+
+        with async_mock.patch.object(
+            test_module.V10PresentationExchange,
+            "retrieve_by_id",
+            async_mock.CoroutineMock(),
+        ) as mock_retrieve:
+            mock_retrieve.side_effect = StorageNotFoundError("no such record")
+            with self.assertRaises(test_module.web.HTTPNotFound) as context:
+                await test_module.presentation_exchange_send_bound_request(self.request)
+            assert "no such record" in str(context.exception)
+
     async def test_presentation_exchange_send_bound_request_bad_state(self):
         self.request.json = async_mock.CoroutineMock(return_value={"trace": False})
         self.request.match_info = {"pres_ex_id": "dummy"}
@@ -1019,6 +1033,20 @@ class TestProofRoutes(AsyncTestCase):
                 mock_response.assert_called_once_with(
                     mock_presentation_exchange.serialize.return_value
                 )
+
+    async def test_presentation_exchange_send_presentation_px_rec_not_found(self):
+        self.request.json = async_mock.CoroutineMock(return_value={"trace": False})
+        self.request.match_info = {"pres_ex_id": "dummy"}
+
+        with async_mock.patch.object(
+            test_module.V10PresentationExchange,
+            "retrieve_by_id",
+            async_mock.CoroutineMock(),
+        ) as mock_retrieve:
+            mock_retrieve.side_effect = StorageNotFoundError("no such record")
+            with self.assertRaises(test_module.web.HTTPNotFound) as context:
+                await test_module.presentation_exchange_send_presentation(self.request)
+            assert "no such record" in str(context.exception)
 
     async def test_presentation_exchange_send_presentation_not_found(self):
         self.request.json = async_mock.CoroutineMock()
@@ -1211,7 +1239,10 @@ class TestProofRoutes(AsyncTestCase):
             "aries_cloudagent.indy.util.generate_pr_nonce",
             autospec=True,
         ) as mock_generate_nonce, async_mock.patch(
-            "aries_cloudagent.protocols.present_proof.v1_0.messages.inner.presentation_preview.PresentationPreview",
+            (
+                "aries_cloudagent.protocols.present_proof.v1_0."
+                "messages.inner.presentation_preview.PresentationPreview"
+            ),
             autospec=True,
         ) as mock_preview, async_mock.patch.object(
             test_module, "PresentationRequest", autospec=True
@@ -1257,6 +1288,22 @@ class TestProofRoutes(AsyncTestCase):
                     self.request
                 )
                 mock_response.assert_called_once_with({"thread_id": "sample-thread-id"})
+
+    async def test_presentation_exchange_verify_presentation_px_rec_not_found(self):
+        self.request.json = async_mock.CoroutineMock(return_value={"trace": False})
+        self.request.match_info = {"pres_ex_id": "dummy"}
+
+        with async_mock.patch.object(
+            test_module.V10PresentationExchange,
+            "retrieve_by_id",
+            async_mock.CoroutineMock(),
+        ) as mock_retrieve:
+            mock_retrieve.side_effect = StorageNotFoundError("no such record")
+            with self.assertRaises(test_module.web.HTTPNotFound) as context:
+                await test_module.presentation_exchange_verify_presentation(
+                    self.request
+                )
+            assert "no such record" in str(context.exception)
 
     async def test_presentation_exchange_verify_presentation_not_found(self):
         self.request.match_info = {"pres_ex_id": "dummy"}
