@@ -1476,6 +1476,60 @@ class TestProofRoutes(AsyncTestCase):
                     self.request
                 )
 
+    async def test_presentation_exchange_problem_report(self):
+        self.request.json = async_mock.CoroutineMock()
+        self.request.match_info = {"pres_ex_id": "dummy"}
+
+        with async_mock.patch.object(
+            test_module, "ConnRecord", autospec=True
+        ) as mock_conn_record, async_mock.patch(
+            (
+                "aries_cloudagent.protocols.present_proof.v1_0."
+                "models.presentation_exchange.V10PresentationExchange"
+            ),
+            autospec=True,
+        ) as mock_pres_ex, async_mock.patch(
+            ("aries_cloudagent.protocols.problem_report.v1_0.message.ProblemReport"),
+            autospec=True,
+        ) as mock_prob_report, async_mock.patch.object(
+            test_module.web, "json_response"
+        ) as mock_response:
+
+            # Since we are mocking import
+            importlib.reload(test_module)
+
+            mock_pres_ex.retrieve_by_id = async_mock.CoroutineMock()
+
+            await test_module.presentation_exchange_problem_report(self.request)
+
+            mock_response.assert_called_once_with({})
+            self.request["outbound_message_router"].assert_awaited_once_with(
+                mock_prob_report.return_value,
+                connection_id=mock_pres_ex.retrieve_by_id.return_value.connection_id,
+            )
+
+    async def test_presentation_exchange_problem_report_bad_pres_ex_id(self):
+        self.request.json = async_mock.CoroutineMock()
+        self.request.match_info = {"pres_ex_id": "dummy"}
+
+        with async_mock.patch(
+            (
+                "aries_cloudagent.protocols.present_proof.v1_0."
+                "models.presentation_exchange.V10PresentationExchange"
+            ),
+            autospec=True,
+        ) as mock_pres_ex:
+
+            # Since we are mocking import
+            importlib.reload(test_module)
+
+            mock_pres_ex.retrieve_by_id = async_mock.CoroutineMock(
+                side_effect=test_module.StorageNotFoundError()
+            )
+
+            with self.assertRaises(test_module.web.HTTPNotFound):
+                await test_module.presentation_exchange_problem_report(self.request)
+
     async def test_presentation_exchange_remove(self):
         self.request.match_info = {"pres_ex_id": "dummy"}
 
