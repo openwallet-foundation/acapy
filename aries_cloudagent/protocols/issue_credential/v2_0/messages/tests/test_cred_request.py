@@ -62,7 +62,7 @@ class TestV20CredRequest(AsyncTestCase):
             ],
         )
         assert (
-            cred_request.requests_attach[0].base64_dict
+            cred_request.requests_attach[0].content
             == TestV20CredRequest.indy_cred_req
         )
         assert cred_request.cred_request() == TestV20CredRequest.indy_cred_req

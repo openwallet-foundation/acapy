@@ -56,7 +56,7 @@ class CredentialIssue(AgentMessage):
                 (typically, list has length 1)
 
         """
-        return self.credentials_attach[index].base64_dict
+        return self.credentials_attach[index].content
 
     @classmethod
     def wrap_indy_credential(cls, indy_cred: dict) -> AttachDecorator:

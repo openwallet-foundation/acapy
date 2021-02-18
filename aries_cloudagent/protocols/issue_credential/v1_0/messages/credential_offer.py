@@ -60,7 +60,7 @@ class CredentialOffer(AgentMessage):
                 (typically, list has length 1)
 
         """
-        return self.offers_attach[index].base64_dict
+        return self.offers_attach[index].content
 
     @classmethod
     def wrap_indy_offer(cls, indy_offer: dict) -> AttachDecorator:

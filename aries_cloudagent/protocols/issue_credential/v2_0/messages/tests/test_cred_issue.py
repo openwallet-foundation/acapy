@@ -98,7 +98,7 @@ class TestV20CredIssue(AsyncTestCase):
             ],
         )
         assert (
-            cred_issue.credentials_attach[0].base64_dict == TestV20CredIssue.indy_cred
+            cred_issue.credentials_attach[0].content == TestV20CredIssue.indy_cred
         )
         assert cred_issue.credentials_attach[0].ident  # auto-generates UUID4
         assert cred_issue.cred() == TestV20CredIssue.indy_cred

@@ -305,28 +305,50 @@ class TestAttachDecorator(TestCase):
         assert decorator.description == DESCRIPTION
         assert decorator.data == DATA_LINKS
 
-    def test_base64_dict(self):
-        deco_indy = AttachDecorator.data_base64(
+    def test_content(self):
+        deco_b64 = AttachDecorator.data_base64(
             mapping=INDY_CRED,
             ident=IDENT,
             description=DESCRIPTION,
         )
-        assert deco_indy.mime_type == "application/json"
-        assert hasattr(deco_indy.data, "base64_")
-        assert deco_indy.data.base64 is not None
-        assert deco_indy.data.json is None
-        assert deco_indy.data.links is None
-        assert deco_indy.data.sha256 is None
-        assert deco_indy.base64_dict == INDY_CRED
-        assert deco_indy.ident == IDENT
-        assert deco_indy.description == DESCRIPTION
+        assert deco_b64.mime_type == "application/json"
+        assert hasattr(deco_b64.data, "base64_")
+        assert deco_b64.data.base64 is not None
+        assert deco_b64.data.json is None
+        assert deco_b64.data.links is None
+        assert deco_b64.data.sha256 is None
+        assert deco_b64.content == INDY_CRED
+        assert deco_b64.ident == IDENT
+        assert deco_b64.description == DESCRIPTION
 
-        deco_indy_auto_id = AttachDecorator.data_base64(mapping=INDY_CRED)
-        assert deco_indy_auto_id.ident
+        deco_b64_auto_id = AttachDecorator.data_base64(mapping=INDY_CRED)
+        assert deco_b64_auto_id.ident
 
         # cover AttachDecoratorData equality operator
         plain_json = AttachDecoratorData(json_=json.dumps({"sample": "data"}))
-        assert deco_indy.data != plain_json
+        assert deco_b64.data != plain_json
+
+        deco_json = AttachDecorator.data_json(
+            mapping=INDY_CRED,
+            ident=IDENT,
+            description=DESCRIPTION,
+        )
+        assert deco_json.mime_type == "application/json"
+        assert hasattr(deco_json.data, "json_")
+        assert deco_json.data.base64 is None
+        assert deco_json.data.json is not None
+        assert deco_json.data.links is None
+        assert deco_json.data.sha256 is None
+        assert deco_json.content == INDY_CRED
+        assert deco_json.ident == IDENT
+        assert deco_json.description == DESCRIPTION
+
+        deco_json_auto_id = AttachDecorator.data_json(mapping=INDY_CRED)
+        assert deco_json_auto_id.ident
+
+        # cover AttachDecoratorData equality operator
+        plain_json = AttachDecoratorData(json_=json.dumps({"sample": "data"}))
+        assert deco_json.data == plain_json
 
         lynx_str = AttachDecoratorData(links_="https://en.wikipedia.org/wiki/Lynx")
         lynx_list = AttachDecoratorData(links_=["https://en.wikipedia.org/wiki/Lynx"])
@@ -336,9 +358,12 @@ class TestAttachDecorator(TestCase):
         assert lynx_str != links
         assert links != DATA_LINKS  # has sha256
 
+        with pytest.raises(ValueError):
+            AttachDecorator(data=lynx_str).content
+
     def test_data_json(self):
         deco_aries = AttachDecorator.data_json(
-            message=INDY_CRED,
+            mapping=INDY_CRED,
             ident=IDENT,
             description=DESCRIPTION,
         )
@@ -352,7 +377,7 @@ class TestAttachDecorator(TestCase):
         assert deco_aries.ident == IDENT
         assert deco_aries.description == DESCRIPTION
 
-        deco_aries_auto_id = AttachDecorator.data_json(message=INDY_CRED)
+        deco_aries_auto_id = AttachDecorator.data_json(mapping=INDY_CRED)
         assert deco_aries_auto_id.ident
 
 

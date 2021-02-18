@@ -141,7 +141,7 @@ class InvitationMessage(AgentMessage):
     @classmethod
     def wrap_message(cls, message: dict) -> AttachDecorator:
         """Convert an aries message to an attachment decorator."""
-        return AttachDecorator.data_json(message=message, ident="request-0")
+        return AttachDecorator.data_json(mapping=message, ident="request-0")
 
     def to_url(self, base_url: str = None) -> str:
         """

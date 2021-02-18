@@ -53,7 +53,7 @@ class TestCredentialRequest(TestCase):
                 )
             ],
         )
-        assert credential_request.requests_attach[0].mapping == self.indy_cred_req
+        assert credential_request.requests_attach[0].content == self.indy_cred_req
         assert credential_request.indy_cred_req(0) == self.indy_cred_req
 
     def test_type(self):

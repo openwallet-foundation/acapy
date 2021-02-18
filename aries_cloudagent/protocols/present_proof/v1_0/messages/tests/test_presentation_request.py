@@ -81,7 +81,7 @@ class TestPresentationRequest(TestCase):
 
     def test_init(self):
         """Test initializer."""
-        assert PRES_REQ.request_presentations_attach[0].base64_dict == INDY_PROOF_REQ
+        assert PRES_REQ.request_presentations_attach[0].content == INDY_PROOF_REQ
         assert PRES_REQ.indy_proof_request(0) == INDY_PROOF_REQ
 
     def test_type(self):

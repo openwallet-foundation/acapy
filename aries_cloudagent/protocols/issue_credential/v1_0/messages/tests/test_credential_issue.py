@@ -88,7 +88,7 @@ class TestCredentialIssue(TestCase):
                 )
             ],
         )
-        assert credential_issue.credentials_attach[0].base64_dict == self.indy_cred
+        assert credential_issue.credentials_attach[0].content == self.indy_cred
         assert credential_issue.credentials_attach[0].ident  # auto-generates UUID4
         assert credential_issue.indy_credential(0) == self.indy_cred
 

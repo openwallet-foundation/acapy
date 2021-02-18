@@ -57,7 +57,7 @@ class CredentialRequest(AgentMessage):
                 (typically, list has length 1)
 
         """
-        return self.requests_attach[index].base64_dict
+        return self.requests_attach[index].content
 
     @classmethod
     def wrap_indy_cred_req(cls, indy_cred_req: dict) -> AttachDecorator:

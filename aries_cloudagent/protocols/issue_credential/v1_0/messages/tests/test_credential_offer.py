@@ -64,7 +64,7 @@ class TestCredentialOffer(TestCase):
             ],
         )
         assert credential_offer.credential_preview == self.preview
-        assert credential_offer.offers_attach[0].base64_dict == self.indy_offer
+        assert credential_offer.offers_attach[0].content == self.indy_offer
         assert credential_offer.indy_offer(0) == self.indy_offer
 
     def test_type(self):

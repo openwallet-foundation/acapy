@@ -80,7 +80,7 @@ class TestV20CredOffer(AsyncTestCase):
         )
         assert cred_offer.credential_preview == TestV20CredOffer.preview
         assert (
-            cred_offer.offers_attach[0].base64_dict == TestV20CredOffer.indy_offer
+            cred_offer.offers_attach[0].content == TestV20CredOffer.indy_offer
         )
         assert cred_offer.offer() == TestV20CredOffer.indy_offer
         assert cred_offer._type == DIDCommPrefix.qualify_current(CRED_20_OFFER)

@@ -546,15 +546,19 @@ class AttachDecorator(BaseModel):
         self.data = data
 
     @property
-    def base64_dict(self):
+    def content(self):
         """
-        Return data structure base64-encoded in attachment.
+        Return attachment content.
 
-        Returns: data attachment's base64-encoded dict, b64-decoded and json-loaded
+        Returns: data attachment's encoded dict, decoded if necessary and json-loaded
 
         """
-        assert hasattr(self.data, "base64_")
-        return json.loads(b64_to_bytes(self.data.base64))
+        if hasattr(self.data, "base64_"):
+            return json.loads(b64_to_bytes(self.data.base64))
+        elif hasattr(self.data, "json_"):
+            return self.data.json
+        else:
+            raise ValueError("Not supported")
 
     @classmethod
     def data_base64(
@@ -597,7 +601,7 @@ class AttachDecorator(BaseModel):
     @classmethod
     def data_json(
         cls,
-        message: dict,
+        mapping: dict,
         *,
         ident: str = None,
         description: str = None,
@@ -612,7 +616,7 @@ class AttachDecorator(BaseModel):
         it as data; mark `application/json` MIME type.
 
         Args:
-            message: aries message (dict) data structure
+            mapping: (dict) data structure; e.g., Aries message
             ident: optional attachment identifier (default random UUID4)
             description: optional attachment description
             filename: optional attachment filename
@@ -627,7 +631,7 @@ class AttachDecorator(BaseModel):
             mime_type="application/json",
             lastmod_time=lastmod_time,
             byte_count=byte_count,
-            data=AttachDecoratorData(json_=message),
+            data=AttachDecoratorData(json_=mapping),
         )
 
 
