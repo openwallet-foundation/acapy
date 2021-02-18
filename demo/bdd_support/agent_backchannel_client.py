@@ -9,6 +9,7 @@ from aiohttp import (
 )
 import json
 from time import sleep
+import uuid
 
 from runners.agent_container import AgentContainer, create_agent_with_args
 from runners.support.agent import DemoAgent
@@ -53,7 +54,7 @@ def run_coroutine_with_kwargs(coroutine, *args, **kwargs):
 
 
 ######################################################################
-# aries agent
+# high level aries agent interface
 ######################################################################
 def create_agent_container_with_args(in_args: list):
     return run_coroutine_with_args(
@@ -112,7 +113,7 @@ def aries_container_create_schema_cred_def(
 def aries_container_issue_credential(
     the_container: AgentContainer,
     cred_def_id: str,
-    cred_attrs: dict,
+    cred_attrs: list,
 ):
     return run_coroutine_with_args(
         the_container.issue_credential,
@@ -123,13 +124,43 @@ def aries_container_issue_credential(
 def aries_container_receive_credential(
     the_container: AgentContainer,
     cred_def_id: str,
-    cred_attrs: dict,
+    cred_attrs: list,
 ):
     return run_coroutine_with_args(
         the_container.receive_credential,
         cred_def_id,
         cred_attrs,
     )
+
+
+######################################################################
+# aries agent admin api interface
+######################################################################
+
+
+######################################################################
+# general utilities
+######################################################################
+def read_json_data(file_name: str):
+    with open("features/data/" + file_name) as data_file:
+        return json.load(data_file)
+
+def read_schema_data(schema_name: str):
+    return read_json_data("schema_" + schema_name + ".json")
+
+def read_credential_data(schema_name: str, cred_scenario_name: str):
+    schema_cred_data = read_json_data("cred_data_schema_" + schema_name + ".json")
+    cred_data = schema_cred_data[cred_scenario_name]
+    for attr in cred_data["attributes"]:
+        if attr["value"] == "@uuid":
+            attr["value"] = str(uuid.uuid4())
+    return cred_data["attributes"]
+
+def read_proof_req_data(proof_req_name: str):
+    return read_json_data("proof_request_" + proof_req_name + ".json")
+
+def read_presentation_data(presentation_name: str):
+    return read_json_data("presentation_" + presentation_name + ".json")
 
 
 ######################################################################

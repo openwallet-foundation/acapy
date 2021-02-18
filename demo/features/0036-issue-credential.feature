@@ -7,17 +7,14 @@ Feature: RFC 0036 Aries agent issue credential
       | Acme  | issuer  | <Acme_capabilities> |
       | Bob   | holder  | <Bob_capabilities>  |
     And "Acme" and "Bob" have an existing connection
-    And "Acme" is ready to issue a credential
-    When "Acme" offers a credential
-    And "Bob" requests the credential
-    And "Acme" issues the credential
-    And "Bob" acknowledges the credential issue
+    And "Acme" is ready to issue a credential for <Schema_name>
+    When "Acme" offers a credential with data <Credential_data>
     Then "Bob" has the credential issued
 
     Examples:
-       | Acme_capabilities                      | Bob_capabilities          |
-       | --public-did                           |                           |
-       | --public-did --did-exchange            | --did-exchange            |
-       | --public-did --mediation               | --mediation               |
-       | --public-did --multitenant             | --multitenant             |
-       | --public-did --mediation --multitenant | --mediation --multitenant |
+       | Acme_capabilities                      | Bob_capabilities          | Schema_name    | Credential_data          |
+       | --public-did                           |                           | driverslicense | Data_DL_NormalizedValues |
+       | --public-did --did-exchange            | --did-exchange            | driverslicense | Data_DL_NormalizedValues |
+       | --public-did --mediation               | --mediation               | driverslicense | Data_DL_NormalizedValues |
+       | --public-did --multitenant             | --multitenant             | driverslicense | Data_DL_NormalizedValues |
+       | --public-did --mediation --multitenant | --mediation --multitenant | driverslicense | Data_DL_NormalizedValues |

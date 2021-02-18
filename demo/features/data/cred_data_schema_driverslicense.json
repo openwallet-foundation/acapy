@@ -5,6 +5,10 @@
       "schema_version":"1.0.1",
       "attributes":[
          {
+            "name":"id",
+            "value":"@uuid"
+         },
+         {
             "name":"address",
             "value":"947 this street, Kingston Ontario Canada, K9O 3R5"
          },
@@ -22,11 +26,15 @@
          }
       ]
    },
-   "Data_HealthID_NormalizedValues":{
+   "Data_DL_NormalizedValues":{
       "cred_name":"Data_HealthID_NormalizedValues",
       "schema_name":"Schema_DriversLicense",
       "schema_version":"1.0.1",
       "attributes":[
+         {
+            "name":"id",
+            "value":"@uuid"
+         },
          {
             "name":"address",
             "value":"947 this street, Kingston Ontario Canada, K9O 3R5"
@@ -50,6 +58,10 @@
       "schema_name":"Schema_DriversLicense",
       "schema_version":"1.0.1",
       "attributes":[
+         {
+            "name":"id",
+            "value":"@uuid"
+         },
          {
             "name":"address",
             "value":"9"

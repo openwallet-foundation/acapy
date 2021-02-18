@@ -54,15 +54,18 @@ class AriesAgent(DemoAgent):
             prefix="Aries",
             extra_args=[]
             if no_auto
-            else ["--auto-accept-invites", "--auto-accept-requests"],
+            else [
+                "--auto-accept-invites",
+                "--auto-accept-requests",
+                "--auto-store-credential",
+            ],
             **kwargs,
         )
         self.connection_id = None
         self._connection_ready = None
         self.cred_state = {}
-        # TODO define a dict to hold credential attributes
-        # based on cred_def_id
-        self.cred_attrs = {}
+        # define a dict to hold credential attributes
+        self.last_credential_received = None
 
     async def detect_connection(self):
         await self._connection_ready
@@ -108,6 +111,7 @@ class AriesAgent(DemoAgent):
         self.cred_state[cred_ex_id] = state
 
         self.log(f"Credential: state = {state}, cred_ex_id = {cred_ex_id}")
+        print(f"Credential: state = {state}, cred_ex_id = {cred_ex_id}")
 
         if state == "request-received":
             log_status("#17 Issue credential to X")
@@ -122,14 +126,17 @@ class AriesAgent(DemoAgent):
                 f"/issue-credential-2.0/records/{cred_ex_id}/send-request"
             )
         elif state == "done":
-            cred_id = message["cred_id_stored"]
-            self.log(f"Stored credential {cred_id} in wallet")
-            log_status(f"#18.1 Stored credential {cred_id} in wallet")
-            cred = await self.admin_GET(f"/credential/{cred_id}")
-            log_json(cred, label="Credential details:")
-            self.log("credential_id", cred_id)
-            self.log("cred_def_id", cred["cred_def_id"])
-            self.log("schema_id", cred["schema_id"])
+            if "cred_id_stored" in message:
+                cred_id = message["cred_id_stored"]
+                self.log(f"Stored credential {cred_id} in wallet")
+                log_status(f"#18.1 Stored credential {cred_id} in wallet")
+                cred = await self.admin_GET(f"/credential/{cred_id}")
+                log_json(cred, label="Credential details:")
+                self.log("credential_id", cred_id)
+                self.log("cred_def_id", cred["cred_def_id"])
+                self.log("schema_id", cred["schema_id"])
+                # track last successfully received credential
+                self.last_credential_received = cred
 
     async def handle_issue_credential_v2_0_indy(self, message):
         rev_reg_id = message.get("rev_reg_id")
@@ -329,19 +336,13 @@ class AgentContainer():
     async def issue_credential(
         self,
         cred_def_id: str,
-        cred_attrs: dict,
+        cred_attrs: list,
     ):
         log_status("#13 Issue credential offer to X")
 
-        # TODO define attributes to send for credential
-        self.agent.cred_attrs[cred_def_id] = cred_attrs
-
         cred_preview = {
             "@type": CRED_PREVIEW_TYPE,
-            "attributes": [
-                {"name": n, "value": v}
-                for (n, v) in self.agent.cred_attrs[cred_def_id].items()
-            ],
+            "attributes": cred_attrs,
         }
         offer_request = {
             "connection_id": self.agent.connection_id,
@@ -360,9 +361,23 @@ class AgentContainer():
     async def receive_credential(
         self,
         cred_def_id: str,
-        cred_attrs: dict,
+        cred_attrs: list,
     ):
-        # TODO
+        await asyncio.sleep(1.0)
+
+        # check if the requested credential matches out last received
+        if not self.agent.last_credential_received:
+            # no credential received
+            print("No credential received")
+            return False
+
+        if cred_def_id != self.agent.last_credential_received["cred_def_id"]:
+            # wrong credential definition
+            print("Wrong credential definition id")
+            return False
+
+        # TODO check if attribute values match those of issued credential
+
         return True
 
     async def terminate(self):
