@@ -464,7 +464,7 @@ class TestProofRoutes(AsyncTestCase):
 
             mock_generate_nonce = async_mock.CoroutineMock()
 
-            mock_attach_decorator.from_indy_dict = async_mock.MagicMock(
+            mock_attach_decorator.data_base64 = async_mock.MagicMock(
                 return_value=mock_attach_decorator
             )
             mock_presentation_exchange.serialize = async_mock.MagicMock()
@@ -576,7 +576,7 @@ class TestProofRoutes(AsyncTestCase):
             mock_connection_record.retrieve_by_id = async_mock.CoroutineMock(
                 return_value=mock_connection_record
             )
-            mock_attach_decorator.from_indy_dict = async_mock.MagicMock(
+            mock_attach_decorator.data_base64 = async_mock.MagicMock(
                 return_value=mock_attach_decorator
             )
             mock_presentation_exchange.serialize = async_mock.MagicMock()
@@ -680,7 +680,7 @@ class TestProofRoutes(AsyncTestCase):
             mock_connection_record.retrieve_by_id = async_mock.CoroutineMock(
                 return_value=mock_connection_record
             )
-            mock_attach_decorator.from_indy_dict = async_mock.MagicMock(
+            mock_attach_decorator.data_base64 = async_mock.MagicMock(
                 return_value=mock_attach_decorator
             )
             mock_presentation_exchange.serialize = async_mock.MagicMock()

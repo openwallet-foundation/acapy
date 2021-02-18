@@ -546,20 +546,20 @@ class AttachDecorator(BaseModel):
         self.data = data
 
     @property
-    def indy_dict(self):
+    def base64_dict(self):
         """
-        Return indy data structure encoded in attachment.
+        Return data structure base64-encoded in attachment.
 
-        Returns: dict with indy object in data attachment
+        Returns: data attachment's base64-encoded dict, b64-decoded and json-loaded
 
         """
         assert hasattr(self.data, "base64_")
         return json.loads(b64_to_bytes(self.data.base64))
 
     @classmethod
-    def from_indy_dict(
+    def data_base64(
         cls,
-        indy_dict: dict,
+        mapping: Mapping,
         *,
         ident: str = None,
         description: str = None,
@@ -568,13 +568,13 @@ class AttachDecorator(BaseModel):
         byte_count: int = None,
     ):
         """
-        Create `AttachDecorator` instance from indy object (dict).
+        Create `AttachDecorator` instance on base64-encoded data from input mapping.
 
-        Given indy object (dict), JSON dump, base64-encode, and embed
+        Given mapping, JSON dump, base64-encode, and embed
         it as data; mark `application/json` MIME type.
 
         Args:
-            indy_dict: indy (dict) data structure
+            mapping: (dict) data structure; e.g., indy production
             ident: optional attachment identifier (default random UUID4)
             description: optional attachment description
             filename: optional attachment filename
@@ -590,12 +590,12 @@ class AttachDecorator(BaseModel):
             lastmod_time=lastmod_time,
             byte_count=byte_count,
             data=AttachDecoratorData(
-                base64_=bytes_to_b64(json.dumps(indy_dict).encode())
+                base64_=bytes_to_b64(json.dumps(mapping).encode())
             ),
         )
 
     @classmethod
-    def from_aries_msg(
+    def data_json(
         cls,
         message: dict,
         *,
@@ -606,7 +606,7 @@ class AttachDecorator(BaseModel):
         byte_count: int = None,
     ):
         """
-        Create `AttachDecorator` instance from an aries message.
+        Create `AttachDecorator` instance on json-encoded data from input mapping.
 
         Given message object (dict), JSON dump, and embed
         it as data; mark `application/json` MIME type.

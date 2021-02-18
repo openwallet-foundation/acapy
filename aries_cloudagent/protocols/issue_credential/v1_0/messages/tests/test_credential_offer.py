@@ -44,8 +44,8 @@ class TestCredentialOffer(TestCase):
         comment="shaken, not stirred",
         credential_preview=preview,
         offers_attach=[
-            AttachDecorator.from_indy_dict(
-                indy_dict=indy_offer,
+            AttachDecorator.data_base64(
+                mapping=indy_offer,
                 ident=ATTACH_DECO_IDS[CREDENTIAL_OFFER],
             )
         ],
@@ -57,14 +57,14 @@ class TestCredentialOffer(TestCase):
             comment="shaken, not stirred",
             credential_preview=self.preview,
             offers_attach=[
-                AttachDecorator.from_indy_dict(
-                    indy_dict=self.indy_offer,
+                AttachDecorator.data_base64(
+                    mapping=self.indy_offer,
                     ident=ATTACH_DECO_IDS[CREDENTIAL_OFFER],
                 )
             ],
         )
         assert credential_offer.credential_preview == self.preview
-        assert credential_offer.offers_attach[0].indy_dict == self.indy_offer
+        assert credential_offer.offers_attach[0].base64_dict == self.indy_offer
         assert credential_offer.indy_offer(0) == self.indy_offer
 
     def test_type(self):
@@ -73,8 +73,8 @@ class TestCredentialOffer(TestCase):
             comment="shaken, not stirred",
             credential_preview=self.preview,
             offers_attach=[
-                AttachDecorator.from_indy_dict(
-                    indy_dict=self.indy_offer,
+                AttachDecorator.data_base64(
+                    mapping=self.indy_offer,
                     ident=ATTACH_DECO_IDS[CREDENTIAL_OFFER],
                 )
             ],
@@ -107,8 +107,8 @@ class TestCredentialOffer(TestCase):
             comment="shaken, not stirred",
             credential_preview=self.preview,
             offers_attach=[
-                AttachDecorator.from_indy_dict(
-                    indy_dict=self.indy_offer,
+                AttachDecorator.data_base64(
+                    mapping=self.indy_offer,
                     ident=ATTACH_DECO_IDS[CREDENTIAL_OFFER],
                 )
             ],
@@ -126,7 +126,7 @@ class TestCredentialOfferSchema(TestCase):
     credential_offer = CredentialOffer(
         comment="shaken, not stirred",
         credential_preview=TestCredentialOffer.preview,
-        offers_attach=[AttachDecorator.from_indy_dict(TestCredentialOffer.indy_offer)],
+        offers_attach=[AttachDecorator.data_base64(TestCredentialOffer.indy_offer)],
     )
 
     def test_make_model(self):

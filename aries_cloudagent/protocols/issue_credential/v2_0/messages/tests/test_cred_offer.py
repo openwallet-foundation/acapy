@@ -53,8 +53,8 @@ class TestV20CredOffer(AsyncTestCase):
             )
         ],
         offers_attach=[
-            AttachDecorator.from_indy_dict(
-                indy_dict=indy_offer,
+            AttachDecorator.data_base64(
+                mapping=indy_offer,
                 ident="abc",
             )
         ],
@@ -72,14 +72,16 @@ class TestV20CredOffer(AsyncTestCase):
                 )
             ],
             offers_attach=[
-                AttachDecorator.from_indy_dict(
-                    indy_dict=TestV20CredOffer.indy_offer,
+                AttachDecorator.data_base64(
+                    mapping=TestV20CredOffer.indy_offer,
                     ident="abc",
                 )
             ],
         )
         assert cred_offer.credential_preview == TestV20CredOffer.preview
-        assert cred_offer.offers_attach[0].indy_dict == TestV20CredOffer.indy_offer
+        assert (
+            cred_offer.offers_attach[0].base64_dict == TestV20CredOffer.indy_offer
+        )
         assert cred_offer.offer() == TestV20CredOffer.indy_offer
         assert cred_offer._type == DIDCommPrefix.qualify_current(CRED_20_OFFER)
 
@@ -109,8 +111,8 @@ class TestV20CredOffer(AsyncTestCase):
                 )
             ],
             offers_attach=[
-                AttachDecorator.from_indy_dict(
-                    indy_dict=TestV20CredOffer.indy_offer,
+                AttachDecorator.data_base64(
+                    mapping=TestV20CredOffer.indy_offer,
                     ident="abc",
                 )
             ],
@@ -140,8 +142,8 @@ class TestCredentialOfferSchema(AsyncTestCase):
                 )
             ],
             offers_attach=[
-                AttachDecorator.from_indy_dict(
-                    indy_dict=TestV20CredOffer.indy_offer,
+                AttachDecorator.data_base64(
+                    mapping=TestV20CredOffer.indy_offer,
                     ident="abc",
                 )
             ],

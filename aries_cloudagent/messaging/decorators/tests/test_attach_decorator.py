@@ -305,9 +305,9 @@ class TestAttachDecorator(TestCase):
         assert decorator.description == DESCRIPTION
         assert decorator.data == DATA_LINKS
 
-    def test_indy_dict(self):
-        deco_indy = AttachDecorator.from_indy_dict(
-            indy_dict=INDY_CRED,
+    def test_base64_dict(self):
+        deco_indy = AttachDecorator.data_base64(
+            mapping=INDY_CRED,
             ident=IDENT,
             description=DESCRIPTION,
         )
@@ -317,11 +317,11 @@ class TestAttachDecorator(TestCase):
         assert deco_indy.data.json is None
         assert deco_indy.data.links is None
         assert deco_indy.data.sha256 is None
-        assert deco_indy.indy_dict == INDY_CRED
+        assert deco_indy.base64_dict == INDY_CRED
         assert deco_indy.ident == IDENT
         assert deco_indy.description == DESCRIPTION
 
-        deco_indy_auto_id = AttachDecorator.from_indy_dict(indy_dict=INDY_CRED)
+        deco_indy_auto_id = AttachDecorator.data_base64(mapping=INDY_CRED)
         assert deco_indy_auto_id.ident
 
         # cover AttachDecoratorData equality operator
@@ -336,8 +336,8 @@ class TestAttachDecorator(TestCase):
         assert lynx_str != links
         assert links != DATA_LINKS  # has sha256
 
-    def test_from_aries_msg(self):
-        deco_aries = AttachDecorator.from_aries_msg(
+    def test_data_json(self):
+        deco_aries = AttachDecorator.data_json(
             message=INDY_CRED,
             ident=IDENT,
             description=DESCRIPTION,
@@ -352,7 +352,7 @@ class TestAttachDecorator(TestCase):
         assert deco_aries.ident == IDENT
         assert deco_aries.description == DESCRIPTION
 
-        deco_aries_auto_id = AttachDecorator.from_aries_msg(message=INDY_CRED)
+        deco_aries_auto_id = AttachDecorator.data_json(message=INDY_CRED)
         assert deco_aries_auto_id.ident
 
 
@@ -372,8 +372,8 @@ class TestAttachDecoratorSignature:
 
     @pytest.mark.asyncio
     async def test_indy_sign(self, wallet, seed):
-        deco_indy = AttachDecorator.from_indy_dict(
-            indy_dict=INDY_CRED,
+        deco_indy = AttachDecorator.data_base64(
+            mapping=INDY_CRED,
             ident=IDENT,
             description=DESCRIPTION,
             filename=FILENAME,

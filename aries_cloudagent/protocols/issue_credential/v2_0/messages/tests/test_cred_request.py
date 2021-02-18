@@ -37,8 +37,8 @@ class TestV20CredRequest(AsyncTestCase):
     cred_req = V20CredRequest(
         comment="Test",
         requests_attach=[
-            AttachDecorator.from_indy_dict(
-                indy_dict=indy_cred_req,
+            AttachDecorator.data_base64(
+                mapping=indy_cred_req,
                 ident="abc",
             )
         ],
@@ -55,14 +55,14 @@ class TestV20CredRequest(AsyncTestCase):
                 )
             ],
             requests_attach=[
-                AttachDecorator.from_indy_dict(
-                    indy_dict=TestV20CredRequest.indy_cred_req,
+                AttachDecorator.data_base64(
+                    mapping=TestV20CredRequest.indy_cred_req,
                     ident="abc",
                 )
             ],
         )
         assert (
-            cred_request.requests_attach[0].indy_dict
+            cred_request.requests_attach[0].base64_dict
             == TestV20CredRequest.indy_cred_req
         )
         assert cred_request.cred_request() == TestV20CredRequest.indy_cred_req
@@ -91,8 +91,8 @@ class TestV20CredRequest(AsyncTestCase):
                 )
             ],
             requests_attach=[
-                AttachDecorator.from_indy_dict(
-                    indy_dict=TestV20CredRequest.indy_cred_req,
+                AttachDecorator.data_base64(
+                    mapping=TestV20CredRequest.indy_cred_req,
                 )
             ],
         )
@@ -120,7 +120,7 @@ class TestV20CredRequestSchema(AsyncTestCase):
                 )
             ],
             requests_attach=[
-                AttachDecorator.from_indy_dict(TestV20CredRequest.indy_cred_req)
+                AttachDecorator.data_base64(TestV20CredRequest.indy_cred_req)
             ],
         )
 

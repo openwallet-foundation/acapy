@@ -46,7 +46,7 @@ class TestV20FormatFormat(TestCase):
                     V20CredFormat(attach_id="abc", format_=V20CredFormat.Format.INDY)
                 ],
                 attachments=[
-                    AttachDecorator.from_indy_dict(TEST_INDY_FILTER, ident="abc")
+                    AttachDecorator.data_base64(TEST_INDY_FILTER, ident="abc")
                 ],
             )
             == TEST_INDY_FILTER
@@ -58,7 +58,7 @@ class TestV20FormatFormat(TestCase):
                     V20CredFormat(attach_id="abc", format_=V20CredFormat.Format.INDY)
                 ],
                 attachments=[
-                    AttachDecorator.from_indy_dict(TEST_INDY_FILTER, ident="xxx")
+                    AttachDecorator.data_base64(TEST_INDY_FILTER, ident="xxx")
                 ],
             )
             is None
@@ -70,7 +70,7 @@ class TestV20FormatFormat(TestCase):
                     V20CredFormat(attach_id="abc", format_=V20CredFormat.Format.INDY)
                 ],
                 attachments=[
-                    AttachDecorator.from_indy_dict(TEST_INDY_FILTER, ident="abc")
+                    AttachDecorator.data_base64(TEST_INDY_FILTER, ident="abc")
                 ],
             )
             is None

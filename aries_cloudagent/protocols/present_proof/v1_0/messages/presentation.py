@@ -56,7 +56,7 @@ class Presentation(AgentMessage):
                 (typically, list has length 1)
 
         """
-        return self.presentations_attach[index].indy_dict
+        return self.presentations_attach[index].base64_dict
 
 
 class PresentationSchema(AgentMessageSchema):

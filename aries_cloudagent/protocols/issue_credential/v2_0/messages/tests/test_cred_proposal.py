@@ -40,7 +40,7 @@ class TestV20CredProposal(AsyncTestCase):
                 )
             ],
             filters_attach=[
-                AttachDecorator.from_indy_dict(TEST_INDY_FILTER, ident="abc")
+                AttachDecorator.data_base64(TEST_INDY_FILTER, ident="abc")
             ],
         )
         assert cred_proposal.credential_preview == TEST_PREVIEW
@@ -113,7 +113,7 @@ class TestV20CredProposal(AsyncTestCase):
                 )
             ],
             filters_attach=[
-                AttachDecorator.from_indy_dict(TEST_INDY_FILTER, ident="abc")
+                AttachDecorator.data_base64(TEST_INDY_FILTER, ident="abc")
             ],
         )
 
@@ -161,7 +161,7 @@ class TestV20CredProposal(AsyncTestCase):
                     format_=V20CredFormat.Format.INDY.aries,
                 )
             ],
-            filters_attach=[AttachDecorator.from_indy_dict({}, ident="abc")],
+            filters_attach=[AttachDecorator.data_base64({}, ident="abc")],
         )
 
         cred_proposal_dict = cred_proposal.serialize()
@@ -199,7 +199,7 @@ class TestV20CredProposalSchema(AsyncTestCase):
                 )
             ],
             filters_attach=[
-                AttachDecorator.from_indy_dict(TEST_INDY_FILTER, ident="abc")
+                AttachDecorator.data_base64(TEST_INDY_FILTER, ident="abc")
             ],
         )
 

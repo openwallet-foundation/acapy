@@ -70,8 +70,8 @@ class TestCredentialIssue(TestCase):
     cred_issue = CredentialIssue(
         comment="Test",
         credentials_attach=[
-            AttachDecorator.from_indy_dict(
-                indy_dict=indy_cred,
+            AttachDecorator.data_base64(
+                mapping=indy_cred,
                 ident=ATTACH_DECO_IDS[CREDENTIAL_ISSUE],
             )
         ],
@@ -82,13 +82,13 @@ class TestCredentialIssue(TestCase):
         credential_issue = CredentialIssue(
             comment="Test",
             credentials_attach=[
-                AttachDecorator.from_indy_dict(
-                    indy_dict=self.indy_cred,
+                AttachDecorator.data_base64(
+                    mapping=self.indy_cred,
                     ident=ATTACH_DECO_IDS[CREDENTIAL_ISSUE],
                 )
             ],
         )
-        assert credential_issue.credentials_attach[0].indy_dict == self.indy_cred
+        assert credential_issue.credentials_attach[0].base64_dict == self.indy_cred
         assert credential_issue.credentials_attach[0].ident  # auto-generates UUID4
         assert credential_issue.indy_credential(0) == self.indy_cred
 
@@ -97,8 +97,8 @@ class TestCredentialIssue(TestCase):
         credential_issue = CredentialIssue(
             comment="Test",
             credentials_attach=[
-                AttachDecorator.from_indy_dict(
-                    indy_dict=self.indy_cred,
+                AttachDecorator.data_base64(
+                    mapping=self.indy_cred,
                     ident=ATTACH_DECO_IDS[CREDENTIAL_ISSUE],
                 )
             ],
@@ -140,7 +140,7 @@ class TestCredentialIssueSchema(TestCase):
 
     credential_issue = CredentialIssue(
         comment="Test",
-        credentials_attach=[AttachDecorator.from_indy_dict({"hello": "world"})],
+        credentials_attach=[AttachDecorator.data_base64({"hello": "world"})],
     )
 
     def test_make_model(self):
