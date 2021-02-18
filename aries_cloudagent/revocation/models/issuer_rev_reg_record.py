@@ -13,10 +13,9 @@ from urllib.parse import urlparse
 
 from marshmallow import fields, validate
 
-from ...tails.base import BaseTailsServer
-from ...config.injection_context import InjectionContext
+from ...core.profile import Profile, ProfileSession
 from ...indy.util import indy_client_dir
-from ...issuer.base import BaseIssuer, IssuerError
+from ...indy.issuer import IndyIssuer, IndyIssuerError
 from ...messaging.models.base_record import BaseRecord, BaseRecordSchema
 from ...messaging.valid import (
     BASE58_SHA256_HASH,
@@ -26,6 +25,7 @@ from ...messaging.valid import (
     UUIDFour,
 )
 from ...ledger.base import BaseLedger
+from ...tails.base import BaseTailsServer
 
 from ..error import RevocationError
 
@@ -49,7 +49,6 @@ class IssuerRevRegRecord(BaseRecord):
     RECORD_TYPE = "issuer_rev_reg"
     WEBHOOK_TOPIC = "revocation_registry"
     LOG_STATE_FLAG = "debug.revocation"
-    CACHE_ENABLED = False
     TAG_NAMES = {
         "cred_def_id",
         "issuer_did",
@@ -134,7 +133,7 @@ class IssuerRevRegRecord(BaseRecord):
         if not (parsed.scheme and parsed.netloc and parsed.path):
             raise RevocationError("URI {} is not a valid URL".format(url))
 
-    async def generate_registry(self, context: InjectionContext):
+    async def generate_registry(self, profile: Profile):
         """Create the revocation registry definition and tails file."""
         if not self.tag:
             self.tag = self._id or str(uuid.uuid4())
@@ -146,10 +145,10 @@ class IssuerRevRegRecord(BaseRecord):
                 )
             )
 
-        issuer: BaseIssuer = await context.inject(BaseIssuer)
+        issuer = profile.inject(IndyIssuer)
         tails_hopper_dir = indy_client_dir(join("tails", ".hopper"), create=True)
 
-        LOGGER.debug("create revocation registry with size:", self.max_cred_num)
+        LOGGER.debug("Creating revocation registry with size: %d", self.max_cred_num)
 
         try:
             (
@@ -164,7 +163,7 @@ class IssuerRevRegRecord(BaseRecord):
                 self.max_cred_num,
                 tails_hopper_dir,
             )
-        except IssuerError as err:
+        except IndyIssuerError as err:
             raise RevocationError() from err
 
         self.revoc_reg_id = revoc_reg_id
@@ -178,11 +177,10 @@ class IssuerRevRegRecord(BaseRecord):
         move(join(tails_hopper_dir, self.tails_hash), tails_path)
         self.tails_local_path = tails_path
 
-        await self.save(context, reason="Generated registry")
+        async with profile.session() as session:
+            await self.save(session, reason="Generated registry")
 
-    async def set_tails_file_public_uri(
-        self, context: InjectionContext, tails_file_uri: str
-    ):
+    async def set_tails_file_public_uri(self, profile: Profile, tails_file_uri: str):
         """Update tails file's publicly accessible URI."""
         if not (
             self.revoc_reg_def
@@ -194,24 +192,23 @@ class IssuerRevRegRecord(BaseRecord):
 
         self.tails_public_uri = tails_file_uri
         self.revoc_reg_def["value"]["tailsLocation"] = tails_file_uri
-        await self.save(context, reason="Set tails file public URI")
+        async with profile.session() as session:
+            await self.save(session, reason="Set tails file public URI")
 
-    async def stage_pending_registry(
-        self, context: InjectionContext, max_attempts: int = 5
-    ):
+    async def stage_pending_registry(self, profile: Profile, max_attempts: int = 5):
         """Prepare registry definition for future use."""
-        await shield(self.generate_registry(context))
-        tails_base_url = context.settings.get("tails_server_base_url")
+        await shield(self.generate_registry(profile))
+        tails_base_url = profile.settings.get("tails_server_base_url")
         await self.set_tails_file_public_uri(
-            context,
+            profile,
             f"{tails_base_url}/{self.revoc_reg_id}",
         )
-        await self.send_def(context)
-        await self.send_entry(context)
+        await self.send_def(profile)
+        await self.send_entry(profile)
 
-        tails_server: BaseTailsServer = await context.inject(BaseTailsServer)
+        tails_server = profile.inject(BaseTailsServer)
         (upload_success, reason) = await tails_server.upload_tails_file(
-            context,
+            profile.context,
             self.revoc_reg_id,
             self.tails_local_path,
             interval=0.25,
@@ -227,7 +224,7 @@ class IssuerRevRegRecord(BaseRecord):
 
         LOGGER.info("Staged pending registry %s", self.revoc_reg_id)
 
-    async def send_def(self, context: InjectionContext):
+    async def send_def(self, profile: Profile):
         """Send the revocation registry definition to the ledger."""
         if not (self.revoc_reg_def and self.issuer_did):
             raise RevocationError(f"Revocation registry {self.revoc_reg_id} undefined")
@@ -241,14 +238,15 @@ class IssuerRevRegRecord(BaseRecord):
                 )
             )
 
-        ledger: BaseLedger = await context.inject(BaseLedger)
+        ledger = profile.inject(BaseLedger)
         async with ledger:
             await ledger.send_revoc_reg_def(self.revoc_reg_def, self.issuer_did)
 
         self.state = IssuerRevRegRecord.STATE_POSTED
-        await self.save(context, reason="Published revocation registry definition")
+        async with profile.session() as session:
+            await self.save(session, reason="Published revocation registry definition")
 
-    async def send_entry(self, context: InjectionContext):
+    async def send_entry(self, profile: Profile):
         """Send a registry entry to the ledger."""
         if not (
             self.revoc_reg_id
@@ -271,7 +269,7 @@ class IssuerRevRegRecord(BaseRecord):
                 )
             )
 
-        ledger: BaseLedger = await context.inject(BaseLedger)
+        ledger = profile.inject(BaseLedger)
         async with ledger:
             await ledger.send_revoc_reg_entry(
                 self.revoc_reg_id,
@@ -281,30 +279,31 @@ class IssuerRevRegRecord(BaseRecord):
             )
         if self.state == IssuerRevRegRecord.STATE_POSTED:
             self.state = IssuerRevRegRecord.STATE_ACTIVE  # initial entry activates
-            await self.save(
-                context, reason="Published initial revocation registry entry"
-            )
+            async with profile.session() as session:
+                await self.save(
+                    session, reason="Published initial revocation registry entry"
+                )
 
-    async def mark_pending(self, context: InjectionContext, cred_rev_id: str) -> None:
+    async def mark_pending(self, session: ProfileSession, cred_rev_id: str) -> None:
         """Mark a credential revocation id as revoked pending publication to ledger.
 
         Args:
-            context: The injection context to use
+            session: The profile session to use
             cred_rev_id: The credential revocation identifier for credential to revoke
         """
         if cred_rev_id not in self.pending_pub:
             self.pending_pub.append(cred_rev_id)
             self.pending_pub.sort()
 
-        await self.save(context, reason="Marked pending revocation")
+        await self.save(session, reason="Marked pending revocation")
 
     async def clear_pending(
-        self, context: InjectionContext, cred_rev_ids: Sequence[str] = None
+        self, session: ProfileSession, cred_rev_ids: Sequence[str] = None
     ) -> None:
         """Clear pending revocations and save any resulting record change.
 
         Args:
-            context: The injection context to use
+            session: The profile session to use
             cred_rev_ids: Credential revocation identifiers to clear; default all
         """
         if self.pending_pub:
@@ -314,7 +313,7 @@ class IssuerRevRegRecord(BaseRecord):
                 ]
             else:
                 self.pending_pub.clear()
-            await self.save(context, reason="Cleared pending revocations")
+            await self.save(session, reason="Cleared pending revocations")
 
     async def get_registry(self) -> RevocationRegistry:
         """Create a `RevocationRegistry` instance from this record."""
@@ -332,12 +331,12 @@ class IssuerRevRegRecord(BaseRecord):
 
     @classmethod
     async def query_by_cred_def_id(
-        cls, context: InjectionContext, cred_def_id: str, state: str = None
+        cls, session: ProfileSession, cred_def_id: str, state: str = None
     ) -> Sequence["IssuerRevRegRecord"]:
         """Retrieve issuer revocation registry records by credential definition ID.
 
         Args:
-            context: The injection context to use
+            session: The profile session to use
             cred_def_id: The credential definition ID to filter by
             state: A state value to filter by
         """
@@ -345,19 +344,19 @@ class IssuerRevRegRecord(BaseRecord):
             **{"cred_def_id": cred_def_id for _ in [""] if cred_def_id},
             **{"state": state for _ in [""] if state},
         }
-        return await cls.query(context, tag_filter)
+        return await cls.query(session, tag_filter)
 
     @classmethod
     async def query_by_pending(
-        cls, context: InjectionContext
+        cls, session: ProfileSession
     ) -> Sequence["IssuerRevRegRecord"]:
         """Retrieve issuer revocation records with revocations pending.
 
         Args:
-            context: The injection context to use
+            session: The profile session to use
         """
         return await cls.query(
-            context=context,
+            session=session,
             tag_filter=None,
             post_filter_positive=None,
             post_filter_negative={"pending_pub": []},
@@ -365,22 +364,22 @@ class IssuerRevRegRecord(BaseRecord):
 
     @classmethod
     async def retrieve_by_revoc_reg_id(
-        cls, context: InjectionContext, revoc_reg_id: str
+        cls, session: ProfileSession, revoc_reg_id: str
     ) -> "IssuerRevRegRecord":
         """Retrieve a revocation registry record by revocation registry ID.
 
         Args:
-            context: The injection context to use
+            session: The profile session to use
             revoc_reg_id: The revocation registry ID
         """
         tag_filter = {"revoc_reg_id": revoc_reg_id}
-        return await cls.retrieve_by_tag_filter(context, tag_filter)
+        return await cls.retrieve_by_tag_filter(session, tag_filter)
 
-    async def set_state(self, context: InjectionContext, state: str = None):
+    async def set_state(self, session: ProfileSession, state: str = None):
         """Change the registry state (default full)."""
         self.state = state or IssuerRevRegRecord.STATE_FULL
         await self.save(
-            context, reason=f"Marked rev reg {self.revoc_reg_id} as {self.state}"
+            session, reason=f"Marked rev reg {self.revoc_reg_id} as {self.state}"
         )
 
     def __eq__(self, other: Any) -> bool:

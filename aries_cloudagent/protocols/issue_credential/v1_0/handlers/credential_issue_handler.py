@@ -34,11 +34,12 @@ class CredentialIssueHandler(BaseHandler):
         )
 
         if not context.connection_ready:
-            raise HandlerException("No connection established for credential request")
+            raise HandlerException("No connection established for credential issue")
 
-        credential_manager = CredentialManager(context)
-
-        cred_ex_record = await credential_manager.receive_credential()
+        credential_manager = CredentialManager(context.profile)
+        cred_ex_record = await credential_manager.receive_credential(
+            context.message, context.connection_record.connection_id
+        )
 
         r_time = trace_event(
             context.settings,

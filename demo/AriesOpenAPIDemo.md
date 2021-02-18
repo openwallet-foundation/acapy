@@ -219,11 +219,11 @@ Enough with the preliminaries, let’s get started!
 
 ## Establishing a Connection
 
-We’ll start the demo by establishing a connection between the Alice and Faber agents. We’re starting there to demonstrate that you can use agents without having a ledger. We won’t be using the Indy public ledger at all for this step. Since the agents communicate using DIDcomm messaging and connect by exchanging pairwise DIDs and DIDDocs based on (an early version of) the `did:peer` DID method, a public ledger is not needed.
+We’ll start the demo by establishing a connection between the Alice and Faber agents. We’re starting there to demonstrate that you can use agents without having a ledger. We won’t be using the Indy public ledger at all for this step. Since the agents communicate using DIDComm messaging and connect by exchanging pairwise DIDs and DIDDocs based on (an early version of) the `did:peer` DID method, a public ledger is not needed.
 
 ### Use the Faber Agent to Create an Invitation
 
-In the Faber browser tab, execute the **`POST /connections/create-invitation`** endpoint. No input data is needed to be added for this call. If successful, you should see a connection Id, an invitation, and the invitation URL. The Ids will be different on each run.
+In the Faber browser tab, navigate to the **`POST /connections/create-invitation`** endpoint. Replace the sample body with and empty production (`{}`) and execute the call. If successful, you should see a connection id, an invitation, and the invitation URL. The connection ids will be different on each run.
 
 **Hint: set an Alias on the Invitation, this makes it easier to find the Connection later on**
 
@@ -478,7 +478,7 @@ For these items set the values as follows:
 
 The `revoc_reg_id` being `null` means that we won't be using a revocation registry and therefore can't revoke the credentials we issue. 
 
-By setting `auto-remove` to true, ACA-Py will automatically remove the credential exchange record after the protocol completes. When implementing a controller, this is the likely setting to use to reduce agent storage usage, but implies if a record of the issuance of the credential is needed, the controller must save it somewhere else. For example, Faber College might extend their Student Information System, where they track all their students, to record when credentials are issued to students, and the Ids of the issued credentials.
+By setting `auto_remove` to true, ACA-Py will automatically remove the credential exchange record after the protocol completes. When implementing a controller, this is the likely setting to use to reduce agent storage usage, but implies if a record of the issuance of the credential is needed, the controller must save it somewhere else. For example, Faber College might extend their Student Information System, where they track all their students, to record when credentials are issued to students, and the Ids of the issued credentials.
 
 ### Faber - Issuing the Credential
 
@@ -571,7 +571,7 @@ You’ve done it, issued a credential!  w00t!
 
 ### Issue Credential Notes
 
-Those that know something about the Indy process for issuing a credential and the DIDcomm `Issue Credential` protocol know that there multiple steps to issuing credentials, a back and forth between the issuer and the holder to (at least) offer, request and issue the credential. All of those messages happened, but the two agents took care of those details rather than bothering the controller (you, in this case) with managing the back and forth.
+Those that know something about the Indy process for issuing a credential and the DIDComm `Issue Credential` protocol know that there multiple steps to issuing credentials, a back and forth between the issuer and the holder to (at least) offer, request and issue the credential. All of those messages happened, but the two agents took care of those details rather than bothering the controller (you, in this case) with managing the back and forth.
 
 * On the Faber agent side, this is because we used the **`POST /issue-credential/send`** administrative message, which handles the back and forth for the issuer automatically. We could have used the other `/issue-credential/` endpoints to allow the controller to handle each step of the protocol.
 * On Alice's agent side, this is because in the startup options for the agent, we used the `--auto-respond-credential-offer` parameter.

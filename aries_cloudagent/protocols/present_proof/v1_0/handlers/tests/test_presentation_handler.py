@@ -14,7 +14,7 @@ from .. import presentation_handler as handler
 
 class TestPresentationHandler(AsyncTestCase):
     async def test_called(self):
-        request_context = RequestContext()
+        request_context = RequestContext.test_context()
         request_context.message_receipt = MessageReceipt()
         request_context.settings["debug.auto_verify_presentation"] = False
 
@@ -24,16 +24,19 @@ class TestPresentationHandler(AsyncTestCase):
             mock_pres_mgr.return_value.receive_presentation = async_mock.CoroutineMock()
             request_context.message = Presentation()
             request_context.connection_ready = True
+            request_context.connection_record = async_mock.MagicMock()
             handler_inst = handler.PresentationHandler()
             responder = MockResponder()
             await handler_inst.handle(request_context, responder)
 
-        mock_pres_mgr.assert_called_once_with(request_context)
-        mock_pres_mgr.return_value.receive_presentation.assert_called_once_with()
+        mock_pres_mgr.assert_called_once_with(request_context.profile)
+        mock_pres_mgr.return_value.receive_presentation.assert_called_once_with(
+            request_context.message, request_context.connection_record
+        )
         assert not responder.messages
 
     async def test_called_auto_verify(self):
-        request_context = RequestContext()
+        request_context = RequestContext.test_context()
         request_context.message_receipt = MessageReceipt()
         request_context.settings["debug.auto_verify_presentation"] = True
 
@@ -44,10 +47,13 @@ class TestPresentationHandler(AsyncTestCase):
             mock_pres_mgr.return_value.verify_presentation = async_mock.CoroutineMock()
             request_context.message = Presentation()
             request_context.connection_ready = True
+            request_context.connection_record = async_mock.MagicMock()
             handler_inst = handler.PresentationHandler()
             responder = MockResponder()
             await handler_inst.handle(request_context, responder)
 
-        mock_pres_mgr.assert_called_once_with(request_context)
-        mock_pres_mgr.return_value.receive_presentation.assert_called_once_with()
+        mock_pres_mgr.assert_called_once_with(request_context.profile)
+        mock_pres_mgr.return_value.receive_presentation.assert_called_once_with(
+            request_context.message, request_context.connection_record
+        )
         assert not responder.messages

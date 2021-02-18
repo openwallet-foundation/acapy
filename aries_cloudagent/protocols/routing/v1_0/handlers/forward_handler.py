@@ -29,7 +29,7 @@ class ForwardHandler(BaseHandler):
 
         packed = context.message.msg
         packed = json.dumps(packed).encode("ascii")
-        rt_mgr = RoutingManager(context)
+        rt_mgr = RoutingManager(context.profile)
         target = context.message.to
 
         try:
@@ -39,10 +39,11 @@ class ForwardHandler(BaseHandler):
             return
 
         # load connection
-        connection_mgr = ConnectionManager(context)
-        connection_targets = await connection_mgr.get_connection_targets(
-            connection_id=recipient.connection_id
-        )
+        async with context.session() as session:
+            connection_mgr = ConnectionManager(session)
+            connection_targets = await connection_mgr.get_connection_targets(
+                connection_id=recipient.connection_id
+            )
         # TODO: validate that there is 1 target, with 1 verkey. warn otherwise
         connection_verkey = connection_targets[0].recipient_keys[0]
 

@@ -1,9 +1,9 @@
 import pytest
 from unittest import mock
 
-from aries_cloudagent.messaging.base_handler import HandlerException
-from aries_cloudagent.messaging.request_context import RequestContext
-from aries_cloudagent.messaging.responder import MockResponder
+from ......messaging.base_handler import HandlerException
+from ......messaging.request_context import RequestContext
+from ......messaging.responder import MockResponder
 
 from ...handlers.basicmessage_handler import BasicMessageHandler
 from ...messages.basicmessage import BasicMessage
@@ -11,8 +11,7 @@ from ...messages.basicmessage import BasicMessage
 
 @pytest.fixture()
 def request_context() -> RequestContext:
-    ctx = RequestContext()
-    yield ctx
+    yield RequestContext.test_context()
 
 
 class TestBasicMessageHandler:

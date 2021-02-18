@@ -142,7 +142,11 @@ class BaseModel(ABC):
         """
         schema = self.Schema(unknown=EXCLUDE)
         try:
-            return schema.dumps(self) if as_string else schema.dump(self)
+            return (
+                schema.dumps(self, separators=(",", ":"))
+                if as_string
+                else schema.dump(self)
+            )
         except ValidationError as e:
             LOGGER.exception(f"{self.__class__.__name__} message serialization error:")
             raise BaseModelError(
@@ -263,7 +267,9 @@ class BaseModelSchema(Schema):
             The modified data
 
         """
-        # not sure why this is necessary, seems like a bug
+        if not data:
+            return data
+
         to_remove = {
             field_obj.data_key or field_name
             for field_name, field_obj in self.fields.items()

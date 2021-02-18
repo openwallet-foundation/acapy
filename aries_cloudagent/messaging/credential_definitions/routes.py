@@ -13,7 +13,8 @@ from aiohttp_apispec import (
 
 from marshmallow import fields
 
-from ...issuer.base import BaseIssuer
+from ...admin.request_context import AdminRequestContext
+from ...indy.issuer import IndyIssuer
 from ...ledger.base import BaseLedger
 from ...storage.base import BaseStorage
 from ...tails.base import BaseTailsServer
@@ -115,7 +116,7 @@ class CredDefIdMatchInfoSchema(OpenAPISchema):
     summary="Sends a credential definition to the ledger",
 )
 @request_schema(CredentialDefinitionSendRequestSchema())
-@response_schema(CredentialDefinitionSendResultsSchema(), 200)
+@response_schema(CredentialDefinitionSendResultsSchema(), 200, description="")
 async def credential_definitions_send_credential_definition(request: web.BaseRequest):
     """
     Request handler for sending a credential definition to the ledger.
@@ -127,7 +128,7 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
         The credential definition identifier
 
     """
-    context = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
 
     body = await request.json()
 
@@ -136,14 +137,14 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
     tag = body.get("tag")
     rev_reg_size = body.get("revocation_registry_size")
 
-    ledger: BaseLedger = await context.inject(BaseLedger, required=False)
+    ledger = context.inject(BaseLedger, required=False)
     if not ledger:
         reason = "No ledger available"
         if not context.settings.get_value("wallet.type"):
             reason += ": missing wallet-type?"
         raise web.HTTPForbidden(reason=reason)
 
-    issuer: BaseIssuer = await context.inject(BaseIssuer)
+    issuer = context.inject(IndyIssuer)
     try:  # even if in wallet, send it and raise if erroneously so
         async with ledger:
             (cred_def_id, cred_def, novel) = await shield(
@@ -160,12 +161,13 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
 
     # If revocation is requested and cred def is novel, create revocation registry
     if support_revocation and novel:
-        tails_base_url = context.settings.get("tails_server_base_url")
+        profile = context.profile
+        tails_base_url = profile.settings.get("tails_server_base_url")
         if not tails_base_url:
             raise web.HTTPBadRequest(reason="tails_server_base_url not configured")
         try:
             # Create registry
-            revoc = IndyRevocation(context)
+            revoc = IndyRevocation(profile)
             registry_record = await revoc.init_issuer_registry(
                 cred_def_id,
                 max_cred_num=rev_reg_size,
@@ -173,13 +175,13 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
 
         except RevocationNotSupportedError as e:
             raise web.HTTPBadRequest(reason=e.message) from e
-        await shield(registry_record.generate_registry(context))
+        await shield(registry_record.generate_registry(profile))
         try:
             await registry_record.set_tails_file_public_uri(
-                context, f"{tails_base_url}/{registry_record.revoc_reg_id}"
+                profile, f"{tails_base_url}/{registry_record.revoc_reg_id}"
             )
-            await registry_record.send_def(context)
-            await registry_record.send_entry(context)
+            await registry_record.send_def(profile)
+            await registry_record.send_entry(profile)
 
             # stage pending registry independent of whether tails server is OK
             pending_registry_record = await revoc.init_issuer_registry(
@@ -187,12 +189,12 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
                 max_cred_num=registry_record.max_cred_num,
             )
             ensure_future(
-                pending_registry_record.stage_pending_registry(context, max_attempts=16)
+                pending_registry_record.stage_pending_registry(profile, max_attempts=16)
             )
 
-            tails_server: BaseTailsServer = await context.inject(BaseTailsServer)
+            tails_server = profile.inject(BaseTailsServer)
             (upload_success, reason) = await tails_server.upload_tails_file(
-                context,
+                profile,
                 registry_record.revoc_reg_id,
                 registry_record.tails_local_path,
                 interval=0.8,
@@ -218,7 +220,7 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
     summary="Search for matching credential definitions that agent originated",
 )
 @querystring_schema(CredDefQueryStringSchema())
-@response_schema(CredentialDefinitionsCreatedResultsSchema(), 200)
+@response_schema(CredentialDefinitionsCreatedResultsSchema(), 200, description="")
 async def credential_definitions_created(request: web.BaseRequest):
     """
     Request handler for retrieving credential definitions that current agent created.
@@ -230,15 +232,16 @@ async def credential_definitions_created(request: web.BaseRequest):
         The identifiers of matching credential definitions.
 
     """
-    context = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
 
-    storage = await context.inject(BaseStorage)
-    found = await storage.search_records(
+    session = await context.session()
+    storage = session.inject(BaseStorage)
+    found = await storage.find_all_records(
         type_filter=CRED_DEF_SENT_RECORD_TYPE,
         tag_query={
             tag: request.query[tag] for tag in CRED_DEF_TAGS if tag in request.query
         },
-    ).fetch_all()
+    )
 
     return web.json_response(
         {"credential_definition_ids": [record.value for record in found]}
@@ -250,7 +253,7 @@ async def credential_definitions_created(request: web.BaseRequest):
     summary="Gets a credential definition from the ledger",
 )
 @match_info_schema(CredDefIdMatchInfoSchema())
-@response_schema(CredentialDefinitionGetResultsSchema(), 200)
+@response_schema(CredentialDefinitionGetResultsSchema(), 200, description="")
 async def credential_definitions_get_credential_definition(request: web.BaseRequest):
     """
     Request handler for getting a credential definition from the ledger.
@@ -262,11 +265,11 @@ async def credential_definitions_get_credential_definition(request: web.BaseRequ
         The credential definition details.
 
     """
-    context = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
 
     cred_def_id = request.match_info["cred_def_id"]
 
-    ledger: BaseLedger = await context.inject(BaseLedger, required=False)
+    ledger = context.inject(BaseLedger, required=False)
     if not ledger:
         reason = "No ledger available"
         if not context.settings.get_value("wallet.type"):

@@ -7,8 +7,9 @@ from datetime import datetime, timezone
 from time import time
 from unittest import TestCase
 
+from ....indy.sdk.wallet_setup import IndyWalletConfig
 from ....messaging.models.base import BaseModelError
-from ....wallet.indy import IndyWallet
+from ....wallet.indy import IndySdkWallet
 from ....wallet.util import b64_to_bytes, bytes_to_b64
 
 from ..attach_decorator import (
@@ -81,17 +82,15 @@ def seed():
 
 @pytest.fixture()
 async def wallet():
-    wallet = IndyWallet(
+    wallet = await IndyWalletConfig(
         {
-            "auto_create": True,
             "auto_remove": True,
-            "key": await IndyWallet.generate_wallet_key(),
+            "key": await IndySdkWallet.generate_wallet_key(),
             "key_derivation_method": "RAW",
             "name": "test-wallet-sign-verify-attach-deco",
         }
-    )
-    await wallet.open()
-    yield wallet
+    ).create_wallet()
+    yield IndySdkWallet(wallet)
     await wallet.close()
 
 

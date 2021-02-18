@@ -33,9 +33,11 @@ class PresentationHandler(BaseHandler):
             context.message.serialize(as_string=True),
         )
 
-        presentation_manager = PresentationManager(context)
+        presentation_manager = PresentationManager(context.profile)
 
-        presentation_exchange_record = await presentation_manager.receive_presentation()
+        presentation_exchange_record = await presentation_manager.receive_presentation(
+            context.message, context.connection_record
+        )
 
         r_time = trace_event(
             context.settings,

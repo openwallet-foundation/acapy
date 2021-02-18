@@ -2,7 +2,7 @@
 
 from typing import Sequence
 
-from marshmallow import EXCLUDE, fields
+from marshmallow import EXCLUDE, fields, post_dump
 
 from .....messaging.models.base import BaseModel, BaseModelSchema
 from .....messaging.valid import INDY_DID, DID_KEY
@@ -33,8 +33,8 @@ class Service(BaseModel):
             id: An identifier for this service block
             type: A type for this service block
             did: A did for the connection
-            recipient_key: A list of recipient keys
-            routing_keys: A list of routing keys
+            recipient_key: A list of recipient keys in W3C did:key format
+            routing_keys: A list of routing keys in W3C did:key format
             service_endpoint: An endpoint for the connection
         """
         self._id = _id
@@ -54,9 +54,9 @@ class ServiceSchema(BaseModelSchema):
         model_class = Service
         unknown = EXCLUDE
 
-    _id = fields.Str(required=True, description="", data_key="id")
-    _type = fields.Str(required=True, description="", data_key="type")
-    did = fields.Str(required=False, description="", **INDY_DID)
+    _id = fields.Str(required=True, description="Service identifier", data_key="id")
+    _type = fields.Str(required=True, description="Service type", data_key="type")
+    did = fields.Str(required=False, description="Service DID", **INDY_DID)
 
     recipient_keys = fields.List(
         fields.Str(description="Recipient public key", **DID_KEY),
@@ -78,3 +78,12 @@ class ServiceSchema(BaseModelSchema):
         description="Service endpoint at which to reach this agent",
         example="http://192.168.56.101:8020",
     )
+
+    @post_dump
+    def post_dump(self, data, **kwargs):
+        """Post dump hook."""
+
+        if "routingKeys" in data and not data["routingKeys"]:
+            del data["routingKeys"]
+
+        return data

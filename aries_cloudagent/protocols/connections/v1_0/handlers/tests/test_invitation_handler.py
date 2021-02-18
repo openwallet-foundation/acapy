@@ -1,9 +1,9 @@
 import pytest
 
-from aries_cloudagent.messaging.base_handler import HandlerException
-from aries_cloudagent.messaging.request_context import RequestContext
-from aries_cloudagent.messaging.responder import MockResponder
-from aries_cloudagent.transport.inbound.receipt import MessageReceipt
+from ......messaging.base_handler import HandlerException
+from ......messaging.request_context import RequestContext
+from ......messaging.responder import MockResponder
+from ......transport.inbound.receipt import MessageReceipt
 
 from ...handlers.connection_invitation_handler import ConnectionInvitationHandler
 from ...messages.connection_invitation import ConnectionInvitation
@@ -12,7 +12,7 @@ from ...messages.problem_report import ProblemReport, ProblemReportReason
 
 @pytest.fixture()
 def request_context() -> RequestContext:
-    ctx = RequestContext()
+    ctx = RequestContext.test_context()
     ctx.message_receipt = MessageReceipt()
     yield ctx
 

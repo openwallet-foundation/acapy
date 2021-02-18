@@ -53,9 +53,9 @@ class group:
         )
 
 
-def create_argument_parser():
+def create_argument_parser(*, prog: str = None):
     """Create am instance of an arg parser, force yaml format for external config."""
-    return ArgumentParser(config_file_parser_class=YAMLConfigFileParser)
+    return ArgumentParser(config_file_parser_class=YAMLConfigFileParser, prog=prog)
 
 
 def load_argument_groups(parser: ArgumentParser, *groups: Type[ArgumentGroup]):
@@ -140,12 +140,13 @@ class AdminGroup(ArgumentGroup):
         parser.add_argument(
             "--webhook-url",
             action="append",
-            metavar="<url>",
+            metavar="<url#api_key>",
             env_var="ACAPY_WEBHOOK_URL",
             help="Send webhooks containing internal state changes to the specified\
-            URL. This is useful for a controller to monitor agent events and respond\
-            to those events using the admin API. If not specified, webhooks are not\
-            published by the agent.",
+            URL. Optional API key to be passed in the request body can be appended using\
+            a hash separator [#]. This is useful for a controller to monitor agent events\
+            and respond to those events using the admin API. If not specified, \
+            webhooks are not published by the agent.",
         )
 
     def get_settings(self, args: Namespace):
@@ -229,16 +230,15 @@ class DebugGroup(ArgumentGroup):
             "--invite",
             action="store_true",
             env_var="ACAPY_INVITE",
-            help="After startup, generate and print a new connection invitation\
+            help="After startup, generate and print a new out-of-band connection invitation\
             URL. Default: false.",
         )
         parser.add_argument(
-            "--invite-role",
-            dest="invite_role",
-            type=str,
-            metavar="<role>",
-            env_var="ACAPY_INVITE_ROLE",
-            help="Specify the role of the generated invitation.",
+            "--connections-invite",
+            action="store_true",
+            env_var="ACAPY_CONNECTIONS_INVITE",
+            help="After startup, generate and print a new connections protocol \
+            style invitation URL. Default: false.",
         )
         parser.add_argument(
             "--invite-label",
@@ -261,6 +261,13 @@ class DebugGroup(ArgumentGroup):
             help="Flag specifying the generated invite should be public.",
         )
         parser.add_argument(
+            "--invite-metadata-json",
+            type=str,
+            metavar="<metadata-json>",
+            env_var="ACAPY_INVITE_METADATA_JSON",
+            help="Add metadata json to invitation created with --invite argument.",
+        )
+        parser.add_argument(
             "--test-suite-endpoint",
             type=str,
             metavar="<endpoint>",
@@ -279,8 +286,8 @@ class DebugGroup(ArgumentGroup):
             "--auto-accept-requests",
             action="store_true",
             env_var="ACAPY_AUTO_ACCEPT_REQUESTS",
-            help="Automatically connection requests without firing a webhook event\
-            or waiting for an admin request. Default: false.",
+            help="Automatically accept connection requests without firing\
+            a webhook event or waiting for an admin request. Default: false.",
         )
         parser.add_argument(
             "--auto-respond-messages",
@@ -354,14 +361,16 @@ class DebugGroup(ArgumentGroup):
             settings["debug.seed"] = args.debug_seed
         if args.invite:
             settings["debug.print_invitation"] = True
-        if args.invite_role:
-            settings["debug.invite_role"] = args.invite_role
+        if args.connections_invite:
+            settings["debug.print_connections_invitation"] = True
         if args.invite_label:
             settings["debug.invite_label"] = args.invite_label
         if args.invite_multi_use:
             settings["debug.invite_multi_use"] = True
         if args.invite_public:
             settings["debug.invite_public"] = True
+        if args.invite_metadata_json:
+            settings["debug.invite_metadata_json"] = args.invite_metadata_json
         if args.test_suite_endpoint:
             settings["debug.test_suite_endpoint"] = args.test_suite_endpoint
 
@@ -462,6 +471,14 @@ class GeneralGroup(ArgumentGroup):
             env_var="ACAPY_TAILS_SERVER_BASE_URL",
             help="Sets the base url of the tails server in use.",
         )
+        parser.add_argument(
+            "--tails-server-upload-url",
+            type=str,
+            metavar="<tails-server-upload-url>",
+            env_var="ACAPY_TAILS_SERVER_UPLOAD_URL",
+            help="Sets the base url of the tails server for upload, defaulting to the\
+            tails server base url.",
+        )
 
     def get_settings(self, args: Namespace) -> dict:
         """Extract general settings."""
@@ -483,6 +500,9 @@ class GeneralGroup(ArgumentGroup):
             settings["read_only_ledger"] = True
         if args.tails_server_base_url:
             settings["tails_server_base_url"] = args.tails_server_base_url
+            settings["tails_server_upload_url"] = args.tails_server_base_url
+        if args.tails_server_upload_url:
+            settings["tails_server_upload_url"] = args.tails_server_upload_url
         return settings
 
 
@@ -543,7 +563,9 @@ class LedgerGroup(ArgumentGroup):
     def get_settings(self, args: Namespace) -> dict:
         """Extract ledger settings."""
         settings = {}
-        if not args.no_ledger:
+        if args.no_ledger:
+            settings["ledger.disabled"] = True
+        else:
             if args.genesis_url:
                 settings["ledger.genesis_url"] = args.genesis_url
             elif args.genesis_file:
@@ -554,7 +576,7 @@ class LedgerGroup(ArgumentGroup):
                 raise ArgsParseError(
                     "One of --genesis-url --genesis-file or --genesis-transactions "
                     + "must be specified (unless --no-ledger is specified to "
-                    + "explicitely configure aca-py to run with no ledger)."
+                    + "explicitly configure aca-py to run with no ledger)."
                 )
             if args.ledger_pool_name:
                 settings["ledger.pool_name"] = args.ledger_pool_name
@@ -702,6 +724,14 @@ class ProtocolGroup(ArgumentGroup):
             'did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/'.",
         )
         parser.add_argument(
+            "--emit-new-didcomm-mime-type",
+            action="store_true",
+            env_var="ACAPY_EMIT_NEW_DIDCOMM_MIME_TYPE",
+            help="Send packed agent messages with the DIDComm MIME type\
+            as of RFC 0044; i.e., 'application/didcomm-envelope-enc'\
+            instead of 'application/ssi-agent-wire'.",
+        )
+        parser.add_argument(
             "--exch-use-unencrypted-tags",
             action="store_true",
             env_var="ACAPY_EXCH_USE_UNENCRYPTED_TAGS",
@@ -758,9 +788,35 @@ class ProtocolGroup(ArgumentGroup):
             settings["preserve_exchange_records"] = True
         if args.emit_new_didcomm_prefix:
             settings["emit_new_didcomm_prefix"] = True
+        if args.emit_new_didcomm_mime_type:
+            settings["emit_new_didcomm_mime_type"] = True
         if args.exch_use_unencrypted_tags:
             settings["exch_use_unencrypted_tags"] = True
             environ["EXCH_UNENCRYPTED_TAGS"] = "True"
+        return settings
+
+
+@group(CAT_START)
+class StartupGroup(ArgumentGroup):
+    """Startup settings."""
+
+    GROUP_NAME = "Start-up"
+
+    def add_arguments(self, parser: ArgumentParser):
+        """Add startup-specific command line arguments to the parser."""
+        parser.add_argument(
+            "--auto-provision",
+            action="store_true",
+            env_var="ACAPY_AUTO_PROVISION",
+            help="If the requested profile does not exist, initialize it with\
+            the given parameters.",
+        )
+
+    def get_settings(self, args: Namespace):
+        """Extract startup settings."""
+        settings = {}
+        if args.auto_provision:
+            settings["auto_provision"] = True
         return settings
 
 
@@ -811,6 +867,13 @@ class TransportGroup(ArgumentGroup):
             (self-attested) to other agents as part of forming a connection.",
         )
         parser.add_argument(
+            "--image-url",
+            type=str,
+            env_var="ACAPY_IMAGE_URL",
+            help="Specifies the image url for this agent. This image url is publicized\
+            (self-attested) to other agents as part of forming a connection.",
+        )
+        parser.add_argument(
             "--max-message-size",
             default=2097152,
             type=ByteSize(min_size=1024),
@@ -851,10 +914,79 @@ class TransportGroup(ArgumentGroup):
 
         if args.label:
             settings["default_label"] = args.label
+        if args.image_url:
+            settings["image_url"] = args.image_url
         if args.max_message_size:
             settings["transport.max_message_size"] = args.max_message_size
         if args.max_outbound_retry:
             settings["transport.max_outbound_retry"] = args.max_outbound_retry
+
+        return settings
+
+
+@group(CAT_START)
+class MediationGroup(ArgumentGroup):
+    """Mediation settings."""
+
+    GROUP_NAME = "Mediation"
+
+    def add_arguments(self, parser: ArgumentParser):
+        """Add mediation command line arguments to the parser."""
+        parser.add_argument(
+            "--open-mediation",
+            action="store_true",
+            help="Enables didcomm mediation. After establishing a connection, if enabled, \
+                an agent may request message mediation, which will allow the mediator to \
+                forward messages on behalf of the recipient. See aries-rfc:0211.",
+        )
+        parser.add_argument(
+            "--mediator-invitation",
+            type=str,
+            metavar="<invite URL to mediator>",
+            env_var="ACAPY_MEDIATION_INVITATION",
+            help="Connect to mediator through provided invitation\
+            and send mediation request and set as default mediator.",
+        )
+        parser.add_argument(
+            "--mediator-connections-invite",
+            action="store_true",
+            env_var="ACAPY_MEDIATION_CONNECTIONS_INVITE",
+            help="Connect to mediator through a connection invitation. \
+                If not specified, connect using an OOB invitation. \
+                Default: false.",
+        )
+        parser.add_argument(
+            "--default-mediator-id",
+            type=str,
+            metavar="<mediation id>",
+            env_var="ACAPY_DEFAULT_MEDIATION_ID",
+            help="Set the default mediator by ID",
+        )
+        parser.add_argument(
+            "--clear-default-mediator",
+            action="store_true",
+            env_var="ACAPY_CLEAR_DEFAULT_MEDIATOR",
+            help="Clear the stored default mediator.",
+        )
+
+    def get_settings(self, args: Namespace):
+        """Extract mediation settings."""
+        settings = {}
+        if args.open_mediation:
+            settings["mediation.open"] = True
+        if args.mediator_invitation:
+            settings["mediation.invite"] = args.mediator_invitation
+        if args.default_mediator_id:
+            settings["mediation.default_id"] = args.default_mediator_id
+        if args.clear_default_mediator:
+            settings["mediation.clear"] = True
+        if args.mediator_connections_invite:
+            settings["mediation.connections_invite"] = True
+
+        if args.clear_default_mediator and args.default_mediator_id:
+            raise ArgsParseError(
+                "Cannot both set and clear mediation at the same time."
+            )
 
         return settings
 
@@ -963,6 +1095,13 @@ class WalletGroup(ArgumentGroup):
             and the '--seed' parameter specifies a new DID, the agent will use\
             the new DID in place of the existing DID. Default: false.",
         )
+        parser.add_argument(
+            "--recreate-wallet",
+            action="store_true",
+            env_var="ACAPY_RECREATE_WALLET",
+            help="If an existing wallet exists with the same name, remove and\
+            recreate it during provisioning.",
+        )
 
     def get_settings(self, args: Namespace) -> dict:
         """Extract wallet settings."""
@@ -987,6 +1126,8 @@ class WalletGroup(ArgumentGroup):
             settings["wallet.storage_creds"] = args.wallet_storage_creds
         if args.replace_public_did:
             settings["wallet.replace_public_did"] = True
+        if args.recreate_wallet:
+            settings["wallet.recreate"] = True
         # check required settings for 'indy' wallets
         if settings["wallet.type"] == "indy":
             # requires name, key
@@ -1005,4 +1146,52 @@ class WalletGroup(ArgumentGroup):
                         "Parameters --wallet-storage-config and --wallet-storage-creds"
                         + " must be provided for indy postgres wallets"
                     )
+        return settings
+
+
+@group(CAT_START)
+class MultitenantGroup(ArgumentGroup):
+    """Multitenant settings."""
+
+    GROUP_NAME = "Multitenant"
+
+    def add_arguments(self, parser: ArgumentParser):
+        """Add multitenant-specific command line arguments to the parser."""
+        parser.add_argument(
+            "--multitenant",
+            action="store_true",
+            env_var="ACAPY_MULTITENANT",
+            help="Enable multitenant mode.",
+        )
+        parser.add_argument(
+            "--jwt-secret",
+            type=str,
+            metavar="<jwt-secret>",
+            env_var="ACAPY_MULTITENANT_JWT_SECRET",
+            help="Specify the secret to be used for Json Web Token (JWT) \
+            creation and verification. The JWTs are used to authenticate and authorize \
+            multitenant wallets.",
+        )
+        parser.add_argument(
+            "--multitenant-admin",
+            action="store_true",
+            env_var="ACAPY_MULTITENANT_ADMIN",
+            help="Specify whether to enable the multitenant admin api.",
+        )
+
+    def get_settings(self, args: Namespace):
+        """Extract multitenant settings."""
+        settings = {}
+        if args.multitenant:
+            settings["multitenant.enabled"] = True
+
+            if args.jwt_secret:
+                settings["multitenant.jwt_secret"] = args.jwt_secret
+            else:
+                raise ArgsParseError(
+                    "Parameter --jwt-secret must be provided in multitenant mode"
+                )
+
+            if args.multitenant_admin:
+                settings["multitenant.admin_enabled"] = True
         return settings

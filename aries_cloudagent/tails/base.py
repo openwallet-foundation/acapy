@@ -1,6 +1,7 @@
 """Tails server interface base class."""
 
 from abc import ABC, abstractmethod, ABCMeta
+from typing import Tuple
 
 from ..config.injection_context import InjectionContext
 
@@ -17,7 +18,7 @@ class BaseTailsServer(ABC, metaclass=ABCMeta):
         interval: float = 1.0,
         backoff: float = 0.25,
         max_attempts: int = 5,
-    ) -> (bool, str):
+    ) -> Tuple[bool, str]:
         """Upload tails file to tails server.
 
         Args:

@@ -15,7 +15,7 @@ class CredentialAck(Ack):
     """Class representing a credential ack message."""
 
     class Meta:
-        """Credential metadata."""
+        """Credential ack metadata."""
 
         handler_class = HANDLER_CLASS
         schema_class = "CredentialAckSchema"

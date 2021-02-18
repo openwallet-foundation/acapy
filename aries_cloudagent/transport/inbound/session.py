@@ -4,7 +4,10 @@ import asyncio
 import logging
 from typing import Callable, Sequence, Union
 
-from ...config.injection_context import InjectionContext
+from ...admin.server import AdminResponder
+from ...core.profile import Profile
+from ...messaging.responder import BaseResponder
+from ...multitenant.manager import MultitenantManager
 
 from ..error import WireFormatError
 from ..outbound.message import OutboundMessage
@@ -35,7 +38,7 @@ class InboundSession:
     def __init__(
         self,
         *,
-        context: InjectionContext,
+        profile: Profile,
         inbound_handler: Callable,
         session_id: str,
         wire_format: BaseWireFormat,
@@ -49,7 +52,7 @@ class InboundSession:
         transport_type: str = None,
     ):
         """Initialize the inbound session."""
-        self.context = context
+        self.profile = profile
         self.inbound_handler = inbound_handler
         self.session_id = session_id
         self.wire_format = wire_format
@@ -66,6 +69,13 @@ class InboundSession:
         self._reply_mode = None
         self._reply_verkeys = None
         self._reply_thread_ids = None
+
+        # If multitenancy is enabled we need to relay the message by changing
+        # the context/profile to the wallet associated with the message.
+        # Only needs to happen for the first received message
+        self._check_relay_context = profile.context.settings.get(
+            "multitenant.enabled", False
+        )
 
         # call setters
         self.reply_thread_ids = reply_thread_ids
@@ -147,6 +157,36 @@ class InboundSession:
         """Check if a response is currently buffered."""
         return bool(self.response_buffer)
 
+    async def handle_relay_context(self, payload_enc: Union[str, bytes]):
+        """Update the session profile based on the recipients of an incoming message."""
+        multitenant_mgr = self.profile.context.inject(MultitenantManager)
+
+        try:
+            [wallet] = await multitenant_mgr.get_wallets_by_message(
+                payload_enc, self.wire_format
+            )
+
+            if wallet.is_managed:
+                profile = await multitenant_mgr.get_wallet_profile(
+                    self.profile.context, wallet
+                )
+
+                base_responder: AdminResponder = profile.inject(BaseResponder)
+
+                # Create new responder based on base responder
+                responder = AdminResponder(
+                    profile,
+                    base_responder.send_fn,
+                    base_responder.webhook_fn,
+                )
+                profile.context.injector.bind_instance(BaseResponder, responder)
+
+                # overwrite session profile with wallet profile
+                self.profile = profile
+
+        except ValueError:
+            pass  # No wallet found. Use the base session profile
+
     def process_inbound(self, message: InboundMessage):
         """
         Process an incoming message and update the session metadata as necessary.
@@ -164,9 +204,8 @@ class InboundSession:
 
     async def parse_inbound(self, payload_enc: Union[str, bytes]) -> InboundMessage:
         """Convert a message payload and to an inbound message."""
-        payload, receipt = await self.wire_format.parse_message(
-            self.context, payload_enc
-        )
+        session = await self.profile.session()
+        payload, receipt = await self.wire_format.parse_message(session, payload_enc)
         return InboundMessage(
             payload,
             receipt,
@@ -176,6 +215,10 @@ class InboundSession:
 
     async def receive(self, payload_enc: Union[str, bytes]) -> InboundMessage:
         """Receive a new message payload and dispatch the message."""
+        if self._check_relay_context:
+            await self.handle_relay_context(payload_enc)
+            self._check_relay_context = False
+
         message = await self.parse_inbound(payload_enc)
         self.receive_inbound(message)
         return message
@@ -183,7 +226,7 @@ class InboundSession:
     def receive_inbound(self, message: InboundMessage):
         """Deliver the inbound message to the conductor."""
         self.process_inbound(message)
-        self.inbound_handler(message, can_respond=self.can_respond)
+        self.inbound_handler(self.profile, message, can_respond=self.can_respond)
 
     def select_outbound(self, message: OutboundMessage) -> bool:
         """Determine if an outbound message should be sent to this session.
@@ -218,8 +261,9 @@ class InboundSession:
         if not outbound.reply_to_verkey:
             raise WireFormatError("No reply verkey available for encoding message")
 
+        session = await self.profile.session()
         return await self.wire_format.encode_message(
-            self.context,
+            session,
             outbound.payload,
             [outbound.reply_to_verkey],
             None,

@@ -12,7 +12,7 @@ from ...messages.ping_response import PingResponse
 
 @pytest.fixture()
 def request_context() -> RequestContext:
-    ctx = RequestContext()
+    ctx = RequestContext.test_context()
     yield ctx
 
 
@@ -21,7 +21,7 @@ class TestPingHandler:
     async def test_ping(self, request_context):
         request_context.message_receipt = MessageReceipt()
         request_context.message = Ping(response_requested=False)
-        request_context.settings = {"debug.monitor_ping": True}
+        request_context.settings["debug.monitor_ping"] = True
         request_context.connection_ready = True
         handler = PingHandler()
         responder = MockResponder()

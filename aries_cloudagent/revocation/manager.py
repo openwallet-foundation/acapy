@@ -4,9 +4,9 @@ import json
 import logging
 from typing import Mapping, Sequence, Text
 
-from ..config.injection_context import InjectionContext
 from ..core.error import BaseError
-from ..issuer.base import BaseIssuer
+from ..core.profile import Profile
+from ..indy.issuer import IndyIssuer
 from ..storage.error import StorageNotFoundError
 
 from .indy import IndyRevocation
@@ -21,26 +21,15 @@ class RevocationManagerError(BaseError):
 class RevocationManager:
     """Class for managing revocation operations."""
 
-    def __init__(self, context: InjectionContext):
+    def __init__(self, profile: Profile):
         """
         Initialize a RevocationManager.
 
         Args:
             context: The context for this revocation manager
         """
-        self._context = context
+        self._profile = profile
         self._logger = logging.getLogger(__name__)
-
-    @property
-    def context(self) -> InjectionContext:
-        """
-        Accessor for the current request context.
-
-        Returns:
-            The request context for this connection
-
-        """
-        return self._context
 
     async def revoke_credential_by_cred_ex_id(
         self, cred_ex_id: str, publish: bool = False
@@ -57,10 +46,11 @@ class RevocationManager:
 
         """
         try:
-            rec = await IssuerCredRevRecord.retrieve_by_cred_ex_id(
-                self.context,
-                cred_ex_id,
-            )
+            async with self._profile.session() as session:
+                rec = await IssuerCredRevRecord.retrieve_by_cred_ex_id(
+                    session,
+                    cred_ex_id,
+                )
         except StorageNotFoundError as err:
             raise RevocationManagerError(
                 "No issuer credential revocation record found for "
@@ -88,9 +78,9 @@ class RevocationManager:
                 along with any revocations pending against it
 
         """
-        issuer: BaseIssuer = await self.context.inject(BaseIssuer)
+        issuer: IndyIssuer = self._profile.inject(IndyIssuer)
 
-        revoc = IndyRevocation(self.context)
+        revoc = IndyRevocation(self._profile)
         issuer_rr_rec = await revoc.get_issuer_rev_reg_record(rev_reg_id)
         if not issuer_rr_rec:
             raise RevocationManagerError(
@@ -108,11 +98,13 @@ class RevocationManager:
             )
             if delta_json:
                 issuer_rr_rec.revoc_reg_entry = json.loads(delta_json)
-                await issuer_rr_rec.send_entry(self.context)
-                await issuer_rr_rec.clear_pending(self.context)
+                await issuer_rr_rec.send_entry(self._profile)
+                async with self._profile.session() as session:
+                    await issuer_rr_rec.clear_pending(session)
 
         else:
-            await issuer_rr_rec.mark_pending(self.context, cred_rev_id)
+            async with self._profile.session() as session:
+                await issuer_rr_rec.mark_pending(session, cred_rev_id)
 
     async def publish_pending_revocations(
         self, rrid2crid: Mapping[Text, Sequence[Text]] = None
@@ -141,9 +133,10 @@ class RevocationManager:
         Returns: mapping from each revocation registry id to its cred rev ids published.
         """
         result = {}
-        issuer: BaseIssuer = await self.context.inject(BaseIssuer)
+        issuer = self._profile.inject(IndyIssuer)
 
-        issuer_rr_recs = await IssuerRevRegRecord.query_by_pending(self.context)
+        async with self._profile.session() as session:
+            issuer_rr_recs = await IssuerRevRegRecord.query_by_pending(session)
         for issuer_rr_rec in issuer_rr_recs:
             rrid = issuer_rr_rec.revoc_reg_id
             crids = []
@@ -162,10 +155,11 @@ class RevocationManager:
                     crids,
                 )
                 issuer_rr_rec.revoc_reg_entry = json.loads(delta_json)
-                await issuer_rr_rec.send_entry(self.context)
+                await issuer_rr_rec.send_entry(self._profile)
                 published = [crid for crid in crids if crid not in failed_crids]
                 result[issuer_rr_rec.revoc_reg_id] = published
-                await issuer_rr_rec.clear_pending(self.context, published)
+                async with self._profile.session() as session:
+                    await issuer_rr_rec.clear_pending(session, published)
 
         return result
 
@@ -200,11 +194,12 @@ class RevocationManager:
 
         """
         result = {}
-        issuer_rr_recs = await IssuerRevRegRecord.query_by_pending(self.context)
-        for issuer_rr_rec in issuer_rr_recs:
-            rrid = issuer_rr_rec.revoc_reg_id
-            await issuer_rr_rec.clear_pending(self.context, (purge or {}).get(rrid))
-            if issuer_rr_rec.pending_pub:
-                result[rrid] = issuer_rr_rec.pending_pub
+        async with self._profile.session() as session:
+            issuer_rr_recs = await IssuerRevRegRecord.query_by_pending(session)
+            for issuer_rr_rec in issuer_rr_recs:
+                rrid = issuer_rr_rec.revoc_reg_id
+                await issuer_rr_rec.clear_pending(session, (purge or {}).get(rrid))
+                if issuer_rr_rec.pending_pub:
+                    result[rrid] = issuer_rr_rec.pending_pub
 
         return result

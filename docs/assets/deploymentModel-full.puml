@@ -18,7 +18,7 @@ cloud "The Internet" {
 
 package "Aries Cloud Agent" as vx {
     component "Core Capabilities" as core
-    package "DIDcomm Protocols" as prot {
+    package "DIDComm Protocols" as prot {
         component "Protocol 1\nProtocol 2\n.\n.\nProtocol n" as protos
     }
     component "Controller\nREST API" as rest

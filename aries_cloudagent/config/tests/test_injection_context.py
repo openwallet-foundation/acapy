@@ -1,6 +1,6 @@
 from asynctest import TestCase as AsyncTestCase
 
-from ..base import BaseInjector, InjectorError
+from ..base import InjectionError
 from ..injection_context import InjectionContext, InjectionContextError
 
 
@@ -32,6 +32,9 @@ class TestInjectionContext(AsyncTestCase):
 
         context = self.test_instance.start_scope(self.test_scope)
         assert context.scope_name == self.test_scope
+        context.scope_name = "Bob"
+        assert context.scope_name == "Bob"
+
         with self.assertRaises(InjectionContextError):
             context.start_scope(self.test_instance.ROOT_SCOPE)
         assert self.test_instance.scope_name == self.test_instance.ROOT_SCOPE
@@ -45,13 +48,16 @@ class TestInjectionContext(AsyncTestCase):
         root = context.injector_for_scope(context.ROOT_SCOPE)
         assert root.settings[self.test_key] == self.test_value
 
+        context.settings = upd_settings
+        assert context.settings == upd_settings
+
     async def test_inject_simple(self):
         """Test a basic injection."""
-        assert (await self.test_instance.inject(str, required=False)) is None
-        with self.assertRaises(InjectorError):
-            await self.test_instance.inject(str)
+        assert self.test_instance.inject(str, required=False) is None
+        with self.assertRaises(InjectionError):
+            self.test_instance.inject(str)
         self.test_instance.injector.bind_instance(str, self.test_value)
-        assert (await self.test_instance.inject(str)) is self.test_value
+        assert self.test_instance.inject(str) is self.test_value
 
         self.test_instance.injector = None
         assert self.test_instance.injector is None
@@ -59,9 +65,10 @@ class TestInjectionContext(AsyncTestCase):
     async def test_inject_scope(self):
         """Test a scoped injection."""
         context = self.test_instance.start_scope(self.test_scope)
-        assert (await context.inject(str, required=False)) is None
+        assert context.inject(str, required=False) is None
         context.injector.bind_instance(str, self.test_value)
-        assert (await context.inject(str)) is self.test_value
-        assert (await self.test_instance.inject(str, required=False)) is None
+        assert context.inject(str) is self.test_value
+        assert self.test_instance.inject(str, required=False) is None
         root = context.injector_for_scope(context.ROOT_SCOPE)
-        assert (await root.inject(str, required=False)) is None
+        assert root.inject(str, required=False) is None
+        assert self.test_instance.inject(str, required=False) is None

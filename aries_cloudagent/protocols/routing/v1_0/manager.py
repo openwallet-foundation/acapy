@@ -1,12 +1,9 @@
 """Routing manager classes for tracking and inspecting routing records."""
 
-import json
-from typing import Sequence
+from typing import Coroutine, Sequence
 
-from ....config.injection_context import InjectionContext
 from ....core.error import BaseError
-from ....messaging.util import time_now
-from ....storage.base import BaseStorage, StorageRecord
+from ....core.profile import Profile
 from ....storage.error import (
     StorageError,
     StorageDuplicateError,
@@ -32,27 +29,16 @@ class RoutingManager:
 
     RECORD_TYPE = "forward_route"
 
-    def __init__(self, context: InjectionContext):
+    def __init__(self, profile: Profile):
         """
         Initialize a RoutingManager.
 
         Args:
-            context: The context for this manager
+            profile: The profile instance for this manager
         """
-        self._context = context
-        if not context:
-            raise RoutingManagerError("Missing request context")
-
-    @property
-    def context(self) -> InjectionContext:
-        """
-        Accessor for the current request context.
-
-        Returns:
-            The request context for this connection
-
-        """
-        return self._context
+        self._profile = profile
+        if not profile:
+            raise RoutingManagerError("Missing profile")
 
     async def get_recipient(self, recip_verkey: str) -> RouteRecord:
         """
@@ -65,25 +51,24 @@ class RoutingManager:
             The `RouteRecord` associated with this verkey
 
         """
-        storage: BaseStorage = await self._context.inject(BaseStorage)
+        if not recip_verkey:
+            raise RoutingManagerError("Must pass non-empty recip_verkey")
+
         try:
-            record = await storage.search_records(
-                RoutingManager.RECORD_TYPE, {"recipient_key": recip_verkey}
-            ).fetch_single()
+            async with self._profile.session() as session:
+                record = await RouteRecord.retrieve_by_recipient_key(
+                    session, recip_verkey
+                )
         except StorageDuplicateError:
             raise RouteNotFoundError(
-                "Duplicate routes found for verkey: %s", recip_verkey
+                f"More than one route record found with recipient key: {recip_verkey}"
             )
         except StorageNotFoundError:
-            raise RouteNotFoundError("No route defined for verkey: %s", recip_verkey)
-        value = json.loads(record.value)
-        return RouteRecord(
-            record_id=record.id,
-            connection_id=record.tags["connection_id"],
-            recipient_key=record.tags["recipient_key"],
-            created_at=value.get("created_at"),
-            updated_at=value.get("updated_at"),
-        )
+            raise RouteNotFoundError(
+                f"No route found with recipient key: {recip_verkey}"
+            )
+
+        return record
 
     async def get_routes(
         self, client_connection_id: str = None, tag_filter: dict = None
@@ -99,7 +84,8 @@ class RoutingManager:
             A sequence of route records found by the query
 
         """
-        filters = {}
+        # Routing protocol acts only as Server, filter out all client records
+        filters = {"role": RouteRecord.ROLE_SERVER}
         if client_connection_id:
             filters["connection_id"] = client_connection_id
         if tag_filter:
@@ -116,16 +102,21 @@ class RoutingManager:
                         "Unsupported tag filter: '{}' = {}".format(key, val)
                     )
 
-        results = []
-        storage: BaseStorage = await self._context.inject(BaseStorage)
-        async for record in storage.search_records(RoutingManager.RECORD_TYPE, filters):
-            value = json.loads(record.value)
-            value.update(record.tags)
-            results.append(RouteRecord(**value))
+        async with self._profile.session() as session:
+            results = await RouteRecord.query(session, tag_filter=filters)
+
         return results
 
+    async def delete_route_record(self, route: RouteRecord):
+        """Remove an existing route record."""
+        async with self._profile.session() as session:
+            await route.delete_record(session)
+
     async def create_route_record(
-        self, client_connection_id: str = None, recipient_key: str = None
+        self,
+        client_connection_id: str = None,
+        recipient_key: str = None,
+        internal_wallet_id: str = None,
     ) -> RouteRecord:
         """
         Create and store a new RouteRecord.
@@ -133,39 +124,26 @@ class RoutingManager:
         Args:
             client_connection_id: The ID of the connection record
             recipient_key: The recipient verkey of the route
+            internal_wallet_id: The ID of the wallet record. Used for internal routing
 
         Returns:
             The new routing record
 
         """
-        if not client_connection_id:
-            raise RoutingManagerError("Missing client_connection_id")
+        if not (client_connection_id or internal_wallet_id):
+            raise RoutingManagerError(
+                "Either client_connection_id or internal_wallet_id is required"
+            )
         if not recipient_key:
             raise RoutingManagerError("Missing recipient_key")
-        value = {"created_at": time_now(), "updated_at": time_now()}
-        record = StorageRecord(
-            RoutingManager.RECORD_TYPE,
-            json.dumps(value),
-            {"connection_id": client_connection_id, "recipient_key": recipient_key},
-        )
-        storage: BaseStorage = await self._context.inject(BaseStorage)
-        await storage.add_record(record)
-        result = RouteRecord(
-            record_id=record.id,
+        route = RouteRecord(
             connection_id=client_connection_id,
+            wallet_id=internal_wallet_id,
             recipient_key=recipient_key,
-            created_at=value["created_at"],
-            updated_at=value["updated_at"],
         )
-        return result
-
-    async def delete_route_record(self, route: RouteRecord):
-        """Remove an existing route record."""
-        if route and route.record_id:
-            storage: BaseStorage = await self._context.inject(BaseStorage)
-            await storage.delete_record(
-                StorageRecord(None, None, None, route.record_id)
-            )
+        async with self._profile.session() as session:
+            await route.save(session, reason="Created new route")
+        return route
 
     async def update_routes(
         self, client_connection_id: str, updates: Sequence[RouteUpdate]
@@ -196,7 +174,10 @@ class RoutingManager:
                     result.result = RouteUpdated.RESULT_NO_CHANGE
                 else:
                     try:
-                        await self.create_route_record(client_connection_id, recip_key)
+                        await self.create_route_record(
+                            client_connection_id=client_connection_id,
+                            recipient_key=recip_key,
+                        )
                     except RoutingManagerError:
                         result.result = RouteUpdated.RESULT_SERVER_ERROR
                     else:
@@ -217,7 +198,7 @@ class RoutingManager:
         return updated
 
     async def send_create_route(
-        self, router_connection_id: str, recip_key: str, outbound_handler
+        self, router_connection_id: str, recip_key: str, outbound_handler: Coroutine
     ):
         """Create and send a route update request.
 

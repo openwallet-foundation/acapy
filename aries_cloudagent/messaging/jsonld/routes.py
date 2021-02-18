@@ -5,8 +5,11 @@ from aiohttp_apispec import docs, request_schema, response_schema
 
 from marshmallow import fields
 
+from ...admin.request_context import AdminRequestContext
 from ...wallet.base import BaseWallet
+
 from ..models.openapi import OpenAPISchema
+
 from .credential import sign_credential, verify_credential
 
 
@@ -25,7 +28,7 @@ class SignResponseSchema(OpenAPISchema):
 
 @docs(tags=["jsonld"], summary="Sign a JSON-LD structure and return it")
 @request_schema(SignRequestSchema())
-@response_schema(SignResponseSchema(), 200)
+@response_schema(SignResponseSchema(), 200, description="")
 async def sign(request: web.BaseRequest):
     """
     Request handler for signing a jsonld doc.
@@ -36,20 +39,20 @@ async def sign(request: web.BaseRequest):
     """
     response = {}
     try:
-        context = request.app["request_context"]
-        wallet: BaseWallet = await context.inject(BaseWallet)
-        if not wallet:
-            raise web.HTTPForbidden()
-
+        context: AdminRequestContext = request["context"]
         body = await request.json()
         verkey = body.get("verkey")
         doc = body.get("doc")
         credential = doc["credential"]
         signature_options = doc["options"]
 
-        document_with_proof = await sign_credential(
-            credential, signature_options, verkey, wallet
-        )
+        async with context.session() as session:
+            wallet = session.inject(BaseWallet, required=False)
+            if not wallet:
+                raise web.HTTPForbidden()
+            document_with_proof = await sign_credential(
+                credential, signature_options, verkey, wallet
+            )
 
         response["signed_doc"] = document_with_proof
     except Exception as e:
@@ -73,7 +76,7 @@ class VerifyResponseSchema(OpenAPISchema):
 
 @docs(tags=["jsonld"], summary="Verify a JSON-LD structure.")
 @request_schema(VerifyRequestSchema())
-@response_schema(VerifyResponseSchema(), 200)
+@response_schema(VerifyResponseSchema(), 200, description="")
 async def verify(request: web.BaseRequest):
     """
     Request handler for signing a jsonld doc.
@@ -84,16 +87,16 @@ async def verify(request: web.BaseRequest):
     """
     response = {"valid": False}
     try:
-        context = request.app["request_context"]
-        wallet: BaseWallet = await context.inject(BaseWallet)
-        if not wallet:
-            raise web.HTTPForbidden()
-
+        context: AdminRequestContext = request["context"]
         body = await request.json()
         verkey = body.get("verkey")
         doc = body.get("doc")
 
-        valid = await verify_credential(doc, verkey, wallet)
+        async with context.session() as session:
+            wallet = session.inject(BaseWallet, required=False)
+            if not wallet:
+                raise web.HTTPForbidden()
+            valid = await verify_credential(doc, verkey, wallet)
 
         response["valid"] = valid
     except Exception as e:

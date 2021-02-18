@@ -4,16 +4,25 @@ import os
 import random
 import sys
 
-import json
+from typing import Tuple
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # noqa
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from runners.support.agent import DemoAgent, default_genesis_txns
-from runners.support.utils import log_timer, progress, require_indy
+from runners.support.agent import (  # noqa:E402
+    DemoAgent,
+    default_genesis_txns,
+    start_mediator_agent,
+    connect_wallet_to_mediator,
+)
+from runners.support.utils import (
+    log_msg,
+    log_timer,
+    progress,
+    require_indy,
+)  # noqa:E402
 
+CRED_PREVIEW_TYPE = "https://didcomm.org/issue-credential/2.0/credential-preview"
 LOGGER = logging.getLogger(__name__)
-
-
 TAILS_FILE_COUNT = int(os.getenv("TAILS_FILE_COUNT", 100))
 
 
@@ -23,7 +32,6 @@ class BaseAgent(DemoAgent):
         ident: str,
         port: int,
         prefix: str = None,
-        use_routing: bool = False,
         **kwargs,
     ):
         if prefix is None:
@@ -47,51 +55,37 @@ class BaseAgent(DemoAgent):
         self._connection_id = conn_id
         self._connection_ready = asyncio.Future()
 
-    async def get_invite(self, auto_accept: bool = True):
-        result = await self.admin_POST(
-            "/connections/create-invitation",
-            params={"auto_accept": json.dumps(auto_accept)},
-        )
-        self.connection_id = result["connection_id"]
-        return result["invitation"]
-
-    async def receive_invite(self, invite, auto_accept: bool = True):
-        result = await self.admin_POST(
-            "/connections/receive-invitation",
-            invite,
-            params={"auto_accept": json.dumps(auto_accept)},
-        )
-        self.connection_id = result["connection_id"]
-        return self.connection_id
-
-    async def accept_invite(self, conn_id: str):
-        await self.admin_POST(f"/connections/{conn_id}/accept-invitation")
-
-    async def establish_inbound(self, conn_id: str, router_conn_id: str):
-        await self.admin_POST(
-            f"/connections/{conn_id}/establish-inbound/{router_conn_id}"
-        )
-
     async def detect_connection(self):
         if not self._connection_ready:
             raise Exception("No connection to await")
         await self._connection_ready
+        self._connection_ready = None
+
+    async def handle_oob_invitation(self, message):
+        pass
 
     async def handle_connections(self, payload):
-        if payload["connection_id"] == self.connection_id:
+        conn_id = payload["connection_id"]
+        if (not self.connection_id) and (payload["state"] in ("invitation", "request")):
+            self.connection_id = conn_id
+        if conn_id == self.connection_id:
             if payload["state"] == "active" and not self._connection_ready.done():
                 self.log("Connected")
                 self._connection_ready.set_result(True)
 
-    async def handle_issue_credential(self, payload):
-        cred_ex_id = payload["credential_exchange_id"]
-        rev_reg_id = payload.get("revoc_reg_id")
-        cred_rev_id = payload.get("revocation_id")
-
+    async def handle_issue_credential_v2_0(self, payload):
+        cred_ex_id = payload["cred_ex_id"]
         self.credential_state[cred_ex_id] = payload["state"]
+        self.credential_event.set()
+
+    async def handle_issue_credential_v2_0_indy(self, payload):
+        rev_reg_id = payload.get("rev_reg_id")
+        cred_rev_id = payload.get("cred_rev_id")
         if rev_reg_id and cred_rev_id:
             self.revocations.append((rev_reg_id, cred_rev_id))
-        self.credential_event.set()
+
+    async def handle_issuer_cred_rev(self, message):
+        pass
 
     async def handle_ping(self, payload):
         thread_id = payload["thread_id"]
@@ -103,13 +97,13 @@ class BaseAgent(DemoAgent):
             self.ping_state[thread_id] = payload["state"]
             self.ping_event.set()
 
-    async def check_received_creds(self) -> (int, int):
+    async def check_received_creds(self) -> Tuple[int, int]:
         while True:
             self.credential_event.clear()
             pending = 0
             total = len(self.credential_state)
             for result in self.credential_state.values():
-                if result != "credential_acked":
+                if result != "done":
                     pending += 1
             if self.credential_event.is_set():
                 continue
@@ -118,7 +112,7 @@ class BaseAgent(DemoAgent):
     async def update_creds(self):
         await self.credential_event.wait()
 
-    async def check_received_pings(self) -> (int, int):
+    async def check_received_pings(self) -> Tuple[int, int]:
         while True:
             self.ping_event.clear()
             result = {}
@@ -154,20 +148,26 @@ class AliceAgent(BaseAgent):
     def __init__(self, port: int, **kwargs):
         super().__init__("Alice", port, seed=None, **kwargs)
         self.extra_args = [
+            "--auto-accept-invites",
+            "--auto-accept-requests",
             "--auto-respond-credential-offer",
             "--auto-store-credential",
             "--monitor-ping",
         ]
         self.timing_log = "logs/alice_perf.log"
 
-    async def set_tag_policy(self, cred_def_id, taggables):
-        req_body = {"taggables": taggables}
-        await self.admin_POST(f"/wallet/tag-policy/{cred_def_id}", req_body)
+    async def fetch_credential_definition(self, cred_def_id):
+        return await self.admin_GET(f"/credential-definitions/{cred_def_id}")
 
 
 class FaberAgent(BaseAgent):
     def __init__(self, port: int, **kwargs):
         super().__init__("Faber", port, **kwargs)
+        self.extra_args = [
+            "--auto-accept-invites",
+            "--auto-accept-requests",
+            "--monitor-ping",
+        ]
         self.schema_id = None
         self.credential_definition_id = None
         self.revocation_registry_id = None
@@ -218,29 +218,28 @@ class FaberAgent(BaseAgent):
         self, cred_attrs: dict, comment: str = None, auto_remove: bool = True
     ):
         cred_preview = {
-            "attributes": [{"name": n, "value": v} for (n, v) in cred_attrs.items()]
+            "@type": CRED_PREVIEW_TYPE,
+            "attributes": [{"name": n, "value": v} for (n, v) in cred_attrs.items()],
         }
         await self.admin_POST(
-            "/issue-credential/send",
+            "/issue-credential-2.0/send",
             {
-                "connection_id": self.connection_id,
-                "cred_def_id": self.credential_definition_id,
-                "credential_proposal": cred_preview,
-                "comment": comment,
+                "filter": {"indy": {"cred_def_id": self.credential_definition_id}},
                 "auto_remove": auto_remove,
-                "revoc_reg_id": self.revocation_registry_id,
+                "comment": comment,
+                "connection_id": self.connection_id,
+                "credential_preview": cred_preview,
             },
         )
 
     async def revoke_credential(self, cred_ex_id: str):
         await self.admin_POST(
-            f"/issue-credential/records/{cred_ex_id}/revoke?publish=true"
+            "/revocation/revoke",
+            {
+                "cred_ex_id": cred_ex_id,
+                "publish": True,
+            },
         )
-
-
-class RoutingAgent(BaseAgent):
-    def __init__(self, port: int, **kwargs):
-        super().__init__("Router", port, **kwargs)
 
 
 async def main(
@@ -248,10 +247,13 @@ async def main(
     threads: int = 20,
     ping_only: bool = False,
     show_timing: bool = False,
-    routing: bool = False,
+    multitenant: bool = False,
+    mediation: bool = False,
+    use_did_exchange: bool = False,
     revocation: bool = False,
     tails_server_base_url: str = None,
     issue_count: int = 300,
+    wallet_type: str = None,
 ):
 
     genesis = await default_genesis_txns()
@@ -261,12 +263,20 @@ async def main(
 
     alice = None
     faber = None
-    alice_router = None
+    alice_mediator_agent = None
+    faber_mediator_agent = None
     run_timer = log_timer("Total runtime:")
     run_timer.start()
 
     try:
-        alice = AliceAgent(start_port, genesis_data=genesis, timing=show_timing)
+        alice = AliceAgent(
+            start_port,
+            genesis_data=genesis,
+            timing=show_timing,
+            multitenant=multitenant,
+            mediation=mediation,
+            wallet_type=wallet_type,
+        )
         await alice.listen_webhooks(start_port + 2)
 
         faber = FaberAgent(
@@ -274,52 +284,72 @@ async def main(
             genesis_data=genesis,
             timing=show_timing,
             tails_server_base_url=tails_server_base_url,
+            multitenant=multitenant,
+            mediation=mediation,
+            wallet_type=wallet_type,
         )
-
         await faber.listen_webhooks(start_port + 5)
         await faber.register_did()
 
-        if routing:
-            alice_router = RoutingAgent(
-                start_port + 6, genesis_data=genesis, timing=show_timing
-            )
-            await alice_router.listen_webhooks(start_port + 8)
-            await alice_router.register_did()
-
         with log_timer("Startup duration:"):
-            if alice_router:
-                await alice_router.start_process()
             await alice.start_process()
             await faber.start_process()
+
+            if mediation:
+                alice_mediator_agent = await start_mediator_agent(
+                    start_port + 8, genesis
+                )
+                if not alice_mediator_agent:
+                    raise Exception("Mediator agent returns None :-(")
+                faber_mediator_agent = await start_mediator_agent(
+                    start_port + 11, genesis
+                )
+                if not faber_mediator_agent:
+                    raise Exception("Mediator agent returns None :-(")
+            else:
+                alice_mediator_agent = None
+                faber_mediator_agent = None
+
+        with log_timer("Connect duration:"):
+            if multitenant:
+                # create an initial managed sub-wallet (also mediated)
+                await alice.register_or_switch_wallet(
+                    "Alice.initial",
+                    webhook_port=None,
+                    mediator_agent=alice_mediator_agent,
+                )
+                await faber.register_or_switch_wallet(
+                    "Faber.initial",
+                    public_did=True,
+                    webhook_port=None,
+                    mediator_agent=faber_mediator_agent,
+                )
+            elif mediation:
+                # we need to pre-connect the agent(s) to their mediator (use the same
+                # mediator for both)
+                if not await connect_wallet_to_mediator(alice, alice_mediator_agent):
+                    log_msg("Mediation setup FAILED :-(")
+                    raise Exception("Mediation setup FAILED :-(")
+                if not await connect_wallet_to_mediator(faber, faber_mediator_agent):
+                    log_msg("Mediation setup FAILED :-(")
+                    raise Exception("Mediation setup FAILED :-(")
+
+            invite = await faber.get_invite(use_did_exchange)
+            await alice.receive_invite(invite["invitation"])
+            await asyncio.wait_for(faber.detect_connection(), 30)
 
         if not ping_only:
             with log_timer("Publish duration:"):
                 await faber.publish_defs(revocation)
-                # await alice.set_tag_policy(faber.credential_definition_id, ["name"])
-
-        with log_timer("Connect duration:"):
-            if routing:
-                router_invite = await alice_router.get_invite()
-                alice_router_conn_id = await alice.receive_invite(router_invite)
-                await asyncio.wait_for(alice.detect_connection(), 30)
-
-            invite = await faber.get_invite()
-
-            if routing:
-                conn_id = await alice.receive_invite(invite, auto_accept=False)
-                await alice.establish_inbound(conn_id, alice_router_conn_id)
-                await alice.accept_invite(conn_id)
-                await asyncio.wait_for(alice.detect_connection(), 30)
-            else:
-                await alice.receive_invite(invite)
-
-            await asyncio.wait_for(faber.detect_connection(), 30)
+            # cache the credential definition
+            await alice.fetch_credential_definition(faber.credential_definition_id)
 
         if show_timing:
             await alice.reset_timing()
             await faber.reset_timing()
-            if routing:
-                await alice_router.reset_timing()
+            if mediation:
+                await alice_mediator_agent.reset_timing()
+                await faber_mediator_agent.reset_timing()
 
         batch_size = 100
 
@@ -454,8 +484,8 @@ async def main(
         if revocation and faber.revocations:
             (rev_reg_id, cred_rev_id) = next(iter(faber.revocations))
             print(
-                "Revoking and publishing cred rev id {cred_rev_id} "
-                "from rev reg id {rev_reg_id}"
+                f"Revoking and publishing cred rev id {cred_rev_id} "
+                f"from rev reg id {rev_reg_id}"
             )
 
         if show_timing:
@@ -468,11 +498,15 @@ async def main(
             if timing:
                 for line in faber.format_timing(timing):
                     faber.log(line)
-            if routing:
-                timing = await alice_router.fetch_timing()
+            if mediation:
+                timing = await alice_mediator_agent.fetch_timing()
                 if timing:
-                    for line in alice_router.format_timing(timing):
-                        alice_router.log(line)
+                    for line in alice_mediator_agent.format_timing(timing):
+                        alice_mediator_agent.log(line)
+                timing = await faber_mediator_agent.fetch_timing()
+                if timing:
+                    for line in faber_mediator_agent.format_timing(timing):
+                        faber_mediator_agent.log(line)
 
     finally:
         terminated = True
@@ -489,8 +523,10 @@ async def main(
             LOGGER.exception("Error terminating agent:")
             terminated = False
         try:
-            if alice_router:
-                await alice_router.terminate()
+            if alice_mediator_agent:
+                await alice_mediator_agent.terminate()
+            if faber_mediator_agent:
+                await faber_mediator_agent.terminate()
         except Exception:
             LOGGER.exception("Error terminating agent:")
             terminated = False
@@ -530,18 +566,24 @@ if __name__ == "__main__":
         help="Only send ping messages between the agents",
     )
     parser.add_argument(
+        "--multitenant", action="store_true", help="Enable multitenancy options"
+    )
+    parser.add_argument(
+        "--mediation", action="store_true", help="Enable mediation functionality"
+    )
+    parser.add_argument(
+        "--did-exchange",
+        action="store_true",
+        help="Use DID-Exchange protocol for connections",
+    )
+    parser.add_argument(
         "--revocation", action="store_true", help="Enable credential revocation"
     )
-
     parser.add_argument(
         "--tails-server-base-url",
         type=str,
-        metavar=("<tails-server-base-url>"),
-        help="Tals server base url",
-    )
-
-    parser.add_argument(
-        "--routing", action="store_true", help="Enable inbound routing demonstration"
+        metavar="<tails-server-base-url>",
+        help="Tails server base url",
     )
     parser.add_argument(
         "-t",
@@ -553,7 +595,25 @@ if __name__ == "__main__":
     parser.add_argument(
         "--timing", action="store_true", help="Enable detailed timing report"
     )
+    parser.add_argument(
+        "--wallet-type",
+        type=str,
+        metavar="<wallet-type>",
+        help="Set the agent wallet type",
+    )
     args = parser.parse_args()
+
+    if args.did_exchange and args.mediation:
+        raise Exception(
+            "DID-Exchange connection protocol is not (yet) compatible with mediation"
+        )
+
+    tails_server_base_url = args.tails_server_base_url or os.getenv("PUBLIC_TAILS_URL")
+
+    if args.revocation and not tails_server_base_url:
+        raise Exception(
+            "If revocation is enabled, --tails-server-base-url must be provided"
+        )
 
     require_indy()
 
@@ -564,10 +624,13 @@ if __name__ == "__main__":
                 args.threads,
                 args.ping,
                 args.timing,
-                args.routing,
+                args.multitenant,
+                args.mediation,
+                args.did_exchange,
                 args.revocation,
-                args.tails_server_base_url,
+                tails_server_base_url,
                 args.count,
+                args.wallet_type,
             )
         )
     except KeyboardInterrupt:

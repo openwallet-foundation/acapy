@@ -26,7 +26,7 @@ class PerformHandler(BaseHandler):
 
         self._logger.info("Received action menu perform request")
 
-        service: BaseMenuService = await context.inject(BaseMenuService, required=False)
+        service: BaseMenuService = context.inject(BaseMenuService, required=False)
         if service:
             reply = await service.perform_menu_action(
                 context.message.name,

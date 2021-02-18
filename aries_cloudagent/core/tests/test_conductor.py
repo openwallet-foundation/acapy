@@ -1,13 +1,11 @@
-import asyncio
 from io import StringIO
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
-from .. import conductor as test_module
 from ...admin.base_server import BaseAdminServer
 from ...config.base_context import ContextBuilder
 from ...config.injection_context import InjectionContext
-from ...connections.models.connection_record import ConnectionRecord
+from ...connections.models.conn_record import ConnRecord
 from ...connections.models.connection_target import ConnectionTarget
 from ...connections.models.diddoc import (
     DIDDoc,
@@ -15,12 +13,13 @@ from ...connections.models.diddoc import (
     PublicKeyType,
     Service,
 )
+from ...core.in_memory import InMemoryProfileManager
+from ...core.profile import ProfileManager
 from ...core.protocol_registry import ProtocolRegistry
-
-from ...protocols.connections.v1_0.manager import ConnectionManager
-from ...storage.base import BaseStorage
-from ...storage.basic import BasicStorage
-from ...transport.inbound.base import InboundTransportConfiguration
+from ...protocols.coordinate_mediation.v1_0.models.mediation_record import (
+    MediationRecord,
+)
+from ...multitenant.manager import MultitenantManager
 from ...transport.inbound.message import InboundMessage
 from ...transport.inbound.receipt import MessageReceipt
 from ...transport.outbound.base import OutboundDeliveryError
@@ -30,7 +29,8 @@ from ...transport.wire_format import BaseWireFormat
 from ...transport.pack_format import PackWireFormat
 from ...utils.stats import Collector
 from ...wallet.base import BaseWallet
-from ...wallet.basic import BasicWallet
+
+from .. import conductor as test_module
 
 
 class Config:
@@ -74,19 +74,17 @@ class StubContextBuilder(ContextBuilder):
         super().__init__(settings)
         self.wire_format = async_mock.create_autospec(PackWireFormat())
 
-    async def build(self) -> InjectionContext:
-        context = InjectionContext(settings=self.settings)
-        context.injector.enforce_typing = False
-        context.injector.bind_instance(BaseStorage, BasicStorage())
-        context.injector.bind_instance(BaseWallet, BasicWallet())
+    async def build_context(self) -> InjectionContext:
+        context = InjectionContext(settings=self.settings, enforce_typing=False)
+        context.injector.bind_instance(ProfileManager, InMemoryProfileManager())
         context.injector.bind_instance(ProtocolRegistry, ProtocolRegistry())
         context.injector.bind_instance(BaseWireFormat, self.wire_format)
         return context
 
 
 class StubCollectorContextBuilder(StubContextBuilder):
-    async def build(self) -> InjectionContext:
-        context = await super().build()
+    async def build_context(self) -> InjectionContext:
+        context = await super().build_context()
         context.injector.bind_instance(Collector, Collector())
         return context
 
@@ -106,7 +104,9 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
 
             await conductor.setup()
 
-            wallet = await conductor.context.inject(BaseWallet)
+            session = await conductor.root_profile.session()
+
+            wallet = session.inject(BaseWallet)
             await wallet.create_public_did()
 
             mock_inbound_mgr.return_value.setup.assert_awaited_once()
@@ -232,13 +232,16 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             receipt = MessageReceipt(direct_response_mode="snail mail")
             message = InboundMessage(message_body, receipt)
 
-            conductor.inbound_message_router(message, can_respond=False)
+            conductor.inbound_message_router(
+                conductor.context, message, can_respond=False
+            )
 
             mock_dispatch_q.assert_called_once()
-            assert mock_dispatch_q.call_args[0][0] is message
-            assert mock_dispatch_q.call_args[0][1] == conductor.outbound_message_router
-            assert mock_dispatch_q.call_args[0][2] is None  # admin webhook router
-            assert callable(mock_dispatch_q.call_args[0][3])
+            assert mock_dispatch_q.call_args[0][0] is conductor.context
+            assert mock_dispatch_q.call_args[0][1] is message
+            assert mock_dispatch_q.call_args[0][2] == conductor.outbound_message_router
+            assert mock_dispatch_q.call_args[0][3] is None  # admin webhook router
+            assert callable(mock_dispatch_q.call_args[0][4])
 
     async def test_inbound_message_handler_ledger_x(self):
         builder: ContextBuilder = StubContextBuilder(self.test_settings_admin)
@@ -258,7 +261,9 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             message = InboundMessage(message_body, receipt)
 
             with self.assertRaises(test_module.LedgerConfigError):
-                conductor.inbound_message_router(message, can_respond=False)
+                conductor.inbound_message_router(
+                    conductor.context, message, can_respond=False
+                )
 
             mock_dispatch_q.assert_called_once()
             mock_notify.assert_called_once()
@@ -326,9 +331,8 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             connection_id = "connection_id"
             message = OutboundMessage(payload=payload, connection_id=connection_id)
 
-            await conductor.outbound_message_router(conductor.context, message)
+            await conductor.outbound_message_router(conductor.root_profile, message)
 
-            conn_mgr.assert_called_once_with(conductor.context)
             conn_mgr.return_value.get_connection_targets.assert_awaited_once_with(
                 connection_id=connection_id
             )
@@ -338,7 +342,7 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             )
 
             mock_outbound_mgr.return_value.enqueue_message.assert_called_once_with(
-                conductor.context, message
+                conductor.root_profile, message
             )
 
     async def test_outbound_message_handler_with_verkey_no_target(self):
@@ -389,7 +393,7 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
 
             await conductor.setup()
 
-            conductor.handle_not_returned(conductor.context, message)
+            conductor.handle_not_returned(conductor.root_profile, message)
 
             with async_mock.patch.object(
                 test_module, "ConnectionManager"
@@ -400,14 +404,14 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
                     async_mock.CoroutineMock()
                 )
                 mock_run_task.side_effect = test_module.ConnectionManagerError()
-                await conductor.queue_outbound(conductor.context, message)
+                await conductor.queue_outbound(conductor.root_profile, message)
                 mock_outbound_mgr.return_value.enqueue_message.assert_not_called()
 
                 message.connection_id = None
                 mock_outbound_mgr.return_value.enqueue_message.side_effect = (
                     test_module.OutboundDeliveryError()
                 )
-                await conductor.queue_outbound(conductor.context, message)
+                await conductor.queue_outbound(conductor.root_profile, message)
                 mock_run_task.assert_called_once()
 
     async def test_handle_not_returned_ledger_x(self):
@@ -435,7 +439,7 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             )
 
             with self.assertRaises(test_module.LedgerConfigError):
-                conductor.handle_not_returned(conductor.context, message)
+                conductor.handle_not_returned(conductor.root_profile, message)
 
             mock_dispatch_run.assert_called_once()
             mock_notify.assert_called_once()
@@ -466,7 +470,7 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             )
 
             with self.assertRaises(test_module.LedgerConfigError):
-                await conductor.queue_outbound(conductor.context, message)
+                await conductor.queue_outbound(conductor.root_profile, message)
 
             mock_dispatch_run.assert_called_once()
             mock_notify.assert_called_once()
@@ -477,10 +481,11 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
         conductor = test_module.Conductor(builder)
 
         await conductor.setup()
-        admin = await conductor.context.inject(BaseAdminServer)
+        admin = conductor.context.inject(BaseAdminServer)
         assert admin is conductor.admin_server
 
-        wallet = await conductor.context.inject(BaseWallet)
+        session = await conductor.root_profile.session()
+        wallet = session.inject(BaseWallet)
         await wallet.create_public_did()
 
         with async_mock.patch.object(
@@ -496,26 +501,38 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
 
     async def test_admin_startx(self):
         builder: ContextBuilder = StubContextBuilder(self.test_settings)
-        builder.update_settings({"admin.enabled": "1", "debug.print_invitation": "1"})
+        builder.update_settings(
+            {
+                "admin.enabled": "1",
+                "debug.print_invitation": True,
+                "debug.print_connections_invitation": True,
+            }
+        )
         conductor = test_module.Conductor(builder)
 
         await conductor.setup()
-        admin = await conductor.context.inject(BaseAdminServer)
+        admin = conductor.context.inject(BaseAdminServer)
         assert admin is conductor.admin_server
 
-        wallet = await conductor.context.inject(BaseWallet)
+        session = await conductor.root_profile.session()
+        wallet = session.inject(BaseWallet)
         await wallet.create_public_did()
 
         with async_mock.patch.object(
-            admin, "start", async_mock.CoroutineMock()
+            admin, "start", autospec=True
         ) as admin_start, async_mock.patch.object(
             admin, "stop", autospec=True
         ) as admin_stop, async_mock.patch.object(
+            test_module, "OutOfBandManager"
+        ) as oob_mgr, async_mock.patch.object(
             test_module, "ConnectionManager"
         ) as conn_mgr:
             admin_start.side_effect = KeyError("trouble")
-            conn_mgr.return_value.create_invitation(
-                side_effect=KeyError("more trouble")
+            oob_mgr.return_value.create_invitation = async_mock.CoroutineMock(
+                side_effect=KeyError("double trouble")
+            )
+            conn_mgr.return_value.create_invitation = async_mock.CoroutineMock(
+                side_effect=KeyError("triple trouble")
             )
             await conductor.start()
             admin_start.assert_awaited_once_with()
@@ -545,7 +562,8 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
         with async_mock.patch.object(test_module, "ConnectionManager") as mock_mgr:
             await conductor.setup()
 
-            wallet = await conductor.context.inject(BaseWallet)
+            session = await conductor.root_profile.session()
+            wallet = session.inject(BaseWallet)
             await wallet.create_public_did()
 
             mock_mgr.return_value.create_static_connection = async_mock.CoroutineMock()
@@ -646,22 +664,193 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             conductor.dispatch_complete(message, mock_task)
             mock_notify.assert_called_once_with()
 
-    async def test_print_invite(self):
+    async def test_print_invite_connection(self):
         builder: ContextBuilder = StubContextBuilder(self.test_settings)
         builder.update_settings(
-            {"debug.print_invitation": True, "invite_base_url": "http://localhost"}
+            {
+                "debug.print_invitation": True,
+                "debug.print_connections_invitation": True,
+                "invite_base_url": "http://localhost",
+            }
         )
         conductor = test_module.Conductor(builder)
+
+        await conductor.setup()
 
         with async_mock.patch("sys.stdout", new=StringIO()) as captured:
             await conductor.setup()
 
-            wallet = await conductor.context.inject(BaseWallet)
+            session = await conductor.root_profile.session()
+            wallet = session.inject(BaseWallet)
             await wallet.create_public_did()
 
             await conductor.start()
             await conductor.stop()
-            assert "http://localhost?c_i=" in captured.getvalue()
+            value = captured.getvalue()
+            assert "http://localhost?oob=" in value
+            assert "http://localhost?c_i=" in value
+
+    async def test_mediator_invitation_0160(self):
+        builder: ContextBuilder = StubContextBuilder(self.test_settings)
+        builder.update_settings({"mediation.invite": "test-invite"})
+        builder.update_settings({"mediation.connections_invite": True})
+        conductor = test_module.Conductor(builder)
+
+        await conductor.setup()
+
+        mock_conn_record = async_mock.MagicMock()
+
+        with async_mock.patch.object(
+            test_module.ConnectionInvitation, "from_url"
+        ) as mock_from_url, async_mock.patch.object(
+            test_module,
+            "ConnectionManager",
+            async_mock.MagicMock(
+                return_value=async_mock.MagicMock(
+                    receive_invitation=async_mock.CoroutineMock(
+                        return_value=mock_conn_record
+                    )
+                )
+            ),
+        ) as mock_mgr, async_mock.patch.object(
+            mock_conn_record, "metadata_set", async_mock.CoroutineMock()
+        ), async_mock.patch.object(
+            test_module,
+            "LOGGER",
+            async_mock.MagicMock(
+                exception=async_mock.MagicMock(
+                    side_effect=Exception("This method should not have been called")
+                )
+            ),
+        ):
+            await conductor.start()
+            await conductor.stop()
+            mock_from_url.assert_called_once_with("test-invite")
+            mock_mgr.return_value.receive_invitation.assert_called_once()
+
+    async def test_mediator_invitation_0434(self):
+        builder: ContextBuilder = StubContextBuilder(self.test_settings)
+        builder.update_settings({"mediation.invite": "test-invite"})
+        conductor = test_module.Conductor(builder)
+
+        await conductor.setup()
+
+        conn_record = ConnRecord(
+            invitation_key="3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx",
+            their_label="Hello",
+            their_role=ConnRecord.Role.RESPONDER.rfc160,
+            alias="Bob",
+        )
+        conn_record.accept = ConnRecord.ACCEPT_MANUAL
+        await conn_record.save(await conductor.root_profile.session())
+        conn_record_dict = conn_record.serialize()
+        with async_mock.patch.object(
+            test_module.InvitationMessage, "from_url"
+        ) as mock_from_url, async_mock.patch.object(
+            test_module,
+            "OutOfBandManager",
+            async_mock.MagicMock(
+                return_value=async_mock.MagicMock(
+                    receive_invitation=async_mock.CoroutineMock(
+                        return_value=conn_record_dict
+                    )
+                )
+            ),
+        ) as mock_mgr, async_mock.patch.object(
+            test_module,
+            "LOGGER",
+            async_mock.MagicMock(
+                exception=async_mock.MagicMock(
+                    side_effect=Exception("This method should not have been called")
+                )
+            ),
+        ):
+            await conductor.start()
+            await conductor.stop()
+            mock_from_url.assert_called_once_with("test-invite")
+            mock_mgr.return_value.receive_invitation.assert_called_once()
+
+    async def test_mediator_invitation_x(self):
+        builder: ContextBuilder = StubContextBuilder(self.test_settings)
+        builder.update_settings({"mediation.invite": "test-invite"})
+        builder.update_settings({"mediation.connections_invite": True})
+        conductor = test_module.Conductor(builder)
+
+        await conductor.setup()
+
+        with async_mock.patch.object(
+            test_module.ConnectionInvitation,
+            "from_url",
+            async_mock.MagicMock(side_effect=Exception()),
+        ) as mock_from_url, async_mock.patch.object(
+            test_module, "LOGGER"
+        ) as mock_logger:
+            await conductor.start()
+            await conductor.stop()
+            mock_from_url.assert_called_once_with("test-invite")
+            mock_logger.exception.assert_called_once()
+
+    async def test_clear_default_mediator(self):
+        builder: ContextBuilder = StubContextBuilder(self.test_settings)
+        builder.update_settings({"mediation.clear": True})
+        conductor = test_module.Conductor(builder)
+
+        await conductor.setup()
+
+        with async_mock.patch.object(
+            test_module,
+            "MediationManager",
+            return_value=async_mock.MagicMock(
+                clear_default_mediator=async_mock.CoroutineMock()
+            ),
+        ) as mock_mgr:
+            await conductor.start()
+            await conductor.stop()
+            mock_mgr.return_value.clear_default_mediator.assert_called_once()
+
+    async def test_set_default_mediator(self):
+        builder: ContextBuilder = StubContextBuilder(self.test_settings)
+        builder.update_settings({"mediation.default_id": "test-id"})
+        conductor = test_module.Conductor(builder)
+
+        await conductor.setup()
+
+        with async_mock.patch.object(
+            test_module,
+            "MediationManager",
+            return_value=async_mock.MagicMock(
+                set_default_mediator_by_id=async_mock.CoroutineMock()
+            ),
+        ) as mock_mgr, async_mock.patch.object(
+            MediationRecord, "retrieve_by_id", async_mock.CoroutineMock()
+        ), async_mock.patch.object(
+            test_module,
+            "LOGGER",
+            async_mock.MagicMock(
+                exception=async_mock.MagicMock(
+                    side_effect=Exception("This method should not have been called")
+                )
+            ),
+        ):
+            await conductor.start()
+            await conductor.stop()
+            mock_mgr.return_value.set_default_mediator_by_id.assert_called_once()
+
+    async def test_set_default_mediator_x(self):
+        builder: ContextBuilder = StubContextBuilder(self.test_settings)
+        builder.update_settings({"mediation.default_id": "test-id"})
+        conductor = test_module.Conductor(builder)
+
+        await conductor.setup()
+
+        with async_mock.patch.object(
+            MediationRecord,
+            "retrieve_by_id",
+            async_mock.CoroutineMock(side_effect=Exception()),
+        ), async_mock.patch.object(test_module, "LOGGER") as mock_logger:
+            await conductor.start()
+            await conductor.stop()
+            mock_logger.exception.assert_called_once()
 
     async def test_webhook_router(self):
         builder: ContextBuilder = StubContextBuilder(self.test_settings)
@@ -683,7 +872,7 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
                 test_topic, test_payload, test_endpoint, test_attempts
             )
             mock_enqueue.assert_called_once_with(
-                test_topic, test_payload, test_endpoint, test_attempts
+                test_topic, test_payload, test_endpoint, test_attempts, None
             )
 
         # swallow error
@@ -696,5 +885,33 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
                 test_topic, test_payload, test_endpoint, test_attempts
             )
             mock_enqueue.assert_called_once_with(
-                test_topic, test_payload, test_endpoint, test_attempts
+                test_topic, test_payload, test_endpoint, test_attempts, None
             )
+
+    async def test_shutdown_multitenant_profiles(self):
+        builder: ContextBuilder = StubContextBuilder(
+            {**self.test_settings, "multitenant.enabled": True}
+        )
+        conductor = test_module.Conductor(builder)
+
+        with async_mock.patch.object(
+            test_module, "InboundTransportManager", autospec=True
+        ) as mock_inbound_mgr, async_mock.patch.object(
+            test_module, "OutboundTransportManager", autospec=True
+        ) as mock_outbound_mgr, async_mock.patch.object(
+            test_module, "LoggingConfigurator", autospec=True
+        ) as mock_logger:
+
+            await conductor.setup()
+
+            multitenant_mgr = conductor.context.inject(MultitenantManager)
+
+            multitenant_mgr._instances = {
+                "test1": async_mock.MagicMock(close=async_mock.CoroutineMock()),
+                "test2": async_mock.MagicMock(close=async_mock.CoroutineMock()),
+            }
+
+            await conductor.stop()
+
+            multitenant_mgr._instances["test1"].close.assert_called_once_with()
+            multitenant_mgr._instances["test2"].close.assert_called_once_with()

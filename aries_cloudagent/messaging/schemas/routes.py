@@ -14,7 +14,8 @@ from aiohttp_apispec import (
 from marshmallow import fields
 from marshmallow.validate import Regexp
 
-from ...issuer.base import BaseIssuer, IssuerError
+from ...admin.request_context import AdminRequestContext
+from ...indy.issuer import IndyIssuer, IndyIssuerError
 from ...ledger.base import BaseLedger
 from ...ledger.error import LedgerError
 from ...storage.base import BaseStorage
@@ -101,7 +102,7 @@ class SchemaIdMatchInfoSchema(OpenAPISchema):
 
 @docs(tags=["schema"], summary="Sends a schema to the ledger")
 @request_schema(SchemaSendRequestSchema())
-@response_schema(SchemaSendResultsSchema(), 200)
+@response_schema(SchemaSendResultsSchema(), 200, description="")
 async def schemas_send_schema(request: web.BaseRequest):
     """
     Request handler for sending a credential offer.
@@ -113,7 +114,7 @@ async def schemas_send_schema(request: web.BaseRequest):
         The schema id sent
 
     """
-    context = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
 
     body = await request.json()
 
@@ -121,14 +122,14 @@ async def schemas_send_schema(request: web.BaseRequest):
     schema_version = body.get("schema_version")
     attributes = body.get("attributes")
 
-    ledger: BaseLedger = await context.inject(BaseLedger, required=False)
+    ledger = context.inject(BaseLedger, required=False)
     if not ledger:
         reason = "No ledger available"
         if not context.settings.get_value("wallet.type"):
             reason += ": missing wallet-type?"
         raise web.HTTPForbidden(reason=reason)
 
-    issuer: BaseIssuer = await context.inject(BaseIssuer)
+    issuer = context.inject(IndyIssuer)
     async with ledger:
         try:
             schema_id, schema_def = await shield(
@@ -136,7 +137,7 @@ async def schemas_send_schema(request: web.BaseRequest):
                     issuer, schema_name, schema_version, attributes
                 )
             )
-        except (IssuerError, LedgerError) as err:
+        except (IndyIssuerError, LedgerError) as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     return web.json_response({"schema_id": schema_id, "schema": schema_def})
@@ -147,7 +148,7 @@ async def schemas_send_schema(request: web.BaseRequest):
     summary="Search for matching schema that agent originated",
 )
 @querystring_schema(SchemaQueryStringSchema())
-@response_schema(SchemasCreatedResultsSchema(), 200)
+@response_schema(SchemasCreatedResultsSchema(), 200, description="")
 async def schemas_created(request: web.BaseRequest):
     """
     Request handler for retrieving schemas that current agent created.
@@ -159,22 +160,23 @@ async def schemas_created(request: web.BaseRequest):
         The identifiers of matching schemas
 
     """
-    context = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
 
-    storage = await context.inject(BaseStorage)
-    found = await storage.search_records(
+    session = await context.session()
+    storage = session.inject(BaseStorage)
+    found = await storage.find_all_records(
         type_filter=SCHEMA_SENT_RECORD_TYPE,
         tag_query={
             tag: request.query[tag] for tag in SCHEMA_TAGS if tag in request.query
         },
-    ).fetch_all()
+    )
 
     return web.json_response({"schema_ids": [record.value for record in found]})
 
 
 @docs(tags=["schema"], summary="Gets a schema from the ledger")
 @match_info_schema(SchemaIdMatchInfoSchema())
-@response_schema(SchemaGetResultsSchema(), 200)
+@response_schema(SchemaGetResultsSchema(), 200, description="")
 async def schemas_get_schema(request: web.BaseRequest):
     """
     Request handler for sending a credential offer.
@@ -186,11 +188,11 @@ async def schemas_get_schema(request: web.BaseRequest):
         The schema details.
 
     """
-    context = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
 
     schema_id = request.match_info["schema_id"]
 
-    ledger: BaseLedger = await context.inject(BaseLedger, required=False)
+    ledger = context.inject(BaseLedger, required=False)
     if not ledger:
         reason = "No ledger available"
         if not context.settings.get_value("wallet.type"):

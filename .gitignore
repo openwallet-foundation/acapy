@@ -186,3 +186,6 @@ $RECYCLE.BIN/
 # Docs build
 _build/
 **/*.iml
+
+# Open API build
+open-api/.build

@@ -3,7 +3,6 @@
 import asyncio
 import functools
 import logging
-import os
 import signal
 from configargparse import ArgumentParser
 from typing import Coroutine, Sequence
@@ -17,6 +16,8 @@ from ..core.conductor import Conductor
 from ..config import argparse as arg
 from ..config.default_context import DefaultContextBuilder
 from ..config.util import common_config
+
+from . import PROG
 
 LOGGER = logging.getLogger(__name__)
 
@@ -40,7 +41,7 @@ def init_argument_parser(parser: ArgumentParser):
 
 def execute(argv: Sequence[str] = None):
     """Entrypoint."""
-    parser = arg.create_argument_parser()
+    parser = arg.create_argument_parser(prog=PROG)
     parser.prog += " start"
     get_settings = init_argument_parser(parser)
     args = parser.parse_args(argv)
@@ -49,13 +50,6 @@ def execute(argv: Sequence[str] = None):
 
     # set ledger to read only if explicitely specified
     settings["ledger.read_only"] = settings.get("read_only_ledger", False)
-
-    # Support WEBHOOK_URL environment variable
-    webhook_url = os.environ.get("WEBHOOK_URL")
-    if webhook_url:
-        webhook_urls = list(settings.get("admin.webhook_urls") or [])
-        webhook_urls.append(webhook_url)
-        settings["admin.webhook_urls"] = webhook_urls
 
     # Create the Conductor instance
     context_builder = DefaultContextBuilder(settings)

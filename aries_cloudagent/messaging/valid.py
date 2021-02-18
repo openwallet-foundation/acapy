@@ -50,6 +50,21 @@ class WholeNumber(Range):
         super().__call__(value)
 
 
+class NumericStrWhole(Regexp):
+    """Validate value against whole number numeric string."""
+
+    EXAMPLE = "0"
+    PATTERN = r"^[0-9]*$"
+
+    def __init__(self):
+        """Initializer."""
+
+        super().__init__(
+            NumericStrWhole.PATTERN,
+            error="Value {input} is not a non-negative numeric string",
+        )
+
+
 class NaturalNumber(Range):
     """Validate value as positive integer."""
 
@@ -66,6 +81,21 @@ class NaturalNumber(Range):
         if type(value) != int:
             raise ValidationError("Value {input} is not a valid natural number")
         super().__call__(value)
+
+
+class NumericStrNatural(Regexp):
+    """Validate value against natural number numeric string."""
+
+    EXAMPLE = "1"
+    PATTERN = r"^[1-9][0-9]*$"
+
+    def __init__(self):
+        """Initializer."""
+
+        super().__init__(
+            NumericStrNatural.PATTERN,
+            error="Value {input} is not a positive numeric string",
+        )
 
 
 class IndyRevRegSize(Range):
@@ -215,7 +245,7 @@ class IndyVersion(Regexp):
     """Validate value against indy version specification."""
 
     EXAMPLE = "1.0"
-    PATTERN = rf"^[0-9.]+$"
+    PATTERN = r"^[0-9.]+$"
 
     def __init__(self):
         """Initializer."""
@@ -265,7 +295,7 @@ class IndyCredRevId(Regexp):
     """Validate value against indy credential revocation identifier specification."""
 
     EXAMPLE = "12345"
-    PATTERN = rf"^[1-9][0-9]*$"
+    PATTERN = r"^[1-9][0-9]*$"
 
     def __init__(self):
         """Initializer."""
@@ -497,7 +527,12 @@ class EndpointType(OneOf):
 # Instances for marshmallow schema specification
 INT_EPOCH = {"validate": IntEpoch(), "example": IntEpoch.EXAMPLE}
 WHOLE_NUM = {"validate": WholeNumber(), "example": WholeNumber.EXAMPLE}
+NUM_STR_WHOLE = {"validate": NumericStrWhole(), "example": NumericStrWhole.EXAMPLE}
 NATURAL_NUM = {"validate": NaturalNumber(), "example": NaturalNumber.EXAMPLE}
+NUM_STR_NATURAL = {
+    "validate": NumericStrNatural(),
+    "example": NumericStrNatural.EXAMPLE,
+}
 INDY_REV_REG_SIZE = {"validate": IndyRevRegSize(), "example": IndyRevRegSize.EXAMPLE}
 JWS_HEADER_KID = {"validate": JWSHeaderKid(), "example": JWSHeaderKid.EXAMPLE}
 JWT = {"validate": JSONWebToken(), "example": JSONWebToken.EXAMPLE}

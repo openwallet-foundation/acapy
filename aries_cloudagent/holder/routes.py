@@ -6,6 +6,8 @@ from aiohttp import web
 from aiohttp_apispec import docs, match_info_schema, querystring_schema, response_schema
 from marshmallow import fields
 
+from ..admin.request_context import AdminRequestContext
+from ..indy.holder import IndyHolder, IndyHolderError
 from ..ledger.base import BaseLedger
 from ..ledger.error import LedgerError
 from ..messaging.models.openapi import OpenAPISchema
@@ -15,12 +17,15 @@ from ..messaging.valid import (
     INDY_REV_REG_ID,
     INDY_SCHEMA_ID,
     INDY_WQL,
-    NATURAL_NUM,
-    WHOLE_NUM,
+    NUM_STR_NATURAL,
+    NUM_STR_WHOLE,
     UUIDFour,
 )
 from ..wallet.error import WalletNotFoundError
-from .base import BaseHolder, HolderError
+
+
+class HolderModuleResponseSchema(OpenAPISchema):
+    """Response schema for Holder Module."""
 
 
 class AttributeMimeTypesResultSchema(OpenAPISchema):
@@ -57,17 +62,15 @@ class CredBriefListSchema(OpenAPISchema):
 class CredentialsListQueryStringSchema(OpenAPISchema):
     """Parameters and validators for query string in credentials list query."""
 
-    start = fields.Int(
+    start = fields.Str(
         description="Start index",
         required=False,
-        strict=True,
-        **WHOLE_NUM,
+        **NUM_STR_WHOLE,
     )
-    count = fields.Int(
+    count = fields.Str(
         description="Maximum number to retrieve",
         required=False,
-        strict=True,
-        **NATURAL_NUM,
+        **NUM_STR_NATURAL,
     )
     wql = fields.Str(
         description="(JSON) WQL query",
@@ -87,16 +90,16 @@ class CredIdMatchInfoSchema(OpenAPISchema):
 class CredRevokedQueryStringSchema(OpenAPISchema):
     """Path parameters and validators for request seeking cred revocation status."""
 
-    fro = fields.Int(
+    fro = fields.Str(
         data_key="from",
         description="Earliest epoch of revocation status interval of interest",
         required=False,
-        **WHOLE_NUM,
+        **NUM_STR_WHOLE,
     )
-    to = fields.Int(
+    to = fields.Str(
         description="Latest epoch of revocation status interval of interest",
         required=False,
-        **WHOLE_NUM,
+        **NUM_STR_WHOLE,
     )
 
 
@@ -108,7 +111,7 @@ class CredRevokedResultSchema(OpenAPISchema):
 
 @docs(tags=["credentials"], summary="Fetch a credential from wallet by id")
 @match_info_schema(CredIdMatchInfoSchema())
-@response_schema(CredBriefSchema(), 200)
+@response_schema(CredBriefSchema(), 200, description="")
 async def credentials_get(request: web.BaseRequest):
     """
     Request handler for retrieving a credential.
@@ -120,11 +123,12 @@ async def credentials_get(request: web.BaseRequest):
         The credential response
 
     """
-    context = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
 
     credential_id = request.match_info["credential_id"]
 
-    holder: BaseHolder = await context.inject(BaseHolder)
+    session = await context.session()
+    holder = session.inject(IndyHolder)
     try:
         credential = await holder.get_credential(credential_id)
     except WalletNotFoundError as err:
@@ -137,7 +141,7 @@ async def credentials_get(request: web.BaseRequest):
 @docs(tags=["credentials"], summary="Query credential revocation status by id")
 @match_info_schema(CredIdMatchInfoSchema())
 @querystring_schema(CredRevokedQueryStringSchema())
-@response_schema(CredRevokedResultSchema(), 200)
+@response_schema(CredRevokedResultSchema(), 200, description="")
 async def credentials_revoked(request: web.BaseRequest):
     """
     Request handler for querying revocation status of credential.
@@ -149,13 +153,14 @@ async def credentials_revoked(request: web.BaseRequest):
         The credential response
 
     """
-    context = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
+    session = await context.session()
 
     credential_id = request.match_info["credential_id"]
     fro = request.query.get("from")
     to = request.query.get("to")
 
-    ledger: BaseLedger = await context.inject(BaseLedger, required=False)
+    ledger = session.inject(BaseLedger, required=False)
     if not ledger:
         reason = "No ledger available"
         if not context.settings.get_value("wallet.type"):
@@ -164,10 +169,10 @@ async def credentials_revoked(request: web.BaseRequest):
 
     async with ledger:
         try:
-            holder: BaseHolder = await context.inject(BaseHolder)
+            holder = session.inject(IndyHolder)
             revoked = await holder.credential_revoked(
-                credential_id,
                 ledger,
+                credential_id,
                 int(fro) if fro else None,
                 int(to) if to else None,
             )
@@ -181,7 +186,7 @@ async def credentials_revoked(request: web.BaseRequest):
 
 @docs(tags=["credentials"], summary="Get attribute MIME types from wallet")
 @match_info_schema(CredIdMatchInfoSchema())
-@response_schema(AttributeMimeTypesResultSchema(), 200)
+@response_schema(AttributeMimeTypesResultSchema(), 200, description="")
 async def credentials_attr_mime_types_get(request: web.BaseRequest):
     """
     Request handler for getting credential attribute MIME types.
@@ -193,15 +198,17 @@ async def credentials_attr_mime_types_get(request: web.BaseRequest):
         The MIME types response
 
     """
-    context = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
+    session = await context.session()
     credential_id = request.match_info["credential_id"]
-    holder: BaseHolder = await context.inject(BaseHolder)
+    holder = session.inject(IndyHolder)
 
     return web.json_response(await holder.get_mime_type(credential_id))
 
 
 @docs(tags=["credentials"], summary="Remove a credential from the wallet by id")
 @match_info_schema(CredIdMatchInfoSchema())
+@response_schema(HolderModuleResponseSchema(), description="")
 async def credentials_remove(request: web.BaseRequest):
     """
     Request handler for searching connection records.
@@ -213,11 +220,12 @@ async def credentials_remove(request: web.BaseRequest):
         The connection list response
 
     """
-    context = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
 
     credential_id = request.match_info["credential_id"]
 
-    holder: BaseHolder = await context.inject(BaseHolder)
+    session = await context.session()
+    holder = session.inject(IndyHolder)
     try:
         await holder.delete_credential(credential_id)
     except WalletNotFoundError as err:
@@ -231,7 +239,7 @@ async def credentials_remove(request: web.BaseRequest):
     summary="Fetch credentials from wallet",
 )
 @querystring_schema(CredentialsListQueryStringSchema())
-@response_schema(CredBriefListSchema(), 200)
+@response_schema(CredBriefListSchema(), 200, description="")
 async def credentials_list(request: web.BaseRequest):
     """
     Request handler for searching credential records.
@@ -243,7 +251,8 @@ async def credentials_list(request: web.BaseRequest):
         The credential list response
 
     """
-    context = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
+    session = await context.session()
 
     start = request.query.get("start")
     count = request.query.get("count")
@@ -256,10 +265,10 @@ async def credentials_list(request: web.BaseRequest):
     start = int(start) if isinstance(start, str) else 0
     count = int(count) if isinstance(count, str) else 10
 
-    holder: BaseHolder = await context.inject(BaseHolder)
+    holder = session.inject(IndyHolder)
     try:
         credentials = await holder.get_credentials(start, count, wql)
-    except HolderError as err:
+    except IndyHolderError as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     return web.json_response({"results": credentials})

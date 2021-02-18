@@ -5,10 +5,9 @@ from aiohttp.test_utils import AioHTTPTestCase, unittest_run_loop
 from aiohttp import web
 from asynctest import mock as async_mock
 
-from ....config.injection_context import InjectionContext
+from ....core.in_memory import InMemoryProfile
 from ....utils.stats import Collector
 
-from ...outbound.message import OutboundMessage
 from ...wire_format import JsonWireFormat
 
 from ..base import OutboundTransportError
@@ -17,11 +16,13 @@ from ..http import HttpTransport
 
 class TestHttpTransport(AioHTTPTestCase):
     async def setUpAsync(self):
-        self.context = InjectionContext()
+        self.profile = InMemoryProfile.test_profile()
         self.message_results = []
+        self.headers = {}
 
     async def receive_message(self, request):
         payload = await request.json()
+        self.headers = request.headers
         self.message_results.append(payload)
         raise web.HTTPOk()
 
@@ -34,17 +35,71 @@ class TestHttpTransport(AioHTTPTestCase):
         return app
 
     @unittest_run_loop
-    async def test_handle_message(self):
+    async def test_handle_message_no_api_key(self):
         server_addr = f"http://localhost:{self.server.port}"
 
         async def send_message(transport, payload, endpoint):
             async with transport:
-                await transport.handle_message(self.context, payload, endpoint)
+                await transport.handle_message(self.profile, payload, endpoint)
 
         transport = HttpTransport()
 
         await asyncio.wait_for(send_message(transport, "{}", endpoint=server_addr), 5.0)
         assert self.message_results == [{}]
+        assert self.headers.get("x-api-key") is None
+        assert self.headers.get("content-type") == "application/json"
+
+    @unittest_run_loop
+    async def test_handle_message_api_key(self):
+        server_addr = f"http://localhost:{self.server.port}"
+        api_key = "test1234"
+
+        async def send_message(transport, payload, endpoint, api_key):
+            async with transport:
+                await transport.handle_message(
+                    self.profile, payload, endpoint, api_key=api_key
+                )
+
+        transport = HttpTransport()
+
+        await asyncio.wait_for(
+            send_message(transport, "{}", endpoint=server_addr, api_key=api_key), 5.0
+        )
+        assert self.message_results == [{}]
+        assert self.headers.get("x-api-key") == api_key
+
+    @unittest_run_loop
+    async def test_handle_message_packed_compat_mime_type(self):
+        server_addr = f"http://localhost:{self.server.port}"
+
+        async def send_message(transport, payload, endpoint):
+            async with transport:
+                await transport.handle_message(self.profile, payload, endpoint)
+
+        transport = HttpTransport()
+
+        await asyncio.wait_for(
+            send_message(transport, b"{}", endpoint=server_addr), 5.0
+        )
+        assert self.message_results == [{}]
+        assert self.headers.get("content-type") == "application/ssi-agent-wire"
+
+    @unittest_run_loop
+    async def test_handle_message_packed_standard_mime_type(self):
+        server_addr = f"http://localhost:{self.server.port}"
+
+        async def send_message(transport, payload, endpoint):
+            async with transport:
+                await transport.handle_message(self.profile, payload, endpoint)
+
+        transport = HttpTransport()
+
+        self.profile.settings["emit_new_didcomm_mime_type"] = True
+        await asyncio.wait_for(
+            send_message(transport, b"{}", endpoint=server_addr), 5.0
+        )
+        assert self.message_results == [{}]
+        assert self.headers.get("content-type") == "application/didcomm-envelope-enc"
 
     @unittest_run_loop
     async def test_stats(self):
@@ -52,7 +107,7 @@ class TestHttpTransport(AioHTTPTestCase):
 
         async def send_message(transport, payload, endpoint):
             async with transport:
-                await transport.handle_message(self.context, payload, endpoint)
+                await transport.handle_message(self.profile, payload, endpoint)
 
         transport = HttpTransport()
         transport.collector = Collector()

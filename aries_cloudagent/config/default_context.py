@@ -2,18 +2,15 @@
 
 from .base_context import ContextBuilder
 from .injection_context import InjectionContext
-from .provider import CachedProvider, ClassProvider, StatsProvider
+from .provider import CachedProvider, ClassProvider
 
 from ..cache.base import BaseCache
-from ..cache.basic import BasicCache
+from ..cache.in_memory import InMemoryCache
 from ..core.plugin_registry import PluginRegistry
+from ..core.profile import ProfileManager, ProfileManagerProvider
 from ..core.protocol_registry import ProtocolRegistry
-from ..ledger.base import BaseLedger
-from ..ledger.provider import LedgerProvider
-from ..issuer.base import BaseIssuer
-from ..holder.base import BaseHolder
-from ..verifier.base import BaseVerifier
 from ..tails.base import BaseTailsServer
+from ..ledger.indy import IndySdkLedgerPool, IndySdkLedgerPoolProvider
 
 from ..protocols.actionmenu.v1_0.base_service import BaseMenuService
 from ..protocols.actionmenu.v1_0.driver_service import DriverMenuService
@@ -21,19 +18,15 @@ from ..protocols.didcomm_prefix import DIDCommPrefix
 from ..protocols.introduction.v0_1.base_service import BaseIntroductionService
 from ..protocols.introduction.v0_1.demo_service import DemoIntroductionService
 
-from ..storage.base import BaseStorage
-from ..storage.provider import StorageProvider
 from ..transport.wire_format import BaseWireFormat
 from ..utils.stats import Collector
-from ..wallet.base import BaseWallet
-from ..wallet.provider import WalletProvider
 
 
 class DefaultContextBuilder(ContextBuilder):
     """Default context builder."""
 
-    async def build(self) -> InjectionContext:
-        """Build the new injection context; set DIDComm prefix to emit."""
+    async def build_context(self) -> InjectionContext:
+        """Build the base injection context; set DIDComm prefix to emit."""
         context = InjectionContext(settings=self.settings)
         context.settings.set_default("default_label", "Aries Cloud Agent")
 
@@ -43,7 +36,7 @@ class DefaultContextBuilder(ContextBuilder):
             context.injector.bind_instance(Collector, collector)
 
         # Shared in-memory cache
-        context.injector.bind_instance(BaseCache, BasicCache())
+        context.injector.bind_instance(BaseCache, InMemoryCache())
 
         # Global protocol registry
         context.injector.bind_instance(ProtocolRegistry, ProtocolRegistry())
@@ -59,71 +52,15 @@ class DefaultContextBuilder(ContextBuilder):
     async def bind_providers(self, context: InjectionContext):
         """Bind various class providers."""
 
+        # MTODO: move to IndySdkProfileManager if possible
+        # Bind global indy pool provider to be able to share pools between wallets
         context.injector.bind_provider(
-            BaseStorage,
-            CachedProvider(
-                StatsProvider(
-                    StorageProvider(), ("add_record", "get_record", "search_records")
-                )
-            ),
-        )
-        context.injector.bind_provider(
-            BaseWallet,
-            CachedProvider(
-                StatsProvider(
-                    WalletProvider(),
-                    (
-                        "sign_message",
-                        "verify_message",
-                        # "pack_message",
-                        # "unpack_message",
-                        "get_local_did",
-                    ),
-                )
-            ),
+            IndySdkLedgerPool,
+            CachedProvider(IndySdkLedgerPoolProvider(), ("ledger.pool_name",)),
         )
 
-        context.injector.bind_provider(
-            BaseLedger,
-            CachedProvider(
-                StatsProvider(
-                    LedgerProvider(),
-                    (
-                        "create_and_send_credential_definition",
-                        "create_and_send_schema",
-                        "get_credential_definition",
-                        "get_schema",
-                    ),
-                )
-            ),
-        )
-        context.injector.bind_provider(
-            BaseIssuer,
-            StatsProvider(
-                ClassProvider(
-                    "aries_cloudagent.issuer.indy.IndyIssuer",
-                    ClassProvider.Inject(BaseWallet),
-                ),
-                ("create_credential_offer", "create_credential"),
-            ),
-        )
-        context.injector.bind_provider(
-            BaseHolder,
-            StatsProvider(
-                ClassProvider(
-                    "aries_cloudagent.holder.indy.IndyHolder",
-                    ClassProvider.Inject(BaseWallet),
-                ),
-                ("get_credential", "store_credential", "create_credential_request"),
-            ),
-        )
-        context.injector.bind_provider(
-            BaseVerifier,
-            ClassProvider(
-                "aries_cloudagent.verifier.indy.IndyVerifier",
-                ClassProvider.Inject(BaseLedger),
-            ),
-        )
+        context.injector.bind_provider(ProfileManager, ProfileManagerProvider())
+
         context.injector.bind_provider(
             BaseTailsServer,
             ClassProvider(
@@ -135,14 +72,12 @@ class DefaultContextBuilder(ContextBuilder):
         context.injector.bind_provider(
             BaseWireFormat,
             CachedProvider(
-                StatsProvider(
-                    ClassProvider(
-                        "aries_cloudagent.transport.pack_format.PackWireFormat"
-                    ),
-                    (
-                        # "encode_message", "parse_message"
-                    ),
-                )
+                # StatsProvider(
+                ClassProvider("aries_cloudagent.transport.pack_format.PackWireFormat"),
+                #    (
+                #        "encode_message", "parse_message"
+                #    ),
+                # )
             ),
         )
 
@@ -170,6 +105,9 @@ class DefaultContextBuilder(ContextBuilder):
         plugin_registry.register_plugin("aries_cloudagent.messaging.schemas")
         plugin_registry.register_plugin("aries_cloudagent.revocation")
         plugin_registry.register_plugin("aries_cloudagent.wallet")
+
+        if context.settings.get("multitenant.admin_enabled"):
+            plugin_registry.register_plugin("aries_cloudagent.multitenant.admin")
 
         # Register external plugins
         for plugin_path in self.settings.get("external_plugins", []):

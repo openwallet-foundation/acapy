@@ -2,101 +2,75 @@
 
 [![pypi releases](https://img.shields.io/pypi/v/aries_cloudagent)](https://pypi.org/project/aries-cloudagent/)
 [![CircleCI](https://circleci.com/gh/hyperledger/aries-cloudagent-python.svg?style=shield)](https://circleci.com/gh/hyperledger/aries-cloudagent-python)
-[![codecov](https://codecov.io/gh/hyperledger/aries-cloudagent-python/branch/master/graph/badge.svg)](https://codecov.io/gh/hyperledger/aries-cloudagent-python)
+[![codecov](https://codecov.io/gh/hyperledger/aries-cloudagent-python/branch/main/graph/badge.svg)](https://codecov.io/gh/hyperledger/aries-cloudagent-python)
 
 <!-- ![logo](/docs/assets/aries-cloudagent-python-logo-bw.png) -->
 
 > An easy to use Aries agent for building SSI services using any language that supports sending/receiving HTTP requests.
 
-Hyperledger Aries Cloud Agent Python (ACA-Py) is a foundation for building self-sovereign identity (SSI) / decentralized identity services running in non-mobile environments using DIDcomm messaging, the did:peer DID method, and verifiable credentials. With ACA-Py, SSI developers can focus on building services using familiar web development technologies instead of trying to learn the nuts and bolts of low-level SDKs.
+## Overview
 
-As we create ACA-Py, we're also building resources so that developers with a wide-range of backgrounds can get productive with ACA-Py in a hurry. Checkout the [resources](#resources) section below and jump in.
+Hyperledger Aries Cloud Agent Python (ACA-Py) is a foundation for building Verifiable Credential (VC) ecosystems. It operates in the second and third layers of the [Trust Over IP framework (PDF)](https://trustoverip.org/wp-content/uploads/sites/98/2020/05/toip_050520_primer.pdf) using [DIDComm messaging](https://github.com/hyperledger/aries-rfcs/tree/master/concepts/0005-didcomm) and [Hyperledger Aries](https://www.hyperledger.org/use/aries) protocols. The "cloud" in the name means that ACA-Py runs on servers (cloud, enterprise, IoT devices, and so forth), but is not designed to run on mobile devices.
 
-The "cloud" in Aries Cloud Agent - Python does **NOT** mean that ACA-Py cannot be used as an edge agent. ACA-Py is suitable for use in any non-mobile agent scenario, including as an enterprise edge agent for
-issuing, verifying and holding verifiable credentials.
+ACA-Py is built on the Aries concepts and features that make up [Aries Interop Profile (AIP) 1.0](https://github.com/hyperledger/aries-rfcs/tree/master/concepts/0302-aries-interop-profile), as well as most of the protocols that will be in [AIP 2.0](https://github.com/hyperledger/aries-rfcs/pull/579). [ACA-Py’s supported Aries protocols](https://github.com/hyperledger/aries-cloudagent-python/blob/main/SupportedRFCs.md) include, most importantly, protocols for issuing, verifying, and holding VCs that work with a [Hyperledger Indy](https://github.com/hyperledger/indy-sdk) distributed ledger and the Indy "AnonCreds" credential format. Contributors are actively working on adding support for other ToIP Layer 1 DID Utilities, and for other VC formats.
 
-## Table of Contents <!-- omit in toc -->
+To use ACA-Py you create a business logic controller that "talks to" ACA-Py (sending HTTP requests and receiving webhook notifications), and ACA-Py handles the rest. That controller can be built in any language that supports making and receiving HTTP requests; knowledge of Python is not needed. Together, this means you can focus on building VC solutions using familiar web development technologies, instead of having to learn the nuts and bolts of low-level cryptography and Trust over IP-type protocols.
 
-- [Background](#background)
-- [Install](#install)
-- [Usage](#usage)
-- [Security](#security)
-- [API](#api)
-- [Resources](#resources)
-  - [Quickstart](#quickstart)
-  - [Architectural Deep Dive](#architectural-deep-dive)
-  - [Getting Started Guide](#getting-started-guide)
-  - [Read the Docs](#read-the-docs)
-  - [What to Focus On?](#what-to-focus-on)
-- [Credit](#credit)
-- [Contributing](#contributing)
-- [License](#license)
+ACA-Py also supports "multi-tenant" scenarios. In these scenarios, one scalable instance of ACA-Py uses one scalable database, and is capable of managing separate secure storage (for private keys, DIDs, credentials, etc.) for many different actors. This enables "issuer-as-a-service", where an enterprise may have many VC issuers, each with different identifiers, using the same instance of ACA-Py to interact with VC holders as required. Likewise, an ACA-Py instance could be a "cloud wallet" for many holders (e.g. people or organizations) that, for whatever reason, cannot use a mobile device for a wallet.
 
-## Background
+ACA-Py supports deployment in scaled environments such as in Kubernetes environments where ACA-Py and its storage components can be horizontally scaled as needed to handle the load.
 
-Developing an ACA-Py-based application is pretty straight forward for those familiar with web development. An ACA-Py instance is always deployed with a paired "controller" application that provides the business logic for that ACA-Py agent. The controller receives webhook event notifications from its instance of ACA-Py and uses an HTTP API exposed by the ACA-Py instance to provide direction on how to respond to those events. No ACA-Py/Python development is needed--just deploy an ACA-Py instance from PyPi (examples available). The source of the business logic is your imagination. An interface to a legacy system? A user interface for a person? Custom code to implement a new service? You can build your controller in any language that supports making and receiving HTTP requests. Wait...that's every language!
 
-ACA-Py currently supports "only" Hyperledger Indy's verifiable credentials scheme (which is pretty powerful). We are experimenting with adding support to ACA-Py for other DID Ledgers and verifiable credential schemes.
+## Example Uses
 
-ACA-Py is built on the Aries concepts and features defined in the [Aries RFC](https://github.com/hyperledger/aries-rfcs) repository. [This document](https://github.com/hyperledger/aries-cloudagent-python/blob/master/SupportedRFCs.md) contains a (reasonably up to date) list of supported Aries RFCs by the current ACA-Py implementation.
+The business logic you use with ACA-Py is limited only by your imagination. Possible applications include:
 
-## Install
 
-ACA-Py can be run with docker without installation, or can be installed [from PyPi](https://pypi.org/project/aries-cloudagent/). Use the following command to install it locally:
 
-```bash
-pip install aries-cloudagent
-```
+*   An interface to a legacy system to issue verifiable credentials
+*   An authentication service based on the presentation of verifiable credential proofs
+*   An enterprise wallet to hold and present verifiable credentials about that enterprise
+*   A user interface for a person to use a wallet not stored on a mobile device
+*   An application embedded in an IoT device, capable of issuing verifiable credentials about collected data
+*   A persistent connection to other agents that enables secure messaging and notifications
+*   Custom code to implement a new service.
 
-## Usage
 
-Instructions for running ACA-Py can be [found here](https://github.com/hyperledger/aries-cloudagent-python/blob/master/DevReadMe.md#running).
+## Understanding the Architecture
 
-## Security
+There is an [architectural deep dive webinar](https://www.youtube.com/watch?v=FXTQEtB4fto&feature=youtu.be) presented by the ACA-Py team, and [slides from the webinar](https://docs.google.com/presentation/d/1K7qiQkVi4n-lpJ3nUZY27OniUEM0c8HAIk4imCWCx5Q/edit#slide=id.g5d43fe05cc_0_77) are also available. The picture below gives a quick overview of the architecture, showing an instance of ACA-Py, a controller and the interfaces between the controller and ACA-Py, and the external paths to other agents and public ledgers on the Internet.
 
-The administrative API exposed by the agent for the controller to use must be protected with an API key
-(using the `--admin-api-key` command line arg) or deliberately left unsecured using the
-`--admin-insecure-mode` command line arg. The latter should not be used other than in development if the API
-is not otherwise secured.
+![drawing](./aca-py_architecture.png)
 
-## API
 
-A deployed instance of an ACA-Py agent assembles an OpenAPI-documented REST interface from the protocols loaded with the agent. This is used by a controller application (written in any language) to manage the behaviour of the agent. The controller can initiate agent actions such as issuing a credential, and can respond to agent events, such
-as sending a presentation request after a new pairwise DID Exchange connection has been accepted. Agent events are delivered to the controller as webhooks to a configured URL. More information on the administration API and webhooks can be found [here](https://github.com/hyperledger/aries-cloudagent-python/blob/master/AdminAPI.md).
+## Installation and Usage
 
-## Resources
+An ["install and go" page for developers](https://github.com/hyperledger/aries-cloudagent-python/blob/main/DevReadMe.md) is available if you are comfortable with Trust over IP and Aries concepts. ACA-Py can be run with Docker without installation (highly recommended), or can be installed[ from PyPi](https://pypi.org/project/aries-cloudagent/). In the [/demo directory](https://github.com/hyperledger/aries-cloudagent-python/tree/main/demo) there is a full set of demos for developers to use in getting started, and the [demo read me](https://github.com/hyperledger/aries-cloudagent-python/blob/main/demo/README.md) is a great starting point for developers to use an "in-browser" approach to run a zero-install example. The[ Read the Docs](https://aries-cloud-agent-python.readthedocs.io/en/latest/) overview is also a way to reference the modules and APIs that make up an ACA-Py instance.
 
-### Quickstart
+For those new to SSI, Indy and Aries there is a[ Getting Started Guide](https://github.com/hyperledger/aries-cloudagent-python/blob/main/docs/GettingStartedAriesDev/README.md) that will take you from knowing next to nothing about decentralized identity to developing Aries-based business apps and services. You’ll run some Indy apps, ACA-Py apps and developer-oriented demos. The guide has a table of contents so you can skip the parts you already know.
 
-If you are an experienced decentralized identity developer that knows Indy, are already familiar with the concepts behind Aries,  want to play with the code, and perhaps even start contributing to the project, an "install and go" page for developers can be found [here](https://github.com/hyperledger/aries-cloudagent-python/blob/master/DevReadMe.md).
+Finally, if you’re not sure where your focus should be—building apps? Aries? Indy? Indy’s Blockchain? Ursa?—then the ["What should I work on?" document](https://github.com/hyperledger/aries-cloudagent-python/blob/main/docs/GettingStartedAriesDev/IndyAriesDevOptions.md) is a good starting point. It goes through the technical stack and shows how the projects fit together, so you can decide where you want to focus your efforts.
 
-### Architectural Deep Dive
 
-The ACA-Py team presented an architectural deep dive webinar that can be viewed [here](https://youtu.be/FXTQEtB4fto). Slides from the webinar can be found [here](https://docs.google.com/presentation/d/1K7qiQkVi4n-lpJ3nUZY27OniUEM0c8HAIk4imCWCx5Q/edit#slide=id.g5d43fe05cc_0_77).
+## About The API
 
-### Getting Started Guide
+The [overview of ACA-Py’s API](https://github.com/hyperledger/aries-cloudagent-python/blob/main/AdminAPI.md) is a great starting place for learning about the API.
 
-For everyone those new to SSI, Indy and Aries, we've created a [Getting Started Guide](https://github.com/hyperledger/aries-cloudagent-python/blob/master/docs/GettingStartedAriesDev/README.md) that will take you from knowing next to nothing about decentralized identity to developing Aries-based business apps and services in a hurry. Along the way, you'll run some early Indy apps, apps built on ACA-Py and developer-oriented demos for interacting with ACA-Py. The guide has a good table of contents so that you can skip the parts you already know.
+An ACA-Py instance puts together an OpenAPI-documented REST interface based on the protocols that are loaded. This is used by a controller application (written in any language) to manage the behaviour of the agent. The controller can initiate actions (e.g. issuing a credential) and can respond to agent events (e.g. sending a presentation request after a connection is accepted). Agent events are delivered to the controller as webhooks to a configured URL.
 
-### Read the Docs
+Technical note: the administrative API exposed by the agent for the controller to use must be protected with an API key (using the --admin-api-key command line arg) or deliberately left unsecured using the --admin-insecure-mode command line arg. The latter should not be used other than in development if the API is not otherwise secured.
 
-The ACA-Py Python docstrings are used as the source of a [Read the Docs](https://aries-cloud-agent-python.readthedocs.io/en/latest/) code overview site. Want to review the
-modules that make up ACA-Py? This is the best place to go.
-
-### What to Focus On?
-
-Not sure where your focus should be? Building apps? Aries? Indy? Indy's Blockchain? Ursa? Here is a [document](https://github.com/hyperledger/aries-cloudagent-python/blob/master/docs/GettingStartedAriesDev/IndyAriesDevOptions.md) that goes through the technical stack to show how the projects fit together, so you can decide where you want to focus your efforts.
 
 ## Credit
 
-The initial implementation of ACA-Py was developed by the Verifiable Organizations Network (VON) team based at the Province of British Columbia. To learn more about VON and what's happening with decentralized identity in British Columbia, please go to [https://vonx.io](https://vonx.io).
+The initial implementation of ACA-Py was developed by the Government of British Columbia’s Digital Trust Team in Canada. To learn more about what’s happening with decentralized identity and digital trust in British Columbia, a new website will be launching in March 2021 and the link will be made available here.
+
 
 ## Contributing
 
-Pull requests are welcome! Please read our [contributions guide](https://github.com/hyperledger/aries-cloudagent-python/blob/master/CONTRIBUTING.md) and submit your PRs. We enforce [developer certificate of origin](https://developercertificate.org/) (DCO) commit signing. See guidance [here](https://github.com/apps/dco).
+Pull requests are welcome! Please read our [contributions guide](https://github.com/hyperledger/aries-cloudagent-python/blob/main/CONTRIBUTING.md) and submit your PRs. We enforce [developer certificate of origin](https://developercertificate.org/) (DCO) commit signing — [guidance](https://github.com/apps/dco) on this is available. We also welcome issues submitted about problems you encounter in using ACA-Py.
 
-We also welcome issues submitted about problems you encounter in using ACA-Py.
 
 ## License
 
-[Apache License Version 2.0](https://github.com/hyperledger/aries-cloudagent-python/blob/master/LICENSE)
+[Apache License Version 2.0](https://github.com/hyperledger/aries-cloudagent-python/blob/main/LICENSE)

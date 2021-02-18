@@ -10,6 +10,7 @@ from urllib.parse import urlparse
 
 from ...connections.models.connection_target import ConnectionTarget
 from ...config.injection_context import InjectionContext
+from ...core.profile import Profile
 from ...utils.classloader import ClassLoader, ModuleLoadError, ClassNotFoundError
 from ...utils.stats import Collector
 from ...utils.task_queue import CompletedTask, TaskQueue, task_exc_info
@@ -41,13 +42,13 @@ class QueuedOutboundMessage:
 
     def __init__(
         self,
-        context: InjectionContext,
+        profile: Profile,
         message: OutboundMessage,
         target: ConnectionTarget,
         transport_id: str,
     ):
         """Initialize the queued outbound message."""
-        self.context = context
+        self.profile = profile
         self.endpoint = target and target.endpoint
         self.error: Exception = None
         self.message = message
@@ -58,6 +59,8 @@ class QueuedOutboundMessage:
         self.target = target
         self.task: asyncio.Task = None
         self.transport_id: str = transport_id
+        self.metadata: dict = None
+        self.api_key: str = None
 
 
 class OutboundTransportManager:
@@ -170,7 +173,7 @@ class OutboundTransportManager:
     async def start_transport(self, transport_id: str):
         """Start a registered transport."""
         transport = self.registered_transports[transport_id]()
-        transport.collector = await self.context.inject(Collector, required=False)
+        transport.collector = self.context.inject(Collector, required=False)
         await transport.start()
         self.running_transports[transport_id] = transport
 
@@ -231,12 +234,12 @@ class OutboundTransportManager:
         """Get an instance of a running transport by ID."""
         return self.running_transports[transport_id]
 
-    def enqueue_message(self, context: InjectionContext, outbound: OutboundMessage):
+    def enqueue_message(self, profile: Profile, outbound: OutboundMessage):
         """
         Add an outbound message to the queue.
 
         Args:
-            context: The context of the request
+            profile: The active profile for the request
             outbound: The outbound message to deliver
         """
         targets = [outbound.target] if outbound.target else (outbound.target_list or [])
@@ -252,13 +255,18 @@ class OutboundTransportManager:
         if not transport_id:
             raise OutboundDeliveryError("No supported transport for outbound message")
 
-        queued = QueuedOutboundMessage(context, outbound, target, transport_id)
+        queued = QueuedOutboundMessage(profile, outbound, target, transport_id)
         queued.retries = self.MAX_RETRY_COUNT
         self.outbound_new.append(queued)
         self.process_queued()
 
     def enqueue_webhook(
-        self, topic: str, payload: dict, endpoint: str, max_attempts: int = None
+        self,
+        topic: str,
+        payload: dict,
+        endpoint: str,
+        max_attempts: int = None,
+        metadata: dict = None,
     ):
         """
         Add a webhook to the queue.
@@ -268,6 +276,7 @@ class OutboundTransportManager:
             payload: The webhook payload
             endpoint: The webhook endpoint
             max_attempts: Override the maximum number of attempts
+            metadata: Additional metadata associated with the payload
 
         Raises:
             OutboundDeliveryError: if the associated transport is not running
@@ -275,7 +284,13 @@ class OutboundTransportManager:
         """
         transport_id = self.get_running_transport_for_endpoint(endpoint)
         queued = QueuedOutboundMessage(None, None, None, transport_id)
+        if len(endpoint.split("#")) > 1:
+            endpoint_hash_split = endpoint.split("#")
+            endpoint = endpoint_hash_split[0]
+            api_key = endpoint_hash_split[1]
+            queued.api_key = api_key
         queued.endpoint = f"{endpoint}/topic/{topic}/"
+        queued.metadata = metadata
         queued.payload = json.dumps(payload)
         queued.state = QueuedOutboundMessage.STATE_PENDING
         queued.retries = 4 if max_attempts is None else max_attempts - 1
@@ -326,7 +341,7 @@ class OutboundTransportManager:
                             exc_info=queued.error,
                         )
                         if self.handle_not_delivered:
-                            self.handle_not_delivered(queued.context, queued.message)
+                            self.handle_not_delivered(queued.profile, queued.message)
                     continue  # remove from buffer
 
                 deliver = False
@@ -409,11 +424,10 @@ class OutboundTransportManager:
     async def perform_encode(self, queued: QueuedOutboundMessage):
         """Perform message encoding."""
         transport = self.get_transport_instance(queued.transport_id)
-        wire_format = transport.wire_format or await queued.context.inject(
-            BaseWireFormat
-        )
+        wire_format = transport.wire_format or self.context.inject(BaseWireFormat)
+        session = await queued.profile.session()
         queued.payload = await wire_format.encode_message(
-            queued.context,
+            session,
             queued.message.payload,
             queued.target.recipient_keys,
             queued.target.routing_keys,
@@ -434,7 +448,13 @@ class OutboundTransportManager:
         """Kick off delivery of a queued message."""
         transport = self.get_transport_instance(queued.transport_id)
         queued.task = self.task_queue.run(
-            transport.handle_message(queued.context, queued.payload, queued.endpoint),
+            transport.handle_message(
+                queued.profile,
+                queued.payload,
+                queued.endpoint,
+                queued.metadata,
+                queued.api_key,
+            ),
             lambda completed: self.finished_deliver(queued, completed),
         )
         return queued.task

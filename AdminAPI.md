@@ -2,7 +2,7 @@
 
 ## Using the OpenAPI (Swagger) Interface
 
-ACA-Py provides an OpenAPI-documented REST interface for adminstering the agent's internal state and sparking communication with connected agents.
+ACA-Py provides an OpenAPI-documented REST interface for administering the agent's internal state and sparking communication with connected agents.
 
 To see the specifics of the supported endpoints as well as the expected request and response formats it is recommended to run the `aca-py` agent with the `--admin {HOST} {PORT}` and `--admin-insecure-mode` command line parameters, which exposes the OpenAPI UI on the provided port for interaction via a web browser. Production deployments should run the agent with `--admin-api-key {KEY}` and add the `X-API-Key: {KEY}` header to all requests instead of running the agent with the `--admin-insecure-mode` parameter.
 
@@ -99,7 +99,7 @@ The payload schemas are defined using [marshmallow](https://marshmallow.readthed
 
 API endpoints are defined using [aiohttp_apispec](https://github.com/maximdanilchenko/aiohttp-apispec) tags (e.g. `@doc`, `@request_schema`, `@response_schema` etc.) which define the input and output parameters of the endpoint.  API url paths are defined in the `register()` method and added to the swagger page in the `post_process_routes()` method.
 
-The API's should return the folowing HTTP status:
+The API's should return the following HTTP status:
 
  * HTTP 200 for successful API completion, with appropriate response
  * HTTP 400 (or appropriate 4xx code) (with an error message) for errors on input parameters (i.e. the user can retry with different parameters and potentially get a successful API call)

@@ -3,11 +3,12 @@
 import logging
 
 from aiohttp import web
-from aiohttp_apispec import docs, match_info_schema, request_schema
+from aiohttp_apispec import docs, match_info_schema, request_schema, response_schema
 
 from marshmallow import fields
 
-from ....connections.models.connection_record import ConnectionRecord
+from ....admin.request_context import AdminRequestContext
+from ....connections.models.conn_record import ConnRecord
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
 from ....messaging.valid import UUIDFour
@@ -20,6 +21,10 @@ from .models.menu_option import MenuOptionSchema
 from .util import MENU_RECORD_TYPE, retrieve_connection_menu, save_connection_menu
 
 LOGGER = logging.getLogger(__name__)
+
+
+class ActionMenuModulesResultSchema(OpenAPISchema):
+    """Schema for the modules endpoint."""
 
 
 class PerformRequestSchema(OpenAPISchema):
@@ -81,6 +86,7 @@ class ConnIdMatchInfoSchema(OpenAPISchema):
     tags=["action-menu"], summary="Close the active menu associated with a connection"
 )
 @match_info_schema(ConnIdMatchInfoSchema())
+@response_schema(ActionMenuModulesResultSchema(), 200, description="")
 async def actionmenu_close(request: web.BaseRequest):
     """
     Request handler for closing the menu associated with a connection.
@@ -89,7 +95,7 @@ async def actionmenu_close(request: web.BaseRequest):
         request: aiohttp request object
 
     """
-    context = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
     connection_id = request.match_info["conn_id"]
 
     menu = await retrieve_connection_menu(connection_id, context)
@@ -108,6 +114,7 @@ async def actionmenu_close(request: web.BaseRequest):
 
 @docs(tags=["action-menu"], summary="Fetch the active menu")
 @match_info_schema(ConnIdMatchInfoSchema())
+@response_schema(ActionMenuModulesResultSchema(), 200, description="")
 async def actionmenu_fetch(request: web.BaseRequest):
     """
     Request handler for fetching the previously-received menu for a connection.
@@ -116,7 +123,7 @@ async def actionmenu_fetch(request: web.BaseRequest):
         request: aiohttp request object
 
     """
-    context = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
     connection_id = request.match_info["conn_id"]
 
     menu = await retrieve_connection_menu(connection_id, context)
@@ -127,6 +134,7 @@ async def actionmenu_fetch(request: web.BaseRequest):
 @docs(tags=["action-menu"], summary="Perform an action associated with the active menu")
 @match_info_schema(ConnIdMatchInfoSchema())
 @request_schema(PerformRequestSchema())
+@response_schema(ActionMenuModulesResultSchema(), 200, description="")
 async def actionmenu_perform(request: web.BaseRequest):
     """
     Request handler for performing a menu action.
@@ -135,13 +143,14 @@ async def actionmenu_perform(request: web.BaseRequest):
         request: aiohttp request object
 
     """
-    context = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
     connection_id = request.match_info["conn_id"]
-    outbound_handler = request.app["outbound_message_router"]
+    outbound_handler = request["outbound_message_router"]
     params = await request.json()
 
     try:
-        connection = await ConnectionRecord.retrieve_by_id(context, connection_id)
+        async with context.session() as session:
+            connection = await ConnRecord.retrieve_by_id(session, connection_id)
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
 
@@ -155,6 +164,7 @@ async def actionmenu_perform(request: web.BaseRequest):
 
 @docs(tags=["action-menu"], summary="Request the active menu")
 @match_info_schema(ConnIdMatchInfoSchema())
+@response_schema(ActionMenuModulesResultSchema(), 200, description="")
 async def actionmenu_request(request: web.BaseRequest):
     """
     Request handler for requesting a menu from the connection target.
@@ -163,12 +173,13 @@ async def actionmenu_request(request: web.BaseRequest):
         request: aiohttp request object
 
     """
-    context = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
     connection_id = request.match_info["conn_id"]
-    outbound_handler = request.app["outbound_message_router"]
+    outbound_handler = request["outbound_message_router"]
 
     try:
-        connection = await ConnectionRecord.retrieve_by_id(context, connection_id)
+        async with context.session() as session:
+            connection = await ConnRecord.retrieve_by_id(session, connection_id)
     except StorageNotFoundError as err:
         LOGGER.debug("Connection not found for action menu request: %s", connection_id)
         raise web.HTTPNotFound(reason=err.roll_up) from err
@@ -184,6 +195,7 @@ async def actionmenu_request(request: web.BaseRequest):
 @docs(tags=["action-menu"], summary="Send an action menu to a connection")
 @match_info_schema(ConnIdMatchInfoSchema())
 @request_schema(SendMenuSchema())
+@response_schema(ActionMenuModulesResultSchema(), 200, description="")
 async def actionmenu_send(request: web.BaseRequest):
     """
     Request handler for requesting a menu from the connection target.
@@ -192,9 +204,9 @@ async def actionmenu_send(request: web.BaseRequest):
         request: aiohttp request object
 
     """
-    context = request.app["request_context"]
+    context: AdminRequestContext = request["context"]
     connection_id = request.match_info["conn_id"]
-    outbound_handler = request.app["outbound_message_router"]
+    outbound_handler = request["outbound_message_router"]
     menu_json = await request.json()
     LOGGER.debug("Received send-menu request: %s %s", connection_id, menu_json)
     try:
@@ -204,7 +216,8 @@ async def actionmenu_send(request: web.BaseRequest):
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     try:
-        connection = await ConnectionRecord.retrieve_by_id(context, connection_id)
+        async with context.session() as session:
+            connection = await ConnRecord.retrieve_by_id(session, connection_id)
     except StorageNotFoundError as err:
         LOGGER.debug(
             "Connection not found for action menu send request: %s", connection_id
