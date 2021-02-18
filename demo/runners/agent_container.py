@@ -66,6 +66,7 @@ class AriesAgent(DemoAgent):
         self.cred_state = {}
         # define a dict to hold credential attributes
         self.last_credential_received = None
+        self.last_proof_received = None
 
     async def detect_connection(self):
         await self._connection_ready
@@ -150,17 +151,88 @@ class AriesAgent(DemoAgent):
 
     async def handle_present_proof(self, message):
         state = message["state"]
+        presentation_exchange_id = message["presentation_exchange_id"]
+        self.log(f"Presentation: state = {state}, presentation_exchange_id = {presentation_exchange_id}")
 
-        pres_ex_id = message["presentation_exchange_id"]
-        self.log(f"Presentation: state = {state}, pres_ex_id = {pres_ex_id}")
+        if state == "request_received":
+            # prover role
+            log_status(
+                "#24 Query for credentials in the wallet that satisfy the proof request"
+            )
 
-        if state == "presentation_received":
+            # include self-attested attributes (not included in credentials)
+            credentials_by_reft = {}
+            revealed = {}
+            self_attested = {}
+            predicates = {}
+
+            try:
+                # select credentials to provide for the proof
+                presentation_request = message["presentation_request"]
+                credentials = await self.admin_GET(
+                    f"/present-proof/records/{presentation_exchange_id}/credentials"
+                )
+                if credentials:
+                    if "timestamp" in credentials[0]["cred_info"]["attrs"]:
+                        sorted_creds = sorted(
+                            credentials,
+                            key=lambda c: int(c["cred_info"]["attrs"]["timestamp"]),
+                            reverse=True,
+                        )
+                    else:
+                        sorted_creds = credentials
+                    for row in sorted_creds:
+                        for referent in row["presentation_referents"]:
+                            if referent not in credentials_by_reft:
+                                credentials_by_reft[referent] = row
+
+                for referent in presentation_request["requested_attributes"]:
+                    if referent in credentials_by_reft:
+                        revealed[referent] = {
+                            "cred_id": credentials_by_reft[referent]["cred_info"][
+                                "referent"
+                            ],
+                            "revealed": True,
+                        }
+                    else:
+                        self_attested[referent] = "my self-attested value"
+
+                for referent in presentation_request["requested_predicates"]:
+                    if referent in credentials_by_reft:
+                        predicates[referent] = {
+                            "cred_id": credentials_by_reft[referent]["cred_info"][
+                                "referent"
+                            ]
+                        }
+
+                log_status("#25 Generate the proof")
+                request = {
+                    "requested_predicates": predicates,
+                    "requested_attributes": revealed,
+                    "self_attested_attributes": self_attested,
+                }
+
+                log_status("#26 Send the proof to X")
+                await self.admin_POST(
+                    (
+                        "/present-proof/records/"
+                        f"{presentation_exchange_id}/send-presentation"
+                    ),
+                    request,
+                )
+            except ClientError:
+                pass
+
+        elif state == "presentation_received":
+            # verifier role
             log_status("#27 Process the proof provided by X")
             log_status("#28 Check if proof is valid")
             proof = await self.admin_POST(
-                f"/present-proof/records/{pres_ex_id}/verify-presentation"
+                f"/present-proof/records/{presentation_exchange_id}/verify-presentation"
             )
             self.log("Proof =", proof["verified"])
+            self.last_proof_received = proof
+
 
     async def handle_basicmessages(self, message):
         self.log("Received message:", message["content"])
@@ -198,17 +270,18 @@ class AriesAgent(DemoAgent):
             log_msg("Waiting for connection...")
             await agent.detect_connection()
 
-    async def create_schema_and_cred_def(self, schema_name, schema_attrs, revocation):
+    async def create_schema_and_cred_def(self, schema_name, schema_attrs, revocation, version=None):
         with log_timer("Publish schema/cred def duration:"):
             log_status("#3/4 Create a new schema/cred def on the ledger")
-            version = format(
-                "%d.%d.%d"
-                % (
-                    random.randint(1, 101),
-                    random.randint(1, 101),
-                    random.randint(1, 101),
+            if not version:
+                version = format(
+                    "%d.%d.%d"
+                    % (
+                        random.randint(1, 101),
+                        random.randint(1, 101),
+                        random.randint(1, 101),
+                    )
                 )
-            )
             (_, cred_def_id,) = await self.register_schema_and_creddef(  # schema id
                 schema_name,
                 version,
@@ -327,10 +400,11 @@ class AgentContainer():
         self,
         schema_name: str,
         schema_attrs: list,
+        version: str = None,
     ):
         if not self.public_did:
             raise Exception("Can't create a schema/cred def without a public DID :-(")
-        self.cred_def_id = await self.agent.create_schema_and_cred_def(schema_name, schema_attrs, self.revocation)
+        self.cred_def_id = await self.agent.create_schema_and_cred_def(schema_name, schema_attrs, self.revocation, version=version)
         return self.cred_def_id
 
     async def issue_credential(
@@ -376,9 +450,54 @@ class AgentContainer():
             print("Wrong credential definition id")
             return False
 
-        # TODO check if attribute values match those of issued credential
+        # check if attribute values match those of issued credential
+        wallet_attrs = self.agent.last_credential_received["attrs"]
+        matched = True
+        for cred_attr in cred_attrs:
+            if cred_attr["name"] in wallet_attrs:
+                if wallet_attrs[cred_attr["name"]] != cred_attr["value"]:
+                    print("Value doesn't match for:", cred_attr["name"])
+                    matched = False
+            else:
+                print("Attribute not found for:", cred_attr["name"])
+                matched = False;
+
+        return matched
+
+    async def request_proof(self, proof_request, revocation: bool = False):
+        log_status("#20 Request proof of degree from alice")
+
+        indy_proof_request = {
+            "name": proof_request["name"] if "name" in proof_request else "Proof of stuff",
+            "version": proof_request["version"] if "version" in proof_request else "1.0",
+            "requested_attributes": proof_request["requested_attributes"],
+            "requested_predicates": proof_request["requested_predicates"],
+        }
+
+        if revocation and self.revocation:
+            indy_proof_request["non_revoked"] = {"to": int(time.time())}
+        proof_request_web_request = {
+            "connection_id": self.agent.connection_id,
+            "proof_request": indy_proof_request,
+            "trace": self.exchange_tracing,
+        }
+        await self.agent.admin_POST(
+            "/present-proof/send-request", proof_request_web_request
+        )
 
         return True
+
+    async def verify_proof(self, proof_request):
+        await asyncio.sleep(1.0)
+
+        # check if the requested credential matches out last received
+        if not self.agent.last_proof_received:
+            # no proof received
+            print("No proof received")
+            return None
+
+        # return verified status
+        return self.agent.last_proof_received["verified"]
 
     async def terminate(self):
         """Shut down any running agents."""

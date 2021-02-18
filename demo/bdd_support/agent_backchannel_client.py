@@ -101,13 +101,15 @@ def aries_container_detect_connection(
 
 def aries_container_create_schema_cred_def(
     the_container: AgentContainer,
-        schema_name: str,
-        schema_attrs: list,
+    schema_name: str,
+    schema_attrs: list,
+    version: str = None,
 ):
-    return run_coroutine_with_args(
+    return run_coroutine_with_kwargs(
         the_container.create_schema_and_cred_def,
         schema_name,
         schema_attrs,
+        version=version,
     )
 
 def aries_container_issue_credential(
@@ -130,6 +132,24 @@ def aries_container_receive_credential(
         the_container.receive_credential,
         cred_def_id,
         cred_attrs,
+    )
+
+def aries_container_request_proof(
+    the_container: AgentContainer,
+    proof_request: dict,
+):
+    return run_coroutine_with_args(
+        the_container.request_proof,
+        proof_request,
+    )
+
+def aries_container_verify_proof(
+    the_container: AgentContainer,
+    proof_request: dict,
+):
+    return run_coroutine_with_args(
+        the_container.verify_proof,
+        proof_request,
     )
 
 
@@ -157,7 +177,8 @@ def read_credential_data(schema_name: str, cred_scenario_name: str):
     return cred_data["attributes"]
 
 def read_proof_req_data(proof_req_name: str):
-    return read_json_data("proof_request_" + proof_req_name + ".json")
+    proof_request_info = read_json_data("proof_request_" + proof_req_name + ".json")
+    return proof_request_info["presentation_proposal"]
 
 def read_presentation_data(presentation_name: str):
     return read_json_data("presentation_" + presentation_name + ".json")
