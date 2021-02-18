@@ -1,6 +1,7 @@
 """Http outbound transport."""
 
 import logging
+import os
 from typing import Union
 
 from aiohttp import ClientSession, DummyCookieJar, TCPConnector
@@ -35,6 +36,7 @@ class HttpTransport(BaseOutboundTransport):
             ]
         session_args["cookie_jar"] = DummyCookieJar()
         session_args["connector"] = self.connector
+        session_args["trust_env"] = os.environ.get("TRUST_ENV", False)
         self.client_session = ClientSession(**session_args)
         return self
 

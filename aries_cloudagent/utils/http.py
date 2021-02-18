@@ -1,6 +1,7 @@
 """HTTP utility methods."""
 
 import asyncio
+import os
 
 from aiohttp import BaseConnector, ClientError, ClientResponse, ClientSession
 from aiohttp.web import HTTPConflict
@@ -46,8 +47,11 @@ async def fetch_stream(
 
     """
     limit = max_attempts if retry else 1
+    trust_env = os.environ.get("TRUST_ENV", False)
     if not session:
-        session = ClientSession(connector=connector, connector_owner=(not connector))
+        session = ClientSession(
+            connector=connector, connector_owner=(not connector), trust_env=trust_env
+        )
     async with session:
         async for attempt in RepeatSequence(limit, interval, backoff):
             try:
@@ -93,8 +97,11 @@ async def fetch(
 
     """
     limit = max_attempts if retry else 1
+    trust_env = os.environ.get("TRUST_ENV", False)
     if not session:
-        session = ClientSession(connector=connector, connector_owner=(not connector))
+        session = ClientSession(
+            connector=connector, connector_owner=(not connector), trust_env=trust_env
+        )
     async with session:
         async for attempt in RepeatSequence(limit, interval, backoff):
             try:
@@ -145,9 +152,12 @@ async def put(
     (data_key, file_path) = [k for k in file_data.items()][0]
     data = {**extra_data}
     limit = max_attempts if retry else 1
+    trust_env = os.environ.get("TRUST_ENV", False)
 
     if not session:
-        session = ClientSession(connector=connector, connector_owner=(not connector))
+        session = ClientSession(
+            connector=connector, connector_owner=(not connector), trust_env=trust_env
+        )
     async with session:
         async for attempt in RepeatSequence(limit, interval, backoff):
             try:
