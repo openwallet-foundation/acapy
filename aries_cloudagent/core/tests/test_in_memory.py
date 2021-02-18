@@ -17,3 +17,7 @@ class TestInMemoryWallet:
 
         assert "InMemoryProfile" in str(profile)
         assert profile.created
+
+    @pytest.mark.asyncio
+    async def test_profile_clear(self):
+        InMemoryProfile.test_profile(settings=None, bind={"a": None})

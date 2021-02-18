@@ -1476,8 +1476,6 @@ class TestV20CredRoutes(AsyncTestCase):
         with async_mock.patch.object(
             test_module, "ConnRecord", autospec=True
         ) as mock_conn_rec, async_mock.patch.object(
-            test_module, "V20CredManager", autospec=True
-        ) as mock_cred_mgr, async_mock.patch.object(
             test_module, "V20CredExRecord", autospec=True
         ) as mock_cx_rec, async_mock.patch.object(
             test_module, "ProblemReport", autospec=True
