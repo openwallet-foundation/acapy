@@ -108,6 +108,16 @@ class AdminResponder(BaseResponder):
         """
         await self._webhook(self._profile, topic, payload)
 
+    @property
+    def send_fn(self) -> Coroutine:
+        """Accessor for async function to send outbound message."""
+        return self._send
+
+    @property
+    def webhook_fn(self) -> Coroutine:
+        """Accessor for the async function to dispatch a webhook."""
+        return self._webhook
+
 
 class WebhookTarget:
     """Class for managing webhook target information."""

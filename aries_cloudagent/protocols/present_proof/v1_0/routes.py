@@ -41,6 +41,7 @@ from ....utils.tracing import trace_event, get_timer, AdminAPIMessageTracingSche
 from ....wallet.error import WalletNotFoundError
 
 from ...problem_report.v1_0 import internal_error
+from ...problem_report.v1_0.message import ProblemReport
 
 from ..indy.presentation_preview import (
     IndyPresentationPreview,
@@ -304,6 +305,12 @@ class CredentialsFetchQueryStringSchema(OpenAPISchema):
         required=False,
         **INDY_EXTRA_WQL,
     )
+
+
+class V10PresentationProblemReportRequestSchema(OpenAPISchema):
+    """Request schema for sending problem report."""
+
+    explain_ltxt = fields.Str(required=True)
 
 
 class PresExIdMatchInfoSchema(OpenAPISchema):
@@ -955,6 +962,52 @@ async def presentation_exchange_verify_presentation(request: web.BaseRequest):
     return web.json_response(result)
 
 
+@docs(
+    tags=["present-proof"],
+    summary="Send a problem report for presentation exchange",
+)
+@match_info_schema(PresExIdMatchInfoSchema())
+@request_schema(V10PresentationProblemReportRequestSchema())
+@response_schema(PresentProofModuleResponseSchema(), 200, description="")
+async def presentation_exchange_problem_report(request: web.BaseRequest):
+    """
+    Request handler for sending problem report.
+
+    Args:
+        request: aiohttp request object
+
+    """
+    r_time = get_timer()
+
+    context: AdminRequestContext = request["context"]
+    outbound_handler = request["outbound_message_router"]
+
+    pres_ex_id = request.match_info["pres_ex_id"]
+    body = await request.json()
+
+    try:
+        async with await context.session() as session:
+            pres_ex_record = await V10PresentationExchange.retrieve_by_id(
+                session, pres_ex_id
+            )
+    except StorageNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
+
+    error_result = ProblemReport(explain_ltxt=body["explain_ltxt"])
+    error_result.assign_thread_id(pres_ex_record.thread_id)
+
+    await outbound_handler(error_result, connection_id=pres_ex_record.connection_id)
+
+    trace_event(
+        context.settings,
+        error_result,
+        outcome="presentation_exchange_problem_report.END",
+        perf_counter=r_time,
+    )
+
+    return web.json_response({})
+
+
 @docs(tags=["present-proof"], summary="Remove an existing presentation exchange record")
 @match_info_schema(PresExIdMatchInfoSchema())
 @response_schema(PresentProofModuleResponseSchema(), description="")
@@ -1030,6 +1083,10 @@ async def register(app: web.Application):
             web.post(
                 "/present-proof/records/{pres_ex_id}/verify-presentation",
                 presentation_exchange_verify_presentation,
+            ),
+            web.post(
+                "/present-proof/records/{pres_ex_id}/problem-report",
+                presentation_exchange_problem_report,
             ),
             web.delete(
                 "/present-proof/records/{pres_ex_id}",
