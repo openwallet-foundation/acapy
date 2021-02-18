@@ -250,12 +250,18 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
         await manager._set_default_mediator_id("test", session)
         assert await manager.get_default_mediator_id() == "test"
 
-    async def test_set_set_get_default_mediator_by_id(
+    async def test_set_set_get_default_mediator_id(
         self, manager: MediationManager, session
     ):
         await manager._set_default_mediator_id("test", session)
         await manager._set_default_mediator_id("updated", session)
         assert await manager.get_default_mediator_id() == "updated"
+
+    async def test_set_default_mediator_by_id(self, manager: MediationManager):
+        with async_mock.patch.object(
+            test_module.MediationRecord, "retrieve_by_id", async_mock.CoroutineMock()
+        ) as mock_retrieve:
+            await manager.set_default_mediator_by_id("test")
 
     async def test_clear_default_mediator(self, manager: MediationManager, session):
         await manager._set_default_mediator_id("test", session)
