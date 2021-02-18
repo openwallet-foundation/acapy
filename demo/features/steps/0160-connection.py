@@ -10,6 +10,7 @@
 
 from behave import given, when, then
 import json
+
 from bdd_support.agent_backchannel_client import (
     create_agent_container_with_args,
     aries_container_initialize,
@@ -87,29 +88,12 @@ def step_impl(context, agent_name):
 
 @given('"{sender}" and "{receiver}" have an existing connection')
 def step_impl(context, sender, receiver):
-    if "DIDExchangeConnection" in context.tags:
-        context.execute_steps(u'''
-            When "''' + sender + '''" sends an explicit invitation
-            And "''' + receiver + '''" receives the invitation
-            And "''' + receiver + '''" sends the request to "''' + sender + '''"
-            And "''' + sender + '''" receives the request
-            And "''' + sender + '''" sends a response to "''' + receiver + '''"
-            And "''' + receiver + '''" receives the response
-            And "''' + receiver + '''" sends complete to "''' + sender + '''"
-            Then "''' + sender + '''" and "''' + receiver + '''" have a connection
-        ''')
-
-    else:
-        context.execute_steps(u'''
-            When "''' + sender + '''" generates a connection invitation
-            And "''' + receiver + '''" receives the connection invitation
-            And "''' + receiver + '''" sends a connection request to "''' + sender + '''"
-            And "''' + sender + '''" receives the connection request
-            And "''' + sender + '''" sends a connection response to "''' + receiver + '''"
-            And "''' + receiver + '''" receives the connection response
-            And "''' + receiver + '''" sends trustping to "''' + sender + '''"
-            Then "''' + sender + '''" and "''' + receiver + '''" have a connection
-        ''')
+    context.execute_steps(u'''
+        When "''' + sender + '''" generates a connection invitation
+        And "''' + receiver + '''" receives the connection invitation
+        Then "''' + sender + '''" has an active connection
+        And "''' + receiver + '''" has an active connection
+    ''')
 
 @when(u'"{sender}" sends a trust ping')
 def step_impl(context, sender):

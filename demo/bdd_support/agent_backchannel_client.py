@@ -98,6 +98,39 @@ def aries_container_detect_connection(
 ):
     run_coroutine(the_container.detect_connection)
 
+def aries_container_create_schema_cred_def(
+    the_container: AgentContainer,
+        schema_name: str,
+        schema_attrs: list,
+):
+    return run_coroutine_with_args(
+        the_container.create_schema_and_cred_def,
+        schema_name,
+        schema_attrs,
+    )
+
+def aries_container_issue_credential(
+    the_container: AgentContainer,
+    cred_def_id: str,
+    cred_attrs: dict,
+):
+    return run_coroutine_with_args(
+        the_container.issue_credential,
+        cred_def_id,
+        cred_attrs,
+    )
+
+def aries_container_receive_credential(
+    the_container: AgentContainer,
+    cred_def_id: str,
+    cred_attrs: dict,
+):
+    return run_coroutine_with_args(
+        the_container.receive_credential,
+        cred_def_id,
+        cred_attrs,
+    )
+
 
 ######################################################################
 # probably obsolete ...

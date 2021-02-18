@@ -80,11 +80,18 @@ class AriesAgent(DemoAgent):
         # will be None
         if not self._connection_ready:
             return
-
         conn_id = message["connection_id"]
+        
+        # inviter:
         if message["state"] == "invitation":
             self.connection_id = conn_id
+
+        # invitee:
+        if (not self.connection_id) and message["rfc23_state"] == "invitation-received":
+            self.connection_id = conn_id
+
         if conn_id == self.connection_id:
+            # inviter or invitee:
             if (
                 message["rfc23_state"] in ["completed", "response-sent"]
                 and not self._connection_ready.done()
@@ -109,6 +116,20 @@ class AriesAgent(DemoAgent):
                 f"/issue-credential-2.0/records/{cred_ex_id}/issue",
                 {"comment": f"Issuing credential, exchange {cred_ex_id}"},
             )
+        elif state == "offer-received":
+            log_status("#15 After receiving credential offer, send credential request")
+            await self.admin_POST(
+                f"/issue-credential-2.0/records/{cred_ex_id}/send-request"
+            )
+        elif state == "done":
+            cred_id = message["cred_id_stored"]
+            self.log(f"Stored credential {cred_id} in wallet")
+            log_status(f"#18.1 Stored credential {cred_id} in wallet")
+            cred = await self.admin_GET(f"/credential/{cred_id}")
+            log_json(cred, label="Credential details:")
+            self.log("credential_id", cred_id)
+            self.log("cred_def_id", cred["cred_def_id"])
+            self.log("schema_id", cred["schema_id"])
 
     async def handle_issue_credential_v2_0_indy(self, message):
         rev_reg_id = message.get("rev_reg_id")
@@ -223,6 +244,8 @@ class AgentContainer():
         self.public_did = public_did
         self.seed = seed
 
+        self.exchange_tracing = False
+
         # local agent(s)
         self.agent = None
         self.mediator_agent = None
@@ -277,10 +300,11 @@ class AgentContainer():
 
         if self.multitenant:
             # create an initial managed sub-wallet (also mediated)
+            rand_name = str(random.randint(100_000, 999_999))
             await self.agent.register_or_switch_wallet(
-                self.ident + ".initial",
+                self.ident + ".initial." + rand_name,
                 public_did=self.public_did,
-                webhook_port=self.agent.get_new_webhook_port(),
+                webhook_port=None,
                 mediator_agent=self.mediator_agent,
             )
         elif self.mediation:
@@ -289,10 +313,57 @@ class AgentContainer():
                 raise Exception("Mediation setup FAILED :-(")
 
         if schema_name and schema_attrs:
-            if not self.public_did:
-                raise Exception("Can't create a schema/cred def without a public DID :-(")
-            # Create a schema
-            self.cred_def_id = await self.agent.create_schema_and_cred_def(schema_name, schema_attrs, self.revocation)
+            # Create a schema/cred def
+            self.cred_def_id = await self.create_schema_and_cred_def(schema_name, schema_attrs, self.revocation)
+
+    async def create_schema_and_cred_def(
+        self,
+        schema_name: str,
+        schema_attrs: list,
+    ):
+        if not self.public_did:
+            raise Exception("Can't create a schema/cred def without a public DID :-(")
+        self.cred_def_id = await self.agent.create_schema_and_cred_def(schema_name, schema_attrs, self.revocation)
+        return self.cred_def_id
+
+    async def issue_credential(
+        self,
+        cred_def_id: str,
+        cred_attrs: dict,
+    ):
+        log_status("#13 Issue credential offer to X")
+
+        # TODO define attributes to send for credential
+        self.agent.cred_attrs[cred_def_id] = cred_attrs
+
+        cred_preview = {
+            "@type": CRED_PREVIEW_TYPE,
+            "attributes": [
+                {"name": n, "value": v}
+                for (n, v) in self.agent.cred_attrs[cred_def_id].items()
+            ],
+        }
+        offer_request = {
+            "connection_id": self.agent.connection_id,
+            "comment": f"Offer on cred def id {cred_def_id}",
+            "auto_remove": False,
+            "credential_preview": cred_preview,
+            "filter": {"indy": {"cred_def_id": cred_def_id}},
+            "trace": self.exchange_tracing,
+        }
+        await self.agent.admin_POST(
+            "/issue-credential-2.0/send-offer", offer_request
+        )
+
+        return True
+
+    async def receive_credential(
+        self,
+        cred_def_id: str,
+        cred_attrs: dict,
+    ):
+        # TODO
+        return True
 
     async def terminate(self):
         """Shut down any running agents."""
@@ -310,7 +381,7 @@ class AgentContainer():
             terminated = False
 
         await asyncio.sleep(3.0)
-        
+
         return terminated
 
     async def generate_invitation(self, auto_accept: bool = True, display_qr: bool = False, wait: bool = False):

@@ -511,12 +511,19 @@ class DemoAgent:
                 raise Exception(msg)
 
     async def terminate(self):
+        # close session to admin api
+        self.log("Shutting down admin api session")
+        await self.client_session.close()
+        # shut down web hooks first
+        self.log("Shutting down web hooks site")
+        if self.webhook_site:
+            await self.webhook_site.stop()
+            await asyncio.sleep(0.5)
+        # now shut down the agent
+        self.log("Shutting down agent")
         loop = asyncio.get_event_loop()
         if self.proc:
             await loop.run_in_executor(None, self._terminate)
-        await self.client_session.close()
-        if self.webhook_site:
-            await self.webhook_site.stop()
 
     async def listen_webhooks(self, webhook_port):
         self.webhook_port = webhook_port
