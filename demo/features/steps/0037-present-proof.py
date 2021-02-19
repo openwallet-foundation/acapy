@@ -1,4 +1,3 @@
-
 from behave import given, when, then
 import json
 from time import sleep
@@ -11,7 +10,7 @@ from bdd_support.agent_backchannel_client import (
     aries_container_verify_proof,
     agent_backchannel_GET,
     agent_backchannel_POST,
-    expected_agent_state
+    expected_agent_state,
 )
 from runners.agent_container import AgentContainer
 
@@ -20,13 +19,16 @@ from runners.agent_container import AgentContainer
 # Given "Acme" and "Bob" have an existing connection
 # And "Bob" has an issued <Schema_name> credential <Credential_data> from <issuer>
 
-@when('"{verifier}" sends a request for proof presentation {request_for_proof} to "{prover}"')
+
+@when(
+    '"{verifier}" sends a request for proof presentation {request_for_proof} to "{prover}"'
+)
 def step_impl(context, verifier, request_for_proof, prover):
     agent = context.active_agents[verifier]
 
     proof_request_info = read_proof_req_data(request_for_proof)
 
-    aries_container_request_proof(agent['agent'], proof_request_info)
+    aries_container_request_proof(agent["agent"], proof_request_info)
 
     context.proof_request = proof_request_info
 
@@ -39,9 +41,8 @@ def step_impl(context, verifier):
 
     # check the received credential status (up to 10 seconds)
     for i in range(10):
-        verified = aries_container_verify_proof(agent['agent'], proof_request)
+        verified = aries_container_verify_proof(agent["agent"], proof_request)
         if verified is not None:
             return verified
 
     assert False
-

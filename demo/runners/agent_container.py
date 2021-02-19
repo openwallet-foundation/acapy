@@ -85,7 +85,7 @@ class AriesAgent(DemoAgent):
         if not self._connection_ready:
             return
         conn_id = message["connection_id"]
-        
+
         # inviter:
         if message["state"] == "invitation":
             self.connection_id = conn_id
@@ -152,7 +152,9 @@ class AriesAgent(DemoAgent):
     async def handle_present_proof(self, message):
         state = message["state"]
         presentation_exchange_id = message["presentation_exchange_id"]
-        self.log(f"Presentation: state = {state}, presentation_exchange_id = {presentation_exchange_id}")
+        self.log(
+            f"Presentation: state = {state}, presentation_exchange_id = {presentation_exchange_id}"
+        )
 
         if state == "request_received":
             # prover role
@@ -233,15 +235,22 @@ class AriesAgent(DemoAgent):
             self.log("Proof =", proof["verified"])
             self.last_proof_received = proof
 
-
     async def handle_basicmessages(self, message):
         self.log("Received message:", message["content"])
 
-    async def generate_invitation(self, use_did_exchange: bool, auto_accept: bool = True, display_qr: bool = False, wait: bool = False):
+    async def generate_invitation(
+        self,
+        use_did_exchange: bool,
+        auto_accept: bool = True,
+        display_qr: bool = False,
+        wait: bool = False,
+    ):
         self._connection_ready = asyncio.Future()
         with log_timer("Generate invitation duration:"):
             # Generate an invitation
-            log_status("#7 Create a connection to alice and print out the invite details")
+            log_status(
+                "#7 Create a connection to alice and print out the invite details"
+            )
             invi_rec = await self.get_invite(use_did_exchange, auto_accept)
 
         if display_qr:
@@ -251,7 +260,9 @@ class AriesAgent(DemoAgent):
                 "Use the following JSON to accept the invite from another demo agent."
                 " Or use the QR code to connect from a mobile agent."
             )
-            log_msg(json.dumps(invi_rec["invitation"]), label="Invitation Data:", color=None)
+            log_msg(
+                json.dumps(invi_rec["invitation"]), label="Invitation Data:", color=None
+            )
             qr.print_ascii(invert=True)
 
         if wait:
@@ -270,7 +281,9 @@ class AriesAgent(DemoAgent):
             log_msg("Waiting for connection...")
             await agent.detect_connection()
 
-    async def create_schema_and_cred_def(self, schema_name, schema_attrs, revocation, version=None):
+    async def create_schema_and_cred_def(
+        self, schema_name, schema_attrs, revocation, version=None
+    ):
         with log_timer("Publish schema/cred def duration:"):
             log_status("#3/4 Create a new schema/cred def on the ledger")
             if not version:
@@ -292,7 +305,7 @@ class AriesAgent(DemoAgent):
             return cred_def_id
 
 
-class AgentContainer():
+class AgentContainer:
     def __init__(
         self,
         genesis_txns: str,
@@ -347,15 +360,15 @@ class AgentContainer():
                 self.ident,
                 self.start_port,
                 self.start_port + 1,
-                genesis_data = self.genesis_txns,
-                no_auto = self.no_auto,
-                tails_server_base_url = self.tails_server_base_url,
-                timing = self.show_timing,
-                revocation = self.revocation,
-                multitenant = self.multitenant,
-                mediation = self.mediation,
-                wallet_type = self.wallet_type,
-                seed = self.seed,
+                genesis_data=self.genesis_txns,
+                no_auto=self.no_auto,
+                tails_server_base_url=self.tails_server_base_url,
+                timing=self.show_timing,
+                revocation=self.revocation,
+                multitenant=self.multitenant,
+                mediation=self.mediation,
+                wallet_type=self.wallet_type,
+                seed=self.seed,
             )
         else:
             self.agent = the_agent
@@ -372,7 +385,9 @@ class AgentContainer():
         log_msg("Endpoint URL is at:", self.agent.endpoint)
 
         if self.mediation:
-            self.mediator_agent = await start_mediator_agent(self.start_port + 4, self.genesis_txns)
+            self.mediator_agent = await start_mediator_agent(
+                self.start_port + 4, self.genesis_txns
+            )
             if not self.mediator_agent:
                 raise Exception("Mediator agent returns None :-(")
         else:
@@ -394,7 +409,9 @@ class AgentContainer():
 
         if schema_name and schema_attrs:
             # Create a schema/cred def
-            self.cred_def_id = await self.create_schema_and_cred_def(schema_name, schema_attrs, self.revocation)
+            self.cred_def_id = await self.create_schema_and_cred_def(
+                schema_name, schema_attrs, self.revocation
+            )
 
     async def create_schema_and_cred_def(
         self,
@@ -404,7 +421,9 @@ class AgentContainer():
     ):
         if not self.public_did:
             raise Exception("Can't create a schema/cred def without a public DID :-(")
-        self.cred_def_id = await self.agent.create_schema_and_cred_def(schema_name, schema_attrs, self.revocation, version=version)
+        self.cred_def_id = await self.agent.create_schema_and_cred_def(
+            schema_name, schema_attrs, self.revocation, version=version
+        )
         return self.cred_def_id
 
     async def issue_credential(
@@ -426,9 +445,7 @@ class AgentContainer():
             "filter": {"indy": {"cred_def_id": cred_def_id}},
             "trace": self.exchange_tracing,
         }
-        await self.agent.admin_POST(
-            "/issue-credential-2.0/send-offer", offer_request
-        )
+        await self.agent.admin_POST("/issue-credential-2.0/send-offer", offer_request)
 
         return True
 
@@ -460,7 +477,7 @@ class AgentContainer():
                     matched = False
             else:
                 print("Attribute not found for:", cred_attr["name"])
-                matched = False;
+                matched = False
 
         return matched
 
@@ -468,8 +485,12 @@ class AgentContainer():
         log_status("#20 Request proof of degree from alice")
 
         indy_proof_request = {
-            "name": proof_request["name"] if "name" in proof_request else "Proof of stuff",
-            "version": proof_request["version"] if "version" in proof_request else "1.0",
+            "name": proof_request["name"]
+            if "name" in proof_request
+            else "Proof of stuff",
+            "version": proof_request["version"]
+            if "version" in proof_request
+            else "1.0",
             "requested_attributes": proof_request["requested_attributes"],
             "requested_predicates": proof_request["requested_predicates"],
         }
@@ -518,8 +539,12 @@ class AgentContainer():
 
         return terminated
 
-    async def generate_invitation(self, auto_accept: bool = True, display_qr: bool = False, wait: bool = False):
-        return await self.agent.generate_invitation(self.use_did_exchange, auto_accept, display_qr, wait)
+    async def generate_invitation(
+        self, auto_accept: bool = True, display_qr: bool = False, wait: bool = False
+    ):
+        return await self.agent.generate_invitation(
+            self.use_did_exchange, auto_accept, display_qr, wait
+        )
 
     async def input_invitation(self, invite_details: dict, wait: bool = False):
         return await self.agent.input_invitation(invite_details, wait)
@@ -610,20 +635,20 @@ async def create_agent_with_args(in_args: list):
         sys.exit(1)
 
     agent = AgentContainer(
-            genesis,
-            args.ident + ".agent",
-            args.port,
-            no_auto = args.no_auto,
-            revocation = args.revocation,
-            tails_server_base_url = tails_server_base_url,
-            show_timing = args.timing,
-            multitenant = args.multitenant,
-            mediation = args.mediation,
-            use_did_exchange = args.did_exchange,
-            wallet_type = args.wallet_type,
-            public_did = args.public_did,
-            seed = "random" if args.public_did else None,
-        )
+        genesis,
+        args.ident + ".agent",
+        args.port,
+        no_auto=args.no_auto,
+        revocation=args.revocation,
+        tails_server_base_url=tails_server_base_url,
+        show_timing=args.timing,
+        multitenant=args.multitenant,
+        mediation=args.mediation,
+        use_did_exchange=args.did_exchange,
+        wallet_type=args.wallet_type,
+        public_did=args.public_did,
+        seed="random" if args.public_did else None,
+    )
 
     return agent
 
@@ -654,36 +679,41 @@ async def test_main(
             genesis,
             "Faber.agent",
             start_port,
-            no_auto = no_auto,
-            revocation = revocation,
-            tails_server_base_url = tails_server_base_url,
-            show_timing = show_timing,
-            multitenant = multitenant,
-            mediation = mediation,
-            use_did_exchange = use_did_exchange,
-            wallet_type = wallet_type,
-            public_did = True,
-            seed = "random",
+            no_auto=no_auto,
+            revocation=revocation,
+            tails_server_base_url=tails_server_base_url,
+            show_timing=show_timing,
+            multitenant=multitenant,
+            mediation=mediation,
+            use_did_exchange=use_did_exchange,
+            wallet_type=wallet_type,
+            public_did=True,
+            seed="random",
         )
         alice_container = AgentContainer(
             genesis,
             "Alice.agent",
-            start_port+10,
-            no_auto = no_auto,
-            revocation = False,
-            show_timing = show_timing,
-            multitenant = multitenant,
-            mediation = mediation,
-            use_did_exchange = use_did_exchange,
-            wallet_type = wallet_type,
-            public_did = False,
-            seed = None,
+            start_port + 10,
+            no_auto=no_auto,
+            revocation=False,
+            show_timing=show_timing,
+            multitenant=multitenant,
+            mediation=mediation,
+            use_did_exchange=use_did_exchange,
+            wallet_type=wallet_type,
+            public_did=False,
+            seed=None,
         )
 
         # start the agents - faber gets a public DID and schema/cred def
         await faber_container.initialize(
-            schema_name = "degree schema",
-            schema_attrs = ["name", "date", "degree", "grade",],
+            schema_name="degree schema",
+            schema_attrs=[
+                "name",
+                "date",
+                "degree",
+                "grade",
+            ],
         )
         await alice_container.initialize()
 
@@ -705,8 +735,8 @@ async def test_main(
         await asyncio.sleep(3.0)
 
     except Exception as e:
-            LOGGER.exception("Error initializing agent:", e)
-            raise(e)
+        LOGGER.exception("Error initializing agent:", e)
+        raise (e)
 
     finally:
         terminated = True
