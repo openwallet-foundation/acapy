@@ -119,12 +119,12 @@ class RevocationManager:
                 registry identifier for all pending within the revocation registry;
                 e.g.,
 
-            ::
-
                 {} - publish all pending revocations from all revocation registries
+
                 {
                     "R17v42T4pk...:4:R17v42T4pk...:3:CL:19:tag:CL_ACCUM:0": [],
                     "R17v42T4pk...:4:R17v42T4pk...:3:CL:19:tag:CL_ACCUM:1": ["1", "2"]
+
                 } - publish:
                     - all pending revocations from all revocation registry tagged 0
                     - pending ["1", "2"] from revocation registry tagged 1
@@ -176,13 +176,13 @@ class RevocationManager:
                 registry identifier for all pending within the revocation registry;
                 e.g.,
 
-            ::
-
                 {} - clear all pending revocations from all revocation registries
+
                 {
                     "R17v42T4pk...:4:R17v42T4pk...:3:CL:19:tag:CL_ACCUM:0": [],
                     "R17v42T4pk...:4:R17v42T4pk...:3:CL:19:tag:CL_ACCUM:1": ["1", "2"]
-                } - clear:
+
+                } - clear
                     - all pending revocations from all revocation registry tagged 0
                     - pending ["1", "2"] from revocation registry tagged 1
                     - no pending revocations from any other revocation registries.
