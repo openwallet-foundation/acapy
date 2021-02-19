@@ -227,4 +227,4 @@ $DOCKER run --name $AGENT --rm -it ${DOCKER_OPTS} \
   -p 0.0.0.0:$AGENT_PORT_RANGE:$AGENT_PORT_RANGE \
   -v "/$(pwd)/../logs:/home/indy/logs" \
   $DOCKER_ENV \
-  aries-bdd-image
+  aries-bdd-image $ARGS
