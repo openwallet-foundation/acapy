@@ -306,6 +306,7 @@ class TestAttachDecorator(TestCase):
         assert decorator.data == DATA_LINKS
 
     def test_content(self):
+        # data.base64
         deco_b64 = AttachDecorator.data_base64(
             mapping=INDY_CRED,
             ident=IDENT,
@@ -328,6 +329,7 @@ class TestAttachDecorator(TestCase):
         plain_json = AttachDecoratorData(json_=json.dumps({"sample": "data"}))
         assert deco_b64.data != plain_json
 
+        # data.json
         deco_json = AttachDecorator.data_json(
             mapping=INDY_CRED,
             ident=IDENT,
@@ -350,6 +352,30 @@ class TestAttachDecorator(TestCase):
         plain_json = AttachDecoratorData(json_=json.dumps({"sample": "data"}))
         assert deco_json.data == plain_json
 
+        # data.links
+        deco_links = AttachDecorator.data_links(
+            links="http://localhost/x.json",
+            ident=IDENT,
+            description=DESCRIPTION,
+        )
+        assert deco_links.mime_type == "application/json"
+        assert hasattr(deco_links.data, "links_")
+        assert deco_links.data.base64 is None
+        assert deco_links.data.json is None
+        assert deco_links.data.links is not None
+        assert deco_links.data.sha256 is None
+        assert deco_links.content == ["http://localhost/x.json"]
+        assert deco_links.ident == IDENT
+        assert deco_links.description == DESCRIPTION
+
+        deco_links_auto_id = AttachDecorator.data_links(links="http://localhost/x.json")
+        assert deco_links_auto_id.ident
+
+        # cover AttachDecoratorData equality operator
+        plain_json = AttachDecoratorData(json_=json.dumps({"sample": "data"}))
+        assert deco_links.data != plain_json
+
+        # links coverage
         lynx_str = AttachDecoratorData(links_="https://en.wikipedia.org/wiki/Lynx")
         lynx_list = AttachDecoratorData(links_=["https://en.wikipedia.org/wiki/Lynx"])
         links = AttachDecoratorData(links_="https://en.wikipedia.org/wiki/Chain")
@@ -358,8 +384,9 @@ class TestAttachDecorator(TestCase):
         assert lynx_str != links
         assert links != DATA_LINKS  # has sha256
 
-        with pytest.raises(ValueError):
-            AttachDecorator(data=lynx_str).content
+        # formalism for no data
+        no_data = AttachDecorator(data=None)
+        assert no_data.content is None
 
     def test_data_json(self):
         deco_aries = AttachDecorator.data_json(

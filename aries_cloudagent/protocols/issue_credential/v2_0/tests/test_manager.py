@@ -266,9 +266,7 @@ class TestV20CredManager(AsyncTestCase):
                     V20CredFormat(attach_id="0", format_=V20CredFormat.Format.INDY)
                 ],
                 filters_attach=[
-                    AttachDecorator.data_base64(
-                        {"cred_def_id": CRED_DEF_ID}, ident="0"
-                    )
+                    AttachDecorator.data_base64({"cred_def_id": CRED_DEF_ID}, ident="0")
                 ],
             )
 

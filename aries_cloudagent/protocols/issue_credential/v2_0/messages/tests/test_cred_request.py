@@ -34,15 +34,15 @@ class TestV20CredRequest(AsyncTestCase):
         },
     }
 
-    cred_req = V20CredRequest(
-        comment="Test",
-        requests_attach=[
-            AttachDecorator.data_base64(
-                mapping=indy_cred_req,
-                ident="abc",
-            )
-        ],
-    )
+    dif_cred_req = {
+        "credential-manifest": {
+            "issuer": "did:example:123",
+            "credential": {
+                "name": "Banana sticker",
+                "schema": "...",
+            },
+        }
+    }
 
     async def test_init_type(self):
         """Test initializer and type."""
@@ -62,8 +62,7 @@ class TestV20CredRequest(AsyncTestCase):
             ],
         )
         assert (
-            cred_request.requests_attach[0].content
-            == TestV20CredRequest.indy_cred_req
+            cred_request.requests_attach[0].content == TestV20CredRequest.indy_cred_req
         )
         assert cred_request.cred_request() == TestV20CredRequest.indy_cred_req
         assert cred_request._type == DIDCommPrefix.qualify_current(CRED_20_REQUEST)
@@ -92,6 +91,7 @@ class TestV20CredRequest(AsyncTestCase):
             ],
             requests_attach=[
                 AttachDecorator.data_base64(
+                    ident="abc",
                     mapping=TestV20CredRequest.indy_cred_req,
                 )
             ],
@@ -115,15 +115,58 @@ class TestV20CredRequestSchema(AsyncTestCase):
             comment="Test",
             formats=[
                 V20CredFormat(
-                    attach_id="abc",
+                    attach_id="indy",
                     format_=V20CredFormat.Format.INDY,
-                )
+                ),
+                V20CredFormat(
+                    attach_id="dif-json",
+                    format_=V20CredFormat.Format.DIF,
+                ),
             ],
             requests_attach=[
-                AttachDecorator.data_base64(TestV20CredRequest.indy_cred_req)
+                AttachDecorator.data_base64(
+                    ident="indy", mapping=TestV20CredRequest.indy_cred_req
+                ),
+                AttachDecorator.data_json(
+                    ident="dif-json", mapping=TestV20CredRequest.dif_cred_req
+                ),
             ],
         )
 
+        assert (
+            cred_request.cred_request(V20CredFormat.Format.INDY)
+            == TestV20CredRequest.indy_cred_req
+        )
+        assert (
+            cred_request.cred_request(V20CredFormat.Format.DIF)
+            == TestV20CredRequest.dif_cred_req
+        )
         data = cred_request.serialize()
         model_instance = V20CredRequest.deserialize(data)
         assert isinstance(model_instance, V20CredRequest)
+
+        cred_request = V20CredRequest(
+            comment="Test",
+            formats=[
+                V20CredFormat(
+                    attach_id="indy",
+                    format_=V20CredFormat.Format.INDY,
+                ),
+                V20CredFormat(
+                    attach_id="dif-links",
+                    format_=V20CredFormat.Format.DIF,
+                ),
+            ],
+            requests_attach=[
+                AttachDecorator.data_base64(
+                    ident="indy", mapping=TestV20CredRequest.indy_cred_req
+                ),
+                AttachDecorator.data_links(
+                    ident="dif-links",
+                    links="http://10.20.30.40/cred-req.json",
+                ),
+            ],
+        )
+        assert cred_request.cred_request(V20CredFormat.Format.DIF) == [
+            "http://10.20.30.40/cred-req.json"
+        ]

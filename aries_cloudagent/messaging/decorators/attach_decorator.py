@@ -228,7 +228,7 @@ class AttachDecoratorData(BaseModel):
         *,
         jws_: AttachDecoratorDataJWS = None,
         sha256_: str = None,
-        links_: Union[list, str] = None,
+        links_: Union[Sequence[str], str] = None,
         base64_: str = None,
         json_: dict = None,
     ):
@@ -244,7 +244,7 @@ class AttachDecoratorData(BaseModel):
         Args:
             jws_: detached JSON Web Signature over base64 or linked attachment content
             sha256_: optional sha-256 hash for content
-            links_: list or single URL of hyperlinks
+            links_: URL or list of URLs
             base64_: base64 encoded content for inclusion
             json_: dict content for inclusion as json
 
@@ -258,7 +258,7 @@ class AttachDecoratorData(BaseModel):
         elif json_:
             self.json_ = json_
         else:
-            assert isinstance(links_, (str, list))
+            assert isinstance(links_, (str, Sequence))
             self.links_ = [links_] if isinstance(links_, str) else list(links_)
         if sha256_:
             self.sha256_ = sha256_
@@ -550,15 +550,17 @@ class AttachDecorator(BaseModel):
         """
         Return attachment content.
 
-        Returns: data attachment's encoded dict, decoded if necessary and json-loaded
+        Returns: data attachment, decoded if necessary and json-loaded, or data links
 
         """
         if hasattr(self.data, "base64_"):
             return json.loads(b64_to_bytes(self.data.base64))
         elif hasattr(self.data, "json_"):
             return self.data.json
+        elif hasattr(self.data, "links_"):
+            return self.data.links  # fetching would be async; we want a property here
         else:
-            raise ValueError("Not supported")
+            return None
 
     @classmethod
     def data_base64(
@@ -632,6 +634,46 @@ class AttachDecorator(BaseModel):
             lastmod_time=lastmod_time,
             byte_count=byte_count,
             data=AttachDecoratorData(json_=mapping),
+        )
+
+    @classmethod
+    def data_links(
+        cls,
+        links: Union[str, Sequence[str]],
+        sha256: str = None,
+        *,
+        ident: str = None,
+        mime_type: str = None,
+        description: str = None,
+        filename: str = None,
+        lastmod_time: str = None,
+        byte_count: int = None,
+    ):
+        """
+        Create `AttachDecorator` instance on json-encoded data from input mapping.
+
+        Given message object (dict), JSON dump, and embed
+        it as data; mark `application/json` MIME type.
+
+        Args:
+            links: URL or list of URLs
+            sha256: optional sha-256 hash for content
+            ident: optional attachment identifier (default random UUID4)
+            mime_type: optional MIME type
+            description: optional attachment description
+            filename: optional attachment filename
+            lastmod_time: optional attachment last modification time
+            byte_count: optional attachment byte count
+
+        """
+        return AttachDecorator(
+            ident=ident or str(uuid.uuid4()),
+            description=description,
+            filename=filename,
+            mime_type=mime_type or "application/json",
+            lastmod_time=lastmod_time,
+            byte_count=byte_count,
+            data=AttachDecoratorData(sha256_=sha256, links_=links),
         )
 
 
