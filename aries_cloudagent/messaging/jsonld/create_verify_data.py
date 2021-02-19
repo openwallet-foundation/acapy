@@ -51,7 +51,8 @@ def create_verify_data(data, signature_options):
 
     if not signature_options["verificationMethod"]:
         raise VerificationMethodMissing(
-            "signature_options.verificationMethod is required"
+            "signature_options.verificationMethod "
+            "is required"
         )
 
     if "created" not in signature_options:

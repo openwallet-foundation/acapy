@@ -7,8 +7,6 @@ from ...admin.request_context import AdminRequestContext
 from ...messaging.models.openapi import OpenAPISchema
 from marshmallow import fields
 
-from ...storage.error import StorageError, StorageNotFoundError
-from ...messaging.models.base import BaseModelError
 from ...config.base import InjectionError
 from ...wallet.error import WalletError
 from ...resolver.did_resolver import DIDResolver
@@ -67,7 +65,7 @@ async def sign(request: web.BaseRequest):
             {"verificationMethod": ver_meth},
             verkey
         )
-    except (DIDError, ResolverError, WalletError, InjectionError, AttributeError) as err:
+    except (DIDError, ResolverError, WalletError, InjectionError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
     return web.json_response({"signed_doc": doc_with_proof})
 
@@ -86,13 +84,17 @@ async def verify(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     session = await context.session()
     body = await request.json()
-    doc = body.get("doc")
-    verkey = body.get("verkey")
+    ver_meth = body.get("verificationMethod")
+    doc = body.get("document")
     try:
+        resolver = session.inject(DIDResolver)
+        # TODO: make this work in the wild.
+        ver_meth_expanded = await resolver.dereference(session, ver_meth)
+        if ver_meth_expanded is None:
+            raise ResolverError(f"Verification method {ver_meth} not found.")
+        verkey = ver_meth_expanded.get("publicKeyBase58")
         result = await verify_credential(session, doc, verkey)
-    except StorageNotFoundError as err:
-        raise web.HTTPNotFound(reason=err.roll_up) from err
-    except (BaseModelError, WalletError, StorageError) as err:
+    except (DIDError, ResolverError, WalletError, InjectionError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
     return web.json_response({"valid": result})
 

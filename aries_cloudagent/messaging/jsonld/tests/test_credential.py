@@ -314,7 +314,7 @@ async def mock_session(wallet):
 @pytest.mark.asyncio
 async def test_verify_credential(input, mock_session):
     result = await verify_credential(
-        mock_session, input.get("doc"), input.get("verkey") 
+        mock_session, input.get("doc"), input.get("verkey")
     )
     assert result
 

@@ -23,7 +23,9 @@ from ....resolver.tests.test_diddoc import DOC
 def mock_resolver():
     did_resolver = async_mock.MagicMock()
     did_resolver.resolve = async_mock.CoroutineMock(return_value=did_doc)
-    did_resolver.dereference = async_mock.CoroutineMock(return_value=DOC["verificationMethod"][1])
+    did_resolver.dereference = async_mock.CoroutineMock(
+        return_value=DOC["verificationMethod"][1]
+    )
     yield did_resolver
 
 
@@ -46,7 +48,7 @@ def mock_verify_credential():
 
 
 @pytest.fixture
-def mock_sign_request(mock_sign_credential,mock_resolver):
+def mock_sign_request(mock_sign_credential, mock_resolver):
     context = AdminRequestContext.test_context({DIDResolver: mock_resolver})
     outbound_message_router = async_mock.CoroutineMock()
     request_dict = {
@@ -126,15 +128,20 @@ async def test_sign(mock_sign_request, mock_response):
     mock_response.assert_called_once_with({"signed_doc": "fake_signage"})
 
 
-@pytest.mark.parametrize("error", [DIDNotFound, DIDMethodNotSupported, WalletError, InjectionError])
+@pytest.mark.parametrize(
+    "error", [DIDNotFound, DIDMethodNotSupported, WalletError, InjectionError]
+)
 @pytest.mark.asyncio
 async def test_sign_bad_req_error(mock_sign_request, mock_response, error):
     test_module.sign_credential = async_mock.CoroutineMock(side_effect=error())
     with pytest.raises(test_module.web.HTTPBadRequest):
         await test_module.sign(mock_sign_request)
 
+
 @pytest.mark.asyncio
-async def test_sign_bad_ver_meth_deref_req_error(mock_resolver, mock_sign_request, mock_response):
+async def test_sign_bad_ver_meth_deref_req_error(
+    mock_resolver, mock_sign_request, mock_response
+):
     mock_resolver.dereference.return_value = None
     with pytest.raises(test_module.web.HTTPBadRequest):
         await test_module.sign(mock_sign_request)
@@ -146,21 +153,19 @@ async def test_verify(mock_verify_request, mock_response):
     mock_response.assert_called_once_with({"valid": "fake_verify"})
 
 
-@pytest.mark.asyncio
-async def test_verify_key_not_found_error(
-    mock_verify_request, mock_response
-):
-    test_module.verify_credential = async_mock.CoroutineMock(
-        side_effect=StorageNotFoundError()
-    )
-    with pytest.raises(test_module.web.HTTPNotFound):
-        await test_module.verify(mock_verify_request)
-
-
-@pytest.mark.parametrize("error", [BaseModelError, WalletError, StorageError])
+@pytest.mark.parametrize("error", [DIDNotFound, DIDMethodNotSupported, WalletError, InjectionError])
 @pytest.mark.asyncio
 async def test_verify_bad_req_error(mock_verify_request, mock_response, error):
     test_module.verify_credential = async_mock.CoroutineMock(side_effect=error())
+    with pytest.raises(test_module.web.HTTPBadRequest):
+        await test_module.verify(mock_verify_request)
+
+
+@pytest.mark.asyncio
+async def test_verify_bad_ver_meth_deref_req_error(
+    mock_resolver, mock_verify_request, mock_response
+):
+    mock_resolver.dereference.return_value = None
     with pytest.raises(test_module.web.HTTPBadRequest):
         await test_module.verify(mock_verify_request)
 
