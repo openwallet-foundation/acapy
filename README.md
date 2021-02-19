@@ -4,7 +4,7 @@
 [![CircleCI](https://circleci.com/gh/hyperledger/aries-cloudagent-python.svg?style=shield)](https://circleci.com/gh/hyperledger/aries-cloudagent-python)
 [![codecov](https://codecov.io/gh/hyperledger/aries-cloudagent-python/branch/main/graph/badge.svg)](https://codecov.io/gh/hyperledger/aries-cloudagent-python)
 
-<!-- ![logo](/docs/assets/aries-cloudagent-python-logo-bw.png) -->
+<!-- ![logo](/assets/aries-cloudagent-python-logo-bw.png) -->
 
 > An easy to use Aries agent for building SSI services using any language that supports sending/receiving HTTP requests.
 
@@ -42,11 +42,11 @@ There is an [architectural deep dive webinar](https://www.youtube.com/watch?v=FX
 
 ## Installation and Usage
 
-An ["install and go" page for developers](https://github.com/hyperledger/aries-cloudagent-python/blob/main/DevReadMe.md) is available if you are comfortable with Trust over IP and Aries concepts. ACA-Py can be run with Docker without installation (highly recommended), or can be installed[ from PyPi](https://pypi.org/project/aries-cloudagent/). In the [/demo directory](https://github.com/hyperledger/aries-cloudagent-python/tree/main/demo) there is a full set of demos for developers to use in getting started, and the [demo read me](https://github.com/hyperledger/aries-cloudagent-python/blob/main/demo/README.md) is a great starting point for developers to use an "in-browser" approach to run a zero-install example. The[ Read the Docs](https://aries-cloud-agent-python.readthedocs.io/en/latest/) overview is also a way to reference the modules and APIs that make up an ACA-Py instance.
+An ["install and go" page for developers](https://github.com/hyperledger/aries-cloudagent-python/blob/main/DevReadMe.md) is available if you are comfortable with Trust over IP and Aries concepts. ACA-Py can be run with Docker without installation (highly recommended), or can be installed [from PyPi](https://pypi.org/project/aries-cloudagent/). In the [/demo directory](https://github.com/hyperledger/aries-cloudagent-python/tree/main/demo) there is a full set of demos for developers to use in getting started, and the [demo read me](https://github.com/hyperledger/aries-cloudagent-python/blob/main/demo/README.md) is a great starting point for developers to use an "in-browser" approach to run a zero-install example. The [Read the Docs](https://aries-cloud-agent-python.readthedocs.io/en/latest/) overview is also a way to reference the modules and APIs that make up an ACA-Py instance.
 
-For those new to SSI, Indy and Aries there is a[ Getting Started Guide](https://github.com/hyperledger/aries-cloudagent-python/blob/main/docs/GettingStartedAriesDev/README.md) that will take you from knowing next to nothing about decentralized identity to developing Aries-based business apps and services. You’ll run some Indy apps, ACA-Py apps and developer-oriented demos. The guide has a table of contents so you can skip the parts you already know.
+For those new to SSI, Indy and Aries there is a [Getting Started Guide](https://github.com/hyperledger/aries-cloudagent-python/blob/main/GettingStartedAriesDev/README.md) that will take you from knowing next to nothing about decentralized identity to developing Aries-based business apps and services. You’ll run some Indy apps, ACA-Py apps and developer-oriented demos. The guide has a table of contents so you can skip the parts you already know.
 
-Finally, if you’re not sure where your focus should be—building apps? Aries? Indy? Indy’s Blockchain? Ursa?—then the ["What should I work on?" document](https://github.com/hyperledger/aries-cloudagent-python/blob/main/docs/GettingStartedAriesDev/IndyAriesDevOptions.md) is a good starting point. It goes through the technical stack and shows how the projects fit together, so you can decide where you want to focus your efforts.
+Finally, if you’re not sure where your focus should be—building apps? Aries? Indy? Indy’s Blockchain? Ursa?—then the ["What should I work on?" document](https://github.com/hyperledger/aries-cloudagent-python/blob/main/GettingStartedAriesDev/IndyAriesDevOptions.md) is a good starting point. It goes through the technical stack and shows how the projects fit together, so you can decide where you want to focus your efforts.
 
 ## About The API
 

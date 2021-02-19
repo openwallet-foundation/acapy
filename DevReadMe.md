@@ -27,11 +27,11 @@ See the [README](README.md) for details about this repository and information ab
 
 Aries Cloud Agent Python (ACA-Py) is a configurable, extensible, non-mobile Aries agent that implements an easy way for developers to build decentralized identity services that use verifiable credentials.
 
-The information on this page assumes you are developer with a background in decentralized identity, Indy, Aries and verifiable credentials. If you aren't familiar with those concepts and projects, please use our [Getting Started Guide](docs/GettingStartedAriesDev/README.md) to learn more.
+The information on this page assumes you are developer with a background in decentralized identity, Indy, Aries and verifiable credentials. If you aren't familiar with those concepts and projects, please use our [Getting Started Guide](GettingStartedAriesDev/README.md) to learn more.
 
 ## Developer Demos
 
-To put ACA-Py through its paces at the command line, checkout our [demos](docs/GettingStartedAriesDev/AriesDeveloperDemos.md) page.
+To put ACA-Py through its paces at the command line, checkout our [demos](GettingStartedAriesDev/AriesDeveloperDemos.md) page.
 
 ## Running
 
@@ -205,7 +205,7 @@ Please also refer to the [contributing guidelines](/CONTRIBUTING.md) and [code o
 
 ## Publishing Releases
 
-The [publishing](https://github.com/hyperledger/aries-cloudagent-python/blob/master/PUBLISHING.md) document provides information on tagging a release and publishing the release artifacts to PyPi.
+The [publishing](https://github.com/hyperledger/aries-cloudagent-python/blob/main/PUBLISHING.md) document provides information on tagging a release and publishing the release artifacts to PyPi.
 
 ## Dynamic Injection of Services
 
