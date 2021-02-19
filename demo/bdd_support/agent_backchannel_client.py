@@ -19,6 +19,7 @@ from runners.support.agent import DemoAgent
 # coroutine utilities
 ######################################################################
 
+
 def run_coroutine(coroutine):
     loop = asyncio.get_event_loop()
     if not loop:
@@ -28,7 +29,8 @@ def run_coroutine(coroutine):
         return loop.run_until_complete(coroutine())
     finally:
         pass
-        #loop.close()
+        # loop.close()
+
 
 def run_coroutine_with_args(coroutine, *args):
     loop = asyncio.get_event_loop()
@@ -39,7 +41,8 @@ def run_coroutine_with_args(coroutine, *args):
         return loop.run_until_complete(coroutine(*args))
     finally:
         pass
-        #loop.close()
+        # loop.close()
+
 
 def run_coroutine_with_kwargs(coroutine, *args, **kwargs):
     loop = asyncio.get_event_loop()
@@ -50,17 +53,15 @@ def run_coroutine_with_kwargs(coroutine, *args, **kwargs):
         return loop.run_until_complete(coroutine(*args, **kwargs))
     finally:
         pass
-        #loop.close()
+        # loop.close()
 
 
 ######################################################################
 # high level aries agent interface
 ######################################################################
 def create_agent_container_with_args(in_args: list):
-    return run_coroutine_with_args(
-        create_agent_with_args,
-        in_args
-    )
+    return run_coroutine_with_args(create_agent_with_args, in_args)
+
 
 def aries_container_initialize(
     the_container: AgentContainer,
@@ -69,14 +70,16 @@ def aries_container_initialize(
 ):
     run_coroutine_with_kwargs(
         the_container.initialize,
-        schema_name = schema_name,
-        schema_attrs = schema_attrs,
+        schema_name=schema_name,
+        schema_attrs=schema_attrs,
     )
+
 
 def aries_container_terminate(
     the_container: AgentContainer,
 ):
     return run_coroutine(the_container.terminate)
+
 
 def aries_container_generate_invitation(
     the_container: AgentContainer,
@@ -84,6 +87,7 @@ def aries_container_generate_invitation(
     return run_coroutine_with_kwargs(
         the_container.generate_invitation,
     )
+
 
 def aries_container_receive_invitation(
     the_container: AgentContainer,
@@ -94,10 +98,12 @@ def aries_container_receive_invitation(
         invite_details,
     )
 
+
 def aries_container_detect_connection(
     the_container: AgentContainer,
 ):
     run_coroutine(the_container.detect_connection)
+
 
 def aries_container_create_schema_cred_def(
     the_container: AgentContainer,
@@ -112,6 +118,7 @@ def aries_container_create_schema_cred_def(
         version=version,
     )
 
+
 def aries_container_issue_credential(
     the_container: AgentContainer,
     cred_def_id: str,
@@ -122,6 +129,7 @@ def aries_container_issue_credential(
         cred_def_id,
         cred_attrs,
     )
+
 
 def aries_container_receive_credential(
     the_container: AgentContainer,
@@ -134,6 +142,7 @@ def aries_container_receive_credential(
         cred_attrs,
     )
 
+
 def aries_container_request_proof(
     the_container: AgentContainer,
     proof_request: dict,
@@ -142,6 +151,7 @@ def aries_container_request_proof(
         the_container.request_proof,
         proof_request,
     )
+
 
 def aries_container_verify_proof(
     the_container: AgentContainer,
@@ -165,8 +175,10 @@ def read_json_data(file_name: str):
     with open("features/data/" + file_name) as data_file:
         return json.load(data_file)
 
+
 def read_schema_data(schema_name: str):
     return read_json_data("schema_" + schema_name + ".json")
+
 
 def read_credential_data(schema_name: str, cred_scenario_name: str):
     schema_cred_data = read_json_data("cred_data_schema_" + schema_name + ".json")
@@ -176,9 +188,11 @@ def read_credential_data(schema_name: str, cred_scenario_name: str):
             attr["value"] = str(uuid.uuid4())
     return cred_data["attributes"]
 
+
 def read_proof_req_data(proof_req_name: str):
     proof_request_info = read_json_data("proof_request_" + proof_req_name + ".json")
     return proof_request_info["presentation_proposal"]
+
 
 def read_presentation_data(presentation_name: str):
     return read_json_data("presentation_" + presentation_name + ".json")
@@ -188,14 +202,13 @@ def read_presentation_data(presentation_name: str):
 # probably obsolete ...
 ######################################################################
 
+
 async def make_agent_backchannel_request(
     method, path, data=None, text=False, params=None
 ) -> (int, str):
     params = {k: v for (k, v) in (params or {}).items() if v is not None}
     client_session: ClientSession = ClientSession()
-    async with client_session.request(
-        method, path, json=data, params=params
-    ) as resp:
+    async with client_session.request(method, path, json=data, params=params) as resp:
         resp_status = resp.status
         resp_text = await resp.text()
         await client_session.close()
@@ -208,11 +221,15 @@ def agent_backchannel_GET(url, topic, operation=None, id=None) -> (int, str):
         agent_url = agent_url + operation + "/"
     if id:
         agent_url = agent_url + id
-    (resp_status, resp_text) = run_coroutine_with_kwargs(make_agent_backchannel_request, "GET", agent_url)
+    (resp_status, resp_text) = run_coroutine_with_kwargs(
+        make_agent_backchannel_request, "GET", agent_url
+    )
     return (resp_status, resp_text)
 
 
-def agent_backchannel_POST(url, topic, operation=None, id=None, data=None) -> (int, str):
+def agent_backchannel_POST(
+    url, topic, operation=None, id=None, data=None
+) -> (int, str):
     agent_url = url + topic + "/"
     payload = {}
     if data:
@@ -220,19 +237,25 @@ def agent_backchannel_POST(url, topic, operation=None, id=None, data=None) -> (i
     if operation:
         agent_url = agent_url + operation + "/"
     if id:
-        if topic == 'credential':
+        if topic == "credential":
             payload["cred_ex_id"] = id
         else:
             payload["id"] = id
-    (resp_status, resp_text) = run_coroutine_with_kwargs(make_agent_backchannel_request, "POST", agent_url, data=payload)
+    (resp_status, resp_text) = run_coroutine_with_kwargs(
+        make_agent_backchannel_request, "POST", agent_url, data=payload
+    )
     return (resp_status, resp_text)
+
 
 def agent_backchannel_DELETE(url, topic, id=None, data=None) -> (int, str):
     agent_url = url + topic + "/"
     if id:
         agent_url = agent_url + id
-    (resp_status, resp_text) = run_coroutine_with_kwargs(make_agent_backchannel_request, "DELETE", agent_url)
+    (resp_status, resp_text) = run_coroutine_with_kwargs(
+        make_agent_backchannel_request, "DELETE", agent_url
+    )
     return (resp_status, resp_text)
+
 
 def expected_agent_state(agent_url, protocol_txt, thread_id, status_txt):
     sleep(0.2)
@@ -240,7 +263,9 @@ def expected_agent_state(agent_url, protocol_txt, thread_id, status_txt):
     if type(status_txt) != list:
         status_txt = [status_txt]
     for i in range(5):
-        (resp_status, resp_text) = agent_backchannel_GET(agent_url + "/agent/command/", protocol_txt, id=thread_id)
+        (resp_status, resp_text) = agent_backchannel_GET(
+            agent_url + "/agent/command/", protocol_txt, id=thread_id
+        )
         if resp_status == 200:
             resp_json = json.loads(resp_text)
             state = resp_json["state"]
@@ -248,5 +273,14 @@ def expected_agent_state(agent_url, protocol_txt, thread_id, status_txt):
                 return True
         sleep(0.2)
 
-    print("From", agent_url, "Expected state", status_txt, "but received", state, ", with a response status of", resp_status)
+    print(
+        "From",
+        agent_url,
+        "Expected state",
+        status_txt,
+        "but received",
+        state,
+        ", with a response status of",
+        resp_status,
+    )
     return False
