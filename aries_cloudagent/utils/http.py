@@ -47,7 +47,9 @@ async def fetch_stream(
     """
     limit = max_attempts if retry else 1
     if not session:
-        session = ClientSession(connector=connector, connector_owner=(not connector))
+        session = ClientSession(
+            connector=connector, connector_owner=(not connector), trust_env=True
+        )
     async with session:
         async for attempt in RepeatSequence(limit, interval, backoff):
             try:
@@ -94,7 +96,9 @@ async def fetch(
     """
     limit = max_attempts if retry else 1
     if not session:
-        session = ClientSession(connector=connector, connector_owner=(not connector))
+        session = ClientSession(
+            connector=connector, connector_owner=(not connector), trust_env=True
+        )
     async with session:
         async for attempt in RepeatSequence(limit, interval, backoff):
             try:
@@ -147,7 +151,9 @@ async def put(
     limit = max_attempts if retry else 1
 
     if not session:
-        session = ClientSession(connector=connector, connector_owner=(not connector))
+        session = ClientSession(
+            connector=connector, connector_owner=(not connector), trust_env=True
+        )
     async with session:
         async for attempt in RepeatSequence(limit, interval, backoff):
             try:
