@@ -102,7 +102,6 @@ exclude_patterns = [
     "GettingStartedAriesDev/*",
     "assets/*",
 ]
- 
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = None
