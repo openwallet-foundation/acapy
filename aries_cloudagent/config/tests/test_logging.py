@@ -65,11 +65,12 @@ class TestLoggingConfigurator:
                 test_label,
                 {"in": mock_http},
                 {"out": mock_https},
+                None,
                 test_did,
                 mock_admin_server,
             )
             test_module.LoggingConfigurator.print_banner(
-                test_label, {"in": mock_http}, {"out": mock_https}, test_did
+                test_label, {"in": mock_http}, {"out": mock_https}, None, test_did
             )
         output = stdout.getvalue()
         assert test_did in output
