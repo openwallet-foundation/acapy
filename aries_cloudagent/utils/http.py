@@ -115,7 +115,7 @@ async def fetch(
                     raise FetchError("Exceeded maximum fetch attempts") from e
 
 
-async def put(
+async def put_file(
     url: str,
     file_data: dict,
     extra_data: dict,
