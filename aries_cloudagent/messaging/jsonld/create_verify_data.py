@@ -38,7 +38,9 @@ def _cannonize_document(doc):
 class DroppedAttributeException(Exception):
     """Exception used to track that an attribute was removed."""
 
-    pass
+
+class VerificationMethodMissing(Exception):
+    """VerificationMethod is required."""
 
 
 def create_verify_data(data, signature_options):
@@ -48,7 +50,10 @@ def create_verify_data(data, signature_options):
         signature_options["verificationMethod"] = signature_options["creator"]
 
     if not signature_options["verificationMethod"]:
-        raise Exception("signature_options.verificationMethod is required")
+        raise VerificationMethodMissing(
+            "signature_options.verificationMethod "
+            "is required"
+        )
 
     if "created" not in signature_options:
         signature_options["created"] = datetime.datetime.now(

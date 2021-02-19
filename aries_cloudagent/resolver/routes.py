@@ -141,7 +141,7 @@ def post_process_routes(app: web.Application):
     app._state["swagger_dict"]["tags"].append(
         {
             "name": "resolver",
-            "description": "universal resolvers",
+            "description": "did resolver interface.",
             "externalDocs": {"description": "Specification"},  # , "url": SPEC_URI},
         }
     )
