@@ -19,10 +19,10 @@ GitHub Repo.
 If you are getting started with verifiable credentials or Aries,
 we recommend that you start with this `verifiable credentials and agents
 getting started guide
-<https://github.com/hyperledger/aries-cloudagent-python/tree/master/docs/GettingStartedAriesDev>`_.
+<https://github.com/hyperledger/aries-cloudagent-python/tree/main/GettingStartedAriesDev>`_.
 
 Want to quick overview of the deployment model for ACA-Py? See 
-`this document <https://github.com/hyperledger/aries-cloudagent-python/blob/master/docs/deploymentModel.md>`_.
+`this document <https://github.com/hyperledger/aries-cloudagent-python/blob/main/deploymentModel.md>`_.
 
 To investigate the code, use search or click the package links in the left menu to
 drill into the modules, subpackages and submodules that make up ACA-Py.
@@ -42,14 +42,14 @@ at the `issuer <generated/aries_cloudagent.issuer.html>`_,
 `verifier <generated/aries_cloudagent.verifier.html>`_ packages.
 
 Please see the `ACA-Py Contribution guidelines 
-<https://github.com/hyperledger/aries-cloudagent-python/blob/master/README.md#contributing>`_
+<https://github.com/hyperledger/aries-cloudagent-python/blob/main/README.md#contributing>`_
 for how to contribute to ACA-Py, including for how to submit issues about ACA-Py.
 
 .. toctree::
    :maxdepth: 3
    :caption: Aries Cloud Agent Python - Modules
 
-   generated/aries_cloudagent
+   generated/modules
 
 Indices and tables
 ==================
