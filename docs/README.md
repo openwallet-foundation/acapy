@@ -3,7 +3,7 @@
 This `docs` folder has several kinds of documentation about Aries Cloud Agent - Python (ACA-Py).
 
 If you are interested in becoming an Aries Developer and want to use ACA-Py to get started, you
-can start by looking at this [Getting Started](GettingStartedAriesDev/README.md) guide. It covers
+can start by looking at this [Getting Started](/docs/GettingStartedAriesDev/README.md) guide. It covers
 a range of topics necessary to understanding how Aries agents work, particularly ACA-Py.
 
 The recommended developer reference documentation is generated from this folder and hosted

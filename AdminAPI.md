@@ -6,7 +6,7 @@ ACA-Py provides an OpenAPI-documented REST interface for administering the agent
 
 To see the specifics of the supported endpoints as well as the expected request and response formats it is recommended to run the `aca-py` agent with the `--admin {HOST} {PORT}` and `--admin-insecure-mode` command line parameters, which exposes the OpenAPI UI on the provided port for interaction via a web browser. Production deployments should run the agent with `--admin-api-key {KEY}` and add the `X-API-Key: {KEY}` header to all requests instead of running the agent with the `--admin-insecure-mode` parameter.
 
-![Admin API Screenshot](/assets/adminApi.png)
+![Admin API Screenshot](/doc/assets/adminApi.png)
 
 To invoke a specific method:
 

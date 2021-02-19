@@ -19,7 +19,7 @@ GitHub Repo.
 If you are getting started with verifiable credentials or Aries,
 we recommend that you start with this `verifiable credentials and agents
 getting started guide
-<https://github.com/hyperledger/aries-cloudagent-python/tree/main/GettingStartedAriesDev>`_.
+<https://github.com/hyperledger/aries-cloudagent-python/tree/main/docs/GettingStartedAriesDev>`_.
 
 Want to quick overview of the deployment model for ACA-Py? See 
 `this document <https://github.com/hyperledger/aries-cloudagent-python/blob/main/deploymentModel.md>`_.

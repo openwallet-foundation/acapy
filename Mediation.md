@@ -67,7 +67,7 @@ See [Aries RFC 0211: Coordinate Mediation Protocol](https://github.com/hyperledg
 
 ## Mediator Message Flow Overview
 
-![Mediator Message Flow](/assets/mediation-message-flow.png)
+![Mediator Message Flow](/doc/assets/mediation-message-flow.png)
 
 ## Using a Mediator
 
