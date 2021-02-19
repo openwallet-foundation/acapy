@@ -37,7 +37,7 @@ The wallets used by the different tenants are called **sub wallets**. A sub wall
 
 The **base wallet** however, takes on a different role and has limited functionality. Its main function is to manage the sub wallets, which can be done using the [Multi-tenant Admin API](#multi-tenant-admin-api). It stores all settings and information about the different sub wallets and will route incoming messages to the corresponding sub wallets. See [Message Routing](#message-routing) for more details. All other features are disabled for the base wallet. This means it cannot issue credentials, present proof, or do any of the other actions sub wallets can do. This is to keep a clear hierarchical difference between base and sub wallets
 
-![Multi-tenancy Architecture](/assets/multitenancyDiagram.png)
+![Multi-tenancy Architecture](/docs/assets/multitenancyDiagram.png)
 
 ### Usage
 
@@ -223,4 +223,4 @@ For deterministic JWT creation and verification between restarts and multiple in
 
 When using the SwaggerUI you can click the :lock: icon next to each of the endpoints or the `Authorize` button at the top to set the correct authentication headers. Make sure to also include the `Bearer ` part in the input field. This won't be automatically added.
 
-![](/assets/adminApiAuthentication.png)
+![](/docs/assets/adminApiAuthentication.png)
