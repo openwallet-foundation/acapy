@@ -1,16 +1,12 @@
 """A simple event bus."""
 
-from itertools import chain
 import logging
-from typing import Any, Callable, Dict, Pattern, Sequence, Union
-from ..messaging.request_context import RequestContext
-from ..admin.request_context import AdminRequestContext
+from itertools import chain
+from typing import Any, Callable, Dict, Pattern, Sequence
 
+from ..core.profile import Profile
 
 LOGGER = logging.getLogger(__name__)
-
-
-EventContext = Union[RequestContext, AdminRequestContext]
 
 
 class Event:
@@ -51,13 +47,13 @@ class EventBus:
 
     async def notify(
         self,
-        context: EventContext,
+        profile: Profile,
         event: Event
     ):
         """Notify subscribers of event.
 
         Args:
-            context (EventContext): context of the event
+            profile (Profile): context of the event
             event (Event): event to emit
 
         """
@@ -74,7 +70,7 @@ class EventBus:
 
         for processor in chain(*matched):
             try:
-                await processor(context, event)
+                await processor(profile, event)
             except Exception:
                 LOGGER.exception("Error occurred while processing event")
 

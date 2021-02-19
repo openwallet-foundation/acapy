@@ -308,6 +308,6 @@ class DispatcherResponder(BaseResponder):
             payload: the webhook payload value
         """
         bus: EventBus = self._context.inject(EventBus)
-        await bus.notify(self._context, Event(topic, payload))
+        await bus.notify(self._context.profile, Event(topic, payload))
         if self._webhook:
             await self._webhook(self._context.profile, topic, payload)
