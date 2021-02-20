@@ -410,7 +410,7 @@ class AgentContainer:
         if schema_name and schema_attrs:
             # Create a schema/cred def
             self.cred_def_id = await self.create_schema_and_cred_def(
-                schema_name, schema_attrs, self.revocation
+                schema_name, schema_attrs
             )
 
     async def create_schema_and_cred_def(
@@ -445,9 +445,9 @@ class AgentContainer:
             "filter": {"indy": {"cred_def_id": cred_def_id}},
             "trace": self.exchange_tracing,
         }
-        await self.agent.admin_POST("/issue-credential-2.0/send-offer", offer_request)
+        cred_exchange = await self.agent.admin_POST("/issue-credential-2.0/send-offer", offer_request)
 
-        return True
+        return cred_exchange
 
     async def receive_credential(
         self,
@@ -502,11 +502,11 @@ class AgentContainer:
             "proof_request": indy_proof_request,
             "trace": self.exchange_tracing,
         }
-        await self.agent.admin_POST(
+        proof_exchange = await self.agent.admin_POST(
             "/present-proof/send-request", proof_request_web_request
         )
 
-        return True
+        return proof_exchange
 
     async def verify_proof(self, proof_request):
         await asyncio.sleep(1.0)
@@ -550,6 +550,7 @@ class AgentContainer:
         return await self.agent.input_invitation(invite_details, wait)
 
     async def detect_connection(self):
+        # no return value, throws an exception if the connection times out
         await self.agent.detect_connection()
 
     async def register_did(self, did, verkey, role):
@@ -609,7 +610,12 @@ class AgentContainer:
         """
         return await self.agent.agency_admin_POST(path, data=data, text=text, params=params)
 
-def arg_parser():
+def arg_parser(ident: str = None):
+    """
+    Standard command-line arguements.
+
+    "ident", if specified, refers to one of the standard demo personas - alice, faber, acme or performance.
+    """
     parser = argparse.ArgumentParser(description="Runs an Aries demo agent.")
     parser.add_argument(
         "--ident",

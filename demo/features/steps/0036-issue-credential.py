@@ -40,13 +40,14 @@ def step_impl(context, issuer, credential_data):
     agent = context.active_agents[issuer]
 
     cred_attrs = read_credential_data(context.schema_name, credential_data)
-    aries_container_issue_credential(
+    cred_exchange = aries_container_issue_credential(
         agent["agent"],
         context.cred_def_id,
         cred_attrs,
     )
 
     context.cred_attrs = cred_attrs
+    context.cred_exchange = cred_exchange
 
     # TODO Check the issuers State
     # assert resp_json["state"] == "offer-sent"
@@ -55,6 +56,32 @@ def step_impl(context, issuer, credential_data):
     # assert expected_agent_state(context.holder_url, "issue-credential", context.cred_thread_id, "offer-received")
 
 
+@when('"{holder}" revokes the credential')
+@then('"{holder}" revokes the credential')
+def step_impl(context, holder):
+    agent = context.active_agents[holder]
+
+    # get the required revocation info from the last credential exchange
+    cred_exchange = context.cred_exchange
+
+    cred_exchange = agent_container_GET(agent['agent'], "/issue-credential-2.0/records/" + cred_exchange["cred_ex_id"])
+    context.cred_exchange = cred_exchange
+    print("rev_reg_id:", cred_exchange["indy"]["rev_reg_id"])
+    print("cred_rev_id:", cred_exchange["indy"]["cred_rev_id"])
+
+    # revoke the credential
+    revoke_status = agent_container_POST(
+        agent['agent'],
+        "/revocation/revoke",
+        data={
+            "rev_reg_id": cred_exchange["indy"]["rev_reg_id"],
+            "cred_rev_id": cred_exchange["indy"]["cred_rev_id"],
+            "publish": "Y"
+        }
+    )
+
+
+@when('"{holder}" has the credential issued')
 @then('"{holder}" has the credential issued')
 def step_impl(context, holder):
     agent = context.active_agents[holder]
@@ -71,7 +98,7 @@ def step_impl(context, holder):
 
 
 @given(
-    '"{holder}" has an issued {schema_name} credential {credential_data} from {issuer}'
+    '"{holder}" has an issued {schema_name} credential {credential_data} from "{issuer}"'
 )
 def step_impl(context, holder, schema_name, credential_data, issuer):
     context.execute_steps(

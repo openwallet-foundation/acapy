@@ -8,7 +8,7 @@ Feature: RFC 0037 Aries agent present proof
          | Faber | verifier | <Acme_capabilities> |
          | Bob   | prover   | <Bob_capabilities>  |
       And "<issuer>" and "Bob" have an existing connection
-      And "Bob" has an issued <Schema_name> credential <Credential_data> from <issuer>
+      And "Bob" has an issued <Schema_name> credential <Credential_data> from "<issuer>"
       And "Faber" and "Bob" have an existing connection
       When "Faber" sends a request for proof presentation <Proof_request> to "Bob"
       Then "Faber" has the proof verified
