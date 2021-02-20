@@ -162,7 +162,7 @@ class TestV20CredManager(AsyncTestCase):
             credential_preview=cred_preview,
             formats=[V20CredFormat(attach_id="0", format_=V20CredFormat.Format.INDY)],
             filters_attach=[
-                AttachDecorator.from_indy_dict(
+                AttachDecorator.data_base64(
                     {"cred_def_id": CRED_DEF_ID, "schema_id": SCHEMA_ID}, ident="0"
                 )
             ],
@@ -266,9 +266,7 @@ class TestV20CredManager(AsyncTestCase):
                     V20CredFormat(attach_id="0", format_=V20CredFormat.Format.INDY)
                 ],
                 filters_attach=[
-                    AttachDecorator.from_indy_dict(
-                        {"cred_def_id": CRED_DEF_ID}, ident="0"
-                    )
+                    AttachDecorator.data_base64({"cred_def_id": CRED_DEF_ID}, ident="0")
                 ],
             )
 
@@ -304,7 +302,7 @@ class TestV20CredManager(AsyncTestCase):
             credential_preview=cred_preview,
             formats=[V20CredFormat(attach_id="0", format_=V20CredFormat.Format.INDY)],
             filters_attach=[
-                AttachDecorator.from_indy_dict({"cred_def_id": CRED_DEF_ID}, ident="0")
+                AttachDecorator.data_base64({"cred_def_id": CRED_DEF_ID}, ident="0")
             ],
         )
         cx_rec = V20CredExRecord(
@@ -389,7 +387,7 @@ class TestV20CredManager(AsyncTestCase):
             credential_preview=cred_preview,
             formats=[V20CredFormat(attach_id="0", format_=V20CredFormat.Format.INDY)],
             filters_attach=[
-                AttachDecorator.from_indy_dict({"cred_def_id": CRED_DEF_ID}, ident="0")
+                AttachDecorator.data_base64({"cred_def_id": CRED_DEF_ID}, ident="0")
             ],
         )
         cx_rec = V20CredExRecord(
@@ -454,7 +452,7 @@ class TestV20CredManager(AsyncTestCase):
         cred_proposal = V20CredProposal(
             credential_preview=cred_preview,
             formats=[V20CredFormat(attach_id="0", format_=V20CredFormat.Format.INDY)],
-            filters_attach=[AttachDecorator.from_indy_dict({}, ident="0")],
+            filters_attach=[AttachDecorator.data_base64({}, ident="0")],
         )
         cx_rec = V20CredExRecord(
             cred_ex_id="dummy-cxid",
@@ -533,7 +531,7 @@ class TestV20CredManager(AsyncTestCase):
         cred_proposal = V20CredProposal(
             credential_preview=cred_preview,
             formats=[V20CredFormat(attach_id="0", format_=V20CredFormat.Format.INDY)],
-            filters_attach=[AttachDecorator.from_indy_dict({}, ident="0")],
+            filters_attach=[AttachDecorator.data_base64({}, ident="0")],
         )
         cx_rec = V20CredExRecord(
             cred_ex_id="dummy-cxid",
@@ -585,12 +583,12 @@ class TestV20CredManager(AsyncTestCase):
         cred_proposal = V20CredProposal(
             credential_preview=cred_preview,
             formats=[V20CredFormat(attach_id="0", format_=V20CredFormat.Format.INDY)],
-            filters_attach=[AttachDecorator.from_indy_dict({}, ident="0")],
+            filters_attach=[AttachDecorator.data_base64({}, ident="0")],
         )
         cred_offer = V20CredOffer(
             credential_preview=cred_preview,
             formats=[V20CredFormat(attach_id="0", format_=V20CredFormat.Format.INDY)],
-            offers_attach=[AttachDecorator.from_indy_dict(indy_offer, ident="0")],
+            offers_attach=[AttachDecorator.data_base64(indy_offer, ident="0")],
         )
         cred_offer.assign_thread_id(thread_id)
 
@@ -649,7 +647,7 @@ class TestV20CredManager(AsyncTestCase):
         cred_offer = V20CredOffer(
             credential_preview=cred_preview,
             formats=[V20CredFormat(attach_id="0", format_=V20CredFormat.Format.INDY)],
-            offers_attach=[AttachDecorator.from_indy_dict(indy_offer, ident="0")],
+            offers_attach=[AttachDecorator.data_base64(indy_offer, ident="0")],
         )
         cred_offer.assign_thread_id(thread_id)
 
@@ -701,7 +699,7 @@ class TestV20CredManager(AsyncTestCase):
 
         cred_offer = V20CredOffer(
             formats=[V20CredFormat(attach_id="0", format_=V20CredFormat.Format.INDY)],
-            offers_attach=[AttachDecorator.from_indy_dict(indy_offer, ident="0")],
+            offers_attach=[AttachDecorator.data_base64(indy_offer, ident="0")],
         )
         cred_offer.assign_thread_id(thread_id)
 
@@ -777,7 +775,7 @@ class TestV20CredManager(AsyncTestCase):
 
         cred_offer = V20CredOffer(
             formats=[V20CredFormat(attach_id="0", format_=V20CredFormat.Format.INDY)],
-            offers_attach=[AttachDecorator.from_indy_dict(indy_offer, ident="0")],
+            offers_attach=[AttachDecorator.data_base64(indy_offer, ident="0")],
         )
         cred_offer.assign_thread_id(thread_id)
 
@@ -832,7 +830,7 @@ class TestV20CredManager(AsyncTestCase):
 
         cred_offer = V20CredOffer(
             formats=[V20CredFormat(attach_id="0", format_=V20CredFormat.Format.INDY)],
-            offers_attach=[AttachDecorator.from_indy_dict(indy_offer, ident="0")],
+            offers_attach=[AttachDecorator.data_base64(indy_offer, ident="0")],
         )
         cred_offer.assign_thread_id(thread_id)
 
@@ -858,7 +856,7 @@ class TestV20CredManager(AsyncTestCase):
 
         cred_offer = V20CredOffer(
             formats=[V20CredFormat(attach_id="0", format_=V20CredFormat.Format.INDY)],
-            offers_attach=[AttachDecorator.from_indy_dict(indy_offer, ident="0")],
+            offers_attach=[AttachDecorator.data_base64(indy_offer, ident="0")],
         )
         cred_offer.assign_thread_id(thread_id)
 
@@ -892,7 +890,7 @@ class TestV20CredManager(AsyncTestCase):
 
         cred_request = V20CredRequest(
             formats=[V20CredFormat(attach_id="0", format_=V20CredFormat.Format.INDY)],
-            requests_attach=[AttachDecorator.from_indy_dict(indy_cred_req, ident="0")],
+            requests_attach=[AttachDecorator.data_base64(indy_cred_req, ident="0")],
         )
 
         with async_mock.patch.object(
@@ -944,7 +942,7 @@ class TestV20CredManager(AsyncTestCase):
             credential_preview=cred_preview,
             formats=[V20CredFormat(attach_id="0", format_=V20CredFormat.Format.INDY)],
             filters_attach=[
-                AttachDecorator.from_indy_dict(
+                AttachDecorator.data_base64(
                     {
                         "schema_id": SCHEMA_ID,
                         "cred_def_id": CRED_DEF_ID,
@@ -955,12 +953,12 @@ class TestV20CredManager(AsyncTestCase):
         )
         cred_offer = V20CredOffer(
             formats=[V20CredFormat(attach_id="0", format_=V20CredFormat.Format.INDY)],
-            offers_attach=[AttachDecorator.from_indy_dict(indy_offer, ident="0")],
+            offers_attach=[AttachDecorator.data_base64(indy_offer, ident="0")],
         )
         cred_offer.assign_thread_id(thread_id)
         cred_request = V20CredRequest(
             formats=[V20CredFormat(attach_id="0", format_=V20CredFormat.Format.INDY)],
-            requests_attach=[AttachDecorator.from_indy_dict(indy_cred_req, ident="0")],
+            requests_attach=[AttachDecorator.data_base64(indy_cred_req, ident="0")],
         )
 
         stored_cx_rec = V20CredExRecord(
@@ -1065,7 +1063,7 @@ class TestV20CredManager(AsyncTestCase):
             credential_preview=cred_preview,
             formats=[V20CredFormat(attach_id="0", format_=V20CredFormat.Format.INDY)],
             filters_attach=[
-                AttachDecorator.from_indy_dict(
+                AttachDecorator.data_base64(
                     {
                         "schema_id": SCHEMA_ID,
                         "cred_def_id": CRED_DEF_ID,
@@ -1076,12 +1074,12 @@ class TestV20CredManager(AsyncTestCase):
         )
         cred_offer = V20CredOffer(
             formats=[V20CredFormat(attach_id="0", format_=V20CredFormat.Format.INDY)],
-            offers_attach=[AttachDecorator.from_indy_dict(indy_offer, ident="0")],
+            offers_attach=[AttachDecorator.data_base64(indy_offer, ident="0")],
         )
         cred_offer.assign_thread_id(thread_id)
         cred_request = V20CredRequest(
             formats=[V20CredFormat(attach_id="0", format_=V20CredFormat.Format.INDY)],
-            requests_attach=[AttachDecorator.from_indy_dict(indy_cred_req, ident="0")],
+            requests_attach=[AttachDecorator.data_base64(indy_cred_req, ident="0")],
         )
 
         stored_cx_rec = V20CredExRecord(
@@ -1164,7 +1162,7 @@ class TestV20CredManager(AsyncTestCase):
             credential_preview=cred_preview,
             formats=[V20CredFormat(attach_id="0", format_=V20CredFormat.Format.INDY)],
             filters_attach=[
-                AttachDecorator.from_indy_dict(
+                AttachDecorator.data_base64(
                     {
                         "schema_id": SCHEMA_ID,
                         "cred_def_id": CRED_DEF_ID,
@@ -1175,12 +1173,12 @@ class TestV20CredManager(AsyncTestCase):
         )
         cred_offer = V20CredOffer(
             formats=[V20CredFormat(attach_id="0", format_=V20CredFormat.Format.INDY)],
-            offers_attach=[AttachDecorator.from_indy_dict(indy_offer, ident="0")],
+            offers_attach=[AttachDecorator.data_base64(indy_offer, ident="0")],
         )
         cred_offer.assign_thread_id(thread_id)
         cred_request = V20CredRequest(
             formats=[V20CredFormat(attach_id="0", format_=V20CredFormat.Format.INDY)],
-            requests_attach=[AttachDecorator.from_indy_dict(indy_cred_req, ident="0")],
+            requests_attach=[AttachDecorator.data_base64(indy_cred_req, ident="0")],
         )
 
         stored_cx_rec = V20CredExRecord(
@@ -1272,7 +1270,7 @@ class TestV20CredManager(AsyncTestCase):
             credential_preview=cred_preview,
             formats=[V20CredFormat(attach_id="0", format_=V20CredFormat.Format.INDY)],
             filters_attach=[
-                AttachDecorator.from_indy_dict(
+                AttachDecorator.data_base64(
                     {
                         "schema_id": SCHEMA_ID,
                         "cred_def_id": CRED_DEF_ID,
@@ -1326,7 +1324,7 @@ class TestV20CredManager(AsyncTestCase):
             credential_preview=cred_preview,
             formats=[V20CredFormat(attach_id="0", format_=V20CredFormat.Format.INDY)],
             filters_attach=[
-                AttachDecorator.from_indy_dict(
+                AttachDecorator.data_base64(
                     {
                         "schema_id": SCHEMA_ID,
                         "cred_def_id": CRED_DEF_ID,
@@ -1337,12 +1335,12 @@ class TestV20CredManager(AsyncTestCase):
         )
         cred_offer = V20CredOffer(
             formats=[V20CredFormat(attach_id="0", format_=V20CredFormat.Format.INDY)],
-            offers_attach=[AttachDecorator.from_indy_dict(indy_offer, ident="0")],
+            offers_attach=[AttachDecorator.data_base64(indy_offer, ident="0")],
         )
         cred_offer.assign_thread_id(thread_id)
         cred_request = V20CredRequest(
             formats=[V20CredFormat(attach_id="0", format_=V20CredFormat.Format.INDY)],
-            requests_attach=[AttachDecorator.from_indy_dict(indy_cred_req, ident="0")],
+            requests_attach=[AttachDecorator.data_base64(indy_cred_req, ident="0")],
         )
 
         stored_cx_rec = V20CredExRecord(
@@ -1419,7 +1417,7 @@ class TestV20CredManager(AsyncTestCase):
             credential_preview=cred_preview,
             formats=[V20CredFormat(attach_id="0", format_=V20CredFormat.Format.INDY)],
             filters_attach=[
-                AttachDecorator.from_indy_dict(
+                AttachDecorator.data_base64(
                     {
                         "schema_id": SCHEMA_ID,
                         "cred_def_id": CRED_DEF_ID,
@@ -1430,12 +1428,12 @@ class TestV20CredManager(AsyncTestCase):
         )
         cred_offer = V20CredOffer(
             formats=[V20CredFormat(attach_id="0", format_=V20CredFormat.Format.INDY)],
-            offers_attach=[AttachDecorator.from_indy_dict(indy_offer, ident="0")],
+            offers_attach=[AttachDecorator.data_base64(indy_offer, ident="0")],
         )
         cred_offer.assign_thread_id(thread_id)
         cred_request = V20CredRequest(
             formats=[V20CredFormat(attach_id="0", format_=V20CredFormat.Format.INDY)],
-            requests_attach=[AttachDecorator.from_indy_dict(indy_cred_req, ident="0")],
+            requests_attach=[AttachDecorator.data_base64(indy_cred_req, ident="0")],
         )
 
         stored_cx_rec = V20CredExRecord(
@@ -1516,7 +1514,7 @@ class TestV20CredManager(AsyncTestCase):
             credential_preview=cred_preview,
             formats=[V20CredFormat(attach_id="0", format_=V20CredFormat.Format.INDY)],
             filters_attach=[
-                AttachDecorator.from_indy_dict(
+                AttachDecorator.data_base64(
                     {
                         "schema_id": SCHEMA_ID,
                         "cred_def_id": CRED_DEF_ID,
@@ -1527,12 +1525,12 @@ class TestV20CredManager(AsyncTestCase):
         )
         cred_offer = V20CredOffer(
             formats=[V20CredFormat(attach_id="0", format_=V20CredFormat.Format.INDY)],
-            offers_attach=[AttachDecorator.from_indy_dict(indy_offer, ident="0")],
+            offers_attach=[AttachDecorator.data_base64(indy_offer, ident="0")],
         )
         cred_offer.assign_thread_id(thread_id)
         cred_request = V20CredRequest(
             formats=[V20CredFormat(attach_id="0", format_=V20CredFormat.Format.INDY)],
-            requests_attach=[AttachDecorator.from_indy_dict(indy_cred_req, ident="0")],
+            requests_attach=[AttachDecorator.data_base64(indy_cred_req, ident="0")],
         )
 
         stored_cx_rec = V20CredExRecord(
@@ -1591,7 +1589,7 @@ class TestV20CredManager(AsyncTestCase):
 
         cred_issue = V20CredIssue(
             formats=[V20CredFormat(attach_id="0", format_=V20CredFormat.Format.INDY)],
-            credentials_attach=[AttachDecorator.from_indy_dict(indy_cred, ident="0")],
+            credentials_attach=[AttachDecorator.data_base64(indy_cred, ident="0")],
         )
 
         with async_mock.patch.object(
@@ -1645,7 +1643,7 @@ class TestV20CredManager(AsyncTestCase):
             credential_preview=cred_preview,
             formats=[V20CredFormat(attach_id="0", format_=V20CredFormat.Format.INDY)],
             filters_attach=[
-                AttachDecorator.from_indy_dict(
+                AttachDecorator.data_base64(
                     {
                         "schema_id": SCHEMA_ID,
                         "cred_def_id": CRED_DEF_ID,
@@ -1656,16 +1654,16 @@ class TestV20CredManager(AsyncTestCase):
         )
         cred_offer = V20CredOffer(
             formats=[V20CredFormat(attach_id="0", format_=V20CredFormat.Format.INDY)],
-            offers_attach=[AttachDecorator.from_indy_dict(indy_offer, ident="0")],
+            offers_attach=[AttachDecorator.data_base64(indy_offer, ident="0")],
         )
         cred_offer.assign_thread_id(thread_id)
         cred_request = V20CredRequest(
             formats=[V20CredFormat(attach_id="0", format_=V20CredFormat.Format.INDY)],
-            requests_attach=[AttachDecorator.from_indy_dict(indy_cred_req, ident="0")],
+            requests_attach=[AttachDecorator.data_base64(indy_cred_req, ident="0")],
         )
         cred_issue = V20CredIssue(
             formats=[V20CredFormat(attach_id="0", format_=V20CredFormat.Format.INDY)],
-            credentials_attach=[AttachDecorator.from_indy_dict(indy_cred, ident="0")],
+            credentials_attach=[AttachDecorator.data_base64(indy_cred, ident="0")],
         )
 
         stored_cx_rec = V20CredExRecord(
@@ -1795,7 +1793,7 @@ class TestV20CredManager(AsyncTestCase):
             credential_preview=cred_preview,
             formats=[V20CredFormat(attach_id="0", format_=V20CredFormat.Format.INDY)],
             filters_attach=[
-                AttachDecorator.from_indy_dict(
+                AttachDecorator.data_base64(
                     {
                         "schema_id": SCHEMA_ID,
                         "cred_def_id": CRED_DEF_ID,
@@ -1806,16 +1804,16 @@ class TestV20CredManager(AsyncTestCase):
         )
         cred_offer = V20CredOffer(
             formats=[V20CredFormat(attach_id="0", format_=V20CredFormat.Format.INDY)],
-            offers_attach=[AttachDecorator.from_indy_dict(indy_offer, ident="0")],
+            offers_attach=[AttachDecorator.data_base64(indy_offer, ident="0")],
         )
         cred_offer.assign_thread_id(thread_id)
         cred_request = V20CredRequest(
             formats=[V20CredFormat(attach_id="0", format_=V20CredFormat.Format.INDY)],
-            requests_attach=[AttachDecorator.from_indy_dict(indy_cred_req, ident="0")],
+            requests_attach=[AttachDecorator.data_base64(indy_cred_req, ident="0")],
         )
         cred_issue = V20CredIssue(
             formats=[V20CredFormat(attach_id="0", format_=V20CredFormat.Format.INDY)],
-            credentials_attach=[AttachDecorator.from_indy_dict(indy_cred, ident="0")],
+            credentials_attach=[AttachDecorator.data_base64(indy_cred, ident="0")],
         )
 
         stored_cx_rec = V20CredExRecord(

@@ -47,4 +47,6 @@ class CredDefQueryStringSchema(OpenAPISchema):
     )
 
 
-CRED_DEF_TAGS = [tag for tag in vars(CredDefQueryStringSchema)["_declared_fields"]]
+CRED_DEF_TAGS = [
+    tag for tag in vars(CredDefQueryStringSchema).get("_declared_fields", [])
+]

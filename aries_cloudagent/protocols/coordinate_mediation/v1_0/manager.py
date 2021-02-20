@@ -455,7 +455,7 @@ class MediationManager:
         """Prepare keylist query message.
 
         Args:
-            filter_ (dict): filter_ for keylist query
+            filter_ (dict): filter for keylist query
             paginate_limit (int): paginate_limit
             paginate_offset (int): paginate_offset
 

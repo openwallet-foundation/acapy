@@ -1,6 +1,6 @@
 # Assets Folder for Documentation
 
-Put an assets (images, source for images, videos, etc.) in this folder to be referenced in the various documents for this repo.
+Put any assets (images, source for images, videos, etc.) in this folder to be referenced in the various documents for this repo.
 
 ## Plantuml Source and Images
 

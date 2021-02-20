@@ -60,13 +60,13 @@ class CredentialOffer(AgentMessage):
                 (typically, list has length 1)
 
         """
-        return self.offers_attach[index].indy_dict
+        return self.offers_attach[index].content
 
     @classmethod
     def wrap_indy_offer(cls, indy_offer: dict) -> AttachDecorator:
         """Convert an indy credential offer to an attachment decorator."""
-        return AttachDecorator.from_indy_dict(
-            indy_dict=indy_offer, ident=ATTACH_DECO_IDS[CREDENTIAL_OFFER]
+        return AttachDecorator.data_base64(
+            mapping=indy_offer, ident=ATTACH_DECO_IDS[CREDENTIAL_OFFER]
         )
 
 

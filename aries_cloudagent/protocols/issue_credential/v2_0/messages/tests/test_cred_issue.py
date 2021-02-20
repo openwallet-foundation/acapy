@@ -72,8 +72,8 @@ class TestV20CredIssue(AsyncTestCase):
     cred_issue = V20CredIssue(
         comment="Test",
         credentials_attach=[
-            AttachDecorator.from_indy_dict(
-                indy_dict=indy_cred,
+            AttachDecorator.data_base64(
+                mapping=indy_cred,
                 ident="abc",
             )
         ],
@@ -91,13 +91,13 @@ class TestV20CredIssue(AsyncTestCase):
                 )
             ],
             credentials_attach=[
-                AttachDecorator.from_indy_dict(
-                    indy_dict=TestV20CredIssue.indy_cred,
+                AttachDecorator.data_base64(
+                    mapping=TestV20CredIssue.indy_cred,
                     ident="abc",
                 )
             ],
         )
-        assert cred_issue.credentials_attach[0].indy_dict == TestV20CredIssue.indy_cred
+        assert cred_issue.credentials_attach[0].content == TestV20CredIssue.indy_cred
         assert cred_issue.credentials_attach[0].ident  # auto-generates UUID4
         assert cred_issue.cred() == TestV20CredIssue.indy_cred
         assert cred_issue._type == DIDCommPrefix.qualify_current(CRED_20_ISSUE)
@@ -134,7 +134,7 @@ class TestV20CredIssueSchema(AsyncTestCase):
         """Test making model."""
         cred_issue = V20CredIssue(
             comment="Test",
-            credentials_attach=[AttachDecorator.from_indy_dict({"hello": "world"})],
+            credentials_attach=[AttachDecorator.data_base64({"hello": "world"})],
         )
 
         data = cred_issue.serialize()

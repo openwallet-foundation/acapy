@@ -121,7 +121,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             TestConfig.test_target_did,
             TestConfig.test_target_verkey,
         )
-        did_doc_attach = AttachDecorator.from_indy_dict(did_doc.serialize())
+        did_doc_attach = AttachDecorator.data_base64(did_doc.serialize())
         with self.assertRaises(DIDXManagerError):
             await self.manager.verify_diddoc(self.session.wallet, did_doc_attach)
 
@@ -155,7 +155,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 hs_protos=[HSProto.RFC23],
             )
             invi_msg = InvitationMessage.deserialize(invi_rec.invitation)
-            mock_attach_deco.from_indy_dict = async_mock.MagicMock(
+            mock_attach_deco.data_base64 = async_mock.MagicMock(
                 return_value=async_mock.MagicMock(
                     data=async_mock.MagicMock(sign=async_mock.CoroutineMock())
                 )
@@ -275,7 +275,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             mock_wallet_create_local_did.return_value = DIDInfo(
                 TestConfig.test_did, TestConfig.test_verkey, None
             )
-            mock_attach_deco.from_indy_dict = async_mock.MagicMock(
+            mock_attach_deco.data_base64 = async_mock.MagicMock(
                 return_value=async_mock.MagicMock(
                     data=async_mock.MagicMock(sign=async_mock.CoroutineMock())
                 )
@@ -463,7 +463,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             mock_did_doc.from_json = async_mock.MagicMock(
                 return_value=async_mock.MagicMock(did=TestConfig.test_did)
             )
-            mock_attach_deco.from_indy_dict = async_mock.MagicMock(
+            mock_attach_deco.data_base64 = async_mock.MagicMock(
                 return_value=async_mock.MagicMock(
                     data=async_mock.MagicMock(sign=async_mock.CoroutineMock())
                 )
@@ -1019,7 +1019,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             mock_did_doc.from_json = async_mock.MagicMock(
                 return_value=async_mock.MagicMock(did=TestConfig.test_did)
             )
-            mock_attach_deco.from_indy_dict = async_mock.MagicMock(
+            mock_attach_deco.data_base64 = async_mock.MagicMock(
                 return_value=async_mock.MagicMock(
                     data=async_mock.MagicMock(sign=async_mock.CoroutineMock())
                 )
@@ -1238,7 +1238,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             mock_create_did_doc.return_value = async_mock.MagicMock(
                 serialize=async_mock.MagicMock()
             )
-            mock_attach_deco.from_indy_dict = async_mock.MagicMock(
+            mock_attach_deco.data_base64 = async_mock.MagicMock(
                 return_value=async_mock.MagicMock(
                     data=async_mock.MagicMock(sign=async_mock.CoroutineMock())
                 )
@@ -1287,7 +1287,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
         ), async_mock.patch.object(
             test_module, "AttachDecorator", autospec=True
         ) as mock_attach_deco:
-            mock_attach_deco.from_indy_dict = async_mock.MagicMock(
+            mock_attach_deco.data_base64 = async_mock.MagicMock(
                 return_value=async_mock.MagicMock(
                     data=async_mock.MagicMock(sign=async_mock.CoroutineMock())
                 )
@@ -1377,7 +1377,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             mock_create_did_doc.return_value = async_mock.MagicMock(
                 serialize=async_mock.MagicMock()
             )
-            mock_attach_deco.from_indy_dict = async_mock.MagicMock(
+            mock_attach_deco.data_base64 = async_mock.MagicMock(
                 return_value=async_mock.MagicMock(
                     data=async_mock.MagicMock(sign=async_mock.CoroutineMock())
                 )
@@ -1414,7 +1414,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             mock_create_did_doc.return_value = async_mock.MagicMock(
                 serialize=async_mock.MagicMock()
             )
-            mock_attach_deco.from_indy_dict = async_mock.MagicMock(
+            mock_attach_deco.data_base64 = async_mock.MagicMock(
                 return_value=async_mock.MagicMock(
                     data=async_mock.MagicMock(sign=async_mock.CoroutineMock())
                 )
