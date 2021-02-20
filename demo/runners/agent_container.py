@@ -552,6 +552,62 @@ class AgentContainer:
     async def detect_connection(self):
         await self.agent.detect_connection()
 
+    async def register_did(self, did, verkey, role):
+        return await self.agent.register_did(
+            did=did,
+            verkey=verkey,
+            role=role,
+        )
+
+    async def admin_GET(
+        self, path, text=False, params=None
+    ) -> dict:
+        """
+        Execute an admin GET request in the context of the current wallet.
+
+        path = /path/of/request
+        text = True if the expected response is text, False if json data
+        params = any additional parameters to pass with the request
+        """
+        return await self.agent.admin_GET(path, text=text, params=params)
+
+    async def admin_POST(
+        self, path, data=None, text=False, params=None
+    ) -> dict:
+        """
+        Execute an admin POST request in the context of the current wallet.
+
+        path = /path/of/request
+        data = payload to post with the request
+        text = True if the expected response is text, False if json data
+        params = any additional parameters to pass with the request
+        """
+        return await self.agent.admin_POST(path, data=data, text=text, params=params)
+
+    async def agency_admin_GET(
+        self, path, text=False, params=None
+    ) -> dict:
+        """
+        Execute an agency GET request in the context of the base wallet (multitenant only).
+
+        path = /path/of/request
+        text = True if the expected response is text, False if json data
+        params = any additional parameters to pass with the request
+        """
+        return await self.agent.agency_admin_GET(path, text=text, params=params)
+
+    async def agency_admin_POST(
+        self, path, data=None, text=False, params=None
+    ) -> dict:
+        """
+        Execute an agency POST request in the context of the base wallet (multitenant only).
+
+        path = /path/of/request
+        data = payload to post with the request
+        text = True if the expected response is text, False if json data
+        params = any additional parameters to pass with the request
+        """
+        return await self.agent.agency_admin_POST(path, data=data, text=text, params=params)
 
 def arg_parser():
     parser = argparse.ArgumentParser(description="Runs an Aries demo agent.")

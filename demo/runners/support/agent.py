@@ -342,13 +342,14 @@ class DemoAgent:
         alias: str = None,
         did: str = None,
         verkey: str = None,
+        role: str = "TRUST_ANCHOR",
     ):
         self.log(f"Registering {self.ident} ...")
         if not ledger_url:
             ledger_url = LEDGER_URL
         if not ledger_url:
             ledger_url = f"http://{self.external_host}:9000"
-        data = {"alias": alias or self.ident, "role": "TRUST_ANCHOR"}
+        data = {"alias": alias or self.ident, "role": role}
         if did and verkey:
             data["did"] = did
             data["verkey"] = verkey

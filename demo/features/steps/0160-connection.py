@@ -17,9 +17,8 @@ from bdd_support.agent_backchannel_client import (
     aries_container_generate_invitation,
     aries_container_receive_invitation,
     aries_container_detect_connection,
-    agent_backchannel_GET,
-    agent_backchannel_POST,
-    expected_agent_state,
+    agent_container_GET,
+    agent_container_POST,
 )
 from runners.agent_container import AgentContainer
 

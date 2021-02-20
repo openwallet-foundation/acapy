@@ -8,6 +8,7 @@ from aiohttp import (
     ClientTimeout,
 )
 import json
+import os
 from time import sleep
 import uuid
 
@@ -74,6 +75,19 @@ def aries_container_initialize(
         schema_attrs=schema_attrs,
     )
 
+
+def agent_container_register_did(
+    the_container: AgentContainer,
+    did: str,
+    verkey: str,
+    role: str,
+):
+    run_coroutine_with_args(
+        the_container.register_did,
+        did,
+        verkey,
+        role,
+    )
 
 def aries_container_terminate(
     the_container: AgentContainer,
@@ -203,84 +217,32 @@ def read_presentation_data(presentation_name: str):
 ######################################################################
 
 
-async def make_agent_backchannel_request(
-    method, path, data=None, text=False, params=None
-) -> (int, str):
-    params = {k: v for (k, v) in (params or {}).items() if v is not None}
-    client_session: ClientSession = ClientSession()
-    async with client_session.request(method, path, json=data, params=params) as resp:
-        resp_status = resp.status
-        resp_text = await resp.text()
-        await client_session.close()
-        return (resp_status, resp_text)
-
-
-def agent_backchannel_GET(url, topic, operation=None, id=None) -> (int, str):
-    agent_url = url + topic + "/"
-    if operation:
-        agent_url = agent_url + operation + "/"
-    if id:
-        agent_url = agent_url + id
-    (resp_status, resp_text) = run_coroutine_with_kwargs(
-        make_agent_backchannel_request, "GET", agent_url
+def agent_container_GET(
+    the_container: AgentContainer,
+    path: str,
+    text: bool=False,
+    params: dict=None,
+) -> dict:
+    return run_coroutine_with_kwargs(
+        the_container.admin_GET,
+        path,
+        text=text,
+        params=params,
     )
-    return (resp_status, resp_text)
 
 
-def agent_backchannel_POST(
-    url, topic, operation=None, id=None, data=None
-) -> (int, str):
-    agent_url = url + topic + "/"
-    payload = {}
-    if data:
-        payload["data"] = data
-    if operation:
-        agent_url = agent_url + operation + "/"
-    if id:
-        if topic == "credential":
-            payload["cred_ex_id"] = id
-        else:
-            payload["id"] = id
-    (resp_status, resp_text) = run_coroutine_with_kwargs(
-        make_agent_backchannel_request, "POST", agent_url, data=payload
+def agent_container_POST(
+    the_container: AgentContainer,
+    path: str,
+    data: dict=None,
+    text: bool=False,
+    params: dict=None,
+) -> dict:
+    return run_coroutine_with_kwargs(
+        the_container.admin_POST,
+        path,
+        data=data,
+        text=text,
+        params=params,
     )
-    return (resp_status, resp_text)
 
-
-def agent_backchannel_DELETE(url, topic, id=None, data=None) -> (int, str):
-    agent_url = url + topic + "/"
-    if id:
-        agent_url = agent_url + id
-    (resp_status, resp_text) = run_coroutine_with_kwargs(
-        make_agent_backchannel_request, "DELETE", agent_url
-    )
-    return (resp_status, resp_text)
-
-
-def expected_agent_state(agent_url, protocol_txt, thread_id, status_txt):
-    sleep(0.2)
-    state = "None"
-    if type(status_txt) != list:
-        status_txt = [status_txt]
-    for i in range(5):
-        (resp_status, resp_text) = agent_backchannel_GET(
-            agent_url + "/agent/command/", protocol_txt, id=thread_id
-        )
-        if resp_status == 200:
-            resp_json = json.loads(resp_text)
-            state = resp_json["state"]
-            if state in status_txt:
-                return True
-        sleep(0.2)
-
-    print(
-        "From",
-        agent_url,
-        "Expected state",
-        status_txt,
-        "but received",
-        state,
-        ", with a response status of",
-        resp_status,
-    )
-    return False
