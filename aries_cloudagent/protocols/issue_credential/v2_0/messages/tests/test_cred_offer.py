@@ -43,22 +43,6 @@ class TestV20CredOffer(AsyncTestCase):
             {"member": "James Bond", "favourite": "martini"}
         )
     )
-    offer = V20CredOffer(
-        comment="shaken, not stirred",
-        credential_preview=preview,
-        formats=[
-            V20CredFormat(
-                attach_id="abc",
-                format_=V20CredFormat.Format.INDY,
-            )
-        ],
-        offers_attach=[
-            AttachDecorator.from_indy_dict(
-                indy_dict=indy_offer,
-                ident="abc",
-            )
-        ],
-    )
 
     async def test_init_type(self):
         """Test initializer and type."""
@@ -72,14 +56,14 @@ class TestV20CredOffer(AsyncTestCase):
                 )
             ],
             offers_attach=[
-                AttachDecorator.from_indy_dict(
-                    indy_dict=TestV20CredOffer.indy_offer,
+                AttachDecorator.data_base64(
+                    mapping=TestV20CredOffer.indy_offer,
                     ident="abc",
                 )
             ],
         )
         assert cred_offer.credential_preview == TestV20CredOffer.preview
-        assert cred_offer.offers_attach[0].indy_dict == TestV20CredOffer.indy_offer
+        assert cred_offer.offers_attach[0].content == TestV20CredOffer.indy_offer
         assert cred_offer.offer() == TestV20CredOffer.indy_offer
         assert cred_offer._type == DIDCommPrefix.qualify_current(CRED_20_OFFER)
 
@@ -109,8 +93,8 @@ class TestV20CredOffer(AsyncTestCase):
                 )
             ],
             offers_attach=[
-                AttachDecorator.from_indy_dict(
-                    indy_dict=TestV20CredOffer.indy_offer,
+                AttachDecorator.data_base64(
+                    mapping=TestV20CredOffer.indy_offer,
                     ident="abc",
                 )
             ],
@@ -140,8 +124,8 @@ class TestCredentialOfferSchema(AsyncTestCase):
                 )
             ],
             offers_attach=[
-                AttachDecorator.from_indy_dict(
-                    indy_dict=TestV20CredOffer.indy_offer,
+                AttachDecorator.data_base64(
+                    mapping=TestV20CredOffer.indy_offer,
                     ident="abc",
                 )
             ],

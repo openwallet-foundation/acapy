@@ -39,9 +39,7 @@ class TestV20CredProposal(AsyncTestCase):
                     format_=V20CredFormat.Format.INDY.aries,
                 )
             ],
-            filters_attach=[
-                AttachDecorator.from_indy_dict(TEST_INDY_FILTER, ident="abc")
-            ],
+            filters_attach=[AttachDecorator.data_base64(TEST_INDY_FILTER, ident="abc")],
         )
         assert cred_proposal.credential_preview == TEST_PREVIEW
         assert cred_proposal.filter() == TEST_INDY_FILTER
@@ -112,9 +110,7 @@ class TestV20CredProposal(AsyncTestCase):
                     format_=V20CredFormat.Format.INDY.aries,
                 )
             ],
-            filters_attach=[
-                AttachDecorator.from_indy_dict(TEST_INDY_FILTER, ident="abc")
-            ],
+            filters_attach=[AttachDecorator.data_base64(TEST_INDY_FILTER, ident="abc")],
         )
 
         cred_proposal_dict = cred_proposal.serialize()
@@ -161,7 +157,7 @@ class TestV20CredProposal(AsyncTestCase):
                     format_=V20CredFormat.Format.INDY.aries,
                 )
             ],
-            filters_attach=[AttachDecorator.from_indy_dict({}, ident="abc")],
+            filters_attach=[AttachDecorator.data_base64({}, ident="abc")],
         )
 
         cred_proposal_dict = cred_proposal.serialize()
@@ -198,9 +194,7 @@ class TestV20CredProposalSchema(AsyncTestCase):
                     format_=V20CredFormat.Format.INDY.aries,
                 )
             ],
-            filters_attach=[
-                AttachDecorator.from_indy_dict(TEST_INDY_FILTER, ident="abc")
-            ],
+            filters_attach=[AttachDecorator.data_base64(TEST_INDY_FILTER, ident="abc")],
         )
 
         data = cred_proposal.serialize()

@@ -272,6 +272,13 @@ class ConnIdRefIdMatchInfoSchema(OpenAPISchema):
     )
 
 
+class EndpointsResultSchema(OpenAPISchema):
+    """Result schema for connection endpoints."""
+
+    my_endpoint = fields.Str(description="My endpoint", **ENDPOINT)
+    their_endpoint = fields.Str(description="Their endpoint", **ENDPOINT)
+
+
 def connection_sort_key(conn):
     """Get the sorting key for a particular connection."""
 
@@ -367,6 +374,35 @@ async def connections_retrieve(request: web.BaseRequest):
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     return web.json_response(result)
+
+
+@docs(tags=["connection"], summary="Fetch connection remote endpoint")
+@match_info_schema(ConnIdMatchInfoSchema())
+@response_schema(EndpointsResultSchema(), 200, description="")
+async def connections_endpoints(request: web.BaseRequest):
+    """
+    Request handler for fetching connection endpoints.
+
+    Args:
+        request: aiohttp request object
+
+    Returns:
+        The endpoints response
+
+    """
+    context: AdminRequestContext = request["context"]
+    connection_id = request.match_info["conn_id"]
+    session = await context.session()
+
+    connection_mgr = ConnectionManager(session)
+    try:
+        endpoints = await connection_mgr.get_endpoints(connection_id)
+    except StorageNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
+    except (BaseModelError, StorageError, WalletError) as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+    return web.json_response(dict(zip(("my_endpoint", "their_endpoint"), endpoints)))
 
 
 @docs(tags=["connection"], summary="Fetch connection metadata")
@@ -731,6 +767,11 @@ async def register(app: web.Application):
                 allow_head=False,
             ),
             web.post("/connections/{conn_id}/metadata", connections_metadata_set),
+            web.get(
+                "/connections/{conn_id}/endpoints",
+                connections_endpoints,
+                allow_head=False,
+            ),
             web.post("/connections/create-static", connections_create_static),
             web.post("/connections/create-invitation", connections_create_invitation),
             web.post("/connections/receive-invitation", connections_receive_invitation),
@@ -739,7 +780,8 @@ async def register(app: web.Application):
                 connections_accept_invitation,
             ),
             web.post(
-                "/connections/{conn_id}/accept-request", connections_accept_request
+                "/connections/{conn_id}/accept-request",
+                connections_accept_request,
             ),
             web.post(
                 "/connections/{conn_id}/establish-inbound/{ref_id}",

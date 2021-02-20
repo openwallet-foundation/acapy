@@ -810,6 +810,32 @@ class ConnectionManager(BaseConnectionManager):
 
         return connection
 
+    async def get_endpoints(self, conn_id: str) -> Tuple[str, str]:
+        """
+        Get connection endpoints.
+
+        Args:
+            conn_id: connection identifier
+
+        Returns:
+            Their endpoint for this connection
+
+        """
+        connection = await ConnRecord.retrieve_by_id(self._session, conn_id)
+
+        wallet = self._session.inject(BaseWallet)
+        my_did_info = await wallet.get_local_did(connection.my_did)
+        my_endpoint = my_did_info.metadata.get(
+            "endpoint",
+            self._session.settings.get("default_endpoint"),
+        )
+
+        conn_targets = await self.get_connection_targets(
+            connection_id=connection.connection_id,
+            connection=connection,
+        )
+        return (my_endpoint, conn_targets[0].endpoint)
+
     async def create_static_connection(
         self,
         my_did: str = None,

@@ -394,6 +394,33 @@ class TestIndySdkStorage(test_in_memory_storage.TestInMemoryStorage):
                 for coro in coros:
                     await coro
 
+            with async_mock.patch.object(  # run on event loop until complete
+                indy.non_secrets, "open_wallet_search", async_mock.CoroutineMock()
+            ) as mock_indy_open_search, async_mock.patch.object(
+                indy.non_secrets, "close_wallet_search", async_mock.CoroutineMock()
+            ) as mock_indy_close_search, async_mock.patch.object(
+                asyncio, "get_event_loop", async_mock.MagicMock()
+            ) as mock_get_event_loop:
+                coros = []
+                mock_get_event_loop.return_value = async_mock.MagicMock(
+                    create_task=lambda c: coros.append(c),
+                    is_running=async_mock.MagicMock(return_value=False),
+                    run_until_complete=async_mock.MagicMock(),
+                )
+                mock_indy_open_search.return_value = 1
+                mock_indy_close_search.side_effect = ValueError("Dave's not here")
+                search = storage.search_records("connection")
+                await search._open()
+                del search
+                assert (
+                    coros
+                    and len(coros)
+                    == mock_get_event_loop.return_value.run_until_complete.call_count
+                )
+                # now run the cleanup task
+                for coro in coros:
+                    await coro
+
     # TODO get these to run in docker ci/cd
     @pytest.mark.asyncio
     @pytest.mark.postgres

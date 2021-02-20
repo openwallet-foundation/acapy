@@ -261,7 +261,7 @@ class DIDXManager(BaseConnectionManager):
             ),
         )
         pthid = conn_rec.invitation_msg_id or f"did:sov:{conn_rec.their_public_did}"
-        attach = AttachDecorator.from_indy_dict(did_doc.serialize())
+        attach = AttachDecorator.data_base64(did_doc.serialize())
         await attach.data.sign(my_info.verkey, wallet)
         if not my_label:
             my_label = self._session.settings.get("default_label")
@@ -566,7 +566,7 @@ class DIDXManager(BaseConnectionManager):
                 filter(None, [base_mediation_record, mediation_record])
             ),
         )
-        attach = AttachDecorator.from_indy_dict(did_doc.serialize())
+        attach = AttachDecorator.data_base64(did_doc.serialize())
         await attach.data.sign(conn_rec.invitation_key, wallet)
         response = DIDXResponse(did=my_info.did, did_doc_attach=attach)
         # Assign thread information
