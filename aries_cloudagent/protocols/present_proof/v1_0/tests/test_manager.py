@@ -311,7 +311,7 @@ class TestPresentationManager(AsyncTestCase):
         ) as mock_rr:
             mock_rr.from_definition = async_mock.MagicMock(return_value=more_magic_rr)
 
-            mock_attach_decorator.from_indy_dict = async_mock.MagicMock(
+            mock_attach_decorator.data_base64 = async_mock.MagicMock(
                 return_value=mock_attach_decorator
             )
 
@@ -354,7 +354,7 @@ class TestPresentationManager(AsyncTestCase):
         ) as mock_rr:
             mock_rr.from_definition = async_mock.MagicMock(return_value=more_magic_rr)
 
-            mock_attach_decorator.from_indy_dict = async_mock.MagicMock(
+            mock_attach_decorator.data_base64 = async_mock.MagicMock(
                 return_value=mock_attach_decorator
             )
 
@@ -415,7 +415,7 @@ class TestPresentationManager(AsyncTestCase):
         ) as mock_rr:
             mock_rr.from_definition = async_mock.MagicMock(return_value=more_magic_rr)
 
-            mock_attach_decorator.from_indy_dict = async_mock.MagicMock(
+            mock_attach_decorator.data_base64 = async_mock.MagicMock(
                 return_value=mock_attach_decorator
             )
 
@@ -487,7 +487,7 @@ class TestPresentationManager(AsyncTestCase):
             test_module, "AttachDecorator", autospec=True
         ) as mock_attach_decorator:
 
-            mock_attach_decorator.from_indy_dict = async_mock.MagicMock(
+            mock_attach_decorator.data_base64 = async_mock.MagicMock(
                 return_value=mock_attach_decorator
             )
 
@@ -558,7 +558,7 @@ class TestPresentationManager(AsyncTestCase):
         ) as mock_rr:
             mock_rr.from_definition = async_mock.MagicMock(return_value=more_magic_rr)
 
-            mock_attach_decorator.from_indy_dict = async_mock.MagicMock(
+            mock_attach_decorator.data_base64 = async_mock.MagicMock(
                 return_value=mock_attach_decorator
             )
 
@@ -645,7 +645,7 @@ class TestPresentationManager(AsyncTestCase):
         ) as mock_rr:
             mock_rr.from_definition = async_mock.MagicMock(return_value=more_magic_rr)
 
-            mock_attach_decorator.from_indy_dict = async_mock.MagicMock(
+            mock_attach_decorator.data_base64 = async_mock.MagicMock(
                 return_value=mock_attach_decorator
             )
 

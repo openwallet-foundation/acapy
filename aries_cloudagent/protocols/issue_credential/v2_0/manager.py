@@ -158,7 +158,7 @@ class V20CredManager:
                 for ident, f in enumerate(fmt2filter.keys())
             ],
             filters_attach=[
-                AttachDecorator.from_indy_dict(f or {}, ident=str(ident))
+                AttachDecorator.data_base64(f or {}, ident=str(ident))
                 for ident, f in enumerate(fmt2filter.values())
             ],
         )
@@ -294,7 +294,7 @@ class V20CredManager:
             comment=comment,
             credential_preview=cred_preview,
             formats=[V20CredFormat(attach_id="0", format_=V20CredFormat.Format.INDY)],
-            offers_attach=[AttachDecorator.from_indy_dict(cred_offer, ident="0")],
+            offers_attach=[AttachDecorator.data_base64(cred_offer, ident="0")],
         )
 
         cred_offer_message._thread = {"thid": cred_ex_record.thread_id}
@@ -342,7 +342,7 @@ class V20CredManager:
             credential_preview=cred_offer_message.credential_preview,
             formats=[V20CredFormat(attach_id="0", format_=V20CredFormat.Format.INDY)],
             filters_attach=[
-                AttachDecorator.from_indy_dict(
+                AttachDecorator.data_base64(
                     {
                         "schema_id": schema_id,
                         "cred_def_id": cred_def_id,
@@ -455,7 +455,7 @@ class V20CredManager:
             comment=comment,
             formats=[V20CredFormat(attach_id="0", format_=V20CredFormat.Format.INDY)],
             requests_attach=[
-                AttachDecorator.from_indy_dict(cred_req_result["request"], ident="0")
+                AttachDecorator.data_base64(cred_req_result["request"], ident="0")
             ],
         )
 
@@ -683,7 +683,7 @@ class V20CredManager:
             comment=comment,
             formats=[V20CredFormat(attach_id="0", format_=V20CredFormat.Format.INDY)],
             credentials_attach=[
-                AttachDecorator.from_indy_dict(json.loads(cred_json), ident="0")
+                AttachDecorator.data_base64(json.loads(cred_json), ident="0")
             ],
         )
 

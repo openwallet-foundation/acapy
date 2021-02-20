@@ -298,7 +298,7 @@ def _formats_filters(filt_spec: Mapping) -> Mapping:
             for fmt_aka in filt_spec.keys()
         ],
         "filters_attach": [
-            AttachDecorator.from_indy_dict(filt_by_fmt, ident=fmt_aka)
+            AttachDecorator.data_base64(filt_by_fmt, ident=fmt_aka)
             for (fmt_aka, filt_by_fmt) in filt_spec.items()
         ],
     }

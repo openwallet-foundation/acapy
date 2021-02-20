@@ -156,8 +156,8 @@ class TestConfig:
     PRES_REQ = PresentationRequest(
         comment="Test",
         request_presentations_attach=[
-            AttachDecorator.from_indy_dict(
-                indy_dict=INDY_PROOF_REQ,
+            AttachDecorator.data_base64(
+                mapping=INDY_PROOF_REQ,
                 ident=ATTACH_DECO_IDS[PRESENTATION_REQUEST],
             )
         ],

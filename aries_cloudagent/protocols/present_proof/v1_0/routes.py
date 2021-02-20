@@ -730,8 +730,8 @@ async def presentation_exchange_create_request(request: web.BaseRequest):
     presentation_request_message = PresentationRequest(
         comment=comment,
         request_presentations_attach=[
-            AttachDecorator.from_indy_dict(
-                indy_dict=indy_proof_request,
+            AttachDecorator.data_base64(
+                mapping=indy_proof_request,
                 ident=ATTACH_DECO_IDS[PRESENTATION_REQUEST],
             )
         ],
@@ -809,8 +809,8 @@ async def presentation_exchange_send_free_request(request: web.BaseRequest):
     presentation_request_message = PresentationRequest(
         comment=comment,
         request_presentations_attach=[
-            AttachDecorator.from_indy_dict(
-                indy_dict=indy_proof_request,
+            AttachDecorator.data_base64(
+                mapping=indy_proof_request,
                 ident=ATTACH_DECO_IDS[PRESENTATION_REQUEST],
             )
         ],
