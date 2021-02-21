@@ -121,6 +121,7 @@ class DemoAgent:
         revocation: bool = False,
         multitenant: bool = False,
         mediation: bool = False,
+        arg_file: str = None,
         extra_args=None,
         **params,
     ):
@@ -146,6 +147,7 @@ class DemoAgent:
         self.mediation = mediation
         self.mediator_connection_id = None
         self.mediator_request_id = None
+        self.arg_file = arg_file
 
         self.admin_url = f"http://{self.internal_host}:{admin_port}"
         if AGENT_ENDPOINT:
@@ -326,6 +328,14 @@ class DemoAgent:
                 ]
             )
 
+        if self.arg_file:
+            result.extend(
+                (
+                    "--arg-file",
+                    self.arg_file,
+                )
+            )
+
         if self.extra_args:
             result.extend(self.extra_args)
 
@@ -342,13 +352,14 @@ class DemoAgent:
         alias: str = None,
         did: str = None,
         verkey: str = None,
+        role: str = "TRUST_ANCHOR",
     ):
         self.log(f"Registering {self.ident} ...")
         if not ledger_url:
             ledger_url = LEDGER_URL
         if not ledger_url:
             ledger_url = f"http://{self.external_host}:9000"
-        data = {"alias": alias or self.ident, "role": "TRUST_ANCHOR"}
+        data = {"alias": alias or self.ident, "role": role}
         if did and verkey:
             data["did"] = did
             data["verkey"] = verkey
@@ -361,6 +372,7 @@ class DemoAgent:
                 raise Exception(f"Error registering DID, response code {resp.status}")
             nym_info = await resp.json()
             self.did = nym_info["did"]
+            self.log(f"nym_info: {nym_info}")
             if self.multitenant:
                 if not self.agency_wallet_did:
                     self.agency_wallet_did = self.did
@@ -510,12 +522,19 @@ class DemoAgent:
                 raise Exception(msg)
 
     async def terminate(self):
+        # close session to admin api
+        self.log("Shutting down admin api session")
+        await self.client_session.close()
+        # shut down web hooks first
+        self.log("Shutting down web hooks site")
+        if self.webhook_site:
+            await self.webhook_site.stop()
+            await asyncio.sleep(0.5)
+        # now shut down the agent
+        self.log("Shutting down agent")
         loop = asyncio.get_event_loop()
         if self.proc:
             await loop.run_in_executor(None, self._terminate)
-        await self.client_session.close()
-        if self.webhook_site:
-            await self.webhook_site.stop()
 
     async def listen_webhooks(self, webhook_port):
         self.webhook_port = webhook_port
