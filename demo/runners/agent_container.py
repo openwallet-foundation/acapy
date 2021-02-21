@@ -321,6 +321,7 @@ class AgentContainer:
         wallet_type: str = None,
         public_did: bool = True,
         seed: str = "random",
+        arg_file: str = None,
     ):
         # configuration parameters
         self.genesis_txns = genesis_txns
@@ -336,6 +337,7 @@ class AgentContainer:
         self.wallet_type = wallet_type
         self.public_did = public_did
         self.seed = seed
+        self.arg_file = arg_file
 
         self.exchange_tracing = False
 
@@ -369,6 +371,7 @@ class AgentContainer:
                 mediation=self.mediation,
                 wallet_type=self.wallet_type,
                 seed=self.seed,
+                arg_file=self.arg_file,
             )
         else:
             self.agent = the_agent
@@ -445,7 +448,9 @@ class AgentContainer:
             "filter": {"indy": {"cred_def_id": cred_def_id}},
             "trace": self.exchange_tracing,
         }
-        cred_exchange = await self.agent.admin_POST("/issue-credential-2.0/send-offer", offer_request)
+        cred_exchange = await self.agent.admin_POST(
+            "/issue-credential-2.0/send-offer", offer_request
+        )
 
         return cred_exchange
 
@@ -479,9 +484,10 @@ class AgentContainer:
                 print("Attribute not found for:", cred_attr["name"])
                 matched = False
 
+        print("Matching credential received")
         return matched
 
-    async def request_proof(self, proof_request, revocation: bool = False):
+    async def request_proof(self, proof_request):
         log_status("#20 Request proof of degree from alice")
 
         indy_proof_request = {
@@ -495,7 +501,7 @@ class AgentContainer:
             "requested_predicates": proof_request["requested_predicates"],
         }
 
-        if revocation and self.revocation:
+        if self.revocation:
             indy_proof_request["non_revoked"] = {"to": int(time.time())}
         proof_request_web_request = {
             "connection_id": self.agent.connection_id,
@@ -518,6 +524,7 @@ class AgentContainer:
             return None
 
         # return verified status
+        print("Received proof:", self.agent.last_proof_received["verified"])
         return self.agent.last_proof_received["verified"]
 
     async def terminate(self):
@@ -560,9 +567,7 @@ class AgentContainer:
             role=role,
         )
 
-    async def admin_GET(
-        self, path, text=False, params=None
-    ) -> dict:
+    async def admin_GET(self, path, text=False, params=None) -> dict:
         """
         Execute an admin GET request in the context of the current wallet.
 
@@ -572,9 +577,7 @@ class AgentContainer:
         """
         return await self.agent.admin_GET(path, text=text, params=params)
 
-    async def admin_POST(
-        self, path, data=None, text=False, params=None
-    ) -> dict:
+    async def admin_POST(self, path, data=None, text=False, params=None) -> dict:
         """
         Execute an admin POST request in the context of the current wallet.
 
@@ -585,9 +588,7 @@ class AgentContainer:
         """
         return await self.agent.admin_POST(path, data=data, text=text, params=params)
 
-    async def agency_admin_GET(
-        self, path, text=False, params=None
-    ) -> dict:
+    async def agency_admin_GET(self, path, text=False, params=None) -> dict:
         """
         Execute an agency GET request in the context of the base wallet (multitenant only).
 
@@ -597,9 +598,7 @@ class AgentContainer:
         """
         return await self.agent.agency_admin_GET(path, text=text, params=params)
 
-    async def agency_admin_POST(
-        self, path, data=None, text=False, params=None
-    ) -> dict:
+    async def agency_admin_POST(self, path, data=None, text=False, params=None) -> dict:
         """
         Execute an agency POST request in the context of the base wallet (multitenant only).
 
@@ -608,7 +607,10 @@ class AgentContainer:
         text = True if the expected response is text, False if json data
         params = any additional parameters to pass with the request
         """
-        return await self.agent.agency_admin_POST(path, data=data, text=text, params=params)
+        return await self.agent.agency_admin_POST(
+            path, data=data, text=text, params=params
+        )
+
 
 def arg_parser(ident: str = None):
     """
@@ -670,6 +672,12 @@ def arg_parser(ident: str = None):
         metavar="<wallet-type>",
         help="Set the agent wallet type",
     )
+    parser.add_argument(
+        "--arg-file",
+        type=str,
+        metavar="<arg-file>",
+        help="Specify a file containing additional aca-py parameters",
+    )
     return parser
 
 
@@ -685,6 +693,15 @@ async def create_agent_with_args(in_args: list):
     require_indy()
 
     tails_server_base_url = args.tails_server_base_url or os.getenv("PUBLIC_TAILS_URL")
+
+    arg_file = args.arg_file or os.getenv("ACAPY_ARG_FILE")
+
+    # if we don't have a tails server url then guess it
+    if args.revocation and not tails_server_base_url:
+        # assume we're running in docker
+        tails_server_base_url = (
+            "http://" + (os.getenv("DOCKERHOST") or "host.docker.internal") + ":6543"
+        )
 
     if args.revocation and not tails_server_base_url:
         raise Exception(
@@ -710,6 +727,7 @@ async def create_agent_with_args(in_args: list):
         wallet_type=args.wallet_type,
         public_did=args.public_did,
         seed="random" if args.public_did else None,
+        arg_file=arg_file,
     )
 
     return agent

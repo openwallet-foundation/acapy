@@ -57,6 +57,10 @@ def run_coroutine_with_kwargs(coroutine, *args, **kwargs):
         # loop.close()
 
 
+def async_sleep(delay):
+    run_coroutine_with_args(asyncio.sleep, delay)
+
+
 ######################################################################
 # high level aries agent interface
 ######################################################################
@@ -88,6 +92,7 @@ def agent_container_register_did(
         verkey,
         role,
     )
+
 
 def aries_container_terminate(
     the_container: AgentContainer,
@@ -220,8 +225,8 @@ def read_presentation_data(presentation_name: str):
 def agent_container_GET(
     the_container: AgentContainer,
     path: str,
-    text: bool=False,
-    params: dict=None,
+    text: bool = False,
+    params: dict = None,
 ) -> dict:
     return run_coroutine_with_kwargs(
         the_container.admin_GET,
@@ -234,9 +239,9 @@ def agent_container_GET(
 def agent_container_POST(
     the_container: AgentContainer,
     path: str,
-    data: dict=None,
-    text: bool=False,
-    params: dict=None,
+    data: dict = None,
+    text: bool = False,
+    params: dict = None,
 ) -> dict:
     return run_coroutine_with_kwargs(
         the_container.admin_POST,
@@ -245,4 +250,3 @@ def agent_container_POST(
         text=text,
         params=params,
     )
-

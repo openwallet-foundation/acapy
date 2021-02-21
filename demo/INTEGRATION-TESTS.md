@@ -68,16 +68,26 @@ In the above example, the test will run twice using the parameters specified in 
 
 The agent's "capabilities" are specified using the same command-line parameters that are supported for the Alice/Faber demo agents.
 
+## Global Configuration for All Aca-py Agents Under Test
+
+You can specify parameters that are applied to all aca-py agents using the `ACAPY_ARG_FILE` environment variable:
+
+```bash
+ACAPY_ARG_FILE=postgres-indy-args.yml ./run_bdd
+```
+
+... will apply the parameters in the `postgres-indy-args.yml` file (which just happens to configure a postgres wallet) to *all* agents under test.
+
+Any aca-py arguement can be included in the yml file, and order-of-precidence applies (see [https://pypi.org/project/ConfigArgParse/](https://pypi.org/project/ConfigArgParse/)).
+
 ## Specifying Command-line Parameters when Running Integration Tests
 
 Aca-py integration tests support the following environment-driven configuration:
 
-TBD - describe genesis/ledger, tails server, postgres, ...
-
-- `LEDGER_URL`
-- `TAILS_NETWORK`
-- `PUBLIC_TAILS_URL`
-- postgres configuration ...
+- `LEDGER_URL` - specify the ledger url
+- `TAILS_NETWORK` - specify the docker network the tailer server is running on
+- `PUBLIC_TAILS_URL` - specify the public url of the tails server
+- `ACAPY_ARG_FILE` - specify global aca-py parameters (see above)
 
 Behave tests are tagged using the same [standard tags as used in AATH](https://github.com/hyperledger/aries-agent-test-harness#test-tags).
 

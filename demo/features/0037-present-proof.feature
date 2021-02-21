@@ -21,3 +21,26 @@ Feature: RFC 0037 Aries agent present proof
          | Acme   | --public-did --mediation               | --mediation               | driverslicense | Data_DL_NormalizedValues | DL_age_over_19 |
          | Acme   | --public-did --multitenant             | --multitenant             | driverslicense | Data_DL_NormalizedValues | DL_age_over_19 |
          | Acme   | --public-did --mediation --multitenant | --mediation --multitenant | driverslicense | Data_DL_NormalizedValues | DL_age_over_19 |
+
+
+   @T002-AIP10-RFC0037 @P1 @critical @AcceptanceTest @Indy @RFC0037
+   Scenario Outline: Present Proof where the issuer revokes the credential and the proof fails
+      Given "3" agents
+         | name  | role     | capabilities        |
+         | Acme  | issuer   | <Acme_capabilities> |
+         | Faber | verifier | <Acme_capabilities> |
+         | Bob   | prover   | <Bob_capabilities>  |
+      And "<issuer>" and "Bob" have an existing connection
+      And "Bob" has an issued <Schema_name> credential <Credential_data> from "<issuer>"
+      And "<issuer>" revokes the credential
+      And "Faber" and "Bob" have an existing connection
+      When "Faber" sends a request for proof presentation <Proof_request> to "Bob"
+      Then "Faber" has the proof verification fail
+
+      Examples:
+         | issuer | Acme_capabilities                          | Bob_capabilities | Schema_name    | Credential_data          | Proof_request  |
+         | Acme   | --revocation --public-did                  |                  | driverslicense | Data_DL_NormalizedValues | DL_age_over_19 |
+         | Faber  | --revocation --public-did                |                  | driverslicense | Data_DL_NormalizedValues | DL_age_over_19 |
+         | Acme   | --revocation --public-did --did-exchange | --did-exchange   | driverslicense | Data_DL_NormalizedValues | DL_age_over_19 |
+         | Acme   | --revocation --public-did --mediation    | --mediation      | driverslicense | Data_DL_NormalizedValues | DL_age_over_19 |
+         | Acme   | --revocation --public-did --multitenant  | --multitenant    | driverslicense | Data_DL_NormalizedValues | DL_age_over_19 |

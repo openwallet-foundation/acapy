@@ -121,6 +121,7 @@ class DemoAgent:
         revocation: bool = False,
         multitenant: bool = False,
         mediation: bool = False,
+        arg_file: str = None,
         extra_args=None,
         **params,
     ):
@@ -146,6 +147,7 @@ class DemoAgent:
         self.mediation = mediation
         self.mediator_connection_id = None
         self.mediator_request_id = None
+        self.arg_file = arg_file
 
         self.admin_url = f"http://{self.internal_host}:{admin_port}"
         if AGENT_ENDPOINT:
@@ -324,6 +326,14 @@ class DemoAgent:
                 [
                     "--open-mediation",
                 ]
+            )
+
+        if self.arg_file:
+            result.extend(
+                (
+                    "--arg-file",
+                    self.arg_file,
+                )
             )
 
         if self.extra_args:

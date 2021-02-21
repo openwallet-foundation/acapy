@@ -43,6 +43,23 @@ def step_impl(context, verifier):
     for i in range(10):
         verified = aries_container_verify_proof(agent["agent"], proof_request)
         if verified is not None:
-            return verified
+            assert verified == "true"
+            return
+
+    assert False
+
+
+@then('"{verifier}" has the proof verification fail')
+def step_impl(context, verifier):
+    agent = context.active_agents[verifier]
+
+    proof_request = context.proof_request
+
+    # check the received credential status (up to 10 seconds)
+    for i in range(10):
+        verified = aries_container_verify_proof(agent["agent"], proof_request)
+        if verified is not None:
+            assert verified == "false"
+            return
 
     assert False

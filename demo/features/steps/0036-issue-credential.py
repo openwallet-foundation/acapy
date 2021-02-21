@@ -11,6 +11,7 @@ from bdd_support.agent_backchannel_client import (
     read_credential_data,
     agent_container_GET,
     agent_container_POST,
+    async_sleep,
 )
 from runners.agent_container import AgentContainer
 
@@ -56,6 +57,7 @@ def step_impl(context, issuer, credential_data):
     # assert expected_agent_state(context.holder_url, "issue-credential", context.cred_thread_id, "offer-received")
 
 
+@given('"{holder}" revokes the credential')
 @when('"{holder}" revokes the credential')
 @then('"{holder}" revokes the credential')
 def step_impl(context, holder):
@@ -79,6 +81,9 @@ def step_impl(context, holder):
             "publish": "Y"
         }
     )
+
+    # pause for a few seconds
+    async_sleep(3.0)
 
 
 @when('"{holder}" has the credential issued')
