@@ -22,6 +22,20 @@ cd aries-cloudagent-python/demo
 
 Note that an Indy ledger and tails server are both required (these can also be specified using environment variables).
 
+By default the test suite runs using a default (SQLite) wallet, to run the tests using postgres run the following:
+
+```bash
+# run the above commands, up to cd aries-cloudagent-python/demo
+docker run --name some-postgres -e POSTGRES_PASSWORD=mysecretpassword -d -p 5432:5432 postgres:10
+ACAPY_ARG_FILE=postgres-indy-args.yml ./run_bdd
+```
+
+You can run individual tests by specifying the tag(s):
+
+```bash
+./run_bdd -t @T001-AIP10-RFC0037
+```
+
 ## Aca-py Integration Tests vs Aries Agent Test Harness (AATH)
 
 Aca-py Behave tests are based on the interoperability tests that are implemented in the [Aries Agent Test Harness (AATH)](https://github.com/hyperledger/aries-agent-test-harness).  Both use [Behave (Gherkin)](https://behave.readthedocs.io/en/stable/) to execute tests against a running aca-py agent (or in the case of AATH, against any compatible Aries agent), however the aca-py integration tests focus on aca-py specific features.
@@ -29,14 +43,14 @@ Aca-py Behave tests are based on the interoperability tests that are implemented
 AATH:
 
 - Main purpose is to test interoperability between Aries agents
-- Implements detailed tests based on [Aries RFC's](https://github.com/hyperledger/aries-rfcs)
-- Runs Aries agents using Docker images (agents run fot he duration of the tests)
+- Implements detailed tests based on [Aries RFC's](https://github.com/hyperledger/aries-rfcs) (runs different scenarios, tests exception paths, etc.)
+- Runs Aries agents using Docker images (agents run for the duration of the tests)
 - Uses a standard "backchannel" to support integration of any Aries agent
 
 Aca-py integration tests:
 
 - Main purpose is to test aca-py
-- Implements tests based on Aries RFC's, but not to the level of detail as AATH (mostly happy path)
+- Implements tests based on Aries RFC's, but not to the level of detail as AATH (runs (mostly) happy path scenarios against multiple agent configurations)
 - Tests aca-py specific configurations and features
 - Starts and stops agents for each tests to test different aca-py configurations
 - Uses the same Python framework as used for the interactive Alice/Faber demo
@@ -70,7 +84,7 @@ The agent's "capabilities" are specified using the same command-line parameters 
 
 ## Global Configuration for All Aca-py Agents Under Test
 
-You can specify parameters that are applied to all aca-py agents using the `ACAPY_ARG_FILE` environment variable:
+You can specify parameters that are applied to all aca-py agents using the `ACAPY_ARG_FILE` environment variable, for example:
 
 ```bash
 ACAPY_ARG_FILE=postgres-indy-args.yml ./run_bdd
@@ -80,7 +94,7 @@ ACAPY_ARG_FILE=postgres-indy-args.yml ./run_bdd
 
 Any aca-py arguement can be included in the yml file, and order-of-precidence applies (see [https://pypi.org/project/ConfigArgParse/](https://pypi.org/project/ConfigArgParse/)).
 
-## Specifying Command-line Parameters when Running Integration Tests
+## Specifying Environment Parameters when Running Integration Tests
 
 Aca-py integration tests support the following environment-driven configuration:
 
@@ -89,13 +103,15 @@ Aca-py integration tests support the following environment-driven configuration:
 - `PUBLIC_TAILS_URL` - specify the public url of the tails server
 - `ACAPY_ARG_FILE` - specify global aca-py parameters (see above)
 
+## Running specific test scenarios
+
 Behave tests are tagged using the same [standard tags as used in AATH](https://github.com/hyperledger/aries-agent-test-harness#test-tags).
 
 To run a specific set of Aca-py integration tests (or exclude specific tests):
 
-TBD the `-t` parameters need to be implemented ...
-
 ```bash
 ./run_bdd -t tag1 -t ~tag2
 ```
+
+(All command line parameters are passed to the `behave` command, so [all parameters supported by behave](https://behave.readthedocs.io/en/stable/behave.html) can be used.)
 

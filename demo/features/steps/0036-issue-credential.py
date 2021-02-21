@@ -66,20 +66,22 @@ def step_impl(context, holder):
     # get the required revocation info from the last credential exchange
     cred_exchange = context.cred_exchange
 
-    cred_exchange = agent_container_GET(agent['agent'], "/issue-credential-2.0/records/" + cred_exchange["cred_ex_id"])
+    cred_exchange = agent_container_GET(
+        agent["agent"], "/issue-credential-2.0/records/" + cred_exchange["cred_ex_id"]
+    )
     context.cred_exchange = cred_exchange
     print("rev_reg_id:", cred_exchange["indy"]["rev_reg_id"])
     print("cred_rev_id:", cred_exchange["indy"]["cred_rev_id"])
 
     # revoke the credential
     revoke_status = agent_container_POST(
-        agent['agent'],
+        agent["agent"],
         "/revocation/revoke",
         data={
             "rev_reg_id": cred_exchange["indy"]["rev_reg_id"],
             "cred_rev_id": cred_exchange["indy"]["cred_rev_id"],
-            "publish": "Y"
-        }
+            "publish": "Y",
+        },
     )
 
     # pause for a few seconds
