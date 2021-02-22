@@ -122,4 +122,4 @@ class V20CredProposalSchema(AgentMessageSchema):
 
         for fmt in formats:
             filt_atch = get_filter_attach_by_id(fmt.attach_id)
-            V20CredFormat.Format.get(fmt.format).validate_filter(filt_atch.indy_dict)
+            V20CredFormat.Format.get(fmt.format).validate_filter(filt_atch.content)

@@ -1664,8 +1664,8 @@ INDY_PROOF = json.loads(
 PRES = Presentation(
     comment="Test",
     presentations_attach=[
-        AttachDecorator.from_indy_dict(
-            indy_dict=INDY_PROOF,
+        AttachDecorator.data_base64(
+            mapping=INDY_PROOF,
             ident=ATTACH_DECO_IDS[PRESENTATION],
         )
     ],
@@ -1677,7 +1677,7 @@ class TestPresentation(TestCase):
 
     def test_init(self):
         """Test initializer."""
-        assert PRES.presentations_attach[0].indy_dict == INDY_PROOF
+        assert PRES.presentations_attach[0].content == INDY_PROOF
         assert PRES.indy_proof(0) == INDY_PROOF
 
     def test_type(self):
@@ -1691,8 +1691,8 @@ class TestPresentation(TestCase):
                 "@type": DIDCommPrefix.qualify_current(PRESENTATION),
                 "comment": "Hello World",
                 "presentations~attach": [
-                    AttachDecorator.from_indy_dict(
-                        indy_dict=INDY_PROOF,
+                    AttachDecorator.data_base64(
+                        mapping=INDY_PROOF,
                         ident=ATTACH_DECO_IDS[PRESENTATION],
                     ).serialize()
                 ],
@@ -1710,8 +1710,8 @@ class TestPresentation(TestCase):
         assert pres_dict == {
             "@type": DIDCommPrefix.qualify_current(PRESENTATION),
             "presentations~attach": [
-                AttachDecorator.from_indy_dict(
-                    indy_dict=INDY_PROOF,
+                AttachDecorator.data_base64(
+                    mapping=INDY_PROOF,
                     ident=ATTACH_DECO_IDS[PRESENTATION],
                 ).serialize()
             ],

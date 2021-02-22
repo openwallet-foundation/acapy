@@ -123,8 +123,7 @@ def trace_event(
     Args:
         context: The application context, attributes of interest are:
             context["trace.enabled"]: True if we are logging events
-            context["trace.target"]: Trace target
-                ("log", "message" or an http endpoint)
+            context["trace.target"]: Trace target ("log", "message" or an http endpoint)
             context["trace.tag"]: Tag to be included in trace output
         message: the current message, can be an AgentMessage,
             InboundMessage, OutboundMessage or Exchange record

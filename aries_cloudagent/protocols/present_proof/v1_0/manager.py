@@ -143,8 +143,8 @@ class PresentationManager:
         presentation_request_message = PresentationRequest(
             comment=comment,
             request_presentations_attach=[
-                AttachDecorator.from_indy_dict(
-                    indy_dict=indy_proof_request,
+                AttachDecorator.data_base64(
+                    mapping=indy_proof_request,
                     ident=ATTACH_DECO_IDS[PRESENTATION_REQUEST],
                 )
             ],
@@ -412,8 +412,8 @@ class PresentationManager:
         presentation_message = Presentation(
             comment=comment,
             presentations_attach=[
-                AttachDecorator.from_indy_dict(
-                    indy_dict=indy_proof, ident=ATTACH_DECO_IDS[PRESENTATION]
+                AttachDecorator.data_base64(
+                    mapping=indy_proof, ident=ATTACH_DECO_IDS[PRESENTATION]
                 )
             ],
         )
