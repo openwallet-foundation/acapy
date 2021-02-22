@@ -238,6 +238,9 @@ class AriesAgent(DemoAgent):
     async def handle_basicmessages(self, message):
         self.log("Received message:", message["content"])
 
+    async def handle_endorse_transaction(self, message):
+        self.log("Received transaction message:", message["state"])
+
     async def generate_invitation(
         self,
         use_did_exchange: bool,
