@@ -22,7 +22,7 @@ class WsTransport(BaseOutboundTransport):
 
     async def start(self):
         """Start the outbound transport."""
-        self.client_session = ClientSession(cookie_jar=DummyCookieJar())
+        self.client_session = ClientSession(cookie_jar=DummyCookieJar(), trust_env=True)
         return self
 
     async def stop(self):
