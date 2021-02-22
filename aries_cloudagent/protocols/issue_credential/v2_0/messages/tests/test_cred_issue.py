@@ -99,7 +99,7 @@ class TestV20CredIssue(AsyncTestCase):
         )
         assert cred_issue.credentials_attach[0].content == TestV20CredIssue.indy_cred
         assert cred_issue.credentials_attach[0].ident  # auto-generates UUID4
-        assert cred_issue.cred() == TestV20CredIssue.indy_cred
+        assert cred_issue.attachment() == TestV20CredIssue.indy_cred
         assert cred_issue._type == DIDCommPrefix.qualify_current(CRED_20_ISSUE)
 
     async def test_deserialize(self):

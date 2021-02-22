@@ -331,7 +331,7 @@ class V20CredManager:
             V20CredFormat.Format.get(p.format) for p in cred_offer_message.formats
         ]  # until DIF support
 
-        offer = cred_offer_message.offer(
+        offer = cred_offer_message.attachment(
             V20CredFormat.Format.INDY
         )  # may change for DIF
         schema_id = offer["schema_id"]
@@ -405,7 +405,7 @@ class V20CredManager:
             )
 
         cred_offer_message = V20CredOffer.deserialize(cred_ex_record.cred_offer)
-        cred_offer = cred_offer_message.offer(
+        cred_offer = cred_offer_message.attachment(
             V20CredFormat.Format.INDY
         )  # will change for DIF
         cred_def_id = cred_offer["cred_def_id"]
@@ -528,13 +528,13 @@ class V20CredManager:
 
         cred_offer_message = V20CredOffer.deserialize(cred_ex_record.cred_offer)
         replacement_id = cred_offer_message.replacement_id
-        cred_offer = cred_offer_message.offer(V20CredFormat.Format.INDY)
+        cred_offer = cred_offer_message.attachment(V20CredFormat.Format.INDY)
         schema_id = cred_offer["schema_id"]
         cred_def_id = cred_offer["cred_def_id"]
 
         cred_request = V20CredRequest.deserialize(
             cred_ex_record.cred_request
-        ).cred_request(
+        ).attachment(
             V20CredFormat.Format.INDY
         )  # will change for DIF
 
@@ -752,7 +752,7 @@ class V20CredManager:
                 f"(must be {V20CredExRecord.STATE_CREDENTIAL_RECEIVED})"
             )
 
-        cred = V20CredIssue.deserialize(cred_ex_record.cred_issue).cred(
+        cred = V20CredIssue.deserialize(cred_ex_record.cred_issue).attachment(
             V20CredFormat.Format.INDY
         )
 

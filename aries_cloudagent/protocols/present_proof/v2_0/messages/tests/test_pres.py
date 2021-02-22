@@ -1674,7 +1674,7 @@ PRES = V20Pres(
         )
     ],
     presentations_attach=[
-        AttachDecorator.from_indy_dict(
+        AttachDecorator.data_base64(
             indy_dict=INDY_PROOF,
             ident="abc",
         )
@@ -1705,7 +1705,7 @@ class TestPresentation(TestCase):
                     }
                 ],
                 "presentations~attach": [
-                    AttachDecorator.from_indy_dict(
+                    AttachDecorator.data_base64(
                         indy_dict=INDY_PROOF,
                         ident="abc",
                     ).serialize()
@@ -1745,7 +1745,7 @@ class TestPresentation(TestCase):
                     }
                 ],
                 "presentations~attach": [
-                    AttachDecorator.from_indy_dict(
+                    AttachDecorator.data_base64(
                         indy_dict=INDY_PROOF,
                         ident="def",
                     ).serialize()
@@ -1769,7 +1769,7 @@ class TestPresentation(TestCase):
                 }
             ],
             "presentations~attach": [
-                AttachDecorator.from_indy_dict(
+                AttachDecorator.data_base64(
                     indy_dict=INDY_PROOF,
                     ident="abc",
                 ).serialize()

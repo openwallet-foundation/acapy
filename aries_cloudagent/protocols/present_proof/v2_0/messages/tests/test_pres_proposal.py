@@ -54,7 +54,7 @@ class TestV20PresProposal(TestCase):
                 )
             ],
             proposal_attach=[
-                AttachDecorator.from_indy_dict(PRES_PREVIEW.serialize(), ident="abc")
+                AttachDecorator.data_base64(PRES_PREVIEW.serialize(), ident="abc")
             ],
         )
         assert pres_proposal._type == DIDCommPrefix.qualify_current(PRES_20_PROPOSAL)
@@ -74,7 +74,7 @@ class TestV20PresProposal(TestCase):
                 )
             ],
             proposal_attach=[
-                AttachDecorator.from_indy_dict(PRES_PREVIEW.serialize(), ident="abc")
+                AttachDecorator.data_base64(PRES_PREVIEW.serialize(), ident="abc")
             ],
         )
         pres_proposal_ser = pres_proposal.serialize()

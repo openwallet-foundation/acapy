@@ -88,7 +88,7 @@ class V20PresFormat(BaseModel):
 
             for atch in attachments:
                 if atch.ident == attach_id:
-                    return atch.indy_dict
+                    return atch.content
 
             return None
 

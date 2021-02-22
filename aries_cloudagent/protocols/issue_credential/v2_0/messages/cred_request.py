@@ -53,7 +53,7 @@ class V20CredRequest(AgentMessage):
         self.formats = list(formats) if formats else []
         self.requests_attach = list(requests_attach) if requests_attach else []
 
-    def cred_request(self, fmt: V20CredFormat.Format = None) -> dict:
+    def attachment(self, fmt: V20CredFormat.Format = None) -> dict:
         """
         Return attached credential request.
 
@@ -61,9 +61,15 @@ class V20CredRequest(AgentMessage):
             fmt: format of attachment in list to decode and return
 
         """
-        return (fmt or V20CredFormat.Format.INDY).get_attachment_data(
-            self.formats,
-            self.requests_attach,
+        return (
+            (
+                fmt or V20CredFormat.Format.get(self.formats[0].format)
+            ).get_attachment_data(
+                self.formats,
+                self.requests_attach,
+            )
+            if self.formats
+            else None
         )
 
 

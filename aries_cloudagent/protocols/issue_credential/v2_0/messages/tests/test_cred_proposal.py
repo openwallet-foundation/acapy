@@ -42,7 +42,7 @@ class TestV20CredProposal(AsyncTestCase):
             filters_attach=[AttachDecorator.data_base64(TEST_INDY_FILTER, ident="abc")],
         )
         assert cred_proposal.credential_preview == TEST_PREVIEW
-        assert cred_proposal.filter() == TEST_INDY_FILTER
+        assert cred_proposal.attachment() == TEST_INDY_FILTER
         assert cred_proposal._type == DIDCommPrefix.qualify_current(CRED_20_PROPOSAL)
 
     async def test_deserialize(self):

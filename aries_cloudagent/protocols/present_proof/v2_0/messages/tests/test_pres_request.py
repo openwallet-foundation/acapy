@@ -81,7 +81,7 @@ PRES_REQ = V20PresRequest(
         )
     ],
     request_presentations_attach=[
-        AttachDecorator.from_indy_dict(
+        AttachDecorator.data_base64(
             indy_dict=INDY_PROOF_REQ,
             ident="abc",
         )
@@ -114,7 +114,7 @@ class TestV20PresRequest(TestCase):
                     }
                 ],
                 "request_presentations~attach": [
-                    AttachDecorator.from_indy_dict(
+                    AttachDecorator.data_base64(
                         indy_dict=INDY_PROOF_REQ,
                         ident="abc",
                     ).serialize()
@@ -156,7 +156,7 @@ class TestV20PresRequest(TestCase):
                     }
                 ],
                 "request_presentations~attach": [
-                    AttachDecorator.from_indy_dict(
+                    AttachDecorator.data_base64(
                         indy_dict=INDY_PROOF_REQ,
                         ident="def",
                     ).serialize()
@@ -181,7 +181,7 @@ class TestV20PresRequest(TestCase):
                 }
             ],
             "request_presentations~attach": [
-                AttachDecorator.from_indy_dict(
+                AttachDecorator.data_base64(
                     indy_dict=INDY_PROOF_REQ,
                     ident="abc",
                 ).serialize()

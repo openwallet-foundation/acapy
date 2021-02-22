@@ -1,0 +1,186 @@
+"""Presentation exchange record."""
+
+from os import environ
+from typing import Any
+
+from marshmallow import fields, validate
+
+from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
+from .....messaging.valid import UUIDFour
+
+unencrypted_tags = environ.get("EXCH_UNENCRYPTED_TAGS", "False").upper() == "TRUE"
+
+
+class V20PresExRecord(BaseExchangeRecord):
+    """Represents a v2.0 presentation exchange."""
+
+    class Meta:
+        """V20PresExRecord metadata."""
+
+        schema_class = "V20PresExRecordSchema"
+
+    RECORD_TYPE = "pres_ex_v20"
+    RECORD_ID_NAME = "pres_ex_id"
+    WEBHOOK_TOPIC = "present_proof_v2_0"
+    TAG_NAMES = {"~thread_id"} if unencrypted_tags else {"thread_id"}
+
+    INITIATOR_SELF = "self"
+    INITIATOR_EXTERNAL = "external"
+
+    ROLE_PROVER = "prover"
+    ROLE_VERIFIER = "verifier"
+
+    STATE_PROPOSAL_SENT = "proposal-sent"
+    STATE_PROPOSAL_RECEIVED = "proposal-received"
+    STATE_REQUEST_SENT = "request-sent"
+    STATE_REQUEST_RECEIVED = "request-received"
+    STATE_PRESENTATION_SENT = "presentation-sent"
+    STATE_PRESENTATION_RECEIVED = "presentation-received"
+    STATE_VERIFIED = "done"
+    STATE_ABANDONED = "abandoned"
+
+    def __init__(
+        self,
+        *,
+        pres_ex_id: str = None,
+        conn_id: str = None,
+        thread_id: str = None,
+        initiator: str = None,
+        role: str = None,
+        state: str = None,
+        pres_proposal: Mapping = None,  # serialized pres proposal message
+        pres_request: Mapping = None,  #serialized pres proposal message
+        pres: Mapping = None,  # serialized pres message
+        verified: str = None,
+        auto_present: bool = False,
+        error_msg: str = None,
+        trace: bool = False,
+        **kwargs
+    ):
+        """Initialize a new PresExRecord."""
+        super().__init__(pres_ex_id, state, trace=trace, **kwargs)
+        self.conn_id = conn_id
+        self.thread_id = thread_id
+        self.initiator = initiator
+        self.role = role
+        self.state = state
+        self.presentation_proposal_dict = presentation_proposal_dict
+        self.presentation_request = presentation_request  # indy proof req
+        self.presentation_request_dict = presentation_request_dict
+        self.presentation = presentation  # indy proof
+        self.verified = verified
+        self.auto_present = auto_present
+        self.error_msg = error_msg
+        self.trace = trace
+
+    @property
+    def pres_ex_id(self) -> str:
+        """Accessor for the ID associated with this exchange record."""
+        return self._id
+
+    @property
+    def record_value(self) -> dict:
+        """Accessor for JSON record value generated for this pres ex record."""
+        return {
+            prop: getattr(self, prop)
+            for prop in (
+                "conn_id",
+                "initiator",
+                "role",
+                "state",
+                "pres_proposal",
+                "pres_request",
+                "pres",
+                "verified",
+                "auto_present",
+                "error_msg",
+                "trace",
+            )
+        }
+
+    def __eq__(self, other: Any) -> bool:
+        """Comparison between records."""
+        return super().__eq__(other)
+
+
+class V20PresExSchema(BaseExchangeSchema):
+    """Schema for de/serialization of v2.0 presentation exchange records."""
+
+    class Meta:
+        """V20PresExRecordSchema metadata."""
+
+        model_class = V10PresentationExchange
+
+    pres_ex_id = fields.Str(
+        required=False,
+        description="Presentation exchange identifier",
+        example=UUIDFour.EXAMPLE,  # typically a UUID4 but not necessarily
+    )
+    conn_id = fields.Str(
+        required=False,
+        description="Connection identifier",
+        example=UUIDFour.EXAMPLE,  # typically a UUID4 but not necessarily
+    )
+    thread_id = fields.Str(
+        required=False,
+        description="Thread identifier",
+        example=UUIDFour.EXAMPLE,  # typically a UUID4 but not necessarily
+    )
+    initiator = fields.Str(
+        required=False,
+        description="Present-proof exchange initiator: self or external",
+        example=V10PresentationExchange.INITIATOR_SELF,
+        validate=validate.OneOf(
+            [
+                getattr(V20PresExRecord, m)
+                for m in vars(V20PresExRecord)
+                if m.startswith("INITIATOR_")
+            ]
+        ),
+    )
+    role = fields.Str(
+        required=False,
+        description="Present-proof exchange role: prover or verifier",
+        example=V10PresentationExchange.ROLE_PROVER,
+        validate=validate.OneOf(
+            [
+                getattr(V20PresExRecord, m)
+                for m in vars(V20PresExRecord)
+                if m.startswith("ROLE_")
+            ]
+        ),
+    )
+    state = fields.Str(
+        required=False,
+        description="Present-proof exchange state",
+        validate=validate.OneOf(
+            [
+                getattr(V20PresExRecord, m)
+                for m in vars(V20PresExRecord)
+                if m.startswith("STATE_")
+            ]
+        ),
+    )
+    pres_proposal = fields.Dict(
+        required=False, description="Serialized presentation proposal message"
+    )
+    pres_request = fields.Dict(
+        required=False, description="Serialized presentation request message"
+    )
+    pres = fields.Dict(
+        required=False, description="Serialized presentation message",
+    )
+    verified = fields.Str(  # tag: must be a string
+        required=False,
+        description="Whether presentation is verified: 'true' or 'false'",
+        example="true",
+        validate=validate.OneOf(["true", "false"]),
+    )
+    auto_present = fields.Bool(
+        required=False,
+        description="Prover choice to auto-present proof as verifier requests",
+        example=False,
+    )
+    error_msg = fields.Str(
+        required=False, description="Error message", example="Invalid structure"
+    )

@@ -59,10 +59,10 @@ class V20Pres(AgentMessage):
             fmt: format of attachment in list to decode and return
 
         """
-        return (fmt or V20PresFormat.Format.INDY).get_attachment_data(
+        return (fmt or V20PresFormat.Format.get(self.formats[0])).get_attachment_data(
             self.formats,
             self.presentations_attach,
-        )
+        ) if self.formats else None
 
 
 class V20PresSchema(AgentMessageSchema):

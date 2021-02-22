@@ -61,7 +61,7 @@ class TestV20FormatFormat(TestCase):
                     V20PresFormat(attach_id="abc", format_=V20PresFormat.Format.INDY)
                 ],
                 attachments=[
-                    AttachDecorator.from_indy_dict(
+                    AttachDecorator.from_data_base64(
                         PRES_PREVIEW.serialize(),
                         ident="abc",
                     )
@@ -76,7 +76,7 @@ class TestV20FormatFormat(TestCase):
                     V20PresFormat(attach_id="abc", format_=V20PresFormat.Format.INDY)
                 ],
                 attachments=[
-                    AttachDecorator.from_indy_dict(
+                    AttachDecorator.data_base64(
                         PRES_PREVIEW.serialize(),
                         ident="xxx",
                     )
@@ -91,7 +91,7 @@ class TestV20FormatFormat(TestCase):
                     V20PresFormat(attach_id="abc", format_=V20PresFormat.Format.INDY)
                 ],
                 attachments=[
-                    AttachDecorator.from_indy_dict(
+                    AttachDecorator.data_base64(
                         PRES_PREVIEW.serialize(),
                         ident="abc",
                     )

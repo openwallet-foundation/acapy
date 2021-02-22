@@ -209,7 +209,7 @@ class TestV20CredManager(AsyncTestCase):
             mock_save.assert_called_once()
 
         cred_proposal = V20CredProposal.deserialize(cx_rec.cred_proposal)
-        assert not cred_proposal.filter(
+        assert not cred_proposal.attachment(
             V20CredFormat.Format.INDY
         ).keys()  # leave underspecified until offer receipt
         assert cx_rec.conn_id == conn_id
@@ -238,7 +238,7 @@ class TestV20CredManager(AsyncTestCase):
             mock_save.assert_called_once()
 
         cred_proposal = V20CredProposal.deserialize(cx_rec.cred_proposal)
-        assert cred_proposal.filter(V20CredFormat.Format.INDY) == {
+        assert cred_proposal.attachment(V20CredFormat.Format.INDY) == {
             "cred_def_id": CRED_DEF_ID
         }
         assert cx_rec.conn_id == conn_id
@@ -275,7 +275,7 @@ class TestV20CredManager(AsyncTestCase):
 
             ret_cred_proposal = V20CredProposal.deserialize(cx_rec.cred_proposal)
 
-            assert ret_cred_proposal.filter(V20CredFormat.Format.INDY) == {
+            assert ret_cred_proposal.attachment(V20CredFormat.Format.INDY) == {
                 "cred_def_id": CRED_DEF_ID
             }
             assert (
@@ -360,7 +360,7 @@ class TestV20CredManager(AsyncTestCase):
             assert cx_rec.role == V20CredExRecord.ROLE_ISSUER
             assert cx_rec.state == V20CredExRecord.STATE_OFFER_SENT
             assert (
-                V20CredOffer.deserialize(cx_rec.cred_offer).offer(
+                V20CredOffer.deserialize(cx_rec.cred_offer).attachment(
                     V20CredFormat.Format.INDY
                 )
                 == indy_offer
@@ -509,7 +509,7 @@ class TestV20CredManager(AsyncTestCase):
             assert cx_rec.role == V20CredExRecord.ROLE_ISSUER
             assert cx_rec.state == V20CredExRecord.STATE_OFFER_SENT
             assert (
-                V20CredOffer.deserialize(cx_rec.cred_offer).offer(
+                V20CredOffer.deserialize(cx_rec.cred_offer).attachment(
                     V20CredFormat.Format.INDY
                 )
                 == indy_offer
@@ -615,7 +615,7 @@ class TestV20CredManager(AsyncTestCase):
             assert cx_rec.role == V20CredExRecord.ROLE_HOLDER
             assert cx_rec.state == V20CredExRecord.STATE_OFFER_RECEIVED
             assert (
-                V20CredOffer.deserialize(cx_rec.cred_offer).offer(
+                V20CredOffer.deserialize(cx_rec.cred_offer).attachment(
                     V20CredFormat.Format.INDY
                 )
                 == indy_offer
@@ -668,7 +668,7 @@ class TestV20CredManager(AsyncTestCase):
             assert cx_rec.role == V20CredExRecord.ROLE_HOLDER
             assert cx_rec.state == V20CredExRecord.STATE_OFFER_RECEIVED
             assert (
-                V20CredOffer.deserialize(cx_rec.cred_offer).offer(
+                V20CredOffer.deserialize(cx_rec.cred_offer).attachment(
                     V20CredFormat.Format.INDY
                 )
                 == indy_offer
@@ -739,7 +739,7 @@ class TestV20CredManager(AsyncTestCase):
                 indy_offer, cred_def, holder_did
             )
 
-            assert ret_cred_req.cred_request() == indy_cred_req
+            assert ret_cred_req.attachment() == indy_cred_req
             assert ret_cred_req._thread_id == thread_id
 
             assert ret_cx_rec.state == V20CredExRecord.STATE_REQUEST_SENT
@@ -812,7 +812,7 @@ class TestV20CredManager(AsyncTestCase):
                 indy_offer, cred_def, holder_did
             )
 
-            assert ret_cred_request.cred_request() == indy_cred_req
+            assert ret_cred_request.attachment() == indy_cred_req
             assert ret_cred_request._thread_id == thread_id
 
             assert ret_cx_rec.state == V20CredExRecord.STATE_REQUEST_SENT
@@ -908,7 +908,7 @@ class TestV20CredManager(AsyncTestCase):
 
             assert cx_rec.state == V20CredExRecord.STATE_REQUEST_RECEIVED
             assert (
-                V20CredRequest.deserialize(cx_rec.cred_request).cred_request()
+                V20CredRequest.deserialize(cx_rec.cred_request).attachment()
                 == indy_cred_req
             )
 
@@ -1019,8 +1019,11 @@ class TestV20CredManager(AsyncTestCase):
                 "dummy-path",
             )
 
-            assert V20CredIssue.deserialize(ret_cx_rec.cred_issue).cred() == indy_cred
-            assert ret_cred_issue.cred() == indy_cred
+            assert (
+                V20CredIssue.deserialize(ret_cx_rec.cred_issue).attachment()
+                == indy_cred
+            )
+            assert ret_cred_issue.attachment() == indy_cred
             assert ret_cx_rec.state == V20CredExRecord.STATE_ISSUED
             assert ret_cred_issue._thread_id == thread_id
 
@@ -1130,8 +1133,11 @@ class TestV20CredManager(AsyncTestCase):
                 None,
             )
 
-            assert V20CredIssue.deserialize(ret_cx_rec.cred_issue).cred() == indy_cred
-            assert ret_cred_issue.cred() == indy_cred
+            assert (
+                V20CredIssue.deserialize(ret_cx_rec.cred_issue).attachment()
+                == indy_cred
+            )
+            assert ret_cred_issue.attachment() == indy_cred
             assert ret_cx_rec.state == V20CredExRecord.STATE_ISSUED
             assert ret_cred_issue._thread_id == thread_id
 
@@ -1247,8 +1253,11 @@ class TestV20CredManager(AsyncTestCase):
                 "dummy-path",
             )
 
-            assert V20CredIssue.deserialize(ret_cx_rec.cred_issue).cred() == indy_cred
-            assert ret_cred_issue.cred() == indy_cred
+            assert (
+                V20CredIssue.deserialize(ret_cx_rec.cred_issue).attachment()
+                == indy_cred
+            )
+            assert ret_cred_issue.attachment() == indy_cred
             assert ret_cx_rec.state == V20CredExRecord.STATE_ISSUED
             assert ret_cred_issue._thread_id == thread_id
 
@@ -1607,7 +1616,10 @@ class TestV20CredManager(AsyncTestCase):
             )
             mock_save.assert_called_once()
 
-            assert V20CredIssue.deserialize(ret_cx_rec.cred_issue).cred() == indy_cred
+            assert (
+                V20CredIssue.deserialize(ret_cx_rec.cred_issue).attachment()
+                == indy_cred
+            )
             assert ret_cx_rec.state == V20CredExRecord.STATE_CREDENTIAL_RECEIVED
 
     async def test_store_credential(self):
@@ -1742,7 +1754,10 @@ class TestV20CredManager(AsyncTestCase):
                 rev_reg_def=REV_REG_DEF,
             )
 
-            assert V20CredIssue.deserialize(ret_cx_rec.cred_issue).cred() == indy_cred
+            assert (
+                V20CredIssue.deserialize(ret_cx_rec.cred_issue).attachment()
+                == indy_cred
+            )
             assert ret_cx_rec.state == V20CredExRecord.STATE_DONE
             assert ret_cred_ack._thread_id == thread_id
 

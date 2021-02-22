@@ -56,7 +56,7 @@ class V20CredProposal(AgentMessage):
         self.formats = list(formats) if formats else []
         self.filters_attach = list(filters_attach) if filters_attach else []
 
-    def filter(self, fmt: V20CredFormat.Format = None) -> dict:
+    def attachment(self, fmt: V20CredFormat.Format = None) -> dict:
         """
         Return attached filter.
 
@@ -64,9 +64,15 @@ class V20CredProposal(AgentMessage):
             fmt: format of attachment in list to decode and return
 
         """
-        return (fmt or V20CredFormat.Format.INDY).get_attachment_data(
-            self.formats,
-            self.filters_attach,
+        return (
+            (
+                fmt or V20CredFormat.Format.get(self.formats[0].format)
+            ).get_attachment_data(
+                self.formats,
+                self.filters_attach,
+            )
+            if self.formats
+            else None
         )
 
 
