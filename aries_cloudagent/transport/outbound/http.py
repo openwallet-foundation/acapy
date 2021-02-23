@@ -27,14 +27,16 @@ class HttpTransport(BaseOutboundTransport):
 
     async def start(self):
         """Start the transport."""
-        session_args = {}
         self.connector = TCPConnector(limit=200, limit_per_host=50)
+        session_args = {
+            "cookie_jar": DummyCookieJar(),
+            "connector": self.connector,
+            "trust_env": True,
+        }
         if self.collector:
             session_args["trace_configs"] = [
                 StatsTracer(self.collector, "outbound-http:")
             ]
-        session_args["cookie_jar"] = DummyCookieJar()
-        session_args["connector"] = self.connector
         self.client_session = ClientSession(**session_args)
         return self
 
