@@ -7,7 +7,7 @@ import aiohttp
 import yaml
 
 from ...core.profile import Profile
-from ..base import BaseDIDResolver, DIDMethodNotSupported, ResolverType
+from ..base import BaseDIDResolver, DIDNotFound, ResolverError, ResolverType
 from ..did import DID
 from ..diddoc import ResolvedDIDDoc
 
@@ -33,18 +33,25 @@ class HTTPUniversalDIDResolver(BaseDIDResolver):
 
     @property
     def supported_methods(self) -> Sequence[str]:
-        """Return supported methods."""
+        """Return supported methods.
+
+        By determining methods from config file, we preserve the ability to not
+        use the universal resolver for a given method, even if the universal
+        is capable of resolving that method.
+        """
         return self._supported_methods
 
-    async def resolve(self, profile: Profile, did: str) -> ResolvedDIDDoc:
+    async def _resolve(self, profile: Profile, did: DID) -> ResolvedDIDDoc:
         """Resolve DID through remote universal resolver."""
-        did = DID(did)
-        if not self.supports(did.method):
-            raise DIDMethodNotSupported(
-                f"{did.method} is not supported by this resolver."
-            )
         async with aiohttp.ClientSession() as session:
             async with session.get(f"{self._endpoint}/{did}") as resp:
                 if resp.status == 200:
                     doc = await resp.json()
                     return ResolvedDIDDoc(doc["didDocument"])
+                if resp.status == 404:
+                    raise DIDNotFound(f"{did} not found by {self.__class__.__name__}")
+
+                raise ResolverError(
+                    f"Unexecpted status from universal resolver ({resp.status}): ",
+                    await resp.text()
+                )
