@@ -1,7 +1,7 @@
 """Presentation exchange record."""
 
 from os import environ
-from typing import Any
+from typing import Any, Mapping
 
 from marshmallow import fields, validate
 
@@ -49,7 +49,7 @@ class V20PresExRecord(BaseExchangeRecord):
         role: str = None,
         state: str = None,
         pres_proposal: Mapping = None,  # serialized pres proposal message
-        pres_request: Mapping = None,  #serialized pres proposal message
+        pres_request: Mapping = None,  # serialized pres proposal message
         pres: Mapping = None,  # serialized pres message
         verified: str = None,
         auto_present: bool = False,
@@ -64,10 +64,9 @@ class V20PresExRecord(BaseExchangeRecord):
         self.initiator = initiator
         self.role = role
         self.state = state
-        self.presentation_proposal_dict = presentation_proposal_dict
-        self.presentation_request = presentation_request  # indy proof req
-        self.presentation_request_dict = presentation_request_dict
-        self.presentation = presentation  # indy proof
+        self.pres_proposal = pres_proposal
+        self.pres_request = pres_request
+        self.pres = pres
         self.verified = verified
         self.auto_present = auto_present
         self.error_msg = error_msg
@@ -103,13 +102,13 @@ class V20PresExRecord(BaseExchangeRecord):
         return super().__eq__(other)
 
 
-class V20PresExSchema(BaseExchangeSchema):
+class V20PresExRecordSchema(BaseExchangeSchema):
     """Schema for de/serialization of v2.0 presentation exchange records."""
 
     class Meta:
         """V20PresExRecordSchema metadata."""
 
-        model_class = V10PresentationExchange
+        model_class = V20PresExRecord
 
     pres_ex_id = fields.Str(
         required=False,
@@ -129,7 +128,7 @@ class V20PresExSchema(BaseExchangeSchema):
     initiator = fields.Str(
         required=False,
         description="Present-proof exchange initiator: self or external",
-        example=V10PresentationExchange.INITIATOR_SELF,
+        example=V20PresExRecord.INITIATOR_SELF,
         validate=validate.OneOf(
             [
                 getattr(V20PresExRecord, m)
@@ -141,7 +140,7 @@ class V20PresExSchema(BaseExchangeSchema):
     role = fields.Str(
         required=False,
         description="Present-proof exchange role: prover or verifier",
-        example=V10PresentationExchange.ROLE_PROVER,
+        example=V20PresExRecord.ROLE_PROVER,
         validate=validate.OneOf(
             [
                 getattr(V20PresExRecord, m)
@@ -168,7 +167,8 @@ class V20PresExSchema(BaseExchangeSchema):
         required=False, description="Serialized presentation request message"
     )
     pres = fields.Dict(
-        required=False, description="Serialized presentation message",
+        required=False,
+        description="Serialized presentation message",
     )
     verified = fields.Str(  # tag: must be a string
         required=False,

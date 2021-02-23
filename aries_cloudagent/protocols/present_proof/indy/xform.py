@@ -1,10 +1,15 @@
 """Utilities to deal with indy."""
 
-from .presentation_preview import PresentationPreview
+from ....indy.holder import IndyHolder
+
+from .presentation_preview import IndyPresentationPreview
 
 
 async def indy_proof_req_preview2indy_requested_creds(
-    indy_proof_req: dict, preview: PresentationPreview = None, *, holder: IndyHolder
+    indy_proof_req: dict,
+    preview: IndyPresentationPreview = None,
+    *,
+    holder: IndyHolder,
 ):
     """
     Build indy requested-credentials structure.

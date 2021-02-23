@@ -15,7 +15,7 @@ from ...util.indy import indy_proof_req_preview2indy_requested_creds
 from ..manager import V20PresManager
 from ..messages.pres_proposal import V20PresProposal
 from ..messages.pres_request import V20PresRequest
-from ..models.pres_exchange import V20PresExchange
+from ..models.pres_exchange import V20PresExRecord
 
 
 class V20PresRequestHandler(BaseHandler):
@@ -50,17 +50,17 @@ class V20PresRequestHandler(BaseHandler):
         # or create it (verifier sent request first)
         try:
             async with context.session() as session:
-                pres_exchange_record = await V20PresExchange.retrieve_by_tag_filter(
+                pres_ex_record = await V20PresExRecord.retrieve_by_tag_filter(
                     session,
                     {"thread_id": context.message._thread_id},
                     {"connection_id": context.connection_record.connection_id},
                 )  # holder initiated via proposal
         except StorageNotFoundError:  # verifier sent this request free of any proposal
-            pres_ex_record = V20PresExchange(
+            pres_ex_record = V20PresExRecord(
                 conn_id=context.connection_record.connection_id,
                 thread_id=context.message._thread_id,
-                initiator=V20PresExchange.INITIATOR_EXTERNAL,
-                role=V20PresExchange.ROLE_PROVER,
+                initiator=V20PresExRecord.INITIATOR_EXTERNAL,
+                role=V20PresExRecord.ROLE_PROVER,
                 pres_request=context.message.serialize(),
                 auto_present=context.settings.get(
                     "debug.auto_respond_presentation_request"
@@ -85,7 +85,6 @@ class V20PresRequestHandler(BaseHandler):
                 exchange_pres_proposal = V20PresProposal.deserialize(
                     pres_ex_record.pres_proposal
                 )
-                # TODO - revisit default attachment format and make it #0 not hl-indy
                 pres_preview = exchange_pres_proposal.attachment()
 
             try:
@@ -98,10 +97,7 @@ class V20PresRequestHandler(BaseHandler):
                 self._logger.warning(f"{err}")
                 return
 
-            (
-                pres_ex_record,
-                pres_message,
-            ) = await pres_manager.create_pres(
+            (pres_ex_record, pres_message,) = await pres_manager.create_pres(
                 pres_ex_record=pres_ex_record,
                 requested_credentials=req_creds,
                 comment="auto-presented for proof request nonce={}".format(

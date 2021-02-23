@@ -37,9 +37,7 @@ class V20PresAckHandler(BaseHandler):
             raise HandlerException("No connection established for presentation ack")
 
         pres_manager = V20PresManager(context.profile)
-        await pres_manager.receive_pres_ack(
-            context.message, context.connection_record
-        )
+        await pres_manager.receive_pres_ack(context.message, context.connection_record)
 
         trace_event(
             context.settings,

@@ -35,7 +35,7 @@ class V20PresRequest(AgentMessage):
         *,
         comment: str = None,
         will_confirm: bool = None,
-        formats: Sequence[V20PresFormat],
+        formats: Sequence[V20PresFormat] = None,
         request_presentations_attach: Sequence[AttachDecorator] = None,
         **kwargs,
     ):
@@ -50,7 +50,7 @@ class V20PresRequest(AgentMessage):
         super().__init__(_id=_id, **kwargs)
         self.comment = comment
         self.will_confirm = will_confirm or False
-        self.formats = formats
+        self.formats = list(formats) if formats else []
         self.request_presentations_attach = (
             list(request_presentations_attach) if request_presentations_attach else []
         )
@@ -63,10 +63,14 @@ class V20PresRequest(AgentMessage):
             fmt: format of attachment in list to decode and return
 
         """
-        return (fmt or V20PresFormat.Format.get(self.formats[0])).get_attachment_data(
-            self.formats,
-            self.request_presentations_attach,
-        ) if self.formats else None
+        return (
+            (fmt or V20PresFormat.Format.get(self.formats[0])).get_attachment_data(
+                self.formats,
+                self.request_presentations_attach,
+            )
+            if self.formats
+            else None
+        )
 
 
 class V20PresRequestSchema(AgentMessageSchema):
@@ -117,5 +121,5 @@ class V20PresRequestSchema(AgentMessageSchema):
         for fmt in formats:
             request_atch = get_attach_by_id(fmt.attach_id)
             V20PresFormat.Format.get(fmt.format).validate_request_attach(
-                request_atch.indy_dict
+                request_atch.content
             )

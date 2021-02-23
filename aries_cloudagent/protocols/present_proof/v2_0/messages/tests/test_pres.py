@@ -1675,7 +1675,7 @@ PRES = V20Pres(
     ],
     presentations_attach=[
         AttachDecorator.data_base64(
-            indy_dict=INDY_PROOF,
+            mapping=INDY_PROOF,
             ident="abc",
         )
     ],
@@ -1687,7 +1687,7 @@ class TestPresentation(TestCase):
 
     def test_init_type(self):
         """Test initializer, type."""
-        assert PRES.presentations_attach[0].indy_dict == INDY_PROOF
+        assert PRES.presentations_attach[0].content == INDY_PROOF
         assert len(PRES.formats) == len(PRES.presentations_attach)
         assert PRES.attachment(V20PresFormat.Format.INDY) == INDY_PROOF
         assert PRES._type == DIDCommPrefix.qualify_current(PRES_20)
@@ -1706,7 +1706,7 @@ class TestPresentation(TestCase):
                 ],
                 "presentations~attach": [
                     AttachDecorator.data_base64(
-                        indy_dict=INDY_PROOF,
+                        mapping=INDY_PROOF,
                         ident="abc",
                     ).serialize()
                 ],
@@ -1746,7 +1746,7 @@ class TestPresentation(TestCase):
                 ],
                 "presentations~attach": [
                     AttachDecorator.data_base64(
-                        indy_dict=INDY_PROOF,
+                        mapping=INDY_PROOF,
                         ident="def",
                     ).serialize()
                 ],
@@ -1770,7 +1770,7 @@ class TestPresentation(TestCase):
             ],
             "presentations~attach": [
                 AttachDecorator.data_base64(
-                    indy_dict=INDY_PROOF,
+                    mapping=INDY_PROOF,
                     ident="abc",
                 ).serialize()
             ],

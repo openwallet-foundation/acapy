@@ -61,8 +61,8 @@ class TestV20FormatFormat(TestCase):
                     V20PresFormat(attach_id="abc", format_=V20PresFormat.Format.INDY)
                 ],
                 attachments=[
-                    AttachDecorator.from_data_base64(
-                        PRES_PREVIEW.serialize(),
+                    AttachDecorator.data_base64(
+                        mapping=PRES_PREVIEW.serialize(),
                         ident="abc",
                     )
                 ],

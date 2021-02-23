@@ -10,8 +10,7 @@ from aiohttp_apispec import (
     request_schema,
     response_schema,
 )
-from marshmallow import fields, validate, validates_schema
-from marshmallow.exceptions import ValidationError
+from marshmallow import fields, validate
 
 from ....admin.request_context import AdminRequestContext
 from ....connections.models.conn_record import ConnRecord
@@ -24,12 +23,9 @@ from ....messaging.models.openapi import OpenAPISchema
 from ....messaging.valid import (
     INDY_CRED_DEF_ID,
     INDY_CRED_REV_ID,
-    INDY_DID,
     INDY_EXTRA_WQL,
-    INDY_PREDICATE,
     INDY_SCHEMA_ID,
     INDY_REV_REG_ID,
-    INDY_VERSION,
     INT_EPOCH,
     NUM_STR_NATURAL,
     NUM_STR_WHOLE,
@@ -43,11 +39,12 @@ from ....wallet.error import WalletNotFoundError
 from ...problem_report.v1_0 import internal_error
 from ...problem_report.v1_0.message import ProblemReport
 
+from ..indy.presentation import IndyProofReqNonRevokedSchema
 from ..indy.presentation_preview import (
     IndyPresentationPreview,
     IndyPresentationPreviewSchema,
 )
-from ..indy.presentation_request import IndyProofRequestSchema
+from ..indy.proof_request import IndyProofRequestSchema
 
 from .manager import PresentationManager
 from .message_types import ATTACH_DECO_IDS, PRESENTATION_REQUEST, SPEC_URI

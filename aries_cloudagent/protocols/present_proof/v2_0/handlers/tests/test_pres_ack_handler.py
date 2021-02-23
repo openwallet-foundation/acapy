@@ -18,7 +18,7 @@ class TestV20PresAckHandler(AsyncTestCase):
         with async_mock.patch.object(
             test_module, "V20PresManager", autospec=True
         ) as mock_pres_mgr:
-            mock_pres_mgr.return_value.receive_pres_ack =  async_mock.CoroutineMock()
+            mock_pres_mgr.return_value.receive_pres_ack = async_mock.CoroutineMock()
             request_context.message = V20PresAck()
             request_context.connection_ready = True
             request_context.connection_record = async_mock.MagicMock()
@@ -39,9 +39,7 @@ class TestV20PresAckHandler(AsyncTestCase):
         with async_mock.patch.object(
             test_module, "V20PresManager", autospec=True
         ) as mock_pres_mgr:
-            mock_pres_mgr.return_value.receive_pres_ack = (
-                async_mock.CoroutineMock()
-            )
+            mock_pres_mgr.return_value.receive_pres_ack = async_mock.CoroutineMock()
             request_context.message = V20PresAck()
             request_context.connection_ready = False
             handler = test_module.V20PresAckHandler()

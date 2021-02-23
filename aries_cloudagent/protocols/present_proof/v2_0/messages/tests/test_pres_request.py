@@ -82,7 +82,7 @@ PRES_REQ = V20PresRequest(
     ],
     request_presentations_attach=[
         AttachDecorator.data_base64(
-            indy_dict=INDY_PROOF_REQ,
+            mapping=INDY_PROOF_REQ,
             ident="abc",
         )
     ],
@@ -96,7 +96,7 @@ class TestV20PresRequest(TestCase):
         """Test initializer, type."""
         assert PRES_REQ.will_confirm
         assert len(PRES_REQ.formats) == len(PRES_REQ.request_presentations_attach)
-        assert PRES_REQ.request_presentations_attach[0].indy_dict == INDY_PROOF_REQ
+        assert PRES_REQ.request_presentations_attach[0].content == INDY_PROOF_REQ
         assert PRES_REQ.attachment(V20PresFormat.Format.INDY) == INDY_PROOF_REQ
         assert PRES_REQ._type == DIDCommPrefix.qualify_current(PRES_20_REQUEST)
 
@@ -115,7 +115,7 @@ class TestV20PresRequest(TestCase):
                 ],
                 "request_presentations~attach": [
                     AttachDecorator.data_base64(
-                        indy_dict=INDY_PROOF_REQ,
+                        mapping=INDY_PROOF_REQ,
                         ident="abc",
                     ).serialize()
                 ],
@@ -157,7 +157,7 @@ class TestV20PresRequest(TestCase):
                 ],
                 "request_presentations~attach": [
                     AttachDecorator.data_base64(
-                        indy_dict=INDY_PROOF_REQ,
+                        mapping=INDY_PROOF_REQ,
                         ident="def",
                     ).serialize()
                 ],
@@ -182,7 +182,7 @@ class TestV20PresRequest(TestCase):
             ],
             "request_presentations~attach": [
                 AttachDecorator.data_base64(
-                    indy_dict=INDY_PROOF_REQ,
+                    mapping=INDY_PROOF_REQ,
                     ident="abc",
                 ).serialize()
             ],

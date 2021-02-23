@@ -47,7 +47,7 @@ class V20PresHandler(BaseHandler):
         )
 
         if context.settings.get("debug.auto_verify_presentation"):
-            await pres_manager.verify_presentation(pres_ex_record)
+            await pres_manager.verify_pres(pres_ex_record)
 
             trace_event(
                 context.settings,

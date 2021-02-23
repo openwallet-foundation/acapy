@@ -19,16 +19,16 @@ class BasexRecordImplSchema(BaseExchangeSchema):
 
 class TestRecord(UnitTestCase):
     def test_record(self):
-        record = V20PresentationExchange(
+        record = V20PresExRecord(
             pres_ex_id="pxid",
-            conn_id="connid",
             thread_id="thid",
+            conn_id="connid",
             initiator="init",
             role="role",
             state="state",
-            pres_proposal={"prop": "dict"},
+            pres_proposal={"pres": "prop"},
             pres_request={"pres": "req"},
-            pres={"pres": "indy"},
+            pres={"pres": "pres"},
             verified="false",
             auto_present=True,
             error_msg="error",
@@ -37,17 +37,16 @@ class TestRecord(UnitTestCase):
         assert record.pres_ex_id == "pxid"
 
         assert record.record_value == {
-            "connection_id": "connid",
+            "conn_id": "connid",
             "initiator": "init",
-            "presentation_proposal_dict": {"prop": "dict"},
-            "presentation_request": {"pres": "req"},
-            "presentation_request_dict": {"pres", "dict"},
-            "presentation": {"pres": "indy"},
             "role": "role",
             "state": "state",
+            "pres_proposal": {"pres": "prop"},
+            "pres_request": {"pres": "req"},
+            "pres": {"pres": "pres"},
+            "verified": "false",
             "auto_present": True,
             "error_msg": "error",
-            "verified": "false",
             "trace": False,
         }
 

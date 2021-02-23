@@ -1,12 +1,14 @@
 """Utilities to deal with indy."""
 
-from marshmallow import fields, validate, validates_schema
+from marshmallow import fields, validate, validates_schema, ValidationError
 
 from ....indy.holder import IndyHolder
 from ....messaging.models.openapi import OpenAPISchema
 from ....messaging.valid import (
     INDY_CRED_DEF_ID,
+    INDY_DID,
     INDY_PREDICATE,
+    INDY_SCHEMA_ID,
     INDY_VERSION,
     INT_EPOCH,
 )

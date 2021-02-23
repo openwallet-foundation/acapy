@@ -32,7 +32,7 @@ class V20Pres(AgentMessage):
         _id: str = None,
         *,
         comment: str = None,
-        formats: Sequence[V20PresFormat],
+        formats: Sequence[V20PresFormat] = None,
         presentations_attach: Sequence[AttachDecorator] = None,
         **kwargs,
     ):
@@ -46,7 +46,7 @@ class V20Pres(AgentMessage):
         """
         super().__init__(_id=_id, **kwargs)
         self.comment = comment
-        self.formats = formats
+        self.formats = formats if formats else []
         self.presentations_attach = (
             list(presentations_attach) if presentations_attach else []
         )
@@ -59,10 +59,14 @@ class V20Pres(AgentMessage):
             fmt: format of attachment in list to decode and return
 
         """
-        return (fmt or V20PresFormat.Format.get(self.formats[0])).get_attachment_data(
-            self.formats,
-            self.presentations_attach,
-        ) if self.formats else None
+        return (
+            (fmt or V20PresFormat.Format.get(self.formats[0])).get_attachment_data(
+                self.formats,
+                self.presentations_attach,
+            )
+            if self.formats
+            else None
+        )
 
 
 class V20PresSchema(AgentMessageSchema):

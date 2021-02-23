@@ -79,7 +79,9 @@ class TestV20PresProposalHandler(AsyncTestCase):
         with async_mock.patch.object(
             test_module, "V20PresManager", autospec=True
         ) as mock_pres_mgr:
-            mock_pres_mgr.return_value.receive_pres_proposal = async_mock.CoroutineMock()
+            mock_pres_mgr.return_value.receive_pres_proposal = (
+                async_mock.CoroutineMock()
+            )
             request_context.message = V20PresProposal()
             request_context.connection_ready = False
             handler = test_module.V20PresProposalHandler()

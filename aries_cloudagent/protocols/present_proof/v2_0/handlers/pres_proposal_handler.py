@@ -27,9 +27,7 @@ class V20PresProposalHandler(BaseHandler):
         """
         r_time = get_timer()
 
-        self._logger.debug(
-            "V20PresProposalHandler called with context %s", context
-        )
+        self._logger.debug("V20PresProposalHandler called with context %s", context)
         assert isinstance(context.message, V20PresProposal)
         self._logger.info(
             "Received v2.0 presentation proposal message: %s",
@@ -42,7 +40,7 @@ class V20PresProposalHandler(BaseHandler):
             )
 
         pres_manager = V20PresManager(context.profile)
-        pres_ex_record = await pres_manager.receive_proposal(
+        pres_ex_record = await pres_manager.receive_pres_proposal(
             context.message, context.connection_record
         )
 

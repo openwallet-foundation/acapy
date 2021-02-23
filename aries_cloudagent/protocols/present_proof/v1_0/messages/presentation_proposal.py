@@ -6,7 +6,10 @@ from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 
 from ..message_types import PRESENTATION_PROPOSAL, PROTOCOL_PACKAGE
 
-from ...util.presentation_preview import PresentationPreview, PresentationPreviewSchema
+from ...indy.presentation_preview import (
+    IndyPresentationPreview,
+    IndyPresentationPreviewSchema,
+)
 
 HANDLER_CLASS = (
     f"{PROTOCOL_PACKAGE}.handlers."
@@ -29,7 +32,7 @@ class PresentationProposal(AgentMessage):
         _id: str = None,
         *,
         comment: str = None,
-        presentation_proposal: PresentationPreview = None,
+        presentation_proposal: IndyPresentationPreview = None,
         **kwargs,
     ):
         """
@@ -56,4 +59,4 @@ class PresentationProposalSchema(AgentMessageSchema):
     comment = fields.Str(
         description="Human-readable comment", required=False, allow_none=True
     )
-    presentation_proposal = fields.Nested(PresentationPreviewSchema, required=True)
+    presentation_proposal = fields.Nested(IndyPresentationPreviewSchema, required=True)

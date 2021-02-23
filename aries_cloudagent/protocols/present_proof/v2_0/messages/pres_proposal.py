@@ -34,8 +34,8 @@ class V20PresProposal(AgentMessage):
         _id: str = None,
         *,
         comment: str = None,
-        formats: Sequence[V20PresFormat],
-        proposal_attach: Sequence[AttachDecorator],
+        formats: Sequence[V20PresFormat] = None,
+        proposal_attach: Sequence[AttachDecorator] = None,
         **kwargs,
     ):
         """
@@ -48,8 +48,8 @@ class V20PresProposal(AgentMessage):
         """
         super().__init__(_id, **kwargs)
         self.comment = comment
-        self.formats = formats
-        self.proposal_attach = proposal_attach or []
+        self.formats = list(formats) if formats else []
+        self.proposal_attach = list(proposal_attach) if proposal_attach else []
 
     def attachment(self, fmt: V20PresFormat.Format = None) -> dict:
         """
@@ -59,10 +59,14 @@ class V20PresProposal(AgentMessage):
             fmt: format of attachment in list to decode and return
 
         """
-        return (fmt or V20PresFormat.Format.get(self.formats[0])).get_attachment_data(
-            self.formats,
-            self.proposal_attach,
-        ) if self.formats else None
+        return (
+            (fmt or V20PresFormat.Format.get(self.formats[0])).get_attachment_data(
+                self.formats,
+                self.proposal_attach,
+            )
+            if self.formats
+            else None
+        )
 
 
 class V20PresProposalSchema(AgentMessageSchema):
@@ -110,5 +114,5 @@ class V20PresProposalSchema(AgentMessageSchema):
         for fmt in formats:
             proposal_atch = get_attach_by_id(fmt.attach_id)
             V20PresFormat.Format.get(fmt.format).validate_proposal_attach(
-                proposal_atch.indy_dict
+                proposal_atch.content
             )
