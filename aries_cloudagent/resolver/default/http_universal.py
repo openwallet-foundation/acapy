@@ -6,6 +6,7 @@ from typing import Sequence
 import aiohttp
 import yaml
 
+from ...config.injection_context import InjectionContext
 from ...core.profile import Profile
 from ..base import BaseDIDResolver, DIDNotFound, ResolverError, ResolverType
 from ..did import DID
@@ -21,15 +22,29 @@ class HTTPUniversalDIDResolver(BaseDIDResolver):
         self._endpoint = None
         self._supported_methods = None
 
-    async def setup(self, profile: Profile):
+    async def setup(self, context: InjectionContext):
         """Preform setup, populate supported method list, configuration."""
         config_file = os.environ.get("UNI_RESOLVER_CONFIG", "universal_resolver.yml")
-        self.configure(yaml.load(config_file))
+        try:
+            with open(config_file) as input_yaml:
+                configuration = yaml.load(input_yaml, Loader=yaml.SafeLoader)
+        except FileNotFoundError as err:
+            raise ResolverError(
+                f"Failed to load configuration file for {self.__class__.__name__}"
+            ) from err
+        assert isinstance(configuration, dict)
+        self.configure(configuration)
 
     def configure(self, configuration: dict):
         """Configure this instance of the resolver from configuration dict."""
-        self._endpoint = configuration["endpoint"]
-        self._supported_methods = configuration["methods"]
+        try:
+            self._endpoint = configuration["endpoint"]
+            self._supported_methods = configuration["methods"]
+        except KeyError as err:
+            raise ResolverError(
+                f"Failed to configure {self.__class__.__name__}, "
+                "missing attribute in configuration: {err}"
+            ) from err
 
     @property
     def supported_methods(self) -> Sequence[str]:
@@ -51,7 +66,7 @@ class HTTPUniversalDIDResolver(BaseDIDResolver):
                 if resp.status == 404:
                     raise DIDNotFound(f"{did} not found by {self.__class__.__name__}")
 
+                text = await resp.text()
                 raise ResolverError(
-                    f"Unexecpted status from universal resolver ({resp.status}): ",
-                    await resp.text()
+                    f"Unexecpted status from universal resolver ({resp.status}): {text}"
                 )

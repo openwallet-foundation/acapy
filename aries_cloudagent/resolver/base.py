@@ -5,6 +5,7 @@ from enum import Enum
 from typing import Sequence, Union
 
 from .diddoc import ResolvedDIDDoc
+from ..config.injection_context import InjectionContext
 from ..core.profile import Profile
 from ..core.error import BaseError
 from .did import DID
@@ -41,7 +42,7 @@ class BaseDIDResolver(ABC):
         self.type = type_ or ResolverType.NON_NATIVE
 
     @abstractmethod
-    async def setup(self, profile: Profile):
+    async def setup(self, context: InjectionContext):
         """Do asynchronous resolver setup."""
 
     @property

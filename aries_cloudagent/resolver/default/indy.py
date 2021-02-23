@@ -4,8 +4,10 @@ Resolution is performed using the IndyLedger class.
 """
 from typing import Sequence
 
+from ...config.injection_context import InjectionContext
 from ...core.profile import Profile
 from ...ledger.indy import IndySdkLedger
+from ...ledger.base import BaseLedger
 from ...ledger.error import LedgerError
 from ..base import BaseDIDResolver, DIDNotFound, ResolverError, ResolverType
 from ..did import DID
@@ -25,7 +27,7 @@ class IndyDIDResolver(BaseDIDResolver):
         """Initialize Indy Resolver."""
         super().__init__(ResolverType.NATIVE)
 
-    async def setup(self, profile: Profile):
+    async def setup(self, context: InjectionContext):
         """Perform required setup for Indy DID resolution."""
 
     @property
@@ -35,9 +37,9 @@ class IndyDIDResolver(BaseDIDResolver):
 
     async def _resolve(self, profile: Profile, did: DID) -> ResolvedDIDDoc:
         """Resolve an indy DID."""
-        ledger = profile.inject(IndySdkLedger, required=False)
-        if not ledger:
-            raise NoIndyLedger("No Indy ledger isntance is configured.")
+        ledger = profile.inject(BaseLedger, required=False)
+        if not ledger or not isinstance(ledger, IndySdkLedger):
+            raise NoIndyLedger("No Indy ledger instance is configured.")
 
         try:
             async with ledger:
@@ -46,28 +48,27 @@ class IndyDIDResolver(BaseDIDResolver):
         except LedgerError as err:
             raise DIDNotFound(f"DID {did} could not be resolved") from err
 
-        doc = ResolvedDIDDoc(
-            {
-                "id": str(did),
-                "verificationMethod": [
-                    {
-                        "id": did.ref(1),
-                        "type": self.VERIFICATION_METHOD_TYPE,
-                        "controller": str(did),
-                        "publicKeyBase58": recipient_key,
-                    }
-                ],
-                "authentication": [did.ref(1)],
-                "service": [
-                    {
-                        "id": did.ref(ResolvedDIDDoc.AGENT_SERVICE_TYPE),
-                        "type": ResolvedDIDDoc.AGENT_SERVICE_TYPE,
-                        "priority": 0,
-                        "recipientKeys": [did.ref(1)],
-                        "routingKeys": [],
-                        "serviceEndpoint": endpoint,
-                    }
-                ],
-            }
-        )
-        return doc
+        doc = {
+            "id": str(did),
+            "verificationMethod": [
+                {
+                    "id": did.ref(1),
+                    "type": self.VERIFICATION_METHOD_TYPE,
+                    "controller": str(did),
+                    "publicKeyBase58": recipient_key,
+                }
+            ],
+            "authentication": [did.ref(1)],
+        }
+
+        if endpoint:
+            doc["service"] = [{
+                "id": did.ref(ResolvedDIDDoc.AGENT_SERVICE_TYPE),
+                "type": ResolvedDIDDoc.AGENT_SERVICE_TYPE,
+                "priority": 0,
+                "recipientKeys": [did.ref(1)],
+                "routingKeys": [],
+                "serviceEndpoint": endpoint,
+            }]
+
+        return ResolvedDIDDoc(doc)

@@ -30,20 +30,16 @@ Resolve did document admin routes.
 """
 
 import re
+
 from aiohttp import web
-from aiohttp_apispec import (
-    docs,
-    match_info_schema,
-    response_schema,
-)
+from aiohttp_apispec import docs, match_info_schema, response_schema
 from marshmallow import fields, validate
 
 from ..admin.request_context import AdminRequestContext
-from ..messaging.models.base import BaseModelError
 from ..messaging.models.openapi import OpenAPISchema
-from ..storage.error import StorageError, StorageNotFoundError
-from .did_resolver import DIDResolver
+from .base import DIDMethodNotSupported, DIDNotFound, ResolverError
 from .did import DID_PATTERN
+from .did_resolver import DIDResolver
 
 
 class W3cDIDDoc(validate.Regexp):
@@ -111,10 +107,12 @@ async def resolve_did(request: web.BaseRequest):
         resolver = session.inject(DIDResolver)
         document = await resolver.resolve(context.profile, did)
         result = document.serialize()
-    except StorageNotFoundError as err:
+    except DIDNotFound as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
-    except (BaseModelError, StorageError) as err:
-        raise web.HTTPBadRequest(reason=err.roll_up) from err
+    except DIDMethodNotSupported as err:
+        raise web.HTTPNotImplemented(reason=err.roll_up) from err
+    except ResolverError as err:
+        raise web.HTTPInternalServerError(reason=err.roll_up) from err
     return web.json_response(result)
 
 
