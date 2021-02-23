@@ -158,9 +158,7 @@ class V20PresManager:
                 )
             ],
         )
-        pres_request_message._thread = {
-            "thid": pres_ex_record.thread_id
-        }
+        pres_request_message._thread = {"thid": pres_ex_record.thread_id}
         pres_request_message.assign_trace_decorator(
             self._profile.settings, pres_ex_record.trace
         )
@@ -206,9 +204,7 @@ class V20PresManager:
 
         return pres_ex_record
 
-    async def receive_request(
-        self, pres_ex_record: V20PresExRecord
-    ):
+    async def receive_request(self, pres_ex_record: V20PresExRecord):
         """
         Receive a presentation request.
 
@@ -219,9 +215,7 @@ class V20PresManager:
             The presentation exchange record, updated
 
         """
-        pres_ex_record.state = (
-            V20PresExRecord.STATE_REQUEST_RECEIVED
-        )
+        pres_ex_record.state = V20PresExRecord.STATE_REQUEST_RECEIVED
         async with self._profile.session() as session:
             await pres_ex_record.save(
                 session, reason="receive v2.0 presentation request"
@@ -437,20 +431,14 @@ class V20PresManager:
         )
 
         # save presentation exchange state
-        pres_ex_record.state = (
-            V20PresExRecord.STATE_PRESENTATION_SENT
-        )
+        pres_ex_record.state = V20PresExRecord.STATE_PRESENTATION_SENT
         pres_ex_record.pres = indy_proof
         async with self._profile.session() as session:
-            await pres_ex_record.save(
-                session, reason="create v2.0 presentation"
-            )
+            await pres_ex_record.save(session, reason="create v2.0 presentation")
 
         return pres_ex_record, pres_message
 
-    async def receive_pres(
-        self, message: V20Pres, conn_record: ConnRecord
-    ):
+    async def receive_pres(self, message: V20Pres, conn_record: ConnRecord):
         """
         Receive a presentation, from message in context on manager creation.
 
@@ -488,15 +476,13 @@ class V20PresManager:
                 pres_ex_record.pres_request
             ).attachment()
 
-            for (reft, attr_spec) in pres["requested_proof"][
-                "revealed_attrs"
-            ].items():
+            for (reft, attr_spec) in pres["requested_proof"]["revealed_attrs"].items():
                 name = proof_req["requested_attributes"][reft]["name"]
                 value = attr_spec["raw"]
                 if not pres_preview.has_attr_spec(
-                    cred_def_id=pres["identifiers"][
-                        attr_spec["sub_proof_index"]
-                    ]["cred_def_id"],
+                    cred_def_id=pres["identifiers"][attr_spec["sub_proof_index"]][
+                        "cred_def_id"
+                    ],
                     name=name,
                     value=value,
                 ):
@@ -505,20 +491,14 @@ class V20PresManager:
                     )
 
         pres_ex_record.pres = pres
-        pres_ex_record.state = (
-            V20PresExRecord.STATE_PRESENTATION_RECEIVED
-        )
+        pres_ex_record.state = V20PresExRecord.STATE_PRESENTATION_RECEIVED
 
         async with self._profile.session() as session:
-            await pres_ex_record.save(
-                session, reason="receive v2.0 presentation"
-            )
+            await pres_ex_record.save(session, reason="receive v2.0 presentation")
 
         return pres_ex_record
 
-    async def verify_pres(
-        self, pres_ex_record: V20PresExRecord
-    ):
+    async def verify_pres(self, pres_ex_record: V20PresExRecord):
         """
         Verify a presentation.
 
@@ -558,10 +538,10 @@ class V20PresManager:
                     )
 
                 if identifier["cred_def_id"] not in cred_defs:
-                    cred_defs[identifier["cred_def_id"]] = (
-                        await ledger.get_credential_definition(
-                            identifier["cred_def_id"]
-                        )
+                    cred_defs[
+                        identifier["cred_def_id"]
+                    ] = await ledger.get_credential_definition(
+                        identifier["cred_def_id"]
                     )
 
                 if identifier.get("rev_reg_id"):
@@ -601,16 +581,12 @@ class V20PresManager:
         pres_ex_record.state = V20PresExRecord.STATE_VERIFIED
 
         async with self._profile.session() as session:
-            await pres_ex_record.save(
-                session, reason="verify v2.0 presentation"
-            )
+            await pres_ex_record.save(session, reason="verify v2.0 presentation")
 
         await self.send_pres_ack(pres_ex_record)
         return pres_ex_record
 
-    async def send_pres_ack(
-        self, pres_ex_record: V20PresExRecord
-    ):
+    async def send_pres_ack(self, pres_ex_record: V20PresExRecord):
         """
         Send acknowledgement of presentation receipt.
 
@@ -622,9 +598,7 @@ class V20PresManager:
 
         if responder:
             pres_ack_message = V20PresAck()
-            pres_ack_message._thread = {
-                "thid": pres_ex_record.thread_id
-            }
+            pres_ack_message._thread = {"thid": pres_ex_record.thread_id}
             pres_ack_message.assign_trace_decorator(
                 self._profile.settings, pres_ex_record.trace
             )
@@ -639,9 +613,7 @@ class V20PresManager:
                 pres_ex_record.thread_id,
             )
 
-    async def receive_pres_ack(
-        self, message: V20PresAck, conn_record: ConnRecord
-    ):
+    async def receive_pres_ack(self, message: V20PresAck, conn_record: ConnRecord):
         """
         Receive a presentation ack, from message in context on manager creation.
 
@@ -656,12 +628,8 @@ class V20PresManager:
                 {"connection_id": conn_record.connection_id},
             )
 
-            pres_ex_record.state = (
-                V20PresExRecord.STATE_PRESENTATION_ACKED
-            )
+            pres_ex_record.state = V20PresExRecord.STATE_PRESENTATION_ACKED
 
-            await pres_ex_record.save(
-                session, reason="receive v2.0 presentation ack"
-            )
+            await pres_ex_record.save(session, reason="receive v2.0 presentation ack")
 
         return pres_ex_record

@@ -364,7 +364,12 @@ class TestAttachDecorator(TestCase):
         assert deco_links.data.json is None
         assert deco_links.data.links is not None
         assert deco_links.data.sha256 is not None
-        assert deco_links.content == ([LINK_1X1,], SHA256_1X1)
+        assert deco_links.content == (
+            [
+                LINK_1X1,
+            ],
+            SHA256_1X1,
+        )
         assert deco_links.ident == IDENT
         assert deco_links.description == DESCRIPTION
 
