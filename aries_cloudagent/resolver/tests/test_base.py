@@ -17,7 +17,7 @@ class ExampleDIDResolver(BaseDIDResolver):
     def supported_methods(self):
         return ["test"]
 
-    async def resolve(self, profile, did: str) -> ResolvedDIDDoc:
+    async def _resolve(self, profile, did) -> ResolvedDIDDoc:
         return ResolvedDIDDoc({"id": "did:example:123"})
 
 
