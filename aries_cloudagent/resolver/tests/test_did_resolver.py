@@ -115,7 +115,7 @@ class MockResolver(BaseDIDResolver):
     def supported_methods(self):
         return self._supported_methods
 
-    async def resolve(self, profile, did):
+    async def _resolve(self, profile, did):
         if isinstance(self.resolved, Exception):
             raise self.resolved
         return self.resolved

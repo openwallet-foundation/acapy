@@ -110,7 +110,3 @@ class ResolvedDIDDoc:
             )
 
         return self._index.get(parsed.fragment)
-
-    def serialize(self):
-        """Return serialized document."""
-        return self._doc

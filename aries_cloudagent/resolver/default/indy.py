@@ -33,13 +33,11 @@ class IndyDIDResolver(BaseDIDResolver):
         """Return supported methods of Indy DID Resolver."""
         return ["sov"]
 
-    async def resolve(self, profile: Profile, did: str) -> ResolvedDIDDoc:
+    async def _resolve(self, profile: Profile, did: DID) -> ResolvedDIDDoc:
         """Resolve an indy DID."""
         ledger = profile.inject(IndySdkLedger, required=False)
         if not ledger:
             raise NoIndyLedger("No Indy ledger isntance is configured.")
-
-        did = DID(did)
 
         try:
             async with ledger:
