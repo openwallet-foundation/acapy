@@ -10,7 +10,7 @@ class ExampleDIDResolver(BaseDIDResolver):
     def __init__(self):
         super().__init__()
 
-    async def setup(self, profile):
+    async def setup(self, context):
         pass
 
     @property
