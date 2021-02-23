@@ -6,9 +6,9 @@ from .....cache.base import BaseCache
 from .....cache.in_memory import InMemoryCache
 from .....connections.models.conn_record import ConnRecord
 from .....connections.models.connection_target import ConnectionTarget
-from .....connections.models.diddoc import (
+from .....connections.models.diddoc_v2 import (
     DIDDoc,
-    PublicKey,
+    VerificationMethod,
     PublicKeyType,
     Service,
 )
@@ -50,28 +50,36 @@ from ..manager import DIDXManager, DIDXManagerError
 class TestConfig:
 
     test_seed = "testseed000000000000000000000001"
-    test_did = "55GkHamhTU1ZbTbV2ab9DE"
+    test_did = "did:sov:55GkHamhTU1ZbTbV2ab9DE"
     test_verkey = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
     test_endpoint = "http://localhost"
 
-    test_target_did = "GbuDUYXaUZRfHD2jeDuQuP"
+    test_target_did = "did:sov:GbuDUYXaUZRfHD2jeDuQuP"
     test_target_verkey = "9WCgWKUaAJj3VWxxtzvvMQN3AoFxoBtBDo9ntwJnVVCC"
 
-    def make_did_doc(self, did, verkey):
-        doc = DIDDoc(did=did)
+    def make_did_doc(self, did, verkey, without_services=False):
+        doc = DIDDoc(did)
         controller = did
-        ident = "1"
         pk_value = verkey
-        pk = PublicKey(
-            did, ident, pk_value, PublicKeyType.ED25519_SIG_2018, controller, False
+        pk = VerificationMethod(
+            "{}#{}".format(did, "1"),
+            PublicKeyType.ED25519_SIG_2018,
+            controller,
+            value=pk_value,
+            authn=False,
         )
         doc.set(pk)
-        recip_keys = [pk]
-        router_keys = []
-        service = Service(
-            did, "indy", "IndyAgent", recip_keys, router_keys, TestConfig.test_endpoint
-        )
-        doc.set(service)
+        if not without_services:
+            recip_keys = [pk]
+            router_keys = []
+            service = Service(
+                "{}#{}".format(did, "indy"),
+                "IndyAgent",
+                self.test_endpoint,
+                recip_keys,
+                router_keys,
+            )
+            doc.set(service)
         return doc
 
 
@@ -460,9 +468,6 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 return_value=test_module.DIDPosture.PUBLIC
             )
 
-            mock_did_doc.from_json = async_mock.MagicMock(
-                return_value=async_mock.MagicMock(did=TestConfig.test_did)
-            )
             mock_attach_deco.from_indy_dict = async_mock.MagicMock(
                 return_value=async_mock.MagicMock(
                     data=async_mock.MagicMock(sign=async_mock.CoroutineMock())
@@ -472,7 +477,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 assign_thread_from=async_mock.MagicMock(),
                 assign_trace_from=async_mock.MagicMock(),
             )
-
+            mock_did_doc.deserialize.return_value.id = self.test_did
             conn_rec = await self.manager.receive_request(
                 request=mock_request,
                 recipient_did=TestConfig.test_did,
@@ -522,7 +527,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             did=TestConfig.test_target_did,
             verkey=TestConfig.test_target_verkey,
         ).serialize()
-        del did_doc_dict["authentication"]
+
         del did_doc_dict["service"]
         new_info = await self.session.wallet.create_local_did()
 
@@ -599,7 +604,6 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             did=TestConfig.test_target_did,
             verkey=TestConfig.test_target_verkey,
         ).serialize()
-        del did_doc_dict["authentication"]
         del did_doc_dict["service"]
         new_info = await self.session.wallet.create_local_did()
 
@@ -768,7 +772,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
         ) as mock_conn_rec_cls, async_mock.patch.object(
             test_module, "DIDPosture", autospec=True
         ) as mock_did_posture, async_mock.patch.object(
-            test_module.DIDDoc, "from_json", async_mock.MagicMock()
+            test_module.DIDDoc, "deserialize", async_mock.MagicMock()
         ) as mock_did_doc_from_json:
             mock_conn_record = async_mock.MagicMock(
                 accept=ConnRecord.ACCEPT_MANUAL,
@@ -878,7 +882,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
         ) as mock_response, async_mock.patch.object(
             self.manager, "create_did_document", async_mock.CoroutineMock()
         ) as mock_create_did_doc, async_mock.patch.object(
-            test_module.DIDDoc, "from_json", async_mock.MagicMock()
+            test_module.DIDDoc, "deserialize", async_mock.MagicMock()
         ) as mock_did_doc_from_json:
             mock_did_doc_from_json.return_value = async_mock.MagicMock(
                 did=TestConfig.test_did
@@ -937,6 +941,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 metadata_get_all=async_mock.CoroutineMock(return_value={}),
                 save=async_mock.CoroutineMock(),
             )
+            mock_did_doc.deserialize.return_value.id = self.test_did
             mock_conn_rec_cls.return_value = mock_conn_record
             mock_conn_rec_cls.retrieve_by_invitation_key = async_mock.CoroutineMock(
                 return_value=mock_conn_record
@@ -1016,9 +1021,9 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 save=async_mock.CoroutineMock(),
                 metadata_set=async_mock.CoroutineMock(),
             )
-            mock_did_doc.from_json = async_mock.MagicMock(
-                return_value=async_mock.MagicMock(did=TestConfig.test_did)
-            )
+
+            mock_did_doc.deserialize.return_value.id = self.test_did
+
             mock_attach_deco.from_indy_dict = async_mock.MagicMock(
                 return_value=async_mock.MagicMock(
                     data=async_mock.MagicMock(sign=async_mock.CoroutineMock())
@@ -1091,6 +1096,8 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             mock_did_doc.from_json = async_mock.MagicMock(
                 return_value=async_mock.MagicMock(did=TestConfig.test_did)
             )
+            mock_did_doc.deserialize.return_value.id = self.test_did
+
             await self.manager.receive_request(
                 request=mock_request,
                 recipient_did=TestConfig.test_did,
@@ -1170,6 +1177,8 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             mock_wallet_get_local_did.return_value = DIDInfo(
                 TestConfig.test_did, TestConfig.test_verkey, None
             )
+            mock_did_doc.deserialize.return_value.id = self.test_did
+
             await self.manager.receive_request(
                 request=mock_request,
                 recipient_did=TestConfig.test_did,
@@ -1782,9 +1791,11 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
         )
 
         x_did_doc = self.make_did_doc(
-            did=TestConfig.test_target_did, verkey=TestConfig.test_target_verkey
+            did=TestConfig.test_target_did,
+            verkey=TestConfig.test_target_verkey,
+            without_services=True,
         )
-        x_did_doc._service = {}
+
         for i in range(2):  # first cover store-record, then update-value
             await self.manager.store_did_document(x_did_doc)
 
@@ -1815,11 +1826,15 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
         )
 
         x_did_doc = self.make_did_doc(
-            did=TestConfig.test_target_did, verkey=TestConfig.test_target_verkey
+            did=TestConfig.test_target_did,
+            verkey=TestConfig.test_target_verkey,
+            without_services=True,
         )
         x_did_doc._service = {}
         x_did_doc.set(
-            Service(TestConfig.test_target_did, "dummy", "IndyAgent", [], [], "", 0)
+            Service(
+                "{}#dummy".format(TestConfig.test_target_did), "IndyAgent", "", [], []
+            )
         )
         for i in range(2):  # first cover store-record, then update-value
             await self.manager.store_did_document(x_did_doc)
@@ -1851,17 +1866,18 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
         )
 
         x_did_doc = self.make_did_doc(
-            did=TestConfig.test_target_did, verkey=TestConfig.test_target_verkey
+            did=TestConfig.test_target_did,
+            verkey=TestConfig.test_target_verkey,
+            without_services=True,
         )
-        x_did_doc._service = {}
+
         x_did_doc.set(
             Service(
-                TestConfig.test_target_did,
-                "dummy",
+                "{}#dummy".format(TestConfig.test_target_did),
                 "IndyAgent",
-                [],
-                [],
                 TestConfig.test_endpoint,
+                [],
+                [],
                 0,
             )
         )
@@ -1914,13 +1930,10 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
         with self.assertRaises(BaseConnectionManagerError):
             self.manager.diddoc_connection_targets(None, TestConfig.test_verkey)
 
-        x_did_doc = DIDDoc(did=None)
-        with self.assertRaises(BaseConnectionManagerError):
-            self.manager.diddoc_connection_targets(x_did_doc, TestConfig.test_verkey)
-
         x_did_doc = self.make_did_doc(
-            did=TestConfig.test_target_did, verkey=TestConfig.test_target_verkey
+            did=TestConfig.test_target_did,
+            verkey=TestConfig.test_target_verkey,
+            without_services=True,
         )
-        x_did_doc._service = {}
         with self.assertRaises(BaseConnectionManagerError):
             self.manager.diddoc_connection_targets(x_did_doc, TestConfig.test_verkey)

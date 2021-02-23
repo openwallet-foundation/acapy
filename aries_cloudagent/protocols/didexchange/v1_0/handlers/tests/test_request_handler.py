@@ -2,9 +2,9 @@ from asynctest import mock as async_mock
 from asynctest import TestCase as AsyncTestCase
 
 from ......connections.models import connection_target, conn_record
-from ......connections.models.diddoc import (
+from ......connections.models.diddoc_v2 import (
     DIDDoc,
-    PublicKey,
+    VerificationMethod,
     PublicKeyType,
     Service,
 )
@@ -22,7 +22,7 @@ from ...manager import DIDXManagerError
 from ...messages.request import DIDXRequest
 from ...messages.problem_report import ProblemReport, ProblemReportReason
 
-TEST_DID = "55GkHamhTU1ZbTbV2ab9DE"
+TEST_DID = "did:sov:55GkHamhTU1ZbTbV2ab9DE"
 TEST_VERKEY = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
 TEST_LABEL = "Label"
 TEST_ENDPOINT = "http://localhost"
@@ -33,28 +33,25 @@ class TestDIDXRequestHandler(AsyncTestCase):
     """Class unit testing request handler."""
 
     def did_doc(self):
-        doc = DIDDoc(did=TEST_DID)
+        doc = DIDDoc(TEST_DID)
         controller = TEST_DID
-        ident = "1"
         pk_value = TEST_VERKEY
-        pk = PublicKey(
-            TEST_DID,
-            ident,
-            pk_value,
+        pk = VerificationMethod(
+            "{}#{}".format(TEST_DID, "1"),
             PublicKeyType.ED25519_SIG_2018,
             controller,
-            False,
+            value=pk_value,
+            authn=False,
         )
         doc.set(pk)
         recip_keys = [pk]
         router_keys = []
         service = Service(
-            TEST_DID,
-            "indy",
+            "{}#{}".format(TEST_DID, "indy"),
+            TEST_ENDPOINT,
             "IndyAgent",
             recip_keys,
             router_keys,
-            TEST_ENDPOINT,
         )
         doc.set(service)
         return doc

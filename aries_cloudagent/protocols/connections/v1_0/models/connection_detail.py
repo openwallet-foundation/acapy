@@ -2,7 +2,7 @@
 
 from marshmallow import EXCLUDE, fields
 
-from .....connections.models.diddoc import DIDDoc
+from .....connections.models.diddoc_v2 import DIDDoc
 from .....messaging.models.base import BaseModel, BaseModelSchema
 from .....messaging.valid import INDY_DID
 

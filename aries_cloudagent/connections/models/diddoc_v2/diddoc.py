@@ -16,6 +16,7 @@ limitations under the License.
 
 import logging
 import copy
+import json
 from typing import Union
 from .verification_method import VerificationMethod
 from .service import Service
@@ -108,8 +109,8 @@ class DIDDoc:
             aux_content = []
             for item in param[1]:
                 if not isinstance(item, str):
-                    did_item = self._index.get(item)
-                    if not self._index.get(item):
+                    did_item = self._index.get(item.id)
+                    if not self._index.get(item.id):
                         self._index[item.id] = item  # {id: <param object>}
                         aux_content.append(item.id)
                     else:
@@ -117,9 +118,10 @@ class DIDDoc:
                             raise ValueError(
                                 "{} has different specifications".format(item.id)
                             )
+                        else:
+                            aux_content.append(item.id)
                 else:
                     if not self._index.get(item):
-                        self._index[item] = param[0]
                         aux_content.append(item)
             self._ref_content[param[0]] = aux_content  # {param: [<List of Ids>]}
 
@@ -135,16 +137,18 @@ class DIDDoc:
             raise ValueError("Not valid DID")
 
     @classmethod
-    def deserialize(cls, json: dict):
+    def deserialize(cls, did_doc: Union[dict, str]):
         """
         Deserialize a dict into a DIDDoc object.
 
         Args:
-            json: service or public key to set
+            did_doc: service or public key to set
         Returns: DIDDoc object
         """
+        if isinstance(did_doc, str):
+            did_doc = json.loads(did_doc)
         schema = DIDDocSchema()
-        did_doc = schema.load(json)
+        did_doc = schema.load(did_doc)
         return did_doc
 
     def serialize(self) -> dict:

@@ -73,7 +73,18 @@ class TestDIDDoc(AsyncTestCase):
     async def test_create_did_doc_wrong_id(self):
 
         with self.assertRaises(ValueError):
-            did_doc = DIDDoc(id="did:sovLjgpST2rjsoxYegQDRm7EL")
+            DIDDoc(id="did:sovLjgpST2rjsoxYegQDRm7EL")
+
+    async  def test_create_bad(self):
+        publicKey2 = copy.copy(publicKey)
+        publicKey2["usage"] = "test"
+
+        with self.assertRaises(ValueError):
+            DIDDoc(
+                id="did:sov:LjgpST2rjsoxYegQDRm7EL",
+                service=[Service.deserialize(service)],
+                public_key=[VerificationMethod.deserialize(publicKey)],
+                authentication=[VerificationMethod.deserialize(publicKey2)])
 
     async def test_update_doc(self):
         did = {

@@ -2,9 +2,9 @@ from unittest import mock
 
 from asynctest import TestCase as AsyncTestCase
 
-from ......connections.models.diddoc import (
+from ......connections.models.diddoc_v2 import (
     DIDDoc,
-    PublicKey,
+    VerificationMethod,
     PublicKeyType,
     Service,
 )
@@ -20,34 +20,31 @@ from ..request import DIDXRequest
 
 class TestConfig:
     test_seed = "testseed000000000000000000000001"
-    test_did = "55GkHamhTU1ZbTbV2ab9DE"
+    test_did = "did:sov:55GkHamhTU1ZbTbV2ab9DE"
     test_verkey = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
     test_label = "Label"
     test_endpoint = "http://localhost"
 
     def make_did_doc(self):
-        doc = DIDDoc(did=self.test_did)
+        doc = DIDDoc(self.test_did)
         controller = self.test_did
-        ident = "1"
         pk_value = self.test_verkey
-        pk = PublicKey(
-            self.test_did,
-            ident,
-            pk_value,
+        pk = VerificationMethod(
+            "{}#{}".format(self.test_did, "1"),
             PublicKeyType.ED25519_SIG_2018,
             controller,
-            False,
+            value=pk_value,
+            authn=False,
         )
         doc.set(pk)
         recip_keys = [pk]
         router_keys = []
         service = Service(
-            self.test_did,
-            "indy",
+            "{}#{}".format(self.test_did, "indy"),
             "IndyAgent",
+            self.test_endpoint,
             recip_keys,
             router_keys,
-            self.test_endpoint,
         )
         doc.set(service)
         return doc

@@ -10,7 +10,7 @@ from ....storage.base import BaseStorage
 from ....storage.error import StorageNotFoundError
 
 from ..conn_record import ConnRecord
-from ..diddoc.diddoc import DIDDoc
+from ..diddoc_v2.diddoc import DIDDoc
 
 
 class TestConnRecord(AsyncTestCase):
@@ -18,7 +18,7 @@ class TestConnRecord(AsyncTestCase):
         self.session = InMemoryProfile.test_session()
 
         self.test_seed = "testseed000000000000000000000001"
-        self.test_did = "55GkHamhTU1ZbTbV2ab9DE"
+        self.test_did = "did:sov:55GkHamhTU1ZbTbV2ab9DE"
         self.test_verkey = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
         self.test_endpoint = "http://localhost"
 

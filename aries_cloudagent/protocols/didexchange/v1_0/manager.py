@@ -4,7 +4,7 @@ import json
 import logging
 
 from ....connections.models.conn_record import ConnRecord
-from ....connections.models.diddoc import DIDDoc
+from ....connections.models.diddoc_v2 import DIDDoc
 from ....connections.base_manager import BaseConnectionManager
 from ....connections.util import mediation_record_if_id
 from ....core.error import BaseError
@@ -403,12 +403,12 @@ class DIDXManager(BaseConnectionManager):
             )
         if not await request.did_doc_attach.data.verify(wallet):
             raise DIDXManagerError("DID Doc signature failed verification")
-        conn_did_doc = DIDDoc.from_json(request.did_doc_attach.data.signed.decode())
-        if request.did != conn_did_doc.did:
+        conn_did_doc = DIDDoc.deserialize(request.did_doc_attach.data.signed.decode())
+        if request.did != conn_did_doc.id:
             raise DIDXManagerError(
                 (
                     f"Connection DID {request.did} does not match "
-                    f"DID Doc id {conn_did_doc.did}"
+                    f"DID Doc id {conn_did_doc.id}"
                 ),
                 error_code=ProblemReportReason.REQUEST_NOT_ACCEPTED,
             )

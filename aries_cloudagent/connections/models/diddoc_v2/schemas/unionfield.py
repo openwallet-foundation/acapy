@@ -31,6 +31,15 @@ class ListOrStringField(fields.Field):
 class ListOrStringOrDictField(fields.Field):
     """List, String or Dict field for Marshmallow."""
 
+    def _serialize(self, value, attr, obj, **kwargs):
+        if isinstance(value, list):
+            for idx, val in enumerate(value):
+                if not isinstance(val, str):
+                    value[idx] = val.serialize()
+            return value
+        else:
+            return "".join(str(d) for d in value)
+
     def _deserialize(self, value, attr, data, **kwargs):
         if isinstance(value, str) or isinstance(value, list) or isinstance(value, dict):
             return value

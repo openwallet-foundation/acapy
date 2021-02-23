@@ -535,7 +535,7 @@ class ConnectionManager(BaseConnectionManager):
             raise ConnectionManagerError(
                 "No DIDDoc provided; cannot connect to public DID"
             )
-        if request.connection.did != conn_did_doc.did:
+        if request.connection.did != conn_did_doc.id:
             raise ConnectionManagerError(
                 "Connection DID does not match DIDDoc id",
                 error_code=ProblemReportReason.REQUEST_NOT_ACCEPTED,
