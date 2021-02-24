@@ -10,6 +10,8 @@ import hashlib
 
 from pyld import jsonld
 
+from ...core.error import BaseError
+
 
 def _canonize(data):
     return jsonld.normalize(
@@ -35,59 +37,78 @@ def _cannonize_document(doc):
     return _canonize(_doc)
 
 
-class DroppedAttributeException(Exception):
+class JsonldError(BaseError):
+    """JsonLD validate or sign Error."""
+
+
+class DroppedAttributeException(JsonldError):
     """Exception used to track that an attribute was removed."""
 
 
-class VerificationMethodMissing(Exception):
+class VerificationMethodMissing(JsonldError):
     """VerificationMethod is required."""
+
+
+class SignatureTypeError(JsonldError):
+    """Signature type error."""
 
 
 def create_verify_data(data, signature_options):
     """Encapsulate the process of constructing the string used during sign and verify."""
 
+    signature_options["type"] = "Ed25519Signature2018"
     if "creator" in signature_options:
         signature_options["verificationMethod"] = signature_options["creator"]
 
     if not signature_options["verificationMethod"]:
         raise VerificationMethodMissing(
-            "signature_options.verificationMethod "
-            "is required"
+            "signature_options.verificationMethod is required"
         )
 
-    if "created" not in signature_options:
-        signature_options["created"] = datetime.datetime.now(
-            datetime.timezone.utc
-        ).strftime("%Y-%m-%dT%H:%M:%SZ")
+    def created_at():
+        stamp = datetime.datetime.now(datetime.timezone.utc)
+        return stamp.strftime("%Y-%m-%dT%H:%M:%SZ")
 
-    if (
-        "type" not in signature_options
-        or signature_options["type"] != "Ed25519Signature2018"
-    ):
-        signature_options["type"] = "Ed25519Signature2018"
+    signature_options["created"] = signature_options.get("created", created_at())
 
-    [expanded] = jsonld.expand(data)
+    # TODO: povide methods for jsonld expand that reports dropped attributes for better error reporting
+    [expanded] = jsonld.expand(data, {"keepFreeFloatingNodes": True})
     framed = jsonld.compact(
         expanded, "https://w3id.org/security/v2", {"skipExpansion": True}
     )
-
     # Detect any dropped attributes during the expand/contract step.
-
-    if len(data) != len(framed):
-        raise DroppedAttributeException("Extra Attribute Detected")
-    if (
-        "proof" in data
-        and "proof" in framed
-        and len(data["proof"]) != len(framed["proof"])
-    ):
-        raise DroppedAttributeException("Extra Attribute Detected")
-    if (
-        "credentialSubject" in data
-        and "https://www.w3.org/2018/credentials#credentialSubject" in framed
-        and len(data["credentialSubject"])
-        != len(framed["https://www.w3.org/2018/credentials#credentialSubject"])
-    ):
-        raise DroppedAttributeException("Extra Attribute Detected")
+    if len(data) > len(framed):
+        # attempt to collect error report data
+        for_diff = jsonld.compact(expanded, data.get("@context"))
+        dropped = set(data.keys()) - set(for_diff.keys())
+        raise DroppedAttributeException(
+            f"{dropped} attributes dropped. "
+            " Provide definitions in context to correct."
+        )
+    # Check proof for dropped attributes
+    attr = "proof"
+    if len(data.get(attr, {})) > len(framed.get(attr, {})):
+        for_diff = jsonld.compact(expanded, data.get("@context"))
+        dropped = set(data.get(attr, {}).keys()) - set(for_diff.get(attr, {}).keys())
+        raise DroppedAttributeException(
+            f"in {attr}, {dropped} attributes dropped. "
+            "Provide definitions in context to correct."
+        )
+    # Check credentialSubject for dropped attributes
+    attr = [
+        "credentialSubject",
+        "https://www.w3.org/2018/credentials#credentialSubject",
+    ]
+    if len(data.get(attr[0], {})) > len(framed.get(attr[1], {})):
+        for_diff = jsonld.compact(expanded, data.get("@context"))
+        dropped = set(data.get(attr[0], {}).keys()) - set(
+            for_diff.get(attr[1], {}).keys()
+        )
+        raise DroppedAttributeException(
+            f"in {attr[0]}, {dropped} attributes dropped."
+            "Provide definitions in context to correct."
+        )
+        raise DroppedAttributeException("CredentialSubject dropped")
 
     cannonized_signature_options = _cannonize_signature_options(signature_options)
     hash_of_cannonized_signature_options = _sha256(cannonized_signature_options)

@@ -12,7 +12,7 @@ from ...wallet.util import (
 )
 from ...wallet.base import BaseWallet
 
-from .create_verify_data import create_verify_data
+from .create_verify_data import create_verify_data, SignatureTypeError
 
 
 class InvalidJWSHeader(Exception):
@@ -105,6 +105,9 @@ async def jws_verify(session, verify_data, signature, public_key):
 async def sign_credential(session, credential, signature_options, verkey):
     """Sign Credential."""
 
+    type_ = signature_options.get("type")
+    if type_ and type_ != "Ed25519Signature2018":
+        raise SignatureTypeError(f"invalid signature type {type_}.")
     framed, verify_data_hex_string = create_verify_data(credential, signature_options)
     verify_data_bytes = bytes.fromhex(verify_data_hex_string)
     jws = await jws_sign(session, verify_data_bytes, verkey)
@@ -113,6 +116,10 @@ async def sign_credential(session, credential, signature_options, verkey):
 
 async def verify_credential(session, doc, verkey):
     """Verify credential."""
+
+    type_ = doc["proof"]["type"]
+    if type_ != "Ed25519Signature2018":
+        raise SignatureTypeError(f"invalid signature type {type_}.")
 
     framed, verify_data_hex_string = create_verify_data(doc, doc["proof"])
     verify_data_bytes = bytes.fromhex(verify_data_hex_string)
