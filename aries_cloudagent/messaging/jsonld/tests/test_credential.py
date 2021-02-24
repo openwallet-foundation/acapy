@@ -137,7 +137,8 @@ TEST_SIGN_ERROR_OBJ0 = {
         "issuer": "did:example:28394728934792387",
         "name": "European Health Insurance Card",
         "description": "Example of a European Health Insurance Card",
-        "issuanceDate2": "2021-01-01T12:19:52Z",
+        "attribute2drop": "drop it like its a tot.",
+        "issuanceDate": "2021-01-01T12:19:52Z",
         "expirationDate": "2029-12-03T12:19:52Z",
         "institutionID": "09999 - GE KVG",
         "cardNo": "80756099990000034111",
@@ -177,7 +178,8 @@ TEST_SIGN_ERROR_OBJ1 = {
         "credentialSubject": {
             "id": "did:example:b34ca6cd37bbf23",
             "type": ["EuropeanHealthInsuranceHolder", "Person"],
-            "familyName2": "Muster",
+            "attribute2drop": "drop it like its a tot.",
+            "familyName": "Muster",
             "giveName": "Maria",
             "birthDate": "1958-07-17",
         },
@@ -203,7 +205,7 @@ TEST_VALIDATE_ERROR_OBJ2 = {
         "credentialSubject": {},
         "proof": {
             "type": "Ed25519Signature2018",
-            "name2drop": "hip2drop",
+            "attribute2drop": "drop it like its a tot.",
             "created": "2020-04-02T18:28:08Z",
             "verificationMethod": "did:example:123#z6MksHh7qHWvybLg5QTPPdG2DgEjjduBDArV9EF9mRiRzMBN",
             "proofPurpose": "assertionMethod",
@@ -425,7 +427,7 @@ async def test_sign_credential(input, mock_session):
 @pytest.mark.parametrize("input", TEST_SIGN_ERROR_OBJS)
 @pytest.mark.asyncio
 async def test_sign_dropped_attribute_exception(input, mock_session):
-    with pytest.raises(DroppedAttributeException):
+    with pytest.raises(DroppedAttributeException,match="attribute2drop"):
         await sign_credential(
             mock_session, input.get("doc"), input.get("options"), TEST_VERKEY
         )
@@ -433,7 +435,7 @@ async def test_sign_dropped_attribute_exception(input, mock_session):
 
 @pytest.mark.asyncio
 async def test_validate_dropped_attribute_exception(mock_session):
-    with pytest.raises(DroppedAttributeException, match=r'name2drop'):
+    with pytest.raises(DroppedAttributeException, match="attribute2drop"):
         input = TEST_VALIDATE_ERROR_OBJ2
         await sign_credential(
             mock_session, input["doc"], input["options"], TEST_VERKEY
