@@ -433,10 +433,10 @@ async def test_sign_dropped_attribute_exception(input, mock_session):
 
 @pytest.mark.asyncio
 async def test_validate_dropped_attribute_exception(mock_session):
-    with pytest.raises(DroppedAttributeException):
+    with pytest.raises(DroppedAttributeException, match=r'name2drop'):
         input = TEST_VALIDATE_ERROR_OBJ2
         await sign_credential(
-            mock_session, input.get("doc"), input.get("options"), TEST_VERKEY
+            mock_session, input["doc"], input["options"], TEST_VERKEY
         )
 
 

@@ -86,29 +86,22 @@ def create_verify_data(data, signature_options):
             " Provide definitions in context to correct."
         )
     # Check proof for dropped attributes
-    attr = "proof"
-    if len(data.get(attr, {})) > len(framed.get(attr, {})):
-        for_diff = jsonld.compact(expanded, data.get("@context"))
-        dropped = set(data.get(attr, {}).keys()) - set(for_diff.get(attr, {}).keys())
-        raise DroppedAttributeException(
-            f"in {attr}, {dropped} attributes dropped. "
-            "Provide definitions in context to correct."
-        )
-    # Check credentialSubject for dropped attributes
-    attr = [
-        "credentialSubject",
-        "https://www.w3.org/2018/credentials#credentialSubject",
-    ]
-    if len(data.get(attr[0], {})) > len(framed.get(attr[1], {})):
-        for_diff = jsonld.compact(expanded, data.get("@context"))
-        dropped = set(data.get(attr[0], {}).keys()) - set(
-            for_diff.get(attr[1], {}).keys()
-        )
-        raise DroppedAttributeException(
-            f"in {attr[0]}, {dropped} attributes dropped."
-            "Provide definitions in context to correct."
-        )
-        raise DroppedAttributeException("CredentialSubject dropped")
+    attr = [("proof", "proof"), ("credentialSubject",
+        "https://www.w3.org/2018/credentials#credentialSubject")]
+    data_context = data.get("@context")
+    for maping in attr:
+        data_attribute = data.get(maping[0], {})
+        frame_attribute = framed.get(maping[1], {})
+        if len( data_attribute) > len(frame_attribute):
+            for_diff = jsonld.compact(expanded, data_context)
+            for_diff_attribute = for_diff.get(maping[1], {})
+            dropped = set(data_attribute.keys()) - set(
+                for_diff_attribute.keys()
+            )
+            raise DroppedAttributeException(
+                f"in {maping[0]}, {dropped} attributes dropped."
+                "Provide definitions in context to correct."
+            )
 
     cannonized_signature_options = _cannonize_signature_options(signature_options)
     hash_of_cannonized_signature_options = _sha256(cannonized_signature_options)
