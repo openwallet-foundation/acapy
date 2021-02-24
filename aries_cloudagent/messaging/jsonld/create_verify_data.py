@@ -72,7 +72,7 @@ def create_verify_data(data, signature_options):
     signature_options["created"] = signature_options.get("created", created_at())
 
     # TODO: povide methods for jsonld expand that reports dropped attributes for better error reporting
-    [expanded] = jsonld.expand(data, {"keepFreeFloatingNodes": True})
+    [expanded] = jsonld.expand(data)
     framed = jsonld.compact(
         expanded, "https://w3id.org/security/v2", {"skipExpansion": True}
     )
@@ -91,15 +91,15 @@ def create_verify_data(data, signature_options):
         ("credentialSubject", "https://www.w3.org/2018/credentials#credentialSubject"),
     ]
     data_context = data.get("@context")
-    for maping in attr:
-        data_attribute = data.get(maping[0], {})
-        frame_attribute = framed.get(maping[1], {})
+    for mapping in attr:
+        data_attribute = data.get(mapping[0], {})
+        frame_attribute = framed.get(mapping[1], {})
         if len(data_attribute) > len(frame_attribute):
             for_diff = jsonld.compact(expanded, data_context)
-            for_diff_attribute = for_diff.get(maping[1], {})
+            for_diff_attribute = for_diff.get(mapping[1], {})
             dropped = set(data_attribute.keys()) - set(for_diff_attribute.keys())
             raise DroppedAttributeException(
-                f"in {maping[0]}, {dropped} attributes dropped."
+                f"in {mapping[0]}, {dropped} attributes dropped."
                 "Provide definitions in context to correct."
             )
 
