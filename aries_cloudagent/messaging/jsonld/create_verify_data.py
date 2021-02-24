@@ -53,6 +53,13 @@ class SignatureTypeError(JsonldError):
     """Signature type error."""
 
 
+def created_at():
+    """Creation Timestamp."""
+
+    stamp = datetime.datetime.now(datetime.timezone.utc)
+    return stamp.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
 def create_verify_data(data, signature_options):
     """Encapsulate the process of constructing the string used during sign and verify."""
 
@@ -64,14 +71,10 @@ def create_verify_data(data, signature_options):
         raise VerificationMethodMissing(
             "signature_options.verificationMethod is required"
         )
-
-    def created_at():
-        stamp = datetime.datetime.now(datetime.timezone.utc)
-        return stamp.strftime("%Y-%m-%dT%H:%M:%SZ")
-
     signature_options["created"] = signature_options.get("created", created_at())
 
-    # TODO: povide methods for jsonld expand that reports dropped attributes for better error reporting
+    # TODO: povide methods for jsonld expand that reports
+    # dropped attributes for better error reporting
     [expanded] = jsonld.expand(data)
     framed = jsonld.compact(
         expanded, "https://w3id.org/security/v2", {"skipExpansion": True}
