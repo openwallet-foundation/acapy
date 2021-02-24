@@ -86,18 +86,18 @@ def create_verify_data(data, signature_options):
             " Provide definitions in context to correct."
         )
     # Check proof for dropped attributes
-    attr = [("proof", "proof"), ("credentialSubject",
-        "https://www.w3.org/2018/credentials#credentialSubject")]
+    attr = [
+        ("proof", "proof"),
+        ("credentialSubject", "https://www.w3.org/2018/credentials#credentialSubject"),
+    ]
     data_context = data.get("@context")
     for maping in attr:
         data_attribute = data.get(maping[0], {})
         frame_attribute = framed.get(maping[1], {})
-        if len( data_attribute) > len(frame_attribute):
+        if len(data_attribute) > len(frame_attribute):
             for_diff = jsonld.compact(expanded, data_context)
             for_diff_attribute = for_diff.get(maping[1], {})
-            dropped = set(data_attribute.keys()) - set(
-                for_diff_attribute.keys()
-            )
+            dropped = set(data_attribute.keys()) - set(for_diff_attribute.keys())
             raise DroppedAttributeException(
                 f"in {maping[0]}, {dropped} attributes dropped."
                 "Provide definitions in context to correct."
