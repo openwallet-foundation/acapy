@@ -198,27 +198,50 @@ TEST_VALIDATE_ERROR_OBJ2 = {
             "https://www.w3.org/2018/credentials/v1",
             "https://www.w3.org/2018/credentials/examples/v1",
         ],
-        "id": "http://example.gov/credentials/3732",
-        "type": [],
-        "issuer": "did:example:123",
-        "issuanceDate": "2020-03-16T22:37:26.544Z",
-        "credentialSubject": {},
+        "holder": "did:example:123",
+        "type": "VerifiablePresentation",
+        "verifiableCredential": [
+            {
+                "@context": [
+                    "https://www.w3.org/2018/credentials/v1",
+                    "https://www.w3.org/2018/credentials/examples/v1",
+                ]
+            },
+            {"id": "http://example.gov/credentials/3732"},
+            {"type": ["VerifiableCredential", "UniversityDegreeCredential"]},
+            {"issuer": "did:example:123"},
+            {"issuanceDate": "2020-03-16T22:37:26.544Z"},
+            {
+                "credentialSubject": {
+                    "id": "did:example:123",
+                    "degree": {
+                        "type": "BachelorDegree",
+                        "name": "Bachelor of Science and Arts",
+                    },
+                }
+            },
+            {
+                "proof": {
+                    "type": "Ed25519Signature2018",
+                    "created": "2020-04-02T18:28:08Z",
+                    "verificationMethod": "did:example:123#z6MksHh7qHWvybLg5QTPPdG2DgEjjduBDArV9EF9mRiRzMBN",
+                    "proofPurpose": "assertionMethod",
+                    "jws": "eyJhbGciOiJFZERTQSIsImI2NCI6ZmFsc2UsImNyaXQiOlsiYjY0Il19..YtqjEYnFENT7fNW-COD0HAACxeuQxPKAmp4nIl8jYAu__6IH2FpSxv81w-l5PvE1og50tS9tH8WyXMlXyo45CA",
+                }
+            },
+        ],
         "proof": {
-            "type": "Ed25519Signature2018",
-            "attribute2drop": "drop it like its a tot.",
-            "created": "2020-04-02T18:28:08Z",
             "verificationMethod": "did:example:123#z6MksHh7qHWvybLg5QTPPdG2DgEjjduBDArV9EF9mRiRzMBN",
+            "attribute2drop": "drop it like its a tot.",
             "proofPurpose": "assertionMethod",
-            "jws": "eyJhbGciOiJFZERTQSIsImI2NCI6ZmFsc2UsImNyaXQiOlsiYjY0Il19..YtqjEYnFENT7fNW-COD0HAACxeuQxPKAmp4nIl8jYAu__6IH2FpSxv81w-l5PvE1og50tS9tH8WyXMlXyo45CA",
+            "created": "2020-04-02T18:48:36Z",
+            "domain": "example.com",
+            "challenge": "d436f0c8-fbd9-4e48-bbb2-55fc5d0920a8",
+            "type": "Ed25519Signature2018",
+            "jws": "eyJhbGciOiAiRWREU0EiLCAiYjY0IjogZmFsc2UsICJjcml0IjogWyJiNjQiXX0..a6dB9OAI9HWc1lDoWzd1---XF_QdArVMu99N2OKnOFT2Ize8MiuVvbJCIkYHpjn3arPle-o0iMlUx3q08ES_Bg",
         },
     },
-    "options": {
-        "verificationMethod": "did:example:123#z6MksHh7qHWvybLg5QTPPdG2DgEjjduBDArV9EF9mRiRzMBN",
-        "proofPurpose": "assertionMethod",
-        "created": "2020-04-02T18:48:36Z",
-        "domain": "example.com",
-        "challenge": "d436f0c8-fbd9-4e48-bbb2-55fc5d0920a8",
-    },
+    "verkey": "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx",
 }
 
 TEST_SIGN_ERROR_OBJS = [TEST_SIGN_ERROR_OBJ0, TEST_SIGN_ERROR_OBJ1]
@@ -437,8 +460,8 @@ async def test_sign_dropped_attribute_exception(input, mock_session):
 async def test_validate_dropped_attribute_exception(mock_session):
     with pytest.raises(DroppedAttributeException, match="attribute2drop"):
         input = TEST_VALIDATE_ERROR_OBJ2
-        await sign_credential(
-            mock_session, input["doc"], input["options"], TEST_VERKEY
+        await verify_credential(
+            mock_session, input["doc"], TEST_VERIFY_ERROR["verkey"]
         )
 
 
