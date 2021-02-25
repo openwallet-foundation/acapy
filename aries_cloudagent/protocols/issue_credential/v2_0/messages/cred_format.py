@@ -13,11 +13,12 @@ from .....messaging.decorators.attach_decorator import AttachDecorator
 from .....messaging.models.base import BaseModel, BaseModelSchema
 from .....messaging.valid import UUIDFour
 
+from ..formats.indy import IndyCredFormat
 from ..models.detail.dif import V20CredExRecordDIF
 from ..models.detail.indy import V20CredExRecordIndy
 
 # Aries RFC value, further monikers, cred ex detail record class
-FormatSpec = namedtuple("FormatSpec", "aries aka detail")
+FormatSpec = namedtuple("FormatSpec", "aries aka detail handler")
 
 
 class V20CredFormat(BaseModel):
@@ -35,6 +36,7 @@ class V20CredFormat(BaseModel):
             "hlindy-zkp-v1.0",
             {"indy", "hyperledgerindy", "hlindy"},
             V20CredExRecordIndy,
+            IndyCredFormat,
         )
         DIF = FormatSpec(
             "dif/credential-manifest@v1.0",
@@ -76,6 +78,10 @@ class V20CredFormat(BaseModel):
         def detail(self) -> str:
             """Accessor for credential exchange detail class."""
             return self.value.detail
+
+        def handler(self) -> IndyCredFormat:
+            """Accessor for credential exchange format handler."""
+            return self.value.handler
 
         def validate_filter(self, data: Mapping):
             """Raise ValidationError for wrong filtration criteria."""

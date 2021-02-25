@@ -12,12 +12,10 @@ from ....core.profile import Profile
 from ....indy.holder import IndyHolder, IndyHolderError
 from ....indy.issuer import IndyIssuer, IndyIssuerRevocationRegistryFullError
 from ....ledger.base import BaseLedger
-from ....messaging.credential_definitions.util import CRED_DEF_SENT_RECORD_TYPE
 from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....revocation.indy import IndyRevocation
 from ....revocation.models.revocation_registry import RevocationRegistry
 from ....revocation.models.issuer_rev_reg_record import IssuerRevRegRecord
-from ....storage.base import BaseStorage
 from ....storage.error import StorageNotFoundError
 
 from .messages.cred_ack import V20CredAck
@@ -60,20 +58,6 @@ class V20CredManager:
 
         """
         return self._profile
-
-    async def _match_sent_cred_def_id(self, tag_query: Mapping[str, str]) -> str:
-        """Return most recent matching id of cred def that agent sent to ledger."""
-
-        async with self._profile.session() as session:
-            storage = session.inject(BaseStorage)
-            found = await storage.find_all_records(
-                type_filter=CRED_DEF_SENT_RECORD_TYPE, tag_query=tag_query
-            )
-        if not found:
-            raise V20CredManagerError(
-                f"Issuer has no operable cred def for proposal spec {tag_query}"
-            )
-        return max(found, key=lambda r: int(r.tags["epoch"])).tags["cred_def_id"]
 
     async def get_detail_record(
         self,
@@ -150,17 +134,17 @@ class V20CredManager:
 
         """
 
+        # Format specific create_proposal handler
+        formats = [
+            await fmt.handler(self.profile).create_proposal(filter)
+            for (fmt, filter) in fmt2filter.items()
+        ]
+
         cred_proposal_message = V20CredProposal(
             comment=comment,
             credential_preview=cred_preview,
-            formats=[
-                V20CredFormat(attach_id=str(ident), format_=V20CredFormat.Format.get(f))
-                for ident, f in enumerate(fmt2filter.keys())
-            ],
-            filters_attach=[
-                AttachDecorator.data_base64(f or {}, ident=str(ident))
-                for ident, f in enumerate(fmt2filter.values())
-            ],
+            formats=[format for (format, _) in formats],
+            filters_attach=[attach for (_, attach) in formats],
         )
         cred_proposal_message.assign_trace_decorator(self._profile.settings, trace)
 
@@ -239,11 +223,6 @@ class V20CredManager:
 
         """
 
-        async def _create(cred_def_id):  # may change for DIF
-            issuer = self._profile.inject(IndyIssuer)
-            offer_json = await issuer.create_credential_offer(cred_def_id)
-            return json.loads(offer_json)
-
         cred_proposal_message = V20CredProposal.deserialize(
             cred_ex_record.cred_proposal
         )
@@ -251,50 +230,20 @@ class V20CredManager:
             self._profile.settings, cred_ex_record.trace
         )
 
-        assert V20CredFormat.Format.INDY in [
-            V20CredFormat.Format.get(p.format) for p in cred_proposal_message.formats
-        ]  # until DIF support
-
-        cred_def_id = await self._match_sent_cred_def_id(
-            V20CredFormat.Format.INDY.get_attachment_data(
-                cred_proposal_message.formats,
-                cred_proposal_message.filters_attach,
-            )
-        )
-        cred_preview = cred_proposal_message.credential_preview
-
-        # vet attributes
-        ledger = self._profile.inject(BaseLedger)  # may change for DIF
-        async with ledger:
-            schema_id = await ledger.credential_definition_id2schema_id(cred_def_id)
-            schema = await ledger.get_schema(schema_id)
-        schema_attrs = {attr for attr in schema["attrNames"]}
-        preview_attrs = {attr for attr in cred_preview.attr_dict()}
-        if preview_attrs != schema_attrs:
-            raise V20CredManagerError(
-                f"Preview attributes {preview_attrs} "
-                f"mismatch corresponding schema attributes {schema_attrs}"
-            )
-
-        cred_offer = None
-        cache_key = f"credential_offer::{cred_def_id}"  # may change for DIF
-        cache = self._profile.inject(BaseCache, required=False)
-        if cache:
-            async with cache.acquire(cache_key) as entry:
-                if entry.result:
-                    cred_offer = entry.result
-                else:
-                    cred_offer = await _create(cred_def_id)
-                    await entry.set_result(cred_offer, 3600)
-        if not cred_offer:
-            cred_offer = await _create(cred_def_id)
+        # Format specific create_offer handler
+        formats = [
+            await V20CredFormat.Format.get(p.format)
+            .handler(self.profile)
+            .create_offer(cred_proposal_message)
+            for p in cred_proposal_message.formats
+        ]
 
         cred_offer_message = V20CredOffer(
             replacement_id=replacement_id,
             comment=comment,
-            credential_preview=cred_preview,
-            formats=[V20CredFormat(attach_id="0", format_=V20CredFormat.Format.INDY)],
-            offers_attach=[AttachDecorator.data_base64(cred_offer, ident="0")],
+            credential_preview=cred_proposal_message.credential_preview,
+            formats=[format for (format, _) in formats],
+            offers_attach=[attach for (_, attach) in formats],
         )
 
         cred_offer_message._thread = {"thid": cred_ex_record.thread_id}
@@ -327,9 +276,9 @@ class V20CredManager:
             The credential exchange record, updated
 
         """
-        assert V20CredFormat.Format.INDY in [
-            V20CredFormat.Format.get(p.format) for p in cred_offer_message.formats
-        ]  # until DIF support
+
+        # TODO: assert for all methods that we support at least one format
+        # TODO: assert we don't suddenly change from format during the interaction
 
         offer = cred_offer_message.attachment(
             V20CredFormat.Format.INDY
