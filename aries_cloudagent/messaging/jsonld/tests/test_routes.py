@@ -153,7 +153,9 @@ async def test_verify(mock_verify_request, mock_response):
     mock_response.assert_called_once_with({"valid": "fake_verify"})
 
 
-@pytest.mark.parametrize("error", [DIDNotFound, DIDMethodNotSupported, WalletError, InjectionError])
+@pytest.mark.parametrize(
+    "error", [DIDNotFound, DIDMethodNotSupported, WalletError, InjectionError]
+)
 @pytest.mark.asyncio
 async def test_verify_bad_req_error(mock_verify_request, mock_response, error):
     test_module.verify_credential = async_mock.CoroutineMock(side_effect=error())

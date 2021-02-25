@@ -60,10 +60,7 @@ async def sign(request: web.BaseRequest):
             raise ResolverError(f"Verification method {ver_meth} not found.")
         verkey = ver_meth_expanded.get("publicKeyBase58")
         doc_with_proof = await sign_credential(
-            session,
-            doc,
-            {"verificationMethod": ver_meth},
-            verkey
+            session, doc, {"verificationMethod": ver_meth}, verkey
         )
     except (DIDError, ResolverError, WalletError, InjectionError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
