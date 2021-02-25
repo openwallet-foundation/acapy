@@ -299,7 +299,9 @@ class DIDDoc:
             if item.id not in self._ref_content[verification_type]:
                 self._ref_content[verification_type].append(item.id)
 
-    def dereference(self, did_url: str):
+    def dereference(
+        self, did_url: Union[str, DIDUrl]
+    ) -> Union[Service, VerificationMethod]:
         """
         Retrieve a verification method or service by it id.
 
@@ -310,7 +312,7 @@ class DIDDoc:
 
         """
 
-        # Verification did url
-        DIDUrl.parse(did_url)
+        if isinstance(did_url, str):
+            did_url = DIDUrl.parse(did_url)
 
         return self._index.get(did_url)

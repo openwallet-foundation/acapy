@@ -31,7 +31,6 @@ publicKey = {
     "type": "RsaVerificationKey2018",
     "controller": "did:sov:LjgpST2rjsoxYegQDRm7EL",
     "publicKeyPem": "-----BEGIN PUBLIC X...",
-    "usage": "signing",
 }
 
 service = {
