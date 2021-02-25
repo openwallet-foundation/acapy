@@ -1,6 +1,6 @@
 # 0.6.0
 
-## February 5, 2021
+## February 25, 2021
 
 This is a significant release of ACA-Py with several new features, as well as changes to the internal architecture in order to set the groundwork for using the new shared component libraries: [indy-vdr](https://github.com/hyperledger/indy-vdr), [indy-credx](https://github.com/hyperledger/indy-shared-rs), and [aries-askar](https://github.com/hyperledger/aries-askar).
 
