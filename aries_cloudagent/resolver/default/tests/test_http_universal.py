@@ -12,20 +12,52 @@ from ...base import DIDNotFound, ResolverError
 
 # pylint: disable=redefined-outer-name
 
+
 @pytest.fixture
 def resolver():
     """Resolver fixture."""
     uni_resolver = HTTPUniversalDIDResolver()
-    uni_resolver.configure({
-        "endpoint": "https://dev.uniresolver.io/1.0/identifiers",
-        "methods": [
-            "sov", "abt", "btcr", "erc725", "dom", "stack", "ethr", "web", "v1",
-            "key", "ipid", "jolo", "hacera", "elem", "seraphid", "github",
-            "ccp", "work", "ont", "kilt", "evan", "echo", "factom", "dock",
-            "trust", "io", "bba", "bid", "schema", "ion", "ace", "gatc",
-            "unisot", "icon"
-        ]
-    })
+    uni_resolver.configure(
+        {
+            "endpoint": "https://dev.uniresolver.io/1.0/identifiers",
+            "methods": [
+                "sov",
+                "abt",
+                "btcr",
+                "erc725",
+                "dom",
+                "stack",
+                "ethr",
+                "web",
+                "v1",
+                "key",
+                "ipid",
+                "jolo",
+                "hacera",
+                "elem",
+                "seraphid",
+                "github",
+                "ccp",
+                "work",
+                "ont",
+                "kilt",
+                "evan",
+                "echo",
+                "factom",
+                "dock",
+                "trust",
+                "io",
+                "bba",
+                "bid",
+                "schema",
+                "ion",
+                "ace",
+                "gatc",
+                "unisot",
+                "icon",
+            ],
+        }
+    )
     yield uni_resolver
 
 
@@ -91,17 +123,18 @@ async def test_resolve(profile, resolver, mock_client_session):
     mock_client_session.response = MockResponse(
         200, {"didDocument": {"id": "did:example:123"}}
     )
-    doc: ResolvedDIDDoc = await resolver.resolve(profile, "did:sov:WRfXPg8dantKVubE3HX8pw")
+    doc: ResolvedDIDDoc = await resolver.resolve(
+        profile, "did:sov:WRfXPg8dantKVubE3HX8pw"
+    )
     assert doc.did == "did:example:123"
 
 
 @pytest.mark.asyncio
 async def test_resolve_not_found(profile, resolver, mock_client_session):
-    mock_client_session.response = MockResponse(
-        404, "Not found"
-    )
+    mock_client_session.response = MockResponse(404, "Not found")
     with pytest.raises(DIDNotFound):
         await resolver.resolve(profile, "did:sov:1234567")
+
 
 @pytest.mark.asyncio
 async def test_resolve_unexpeceted_status(profile, resolver, mock_client_session):

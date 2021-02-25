@@ -62,13 +62,15 @@ class IndyDIDResolver(BaseDIDResolver):
         }
 
         if endpoint:
-            doc["service"] = [{
-                "id": did.ref(ResolvedDIDDoc.AGENT_SERVICE_TYPE),
-                "type": ResolvedDIDDoc.AGENT_SERVICE_TYPE,
-                "priority": 0,
-                "recipientKeys": [did.ref(1)],
-                "routingKeys": [],
-                "serviceEndpoint": endpoint,
-            }]
+            doc["service"] = [
+                {
+                    "id": did.ref(ResolvedDIDDoc.AGENT_SERVICE_TYPE),
+                    "type": ResolvedDIDDoc.AGENT_SERVICE_TYPE,
+                    "priority": 0,
+                    "recipientKeys": [did.ref(1)],
+                    "routingKeys": [],
+                    "serviceEndpoint": endpoint,
+                }
+            ]
 
         return ResolvedDIDDoc(doc)

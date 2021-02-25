@@ -7,7 +7,7 @@ from .default.http_universal import HTTPUniversalDIDResolver
 
 
 async def setup(context: InjectionContext):
-    """Setup default resolvers."""
+    """Set up default resolvers."""
     registry = context.inject(DIDResolverRegistry)
     for Resolver in (IndyDIDResolver, HTTPUniversalDIDResolver):
         resolver = Resolver()
