@@ -12,7 +12,8 @@ from ...resolver.base import (
     ResolverType,
 )
 from ...resolver.did import DID
-from ...resolver.diddoc import ResolvedDIDDoc
+from . import DOC
+from ...connections.models.diddoc_v2 import DIDDoc, VerificationMethod
 from ..did_resolver import DIDResolver
 from ..did_resolver_registry import DIDResolverRegistry
 
@@ -60,48 +61,6 @@ TEST_METHOD_SPECIFIC_IDS = [
 ]
 
 
-DOC = {
-    "@context": "https://w3id.org/did/v1",
-    "id": "did:example:1234abcd",
-    "verificationMethod": [
-        {
-            "id": "3",
-            "type": "RsaVerificationKey2018",
-            "controller": "did:example:1234abcd",
-            "publicKeyPem": "-----BEGIN PUBLIC X…",
-        },
-        {
-            "id": "4",
-            "type": "RsaVerificationKey2018",
-            "controller": "did:example:1234abcd",
-            "publicKeyPem": "-----BEGIN PUBLIC 9…",
-        },
-        {
-            "id": "6",
-            "type": "RsaVerificationKey2018",
-            "controller": "did:example:1234abcd",
-            "publicKeyPem": "-----BEGIN PUBLIC A…",
-        },
-    ],
-    "authentication": [
-        {
-            "type": "RsaSignatureAuthentication2018",
-            "publicKey": "did:example:1234abcd#4",
-        }
-    ],
-    "service": [
-        {
-            "id": "did:example:123456789abcdefghi;did-communication",
-            "type": "did-communication",
-            "priority": 0,
-            "recipientKeys": ["did:example:1234abcd#4"],
-            "routingKeys": ["did:example:1234abcd#3"],
-            "serviceEndpoint": "did:example:xd45fr567794lrzti67;did-communication",
-        }
-    ],
-}
-
-
 class MockResolver(BaseDIDResolver):
     def __init__(self, supported_methods, resolved=None, native: bool = False):
         super().__init__(ResolverType.NATIVE if native else ResolverType.NON_NATIVE)
@@ -125,7 +84,7 @@ class MockResolver(BaseDIDResolver):
 def resolver():
     did_resolver_registry = DIDResolverRegistry()
     for method in TEST_DID_METHODS:
-        resolver = MockResolver([method], ResolvedDIDDoc(DOC))
+        resolver = MockResolver([method], DIDDoc.deserialize(DOC))
         did_resolver_registry.register(resolver)
     return DIDResolver(did_resolver_registry)
 
@@ -181,14 +140,16 @@ def test_match_did_to_resolver_registration_order():
 @pytest.mark.asyncio
 async def test_dereference(resolver, profile):
     url = "did:example:1234abcd#4"
-    assert DOC["verificationMethod"][1] == await resolver.dereference(profile, url)
+    expected: dict = DOC["verificationMethod"][0]
+    actual: VerificationMethod = await resolver.dereference(profile, url)
+    assert expected == actual.serialize()
 
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("did", TEST_DIDS)
 async def test_resolve(resolver, profile, did):
     did_doc = await resolver.resolve(profile, did)
-    assert isinstance(did_doc, ResolvedDIDDoc)
+    assert isinstance(did_doc, DIDDoc)
 
 
 @pytest.mark.asyncio
@@ -196,7 +157,7 @@ async def test_resolve(resolver, profile, did):
 async def test_resolve_did(resolver, profile, did):
     did = DID(did)
     did_doc = await resolver.resolve(profile, did)
-    assert isinstance(did_doc, ResolvedDIDDoc)
+    assert isinstance(did_doc, DIDDoc)
 
 
 @pytest.mark.asyncio

@@ -11,7 +11,7 @@ from ...ledger.base import BaseLedger
 from ...ledger.error import LedgerError
 from ..base import BaseDIDResolver, DIDNotFound, ResolverError, ResolverType
 from ..did import DID
-from ..diddoc import ResolvedDIDDoc
+from ...connections.models.diddoc_v2.diddoc import DIDDoc
 
 
 class NoIndyLedger(ResolverError):
@@ -22,6 +22,7 @@ class IndyDIDResolver(BaseDIDResolver):
     """Indy DID Resolver."""
 
     VERIFICATION_METHOD_TYPE = "Ed25519VerificationKey2018"
+    AGENT_SERVICE_TYPE = "did-communication"
 
     def __init__(self):
         """Initialize Indy Resolver."""
@@ -48,29 +49,28 @@ class IndyDIDResolver(BaseDIDResolver):
         except LedgerError as err:
             raise DIDNotFound(f"DID {did} could not be resolved") from err
 
-        doc = {
-            "id": str(did),
-            "verificationMethod": [
-                {
-                    "id": did.ref(1),
-                    "type": self.VERIFICATION_METHOD_TYPE,
-                    "controller": str(did),
-                    "publicKeyBase58": recipient_key,
-                }
-            ],
-            "authentication": [did.ref(1)],
-        }
-
-        if endpoint:
-            doc["service"] = [
-                {
-                    "id": did.ref(ResolvedDIDDoc.AGENT_SERVICE_TYPE),
-                    "type": ResolvedDIDDoc.AGENT_SERVICE_TYPE,
-                    "priority": 0,
-                    "recipientKeys": [did.ref(1)],
-                    "routingKeys": [],
-                    "serviceEndpoint": endpoint,
-                }
-            ]
-
-        return ResolvedDIDDoc(doc)
+        doc = DIDDoc.deserialize(
+            {
+                "id": str(did),
+                "verificationMethod": [
+                    {
+                        "id": did.ref(1),
+                        "type": self.VERIFICATION_METHOD_TYPE,
+                        "controller": str(did),
+                        "publicKeyBase58": recipient_key,
+                    }
+                ],
+                "authentication": [did.ref(1)],
+                "service": [
+                    {
+                        "id": did.ref(self.AGENT_SERVICE_TYPE),
+                        "type": self.AGENT_SERVICE_TYPE,
+                        "priority": 0,
+                        "recipientKeys": [did.ref(1)],
+                        "routingKeys": [],
+                        "serviceEndpoint": endpoint,
+                    }
+                ],
+            }
+        )
+        return doc

@@ -6,13 +6,16 @@ import pytest
 from asynctest import mock as async_mock
 
 from ...admin.request_context import AdminRequestContext
-from ...resolver.diddoc import ResolvedDIDDoc
+from ...connections.models.diddoc_v2.diddoc import DIDDoc
 from .. import routes as test_module
-from ..base import DIDMethodNotSupported, DIDNotFound, ResolverError
+from ..base import (
+    DIDMethodNotSupported, DIDNotFound, ResolverError,
+)
 from ..did_resolver import DIDResolver
+from . import DOC
 from .test_diddoc import DOC
 
-did_doc = ResolvedDIDDoc(DOC)
+did_doc = DIDDoc.deserialize(DOC)
 
 
 @pytest.fixture

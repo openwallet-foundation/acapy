@@ -1,7 +1,8 @@
 """Test Base DID Resolver methods."""
 
 import pytest
-from ..base import BaseDIDResolver, ResolverType, ResolvedDIDDoc
+from ...connections.models.diddoc_v2.diddoc import DIDDoc
+from ..base import BaseDIDResolver, ResolverType
 
 
 class ExampleDIDResolver(BaseDIDResolver):

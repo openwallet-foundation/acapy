@@ -4,8 +4,7 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Sequence, Union
 
-from .diddoc import ResolvedDIDDoc
-from ..config.injection_context import InjectionContext
+from ..connections.models.diddoc_v2.diddoc import DIDDoc
 from ..core.profile import Profile
 from ..core.error import BaseError
 from .did import DID
