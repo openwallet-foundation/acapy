@@ -1,25 +1,16 @@
-import unittest
-import asyncio
+"""Test resolver routes."""
+
+# pylint: disable=redefined-outer-name
+
 import pytest
 from asynctest import mock as async_mock
-from ...storage.error import StorageError, StorageNotFoundError
-from ...messaging.models.base import BaseModelError
 
-from ..base import (
-    BaseDIDResolver,
-    DIDMethodNotSupported,
-    DIDNotFound,
-    ResolverType,
-)
-from ...resolver.did import DID
-from ...resolver.diddoc import ResolvedDIDDoc
-from ..did_resolver import DIDResolver
-from ..did_resolver_registry import DIDResolverRegistry
-from .test_did_resolver import TEST_DID_METHODS
 from ...admin.request_context import AdminRequestContext
-from .test_diddoc import DOC
+from ...resolver.diddoc import ResolvedDIDDoc
 from .. import routes as test_module
-from ...core.in_memory import InMemoryProfile
+from ..base import DIDMethodNotSupported, DIDNotFound, ResolverError
+from ..did_resolver import DIDResolver
+from .test_diddoc import DOC
 
 did_doc = ResolvedDIDDoc(DOC)
 
@@ -67,25 +58,19 @@ async def test_resolver(mock_request, mock_response):
 
 
 @pytest.mark.asyncio
-async def test_resolver_not_found_error(mock_resolver, mock_request, mock_response):
-    mock_resolver.resolve = async_mock.CoroutineMock(side_effect=StorageNotFoundError())
-    with pytest.raises(test_module.web.HTTPNotFound):
-        await test_module.resolve_did(mock_request)
-
-
-@pytest.mark.asyncio
-async def test_resolver_bad_req_error(mock_resolver, mock_request, mock_response):
-    mock_resolver.resolve = async_mock.CoroutineMock(side_effect=BaseModelError())
-    with pytest.raises(test_module.web.HTTPBadRequest):
-        await test_module.resolve_did(mock_request)
-
-
-@pytest.mark.asyncio
-async def test_resolver_bad_req_storage_error(
-    mock_resolver, mock_request, mock_response
+@pytest.mark.parametrize(
+    "side_effect, error",
+    [
+        (DIDNotFound, test_module.web.HTTPNotFound),
+        (DIDMethodNotSupported, test_module.web.HTTPNotImplemented),
+        (ResolverError, test_module.web.HTTPInternalServerError),
+    ],
+)
+async def test_resolver_not_found_error(
+    mock_resolver, mock_request, side_effect, error
 ):
-    mock_resolver.resolve = async_mock.CoroutineMock(side_effect=StorageError())
-    with pytest.raises(test_module.web.HTTPBadRequest):
+    mock_resolver.resolve = async_mock.CoroutineMock(side_effect=side_effect())
+    with pytest.raises(error):
         await test_module.resolve_did(mock_request)
 
 
