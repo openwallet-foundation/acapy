@@ -1,3 +1,4 @@
+import argparse
 import asyncio
 import base64
 import binascii
@@ -11,6 +12,10 @@ from aiohttp import ClientError
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from runners.agent_container import (
+    arg_parser,
+    create_agent_with_args,
+)
 from runners.support.agent import (  # noqa:E402
     DemoAgent,
     default_genesis_txns,
@@ -117,7 +122,6 @@ class AliceAgent(DemoAgent):
     async def handle_present_proof(self, message):
         state = message["state"]
         presentation_exchange_id = message["presentation_exchange_id"]
-        presentation_request = message["presentation_request"]
 
         log_msg(
             "Presentation: state =",
@@ -139,6 +143,7 @@ class AliceAgent(DemoAgent):
 
             try:
                 # select credentials to provide for the proof
+                presentation_request = message["presentation_request"]
                 credentials = await self.admin_GET(
                     f"/present-proof/records/{presentation_exchange_id}/credentials"
                 )
@@ -368,33 +373,7 @@ async def main(
 
 
 if __name__ == "__main__":
-    import argparse
-
-    parser = argparse.ArgumentParser(description="Runs an Alice demo agent.")
-    parser.add_argument("--no-auto", action="store_true", help="Disable auto issuance")
-    parser.add_argument(
-        "-p",
-        "--port",
-        type=int,
-        default=8030,
-        metavar=("<port>"),
-        help="Choose the starting port number to listen on",
-    )
-    parser.add_argument(
-        "--timing", action="store_true", help="Enable timing information"
-    )
-    parser.add_argument(
-        "--multitenant", action="store_true", help="Enable multitenancy options"
-    )
-    parser.add_argument(
-        "--mediation", action="store_true", help="Enable mediation functionality"
-    )
-    parser.add_argument(
-        "--wallet-type",
-        type=str,
-        metavar="<wallet-type>",
-        help="Set the agent wallet type",
-    )
+    parser = arg_parser(ident = "faber", port=8030)
     args = parser.parse_args()
 
     ENABLE_PYDEVD_PYCHARM = os.getenv("ENABLE_PYDEVD_PYCHARM", "").lower()

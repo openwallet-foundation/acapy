@@ -12,7 +12,7 @@ import os
 from time import sleep
 import uuid
 
-from runners.agent_container import AgentContainer, create_agent_with_args
+from runners.agent_container import AgentContainer, create_agent_with_args_list
 from runners.support.agent import DemoAgent
 
 
@@ -65,7 +65,7 @@ def async_sleep(delay):
 # high level aries agent interface
 ######################################################################
 def create_agent_container_with_args(in_args: list):
-    return run_coroutine_with_args(create_agent_with_args, in_args)
+    return run_coroutine_with_args(create_agent_with_args_list, in_args)
 
 
 def aries_container_initialize(
