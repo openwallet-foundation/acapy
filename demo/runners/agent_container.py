@@ -44,8 +44,8 @@ class AriesAgent(DemoAgent):
         ident: str,
         http_port: int,
         admin_port: int,
-        no_auto: bool = False,
         prefix: str = "Aries",
+        no_auto: bool = False,
         extra_args: list = [],
         **kwargs,
     ):
@@ -281,7 +281,7 @@ class AriesAgent(DemoAgent):
 
         if wait:
             log_msg("Waiting for connection...")
-            await agent.detect_connection()
+            await self.detect_connection()
 
     async def create_schema_and_cred_def(
         self, schema_name, schema_attrs, revocation, version=None
@@ -693,25 +693,28 @@ async def create_agent_with_args_list(in_args: list):
 
 
 async def create_agent_with_args(args, ident: str = None):
-    if args.did_exchange and args.mediation:
+    if ("did_exchange" in args and args.did_exchange) and args.mediation:
         raise Exception(
             "DID-Exchange connection protocol is not (yet) compatible with mediation"
         )
 
     require_indy()
 
-    tails_server_base_url = args.tails_server_base_url or os.getenv("PUBLIC_TAILS_URL")
+    if "revocation" in args and args.revocation:
+        tails_server_base_url = args.tails_server_base_url or os.getenv("PUBLIC_TAILS_URL")
+    else:
+        tails_server_base_url = None
 
     arg_file = args.arg_file or os.getenv("ACAPY_ARG_FILE")
 
     # if we don't have a tails server url then guess it
-    if args.revocation and not tails_server_base_url:
+    if ("revocation" in args and args.revocation) and not tails_server_base_url:
         # assume we're running in docker
         tails_server_base_url = (
             "http://" + (os.getenv("DOCKERHOST") or "host.docker.internal") + ":6543"
         )
 
-    if args.revocation and not tails_server_base_url:
+    if ("revocation" in args and args.revocation) and not tails_server_base_url:
         raise Exception(
             "If revocation is enabled, --tails-server-base-url must be provided"
         )
@@ -727,12 +730,12 @@ async def create_agent_with_args(args, ident: str = None):
         agent_ident + ".agent",
         args.port,
         no_auto=args.no_auto,
-        revocation=args.revocation,
+        revocation=args.revocation if "revocation" in args else False,
         tails_server_base_url=tails_server_base_url,
         show_timing=args.timing,
         multitenant=args.multitenant,
         mediation=args.mediation,
-        use_did_exchange=args.did_exchange,
+        use_did_exchange=args.did_exchange if "did_exchange" in args else False,
         wallet_type=args.wallet_type,
         public_did=args.public_did if "public_did" in args else None,
         seed="random" if ("public_did" in args and args.public_did) else None,
