@@ -39,12 +39,8 @@ from ....wallet.error import WalletNotFoundError
 from ...problem_report.v1_0 import internal_error
 from ...problem_report.v1_0.message import ProblemReport
 
-from ..indy.presentation import IndyProofReqNonRevokedSchema
-from ..indy.presentation_preview import (
-    IndyPresentationPreview,
-    IndyPresentationPreviewSchema,
-)
-from ..indy.proof_request import IndyProofRequestSchema
+from ..indy.proof_request import IndyProofReqNonRevokedSchema, IndyProofRequestSchema
+from ..indy.pres_preview import IndyPresPreview, IndyPresPreviewSchema
 
 from .manager import PresentationManager
 from .message_types import ATTACH_DECO_IDS, PRESENTATION_REQUEST, SPEC_URI
@@ -116,7 +112,7 @@ class V10PresentationProposalRequestSchema(AdminAPIMessageTracingSchema):
         description="Human-readable comment", required=False, allow_none=True
     )
     presentation_proposal = fields.Nested(
-        IndyPresentationPreviewSchema(),
+        IndyPresPreviewSchema(),
         required=True,
     )
     auto_present = fields.Boolean(
@@ -497,7 +493,7 @@ async def presentation_exchange_send_proposal(request: web.BaseRequest):
             connection_record = await ConnRecord.retrieve_by_id(session, connection_id)
             presentation_proposal_message = PresentationProposal(
                 comment=comment,
-                presentation_proposal=IndyPresentationPreview.deserialize(
+                presentation_proposal=IndyPresPreview.deserialize(
                     presentation_preview
                 ),
             )

@@ -1,8 +1,7 @@
 """Utilities to deal with indy."""
 
-from marshmallow import fields, validate, validates_schema
+from marshmallow import fields, validate, validates_schema, ValidationError
 
-from ....indy.holder import IndyHolder
 from ....messaging.models.openapi import OpenAPISchema
 from ....messaging.valid import (
     INDY_CRED_DEF_ID,
@@ -85,7 +84,11 @@ class IndyProofReqAttrSpecSchema(OpenAPISchema):
         ),
         required=False,
     )
-    non_revoked = fields.Nested(IndyProofReqNonRevokedSchema(), required=False)
+    non_revoked = fields.Nested(
+        IndyProofReqNonRevokedSchema(),
+        required=False,
+        allow_none=True,  # accommodate libvcx
+    )
 
     @validates_schema
     def validate_fields(self, data, **kwargs):
@@ -128,7 +131,11 @@ class IndyProofReqPredSpecSchema(OpenAPISchema):
         description="If present, credential must satisfy one of given restrictions",
         required=False,
     )
-    non_revoked = fields.Nested(IndyProofReqNonRevokedSchema(), required=False)
+    non_revoked = fields.Nested(
+        IndyProofReqNonRevokedSchema(),
+        required=False,
+        allow_none=True,  # accommodate libvcx
+    )
 
 
 class IndyProofRequestSchema(OpenAPISchema):
@@ -159,4 +166,8 @@ class IndyProofRequestSchema(OpenAPISchema):
         keys=fields.Str(example="0_age_GE_uuid"),  # marshmallow/apispec v3.0 ignores
         values=fields.Nested(IndyProofReqPredSpecSchema()),
     )
-    non_revoked = fields.Nested(IndyProofReqNonRevokedSchema(), required=False)
+    non_revoked = fields.Nested(
+        IndyProofReqNonRevokedSchema(),
+        required=False,
+        allow_none=True,  # accommodate libvcx
+    )

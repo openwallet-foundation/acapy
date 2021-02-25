@@ -12,7 +12,7 @@ from .....messaging.decorators.attach_decorator import AttachDecorator
 from .....messaging.models.base import BaseModel, BaseModelSchema
 from .....messaging.valid import UUIDFour
 
-from ...indy.presentation_preview import IndyPresentationPreviewSchema
+from ...indy.pres_preview import IndyPresPreviewSchema
 from ...indy.proof_request import IndyProofRequestSchema
 
 FormatSpec = namedtuple("FormatSpec", "aries aka")  # Aries RFC value, further monikers
@@ -66,7 +66,7 @@ class V20PresFormat(BaseModel):
         def validate_proposal_attach(self, data: Mapping):
             """Raise ValidationError for wrong proposal~attach content."""
             if self is V20PresFormat.Format.INDY:
-                IndyPresentationPreviewSchema().load(data)
+                IndyPresPreviewSchema().load(data)
 
         def validate_request_attach(self, data: Mapping):
             """Raise ValidationError for wrong request_presentations~attach content."""

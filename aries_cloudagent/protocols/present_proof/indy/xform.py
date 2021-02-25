@@ -2,12 +2,12 @@
 
 from ....indy.holder import IndyHolder
 
-from .presentation_preview import IndyPresentationPreview
+from .pres_preview import IndyPresPreview
 
 
 async def indy_proof_req_preview2indy_requested_creds(
     indy_proof_req: dict,
-    preview: IndyPresentationPreview = None,
+    preview: IndyPresPreview = None,
     *,
     holder: IndyHolder,
 ):

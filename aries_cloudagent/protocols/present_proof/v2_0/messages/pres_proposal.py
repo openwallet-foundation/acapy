@@ -60,10 +60,9 @@ class V20PresProposal(AgentMessage):
 
         """
         return (
-            (fmt or V20PresFormat.Format.get(self.formats[0])).get_attachment_data(
-                self.formats,
-                self.proposal_attach,
-            )
+            (
+                fmt or V20PresFormat.Format.get(self.formats[0].format)
+            ).get_attachment_data(self.formats, self.proposal_attach)
             if self.formats
             else None
         )

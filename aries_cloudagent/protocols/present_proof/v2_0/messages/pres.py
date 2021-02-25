@@ -60,10 +60,9 @@ class V20Pres(AgentMessage):
 
         """
         return (
-            (fmt or V20PresFormat.Format.get(self.formats[0])).get_attachment_data(
-                self.formats,
-                self.presentations_attach,
-            )
+            (
+                fmt or V20PresFormat.Format.get(self.formats[0].format)
+            ).get_attachment_data(self.formats, self.presentations_attach)
             if self.formats
             else None
         )

@@ -4,18 +4,14 @@ from marshmallow import ValidationError
 
 from ......messaging.decorators.attach_decorator import AttachDecorator
 
-from ....indy.presentation_preview import (
-    IndyPresAttrSpec,
-    IndyPresentationPreview,
-    IndyPresPredSpec,
-)
+from ....indy.pres_preview import IndyPresAttrSpec, IndyPresPreview, IndyPresPredSpec
 
 from ..pres_format import V20PresFormat
 
 
 S_ID = "NcYxiDXkpYi6ov5FcYDi1e:2:vidya:1.0"
 CD_ID = f"NcYxiDXkpYi6ov5FcYDi1e:3:CL:{S_ID}:tag1"
-PRES_PREVIEW = IndyPresentationPreview(
+PRES_PREVIEW = IndyPresPreview(
     attributes=[
         IndyPresAttrSpec(name="player", cred_def_id=CD_ID, value="Richie Knucklez"),
         IndyPresAttrSpec(

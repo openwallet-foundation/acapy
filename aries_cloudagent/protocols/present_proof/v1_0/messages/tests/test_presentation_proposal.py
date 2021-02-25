@@ -2,10 +2,10 @@ from unittest import TestCase
 
 from .....didcomm_prefix import DIDCommPrefix
 
-from ....indy.presentation_preview import (
+from ....indy.pres_preview import (
     IndyPresAttrSpec,
     IndyPresPredSpec,
-    IndyPresentationPreview,
+    IndyPresPreview,
     PRESENTATION_PREVIEW,
 )
 
@@ -16,7 +16,7 @@ from ..presentation_proposal import PresentationProposal
 
 S_ID = "NcYxiDXkpYi6ov5FcYDi1e:2:vidya:1.0"
 CD_ID = f"NcYxiDXkpYi6ov5FcYDi1e:3:CL:{S_ID}:tag1"
-PRES_PREVIEW = IndyPresentationPreview(
+PRES_PREVIEW = IndyPresPreview(
     attributes=[
         IndyPresAttrSpec(name="player", cred_def_id=CD_ID, value="Richie Knucklez"),
         IndyPresAttrSpec(

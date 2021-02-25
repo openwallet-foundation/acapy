@@ -10,7 +10,7 @@ from ......messaging.util import str_to_datetime, str_to_epoch
 
 from .....didcomm_prefix import DIDCommPrefix
 
-from ....indy.presentation_preview import PRESENTATION_PREVIEW
+from ....indy.pres_preview import PRESENTATION_PREVIEW
 
 from ...message_types import PRES_20
 

@@ -36,7 +36,7 @@ class V20PresExRecord(BaseExchangeRecord):
     STATE_REQUEST_RECEIVED = "request-received"
     STATE_PRESENTATION_SENT = "presentation-sent"
     STATE_PRESENTATION_RECEIVED = "presentation-received"
-    STATE_VERIFIED = "done"
+    STATE_DONE = "done"
     STATE_ABANDONED = "abandoned"
 
     def __init__(

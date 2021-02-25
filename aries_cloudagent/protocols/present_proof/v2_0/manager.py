@@ -15,7 +15,7 @@ from ....messaging.responder import BaseResponder
 from ....revocation.models.revocation_registry import RevocationRegistry
 from ....storage.error import StorageNotFoundError
 
-from ..indy.presentation_preview import IndyPresentationPreview
+from ..indy.pres_preview import IndyPresPreview
 from ..indy.xform import indy_proof_req2non_revoc_intervals
 
 from .models.pres_exchange import V20PresExRecord
@@ -24,7 +24,6 @@ from .messages.pres_format import V20PresFormat
 from .messages.pres_proposal import V20PresProposal
 from .messages.pres_request import V20PresRequest
 from .messages.pres import V20Pres
-from .message_types import PRES_20, PRES_20_REQUEST
 
 LOGGER = logging.getLogger(__name__)
 
@@ -132,9 +131,10 @@ class V20PresManager:
             A tuple (updated presentation exchange record, presentation request message)
 
         """
-        # TODO format finesse; take #0, assert hl-indy, and run with it?
-        pres_preview = IndyPresentationPreview.deserialize(
-            V20PresProposal.deserialize(pres_ex_record.pres_proposal).attachment()
+        pres_preview = IndyPresPreview.deserialize(
+            V20PresProposal.deserialize(pres_ex_record.pres_proposal).attachment(
+                V20PresFormat.Format.INDY
+            )
         )
 
         indy_proof_request = await pres_preview.indy_proof_request(
@@ -204,7 +204,7 @@ class V20PresManager:
 
         return pres_ex_record
 
-    async def receive_request(self, pres_ex_record: V20PresExRecord):
+    async def receive_pres_request(self, pres_ex_record: V20PresExRecord):
         """
         Receive a presentation request.
 
@@ -273,7 +273,7 @@ class V20PresManager:
         requested_referents = {}
         pres_request = V20PresRequest.deserialize(
             pres_ex_record.pres_request
-        ).attachment()  # TODO format finesse
+        ).attachment(V20PresFormat.Format.INDY)
         non_revoc_intervals = indy_proof_req2non_revoc_intervals(pres_request)
         attr_creds = requested_credentials.get("requested_attributes", {})
         req_attrs = pres_request.get("requested_attributes", {})
@@ -403,7 +403,7 @@ class V20PresManager:
                     "timestamp"
                 ] = precis["timestamp"]
 
-        indy_proof_json = await holder.create_pres(
+        indy_proof_json = await holder.create_presentation(
             pres_request,
             requested_credentials,
             schemas,
@@ -467,10 +467,10 @@ class V20PresManager:
 
         # Check for bait-and-switch in presented attribute values vs. proposal
         if pres_ex_record.pres_proposal:
-            pres_preview = IndyPresentationPreview.deserialize(
+            pres_preview = IndyPresPreview.deserialize(
                 V20PresProposal.deserialize(
                     pres_ex_record.pres_proposal
-                ).attachment()  # TODO format finesse
+                ).attachment(V20PresFormat.Format.INDY)
             )
             proof_req = V20PresRequest.deserialize(
                 pres_ex_record.pres_request
@@ -510,10 +510,9 @@ class V20PresManager:
             presentation exchange record, updated
 
         """
-        # TODO: format finesse
         indy_proof_request = V20PresRequest.deserialize(
             pres_ex_record.pres_request
-        ).attachment()
+        ).attachment(V20PresFormat.Format.INDY)
         indy_proof = V20Pres.deserialize(pres_ex_record.pres).attachment()
 
         schema_ids = []
@@ -578,7 +577,7 @@ class V20PresManager:
                 rev_reg_entries,
             )
         )
-        pres_ex_record.state = V20PresExRecord.STATE_VERIFIED
+        pres_ex_record.state = V20PresExRecord.STATE_DONE
 
         async with self._profile.session() as session:
             await pres_ex_record.save(session, reason="verify v2.0 presentation")
@@ -628,7 +627,7 @@ class V20PresManager:
                 {"connection_id": conn_record.connection_id},
             )
 
-            pres_ex_record.state = V20PresExRecord.STATE_PRESENTATION_ACKED
+            pres_ex_record.state = V20PresExRecord.STATE_DONE
 
             await pres_ex_record.save(session, reason="receive v2.0 presentation ack")
 

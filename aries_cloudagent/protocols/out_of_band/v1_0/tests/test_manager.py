@@ -27,10 +27,10 @@ from .....protocols.didexchange.v1_0.manager import DIDXManager
 from .....protocols.issue_credential.v1_0.message_types import (
     CREDENTIAL_OFFER,
 )
-from .....protocols.present_proof.util.presentation_preview import (
-    PresAttrSpec,
-    PresentationPreview,
-    PresPredSpec,
+from .....protocols.present_proof.indy.pres_preview import (
+    IndyPresAttrSpec,
+    IndyPresPredSpec,
+    IndyPresPreview,
 )
 from .....protocols.present_proof.v1_0.manager import PresentationManager
 from .....protocols.present_proof.v1_0.message_types import (
@@ -132,10 +132,10 @@ class TestConfig:
     }}"""
     )
 
-    PRES_PREVIEW = PresentationPreview(
+    PRES_PREVIEW = IndyPresPreview(
         attributes=[
-            PresAttrSpec(name="player", cred_def_id=CD_ID, value="Richie Knucklez"),
-            PresAttrSpec(
+            IndyPresAttrSpec(name="player", cred_def_id=CD_ID, value="Richie Knucklez"),
+            IndyPresAttrSpec(
                 name="screenCapture",
                 cred_def_id=CD_ID,
                 mime_type="image/png",
@@ -143,7 +143,7 @@ class TestConfig:
             ),
         ],
         predicates=[
-            PresPredSpec(
+            IndyPresPredSpec(
                 name="highScore", cred_def_id=CD_ID, predicate=">=", threshold=1000000
             )
         ],

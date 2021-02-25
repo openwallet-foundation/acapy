@@ -230,13 +230,13 @@ class IndyPresAttrSpecSchema(BaseModelSchema):
     )
 
 
-class IndyPresentationPreview(BaseModel):
+class IndyPresPreview(BaseModel):
     """Class representing presentation preview."""
 
     class Meta:
         """Presentation preview metadata."""
 
-        schema_class = "IndyPresentationPreviewSchema"
+        schema_class = "IndyPresPreviewSchema"
         message_type = PRESENTATION_PREVIEW
 
     def __init__(
@@ -264,7 +264,7 @@ class IndyPresentationPreview(BaseModel):
     def _type(self):
         """Accessor for message type."""
 
-        return DIDCommPrefix.qualify_current(IndyPresentationPreview.Meta.message_type)
+        return DIDCommPrefix.qualify_current(IndyPresPreview.Meta.message_type)
 
     def has_attr_spec(self, cred_def_id: str, name: str, value: str) -> bool:
         """
@@ -427,13 +427,13 @@ class IndyPresentationPreview(BaseModel):
         return True
 
 
-class IndyPresentationPreviewSchema(BaseModelSchema):
+class IndyPresPreviewSchema(BaseModelSchema):
     """Presentation preview schema."""
 
     class Meta:
         """Presentation preview schema metadata."""
 
-        model_class = IndyPresentationPreview
+        model_class = IndyPresPreview
 
     _type = fields.Str(
         description="Message type identifier",

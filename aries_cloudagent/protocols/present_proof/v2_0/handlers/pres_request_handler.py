@@ -10,9 +10,11 @@ from .....messaging.base_handler import (
 from .....storage.error import StorageNotFoundError
 from .....utils.tracing import trace_event, get_timer
 
-from ...util.indy import indy_proof_req_preview2indy_requested_creds
+from ...indy.pres_preview import IndyPresPreview
+from ...indy.xform import indy_proof_req_preview2indy_requested_creds
 
 from ..manager import V20PresManager
+from ..messages.pres_format import V20PresFormat
 from ..messages.pres_proposal import V20PresProposal
 from ..messages.pres_request import V20PresRequest
 from ..models.pres_exchange import V20PresExRecord
@@ -44,8 +46,6 @@ class V20PresRequestHandler(BaseHandler):
 
         pres_manager = V20PresManager(context.profile)
 
-        indy_proof_request = context.message.indy_proof_request(0)
-
         # Get pres ex record (holder initiated via proposal)
         # or create it (verifier sent request first)
         try:
@@ -68,8 +68,7 @@ class V20PresRequestHandler(BaseHandler):
                 trace=(context.message._trace is not None),
             )
 
-        pres_ex_record.pres_request = indy_proof_request
-        pres_ex_record = await pres_manager.receive_request(pres_ex_record)
+        pres_ex_record = await pres_manager.receive_pres_request(pres_ex_record)
 
         r_time = trace_event(
             context.settings,
@@ -81,11 +80,14 @@ class V20PresRequestHandler(BaseHandler):
         # If auto_present is enabled, respond immediately with presentation
         if pres_ex_record.auto_present:
             pres_preview = None
+            indy_proof_request = context.message.attachment(V20PresFormat.Format.INDY)
             if pres_ex_record.pres_proposal:
                 exchange_pres_proposal = V20PresProposal.deserialize(
                     pres_ex_record.pres_proposal
                 )
-                pres_preview = exchange_pres_proposal.attachment()
+                pres_preview = IndyPresPreview.deserialize(
+                    exchange_pres_proposal.attachment(V20PresFormat.Format.INDY)
+                )
 
             try:
                 req_creds = await indy_proof_req_preview2indy_requested_creds(
@@ -97,11 +99,12 @@ class V20PresRequestHandler(BaseHandler):
                 self._logger.warning(f"{err}")
                 return
 
-            (pres_ex_record, pres_message,) = await pres_manager.create_pres(
+            (pres_ex_record, pres_message) = await pres_manager.create_pres(
                 pres_ex_record=pres_ex_record,
                 requested_credentials=req_creds,
-                comment="auto-presented for proof request nonce={}".format(
-                    indy_proof_request["nonce"]
+                comment=(
+                    "auto-presented for proof request nonce "
+                    f"{indy_proof_request['nonce']}"
                 ),
             )
 
