@@ -4,6 +4,7 @@ import asyncio
 import functools
 import logging
 import signal
+import sys
 from configargparse import ArgumentParser
 from typing import Coroutine, Sequence
 
@@ -76,11 +77,15 @@ def run_loop(startup: Coroutine, shutdown: Coroutine):
     async def done():
         """Run shutdown and clean up any outstanding tasks."""
         await shutdown
-        tasks = [
-            task
-            for task in asyncio.Task.all_tasks()
-            if task is not asyncio.Task.current_task()
-        ]
+
+        if sys.version_info.major == 3 and sys.version_info.minor > 6:
+            all_tasks = asyncio.all_tasks()
+            current_task = asyncio.current_task()
+        else:
+            all_tasks = asyncio.Task.all_tasks()
+            current_task = asyncio.Task.current_task()
+
+        tasks = [task for task in all_tasks if task is not current_task]
         for task in tasks:
             task.cancel()
         if tasks:
