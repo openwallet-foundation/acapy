@@ -481,7 +481,8 @@ class ConnectionManager(BaseConnectionManager):
             except StorageNotFoundError:
                 raise ConnectionManagerError(
                     "No invitation found for pairwise connection "
-                    f"in state {ConnRecord.State.INVITATION.rfc160}"
+                    f"in state {ConnRecord.State.INVITATION.rfc160}: "
+                    "a prior connection request may have updated the connection state"
                 )
 
         invitation = None
