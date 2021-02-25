@@ -353,7 +353,9 @@ class DIDXManager(BaseConnectionManager):
         except StorageNotFoundError:
             if recipient_verkey:
                 raise DIDXManagerError(
-                    "No explicit invitation found for pairwise connection"
+                    "No explicit invitation found for pairwise connection "
+                    f"in state {ConnRecord.State.INVITATION.rfc23}: "
+                    "a prior connection request may have updated the connection state"
                 )
 
         if conn_rec:  # invitation was explicit
