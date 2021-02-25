@@ -5,7 +5,14 @@ import asyncio
 from asynctest import mock as async_mock
 from itertools import cycle
 from ....admin.request_context import AdminRequestContext
-from ..credential import verify_credential, sign_credential, did_key, InvalidJWSHeader
+from ..credential import (
+    verify_credential,
+    sign_credential,
+    did_key,
+    InvalidJWSHeader,
+    SignatureTypeError,
+)
+from ..create_verify_data import DroppedAttributeException
 from ....core.in_memory import InMemoryProfile
 from ....wallet.in_memory import InMemoryWallet
 from ....wallet.base import BaseWallet
@@ -122,11 +129,128 @@ TEST_SIGN_OBJ2 = {
         "challenge": "d436f0c8-fbd9-4e48-bbb2-55fc5d0920a8",
     },
 }
-TEST_SIGN_OBJS = [
-    TEST_SIGN_OBJ0,
-    TEST_SIGN_OBJ1,
-    TEST_SIGN_OBJ2,
-]
+
+TEST_SIGN_OBJS = [TEST_SIGN_OBJ0, TEST_SIGN_OBJ1, TEST_SIGN_OBJ2]  # , TEST_SIGN_OBJ3]
+
+TEST_SIGN_ERROR_OBJ0 = {
+    "doc": {
+        "@context": [
+            "https://www.w3.org/2018/credentials/v1",
+            "https://essif-lab.pages.grnet.gr/interoperability/eidas-generic-use-case/contexts/ehic-v1.jsonld",
+        ],
+        "id": "https://ec.europa.eu/credentials/83627465",
+        "type": ["VerifiableCredential", "EuropeanHealthInsuranceCard"],
+        "issuer": "did:example:28394728934792387",
+        "name": "European Health Insurance Card",
+        "description": "Example of a European Health Insurance Card",
+        "attribute2drop": "drop it like its a tot.",
+        "issuanceDate": "2021-01-01T12:19:52Z",
+        "expirationDate": "2029-12-03T12:19:52Z",
+        "institutionID": "09999 - GE KVG",
+        "cardNo": "80756099990000034111",
+        "personalID": "09999 111999",
+        "credentialSubject": {
+            "id": "did:example:b34ca6cd37bbf23",
+            "type": ["EuropeanHealthInsuranceHolder", "Person"],
+            "familyName": "Muster",
+            "giveName": "Maria",
+            "birthDate": "1958-07-17",
+        },
+    },
+    "options": {
+        "verificationMethod": "did:example:123#z6MksHh7qHWvybLg5QTPPdG2DgEjjduBDArV9EF9mRiRzMBN",
+        "proofPurpose": "assertionMethod",
+        "created": "2020-04-02T18:48:36Z",
+        "domain": "example.com",
+        "challenge": "d436f0c8-fbd9-4e48-bbb2-55fc5d0920a8",
+    },
+}
+TEST_SIGN_ERROR_OBJ1 = {
+    "doc": {
+        "@context": [
+            "https://www.w3.org/2018/credentials/v1",
+            "https://essif-lab.pages.grnet.gr/interoperability/eidas-generic-use-case/contexts/ehic-v1.jsonld",
+        ],
+        "id": "https://ec.europa.eu/credentials/83627465",
+        "type": ["VerifiableCredential", "EuropeanHealthInsuranceCard"],
+        "issuer": "did:example:28394728934792387",
+        "name": "European Health Insurance Card",
+        "description": "Example of a European Health Insurance Card",
+        "issuanceDate": "2021-01-01T12:19:52Z",
+        "expirationDate": "2029-12-03T12:19:52Z",
+        "institutionID": "09999 - GE KVG",
+        "cardNo": "80756099990000034111",
+        "personalID": "09999 111999",
+        "credentialSubject": {
+            "id": "did:example:b34ca6cd37bbf23",
+            "type": ["EuropeanHealthInsuranceHolder", "Person"],
+            "attribute2drop": "drop it like its a tot.",
+            "familyName": "Muster",
+            "giveName": "Maria",
+            "birthDate": "1958-07-17",
+        },
+    },
+    "options": {
+        "verificationMethod": "did:example:123#z6MksHh7qHWvybLg5QTPPdG2DgEjjduBDArV9EF9mRiRzMBN",
+        "proofPurpose": "assertionMethod",
+        "created": "2020-04-02T18:48:36Z",
+        "domain": "example.com",
+        "challenge": "d436f0c8-fbd9-4e48-bbb2-55fc5d0920a8",
+    },
+}
+TEST_VALIDATE_ERROR_OBJ2 = {
+    "doc": {
+        "@context": [
+            "https://www.w3.org/2018/credentials/v1",
+            "https://www.w3.org/2018/credentials/examples/v1",
+        ],
+        "holder": "did:example:123",
+        "type": "VerifiablePresentation",
+        "verifiableCredential": [
+            {
+                "@context": [
+                    "https://www.w3.org/2018/credentials/v1",
+                    "https://www.w3.org/2018/credentials/examples/v1",
+                ]
+            },
+            {"id": "http://example.gov/credentials/3732"},
+            {"type": ["VerifiableCredential", "UniversityDegreeCredential"]},
+            {"issuer": "did:example:123"},
+            {"issuanceDate": "2020-03-16T22:37:26.544Z"},
+            {
+                "credentialSubject": {
+                    "id": "did:example:123",
+                    "degree": {
+                        "type": "BachelorDegree",
+                        "name": "Bachelor of Science and Arts",
+                    },
+                }
+            },
+            {
+                "proof": {
+                    "type": "Ed25519Signature2018",
+                    "created": "2020-04-02T18:28:08Z",
+                    "verificationMethod": "did:example:123#z6MksHh7qHWvybLg5QTPPdG2DgEjjduBDArV9EF9mRiRzMBN",
+                    "proofPurpose": "assertionMethod",
+                    "jws": "eyJhbGciOiJFZERTQSIsImI2NCI6ZmFsc2UsImNyaXQiOlsiYjY0Il19..YtqjEYnFENT7fNW-COD0HAACxeuQxPKAmp4nIl8jYAu__6IH2FpSxv81w-l5PvE1og50tS9tH8WyXMlXyo45CA",
+                }
+            },
+        ],
+        "proof": {
+            "verificationMethod": "did:example:123#z6MksHh7qHWvybLg5QTPPdG2DgEjjduBDArV9EF9mRiRzMBN",
+            "attribute2drop": "drop it like its a tot.",
+            "proofPurpose": "assertionMethod",
+            "created": "2020-04-02T18:48:36Z",
+            "domain": "example.com",
+            "challenge": "d436f0c8-fbd9-4e48-bbb2-55fc5d0920a8",
+            "type": "Ed25519Signature2018",
+            "jws": "eyJhbGciOiAiRWREU0EiLCAiYjY0IjogZmFsc2UsICJjcml0IjogWyJiNjQiXX0..a6dB9OAI9HWc1lDoWzd1---XF_QdArVMu99N2OKnOFT2Ize8MiuVvbJCIkYHpjn3arPle-o0iMlUx3q08ES_Bg",
+        },
+    },
+    "verkey": "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx",
+}
+
+TEST_SIGN_ERROR_OBJS = [TEST_SIGN_ERROR_OBJ0, TEST_SIGN_ERROR_OBJ1]
 
 TEST_VERIFY_OBJ0 = {
     "verkey": ("5yKdnU7ToTjAoRNDzfuzVTfWBH38qyhE1b9xh4v8JaWF"),
@@ -327,6 +451,40 @@ async def test_sign_credential(input, mock_session):
     )
     assert "proof" in result.keys()
     assert "jws" in result.get("proof", {}).keys()
+
+
+@pytest.mark.parametrize("input", TEST_SIGN_ERROR_OBJS)
+@pytest.mark.asyncio
+async def test_sign_dropped_attribute_exception(input, mock_session):
+    with pytest.raises(DroppedAttributeException, match="attribute2drop"):
+        await sign_credential(
+            mock_session, input.get("doc"), input.get("options"), TEST_VERKEY
+        )
+
+
+@pytest.mark.asyncio
+async def test_validate_dropped_attribute_exception(mock_session):
+    with pytest.raises(DroppedAttributeException, match="attribute2drop"):
+        input = TEST_VALIDATE_ERROR_OBJ2
+        await verify_credential(mock_session, input["doc"], TEST_VERIFY_ERROR["verkey"])
+
+
+@pytest.mark.parametrize("input", TEST_SIGN_OBJS)
+@pytest.mark.asyncio
+async def test_signature_option_type(input, mock_session):
+    with pytest.raises(SignatureTypeError):
+        input["options"]["type"] = "Ed25519Signature2038"
+        await sign_credential(
+            mock_session, input.get("doc"), input.get("options"), TEST_VERKEY
+        )
+
+
+@pytest.mark.parametrize("input", TEST_VERIFY_OBJS)
+@pytest.mark.asyncio
+async def test_verify_optiion_type(input, mock_session):
+    with pytest.raises(SignatureTypeError):
+        input["doc"]["proof"]["type"] = "Ed25519Signature2038"
+        await verify_credential(mock_session, input.get("doc"), input.get("verkey"))
 
 
 @pytest.mark.asyncio
