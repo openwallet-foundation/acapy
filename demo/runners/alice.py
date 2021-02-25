@@ -246,7 +246,11 @@ async def main(args):
     try:
         log_status(
             "#7 Provision an agent and wallet, get back configuration details"
-            + (f" (Wallet type: {alice_agent.wallet_type})" if alice_agent.wallet_type else "")
+            + (
+                f" (Wallet type: {alice_agent.wallet_type})"
+                if alice_agent.wallet_type
+                else ""
+            )
         )
         agent = AliceAgent(
             "alice.agent",
@@ -324,7 +328,7 @@ async def main(args):
 
 
 if __name__ == "__main__":
-    parser = arg_parser(ident = "alice", port=8030)
+    parser = arg_parser(ident="alice", port=8030)
     args = parser.parse_args()
 
     ENABLE_PYDEVD_PYCHARM = os.getenv("ENABLE_PYDEVD_PYCHARM", "").lower()
@@ -358,8 +362,6 @@ if __name__ == "__main__":
     require_indy()
 
     try:
-        asyncio.get_event_loop().run_until_complete(
-            main(args)
-        )
+        asyncio.get_event_loop().run_until_complete(main(args))
     except KeyboardInterrupt:
         os._exit(1)

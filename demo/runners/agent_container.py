@@ -614,13 +614,15 @@ class AgentContainer:
         )
 
 
-def arg_parser(ident: str = None, port: int=8020):
+def arg_parser(ident: str = None, port: int = 8020):
     """
     Standard command-line arguements.
 
     "ident", if specified, refers to one of the standard demo personas - alice, faber, acme or performance.
     """
-    parser = argparse.ArgumentParser(description="Runs a " + (ident or "aries") + " demo agent.")
+    parser = argparse.ArgumentParser(
+        description="Runs a " + (ident or "aries") + " demo agent."
+    )
     if not ident:
         parser.add_argument(
             "--ident",
@@ -701,7 +703,9 @@ async def create_agent_with_args(args, ident: str = None):
     require_indy()
 
     if "revocation" in args and args.revocation:
-        tails_server_base_url = args.tails_server_base_url or os.getenv("PUBLIC_TAILS_URL")
+        tails_server_base_url = args.tails_server_base_url or os.getenv(
+            "PUBLIC_TAILS_URL"
+        )
     else:
         tails_server_base_url = None
 

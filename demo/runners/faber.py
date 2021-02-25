@@ -149,7 +149,11 @@ async def main(args):
     try:
         log_status(
             "#1 Provision an agent and wallet, get back configuration details"
-            + (f" (Wallet type: {faber_agent.wallet_type})" if faber_agent.wallet_type else "")
+            + (
+                f" (Wallet type: {faber_agent.wallet_type})"
+                if faber_agent.wallet_type
+                else ""
+            )
         )
         agent = FaberAgent(
             "faber.agent",
@@ -250,7 +254,9 @@ async def main(args):
                     "@type": CRED_PREVIEW_TYPE,
                     "attributes": [
                         {"name": n, "value": v}
-                        for (n, v) in faber_agent.agent.cred_attrs[faber_agent.cred_def_id].items()
+                        for (n, v) in faber_agent.agent.cred_attrs[
+                            faber_agent.cred_def_id
+                        ].items()
                     ],
                 }
                 offer_request = {
@@ -333,7 +339,8 @@ async def main(args):
             elif option == "3":
                 msg = await prompt("Enter message: ")
                 await faber_agent.agent.admin_POST(
-                    f"/connections/{faber_agent.agent.connection_id}/send-message", {"content": msg}
+                    f"/connections/{faber_agent.agent.connection_id}/send-message",
+                    {"content": msg},
                 )
 
             elif option == "4":
@@ -363,7 +370,9 @@ async def main(args):
 
             elif option == "6" and faber_agent.revocation:
                 try:
-                    resp = await faber_agent.agent.admin_POST("/revocation/publish-revocations", {})
+                    resp = await faber_agent.agent.admin_POST(
+                        "/revocation/publish-revocations", {}
+                    )
                     faber_agent.agent.log(
                         "Published revocations for {} revocation registr{} {}".format(
                             len(resp["rrid2crid"]),
@@ -390,7 +399,7 @@ async def main(args):
 
 
 if __name__ == "__main__":
-    parser = arg_parser(ident = "faber", port=8020)
+    parser = arg_parser(ident="faber", port=8020)
     args = parser.parse_args()
 
     ENABLE_PYDEVD_PYCHARM = os.getenv("ENABLE_PYDEVD_PYCHARM", "").lower()
@@ -422,8 +431,6 @@ if __name__ == "__main__":
             print("pydevd_pycharm library was not found")
 
     try:
-        asyncio.get_event_loop().run_until_complete(
-            main(args)
-        )
+        asyncio.get_event_loop().run_until_complete(main(args))
     except KeyboardInterrupt:
         os._exit(1)
