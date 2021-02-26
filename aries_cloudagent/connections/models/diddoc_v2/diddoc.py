@@ -205,74 +205,50 @@ class DIDDoc:
     @property
     def verification_method(self):
         """Getter for DIDDoc verificationMethod."""
-        aux_ids = []
         ids = self._ref_content.get("verificationMethod")
-        for item in ids:
-            aux_ids.append(self._index.get(item))
-        return aux_ids
+        return [self._index.get(item) for item in ids]
 
     @property
     def authentication(self):
         """Getter for DIDDoc authentication."""
-        aux_ids = []
         ids = self._ref_content.get("authentication")
-        for item in ids:
-            aux_ids.append(self._index.get(item))
-        return aux_ids
+        return [self._index.get(item) for item in ids]
 
     @property
     def assertion_method(self):
         """Getter for DIDDoc assertionMethod."""
-        aux_ids = []
         ids = self._ref_content.get("assertionMethod")
-        for item in ids:
-            aux_ids.append(self._index.get(item))
-        return aux_ids
+        return [self._index.get(item) for item in ids]
 
     @property
     def key_agreement(self):
         """Getter for DIDDoc keyAgreement."""
-        aux_ids = []
         ids = self._ref_content.get("keyAgreement")
-        for item in ids:
-            aux_ids.append(self._index.get(item))
-        return aux_ids
+        return [self._index.get(item) for item in ids]
 
     @property
     def capability_invocation(self):
         """Getter for DIDDoc capabilityInvocation."""
-        aux_ids = []
         ids = self._ref_content.get("capabilityInvocation")
-        for item in ids:
-            aux_ids.append(self._index.get(item))
-        return aux_ids
+        return [self._index.get(item) for item in ids]
 
     @property
     def capability_delegation(self):
         """Getter for DIDDoc capabilityDelegation."""
-        aux_ids = []
         ids = self._ref_content.get("capabilityDelegation")
-        for item in ids:
-            aux_ids.append(self._index.get(item))
-        return aux_ids
+        return [self._index.get(item) for item in ids]
 
     @property
     def public_key(self):
         """Getter for DIDDoc publicKey."""
-        aux_ids = []
         ids = self._ref_content.get("publicKey")
-        for item in ids:
-            aux_ids.append(self._index.get(item))
-        return aux_ids
+        return [self._index.get(item) for item in ids]
 
     @property
     def service(self):
         """Getter for DIDDoc service."""
-        aux_ids = []
         ids = self._ref_content.get("service")
-        for item in ids:
-            aux_ids.append(self._index.get(item))
-        return aux_ids
+        return [self._index.get(item) for item in ids]
 
     @id.setter
     def id(self, value: str) -> None:
@@ -417,7 +393,9 @@ class DIDDoc:
             if item.id not in self._ref_content[verification_type]:
                 self._ref_content[verification_type].append(item.id)
 
-    def dereference(self, did_url: str):
+    def dereference(
+        self, did_url: Union[str, DIDUrl]
+    ) -> Union[Service, VerificationMethod]:
         """
         Retrieve a verification method or service by it id.
 
@@ -428,8 +406,8 @@ class DIDDoc:
 
         """
 
-        # Verification did url
-        DIDUrl.parse(did_url)
+        if isinstance(did_url, str):
+            did_url = DIDUrl.parse(did_url)
 
         return self._index.get(did_url)
 

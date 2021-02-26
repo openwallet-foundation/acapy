@@ -33,7 +33,6 @@ publicKey = {
     "type": "RsaVerificationKey2018",
     "controller": "did:sov:LjgpST2rjsoxYegQDRm7EL",
     "publicKeyPem": "-----BEGIN PUBLIC X...",
-    "usage": "signing",
 }
 
 service = {
@@ -220,14 +219,14 @@ class TestDIDDoc(AsyncTestCase):
         assert result.authentication[0].serialize() == publicKey
 
     async def test_deserialize_wrong_id(self):
-        did = {
-            "id": "dd:sov:LjgpST2rjsoxYegQDRm7EL",
-            "service": [service],
-            "publicKey": [publicKey],
-            "authentication": [publicKey],
-        }
-
         with self.assertRaises(ValidationError):
+            did = {
+                "id": "dd:sov:LjgpST2rjsoxYegQDRm7EL",
+                "service": [service],
+                "publicKey": [publicKey],
+                "authentication": [publicKey],
+            }
+
             DIDDoc.deserialize(did)
 
     async def test_deserialize_wrong_service(self):
@@ -259,13 +258,13 @@ class TestDIDDoc(AsyncTestCase):
             DIDDoc.deserialize(did)
 
     async def test_deserialize_missing_id(self):
-        did = {
-            "service": [service],
-            "publicKey": [publicKey],
-            "authentication": [publicKey],
-        }
-
         with self.assertRaises(ValidationError):
+            did = {
+                "service": [service],
+                "publicKey": [publicKey],
+                "authentication": [publicKey],
+            }
+
             DIDDoc.deserialize(did)
 
     async def test_add_new_service(self):

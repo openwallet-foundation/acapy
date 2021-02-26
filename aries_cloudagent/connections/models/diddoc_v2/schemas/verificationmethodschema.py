@@ -33,7 +33,6 @@ class VerificationMethodSchema(Schema):
     {"id": "did:sov:LjgpST2rjsoxYegQDRm7EL#keys-4",
      "type": "RsaVerificationKey2018",
      "controller": "did:sov:LjgpST2rjsoxYegQDRm7EL",
-     "usage": "signing",
      "publicKeyPem": "-----BEGIN PUBLIC X...",
      "publicKeyBase58",
      "publicKeyHex": "0361f286ada2a6b2c74bc6ed44a71ef59fb9dd15eca9283cbe5608aeb516730f33",
@@ -50,7 +49,6 @@ class VerificationMethodSchema(Schema):
     id = fields.Str(required=True, validate=validate.Regexp(DID_PATTERN))
     type = fields.Str(required=True)
     controller = ListOrStringField(required=True)
-    usage = fields.Str()
     publicKeyHex = fields.Str()
     publicKeyPem = fields.Str()
     publicKeyJwk = fields.Dict()
@@ -68,13 +66,13 @@ class PublicKeyField(fields.Field):
     """Public Key field for Marshmallow."""
 
     def _serialize(self, value, attr, obj, **kwargs):
-        if isinstance(value, list):
-            for idx, val in enumerate(value):
-                if not isinstance(val, str):
-                    value[idx] = val.serialize()
-            return value
-        else:
+        if not isinstance(value, list):
             return "".join(str(d) for d in value)
+
+        for idx, val in enumerate(value):
+            if not isinstance(val, str):
+                value[idx] = val.serialize()
+        return value
 
     def _deserialize(self, value, attr, data, **kwargs):
         from aries_cloudagent.connections.models.diddoc_v2 import VerificationMethod

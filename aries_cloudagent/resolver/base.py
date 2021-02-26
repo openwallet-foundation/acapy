@@ -4,11 +4,12 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Sequence
 
-from .diddoc import ResolvedDIDDoc
+from ..connections.models.diddoc_v2.diddoc import DIDDoc
 from ..core.profile import Profile
+from ..core.error import BaseError
 
 
-class ResolverError(Exception):
+class ResolverError(BaseError):
     """Base class for resolver exceptions."""
 
 
@@ -57,5 +58,5 @@ class BaseDIDResolver(ABC):
         return method in self.supported_methods
 
     @abstractmethod
-    async def resolve(self, profile: Profile, did: str) -> ResolvedDIDDoc:
+    async def resolve(self, profile: Profile, did: str) -> DIDDoc:
         """Resolve a DID using this resolver."""
