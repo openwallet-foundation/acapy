@@ -7,10 +7,10 @@ import aiohttp
 import yaml
 
 from ...config.injection_context import InjectionContext
+from ...connections.models.diddoc_v2 import DIDDoc
 from ...core.profile import Profile
 from ..base import BaseDIDResolver, DIDNotFound, ResolverError, ResolverType
 from ..did import DID
-from ..diddoc import ResolvedDIDDoc
 
 
 class HTTPUniversalDIDResolver(BaseDIDResolver):
@@ -56,13 +56,13 @@ class HTTPUniversalDIDResolver(BaseDIDResolver):
         """
         return self._supported_methods
 
-    async def _resolve(self, profile: Profile, did: DID) -> ResolvedDIDDoc:
+    async def _resolve(self, profile: Profile, did: DID) -> DIDDoc:
         """Resolve DID through remote universal resolver."""
         async with aiohttp.ClientSession() as session:
             async with session.get(f"{self._endpoint}/{did}") as resp:
                 if resp.status == 200:
                     doc = await resp.json()
-                    return ResolvedDIDDoc(doc["didDocument"])
+                    return DIDDoc.deserialize(doc["didDocument"])
                 if resp.status == 404:
                     raise DIDNotFound(f"{did} not found by {self.__class__.__name__}")
 

@@ -5,13 +5,13 @@ Resolution is performed using the IndyLedger class.
 from typing import Sequence
 
 from ...config.injection_context import InjectionContext
+from ...connections.models.diddoc_v2.diddoc import DIDDoc
 from ...core.profile import Profile
-from ...ledger.indy import IndySdkLedger
 from ...ledger.base import BaseLedger
 from ...ledger.error import LedgerError
+from ...ledger.indy import IndySdkLedger
 from ..base import BaseDIDResolver, DIDNotFound, ResolverError, ResolverType
 from ..did import DID
-from ..diddoc import ResolvedDIDDoc
 
 
 class NoIndyLedger(ResolverError):
@@ -22,6 +22,7 @@ class IndyDIDResolver(BaseDIDResolver):
     """Indy DID Resolver."""
 
     VERIFICATION_METHOD_TYPE = "Ed25519VerificationKey2018"
+    AGENT_SERVICE_TYPE = "did-communication"
 
     def __init__(self):
         """Initialize Indy Resolver."""
@@ -35,7 +36,7 @@ class IndyDIDResolver(BaseDIDResolver):
         """Return supported methods of Indy DID Resolver."""
         return ["sov"]
 
-    async def _resolve(self, profile: Profile, did: DID) -> ResolvedDIDDoc:
+    async def _resolve(self, profile: Profile, did: DID) -> DIDDoc:
         """Resolve an indy DID."""
         ledger = profile.inject(BaseLedger, required=False)
         if not ledger or not isinstance(ledger, IndySdkLedger):
@@ -48,7 +49,7 @@ class IndyDIDResolver(BaseDIDResolver):
         except LedgerError as err:
             raise DIDNotFound(f"DID {did} could not be resolved") from err
 
-        doc = {
+        raw_doc = {
             "id": str(did),
             "verificationMethod": [
                 {
@@ -62,10 +63,10 @@ class IndyDIDResolver(BaseDIDResolver):
         }
 
         if endpoint:
-            doc["service"] = [
+            raw_doc["service"] = [
                 {
-                    "id": did.ref(ResolvedDIDDoc.AGENT_SERVICE_TYPE),
-                    "type": ResolvedDIDDoc.AGENT_SERVICE_TYPE,
+                    "id": did.ref(self.AGENT_SERVICE_TYPE),
+                    "type": self.AGENT_SERVICE_TYPE,
                     "priority": 0,
                     "recipientKeys": [did.ref(1)],
                     "routingKeys": [],
@@ -73,4 +74,4 @@ class IndyDIDResolver(BaseDIDResolver):
                 }
             ]
 
-        return ResolvedDIDDoc(doc)
+        return DIDDoc.deserialize(raw_doc)

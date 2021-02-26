@@ -87,6 +87,10 @@ class DIDUrl:
             return False
         return self.url == other.url
 
+    def __hash__(self):
+        """Hash url string."""
+        return hash(self.url)
+
     @classmethod
     def parse(cls, url: str):
         """Parse DID URL from string."""

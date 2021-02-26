@@ -5,10 +5,10 @@ from typing import Dict, Union
 import pytest
 from asynctest import mock as async_mock
 
-from ...diddoc import ResolvedDIDDoc
+from ....connections.models.diddoc_v2 import DIDDoc
+from ...base import DIDNotFound, ResolverError
 from .. import http_universal as test_module
 from ..http_universal import HTTPUniversalDIDResolver
-from ...base import DIDNotFound, ResolverError
 
 # pylint: disable=redefined-outer-name
 
@@ -123,10 +123,10 @@ async def test_resolve(profile, resolver, mock_client_session):
     mock_client_session.response = MockResponse(
         200, {"didDocument": {"id": "did:example:123"}}
     )
-    doc: ResolvedDIDDoc = await resolver.resolve(
+    doc: DIDDoc = await resolver.resolve(
         profile, "did:sov:WRfXPg8dantKVubE3HX8pw"
     )
-    assert doc.did == "did:example:123"
+    assert doc.id == "did:example:123"
 
 
 @pytest.mark.asyncio

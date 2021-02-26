@@ -13,18 +13,21 @@ from asynctest import mock as async_mock
 from ....admin.request_context import AdminRequestContext
 from .. import credential
 from .. import routes as test_module
-from ....resolver.tests.test_routes import did_doc
 from ....resolver.did_resolver import DIDResolver
 from ....resolver.base import DIDNotFound, DIDMethodNotSupported
-from ....resolver.tests.test_diddoc import DOC
+from ....resolver.tests import DOC
+from ....connections.models.diddoc_v2.diddoc import DIDDoc
+
+did_doc = DIDDoc.deserialize(DOC)
 
 
 @pytest.fixture
 def mock_resolver():
     did_resolver = async_mock.MagicMock()
     did_resolver.resolve = async_mock.CoroutineMock(return_value=did_doc)
+    url = "did:example:1234abcd#4"
     did_resolver.dereference = async_mock.CoroutineMock(
-        return_value=DOC["verificationMethod"][1]
+        return_value=did_doc.dereference(url)
     )
     yield did_resolver
 
