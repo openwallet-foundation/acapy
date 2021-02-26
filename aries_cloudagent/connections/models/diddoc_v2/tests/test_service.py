@@ -93,28 +93,28 @@ class TestService(AsyncTestCase):
             Service.deserialize(test_service)
 
     async def test_deserialize_wrong_id(self):
-        test_service = {
-            "id": "did:sov:LjgpST2rjsoxYegQDRm7EL##keys-2",
-            "type": "one",
-            "priority": 1,
-            "recipientKeys": ["did:sov:LjgpST2rjsoxYegQDRm7EL#keys-1"],
-            "routingKeys": ["did:sov:LjgpST2rjsoxYegQDRm7EL#keys-4"],
-            "serviceEndpoint": "LjgpST2rjsoxYegQDRm7EL;2",
-        }
-
         with self.assertRaises(ValidationError):
+            test_service = {
+                "id": "did:sov:LjgpST2rjsoxYegQDRm7EL##keys-2",
+                "type": "one",
+                "priority": 1,
+                "recipientKeys": ["did:sov:LjgpST2rjsoxYegQDRm7EL#keys-1"],
+                "routingKeys": ["did:sov:LjgpST2rjsoxYegQDRm7EL#keys-4"],
+                "serviceEndpoint": "LjgpST2rjsoxYegQDRm7EL;2",
+            }
+
             Service.deserialize(test_service)
 
     async def test_deserialize_missing_endpoint(self):
-        test_service = {
-            "id": "did:sov:LjgpST2rjsoxYegQDRm7EL#keys-2",
-            "type": "one",
-            "priority": 1,
-            "recipientKeys": ["did:sov:LjgpST2rjsoxYegQDRm7EL#keys-1"],
-            "routingKeys": ["did:sov:LjgpST2rjsoxYegQDRm7EL#keys-4"],
-        }
-
         with self.assertRaises(ValidationError):
+            test_service = {
+                "id": "did:sov:LjgpST2rjsoxYegQDRm7EL#keys-2",
+                "type": "one",
+                "priority": 1,
+                "recipientKeys": ["did:sov:LjgpST2rjsoxYegQDRm7EL#keys-1"],
+                "routingKeys": ["did:sov:LjgpST2rjsoxYegQDRm7EL#keys-4"],
+            }
+
             Service.deserialize(test_service)
 
     async def test_serialize_ok(self):

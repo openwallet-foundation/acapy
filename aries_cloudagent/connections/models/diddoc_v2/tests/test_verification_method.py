@@ -29,29 +29,29 @@ TEST_ID = "did:sov:LjgpST2rjsoxYegQDRm7EL#555"
 
 
 class TestPublicKey(AsyncTestCase):
-    async def test_public_key_type(self):
+    def test_public_key_type(self):
         key_type = PublicKeyType.get("RsaVerificationKey2018")
         assert key_type == PublicKeyType.RSA_SIG_2018
         assert key_type.specification("test") == {"publicKeyPem": "test"}
         key_type = PublicKeyType.get("Noexistingtype")
         assert not key_type
 
-    async def test_create_verification(self):
+    def test_create_verification(self):
         key = "ZXd1ZXduZXduaXV3ZWg3d2V3ZW5q"
         v_method = VerificationMethod(
             id=TEST_ID,
             type=PublicKeyType.ED25519_SIG_2018,
-            controller=TEST_ID,
             value=key,
+            controller=TEST_ID,
         )
+        print(v_method)
         assert v_method.value == key
         assert v_method.type == PublicKeyType.ED25519_SIG_2018.ver_type
         assert v_method.controller == TEST_ID
         assert v_method.id == TEST_ID
-
         return v_method
 
-    async def test_update_verification(self):
+    def test_update_verification(self):
         key = "-----BEGIN PUBLIC X..."
         key_hex = "0361f286ada2a6b2c74bc6ed44a71ef59fb9dd15eca9283cbe5608aeb516730f33"
         new_id = "{}5".format(TEST_ID)
@@ -65,7 +65,7 @@ class TestPublicKey(AsyncTestCase):
             "y": "36uMVGM7hnw-N6GnjFcihWE3SkrhMLzzLCdPMXPEXlA",
         }
 
-        v_method = await self.test_create_verification()
+        v_method = self.test_create_verification()
         v_method.id = new_id
         v_method.type = PublicKeyType.RSA_SIG_2018
         v_method.controller = new_id
@@ -91,13 +91,12 @@ class TestPublicKey(AsyncTestCase):
         v_method.value = json.dumps(key_jwk)
         assert v_method.value == key_jwk
 
-    async def test_deserialize_ok(self):
+    def test_deserialize_ok(self):
         pub_key = {
             "id": "did:sov:LjgpST2rjsoxYegQDRm7EL#555",
             "type": "RsaVerificationKey2018",
             "controller": "did:sov:LjgpST2rjsoxYegQDRm7EL",
             "publicKeyPem": "-----BEGIN PUBLIC X...",
-            "usage": "signing",
             "publicKeyBase58": "ZXd1ZXduZXduaXV3ZWg3d2V3ZW5q",
             "publicKeyHex": "0361f286ada2a6b2c74bc6ed44a71ef59fb9dd15eca9283cbe5608aeb516730f33",
             "publicKeyJwk": {
@@ -114,56 +113,52 @@ class TestPublicKey(AsyncTestCase):
         assert result.id == pub_key["id"]
         assert result.controller == pub_key["controller"]
         assert result.publicKeyPem == pub_key["publicKeyPem"]
-        assert result.usage == pub_key["usage"]
 
     def test_deserialize_wrong_id(self):
-        pub_key = {
-            "id": "LjgpST2rjsoxYegQDRm7EL#555",
-            "type": "RsaVerificationKey2018",
-            "controller": "did:sov:LjgpST2rjsoxYegQDRm7EL",
-            "publicKeyPem": "-----BEGIN PUBLIC X...",
-            "usage": "signing",
-            "publicKeyBase58": "ZXd1ZXduZXduaXV3ZWg3d2V3ZW5q",
-            "publicKeyHex": "0361f286ada2a6b2c74bc6ed44a71ef59fb9dd15eca9283cbe5608aeb516730f33",
-            "publicKeyJwk": {
-                "kty": "EC",
-                "crv": "secp256k1",
-                "kid": "JUvpllMEYUZ2joO59UNui_XYDqxVqiFLLAJ8klWuPBw",
-                "x": "dWCvM4fTdeM0KmloF57zxtBPXTOythHPMm1HCLrdd3A",
-                "y": "36uMVGM7hnw-N6GnjFcihWE3SkrhMLzzLCdPMXPEXlA",
-            },
-        }
-
         with self.assertRaises(ValidationError):
+            pub_key = {
+                "id": "LjgpST2rjsoxYegQDRm7EL#555",
+                "type": "RsaVerificationKey2018",
+                "controller": "did:sov:LjgpST2rjsoxYegQDRm7EL",
+                "publicKeyPem": "-----BEGIN PUBLIC X...",
+                "publicKeyBase58": "ZXd1ZXduZXduaXV3ZWg3d2V3ZW5q",
+                "publicKeyHex": "0361f286ada2a6b2c74bc6ed44a71ef59fb9dd15eca9283cbe5608aeb516730f33",
+                "publicKeyJwk": {
+                    "kty": "EC",
+                    "crv": "secp256k1",
+                    "kid": "JUvpllMEYUZ2joO59UNui_XYDqxVqiFLLAJ8klWuPBw",
+                    "x": "dWCvM4fTdeM0KmloF57zxtBPXTOythHPMm1HCLrdd3A",
+                    "y": "36uMVGM7hnw-N6GnjFcihWE3SkrhMLzzLCdPMXPEXlA",
+                },
+            }
+
             VerificationMethod.deserialize(pub_key)
 
     def test_deserialize_missing_type(self):
-        pub_key = {
-            "id": "did:sov:LjgpST2rjsoxYegQDRm7EL#555",
-            "controller": "did:sov:LjgpST2rjsoxYegQDRm7EL",
-            "publicKeyPem": "-----BEGIN PUBLIC X...",
-            "usage": "signing",
-            "publicKeyBase58": "ZXd1ZXduZXduaXV3ZWg3d2V3ZW5q",
-            "publicKeyHex": "0361f286ada2a6b2c74bc6ed44a71ef59fb9dd15eca9283cbe5608aeb516730f33",
-            "publicKeyJwk": {
-                "kty": "EC",
-                "crv": "secp256k1",
-                "kid": "JUvpllMEYUZ2joO59UNui_XYDqxVqiFLLAJ8klWuPBw",
-                "x": "dWCvM4fTdeM0KmloF57zxtBPXTOythHPMm1HCLrdd3A",
-                "y": "36uMVGM7hnw-N6GnjFcihWE3SkrhMLzzLCdPMXPEXlA",
-            },
-        }
-
         with self.assertRaises(ValidationError):
+            pub_key = {
+                "id": "did:sov:LjgpST2rjsoxYegQDRm7EL#555",
+                "controller": "did:sov:LjgpST2rjsoxYegQDRm7EL",
+                "publicKeyPem": "-----BEGIN PUBLIC X...",
+                "publicKeyBase58": "ZXd1ZXduZXduaXV3ZWg3d2V3ZW5q",
+                "publicKeyHex": "0361f286ada2a6b2c74bc6ed44a71ef59fb9dd15eca9283cbe5608aeb516730f33",
+                "publicKeyJwk": {
+                    "kty": "EC",
+                    "crv": "secp256k1",
+                    "kid": "JUvpllMEYUZ2joO59UNui_XYDqxVqiFLLAJ8klWuPBw",
+                    "x": "dWCvM4fTdeM0KmloF57zxtBPXTOythHPMm1HCLrdd3A",
+                    "y": "36uMVGM7hnw-N6GnjFcihWE3SkrhMLzzLCdPMXPEXlA",
+                },
+            }
+
             VerificationMethod.deserialize(pub_key)
 
-    async def test_serialize_ok(self):
+    def test_serialize_ok(self):
         pub_key = {
             "id": "did:sov:LjgpST2rjsoxYegQDRm7EL#555",
             "type": "RsaVerificationKey2018",
             "controller": "did:sov:LjgpST2rjsoxYegQDRm7EL",
             "publicKeyPem": "-----BEGIN PUBLIC X...",
-            "usage": "signing",
         }
 
         result = VerificationMethod(
@@ -171,14 +166,12 @@ class TestPublicKey(AsyncTestCase):
             type=pub_key["type"],
             controller=pub_key["controller"],
             value=pub_key["publicKeyPem"],
-            usage=pub_key["usage"],
         )
 
         assert result.type == pub_key["type"]
         assert result.id == pub_key["id"]
         assert result.controller == pub_key["controller"]
         assert result.publicKeyPem == pub_key["publicKeyPem"]
-        assert result.usage == pub_key["usage"]
 
         serialized_key = result.serialize()
 

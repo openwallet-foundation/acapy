@@ -35,7 +35,6 @@ class VerificationMethod:
         id: str,
         type: PublicKeyType,
         controller: Union[str, Sequence],
-        usage: str = None,
         value: str = None,
         authn: bool = False,
         **kwargs
@@ -61,7 +60,6 @@ class VerificationMethod:
         self._id = id
         self._type = type
         self._controller = controller
-        self._usage = usage
         self._authn = authn
         if kwargs:
             value = kwargs.get(PublicKeyType.get(type).specifier)
@@ -123,45 +121,26 @@ class VerificationMethod:
     @type.setter
     def type(self, value: PublicKeyType):
         """Setter for the public key type."""
-        if isinstance(value, PublicKeyType):
-            self._type = value.ver_type
-        else:
-            self._type = value
+        self._type = value.ver_type if isinstance(value, PublicKeyType) else value
 
     @property
     def value(self):
         """Getter for the public key value."""
-
         return self._get_key()
 
     @value.setter
     def value(self, value: str):
         """Setter for the public key value."""
-
         self._fill_key(value)
-
-    @property
-    def usage(self) -> PublicKeyType:
-        """Getter for the public key usage."""
-
-        return self._usage
-
-    @usage.setter
-    def usage(self, value: PublicKeyType):
-        """Setter for the public key usage."""
-
-        self._usage = value
 
     @property
     def controller(self) -> Union[str, Sequence]:
         """Getter for the controller DID."""
-
         return self._controller
 
     @controller.setter
     def controller(self, value: Union[str, Sequence]):
         """Setter for the controller DID."""
-
         self._controller = value
 
     @property
@@ -170,7 +149,6 @@ class VerificationMethod:
 
         Returns: whether public key is marked as having DID authentication privilege
         """
-
         return self._authn
 
     @authn.setter
@@ -180,7 +158,6 @@ class VerificationMethod:
         Args:
             value: authentication marker
         """
-
         self._authn = value
 
     def serialize(self) -> dict:

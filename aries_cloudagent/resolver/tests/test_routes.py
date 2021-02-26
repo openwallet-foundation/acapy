@@ -12,16 +12,16 @@ from ..base import (
     ResolverType,
 )
 from ...resolver.did import DID
-from ...resolver.diddoc import ResolvedDIDDoc
+from . import DOC
+from ...connections.models.diddoc_v2.diddoc import DIDDoc
 from ..did_resolver import DIDResolver
 from ..did_resolver_registry import DIDResolverRegistry
 from .test_did_resolver import TEST_DID_METHODS
 from ...admin.request_context import AdminRequestContext
-from .test_diddoc import DOC
 from .. import routes as test_module
 from ...core.in_memory import InMemoryProfile
 
-did_doc = ResolvedDIDDoc(DOC)
+did_doc = DIDDoc.deserialize(DOC)
 
 
 @pytest.fixture
