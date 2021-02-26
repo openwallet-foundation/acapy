@@ -69,12 +69,13 @@ def test_unsub_idempotency(event_bus: EventBus, processor):
     event_bus.unsubscribe(re.compile(".*"), processor)
     assert not event_bus.topic_patterns_to_subscribers
 
+
 def test_unsub_unsubbed_processor(event_bus: EventBus, processor):
     """Test unsubscribing an unsubscribed processor does not error."""
-    event_bus.unsubscribe(re.compile('.*'), processor)
-    event_bus.subscribe(re.compile('.*'), processor)
+    event_bus.unsubscribe(re.compile(".*"), processor)
+    event_bus.subscribe(re.compile(".*"), processor)
     another_processor = TestProcessor()
-    event_bus.unsubscribe(re.compile('.*'), another_processor)
+    event_bus.unsubscribe(re.compile(".*"), another_processor)
 
 
 @pytest.mark.asyncio
@@ -86,14 +87,15 @@ async def test_sub_notify(event_bus: EventBus, context, event, processor):
     assert processor.event == event
 
 
-
 @pytest.mark.asyncio
 async def test_sub_notify_error_logged_and_exec_continues(
     event_bus: EventBus, context, event, caplog
 ):
     """Test subscriber errors are logged but do not halt execution."""
+
     def _raise_exception(context, event):
         raise Exception()
+
     processor = TestProcessor()
     bad_processor = _raise_exception
     event_bus.subscribe(re.compile(".*"), bad_processor)

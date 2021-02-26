@@ -1,10 +1,11 @@
-import pytest
 from unittest import mock
 
+import pytest
+
 from ......messaging.base_handler import HandlerException
+from ......messaging.decorators.localization_decorator import LocalizationDecorator
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
-
 from ...handlers.basicmessage_handler import BasicMessageHandler
 from ...messages.basicmessage import BasicMessage
 
@@ -35,6 +36,7 @@ class TestBasicMessageHandler:
                 "message_id": request_context.message._id,
                 "content": test_message_content,
                 "state": "received",
+                "sent_time": request_context.message.sent_time,
             },
         )
 
@@ -63,7 +65,8 @@ class TestBasicMessageHandler:
         request_context.default_label = "agent"
         test_message_content = "Reply with: g'day"
         request_context.message = BasicMessage(
-            content=test_message_content, localization="en-CA"
+            content=test_message_content,
+            localization=LocalizationDecorator(locale="en-CA"),
         )
         request_context.connection_ready = True
         handler = BasicMessageHandler()

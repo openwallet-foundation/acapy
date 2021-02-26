@@ -39,7 +39,7 @@ class BasicMessageHandler(BaseHandler):
             "message_id": context.message._id,
             "content": body,
             "state": "received",
-            "sent_time": context.message.sent_time
+            "sent_time": context.message.sent_time,
         }
 
         if "l10n" in context.message._decorators:

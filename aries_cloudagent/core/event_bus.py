@@ -45,11 +45,7 @@ class EventBus:
         """Initialize Event Bus."""
         self.topic_patterns_to_subscribers: Dict[Pattern, Sequence[Callable]] = {}
 
-    async def notify(
-        self,
-        profile: Profile,
-        event: Event
-    ):
+    async def notify(self, profile: Profile, event: Event):
         """Notify subscribers of event.
 
         Args:
