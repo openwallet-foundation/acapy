@@ -45,27 +45,17 @@ from ..models.connection_detail import ConnectionDetail
 class TestConnectionManager(AsyncTestCase):
     def make_did_doc(self, did, verkey, without_service=False):
         doc = DIDDoc(did)
-        controller = did
-        pk_value = verkey
-        pk = VerificationMethod(
-            "{}#{}".format(self.test_did, "1"),
-            PublicKeyType.ED25519_SIG_2018,
-            controller,
-            value=pk_value,
-            authn=False,
+
+        pk = doc.add_verification_method(
+            type=PublicKeyType.ED25519_SIG_2018, controller=did, value=verkey, ident="1"
         )
-        doc.set(pk)
         if not without_service:
-            recip_keys = [pk]
-            router_keys = []
-            service = Service(
-                id="{}#{}".format(self.test_did, "indy"),
+            doc.add_didcomm_service(
                 type="IndyAgent",
-                service_endpoint=self.test_endpoint,
-                recipient_keys=recip_keys,
-                routing_keys=router_keys,
+                recipient_keys=[pk],
+                routing_keys=[],
+                endpoint=self.test_endpoint,
             )
-            doc.set(service)
         return doc
 
     async def setUp(self):
@@ -1696,9 +1686,8 @@ class TestConnectionManager(AsyncTestCase):
             without_service=True,
         )
 
-        x_did_doc.set(
-            Service("{}#dummy".format(self.test_target_did), "IndyAgent", "", [], [], 0)
-        )
+        x_did_doc.add_service(type="IndyAgent", endpoint="", ident="dummy")
+
         for i in range(2):  # first cover store-record, then update-value
             await self.manager.store_did_document(x_did_doc)
 
@@ -1733,16 +1722,11 @@ class TestConnectionManager(AsyncTestCase):
             verkey=self.test_target_verkey,
             without_service=True,
         )
-
-        x_did_doc.set(
-            Service(
-                "{}#dummy".format(self.test_target_did),
-                "IndyAgent",
-                self.test_endpoint,
-                [],
-                [],
-                0,
-            )
+        x_did_doc.add_didcomm_service(
+            type="IndyAgent",
+            recipient_keys=[],
+            routing_keys=[],
+            endpoint=self.test_endpoint,
         )
 
         for i in range(2):  # first cover store-record, then update-value
@@ -1781,7 +1765,10 @@ class TestConnectionManager(AsyncTestCase):
         assert len(services) == 1
         (service,) = services
         service_public_keys = service.routing_keys[0]
-        assert service_public_keys.value == mediation_record.routing_keys[0]
+        assert (
+            doc.dereference(service_public_keys).value
+            == mediation_record.routing_keys[0]
+        )
         assert service.service_endpoint == mediation_record.endpoint
 
     async def test_create_did_document_multiple_mediators(self):
@@ -1801,7 +1788,7 @@ class TestConnectionManager(AsyncTestCase):
             role=MediationRecord.ROLE_CLIENT,
             state=MediationRecord.STATE_GRANTED,
             connection_id="mediator-conn-id2",
-            routing_keys=["05e8afd1-b4f0-46b7-a285-7a08c8a37caf"],
+            routing_keys=self.test_mediator_routing_keys,
             endpoint="http://mediatorw.example.com",
         )
         doc = await self.manager.create_did_document(
@@ -1811,8 +1798,9 @@ class TestConnectionManager(AsyncTestCase):
         services = doc.service
         assert len(services) == 1
         (service,) = services
-        assert service.routing_keys[0].value == mediation_record1.routing_keys[0]
-        assert service.routing_keys[1].value == mediation_record2.routing_keys[0]
+        routing = service.routing_keys
+        assert doc.dereference(routing[0]).value == mediation_record1.routing_keys[0]
+        assert doc.dereference(routing[1]).value == mediation_record2.routing_keys[0]
         assert service.service_endpoint == mediation_record2.endpoint
 
     async def test_create_did_document_mediation_svc_endpoints_overwritten(self):
@@ -1838,7 +1826,10 @@ class TestConnectionManager(AsyncTestCase):
         assert len(services) == 1
         (service,) = services
         service_public_keys = service.routing_keys[0]
-        assert service_public_keys.value == mediation_record.routing_keys[0]
+        assert (
+            doc.dereference(service_public_keys).value
+            == mediation_record.routing_keys[0]
+        )
         assert service.service_endpoint == mediation_record.endpoint
 
     async def test_did_key_storage(self):

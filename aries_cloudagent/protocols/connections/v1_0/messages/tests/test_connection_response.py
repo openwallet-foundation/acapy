@@ -26,27 +26,18 @@ class TestConfig:
     test_endpoint = "http://localhost"
 
     def make_did_doc(self):
-        doc = DIDDoc(self.test_did)
-        controller = self.test_did
-        pk_value = self.test_verkey
-        pk = VerificationMethod(
-            "{}#{}".format(self.test_did, "1"),
-            PublicKeyType.ED25519_SIG_2018,
-            controller,
-            value=pk_value,
-            authn=False,
+        did = self.test_did
+        verkey = self.test_verkey
+        endpoint = self.test_endpoint
+        doc = DIDDoc(did)
+
+        pk = doc.add_verification_method(
+            type=PublicKeyType.ED25519_SIG_2018, controller=did, value=verkey, ident="1"
         )
-        doc.set(pk)
-        recip_keys = [pk]
-        router_keys = []
-        service = Service(
-            "{}#{}".format(self.test_did, "indy"),
-            "IndyAgent",
-            recip_keys,
-            router_keys,
-            self.test_endpoint,
+
+        doc.add_didcomm_service(
+            type="IndyAgent", recipient_keys=[pk], routing_keys=[], endpoint=endpoint
         )
-        doc.set(service)
         return doc
 
 

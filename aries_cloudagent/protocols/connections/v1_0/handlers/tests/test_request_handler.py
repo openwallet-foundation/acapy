@@ -4,8 +4,12 @@ from asynctest import mock as async_mock
 from ......core.profile import ProfileSession
 from ......connections.models import connection_target
 from ......connections.models.conn_record import ConnRecord
-from ......connections.models.diddoc_v2 import DIDDoc, VerificationMethod, PublicKeyType, \
-    Service
+from ......connections.models.diddoc_v2 import (
+    DIDDoc,
+    VerificationMethod,
+    PublicKeyType,
+    Service,
+)
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
 from ......transport.inbound.receipt import MessageReceipt
@@ -47,22 +51,20 @@ TEST_IMAGE_URL = "http://aries.ca/images/sample.png"
 
 @pytest.fixture()
 def did_doc():
-    doc = DIDDoc(TEST_DID)
-    controller = TEST_DID
-    pk_value = TEST_VERKEY
-    pk = VerificationMethod(
-        "{}#{}".format(TEST_DID, "1"), PublicKeyType.ED25519_SIG_2018, controller,
-        value=pk_value, authn=False
-    )
-    doc.set(pk)
-    recip_keys = [pk]
-    router_keys = []
-    service = Service(
-        "{}#{}".format(TEST_DID, "indy"), "IndyAgent", TEST_ENDPOINT, recip_keys,
-        router_keys
+    did = TEST_DID
+    verkey = TEST_VERKEY
+    endpoint = TEST_ENDPOINT
 
+    doc = DIDDoc(did)
+
+    pk = doc.add_verification_method(
+        type=PublicKeyType.ED25519_SIG_2018, controller=did, value=verkey, ident="1"
     )
-    doc.set(service)
+
+    doc.add_didcomm_service(
+        type="IndyAgent", recipient_keys=[pk], routing_keys=[], endpoint=endpoint
+    )
+
     yield doc
 
 
@@ -83,14 +85,14 @@ class TestRequestHandler:
     @pytest.mark.asyncio
     @async_mock.patch.object(handler, "ConnectionManager")
     async def test_connection_record_with_mediation_metadata(
-            self, mock_conn_mgr, request_context, connection_record
+        self, mock_conn_mgr, request_context, connection_record
     ):
         mock_conn_mgr.return_value.receive_request = async_mock.CoroutineMock()
         request_context.message = ConnectionRequest()
         with async_mock.patch.object(
-                connection_record,
-                "metadata_get",
-                async_mock.CoroutineMock(return_value={"id": "test-mediation-id"}),
+            connection_record,
+            "metadata_get",
+            async_mock.CoroutineMock(return_value={"id": "test-mediation-id"}),
         ) as mock_metadata_get:
             handler_inst = handler.ConnectionRequestHandler()
             responder = MockResponder()
@@ -105,15 +107,15 @@ class TestRequestHandler:
     @pytest.mark.asyncio
     @async_mock.patch.object(handler, "ConnectionManager")
     async def test_connection_record_without_mediation_metadata(
-            self, mock_conn_mgr, request_context, session, connection_record
+        self, mock_conn_mgr, request_context, session, connection_record
     ):
         mock_conn_mgr.return_value.receive_request = async_mock.CoroutineMock()
         request_context.message = ConnectionRequest()
         storage: BaseStorage = session.inject(BaseStorage)
         with async_mock.patch.object(
-                storage,
-                "find_record",
-                async_mock.CoroutineMock(raises=StorageNotFoundError),
+            storage,
+            "find_record",
+            async_mock.CoroutineMock(raises=StorageNotFoundError),
         ) as mock_storage_find_record:
             handler_inst = handler.ConnectionRequestHandler()
             responder = MockResponder()
@@ -140,8 +142,8 @@ class TestRequestHandler:
         assert len(messages) == 1
         result, target = messages[0]
         assert (
-                isinstance(result, ProblemReport)
-                and result.problem_code == ProblemReportReason.REQUEST_NOT_ACCEPTED
+            isinstance(result, ProblemReport)
+            and result.problem_code == ProblemReportReason.REQUEST_NOT_ACCEPTED
         )
         assert target == {"target_list": None}
 
@@ -149,7 +151,7 @@ class TestRequestHandler:
     @async_mock.patch.object(handler, "ConnectionManager")
     @async_mock.patch.object(connection_target, "ConnectionTarget")
     async def test_problem_report_did_doc(
-            self, mock_conn_target, mock_conn_mgr, request_context, did_doc
+        self, mock_conn_target, mock_conn_mgr, request_context, did_doc
     ):
         mock_conn_mgr.return_value.receive_request = async_mock.CoroutineMock()
         mock_conn_mgr.return_value.receive_request.side_effect = ConnectionManagerError(
@@ -170,8 +172,8 @@ class TestRequestHandler:
         assert len(messages) == 1
         result, target = messages[0]
         assert (
-                isinstance(result, ProblemReport)
-                and result.problem_code == ProblemReportReason.REQUEST_NOT_ACCEPTED
+            isinstance(result, ProblemReport)
+            and result.problem_code == ProblemReportReason.REQUEST_NOT_ACCEPTED
         )
         assert target == {"target_list": [mock_conn_target]}
 
@@ -179,7 +181,7 @@ class TestRequestHandler:
     @async_mock.patch.object(handler, "ConnectionManager")
     @async_mock.patch.object(connection_target, "ConnectionTarget")
     async def test_problem_report_did_doc_no_conn_target(
-            self, mock_conn_target, mock_conn_mgr, request_context, did_doc
+        self, mock_conn_target, mock_conn_mgr, request_context, did_doc
     ):
         mock_conn_mgr.return_value.receive_request = async_mock.CoroutineMock()
         mock_conn_mgr.return_value.receive_request.side_effect = ConnectionManagerError(
@@ -200,7 +202,7 @@ class TestRequestHandler:
         assert len(messages) == 1
         result, target = messages[0]
         assert (
-                isinstance(result, ProblemReport)
-                and result.problem_code == ProblemReportReason.REQUEST_NOT_ACCEPTED
+            isinstance(result, ProblemReport)
+            and result.problem_code == ProblemReportReason.REQUEST_NOT_ACCEPTED
         )
         assert target == {"target_list": None}

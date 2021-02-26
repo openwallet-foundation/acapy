@@ -17,7 +17,9 @@ limitations under the License.
 import logging
 import copy
 import json
-from typing import Union
+from typing import Union, Sequence
+
+from .publickeytype import PublicKeyType
 from .verification_method import VerificationMethod
 from .service import Service
 from .schemas.diddocschema import DIDDocSchema
@@ -37,18 +39,18 @@ class DIDDoc:
     CONTEXT = "https://w3id.org/did/v1"
 
     def __init__(
-        self,
-        id: str,
-        also_known_as: list = None,
-        controller=None,
-        verification_method: list = None,
-        authentication: list = None,
-        assertion_method: list = None,
-        key_agreement: list = None,
-        capability_invocation: list = None,
-        capability_delegation: list = None,
-        public_key: list = None,
-        service: list = None,
+            self,
+            id: str,
+            also_known_as: list = None,
+            controller=None,
+            verification_method: list = None,
+            authentication: list = None,
+            assertion_method: list = None,
+            key_agreement: list = None,
+            capability_invocation: list = None,
+            capability_delegation: list = None,
+            public_key: list = None,
+            service: list = None,
     ) -> None:
         """
         Initialize the DIDDoc instance.
@@ -90,9 +92,32 @@ class DIDDoc:
             ("capabilityInvocation", capability_invocation or []),
             ("capabilityDelegation", capability_delegation or []),
             ("publicKey", public_key or []),
-            ("service", service or []),
         )
         self._index_params(params)
+        self._keys_refactor_on_services(service or [])
+
+    def _keys_refactor_on_services(self, services):
+        """Process to check the services keys and refactor to not duplicate data."""
+        for service in services:
+            routing = self._keys_refactor(service.routing_keys)
+            recipient = self._keys_refactor(service.recipient_keys)
+            service.recipient_keys = recipient
+            service.routing_keys = routing
+
+        param = (("service", services or []),)
+        self._index_params(param)
+
+    def _keys_refactor(self, keys):
+        """Keys Refactor to set Keys and save the DID URL reference in services."""
+        for index, key in enumerate(keys):
+            if isinstance(key, str):
+                if not self.dereference(key):
+                    raise ValueError("Key '{}' not found on DIDDoc".format(key))
+            else:
+                self._set(key)
+                keys[index] = key.id
+
+        return keys
 
     def _index_params(self, params):
         """
@@ -267,11 +292,99 @@ class DIDDoc:
 
         self._id = value
 
-    def set(
-        self,
-        item: Union[Service, VerificationMethod],
-        upsert=False,
-        verification_type="publicKey",
+    def add_verification_method(
+            self,
+            type: Union[PublicKeyType, str],
+            controller: Union[str, Sequence],
+            value: str,
+            *,
+            ident: str = None,
+            usage: str = None,
+            authentication: bool = False,
+            verification_type: str = "publicKey",
+            upsert: bool = False
+    ) -> VerificationMethod:
+        """Add a verification method to this document."""
+        if ident:
+            id = "{}#{}".format(self.id, ident)
+            if self._index.get(id) and not upsert:
+                raise ValueError("ID already exists, use arg upsert to update it")
+        else:
+            for index in range(1, 100):
+                id_aux = "{}#keys-{}".format(self.id, index)
+                if not self._index.get(id_aux):
+                    id = id_aux
+                    break
+
+        key = VerificationMethod(id, type, controller, usage, value, authentication)
+        self._set(key, upsert=upsert, verification_type=verification_type)
+        return key
+
+    def add_service(
+            self,
+            type: Union[str, list],
+            endpoint: Union[str, Sequence, dict],
+            ident: str = None,
+            priority: int = 0,
+            upsert: bool = False
+    ) -> Service:
+        """Add service to this document."""
+        if ident:
+            id = "{}#{}".format(self.id, ident)
+            if self._index.get(id) and not upsert:
+                raise ValueError("ID already exists, use arg upsert to update it")
+        else:
+            for index in range(1, 100):
+                id_aux = "{}#service-{}".format(self.id, index)
+                if not self._index.get(id_aux):
+                    id = id_aux
+                    break
+
+        service = Service(id, type, endpoint, priority=priority)
+        self._set(service, upsert=upsert)
+
+    def _add_keys(self, keys):
+        result = []
+        if isinstance(keys, list):
+            for key in keys:
+                result.append(key.id)
+                self._set(key)
+
+        elif isinstance(keys, VerificationMethod):
+            result.append(keys.id)
+            self._set(keys)
+
+        return result
+
+    def add_didcomm_service(
+            self,
+            type: Union[str, list],
+            recipient_keys: Union[Sequence[VerificationMethod], VerificationMethod],
+            routing_keys: Union[Sequence[VerificationMethod], VerificationMethod],
+            endpoint: Union[str, Sequence, dict],
+            priority: int = 0
+    ) -> Service:
+        """Add DIDComm Service to this document."""
+        for index in range(1, 100):
+            id_aux = "{}#didcomm-{}".format(self.id, index)
+            if not self._index.get(id_aux):
+                id = id_aux
+                break
+
+        # RECIPIENT KEYS
+        recip_keys = self._add_keys(recipient_keys)
+
+        # ROUTING KEYS
+        rout_keys = self._add_keys(routing_keys)
+
+        service = Service(id, type, endpoint, recip_keys, rout_keys, priority)
+        self._set(service)
+
+    def _set(
+            self,
+            item: Union[Service, VerificationMethod],
+            upsert: bool = False,
+            verification_type: str = "publicKey",
     ) -> "DIDDoc":
         """
         Add or replace service or verification method; return current DIDDoc.
@@ -286,14 +399,15 @@ class DIDDoc:
             if it is a verification method.
 
         """
-
-        # Verification did url
-        DIDUrl.parse(item.id)
-
         # Upsert validation
-        if self._index.get(item.id) and (not upsert):
-            raise ValueError("ID already exists, use arg upsert to update it")
+        existing_item = self._index.get(item.id)
+        if existing_item and (not upsert):
+            if item.serialize() != existing_item.serialize():
+                raise ValueError("ID already exists, use arg upsert to update it")
+            else:
+                return
 
+        # Inserting item
         self._index[item.id] = item
 
         if isinstance(item, Service):
@@ -318,3 +432,14 @@ class DIDDoc:
         DIDUrl.parse(did_url)
 
         return self._index.get(did_url)
+
+
+class AntiquatedDIDDoc(DIDDoc):
+    """Antiquated DIDDoc implementation for methodless ids."""
+
+    PREFIX = "did:sov:"
+
+    def __init__(self, nym: str, *args, **kwargs):
+        """Initialize the antiquated DIDDoc instance."""
+        did = self.PREFIX + nym
+        super().__init__(did, *args, **kwargs)

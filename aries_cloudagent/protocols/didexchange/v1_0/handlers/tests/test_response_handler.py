@@ -29,27 +29,18 @@ TEST_IMAGE_URL = "http://aries.ca/images/sample.png"
 
 class TestDIDXResponseHandler(AsyncTestCase):
     def did_doc(self):
-        doc = DIDDoc(TEST_DID)
-        controller = TEST_DID
-        pk_value = TEST_VERKEY
-        pk = VerificationMethod(
-            "{}#{}".format(TEST_DID, "1"),
-            PublicKeyType.ED25519_SIG_2018,
-            controller,
-            value=pk_value,
-            authn=False,
+        did = TEST_DID
+        verkey = TEST_VERKEY
+        endpoint = TEST_ENDPOINT
+        doc = DIDDoc(did)
+
+        pk = doc.add_verification_method(
+            type=PublicKeyType.ED25519_SIG_2018, controller=did, value=verkey, ident="1"
         )
-        doc.set(pk)
-        recip_keys = [pk]
-        router_keys = []
-        service = Service(
-            "{}#{}".format(TEST_DID, "indy"),
-            "IndyAgent",
-            TEST_ENDPOINT,
-            recip_keys,
-            router_keys,
+
+        doc.add_didcomm_service(
+            type="IndyAgent", recipient_keys=[pk], routing_keys=[], endpoint=endpoint
         )
-        doc.set(service)
         return doc
 
     async def setUp(self):

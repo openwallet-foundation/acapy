@@ -53,20 +53,13 @@ class TestDIDs:
 
     def make_did_doc(self, did, verkey):
         doc = DIDDoc(did)
-        controller = did
-        pk_value = verkey
-        pk = VerificationMethod(
-            "{}#{}".format(did, "1"), PublicKeyType.ED25519_SIG_2018, controller,
-            value=pk_value, authn=False
-        )
-        doc.set(pk)
-        recip_keys = [pk]
-        router_keys = []
-        service = Service(
-            "{}#{}".format(did, "indy"), "IndyAgent", recip_keys, router_keys,
-            self.test_endpoint
-        )
-        doc.set(service)
+
+        pk = doc.add_verification_method(type=PublicKeyType.ED25519_SIG_2018,
+                                         controller=did, value=verkey, ident="1")
+
+
+        doc.add_didcomm_service(type="IndyAgent", recipient_keys=[pk], routing_keys=[],
+                                endpoint=self.test_endpoint)
         return doc, pk
 
 

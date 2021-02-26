@@ -59,27 +59,17 @@ class TestConfig:
 
     def make_did_doc(self, did, verkey, without_services=False):
         doc = DIDDoc(did)
-        controller = did
-        pk_value = verkey
-        pk = VerificationMethod(
-            "{}#{}".format(did, "1"),
-            PublicKeyType.ED25519_SIG_2018,
-            controller,
-            value=pk_value,
-            authn=False,
+
+        pk = doc.add_verification_method(
+            type=PublicKeyType.ED25519_SIG_2018, controller=did, value=verkey, ident="1"
         )
-        doc.set(pk)
         if not without_services:
-            recip_keys = [pk]
-            router_keys = []
-            service = Service(
-                "{}#{}".format(did, "indy"),
-                "IndyAgent",
-                self.test_endpoint,
-                recip_keys,
-                router_keys,
+            doc.add_didcomm_service(
+                type="IndyAgent",
+                recipient_keys=[pk],
+                routing_keys=[],
+                endpoint=self.test_endpoint,
             )
-            doc.set(service)
         return doc
 
 
@@ -1831,11 +1821,10 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             without_services=True,
         )
         x_did_doc._service = {}
-        x_did_doc.set(
-            Service(
-                "{}#dummy".format(TestConfig.test_target_did), "IndyAgent", "", [], []
-            )
+        x_did_doc.add_didcomm_service(
+            type="IndyAgent", recipient_keys=[], routing_keys=[], endpoint=""
         )
+
         for i in range(2):  # first cover store-record, then update-value
             await self.manager.store_did_document(x_did_doc)
 
@@ -1870,17 +1859,13 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             verkey=TestConfig.test_target_verkey,
             without_services=True,
         )
-
-        x_did_doc.set(
-            Service(
-                "{}#dummy".format(TestConfig.test_target_did),
-                "IndyAgent",
-                TestConfig.test_endpoint,
-                [],
-                [],
-                0,
-            )
+        x_did_doc.add_didcomm_service(
+            type="IndyAgent",
+            recipient_keys=[],
+            routing_keys=[],
+            endpoint=self.test_endpoint,
         )
+
         for i in range(2):  # first cover store-record, then update-value
             await self.manager.store_did_document(x_did_doc)
 

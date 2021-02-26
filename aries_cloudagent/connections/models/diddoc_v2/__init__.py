@@ -14,13 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from .diddoc import DIDDoc
+from .diddoc import DIDDoc, AntiquatedDIDDoc
 from .verification_method import VerificationMethod, PublicKeyType
 from .publickeytype import LinkedDataKeySpec
 from .service import Service
 
 __all__ = [
     "DIDDoc",
+    "AntiquatedDIDDoc",
     "LinkedDataKeySpec",
     "VerificationMethod",
     "PublicKeyType",
