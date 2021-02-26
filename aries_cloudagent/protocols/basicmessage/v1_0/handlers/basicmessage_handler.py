@@ -34,15 +34,18 @@ class BasicMessageHandler(BaseHandler):
         ):
             meta["copy_invite"] = True
 
-        await responder.send_webhook(
-            "basicmessages",
-            {
-                "connection_id": context.connection_record.connection_id,
-                "message_id": context.message._id,
-                "content": body,
-                "state": "received",
-            },
-        )
+        payload = {
+            "connection_id": context.connection_record.connection_id,
+            "message_id": context.message._id,
+            "content": body,
+            "state": "received",
+            "sent_time": context.message.sent_time
+        }
+
+        if "l10n" in context.message._decorators:
+            payload["locale"] = context.message._decorators["l10n"].locale
+
+        await responder.send_webhook("basicmessages", payload)
 
         reply = None
         if body:
