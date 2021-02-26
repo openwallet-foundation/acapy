@@ -115,42 +115,42 @@ class TestPublicKey(AsyncTestCase):
         assert result.publicKeyPem == pub_key["publicKeyPem"]
 
     def test_deserialize_wrong_id(self):
-        pub_key = {
-            "id": "LjgpST2rjsoxYegQDRm7EL#555",
-            "type": "RsaVerificationKey2018",
-            "controller": "did:sov:LjgpST2rjsoxYegQDRm7EL",
-            "publicKeyPem": "-----BEGIN PUBLIC X...",
-            "publicKeyBase58": "ZXd1ZXduZXduaXV3ZWg3d2V3ZW5q",
-            "publicKeyHex": "0361f286ada2a6b2c74bc6ed44a71ef59fb9dd15eca9283cbe5608aeb516730f33",
-            "publicKeyJwk": {
-                "kty": "EC",
-                "crv": "secp256k1",
-                "kid": "JUvpllMEYUZ2joO59UNui_XYDqxVqiFLLAJ8klWuPBw",
-                "x": "dWCvM4fTdeM0KmloF57zxtBPXTOythHPMm1HCLrdd3A",
-                "y": "36uMVGM7hnw-N6GnjFcihWE3SkrhMLzzLCdPMXPEXlA",
-            },
-        }
-
         with self.assertRaises(ValidationError):
+            pub_key = {
+                "id": "LjgpST2rjsoxYegQDRm7EL#555",
+                "type": "RsaVerificationKey2018",
+                "controller": "did:sov:LjgpST2rjsoxYegQDRm7EL",
+                "publicKeyPem": "-----BEGIN PUBLIC X...",
+                "publicKeyBase58": "ZXd1ZXduZXduaXV3ZWg3d2V3ZW5q",
+                "publicKeyHex": "0361f286ada2a6b2c74bc6ed44a71ef59fb9dd15eca9283cbe5608aeb516730f33",
+                "publicKeyJwk": {
+                    "kty": "EC",
+                    "crv": "secp256k1",
+                    "kid": "JUvpllMEYUZ2joO59UNui_XYDqxVqiFLLAJ8klWuPBw",
+                    "x": "dWCvM4fTdeM0KmloF57zxtBPXTOythHPMm1HCLrdd3A",
+                    "y": "36uMVGM7hnw-N6GnjFcihWE3SkrhMLzzLCdPMXPEXlA",
+                },
+            }
+
             VerificationMethod.deserialize(pub_key)
 
     def test_deserialize_missing_type(self):
-        pub_key = {
-            "id": "did:sov:LjgpST2rjsoxYegQDRm7EL#555",
-            "controller": "did:sov:LjgpST2rjsoxYegQDRm7EL",
-            "publicKeyPem": "-----BEGIN PUBLIC X...",
-            "publicKeyBase58": "ZXd1ZXduZXduaXV3ZWg3d2V3ZW5q",
-            "publicKeyHex": "0361f286ada2a6b2c74bc6ed44a71ef59fb9dd15eca9283cbe5608aeb516730f33",
-            "publicKeyJwk": {
-                "kty": "EC",
-                "crv": "secp256k1",
-                "kid": "JUvpllMEYUZ2joO59UNui_XYDqxVqiFLLAJ8klWuPBw",
-                "x": "dWCvM4fTdeM0KmloF57zxtBPXTOythHPMm1HCLrdd3A",
-                "y": "36uMVGM7hnw-N6GnjFcihWE3SkrhMLzzLCdPMXPEXlA",
-            },
-        }
-
         with self.assertRaises(ValidationError):
+            pub_key = {
+                "id": "did:sov:LjgpST2rjsoxYegQDRm7EL#555",
+                "controller": "did:sov:LjgpST2rjsoxYegQDRm7EL",
+                "publicKeyPem": "-----BEGIN PUBLIC X...",
+                "publicKeyBase58": "ZXd1ZXduZXduaXV3ZWg3d2V3ZW5q",
+                "publicKeyHex": "0361f286ada2a6b2c74bc6ed44a71ef59fb9dd15eca9283cbe5608aeb516730f33",
+                "publicKeyJwk": {
+                    "kty": "EC",
+                    "crv": "secp256k1",
+                    "kid": "JUvpllMEYUZ2joO59UNui_XYDqxVqiFLLAJ8klWuPBw",
+                    "x": "dWCvM4fTdeM0KmloF57zxtBPXTOythHPMm1HCLrdd3A",
+                    "y": "36uMVGM7hnw-N6GnjFcihWE3SkrhMLzzLCdPMXPEXlA",
+                },
+            }
+
             VerificationMethod.deserialize(pub_key)
 
     def test_serialize_ok(self):

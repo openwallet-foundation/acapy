@@ -66,13 +66,13 @@ class PublicKeyField(fields.Field):
     """Public Key field for Marshmallow."""
 
     def _serialize(self, value, attr, obj, **kwargs):
-        if isinstance(value, list):
-            for idx, val in enumerate(value):
-                if not isinstance(val, str):
-                    value[idx] = val.serialize()
-            return value
-        else:
+        if not isinstance(value, list):
             return "".join(str(d) for d in value)
+
+        for idx, val in enumerate(value):
+            if not isinstance(val, str):
+                value[idx] = val.serialize()
+        return value
 
     def _deserialize(self, value, attr, data, **kwargs):
         from aries_cloudagent.connections.models.diddoc_v2 import VerificationMethod
