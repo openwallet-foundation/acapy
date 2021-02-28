@@ -7,6 +7,8 @@ from aiohttp import web, WSMessage, WSMsgType
 
 from ...messaging.error import MessageParseError
 
+from ..error import WireFormatParseError
+
 from .base import BaseInboundTransport, InboundTransportSetupError
 
 LOGGER = logging.getLogger(__name__)
@@ -106,7 +108,7 @@ class WsTransport(BaseInboundTransport):
                     if msg.type in (WSMsgType.TEXT, WSMsgType.BINARY):
                         try:
                             await session.receive(msg.data)
-                        except MessageParseError:
+                        except (MessageParseError, WireFormatParseError):
                             await ws.close(1003)  # unsupported data error
                     elif msg.type == WSMsgType.ERROR:
                         LOGGER.error(
