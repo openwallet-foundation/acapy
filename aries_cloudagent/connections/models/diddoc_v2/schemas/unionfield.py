@@ -22,7 +22,7 @@ class ListOrStringField(fields.Field):
     """List or String field for Marshmallow."""
 
     def _deserialize(self, value, attr, data, **kwargs):
-        if isinstance(value, (str, list)):
+        if isinstance(value, str) or isinstance(value, list):
             return value
         else:
             raise ValidationError("Field should be str or list")
@@ -41,7 +41,7 @@ class ListOrStringOrDictField(fields.Field):
             return "".join(str(d) for d in value)
 
     def _deserialize(self, value, attr, data, **kwargs):
-        if isinstance(value, (str, list, dict)):
+        if isinstance(value, str) or isinstance(value, list) or isinstance(value, dict):
             return value
         else:
             raise ValidationError("Field should be str, list or dict")
