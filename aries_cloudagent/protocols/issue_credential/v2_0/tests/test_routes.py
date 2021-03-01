@@ -25,7 +25,7 @@ class TestV20CredRoutes(AsyncTestCase):
         )
 
     async def test_validate_cred_filter(self):
-        filt = test_module.V20CredFilter()
+        filt = test_module.V20CredFilterSchema()
         filt.validate_fields({"indy": {"issuer_did": TEST_DID}})
         filt.validate_fields(
             {"indy": {"issuer_did": TEST_DID, "schema_version": "1.0"}}

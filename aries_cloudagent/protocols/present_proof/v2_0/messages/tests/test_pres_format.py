@@ -42,6 +42,10 @@ class TestV20FormatFormat(TestCase):
         assert V20PresFormat.Format.get("HL/INDY").aries == "hlindy-zkp-v1.0"
         assert "indy" in V20PresFormat.Format.get("HL/INDY").aka
         assert (
+            V20PresFormat.Format.get("HL/INDY").api
+            in V20PresFormat.Format.get("hl-indy").aka
+        )
+        assert (
             V20PresFormat.Format.get("JSON-LD").aries
             == "dif/presentation-exchange/definitions@v1.0"
         )

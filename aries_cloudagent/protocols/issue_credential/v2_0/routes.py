@@ -122,7 +122,7 @@ class V20CredStoreRequestSchema(OpenAPISchema):
     credential_id = fields.Str(required=False)
 
 
-class V20CredFilterIndy(OpenAPISchema):
+class V20CredFilterIndySchema(OpenAPISchema):
     """Indy credential filtration criteria."""
 
     cred_def_id = fields.Str(
@@ -147,7 +147,7 @@ class V20CredFilterIndy(OpenAPISchema):
     )
 
 
-class V20CredFilterDIF(OpenAPISchema):
+class V20CredFilterDIFSchema(OpenAPISchema):
     """DIF credential filtration criteria."""
 
     some_dif_criterion = fields.Str(
@@ -156,14 +156,18 @@ class V20CredFilterDIF(OpenAPISchema):
     )
 
 
-class V20CredFilter(OpenAPISchema):
+class V20CredFilterSchema(OpenAPISchema):
     """Credential filtration criteria."""
 
     indy = fields.Nested(
-        V20CredFilterIndy, required=False, description="Credential filter for indy"
+        V20CredFilterIndySchema,
+        required=False,
+        description="Credential filter for indy",
     )
     dif = fields.Nested(
-        V20CredFilterDIF, required=False, description="Credential filter for DIF"
+        V20CredFilterDIFSchema,
+        required=False,
+        description="Credential filter for DIF",
     )
 
     @validates_schema
@@ -180,15 +184,15 @@ class V20CredFilter(OpenAPISchema):
             ValidationError: if data has neither indy nor dif
 
         """
-        if not (("indy" in data) or ("dif" in data)):
-            raise ValidationError("V20CredFilter requires indy, dif, or both")
+        if not any(f.api in data for f in V20CredFormat.Format):
+            raise ValidationError("V20CredFilterSchema requires indy, dif, or both")
 
 
 class V20IssueCredSchemaCore(AdminAPIMessageTracingSchema):
     """Filter, auto-remove, comment, trace."""
 
     filter_ = fields.Nested(
-        V20CredFilter,
+        V20CredFilterSchema,
         required=True,
         data_key="filter",
         description="Credential specification criteria by format",
@@ -295,7 +299,7 @@ def _formats_filters(filt_spec: Mapping) -> Mapping:
                 attach_id=fmt_aka,
                 format_=V20CredFormat.Format.get(fmt_aka),
             )
-            for fmt_aka in filt_spec.keys()
+            for fmt_aka in filt_spec
         ],
         "filters_attach": [
             AttachDecorator.data_base64(filt_by_fmt, ident=fmt_aka)

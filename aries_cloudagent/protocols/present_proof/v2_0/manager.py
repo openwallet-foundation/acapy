@@ -4,6 +4,8 @@ import json
 import logging
 import time
 
+from typing import Tuple
+
 from ....connections.models.conn_record import ConnRecord
 from ....core.error import BaseError
 from ....core.profile import Profile
@@ -19,11 +21,11 @@ from ..indy.pres_preview import IndyPresPreview
 from ..indy.xform import indy_proof_req2non_revoc_intervals
 
 from .models.pres_exchange import V20PresExRecord
+from .messages.pres import V20Pres
 from .messages.pres_ack import V20PresAck
 from .messages.pres_format import V20PresFormat
 from .messages.pres_proposal import V20PresProposal
 from .messages.pres_request import V20PresRequest
-from .messages.pres import V20Pres
 
 LOGGER = logging.getLogger(__name__)
 
@@ -228,7 +230,7 @@ class V20PresManager:
         pres_ex_record: V20PresExRecord,
         requested_credentials: dict,
         comment: str = None,
-    ):
+    ) -> Tuple[V20PresExRecord, V20Pres]:
         """
         Create a presentation.
 
@@ -446,7 +448,7 @@ class V20PresManager:
             presentation exchange record, retrieved and updated
 
         """
-        pres = message.indy_proof()
+        pres = message.attachment(V20PresFormat.Format.INDY)
 
         thread_id = message._thread_id
         conn_id_filter = (
@@ -468,13 +470,13 @@ class V20PresManager:
         # Check for bait-and-switch in presented attribute values vs. proposal
         if pres_ex_record.pres_proposal:
             pres_preview = IndyPresPreview.deserialize(
-                V20PresProposal.deserialize(
-                    pres_ex_record.pres_proposal
-                ).attachment(V20PresFormat.Format.INDY)
+                V20PresProposal.deserialize(pres_ex_record.pres_proposal).attachment(
+                    V20PresFormat.Format.INDY
+                )
             )
             proof_req = V20PresRequest.deserialize(
                 pres_ex_record.pres_request
-            ).attachment()
+            ).attachment(V20PresFormat.Format.INDY)
 
             for (reft, attr_spec) in pres["requested_proof"]["revealed_attrs"].items():
                 name = proof_req["requested_attributes"][reft]["name"]

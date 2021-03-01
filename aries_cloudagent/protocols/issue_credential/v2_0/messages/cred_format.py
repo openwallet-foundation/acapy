@@ -68,6 +68,11 @@ class V20CredFormat(BaseModel):
             return self.value.aka
 
         @property
+        def api(self) -> str:
+            """Admin API specifier."""
+            return self.name.lower()
+
+        @property
         def detail(self) -> str:
             """Accessor for credential exchange detail class."""
             return self.value.detail

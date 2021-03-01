@@ -63,6 +63,11 @@ class V20PresFormat(BaseModel):
             """Accessor for alternative identifier list."""
             return self.value.aka
 
+        @property
+        def api(self) -> str:
+            """Admin API specifier."""
+            return self.name.lower()
+
         def validate_proposal_attach(self, data: Mapping):
             """Raise ValidationError for wrong proposal~attach content."""
             if self is V20PresFormat.Format.INDY:

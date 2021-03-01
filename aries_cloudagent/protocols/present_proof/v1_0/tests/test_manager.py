@@ -721,25 +721,23 @@ class TestPresentationManager(AsyncTestCase):
                 },
             },
             presentation={
-                "proof": {
-                    "proofs": [],
-                    "requested_proof": {
-                        "revealed_attrs": {
-                            "0_favourite_uuid": {
-                                "sub_proof_index": 0,
-                                "raw": "potato",
-                                "encoded": "12345678901234567890",
-                            },
-                            "1_icon_uuid": {
-                                "sub_proof_index": 1,
-                                "raw": "cG90YXRv",
-                                "encoded": "12345678901234567890",
-                            },
+                "proof": {"proofs": []},
+                "requested_proof": {
+                    "revealed_attrs": {
+                        "0_favourite_uuid": {
+                            "sub_proof_index": 0,
+                            "raw": "potato",
+                            "encoded": "12345678901234567890",
                         },
-                        "self_attested_attrs": {},
-                        "unrevealed_attrs": {},
-                        "predicates": {},
+                        "1_icon_uuid": {
+                            "sub_proof_index": 1,
+                            "raw": "cG90YXRv",
+                            "encoded": "12345678901234567890",
+                        },
                     },
+                    "self_attested_attrs": {},
+                    "unrevealed_attrs": {},
+                    "predicates": {},
                 },
                 "identifiers": [
                     {
@@ -813,25 +811,23 @@ class TestPresentationManager(AsyncTestCase):
                 },
             },
             presentation={
-                "proof": {
-                    "proofs": [],
-                    "requested_proof": {
-                        "revealed_attrs": {
-                            "0_favourite_uuid": {
-                                "sub_proof_index": 0,
-                                "raw": "potato",
-                                "encoded": "12345678901234567890",
-                            },
-                            "1_icon_uuid": {
-                                "sub_proof_index": 1,
-                                "raw": "cG90YXRv",
-                                "encoded": "12345678901234567890",
-                            },
+                "proof": {"proofs": []},
+                "requested_proof": {
+                    "revealed_attrs": {
+                        "0_favourite_uuid": {
+                            "sub_proof_index": 0,
+                            "raw": "potato",
+                            "encoded": "12345678901234567890",
                         },
-                        "self_attested_attrs": {},
-                        "unrevealed_attrs": {},
-                        "predicates": {},
+                        "1_icon_uuid": {
+                            "sub_proof_index": 1,
+                            "raw": "cG90YXRv",
+                            "encoded": "12345678901234567890",
+                        },
                     },
+                    "self_attested_attrs": {},
+                    "unrevealed_attrs": {},
+                    "predicates": {},
                 },
                 "identifiers": [
                     {
