@@ -11,15 +11,15 @@ class ExampleDIDResolver(BaseDIDResolver):
     def __init__(self):
         super().__init__()
 
-    async def setup(self, profile):
+    async def setup(self, context):
         pass
 
     @property
     def supported_methods(self):
         return ["test"]
 
-    async def resolve(self, profile, did: str) -> DIDDoc:
-        return DIDDoc({"id": "did:example:123"})
+    async def _resolve(self, profile, did) -> DIDDoc:
+        return DIDDoc("did:example:123")
 
 
 @pytest.fixture

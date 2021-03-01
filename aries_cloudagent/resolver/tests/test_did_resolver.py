@@ -67,14 +67,14 @@ class MockResolver(BaseDIDResolver):
         self._supported_methods = supported_methods
         self.resolved = resolved
 
-    async def setup(self, profile):
+    async def setup(self, context):
         pass
 
     @property
     def supported_methods(self):
         return self._supported_methods
 
-    async def resolve(self, profile, did):
+    async def _resolve(self, profile, did):
         if isinstance(self.resolved, Exception):
             raise self.resolved
         return self.resolved

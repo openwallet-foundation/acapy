@@ -4,12 +4,14 @@ Resolution is performed using the IndyLedger class.
 """
 from typing import Sequence
 
+from ...config.injection_context import InjectionContext
+from ...connections.models.diddoc_v2.diddoc import DIDDoc
 from ...core.profile import Profile
-from ...ledger.indy import IndySdkLedger
+from ...ledger.base import BaseLedger
 from ...ledger.error import LedgerError
+from ...ledger.indy import IndySdkLedger
 from ..base import BaseDIDResolver, DIDNotFound, ResolverError, ResolverType
 from ..did import DID
-from ...connections.models.diddoc_v2.diddoc import DIDDoc
 
 
 class NoIndyLedger(ResolverError):
@@ -26,7 +28,7 @@ class IndyDIDResolver(BaseDIDResolver):
         """Initialize Indy Resolver."""
         super().__init__(ResolverType.NATIVE)
 
-    async def setup(self, profile: Profile):
+    async def setup(self, context: InjectionContext):
         """Perform required setup for Indy DID resolution."""
 
     @property
@@ -34,13 +36,11 @@ class IndyDIDResolver(BaseDIDResolver):
         """Return supported methods of Indy DID Resolver."""
         return ["sov"]
 
-    async def resolve(self, profile: Profile, did: str) -> DIDDoc:
+    async def _resolve(self, profile: Profile, did: DID) -> DIDDoc:
         """Resolve an indy DID."""
-        ledger = profile.inject(IndySdkLedger, required=False)
-        if not ledger:
-            raise NoIndyLedger("No Indy ledger isntance is configured.")
-
-        did = DID(did)
+        ledger = profile.inject(BaseLedger, required=False)
+        if not ledger or not isinstance(ledger, IndySdkLedger):
+            raise NoIndyLedger("No Indy ledger instance is configured.")
 
         try:
             async with ledger:
@@ -49,28 +49,29 @@ class IndyDIDResolver(BaseDIDResolver):
         except LedgerError as err:
             raise DIDNotFound(f"DID {did} could not be resolved") from err
 
-        doc = DIDDoc.deserialize(
-            {
-                "id": str(did),
-                "verificationMethod": [
-                    {
-                        "id": did.ref(1),
-                        "type": self.VERIFICATION_METHOD_TYPE,
-                        "controller": str(did),
-                        "publicKeyBase58": recipient_key,
-                    }
-                ],
-                "authentication": [did.ref(1)],
-                "service": [
-                    {
-                        "id": did.ref(self.AGENT_SERVICE_TYPE),
-                        "type": self.AGENT_SERVICE_TYPE,
-                        "priority": 0,
-                        "recipientKeys": [did.ref(1)],
-                        "routingKeys": [],
-                        "serviceEndpoint": endpoint,
-                    }
-                ],
-            }
-        )
-        return doc
+        raw_doc = {
+            "id": str(did),
+            "verificationMethod": [
+                {
+                    "id": did.ref(1),
+                    "type": self.VERIFICATION_METHOD_TYPE,
+                    "controller": str(did),
+                    "publicKeyBase58": recipient_key,
+                }
+            ],
+            "authentication": [did.ref(1)],
+        }
+
+        if endpoint:
+            raw_doc["service"] = [
+                {
+                    "id": did.ref(self.AGENT_SERVICE_TYPE),
+                    "type": self.AGENT_SERVICE_TYPE,
+                    "priority": 0,
+                    "recipientKeys": [did.ref(1)],
+                    "routingKeys": [],
+                    "serviceEndpoint": endpoint,
+                }
+            ]
+
+        return DIDDoc.deserialize(raw_doc)

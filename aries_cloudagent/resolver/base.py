@@ -2,11 +2,13 @@
 
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Sequence
+from typing import Sequence, Union
 
+from ..config.injection_context import InjectionContext
 from ..connections.models.diddoc_v2.diddoc import DIDDoc
-from ..core.profile import Profile
 from ..core.error import BaseError
+from ..core.profile import Profile
+from .did import DID
 
 
 class ResolverError(BaseError):
@@ -40,7 +42,7 @@ class BaseDIDResolver(ABC):
         self.type = type_ or ResolverType.NON_NATIVE
 
     @abstractmethod
-    async def setup(self, profile: Profile):
+    async def setup(self, context: InjectionContext):
         """Do asynchronous resolver setup."""
 
     @property
@@ -53,10 +55,21 @@ class BaseDIDResolver(ABC):
     def supported_methods(self) -> Sequence[str]:
         """Return list of DID methods supported by this resolver."""
 
-    def supports(self, method: str):
+    def supports(self, method: str) -> bool:
         """Return if this resolver supports the given method."""
         return method in self.supported_methods
 
+    async def resolve(self, profile: Profile, did: Union[str, DID]) -> DIDDoc:
+        """Resolve a DID using this resolver."""
+        if isinstance(did, str):
+            did = DID(did)
+
+        if not self.supports(did.method):
+            raise DIDMethodNotSupported(
+                f"{did.method} is not supported by {self.__class__.__name__} resolver."
+            )
+        return await self._resolve(profile, did)
+
     @abstractmethod
-    async def resolve(self, profile: Profile, did: str) -> DIDDoc:
+    async def _resolve(self, profile: Profile, did: DID) -> DIDDoc:
         """Resolve a DID using this resolver."""
