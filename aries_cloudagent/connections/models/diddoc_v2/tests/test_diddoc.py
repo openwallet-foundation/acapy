@@ -26,7 +26,7 @@ from aries_cloudagent.connections.models.diddoc_v2 import (
 
 from marshmallow.exceptions import ValidationError
 
-from aries_cloudagent.resolver.did import InvalidDIDUrlError
+from aries_cloudagent.resolver.did import InvalidDIDUrlError, DIDUrl
 
 publicKey = {
     "id": "did:sov:LjgpST2rjsoxYegQDRm7EL#3",
@@ -49,7 +49,6 @@ service_key = {
     "id": "did:sov:LjgpST2rjsoxYegQDRm7EL#8",
     "type": "one",
     "priority": 1,
-    "recipientKeys": [],
     "routingKeys": [publicKey],
     "serviceEndpoint": "LjgpST2rjsoxYegQDRm7EL;2",
 }
@@ -88,13 +87,20 @@ class TestDIDDoc(AsyncTestCase):
         assert not did_doc.public_key
         assert not did_doc.service
         assert did_doc.id == "did:sov:LjgpST2rjsoxYegQDRm7EL"
-        did_doc.add_service(type="service2", endpoint="LjgpST2rjsoxYegQDRm7EL;2",
-                            ident="2", priority=4, upsert=True)
+        did_doc.add_service(
+            type="service2",
+            endpoint="LjgpST2rjsoxYegQDRm7EL;2",
+            ident="2",
+            priority=4,
+            upsert=True,
+        )
 
-        did_doc.add_verification_method(type=publicKey["type"],
-                                        controller=publicKey["controller"],
-                                        value=publicKey["publicKeyPem"],
-                                        ident="3")
+        did_doc.add_verification_method(
+            type=publicKey["type"],
+            controller=publicKey["controller"],
+            value=publicKey["publicKeyPem"],
+            ident="3",
+        )
 
         assert did_doc.public_key
         assert did_doc.service
@@ -107,8 +113,10 @@ class TestDIDDoc(AsyncTestCase):
         with self.assertRaises(ValueError):
             DIDDoc(
                 id="did:sov:LjgpST2rjsoxYegQDRm7EL",
-                service=[Service.deserialize(serv_copy),
-                         Service.deserialize(service_key)],
+                service=[
+                    Service.deserialize(serv_copy),
+                    Service.deserialize(service_key),
+                ],
                 public_key=[VerificationMethod.deserialize(publicKey)],
                 authentication=["did:sov:LjgpST2rjsoxYegQDRm7EL#3"],
             )
@@ -122,8 +130,10 @@ class TestDIDDoc(AsyncTestCase):
         with self.assertRaises(ValueError):
             DIDDoc(
                 id="did:sov:LjgpST2rjsoxYegQDRm7EL",
-                service=[Service.deserialize(service),
-                         Service.deserialize(service_copy)],
+                service=[
+                    Service.deserialize(service),
+                    Service.deserialize(service_copy),
+                ],
                 public_key=[VerificationMethod.deserialize(publicKey)],
                 authentication=["did:sov:LjgpST2rjsoxYegQDRm7EL#3"],
             )
@@ -141,7 +151,8 @@ class TestDIDDoc(AsyncTestCase):
                 id="did:sov:LjgpST2rjsoxYegQDRm7EL",
                 service=[Service.deserialize(service)],
                 public_key=[VerificationMethod.deserialize(publicKey)],
-                authentication=[VerificationMethod.deserialize(publicKey2)])
+                authentication=[VerificationMethod.deserialize(publicKey2)],
+            )
 
     async def test_update_doc(self):
         did = {
@@ -166,19 +177,24 @@ class TestDIDDoc(AsyncTestCase):
             "capabilityInvocation",
         )
         for key_parm in verification_keys:
-            did_doc.add_verification_method(type=publicKey["type"],
-                                            controller=publicKey["controller"],
-                                            usage="signing",
-                                            value=publicKey["publicKeyPem"],
-                                            ident="3", verification_type=key_parm,
-                                            upsert=True)
+            did_doc.add_verification_method(
+                type=publicKey["type"],
+                controller=publicKey["controller"],
+                usage="signing",
+                value=publicKey["publicKeyPem"],
+                ident="3",
+                verification_type=key_parm,
+                upsert=True,
+            )
 
         # Not upsert active
         with self.assertRaises(ValueError):
-            did_doc.add_verification_method(type=publicKey["type"],
-                                            controller=publicKey["controller"],
-                                            value=publicKey["publicKeyPem"],
-                                            ident="3")
+            did_doc.add_verification_method(
+                type=publicKey["type"],
+                controller=publicKey["controller"],
+                value=publicKey["publicKeyPem"],
+                ident="3",
+            )
 
         did_doc.id = "did:sov:LjgpST2rjsoxYegQDRm72"
         assert did_doc.id == "did:sov:LjgpST2rjsoxYegQDRm72"
@@ -272,8 +288,9 @@ class TestDIDDoc(AsyncTestCase):
         did = {"id": "did:sov:LjgpST2rjsoxYegQDRm7EL", "service": [service]}
         service_instance = Service.deserialize(service)
         key_instance = VerificationMethod.deserialize(publicKey)
-        did_instance = DIDDoc(id=did["id"], public_key=[key_instance],
-                              service=[service_instance])
+        did_instance = DIDDoc(
+            id=did["id"], public_key=[key_instance], service=[service_instance]
+        )
         assert did_instance.id == did["id"]
         assert len(did_instance.service) == 1
         assert did_instance.service[0].serialize() == service
@@ -282,10 +299,19 @@ class TestDIDDoc(AsyncTestCase):
         service2 = copy.copy(service)
         service2["id"] = "did:sov:LjgpST2rjsoxYegQDRm7EL#5"
         key = VerificationMethod.deserialize(publicKey)
-        did_instance.add_didcomm_service(type="type", recipient_keys=key,
-                                         routing_keys=key,
-                                         endpoint="local")
+        did_instance.add_didcomm_service(
+            type="type",
+            recipient_keys=key,
+            routing_keys=key,
+            endpoint="local",
+            backward_compatibility=False,
+        )
         assert len(did_instance.service) == 2
+        # add services with default types: did-communication & IndyAgent
+        did_instance.add_didcomm_service(
+            recipient_keys=[key], routing_keys=key, endpoint="local"
+        )
+        assert len(did_instance.service) == 4
 
     async def test_update_service(self):
         did = {"id": "did:sov:LjgpST2rjsoxYegQDRm7EL", "service": [service]}
@@ -297,13 +323,22 @@ class TestDIDDoc(AsyncTestCase):
         assert did_instance.service[0].serialize() == service
         assert did_instance.service[0] == serv_inst
 
-        did_instance.add_service(type="service2", endpoint="LjgpST2rjsoxYegQDRm7EL;2",
-                                 ident="2", priority=4, upsert=True)
+        did_instance.add_service(
+            type="service2",
+            endpoint="LjgpST2rjsoxYegQDRm7EL;2",
+            ident="2",
+            priority=4,
+            upsert=True,
+        )
         assert len(did_instance.service) == 1
         assert did_instance.service[0].serialize()["type"] == "service2"
         assert did_instance.service[0].serialize()["priority"] == 4
-        did_instance.add_service(type="service2", endpoint="LjgpST2rjsoxYegQDRm7EL;2",
-                                 priority=4, upsert=True)
+        did_instance.add_service(
+            type="service2",
+            endpoint="LjgpST2rjsoxYegQDRm7EL;2",
+            priority=4,
+            upsert=True,
+        )
         assert len(did_instance.service) == 2
 
     async def test_add_new_verification_method(self):
@@ -315,9 +350,9 @@ class TestDIDDoc(AsyncTestCase):
         assert did_instance.public_key[0].serialize() == publicKey
         assert did_instance.public_key[0] == publicKey_instance
 
-        did_instance.add_verification_method(type=publicKey["type"],
-                                             controller=publicKey["controller"],
-                                             value=publicKey["publicKeyPem"])
+        did_instance.add_verification_method(
+            type=publicKey["type"], value=publicKey["publicKeyPem"]
+        )
         assert len(did_instance.public_key) == 2
 
     async def test_serialize_ok(self):
@@ -351,6 +386,27 @@ class TestDIDDoc(AsyncTestCase):
 
         service_instance = result.dereference("did:sov:LjgpST2rjsoxYegQDRm7EL#2")
         publicKey_instance = result.dereference("did:sov:LjgpST2rjsoxYegQDRm7EL#3")
+        assert service_instance.serialize() == service
+        assert publicKey_instance.serialize() == publicKey
+        assert isinstance(service_instance, Service)
+        assert isinstance(publicKey_instance, VerificationMethod)
+
+    async def test_dereference_ok_by_infoID(self):
+        did = {
+            "id": "did:sov:LjgpST2rjsoxYegQDRm7EL",
+            "service": [service],
+            "publicKey": [publicKey],
+            "authentication": [publicKey],
+        }
+
+        result = DIDDoc.deserialize(did)
+
+        service_instance = result.dereference(
+            DIDUrl("did:sov:LjgpST2rjsoxYegQDRm7EL#2")
+        )
+        publicKey_instance = result.dereference(
+            DIDUrl("did:sov:LjgpST2rjsoxYegQDRm7EL#3")
+        )
         assert service_instance.serialize() == service
         assert publicKey_instance.serialize() == publicKey
         assert isinstance(service_instance, Service)

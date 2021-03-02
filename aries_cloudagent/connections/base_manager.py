@@ -25,7 +25,7 @@ from ..wallet.util import did_key_to_naked
 
 from .models.conn_record import ConnRecord
 from .models.connection_target import ConnectionTarget
-from .models.diddoc_v2 import AntiquatedDIDDoc, DIDDoc, VerificationMethod, PublicKeyType
+from .models.diddoc_v2 import AntiquatedDIDDoc, DIDDoc, PublicKeyType
 
 
 class BaseConnectionManagerError(BaseError):
@@ -49,11 +49,11 @@ class BaseConnectionManager:
         self._session = session
 
     async def create_did_document(
-            self,
-            did_info: DIDInfo,
-            inbound_connection_id: str = None,
-            svc_endpoints: Sequence[str] = None,
-            mediation_records: List[MediationRecord] = None,
+        self,
+        did_info: DIDInfo,
+        inbound_connection_id: str = None,
+        svc_endpoints: Sequence[str] = None,
+        mediation_records: List[MediationRecord] = None,
     ) -> DIDDoc:
         """Create our DID doc for a given DID.
 
@@ -74,9 +74,12 @@ class BaseConnectionManager:
         else:
             did_doc = DIDDoc(did)
 
-        pk = did_doc.add_verification_method(type=PublicKeyType.ED25519_SIG_2018,
-                                             controller=did_doc.id, value=did_info.verkey,
-                                             ident="1", authentication=True)
+        pk = did_doc.add_verification_method(
+            type=PublicKeyType.ED25519_SIG_2018,
+            value=did_info.verkey,
+            ident="1",
+            authentication=True,
+        )
 
         router_id = inbound_connection_id
         routing_keys = []
@@ -103,14 +106,13 @@ class BaseConnectionManager:
                         "Routing DIDDoc service has no recipient key(s)"
                     )
 
-                rk_id = "{}#routing-{}".format(did_doc.id, router_idx)
+                self.method = did_doc.add_verification_method(
+                    type=PublicKeyType.ED25519_SIG_2018,
+                    value=routing_doc.dereference(service.recipient_keys[0]).value,
+                    ident="routing-{}".format(router_idx),
+                    authentication=True,
+                )
 
-                self.method = VerificationMethod(id=rk_id,
-                                                 type=PublicKeyType.ED25519_SIG_2018,
-                                                 controller=did_doc.id,
-                                                 value=routing_doc.dereference(
-                                                     service.recipient_keys[0]).value,
-                                                 authn=True, )
                 rk = self.method
                 routing_keys.append(rk)
                 svc_endpoints = [service.service_endpoint]
@@ -120,24 +122,23 @@ class BaseConnectionManager:
         if mediation_records:
             for mediation_record in mediation_records:
                 mediator_routing_keys = [
-                    # TODO: get correct controller did_info
-                    VerificationMethod(
-                        id="{}#routing-{}".format(did_doc.id, idx),
+                    did_doc.add_verification_method(
                         type=PublicKeyType.ED25519_SIG_2018,
-                        controller=did_doc.id,
                         value=key,
-                        authn=True,
-                    )  # TODO: should this be true?
+                        ident="routing-{}".format(idx),
+                        authentication=True,
+                    )
                     for idx, key in enumerate(mediation_record.routing_keys)
                 ]
 
                 routing_keys = [*routing_keys, *mediator_routing_keys]
+
                 svc_endpoints = [mediation_record.endpoint]
 
         for (endpoint_index, svc_endpoint) in enumerate(svc_endpoints or []):
-            did_doc.add_didcomm_service(type="IndyAgent", recipient_keys=[pk],
-                                        routing_keys=routing_keys,
-                                        endpoint=svc_endpoint)
+            did_doc.add_didcomm_service(
+                recipient_keys=[pk], routing_keys=routing_keys, endpoint=svc_endpoint
+            )
 
         return did_doc
 
@@ -198,7 +199,7 @@ class BaseConnectionManager:
         await storage.delete_all_records(self.RECORD_TYPE_DID_KEY, {"did": did})
 
     async def fetch_connection_targets(
-            self, connection: ConnRecord
+        self, connection: ConnRecord
     ) -> Sequence[ConnectionTarget]:
         """Get a list of connection target from a `ConnRecord`.
 
@@ -216,9 +217,9 @@ class BaseConnectionManager:
         results = None
 
         if (
-                ConnRecord.State.get(connection.state)
-                in (ConnRecord.State.INVITATION, ConnRecord.State.REQUEST) and
-                ConnRecord.Role.get(connection.their_role) is ConnRecord.Role.RESPONDER
+            ConnRecord.State.get(connection.state)
+            in (ConnRecord.State.INVITATION, ConnRecord.State.REQUEST)
+            and ConnRecord.Role.get(connection.their_role) is ConnRecord.Role.RESPONDER
         ):
             invitation = await connection.retrieve_invitation(self._session)
             if isinstance(invitation, ConnectionInvitation):  # conn protocol invitation
@@ -287,7 +288,7 @@ class BaseConnectionManager:
         return results
 
     def diddoc_connection_targets(
-            self, doc: DIDDoc, sender_verkey: str, their_label: str = None
+        self, doc: DIDDoc, sender_verkey: str, their_label: str = None
     ) -> Sequence[ConnectionTarget]:
         """Get a list of connection targets from a DID Document.
 
@@ -311,8 +312,8 @@ class BaseConnectionManager:
                         endpoint=service.service_endpoint,
                         label=their_label,
                         recipient_keys=[
-                            doc.dereference(key).value for key in
-                            (service.recipient_keys or ())
+                            doc.dereference(key).value
+                            for key in (service.recipient_keys or ())
                         ],
                         routing_keys=[
                             key.value for key in (service.routing_keys or ())

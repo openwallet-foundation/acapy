@@ -1762,8 +1762,8 @@ class TestConnectionManager(AsyncTestCase):
         )
         assert doc.service
         services = doc.service
-        assert len(services) == 1
-        (service,) = services
+        assert len(services) == 2
+        (service,) = [services[1]]
         service_public_keys = service.routing_keys[0]
         assert (
             doc.dereference(service_public_keys).value
@@ -1796,8 +1796,8 @@ class TestConnectionManager(AsyncTestCase):
         )
         assert doc.service
         services = doc.service
-        assert len(services) == 1
-        (service,) = services
+        assert len(services) == 2
+        (service,) = [services[1]]
         routing = service.routing_keys
         assert doc.dereference(routing[0]).value == mediation_record1.routing_keys[0]
         assert doc.dereference(routing[1]).value == mediation_record2.routing_keys[0]
@@ -1823,8 +1823,8 @@ class TestConnectionManager(AsyncTestCase):
         )
         assert doc.service
         services = doc.service
-        assert len(services) == 1
-        (service,) = services
+        assert len(services) == 2
+        (service,) = [services[1]]
         service_public_keys = service.routing_keys[0]
         assert (
             doc.dereference(service_public_keys).value
@@ -2180,7 +2180,7 @@ class TestConnectionManager(AsyncTestCase):
         )
 
         targets = await self.manager.fetch_connection_targets(mock_conn)
-        assert len(targets) == 1
+        assert len(targets) == 2
         target = targets[0]
         assert target.did == mock_conn.their_did
         assert target.endpoint == self.test_endpoint

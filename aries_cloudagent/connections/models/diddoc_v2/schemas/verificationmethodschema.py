@@ -16,7 +16,7 @@ limitations under the License.
 
 import re
 
-from marshmallow import Schema, fields, post_load, validate, ValidationError
+from marshmallow import Schema, fields, post_load, post_dump, validate, ValidationError
 
 from .....resolver.did import DID_PATTERN
 from .unionfield import ListOrStringField
@@ -63,6 +63,14 @@ class VerificationMethodSchema(Schema):
 
         return VerificationMethod(**data)
 
+    @post_dump
+    def post_dump_did_doc(self, data, many, **kwargs):
+        """Post dump function."""
+        for key in tuple(data.keys()):
+            if not data.get(key):
+                data.pop(key)
+        return data
+
 
 class PublicKeyField(fields.Field):
     """Public Key field for Marshmallow."""
@@ -70,7 +78,7 @@ class PublicKeyField(fields.Field):
     def _serialize(self, value, attr, obj, **kwargs):
         if isinstance(value, list):
             for idx, val in enumerate(value):
-                if not isinstance(val, str):
+                if val and not isinstance(val, str):
                     value[idx] = val.serialize()
             return value
         else:

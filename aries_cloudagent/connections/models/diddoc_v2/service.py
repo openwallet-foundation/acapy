@@ -36,6 +36,7 @@ class Service:
         recipient_keys: Union[Sequence, VerificationMethod] = None,
         routing_keys: Union[Sequence, VerificationMethod] = None,
         priority: int = 0,
+        **kwargs
     ):
         """
         Initialize the Service instance.
@@ -65,6 +66,7 @@ class Service:
         self._recip_keys = recipient_keys or []
         self._routing_keys = routing_keys or []
         self._priority = priority or 0
+        self.kwargs = kwargs or {}
 
     @property
     def id(self) -> str:

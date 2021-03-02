@@ -39,18 +39,18 @@ class DIDDoc:
     CONTEXT = "https://w3id.org/did/v1"
 
     def __init__(
-            self,
-            id: str,
-            also_known_as: list = None,
-            controller=None,
-            verification_method: list = None,
-            authentication: list = None,
-            assertion_method: list = None,
-            key_agreement: list = None,
-            capability_invocation: list = None,
-            capability_delegation: list = None,
-            public_key: list = None,
-            service: list = None,
+        self,
+        id: str,
+        also_known_as: list = None,
+        controller=None,
+        verification_method: list = None,
+        authentication: list = None,
+        assertion_method: list = None,
+        key_agreement: list = None,
+        capability_invocation: list = None,
+        capability_delegation: list = None,
+        public_key: list = None,
+        service: list = None,
     ) -> None:
         """
         Initialize the DIDDoc instance.
@@ -112,6 +112,7 @@ class DIDDoc:
         for index, key in enumerate(keys):
             if isinstance(key, str):
                 if not self.dereference(key):
+
                     raise ValueError("Key '{}' not found on DIDDoc".format(key))
             else:
                 self._set(key)
@@ -293,40 +294,43 @@ class DIDDoc:
         self._id = value
 
     def add_verification_method(
-            self,
-            type: Union[PublicKeyType, str],
-            controller: Union[str, Sequence],
-            value: str,
-            *,
-            ident: str = None,
-            usage: str = None,
-            authentication: bool = False,
-            verification_type: str = "publicKey",
-            upsert: bool = False
+        self,
+        type: Union[PublicKeyType, str],
+        value: str,
+        controller: Union[str, Sequence] = None,
+        *,
+        ident: str = None,
+        usage: str = None,
+        authentication: bool = False,
+        verification_type: str = "publicKey",
+        upsert: bool = False
     ) -> VerificationMethod:
         """Add a verification method to this document."""
         if ident:
             id = "{}#{}".format(self.id, ident)
-            if self._index.get(id) and not upsert:
-                raise ValueError("ID already exists, use arg upsert to update it")
-        else:
-            for index in range(1, 100):
-                id_aux = "{}#keys-{}".format(self.id, index)
-                if not self._index.get(id_aux):
-                    id = id_aux
-                    break
 
+        else:
+            id = self._build_id("keys-")
+
+        if not controller:
+            controller = self.id
         key = VerificationMethod(id, type, controller, usage, value, authentication)
+
+        exists = self._index.get(id)
+        if (exists) and (not upsert) and (exists.serialize() != key.serialize()):
+            print("hola")
+            raise ValueError("ID already exists, use arg upsert to update it")
+
         self._set(key, upsert=upsert, verification_type=verification_type)
         return key
 
     def add_service(
-            self,
-            type: Union[str, list],
-            endpoint: Union[str, Sequence, dict],
-            ident: str = None,
-            priority: int = 0,
-            upsert: bool = False
+        self,
+        type: Union[str, list],
+        endpoint: Union[str, Sequence, dict],
+        ident: str = None,
+        upsert: bool = False,
+        **kwargs
     ) -> Service:
         """Add service to this document."""
         if ident:
@@ -334,57 +338,70 @@ class DIDDoc:
             if self._index.get(id) and not upsert:
                 raise ValueError("ID already exists, use arg upsert to update it")
         else:
-            for index in range(1, 100):
-                id_aux = "{}#service-{}".format(self.id, index)
-                if not self._index.get(id_aux):
-                    id = id_aux
-                    break
+            id = self._build_id("service-")
 
-        service = Service(id, type, endpoint, priority=priority)
+        service = Service(id, type, endpoint, **kwargs)
         self._set(service, upsert=upsert)
 
-    def _add_keys(self, keys):
+    def _format_keys(self, keys):
         result = []
         if isinstance(keys, list):
             for key in keys:
                 result.append(key.id)
-                self._set(key)
 
         elif isinstance(keys, VerificationMethod):
             result.append(keys.id)
-            self._set(keys)
+
+        for key in result:
+            if not self.dereference(key):
+                raise ValueError("Key {} not found in the DIDDoc".format(key))
 
         return result
 
+    def _build_id(self, ident):
+        for index in range(1, 100):
+            id_aux = "{}#{}{}".format(self.id, ident, index)
+            if not self._index.get(id_aux):
+                return id_aux
+
+        raise ValueError("DIDDoc can not have more than 100 {} entities".format(ident))
+
     def add_didcomm_service(
-            self,
-            type: Union[str, list],
-            recipient_keys: Union[Sequence[VerificationMethod], VerificationMethod],
-            routing_keys: Union[Sequence[VerificationMethod], VerificationMethod],
-            endpoint: Union[str, Sequence, dict],
-            priority: int = 0
+        self,
+        recipient_keys: Union[Sequence[VerificationMethod], VerificationMethod],
+        routing_keys: Union[Sequence[VerificationMethod], VerificationMethod],
+        endpoint: Union[str, Sequence, dict],
+        priority: int = 0,
+        type: Union[str, list] = None,
+        backward_compatibility: bool = True,
     ) -> Service:
         """Add DIDComm Service to this document."""
-        for index in range(1, 100):
-            id_aux = "{}#didcomm-{}".format(self.id, index)
-            if not self._index.get(id_aux):
-                id = id_aux
-                break
+
+        id = self._build_id("didcomm-")
 
         # RECIPIENT KEYS
-        recip_keys = self._add_keys(recipient_keys)
+        recip_keys = self._format_keys(recipient_keys)
 
         # ROUTING KEYS
-        rout_keys = self._add_keys(routing_keys)
+        rout_keys = self._format_keys(routing_keys)
+
+        if not type:
+            type = "did-communication"
 
         service = Service(id, type, endpoint, recip_keys, rout_keys, priority)
         self._set(service)
 
+        if backward_compatibility:
+            type = "IndyAgent"
+            id = self._build_id("didcomm-")
+            service = Service(id, type, endpoint, recip_keys, rout_keys, priority)
+            self._set(service)
+
     def _set(
-            self,
-            item: Union[Service, VerificationMethod],
-            upsert: bool = False,
-            verification_type: str = "publicKey",
+        self,
+        item: Union[Service, VerificationMethod],
+        upsert: bool = False,
+        verification_type: str = "publicKey",
     ) -> "DIDDoc":
         """
         Add or replace service or verification method; return current DIDDoc.
@@ -429,6 +446,8 @@ class DIDDoc:
         """
 
         # Verification did url
+        if not isinstance(did_url, str):
+            did_url = did_url.url
         DIDUrl.parse(did_url)
 
         return self._index.get(did_url)
