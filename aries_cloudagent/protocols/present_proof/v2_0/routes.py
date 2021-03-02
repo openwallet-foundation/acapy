@@ -24,7 +24,6 @@ from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
 from ....messaging.valid import (
     INDY_EXTRA_WQL,
-    INT_EPOCH,
     NUM_STR_NATURAL,
     NUM_STR_WHOLE,
     UUIDFour,
@@ -39,14 +38,14 @@ from ...problem_report.v1_0.message import ProblemReport
 
 from ..indy.cred_precis import IndyCredPrecisSchema
 from ..indy.proof_request import IndyProofRequestSchema
-from ..indy.pres_preview import IndyPresPreview, IndyPresPreviewSchema
+from ..indy.pres_preview import IndyPresPreviewSchema
 from ..indy.requested_creds import (
     IndyRequestedCredsRequestedAttrSchema,
     IndyRequestedCredsRequestedPredSchema,
 )
 
 from .manager import V20PresManager
-from .message_types import PRES_20_REQUEST, SPEC_URI
+from .message_types import SPEC_URI
 from .messages.pres_format import V20PresFormat
 from .messages.pres_proposal import V20PresProposal
 from .messages.pres_request import V20PresRequest

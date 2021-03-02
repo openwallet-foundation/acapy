@@ -24,30 +24,30 @@ class TestV20CredRoutes(AsyncTestCase):
             __getitem__=lambda _, k: self.request_dict[k],
         )
 
-    async def test_validate_cred_filter(self):
-        filt = test_module.V20CredFilterSchema()
-        filt.validate_fields({"indy": {"issuer_did": TEST_DID}})
-        filt.validate_fields(
+    async def test_validate_cred_filter_schema(self):
+        schema = test_module.V20CredFilterSchema()
+        schema.validate_fields({"indy": {"issuer_did": TEST_DID}})
+        schema.validate_fields(
             {"indy": {"issuer_did": TEST_DID, "schema_version": "1.0"}}
         )
-        filt.validate_fields(
+        schema.validate_fields(
             {
                 "indy": {"issuer_did": TEST_DID},
                 "dif": {"some_dif_criterion": "..."},
             }
         )
-        filt.validate_fields(
+        schema.validate_fields(
             {
                 "indy": {},
                 "dif": {"some_dif_criterion": "..."},
             }
         )
         with self.assertRaises(test_module.ValidationError):
-            filt.validate_fields({})
+            schema.validate_fields({})
         with self.assertRaises(test_module.ValidationError):
-            filt.validate_fields(["hopeless", "stop"])
+            schema.validate_fields(["hopeless", "stop"])
         with self.assertRaises(test_module.ValidationError):
-            filt.validate_fields({"veres-one": {"no": "support"}})
+            schema.validate_fields({"veres-one": {"no": "support"}})
 
     async def test_credential_exchange_list(self):
         self.request.query = {

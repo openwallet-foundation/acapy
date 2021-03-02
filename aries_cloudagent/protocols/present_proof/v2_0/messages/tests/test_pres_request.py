@@ -74,17 +74,9 @@ INDY_PROOF_REQ = json.loads(
 PRES_REQ = V20PresRequest(
     comment="Test",
     will_confirm=True,
-    formats=[
-        V20PresFormat(
-            attach_id="abc",
-            format_=V20PresFormat.Format.INDY.aries,
-        )
-    ],
+    formats=[V20PresFormat(attach_id="indy", format_=V20PresFormat.Format.INDY.aries)],
     request_presentations_attach=[
-        AttachDecorator.data_base64(
-            mapping=INDY_PROOF_REQ,
-            ident="abc",
-        )
+        AttachDecorator.data_base64(mapping=INDY_PROOF_REQ, ident="indy")
     ],
 )
 
@@ -109,14 +101,14 @@ class TestV20PresRequest(TestCase):
                 "will_confirm": True,
                 "formats": [
                     {
-                        "attach_id": "abc",
+                        "attach_id": "indy",
                         "format": V20PresFormat.Format.INDY.aries,
                     }
                 ],
                 "request_presentations~attach": [
                     AttachDecorator.data_base64(
                         mapping=INDY_PROOF_REQ,
-                        ident="abc",
+                        ident="indy",
                     ).serialize()
                 ],
             }
@@ -134,7 +126,7 @@ class TestV20PresRequest(TestCase):
                 "will_confirm": True,
                 "formats": [
                     {
-                        "attach_id": "abc",
+                        "attach_id": "indy",
                         "format": V20PresFormat.Format.INDY.aries,
                     }
                 ],
@@ -151,14 +143,14 @@ class TestV20PresRequest(TestCase):
                 "will_confirm": True,
                 "formats": [
                     {
-                        "attach_id": "abc",
+                        "attach_id": "indy",
                         "format": V20PresFormat.Format.INDY.aries,
                     }
                 ],
                 "request_presentations~attach": [
                     AttachDecorator.data_base64(
                         mapping=INDY_PROOF_REQ,
-                        ident="def",
+                        ident="a suffusion of yellow",
                     ).serialize()
                 ],
             }
@@ -176,14 +168,14 @@ class TestV20PresRequest(TestCase):
             "will_confirm": True,
             "formats": [
                 {
-                    "attach_id": "abc",
+                    "attach_id": "indy",
                     "format": V20PresFormat.Format.INDY.aries,
                 }
             ],
             "request_presentations~attach": [
                 AttachDecorator.data_base64(
                     mapping=INDY_PROOF_REQ,
-                    ident="abc",
+                    ident="indy",
                 ).serialize()
             ],
             "comment": "Test",
@@ -204,7 +196,7 @@ class TestV20PresRequestSchema(TestCase):
             "will_confirm": true,
             "request_presentations~attach": [
                 {
-                    "@id": "abc",
+                    "@id": "indy",
                     "mime-type": "application/json",
                     "data": {
                         "base64": "eyJu..."
@@ -213,7 +205,7 @@ class TestV20PresRequestSchema(TestCase):
             ],
             "formats": [
                 {
-                    "attach_id": "abc",
+                    "attach_id": "indy",
                     "format": "hlindy-zkp-v1.0"
                 }
             ],

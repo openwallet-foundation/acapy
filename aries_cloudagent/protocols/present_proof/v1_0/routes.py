@@ -22,7 +22,6 @@ from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
 from ....messaging.valid import (
     INDY_EXTRA_WQL,
-    INT_EPOCH,
     NUM_STR_NATURAL,
     NUM_STR_WHOLE,
     UUIDFour,
@@ -412,9 +411,7 @@ async def presentation_exchange_send_proposal(request: web.BaseRequest):
             connection_record = await ConnRecord.retrieve_by_id(session, connection_id)
             presentation_proposal_message = PresentationProposal(
                 comment=comment,
-                presentation_proposal=IndyPresPreview.deserialize(
-                    presentation_preview
-                ),
+                presentation_proposal=IndyPresPreview.deserialize(presentation_preview),
             )
         except (BaseModelError, StorageError) as err:
             return await internal_error(

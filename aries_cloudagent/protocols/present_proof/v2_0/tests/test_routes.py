@@ -101,6 +101,34 @@ class TestPresentProofRoutes(AsyncTestCase):
             __getitem__=lambda _, k: self.request_dict[k],
         )
 
+    async def test_validate(self):
+        schema = test_module.V20PresPreviewByFormatSchema()
+        schema.validate_fields({"indy": {"attributes": [], "predicates": []}})
+        schema.validate_fields({"dif": {"some_dif_criterion": "..."}})
+        schema.validate_fields(
+            {
+                "indy": {"attributes": [], "predicates": []},
+                "dif": {"some_dif_criterion": "..."},
+            }
+        )
+        with self.assertRaises(test_module.ValidationError):
+            schema.validate_fields({})
+        with self.assertRaises(test_module.ValidationError):
+            schema.validate_fields(["hopeless", "stop"])
+        with self.assertRaises(test_module.ValidationError):
+            schema.validate_fields({"veres-one": {"no": "support"}})
+
+        schema = test_module.V20PresRequestByFormatSchema()
+        schema.validate_fields({"indy": {"...": "..."}})
+        schema.validate_fields({"dif": {"...": "..."}})
+        schema.validate_fields({"indy": {"...": "..."}, "dif": {"...": "..."}})
+        with self.assertRaises(test_module.ValidationError):
+            schema.validate_fields({})
+        with self.assertRaises(test_module.ValidationError):
+            schema.validate_fields(["hopeless", "stop"])
+        with self.assertRaises(test_module.ValidationError):
+            schema.validate_fields({"veres-one": {"no": "support"}})
+
     async def test_validate_proof_req_attr_spec(self):
         aspec = IndyProofReqAttrSpecSchema()
         aspec.validate_fields({"name": "attr0"})
