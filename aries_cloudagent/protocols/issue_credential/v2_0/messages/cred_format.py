@@ -1,23 +1,26 @@
 """Issue-credential protocol message attachment format."""
 
 from collections import namedtuple
-from enum import Enum
 from re import sub
-from typing import Mapping, Sequence, Union
+from typing import Mapping, Sequence, Type, Union
+from enum import Enum
 from uuid import uuid4
 
-from marshmallow import EXCLUDE, fields, validate, ValidationError
+from marshmallow import EXCLUDE, fields, validate
 
-from .....messaging.credential_definitions.util import CRED_DEF_TAGS
-from .....messaging.decorators.attach_decorator import AttachDecorator
+from .....utils.classloader import ClassLoader
 from .....messaging.models.base import BaseModel, BaseModelSchema
 from .....messaging.valid import UUIDFour
-
-from ..formats.indy import IndyCredFormat
-from ..models.detail.dif import V20CredExRecordDIF
+from .....messaging.decorators.attach_decorator import AttachDecorator
+from ..message_types import PROTOCOL_PACKAGE
 from ..models.detail.indy import V20CredExRecordIndy
+from ..models.detail.dif import V20CredExRecordDIF
+from typing import TYPE_CHECKING
 
-# Aries RFC value, further monikers, cred ex detail record class
+# TODO: remove
+if TYPE_CHECKING:
+    from ..formats.handler import V20CredFormatHandler
+
 FormatSpec = namedtuple("FormatSpec", "aries aka detail handler")
 
 
@@ -34,14 +37,15 @@ class V20CredFormat(BaseModel):
 
         INDY = FormatSpec(
             "hlindy-zkp-v1.0",
-            {"indy", "hyperledgerindy", "hlindy"},
+            ["indy", "hyperledgerindy", "hlindy"],
             V20CredExRecordIndy,
-            IndyCredFormat,
+            f"{PROTOCOL_PACKAGE}.formats.indy.IndyCredFormatHandler",
         )
         DIF = FormatSpec(
             "dif/credential-manifest@v1.0",
-            {"dif", "w3c", "jsonld"},
+            ["dif", "w3c", "jsonld"],
             V20CredExRecordDIF,
+            f"{PROTOCOL_PACKAGE}.formats.indy.IndyCredFormatHandler",
         )
 
         @classmethod
@@ -79,15 +83,15 @@ class V20CredFormat(BaseModel):
             """Accessor for credential exchange detail class."""
             return self.value.detail
 
-        def handler(self) -> IndyCredFormat:
+        @property
+        def handler(self) -> Type["V20CredFormatHandler"]:
             """Accessor for credential exchange format handler."""
-            return self.value.handler
+            # TODO: optimize / refactor
+            return ClassLoader.load_class(self.value.handler)
 
         def validate_filter(self, data: Mapping):
             """Raise ValidationError for wrong filtration criteria."""
-            if self is V20CredFormat.Format.INDY:
-                if data.keys() - set(CRED_DEF_TAGS):
-                    raise ValidationError(f"Bad indy credential filter: {data}")
+            self.handler.validate_filter(data)
 
         def get_attachment_data(
             self,

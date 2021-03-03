@@ -308,6 +308,24 @@ def _formats_filters(filt_spec: Mapping) -> Mapping:
     }
 
 
+async def _get_result_with_details(
+    profile: Profile, cred_ex_record: V20CredExRecord
+) -> Mapping:
+    """Get credential exchange result with detail records."""
+    result = {"cred_ex_record": cred_ex_record.serialize()}
+
+    for fmt in V20CredFormat.Format:
+        # TODO: optimize so we don't need to initialize it for each record
+        detail_record = await fmt.handler(profile).get_detail_record(
+            cred_ex_record.cred_ex_id
+        )
+
+        if detail_record:
+            result[fmt.aka[0]] = detail_record.serialize()
+
+    return result
+
+
 @docs(
     tags=["issue-credential v2.0"],
     summary="Fetch all credential exchange records",
@@ -344,23 +362,9 @@ async def credential_exchange_list(request: web.BaseRequest):
             )
 
         results = []
-        cred_manager = V20CredManager(context.profile)
         for cxr in cred_ex_records:
-            indy_record = await cred_manager.get_detail_record(
-                cxr.cred_ex_id,
-                V20CredFormat.Format.INDY,
-            )
-            dif_record = await cred_manager.get_detail_record(
-                cxr.cred_ex_id,
-                V20CredFormat.Format.DIF,
-            )
-            results.append(
-                {
-                    "cred_ex_record": cxr.serialize(),
-                    "indy": indy_record.serialize() if indy_record else None,
-                    "dif": dif_record.serialize() if dif_record else None,
-                }
-            )
+            result = await _get_result_with_details(context.profile, cxr)
+            results.append(result)
 
     except (StorageError, BaseModelError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
@@ -394,18 +398,7 @@ async def credential_exchange_retrieve(request: web.BaseRequest):
         async with context.session() as session:
             cred_ex_record = await V20CredExRecord.retrieve_by_id(session, cred_ex_id)
 
-        cred_manager = V20CredManager(context.profile)
-        indy_record = await cred_manager.get_detail_record(
-            cred_ex_id, V20CredFormat.Format.INDY
-        )
-        dif_record = await cred_manager.get_detail_record(
-            cred_ex_id, V20CredFormat.Format.DIF
-        )
-        result = {
-            "cred_ex_record": cred_ex_record.serialize(),
-            "indy": indy_record.serialize() if indy_record else None,
-            "dif": dif_record.serialize() if dif_record else None,
-        }
+        result = await _get_result_with_details(context.profile, cred_ex_record)
 
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
