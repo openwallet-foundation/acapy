@@ -1,70 +1,92 @@
+# Intro
+The author of this demo struggeled a bit with seeing the whole picture of the existing demoes. There were too much black box stuff going on for the author to understand what was exactly going on. Hence this demo was written while working out the kinks of whats what. This does not hide anything, do anything automatic and try take things from scratch so one understands how to set this up yourself. Initial conversation started here: https://github.com/hyperledger/aries-cloudagent-python/issues/983
+
+# Pre configurations
+## Docker and config
+You need docker installed. Making sure that docker-compose also works on your end.
+If you are unfamiliar with this, have a look at these two links: 
+
+https://docs.docker.com/engine/install/ 
+https://docs.docker.com/compose/install/
+
+You also want to run the manage script with the function seed, to be able to get a seed to use in the configuration
+
+`manage seed`
+
+Use the outcome into `INDY_SEED` in the `.env` file
+## Node and webhook receiver
+Currently the webhook receiver is not setup for docker, so you have to have node to run it. Or you can contribute to the demo by wrapping it in a docker and adding it to the compose file.
+
+But simply run   
+`yarn`    
+`yarn start`    
+Or use npm if you prefer that
+
 # Configurations
+## .env
+We have a .env file we need to fill in.
+And then run the docker compose in the same folder as the .env file.
 
 ```
-version: "3"
-services:
-diwala-agent:
-image: bcgovimages/aries-cloudagent:py36-1.15-0_0.6.0rc0
-environment:
-ADMIN_PORT: 5000
-AGENT_PORT: 10000
-INDY_SEED: diwalaJnecnKjegsyIR0P3vXBc56G71H
-WEBHOOK_URL: http://host.docker.internal:3000/webhooks
-AGENT_LABEL: Diwala Agent
-ports:
-- "5000:5000"
-- "10000:10000"
-entrypoint: /bin/bash
-command: [
-"-c",
-"curl -d '{\"seed\":\"diwalaJnecnKjegsyIR0P3vXBc56G71H\", \"role\":\"TRUST_ANCHOR\", \"alias\":\"Diwala agent\"}' -X POST http://test.bcovrin.vonx.io/register; \
-sleep 5; \
-aca-py start \
--it http '0.0.0.0' 10000 \
--ot http \
---admin '0.0.0.0' 5000 \
--e 'http://localhost:10000/' \
---auto-provision \
---wallet-storage-type postgres_storage \
---wallet-storage-config '{\"url\":\"host.docker.internal:5432\", \"wallet_scheme\":\"MultiWalletSingleTableSharedPool\"}' \
---wallet-storage-creds '{\"account\":\"local-cloud-agent\",\"password\":\"testtest\",\"admin_account\":\"admin-cloud-agent\",\"admin_password\":\"testtest\"}' \
---wallet-type indy \
---wallet-name diwala \
---wallet-key Diwala.Agent321311 \
---seed diwalaJnecnKjegsyIR0P3vXBc56G71H \
---genesis-url http://test.bcovrin.vonx.io/genesis \
---label 'Diwala Multitenant Agent' \
---admin-insecure-mode \
---multitenant \
---multitenant-admin \
---jwt-secret very_secret_secret \
---log-level info",
-]
-
+ADMIN_PORT=5000
+AGENT_PORT=10000
+INDY_SEED=diwala9jphVquhjphuVIerbf0XEc74WL
+WEBHOOK_URL=http://host.docker.internal:3000/webhooks
+AGENT_LABEL=Diwala Agent 3
+LEDGER_URL=http://test.bcovrin.vonx.io
+WALLETKEY=Diwala.Agent421311
+MAIN_WALLET_NAME=diwala2
+POSTGRES_ADMIN=admin-cloud-agent
+POSTGRES_ADMIN_PASSWORD=testtest
+POSTGRES_ACCOUNT=local-cloud-agent
+POSTGRES_ACCOUNT_PASSWORD=testtest
 ```
+From bottom to top. `Posgres` is explained below.  
+
+`MAIN_WALLET_NAME` is in this multitenant setup, the multitenant wallet name.
+`WALLETKEY` Got a question on that   
+`LEDGER_URL` This is used inside docker compose for registering your seed, as well as using the same url to get the genesis block to connect to the ledger. This is a simple process because it is a testnet, might be a bit more difficult on production nets    
+`AGENT_LABEL` Will just name the agent itself in the API and on the ledger. It is used for main outer agent in this multitenant setup     
+`WEBHOOK_URL` Is important to define, what is the controller or webhook receiver for your agent? I have defined here a service that is simply spitting out the webhooks in the console. See the node folder    
+`INDY_SEED` Explained in the top    
+`AGENT_PORT` The port where the agent interacts   
+`ADMIN_PORT` The port the admin interface, swagger api is available    
 
 ## Postgres
 Postgres connection is important to make sure you are keeping state in a sane place. Volumes are fine, but they can be lost quite fast if it is not a good control over them. So a database, potentially as a service is even easier to handle and make sure that have the backups needed and overview needed.
 
-Setting up configuration for postgres is quite straight forward, with one hickup. The above configuration does not work out of the box, atleast not on < postgres@12.
+Make an admin user that can create databases, put in `POSTGRES_ADMIN`   
+Make a bit more restricte user that can read and write, put in `POSTGRES_ACCOUNT`
 
-The setup fails because it cannot find the used “user” database. Which is weird, as the user is not a database, that is created during initialisation.
+Go into the compose file and define a place your postgres is reachable. This example have a postgres running on the local machine, hence the `url: host.docker.internal:5432`
 
-To get past this, I had to create a “fake” database with the “user” name and it was able to run initialisation and all for the rest of the indy database creation.
+Looking at this, setting up configuration for postgres is quite straight forward, with one hickup. The above configuration does not work out of the box, atleast not on postgres < postgres@12.
+
+The setup fails because it cannot find the a database with the name you defined of your admin “user”. Which is weird, as the user is not the database.
+
+To get past this, I had to create a “fake” database with the defined “user” name and it was able to run initialisation and all for the rest of the indy database creation.
 
 ### Database management mode
 It is important to be aware of what is default and what possibilities you have for database management mode. Here is an explainer: https://github.com/hyperledger/indy-sdk/tree/master/experimental/plugins/postgres_storage#wallet-management-modes
-I chose MultiWalletSingleTableSharedPool because centralise all the things 🤪
+This example usess MultiWalletSingleTableSharedPool, see the compose file, because centralise all the things 🤪
+
+### Statistics
+If you want to have any insight to your data or statstics of what is going on, it is not possible to do so with the database entries. They are encrypted and done so for security reasons.
+
+Suggestion is to have some audit loggin at the controller level. As when you set this to production, there will be some controller calling the agent API.
 
 ### Questions
-Is there any way to read out of the database and understand the binary data? Meaning setting up statistics towards the type column of a wallet db?
-When doing MultiWalletSingleTableSharedPool, why does it use the name wallets, and not the wallet name that the configuration sends in? There is an ID with the wallet name, but guess that is the multitenant wallet name one define then?
+The crossed out is answered and documented
+- ~~Is there any way to read out of the database and understand the binary data? Meaning setting up statistics towards the type column of a wallet db?~~
+* When doing MultiWalletSingleTableSharedPool, why does it use the name wallets, and not the wallet name that the configuration sends in? There is an ID with the wallet name, but guess that is the multitenant wallet name one define then?
+* What is exaclty wallet key?
 
 # Creating connections
 Following this very straight forward: https://github.com/hyperledger/aries-cloudagent-python/blob/main/demo/AriesOpenAPIDemo.md#establishing-a-connection
 
 Important notice, one thing that was not straight forward in the demo and this setup was: Response does not go to active by default. There has to be an action on the connection to make it in active state.
-Trust ping or basic message pushes the state to active. But before that, it will stay response state.
+Trust ping or basic message pushes the state to active. But before that, it will stay response state. This is a response from the maintaners:
+>This is for the initial connection method based [Aries RFC0160](https://github.com/hyperledger/aries-rfcs/tree/master/features/0160-connection-protocol). For the new [RFC0023 (DID Exchange)](https://github.com/hyperledger/aries-rfcs/tree/master/features/0023-did-exchange) mechanism, this will not be needed as there is an extra message in the protocol to ensure the connection is confirmed
 
 # Sending a basic message
 Follow this: https://github.com/hyperledger/aries-cloudagent-python/blob/main/demo/AriesOpenAPIDemo.md#basic-messaging-between-agents
