@@ -83,6 +83,7 @@ class LoggingConfigurator:
         agent_label,
         inbound_transports,
         outbound_transports,
+        outbound_queue,
         public_did,
         admin_server=None,
         banner_length=40,
@@ -95,6 +96,7 @@ class LoggingConfigurator:
             agent_label: Agent Label
             inbound_transports: Configured inbound transports
             outbound_transports: Configured outbound transports
+            outbound_queue: The outbound queue engine instance
             admin_server: Admin server info
             public_did: Public DID
             banner_length: (Default value = 40) Length of the banner
@@ -123,13 +125,25 @@ class LoggingConfigurator:
         banner.print_spacer()
 
         # Outbound transports
-        banner.print_subtitle("Outbound Transports")
-        banner.print_spacer()
         schemes = set().union(
             *(transport.schemes for transport in outbound_transports.values())
         )
-        banner.print_list([f"{scheme}" for scheme in sorted(schemes)])
-        banner.print_spacer()
+        if schemes:
+            banner.print_subtitle("Outbound Transports")
+            banner.print_spacer()
+            banner.print_list([f"{scheme}" for scheme in sorted(schemes)])
+            banner.print_spacer()
+
+        # Outbound queue
+        if outbound_queue:
+            banner.print_subtitle("Outbound Queue")
+            banner.print_spacer()
+            banner.print_list(
+                [
+                    f"{outbound_queue.connection}",
+                ]
+            )
+            banner.print_spacer()
 
         # DID info
         if public_did:
