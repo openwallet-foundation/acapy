@@ -1,20 +1,23 @@
 from typing import Any
 
+
+from ..ld_proofs import LinkedDataSignature, ProofPurpose, sign, document_loader
+from .purposes import IssueCredentialProofPurpose
 from .checker import check_credential
 
 
-def issue(credential: dict, suite: Any, *, purpose: Any = None):
-    # common credential checks
-    check_credential(credential)
+def issue(
+    credential: dict, suite: LinkedDataSignature, *, purpose: ProofPurpose = None
+):
+    # TODO: validate credential format
 
-    # todo: document loader
-    # see: https://github.com/animo/aries-cloudagent-python/issues/3
+    if not purpose:
+        purpose = IssueCredentialProofPurpose()
 
-    if not suite.verification_method:
-        raise Exception('"suite.verification_method" property is required')
-
-    # todo: set purpose to CredentialIssuancePurpose if not present
-    # see: https://github.com/animo/aries-cloudagent-python/issues/4
-
-    # todo: sign credential, dependent on ld-proofs functionality
-    return credential
+    signed_credential = sign(
+        document=credential,
+        suite=suite,
+        purpose=purpose,
+        document_loader=document_loader,
+    )
+    return signed_credential
