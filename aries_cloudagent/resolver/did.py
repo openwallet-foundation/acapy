@@ -12,7 +12,7 @@ from typing import Dict, Union
 from urllib.parse import urlparse, parse_qsl, urlencode
 from ..core.error import BaseError
 
-DID_PATTERN = re.compile("did:([a-z]+):((?:[a-zA-Z0-9._-]*:)*[a-zA-Z0-9._-]+)")
+DID_PATTERN = re.compile("did:([a-z0-9]+):((?:[a-zA-Z0-9._-]*:)*[a-zA-Z0-9._-]+)")
 
 
 class DIDError(BaseError):
