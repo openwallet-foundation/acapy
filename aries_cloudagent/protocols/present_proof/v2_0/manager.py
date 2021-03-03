@@ -450,7 +450,7 @@ class V20PresManager:
                     mapping=indy_proof,
                     ident="indy",
                 )
-            ]
+            ],
         ).serialize()
         async with self._profile.session() as session:
             await pres_ex_record.save(session, reason="create v2.0 presentation")
@@ -469,9 +469,7 @@ class V20PresManager:
 
         thread_id = message._thread_id
         conn_id_filter = (
-            None
-            if conn_record is None
-            else {"conn_id": conn_record.connection_id}
+            None if conn_record is None else {"conn_id": conn_record.connection_id}
         )
         async with self._profile.session() as session:
             try:

@@ -734,7 +734,6 @@ async def present_proof_send_bound_request(request: web.BaseRequest):
     async with context.session() as session:
         try:
             pres_ex_record = await V20PresExRecord.retrieve_by_id(session, pres_ex_id)
-            print(f'\n\n== ROUTES create-bound-req got pxrec {pres_ex_record.serialize()}')
         except StorageNotFoundError as err:
             return await internal_error(
                 err, web.HTTPNotFound, pres_ex_record, outbound_handler
@@ -817,7 +816,6 @@ async def present_proof_send_presentation(request: web.BaseRequest):
     async with context.session() as session:
         try:
             pres_ex_record = await V20PresExRecord.retrieve_by_id(session, pres_ex_id)
-            print(f'\n\n== ROUTES send-pres got pxrec {pres_ex_record.serialize()}')
         except StorageNotFoundError as err:
             return await internal_error(
                 err, web.HTTPNotFound, pres_ex_record, outbound_handler
@@ -910,7 +908,6 @@ async def present_proof_verify_presentation(request: web.BaseRequest):
     async with context.session() as session:
         try:
             pres_ex_record = await V20PresExRecord.retrieve_by_id(session, pres_ex_id)
-            print(f'\n\n== ROUTES verify got pxrec {pres_ex_record.serialize()}')
         except StorageNotFoundError as err:
             return await internal_error(
                 err, web.HTTPNotFound, pres_ex_record, outbound_handler
@@ -980,7 +977,6 @@ async def present_proof_problem_report(request: web.BaseRequest):
     try:
         async with await context.session() as session:
             pres_ex_record = await V20PresExRecord.retrieve_by_id(session, pres_ex_id)
-            print(f'\n\n== ROUTES prob-rept got pxrec {pres_ex_record.serialize()}')
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
 
@@ -1021,7 +1017,6 @@ async def present_proof_remove(request: web.BaseRequest):
     try:
         async with context.session() as session:
             pres_ex_record = await V20PresExRecord.retrieve_by_id(session, pres_ex_id)
-            print(f'\n\n== ROUTES remove got pxrec {pres_ex_record.serialize()}')
             await pres_ex_record.delete_record(session)
     except StorageNotFoundError as err:
         return await internal_error(

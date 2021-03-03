@@ -539,9 +539,7 @@ class TestPresentProofRoutes(AsyncTestCase):
             )
 
     async def test_present_proof_send_free_request_not_found(self):
-        self.request.json = async_mock.CoroutineMock(
-            return_value={"conn_id": "dummy"}
-        )
+        self.request.json = async_mock.CoroutineMock(return_value={"conn_id": "dummy"})
 
         with async_mock.patch.object(
             test_module, "ConnRecord", async_mock.MagicMock()
