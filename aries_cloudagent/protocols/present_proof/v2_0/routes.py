@@ -37,12 +37,9 @@ from ...problem_report.v1_0 import internal_error
 from ...problem_report.v1_0.message import ProblemReport
 
 from ..indy.cred_precis import IndyCredPrecisSchema
+from ..indy.proof import IndyPresSpecSchema
 from ..indy.proof_request import IndyProofRequestSchema
 from ..indy.pres_preview import IndyPresPreviewSchema
-from ..indy.requested_creds import (
-    IndyRequestedCredsRequestedAttrSchema,
-    IndyRequestedCredsRequestedPredSchema,
-)
 
 from .manager import V20PresManager
 from .message_types import SPEC_URI
@@ -59,7 +56,7 @@ class V20PresentProofModuleResponseSchema(OpenAPISchema):
 class V20PresExRecordListQueryStringSchema(OpenAPISchema):
     """Parameters and validators for presentation exchange list query."""
 
-    connection_id = fields.UUID(
+    conn_id = fields.UUID(
         description="Connection identifier",
         required=False,
         example=UUIDFour.EXAMPLE,  # typically but not necessarily a UUID4
@@ -120,8 +117,17 @@ class DIFPresRequestSchema(OpenAPISchema):
     )
 
 
+class DIFPresSpecSchema(OpenAPISchema):
+    """DIF presentation schema specification placeholder."""
+
+    some_dif = fields.Str(
+        description="Placeholder for W3C/DIF/JSON-LD presentation format",
+        required=False,
+    )
+
+
 class V20PresPreviewByFormatSchema(OpenAPISchema):
-    """Presentation preview per format."""
+    """Schema for presentation preview per format."""
 
     indy = fields.Nested(
         IndyPresPreviewSchema,
@@ -137,15 +143,13 @@ class V20PresPreviewByFormatSchema(OpenAPISchema):
     @validates_schema
     def validate_fields(self, data, **kwargs):
         """
-        Validate schema fields.
-
-        Data must have indy, dif, or both.
+        Validate schema fields: data must have at least one format.
 
         Args:
             data: The data to validate
 
         Raises:
-            ValidationError: if data has neither indy nor dif
+            ValidationError: if data has no formats
 
         """
         if not any(f.api in data for f in V20PresFormat.Format):
@@ -157,7 +161,7 @@ class V20PresPreviewByFormatSchema(OpenAPISchema):
 class V20PresProposalRequestSchema(AdminAPIMessageTracingSchema):
     """Request schema for sending a presentation proposal admin message."""
 
-    connection_id = fields.UUID(
+    conn_id = fields.UUID(
         description="Connection identifier", required=True, example=UUIDFour.EXAMPLE
     )
     comment = fields.Str(
@@ -183,7 +187,7 @@ class V20PresProposalRequestSchema(AdminAPIMessageTracingSchema):
 
 
 class V20PresRequestByFormatSchema(OpenAPISchema):
-    """Presentation preview per format."""
+    """Presentation request per format."""
 
     indy = fields.Nested(
         IndyProofRequestSchema,
@@ -199,15 +203,13 @@ class V20PresRequestByFormatSchema(OpenAPISchema):
     @validates_schema
     def validate_fields(self, data, **kwargs):
         """
-        Validate schema fields.
-
-        Data must have indy, dif, or both.
+        Validate schema fields: data must have at least one format.
 
         Args:
             data: The data to validate
 
         Raises:
-            ValidationError: if data has neither indy nor dif
+            ValidationError: if data has no formats
 
         """
         if not any(f.api in data for f in V20PresFormat.Format):
@@ -219,7 +221,7 @@ class V20PresRequestByFormatSchema(OpenAPISchema):
 class V20PresCreateRequestRequestSchema(AdminAPIMessageTracingSchema):
     """Request schema for creating a proof request free of any connection."""
 
-    presentation_request = fields.Nested(IndyProofRequestSchema(), required=True)
+    presentation_request = fields.Nested(V20PresRequestByFormatSchema(), required=True)
     comment = fields.Str(required=False, allow_none=True)
     trace = fields.Bool(
         description="Whether to trace event (default false)",
@@ -231,49 +233,41 @@ class V20PresCreateRequestRequestSchema(AdminAPIMessageTracingSchema):
 class V20PresSendRequestRequestSchema(V20PresCreateRequestRequestSchema):
     """Request schema for sending a proof request on a connection."""
 
-    connection_id = fields.UUID(
+    conn_id = fields.UUID(
         description="Connection identifier", required=True, example=UUIDFour.EXAMPLE
     )
 
 
-class V20PresRequestSchema(AdminAPIMessageTracingSchema):
-    """Request schema for sending a presentation."""
+class V20PresSpecByFormatRequestSchema(AdminAPIMessageTracingSchema):
+    """Presentation specification schema by format, for send-presentation request."""
 
-    self_attested_attributes = fields.Dict(
-        description="Self-attested attributes to build into proof",
-        required=True,
-        keys=fields.Str(example="attr_name"),  # marshmallow/apispec v3.0 ignores
-        values=fields.Str(
-            example="self_attested_value",
-            description=(
-                "Self-attested attribute values to use in requested-credentials "
-                "structure for proof construction"
-            ),
-        ),
-    )
-    requested_attributes = fields.Dict(
-        description=(
-            "Nested object mapping proof request attribute referents to "
-            "requested-attribute specifiers"
-        ),
-        required=True,
-        keys=fields.Str(example="attr_referent"),  # marshmallow/apispec v3.0 ignores
-        values=fields.Nested(IndyRequestedCredsRequestedAttrSchema()),
-    )
-    requested_predicates = fields.Dict(
-        description=(
-            "Nested object mapping proof request predicate referents to "
-            "requested-predicate specifiers"
-        ),
-        required=True,
-        keys=fields.Str(example="pred_referent"),  # marshmallow/apispec v3.0 ignores
-        values=fields.Nested(IndyRequestedCredsRequestedPredSchema()),
-    )
-    trace = fields.Bool(
-        description="Whether to trace event (default false)",
+    indy = fields.Nested(
+        IndyPresSpecSchema,
         required=False,
-        example=False,
+        description="Presentation specification for indy",
     )
+    dif = fields.Nested(
+        DIFPresSpecSchema,
+        required=False,
+        description="Presentation specification for DIF",
+    )
+
+    @validates_schema
+    def validate_fields(self, data, **kwargs):
+        """
+        Validate schema fields: specify exactly one format.
+
+        Args:
+            data: The data to validate
+
+        Raises:
+            ValidationError: if data does not have exactly one format.
+
+        """
+        if len(data.keys() & {f.api for f in V20PresFormat.Format}) != 1:
+            raise ValidationError(
+                "V20PresSpecByFormatRequestSchema must specify one presentation format"
+            )
 
 
 class V20CredentialsFetchQueryStringSchema(OpenAPISchema):
@@ -309,7 +303,7 @@ class V20PresProblemReportRequestSchema(OpenAPISchema):
 
 
 class V20PresExIdMatchInfoSchema(OpenAPISchema):
-    """Path parameters and validators for request taking presentation exchange id."""
+    """Path parameters for request taking presentation exchange id."""
 
     pres_ex_id = fields.Str(
         description="Presentation exchange identifier", required=True, **UUID4
@@ -363,7 +357,7 @@ async def present_proof_list(request: web.BaseRequest):
         tag_filter["thread_id"] = request.query["thread_id"]
     post_filter = {
         k: request.query[k]
-        for k in ("connection_id", "role", "state")
+        for k in ("conn_id", "role", "state")
         if request.query.get(k, "") != ""
     }
 
@@ -462,7 +456,7 @@ async def present_proof_credentials_list(request: web.BaseRequest):
     holder = context.profile.inject(IndyHolder)
     try:
         pres_request = pres_ex_record.pres_request.attachment(V20PresFormat.Format.INDY)
-        # TODO allow for choice of format from pres req
+        # TODO allow for choice of format from those specified in pres req
         credentials = await holder.get_credentials_for_presentation_request_by_referent(
             pres_request,
             pres_referents,
@@ -510,7 +504,7 @@ async def present_proof_send_proposal(request: web.BaseRequest):
     body = await request.json()
 
     comment = body.get("comment")
-    conn_id = body.get("connection_id")
+    conn_id = body.get("conn_id")
 
     pres_preview = body.get("presentation_preview")
     conn_record = None
@@ -569,7 +563,7 @@ async def present_proof_send_proposal(request: web.BaseRequest):
 
 @docs(
     tags=["present-proof v2.0"],
-    summary=("Creates a presentation request not bound to any proposal or connection"),
+    summary="Creates a presentation request not bound to any proposal or connection",
 )
 @request_schema(V20PresCreateRequestRequestSchema())
 @response_schema(V20PresExRecordSchema(), 200, description="")
@@ -658,7 +652,7 @@ async def present_proof_send_free_request(request: web.BaseRequest):
 
     body = await request.json()
 
-    conn_id = body.get("connection_id")
+    conn_id = body.get("conn_id")
     async with context.session() as session:
         try:
             conn_record = await ConnRecord.retrieve_by_id(session, conn_id)
@@ -740,6 +734,7 @@ async def present_proof_send_bound_request(request: web.BaseRequest):
     async with context.session() as session:
         try:
             pres_ex_record = await V20PresExRecord.retrieve_by_id(session, pres_ex_id)
+            print(f'\n\n== ROUTES create-bound-req got pxrec {pres_ex_record.serialize()}')
         except StorageNotFoundError as err:
             return await internal_error(
                 err, web.HTTPNotFound, pres_ex_record, outbound_handler
@@ -797,7 +792,7 @@ async def present_proof_send_bound_request(request: web.BaseRequest):
 
 @docs(tags=["present-proof v2.0"], summary="Sends a proof presentation")
 @match_info_schema(V20PresExIdMatchInfoSchema())
-@request_schema(V20PresRequestSchema())
+@request_schema(V20PresSpecByFormatRequestSchema())
 @response_schema(V20PresExRecordSchema(), description="")
 async def present_proof_send_presentation(request: web.BaseRequest):
     """
@@ -815,12 +810,14 @@ async def present_proof_send_presentation(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     outbound_handler = request["outbound_message_router"]
     pres_ex_id = request.match_info["pres_ex_id"]
+    fmt = V20PresFormat.Format.get(request.match_info.get("format"))
     body = await request.json()
 
     pres_ex_record = None
     async with context.session() as session:
         try:
             pres_ex_record = await V20PresExRecord.retrieve_by_id(session, pres_ex_id)
+            print(f'\n\n== ROUTES send-pres got pxrec {pres_ex_record.serialize()}')
         except StorageNotFoundError as err:
             return await internal_error(
                 err, web.HTTPNotFound, pres_ex_record, outbound_handler
@@ -854,6 +851,7 @@ async def present_proof_send_presentation(request: web.BaseRequest):
                 "requested_predicates": body.get("requested_predicates"),
             },
             comment=body.get("comment"),
+            format_=fmt,
         )
         result = pres_ex_record.serialize()
     except (
@@ -912,6 +910,7 @@ async def present_proof_verify_presentation(request: web.BaseRequest):
     async with context.session() as session:
         try:
             pres_ex_record = await V20PresExRecord.retrieve_by_id(session, pres_ex_id)
+            print(f'\n\n== ROUTES verify got pxrec {pres_ex_record.serialize()}')
         except StorageNotFoundError as err:
             return await internal_error(
                 err, web.HTTPNotFound, pres_ex_record, outbound_handler
@@ -981,6 +980,7 @@ async def present_proof_problem_report(request: web.BaseRequest):
     try:
         async with await context.session() as session:
             pres_ex_record = await V20PresExRecord.retrieve_by_id(session, pres_ex_id)
+            print(f'\n\n== ROUTES prob-rept got pxrec {pres_ex_record.serialize()}')
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
 
@@ -1021,6 +1021,7 @@ async def present_proof_remove(request: web.BaseRequest):
     try:
         async with context.session() as session:
             pres_ex_record = await V20PresExRecord.retrieve_by_id(session, pres_ex_id)
+            print(f'\n\n== ROUTES remove got pxrec {pres_ex_record.serialize()}')
             await pres_ex_record.delete_record(session)
     except StorageNotFoundError as err:
         return await internal_error(
@@ -1039,47 +1040,51 @@ async def register(app: web.Application):
 
     app.add_routes(
         [
-            web.get("/present-proof/records", present_proof_list, allow_head=False),
             web.get(
-                "/present-proof/records/{pres_ex_id}",
+                "/present-proof-2.0/records",
+                present_proof_list,
+                allow_head=False,
+            ),
+            web.get(
+                "/present-proof-2.0/records/{pres_ex_id}",
                 present_proof_retrieve,
                 allow_head=False,
             ),
             web.get(
-                "/present-proof/records/{pres_ex_id}/credentials",
+                "/present-proof-2.0/records/{pres_ex_id}/credentials",
                 present_proof_credentials_list,
                 allow_head=False,
             ),
             web.post(
-                "/present-proof/send-proposal",
+                "/present-proof-2.0/send-proposal",
                 present_proof_send_proposal,
             ),
             web.post(
-                "/present-proof/create-request",
+                "/present-proof-2.0/create-request",
                 present_proof_create_request,
             ),
             web.post(
-                "/present-proof/send-request",
+                "/present-proof-2.0/send-request",
                 present_proof_send_free_request,
             ),
             web.post(
-                "/present-proof/records/{pres_ex_id}/send-request",
+                "/present-proof-2.0/records/{pres_ex_id}/send-request",
                 present_proof_send_bound_request,
             ),
             web.post(
-                "/present-proof/records/{pres_ex_id}/send-presentation",
+                "/present-proof-2.0/records/{pres_ex_id}/send-presentation",
                 present_proof_send_presentation,
             ),
             web.post(
-                "/present-proof/records/{pres_ex_id}/verify-presentation",
+                "/present-proof-2.0/records/{pres_ex_id}/verify-presentation",
                 present_proof_verify_presentation,
             ),
             web.post(
-                "/present-proof/records/{pres_ex_id}/problem-report",
+                "/present-proof-2.0/records/{pres_ex_id}/problem-report",
                 present_proof_problem_report,
             ),
             web.delete(
-                "/present-proof/records/{pres_ex_id}",
+                "/present-proof-2.0/records/{pres_ex_id}",
                 present_proof_remove,
             ),
         ]
@@ -1095,7 +1100,7 @@ def post_process_routes(app: web.Application):
     app._state["swagger_dict"]["tags"].append(
         {
             "name": "present-proof v2.0",
-            "description": "Proof presentation",
+            "description": "Proof presentation v2.0",
             "externalDocs": {"description": "Specification", "url": SPEC_URI},
         }
     )

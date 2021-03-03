@@ -17,9 +17,9 @@ PROTOCOL_PACKAGE = "aries_cloudagent.protocols.present_proof.v2_0"
 
 MESSAGE_TYPES = DIDCommPrefix.qualify_all(
     {
-        PRES_20_PROPOSAL: (f"{PROTOCOL_PACKAGE}.messages.pres_proposal.PresProposal"),
-        PRES_20_REQUEST: (f"{PROTOCOL_PACKAGE}.messages.pres_request.PresRequest"),
-        PRES_20: f"{PROTOCOL_PACKAGE}.messages.pres.Pres",
-        PRES_20_ACK: (f"{PROTOCOL_PACKAGE}.messages.pres_ack.PresAck"),
+        PRES_20_PROPOSAL: f"{PROTOCOL_PACKAGE}.messages.pres_proposal.V20PresProposal",
+        PRES_20_REQUEST: f"{PROTOCOL_PACKAGE}.messages.pres_request.V20PresRequest",
+        PRES_20: f"{PROTOCOL_PACKAGE}.messages.pres.V20Pres",
+        PRES_20_ACK: f"{PROTOCOL_PACKAGE}.messages.pres_ack.V20PresAck",
     }
 )

@@ -35,12 +35,9 @@ from ...problem_report.v1_0 import internal_error
 from ...problem_report.v1_0.message import ProblemReport
 
 from ..indy.cred_precis import IndyCredPrecisSchema
+from ..indy.proof import IndyPresSpecSchema
 from ..indy.proof_request import IndyProofRequestSchema
 from ..indy.pres_preview import IndyPresPreview, IndyPresPreviewSchema
-from ..indy.requested_creds import (
-    IndyRequestedCredsRequestedAttrSchema,
-    IndyRequestedCredsRequestedPredSchema,
-)
 
 from .manager import PresentationManager
 from .message_types import ATTACH_DECO_IDS, PRESENTATION_REQUEST, SPEC_URI
@@ -152,46 +149,6 @@ class V10PresentationSendRequestRequestSchema(
     )
 
 
-class V10PresentationRequestSchema(AdminAPIMessageTracingSchema):
-    """Request schema for sending a presentation."""
-
-    self_attested_attributes = fields.Dict(
-        description="Self-attested attributes to build into proof",
-        required=True,
-        keys=fields.Str(example="attr_name"),  # marshmallow/apispec v3.0 ignores
-        values=fields.Str(
-            example="self_attested_value",
-            description=(
-                "Self-attested attribute values to use in requested-credentials "
-                "structure for proof construction"
-            ),
-        ),
-    )
-    requested_attributes = fields.Dict(
-        description=(
-            "Nested object mapping proof request attribute referents to "
-            "requested-attribute specifiers"
-        ),
-        required=True,
-        keys=fields.Str(example="attr_referent"),  # marshmallow/apispec v3.0 ignores
-        values=fields.Nested(IndyRequestedCredsRequestedAttrSchema()),
-    )
-    requested_predicates = fields.Dict(
-        description=(
-            "Nested object mapping proof request predicate referents to "
-            "requested-predicate specifiers"
-        ),
-        required=True,
-        keys=fields.Str(example="pred_referent"),  # marshmallow/apispec v3.0 ignores
-        values=fields.Nested(IndyRequestedCredsRequestedPredSchema()),
-    )
-    trace = fields.Bool(
-        description="Whether to trace event (default false)",
-        required=False,
-        example=False,
-    )
-
-
 class CredentialsFetchQueryStringSchema(OpenAPISchema):
     """Parameters and validators for credentials fetch request query string."""
 
@@ -232,7 +189,7 @@ class V10PresExIdMatchInfoSchema(OpenAPISchema):
     )
 
 
-@docs(tags=["present-proof"], summary="Fetch all present-proof exchange records")
+@docs(tags=["present-proof v1.0"], summary="Fetch all present-proof exchange records")
 @querystring_schema(V10PresentationExchangeListQueryStringSchema)
 @response_schema(V10PresentationExchangeListSchema(), 200, description="")
 async def presentation_exchange_list(request: web.BaseRequest):
@@ -271,7 +228,10 @@ async def presentation_exchange_list(request: web.BaseRequest):
     return web.json_response({"results": results})
 
 
-@docs(tags=["present-proof"], summary="Fetch a single presentation exchange record")
+@docs(
+    tags=["present-proof v1.0"],
+    summary="Fetch a single presentation exchange record",
+)
 @match_info_schema(V10PresExIdMatchInfoSchema())
 @response_schema(V10PresentationExchangeSchema(), 200, description="")
 async def presentation_exchange_retrieve(request: web.BaseRequest):
@@ -307,7 +267,7 @@ async def presentation_exchange_retrieve(request: web.BaseRequest):
 
 
 @docs(
-    tags=["present-proof"],
+    tags=["present-proof v1.0"],
     summary="Fetch credentials for a presentation request from wallet",
 )
 @match_info_schema(V10PresExIdMatchInfoSchema())
@@ -379,7 +339,7 @@ async def presentation_exchange_credentials_list(request: web.BaseRequest):
     return web.json_response(credentials)
 
 
-@docs(tags=["present-proof"], summary="Sends a presentation proposal")
+@docs(tags=["present-proof v1.0"], summary="Sends a presentation proposal")
 @request_schema(V10PresentationProposalRequestSchema())
 @response_schema(V10PresentationExchangeSchema(), 200, description="")
 async def presentation_exchange_send_proposal(request: web.BaseRequest):
@@ -460,10 +420,8 @@ async def presentation_exchange_send_proposal(request: web.BaseRequest):
 
 
 @docs(
-    tags=["present-proof"],
-    summary="""
-    Creates a presentation request not bound to any proposal or existing connection
-    """,
+    tags=["present-proof v1.0"],
+    summary="Creates a presentation request not bound to any proposal or connection",
 )
 @request_schema(V10PresentationCreateRequestRequestSchema())
 @response_schema(V10PresentationExchangeSchema(), 200, description="")
@@ -534,7 +492,7 @@ async def presentation_exchange_create_request(request: web.BaseRequest):
 
 
 @docs(
-    tags=["present-proof"],
+    tags=["present-proof v1.0"],
     summary="Sends a free presentation request not bound to any proposal",
 )
 @request_schema(V10PresentationSendRequestRequestSchema())
@@ -616,7 +574,7 @@ async def presentation_exchange_send_free_request(request: web.BaseRequest):
 
 
 @docs(
-    tags=["present-proof"],
+    tags=["present-proof v1.0"],
     summary="Sends a presentation request in reference to a proposal",
 )
 @match_info_schema(V10PresExIdMatchInfoSchema())
@@ -702,9 +660,9 @@ async def presentation_exchange_send_bound_request(request: web.BaseRequest):
     return web.json_response(result)
 
 
-@docs(tags=["present-proof"], summary="Sends a proof presentation")
+@docs(tags=["present-proof v1.0"], summary="Sends a proof presentation")
 @match_info_schema(V10PresExIdMatchInfoSchema())
-@request_schema(V10PresentationRequestSchema())
+@request_schema(IndyPresSpecSchema())
 @response_schema(V10PresentationExchangeSchema(), description="")
 async def presentation_exchange_send_presentation(request: web.BaseRequest):
     """
@@ -799,7 +757,7 @@ async def presentation_exchange_send_presentation(request: web.BaseRequest):
     return web.json_response(result)
 
 
-@docs(tags=["present-proof"], summary="Verify a received presentation")
+@docs(tags=["present-proof v1.0"], summary="Verify a received presentation")
 @match_info_schema(V10PresExIdMatchInfoSchema())
 @response_schema(V10PresentationExchangeSchema(), description="")
 async def presentation_exchange_verify_presentation(request: web.BaseRequest):
@@ -872,7 +830,7 @@ async def presentation_exchange_verify_presentation(request: web.BaseRequest):
 
 
 @docs(
-    tags=["present-proof"],
+    tags=["present-proof v1.0"],
     summary="Send a problem report for presentation exchange",
 )
 @match_info_schema(V10PresExIdMatchInfoSchema())
@@ -917,7 +875,10 @@ async def presentation_exchange_problem_report(request: web.BaseRequest):
     return web.json_response({})
 
 
-@docs(tags=["present-proof"], summary="Remove an existing presentation exchange record")
+@docs(
+    tags=["present-proof v1.0"],
+    summary="Remove an existing presentation exchange record",
+)
 @match_info_schema(V10PresExIdMatchInfoSchema())
 @response_schema(V10PresentProofModuleResponseSchema(), description="")
 async def presentation_exchange_remove(request: web.BaseRequest):
@@ -957,7 +918,9 @@ async def register(app: web.Application):
     app.add_routes(
         [
             web.get(
-                "/present-proof/records", presentation_exchange_list, allow_head=False
+                "/present-proof/records",
+                presentation_exchange_list,
+                allow_head=False,
             ),
             web.get(
                 "/present-proof/records/{pres_ex_id}",
@@ -1013,8 +976,8 @@ def post_process_routes(app: web.Application):
         app._state["swagger_dict"]["tags"] = []
     app._state["swagger_dict"]["tags"].append(
         {
-            "name": "present-proof",
-            "description": "Proof presentation",
+            "name": "present-proof v1.0",
+            "description": "Proof presentation v1.0",
             "externalDocs": {"description": "Specification", "url": SPEC_URI},
         }
     )

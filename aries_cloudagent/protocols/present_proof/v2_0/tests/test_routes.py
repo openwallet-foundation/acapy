@@ -114,8 +114,6 @@ class TestPresentProofRoutes(AsyncTestCase):
         with self.assertRaises(test_module.ValidationError):
             schema.validate_fields({})
         with self.assertRaises(test_module.ValidationError):
-            schema.validate_fields(["hopeless", "stop"])
-        with self.assertRaises(test_module.ValidationError):
             schema.validate_fields({"veres-one": {"no": "support"}})
 
         schema = test_module.V20PresRequestByFormatSchema()
@@ -125,7 +123,15 @@ class TestPresentProofRoutes(AsyncTestCase):
         with self.assertRaises(test_module.ValidationError):
             schema.validate_fields({})
         with self.assertRaises(test_module.ValidationError):
-            schema.validate_fields(["hopeless", "stop"])
+            schema.validate_fields({"veres-one": {"no": "support"}})
+
+        schema = test_module.V20PresSpecByFormatRequestSchema()
+        schema.validate_fields({"indy": {"...": "..."}})
+        schema.validate_fields({"dif": {"...": "..."}})
+        with self.assertRaises(test_module.ValidationError):
+            schema.validate_fields({"indy": {"...": "..."}, "dif": {"...": "..."}})
+        with self.assertRaises(test_module.ValidationError):
+            schema.validate_fields({})
         with self.assertRaises(test_module.ValidationError):
             schema.validate_fields({"veres-one": {"no": "support"}})
 
@@ -155,7 +161,7 @@ class TestPresentProofRoutes(AsyncTestCase):
     async def test_present_proof_list(self):
         self.request.query = {
             "thread_id": "thread_id_0",
-            "connection_id": "conn_id_0",
+            "conn_id": "conn_id_0",
             "role": "dummy",
             "state": "dummy",
         }
@@ -182,7 +188,7 @@ class TestPresentProofRoutes(AsyncTestCase):
     async def test_present_proof_list_x(self):
         self.request.query = {
             "thread_id": "thread_id_0",
-            "connection_id": "conn_id_0",
+            "conn_id": "conn_id_0",
             "role": "dummy",
             "state": "dummy",
         }
@@ -331,7 +337,7 @@ class TestPresentProofRoutes(AsyncTestCase):
         self.request.match_info = {"pres_ex_id": "dummy"}
 
         mock_pres_ex_rec_inst = async_mock.MagicMock(
-            connection_id="abc123",
+            conn_id="abc123",
             thread_id="thid123",
             serialize=async_mock.MagicMock(side_effect=test_module.BaseModelError()),
         )
@@ -348,7 +354,7 @@ class TestPresentProofRoutes(AsyncTestCase):
     async def test_present_proof_send_proposal(self):
         self.request.json = async_mock.CoroutineMock(
             return_value={
-                "connection_id": "dummy-conn-id",
+                "conn_id": "dummy-conn-id",
                 "presentation_preview": {
                     V20PresFormat.Format.INDY.api: INDY_PRES_PREVIEW.serialize()
                 },
@@ -498,7 +504,7 @@ class TestPresentProofRoutes(AsyncTestCase):
         )
         self.request.json = async_mock.CoroutineMock(
             return_value={
-                "connection_id": "dummy",
+                "conn_id": "dummy",
                 "comment": "dummy",
                 "presentation_request": {V20PresFormat.Format.INDY.api: indy_proof_req},
             }
@@ -534,7 +540,7 @@ class TestPresentProofRoutes(AsyncTestCase):
 
     async def test_present_proof_send_free_request_not_found(self):
         self.request.json = async_mock.CoroutineMock(
-            return_value={"connection_id": "dummy"}
+            return_value={"conn_id": "dummy"}
         )
 
         with async_mock.patch.object(
@@ -549,7 +555,7 @@ class TestPresentProofRoutes(AsyncTestCase):
 
     async def test_present_proof_send_free_request_not_ready(self):
         self.request.json = async_mock.CoroutineMock(
-            return_value={"connection_id": "dummy", "proof_request": {}}
+            return_value={"conn_id": "dummy", "proof_request": {}}
         )
 
         with async_mock.patch.object(
@@ -571,7 +577,7 @@ class TestPresentProofRoutes(AsyncTestCase):
         )
         self.request.json = async_mock.CoroutineMock(
             return_value={
-                "connection_id": "dummy",
+                "conn_id": "dummy",
                 "comment": "dummy",
                 "presentation_request": {V20PresFormat.Format.INDY.api: indy_proof_req},
             }
@@ -633,7 +639,7 @@ class TestPresentProofRoutes(AsyncTestCase):
             test_module.web, "json_response", async_mock.MagicMock()
         ) as mock_response:
             mock_px_rec_inst = async_mock.MagicMock(
-                connection_id="dummy",
+                conn_id="dummy",
                 state=test_module.V20PresExRecord.STATE_PROPOSAL_RECEIVED,
                 serialize=async_mock.MagicMock(
                     return_value={"thread_id": "sample-thread-id"}
@@ -686,7 +692,7 @@ class TestPresentProofRoutes(AsyncTestCase):
             test_module, "V20PresExRecord", autospec=True
         ) as mock_px_rec_cls:
             mock_px_rec_inst = async_mock.MagicMock(
-                connection_id="dummy",
+                conn_id="dummy",
                 state=test_module.V20PresExRecord.STATE_PROPOSAL_RECEIVED,
                 serialize=async_mock.MagicMock(
                     return_value={"thread_id": "sample-thread-id"}
@@ -726,7 +732,7 @@ class TestPresentProofRoutes(AsyncTestCase):
             test_module, "V20PresExRecord", autospec=True
         ) as mock_px_rec_cls:
             mock_px_rec_inst = async_mock.MagicMock(
-                connection_id="dummy",
+                conn_id="dummy",
                 state=test_module.V20PresExRecord.STATE_PROPOSAL_RECEIVED,
                 serialize=async_mock.MagicMock(
                     return_value={"thread_id": "sample-thread-id"}
@@ -781,7 +787,7 @@ class TestPresentProofRoutes(AsyncTestCase):
             test_module, "V20PresExRecord", autospec=True
         ) as mock_px_rec_cls:
             mock_px_rec_inst = async_mock.MagicMock(
-                connection_id="dummy",
+                conn_id="dummy",
                 state=test_module.V20PresExRecord.STATE_DONE,
                 serialize=async_mock.MagicMock(
                     return_value={"thread_id": "sample-thread-id"}
@@ -820,7 +826,7 @@ class TestPresentProofRoutes(AsyncTestCase):
             test_module, "V20PresExRecord", autospec=True
         ) as mock_px_rec_cls:
             mock_px_rec_inst = async_mock.MagicMock(
-                connection_id="dummy",
+                conn_id="dummy",
                 state=test_module.V20PresExRecord.STATE_PROPOSAL_RECEIVED,
                 serialize=async_mock.MagicMock(
                     return_value={"thread_id": "sample-thread-id"}
@@ -849,13 +855,17 @@ class TestPresentProofRoutes(AsyncTestCase):
     async def test_present_proof_send_presentation(self):
         self.request.json = async_mock.CoroutineMock(
             return_value={
-                "comment": "dummy",
-                "self_attested_attributes": {},
-                "requested_attributes": {},
-                "requested_predicates": {},
+                "indy": {
+                    "comment": "dummy",
+                    "self_attested_attributes": {},
+                    "requested_attributes": {},
+                    "requested_predicates": {},
+                }
             }
         )
-        self.request.match_info = {"pres_ex_id": "dummy"}
+        self.request.match_info = {
+            "pres_ex_id": "dummy",
+        }
         self.profile.context.injector.bind_instance(
             IndyVerifier,
             async_mock.MagicMock(
@@ -873,7 +883,7 @@ class TestPresentProofRoutes(AsyncTestCase):
             test_module.web, "json_response"
         ) as mock_response:
             mock_px_rec_inst = async_mock.MagicMock(
-                connection_id="dummy",
+                conn_id="dummy",
                 state=test_module.V20PresExRecord.STATE_REQUEST_RECEIVED,
                 serialize=async_mock.MagicMock(
                     return_value={"thread_id": "sample-thread-id"}
@@ -903,13 +913,17 @@ class TestPresentProofRoutes(AsyncTestCase):
     async def test_present_proof_send_presentation_px_rec_not_found(self):
         self.request.json = async_mock.CoroutineMock(
             return_value={
-                "comment": "dummy",
-                "self_attested_attributes": {},
-                "requested_attributes": {},
-                "requested_predicates": {},
+                "indy": {
+                    "comment": "dummy",
+                    "self_attested_attributes": {},
+                    "requested_attributes": {},
+                    "requested_predicates": {},
+                }
             }
         )
-        self.request.match_info = {"pres_ex_id": "dummy"}
+        self.request.match_info = {
+            "pres_ex_id": "dummy",
+        }
 
         with async_mock.patch.object(
             test_module, "V20PresExRecord", autospec=True
@@ -925,13 +939,17 @@ class TestPresentProofRoutes(AsyncTestCase):
     async def test_present_proof_send_presentation_not_found(self):
         self.request.json = async_mock.CoroutineMock(
             return_value={
-                "comment": "dummy",
-                "self_attested_attributes": {},
-                "requested_attributes": {},
-                "requested_predicates": {},
+                "indy": {
+                    "comment": "dummy",
+                    "self_attested_attributes": {},
+                    "requested_attributes": {},
+                    "requested_predicates": {},
+                }
             }
         )
-        self.request.match_info = {"pres_ex_id": "dummy"}
+        self.request.match_info = {
+            "pres_ex_id": "dummy",
+        }
         self.profile.context.injector.bind_instance(
             IndyVerifier,
             async_mock.MagicMock(
@@ -945,7 +963,7 @@ class TestPresentProofRoutes(AsyncTestCase):
             test_module, "V20PresExRecord", autospec=True
         ) as mock_px_rec_cls:
             mock_px_rec_inst = async_mock.MagicMock(
-                connection_id="dummy",
+                conn_id="dummy",
                 state=test_module.V20PresExRecord.STATE_REQUEST_RECEIVED,
                 serialize=async_mock.MagicMock(
                     return_value={"thread_id": "sample-thread-id"}
@@ -966,13 +984,17 @@ class TestPresentProofRoutes(AsyncTestCase):
     async def test_present_proof_send_presentation_not_ready(self):
         self.request.json = async_mock.CoroutineMock(
             return_value={
-                "comment": "dummy",
-                "self_attested_attributes": {},
-                "requested_attributes": {},
-                "requested_predicates": {},
+                "indy": {
+                    "comment": "dummy",
+                    "self_attested_attributes": {},
+                    "requested_attributes": {},
+                    "requested_predicates": {},
+                }
             }
         )
-        self.request.match_info = {"pres_ex_id": "dummy"}
+        self.request.match_info = {
+            "pres_ex_id": "dummy",
+        }
         self.profile.context.injector.bind_instance(
             IndyVerifier,
             async_mock.MagicMock(
@@ -986,7 +1008,7 @@ class TestPresentProofRoutes(AsyncTestCase):
             test_module, "V20PresExRecord", autospec=True
         ) as mock_px_rec_cls:
             mock_px_rec_inst = async_mock.MagicMock(
-                connection_id="dummy",
+                conn_id="dummy",
                 state=test_module.V20PresExRecord.STATE_REQUEST_RECEIVED,
                 serialize=async_mock.MagicMock(
                     return_value={"thread_id": "sample-thread-id"}
@@ -1007,19 +1029,23 @@ class TestPresentProofRoutes(AsyncTestCase):
     async def test_present_proof_send_presentation_bad_state(self):
         self.request.json = async_mock.CoroutineMock(
             return_value={
-                "comment": "dummy",
-                "self_attested_attributes": {},
-                "requested_attributes": {},
-                "requested_predicates": {},
+                "indy": {
+                    "comment": "dummy",
+                    "self_attested_attributes": {},
+                    "requested_attributes": {},
+                    "requested_predicates": {},
+                }
             }
         )
-        self.request.match_info = {"pres_ex_id": "dummy"}
+        self.request.match_info = {
+            "pres_ex_id": "dummy",
+        }
 
         with async_mock.patch.object(
             test_module, "V20PresExRecord", autospec=True
         ) as mock_px_rec_cls:
             mock_px_rec_inst = async_mock.MagicMock(
-                connection_id="dummy",
+                conn_id="dummy",
                 state=test_module.V20PresExRecord.STATE_DONE,
                 serialize=async_mock.MagicMock(
                     return_value={"thread_id": "sample-thread-id"}
@@ -1035,13 +1061,17 @@ class TestPresentProofRoutes(AsyncTestCase):
     async def test_present_proof_send_presentation_x(self):
         self.request.json = async_mock.CoroutineMock(
             return_value={
-                "comment": "dummy",
-                "self_attested_attributes": {},
-                "requested_attributes": {},
-                "requested_predicates": {},
+                "indy": {
+                    "comment": "dummy",
+                    "self_attested_attributes": {},
+                    "requested_attributes": {},
+                    "requested_predicates": {},
+                }
             }
         )
-        self.request.match_info = {"pres_ex_id": "dummy"}
+        self.request.match_info = {
+            "pres_ex_id": "dummy",
+        }
         self.profile.context.injector.bind_instance(
             IndyVerifier,
             async_mock.MagicMock(
@@ -1059,7 +1089,7 @@ class TestPresentProofRoutes(AsyncTestCase):
             test_module.web, "json_response"
         ) as mock_response:
             mock_px_rec_inst = async_mock.MagicMock(
-                connection_id="dummy",
+                conn_id="dummy",
                 state=test_module.V20PresExRecord.STATE_REQUEST_RECEIVED,
                 serialize=async_mock.MagicMock(
                     return_value={"thread_id": "sample-thread-id"}
@@ -1097,7 +1127,7 @@ class TestPresentProofRoutes(AsyncTestCase):
             test_module.web, "json_response", async_mock.MagicMock()
         ) as mock_response:
             mock_px_rec_inst = async_mock.MagicMock(
-                connection_id="dummy",
+                conn_id="dummy",
                 state=test_module.V20PresExRecord.STATE_PRESENTATION_RECEIVED,
                 serialize=async_mock.MagicMock(
                     return_value={"thread_id": "sample-thread-id"}
@@ -1142,7 +1172,7 @@ class TestPresentProofRoutes(AsyncTestCase):
             test_module, "V20PresExRecord", autospec=True
         ) as mock_px_rec_cls:
             mock_px_rec_inst = async_mock.MagicMock(
-                connection_id="dummy",
+                conn_id="dummy",
                 state=test_module.V20PresExRecord.STATE_PRESENTATION_RECEIVED,
                 serialize=async_mock.MagicMock(
                     return_value={"thread_id": "sample-thread-id"}
@@ -1169,7 +1199,7 @@ class TestPresentProofRoutes(AsyncTestCase):
             test_module, "V20PresExRecord", autospec=True
         ) as mock_px_rec_cls:
             mock_px_rec_inst = async_mock.MagicMock(
-                connection_id="dummy",
+                conn_id="dummy",
                 state=test_module.V20PresExRecord.STATE_PRESENTATION_RECEIVED,
                 serialize=async_mock.MagicMock(
                     return_value={"thread_id": "sample-thread-id"}
@@ -1193,7 +1223,7 @@ class TestPresentProofRoutes(AsyncTestCase):
             test_module, "V20PresExRecord", autospec=True
         ) as mock_px_rec_cls:
             mock_px_rec_inst = async_mock.MagicMock(
-                connection_id="dummy",
+                conn_id="dummy",
                 state=test_module.V20PresExRecord.STATE_DONE,
                 serialize=async_mock.MagicMock(
                     return_value={"thread_id": "sample-thread-id"}
@@ -1219,7 +1249,7 @@ class TestPresentProofRoutes(AsyncTestCase):
             test_module.web, "json_response", async_mock.MagicMock()
         ) as mock_response:
             mock_px_rec_inst = async_mock.MagicMock(
-                connection_id="dummy",
+                conn_id="dummy",
                 state=test_module.V20PresExRecord.STATE_PRESENTATION_RECEIVED,
                 serialize=async_mock.MagicMock(
                     return_value={"thread_id": "sample-thread-id"}
@@ -1263,7 +1293,7 @@ class TestPresentProofRoutes(AsyncTestCase):
             mock_response.assert_called_once_with({})
             self.request["outbound_message_router"].assert_awaited_once_with(
                 mock_prob_report_cls.return_value,
-                connection_id="dummy-conn-id",
+                conn_id="dummy-conn-id",
             )
 
     async def test_present_proof_problem_report_bad_pres_ex_id(self):
@@ -1291,7 +1321,7 @@ class TestPresentProofRoutes(AsyncTestCase):
             mock_px_rec_cls.retrieve_by_id = async_mock.CoroutineMock(
                 return_value=async_mock.MagicMock(
                     state=test_module.V20PresExRecord.STATE_DONE,
-                    connection_id="dummy",
+                    conn_id="dummy",
                     delete_record=async_mock.CoroutineMock(),
                 )
             )
@@ -1321,7 +1351,7 @@ class TestPresentProofRoutes(AsyncTestCase):
             mock_px_rec_cls.retrieve_by_id = async_mock.CoroutineMock(
                 return_value=async_mock.MagicMock(
                     state=test_module.V20PresExRecord.STATE_DONE,
-                    connection_id="dummy",
+                    conn_id="dummy",
                     delete_record=async_mock.CoroutineMock(
                         side_effect=test_module.StorageError()
                     ),

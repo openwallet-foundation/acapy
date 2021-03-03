@@ -55,7 +55,7 @@ class V20IssueCredentialModuleResponseSchema(OpenAPISchema):
 class V20CredExRecordListQueryStringSchema(OpenAPISchema):
     """Parameters and validators for credential exchange record list query."""
 
-    connection_id = fields.UUID(
+    conn_id = fields.UUID(
         description="Connection identifier",
         required=False,
         example=UUIDFour.EXAMPLE,  # typically but not necessarily a UUID4
@@ -223,7 +223,7 @@ class V20CredCreateSchema(V20IssueCredSchemaCore):
 class V20CredProposalRequestSchemaBase(V20IssueCredSchemaCore):
     """Base class for request schema for sending credential proposal admin message."""
 
-    connection_id = fields.UUID(
+    conn_id = fields.UUID(
         description="Connection identifier",
         required=True,
         example=UUIDFour.EXAMPLE,  # typically but not necessarily a UUID4
@@ -245,7 +245,7 @@ class V20CredProposalRequestPreviewMandSchema(V20CredProposalRequestSchemaBase):
 class V20CredOfferRequestSchema(V20IssueCredSchemaCore):
     """Request schema for sending credential offer admin message."""
 
-    connection_id = fields.UUID(
+    conn_id = fields.UUID(
         description="Connection identifier",
         required=True,
         example=UUIDFour.EXAMPLE,  # typically but not necessarily a UUID4
@@ -331,7 +331,7 @@ async def credential_exchange_list(request: web.BaseRequest):
         tag_filter["thread_id"] = request.query["thread_id"]
     post_filter = {
         k: request.query[k]
-        for k in ("connection_id", "role", "state")
+        for k in ("conn_id", "role", "state")
         if request.query.get(k, "") != ""
     }
 
@@ -518,7 +518,7 @@ async def credential_exchange_send(request: web.BaseRequest):
     body = await request.json()
 
     comment = body.get("comment")
-    conn_id = body.get("connection_id")
+    conn_id = body.get("conn_id")
     preview_spec = body.get("credential_preview")
     if not preview_spec:
         raise web.HTTPBadRequest(reason="Missing credential_preview")
@@ -605,7 +605,7 @@ async def credential_exchange_send_proposal(request: web.BaseRequest):
 
     body = await request.json()
 
-    conn_id = body.get("connection_id")
+    conn_id = body.get("conn_id")
     comment = body.get("comment")
     preview_spec = body.get("credential_preview")
     filt_spec = body.get("filter")
@@ -743,7 +743,7 @@ async def credential_exchange_create_free_offer(request: web.BaseRequest):
     filt_spec = body.get("filter")
     if not filt_spec:
         raise web.HTTPBadRequest(reason="Missing filter")
-    conn_id = body.get("connection_id")
+    conn_id = body.get("conn_id")
     trace_msg = body.get("trace")
 
     async with context.session() as session:
@@ -831,7 +831,7 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
 
     body = await request.json()
 
-    conn_id = body.get("connection_id")
+    conn_id = body.get("conn_id")
     filt_spec = body.get("filter")
     if not filt_spec:
         raise web.HTTPBadRequest(reason="Missing filter")

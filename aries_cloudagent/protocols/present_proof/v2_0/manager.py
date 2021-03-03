@@ -230,12 +230,15 @@ class V20PresManager:
         pres_ex_record: V20PresExRecord,
         requested_credentials: dict,
         comment: str = None,
+        *,
+        format_: V20PresFormat.Format = None,
     ) -> Tuple[V20PresExRecord, V20Pres]:
         """
         Create a presentation.
 
         Args:
             pres_ex_record: record to update
+            format_: presentation format
             requested_credentials: indy formatted requested_credentials
             comment: optional human-readable comment
 
@@ -266,6 +269,7 @@ class V20PresManager:
             A tuple (updated presentation exchange record, presentation message)
 
         """
+        assert format_ in (None, V20PresFormat.Format.INDY)  # until DIF support
 
         # Get all credentials for this presentation
         holder = self._profile.inject(IndyHolder)
@@ -275,7 +279,7 @@ class V20PresManager:
         requested_referents = {}
         pres_request = V20PresRequest.deserialize(
             pres_ex_record.pres_request
-        ).attachment(V20PresFormat.Format.INDY)
+        ).attachment(format_)
         non_revoc_intervals = indy_proof_req2non_revoc_intervals(pres_request)
         attr_creds = requested_credentials.get("requested_attributes", {})
         req_attrs = pres_request.get("requested_attributes", {})
@@ -434,7 +438,20 @@ class V20PresManager:
 
         # save presentation exchange state
         pres_ex_record.state = V20PresExRecord.STATE_PRESENTATION_SENT
-        pres_ex_record.pres = indy_proof
+        pres_ex_record.pres = V20Pres(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy",
+                    format_=V20PresFormat.Format.INDY.aries,
+                ),
+            ],
+            presentations_attach=[
+                AttachDecorator.data_base64(
+                    mapping=indy_proof,
+                    ident="indy",
+                )
+            ]
+        ).serialize()
         async with self._profile.session() as session:
             await pres_ex_record.save(session, reason="create v2.0 presentation")
 
@@ -454,7 +471,7 @@ class V20PresManager:
         conn_id_filter = (
             None
             if conn_record is None
-            else {"connection_id": conn_record.connection_id}
+            else {"conn_id": conn_record.connection_id}
         )
         async with self._profile.session() as session:
             try:
@@ -492,7 +509,7 @@ class V20PresManager:
                         f"Presentation {name}={value} mismatches proposal value"
                     )
 
-        pres_ex_record.pres = pres
+        pres_ex_record.pres = message.serialize()
         pres_ex_record.state = V20PresExRecord.STATE_PRESENTATION_RECEIVED
 
         async with self._profile.session() as session:
@@ -626,7 +643,7 @@ class V20PresManager:
             pres_ex_record = await V20PresExRecord.retrieve_by_tag_filter(
                 session,
                 {"thread_id": message._thread_id},
-                {"connection_id": conn_record.connection_id},
+                {"conn_id": conn_record.connection_id},
             )
 
             pres_ex_record.state = V20PresExRecord.STATE_DONE
