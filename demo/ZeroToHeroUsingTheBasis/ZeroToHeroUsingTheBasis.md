@@ -125,11 +125,22 @@ All the next steps has to be done once, for each credential schema type. But onc
 A schema is needed to make sure you know the attributes of a credential. This defines the names of the attributes and the schema, and also the version of the schema. Which is used in the credential definition
 [Localhost link to API doc](http://localhost:5000/api/doc#/schema/post_schemas)
 
+### Types
+Currently the current stack is functionally complete. So types are not part of this stack. But there can come other VC supports in the future. Comment from maintaner:
+> The Indy VC stack has been around for a long time and is functionally complete, but, as you note lacking in important areas like data types. We are currently working on adding support for VCs using JSON-LD and BBS+ Signatures. That will eliminate the need for an on-ledger schema (although that could be done) and for the credential definition (the keys for the cred def are dynamically derived from the issuer's key.
+
 ### Questions
-Are there any work going on in defining types in the schema or what is the 2 cents there?
+* ~~Are there any work going on in defining types in the schema or what is the 2 cents there?~~
 
 ## Creating the credential definition 
 This is where you define if you want revocation or not. It also where you define the definition of the credential, based on a schema. [Localhost link to API doc](http://localhost:5000/api/doc#/credential-definition/post_credential_definitions)
+
+### Why
+This follows the [AnonCreds design](https://hyperledger-indy.readthedocs.io/projects/sdk/en/latest/docs/design/002-anoncreds/README.html). The credential definition links the issuer of the credential to the ledger. Also links the schema and the public key of the issuer, so that there is a private key corresponding for each attribute.
+
+This design also makes it easier to associate with the revocation registry.
+Maintaner quote:
+> In the AnonCreds verifiable credential mechanism -- the cred def links the issuer of the credential, the schema being used and contains a public key (and the issuer has the corresponding private key) for each attribute. As noted it also provides an association with the revocation registries.
 
 ### Questions
 Why is this needed, except for revocation?
