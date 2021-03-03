@@ -106,3 +106,4 @@ class JwsLinkedDataSignature(LinkedDataSignature):
   #  return verification_method == self.key.id
 
   
+__all__ = [JwsLinkedDataSignature]

@@ -32,3 +32,5 @@ class IssueCredentialProofPurpose(AssertionProofPurpose):
 
     except Exception as e:
       return {'valid': False, 'error': e}
+
+__all__ = [IssueCredentialProofPurpose]

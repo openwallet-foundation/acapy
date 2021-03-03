@@ -1,34 +1,42 @@
-import datetime
+from datetime import datetime, timedelta
 
 
 class ProofPurpose:
-  def __init__(
-      self,
-      term: str,
-      date: datetime.datetime,
-      max_timestamp_delta: datetime.timedelta = None):
-    self.term = term
-    self.date = date
-    self.max_timestamp_delta = max_timestamp_delta
+    def __init__(
+        self, term: str, date: datetime = None, max_timestamp_delta: timedelta = None
+    ):
+        self.term = term
 
-  def validate(self, proof: dict) -> bool:
-    try:
-      if self.max_timestamp_delta is not None:
-        expected = self.date.time()
-        created = datetime.datetime.strptime(
-            proof['created'], "%Y-%m-%dT%H:%M:%SZ")
+        if not date:
+            date = datetime.now()
 
-        if not (created >= (expected - self.max_timestamp_delta) and created <=
-                (expected + self.max_timestamp_delta)):
-          raise Exception('The proof\'s created timestamp is out of range.')
+        self.date = date
+        self.max_timestamp_delta = max_timestamp_delta
 
-        return {'valid': True}
-    except Exception as err:
-      return {"valid": False, "error": err}
+    def validate(self, proof: dict) -> bool:
+        try:
+            if self.max_timestamp_delta is not None:
+                expected = self.date.time()
+                created = datetime.datetime.strptime(
+                    proof["created"], "%Y-%m-%dT%H:%M:%SZ"
+                )
 
-  def update(self, proof: dict) -> dict:
-    proof['proofPurpose'] = self.term
-    return proof
+                if not (
+                    created >= (expected - self.max_timestamp_delta)
+                    and created <= (expected + self.max_timestamp_delta)
+                ):
+                    raise Exception("The proof's created timestamp is out of range.")
 
-  def match(self, proof: dict) -> bool:
-    return proof['proofPurpose'] == self.term
+                return {"valid": True}
+        except Exception as err:
+            return {"valid": False, "error": err}
+
+    def update(self, proof: dict) -> dict:
+        proof["proofPurpose"] = self.term
+        return proof
+
+    def match(self, proof: dict) -> bool:
+        return proof["proofPurpose"] == self.term
+
+
+__all__ = [ProofPurpose]

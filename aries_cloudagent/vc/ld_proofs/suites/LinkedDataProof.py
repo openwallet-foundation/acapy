@@ -1,17 +1,27 @@
 """Abstract base class for linked data proofs."""
+from ..purposes.ProofPurpose import ProofPurpose
+from ..document_loader import document_loader
+
 from abc import ABCMeta, abstractmethod
 
+
 class LinkedDataProof(metaclass=ABCMeta):
-  def __init__(self, signature_type: str):
-    self.signature_type = signature_type
+    def __init__(self, signature_type: str):
+        self.signature_type = signature_type
 
-  @abstractmethod
-  async def create_proof(self, options: dict):
-    pass
+    @abstractmethod
+    async def create_proof(
+        self, *, document: dict, purpose: ProofPurpose, document_loader: document_loader
+    ):
+        pass
 
-  @abstractmethod
-  async def verify_proof(self, **kwargs):
-    pass
+    @abstractmethod
+    async def verify_proof(self, **kwargs):
+        """TODO update method signature"""
+        pass
 
-  async def match_proof(self, signature_type: str) -> bool:
-    return signature_type == self.signature_type
+    async def match_proof(self, signature_type: str) -> bool:
+        return signature_type == self.signature_type
+
+
+__all__ = [LinkedDataProof]

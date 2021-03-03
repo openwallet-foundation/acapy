@@ -16,3 +16,6 @@ class PublicKeyProofPurpose(ControllerProofPurpose):
 
   async def match(self, proof: dict) -> Awaitable[boo]:
     return proof.get('proofPurpose') == None
+
+
+__all__ = [PublicKeyProofPurpose]

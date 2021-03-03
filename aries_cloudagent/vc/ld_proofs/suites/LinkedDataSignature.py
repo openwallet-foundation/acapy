@@ -7,7 +7,6 @@ from hashlib import sha256
 from typing import Union
 from ..constants import SECURITY_CONTEXT_V2_URL
 
-
 class LinkedDataSignature(LinkedDataProof, metaclass=ABCMeta):
   def __init__(
       self,
@@ -164,3 +163,6 @@ class LinkedDataSignature(LinkedDataProof, metaclass=ABCMeta):
   def verify_signature(
       self, verify_data: bytes, verification_method: dict, proof: dict):
     pass
+
+
+__all__ = [LinkedDataSignature]

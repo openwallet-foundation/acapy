@@ -1,6 +1,8 @@
 from pyld.documentloader import requests
 from .wallet_util import did_key_to_naked
-from ...wallet.util import did_key_to_naked 
+from ...wallet.util import did_key_to_naked
+from typing import Callable
+
 
 def resolve_ed25519_did_key(did_key: str) -> dict:
     pub_key_base58 = did_key_to_naked(did_key)
@@ -31,7 +33,7 @@ def resolve_ed25519_did_key(did_key: str) -> dict:
     }
 
 
-def document_loader(url: str, options: dict):
+def did_key_document_loader(url: str, options: dict):
     # NOTE: this is a hacky approach for the time being.
     if url.startswith("did:key:"):
         return resolve_ed25519_did_key(url)
@@ -42,3 +44,8 @@ def document_loader(url: str, options: dict):
         raise Exception(
             "Unrecognized url format. Must start with 'did:key:', 'http://' or 'https://'"
         )
+
+
+DocumentLoader = Callable[str, dict]
+
+__all__ = [DocumentLoader, did_key_document_loader]
