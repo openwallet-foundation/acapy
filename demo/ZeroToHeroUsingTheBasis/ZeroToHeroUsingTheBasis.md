@@ -75,6 +75,8 @@ If you want to have any insight to your data or statstics of what is going on, i
 
 Suggestion is to have some audit loggin at the controller level. As when you set this to production, there will be some controller calling the agent API.
 
+There is a new new storage mechanism that is coming, Aries-Askar which will have the capability of having a "null" encryption method. This is a security trade-off, being able to create better code as a developer vs. the risk of using null encryption in production.
+
 ### Questions
 The crossed out is answered and documented
 - ~~Is there any way to read out of the database and understand the binary data? Meaning setting up statistics towards the type column of a wallet db?~~
