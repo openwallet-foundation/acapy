@@ -72,7 +72,7 @@ class W3cDID(validate.Regexp):
     """Validate value against w3c DID."""
 
     EXAMPLE = "did:ted:WgWxqztrNooG92RXvxSTWv"
-    PATTERN = re.compile(r"did:([a-z]+):((?:[a-zA-Z0-9._-]*:)*[a-zA-Z0-9._-]+)")
+    PATTERN = DID_PATTERN
 
     def __init__(self):
         """Initializer."""
