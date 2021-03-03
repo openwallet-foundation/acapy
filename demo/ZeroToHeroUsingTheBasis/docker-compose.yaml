@@ -1,6 +1,6 @@
 version: "3"
 services:
-  diwala-agent:
+  cloud-agent:
     image: bcgovimages/aries-cloudagent:py36-1.16-0_0.6.0
     ports:
       - "${AGENT_PORT}:${AGENT_PORT}"
