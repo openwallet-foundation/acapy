@@ -134,9 +134,7 @@ class V20PresManager:
 
         """
         pres_preview = IndyPresPreview.deserialize(
-            V20PresProposal.deserialize(pres_ex_record.pres_proposal).attachment(
-                V20PresFormat.Format.INDY
-            )
+            pres_ex_record.by_format["pres_proposal"][V20PresFormat.Format.INDY.api]
         )
 
         indy_proof_request = await pres_preview.indy_proof_request(
@@ -147,6 +145,7 @@ class V20PresManager:
         )
         pres_request_message = V20PresRequest(
             comment=comment,
+            will_confirm=True,
             formats=[
                 V20PresFormat(
                     attach_id="indy",
@@ -279,7 +278,7 @@ class V20PresManager:
         requested_referents = {}
         pres_request = V20PresRequest.deserialize(
             pres_ex_record.pres_request
-        ).attachment(format_)
+        ).attachment(format_)  # take format_ = None seamlessly, contrast by_format
         non_revoc_intervals = indy_proof_req2non_revoc_intervals(pres_request)
         attr_creds = requested_credentials.get("requested_attributes", {})
         req_attrs = pres_request.get("requested_attributes", {})
@@ -487,13 +486,11 @@ class V20PresManager:
         # Check for bait-and-switch in presented attribute values vs. proposal
         if pres_ex_record.pres_proposal:
             pres_preview = IndyPresPreview.deserialize(
-                V20PresProposal.deserialize(pres_ex_record.pres_proposal).attachment(
-                    V20PresFormat.Format.INDY
-                )
+                pres_ex_record.by_format["pres_proposal"][V20PresFormat.Format.INDY.api]
             )
-            proof_req = V20PresRequest.deserialize(
-                pres_ex_record.pres_request
-            ).attachment(V20PresFormat.Format.INDY)
+            proof_req = pres_ex_record.by_format["pres_request"][
+                V20PresFormat.Format.INDY.api
+            ]
 
             for (reft, attr_spec) in pres["requested_proof"]["revealed_attrs"].items():
                 name = proof_req["requested_attributes"][reft]["name"]
@@ -529,10 +526,9 @@ class V20PresManager:
             presentation exchange record, updated
 
         """
-        indy_proof_request = V20PresRequest.deserialize(
-            pres_ex_record.pres_request
-        ).attachment(V20PresFormat.Format.INDY)
-        indy_proof = V20Pres.deserialize(pres_ex_record.pres).attachment()
+        pres_request_msg = V20PresRequest.deserialize(pres_ex_record.pres_request)
+        indy_proof_request = pres_request_msg.attachment(V20PresFormat.Format.INDY)
+        indy_proof = pres_ex_record.by_format["pres"][V20PresFormat.Format.INDY.api]
 
         schema_ids = []
         cred_def_ids = []
@@ -601,7 +597,9 @@ class V20PresManager:
         async with self._profile.session() as session:
             await pres_ex_record.save(session, reason="verify v2.0 presentation")
 
-        await self.send_pres_ack(pres_ex_record)
+        if pres_request_msg.will_confirm:
+            await self.send_pres_ack(pres_ex_record)
+
         return pres_ex_record
 
     async def send_pres_ack(self, pres_ex_record: V20PresExRecord):

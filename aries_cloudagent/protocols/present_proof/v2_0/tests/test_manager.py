@@ -1008,6 +1008,7 @@ class TestV20PresManager(AsyncTestCase):
                     format_=V20PresFormat.Format.INDY.aries,
                 )
             ],
+            will_confirm=True,
             request_presentations_attach=[
                 AttachDecorator.data_base64(indy_proof_req, ident="indy")
             ],
