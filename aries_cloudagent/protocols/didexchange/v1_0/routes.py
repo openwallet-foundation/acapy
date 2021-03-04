@@ -39,6 +39,8 @@ class DIDXCreateRequestImplicitQueryStringSchema(OpenAPISchema):
     """Parameters and validators for create-request-implicit request query string."""
 
     their_public_did = fields.Str(
+        required=True,
+        allow_none=False,
         description="Public DID to which to request connection",
         **INDY_DID,
     )

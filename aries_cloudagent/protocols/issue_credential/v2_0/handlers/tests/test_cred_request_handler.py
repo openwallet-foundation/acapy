@@ -59,7 +59,7 @@ class TestV20CredRequestHandler(AsyncTestCase):
             credential_preview=cred_preview,
             formats=[V20CredFormat(attach_id="0", format_=V20CredFormat.Format.INDY)],
             filters_attach=[
-                AttachDecorator.from_indy_dict(
+                AttachDecorator.data_base64(
                     {
                         "cred_def_id": "LjgpST2rjsoxYegQDRm7EL:3:CL:12:tag1",
                     },
@@ -107,10 +107,8 @@ class TestV20CredRequestHandler(AsyncTestCase):
             credential_preview=None,
             formats=[V20CredFormat(attach_id="0", format_=V20CredFormat.Format.INDY)],
             filters_attach=[
-                AttachDecorator.from_indy_dict(
-                    {
-                        "cred_def_id": "LjgpST2rjsoxYegQDRm7EL:3:CL:12:tag1",
-                    },
+                AttachDecorator.data_base64(
+                    {"cred_def_id": "LjgpST2rjsoxYegQDRm7EL:3:CL:12:tag1"},
                     ident="0",
                 )
             ],

@@ -8,6 +8,7 @@ from asynctest import mock as async_mock
 from ....core.in_memory import InMemoryProfile
 from ....core.profile import Profile
 
+from ...error import WireFormatParseError
 from ...outbound.message import OutboundMessage
 from ...wire_format import JsonWireFormat
 
@@ -136,7 +137,7 @@ class TestHttpTransport(AioHTTPTestCase):
 
             mock_session.return_value = async_mock.MagicMock(
                 receive=async_mock.CoroutineMock(
-                    side_effect=test_module.MessageParseError()
+                    side_effect=test_module.WireFormatParseError()
                 ),
                 profile=InMemoryProfile.test_profile(),
             )

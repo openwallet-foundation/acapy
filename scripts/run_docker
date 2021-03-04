@@ -7,7 +7,7 @@ $CONTAINER_RUNTIME build -t aries-cloudagent-run -f ../docker/Dockerfile.run .. 
 
 ARGS=""
 for PORT in $PORTS; do
-  ARGS="${ARGS} -p $PORT"
+  ARGS="${ARGS} -p $PORT:$PORT"
 done
 
 PTVSD_PORT="${PTVSD_PORT-5678}"

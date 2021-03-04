@@ -11,14 +11,14 @@ class WireFormatError(TransportError):
     """Base class for wire-format errors."""
 
 
-class MessageParseError(WireFormatError):
-    """Message parse error."""
+class WireFormatParseError(WireFormatError):
+    """Parse error when unpacking the wire format."""
 
     error_code = "message_parse_error"
 
 
-class MessageEncodeError(WireFormatError):
-    """Message encoding error."""
+class WireFormatEncodeError(WireFormatError):
+    """Encoding error when packing the wire format."""
 
     error_code = "message_encode_error"
 

@@ -35,8 +35,8 @@ class TestCredentialRequest(TestCase):
     cred_req = CredentialRequest(
         comment="Test",
         requests_attach=[
-            AttachDecorator.from_indy_dict(
-                indy_dict=indy_cred_req,
+            AttachDecorator.data_base64(
+                mapping=indy_cred_req,
                 ident=ATTACH_DECO_IDS[CREDENTIAL_REQUEST],
             )
         ],
@@ -47,13 +47,13 @@ class TestCredentialRequest(TestCase):
         credential_request = CredentialRequest(
             comment="Test",
             requests_attach=[
-                AttachDecorator.from_indy_dict(
-                    indy_dict=self.indy_cred_req,
+                AttachDecorator.data_base64(
+                    mapping=self.indy_cred_req,
                     ident=ATTACH_DECO_IDS[CREDENTIAL_REQUEST],
                 )
             ],
         )
-        assert credential_request.requests_attach[0].indy_dict == self.indy_cred_req
+        assert credential_request.requests_attach[0].content == self.indy_cred_req
         assert credential_request.indy_cred_req(0) == self.indy_cred_req
 
     def test_type(self):
@@ -61,8 +61,8 @@ class TestCredentialRequest(TestCase):
         credential_request = CredentialRequest(
             comment="Test",
             requests_attach=[
-                AttachDecorator.from_indy_dict(
-                    indy_dict=self.indy_cred_req,
+                AttachDecorator.data_base64(
+                    mapping=self.indy_cred_req,
                     ident=ATTACH_DECO_IDS[CREDENTIAL_REQUEST],
                 )
             ],
@@ -98,8 +98,8 @@ class TestCredentialRequest(TestCase):
         credential_request = CredentialRequest(
             comment="Test",
             requests_attach=[
-                AttachDecorator.from_indy_dict(
-                    indy_dict=self.indy_cred_req,
+                AttachDecorator.data_base64(
+                    mapping=self.indy_cred_req,
                     ident=ATTACH_DECO_IDS[CREDENTIAL_REQUEST],
                 )
             ],
@@ -119,7 +119,7 @@ class TestCredentialRequestSchema(TestCase):
     credential_request = CredentialRequest(
         comment="Test",
         requests_attach=[
-            AttachDecorator.from_indy_dict(TestCredentialRequest.indy_cred_req)
+            AttachDecorator.data_base64(TestCredentialRequest.indy_cred_req)
         ],
     )
 
