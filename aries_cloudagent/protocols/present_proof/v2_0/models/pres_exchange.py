@@ -110,7 +110,7 @@ class V20PresExRecord(BaseExchangeRecord):
         for item, cls in {
             "pres_proposal": V20PresProposal,
             "pres_request": V20PresRequest,
-            "pres": V20Pres
+            "pres": V20Pres,
         }.items():
             mapping = getattr(self, item)
             if mapping:

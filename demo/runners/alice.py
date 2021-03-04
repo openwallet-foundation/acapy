@@ -114,7 +114,7 @@ class AliceAgent(DemoAgent):
         if cred_req_metadata:
             log_json(cred_req_metadata, label="Credential request metadata:")
 
-    '''
+    """
     async def handle_present_proof(self, message):
         state = message["state"]
         presentation_exchange_id = message["presentation_exchange_id"]
@@ -189,7 +189,7 @@ class AliceAgent(DemoAgent):
                 )
             except ClientError:
                 pass
-    '''
+    """
 
     async def handle_present_proof_v2_0(self, message):
         state = message["state"]
@@ -247,10 +247,7 @@ class AliceAgent(DemoAgent):
 
                 log_status("#26 Send the proof to X")
                 await self.admin_POST(
-                    (
-                        "/present-proof-2.0/records/"
-                        f"{pres_ex_id}/send-presentation"
-                    ),
+                    ("/present-proof-2.0/records/" f"{pres_ex_id}/send-presentation"),
                     request,
                 )
             except ClientError:

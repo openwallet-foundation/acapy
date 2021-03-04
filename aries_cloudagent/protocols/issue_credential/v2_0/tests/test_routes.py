@@ -312,7 +312,7 @@ class TestV20CredRoutes(AsyncTestCase):
         self.request.json = async_mock.CoroutineMock(
             return_value={
                 "connection_id": connection_id,
-                "credential_preview": preview_spec
+                "credential_preview": preview_spec,
             }
         )
 
