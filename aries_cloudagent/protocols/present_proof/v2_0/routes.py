@@ -597,6 +597,7 @@ async def present_proof_create_request(request: web.BaseRequest):
 
     pres_request_message = V20PresRequest(
         comment=comment,
+        will_confirm=True,
         **_formats_attach(pres_request_spec, "request_presentations"),
     )
     trace_msg = body.get("trace")
@@ -670,6 +671,7 @@ async def present_proof_send_free_request(request: web.BaseRequest):
         await _add_nonce(pres_request_spec[V20PresFormat.Format.INDY.api])
     pres_request_message = V20PresRequest(
         comment=comment,
+        will_confirm=True,
         **_formats_attach(pres_request_spec, "request_presentations"),
     )
     trace_msg = body.get("trace")

@@ -278,7 +278,9 @@ class V20PresManager:
         requested_referents = {}
         pres_request = V20PresRequest.deserialize(
             pres_ex_record.pres_request
-        ).attachment(format_)  # take format_ = None seamlessly, contrast by_format
+        ).attachment(
+            format_
+        )  # take format_ = None seamlessly, contrast by_format
         non_revoc_intervals = indy_proof_req2non_revoc_intervals(pres_request)
         attr_creds = requested_credentials.get("requested_attributes", {})
         req_attrs = pres_request.get("requested_attributes", {})
