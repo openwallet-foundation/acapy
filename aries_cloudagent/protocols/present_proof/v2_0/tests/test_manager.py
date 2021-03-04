@@ -835,6 +835,12 @@ class TestV20PresManager(AsyncTestCase):
             pres_proposal=pres_proposal.serialize(),
             pres_request=pres_request.serialize(),
         )
+
+        # cover by_format property
+        by_format = px_rec_dummy.by_format
+        assert by_format.get("pres_proposal").get("indy") == PRES_PREVIEW.serialize()
+        assert by_format.get("pres_request").get("indy") == indy_proof_req
+
         with async_mock.patch.object(
             V20PresExRecord, "save", autospec=True
         ) as save_ex, async_mock.patch.object(

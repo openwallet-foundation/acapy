@@ -49,7 +49,7 @@ class V20PresManager:
 
     async def create_exchange_for_proposal(
         self,
-        conn_id: str,
+        connection_id: str,
         pres_proposal_message: V20PresProposal,
         auto_present: bool = None,
     ):
@@ -57,7 +57,7 @@ class V20PresManager:
         Create a presentation exchange record for input presentation proposal.
 
         Args:
-            conn_id: connection identifier
+            connection_id: connection identifier
             pres_proposal_message: presentation proposal to serialize
                 to exchange record
             auto_present: whether to present proof upon receiving proof request
@@ -68,7 +68,7 @@ class V20PresManager:
 
         """
         pres_ex_record = V20PresExRecord(
-            conn_id=conn_id,
+            connection_id=connection_id,
             thread_id=pres_proposal_message._thread_id,
             initiator=V20PresExRecord.INITIATOR_SELF,
             role=V20PresExRecord.ROLE_PROVER,
@@ -95,7 +95,7 @@ class V20PresManager:
 
         """
         pres_ex_record = V20PresExRecord(
-            conn_id=conn_record.connection_id,
+            connection_id=conn_record.connection_id,
             thread_id=message._thread_id,
             initiator=V20PresExRecord.INITIATOR_EXTERNAL,
             role=V20PresExRecord.ROLE_VERIFIER,
@@ -176,13 +176,13 @@ class V20PresManager:
         return pres_ex_record, pres_request_message
 
     async def create_exchange_for_request(
-        self, conn_id: str, pres_request_message: V20PresRequest
+        self, connection_id: str, pres_request_message: V20PresRequest
     ):
         """
         Create a presentation exchange record for input presentation request.
 
         Args:
-            conn_id: connection identifier
+            connection_id: connection identifier
             pres_request_message: presentation request to use in creating
                 exchange record, extracting indy proof request and thread id
 
@@ -191,7 +191,7 @@ class V20PresManager:
 
         """
         pres_ex_record = V20PresExRecord(
-            conn_id=conn_id,
+            connection_id=connection_id,
             thread_id=pres_request_message._thread_id,
             initiator=V20PresExRecord.INITIATOR_SELF,
             role=V20PresExRecord.ROLE_VERIFIER,
@@ -469,7 +469,9 @@ class V20PresManager:
 
         thread_id = message._thread_id
         conn_id_filter = (
-            None if conn_record is None else {"conn_id": conn_record.connection_id}
+            None
+            if conn_record is None
+            else {"connection_id": conn_record.connection_id}
         )
         async with self._profile.session() as session:
             try:
@@ -621,7 +623,7 @@ class V20PresManager:
 
             await responder.send_reply(
                 pres_ack_message,
-                connection_id=pres_ex_record.conn_id,
+                connection_id=pres_ex_record.connection_id,
             )
         else:
             LOGGER.warning(
@@ -641,7 +643,7 @@ class V20PresManager:
             pres_ex_record = await V20PresExRecord.retrieve_by_tag_filter(
                 session,
                 {"thread_id": message._thread_id},
-                {"conn_id": conn_record.connection_id},
+                {"connection_id": conn_record.connection_id},
             )
 
             pres_ex_record.state = V20PresExRecord.STATE_DONE

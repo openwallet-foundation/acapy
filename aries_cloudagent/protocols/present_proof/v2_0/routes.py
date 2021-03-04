@@ -56,7 +56,7 @@ class V20PresentProofModuleResponseSchema(OpenAPISchema):
 class V20PresExRecordListQueryStringSchema(OpenAPISchema):
     """Parameters and validators for presentation exchange list query."""
 
-    conn_id = fields.UUID(
+    connection_id = fields.UUID(
         description="Connection identifier",
         required=False,
         example=UUIDFour.EXAMPLE,  # typically but not necessarily a UUID4
@@ -161,7 +161,7 @@ class V20PresPreviewByFormatSchema(OpenAPISchema):
 class V20PresProposalRequestSchema(AdminAPIMessageTracingSchema):
     """Request schema for sending a presentation proposal admin message."""
 
-    conn_id = fields.UUID(
+    connection_id = fields.UUID(
         description="Connection identifier", required=True, example=UUIDFour.EXAMPLE
     )
     comment = fields.Str(
@@ -233,7 +233,7 @@ class V20PresCreateRequestRequestSchema(AdminAPIMessageTracingSchema):
 class V20PresSendRequestRequestSchema(V20PresCreateRequestRequestSchema):
     """Request schema for sending a proof request on a connection."""
 
-    conn_id = fields.UUID(
+    connection_id = fields.UUID(
         description="Connection identifier", required=True, example=UUIDFour.EXAMPLE
     )
 
@@ -357,7 +357,7 @@ async def present_proof_list(request: web.BaseRequest):
         tag_filter["thread_id"] = request.query["thread_id"]
     post_filter = {
         k: request.query[k]
-        for k in ("conn_id", "role", "state")
+        for k in ("connection_id", "role", "state")
         if request.query.get(k, "") != ""
     }
 
@@ -504,13 +504,13 @@ async def present_proof_send_proposal(request: web.BaseRequest):
     body = await request.json()
 
     comment = body.get("comment")
-    conn_id = body.get("conn_id")
+    connection_id = body.get("connection_id")
 
     pres_preview = body.get("presentation_preview")
     conn_record = None
     async with context.session() as session:
         try:
-            conn_record = await ConnRecord.retrieve_by_id(session, conn_id)
+            conn_record = await ConnRecord.retrieve_by_id(session, connection_id)
             pres_proposal_message = V20PresProposal(
                 comment=comment,
                 **_formats_attach(pres_preview, "proposal"),
@@ -521,7 +521,7 @@ async def present_proof_send_proposal(request: web.BaseRequest):
             )
 
     if not conn_record.is_ready:
-        raise web.HTTPForbidden(reason=f"Connection {conn_id} not ready")
+        raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
 
     trace_msg = body.get("trace")
     pres_proposal_message.assign_trace_decorator(
@@ -536,7 +536,7 @@ async def present_proof_send_proposal(request: web.BaseRequest):
     pres_ex_record = None
     try:
         pres_ex_record = await pres_manager.create_exchange_for_proposal(
-            conn_id=conn_id,
+            connection_id=connection_id,
             pres_proposal_message=pres_proposal_message,
             auto_present=auto_present,
         )
@@ -549,7 +549,7 @@ async def present_proof_send_proposal(request: web.BaseRequest):
             outbound_handler,
         )
 
-    await outbound_handler(pres_proposal_message, connection_id=conn_id)
+    await outbound_handler(pres_proposal_message, connection_id=connection_id)
 
     trace_event(
         context.settings,
@@ -607,7 +607,7 @@ async def present_proof_create_request(request: web.BaseRequest):
     pres_ex_record = None
     try:
         pres_ex_record = await pres_manager.create_exchange_for_request(
-            conn_id=None,
+            connection_id=None,
             pres_request_message=pres_request_message,
         )
         result = pres_ex_record.serialize()
@@ -652,15 +652,15 @@ async def present_proof_send_free_request(request: web.BaseRequest):
 
     body = await request.json()
 
-    conn_id = body.get("conn_id")
+    connection_id = body.get("connection_id")
     async with context.session() as session:
         try:
-            conn_record = await ConnRecord.retrieve_by_id(session, conn_id)
+            conn_record = await ConnRecord.retrieve_by_id(session, connection_id)
         except StorageNotFoundError as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     if not conn_record.is_ready:
-        raise web.HTTPForbidden(reason=f"Connection {conn_id} not ready")
+        raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
 
     comment = body.get("comment")
     pres_request_spec = body.get("presentation_request")
@@ -680,7 +680,7 @@ async def present_proof_send_free_request(request: web.BaseRequest):
     pres_ex_record = None
     try:
         (pres_ex_record) = await pres_manager.create_exchange_for_request(
-            conn_id=conn_id,
+            connection_id=connection_id,
             pres_request_message=pres_request_message,
         )
         result = pres_ex_record.serialize()
@@ -692,7 +692,7 @@ async def present_proof_send_free_request(request: web.BaseRequest):
             outbound_handler,
         )
 
-    await outbound_handler(pres_request_message, connection_id=conn_id)
+    await outbound_handler(pres_request_message, connection_id=connection_id)
 
     trace_event(
         context.settings,
@@ -747,15 +747,15 @@ async def present_proof_send_bound_request(request: web.BaseRequest):
                     f"(must be {V20PresExRecord.STATE_PROPOSAL_RECEIVED})"
                 )
             )
-        conn_id = pres_ex_record.conn_id
+        connection_id = pres_ex_record.connection_id
 
         try:
-            conn_record = await ConnRecord.retrieve_by_id(session, conn_id)
+            conn_record = await ConnRecord.retrieve_by_id(session, connection_id)
         except StorageError as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     if not conn_record.is_ready:
-        raise web.HTTPForbidden(reason=f"Connection {conn_id} not ready")
+        raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
 
     pres_manager = V20PresManager(context.profile)
     try:
@@ -777,7 +777,7 @@ async def present_proof_send_bound_request(request: web.BaseRequest):
         context.settings,
         trace_msg,
     )
-    await outbound_handler(pres_request_message, connection_id=conn_id)
+    await outbound_handler(pres_request_message, connection_id=connection_id)
 
     trace_event(
         context.settings,
@@ -830,14 +830,14 @@ async def present_proof_send_presentation(request: web.BaseRequest):
                 )
             )
 
-        conn_id = pres_ex_record.conn_id
+        connection_id = pres_ex_record.connection_id
         try:
-            conn_record = await ConnRecord.retrieve_by_id(session, conn_id)
+            conn_record = await ConnRecord.retrieve_by_id(session, connection_id)
         except StorageNotFoundError as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     if not conn_record.is_ready:
-        raise web.HTTPForbidden(reason=f"Connection {conn_id} not ready")
+        raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
 
     pres_manager = V20PresManager(context.profile)
     try:
@@ -871,7 +871,7 @@ async def present_proof_send_presentation(request: web.BaseRequest):
         context.settings,
         trace_msg,
     )
-    await outbound_handler(pres_message, connection_id=conn_id)
+    await outbound_handler(pres_message, connection_id=connection_id)
 
     trace_event(
         context.settings,
@@ -922,15 +922,15 @@ async def present_proof_verify_presentation(request: web.BaseRequest):
                 )
             )
 
-        conn_id = pres_ex_record.conn_id
+        connection_id = pres_ex_record.connection_id
 
         try:
-            conn_record = await ConnRecord.retrieve_by_id(session, conn_id)
+            conn_record = await ConnRecord.retrieve_by_id(session, connection_id)
         except StorageError as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     if not conn_record.is_ready:
-        raise web.HTTPForbidden(reason=f"Connection {conn_id} not ready")
+        raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
 
     pres_manager = V20PresManager(context.profile)
     try:
@@ -983,7 +983,7 @@ async def present_proof_problem_report(request: web.BaseRequest):
     error_result = ProblemReport(explain_ltxt=body["explain_ltxt"])
     error_result.assign_thread_id(pres_ex_record.thread_id)
 
-    await outbound_handler(error_result, connection_id=pres_ex_record.conn_id)
+    await outbound_handler(error_result, connection_id=pres_ex_record.connection_id)
 
     trace_event(
         context.settings,

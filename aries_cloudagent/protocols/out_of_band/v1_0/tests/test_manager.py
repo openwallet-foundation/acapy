@@ -825,9 +825,9 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             use_existing_connection=True,
             auto_accept=True,
         )
-        conn_id = UUID(result.get("connection_id"), version=4)
+        connection_id = UUID(result.get("connection_id"), version=4)
         assert (
-            conn_id.hex == result.get("connection_id").replace("-", "")
+            connection_id.hex == result.get("connection_id").replace("-", "")
             and len(result.get("connection_id")) > 5
         )
 
@@ -930,9 +930,9 @@ class TestOOBManager(AsyncTestCase, TestConfig):
 
             with self.assertRaises(OutOfBandManagerError) as context:
                 result = await self.manager.receive_invitation(mock_oob_invi)
-                conn_id = UUID(result.get("connection_id"), version=4)
+                connection_id = UUID(result.get("connection_id"), version=4)
                 assert (
-                    conn_id.hex == result.get("connection_id")
+                    connection_id.hex == result.get("connection_id")
                     and len(result.get("connection_id")) > 5
                 )
             assert "request~attach is not properly formatted" in str(context.exception)

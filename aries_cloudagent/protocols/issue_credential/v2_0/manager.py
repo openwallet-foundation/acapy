@@ -91,7 +91,7 @@ class V20CredManager:
 
     async def prepare_send(
         self,
-        conn_id: str,
+        connection_id: str,
         cred_proposal: V20CredProposal,
         auto_remove: bool = None,
     ) -> Tuple[V20CredExRecord, V20CredOffer]:
@@ -99,7 +99,7 @@ class V20CredManager:
         Set up a new credential exchange record for an automated send.
 
         Args:
-            conn_id: connection for which to create offer
+            connection_id: connection for which to create offer
             cred_proposal: credential proposal with preview
             auto_remove: flag to remove the record automatically on completion
 
@@ -110,7 +110,7 @@ class V20CredManager:
         if auto_remove is None:
             auto_remove = not self._profile.settings.get("preserve_exchange_records")
         cred_ex_record = V20CredExRecord(
-            conn_id=conn_id,
+            connection_id=connection_id,
             initiator=V20CredExRecord.INITIATOR_SELF,
             role=V20CredExRecord.ROLE_ISSUER,
             cred_proposal=cred_proposal.serialize(),
@@ -126,7 +126,7 @@ class V20CredManager:
 
     async def create_proposal(
         self,
-        conn_id: str,
+        connection_id: str,
         *,
         auto_remove: bool = None,
         comment: str = None,
@@ -138,7 +138,7 @@ class V20CredManager:
         Create a credential proposal.
 
         Args:
-            conn_id: connection for which to create proposal
+            connection_id: connection for which to create proposal
             auto_remove: whether to remove record automatically on completion
             comment: optional human-readable comment to include in proposal
             cred_preview: credential preview to use to create credential proposal
@@ -167,7 +167,7 @@ class V20CredManager:
         if auto_remove is None:
             auto_remove = not self._profile.settings.get("preserve_exchange_records")
         cred_ex_record = V20CredExRecord(
-            conn_id=conn_id,
+            connection_id=connection_id,
             thread_id=cred_proposal_message._thread_id,
             initiator=V20CredExRecord.INITIATOR_SELF,
             role=V20CredExRecord.ROLE_HOLDER,
@@ -186,7 +186,7 @@ class V20CredManager:
     async def receive_proposal(
         self,
         cred_proposal_message: V20CredProposal,
-        conn_id: str,
+        connection_id: str,
     ) -> V20CredExRecord:
         """
         Receive a credential proposal.
@@ -197,7 +197,7 @@ class V20CredManager:
         """
         # at this point, cred def and schema still open to potential negotiation
         cred_ex_record = V20CredExRecord(
-            conn_id=conn_id,
+            connection_id=connection_id,
             thread_id=cred_proposal_message._thread_id,
             initiator=V20CredExRecord.INITIATOR_EXTERNAL,
             role=V20CredExRecord.ROLE_ISSUER,
@@ -314,14 +314,14 @@ class V20CredManager:
     async def receive_offer(
         self,
         cred_offer_message: V20CredOffer,
-        conn_id: str,
+        connection_id: str,
     ) -> V20CredExRecord:
         """
         Receive a credential offer.
 
         Args:
             cred_offer_message: credential offer message
-            conn_id: connection identifier
+            connection_id: connection identifier
 
         Returns:
             The credential exchange record, updated
@@ -358,13 +358,13 @@ class V20CredManager:
             try:
                 cred_ex_record = await (
                     V20CredExRecord.retrieve_by_conn_and_thread(
-                        session, conn_id, cred_offer_message._thread_id
+                        session, connection_id, cred_offer_message._thread_id
                     )
                 )
                 cred_ex_record.cred_proposal = cred_proposal_ser
             except StorageNotFoundError:  # issuer sent this offer free of any proposal
                 cred_ex_record = V20CredExRecord(
-                    conn_id=conn_id,
+                    connection_id=connection_id,
                     thread_id=cred_offer_message._thread_id,
                     initiator=V20CredExRecord.INITIATOR_EXTERNAL,
                     role=V20CredExRecord.ROLE_HOLDER,
@@ -472,14 +472,14 @@ class V20CredManager:
         return (cred_ex_record, cred_request_message)
 
     async def receive_request(
-        self, cred_request_message: V20CredRequest, conn_id: str
+        self, cred_request_message: V20CredRequest, connection_id: str
     ) -> V20CredExRecord:
         """
         Receive a credential request.
 
         Args:
             cred_request_message: credential request to receive
-            conn_id: connection identifier
+            connection_id: connection identifier
 
         Returns:
             credential exchange record, retrieved and updated
@@ -490,7 +490,7 @@ class V20CredManager:
         async with self._profile.session() as session:
             cred_ex_record = await (
                 V20CredExRecord.retrieve_by_conn_and_thread(
-                    session, conn_id, cred_request_message._thread_id
+                    session, connection_id, cred_request_message._thread_id
                 )
             )
             cred_ex_record.cred_request = cred_request_message.serialize()
@@ -702,7 +702,7 @@ class V20CredManager:
         return (cred_ex_record, cred_issue_message)
 
     async def receive_credential(
-        self, cred_issue_message: V20CredIssue, conn_id: str
+        self, cred_issue_message: V20CredIssue, connection_id: str
     ) -> V20CredExRecord:
         """
         Receive a credential issue message from an issuer.
@@ -720,7 +720,7 @@ class V20CredManager:
             cred_ex_record = await (
                 V20CredExRecord.retrieve_by_conn_and_thread(
                     session,
-                    conn_id,
+                    connection_id,
                     cred_issue_message._thread_id,
                 )
             )
@@ -820,14 +820,14 @@ class V20CredManager:
         return (cred_ex_record, cred_ack_message)
 
     async def receive_credential_ack(
-        self, cred_ack_message: V20CredAck, conn_id: str
+        self, cred_ack_message: V20CredAck, connection_id: str
     ) -> V20CredExRecord:
         """
         Receive credential ack from holder.
 
         Args:
             cred_ack_message: credential ack message to receive
-            conn_id: connection identifier
+            connection_id: connection identifier
 
         Returns:
             credential exchange record, retrieved and updated
@@ -838,7 +838,7 @@ class V20CredManager:
             cred_ex_record = await (
                 V20CredExRecord.retrieve_by_conn_and_thread(
                     session,
-                    conn_id,
+                    connection_id,
                     cred_ack_message._thread_id,
                 )
             )

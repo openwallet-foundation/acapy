@@ -117,7 +117,7 @@ Replace the ```# TODO``` comment with the following code:
 Now we need to handle receipt of the proof.  Locate the code that handles received proofs (this is in a webhook callback):
 
 ```
-        if state == "presentation_received":
+        if state == "presentation-received":
             # TODO handle received presentations
             pass
 ```

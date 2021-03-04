@@ -8,6 +8,11 @@ from marshmallow import fields, validate
 from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
 from .....messaging.valid import UUIDFour
 
+from ..messages.pres import V20Pres
+from ..messages.pres_format import V20PresFormat
+from ..messages.pres_proposal import V20PresProposal
+from ..messages.pres_request import V20PresRequest
+
 unencrypted_tags = environ.get("EXCH_UNENCRYPTED_TAGS", "False").upper() == "TRUE"
 
 
@@ -43,7 +48,7 @@ class V20PresExRecord(BaseExchangeRecord):
         self,
         *,
         pres_ex_id: str = None,
-        conn_id: str = None,
+        connection_id: str = None,
         thread_id: str = None,
         initiator: str = None,
         role: str = None,
@@ -55,11 +60,12 @@ class V20PresExRecord(BaseExchangeRecord):
         auto_present: bool = False,
         error_msg: str = None,
         trace: bool = False,
+        by_format: Mapping = None,  # formalism for base_record.from_storage()
         **kwargs
     ):
         """Initialize a new PresExRecord."""
         super().__init__(pres_ex_id, state, trace=trace, **kwargs)
-        self.conn_id = conn_id
+        self.connection_id = connection_id
         self.thread_id = thread_id
         self.initiator = initiator
         self.role = role
@@ -83,7 +89,7 @@ class V20PresExRecord(BaseExchangeRecord):
         return {
             prop: getattr(self, prop)
             for prop in (
-                "conn_id",
+                "connection_id",
                 "initiator",
                 "role",
                 "state",
@@ -96,6 +102,31 @@ class V20PresExRecord(BaseExchangeRecord):
                 "trace",
             )
         }
+
+    @property
+    def by_format(self):
+        """Record proposal, request, and presentation data structures by format."""
+        result = {}
+        for item, cls in {
+            "pres_proposal": V20PresProposal,
+            "pres_request": V20PresRequest,
+            "pres": V20Pres
+        }.items():
+            mapping = getattr(self, item)
+            if mapping:
+                msg = cls.deserialize(mapping)
+                result.update(
+                    {
+                        item: {
+                            V20PresFormat.Format.get(f.format).api: msg.attachment(
+                                V20PresFormat.Format.get(f.format)
+                            )
+                            for f in msg.formats
+                        }
+                    }
+                )
+
+        return result
 
     def __eq__(self, other: Any) -> bool:
         """Comparison between records."""
@@ -115,7 +146,7 @@ class V20PresExRecordSchema(BaseExchangeSchema):
         description="Presentation exchange identifier",
         example=UUIDFour.EXAMPLE,  # typically a UUID4 but not necessarily
     )
-    conn_id = fields.Str(
+    connection_id = fields.Str(
         required=False,
         description="Connection identifier",
         example=UUIDFour.EXAMPLE,  # typically a UUID4 but not necessarily
@@ -169,6 +200,13 @@ class V20PresExRecordSchema(BaseExchangeSchema):
     pres = fields.Dict(
         required=False,
         description="Serialized presentation message",
+    )
+    by_format = fields.Dict(
+        required=False,
+        description=(
+            "Attachment content by format for proposal, request, and presentation"
+        ),
+        dump_only=True,
     )
     verified = fields.Str(  # tag: must be a string
         required=False,

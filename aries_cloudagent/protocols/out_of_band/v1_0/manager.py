@@ -687,7 +687,7 @@ class OutOfBandManager(BaseConnectionManager):
             "serviceEndpoint": oob_invi_service.get("serviceEndpoint"),
         }
         pres_ex_record = V20PresExRecord(
-            conn_id=conn_rec.connection_id,
+            connection_id=conn_rec.connection_id,
             thread_id=pres_request_msg["@id"],
             initiator=V20PresExRecord.INITIATOR_EXTERNAL,
             role=V20PresExRecord.ROLE_PROVER,

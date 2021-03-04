@@ -53,12 +53,12 @@ class V20PresRequestHandler(BaseHandler):
                 pres_ex_record = await V20PresExRecord.retrieve_by_tag_filter(
                     session,
                     {"thread_id": context.message._thread_id},
-                    {"conn_id": context.connection_record.connection_id},
+                    {"connection_id": context.connection_record.connection_id},
                 )  # holder initiated via proposal
             pres_ex_record.pres_request = context.message.serialize()
         except StorageNotFoundError:  # verifier sent this request free of any proposal
             pres_ex_record = V20PresExRecord(
-                conn_id=context.connection_record.connection_id,
+                connection_id=context.connection_record.connection_id,
                 thread_id=context.message._thread_id,
                 initiator=V20PresExRecord.INITIATOR_EXTERNAL,
                 role=V20PresExRecord.ROLE_PROVER,

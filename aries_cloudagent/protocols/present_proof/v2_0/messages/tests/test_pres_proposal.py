@@ -49,12 +49,12 @@ class TestV20PresProposal(TestCase):
             comment="Hello World",
             formats=[
                 V20PresFormat(
-                    attach_id="abc",
+                    attach_id="indy",
                     format_=V20PresFormat.Format.INDY.aries,
                 )
             ],
             proposal_attach=[
-                AttachDecorator.data_base64(PRES_PREVIEW.serialize(), ident="abc")
+                AttachDecorator.data_base64(PRES_PREVIEW.serialize(), ident="indy")
             ],
         )
         assert pres_proposal._type == DIDCommPrefix.qualify_current(PRES_20_PROPOSAL)
@@ -69,12 +69,12 @@ class TestV20PresProposal(TestCase):
             comment="Hello World",
             formats=[
                 V20PresFormat(
-                    attach_id="abc",
+                    attach_id="indy",
                     format_=V20PresFormat.Format.INDY.aries,
                 )
             ],
             proposal_attach=[
-                AttachDecorator.data_base64(PRES_PREVIEW.serialize(), ident="abc")
+                AttachDecorator.data_base64(PRES_PREVIEW.serialize(), ident="indy")
             ],
         )
         pres_proposal_ser = pres_proposal.serialize()
@@ -84,7 +84,7 @@ class TestV20PresProposal(TestCase):
         pres_proposal_dict = pres_proposal_deser.serialize()
         assert pres_proposal_dict == pres_proposal_ser
 
-        pres_proposal_dict["formats"][0]["attach_id"] = "def"
+        pres_proposal_dict["formats"][0]["attach_id"] = "xxx"
         with pytest.raises(BaseModelError):
             V20PresProposal.deserialize(pres_proposal_dict)  # id mismatch
 

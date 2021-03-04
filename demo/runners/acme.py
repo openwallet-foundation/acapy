@@ -72,13 +72,22 @@ class AcmeAgent(DemoAgent):
             # TODO issue credentials based on offer preview in cred ex record
             pass
 
+    '''
     async def handle_present_proof(self, message):
         state = message["state"]
-
         pres_ex_id = message["presentation_exchange_id"]
         self.log(f"Presentation: state = {state}, pres_ex_id = {pres_ex_id}")
 
         if state == "presentation_received":
+            # TODO handle received presentations
+            pass
+    '''
+    async def handle_present_proof_v2_0(self, message):
+        state = message["state"]
+        pres_ex_id = message["pres_ex_id"]
+        self.log(f"Presentation: state = {state}, pres_ex_id = {pres_ex_id}")
+
+        if state == "presentation-received":
             # TODO handle received presentations
             pass
 

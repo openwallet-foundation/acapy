@@ -22,7 +22,7 @@ class TestRecord(UnitTestCase):
         record = V20PresExRecord(
             pres_ex_id="pxid",
             thread_id="thid",
-            conn_id="connid",
+            connection_id="conn_id",
             initiator="init",
             role="role",
             state="state",
@@ -37,7 +37,7 @@ class TestRecord(UnitTestCase):
         assert record.pres_ex_id == "pxid"
 
         assert record.record_value == {
-            "conn_id": "connid",
+            "connection_id": "conn_id",
             "initiator": "init",
             "role": "role",
             "state": "state",
