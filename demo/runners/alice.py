@@ -114,83 +114,6 @@ class AliceAgent(DemoAgent):
         if cred_req_metadata:
             log_json(cred_req_metadata, label="Credential request metadata:")
 
-    """
-    async def handle_present_proof(self, message):
-        state = message["state"]
-        presentation_exchange_id = message["presentation_exchange_id"]
-        presentation_request = message["presentation_request"]
-
-        log_msg(
-            "Presentation: state =",
-            state,
-            ", presentation_exchange_id =",
-            presentation_exchange_id,
-        )
-
-        if state == "request_received":
-            log_status(
-                "#24 Query for credentials in the wallet that satisfy the proof request"
-            )
-
-            # include self-attested attributes (not included in credentials)
-            credentials_by_reft = {}
-            revealed = {}
-            self_attested = {}
-            predicates = {}
-
-            try:
-                # select credentials to provide for the proof
-                credentials = await self.admin_GET(
-                    f"/present-proof/records/{presentation_exchange_id}/credentials"
-                )
-                if credentials:
-                    for row in sorted(
-                        credentials,
-                        key=lambda c: int(c["cred_info"]["attrs"]["timestamp"]),
-                        reverse=True,
-                    ):
-                        for referent in row["presentation_referents"]:
-                            if referent not in credentials_by_reft:
-                                credentials_by_reft[referent] = row
-
-                for referent in presentation_request["requested_attributes"]:
-                    if referent in credentials_by_reft:
-                        revealed[referent] = {
-                            "cred_id": credentials_by_reft[referent]["cred_info"][
-                                "referent"
-                            ],
-                            "revealed": True,
-                        }
-                    else:
-                        self_attested[referent] = "my self-attested value"
-
-                for referent in presentation_request["requested_predicates"]:
-                    if referent in credentials_by_reft:
-                        predicates[referent] = {
-                            "cred_id": credentials_by_reft[referent]["cred_info"][
-                                "referent"
-                            ]
-                        }
-
-                log_status("#25 Generate the proof")
-                request = {
-                    "requested_predicates": predicates,
-                    "requested_attributes": revealed,
-                    "self_attested_attributes": self_attested,
-                }
-
-                log_status("#26 Send the proof to X")
-                await self.admin_POST(
-                    (
-                        "/present-proof/records/"
-                        f"{presentation_exchange_id}/send-presentation"
-                    ),
-                    request,
-                )
-            except ClientError:
-                pass
-    """
-
     async def handle_present_proof_v2_0(self, message):
         state = message["state"]
         pres_ex_id = message["pres_ex_id"]
@@ -240,14 +163,16 @@ class AliceAgent(DemoAgent):
 
                 log_status("#25 Generate the proof")
                 request = {
-                    "requested_predicates": predicates,
-                    "requested_attributes": revealed,
-                    "self_attested_attributes": self_attested,
+                    "indy": {
+                        "requested_predicates": predicates,
+                        "requested_attributes": revealed,
+                        "self_attested_attributes": self_attested,
+                    }
                 }
 
                 log_status("#26 Send the proof to X")
                 await self.admin_POST(
-                    ("/present-proof-2.0/records/" f"{pres_ex_id}/send-presentation"),
+                    f"/present-proof-2.0/records/{pres_ex_id}/send-presentation",
                     request,
                 )
             except ClientError:

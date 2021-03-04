@@ -118,22 +118,6 @@ class FaberAgent(DemoAgent):
     async def handle_issuer_cred_rev(self, message):
         pass
 
-    """
-    async def handle_present_proof(self, message):
-        state = message["state"]
-
-        pres_ex_id = message["presentation_exchange_id"]
-        self.log(f"Presentation: state = {state}, pres_ex_id = {pres_ex_id}")
-
-        if state == "presentation_received":
-            log_status("#27 Process the proof provided by X")
-            log_status("#28 Check if proof is valid")
-            proof = await self.admin_POST(
-                f"/present-proof/records/{pres_ex_id}/verify-presentation"
-            )
-            self.log("Proof =", proof["verified"])
-    """
-
     async def handle_present_proof_v2_0(self, message):
         state = message["state"]
         pres_ex_id = message["pres_ex_id"]

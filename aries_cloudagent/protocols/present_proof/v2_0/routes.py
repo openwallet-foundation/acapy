@@ -455,8 +455,10 @@ async def present_proof_credentials_list(request: web.BaseRequest):
 
     holder = context.profile.inject(IndyHolder)
     try:
-        pres_request = pres_ex_record.pres_request.attachment(V20PresFormat.Format.INDY)
-        # TODO allow for choice of format from those specified in pres req
+        # TODO: allow for choice of format from those specified in pres req
+        pres_request = pres_ex_record.by_format["pres_request"].get(
+            V20PresFormat.Format.INDY.api
+        )
         credentials = await holder.get_credentials_for_presentation_request_by_referent(
             pres_request,
             pres_referents,
@@ -841,12 +843,13 @@ async def present_proof_send_presentation(request: web.BaseRequest):
 
     pres_manager = V20PresManager(context.profile)
     try:
+        indy_spec = body.get(V20PresFormat.Format.INDY.api)  # TODO: accommodate DIF
         pres_ex_record, pres_message = await pres_manager.create_pres(
             pres_ex_record,
             {
-                "self_attested_attributes": body.get("self_attested_attributes"),
-                "requested_attributes": body.get("requested_attributes"),
-                "requested_predicates": body.get("requested_predicates"),
+                "self_attested_attributes": indy_spec["self_attested_attributes"],
+                "requested_attributes": indy_spec["requested_attributes"],
+                "requested_predicates": indy_spec["requested_predicates"],
             },
             comment=body.get("comment"),
             format_=fmt,
