@@ -14,7 +14,7 @@ from .....messaging.valid import UUIDFour
 from .....messaging.decorators.attach_decorator import AttachDecorator
 from ..message_types import PROTOCOL_PACKAGE
 from ..models.detail.indy import V20CredExRecordIndy
-from ..models.detail.dif import V20CredExRecordDIF
+from ..models.detail.ld_proof import V20CredExRecordLDProof
 from typing import TYPE_CHECKING
 
 # TODO: remove
@@ -41,11 +41,11 @@ class V20CredFormat(BaseModel):
             V20CredExRecordIndy,
             f"{PROTOCOL_PACKAGE}.formats.indy.IndyCredFormatHandler",
         )
-        DIF = FormatSpec(
+        LD_PROOF = FormatSpec(
             "dif/credential-manifest@v1.0",
-            ["dif", "w3c", "jsonld"],
-            V20CredExRecordDIF,
-            f"{PROTOCOL_PACKAGE}.formats.indy.IndyCredFormatHandler",
+            ["ldproof", "jsonld"],
+            V20CredExRecordLDProof,
+            f"{PROTOCOL_PACKAGE}.formats.ld_proof.LDProofCredFormatHandler",
         )
 
         @classmethod

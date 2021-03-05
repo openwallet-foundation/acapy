@@ -1,4 +1,4 @@
-"""DIF-specific credential exchange information with non-secrets storage."""
+"""Linked data proof specific credential exchange information with non-secrets storage."""
 
 from typing import Any
 
@@ -11,37 +11,37 @@ from ......messaging.valid import UUIDFour
 from .. import UNENCRYPTED_TAGS
 
 
-class V20CredExRecordDIF(BaseRecord):
-    """Credential exchange DIF detail record."""
+class V20CredExRecordLDProof(BaseRecord):
+    """Credential exchange linked data proof detail record."""
 
     class Meta:
-        """V20CredExRecordDIF metadata."""
+        """V20CredExRecordLDProof metadata."""
 
-        schema_class = "V20CredExRecordDIFSchema"
+        schema_class = "V20CredExRecordLDProofSchema"
 
-    RECORD_ID_NAME = "cred_ex_dif_id"
-    RECORD_TYPE = "dif_cred_ex_v20"
+    RECORD_ID_NAME = "cred_ex_ld_proof_id"
+    RECORD_TYPE = "ld_proof_cred_ex_v20"
     TAG_NAMES = {"~cred_ex_id"} if UNENCRYPTED_TAGS else {"cred_ex_id"}
-    WEBHOOK_TOPIC = "issue_credential_v2_0_dif"
+    WEBHOOK_TOPIC = "issue_credential_v2_0_ld_proof"
 
     def __init__(
         self,
-        cred_ex_dif_id: str = None,
+        cred_ex_ld_proof_id: str = None,
         *,
         cred_ex_id: str = None,
-        # TODO: REMOVE THIS COMMENT AND SET DIF ITEMS BELOW
+        # TODO: REMOVE THIS COMMENT AND SET LDProof ITEMS BELOW
         item: str = None,
         **kwargs,
     ):
-        """Initialize DIF credential exchange record details."""
-        super().__init__(cred_ex_dif_id, **kwargs)
+        """Initialize LD Proof credential exchange record details."""
+        super().__init__(cred_ex_ld_proof_id, **kwargs)
 
         self.cred_ex_id = cred_ex_id
-        # TODO: REMOVE THIS COMMENT AND SET DIF ITEMS BELOW
+        # TODO: REMOVE THIS COMMENT AND SET LDProof ITEMS BELOW
         self.item = item
 
     @property
-    def cred_ex_dif_id(self) -> str:
+    def cred_ex_ld_proof_id(self) -> str:
         """Accessor for the ID associated with this exchange."""
         return self._id
 
@@ -51,7 +51,7 @@ class V20CredExRecordDIF(BaseRecord):
         return {
             prop: getattr(self, prop)
             for prop in (
-                # TODO: REMOVE THIS COMMENT AND SET DIF ITEMS BELOW
+                # TODO: REMOVE THIS COMMENT AND SET LDProof ITEMS BELOW
                 "item",
             )
         }
@@ -61,8 +61,8 @@ class V20CredExRecordDIF(BaseRecord):
         cls,
         session: ProfileSession,
         cred_ex_id: str,
-    ) -> "V20CredExRecordDIF":
-        """Retrieve a credential exchange DIF detail record by its cred ex id."""
+    ) -> "V20CredExRecordLDProof":
+        """Retrieve a credential exchange LDProof detail record by its cred ex id."""
         return await cls.retrieve_by_tag_filter(
             session,
             {"cred_ex_id": cred_ex_id},
@@ -74,16 +74,16 @@ class V20CredExRecordDIF(BaseRecord):
         return super().__eq__(other)
 
 
-class V20CredExRecordDIFSchema(BaseRecordSchema):
-    """Credential exchange DIF detail record detail schema."""
+class V20CredExRecordLDProofSchema(BaseRecordSchema):
+    """Credential exchange linked data proof detail record detail schema."""
 
     class Meta:
-        """Credential exchange DIF detail record schema metadata."""
+        """Credential exchange linked data proof detail record schema metadata."""
 
-        model_class = V20CredExRecordDIF
+        model_class = V20CredExRecordLDProof
         unknown = EXCLUDE
 
-    cred_ex_dif_id = fields.Str(
+    cred_ex_ld_proof_id = fields.Str(
         required=False,
         description="Record identifier",
         example=UUIDFour.EXAMPLE,
@@ -93,9 +93,9 @@ class V20CredExRecordDIFSchema(BaseRecordSchema):
         description="Corresponding v2.0 credential exchange record identifier",
         example=UUIDFour.EXAMPLE,
     )
-    # TODO: REMOVE THIS COMMENT AND SET DIF ITEMS BELOW
+    # TODO: REMOVE THIS COMMENT AND SET LDProof ITEMS BELOW
     item = fields.Dict(
         required=False,
-        description="DIF item",
+        description="LDProof item",
         example=UUIDFour.EXAMPLE,
     )

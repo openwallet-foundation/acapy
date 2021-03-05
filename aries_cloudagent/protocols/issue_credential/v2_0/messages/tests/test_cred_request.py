@@ -34,7 +34,7 @@ class TestV20CredRequest(AsyncTestCase):
         },
     }
 
-    dif_cred_req = {
+    ld_proof_cred_req = {
         "credential-manifest": {
             "issuer": "did:example:123",
             "credential": {
@@ -119,8 +119,8 @@ class TestV20CredRequestSchema(AsyncTestCase):
                     format_=V20CredFormat.Format.INDY,
                 ),
                 V20CredFormat(
-                    attach_id="dif-json",
-                    format_=V20CredFormat.Format.DIF,
+                    attach_id="ld-proof-json",
+                    format_=V20CredFormat.Format.LD_PROOF,
                 ),
             ],
             requests_attach=[
@@ -128,7 +128,7 @@ class TestV20CredRequestSchema(AsyncTestCase):
                     ident="indy", mapping=TestV20CredRequest.indy_cred_req
                 ),
                 AttachDecorator.data_json(
-                    ident="dif-json", mapping=TestV20CredRequest.dif_cred_req
+                    ident="ld-proof-json", mapping=TestV20CredRequest.ld_proof_cred_req
                 ),
             ],
         )
@@ -138,8 +138,8 @@ class TestV20CredRequestSchema(AsyncTestCase):
             == TestV20CredRequest.indy_cred_req
         )
         assert (
-            cred_request.attachment(V20CredFormat.Format.DIF)
-            == TestV20CredRequest.dif_cred_req
+            cred_request.attachment(V20CredFormat.Format.LD_PROOF)
+            == TestV20CredRequest.ld_proof_cred_req
         )
         data = cred_request.serialize()
         model_instance = V20CredRequest.deserialize(data)
@@ -153,8 +153,8 @@ class TestV20CredRequestSchema(AsyncTestCase):
                     format_=V20CredFormat.Format.INDY,
                 ),
                 V20CredFormat(
-                    attach_id="dif-links",
-                    format_=V20CredFormat.Format.DIF,
+                    attach_id="ld-proof-links",
+                    format_=V20CredFormat.Format.LD_PROOF,
                 ),
             ],
             requests_attach=[
@@ -162,13 +162,13 @@ class TestV20CredRequestSchema(AsyncTestCase):
                     ident="indy", mapping=TestV20CredRequest.indy_cred_req
                 ),
                 AttachDecorator.data_links(
-                    ident="dif-links",
+                    ident="ld-proof-links",
                     links="http://10.20.30.40/cred-req.json",
                     sha256="00000000000000000000000000000000",
                 ),
             ],
         )
-        assert cred_request.attachment(V20CredFormat.Format.DIF) == (
+        assert cred_request.attachment(V20CredFormat.Format.LD_PROOF) == (
             ["http://10.20.30.40/cred-req.json"],
             "00000000000000000000000000000000",
         )

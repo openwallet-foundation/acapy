@@ -27,7 +27,7 @@ from ..messages.cred_proposal import V20CredProposal
 from ..messages.cred_request import V20CredRequest
 from ..messages.inner.cred_preview import V20CredPreview, V20CredAttrSpec
 from ..models.cred_ex_record import V20CredExRecord
-from ..models.detail.dif import V20CredExRecordDIF
+from ..models.detail.ld_proof import V20CredExRecordLDProof
 from ..models.detail.indy import V20CredExRecordIndy
 
 
@@ -125,29 +125,6 @@ class TestV20CredManager(AsyncTestCase):
 
         self.manager = V20CredManager(self.profile)
         assert self.manager.profile
-
-    async def test_get_indy_detail_record(self):
-        cred_ex_id = "dummy"
-        detail_indy = V20CredExRecordIndy(
-            cred_ex_id=cred_ex_id,
-            rev_reg_id="rr-id",
-            cred_rev_id="0",
-        )
-        await detail_indy.save(self.session)
-        assert (
-            await self.manager.get_detail_record(cred_ex_id, V20CredFormat.Format.INDY)
-            == detail_indy
-        )
-        assert (
-            await self.manager.get_detail_record(cred_ex_id, V20CredFormat.Format.DIF)
-            is None
-        )
-
-    async def test_get_dif_detail_record(self):
-        cred_ex_id = "dummy"
-        detail_dif = V20CredExRecordDIF(cred_ex_id=cred_ex_id, item="my-item")
-        await detail_dif.save(self.session)
-        await self.manager.get_detail_record(cred_ex_id, V20CredFormat.Format.DIF)
 
     async def test_prepare_send(self):
         connection_id = "test_conn_id"

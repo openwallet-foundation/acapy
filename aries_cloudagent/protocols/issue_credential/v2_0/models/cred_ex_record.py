@@ -52,7 +52,6 @@ class V20CredExRecord(BaseExchangeRecord):
         cred_proposal: Mapping = None,  # serialized cred proposal message
         cred_offer: Mapping = None,  # serialized cred offer message
         cred_request: Mapping = None,  # serialized cred request message
-        cred_request_metadata: Mapping = None,  # credential request metadata
         cred_issue: Mapping = None,  # serialized cred issue message
         cred_id_stored: str = None,
         auto_offer: bool = False,
@@ -75,7 +74,6 @@ class V20CredExRecord(BaseExchangeRecord):
         self.cred_proposal = cred_proposal
         self.cred_offer = cred_offer
         self.cred_request = cred_request
-        self.cred_request_metadata = cred_request_metadata
         self.cred_issue = cred_issue
         self.cred_id_stored = cred_id_stored
         self.auto_offer = auto_offer
@@ -110,7 +108,6 @@ class V20CredExRecord(BaseExchangeRecord):
                 "cred_proposal",
                 "cred_offer",
                 "cred_request",
-                "cred_request_metadata",
                 "cred_issue",
                 "cred_id_stored",
                 "auto_offer",
@@ -215,9 +212,6 @@ class V20CredExRecordSchema(BaseExchangeSchema):
     )
     cred_request = fields.Dict(
         required=False, description="Serialized credential request message"
-    )
-    cred_request_metadata = fields.Dict(
-        required=False, description="(Indy) credential request metadata"
     )
     cred_issue = fields.Dict(
         required=False, description="Serialized credential issue message"

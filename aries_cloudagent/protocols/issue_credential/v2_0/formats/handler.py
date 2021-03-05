@@ -11,10 +11,10 @@ from .....messaging.decorators.attach_decorator import AttachDecorator
 from .....storage.error import StorageNotFoundError
 
 from ..messages.cred_format import V20CredFormat
-from ..messages.cred_proposal import V20CredProposal
 from ..messages.cred_offer import V20CredOffer
+from ..messages.cred_request import V20CredRequest
 from ..models.detail.indy import V20CredExRecordIndy
-from ..models.detail.dif import V20CredExRecordDIF
+from ..models.detail.ld_proof import V20CredExRecordLDProof
 from ..models.cred_ex_record import V20CredExRecord
 
 LOGGER = logging.getLogger(__name__)
@@ -48,7 +48,7 @@ class V20CredFormatHandler(ABC):
 
     async def get_detail_record(
         self, cred_ex_id: str
-    ) -> Union[V20CredExRecordIndy, V20CredExRecordDIF]:
+    ) -> Union[V20CredExRecordIndy, V20CredExRecordLDProof]:
         """Retrieve credential exchange detail record by cred_ex_id."""
 
         async with self.profile.session() as session:
@@ -65,7 +65,13 @@ class V20CredFormatHandler(ABC):
 
     @abstractmethod
     async def create_proposal(
-        self, filter: Mapping[str, str]
+        self, cred_ex_record: V20CredExRecord, filter: Mapping = None
+    ) -> Tuple[V20CredFormat, AttachDecorator]:
+        """"""
+
+    @abstractmethod
+    async def create_offer(
+        self, cred_ex_record: V20CredExRecord
     ) -> Tuple[V20CredFormat, AttachDecorator]:
         """"""
 
@@ -76,18 +82,15 @@ class V20CredFormatHandler(ABC):
         """"""
 
     @abstractmethod
-    async def create_offer(
-        self, cred_proposal_message: V20CredProposal
-    ) -> Tuple[V20CredFormat, AttachDecorator]:
-        """"""
-
-    @abstractmethod
     async def create_request(
-        self,
-        cred_ex_record: V20CredExRecord,
-        holder_did: str,
+        self, cred_ex_record: V20CredExRecord, holder_did: str = None
     ):
         """"""
+
+    async def receive_request(
+        self, cred_ex_record: V20CredExRecord, cred_request_message: V20CredRequest
+    ):
+        """Format specific handler for receiving credential request message"""
 
     @abstractmethod
     async def issue_credential(self, cred_ex_record: V20CredExRecord, retries: int = 5):

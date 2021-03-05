@@ -108,9 +108,20 @@ class V20CredManager:
 
         """
 
+        if auto_remove is None:
+            auto_remove = not self._profile.settings.get("preserve_exchange_records")
+        cred_ex_record = V20CredExRecord(
+            connection_id=connection_id,
+            initiator=V20CredExRecord.INITIATOR_SELF,
+            role=V20CredExRecord.ROLE_HOLDER,
+            state=V20CredExRecord.STATE_PROPOSAL_SENT,
+            auto_remove=auto_remove,
+            trace=trace,
+        )
+
         # Format specific create_proposal handler
         formats = [
-            await fmt.handler(self._profile).create_proposal(filter)
+            await fmt.handler(self._profile).create_proposal(cred_ex_record, filter)
             for (fmt, filter) in fmt2filter.items()
         ]
 
@@ -120,20 +131,12 @@ class V20CredManager:
             formats=[format for (format, _) in formats],
             filters_attach=[attach for (_, attach) in formats],
         )
+
+        cred_ex_record.thread_id = (cred_proposal_message._thread_id,)
+        cred_ex_record.cred_proposal = cred_proposal_message.serialize()
+
         cred_proposal_message.assign_trace_decorator(self._profile.settings, trace)
 
-        if auto_remove is None:
-            auto_remove = not self._profile.settings.get("preserve_exchange_records")
-        cred_ex_record = V20CredExRecord(
-            connection_id=connection_id,
-            thread_id=cred_proposal_message._thread_id,
-            initiator=V20CredExRecord.INITIATOR_SELF,
-            role=V20CredExRecord.ROLE_HOLDER,
-            state=V20CredExRecord.STATE_PROPOSAL_SENT,
-            cred_proposal=cred_proposal_message.serialize(),
-            auto_remove=auto_remove,
-            trace=trace,
-        )
         async with self._profile.session() as session:
             await cred_ex_record.save(
                 session,
@@ -208,7 +211,7 @@ class V20CredManager:
         formats = [
             await V20CredFormat.Format.get(p.format)
             .handler(self.profile)
-            .create_offer(cred_proposal_message)
+            .create_offer(cred_ex_record)
             for p in cred_proposal_message.formats
         ]
 
@@ -275,19 +278,16 @@ class V20CredManager:
                     trace=(cred_offer_message._trace is not None),
                 )
 
+            # Format specific receive_offer handler
+            for cred_format in cred_offer_message.formats:
+                await V20CredFormat.Format.get(cred_format.format).handler(
+                    self.profile
+                ).receive_offer(cred_ex_record, cred_offer_message)
+
             cred_ex_record.cred_offer = cred_offer_message.serialize()
             cred_ex_record.state = V20CredExRecord.STATE_OFFER_RECEIVED
 
             await cred_ex_record.save(session, reason="receive v2.0 credential offer")
-
-        # TODO: should be called before the code above
-        # Format specific receive_offer handler
-        formats = [
-            await V20CredFormat.Format.get(p.format)
-            .handler(self.profile)
-            .receive_offer(cred_ex_record, cred_offer_message)
-            for p in cred_offer_message.formats
-        ]
 
         return cred_ex_record
 
@@ -306,35 +306,36 @@ class V20CredManager:
             A tuple (credential exchange record, credential request message)
 
         """
-        # TODO: allow to start from request message
-        # TODO: limit the number of formats in the final credential? pick one?
-        if cred_ex_record.state != V20CredExRecord.STATE_OFFER_RECEIVED:
-            raise V20CredManagerError(  # indy-ism: must change for DIF
-                f"Credential exchange {cred_ex_record.cred_ex_id} "
-                f"in {cred_ex_record.state} state "
-                f"(must be {V20CredExRecord.STATE_OFFER_RECEIVED})"
-            )
+        # react to credential offer
+        if cred_ex_record.state:
+            if cred_ex_record.state != V20CredExRecord.STATE_OFFER_RECEIVED:
+                raise V20CredManagerError(
+                    f"Credential exchange {cred_ex_record.cred_ex_id} "
+                    f"in {cred_ex_record.state} state "
+                    f"(must be {V20CredExRecord.STATE_OFFER_RECEIVED})"
+                )
 
-        if cred_ex_record.cred_request:
-            raise V20CredManagerError(
-                "create_request() called multiple times for "
-                f"v2.0 credential exchange {cred_ex_record.cred_ex_id}"
-            )
+            cred_offer = V20CredOffer.deserialize(cred_ex_record.cred_offer)
 
-        cred_offer_message = V20CredOffer.deserialize(cred_ex_record.cred_offer)
+            formats = cred_offer.formats
+        # start with request (not allowed for indy -> checked in indy format handler)
+        else:
+            # TODO: where to get data from if starting from request. proposal?
+            cred_proposal = V20CredOffer.deserialize(cred_ex_record.cred_proposal)
+            formats = cred_proposal.formats
 
         # Format specific create_request handler
-        formats = [
-            await V20CredFormat.Format.get(p.format)
-            .handler(self.profile)
+        request_formats = [
+            await V20CredFormat.Format.get(p.format).handler(self.profile)
+            # TODO: retrieve holder did from create_request handler?
             .create_request(cred_ex_record, holder_did)
-            for p in cred_offer_message.formats
+            for p in formats
         ]
 
         cred_request_message = V20CredRequest(
             comment=comment,
-            formats=[format for (format, _) in formats],
-            requests_attach=[attach for (_, attach) in formats],
+            formats=[format for (format, _) in request_formats],
+            requests_attach=[attach for (_, attach) in request_formats],
         )
 
         cred_request_message._thread = {"thid": cred_ex_record.thread_id}
@@ -342,7 +343,10 @@ class V20CredManager:
             self._profile.settings, cred_ex_record.trace
         )
 
+        cred_ex_record.thread_id = cred_request_message._thread_id
         cred_ex_record.state = V20CredExRecord.STATE_REQUEST_SENT
+        cred_ex_record.cred_request = cred_request_message.serialize()
+
         async with self._profile.session() as session:
             await cred_ex_record.save(session, reason="create v2.0 credential request")
 
@@ -359,19 +363,36 @@ class V20CredManager:
             connection_id: connection identifier
 
         Returns:
-            credential exchange record, retrieved and updated
+            credential exchange record, updated
 
         """
-        assert len(cred_request_message.requests_attach or []) == 1
-
         async with self._profile.session() as session:
-            cred_ex_record = await (
-                V20CredExRecord.retrieve_by_conn_and_thread(
-                    session, connection_id, cred_request_message._thread_id
+            try:
+                cred_ex_record = await (
+                    V20CredExRecord.retrieve_by_conn_and_thread(
+                        session, connection_id, cred_request_message._thread_id
+                    )
                 )
-            )
+            except StorageNotFoundError:  # holder sent this request free of any offer
+                cred_ex_record = V20CredExRecord(
+                    connection_id=connection_id,
+                    thread_id=cred_request_message._thread_id,
+                    initiator=V20CredExRecord.INITIATOR_EXTERNAL,
+                    role=V20CredExRecord.ROLE_ISSUER,
+                    auto_remove=not self._profile.settings.get(
+                        "preserve_exchange_records"
+                    ),
+                    trace=(cred_request_message._trace is not None),
+                )
+
+            for cred_format in cred_request_message.formats:
+                await V20CredFormat.Format.get(cred_format.format).handler(
+                    self.profile
+                ).receive_request(cred_ex_record, cred_request_message)
+
             cred_ex_record.cred_request = cred_request_message.serialize()
             cred_ex_record.state = V20CredExRecord.STATE_REQUEST_RECEIVED
+
             await cred_ex_record.save(session, reason="receive v2.0 credential request")
 
         return cred_ex_record
@@ -407,23 +428,31 @@ class V20CredManager:
                 f"cred ex record {cred_ex_record.cred_ex_id}"
             )
 
-        cred_offer_message = V20CredOffer.deserialize(cred_ex_record.cred_offer)
-        cred_request_message = V20CredRequest.deserialize(cred_ex_record.cred_request)
-        replacement_id = cred_offer_message.replacement_id
+        # TODO: replacement id for jsonld start from request
+        replacement_id = None
+        formats = V20CredRequest.deserialize(cred_ex_record.cred_request).formats
+
+        if cred_ex_record.cred_offer:
+            cred_offer_message = V20CredOffer.deserialize(cred_ex_record.cred_offer)
+            replacement_id = cred_offer_message.replacement_id
+
+            # TODO: How do we verify if requests matches offer?
+            # Use offer formats if offer is sent
+            formats = cred_offer_message.formats
 
         # Format specific issue_credential handler
-        formats = [
+        issue_formats = [
             await V20CredFormat.Format.get(p.format)
             .handler(self.profile)
             .issue_credential(cred_ex_record)
-            for p in cred_request_message.formats
+            for p in formats
         ]
 
         cred_issue_message = V20CredIssue(
             replacement_id=replacement_id,
             comment=comment,
-            formats=[format for (format, _) in formats],
-            credentials_attach=[attach for (_, attach) in formats],
+            formats=[format for (format, _) in issue_formats],
+            credentials_attach=[attach for (_, attach) in issue_formats],
         )
 
         cred_ex_record.state = V20CredExRecord.STATE_ISSUED
@@ -491,8 +520,8 @@ class V20CredManager:
             )
 
         # Format specific store_credential handler
-        for p in V20CredIssue.deserialize(cred_ex_record.cred_issue).formats:
-            await V20CredFormat.Format.get(p.format).handler(
+        for cred_format in V20CredIssue.deserialize(cred_ex_record.cred_issue).formats:
+            await V20CredFormat.Format.get(cred_format.format).handler(
                 self.profile
             ).store_credential(cred_ex_record, cred_id)
 
