@@ -14,12 +14,24 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from marshmallow import Schema, fields, post_dump, post_load, pre_load, validate
-
-from .....resolver.did import DID_PATTERN
+from marshmallow import (
+    Schema,
+    fields,
+    post_dump,
+    post_load,
+    pre_load,
+    validate,
+    INCLUDE,
+    ValidationError,
+)
+from .utils import VERIFICATION_METHOD_KEYS, DID_PATTERN, DID_CONTENT_PATTERN
 from .serviceschema import ServiceSchema
 from .unionfield import ListOrStringField
 from .verificationmethodschema import VerificationMethodSchema, PublicKeyField
+import uuid
+import logging
+
+LOGGER = logging.getLogger(__name__)
 
 
 class DIDDocSchema(Schema):
@@ -65,6 +77,11 @@ class DIDDocSchema(Schema):
     }
     """
 
+    class Meta:
+        """Accept parameter overload."""
+
+        unknown = INCLUDE
+
     id = fields.Str(required=True, validate=validate.Regexp(DID_PATTERN))
     also_known_as = fields.List(fields.Str(), data_key="alsoKnownAs")
     controller = ListOrStringField()
@@ -87,6 +104,14 @@ class DIDDocSchema(Schema):
             in_data["verificationMethod"] = [verification]
         if in_data.get("@context"):
             in_data.pop("@context")
+
+        if not in_data.get("id"):
+            raise ValidationError("ID not found in the DIDDoc")
+
+        in_data = self._check_verification_method_controller(in_data)
+        in_data = self._complete_ids(in_data)
+        in_data = self._refactoring_references(in_data)
+
         return in_data
 
     @post_load
@@ -103,3 +128,86 @@ class DIDDocSchema(Schema):
             if not data.get(key):
                 data.pop(key)
         return data
+
+    def _complete_ids(self, in_data):
+        for key in in_data:
+            value = in_data.get(key)
+
+            if isinstance(value, list):
+                for item in value:
+                    if isinstance(item, dict):
+                        component_id = item.get("id")
+                        if component_id:
+                            item["id"] = self._build_id(
+                                in_data["id"], component_id, key
+                            )
+                        else:
+                            item["id"] = self._create_id(key, in_data["id"])
+
+        return in_data
+
+    def _create_id(self, key, did_id):
+        if key == "service":
+            component_id = "service-{}"
+        else:
+            component_id = "key-{}"
+
+        component_id = component_id.format(uuid.uuid4().hex)
+        return self._build_id(did_id, component_id)
+
+    def _check_verification_method_controller(self, in_data):
+
+        for item in VERIFICATION_METHOD_KEYS:
+
+            vm_keys = in_data.get(item, [])
+            if isinstance(vm_keys, list):
+                for index, key in enumerate(vm_keys):
+                    if isinstance(key, dict):
+                        if not in_data[item][index].get("controller"):
+                            LOGGER.warning(
+                                "{} [{}] has no controller, {} setted by default".format(
+                                    item, index, in_data["id"]
+                                )
+                            )
+                            in_data[item][index]["controller"] = in_data["id"]
+
+        return in_data
+
+    def _refactoring_references(self, in_data):
+        for item in VERIFICATION_METHOD_KEYS:
+
+            vm_keys = in_data.get(item, [])
+            if isinstance(vm_keys, list):
+                for index, key in enumerate(vm_keys):
+                    if isinstance(key, dict):
+                        for param in key.keys():
+                            if param in VERIFICATION_METHOD_KEYS:
+                                reference = key.get(param)
+
+                                reference = self._build_id(in_data["id"], reference)
+                                in_data[item][index] = reference
+        return in_data
+
+    def _build_id(self, id, reference, key=None):
+        result = reference
+        if isinstance(reference, list):
+            reference = reference[0]
+        if id != reference:
+            matches = DID_CONTENT_PATTERN.match(reference)
+            if not matches:
+
+                if reference[0] != "#":
+                    reference = "#{}".format(reference)
+                reference = "{}{}".format(id, reference)
+                matches = DID_CONTENT_PATTERN.match(reference)
+
+            if matches:
+                LOGGER.warning(
+                    '"{}" reference changed to "{}"'.format(result, reference)
+                )
+                result = reference
+
+        elif key:
+            result = self._create_id(key, reference)
+
+        return result

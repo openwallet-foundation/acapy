@@ -33,9 +33,6 @@ class ListOrStringOrDictField(fields.Field):
 
     def _serialize(self, value, attr, obj, **kwargs):
         if isinstance(value, list):
-            for idx, val in enumerate(value):
-                if not isinstance(val, str):
-                    value[idx] = val.serialize()
             return value
         else:
             return "".join(str(d) for d in value)

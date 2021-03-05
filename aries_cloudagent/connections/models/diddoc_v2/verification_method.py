@@ -19,7 +19,7 @@ from typing import Sequence, Union
 
 from .schemas.verificationmethodschema import VerificationMethodSchema
 from .publickeytype import PublicKeyType
-from ....resolver.did import DIDUrl
+from aries_cloudagent.resolver.did import DIDUrl
 
 
 class VerificationMethod:
@@ -59,15 +59,61 @@ class VerificationMethod:
         DIDUrl.parse(id)
 
         self._id = id
+        if isinstance(type, list) and len(type) == 1:
+            type = type[0]
+
         self._type = type
         self._controller = controller
         self._usage = usage
         self._authn = authn
-        if kwargs:
-            value = kwargs.get(PublicKeyType.get(type).specifier)
-        self._fill_key(value)
+        item_type = None
+        if kwargs and not value:
+            item_type = PublicKeyType.get(type)
+            if item_type:
+                item_type = item_type.specifier
+                value = kwargs.get(item_type)
+            else:
+                item_type, value = self._find_key_type_from_kwargs(kwargs)
 
-    def _fill_key(self, value: str):
+        self._fill_key(value, item_type)
+
+    def _find_key_type_from_kwargs(self, kwargs):
+        keys = [
+            "publicKeyBase58",
+            "publicKeyHex",
+            "publicKeyPem",
+            "publicKeyBase64",
+            "publicKeyJwk",
+        ]
+        for key in keys:
+            if kwargs.get(key):
+                return key, kwargs.get(key)
+        raise ValueError('"{}" does not have Public Key'.format(self._id))
+
+    def _fill_key(self, value: str, item_type: str = None):
+        if item_type:
+            if "publicKeyJwk" == item_type:
+                try:
+                    value = dict(value)
+                except Exception:
+                    value = json.loads(value)
+                self.publicKeyJwk = value
+
+            elif "publicKeyBase58" == item_type:
+                self.publicKeyBase58 = value
+
+            elif "publicKeyHex" == item_type:
+                self.publicKeyHex = value
+
+            elif "publicKeyPem" == item_type:
+                self.publicKeyPem = value
+
+            else:
+                self.publicKeyBase64 = value
+
+            self._key_value = value
+            return
+
         if isinstance(self._type, PublicKeyType):
             self._type = self._type.ver_type
 
@@ -87,18 +133,10 @@ class VerificationMethod:
                 value = json.loads(value)
             self.publicKeyJwk = value
 
+        self._key_value = value
+
     def _get_key(self):
-        if self._type == "RsaVerificationKey2018":
-            return self.publicKeyPem
-
-        elif self._type == "Ed25519VerificationKey2018":
-            return self.publicKeyBase58
-
-        elif self._type == "Secp256k1VerificationKey2018":
-            return self.publicKeyHex
-
-        elif self._type == "EcdsaSecp256k1RecoveryMethod2020":
-            return self.publicKeyJwk
+        return self._key_value
 
     @property
     def id(self) -> str:

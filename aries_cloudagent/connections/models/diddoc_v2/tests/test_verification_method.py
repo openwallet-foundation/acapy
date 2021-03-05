@@ -28,13 +28,20 @@ from marshmallow.exceptions import ValidationError
 TEST_ID = "did:sov:LjgpST2rjsoxYegQDRm7EL#555"
 
 
-class TestPublicKey(AsyncTestCase):
+class TestVerificationMethod(AsyncTestCase):
     async def test_public_key_type(self):
         key_type = PublicKeyType.get("RsaVerificationKey2018")
         assert key_type == PublicKeyType.RSA_SIG_2018
         assert key_type.specification("test") == {"publicKeyPem": "test"}
         key_type = PublicKeyType.get("Noexistingtype")
         assert not key_type
+
+    async def test_no_existing_key_type(self):
+        key = "ZXd1ZXduZXduaXV3ZWg3d2V3ZW5q"
+        with self.assertRaises(ValueError):
+            VerificationMethod(
+                id=TEST_ID, type="invent_key", controller=TEST_ID, base99_key=key
+            )
 
     async def test_create_verification(self):
         key = "ZXd1ZXduZXduaXV3ZWg3d2V3ZW5q"

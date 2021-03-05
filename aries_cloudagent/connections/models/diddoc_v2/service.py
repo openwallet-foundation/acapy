@@ -17,7 +17,7 @@ limitations under the License.
 from typing import List, Sequence, Union
 from .verification_method import VerificationMethod
 from .schemas.serviceschema import ServiceSchema
-from ....resolver.did import DIDUrl
+from aries_cloudagent.resolver.did import DIDUrl
 
 
 class Service:

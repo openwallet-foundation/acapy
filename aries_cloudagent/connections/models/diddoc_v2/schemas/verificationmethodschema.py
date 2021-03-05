@@ -14,14 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import re
-
 from marshmallow import Schema, fields, post_load, post_dump, validate, ValidationError
 
-from .....resolver.did import DID_PATTERN
+from .utils import DID_CONTENT_PATTERN
 from .unionfield import ListOrStringField
-
-DID_PATTERN = re.compile("{}#[a-zA-Z0-9._-]+".format(DID_PATTERN.pattern))
 
 
 class VerificationMethodSchema(Schema):
@@ -47,14 +43,15 @@ class VerificationMethodSchema(Schema):
       }
     """
 
-    id = fields.Str(required=True, validate=validate.Regexp(DID_PATTERN))
-    type = fields.Str(required=True)
+    id = fields.Str(required=True, validate=validate.Regexp(DID_CONTENT_PATTERN))
+    type = ListOrStringField(required=True)
     controller = ListOrStringField(required=True)
     usage = fields.Str()
     publicKeyHex = fields.Str()
     publicKeyPem = fields.Str()
     publicKeyJwk = fields.Dict()
     publicKeyBase58 = fields.Str()
+    publicKeyBase64 = fields.Str()
 
     @post_load
     def make_public_key(self, data, **_kwargs):
@@ -92,15 +89,11 @@ class PublicKeyField(fields.Field):
         elif isinstance(value, list):
             for idx, val in enumerate(value):
                 if isinstance(val, dict):
-                    if (
-                        (not val.get("id"))
-                        or (not val.get("type"))
-                        or (not val.get("controller"))
-                    ):
+                    if (not val.get("id")) or (not val.get("type")):
                         raise ValidationError(
-                            "VerificationMethod Map must have id, type & controler"
+                            "VerificationMethod Map must have id & type"
                         )
                     value[idx] = VerificationMethod(**val)
             return value
         else:
-            raise ValidationError("Field should be str, list or dict")
+            raise ValidationError("Field should be str or list")

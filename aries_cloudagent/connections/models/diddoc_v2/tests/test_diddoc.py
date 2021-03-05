@@ -139,6 +139,22 @@ class TestDIDDoc(AsyncTestCase):
             )
 
     async def test_create_did_doc_wrong_id(self):
+        publicKey_bad_type = copy.copy(publicKey)
+        publicKey_bad_type["type"] = ""
+        service_key_bad_type = {
+            "id": "did:sov:LjgpST2rjsoxYegQDRm7EL#8",
+            "type": "one",
+            "priority": 1,
+            "routingKeys": [publicKey_bad_type],
+            "serviceEndpoint": "LjgpST2rjsoxYegQDRm7EL;2",
+        }
+        with self.assertRaises(ValidationError):
+            DIDDoc(
+                id="did:sov:LjgpST2rjsoxYegQDRm7EL",
+                service=[Service.deserialize(service_key_bad_type)],
+                public_key=[VerificationMethod.deserialize(publicKey_bad_type)],
+            )
+
         with self.assertRaises(ValueError):
             DIDDoc(id="did:sovLjgpST2rjsoxYegQDRm7EL")
 
@@ -257,8 +273,9 @@ class TestDIDDoc(AsyncTestCase):
             "authentication": [publicKey],
         }
 
-        with self.assertRaises(ValidationError):
-            DIDDoc.deserialize(did)
+        did_doc = DIDDoc.deserialize(did)
+        assert did_doc.service[0].id
+        assert did_doc.service[0].id.find("did:sov:LjgpST2rjsoxYegQDRm7EL") >= 0
 
     async def test_deserialize_wrong_publicKey(self):
         publicKey2 = copy.copy(publicKey)
@@ -271,8 +288,9 @@ class TestDIDDoc(AsyncTestCase):
             "authentication": [publicKey],
         }
 
-        with self.assertRaises(ValidationError):
-            DIDDoc.deserialize(did)
+        did_doc = DIDDoc.deserialize(did)
+        assert did_doc.public_key[0].id
+        assert did_doc.public_key[0].id.find("did:sov:LjgpST2rjsoxYegQDRm7EL") >= 0
 
     async def test_deserialize_missing_id(self):
         did = {
@@ -312,6 +330,29 @@ class TestDIDDoc(AsyncTestCase):
             recipient_keys=[key], routing_keys=key, endpoint="local"
         )
         assert len(did_instance.service) == 4
+
+    async def test_add_new_service_with_no_existing_keys(self):
+        did = {"id": "did:sov:LjgpST2rjsoxYegQDRm7EL", "service": [service]}
+        service_instance = Service.deserialize(service)
+        key_instance = VerificationMethod.deserialize(publicKey)
+        did_instance = DIDDoc(
+            id=did["id"], public_key=[key_instance], service=[service_instance]
+        )
+
+        service2 = copy.copy(service)
+        service2["id"] = "did:sov:LjgpST2rjsoxYegQDRm7EL#5"
+        key = VerificationMethod.deserialize(publicKey)
+
+        key.id = "did:sov:LjgpST2rjsoxYegQDRm7EL#999"
+
+        with self.assertRaises(ValueError):
+            did_instance.add_didcomm_service(
+                type="type",
+                recipient_keys=key,
+                routing_keys=key,
+                endpoint="local",
+                backward_compatibility=False,
+            )
 
     async def test_update_service(self):
         did = {"id": "did:sov:LjgpST2rjsoxYegQDRm7EL", "service": [service]}
@@ -354,6 +395,25 @@ class TestDIDDoc(AsyncTestCase):
             type=publicKey["type"], value=publicKey["publicKeyPem"]
         )
         assert len(did_instance.public_key) == 2
+
+    async def test_add_to_many_verification_method(self):
+        did = {"id": "did:sov:LjgpST2rjsoxYegQDRm7EL", "publicKey": [publicKey]}
+        publicKey_instance = VerificationMethod.deserialize(publicKey)
+        did_instance = DIDDoc(id=did["id"], public_key=[publicKey_instance])
+        assert did_instance.id == did["id"]
+        assert len(did_instance.public_key) == 1
+        assert did_instance.public_key[0].serialize() == publicKey
+        assert did_instance.public_key[0] == publicKey_instance
+
+        for item in range(0, 99):
+            did_instance.add_verification_method(
+                type=publicKey["type"], value=publicKey["publicKeyPem"]
+            )
+
+        with self.assertRaises(ValueError):
+            did_instance.add_verification_method(
+                type=publicKey["type"], value=publicKey["publicKeyPem"]
+            )
 
     async def test_serialize_ok(self):
         did = {
@@ -435,3 +495,119 @@ class TestDIDDoc(AsyncTestCase):
         result = DIDDoc.deserialize(did)
 
         assert not result.dereference("did:sov:LjgpST2rjsoxYegQDRm7EL#10")
+
+    async def test_universal_resolver(self):
+        universal_resolver_DID = {
+            "created": "2020-07-14T08:25:15Z",
+            "id": "did:ace:0xf81c16a78b257c10fddf87ed4324d433317169a005ddf36a3a1ba937ba9788e3",
+            "publicKey": [
+                {
+                    "controller": "did:ace:0xf81c16a78b257c10fddf87ed4324d433317169a005ddf36a3a1ba937ba9788e3",
+                    "publicKeyJwk": '{"kty":"EC","crv":"secp256k1","x":"qdVu4dIjLSS2A_dEp7DYovzoTgFSw309yLTrZanR0Mo","y":"jAhMNEKzvITyyXIr12emFCz5SiCvSwT9qxTRKViKYFk"}',
+                    "id": "did:ace:0xf81c16a78b257c10fddf87ed4324d433317169a005ddf36a3a1ba937ba9788e3#selfIssued-1",
+                    "type": "EcdsaSecp256k1VerificationKey2019",
+                },
+                {
+                    "controller": "did:ace:0xf81c16a78b257c10fddf87ed4324d433317169a005ddf36a3a1ba937ba9788e3",
+                    "publicKeyPem": "-----BEGIN PUBLIC KEY-----\nMIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAmefTYRNzfzrmy7rnyf8WrGg0AnS9McZc\n79xN9W901R4G9U7Ci36N216dhkQS2FiTzYjlcHwDnv8X7lkN1LokfFRR0Q96m11nrvbkmd4lrTsa\nngGHZm+9lLSrjlAbXO+h6lA7aPK0/Vu0HZtdEmXF8RzsxjHhwY6U8hgGGotTjEPL96Zntc5fCB52\nCJMGof+sg5xnu8PxW2/z4Pqkw0n6JWhqg8xVy+vq0FYqtbLOKPHpfSKECG7PnNYqImlnHRQd5r+j\nEtMPFkrT78Unm9lPWIhuVyt1S17hmkJColBNsO+f0G1NE1FE+RALcrZ99Mjc9sb9BYK7L1qk9RW7\n2nLmIBrpu327ZPYQA765bYKLIUq3ItmqR14KlKGHPmlIe6tEE8XrRxT2HYShB19xgLL9tgSkr+wd\nNXmzCSM1GFTMkRh3mOa3BZvqnVgSaJjjeMilPzTDNcbHRqEsj9qbx35Svi02qINBLuXGLQTCitto\nCqfOcxvn37e6QMcLXXkfraOGLhk4RGrjUvvlLN1YmOJdbqeczuIhIdn2ylER4y2ZKYZidjcnUvug\ndF3reduTQscwUV9ZObs13awtjVaAZxnb1DOXu5iKDutqoH+T44JVYAZTYubyyHk2zekO+aTRYMSw\nYKpbqMPbfI9TJ4Nt0RB4QLW/ibBMdH/+FIA10y3TBsUCAwEAAQ==\n-----END PUBLIC KEY-----",
+                    "id": "did:ace:0xf81c16a78b257c10fddf87ed4324d433317169a005ddf36a3a1ba937ba9788e3#selfIssued-2",
+                    "type": "RsaVerificationKey2018",
+                },
+                {
+                    "controller": "did:ace:0xf81c16a78b257c10fddf87ed4324d433317169a005ddf36a3a1ba937ba9788e3",
+                    "publicKeyBase58": "testestetesttest",
+                    "id": "did:ace:0xf81c16a78b257c10fddf87ed4324d433317169a005ddf36a3a1ba937ba9788e3#iot-1",
+                    "type": "EcdsaSecp256k1VerificationKey2019",
+                },
+                {
+                    "controller": "did:ace:0xf81c16a78b257c10fddf87ed4324d433317169a005ddf36a3a1ba937ba9788e3",
+                    "publicKeyHex": "1920ABC829283",
+                    "id": "did:ace:0xf81c16a78b257c10fddf87ed4324d433317169a005ddf36a3a1ba937ba9788e3#selfIssued-3",
+                    "type": "EcdsaSecp256r1VerificationKey2019",
+                },
+                {
+                    "publicKeyBase64": "1AJEOSLE920ABC829283",
+                    "type": "EcdsaSecp256r1VerificationKey2019",
+                },
+            ],
+            "proof": {
+                "creator": "did:ace:0xf81c16a78b257c10fddf87ed4324d433317169a005ddf36a3a1ba937ba9788e3#selfIssued-1",
+                "created": "2020-07-14T08:25:16Z",
+                "type": "LinkedDataSignature2015",
+                "signatureValue": "MEQCIDiWhWaHte+/G/9emToSx6JwYG7OWEGCm5u1P1QXUfs2AiAQzp+gO1nLaEMKHQ22bxxT9T9pnm0bIfYHbqeAHsKXxA==",
+            },
+            "@context": "https://www.w3.org/ns/did/v1",
+            "updated": "2020-07-14T08:25:15Z",
+        }
+
+        result = DIDDoc.deserialize(universal_resolver_DID)
+        assert len(result.public_key) == 5
+        assert result.public_key[4].id
+        assert result.public_key[4].controller
+
+        # Dependencies of other Verification Methods
+        universal_resolver_DID_2 = {
+            "@context": ["https://www.w3.org/ns/did/v1"],
+            "id": "did:btcr:xz35-jznz-q9yu-ply",
+            "verificationMethod": [
+                {
+                    "type": ["EcdsaSecp256k1VerificationKey2019"],
+                    "id": ["did:btcr:xz35-jznz-q9yu-ply#key-0"],
+                    "publicKeyBase58": "020a5a5c8c3575489cd2c17d43f642fc2b34792d47c9b026fafe33b3469e31b841",
+                },
+                {
+                    "type": ["EcdsaSecp256k1VerificationKey2019"],
+                    "id": "did:btcr:xz35-jznz-q9yu-ply#key-1",
+                    "publicKeyBase58": "020a5a5c8c3575489cd2c17d43f642fc2b34792d47c9b026fafe33b3469e31b841",
+                },
+                {
+                    "type": ["EcdsaSecp256k1VerificationKey2019"],
+                    "id": "did:btcr:xz35-jznz-q9yu-ply#satoshi",
+                    "publicKeyBase58": "020a5a5c8c3575489cd2c17d43f642fc2b34792d47c9b026fafe33b3469e31b841",
+                },
+            ],
+            "authentication": [
+                {
+                    "type": ["EcdsaSecp256k1SignatureAuthentication2019"],
+                    "verificationMethod": "#satoshi",
+                }
+            ],
+        }
+        result2 = DIDDoc.deserialize(universal_resolver_DID_2)
+        assert (
+            result2.authentication[0].serialize()
+            == result2.verification_method[2].serialize()
+        )
+
+        # No existing service ID
+        universal_resolver_DID_3 = {
+            "@context": "https://www.w3.org/2019/did/v1",
+            "id": "did:stack:v0:16EMaNw3pkn3v6f2BgnSSs53zAKH4Q8YJg-0",
+            "service": [
+                {"type": "blockstack", "serviceEndpoint": "https://core.blockstack.org"}
+            ],
+            "publicKey": [
+                {
+                    "id": "did:stack:v0:16EMaNw3pkn3v6f2BgnSSs53zAKH4Q8YJg-0",
+                    "type": "Secp256k1VerificationKey2018",
+                    "publicKeyHex": "040fadbbcea0ff3b05f03195b41cd991d7a0af8bd38559943aec99cbdaf0b22cc806b9a4f07579934774cc0c155e781d45c989f94336765e88a66d91cfb9f060b0",
+                }
+            ],
+        }
+
+        result3 = DIDDoc.deserialize(universal_resolver_DID_3)
+        assert result3.service[0].id
+
+    async def test_universal_resolver_wrong(self):
+
+        universal_resolver_DID_error = {
+            "@context": ["https://www.w3.org/ns/did/v1"],
+            "id": "did:btcr:xz35-jznz-q9yu-ply",
+            "verificationMethod": {
+                "type": ["EcdsaSecp256k1VerificationKey2019"],
+                "id": ["did:btcr:xz35-jznz-q9yu-ply#key-0"],
+                "publicKeyBase99": "020a5a5c8c3575489cd2c17d43f642fc2b34792d47c9b026fafe33b3469e31b841",
+            },
+        }
+        with self.assertRaises(ValidationError):
+            DIDDoc.deserialize(universal_resolver_DID_error)

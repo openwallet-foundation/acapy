@@ -63,7 +63,7 @@ class TestService(AsyncTestCase):
             "priority": 1,
             "recipientKeys": ["did:sov:LjgpST2rjsoxYegQDRm7EL#keys-1"],
             "routingKeys": ["did:sov:LjgpST2rjsoxYegQDRm7EL#keys-4"],
-            "serviceEndpoint": "LjgpST2rjsoxYegQDRm7EL;2",
+            "serviceEndpoint": ["LjgpST2rjsoxYegQDRm7EL;2"],
             "kwarg_value1": "value1",
             "kwarg_value1": "value2",
         }
@@ -91,6 +91,10 @@ class TestService(AsyncTestCase):
             Service.deserialize(test_service)
         test_service["type"] = "one"
         test_service["serviceEndpoint"] = False
+        with self.assertRaises(ValidationError):
+            Service.deserialize(test_service)
+        test_service["type"] = ""
+        test_service["serviceEndpoint"] = "LjgpST2rjsoxYegQDRm7EL;2"
         with self.assertRaises(ValidationError):
             Service.deserialize(test_service)
 
@@ -133,7 +137,7 @@ class TestService(AsyncTestCase):
             "priority": 1,
             "recipientKeys": "did:sov:LjgpST2rjsoxYegQDRm7EL#keys-4",
             "routingKeys": [verification],
-            "serviceEndpoint": "LjgpST2rjsoxYegQDRm7EL;2",
+            "serviceEndpoint": ["LjgpST2rjsoxYegQDRm7EL;2"],
             "kwarg_value1": 1,
         }
 

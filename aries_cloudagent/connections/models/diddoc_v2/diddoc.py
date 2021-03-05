@@ -23,7 +23,7 @@ from .publickeytype import PublicKeyType
 from .verification_method import VerificationMethod
 from .service import Service
 from .schemas.diddocschema import DIDDocSchema
-from ....resolver.did import DID_PATTERN, DIDUrl
+from aries_cloudagent.resolver.did import DID_PATTERN, DIDUrl
 
 LOGGER = logging.getLogger(__name__)
 
@@ -51,6 +51,7 @@ class DIDDoc:
         capability_delegation: list = None,
         public_key: list = None,
         service: list = None,
+        **kwargs
     ) -> None:
         """
         Initialize the DIDDoc instance.
@@ -147,8 +148,8 @@ class DIDDoc:
                         else:
                             aux_content.append(item.id)
                 else:
-                    if not self._index.get(item):
-                        aux_content.append(item)
+                    aux_content.append(item)
+
             self._ref_content[param[0]] = aux_content  # {param: [<List of Ids>]}
 
     @classmethod
@@ -318,7 +319,6 @@ class DIDDoc:
 
         exists = self._index.get(id)
         if (exists) and (not upsert) and (exists.serialize() != key.serialize()):
-            print("hola")
             raise ValueError("ID already exists, use arg upsert to update it")
 
         self._set(key, upsert=upsert, verification_type=verification_type)

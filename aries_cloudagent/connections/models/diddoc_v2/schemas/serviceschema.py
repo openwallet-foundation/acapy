@@ -17,11 +17,7 @@ limitations under the License.
 from marshmallow import Schema, fields, pre_load, post_load, post_dump, validate
 from .unionfield import ListOrStringField, ListOrStringOrDictField
 from .verificationmethodschema import PublicKeyField
-from .....resolver.did import DID_PATTERN
-import re
-
-
-DID_PATTERN = re.compile("{}#[a-zA-Z0-9._-]+".format(DID_PATTERN.pattern))
+from .utils import DID_CONTENT_PATTERN
 
 
 class ServiceSchema(Schema):
@@ -40,7 +36,7 @@ class ServiceSchema(Schema):
      "serviceEndpoint": "LjgpST2rjsoxYegQDRm7EL;2"}
     """
 
-    id = fields.Str(required=True, validate=validate.Regexp(DID_PATTERN))
+    id = fields.Str(required=True, validate=validate.Regexp(DID_CONTENT_PATTERN))
     type = ListOrStringField(required=True)
     service_endpoint = ListOrStringOrDictField(
         required=True, data_key="serviceEndpoint"
