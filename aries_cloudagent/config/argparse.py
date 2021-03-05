@@ -562,7 +562,7 @@ class LedgerGroup(ArgumentGroup):
         parser.add_argument(
             "--ledger-keepalive",
             default=5,
-            type=ByteSize(min_size=5),
+            type=int,
             env_var="ACAPY_LEDGER_KEEP_ALIVE",
             help="Specifies how many seconds to keep the ledger open. Default: 5",
         )
@@ -588,7 +588,7 @@ class LedgerGroup(ArgumentGroup):
             if args.ledger_pool_name:
                 settings["ledger.pool_name"] = args.ledger_pool_name
 
-            if args.ledger_keepalive:
+            if args.ledger_keepalive and args.ledger_keepalive > 5:
                 settings["ledger.keepalive"] = args.ledger_keepalive
 
         return settings
