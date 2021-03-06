@@ -1,0 +1,11 @@
+{
+   "presentation_proposal": {
+      "requested_attributes": [
+         {
+             "name": "address",
+             "cred_def_id": "replace_me",
+             "cred_type_name": "Schema_DriversLicense"
+         }
+     ]
+   }
+}

@@ -1,0 +1,14 @@
+{
+   "schema":{
+      "schema_name":"Schema_Health_Consent",
+      "schema_version":"0.2.0",
+      "attributes":[
+         "name",
+         "jti_id",
+         "expiry",
+         "phone",
+         "consented_on"
+      ]
+   },
+   "cred_def_support_revocation":false
+}
