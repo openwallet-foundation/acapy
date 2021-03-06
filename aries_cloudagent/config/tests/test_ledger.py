@@ -7,6 +7,7 @@ from ...core.in_memory import InMemoryProfile
 from ...ledger.base import BaseLedger
 from ...ledger.error import LedgerError
 from ...wallet.base import BaseWallet
+from .. import argparse
 
 from .. import ledger as test_module
 from ..injection_context import InjectionContext
@@ -297,3 +298,31 @@ class TestLedgerConfig(AsyncTestCase):
             )
             mock_prompt.return_value = ""
             assert await test_module.accept_taa(mock_ledger, taa_info, provision=False)
+
+    async def test_ledger_config(self):
+        """Test required argument parsing."""
+
+        parser = argparse.create_argument_parser()
+        group = argparse.LedgerGroup()
+        group.add_arguments(parser)
+
+        with async_mock.patch.object(parser, "exit") as exit_parser:
+            parser.parse_args(["-h"])
+            exit_parser.assert_called_once()
+
+        result = parser.parse_args(
+            [
+                "--genesis-url",
+                "http://1.2.3.4:9000/genesis",
+                "--ledger-keepalive",
+                "10",
+            ]
+        )
+
+        assert result.ledger_keepalive == 10
+        assert result.genesis_url == "http://1.2.3.4:9000/genesis"
+
+        settings = group.get_settings(result)
+
+        assert settings["ledger.keepalive"] == result.ledger_keepalive
+        assert settings["ledger.genesis_url"] == result.genesis_url
