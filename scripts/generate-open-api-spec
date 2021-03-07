@@ -114,7 +114,7 @@ function runACAPy() {
   # Mount the agent logs onto the hosting machine 
   args="${args} -v /$(pwd)/../logs:/home/indy/logs"
 
-  randName=$(cat /dev/urandom | env LC_CTYPE=C tr -dc 'a-zA-Z0-9' | fold -w 16 | head -n 1)
+  randName=$(cat /dev/urandom | env LC_ALL=C tr -dc 'a-zA-Z0-9' | fold -w 16 | head -n 1)
   acaPyCmd="docker run -d --rm  --name ${acaPyImage}_${randName} ${args} \
               ${acaPyImage} start ${acaPyArgs}" 
   printMilestone "Starting ACA-py docker image with command: \n \
