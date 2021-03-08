@@ -1,0 +1,33 @@
+{
+    "presentation_proposal": {
+        "name": "Health Consent Proof",
+        "requested_attributes": {
+            "bioindicators_attrs": {
+                "names": [
+                    "name",
+                    "range",
+                    "concentration",
+                    "unit",
+                    "collected_on"
+                ],
+                "restrictions": [
+                    {
+                        "schema_name": "Schema_Biological_Indicators",
+                        "schema_version": "0.2.0"
+                    }
+                ]
+            },
+            "consent_attrs": {
+                "name": "jti_id",
+                "restrictions": [
+                    {
+                        "schema_name": "Schema_Health_Consent",
+                        "schema_version": "0.2.0"
+                    }
+                ]
+            }
+        },
+        "requested_predicates": {},
+        "version": "0.1.0"
+    }
+}

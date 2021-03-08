@@ -194,30 +194,6 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
                 ]
             )
 
-    async def test_setup_x(self):
-        builder: ContextBuilder = StubContextBuilder(self.test_settings)
-        builder.update_settings(
-            {"admin.enabled": "1", "admin.webhook_urls": ["http://sample.webhook.ca"]}
-        )
-        conductor = test_module.Conductor(builder)
-
-        mock_om = async_mock.MagicMock(
-            setup=async_mock.CoroutineMock(),
-            register=async_mock.MagicMock(side_effect=KeyError("sample error")),
-            registered_schemes={},
-        )
-        with async_mock.patch.object(
-            test_module, "InboundTransportManager", autospec=True
-        ) as mock_inbound_mgr, async_mock.patch.object(
-            test_module, "OutboundTransportManager", autospec=True
-        ) as mock_outbound_mgr, async_mock.patch.object(
-            test_module, "LoggingConfigurator", async_mock.MagicMock()
-        ) as mock_logger:
-            mock_outbound_mgr.return_value = mock_om
-
-            with self.assertRaises(KeyError):
-                await conductor.setup()
-
     async def test_inbound_message_handler(self):
         builder: ContextBuilder = StubContextBuilder(self.test_settings)
         conductor = test_module.Conductor(builder)
