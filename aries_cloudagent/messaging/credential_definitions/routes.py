@@ -10,6 +10,7 @@ from aiohttp_apispec import (
     request_schema,
     response_schema,
 )
+import json
 
 from marshmallow import fields
 
@@ -28,6 +29,8 @@ from ...revocation.indy import IndyRevocation
 from ...ledger.error import LedgerError
 
 from .util import CredDefQueryStringSchema, CRED_DEF_TAGS, CRED_DEF_SENT_RECORD_TYPE
+
+from ...protocols.endorse_transaction.v1_0.manager import TransactionManager
 
 
 class CredentialDefinitionSendRequestSchema(OpenAPISchema):
@@ -111,11 +114,31 @@ class CredDefIdMatchInfoSchema(OpenAPISchema):
     )
 
 
+class AutoEndorseOptionSchema(OpenAPISchema):
+    """Class for user to input whether to auto-endorse the transaction or not."""
+
+    auto_endorse = fields.Boolean(
+        description="Auto-endorse Transaction",
+        required=False,
+    )
+
+
+class EndorserDIDOptionSchema(OpenAPISchema):
+    """Class for user to input the DID associated with the requested endorser."""
+
+    endorser_did = fields.Str(
+        description="Endorser DID",
+        required=False,
+    )
+
+
 @docs(
     tags=["credential-definition"],
     summary="Sends a credential definition to the ledger",
 )
 @request_schema(CredentialDefinitionSendRequestSchema())
+@querystring_schema(AutoEndorseOptionSchema())
+@querystring_schema(EndorserDIDOptionSchema())
 @response_schema(CredentialDefinitionSendResultsSchema(), 200, description="")
 async def credential_definitions_send_credential_definition(request: web.BaseRequest):
     """
@@ -129,6 +152,8 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
 
     """
     context: AdminRequestContext = request["context"]
+    auto_endorse = json.loads(request.query.get("auto_endorse", "true"))
+    endorser_did = request.query.get("endorser_did", None)
 
     body = await request.json()
 
@@ -154,8 +179,11 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
                     signature_type=None,
                     tag=tag,
                     support_revocation=support_revocation,
+                    write_ledger=auto_endorse,
+                    endorser_did=endorser_did,
                 )
             )
+
     except LedgerError as e:
         raise web.HTTPBadRequest(reason=e.message) from e
 
@@ -212,7 +240,20 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
         except RevocationError as e:
             raise web.HTTPBadRequest(reason=e.message) from e
 
-    return web.json_response({"credential_definition_id": cred_def_id})
+    if auto_endorse:
+        return web.json_response({"credential_definition_id": cred_def_id})
+
+    else:
+        session = await context.session()
+
+        transaction_mgr = TransactionManager(session)
+
+        transaction = await transaction_mgr.create_record(
+            messages_attach=cred_def["signed_txn"],
+            expires_time="1597708800",
+        )
+
+        return web.json_response(transaction.serialize())
 
 
 @docs(
