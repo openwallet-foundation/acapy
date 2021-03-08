@@ -598,6 +598,138 @@ class TestDIDDoc(AsyncTestCase):
         result3 = DIDDoc.deserialize(universal_resolver_DID_3)
         assert result3.service[0].id
 
+        # Same key reference in multiple fields
+        universal_resolver_DID_4 = {
+            "@context": "https://w3id.org/did/v0.11",
+            "id": "did:web:did.actor:alice",
+            "publicKey": [
+                {
+                    "id": "did:web:did.actor:alice#z6MkrmNwty5ajKtFqc1U48oL2MMLjWjartwc5sf2AihZwXDN",
+                    "controller": "did:web:did.actor:alice",
+                    "type": "Ed25519VerificationKey2018",
+                    "publicKeyBase58": "DK7uJiq9PnPnj7AmNZqVBFoLuwTjT1hFPrk6LSjZ2JRz",
+                }
+            ],
+            "authentication": [
+                "did:web:did.actor:alice#z6MkrmNwty5ajKtFqc1U48oL2MMLjWjartwc5sf2AihZwXDN"
+            ],
+            "assertionMethod": [
+                "did:web:did.actor:alice#z6MkrmNwty5ajKtFqc1U48oL2MMLjWjartwc5sf2AihZwXDN"
+            ],
+            "capabilityDelegation": [
+                "did:web:did.actor:alice#z6MkrmNwty5ajKtFqc1U48oL2MMLjWjartwc5sf2AihZwXDN"
+            ],
+            "capabilityInvocation": [
+                "did:web:did.actor:alice#z6MkrmNwty5ajKtFqc1U48oL2MMLjWjartwc5sf2AihZwXDN"
+            ],
+            "keyAgreement": [
+                {
+                    "id": "did:web:did.actor:alice#zC8GybikEfyNaausDA4mkT4egP7SNLx2T1d1kujLQbcP6h",
+                    "type": "X25519KeyAgreementKey2019",
+                    "controller": "did:web:did.actor:alice",
+                    "publicKeyBase58": "CaSHXEvLKS6SfN9aBfkVGBpp15jSnaHazqHgLHp8KZ3Y",
+                }
+            ],
+        }
+        result4 = DIDDoc.deserialize(universal_resolver_DID_4)
+        assert result4.authentication == result4.capability_delegation
+        assert result4.authentication == result4.capability_invocation
+        assert result4.authentication == result4.public_key
+        assert result4.authentication[0].id != result4.key_agreement[0].id
+
+        # Services without IDs & key used 3 times
+        universal_resolver_DID_5 = {
+            "@context": ["https://www.w3.org/ns/did/v1"],
+            "id": "did:sov:WRfXPg8dantKVubE3HX8pw",
+            "verificationMethod": [
+                {
+                    "type": "Ed25519VerificationKey2018",
+                    "id": "did:sov:WRfXPg8dantKVubE3HX8pw#key-1",
+                    "publicKeyBase58": "H3C2AVvLMv6gmMNam3uVAjZpfkcJCwDwnZn6z3wXmqPV",
+                }
+            ],
+            "service": [
+                {
+                    "type": "agent",
+                    "serviceEndpoint": "https://agents.danubeclouds.com/agent/WRfXPg8dantKVubE3HX8pw",
+                },
+                {
+                    "type": "xdi",
+                    "serviceEndpoint": "https://xdi03-at.danubeclouds.com/cl/+!:did:sov:WRfXPg8dantKVubE3HX8pw",
+                },
+            ],
+            "authentication": [
+                {
+                    "type": "Ed25519VerificationKey2018",
+                    "id": "did:sov:WRfXPg8dantKVubE3HX8pw#key-1",
+                    "publicKeyBase58": "H3C2AVvLMv6gmMNam3uVAjZpfkcJCwDwnZn6z3wXmqPV",
+                }
+            ],
+            "assertionMethod": [
+                {
+                    "type": "Ed25519VerificationKey2018",
+                    "id": "did:sov:WRfXPg8dantKVubE3HX8pw#key-1",
+                    "publicKeyBase58": "H3C2AVvLMv6gmMNam3uVAjZpfkcJCwDwnZn6z3wXmqPV",
+                }
+            ],
+        }
+        result5 = DIDDoc.deserialize(universal_resolver_DID_5)
+        assert result5.service[0].id
+        assert result5.service[1].id
+        assert result5.verification_method == result5.authentication
+        assert result5.verification_method == result5.assertion_method
+
+        # parameters overload
+        universal_resolver_DID_6 = {
+            "@context": "https://w3id.org/did/v1",
+            "id": "did:github:gjgd",
+            "publicKey": [
+                {
+                    "type": "OpenPgpVerificationKey2019",
+                    "id": "did:github:gjgd#nj-UQm3dz5BpX5UX4f2aMB2F39PQSO10ROVWnYpWSj4",
+                    "controller": "did:github:gjgd",
+                    "publicKeyPem": "-----BEGIN PGP PUBLIC KEY BLOCK-----\r\nVersion: OpenPGP.js v4.10.4\r\nComment: https://openpgpjs.org\r\n\r\nxk8EXqh2+xMFK4EEAAoCAwR2PP0CM6D9mHe7/U8uTM3jYbFz5AplyZE43Jm1\r\nVdpxP9gewWZYu3mgWkM84Xz02XtrXIz6JlUKqQoR+0c7d1iYzRdhbm9uIDxh\r\nbm9uQGV4YW1wbGUuY29tPsJ4BBATCAAgBQJeqHb7BgsJBwgDAgQVCAoCBBYC\r\nAQACGQECGwMCHgEACgkQ8mYJ+2/BPYwZqAD/ctdWEx0vLwdYOHrFBW7QgTXI\r\nVsRm2H9peVrb+iDc27oA/1hFGrK+jgL3lgQPoWo0AdAnOiQnhVCQ+B9JQ9Nt\r\n2ZCYzlMEXqh2+xIFK4EEAAoCAwSG/xVTu5u65hTvct5cPJd5EGE4neuZZMfk\r\nTJVp++Ep/4hZ0bZaCyHvZUS3BBGjZW7oyvUTrFAZtWnNNtdtir3jAwEIB8Jh\r\nBBgTCAAJBQJeqHb7AhsMAAoJEPJmCftvwT2MppMBALP+AZaFPtGiEKJ42Wdy\r\nn0kWrnfgk6IA9uuaT/CHiYPxAQC1GVFg/HsSCikeSmOV/Te0kb60G13+ffln\r\n9EQnBMQJbw==\r\n=2eMS\r\n-----END PGP PUBLIC KEY BLOCK-----\r\n",
+                },
+                {
+                    "type": "Ed25519VerificationKey2018",
+                    "id": "did:github:gjgd#edQPY-F4N3AOBWb7T3VPiY9zJ7VxdKmPG6cB8KV0a94",
+                    "controller": "did:github:gjgd",
+                    "publicKeyBase58": "CLEipQaDBbt91GAxHHujpQ7mes485QqRcGT3cannTQLM",
+                },
+            ],
+            "authentication": [],
+            "service": [],
+            "capabilityDelegation": [
+                "did:github:gjgd#edQPY-F4N3AOBWb7T3VPiY9zJ7VxdKmPG6cB8KV0a94"
+            ],
+            "capabilityInvocation": [
+                "did:github:gjgd#edQPY-F4N3AOBWb7T3VPiY9zJ7VxdKmPG6cB8KV0a94"
+            ],
+            "assertionMethod": [
+                "did:github:gjgd#edQPY-F4N3AOBWb7T3VPiY9zJ7VxdKmPG6cB8KV0a94"
+            ],
+            "keyAgreement": [
+                {
+                    "id": "did:github:gjgd#zC1sYUy6Xo4WgLErBG1koqeGzMV8R3JsbcrLxAcGVkyQ9x",
+                    "type": "X25519KeyAgreementKey2019",
+                    "controller": "did:github:gjgd",
+                    "publicKeyBase58": "2NpmbuibgmPu8oCocGEsV7K4Erc5kAz7xTf8mBhMsA3k",
+                }
+            ],
+            "proof": {
+                "type": "Ed25519Signature2018",
+                "created": "2020-05-04T17:00:14Z",
+                "verificationMethod": "did:github:gjgd#edQPY-F4N3AOBWb7T3VPiY9zJ7VxdKmPG6cB8KV0a94",
+                "proofPurpose": "assertionMethod",
+                "jws": "eyJhbGciOiJFZERTQSIsImI2NCI6ZmFsc2UsImNyaXQiOlsiYjY0Il19..t57scngjBf7TBPC7HGIlsaXbOzKcAHhAS5elPsopia2dqiX_6D1drePTmdIz4aeyTWotFyInYYWdMinToIGtCA",
+            },
+        }
+        result6 = DIDDoc.deserialize(universal_resolver_DID_6)
+        assert result6.assertion_method == result6.capability_delegation
+        assert result6.assertion_method == result6.capability_invocation
+        assert result6.assertion_method != result6.key_agreement
+        assert len(result6.public_key) == 2
+
     async def test_universal_resolver_wrong(self):
 
         universal_resolver_DID_error = {

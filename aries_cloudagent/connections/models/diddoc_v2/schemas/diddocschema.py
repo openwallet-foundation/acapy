@@ -202,10 +202,11 @@ class DIDDocSchema(Schema):
                 matches = DID_CONTENT_PATTERN.match(reference)
 
             if matches:
-                LOGGER.warning(
-                    '"{}" reference changed to "{}"'.format(result, reference)
-                )
-                result = reference
+                if result != reference:
+                    LOGGER.warning(
+                        '"{}" reference changed to "{}"'.format(result, reference)
+                    )
+                    result = reference
 
         elif key:
             result = self._create_id(key, reference)
