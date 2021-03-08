@@ -559,6 +559,13 @@ class LedgerGroup(ArgumentGroup):
             This must be set if running in no-ledger mode.  Overrides any\
             specified ledger or genesis configurations.  Default: false.",
         )
+        parser.add_argument(
+            "--ledger-keepalive",
+            default=5,
+            type=int,
+            env_var="ACAPY_LEDGER_KEEP_ALIVE",
+            help="Specifies how many seconds to keep the ledger open. Default: 5",
+        )
 
     def get_settings(self, args: Namespace) -> dict:
         """Extract ledger settings."""
@@ -580,6 +587,10 @@ class LedgerGroup(ArgumentGroup):
                 )
             if args.ledger_pool_name:
                 settings["ledger.pool_name"] = args.ledger_pool_name
+
+            if args.ledger_keepalive and args.ledger_keepalive > 5:
+                settings["ledger.keepalive"] = args.ledger_keepalive
+
         return settings
 
 

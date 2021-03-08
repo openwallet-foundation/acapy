@@ -1,0 +1,19 @@
+{
+    "presentation": {
+        "comment": "This is a comment for the send presentation for the Health Consent Proof.",
+        "requested_attributes": {
+            "bioindicators_attrs": {
+                "cred_type_name": "Schema_Biological_Indicators",
+                "cred_id": "replace me",
+                "revealed": true
+            },
+            "consent_attrs": {
+                "cred_type_name": "Schema_Health_Consent",
+                "cred_id": "replace me",
+                "revealed": true
+            }
+        },
+        "requested_predicates": {},
+        "self_attested_attributes": {}
+    }
+}
