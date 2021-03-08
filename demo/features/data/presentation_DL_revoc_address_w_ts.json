@@ -1,0 +1,13 @@
+{
+   "presentation": {
+      "comment": "This is a comment for the send presentation.",
+      "requested_attributes": {
+         "address_attrs": {
+            "cred_type_name": "Schema_DriversLicense_Revoc",
+            "revealed": true,
+            "cred_id": "replace_me",
+            "timestamp": "now"
+         }
+      }
+   }
+}

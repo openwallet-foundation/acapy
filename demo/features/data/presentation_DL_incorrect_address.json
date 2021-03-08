@@ -1,0 +1,11 @@
+{
+   "presentation": {
+      "comment": "This is a comment for the send presentation.",
+      "requested_attributes": {
+         "address_attrs": {
+            "revealed": true,
+            "cred_id": "d413f359-9595-4ab6-94cf-1aa191d2c884"
+         }
+      }
+   }
+}
