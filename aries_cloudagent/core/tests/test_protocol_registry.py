@@ -1,7 +1,6 @@
 from asynctest import TestCase as AsyncTestCase, mock as async_mock
 
 from ...config.injection_context import InjectionContext
-from ...messaging.error import MessageParseError
 from ...utils.classloader import ClassLoader
 
 from ..protocol_registry import ProtocolRegistry

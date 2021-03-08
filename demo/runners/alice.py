@@ -1,3 +1,4 @@
+import argparse
 import asyncio
 import base64
 import binascii
@@ -11,6 +12,12 @@ from aiohttp import ClientError
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from runners.agent_container import (
+    arg_parser,
+    create_agent_with_args,
+    AgentContainer,
+    AriesAgent,
+)
 from runners.support.agent import (  # noqa:E402
     DemoAgent,
     default_genesis_txns,
@@ -31,7 +38,7 @@ logging.basicConfig(level=logging.WARNING)
 LOGGER = logging.getLogger(__name__)
 
 
-class AliceAgent(DemoAgent):
+class AliceAgent(AriesAgent):
     def __init__(
         self,
         ident: str,
@@ -117,7 +124,6 @@ class AliceAgent(DemoAgent):
     async def handle_present_proof(self, message):
         state = message["state"]
         presentation_exchange_id = message["presentation_exchange_id"]
-        presentation_request = message["presentation_request"]
 
         log_msg(
             "Presentation: state =",
@@ -139,6 +145,7 @@ class AliceAgent(DemoAgent):
 
             try:
                 # select credentials to provide for the proof
+                presentation_request = message["presentation_request"]
                 credentials = await self.admin_GET(
                     f"/present-proof/records/{presentation_exchange_id}/credentials"
                 )
@@ -194,7 +201,6 @@ class AliceAgent(DemoAgent):
 
 
 async def input_invitation(agent):
-    agent._connection_ready = asyncio.Future()
     async for details in prompt_loop("Invite details: "):
         b64_invite = None
         try:
@@ -231,79 +237,43 @@ async def input_invitation(agent):
                 log_msg("Invalid invitation:", str(e))
 
     with log_timer("Connect duration:"):
-        connection = await agent.receive_invite(details)
-        log_json(connection, label="Invitation response:")
-
-        await agent.detect_connection()
+        connection = await agent.input_invitation(details, wait=True)
 
 
-async def main(
-    start_port: int,
-    no_auto: bool = False,
-    show_timing: bool = False,
-    multitenant: bool = False,
-    mediation: bool = False,
-    wallet_type: str = None,
-):
-    genesis = await default_genesis_txns()
-    if not genesis:
-        print("Error retrieving ledger genesis transactions")
-        sys.exit(1)
-
-    agent = None
-    mediator_agent = None
+async def main(args):
+    alice_agent = await create_agent_with_args(args, ident="alice")
 
     try:
         log_status(
             "#7 Provision an agent and wallet, get back configuration details"
-            + (f" (Wallet type: {wallet_type})" if wallet_type else "")
+            + (
+                f" (Wallet type: {alice_agent.wallet_type})"
+                if alice_agent.wallet_type
+                else ""
+            )
         )
         agent = AliceAgent(
-            "Alice.Agent",
-            start_port,
-            start_port + 1,
-            genesis_data=genesis,
-            no_auto=no_auto,
-            timing=show_timing,
-            multitenant=multitenant,
-            mediation=mediation,
-            wallet_type=wallet_type,
+            "alice.agent",
+            alice_agent.start_port,
+            alice_agent.start_port + 1,
+            genesis_data=alice_agent.genesis_txns,
+            no_auto=alice_agent.no_auto,
+            timing=alice_agent.show_timing,
+            multitenant=alice_agent.multitenant,
+            mediation=alice_agent.mediation,
+            wallet_type=alice_agent.wallet_type,
         )
-        await agent.listen_webhooks(start_port + 2)
 
-        with log_timer("Startup duration:"):
-            await agent.start_process()
-        log_msg("Admin URL is at:", agent.admin_url)
-        log_msg("Endpoint URL is at:", agent.endpoint)
-
-        if mediation:
-            mediator_agent = await start_mediator_agent(start_port + 4, genesis)
-            if not mediator_agent:
-                raise Exception("Mediator agent returns None :-(")
-        else:
-            mediator_agent = None
-
-        if multitenant:
-            # create an initial managed sub-wallet (also mediated)
-            await agent.register_or_switch_wallet(
-                "Alice.initial",
-                webhook_port=agent.get_new_webhook_port(),
-                mediator_agent=mediator_agent,
-            )
-        elif mediation:
-            # we need to pre-connect the agent to its mediator
-            if not await connect_wallet_to_mediator(agent, mediator_agent):
-                log_msg("Mediation setup FAILED :-(")
-                raise Exception("Mediation setup FAILED :-(")
+        await alice_agent.initialize(the_agent=agent)
 
         log_status("#9 Input faber.py invitation details")
-        await input_invitation(agent)
+        await input_invitation(alice_agent)
 
         options = "    (3) Send Message\n" "    (4) Input New Invitation\n"
-        if multitenant:
+        if alice_agent.multitenant:
             options += "    (W) Create and/or Enable Wallet\n"
         options += "    (X) Exit?\n[3/4/{}X] ".format(
-            "W/" if multitenant else "",
+            "W/" if alice_agent.multitenant else "",
         )
         async for option in prompt_loop(options):
             if option is not None:
@@ -312,27 +282,27 @@ async def main(
             if option is None or option in "xX":
                 break
 
-            elif option in "wW" and multitenant:
+            elif option in "wW" and alice_agent.multitenant:
                 target_wallet_name = await prompt("Enter wallet name: ")
                 include_subwallet_webhook = await prompt(
                     "(Y/N) Create sub-wallet webhook target: "
                 )
                 if include_subwallet_webhook.lower() == "y":
-                    await agent.register_or_switch_wallet(
+                    await alice_agent.agent.register_or_switch_wallet(
                         target_wallet_name,
-                        webhook_port=agent.get_new_webhook_port(),
-                        mediator_agent=mediator_agent,
+                        webhook_port=alice_agent.agent.get_new_webhook_port(),
+                        mediator_agent=alice_agent.mediator_agent,
                     )
                 else:
-                    await agent.register_or_switch_wallet(
+                    await alice_agent.agent.register_or_switch_wallet(
                         target_wallet_name,
-                        mediator_agent=mediator_agent,
+                        mediator_agent=alice_agent.mediator_agent,
                     )
 
             elif option == "3":
                 msg = await prompt("Enter message: ")
                 if msg:
-                    await agent.admin_POST(
+                    await alice_agent.agent.admin_POST(
                         f"/connections/{agent.connection_id}/send-message",
                         {"content": msg},
                     )
@@ -340,26 +310,16 @@ async def main(
             elif option == "4":
                 # handle new invitation
                 log_status("Input new invitation details")
-                await input_invitation(agent)
+                await input_invitation(alice_agent)
 
-        if show_timing:
-            timing = await agent.fetch_timing()
+        if alice_agent.show_timing:
+            timing = await alice_agent.agent.fetch_timing()
             if timing:
-                for line in agent.format_timing(timing):
+                for line in alice_agent.agent.format_timing(timing):
                     log_msg(line)
 
     finally:
-        terminated = True
-        try:
-            if mediator_agent:
-                log_msg("Shutting down mediator agent ...")
-                await mediator_agent.terminate()
-            if agent:
-                log_msg("Shutting down alice agent ...")
-                await agent.terminate()
-        except Exception:
-            LOGGER.exception("Error terminating agent:")
-            terminated = False
+        terminated = await alice_agent.terminate()
 
     await asyncio.sleep(0.1)
 
@@ -368,33 +328,7 @@ async def main(
 
 
 if __name__ == "__main__":
-    import argparse
-
-    parser = argparse.ArgumentParser(description="Runs an Alice demo agent.")
-    parser.add_argument("--no-auto", action="store_true", help="Disable auto issuance")
-    parser.add_argument(
-        "-p",
-        "--port",
-        type=int,
-        default=8030,
-        metavar=("<port>"),
-        help="Choose the starting port number to listen on",
-    )
-    parser.add_argument(
-        "--timing", action="store_true", help="Enable timing information"
-    )
-    parser.add_argument(
-        "--multitenant", action="store_true", help="Enable multitenancy options"
-    )
-    parser.add_argument(
-        "--mediation", action="store_true", help="Enable mediation functionality"
-    )
-    parser.add_argument(
-        "--wallet-type",
-        type=str,
-        metavar="<wallet-type>",
-        help="Set the agent wallet type",
-    )
+    parser = arg_parser(ident="alice", port=8030)
     args = parser.parse_args()
 
     ENABLE_PYDEVD_PYCHARM = os.getenv("ENABLE_PYDEVD_PYCHARM", "").lower()
@@ -428,15 +362,6 @@ if __name__ == "__main__":
     require_indy()
 
     try:
-        asyncio.get_event_loop().run_until_complete(
-            main(
-                args.port,
-                args.no_auto,
-                args.timing,
-                args.multitenant,
-                args.mediation,
-                args.wallet_type,
-            )
-        )
+        asyncio.get_event_loop().run_until_complete(main(args))
     except KeyboardInterrupt:
         os._exit(1)

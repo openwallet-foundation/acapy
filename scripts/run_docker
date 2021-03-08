@@ -7,6 +7,10 @@ $CONTAINER_RUNTIME build -t aries-cloudagent-run -f ../docker/Dockerfile.run .. 
 
 ARGS=""
 for PORT in $PORTS; do
+  case $PORT in
+    *:*) ;;
+    *) PORT="$PORT:$PORT" ;;
+  esac
   ARGS="${ARGS} -p $PORT"
 done
 
@@ -31,6 +35,6 @@ if [ "$OSTYPE" == "msys" ]; then
   CONTAINER_RUNTIME="winpty docker"
 fi
 
-RAND_NAME=$(env LC_CTYPE=C tr -dc 'a-zA-Z0-9' < /dev/urandom | fold -w 16 | head -n 1)
+RAND_NAME=$(env LC_ALL=C tr -dc 'a-zA-Z0-9' < /dev/urandom | fold -w 16 | head -n 1)
 $CONTAINER_RUNTIME run --rm -ti --name "aries-cloudagent-runner_${RAND_NAME}" \
     $ARGS aries-cloudagent-run "$@"

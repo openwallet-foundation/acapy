@@ -44,14 +44,16 @@ class AriesAgent(DemoAgent):
         ident: str,
         http_port: int,
         admin_port: int,
+        prefix: str = "Aries",
         no_auto: bool = False,
+        extra_args: list = [],
         **kwargs,
     ):
         super().__init__(
             ident,
             http_port,
             admin_port,
-            prefix="Aries",
+            prefix=prefix,
             extra_args=[]
             if no_auto
             else [
@@ -282,7 +284,7 @@ class AriesAgent(DemoAgent):
 
         if wait:
             log_msg("Waiting for connection...")
-            await agent.detect_connection()
+            await self.detect_connection()
 
     async def create_schema_and_cred_def(
         self, schema_name, schema_attrs, revocation, version=None
@@ -615,51 +617,55 @@ class AgentContainer:
         )
 
 
-def arg_parser(ident: str = None):
+def arg_parser(ident: str = None, port: int = 8020):
     """
     Standard command-line arguements.
 
     "ident", if specified, refers to one of the standard demo personas - alice, faber, acme or performance.
     """
-    parser = argparse.ArgumentParser(description="Runs an Aries demo agent.")
-    parser.add_argument(
-        "--ident",
-        type=str,
-        metavar="<ident>",
-        help="Agent identity (label)",
+    parser = argparse.ArgumentParser(
+        description="Runs a " + (ident or "aries") + " demo agent."
     )
+    if not ident:
+        parser.add_argument(
+            "--ident",
+            type=str,
+            metavar="<ident>",
+            help="Agent identity (label)",
+        )
+        parser.add_argument(
+            "--public-did",
+            action="store_true",
+            help="Create a public DID for the agent",
+        )
     parser.add_argument(
         "--no-auto",
         action="store_true",
         help="Disable auto issuance",
     )
     parser.add_argument(
-        "--public-did",
-        action="store_true",
-        help="Create a public DID for the agent",
-    )
-    parser.add_argument(
         "-p",
         "--port",
         type=int,
-        default=8020,
+        default=port,
         metavar=("<port>"),
         help="Choose the starting port number to listen on",
     )
-    parser.add_argument(
-        "--did-exchange",
-        action="store_true",
-        help="Use DID-Exchange protocol for connections",
-    )
-    parser.add_argument(
-        "--revocation", action="store_true", help="Enable credential revocation"
-    )
-    parser.add_argument(
-        "--tails-server-base-url",
-        type=str,
-        metavar=("<tails-server-base-url>"),
-        help="Tals server base url",
-    )
+    if (not ident) or (ident != "alice"):
+        parser.add_argument(
+            "--did-exchange",
+            action="store_true",
+            help="Use DID-Exchange protocol for connections",
+        )
+        parser.add_argument(
+            "--revocation", action="store_true", help="Enable credential revocation"
+        )
+        parser.add_argument(
+            "--tails-server-base-url",
+            type=str,
+            metavar=("<tails-server-base-url>"),
+            help="Tals server base url",
+        )
     parser.add_argument(
         "--timing", action="store_true", help="Enable timing information"
     )
@@ -684,29 +690,38 @@ def arg_parser(ident: str = None):
     return parser
 
 
-async def create_agent_with_args(in_args: list):
+async def create_agent_with_args_list(in_args: list):
     parser = arg_parser()
     args = parser.parse_args(in_args)
 
-    if args.did_exchange and args.mediation:
+    return await create_agent_with_args(args)
+
+
+async def create_agent_with_args(args, ident: str = None):
+    if ("did_exchange" in args and args.did_exchange) and args.mediation:
         raise Exception(
             "DID-Exchange connection protocol is not (yet) compatible with mediation"
         )
 
     require_indy()
 
-    tails_server_base_url = args.tails_server_base_url or os.getenv("PUBLIC_TAILS_URL")
+    if "revocation" in args and args.revocation:
+        tails_server_base_url = args.tails_server_base_url or os.getenv(
+            "PUBLIC_TAILS_URL"
+        )
+    else:
+        tails_server_base_url = None
 
     arg_file = args.arg_file or os.getenv("ACAPY_ARG_FILE")
 
     # if we don't have a tails server url then guess it
-    if args.revocation and not tails_server_base_url:
+    if ("revocation" in args and args.revocation) and not tails_server_base_url:
         # assume we're running in docker
         tails_server_base_url = (
             "http://" + (os.getenv("DOCKERHOST") or "host.docker.internal") + ":6543"
         )
 
-    if args.revocation and not tails_server_base_url:
+    if ("revocation" in args and args.revocation) and not tails_server_base_url:
         raise Exception(
             "If revocation is enabled, --tails-server-base-url must be provided"
         )
@@ -716,20 +731,21 @@ async def create_agent_with_args(in_args: list):
         print("Error retrieving ledger genesis transactions")
         sys.exit(1)
 
+    agent_ident = ident if ident else (args.ident if "ident" in args else "Aries")
     agent = AgentContainer(
         genesis,
-        args.ident + ".agent",
+        agent_ident + ".agent",
         args.port,
         no_auto=args.no_auto,
-        revocation=args.revocation,
+        revocation=args.revocation if "revocation" in args else False,
         tails_server_base_url=tails_server_base_url,
         show_timing=args.timing,
         multitenant=args.multitenant,
         mediation=args.mediation,
-        use_did_exchange=args.did_exchange,
+        use_did_exchange=args.did_exchange if "did_exchange" in args else False,
         wallet_type=args.wallet_type,
-        public_did=args.public_did,
-        seed="random" if args.public_did else None,
+        public_did=args.public_did if "public_did" in args else None,
+        seed="random" if ("public_did" in args and args.public_did) else None,
         arg_file=arg_file,
     )
 
@@ -748,11 +764,6 @@ async def test_main(
     wallet_type: str = None,
 ):
     """Test to startup a couple of agents."""
-
-    genesis = await default_genesis_txns()
-    if not genesis:
-        print("Error retrieving ledger genesis transactions")
-        sys.exit(1)
 
     faber_container = None
     alice_container = None
