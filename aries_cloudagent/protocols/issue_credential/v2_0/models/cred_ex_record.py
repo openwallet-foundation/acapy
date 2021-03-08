@@ -60,12 +60,13 @@ class V20CredExRecord(BaseExchangeRecord):
         auto_remove: bool = True,
         error_msg: str = None,
         trace: bool = False,
+        conn_id: str = None,  # for backward compatibility to restore from storage
         **kwargs,
     ):
         """Initialize a new V20CredExRecord."""
         super().__init__(cred_ex_id, state, trace=trace, **kwargs)
         self._id = cred_ex_id
-        self.connection_id = connection_id
+        self.connection_id = connection_id or conn_id
         self.thread_id = thread_id
         self.parent_thread_id = parent_thread_id
         self.initiator = initiator
