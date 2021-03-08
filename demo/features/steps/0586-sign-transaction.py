@@ -54,9 +54,9 @@ def step_impl(context, agent_name, connection_job_role):
     # set role for agent's connection
     print("Updating role for connection:", connection_id, connection_job_role)
     updated_connection = agent_container_POST(
-       agent['agent'],
-       "/transactions/" + connection_id + "/set-transaction-jobs",
-       params={"transaction_my_job": connection_job_role}
+        agent["agent"],
+        "/transactions/" + connection_id + "/set-transaction-jobs",
+        params={"transaction_my_job": connection_job_role},
     )
 
     # assert goodness
@@ -66,8 +66,7 @@ def step_impl(context, agent_name, connection_job_role):
 
 @when('"{agent_name}" authors a schema transaction with {schema_name}')
 def step_impl(context, agent_name, schema_name):
-    agent = context.active_agents[agent_name
-    ]
+    agent = context.active_agents[agent_name]
 
     schema_info = read_schema_data(schema_name)
     endorser_did = context.public_dids["ENDORSER"]
@@ -117,7 +116,9 @@ def step_impl(context, agent_name):
     assert requested_txn["state"] == "request_received"
     txn_id = requested_txn["_id"]
 
-    endorsed_txn = agent_container_POST(agent["agent"], "/transactions/" + txn_id + "/endorse")
+    endorsed_txn = agent_container_POST(
+        agent["agent"], "/transactions/" + txn_id + "/endorse"
+    )
 
     assert endorsed_txn["state"] == "transaction_endorsed"
 
@@ -132,7 +133,9 @@ def step_impl(context, agent_name):
     assert requested_txn["state"] == "transaction_endorsed"
     txn_id = requested_txn["_id"]
 
-    written_txn = agent_container_POST(agent["agent"], "/transactions/" + txn_id + "/write")
+    written_txn = agent_container_POST(
+        agent["agent"], "/transactions/" + txn_id + "/write"
+    )
 
     assert written_txn["state"] == "transaction_completed"
 
