@@ -56,7 +56,7 @@ class TestIndyCredAbstract(TestCase):
             "schema_id": SCHEMA_ID,
             "cred_def_id": CRED_DEF_ID,
             "nonce": "1234567890",
-            "key_correctness_proof": KC_PROOF
+            "key_correctness_proof": KC_PROOF,
         }
         cred_abstract = IndyCredAbstract.deserialize(obj)
         assert type(cred_abstract) == IndyCredAbstract
