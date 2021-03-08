@@ -17,7 +17,7 @@ limitations under the License.
 from typing import List, Sequence, Union
 from .verification_method import VerificationMethod
 from .schemas.serviceschema import ServiceSchema
-from ....resolver.did import DIDUrl
+from aries_cloudagent.resolver.did import DIDUrl
 
 
 class Service:
@@ -36,6 +36,7 @@ class Service:
         recipient_keys: Union[Sequence, VerificationMethod] = None,
         routing_keys: Union[Sequence, VerificationMethod] = None,
         priority: int = 0,
+        **kwargs
     ):
         """
         Initialize the Service instance.
@@ -65,6 +66,7 @@ class Service:
         self._recip_keys = recipient_keys or []
         self._routing_keys = routing_keys or []
         self._priority = priority or 0
+        self.kwargs = kwargs or {}
 
     @property
     def id(self) -> str:

@@ -14,14 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import re
+from marshmallow import Schema, fields, post_load, post_dump, validate, ValidationError
 
-from marshmallow import Schema, fields, post_load, validate, ValidationError
-
-from .....resolver.did import DID_PATTERN
+from .utils import DID_CONTENT_PATTERN
 from .unionfield import ListOrStringField
-
-DID_PATTERN = re.compile("{}#[a-zA-Z0-9._-]+".format(DID_PATTERN.pattern))
 
 
 class VerificationMethodSchema(Schema):
@@ -33,6 +29,7 @@ class VerificationMethodSchema(Schema):
     {"id": "did:sov:LjgpST2rjsoxYegQDRm7EL#keys-4",
      "type": "RsaVerificationKey2018",
      "controller": "did:sov:LjgpST2rjsoxYegQDRm7EL",
+     "usage": "signing",
      "publicKeyPem": "-----BEGIN PUBLIC X...",
      "publicKeyBase58",
      "publicKeyHex": "0361f286ada2a6b2c74bc6ed44a71ef59fb9dd15eca9283cbe5608aeb516730f33",
@@ -46,13 +43,15 @@ class VerificationMethodSchema(Schema):
       }
     """
 
-    id = fields.Str(required=True, validate=validate.Regexp(DID_PATTERN))
-    type = fields.Str(required=True)
+    id = fields.Str(required=True, validate=validate.Regexp(DID_CONTENT_PATTERN))
+    type = ListOrStringField(required=True)
     controller = ListOrStringField(required=True)
+    usage = fields.Str()
     publicKeyHex = fields.Str()
     publicKeyPem = fields.Str()
     publicKeyJwk = fields.Dict()
     publicKeyBase58 = fields.Str()
+    publicKeyBase64 = fields.Str()
 
     @post_load
     def make_public_key(self, data, **_kwargs):
@@ -61,18 +60,26 @@ class VerificationMethodSchema(Schema):
 
         return VerificationMethod(**data)
 
+    @post_dump
+    def post_dump_did_doc(self, data, many, **kwargs):
+        """Post dump function."""
+        for key in tuple(data.keys()):
+            if not data.get(key):
+                data.pop(key)
+        return data
+
 
 class PublicKeyField(fields.Field):
     """Public Key field for Marshmallow."""
 
     def _serialize(self, value, attr, obj, **kwargs):
-        if not isinstance(value, list):
+        if isinstance(value, list):
+            for idx, val in enumerate(value):
+                if val and not isinstance(val, str):
+                    value[idx] = val.serialize()
+            return value
+        else:
             return "".join(str(d) for d in value)
-
-        for idx, val in enumerate(value):
-            if not isinstance(val, str):
-                value[idx] = val.serialize()
-        return value
 
     def _deserialize(self, value, attr, data, **kwargs):
         from aries_cloudagent.connections.models.diddoc_v2 import VerificationMethod
@@ -82,15 +89,11 @@ class PublicKeyField(fields.Field):
         elif isinstance(value, list):
             for idx, val in enumerate(value):
                 if isinstance(val, dict):
-                    if (
-                        (not val.get("id"))
-                        or (not val.get("type"))
-                        or (not val.get("controller"))
-                    ):
+                    if (not val.get("id")) or (not val.get("type")):
                         raise ValidationError(
-                            "VerificationMethod Map must have id, type & controler"
+                            "VerificationMethod Map must have id & type"
                         )
                     value[idx] = VerificationMethod(**val)
             return value
         else:
-            raise ValidationError("Field should be str, list or dict")
+            raise ValidationError("Field should be str or list")

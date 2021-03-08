@@ -7,9 +7,9 @@ from ...config.base_context import ContextBuilder
 from ...config.injection_context import InjectionContext
 from ...connections.models.conn_record import ConnRecord
 from ...connections.models.connection_target import ConnectionTarget
-from ...connections.models.diddoc import (
+from ...connections.models.diddoc_v2 import (
     DIDDoc,
-    PublicKey,
+    VerificationMethod,
     PublicKeyType,
     Service,
 )
@@ -52,20 +52,14 @@ class TestDIDs:
     test_target_verkey = "9WCgWKUaAJj3VWxxtzvvMQN3AoFxoBtBDo9ntwJnVVCC"
 
     def make_did_doc(self, did, verkey):
-        doc = DIDDoc(did=did)
-        controller = did
-        ident = "1"
-        pk_value = verkey
-        pk = PublicKey(
-            did, ident, pk_value, PublicKeyType.ED25519_SIG_2018, controller, False
-        )
-        doc.set(pk)
-        recip_keys = [pk]
-        router_keys = []
-        service = Service(
-            did, "indy", "IndyAgent", recip_keys, router_keys, self.test_endpoint
-        )
-        doc.set(service)
+        doc = DIDDoc(did)
+
+        pk = doc.add_verification_method(type=PublicKeyType.ED25519_SIG_2018,
+                                         controller=did, value=verkey, ident="1")
+
+
+        doc.add_didcomm_service(type="IndyAgent", recipient_keys=[pk], routing_keys=[],
+                                endpoint=self.test_endpoint)
         return doc, pk
 
 

@@ -2,9 +2,9 @@ import pytest
 from asynctest import mock as async_mock
 
 from ......connections.models import connection_target
-from ......connections.models.diddoc import (
+from ......connections.models.diddoc_v2 import (
     DIDDoc,
-    PublicKey,
+    VerificationMethod,
     PublicKeyType,
     Service,
 )
@@ -29,7 +29,7 @@ def request_context() -> RequestContext:
     yield ctx
 
 
-TEST_DID = "55GkHamhTU1ZbTbV2ab9DE"
+TEST_DID = "did:sov:55GkHamhTU1ZbTbV2ab9DE"
 TEST_VERKEY = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
 TEST_LABEL = "Label"
 TEST_ENDPOINT = "http://localhost"
@@ -38,30 +38,19 @@ TEST_IMAGE_URL = "http://aries.ca/images/sample.png"
 
 @pytest.fixture()
 def did_doc():
-    doc = DIDDoc(did=TEST_DID)
-    controller = TEST_DID
-    ident = "1"
-    pk_value = TEST_VERKEY
-    pk = PublicKey(
-        TEST_DID,
-        ident,
-        pk_value,
-        PublicKeyType.ED25519_SIG_2018,
-        controller,
-        False,
+    did = TEST_DID
+    verkey = TEST_VERKEY
+    endpoint = TEST_ENDPOINT
+
+    doc = DIDDoc(did)
+
+    pk = doc.add_verification_method(
+        type=PublicKeyType.ED25519_SIG_2018, controller=did, value=verkey, ident="1"
     )
-    doc.set(pk)
-    recip_keys = [pk]
-    router_keys = []
-    service = Service(
-        TEST_DID,
-        "indy",
-        "IndyAgent",
-        recip_keys,
-        router_keys,
-        TEST_ENDPOINT,
+
+    doc.add_didcomm_service(
+        type="IndyAgent", recipient_keys=[pk], routing_keys=[], endpoint=endpoint
     )
-    doc.set(service)
     yield doc
 
 

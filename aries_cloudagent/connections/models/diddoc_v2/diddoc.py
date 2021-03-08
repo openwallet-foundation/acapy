@@ -16,11 +16,14 @@ limitations under the License.
 
 import logging
 import copy
-from typing import Union
+import json
+from typing import Union, Sequence
+
+from .publickeytype import PublicKeyType
 from .verification_method import VerificationMethod
 from .service import Service
 from .schemas.diddocschema import DIDDocSchema
-from ....resolver.did import DID_PATTERN, DIDUrl
+from aries_cloudagent.resolver.did import DID_PATTERN, DIDUrl
 
 LOGGER = logging.getLogger(__name__)
 
@@ -48,6 +51,7 @@ class DIDDoc:
         capability_delegation: list = None,
         public_key: list = None,
         service: list = None,
+        **kwargs
     ) -> None:
         """
         Initialize the DIDDoc instance.
@@ -80,6 +84,7 @@ class DIDDoc:
         self._controller = controller
         self._index = {}
         self._ref_content = {}
+        self.extra = kwargs
 
         params = (
             ("verificationMethod", verification_method or []),
@@ -89,9 +94,33 @@ class DIDDoc:
             ("capabilityInvocation", capability_invocation or []),
             ("capabilityDelegation", capability_delegation or []),
             ("publicKey", public_key or []),
-            ("service", service or []),
         )
         self._index_params(params)
+        self._keys_refactor_on_services(service or [])
+
+    def _keys_refactor_on_services(self, services):
+        """Process to check the services keys and refactor to not duplicate data."""
+        for service in services:
+            routing = self._keys_refactor(service.routing_keys)
+            recipient = self._keys_refactor(service.recipient_keys)
+            service.recipient_keys = recipient
+            service.routing_keys = routing
+
+        param = (("service", services or []),)
+        self._index_params(param)
+
+    def _keys_refactor(self, keys):
+        """Keys Refactor to set Keys and save the DID URL reference in services."""
+        for index, key in enumerate(keys):
+            if isinstance(key, str):
+                if not self.dereference(key):
+
+                    raise ValueError("Key '{}' not found on DIDDoc".format(key))
+            else:
+                self._set(key)
+                keys[index] = key.id
+
+        return keys
 
     def _index_params(self, params):
         """
@@ -107,20 +136,21 @@ class DIDDoc:
         for param in params:
             aux_content = []
             for item in param[1]:
-                if isinstance(item, str):
-                    if not self._index.get(item):
-                        self._index[item] = param[0]
-                        aux_content.append(item)
-                else:
-                    did_item = self._index.get(item)
-                    if self._index.get(item):
-                        if did_item.serialize() != item.serialize():
+                if not isinstance(item, str):
+                    did_item = self._index.get(item.id)
+                    if not self._index.get(item.id):
+                        self._index[item.id] = item  # {id: <param object>}
+                        aux_content.append(item.id)
+                    else:
+                        if not (did_item.serialize() == item.serialize()):
                             raise ValueError(
                                 "{} has different specifications".format(item.id)
                             )
-                    else:
-                        self._index[item.id] = item  # {id: <param object>}
-                        aux_content.append(item.id)
+                        else:
+                            aux_content.append(item.id)
+                else:
+                    aux_content.append(item)
+
             self._ref_content[param[0]] = aux_content  # {param: [<List of Ids>]}
 
     @classmethod
@@ -135,16 +165,18 @@ class DIDDoc:
             raise ValueError("Not valid DID")
 
     @classmethod
-    def deserialize(cls, json: dict):
+    def deserialize(cls, did_doc: Union[dict, str]):
         """
         Deserialize a dict into a DIDDoc object.
 
         Args:
-            json: service or public key to set
+            did_doc: service or public key to set
         Returns: DIDDoc object
         """
+        if isinstance(did_doc, str):
+            did_doc = json.loads(did_doc)
         schema = DIDDocSchema()
-        did_doc = schema.load(json)
+        did_doc = schema.load(did_doc)
         return did_doc
 
     def serialize(self) -> dict:
@@ -156,6 +188,7 @@ class DIDDoc:
         schema = DIDDocSchema()
         did_doc = schema.dump(copy.deepcopy(self))
         did_doc["@context"] = self.CONTEXT
+        did_doc.update(self.extra)
         return did_doc
 
     @property
@@ -176,50 +209,74 @@ class DIDDoc:
     @property
     def verification_method(self):
         """Getter for DIDDoc verificationMethod."""
+        aux_ids = []
         ids = self._ref_content.get("verificationMethod")
-        return [self._index.get(item) for item in ids]
+        for item in ids:
+            aux_ids.append(self._index.get(item))
+        return aux_ids
 
     @property
     def authentication(self):
         """Getter for DIDDoc authentication."""
+        aux_ids = []
         ids = self._ref_content.get("authentication")
-        return [self._index.get(item) for item in ids]
+        for item in ids:
+            aux_ids.append(self._index.get(item))
+        return aux_ids
 
     @property
     def assertion_method(self):
         """Getter for DIDDoc assertionMethod."""
+        aux_ids = []
         ids = self._ref_content.get("assertionMethod")
-        return [self._index.get(item) for item in ids]
+        for item in ids:
+            aux_ids.append(self._index.get(item))
+        return aux_ids
 
     @property
     def key_agreement(self):
         """Getter for DIDDoc keyAgreement."""
+        aux_ids = []
         ids = self._ref_content.get("keyAgreement")
-        return [self._index.get(item) for item in ids]
+        for item in ids:
+            aux_ids.append(self._index.get(item))
+        return aux_ids
 
     @property
     def capability_invocation(self):
         """Getter for DIDDoc capabilityInvocation."""
+        aux_ids = []
         ids = self._ref_content.get("capabilityInvocation")
-        return [self._index.get(item) for item in ids]
+        for item in ids:
+            aux_ids.append(self._index.get(item))
+        return aux_ids
 
     @property
     def capability_delegation(self):
         """Getter for DIDDoc capabilityDelegation."""
+        aux_ids = []
         ids = self._ref_content.get("capabilityDelegation")
-        return [self._index.get(item) for item in ids]
+        for item in ids:
+            aux_ids.append(self._index.get(item))
+        return aux_ids
 
     @property
     def public_key(self):
         """Getter for DIDDoc publicKey."""
+        aux_ids = []
         ids = self._ref_content.get("publicKey")
-        return [self._index.get(item) for item in ids]
+        for item in ids:
+            aux_ids.append(self._index.get(item))
+        return aux_ids
 
     @property
     def service(self):
         """Getter for DIDDoc service."""
+        aux_ids = []
         ids = self._ref_content.get("service")
-        return [self._index.get(item) for item in ids]
+        for item in ids:
+            aux_ids.append(self._index.get(item))
+        return aux_ids
 
     @id.setter
     def id(self, value: str) -> None:
@@ -239,11 +296,114 @@ class DIDDoc:
 
         self._id = value
 
-    def set(
+    def add_verification_method(
+        self,
+        type: Union[PublicKeyType, str],
+        value: str,
+        controller: Union[str, Sequence] = None,
+        *,
+        ident: str = None,
+        usage: str = None,
+        authentication: bool = False,
+        verification_type: str = "publicKey",
+        upsert: bool = False
+    ) -> VerificationMethod:
+        """Add a verification method to this document."""
+        if ident:
+            id = "{}#{}".format(self.id, ident)
+
+        else:
+            id = self._build_id("keys-")
+
+        if not controller:
+            controller = self.id
+        key = VerificationMethod(id, type, controller, usage, value, authentication)
+
+        exists = self._index.get(id)
+        if (exists) and (not upsert) and (exists.serialize() != key.serialize()):
+            raise ValueError("ID already exists, use arg upsert to update it")
+
+        self._set(key, upsert=upsert, verification_type=verification_type)
+        return key
+
+    def add_service(
+        self,
+        type: Union[str, list],
+        endpoint: Union[str, Sequence, dict],
+        ident: str = None,
+        upsert: bool = False,
+        **kwargs
+    ) -> Service:
+        """Add service to this document."""
+        if ident:
+            id = "{}#{}".format(self.id, ident)
+            if self._index.get(id) and not upsert:
+                raise ValueError("ID already exists, use arg upsert to update it")
+        else:
+            id = self._build_id("service-")
+
+        service = Service(id, type, endpoint, **kwargs)
+        self._set(service, upsert=upsert)
+
+    def _format_keys(self, keys):
+        result = []
+        if isinstance(keys, list):
+            for key in keys:
+                result.append(key.id)
+
+        elif isinstance(keys, VerificationMethod):
+            result.append(keys.id)
+
+        for key in result:
+            if not self.dereference(key):
+                raise ValueError("Key {} not found in the DIDDoc".format(key))
+
+        return result
+
+    def _build_id(self, ident):
+        for index in range(1, 100):
+            id_aux = "{}#{}{}".format(self.id, ident, index)
+            if not self._index.get(id_aux):
+                return id_aux
+
+        raise ValueError("DIDDoc can not have more than 100 {} entities".format(ident))
+
+    def add_didcomm_service(
+        self,
+        recipient_keys: Union[Sequence[VerificationMethod], VerificationMethod],
+        routing_keys: Union[Sequence[VerificationMethod], VerificationMethod],
+        endpoint: Union[str, Sequence, dict],
+        priority: int = 0,
+        type: Union[str, list] = None,
+        backward_compatibility: bool = True,
+    ) -> Service:
+        """Add DIDComm Service to this document."""
+
+        id = self._build_id("didcomm-")
+
+        # RECIPIENT KEYS
+        recip_keys = self._format_keys(recipient_keys)
+
+        # ROUTING KEYS
+        rout_keys = self._format_keys(routing_keys)
+
+        if not type:
+            type = "did-communication"
+
+        service = Service(id, type, endpoint, recip_keys, rout_keys, priority)
+        self._set(service)
+
+        if backward_compatibility:
+            type = "IndyAgent"
+            id = self._build_id("didcomm-")
+            service = Service(id, type, endpoint, recip_keys, rout_keys, priority)
+            self._set(service)
+
+    def _set(
         self,
         item: Union[Service, VerificationMethod],
-        upsert=False,
-        verification_type="publicKey",
+        upsert: bool = False,
+        verification_type: str = "publicKey",
     ) -> "DIDDoc":
         """
         Add or replace service or verification method; return current DIDDoc.
@@ -258,14 +418,15 @@ class DIDDoc:
             if it is a verification method.
 
         """
-
-        # Verification did url
-        DIDUrl.parse(item.id)
-
         # Upsert validation
-        if self._index.get(item.id) and (not upsert):
-            raise ValueError("ID already exists, use arg upsert to update it")
+        existing_item = self._index.get(item.id)
+        if existing_item and (not upsert):
+            if item.serialize() != existing_item.serialize():
+                raise ValueError("ID already exists, use arg upsert to update it")
+            else:
+                return
 
+        # Inserting item
         self._index[item.id] = item
 
         if isinstance(item, Service):
@@ -275,9 +436,7 @@ class DIDDoc:
             if item.id not in self._ref_content[verification_type]:
                 self._ref_content[verification_type].append(item.id)
 
-    def dereference(
-        self, did_url: Union[str, DIDUrl]
-    ) -> Union[Service, VerificationMethod]:
+    def dereference(self, did_url: str):
         """
         Retrieve a verification method or service by it id.
 
@@ -288,7 +447,20 @@ class DIDDoc:
 
         """
 
-        if isinstance(did_url, str):
-            did_url = DIDUrl.parse(did_url)
+        # Verification did url
+        if not isinstance(did_url, str):
+            did_url = did_url.url
+        DIDUrl.parse(did_url)
 
         return self._index.get(did_url)
+
+
+class AntiquatedDIDDoc(DIDDoc):
+    """Antiquated DIDDoc implementation for methodless ids."""
+
+    PREFIX = "did:sov:"
+
+    def __init__(self, nym: str, *args, **kwargs):
+        """Initialize the antiquated DIDDoc instance."""
+        did = self.PREFIX + nym
+        super().__init__(did, *args, **kwargs)

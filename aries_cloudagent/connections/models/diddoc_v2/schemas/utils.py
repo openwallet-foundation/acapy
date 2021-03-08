@@ -1,8 +1,5 @@
 """
-DID Document model support.
-
-Copyright 2017-2019 Government of Canada
-Public Services and Procurement Canada - buyandsell.gc.ca
+DID Document Utils Schema.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,8 +14,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from .diddoc import DIDDoc
-from .publickey import LinkedDataKeySpec, PublicKey, PublicKeyType
-from .service import Service
+from aries_cloudagent.resolver.did import DID_PATTERN
+import re
 
-__all__ = ["DIDDoc", "LinkedDataKeySpec", "PublicKey", "PublicKeyType", "Service"]
+DID_CONTENT_PATTERN = re.compile("{}[#;][a-zA-Z0-9._-]+".format(DID_PATTERN.pattern))
+
+VERIFICATION_METHOD_KEYS = [
+    "verificationMethod",
+    "assertionMethod",
+    "keyAgreement",
+    "capabilityInvocation",
+    "capabilityDelegation",
+    "publicKey",
+    "authentication",
+]

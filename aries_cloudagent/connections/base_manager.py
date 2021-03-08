@@ -25,12 +25,7 @@ from ..wallet.util import did_key_to_naked
 
 from .models.conn_record import ConnRecord
 from .models.connection_target import ConnectionTarget
-from .models.diddoc import (
-    DIDDoc,
-    PublicKey,
-    PublicKeyType,
-    Service,
-)
+from .models.diddoc_v2 import AntiquatedDIDDoc, DIDDoc, PublicKeyType
 
 
 class BaseConnectionManagerError(BaseError):
@@ -73,19 +68,18 @@ class BaseConnectionManager:
             The prepared `DIDDoc` instance
 
         """
+        did = did_info.did
+        if len(did_info.did.split(":")) < 2:
+            did_doc = AntiquatedDIDDoc(did)
+        else:
+            did_doc = DIDDoc(did)
 
-        did_doc = DIDDoc(did=did_info.did)
-        did_controller = did_info.did
-        did_key = did_info.verkey
-        pk = PublicKey(
-            did_info.did,
-            "1",
-            did_key,
-            PublicKeyType.ED25519_SIG_2018,
-            did_controller,
-            True,
+        pk = did_doc.add_verification_method(
+            type=PublicKeyType.ED25519_SIG_2018,
+            value=did_info.verkey,
+            ident="1",
+            authentication=True,
         )
-        did_doc.set(pk)
 
         router_id = inbound_connection_id
         routing_keys = []
@@ -102,56 +96,49 @@ class BaseConnectionManager:
                 raise BaseConnectionManagerError(
                     f"No services defined by routing DIDDoc: {router_id}"
                 )
-            for service in routing_doc.service.values():
-                if not service.endpoint:
+            for service in routing_doc.service:
+                if not service.service_endpoint:
                     raise BaseConnectionManagerError(
                         "Routing DIDDoc service has no service endpoint"
                     )
-                if not service.recip_keys:
+                if not service.recipient_keys:
                     raise BaseConnectionManagerError(
                         "Routing DIDDoc service has no recipient key(s)"
                     )
-                rk = PublicKey(
-                    did_info.did,
-                    f"routing-{router_idx}",
-                    service.recip_keys[0].value,
-                    PublicKeyType.ED25519_SIG_2018,
-                    did_controller,
-                    True,
+
+                self.method = did_doc.add_verification_method(
+                    type=PublicKeyType.ED25519_SIG_2018,
+                    value=routing_doc.dereference(service.recipient_keys[0]).value,
+                    ident="routing-{}".format(router_idx),
+                    authentication=True,
                 )
+
+                rk = self.method
                 routing_keys.append(rk)
-                svc_endpoints = [service.endpoint]
+                svc_endpoints = [service.service_endpoint]
                 break
             router_id = router.inbound_connection_id
 
         if mediation_records:
             for mediation_record in mediation_records:
                 mediator_routing_keys = [
-                    PublicKey(
-                        did_info.did,
-                        f"routing-{idx}",
-                        key,
-                        PublicKeyType.ED25519_SIG_2018,
-                        did_controller,  # TODO: get correct controller did_info
-                        True,  # TODO: should this be true?
+                    did_doc.add_verification_method(
+                        type=PublicKeyType.ED25519_SIG_2018,
+                        value=key,
+                        ident="routing-{}".format(idx),
+                        authentication=True,
                     )
                     for idx, key in enumerate(mediation_record.routing_keys)
                 ]
 
                 routing_keys = [*routing_keys, *mediator_routing_keys]
+
                 svc_endpoints = [mediation_record.endpoint]
 
         for (endpoint_index, svc_endpoint) in enumerate(svc_endpoints or []):
-            endpoint_ident = "indy" if endpoint_index == 0 else f"indy{endpoint_index}"
-            service = Service(
-                did_info.did,
-                endpoint_ident,
-                "IndyAgent",
-                [pk],
-                routing_keys,
-                svc_endpoint,
+            did_doc.add_didcomm_service(
+                recipient_keys=[pk], routing_keys=routing_keys, endpoint=svc_endpoint
             )
-            did_doc.set(service)
 
         return did_doc
 
@@ -161,23 +148,25 @@ class BaseConnectionManager:
         Args:
             did_doc: The `DIDDoc` instance to persist
         """
-        assert did_doc.did
+        assert did_doc.id
         storage: BaseStorage = self._session.inject(BaseStorage)
         try:
-            stored_doc, record = await self.fetch_did_document(did_doc.did)
+            stored_doc, record = await self.fetch_did_document(did_doc.id)
         except StorageNotFoundError:
             record = StorageRecord(
                 self.RECORD_TYPE_DID_DOC,
-                did_doc.to_json(),
-                {"did": did_doc.did},
+                did_doc.serialize(),
+                {"did": did_doc.id},
             )
             await storage.add_record(record)
         else:
-            await storage.update_record(record, did_doc.to_json(), {"did": did_doc.did})
-        await self.remove_keys_for_did(did_doc.did)
-        for key in did_doc.pubkey.values():
-            if key.controller == did_doc.did:
-                await self.add_key_for_did(did_doc.did, key.value)
+            await storage.update_record(
+                record, did_doc.serialize(), {"did": did_doc.id}
+            )
+        await self.remove_keys_for_did(did_doc.id)
+        for key in did_doc.public_key:
+            if key.controller == did_doc.id:
+                await self.add_key_for_did(did_doc.id, key.value)
 
     async def add_key_for_did(self, did: str, key: str):
         """Store a verkey for lookup against a DID.
@@ -311,21 +300,20 @@ class BaseConnectionManager:
 
         if not doc:
             raise BaseConnectionManagerError("No DIDDoc provided for connection target")
-        if not doc.did:
-            raise BaseConnectionManagerError("DIDDoc has no DID")
         if not doc.service:
             raise BaseConnectionManagerError("No services defined by DIDDoc")
 
         targets = []
-        for service in doc.service.values():
-            if service.recip_keys:
+        for service in doc.service:
+            if service.recipient_keys:
                 targets.append(
                     ConnectionTarget(
-                        did=doc.did,
-                        endpoint=service.endpoint,
+                        did=doc.id,
+                        endpoint=service.service_endpoint,
                         label=their_label,
                         recipient_keys=[
-                            key.value for key in (service.recip_keys or ())
+                            doc.dereference(key).value
+                            for key in (service.recipient_keys or ())
                         ],
                         routing_keys=[
                             key.value for key in (service.routing_keys or ())
@@ -343,4 +331,4 @@ class BaseConnectionManager:
         """
         storage = self._session.inject(BaseStorage)
         record = await storage.find_record(self.RECORD_TYPE_DID_DOC, {"did": did})
-        return DIDDoc.from_json(record.value), record
+        return DIDDoc.deserialize(record.value), record

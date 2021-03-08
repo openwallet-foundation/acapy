@@ -10,7 +10,12 @@ from uuid import UUID
 
 from .....connections.models.conn_record import ConnRecord
 from .....connections.models.connection_target import ConnectionTarget
-from .....connections.models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
+from .....connections.models.diddoc_v2 import (
+    DIDDoc,
+    VerificationMethod,
+    PublicKeyType,
+    Service,
+)
 from .....core.in_memory import InMemoryProfile
 from .....indy.holder import IndyHolder
 from .....ledger.base import BaseLedger
@@ -78,7 +83,7 @@ from ..models.invitation import InvitationRecord
 
 class TestConfig:
 
-    test_did = "55GkHamhTU1ZbTbV2ab9DE"
+    test_did = "did:sov:55GkHamhTU1ZbTbV2ab9DE"
     test_verkey = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
     test_endpoint = "http://localhost"
     test_target_did = "GbuDUYXaUZRfHD2jeDuQuP"
@@ -184,18 +189,25 @@ class TestConfig:
     cred_req_meta = {}
 
     def make_did_doc(self, did, verkey):
-        doc = DIDDoc(did=did)
+        doc = DIDDoc(did)
         controller = did
-        ident = "1"
         pk_value = verkey
-        pk = PublicKey(
-            did, ident, pk_value, PublicKeyType.ED25519_SIG_2018, controller, False
+        pk = VerificationMethod(
+            "{}#{}".format(did, "1"),
+            PublicKeyType.ED25519_SIG_2018,
+            controller,
+            value=pk_value,
+            authn=False,
         )
         doc.set(pk)
         recip_keys = [pk]
         router_keys = []
         service = Service(
-            did, "indy", "IndyAgent", recip_keys, router_keys, TestConfig.test_endpoint
+            "{}#{}".format(did, "indy"),
+            "IndyAgent",
+            recip_keys,
+            router_keys,
+            self.test_endpoint,
         )
         doc.set(service)
         return doc
