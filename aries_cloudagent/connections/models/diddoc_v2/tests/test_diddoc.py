@@ -497,6 +497,7 @@ class TestDIDDoc(AsyncTestCase):
         assert not result.dereference("did:sov:LjgpST2rjsoxYegQDRm7EL#10")
 
     async def test_universal_resolver(self):
+        # standar case
         universal_resolver_DID = {
             "created": "2020-07-14T08:25:15Z",
             "id": "did:ace:0xf81c16a78b257c10fddf87ed4324d433317169a005ddf36a3a1ba937ba9788e3",
@@ -541,11 +542,26 @@ class TestDIDDoc(AsyncTestCase):
         }
 
         result = DIDDoc.deserialize(universal_resolver_DID)
+        assert result.id == universal_resolver_DID["id"]
         assert len(result.public_key) == 5
         assert result.public_key[4].id
         assert result.public_key[4].controller
+        assert result.extra["proof"] == universal_resolver_DID["proof"]
+        for i in range(0, 4):
+            assert (
+                result.public_key[i].id == universal_resolver_DID["publicKey"][i]["id"]
+            )
+            assert (
+                result.public_key[i].type
+                == universal_resolver_DID["publicKey"][i]["type"]
+            )
+            assert (
+                result.public_key[i].controller
+                == universal_resolver_DID["publicKey"][i]["controller"]
+            )
 
-        # Dependencies of other Verification Methods
+    async def test_universal_resolver_2_dependencies(self):
+        # Dependencies of other Verification Methods & controller atribute is missing
         universal_resolver_DID_2 = {
             "@context": ["https://www.w3.org/ns/did/v1"],
             "id": "did:btcr:xz35-jznz-q9yu-ply",
@@ -557,12 +573,12 @@ class TestDIDDoc(AsyncTestCase):
                 },
                 {
                     "type": ["EcdsaSecp256k1VerificationKey2019"],
-                    "id": "did:btcr:xz35-jznz-q9yu-ply#key-1",
+                    "id": ["did:btcr:xz35-jznz-q9yu-ply#key-1"],
                     "publicKeyBase58": "020a5a5c8c3575489cd2c17d43f642fc2b34792d47c9b026fafe33b3469e31b841",
                 },
                 {
                     "type": ["EcdsaSecp256k1VerificationKey2019"],
-                    "id": "did:btcr:xz35-jznz-q9yu-ply#satoshi",
+                    "id": ["did:btcr:xz35-jznz-q9yu-ply#satoshi"],
                     "publicKeyBase58": "020a5a5c8c3575489cd2c17d43f642fc2b34792d47c9b026fafe33b3469e31b841",
                 },
             ],
@@ -578,8 +594,22 @@ class TestDIDDoc(AsyncTestCase):
             result2.authentication[0].serialize()
             == result2.verification_method[2].serialize()
         )
+        for index in range(0, len(result2.verification_method)):
+            assert (
+                universal_resolver_DID_2["verificationMethod"][index]["type"][0]
+                == result2.verification_method[index].type
+            )
+            assert (
+                universal_resolver_DID_2["verificationMethod"][index]["id"][0]
+                == result2.verification_method[index].id
+            )
+            assert (
+                universal_resolver_DID_2["verificationMethod"][index]["publicKeyBase58"]
+                == result2.verification_method[index].publicKeyBase58
+            )
 
-        # No existing service ID
+    async def test_universal_resolver_3_non_existing_atributes(self):
+        # No existing service ID. Public key controller missing and incomplete id
         universal_resolver_DID_3 = {
             "@context": "https://www.w3.org/2019/did/v1",
             "id": "did:stack:v0:16EMaNw3pkn3v6f2BgnSSs53zAKH4Q8YJg-0",
@@ -597,7 +627,26 @@ class TestDIDDoc(AsyncTestCase):
 
         result3 = DIDDoc.deserialize(universal_resolver_DID_3)
         assert result3.service[0].id
+        assert result3.public_key[0].controller
+        assert (
+            result3.public_key[0].id != universal_resolver_DID_3["publicKey"][0]["id"]
+        )
+        assert (
+            result3.public_key[0].type
+            == universal_resolver_DID_3["publicKey"][0]["type"]
+        )
+        assert (
+            result3.public_key[0].publicKeyHex
+            == universal_resolver_DID_3["publicKey"][0]["publicKeyHex"]
+        )
 
+        assert result3.service[0].type == universal_resolver_DID_3["service"][0]["type"]
+        assert (
+            result3.service[0].service_endpoint
+            == universal_resolver_DID_3["service"][0]["serviceEndpoint"]
+        )
+
+    async def test_universal_resolver_4_same_key_reference(self):
         # Same key reference in multiple fields
         universal_resolver_DID_4 = {
             "@context": "https://w3id.org/did/v0.11",
@@ -636,8 +685,24 @@ class TestDIDDoc(AsyncTestCase):
         assert result4.authentication == result4.capability_invocation
         assert result4.authentication == result4.public_key
         assert result4.authentication[0].id != result4.key_agreement[0].id
+        result4_serialized = result4.serialize()
+        assert result4_serialized["id"] == universal_resolver_DID_4["id"]
+        assert universal_resolver_DID_4["publicKey"] == result4_serialized["publicKey"]
+        assert (
+            result4_serialized["assertionMethod"]
+            == result4_serialized["capabilityDelegation"]
+        )
+        assert (
+            result4_serialized["assertionMethod"]
+            == result4_serialized["capabilityInvocation"]
+        )
+        assert result4_serialized["assertionMethod"] == result4_serialized["publicKey"]
+        assert (
+            result4_serialized["assertionMethod"] != result4_serialized["keyAgreement"]
+        )
 
-        # Services without IDs & key used 3 times
+    async def test_universal_resolver_5_mix(self):
+        # Services without IDs & key used 3 times without controller
         universal_resolver_DID_5 = {
             "@context": ["https://www.w3.org/ns/did/v1"],
             "id": "did:sov:WRfXPg8dantKVubE3HX8pw",
@@ -676,9 +741,59 @@ class TestDIDDoc(AsyncTestCase):
         result5 = DIDDoc.deserialize(universal_resolver_DID_5)
         assert result5.service[0].id
         assert result5.service[1].id
+        assert result5.service[0].id != result5.service[1].id
         assert result5.verification_method == result5.authentication
         assert result5.verification_method == result5.assertion_method
+        assert result5.verification_method[0].controller
 
+        result5_serialized = result5.serialize()
+        assert result5_serialized["id"] == universal_resolver_DID_5["id"]
+        assert (
+            result5_serialized["service"][0]["serviceEndpoint"]
+            == universal_resolver_DID_5["service"][0]["serviceEndpoint"]
+        )
+        assert (
+            result5_serialized["service"][1]["serviceEndpoint"]
+            == universal_resolver_DID_5["service"][1]["serviceEndpoint"]
+        )
+        assert (
+            result5_serialized["service"][0]["type"]
+            == universal_resolver_DID_5["service"][0]["type"]
+        )
+        assert (
+            result5_serialized["service"][1]["type"]
+            == universal_resolver_DID_5["service"][1]["type"]
+        )
+        assert (
+            result5_serialized["authentication"][0]["type"]
+            == universal_resolver_DID_5["authentication"][0]["type"]
+        )
+        assert (
+            result5_serialized["authentication"][0]["id"]
+            == universal_resolver_DID_5["authentication"][0]["id"]
+        )
+        assert (
+            result5_serialized["authentication"][0]["publicKeyBase58"]
+            == universal_resolver_DID_5["authentication"][0]["publicKeyBase58"]
+        )
+
+        assert (
+            result5_serialized["assertionMethod"]
+            == result5_serialized["authentication"]
+        )
+        assert (
+            result5_serialized["assertionMethod"]
+            == result5_serialized["verificationMethod"]
+        )
+        assert result5_serialized["assertionMethod"][0]["controller"]
+        assert result5_serialized["service"][0]["id"]
+        assert result5_serialized["service"][1]["id"]
+        assert (
+            result5_serialized["service"][0]["id"]
+            != result5_serialized["service"][1]["id"]
+        )
+
+    async def test_universal_resolver_6_parameters_overloaded(self):
         # parameters overload
         universal_resolver_DID_6 = {
             "@context": "https://w3id.org/did/v1",
@@ -729,6 +844,28 @@ class TestDIDDoc(AsyncTestCase):
         assert result6.assertion_method == result6.capability_invocation
         assert result6.assertion_method != result6.key_agreement
         assert len(result6.public_key) == 2
+        assert universal_resolver_DID_6["proof"] == result6.extra["proof"]
+
+        result6_serialized = result6.serialize()
+        assert result6_serialized["id"] == universal_resolver_DID_6["id"]
+        assert result6_serialized["proof"] == universal_resolver_DID_6["proof"]
+        assert (
+            result6_serialized["assertionMethod"]
+            == result6_serialized["capabilityDelegation"]
+        )
+        assert (
+            result6_serialized["assertionMethod"]
+            == result6_serialized["capabilityInvocation"]
+        )
+        assert (
+            result6_serialized["assertionMethod"] != result6_serialized["keyAgreement"]
+        )
+        assert len(result6_serialized["publicKey"]) == 2
+
+        assert universal_resolver_DID_6["publicKey"] == result6_serialized["publicKey"]
+        assert [result6_serialized["publicKey"][1]] == result6_serialized[
+            "assertionMethod"
+        ]
 
     async def test_universal_resolver_wrong(self):
 

@@ -84,6 +84,7 @@ class DIDDoc:
         self._controller = controller
         self._index = {}
         self._ref_content = {}
+        self.extra = kwargs
 
         params = (
             ("verificationMethod", verification_method or []),
@@ -187,6 +188,7 @@ class DIDDoc:
         schema = DIDDocSchema()
         did_doc = schema.dump(copy.deepcopy(self))
         did_doc["@context"] = self.CONTEXT
+        did_doc.update(self.extra)
         return did_doc
 
     @property

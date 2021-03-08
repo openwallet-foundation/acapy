@@ -29,6 +29,7 @@ from .serviceschema import ServiceSchema
 from .unionfield import ListOrStringField
 from .verificationmethodschema import VerificationMethodSchema, PublicKeyField
 import uuid
+import copy
 import logging
 
 LOGGER = logging.getLogger(__name__)
@@ -99,20 +100,21 @@ class DIDDocSchema(Schema):
     @pre_load
     def pre_load_did_doc(self, in_data, **kwargs):
         """Preload function."""
-        verification = in_data.get("verificationMethod")
+        did_doc = copy.deepcopy(in_data)
+        verification = did_doc.get("verificationMethod")
         if isinstance(verification, dict):
-            in_data["verificationMethod"] = [verification]
-        if in_data.get("@context"):
-            in_data.pop("@context")
+            did_doc["verificationMethod"] = [verification]
+        if did_doc.get("@context"):
+            did_doc.pop("@context")
 
-        if not in_data.get("id"):
+        if not did_doc.get("id"):
             raise ValidationError("ID not found in the DIDDoc")
 
-        in_data = self._check_verification_method_controller(in_data)
-        in_data = self._complete_ids(in_data)
-        in_data = self._refactoring_references(in_data)
+        did_doc = self._check_verification_method_controller(did_doc)
+        did_doc = self._complete_ids(did_doc)
+        did_doc = self._refactoring_references(did_doc)
 
-        return in_data
+        return did_doc
 
     @post_load
     def post_load_did_doc(self, data, **kwargs):
