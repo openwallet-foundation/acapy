@@ -3,7 +3,7 @@ from configargparse import ArgumentTypeError
 from asynctest import TestCase as AsyncTestCase, mock as async_mock
 
 from .. import argparse
-from ..util import ByteSize
+from ..util import BoundedInt, ByteSize
 
 
 class TestArgParse(AsyncTestCase):
@@ -119,17 +119,42 @@ class TestArgParse(AsyncTestCase):
         assert bs("1G") == 1073741824
         assert bs("1t") == 1099511627776
 
-        bs = ByteSize(min_size=10)
+        bs = ByteSize(min=10)
         with self.assertRaises(ArgumentTypeError):
             bs("5")
         assert bs("12") == 12
 
-        bs = ByteSize(max_size=10)
+        bs = ByteSize(max=10)
         with self.assertRaises(ArgumentTypeError):
             bs("15")
         assert bs("10") == 10
 
-        assert repr(bs) == "ByteSize"
+        assert repr(bs) == "bytes"
+
+    def test_bounded_int(self):
+        bounded = BoundedInt()
+        with self.assertRaises(ArgumentTypeError):
+            bounded(None)
+        with self.assertRaises(ArgumentTypeError):
+            bounded("")
+        with self.assertRaises(ArgumentTypeError):
+            bounded("a")
+        with self.assertRaises(ArgumentTypeError):
+            bounded("1.5")
+        assert bounded("101") == 101
+        assert bounded("-99") == -99
+
+        bounded = BoundedInt(min=10)
+        with self.assertRaises(ArgumentTypeError):
+            bounded("5")
+        assert bounded("12") == 12
+
+        bounded = BoundedInt(max=10)
+        with self.assertRaises(ArgumentTypeError):
+            bounded("15")
+        assert bounded("10") == 10
+
+        assert repr(bounded) == "integer"
 
     async def test_mediation_x_clear_and_default(self):
         parser = argparse.create_argument_parser()

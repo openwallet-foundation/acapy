@@ -7,7 +7,7 @@ from configargparse import ArgumentParser, Namespace, YAMLConfigFileParser
 from typing import Type
 
 from .error import ArgsParseError
-from .util import ByteSize
+from .util import BoundedInt, ByteSize
 from ..utils.tracing import trace_event
 
 CAT_PROVISION = "general"
@@ -562,7 +562,7 @@ class LedgerGroup(ArgumentGroup):
         parser.add_argument(
             "--ledger-keepalive",
             default=5,
-            type=int,
+            type=BoundedInt(min=5),
             env_var="ACAPY_LEDGER_KEEP_ALIVE",
             help="Specifies how many seconds to keep the ledger open. Default: 5",
         )
@@ -587,8 +587,7 @@ class LedgerGroup(ArgumentGroup):
                 )
             if args.ledger_pool_name:
                 settings["ledger.pool_name"] = args.ledger_pool_name
-
-            if args.ledger_keepalive and args.ledger_keepalive > 5:
+            if args.ledger_keepalive:
                 settings["ledger.keepalive"] = args.ledger_keepalive
 
         return settings
@@ -887,7 +886,7 @@ class TransportGroup(ArgumentGroup):
         parser.add_argument(
             "--max-message-size",
             default=2097152,
-            type=ByteSize(min_size=1024),
+            type=ByteSize(min=1024),
             metavar="<message-size>",
             env_var="ACAPY_MAX_MESSAGE_SIZE",
             help="Set the maximum size in bytes for inbound agent messages.",
@@ -903,7 +902,7 @@ class TransportGroup(ArgumentGroup):
         parser.add_argument(
             "--max-outbound-retry",
             default=4,
-            type=ByteSize(min_size=1),
+            type=BoundedInt(min=1),
             env_var="ACAPY_MAX_OUTBOUND_RETRY",
             help="Set the maximum retry number for undelivered outbound\
             messages. Increasing this number might cause to increase the\
