@@ -35,6 +35,10 @@ if [ "$OSTYPE" == "msys" ]; then
   CONTAINER_RUNTIME="winpty docker"
 fi
 
+if [ ! -z "$TEST_REDIS_CONFIG" ]; then
+  DOCKER_ARGS="$DOCKER_ARGS -e TEST_REDIS_CONFIG=$TEST_REDIS_CONFIG"
+fi
+
 $CONTAINER_RUNTIME run --rm -ti --name aries-cloudagent-runner \
 	-v "$(pwd)/../test-reports:/usr/src/app/test-reports:z" \
 	$DOCKER_ARGS aries-cloudagent-test "$@"

@@ -7,6 +7,7 @@ from marshmallow import fields, validate
 from ....messaging.models.base import BaseModel, BaseModelSchema
 from ....messaging.valid import (
     INDY_CRED_DEF_ID,
+    INDY_PREDICATE,
     INDY_REV_REG_ID,
     INDY_SCHEMA_ID,
     INT_EPOCH,
@@ -105,8 +106,7 @@ class IndyGEProofPredSchema(BaseModelSchema):
     attr_name = fields.Str(description="Attribute name, indy-canonicalized")
     p_type = fields.Str(
         description="Predicate type",
-        example="GE",
-        validate=validate.OneOf([p.fortran for p in Predicate]),
+        **INDY_PREDICATE,
     )
     value = fields.Integer(strict=True, description="Predicate threshold value")
 
@@ -183,9 +183,14 @@ class IndyPrimaryProofSchema(BaseModelSchema):
 
         model_class = IndyPrimaryProof
 
-    eq_proof = fields.Nested(IndyEQProofSchema, description="Indy equality proof")
+    eq_proof = fields.Nested(
+        IndyEQProofSchema, allow_none=True, description="Indy equality proof"
+    )
     ge_proofs = fields.Nested(
-        IndyGEProofSchema, many=True, description="Indy GE proofs"
+        IndyGEProofSchema,
+        many=True,
+        allow_none=True,
+        description="Indy GE proofs",
     )
 
 
@@ -255,6 +260,7 @@ class IndyProofProofProofsProofSchema(BaseModelSchema):
     )
     non_revoc_proof = fields.Nested(
         IndyNonRevocProofSchema,
+        allow_none=True,
         description="Indy non-revocation proof",
     )
 
@@ -499,11 +505,13 @@ class IndyProofRequestedProofSchema(BaseModelSchema):
     revealed_attrs = fields.Dict(
         keys=fields.Str(),
         values=fields.Nested(IndyProofRequestedProofRevealedAttrSchema),
+        allow_none=True,
         description="Proof requested proof revealed attributes",
     )
     revealed_attr_groups = fields.Dict(
         keys=fields.Str(),
         values=fields.Nested(IndyProofRequestedProofRevealedAttrGroupSchema),
+        allow_none=True,
         description="Proof requested proof revealed attribute groups",
     )
     self_attested_attrs = fields.Dict(
@@ -558,10 +566,12 @@ class IndyProofIdentifierSchema(BaseModelSchema):
     )
     rev_reg_id = fields.Str(
         description="Revocation registry identifier",
+        allow_none=True,
         **INDY_REV_REG_ID,
     )
     timestamp = fields.Int(
         strict=True,
+        allow_none=True,
         description="Timestamp epoch",
         **INT_EPOCH,
     )

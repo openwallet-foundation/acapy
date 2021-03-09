@@ -109,4 +109,7 @@ class V20PresSchema(AgentMessageSchema):
             raise ValidationError("Formats vs. attachments length mismatch")
 
         for fmt in formats:
-            get_attach_by_id(fmt.attach_id)
+            request_atch = get_attach_by_id(fmt.attach_id)
+            V20PresFormat.Format.get(fmt.format).validate_pres_attach(
+                request_atch.content
+            )

@@ -12,7 +12,7 @@ from .....messaging.decorators.attach_decorator import AttachDecorator
 from .....messaging.models.base import BaseModel, BaseModelSchema
 from .....messaging.valid import UUIDFour
 
-from ...indy.pres_preview import IndyPresPreviewSchema
+from ...indy.proof import IndyProofSchema
 from ...indy.proof_request import IndyProofRequestSchema
 
 FormatSpec = namedtuple("FormatSpec", "aries aka")  # Aries RFC value, further monikers
@@ -30,11 +30,11 @@ class V20PresFormat(BaseModel):
         """Attachment format."""
 
         INDY = FormatSpec(
-            "hlindy-zkp-v1.0",
+            "hlindy@v2.0",  # TODO - revisit upon aries-rfcs PR 599 resolution
             {"indy", "hyperledgerindy", "hlindy"},
         )
         DIF = FormatSpec(
-            "dif/presentation-exchange/definitions@v1.0",
+            "dif@v1.0",  # TODO - revisit upon aries-rfcs PR 599 resolution
             {"dif", "w3c", "jsonld"},
         )
 
@@ -68,15 +68,15 @@ class V20PresFormat(BaseModel):
             """Admin API specifier."""
             return self.name.lower()
 
-        def validate_proposal_attach(self, data: Mapping):
-            """Raise ValidationError for wrong proposal~attach content."""
-            if self is V20PresFormat.Format.INDY:
-                IndyPresPreviewSchema().load(data)
-
         def validate_request_attach(self, data: Mapping):
-            """Raise ValidationError for wrong request_presentations~attach content."""
+            """Raise ValidationError for wrong proposal/request content."""
             if self is V20PresFormat.Format.INDY:
                 IndyProofRequestSchema().load(data)
+
+        def validate_pres_attach(self, data: Mapping):
+            """Raise ValidationError for wrong presentation content."""
+            if self is V20PresFormat.Format.INDY:
+                IndyProofSchema().load(data)
 
         def get_attachment_data(
             self,

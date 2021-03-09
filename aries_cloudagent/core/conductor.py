@@ -37,8 +37,10 @@ from ..protocols.out_of_band.v1_0.messages.invitation import HSProto, Invitation
 from ..transport.inbound.manager import InboundTransportManager
 from ..transport.inbound.message import InboundMessage
 from ..transport.outbound.base import OutboundDeliveryError
+from ..transport.outbound.queue.base import BaseOutboundQueue
 from ..transport.outbound.manager import OutboundTransportManager, QueuedOutboundMessage
 from ..transport.outbound.message import OutboundMessage
+from ..transport.outbound.queue.loader import get_outbound_queue
 from ..transport.wire_format import BaseWireFormat
 from ..utils.stats import Collector
 from ..utils.task_queue import CompletedTask, TaskQueue
@@ -73,6 +75,7 @@ class Conductor:
         self.outbound_transport_manager: OutboundTransportManager = None
         self.root_profile: Profile = None
         self.setup_public_did: DIDInfo = None
+        self.outbound_queue: BaseOutboundQueue = None
 
     @property
     def context(self) -> InjectionContext:
@@ -122,6 +125,8 @@ class Conductor:
             multitenant_mgr = MultitenantManager(self.root_profile)
             context.injector.bind_instance(MultitenantManager, multitenant_mgr)
 
+        self.outbound_queue = get_outbound_queue(context.settings)
+
         # Admin API
         if context.settings.get("admin.enabled"):
             try:
@@ -143,8 +148,6 @@ class Conductor:
                     for url in webhook_urls:
                         self.admin_server.add_webhook_target(url)
                 context.injector.bind_instance(BaseAdminServer, self.admin_server)
-                if "http" not in self.outbound_transport_manager.registered_schemes:
-                    self.outbound_transport_manager.register("http")
             except Exception:
                 LOGGER.exception("Unable to register admin server")
                 raise
@@ -212,6 +215,7 @@ class Conductor:
             default_label,
             self.inbound_transport_manager.registered_transports,
             self.outbound_transport_manager.registered_transports,
+            self.outbound_queue,
             self.setup_public_did and self.setup_public_did.did,
             self.admin_server,
         )
@@ -483,7 +487,7 @@ class Conductor:
         inbound: InboundMessage = None,
     ):
         """
-        Queue an outbound message.
+        Queue an outbound message for transport.
 
         Args:
             profile: The active profile
@@ -511,7 +515,33 @@ class Conductor:
                         self.admin_server.notify_fatal_error()
                     raise
                 del conn_mgr
+        # If ``self.outbound_queue`` is specified (usually set via
+        # outbound queue `-oq` commandline option), use that external
+        # queue. Else save the message to an internal queue. This
+        # internal queue usually results in the message to be sent over
+        # ACA-py `-ot` transport.
+        if self.outbound_queue:
+            await self._queue_external(profile, outbound)
+        else:
+            self._queue_internal(profile, outbound)
 
+    async def _queue_external(
+        self,
+        profile: Profile,
+        outbound: OutboundMessage,
+    ):
+        """Save the message to an external outbound queue."""
+        async with self.outbound_queue:
+            targets = (
+                [outbound.target] if outbound.target else (outbound.target_list or [])
+            )
+            for target in targets:
+                await self.outbound_queue.enqueue_message(
+                    outbound.payload, target.endpoint
+                )
+
+    def _queue_internal(self, profile: Profile, outbound: OutboundMessage):
+        """Save the message to an internal outbound queue."""
         try:
             self.outbound_transport_manager.enqueue_message(profile, outbound)
         except OutboundDeliveryError:

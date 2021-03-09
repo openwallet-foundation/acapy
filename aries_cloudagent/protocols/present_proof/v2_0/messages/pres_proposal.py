@@ -112,6 +112,6 @@ class V20PresProposalSchema(AgentMessageSchema):
 
         for fmt in formats:
             proposal_atch = get_attach_by_id(fmt.attach_id)
-            V20PresFormat.Format.get(fmt.format).validate_proposal_attach(
+            V20PresFormat.Format.get(fmt.format).validate_request_attach(
                 proposal_atch.content
             )

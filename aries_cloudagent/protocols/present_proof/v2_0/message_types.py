@@ -4,7 +4,7 @@ from ...didcomm_prefix import DIDCommPrefix
 
 SPEC_URI = (
     "https://github.com/hyperledger/aries-rfcs/tree/"
-    "de0092a41b7d54c4fe58a69e0dba24ae8bec9360/features/0454-present-proof-v2"
+    "eace815c3e8598d4a8dd7881d8c731fdb2bcc0aa/features/0454-present-proof-v2"
 )
 
 # Message types

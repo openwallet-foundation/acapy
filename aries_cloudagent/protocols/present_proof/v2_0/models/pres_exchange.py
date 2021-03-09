@@ -104,7 +104,7 @@ class V20PresExRecord(BaseExchangeRecord):
         }
 
     @property
-    def by_format(self):
+    def by_format(self) -> Mapping:
         """Record proposal, request, and presentation data structures by format."""
         result = {}
         for item, cls in {

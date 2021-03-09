@@ -597,7 +597,7 @@ class OutOfBandManager(BaseConnectionManager):
             conn_rec: connection record
             trace: trace setting for presentation exchange record
         """
-        pres_mgr = PresentationManager(self._session)
+        pres_mgr = PresentationManager(self._session.profile)
         pres_request_msg = req_attach.content
         indy_proof_request = json.loads(
             b64_to_bytes(
@@ -678,7 +678,7 @@ class OutOfBandManager(BaseConnectionManager):
             conn_rec: connection record
             trace: trace setting for presentation exchange record
         """
-        pres_mgr = V20PresManager(self._session)
+        pres_mgr = V20PresManager(self._session.profile)
         pres_request_msg = req_attach.content
         oob_invi_service = service.serialize()
         pres_request_msg["~service"] = {

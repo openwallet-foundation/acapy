@@ -55,6 +55,8 @@ class TestSchemaRoutes(AsyncTestCase):
             }
         )
 
+        self.request.query = {"auto_endorse": "true"}
+
         with async_mock.patch.object(test_module.web, "json_response") as mock_response:
             result = await test_module.schemas_send_schema(self.request)
             assert result == mock_response.return_value
@@ -83,6 +85,7 @@ class TestSchemaRoutes(AsyncTestCase):
                 "attributes": ["table", "drink", "colour"],
             }
         )
+        self.request.query = {"auto_endorse": "true"}
         self.ledger.create_and_send_schema = async_mock.CoroutineMock(
             side_effect=test_module.LedgerError("Down for routine maintenance")
         )
