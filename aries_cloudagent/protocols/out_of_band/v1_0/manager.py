@@ -529,7 +529,7 @@ class OutOfBandManager(BaseConnectionManager):
                 if req_attach.data is not None:
                     req_attach_type = req_attach.data.json["@type"]
                     if DIDCommPrefix.unqualify(req_attach_type) == PRESENTATION_REQUEST:
-                        proof_present_mgr = PresentationManager(self._session)
+                        proof_present_mgr = PresentationManager(self._session.profile)
                         indy_proof_request = json.loads(
                             b64_to_bytes(
                                 req_attach.data.json["request_presentations~attach"][0][
