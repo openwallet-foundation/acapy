@@ -1,3 +1,6 @@
+from datetime import datetime
+from typing import Union
+
 from ..crypto import Ed25519KeyPair
 from .JwsLinkedDataSignature import JwsLinkedDataSignature
 
@@ -10,7 +13,7 @@ class Ed25519Signature2018(JwsLinkedDataSignature):
         date: Union[datetime, str] = None,
     ):
         super().__init__(
-            signature_type="Ed25519Signature",
+            signature_type="Ed25519Signature2018",
             algorithm="EdDSA",
             key_pair=Ed25519KeyPair,
             verification_method=verification_method,

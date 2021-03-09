@@ -5,9 +5,9 @@ from .AuthenticationProofPurpose import AuthenticationProofPurpose
 from .PublicKeyProofPurpose import PublicKeyProofPurpose
 
 __all__ = [
-  ProofPurpose,
-  ControllerProofPurpose,
-  AssertionProofPurpose,
-  AuthenticationProofPurpose,
-  PublicKeyProofPurpose
+    ProofPurpose,
+    ControllerProofPurpose,
+    AssertionProofPurpose,
+    AuthenticationProofPurpose,
+    PublicKeyProofPurpose,
 ]
