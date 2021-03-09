@@ -1,6 +1,6 @@
 from pyld.documentloader import requests
-from .wallet_util import did_key_to_naked
 from ...wallet.util import did_key_to_naked
+
 from typing import Callable
 
 

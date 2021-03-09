@@ -5,7 +5,7 @@ from pyld import jsonld
 
 from .suites import LinkedDataProof, LinkedDataSignature
 from .purposes.ProofPurpose import ProofPurpose
-from .document_loader import document_loader
+from .document_loader import DocumentLoader
 from .constants import SECURITY_CONTEXT_V2_URL
 
 
@@ -16,7 +16,7 @@ class ProofSet:
         document: Union[dict, str],
         suite: LinkedDataProof,
         purpose: ProofPurpose,
-        document_loader: document_loader
+        document_loader: DocumentLoader
     ) -> dict:
 
         if isinstance(document, str):
@@ -42,7 +42,7 @@ class ProofSet:
         document: Union[dict, str],
         suites: List[LinkedDataProof],
         purpose: ProofPurpose,
-        document_loader: document_loader
+        document_loader: DocumentLoader
     ):
         try:
             if isinstance(document, str):
@@ -75,7 +75,7 @@ class ProofSet:
             return {"verified": verified, "error": e}
 
     @staticmethod
-    async def _get_proofs(document: dict, document_loader: document_loader) -> dict:
+    async def _get_proofs(document: dict, document_loader: DocumentLoader) -> dict:
         proof_set = jsonld.get_values(document, "proof")
 
         del document["proof"]
@@ -95,7 +95,7 @@ class ProofSet:
         suites: List[LinkedDataProof],
         proof_set: List[dict],
         purpose: ProofPurpose,
-        document_loader: document_loader,
+        document_loader: DocumentLoader,
     ):
 
         result = await asyncio.gather(

@@ -1,6 +1,6 @@
 """Abstract base class for linked data proofs."""
 from ..purposes.ProofPurpose import ProofPurpose
-from ..document_loader import document_loader
+from ..document_loader import DocumentLoader
 
 from abc import ABCMeta, abstractmethod
 
@@ -11,7 +11,7 @@ class LinkedDataProof(metaclass=ABCMeta):
 
     @abstractmethod
     async def create_proof(
-        self, *, document: dict, purpose: ProofPurpose, document_loader: document_loader
+        self, *, document: dict, purpose: ProofPurpose, document_loader: DocumentLoader
     ):
         pass
 

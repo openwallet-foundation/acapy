@@ -20,7 +20,7 @@ async def _verify_credential(
     suite: LinkedDataSignature,
     purpose: ProofPurpose = None,
     check_status: Callable = None,
-) -> Awaitable(dict):
+) -> dict:
     # TODO: validate credential structure
 
     if credential["credentialStatus"] and not check_status:
@@ -188,10 +188,8 @@ async def verify(
     except Exception as e:
         return {
             "verified": False,
-            "results": [
-                {"presentation": presentation, "verified": False, "error": error}
-            ],
-            "error": error,
+            "results": [{"presentation": presentation, "verified": False, "error": e}],
+            "error": e,
         }
 
 

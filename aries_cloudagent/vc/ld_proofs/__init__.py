@@ -8,7 +8,12 @@ from .purposes import (
     AssertionProofPurpose,
     IssueCredentialProofPurpose,
 )
-from .suites import LinkedDataProof, LinkedDataSignature, JwsLinkedDataSignature
+from .suites import (
+    LinkedDataProof,
+    LinkedDataSignature,
+    JwsLinkedDataSignature,
+    Ed25519Signature2018,
+)
 from .crypto import Base58Encoder, KeyPair, Ed25519KeyPair
 from .document_loader import DocumentLoader, did_key_document_loader
 
@@ -25,6 +30,7 @@ __all__ = [
     LinkedDataProof,
     LinkedDataSignature,
     JwsLinkedDataSignature,
+    Ed25519Signature2018,
     Base58Encoder,
     KeyPair,
     Ed25519KeyPair,
