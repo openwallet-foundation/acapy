@@ -38,6 +38,7 @@ class VCRecord:
         self.record_id = record_id or uuid4().hex
 
     def __eq__(self, other: object) -> bool:
+        """Compare two VC records for equality."""
         if not isinstance(other, VCRecord):
             return False
         return (

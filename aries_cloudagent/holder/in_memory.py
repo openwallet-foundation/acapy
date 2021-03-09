@@ -81,6 +81,7 @@ class InMemoryVCHolder(VCHolder):
             cred: The VCRecord instance to store
         Raises:
             StorageDuplicateError: If the record_id is not unique
+
         """
         record = serialize_credential(cred)
         await self._store.add_record(record)
@@ -91,6 +92,7 @@ class InMemoryVCHolder(VCHolder):
 
         Raises:
             StorageNotFoundError: If the record is not found
+
         """
         record = await self._store.get_record(VC_CRED_RECORD_TYPE, record_id)
         return load_credential(record)
@@ -101,6 +103,7 @@ class InMemoryVCHolder(VCHolder):
 
         Raises:
             StorageNotFoundError: If the record is not found
+
         """
         record = await self._store.find_record(
             VC_CRED_RECORD_TYPE, {"given_id": given_id}
@@ -113,6 +116,7 @@ class InMemoryVCHolder(VCHolder):
 
         Raises:
             StorageNotFoundError: If the record is not found
+
         """
         await self._store.delete_record(serialize_credential(cred))
 
@@ -133,6 +137,7 @@ class InMemoryVCHolder(VCHolder):
             issuer_id: The ID of the credential issuer
             subject_id: The ID of one of the credential subjects
             tag_filter: A tag filter clause
+
         """
         query = {}
         if contexts:
@@ -152,6 +157,8 @@ class InMemoryVCHolder(VCHolder):
 
 
 class InMemoryVCRecordSearch(VCRecordSearch):
+    """In-memory search for VC records."""
+
     def __init__(self, search: InMemoryStorageSearch):
         """Initialize the in-memory VC record search."""
         self._search = search

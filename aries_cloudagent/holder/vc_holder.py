@@ -1,3 +1,5 @@
+"""Abstract interfaces for VC holder implementations."""
+
 from abc import ABC, abstractmethod
 from typing import Mapping, Sequence
 
@@ -16,6 +18,7 @@ class VCHolder(ABC):
             cred: The VCRecord instance to store
         Raises:
             StorageDuplicateError: If the record_id is not unique
+
         """
 
     @abstractmethod
@@ -25,6 +28,7 @@ class VCHolder(ABC):
 
         Raises:
             StorageNotFoundError: If the record is not found
+
         """
 
     @abstractmethod
@@ -34,6 +38,7 @@ class VCHolder(ABC):
 
         Raises:
             StorageNotFoundError: If the record is not found
+
         """
 
     @abstractmethod
@@ -43,6 +48,7 @@ class VCHolder(ABC):
 
         Raises:
             StorageNotFoundError: If the record is not found
+
         """
 
     @abstractmethod
@@ -63,6 +69,7 @@ class VCHolder(ABC):
             issuer_id: The ID of the credential issuer
             subject_id: The ID of one of the credential subjects
             tag_filter: A tag filter clause
+
         """
 
     def __repr__(self) -> str:
@@ -77,6 +84,8 @@ class VCHolder(ABC):
 
 
 class VCRecordSearch(ABC):
+    """A VC record search in progress."""
+
     @abstractmethod
     async def fetch(self, max_count: int = None) -> Sequence[VCRecord]:
         """
