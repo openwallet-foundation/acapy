@@ -7,7 +7,7 @@ from configargparse import ArgumentParser, Namespace, YAMLConfigFileParser
 from typing import Type
 
 from .error import ArgsParseError
-from .util import ByteSize
+from .util import BoundedInt, ByteSize
 from ..utils.tracing import trace_event
 
 CAT_PROVISION = "general"
@@ -559,6 +559,13 @@ class LedgerGroup(ArgumentGroup):
             This must be set if running in no-ledger mode.  Overrides any\
             specified ledger or genesis configurations.  Default: false.",
         )
+        parser.add_argument(
+            "--ledger-keepalive",
+            default=5,
+            type=BoundedInt(min=5),
+            env_var="ACAPY_LEDGER_KEEP_ALIVE",
+            help="Specifies how many seconds to keep the ledger open. Default: 5",
+        )
 
     def get_settings(self, args: Namespace) -> dict:
         """Extract ledger settings."""
@@ -580,6 +587,9 @@ class LedgerGroup(ArgumentGroup):
                 )
             if args.ledger_pool_name:
                 settings["ledger.pool_name"] = args.ledger_pool_name
+            if args.ledger_keepalive:
+                settings["ledger.keepalive"] = args.ledger_keepalive
+
         return settings
 
 
@@ -858,6 +868,41 @@ class TransportGroup(ArgumentGroup):
             transport types are 'http' and 'ws'.",
         )
         parser.add_argument(
+            "-oq",
+            "--outbound-queue",
+            dest="outbound_queue",
+            type=str,
+            env_var="ACAPY_OUTBOUND_TRANSPORT_QUEUE",
+            help="""Defines connection details for outbound queue in a single
+                    connection string. For example, 'redis://127.0.0.1:6379'.
+                 """,
+        )
+        parser.add_argument(
+            "-oqp",
+            "--outbound-queue-prefix",
+            dest="outbound_queue_prefix",
+            type=str,
+            env_var="ACAPY_OUTBOUND_TRANSPORT_QUEUE_PREFIX",
+            help="""Defines the prefix used to generate the queue key. The
+                    default is 'acapy', which generates a queue key as follows:
+                    'acapy.outbound_transport'.
+                 """,
+        )
+        parser.add_argument(
+            "-oqc",
+            "--outbound-queue-class",
+            dest="outbound_queue_class",
+            type=str,
+            env_var="ACAPY_OUTBOUND_TRANSPORT_QUEUE_CLASS",
+            help="""Defines the location of the Outbound Queue Engine. This must be
+                    a 'dotpath' to a Python module on the PYTHONPATH, followed by a
+                    colon, followed by the name of a Python class that implements
+                    BaseOutboundQueue. This commandline option is the official entry
+                    point of ACA-py's pluggable queue interface. The default value is:
+                    'aries_cloudagent.transport.outbound.queue.redis:RedisOutboundQueue'
+                 """,
+        )
+        parser.add_argument(
             "-l",
             "--label",
             type=str,
@@ -876,7 +921,7 @@ class TransportGroup(ArgumentGroup):
         parser.add_argument(
             "--max-message-size",
             default=2097152,
-            type=ByteSize(min_size=1024),
+            type=ByteSize(min=1024),
             metavar="<message-size>",
             env_var="ACAPY_MAX_MESSAGE_SIZE",
             help="Set the maximum size in bytes for inbound agent messages.",
@@ -892,7 +937,7 @@ class TransportGroup(ArgumentGroup):
         parser.add_argument(
             "--max-outbound-retry",
             default=4,
-            type=ByteSize(min_size=1),
+            type=BoundedInt(min=1),
             env_var="ACAPY_MAX_OUTBOUND_RETRY",
             help="Set the maximum retry number for undelivered outbound\
             messages. Increasing this number might cause to increase the\
@@ -906,10 +951,27 @@ class TransportGroup(ArgumentGroup):
             settings["transport.inbound_configs"] = args.inbound_transports
         else:
             raise ArgsParseError("-it/--inbound-transport is required")
+        if not args.outbound_transports and not args.outbound_queue:
+            raise ArgsParseError(
+                "-ot/--outbound-transport or -oq/--outbound-queue is required"
+            )
+        if args.outbound_transports and args.outbound_queue:
+            raise ArgsParseError(
+                "-ot/--outbound-transport and -oq/--outbound-queue are "
+                "not allowed together"
+            )
         if args.outbound_transports:
             settings["transport.outbound_configs"] = args.outbound_transports
-        else:
-            raise ArgsParseError("-ot/--outbound-transport is required")
+        if args.outbound_queue:
+            settings["transport.outbound_queue"] = args.outbound_queue
+        settings["transport.outbound_queue_prefix"] = (
+            args.outbound_queue_prefix or "acapy"
+        )
+        settings["transport.outbound_queue_class"] = (
+            args.outbound_queue_class
+            or "aries_cloudagent.transport.outbound.queue.redis:RedisOutboundQueue"
+        )
+
         settings["transport.enable_undelivered_queue"] = args.enable_undelivered_queue
 
         if args.label:

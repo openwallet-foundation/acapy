@@ -10,6 +10,7 @@ from aiohttp_apispec import (
     request_schema,
     response_schema,
 )
+import json
 
 from marshmallow import fields
 from marshmallow.validate import Regexp
@@ -22,6 +23,8 @@ from ...storage.base import BaseStorage
 from ..models.openapi import OpenAPISchema
 from ..valid import B58, NATURAL_NUM, INDY_SCHEMA_ID, INDY_VERSION
 from .util import SchemaQueryStringSchema, SCHEMA_SENT_RECORD_TYPE, SCHEMA_TAGS
+
+from ...protocols.endorse_transaction.v1_0.manager import TransactionManager
 
 
 class SchemaSendRequestSchema(OpenAPISchema):
@@ -100,8 +103,28 @@ class SchemaIdMatchInfoSchema(OpenAPISchema):
     )
 
 
+class AutoEndorseOptionSchema(OpenAPISchema):
+    """Class for user to input whether to auto-endorse the transaction or not."""
+
+    auto_endorse = fields.Boolean(
+        description="Auto-endorse Transaction",
+        required=False,
+    )
+
+
+class EndorserDIDOptionSchema(OpenAPISchema):
+    """Class for user to input the DID associated with the requested endorser."""
+
+    endorser_did = fields.Str(
+        description="Endorser DID",
+        required=False,
+    )
+
+
 @docs(tags=["schema"], summary="Sends a schema to the ledger")
 @request_schema(SchemaSendRequestSchema())
+@querystring_schema(AutoEndorseOptionSchema())
+@querystring_schema(EndorserDIDOptionSchema())
 @response_schema(SchemaSendResultsSchema(), 200, description="")
 async def schemas_send_schema(request: web.BaseRequest):
     """
@@ -115,6 +138,8 @@ async def schemas_send_schema(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
+    auto_endorse = json.loads(request.query.get("auto_endorse", "true"))
+    endorser_did = request.query.get("endorser_did", None)
 
     body = await request.json()
 
@@ -132,15 +157,34 @@ async def schemas_send_schema(request: web.BaseRequest):
     issuer = context.inject(IndyIssuer)
     async with ledger:
         try:
+            # if not auto_endorse, then the returned "schema_def" is actually
+            # the signed transaction
             schema_id, schema_def = await shield(
                 ledger.create_and_send_schema(
-                    issuer, schema_name, schema_version, attributes
+                    issuer,
+                    schema_name,
+                    schema_version,
+                    attributes,
+                    write_ledger=auto_endorse,
+                    endorser_did=endorser_did,
                 )
             )
         except (IndyIssuerError, LedgerError) as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-    return web.json_response({"schema_id": schema_id, "schema": schema_def})
+    if auto_endorse:
+        return web.json_response({"schema_id": schema_id, "schema": schema_def})
+    else:
+        session = await context.session()
+
+        transaction_mgr = TransactionManager(session)
+
+        transaction = await transaction_mgr.create_record(
+            messages_attach=schema_def["signed_txn"],
+            expires_time="1597708800",
+        )
+
+        return web.json_response(transaction.serialize())
 
 
 @docs(

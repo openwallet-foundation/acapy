@@ -1,3 +1,4 @@
+import argparse
 import asyncio
 import json
 import logging
@@ -12,6 +13,12 @@ from aiohttp import ClientError
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from runners.agent_container import (
+    arg_parser,
+    create_agent_with_args,
+    AgentContainer,
+    AriesAgent,
+)
 from runners.support.agent import (  # noqa:E402
     DemoAgent,
     default_genesis_txns,
@@ -36,7 +43,7 @@ logging.basicConfig(level=logging.WARNING)
 LOGGER = logging.getLogger(__name__)
 
 
-class FaberAgent(DemoAgent):
+class FaberAgent(AriesAgent):
     def __init__(
         self,
         ident: str,
@@ -135,118 +142,42 @@ class FaberAgent(DemoAgent):
         self.log("Received message:", message["content"])
 
 
-async def generate_invitation(agent, use_did_exchange: bool, auto_accept: bool = True):
-    agent._connection_ready = asyncio.Future()
-    with log_timer("Generate invitation duration:"):
-        # Generate an invitation
-        log_status("#7 Create a connection to alice and print out the invite details")
-        invi_rec = await agent.get_invite(use_did_exchange, auto_accept)
-
-    qr = QRCode(border=1)
-    qr.add_data(invi_rec["invitation_url"])
-    log_msg(
-        "Use the following JSON to accept the invite from another demo agent."
-        " Or use the QR code to connect from a mobile agent."
-    )
-    log_msg(json.dumps(invi_rec["invitation"]), label="Invitation Data:", color=None)
-    qr.print_ascii(invert=True)
-
-    log_msg("Waiting for connection...")
-    await agent.detect_connection()
-
-
-async def create_schema_and_cred_def(agent, revocation):
-    with log_timer("Publish schema/cred def duration:"):
-        log_status("#3/4 Create a new schema/cred def on the ledger")
-        version = format(
-            "%d.%d.%d"
-            % (
-                random.randint(1, 101),
-                random.randint(1, 101),
-                random.randint(1, 101),
-            )
-        )
-        (_, cred_def_id,) = await agent.register_schema_and_creddef(  # schema id
-            "degree schema",
-            version,
-            ["name", "date", "degree", "age", "timestamp"],
-            support_revocation=revocation,
-            revocation_registry_size=TAILS_FILE_COUNT if revocation else None,
-        )
-        return cred_def_id
-
-
-async def main(
-    start_port: int,
-    no_auto: bool = False,
-    revocation: bool = False,
-    tails_server_base_url: str = None,
-    show_timing: bool = False,
-    multitenant: bool = False,
-    mediation: bool = False,
-    use_did_exchange: bool = False,
-    wallet_type: str = None,
-):
-    genesis = await default_genesis_txns()
-    if not genesis:
-        print("Error retrieving ledger genesis transactions")
-        sys.exit(1)
-
-    agent = None
-    mediator_agent = None
+async def main(args):
+    faber_agent = await create_agent_with_args(args, ident="faber")
 
     try:
         log_status(
             "#1 Provision an agent and wallet, get back configuration details"
-            + (f" (Wallet type: {wallet_type})" if wallet_type else "")
+            + (
+                f" (Wallet type: {faber_agent.wallet_type})"
+                if faber_agent.wallet_type
+                else ""
+            )
         )
         agent = FaberAgent(
-            "Faber.Agent",
-            start_port,
-            start_port + 1,
-            genesis_data=genesis,
-            no_auto=no_auto,
-            tails_server_base_url=tails_server_base_url,
-            timing=show_timing,
-            multitenant=multitenant,
-            mediation=mediation,
-            wallet_type=wallet_type,
+            "faber.agent",
+            faber_agent.start_port,
+            faber_agent.start_port + 1,
+            genesis_data=faber_agent.genesis_txns,
+            no_auto=faber_agent.no_auto,
+            tails_server_base_url=faber_agent.tails_server_base_url,
+            timing=faber_agent.show_timing,
+            multitenant=faber_agent.multitenant,
+            mediation=faber_agent.mediation,
+            wallet_type=faber_agent.wallet_type,
         )
-        await agent.listen_webhooks(start_port + 2)
-        await agent.register_did()
 
-        with log_timer("Startup duration:"):
-            await agent.start_process()
-        log_msg("Admin URL is at:", agent.admin_url)
-        log_msg("Endpoint URL is at:", agent.endpoint)
+        faber_agent.public_did = True
+        faber_schema_name = "degree schema"
+        faber_schema_attrs = ["name", "date", "degree", "age", "timestamp"]
+        await faber_agent.initialize(
+            the_agent=agent,
+            schema_name=faber_schema_name,
+            schema_attrs=faber_schema_attrs,
+        )
 
-        if mediation:
-            mediator_agent = await start_mediator_agent(start_port + 4, genesis)
-            if not mediator_agent:
-                raise Exception("Mediator agent returns None :-(")
-        else:
-            mediator_agent = None
-
-        if multitenant:
-            # create an initial managed sub-wallet (also mediated)
-            await agent.register_or_switch_wallet(
-                "Faber.initial",
-                public_did=True,
-                webhook_port=agent.get_new_webhook_port(),
-                mediator_agent=mediator_agent,
-            )
-        elif mediation:
-            # we need to pre-connect the agent to its mediator
-            if not await connect_wallet_to_mediator(agent, mediator_agent):
-                log_msg("Mediation setup FAILED :-(")
-                raise Exception("Mediation setup FAILED :-(")
-
-        # Create a schema
-        cred_def_id = await create_schema_and_cred_def(agent, revocation)
-
-        # TODO add an additional credential for Student ID
-
-        await generate_invitation(agent, use_did_exchange)
+        # generate an invitation for Alice
+        await faber_agent.generate_invitation(display_qr=True, wait=True)
 
         exchange_tracing = False
         options = (
@@ -255,14 +186,14 @@ async def main(
             "    (3) Send Message\n"
             "    (4) Create New Invitation\n"
         )
-        if revocation:
+        if faber_agent.revocation:
             options += "    (5) Revoke Credential\n" "    (6) Publish Revocations\n"
-        if multitenant:
+        if faber_agent.multitenant:
             options += "    (W) Create and/or Enable Wallet\n"
         options += "    (T) Toggle tracing on credential/proof exchange\n"
         options += "    (X) Exit?\n[1/2/3/4/{}{}T/X] ".format(
-            "5/6/" if revocation else "",
-            "W/" if multitenant else "",
+            "5/6/" if faber_agent.revocation else "",
+            "W/" if faber_agent.multitenant else "",
         )
         async for option in prompt_loop(options):
             if option is not None:
@@ -271,29 +202,32 @@ async def main(
             if option is None or option in "xX":
                 break
 
-            elif option in "wW" and multitenant:
+            elif option in "wW" and faber_agent.multitenant:
                 target_wallet_name = await prompt("Enter wallet name: ")
                 include_subwallet_webhook = await prompt(
                     "(Y/N) Create sub-wallet webhook target: "
                 )
                 if include_subwallet_webhook.lower() == "y":
-                    created = await agent.register_or_switch_wallet(
+                    created = await faber_agent.agent.register_or_switch_wallet(
                         target_wallet_name,
-                        webhook_port=agent.get_new_webhook_port(),
+                        webhook_port=faber_agent.agent.get_new_webhook_port(),
                         public_did=True,
-                        mediator_agent=mediator_agent,
+                        mediator_agent=faber_agent.mediator_agent,
                     )
                 else:
-                    created = await agent.register_or_switch_wallet(
+                    created = await faber_agent.agent.register_or_switch_wallet(
                         target_wallet_name,
                         public_did=True,
-                        mediator_agent=mediator_agent,
+                        mediator_agent=faber_agent.mediator_agent,
                     )
                 # create a schema and cred def for the new wallet
                 # TODO check first in case we are switching between existing wallets
                 if created:
                     # TODO this fails because the new wallet doesn't get a public DID
-                    cred_def_id = await create_schema_and_cred_def(agent, revocation)
+                    await faber_agent.create_schema_and_cred_def(
+                        schema_name=faber_schema_name,
+                        schema_attrs=faber_schema_attrs,
+                    )
 
             elif option in "tT":
                 exchange_tracing = not exchange_tracing
@@ -307,7 +241,7 @@ async def main(
                 log_status("#13 Issue credential offer to X")
 
                 # TODO define attributes to send for credential
-                agent.cred_attrs[cred_def_id] = {
+                faber_agent.agent.cred_attrs[faber_agent.cred_def_id] = {
                     "name": "Alice Smith",
                     "date": "2018-05-28",
                     "degree": "Maths",
@@ -319,18 +253,20 @@ async def main(
                     "@type": CRED_PREVIEW_TYPE,
                     "attributes": [
                         {"name": n, "value": v}
-                        for (n, v) in agent.cred_attrs[cred_def_id].items()
+                        for (n, v) in faber_agent.agent.cred_attrs[
+                            faber_agent.cred_def_id
+                        ].items()
                     ],
                 }
                 offer_request = {
-                    "connection_id": agent.connection_id,
-                    "comment": f"Offer on cred def id {cred_def_id}",
+                    "connection_id": faber_agent.agent.connection_id,
+                    "comment": f"Offer on cred def id {faber_agent.cred_def_id}",
                     "auto_remove": False,
                     "credential_preview": cred_preview,
-                    "filter": {"indy": {"cred_def_id": cred_def_id}},
+                    "filter": {"indy": {"cred_def_id": faber_agent.cred_def_id}},
                     "trace": exchange_tracing,
                 }
-                await agent.admin_POST(
+                await faber_agent.agent.admin_POST(
                     "/issue-credential-2.0/send-offer", offer_request
                 )
                 # TODO issue an additional credential for Student ID
@@ -340,18 +276,18 @@ async def main(
                 req_attrs = [
                     {
                         "name": "name",
-                        "restrictions": [{"schema_name": "degree schema"}],
+                        "restrictions": [{"schema_name": faber_schema_name}],
                     },
                     {
                         "name": "date",
-                        "restrictions": [{"schema_name": "degree schema"}],
+                        "restrictions": [{"schema_name": faber_schema_name}],
                     },
                 ]
-                if revocation:
+                if faber_agent.revocation:
                     req_attrs.append(
                         {
                             "name": "degree",
-                            "restrictions": [{"schema_name": "degree schema"}],
+                            "restrictions": [{"schema_name": faber_schema_name}],
                             "non_revoked": {"to": int(time.time() - 1)},
                         },
                     )
@@ -359,7 +295,7 @@ async def main(
                     req_attrs.append(
                         {
                             "name": "degree",
-                            "restrictions": [{"schema_name": "degree schema"}],
+                            "restrictions": [{"schema_name": faber_schema_name}],
                         }
                     )
                 if SELF_ATTESTED:
@@ -373,7 +309,7 @@ async def main(
                         "name": "age",
                         "p_type": ">=",
                         "p_value": 18,
-                        "restrictions": [{"schema_name": "degree schema"}],
+                        "restrictions": [{"schema_name": faber_schema_name}],
                     }
                 ]
                 indy_proof_request = {
@@ -388,7 +324,7 @@ async def main(
                     },
                 }
 
-                if revocation:
+                if faber_agent.revocation:
                     indy_proof_request["non_revoked"] = {"to": int(time.time())}
                 proof_request_web_request = {
                     "connection_id": agent.connection_id,
@@ -401,8 +337,9 @@ async def main(
 
             elif option == "3":
                 msg = await prompt("Enter message: ")
-                await agent.admin_POST(
-                    f"/connections/{agent.connection_id}/send-message", {"content": msg}
+                await faber_agent.agent.admin_POST(
+                    f"/connections/{faber_agent.agent.connection_id}/send-message",
+                    {"content": msg},
                 )
 
             elif option == "4":
@@ -410,16 +347,16 @@ async def main(
                     "Creating a new invitation, please receive "
                     "and accept this invitation using Alice agent"
                 )
-                await generate_invitation(agent, use_did_exchange)
+                await faber_agent.generate_invitation(display_qr=True, wait=True)
 
-            elif option == "5" and revocation:
+            elif option == "5" and faber_agent.revocation:
                 rev_reg_id = (await prompt("Enter revocation registry ID: ")).strip()
                 cred_rev_id = (await prompt("Enter credential revocation ID: ")).strip()
                 publish = (
                     await prompt("Publish now? [Y/N]: ", default="N")
                 ).strip() in "yY"
                 try:
-                    await agent.admin_POST(
+                    await faber_agent.agent.admin_POST(
                         "/revocation/revoke",
                         {
                             "rev_reg_id": rev_reg_id,
@@ -430,10 +367,12 @@ async def main(
                 except ClientError:
                     pass
 
-            elif option == "6" and revocation:
+            elif option == "6" and faber_agent.revocation:
                 try:
-                    resp = await agent.admin_POST("/revocation/publish-revocations", {})
-                    agent.log(
+                    resp = await faber_agent.agent.admin_POST(
+                        "/revocation/publish-revocations", {}
+                    )
+                    faber_agent.agent.log(
                         "Published revocations for {} revocation registr{} {}".format(
                             len(resp["rrid2crid"]),
                             "y" if len(resp["rrid2crid"]) == 1 else "ies",
@@ -443,24 +382,14 @@ async def main(
                 except ClientError:
                     pass
 
-        if show_timing:
-            timing = await agent.fetch_timing()
+        if faber_agent.show_timing:
+            timing = await faber_agent.agent.fetch_timing()
             if timing:
-                for line in agent.format_timing(timing):
+                for line in faber_agent.agent.format_timing(timing):
                     log_msg(line)
 
     finally:
-        terminated = True
-        try:
-            if mediator_agent:
-                log_msg("Shutting down mediator agent ...")
-                await mediator_agent.terminate()
-            if agent:
-                log_msg("Shutting down faber agent ...")
-                await agent.terminate()
-        except Exception:
-            LOGGER.exception("Error terminating agent:")
-            terminated = False
+        terminated = await faber_agent.terminate()
 
     await asyncio.sleep(0.1)
 
@@ -469,53 +398,8 @@ async def main(
 
 
 if __name__ == "__main__":
-    import argparse
-
-    parser = argparse.ArgumentParser(description="Runs a Faber demo agent.")
-    parser.add_argument("--no-auto", action="store_true", help="Disable auto issuance")
-    parser.add_argument(
-        "-p",
-        "--port",
-        type=int,
-        default=8020,
-        metavar=("<port>"),
-        help="Choose the starting port number to listen on",
-    )
-    parser.add_argument(
-        "--did-exchange",
-        action="store_true",
-        help="Use DID-Exchange protocol for connections",
-    )
-    parser.add_argument(
-        "--revocation", action="store_true", help="Enable credential revocation"
-    )
-    parser.add_argument(
-        "--tails-server-base-url",
-        type=str,
-        metavar=("<tails-server-base-url>"),
-        help="Tals server base url",
-    )
-    parser.add_argument(
-        "--timing", action="store_true", help="Enable timing information"
-    )
-    parser.add_argument(
-        "--multitenant", action="store_true", help="Enable multitenancy options"
-    )
-    parser.add_argument(
-        "--mediation", action="store_true", help="Enable mediation functionality"
-    )
-    parser.add_argument(
-        "--wallet-type",
-        type=str,
-        metavar="<wallet-type>",
-        help="Set the agent wallet type",
-    )
+    parser = arg_parser(ident="faber", port=8020)
     args = parser.parse_args()
-
-    if args.did_exchange and args.mediation:
-        raise Exception(
-            "DID-Exchange connection protocol is not (yet) compatible with mediation"
-        )
 
     ENABLE_PYDEVD_PYCHARM = os.getenv("ENABLE_PYDEVD_PYCHARM", "").lower()
     ENABLE_PYDEVD_PYCHARM = ENABLE_PYDEVD_PYCHARM and ENABLE_PYDEVD_PYCHARM not in (
@@ -545,28 +429,7 @@ if __name__ == "__main__":
         except ImportError:
             print("pydevd_pycharm library was not found")
 
-    require_indy()
-
-    tails_server_base_url = args.tails_server_base_url or os.getenv("PUBLIC_TAILS_URL")
-
-    if args.revocation and not tails_server_base_url:
-        raise Exception(
-            "If revocation is enabled, --tails-server-base-url must be provided"
-        )
-
     try:
-        asyncio.get_event_loop().run_until_complete(
-            main(
-                args.port,
-                args.no_auto,
-                args.revocation,
-                tails_server_base_url,
-                args.timing,
-                args.multitenant,
-                args.mediation,
-                args.did_exchange,
-                args.wallet_type,
-            )
-        )
+        asyncio.get_event_loop().run_until_complete(main(args))
     except KeyboardInterrupt:
         os._exit(1)
