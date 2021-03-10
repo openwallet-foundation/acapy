@@ -6,8 +6,8 @@ from weakref import ref
 
 from ..config.injection_context import InjectionContext
 from ..config.provider import ClassProvider
-from ..holder.vc_holder import VCHolder
 from ..storage.base import BaseStorage
+from ..storage.vc_holder.base import VCHolder
 from ..utils.classloader import DeferLoad
 from ..wallet.base import BaseWallet
 
@@ -44,7 +44,8 @@ class InMemoryProfile(Profile):
         injector.bind_provider(
             VCHolder,
             ClassProvider(
-                "aries_cloudagent.holder.in_memory.InMemoryVCHolder", ref(self)
+                "aries_cloudagent.storage.vc_holder.in_memory.InMemoryVCHolder",
+                ref(self),
             ),
         )
 

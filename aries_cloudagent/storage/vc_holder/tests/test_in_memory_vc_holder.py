@@ -1,24 +1,14 @@
 import pytest
 
-from asynctest import mock as async_mock
-
-from ...core.in_memory import InMemoryProfile
-from ...storage.error import (
+from ....core.in_memory import InMemoryProfile
+from ...error import (
     StorageDuplicateError,
-    StorageError,
     StorageNotFoundError,
-    StorageSearchError,
 )
-from ...storage.in_memory import (
-    InMemoryStorage,
-    tag_value_match,
-    tag_query_match,
-)
-from ...storage.record import StorageRecord
 
+from ..base import VCHolder
 from ..in_memory import InMemoryVCHolder
-from ..models.vc_record import VCRecord
-from ..vc_holder import VCHolder
+from ..vc_record import VCRecord
 
 
 VC_CONTEXT = "https://www.w3.org/2018/credentials/v1"
@@ -32,13 +22,7 @@ VC_GIVEN_ID = "http://example.edu/credentials/3732"
 @pytest.fixture()
 def holder():
     profile = InMemoryProfile.test_profile()
-    yield InMemoryVCHolder(profile)
-
-
-@pytest.fixture()
-def store_search():
-    profile = InMemoryProfile.test_profile()
-    yield InMemoryStorage(profile)
+    yield profile.inject(VCHolder)
 
 
 def test_record(tags={}) -> VCRecord:

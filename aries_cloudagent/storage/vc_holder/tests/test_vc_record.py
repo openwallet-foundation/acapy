@@ -33,10 +33,10 @@ class TestVCRecord:
     def test_create(self):
         record = test_record()
 
-        assert record.contexts == contexts
-        assert record.types == types
-        assert record.schema_ids == schema_ids
-        assert record.subject_ids == subject_ids
+        assert record.contexts == set(contexts)
+        assert record.types == set(types)
+        assert record.schema_ids == set(schema_ids)
+        assert record.subject_ids == set(subject_ids)
         assert record.issuer_id == issuer_id
         assert record.given_id == given_id
         assert record.record_id and type(record.record_id) is str
@@ -51,5 +51,5 @@ class TestVCRecord:
         record_b.record_id = record_a.record_id
         assert record_a == record_b
         assert record_a != object()
-        record_b.contexts = []
+        record_b.contexts.clear()
         assert record_a != record_b

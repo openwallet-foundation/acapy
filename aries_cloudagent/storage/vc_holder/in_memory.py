@@ -3,13 +3,12 @@
 from aries_cloudagent.storage.record import StorageRecord
 from typing import Mapping, Sequence
 
-from ..core.in_memory import InMemoryProfile
+from ...core.in_memory import InMemoryProfile
 
-from ..storage.in_memory import InMemoryStorage, InMemoryStorageSearch
+from ..in_memory import InMemoryStorage, InMemoryStorageSearch
 
-from .models.vc_record import VCRecord
-
-from .vc_holder import VCHolder, VCRecordSearch
+from .base import VCHolder, VCRecordSearch
+from .vc_record import VCRecord
 
 VC_CRED_RECORD_TYPE = "vc_cred"
 
@@ -144,7 +143,7 @@ class InMemoryVCHolder(VCHolder):
             schema_ids: An inclusive list of credential schema identifiers
             issuer_id: The ID of the credential issuer
             subject_id: The ID of one of the credential subjects
-            tag_filter: A tag filter clause
+            tag_query: A tag filter clause
 
         """
         query = {}

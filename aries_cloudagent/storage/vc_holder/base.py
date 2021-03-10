@@ -3,7 +3,7 @@
 from abc import ABC, abstractmethod
 from typing import Mapping, Sequence
 
-from .models.vc_record import VCRecord
+from .vc_record import VCRecord
 
 
 class VCHolder(ABC):
@@ -70,7 +70,7 @@ class VCHolder(ABC):
             schema_ids: An inclusive list of credential schema identifiers
             issuer_id: The ID of the credential issuer
             subject_id: The ID of one of the credential subjects
-            tag_filter: A tag filter clause
+            tag_query: A tag filter clause
 
         """
 

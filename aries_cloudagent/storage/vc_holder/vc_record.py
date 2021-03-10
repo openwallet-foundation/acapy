@@ -30,11 +30,11 @@ class VCRecord:
         record_id: str = None,
     ):
         """Initialize some defaults on record."""
-        self.contexts = list(contexts) if contexts else []
-        self.types = list(types) if types else []
-        self.schema_ids = list(schema_ids) if schema_ids else []
+        self.contexts = set(contexts) if contexts else set()
+        self.types = set(types) if types else set()
+        self.schema_ids = set(schema_ids) if schema_ids else set()
         self.issuer_id = issuer_id
-        self.subject_ids = list(subject_ids) if subject_ids else []
+        self.subject_ids = set(subject_ids) if subject_ids else set()
         self.value = value
         self.given_id = given_id
         self.tags = tags or {}
