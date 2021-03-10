@@ -327,7 +327,7 @@ async def main(args):
                 if faber_agent.revocation:
                     indy_proof_request["non_revoked"] = {"to": int(time.time())}
                 proof_request_web_request = {
-                    "connection_id": agent.connection_id,
+                    "connection_id": faber_agent.agent.connection_id,
                     "presentation_request": {"indy": indy_proof_request},
                     "trace": exchange_tracing,
                 }
