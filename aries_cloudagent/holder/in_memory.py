@@ -19,8 +19,8 @@ def load_credential(record: StorageRecord) -> VCRecord:
     tags = {}
     contexts = []
     types = []
+    schema_ids = []
     subject_ids = []
-    schema_id = None
     issuer_id = None
     given_id = None
     for tagname, tagval in (record.tags or {}).items():
@@ -28,10 +28,10 @@ def load_credential(record: StorageRecord) -> VCRecord:
             contexts.append(tagname[5:])
         elif tagname.startswith("type:"):
             types.append(tagname[5:])
+        elif tagname.startswith("schm:"):
+            schema_ids.append(tagname[5:])
         elif tagname.startswith("subj:"):
             subject_ids.append(tagname[5:])
-        elif tagname == "schema_id":
-            schema_id = tagval
         elif tagname == "issuer_id":
             issuer_id = tagval
         elif tagname == "given_id":
@@ -41,7 +41,7 @@ def load_credential(record: StorageRecord) -> VCRecord:
     return VCRecord(
         contexts=contexts,
         types=types,
-        schema_id=schema_id,
+        schema_ids=schema_ids,
         issuer_id=issuer_id,
         subject_ids=subject_ids,
         value=record.value,
@@ -58,10 +58,10 @@ def serialize_credential(cred: VCRecord) -> StorageRecord:
         tags[f"ctxt:{ctx_val}"] = "1"
     for type_val in cred.types:
         tags[f"type:{type_val}"] = "1"
+    for schema_val in cred.schema_ids:
+        tags[f"schm:{schema_val}"] = "1"
     for subj_id in cred.subject_ids:
         tags[f"subj:{subj_id}"] = "1"
-    if cred.schema_id:
-        tags["schema_id"] = cred.schema_id
     if cred.issuer_id:
         tags["issuer_id"] = cred.issuer_id
     if cred.given_id:
@@ -130,20 +130,20 @@ class InMemoryVCHolder(VCHolder):
         self,
         contexts: Sequence[str] = None,
         types: Sequence[str] = None,
+        schema_ids: str = None,
         issuer_id: str = None,
         subject_id: str = None,
-        schema_id: str = None,
         tag_query: Mapping = None,
-    ) -> "InMemoryVCRecordSearch":
+    ) -> "VCRecordSearch":
         """
         Start a new VC record search.
 
         Args:
             contexts: An inclusive list of JSON-LD contexts to filter for
             types: An inclusive list of JSON-LD types to filter for
+            schema_ids: An inclusive list of credential schema identifiers
             issuer_id: The ID of the credential issuer
             subject_id: The ID of one of the credential subjects
-            schema_id: The ID of the credential schema
             tag_filter: A tag filter clause
 
         """
@@ -154,12 +154,13 @@ class InMemoryVCHolder(VCHolder):
         if types:
             for type_val in types:
                 query[f"type:{type_val}"] = "1"
+        if schema_ids:
+            for schema_val in schema_ids:
+                query[f"schm:{schema_val}"] = "1"
         if subject_id:
             query[f"subj:{subject_id}"] = "1"
         if issuer_id:
             query["issuer_id"] = issuer_id
-        if schema_id:
-            query["schema_id"] = schema_id
         if tag_query:
             query.update(tag_query)
         search = self._store.search_records(VC_CRED_RECORD_TYPE, query)

@@ -18,10 +18,10 @@ class VCRecord:
         issuer_id: str,
         # one or more subject IDs may be present
         subject_ids: Sequence[str],
+        # one or more credential schema IDs may be present
+        schema_ids: Sequence[str],
         # the credential encoded as a serialized JSON string
         value: str,
-        # credential schema ID, if any
-        schema_id: str,
         # value of the credential 'id' property, if any
         given_id: str = None,
         # array of tags for retrieval (derived from attribute values)
@@ -32,10 +32,10 @@ class VCRecord:
         """Initialize some defaults on record."""
         self.contexts = list(contexts) if contexts else []
         self.types = list(types) if types else []
+        self.schema_ids = list(schema_ids) if schema_ids else []
         self.issuer_id = issuer_id
         self.subject_ids = list(subject_ids) if subject_ids else []
         self.value = value
-        self.schema_id = schema_id
         self.given_id = given_id
         self.tags = tags or {}
         self.record_id = record_id or uuid4().hex
@@ -48,8 +48,8 @@ class VCRecord:
             other.contexts == self.contexts
             and other.types == self.types
             and other.subject_ids == self.subject_ids
+            and other.schema_ids == self.schema_ids
             and other.issuer_id == self.issuer_id
-            and other.schema_id == self.schema_id
             and other.given_id == self.given_id
             and other.record_id == self.record_id
             and other.tags == self.tags

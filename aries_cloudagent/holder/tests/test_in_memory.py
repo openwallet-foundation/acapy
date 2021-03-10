@@ -51,9 +51,9 @@ def test_record(tags={}) -> VCRecord:
             VC_TYPE,
             "https://www.w3.org/2018/credentials/examples/v1/UniversityDegreeCredential",
         ],
+        schema_ids=[VC_SCHEMA_ID],
         issuer_id=VC_ISSUER_ID,
         subject_ids=[VC_SUBJECT_ID],
-        schema_id=VC_SCHEMA_ID,
         given_id=VC_GIVEN_ID,
         tags={"tag": "value"},
         value="{}",
@@ -99,12 +99,20 @@ class TestInMemoryVCHolder:
         rows = await holder.search_credentials().fetch()
         assert rows == [record]
 
+        # test async iter and repr
+        search = holder.search_credentials()
+        assert search.__class__.__name__ in str(search)
+        rows = []
+        async for row in search:
+            rows.append(row)
+        assert rows == [record]
+
         rows = await holder.search_credentials(
             contexts=[VC_CONTEXT],
             types=[VC_TYPE],
+            schema_ids=[VC_SCHEMA_ID],
             subject_id=VC_SUBJECT_ID,
             issuer_id=VC_ISSUER_ID,
-            schema_id=VC_SCHEMA_ID,
         ).fetch()
         assert rows == [record]
 
@@ -114,11 +122,11 @@ class TestInMemoryVCHolder:
         rows = await holder.search_credentials(types=["other-type"]).fetch()
         assert not rows
 
+        rows = await holder.search_credentials(schema_ids=["other schema"]).fetch()
+        assert not rows
+
         rows = await holder.search_credentials(subject_id="other subject").fetch()
         assert not rows
 
         rows = await holder.search_credentials(issuer_id="other issuer").fetch()
-        assert not rows
-
-        rows = await holder.search_credentials(schema_id="other schema").fetch()
         assert not rows

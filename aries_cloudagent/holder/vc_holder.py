@@ -56,9 +56,9 @@ class VCHolder(ABC):
         self,
         contexts: Sequence[str] = None,
         types: Sequence[str] = None,
+        schema_ids: str = None,
         issuer_id: str = None,
         subject_id: str = None,
-        schema_id: str = None,
         tag_query: Mapping = None,
     ) -> "VCRecordSearch":
         """
@@ -67,9 +67,9 @@ class VCHolder(ABC):
         Args:
             contexts: An inclusive list of JSON-LD contexts to filter for
             types: An inclusive list of JSON-LD types to filter for
+            schema_ids: An inclusive list of credential schema identifiers
             issuer_id: The ID of the credential issuer
             subject_id: The ID of one of the credential subjects
-            schema_id: The ID of the credential schema
             tag_filter: A tag filter clause
 
         """
