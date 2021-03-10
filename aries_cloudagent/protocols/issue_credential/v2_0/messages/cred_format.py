@@ -43,7 +43,7 @@ class V20CredFormat(BaseModel):
         )
         LD_PROOF = FormatSpec(
             "dif/credential-manifest@v1.0",
-            ["ldproof", "jsonld"],
+            ["ld_proof", "ldproof", "jsonld"],
             V20CredExRecordLDProof,
             f"{PROTOCOL_PACKAGE}.formats.ld_proof.LDProofCredFormatHandler",
         )

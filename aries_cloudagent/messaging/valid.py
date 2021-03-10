@@ -5,7 +5,7 @@ import json
 from datetime import datetime
 
 from base58 import alphabet
-from marshmallow.validate import OneOf, Range, Regexp
+from marshmallow.validate import OneOf, Range, Regexp, Validator
 from marshmallow.exceptions import ValidationError
 
 from .util import epoch_to_str
@@ -490,6 +490,16 @@ class UUIDFour(Regexp):
         )
 
 
+class URI(Regexp):
+    """Validate value against URI on any scheme."""
+
+    EXAMPLE = "https://www.w3.org/2018/credentials/v1"
+    PATTERN = r"^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?"
+
+    def __init__(self):
+        super().__init__(URI.PATTERN, error="Value {input} is not URI")
+
+
 class Endpoint(Regexp):  # using Regexp brings in nice visual validator cue
     """Validate value against endpoint URL on any scheme."""
 
@@ -522,6 +532,62 @@ class EndpointType(OneOf):
             choices=[e.w3c for e in EndpointTypeEnum],
             error="Value {input} must be one of {choices}",
         )
+
+
+class CredentialType(Validator):
+
+    FIRST_TYPE = "VerifiableCredential"
+    EXAMPLE = [FIRST_TYPE, "AlumniCredential"]
+
+    def __init__(self) -> None:
+        super().__init__()
+
+    def __call__(self, value):
+        length = len(value)
+
+        if length < 1 or value[0] != CredentialType.FIRST_TYPE:
+            raise ValidationError(
+                f"First type {value[0]} must be {CredentialType.FIRST_TYPE}"
+            )
+
+        return value
+
+
+class CredentialContext(Validator):
+    FIRST_CONTEXT = "https://www.w3.org/2018/credentials/v1"
+    EXAMPLE = [FIRST_CONTEXT, "https://www.w3.org/2018/credentials/examples/v1"]
+
+    def __init__(self) -> None:
+        super().__init__()
+
+    def __call__(self, value):
+        length = len(value)
+
+        if length < 1 or value[0] != CredentialContext.FIRST_CONTEXT:
+            raise ValidationError(
+                f"First context {value[0]} must be {CredentialContext.FIRST_CONTEXT}"
+            )
+
+        return value
+
+
+class CredentialSubject(Validator):
+
+    EXAMPLE = {
+        "id": "did:example:ebfeb1f712ebc6f1c276e12ec21",
+        "alumniOf": {"id": "did:example:c276e12ec21ebfeb1f712ebc6f1"},
+    }
+
+    def __init__(self) -> None:
+        super().__init__()
+
+    def __call__(self, value):
+        if "id" in value:
+            uri_validator = URI()
+            if not uri_validator(value["id"]):
+                raise ValidationError(f"credential subject id {value[0]} must be URI")
+
+        return value
 
 
 # Instances for marshmallow schema specification
@@ -566,3 +632,12 @@ BASE58_SHA256_HASH = {
 UUID4 = {"validate": UUIDFour(), "example": UUIDFour.EXAMPLE}
 ENDPOINT = {"validate": Endpoint(), "example": Endpoint.EXAMPLE}
 ENDPOINT_TYPE = {"validate": EndpointType(), "example": EndpointType.EXAMPLE}
+CREDENTIAL_TYPE = {"validate": CredentialType(), "example": CredentialType.EXAMPLE}
+CREDENTIAL_CONTEXT = {
+    "validate": CredentialContext(),
+    "example": CredentialType.EXAMPLE,
+}
+CREDENTIAL_SUBJECT = {
+    "validate": CredentialSubject(),
+    "example": CredentialSubject.EXAMPLE,
+}

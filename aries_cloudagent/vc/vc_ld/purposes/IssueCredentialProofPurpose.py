@@ -1,11 +1,12 @@
-from .AssertionProofPurpose import AssertionProofPurpose
-from datetime import datetime
-from ..suites import LinkedDataSignature
-from pyld import jsonld
+from datetime import datetime, timedelta
+from pyld.jsonld import JsonLdProcessor
+
+from ...ld_proofs.purposes import AssertionProofPurpose
+from ...ld_proofs.suites import LinkedDataSignature
 
 
 class IssueCredentialProofPurpose(AssertionProofPurpose):
-    def __init__(self, date: datetime, max_timestamp_delta: None):
+    def __init__(self, date: datetime = None, max_timestamp_delta: timedelta = None):
         super().__init__(date, max_timestamp_delta)
 
     async def validate(
@@ -22,7 +23,7 @@ class IssueCredentialProofPurpose(AssertionProofPurpose):
             if not result["valid"]:
                 raise result["error"]
 
-            issuer = jsonld.get_values(
+            issuer = JsonLdProcessor.get_values(
                 document, "https://www.w3.org/2018/credentials#issuer"
             )
 

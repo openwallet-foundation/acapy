@@ -6,7 +6,6 @@ from .purposes import (
     AuthenticationProofPurpose,
     PublicKeyProofPurpose,
     AssertionProofPurpose,
-    IssueCredentialProofPurpose,
 )
 from .suites import (
     LinkedDataProof,
@@ -14,7 +13,7 @@ from .suites import (
     JwsLinkedDataSignature,
     Ed25519Signature2018,
 )
-from .crypto import Base58Encoder, KeyPair, Ed25519KeyPair
+from .crypto import Base58Encoder, KeyPair, Ed25519KeyPair, Ed25519WalletKeyPair
 from .document_loader import DocumentLoader, did_key_document_loader
 
 __all__ = [
@@ -26,7 +25,6 @@ __all__ = [
     AssertionProofPurpose,
     AuthenticationProofPurpose,
     PublicKeyProofPurpose,
-    IssueCredentialProofPurpose,
     LinkedDataProof,
     LinkedDataSignature,
     JwsLinkedDataSignature,
@@ -34,6 +32,7 @@ __all__ = [
     Base58Encoder,
     KeyPair,
     Ed25519KeyPair,
+    Ed25519WalletKeyPair,
     DocumentLoader,
     did_key_document_loader,
 ]

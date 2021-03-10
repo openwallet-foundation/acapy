@@ -11,7 +11,7 @@ from aiohttp_apispec import (
     request_schema,
     response_schema,
 )
-from marshmallow import fields, validate, validates_schema, ValidationError
+from marshmallow import fields, validate, validates_schema, ValidationError, Schema
 
 from ....admin.request_context import AdminRequestContext
 from ....connections.models.conn_record import ConnRecord
@@ -21,10 +21,14 @@ from ....ledger.error import LedgerError
 from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....messaging.models.base import BaseModelError, OpenAPISchema
 from ....messaging.valid import (
+    CREDENTIAL_CONTEXT,
+    CREDENTIAL_SUBJECT,
+    CREDENTIAL_TYPE,
     INDY_CRED_DEF_ID,
     INDY_DID,
     INDY_SCHEMA_ID,
     INDY_VERSION,
+    URI,
     UUIDFour,
     UUID4,
 )
@@ -148,13 +152,77 @@ class V20CredFilterIndySchema(OpenAPISchema):
     )
 
 
+class LDCredential(Schema):
+    context = fields.List(
+        fields.Str(),
+        data_key="@context",
+        required=True,
+        description="The JSON-LD context of the credential",
+        **CREDENTIAL_CONTEXT,
+    )
+    id = fields.Str(
+        required=False,
+        desscription="The ID of the credential",
+        example="http://example.edu/credentials/1872",
+        validate=URI(),
+    )
+    type = fields.List(
+        fields.Str(),
+        required=True,
+        description="The JSON-LD type of the credential",
+        **CREDENTIAL_TYPE,
+    )
+    issuer = fields.Str(
+        required=False, description="The JSON-LD Verifiable Credential Issuer"
+    )
+    issuance_date = fields.DateTime(
+        data_key="issuanceDate",
+        required=False,
+        description="The issuance date",
+        example="2010-01-01T19:73:24Z",
+    )
+    expiration_date = fields.DateTime(
+        data_key="expirationDate",
+        required=False,
+        description="The expiration date",
+        example="2010-01-01T19:73:24Z",
+    )
+    credential_subject = fields.Dict(
+        required=True,
+        keys=fields.Str(),
+        data_key="credentialSubject",
+        **CREDENTIAL_SUBJECT,
+    )
+    # TODO: add typing
+    credential_schema = fields.Dict(required=False, data_key="credentialSchema")
+
+
+class LDCredentialOptions(Schema):
+    proof_type = fields.List(
+        fields.Str(
+            validate=validate.OneOf(["Ed25519Signature2018", "BbsBlsSignature2020"])
+        ),
+        required=True,
+        data_key="proofType",
+        description="Proof types to use for the linked data proof. Entries should match suites registered in the Linked Data Cryptographic Suite Registry.",
+        example=[
+            "Ed25519VerificationKey",
+        ],
+    )
+
+    # TODO: add typing
+    credential_status = fields.Dict(required=False, data_key="credentialStatus")
+
+
 class V20CredFilterLDProofSchema(OpenAPISchema):
     """Linked data proof credential filtration criteria."""
 
-    some_ld_proof_criterion = fields.Str(
-        description="Placeholder for W3C/JSON-LD proof filtration criterion",
-        required=False,
+    credential = fields.Nested(
+        LDCredential,
+        required=True,
+        description="JSON-LD credential data",
     )
+    options = fields.Nested(LDCredentialOptions)
 
 
 class V20CredFilterSchema(OpenAPISchema):
@@ -488,7 +556,8 @@ async def credential_exchange_create(request: web.BaseRequest):
     tags=["issue-credential v2.0"],
     summary="Send holder a credential, automating entire flow",
 )
-@request_schema(V20CredProposalRequestPreviewMandSchema())
+# TODO: make credential preview mandatory if indy filter is present
+@request_schema(V20CredProposalRequestPreviewOptSchema())
 @response_schema(V20CredExRecordSchema(), 200, description="")
 async def credential_exchange_send(request: web.BaseRequest):
     """
@@ -514,19 +583,23 @@ async def credential_exchange_send(request: web.BaseRequest):
 
     comment = body.get("comment")
     connection_id = body.get("connection_id")
-    preview_spec = body.get("credential_preview")
-    if not preview_spec:
-        raise web.HTTPBadRequest(reason="Missing credential_preview")
     filt_spec = body.get("filter")
     if not filt_spec:
         raise web.HTTPBadRequest(reason="Missing filter")
+    preview_spec = body.get("credential_preview")
+    # TODO: use generic format identifier
+    if "indy" in filt_spec and not preview_spec:
+        raise web.HTTPBadRequest(reason="Missing credential_preview for indy filter")
     auto_remove = body.get("auto_remove")
     trace_msg = body.get("trace")
 
     conn_record = None
     cred_ex_record = None
     try:
-        cred_preview = V20CredPreview.deserialize(preview_spec)
+        # Not all formats use credential preview
+        cred_preview = (
+            V20CredPreview.deserialize(preview_spec) if preview_spec else None
+        )
         async with context.session() as session:
             conn_record = await ConnRecord.retrieve_by_id(session, connection_id)
             if not conn_record.is_ready:
@@ -992,7 +1065,7 @@ async def credential_exchange_send_free_request(request: web.BaseRequest):
 
     body = await request.json()
 
-    conn_id = body.get("connection_id")
+    connection_id = body.get("connection_id")
     comment = body.get("comment")
     filt_spec = body.get("filter")
     if not filt_spec:
@@ -1008,9 +1081,9 @@ async def credential_exchange_send_free_request(request: web.BaseRequest):
     cred_ex_record = None
     try:
         async with context.session() as session:
-            conn_record = await ConnRecord.retrieve_by_id(session, conn_id)
+            conn_record = await ConnRecord.retrieve_by_id(session, connection_id)
             if not conn_record.is_ready:
-                raise web.HTTPForbidden(reason=f"Connection {conn_id} not ready")
+                raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
 
         cred_manager = V20CredManager(context.profile)
 
@@ -1020,7 +1093,7 @@ async def credential_exchange_send_free_request(request: web.BaseRequest):
         )
 
         cred_ex_record = await V20CredExRecord(
-            conn_id=conn_id,
+            connection_id=connection_id,
             auto_remove=auto_remove,
             cred_proposal=cred_proposal.serialize(),
             initiator=V20CredExRecord.INITIATOR_SELF,
@@ -1044,7 +1117,7 @@ async def credential_exchange_send_free_request(request: web.BaseRequest):
             outbound_handler,
         )
 
-    await outbound_handler(cred_request_message, connection_id=conn_id)
+    await outbound_handler(cred_request_message, connection_id=connection_id)
 
     trace_event(
         context.settings,

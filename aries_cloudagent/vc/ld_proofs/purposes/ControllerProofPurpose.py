@@ -1,8 +1,10 @@
-from .ProofPurpose import ProofPurpose
-from ..constants import SECURITY_CONTEXT_V2_URL
-from pyld import jsonld
-from typing import Union
 from datetime import datetime, timedelta
+
+from pyld import jsonld
+from pyld.jsonld import JsonLdProcessor
+
+from ..constants import SECURITY_CONTEXT_V2_URL
+from .ProofPurpose import ProofPurpose
 
 
 class ControllerProofPurpose(ProofPurpose):
@@ -33,7 +35,9 @@ class ControllerProofPurpose(ProofPurpose):
             result["controller"] = framed
             verification_id = verification_method["id"]
 
-            verification_methods = jsonld.get_values(result["controller"], self.term)
+            verification_methods = JsonLdProcessor.get_values(
+                result["controller"], self.term
+            )
             result["valid"] = any(
                 method == verification_id for method in verification_methods
             )

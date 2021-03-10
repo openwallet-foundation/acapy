@@ -46,6 +46,6 @@ def did_key_document_loader(url: str, options: dict):
         )
 
 
-DocumentLoader = Callable[str, dict]
+DocumentLoader = Callable[[str, dict], dict]
 
 __all__ = [DocumentLoader, did_key_document_loader]

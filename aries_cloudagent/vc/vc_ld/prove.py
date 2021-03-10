@@ -1,4 +1,13 @@
-from ..ld_proofs import AuthenticationProofPurpose, ProofPurpose, DocumentLoader, sign
+from typing import List, Union
+
+
+from ..ld_proofs import (
+    AuthenticationProofPurpose,
+    ProofPurpose,
+    DocumentLoader,
+    sign,
+    LinkedDataProof,
+)
 from .constants import CREDENTIALS_CONTEXT_V1_URL
 
 
@@ -27,7 +36,7 @@ async def create_presentation(
 
 async def sign_presentation(
     presentation: dict,
-    suite: LinkedProofSignature,
+    suite: LinkedDataProof,
     document_loader: DocumentLoader,
     domain: str,
     challenge: str,
@@ -42,7 +51,7 @@ async def sign_presentation(
         purpose = AuthenticationProofPurpose(challenge=challenge, domain=domain)
 
     return await sign(
-        document=presentaton,
+        document=presentation,
         suite=suite,
         purpose=purpose,
         document_loader=document_loader,

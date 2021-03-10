@@ -1,11 +1,13 @@
-from abc import abstractmethod, ABCMeta
-from .LinkedDataProof import LinkedDataProof
-from ..purposes import ProofPurpose
+from copy import Error
 from pyld import jsonld
 from datetime import datetime
 from hashlib import sha256
 from typing import Union
+from abc import abstractmethod, ABCMeta
+
+from ..purposes import ProofPurpose
 from ..constants import SECURITY_CONTEXT_V2_URL
+from .LinkedDataProof import LinkedDataProof
 
 
 class LinkedDataSignature(LinkedDataProof, metaclass=ABCMeta):
@@ -15,19 +17,19 @@ class LinkedDataSignature(LinkedDataProof, metaclass=ABCMeta):
         verification_method: str,
         *,
         proof: dict = None,
-        date: Union[datetime, str],
+        date: Union[datetime, str, None] = None,
     ):
         super().__init__(signature_type)
         self.verification_method = verification_method
         self.proof = proof
         self.date = date
 
+        if isinstance(date, datetime):
+            # cast date to datetime if str
+            self.date = datetime.strptime(date)
+
     async def create_proof(
-        self,
-        document: dict,
-        purpose: ProofPurpose,
-        document_loader: callable,
-        compact_proof: bool,
+        self, document: dict, purpose: ProofPurpose, document_loader: callable
     ) -> dict:
         proof = None
         if self.proof:
@@ -42,22 +44,19 @@ class LinkedDataSignature(LinkedDataProof, metaclass=ABCMeta):
 
         proof["type"] = self.signature_type
 
-        # TODO validate existance and type of date more carefully
-        # see: jsonld-signatures implementation
         if not self.date:
-            self.date = datetime.now().isoformat()
+            self.date = datetime.now()
 
         if not proof.get("created"):
-            proof["created"] = str(self.date.isoformat())
+            proof["created"] = self.date.isoformat()
 
         if self.verification_method:
-            proof[
-                "verificationMethod"
-            ] = f"{self.verification_method}#{self.verification_method[8:]}"
+            proof["verificationMethod"] = self.verification_method
 
         proof = await self.update_proof(proof)
 
         proof = purpose.update(proof)
+
         verify_data = await self.create_verify_data(document, proof, document_loader)
 
         proof = await self.sign(verify_data, proof)
@@ -69,7 +68,6 @@ class LinkedDataSignature(LinkedDataProof, metaclass=ABCMeta):
         c14n_proof_options = await self.canonize_proof(
             proof, document_loader=document_loader
         )
-        print(c14n_proof_options)
         c14n_doc = await self.canonize(document, document_loader=document_loader)
         hash = sha256(c14n_proof_options.encode())
         hash.update(c14n_doc.encode())
@@ -88,7 +86,6 @@ class LinkedDataSignature(LinkedDataProof, metaclass=ABCMeta):
         )
 
     async def canonize_proof(self, proof: dict, *, document_loader: callable = None):
-        print(proof)
         proof = proof.copy()
 
         # TODO check if these values ever exist in our use case

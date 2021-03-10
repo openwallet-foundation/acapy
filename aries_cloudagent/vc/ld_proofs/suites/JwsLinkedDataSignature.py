@@ -1,12 +1,11 @@
-from .LinkedDataSignature import LinkedDataSignature
-from .LinkedDataProof import LinkedDataProof
-from ....wallet.util import str_to_b64, b64_to_str
-from ....messaging.jsonld.credential import create_jws
-import json
 from pyld import jsonld
-from typing import Union
 from datetime import datetime
+from typing import Union
+import json
+
+from ....wallet.util import bytes_to_b64, str_to_b64, b64_to_str
 from ..crypto import KeyPair
+from .LinkedDataSignature import LinkedDataSignature
 
 
 class JwsLinkedDataSignature(LinkedDataSignature):
@@ -26,7 +25,7 @@ class JwsLinkedDataSignature(LinkedDataSignature):
         self.algorithm = algorithm
         self.key_pair = key_pair
 
-    def decode_header(self, encoded_header: str) -> dict:
+    def _decode_header(self, encoded_header: str) -> dict:
         header = None
         try:
             header = json.loads(b64_to_str(encoded_header, urlsafe=True))
@@ -34,7 +33,7 @@ class JwsLinkedDataSignature(LinkedDataSignature):
             raise Exception("Could not parse JWS header.")
         return header
 
-    def validate_header(self, header: dict):
+    def _validate_header(self, header: dict):
         """ Validates the JWS header, throws if not ok """
         if not (header and isinstance(header, dict)):
             raise Exception("Invalid JWS header.")
@@ -49,15 +48,19 @@ class JwsLinkedDataSignature(LinkedDataSignature):
         ):
             raise Exception(f"Invalid JWS header params for {self.signature_type}")
 
+    def _create_jws(
+        self, encoded_header: Union[str, bytes], verify_data: bytes
+    ) -> bytes:
+        """Compose JWS."""
+        return (encoded_header + ".").encode("utf-8") + verify_data
+
     async def sign(self, verify_data: bytes, proof: dict):
 
         header = {"alg": self.algorithm, "b64": False, "crit": ["b64"]}
-
         encoded_header = str_to_b64(json.dumps(header), urlsafe=True, pad=False)
 
-        data = create_jws(encoded_header, verify_data)
-
-        signature = self.key_pair.sign(data).signature
+        data = self._create_jws(encoded_header, verify_data)
+        signature = await self.key_pair.sign(data)
 
         encoded_signature = bytes_to_b64(signature, urlsafe=True, pad=False)
 
@@ -76,14 +79,14 @@ class JwsLinkedDataSignature(LinkedDataSignature):
 
         encoded_header, payload, encoded_signature = proof["jws"].split(".")
 
-        header = self.decode_header(encoded_header)
+        header = self._decode_header(encoded_header)
 
-        self.validate_header(header)
+        self._validate_header(header)
 
         signature = b64_to_str(encoded_signature, urlsafe=True)
-        data = create_jws(encoded_header, verify_data)
+        data = self._create_jws(encoded_header, verify_data)
 
-        return self.key_pair.verify(data, signature)
+        return await self.key_pair.verify(data, signature)
 
     def assert_verification_method(self, verification_method: dict):
         if not jsonld.has_value(verification_method, "type", self.required_key_type):
@@ -111,6 +114,3 @@ class JwsLinkedDataSignature(LinkedDataSignature):
     #     return verification_method['id'] == self.key.id
 
     #  return verification_method == self.key.id
-
-
-__all__ = [JwsLinkedDataSignature]

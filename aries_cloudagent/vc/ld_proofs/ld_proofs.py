@@ -19,7 +19,7 @@ async def sign(
         return await ProofSet().add(
             document=document,
             suite=suite,
-            purpose=ProofPurpose,
+            purpose=purpose,
             document_loader=document_loader,
         )
 
@@ -35,14 +35,14 @@ async def sign(
 async def verify(
     *,
     document: Union[dict, str],
-    suite: LinkedDataSignature,
+    suites: LinkedDataSignature,
     purpose: ProofPurpose,
     document_loader: DocumentLoader,
 ):
     result = await ProofSet().verify(
         document=document,
-        suite=suite,
-        purpose=ProofPurpose,
+        suites=suites,
+        purpose=purpose,
         document_loader=document_loader,
     )
 

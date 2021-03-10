@@ -1,7 +1,8 @@
-from typing import Any, Awaitable, Callable, Mapping
+from aries_cloudagent.vc.ld_proofs.suites.LinkedDataProof import LinkedDataProof
+from typing import Callable, Mapping
 import asyncio
+from pyld.jsonld import JsonLdProcessor
 
-from pyld import jsonld
 from ..ld_proofs import (
     DocumentLoader,
     LinkedDataSignature,
@@ -15,7 +16,6 @@ from .purposes import IssueCredentialProofPurpose
 
 async def _verify_credential(
     credential: dict,
-    controller: dict,
     document_loader: DocumentLoader,
     suite: LinkedDataSignature,
     purpose: ProofPurpose = None,
@@ -23,7 +23,7 @@ async def _verify_credential(
 ) -> dict:
     # TODO: validate credential structure
 
-    if credential["credentialStatus"] and not check_status:
+    if "credentialStatus" in credential and not check_status:
         raise Exception(
             'A "check_status function must be provided to verify credentials with "credentialStatus" set.'
         )
@@ -33,7 +33,7 @@ async def _verify_credential(
 
     result = await ld_proofs_verify(
         document=credential,
-        suite=suite,
+        suites=[suite],
         purpose=purpose,
         document_loader=document_loader,
     )
@@ -41,9 +41,9 @@ async def _verify_credential(
     if not result["verified"]:
         return result
 
-    if credential["credentialStatus"]:
+    if "credentialStatus" in credential:
         # CHECK make sure this is how check_status should be called
-        result["credentialStatus"] = await check_status(credential)
+        result["statusResult"] = await check_status(credential)
 
     if not result["statusResult"]["verified"]:
         result["verified"] = False
@@ -53,7 +53,6 @@ async def _verify_credential(
 
 async def verify_credential(
     credential: dict,
-    controller: dict,
     document_loader: DocumentLoader,
     suite: LinkedDataSignature,
     purpose: ProofPurpose = None,
@@ -61,7 +60,7 @@ async def verify_credential(
 ) -> dict:
     try:
         return await _verify_credential(
-            credential, controller, document_loader, suite, purpose, check_status
+            credential, document_loader, suite, purpose, check_status
         )
     except Exception as e:
         return {
@@ -74,10 +73,10 @@ async def verify_credential(
 async def _verify_presentation(
     challenge: str,
     presentation: dict = None,
-    purpose: LinkedDataSignature = None,
+    purpose: ProofPurpose = None,
     unsigned_presentation: dict = None,
-    suite_map: Mapping[str, LinkedDataSignature] = None,
-    suite: LinkedDataSignature = None,
+    suite_map: Mapping[str, LinkedDataProof] = None,
+    suite: LinkedDataProof = None,
     controller: dict = None,
     domain: str = None,
     document_loader: DocumentLoader = None,
@@ -124,7 +123,7 @@ async def _verify_presentation(
     credential_results = None
     verified = True
 
-    credentials = jsonld.get_values(vp, "verifiableCredential")
+    credentials = JsonLdProcessor.get_values(vp, "verifiableCredential")
 
     def v(credential: dict):
         if suite_map:

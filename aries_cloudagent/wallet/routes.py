@@ -1,5 +1,6 @@
 """Wallet admin routes."""
 
+from aries_cloudagent.wallet.util import naked_to_did_key
 from aiohttp import web
 from aiohttp_apispec import (
     docs,
@@ -129,6 +130,8 @@ def format_did_info(info: DIDInfo):
             "did": info.did,
             "verkey": info.verkey,
             "posture": DIDPosture.get(info.metadata).moniker,
+            # TODO: if did is public use did:sov
+            "full_did": naked_to_did_key(info.verkey),
         }
 
 

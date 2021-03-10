@@ -1,9 +1,9 @@
 """Class to represent a linked data proof set."""
 import asyncio
 from typing import Union, List
-from pyld import jsonld
+from pyld.jsonld import JsonLdProcessor
 
-from .suites import LinkedDataProof, LinkedDataSignature
+from .suites import LinkedDataProof
 from .purposes.ProofPurpose import ProofPurpose
 from .document_loader import DocumentLoader
 from .constants import SECURITY_CONTEXT_V2_URL
@@ -32,9 +32,9 @@ class ProofSet:
         if "@context" in proof:
             del proof["@context"]
 
-        jsonld.add_value(document, "proof", proof)
+        JsonLdProcessor.add_value(document, "proof", proof)
 
-        return proof
+        return document
 
     async def verify(
         self,
@@ -76,7 +76,7 @@ class ProofSet:
 
     @staticmethod
     async def _get_proofs(document: dict, document_loader: DocumentLoader) -> dict:
-        proof_set = jsonld.get_values(document, "proof")
+        proof_set = JsonLdProcessor.get_values(document, "proof")
 
         del document["proof"]
 

@@ -1,7 +1,7 @@
 from pyld.jsonld import JsonLdProcessor
 import re
 
-from ..messaging.valid import RFC3339DateTime
+from ...messaging.valid import RFC3339DateTime
 from .constants import CREDENTIALS_CONTEXT_V1_URL
 
 

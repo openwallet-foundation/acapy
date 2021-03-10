@@ -3,9 +3,9 @@ from abc import ABC, abstractmethod
 
 class KeyPair(ABC):
     @abstractmethod
-    def sign(self, message):
+    async def sign(self, message: bytes) -> bytes:
         pass
 
     @abstractmethod
-    def verify(self, message):
+    async def verify(self, message: bytes) -> bool:
         pass
