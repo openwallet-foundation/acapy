@@ -47,6 +47,7 @@ class V20CredOffer(AgentMessage):
             replacement_id: unique to issuer, to coordinate credential replacement
             comment: optional human-readable comment
             credential_preview: credential preview
+            formats: acceptable attachment formats
             offers_attach: list of offer attachments
 
         """
@@ -57,7 +58,7 @@ class V20CredOffer(AgentMessage):
         self.formats = list(formats) if formats else []
         self.offers_attach = list(offers_attach) if offers_attach else []
 
-    def offer(self, fmt: V20CredFormat.Format = None) -> dict:
+    def attachment(self, fmt: V20CredFormat.Format = None) -> dict:
         """
         Return attached offer.
 
@@ -65,9 +66,15 @@ class V20CredOffer(AgentMessage):
             fmt: format of attachment in list to decode and return
 
         """
-        return (fmt or V20CredFormat.Format.INDY).get_attachment_data(
-            self.formats,
-            self.offers_attach,
+        return (
+            (
+                fmt or V20CredFormat.Format.get(self.formats[0].format)
+            ).get_attachment_data(
+                self.formats,
+                self.offers_attach,
+            )
+            if self.formats
+            else None
         )
 
 
@@ -99,5 +106,9 @@ class V20CredOfferSchema(AgentMessageSchema):
         description="Acceptable credential formats",
     )
     offers_attach = fields.Nested(
-        AttachDecoratorSchema, required=True, many=True, data_key="offers~attach"
+        AttachDecoratorSchema,
+        required=True,
+        many=True,
+        data_key="offers~attach",
+        description="Offer attachments",
     )

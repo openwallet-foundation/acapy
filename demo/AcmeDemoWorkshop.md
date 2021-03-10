@@ -104,12 +104,12 @@ Replace the ```# TODO``` comment with the following code:
                 }
                 proof_request_web_request = {
                     "connection_id": agent.connection_id,
-                    "proof_request": indy_proof_request
+                    "presentation_request": {"indy": indy_proof_request},
                 }
                 # this sends the request to our agent, which forwards it to Alice
                 # (based on the connection_id)
                 await agent.admin_POST(
-                    "/present-proof/send-request",
+                    "/present-proof-2.0/send-request",
                     proof_request_web_request
                 )
 ```
@@ -117,7 +117,7 @@ Replace the ```# TODO``` comment with the following code:
 Now we need to handle receipt of the proof.  Locate the code that handles received proofs (this is in a webhook callback):
 
 ```
-        if state == "presentation_received":
+        if state == "presentation-received":
             # TODO handle received presentations
             pass
 ```
@@ -128,14 +128,14 @@ then replace the ```# TODO``` comment and the ```pass``` statement:
             log_status("#27 Process the proof provided by X")
             log_status("#28 Check if proof is valid")
             proof = await self.admin_POST(
-                f"/present-proof/records/{pres_ex_id}/verify-presentation"
+                f"/present-proof-2.0/records/{pres_ex_id}/verify-presentation"
             )
             self.log("Proof = ", proof["verified"])
 
             # if presentation is a degree schema (proof of education),
             # check values received
-            pres_req = message["presentation_request"]
-            pres = message["presentation"]
+            pres_req = message["by_format"]["pres_request"]["indy"]
+            pres = message["by_format"]["pres"]["indy"]
             is_proof_of_education = (
                 pres_req["name"] == "Proof of Education"
             )

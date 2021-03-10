@@ -8,32 +8,30 @@ from unittest import TestCase
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
-from .......messaging.util import canon
-from .......revocation.models.indy import NonRevocationInterval
+from .....messaging.util import canon
+from .....revocation.models.indy import NonRevocationInterval
 
-from ......didcomm_prefix import DIDCommPrefix
+from ....didcomm_prefix import DIDCommPrefix
 
-from ....message_types import PRESENTATION_PREVIEW
-from ....util.predicate import Predicate
-
-from ..presentation_preview import (
-    PresAttrSpec,
-    PresPredSpec,
-    PresentationPreview,
+from ..predicate import Predicate
+from ..pres_preview import (
+    IndyPresAttrSpec,
+    IndyPresPredSpec,
+    IndyPresPreview,
+    PRESENTATION_PREVIEW,
 )
-
 
 S_ID = {
     "score": "NcYxiDXkpYi6ov5FcYDi1e:2:score:1.0",
     "membership": "NcYxiDXkpYi6ov5FcYDi1e:2:membership:1.0",
 }
 CD_ID = {name: f"NcYxiDXkpYi6ov5FcYDi1e:3:CL:{S_ID[name]}:tag1" for name in S_ID}
-PRES_PREVIEW = PresentationPreview(
+PRES_PREVIEW = IndyPresPreview(
     attributes=[
-        PresAttrSpec(
+        IndyPresAttrSpec(
             name="player", cred_def_id=CD_ID["score"], value="Richie Knucklez"
         ),
-        PresAttrSpec(
+        IndyPresAttrSpec(
             name="screenCapture",
             cred_def_id=CD_ID["score"],
             mime_type="image/png",
@@ -41,7 +39,7 @@ PRES_PREVIEW = PresentationPreview(
         ),
     ],
     predicates=[
-        PresPredSpec(
+        IndyPresPredSpec(
             name="highScore",
             cred_def_id=CD_ID["score"],
             predicate=">=",
@@ -49,28 +47,28 @@ PRES_PREVIEW = PresentationPreview(
         )
     ],
 )
-PRES_PREVIEW_ATTR_NAMES = PresentationPreview(
+PRES_PREVIEW_ATTR_NAMES = IndyPresPreview(
     attributes=[
-        PresAttrSpec(
+        IndyPresAttrSpec(
             name="player",
             cred_def_id=CD_ID["score"],
             value="Richie Knucklez",
             referent="reft-0",
         ),
-        PresAttrSpec(
+        IndyPresAttrSpec(
             name="screenCapture",
             cred_def_id=CD_ID["score"],
             mime_type="image/png",
             value="aW1hZ2luZSBhIHNjcmVlbiBjYXB0dXJl",
             referent="reft-0",
         ),
-        PresAttrSpec(
+        IndyPresAttrSpec(
             name="member",
             cred_def_id=CD_ID["membership"],
             value="Richard Hand",
             referent="reft-1",
         ),
-        PresAttrSpec(
+        IndyPresAttrSpec(
             name="since",
             cred_def_id=CD_ID["membership"],
             value="2020-01-01",
@@ -143,32 +141,32 @@ INDY_PROOF_REQ_ATTR_NAMES = json.loads(
 )
 
 
-class TestPresAttrSpec(TestCase):
+class TestIndyPresAttrSpec(TestCase):
     """Presentation-preview attribute specification tests"""
 
     def test_posture(self):
-        self_attested = PresAttrSpec(name="ident", cred_def_id=None, value="655321")
-        assert self_attested.posture == PresAttrSpec.Posture.SELF_ATTESTED
+        self_attested = IndyPresAttrSpec(name="ident", cred_def_id=None, value="655321")
+        assert self_attested.posture == IndyPresAttrSpec.Posture.SELF_ATTESTED
 
-        revealed = PresAttrSpec(
+        revealed = IndyPresAttrSpec(
             name="ident", cred_def_id=CD_ID["score"], value="655321"
         )
-        assert revealed.posture == PresAttrSpec.Posture.REVEALED_CLAIM
+        assert revealed.posture == IndyPresAttrSpec.Posture.REVEALED_CLAIM
 
-        unrevealed = PresAttrSpec(name="ident", cred_def_id=CD_ID["score"])
-        assert unrevealed.posture == PresAttrSpec.Posture.UNREVEALED_CLAIM
+        unrevealed = IndyPresAttrSpec(name="ident", cred_def_id=CD_ID["score"])
+        assert unrevealed.posture == IndyPresAttrSpec.Posture.UNREVEALED_CLAIM
 
-        no_posture = PresAttrSpec(name="no_spec")
+        no_posture = IndyPresAttrSpec(name="no_spec")
         assert no_posture.posture is None
 
     def test_list_plain(self):
-        by_list = PresAttrSpec.list_plain(
+        by_list = IndyPresAttrSpec.list_plain(
             plain={"ident": "655321", " Given Name ": "Alexander DeLarge"},
             cred_def_id=CD_ID["score"],
         )
         explicit = [
-            PresAttrSpec(name="ident", cred_def_id=CD_ID["score"], value="655321"),
-            PresAttrSpec(
+            IndyPresAttrSpec(name="ident", cred_def_id=CD_ID["score"], value="655321"),
+            IndyPresAttrSpec(
                 name="givenname", cred_def_id=CD_ID["score"], value="Alexander DeLarge"
             ),
         ]
@@ -179,19 +177,19 @@ class TestPresAttrSpec(TestCase):
         assert len(explicit) == len(by_list)
 
     def test_list_plain_share_referent(self):
-        by_list = PresAttrSpec.list_plain(
+        by_list = IndyPresAttrSpec.list_plain(
             plain={"ident": "655321", " Given Name ": "Alexander DeLarge"},
             cred_def_id=CD_ID["score"],
             referent="dummy",
         )
         explicit = [
-            PresAttrSpec(
+            IndyPresAttrSpec(
                 name="ident",
                 cred_def_id=CD_ID["score"],
                 value="655321",
                 referent="dummy",
             ),
-            PresAttrSpec(
+            IndyPresAttrSpec(
                 name="givenname",
                 cred_def_id=CD_ID["score"],
                 value="Alexander DeLarge",
@@ -206,21 +204,21 @@ class TestPresAttrSpec(TestCase):
 
     def test_eq(self):
         attr_specs_none_plain = [
-            PresAttrSpec(name="name", value="value"),
-            PresAttrSpec(name="name", value="value", mime_type=None),
-            PresAttrSpec(name=" NAME ", value="value"),
+            IndyPresAttrSpec(name="name", value="value"),
+            IndyPresAttrSpec(name="name", value="value", mime_type=None),
+            IndyPresAttrSpec(name=" NAME ", value="value"),
         ]
         attr_specs_different = [
-            PresAttrSpec(name="name", value="dmFsdWU=", mime_type="image/png"),
-            PresAttrSpec(name="name", value="value", cred_def_id="cred_def_id"),
-            PresAttrSpec(name="name", value="distinct value", mime_type=None),
-            PresAttrSpec(name="distinct name", value="value", mime_type=None),
-            PresAttrSpec(name="name", value="dmFsdWU=", mime_type=None),
-            PresAttrSpec(name="name"),
-            PresAttrSpec(
+            IndyPresAttrSpec(name="name", value="dmFsdWU=", mime_type="image/png"),
+            IndyPresAttrSpec(name="name", value="value", cred_def_id="cred_def_id"),
+            IndyPresAttrSpec(name="name", value="distinct value", mime_type=None),
+            IndyPresAttrSpec(name="distinct name", value="value", mime_type=None),
+            IndyPresAttrSpec(name="name", value="dmFsdWU=", mime_type=None),
+            IndyPresAttrSpec(name="name"),
+            IndyPresAttrSpec(
                 name="name", value="value", cred_def_id="cred_def_id", referent="reft-0"
             ),
-            PresAttrSpec(
+            IndyPresAttrSpec(
                 name="name", value="value", cred_def_id="cred_def_id", referent="reft-1"
             ),
         ]
@@ -247,8 +245,8 @@ class TestPresAttrSpec(TestCase):
             }
         )
 
-        attr_spec = PresAttrSpec.deserialize(dump)
-        assert type(attr_spec) == PresAttrSpec
+        attr_spec = IndyPresAttrSpec.deserialize(dump)
+        assert type(attr_spec) == IndyPresAttrSpec
         assert canon(attr_spec.name) == "player"
 
         dump = json.dumps(
@@ -260,8 +258,8 @@ class TestPresAttrSpec(TestCase):
             }
         )
 
-        attr_spec = PresAttrSpec.deserialize(dump)
-        assert type(attr_spec) == PresAttrSpec
+        attr_spec = IndyPresAttrSpec.deserialize(dump)
+        assert type(attr_spec) == IndyPresAttrSpec
         assert canon(attr_spec.name) == "player"
 
     def test_serialize(self):
@@ -325,7 +323,7 @@ class TestPredicate(TestCase):
         assert Predicate.get("GT").value.no("0", "0")
 
 
-class TestPresPredSpec(TestCase):
+class TestIndyPresPredSpec(TestCase):
     """Presentation predicate specification tests"""
 
     def test_deserialize(self):
@@ -339,8 +337,8 @@ class TestPresPredSpec(TestCase):
             }
         )
 
-        pred_spec = PresPredSpec.deserialize(dump)
-        assert type(pred_spec) == PresPredSpec
+        pred_spec = IndyPresPredSpec.deserialize(dump)
+        assert type(pred_spec) == IndyPresPredSpec
         assert canon(pred_spec.name) == "highscore"
 
     def test_serialize(self):
@@ -357,13 +355,13 @@ class TestPresPredSpec(TestCase):
     def test_eq(self):
         """Test equality operator."""
 
-        pred_spec_a = PresPredSpec(
+        pred_spec_a = IndyPresPredSpec(
             name="a",
             cred_def_id=CD_ID["score"],
             predicate=Predicate.GE.value.math,
             threshold=0,
         )
-        pred_spec_b = PresPredSpec(
+        pred_spec_b = IndyPresPredSpec(
             name="b",
             cred_def_id=CD_ID["score"],
             predicate=Predicate.GE.value.math,
@@ -389,7 +387,7 @@ class TestPresPredSpec(TestCase):
 
 
 @pytest.mark.indy
-class TestPresentationPreviewAsync(AsyncTestCase):
+class TestIndyPresPreviewAsync(AsyncTestCase):
     """Presentation preview tests"""
 
     @pytest.mark.asyncio
@@ -499,25 +497,25 @@ class TestPresentationPreviewAsync(AsyncTestCase):
     async def test_satisfaction(self):
         """Test presentation preview predicate satisfaction."""
 
-        pred_spec = PresPredSpec(
+        pred_spec = IndyPresPredSpec(
             name="highScore",
             cred_def_id=CD_ID["score"],
             predicate=Predicate.GE.value.math,
             threshold=1000000,
         )
-        attr_spec = PresAttrSpec(
+        attr_spec = IndyPresAttrSpec(
             name="HIGHSCORE", cred_def_id=CD_ID["score"], value=1234567
         )
         assert attr_spec.satisfies(pred_spec)
 
-        attr_spec = PresAttrSpec(
+        attr_spec = IndyPresAttrSpec(
             name="HIGHSCORE", cred_def_id=CD_ID["score"], value=985260
         )
         assert not attr_spec.satisfies(pred_spec)
 
 
 @pytest.mark.indy
-class TestPresentationPreview(TestCase):
+class TestIndyPresPreview(TestCase):
     """Presentation preview tests"""
 
     def test_init(self):
@@ -559,8 +557,8 @@ class TestPresentationPreview(TestCase):
             ],
         }
 
-        preview = PresentationPreview.deserialize(dump)
-        assert type(preview) == PresentationPreview
+        preview = IndyPresPreview.deserialize(dump)
+        assert type(preview) == IndyPresPreview
 
     def test_serialize(self):
         """Test serialization."""
@@ -592,7 +590,7 @@ class TestPresentationPreview(TestCase):
         }
 
     def test_eq(self):
-        pres_preview_a = PresentationPreview.deserialize(PRES_PREVIEW.serialize())
+        pres_preview_a = IndyPresPreview.deserialize(PRES_PREVIEW.serialize())
         assert pres_preview_a == PRES_PREVIEW
 
         pres_preview_a.predicates = []

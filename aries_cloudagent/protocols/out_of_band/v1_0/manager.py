@@ -33,11 +33,15 @@ from ...didexchange.v1_0.manager import DIDXManager
 from ...issue_credential.v1_0.models.credential_exchange import V10CredentialExchange
 from ...issue_credential.v2_0.messages.cred_offer import V20CredOffer
 from ...issue_credential.v2_0.models.cred_ex_record import V20CredExRecord
+from ...present_proof.indy.xform import indy_proof_req_preview2indy_requested_creds
 from ...present_proof.v1_0.manager import PresentationManager
 from ...present_proof.v1_0.message_types import PRESENTATION_REQUEST
-from ...present_proof.v1_0.messages.presentation_proposal import PresentationProposal
 from ...present_proof.v1_0.models.presentation_exchange import V10PresentationExchange
-from ...present_proof.v1_0.util.indy import indy_proof_req_preview2indy_requested_creds
+from ...present_proof.v2_0.manager import V20PresManager
+from ...present_proof.v2_0.message_types import PRES_20_REQUEST
+from ...present_proof.v2_0.messages.pres_format import V20PresFormat
+from ...present_proof.v2_0.messages.pres_request import V20PresRequest
+from ...present_proof.v2_0.models.pres_exchange import V20PresExRecord
 
 from .messages.invitation import HSProto, InvitationMessage
 from .messages.problem_report import ProblemReport
@@ -175,21 +179,32 @@ class OutOfBandManager(BaseConnectionManager):
                     )
                     message_attachments.append(
                         InvitationMessage.wrap_message(
-                            V20CredOffer.deserialize(
-                                cred_ex_rec.cred_offer
-                            ).offer()  # default to indy format: will change for DIF
+                            V20CredOffer.deserialize(cred_ex_rec.cred_offer).offer()
                         )
                     )
             elif a_type == "present-proof":
-                pres_ex_rec = await V10PresentationExchange.retrieve_by_id(
-                    self._session,
-                    a_id,
-                )
-                message_attachments.append(
-                    InvitationMessage.wrap_message(
-                        pres_ex_rec.presentation_request_dict
+                try:
+                    pres_ex_rec = await V10PresentationExchange.retrieve_by_id(
+                        self._session,
+                        a_id,
                     )
-                )
+                    message_attachments.append(
+                        InvitationMessage.wrap_message(
+                            pres_ex_rec.presentation_request_dict
+                        )
+                    )
+                except StorageNotFoundError:
+                    pres_ex_rec = await V20PresExRecord.retrieve_by_id(
+                        self._session,
+                        a_id,
+                    )
+                    message_attachments.append(
+                        InvitationMessage.wrap_message(
+                            V20PresRequest.deserialize(
+                                pres_ex_rec.pres_request
+                            ).attachment()
+                        )
+                    )
             else:
                 raise OutOfBandManagerError(f"Unknown attachment type: {a_type}")
 
@@ -349,8 +364,20 @@ class OutOfBandManager(BaseConnectionManager):
         alias: str = None,
         mediation_id: str = None,
     ) -> dict:
-        """Receive an out of band invitation message."""
+        """
+        Receive an out of band invitation message.
 
+        Args:
+            invi_msg: invitation message
+            use_existing_connection: whether to use existing connection if possible
+            auto_accept: whether to accept the invitation automatically
+            alias: Alias for connection record
+            mediation_id: mediation identifier
+
+        Returns:
+            ConnRecord, serialized
+
+        """
         ledger: BaseLedger = self._session.inject(BaseLedger)
 
         if mediation_id:
@@ -478,10 +505,7 @@ class OutOfBandManager(BaseConnectionManager):
         if conn_rec is None:
             if not unq_handshake_protos:
                 raise OutOfBandManagerError(
-                    (
-                        "No existing connection exists and "
-                        "handshake_protocol is missing"
-                    )
+                    "No existing connection exists and handshake_protocol is missing"
                 )
             # Create a new connection
             for proto in unq_handshake_protos:
@@ -527,120 +551,196 @@ class OutOfBandManager(BaseConnectionManager):
             req_attach = invi_msg.request_attach[0]
             if isinstance(req_attach, AttachDecorator):
                 if req_attach.data is not None:
-                    req_attach_type = req_attach.data.json["@type"]
-                    if DIDCommPrefix.unqualify(req_attach_type) == PRESENTATION_REQUEST:
-                        proof_present_mgr = PresentationManager(self._session.profile)
-                        indy_proof_request = json.loads(
-                            b64_to_bytes(
-                                req_attach.data.json["request_presentations~attach"][0][
-                                    "data"
-                                ]["base64"]
-                            )
-                        )
-                        present_request_msg = req_attach.data.json
-                        service_deco = {}
-                        oob_invi_service = service.serialize()
-                        service_deco["recipientKeys"] = oob_invi_service.get(
-                            "recipientKeys"
-                        )
-                        service_deco["routingKeys"] = oob_invi_service.get(
-                            "routingKeys"
-                        )
-                        service_deco["serviceEndpoint"] = oob_invi_service.get(
-                            "serviceEndpoint"
-                        )
-                        present_request_msg["~service"] = service_deco
-                        presentation_ex_record = V10PresentationExchange(
-                            connection_id=conn_rec.connection_id,
-                            thread_id=present_request_msg["@id"],
-                            initiator=V10PresentationExchange.INITIATOR_EXTERNAL,
-                            role=V10PresentationExchange.ROLE_PROVER,
-                            presentation_request=indy_proof_request,
-                            presentation_request_dict=present_request_msg,
-                            auto_present=self._session.context.settings.get(
-                                "debug.auto_respond_presentation_request"
-                            ),
+                    unq_req_attach_type = DIDCommPrefix.unqualify(
+                        req_attach.content["@type"]
+                    )
+                    if unq_req_attach_type == PRESENTATION_REQUEST:
+                        await self._process_pres_request_v1(
+                            req_attach=req_attach,
+                            service=service,
+                            conn_rec=conn_rec,
                             trace=(invi_msg._trace is not None),
                         )
-
-                        presentation_ex_record.presentation_request = indy_proof_request
-                        presentation_ex_record = (
-                            await proof_present_mgr.receive_request(
-                                presentation_ex_record
-                            )
+                    elif unq_req_attach_type == PRES_20_REQUEST:
+                        await self._process_pres_request_v2(
+                            req_attach=req_attach,
+                            service=service,
+                            conn_rec=conn_rec,
+                            trace=(invi_msg._trace is not None),
                         )
-                        if presentation_ex_record.auto_present:
-                            presentation_preview = None
-                            if presentation_ex_record.presentation_proposal_dict:
-                                exchange_pres_proposal = PresentationProposal.deserialize(
-                                    presentation_ex_record.presentation_proposal_dict
-                                )
-                                presentation_preview = (
-                                    exchange_pres_proposal.presentation_proposal
-                                )
-
-                            try:
-                                req_creds = (
-                                    await indy_proof_req_preview2indy_requested_creds(
-                                        indy_proof_request,
-                                        presentation_preview,
-                                        holder=self._session.inject(IndyHolder),
-                                    )
-                                )
-                            except ValueError as err:
-                                self._logger.warning(f"{err}")
-                                return
-
-                            (
-                                presentation_ex_record,
-                                presentation_message,
-                            ) = await proof_present_mgr.create_presentation(
-                                presentation_exchange_record=presentation_ex_record,
-                                requested_credentials=req_creds,
-                                comment=(
-                                    "auto-presented for proof request nonce={}".format(
-                                        indy_proof_request["nonce"]
-                                    )
-                                ),
-                            )
-                            responder = self._session.inject(
-                                BaseResponder, required=False
-                            )
-                            connection_targets = await self.fetch_connection_targets(
-                                connection=conn_rec
-                            )
-                            if presentation_message is None:
-                                raise OutOfBandManagerError(
-                                    "No presentation for proof request nonce={}".format(
-                                        indy_proof_request["nonce"]
-                                    )
-                                )
-                            else:
-                                if responder:
-                                    await responder.send(
-                                        message=presentation_message,
-                                        target_list=connection_targets,
-                                    )
-                                return presentation_message.serialize()
-                        else:
-                            raise OutOfBandManagerError(
-                                (
-                                    "auto_present setting in configuration is"
-                                    " set to false. Cannot respond automatically"
-                                    " to presentation requests, building"
-                                )
-                            )
                     else:
                         raise OutOfBandManagerError(
                             (
-                                "Unsupported request~attach type, "
-                                "only request-presentation is supported"
+                                "Unsupported request~attach type "
+                                f"{req_attach.content['@type']}: must unqualify to"
+                                f"{PRESENTATION_REQUEST} or {PRES_20_REQUEST}"
                             )
                         )
             else:
                 raise OutOfBandManagerError("request~attach is not properly formatted")
+
+        return conn_rec.serialize()
+
+    async def _process_pres_request_v1(
+        self,
+        req_attach: AttachDecorator,
+        service: ServiceMessage,
+        conn_rec: ConnRecord,
+        trace: bool,
+    ):
+        """
+        Create exchange for v1 pres request attachment, auto-present if configured.
+
+        Args:
+            req_attach: request attachment on invitation
+            service: service message from invitation
+            conn_rec: connection record
+            trace: trace setting for presentation exchange record
+        """
+        pres_mgr = PresentationManager(self._session.profile)
+        pres_request_msg = req_attach.content
+        indy_proof_request = json.loads(
+            b64_to_bytes(
+                pres_request_msg["request_presentations~attach"][0]["data"]["base64"]
+            )
+        )
+        oob_invi_service = service.serialize()
+        pres_request_msg["~service"] = {
+            "recipientKeys": oob_invi_service.get("recipientKeys"),
+            "routingKeys": oob_invi_service.get("routingKeys"),
+            "serviceEndpoint": oob_invi_service.get("serviceEndpoint"),
+        }
+        pres_ex_record = V10PresentationExchange(
+            connection_id=conn_rec.connection_id,
+            thread_id=pres_request_msg["@id"],
+            initiator=V10PresentationExchange.INITIATOR_EXTERNAL,
+            role=V10PresentationExchange.ROLE_PROVER,
+            presentation_request=indy_proof_request,
+            presentation_request_dict=pres_request_msg,
+            auto_present=self._session.context.settings.get(
+                "debug.auto_respond_presentation_request"
+            ),
+            trace=trace,
+        )
+
+        pres_ex_record = await pres_mgr.receive_request(pres_ex_record)
+        if pres_ex_record.auto_present:
+            try:
+                req_creds = await indy_proof_req_preview2indy_requested_creds(
+                    indy_proof_req=indy_proof_request,
+                    preview=None,
+                    holder=self._session.inject(IndyHolder),
+                )
+            except ValueError as err:
+                self._logger.warning(f"{err}")
+                raise OutOfBandManagerError(
+                    f"Cannot auto-respond to presentation request attachment: {err}"
+                )
+
+            (pres_ex_record, presentation_message) = await pres_mgr.create_presentation(
+                presentation_exchange_record=pres_ex_record,
+                requested_credentials=req_creds,
+                comment=(
+                    "auto-presented for proof request nonce={}".format(
+                        indy_proof_request["nonce"]
+                    )
+                ),
+            )
+            responder = self._session.inject(BaseResponder, required=False)
+            if responder:
+                await responder.send(
+                    message=presentation_message,
+                    target_list=await self.fetch_connection_targets(
+                        connection=conn_rec
+                    ),
+                )
         else:
-            return conn_rec.serialize()
+            raise OutOfBandManagerError(
+                (
+                    "Configuration sets auto_present false: cannot "
+                    "respond automatically to presentation requests"
+                )
+            )
+
+    async def _process_pres_request_v2(
+        self,
+        req_attach: AttachDecorator,
+        service: ServiceMessage,
+        conn_rec: ConnRecord,
+        trace: bool,
+    ):
+        """
+        Create exchange for v2 pres request attachment, auto-present if configured.
+
+        Args:
+            req_attach: request attachment on invitation
+            service: service message from invitation
+            conn_rec: connection record
+            trace: trace setting for presentation exchange record
+        """
+        pres_mgr = V20PresManager(self._session.profile)
+        pres_request_msg = req_attach.content
+        oob_invi_service = service.serialize()
+        pres_request_msg["~service"] = {
+            "recipientKeys": oob_invi_service.get("recipientKeys"),
+            "routingKeys": oob_invi_service.get("routingKeys"),
+            "serviceEndpoint": oob_invi_service.get("serviceEndpoint"),
+        }
+        pres_ex_record = V20PresExRecord(
+            connection_id=conn_rec.connection_id,
+            thread_id=pres_request_msg["@id"],
+            initiator=V20PresExRecord.INITIATOR_EXTERNAL,
+            role=V20PresExRecord.ROLE_PROVER,
+            pres_request=pres_request_msg,
+            auto_present=self._session.context.settings.get(
+                "debug.auto_respond_presentation_request"
+            ),
+            trace=trace,
+        )
+
+        pres_ex_record = await pres_mgr.receive_pres_request(pres_ex_record)
+        if pres_ex_record.auto_present:
+            indy_proof_request = V20PresRequest.deserialize(
+                pres_request_msg
+            ).attachment(
+                V20PresFormat.Format.INDY
+            )  # assumption will change for DIF
+            try:
+                req_creds = await indy_proof_req_preview2indy_requested_creds(
+                    indy_proof_req=indy_proof_request,
+                    preview=None,
+                    holder=self._session.inject(IndyHolder),
+                )
+            except ValueError as err:
+                self._logger.warning(f"{err}")
+                raise OutOfBandManagerError(
+                    f"Cannot auto-respond to presentation request attachment: {err}"
+                )
+
+            (pres_ex_record, pres_msg) = await pres_mgr.create_pres(
+                pres_ex_record=pres_ex_record,
+                requested_credentials=req_creds,
+                comment=(
+                    "auto-presented for proof request nonce={}".format(
+                        indy_proof_request["nonce"]
+                    )
+                ),
+            )
+            responder = self._session.inject(BaseResponder, required=False)
+            if responder:
+                await responder.send(
+                    message=pres_msg,
+                    target_list=await self.fetch_connection_targets(
+                        connection=conn_rec
+                    ),
+                )
+        else:
+            raise OutOfBandManagerError(
+                (
+                    "Configuration sets auto_present false: cannot "
+                    "respond automatically to presentation requests"
+                )
+            )
 
     async def find_existing_connection(
         self,

@@ -1,4 +1,4 @@
-"""Credential format inner object."""
+"""Issue-credential protocol message attachment format."""
 
 from collections import namedtuple
 from enum import Enum
@@ -21,15 +21,15 @@ FormatSpec = namedtuple("FormatSpec", "aries aka detail")
 
 
 class V20CredFormat(BaseModel):
-    """Credential format."""
+    """Issue-credential protocol message attachment format."""
 
     class Meta:
-        """Credential format metadata."""
+        """Issue-credential protocol message attachment format metadata."""
 
         schema_class = "V20CredFormatSchema"
 
     class Format(Enum):
-        """Proposal credential format."""
+        """Attachment format."""
 
         INDY = FormatSpec(
             "hlindy-zkp-v1.0",
@@ -68,6 +68,11 @@ class V20CredFormat(BaseModel):
             return self.value.aka
 
         @property
+        def api(self) -> str:
+            """Admin API specifier."""
+            return self.name.lower()
+
+        @property
         def detail(self) -> str:
             """Accessor for credential exchange detail class."""
             return self.value.detail
@@ -103,7 +108,7 @@ class V20CredFormat(BaseModel):
         attach_id: str = None,
         format_: Union[str, "V20CredFormat.Format"] = None,
     ):
-        """Initialize cred format."""
+        """Initialize issue-credential protocol message attachment format."""
         self.attach_id = attach_id or uuid4()
         self.format_ = (
             V20CredFormat.Format.get(format_) or V20CredFormat.Format.INDY
@@ -116,10 +121,10 @@ class V20CredFormat(BaseModel):
 
 
 class V20CredFormatSchema(BaseModelSchema):
-    """Credential format schema."""
+    """Issue-credential protocol message attachment format schema."""
 
     class Meta:
-        """Credential format schema metadata."""
+        """Issue-credential protocol message attachment format schema metadata."""
 
         model_class = V20CredFormat
         unknown = EXCLUDE
@@ -127,13 +132,13 @@ class V20CredFormatSchema(BaseModelSchema):
     attach_id = fields.Str(
         required=True,
         allow_none=False,
-        description="attachment identifier",
+        description="Attachment identifier",
         example=UUIDFour.EXAMPLE,
     )
     format_ = fields.Str(
         required=True,
         allow_none=False,
-        description="acceptable credential format specifier",
+        description="Acceptable issue-credential message attachment format specifier",
         data_key="format",
         validate=validate.OneOf([f.aries for f in V20CredFormat.Format]),
         example=V20CredFormat.Format.INDY.aries,

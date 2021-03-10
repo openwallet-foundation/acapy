@@ -4,9 +4,9 @@ from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 
-from ..message_types import PRESENTATION_PROPOSAL, PROTOCOL_PACKAGE
+from ...indy.pres_preview import IndyPresPreview, IndyPresPreviewSchema
 
-from .inner.presentation_preview import PresentationPreview, PresentationPreviewSchema
+from ..message_types import PRESENTATION_PROPOSAL, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = (
     f"{PROTOCOL_PACKAGE}.handlers."
@@ -29,7 +29,7 @@ class PresentationProposal(AgentMessage):
         _id: str = None,
         *,
         comment: str = None,
-        presentation_proposal: PresentationPreview = None,
+        presentation_proposal: IndyPresPreview = None,
         **kwargs,
     ):
         """
@@ -56,4 +56,4 @@ class PresentationProposalSchema(AgentMessageSchema):
     comment = fields.Str(
         description="Human-readable comment", required=False, allow_none=True
     )
-    presentation_proposal = fields.Nested(PresentationPreviewSchema, required=True)
+    presentation_proposal = fields.Nested(IndyPresPreviewSchema, required=True)

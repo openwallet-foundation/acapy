@@ -125,17 +125,16 @@ class FaberAgent(AriesAgent):
     async def handle_issuer_cred_rev(self, message):
         pass
 
-    async def handle_present_proof(self, message):
+    async def handle_present_proof_v2_0(self, message):
         state = message["state"]
-
-        pres_ex_id = message["presentation_exchange_id"]
+        pres_ex_id = message["pres_ex_id"]
         self.log(f"Presentation: state = {state}, pres_ex_id = {pres_ex_id}")
 
-        if state == "presentation_received":
+        if state == "presentation-received":
             log_status("#27 Process the proof provided by X")
             log_status("#28 Check if proof is valid")
             proof = await self.admin_POST(
-                f"/present-proof/records/{pres_ex_id}/verify-presentation"
+                f"/present-proof-2.0/records/{pres_ex_id}/verify-presentation"
             )
             self.log("Proof =", proof["verified"])
 
@@ -329,11 +328,11 @@ async def main(args):
                     indy_proof_request["non_revoked"] = {"to": int(time.time())}
                 proof_request_web_request = {
                     "connection_id": faber_agent.agent.connection_id,
-                    "proof_request": indy_proof_request,
+                    "presentation_request": {"indy": indy_proof_request},
                     "trace": exchange_tracing,
                 }
-                await faber_agent.agent.admin_POST(
-                    "/present-proof/send-request", proof_request_web_request
+                await agent.admin_POST(
+                    "/present-proof-2.0/send-request", proof_request_web_request
                 )
 
             elif option == "3":

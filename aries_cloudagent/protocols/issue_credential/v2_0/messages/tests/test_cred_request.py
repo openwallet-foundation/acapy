@@ -64,7 +64,7 @@ class TestV20CredRequest(AsyncTestCase):
         assert (
             cred_request.requests_attach[0].content == TestV20CredRequest.indy_cred_req
         )
-        assert cred_request.cred_request() == TestV20CredRequest.indy_cred_req
+        assert cred_request.attachment() == TestV20CredRequest.indy_cred_req
         assert cred_request._type == DIDCommPrefix.qualify_current(CRED_20_REQUEST)
 
     async def test_deserialize(self):
@@ -134,11 +134,11 @@ class TestV20CredRequestSchema(AsyncTestCase):
         )
 
         assert (
-            cred_request.cred_request(V20CredFormat.Format.INDY)
+            cred_request.attachment(V20CredFormat.Format.INDY)
             == TestV20CredRequest.indy_cred_req
         )
         assert (
-            cred_request.cred_request(V20CredFormat.Format.DIF)
+            cred_request.attachment(V20CredFormat.Format.DIF)
             == TestV20CredRequest.dif_cred_req
         )
         data = cred_request.serialize()
@@ -164,9 +164,11 @@ class TestV20CredRequestSchema(AsyncTestCase):
                 AttachDecorator.data_links(
                     ident="dif-links",
                     links="http://10.20.30.40/cred-req.json",
+                    sha256="00000000000000000000000000000000",
                 ),
             ],
         )
-        assert cred_request.cred_request(V20CredFormat.Format.DIF) == [
-            "http://10.20.30.40/cred-req.json"
-        ]
+        assert cred_request.attachment(V20CredFormat.Format.DIF) == (
+            ["http://10.20.30.40/cred-req.json"],
+            "00000000000000000000000000000000",
+        )

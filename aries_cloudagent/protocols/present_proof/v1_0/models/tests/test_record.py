@@ -30,7 +30,7 @@ class TestRecord(UnitTestCase):
             presentation_request={"pres": "req"},
             presentation_request_dict={"pres", "dict"},
             presentation={"pres": "indy"},
-            verified=False,
+            verified="false",
             auto_present=True,
             error_msg="error",
         )
@@ -48,7 +48,7 @@ class TestRecord(UnitTestCase):
             "state": "state",
             "auto_present": True,
             "error_msg": "error",
-            "verified": False,
+            "verified": "false",
             "trace": False,
         }
 

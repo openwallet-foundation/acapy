@@ -8,7 +8,7 @@ An attach decorator embeds content or specifies appended content.
 import json
 import uuid
 
-from typing import Any, Mapping, Sequence, Union
+from typing import Any, Mapping, Sequence, Tuple, Union
 
 from marshmallow import EXCLUDE, fields, pre_load
 
@@ -546,11 +546,13 @@ class AttachDecorator(BaseModel):
         self.data = data
 
     @property
-    def content(self):
+    def content(self) -> Union[Mapping, Tuple[Sequence[str], str]]:
         """
         Return attachment content.
 
-        Returns: data attachment, decoded if necessary and json-loaded, or data links
+        Returns:
+            data attachment, decoded if necessary and json-loaded, or data links
+            and sha-256 hash.
 
         """
         if hasattr(self.data, "base64_"):
@@ -558,7 +560,10 @@ class AttachDecorator(BaseModel):
         elif hasattr(self.data, "json_"):
             return self.data.json
         elif hasattr(self.data, "links_"):
-            return self.data.links  # fetching would be async; we want a property here
+            return (  # fetching would be async; we want a property here
+                self.data.links,
+                self.data.sha256,
+            )
         else:
             return None
 

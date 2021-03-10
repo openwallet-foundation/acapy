@@ -15,13 +15,14 @@ from ....messaging.responder import BaseResponder
 from ....revocation.models.revocation_registry import RevocationRegistry
 from ....storage.error import StorageNotFoundError
 
+from ..indy.xform import indy_proof_req2non_revoc_intervals
+
 from .models.presentation_exchange import V10PresentationExchange
 from .messages.presentation_ack import PresentationAck
 from .messages.presentation_proposal import PresentationProposal
 from .messages.presentation_request import PresentationRequest
 from .messages.presentation import Presentation
 from .message_types import ATTACH_DECO_IDS, PRESENTATION, PRESENTATION_REQUEST
-from .util.indy import indy_proof_req2non_revoc_intervals
 
 LOGGER = logging.getLogger(__name__)
 

@@ -44,6 +44,8 @@ class V20CredIssue(AgentMessage):
         Args:
             comment: optional comment
             credentials_attach: credentials attachments
+            formats: acceptable attachment formats
+            filter_attach: list of credential attachments
 
         """
         super().__init__(_id=_id, **kwargs)
@@ -52,7 +54,7 @@ class V20CredIssue(AgentMessage):
         self.formats = list(formats) if formats else []
         self.credentials_attach = list(credentials_attach) if credentials_attach else []
 
-    def cred(self, fmt: V20CredFormat.Format = None) -> dict:
+    def attachment(self, fmt: V20CredFormat.Format = None) -> dict:
         """
         Return attached credential.
 
@@ -60,9 +62,15 @@ class V20CredIssue(AgentMessage):
             fmt: format of attachment in list to decode and return
 
         """
-        return (fmt or V20CredFormat.Format.INDY).get_attachment_data(
-            self.formats,
-            self.credentials_attach,
+        return (
+            (
+                fmt or V20CredFormat.Format.get(self.formats[0].format)
+            ).get_attachment_data(
+                self.formats,
+                self.credentials_attach,
+            )
+            if self.formats
+            else None
         )
 
 
@@ -88,8 +96,12 @@ class V20CredIssueSchema(AgentMessageSchema):
         V20CredFormatSchema,
         many=True,
         required=True,
-        description="Acceptable credential formats",
+        description="Acceptable attachment formats",
     )
     credentials_attach = fields.Nested(
-        AttachDecoratorSchema, many=True, required=True, data_key="credentials~attach"
+        AttachDecoratorSchema,
+        many=True,
+        required=True,
+        data_key="credentials~attach",
+        description="Credential attachments",
     )
