@@ -173,6 +173,10 @@ class IndySdkVCRecordSearch(VCRecordSearch):
         """Initialize the Indy-SDK VC record search."""
         self._search = search
 
+    async def close(self):
+        """Dispose of the search query."""
+        await self._search.close()
+
     async def fetch(self, max_count: int = None) -> Sequence[VCRecord]:
         """
         Fetch the next list of VC records from the store.
