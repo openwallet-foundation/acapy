@@ -18,7 +18,6 @@ from ....messaging.responder import BaseResponder
 from ....revocation.models.revocation_registry import RevocationRegistry
 from ....storage.error import StorageNotFoundError
 
-from ..indy.pres_preview import IndyPresPreview
 from ..indy.xform import indy_proof_req2non_revoc_intervals
 
 from .models.pres_exchange import V20PresExRecord
@@ -134,9 +133,9 @@ class V20PresManager:
             A tuple (updated presentation exchange record, presentation request message)
 
         """
-        indy_proof_request = IndyPresPreview.deserialize(
-            pres_ex_record.by_format["pres_proposal"][V20PresFormat.Format.INDY.api]
-        )
+        indy_proof_request = pres_ex_record.by_format["pres_proposal"][
+            V20PresFormat.Format.INDY.api
+        ]
         indy_proof_request["name"] = name or "proof-request"
         indy_proof_request["version"] = version or "1.0"
         indy_proof_request["nonce"] = nonce or await generate_pr_nonce()
@@ -484,32 +483,35 @@ class V20PresManager:
                 )
 
         # Check for bait-and-switch in presented attribute values vs. request
+        # TODO: move to verifier.pre_verify(), include attr groups & predicate bounds
         proof_req = pres_ex_record.by_format["pres_request"][
             V20PresFormat.Format.INDY.api
         ]
 
         for (reft, attr_spec) in proof["requested_proof"]["revealed_attrs"].items():
-            name = proof_req["requested_attributes"][reft]["name"]
+            proof_req_attr_spec = proof_req["requested_attributes"].get(reft)
+            if not proof_req_attr_spec:
+                raise V20PresManagerError(
+                    f"Presentation referent {reft} not in request"
+                )
+            req_restrictions = proof_req_attr_spec["restrictions"]
+
+            name = proof_req_attr_spec["name"]
             proof_value = attr_spec["raw"]
             sub_proof_index = attr_spec["sub_proof_index"]
             schema_id = proof["identifiers"][sub_proof_index]["schema_id"]
             cred_def_id = proof["identifiers"][sub_proof_index]["cred_def_id"]
             criteria = {
                 "schema_id": schema_id,
-                "schema_issuer_did": schema_id.split[":"][-4],
-                "schema_name": schema_id.split[":"][-2],
-                "schema_version": schema_id.split[":"][-1],
+                "schema_issuer_did": schema_id.split(":")[-4],
+                "schema_name": schema_id.split(":")[-2],
+                "schema_version": schema_id.split(":")[-1],
                 "cred_def_id": proof["identifiers"][sub_proof_index]["cred_def_id"],
-                "issuer_did": cred_def_id.split[":"][-5],
+                "issuer_did": cred_def_id.split(":")[-5],
                 f"attr::{name}::value": proof_value,
             }
 
-            proof_req_attr_spec = proof_req["requested_attributes"].get(reft, {})
-            req_restrictions = proof_req_attr_spec.get("restrictions", [])
-            if not any(
-                r.items() <= criteria.items
-                for r in proof_req_attr_spec.get("restrictions", [])
-            ):
+            if not any(r.items() <= criteria.items() for r in req_restrictions):
                 raise V20PresManagerError(
                     f"Presentation {name}={proof_value} not in requested value(s)"
                 )

@@ -39,7 +39,6 @@ from ...problem_report.v1_0.message import ProblemReport
 from ..indy.cred_precis import IndyCredPrecisSchema
 from ..indy.proof import IndyPresSpecSchema
 from ..indy.proof_request import IndyProofRequestSchema
-from ..indy.pres_preview import IndyPresPreviewSchema
 
 from .manager import V20PresManager
 from .message_types import SPEC_URI
@@ -99,11 +98,11 @@ class V20PresExRecordListSchema(OpenAPISchema):
     )
 
 
-class DIFPresPreviewSchema(OpenAPISchema):
-    """DIF presentation preview schema placeholder."""
+class DIFPresProposalSchema(OpenAPISchema):
+    """DIF presentation proposal schema placeholder."""
 
     some_dif = fields.Str(
-        description="Placeholder for W3C/DIF/JSON-LD presentation preview format",
+        description="Placeholder for W3C/DIF/JSON-LD presentation proposal format",
         required=False,
     )
 
@@ -126,18 +125,18 @@ class DIFPresSpecSchema(OpenAPISchema):
     )
 
 
-class V20PresPreviewByFormatSchema(OpenAPISchema):
-    """Schema for presentation preview per format."""
+class V20PresProposalByFormatSchema(OpenAPISchema):
+    """Schema for presentation proposal per format."""
 
     indy = fields.Nested(
-        IndyPresPreviewSchema,
+        IndyProofRequestSchema,
         required=False,
-        description="Presentation preview for indy",
+        description="Presentation proposal for indy",
     )
     dif = fields.Nested(
-        DIFPresPreviewSchema,
+        DIFPresProposalSchema,
         required=False,
-        description="Presentation preview for DIF",
+        description="Presentation proposal for DIF",
     )
 
     @validates_schema
@@ -154,7 +153,7 @@ class V20PresPreviewByFormatSchema(OpenAPISchema):
         """
         if not any(f.api in data for f in V20PresFormat.Format):
             raise ValidationError(
-                "V20PresPreviewByFormatSchema requires indy, dif, or both"
+                "V20PresProposalByFormatSchema requires indy, dif, or both"
             )
 
 
@@ -167,8 +166,8 @@ class V20PresProposalRequestSchema(AdminAPIMessageTracingSchema):
     comment = fields.Str(
         description="Human-readable comment", required=False, allow_none=True
     )
-    presentation_preview = fields.Nested(
-        V20PresPreviewByFormatSchema(),
+    presentation_proposal = fields.Nested(
+        V20PresProposalByFormatSchema(),
         required=True,
     )
     auto_present = fields.Boolean(
@@ -197,7 +196,7 @@ class V20PresRequestByFormatSchema(OpenAPISchema):
     dif = fields.Nested(
         DIFPresRequestSchema,
         required=False,
-        description="Presentation preview for DIF",
+        description="Presentation request for DIF",
     )
 
     @validates_schema
@@ -508,14 +507,14 @@ async def present_proof_send_proposal(request: web.BaseRequest):
     comment = body.get("comment")
     connection_id = body.get("connection_id")
 
-    pres_preview = body.get("presentation_preview")
+    pres_proposal = body.get("presentation_proposal")
     conn_record = None
     async with context.session() as session:
         try:
             conn_record = await ConnRecord.retrieve_by_id(session, connection_id)
             pres_proposal_message = V20PresProposal(
                 comment=comment,
-                **_formats_attach(pres_preview, "proposal"),
+                **_formats_attach(pres_proposal, "proposal"),
             )
         except (BaseModelError, StorageError) as err:
             return await internal_error(

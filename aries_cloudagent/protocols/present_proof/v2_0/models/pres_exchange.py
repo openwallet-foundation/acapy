@@ -108,7 +108,7 @@ class V20PresExRecord(BaseExchangeRecord):
         """Record proposal, request, and presentation data structures by format."""
         result = {}
         for item, cls in {
-            "pres_proposal": V20PresProposal,
+            "pres_proposal": V20PresProposal,  # note: proof request attached for indy
             "pres_request": V20PresRequest,
             "pres": V20Pres,
         }.items():

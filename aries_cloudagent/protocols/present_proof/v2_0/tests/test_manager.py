@@ -1,5 +1,6 @@
 import json
 
+from copy import deepcopy
 from time import time
 
 from asynctest import TestCase as AsyncTestCase
@@ -20,7 +21,6 @@ from .....indy.sdk.verifier import IndySdkVerifier
 from ....didcomm_prefix import DIDCommPrefix
 
 from ...indy.xform import indy_proof_req_preview2indy_requested_creds
-from ...indy.pres_preview import IndyPresAttrSpec, IndyPresPreview, IndyPresPredSpec
 
 from .. import manager as test_module
 from ..manager import V20PresManager, V20PresManagerError
@@ -37,46 +37,70 @@ ISSUER_DID = "NcYxiDXkpYi6ov5FcYDi1e"
 S_ID = f"{ISSUER_DID}:2:vidya:1.0"
 CD_ID = f"{ISSUER_DID}:3:CL:{S_ID}:tag1"
 RR_ID = f"{ISSUER_DID}:4:{CD_ID}:CL_ACCUM:0"
-PRES_PREVIEW = IndyPresPreview(
-    attributes=[
-        IndyPresAttrSpec(name="player", cred_def_id=CD_ID, value="Richie Knucklez"),
-        IndyPresAttrSpec(
-            name="screenCapture",
-            cred_def_id=CD_ID,
-            mime_type="image/png",
-            value="aW1hZ2luZSBhIHNjcmVlbiBjYXB0dXJl",
-        ),
-    ],
-    predicates=[
-        IndyPresPredSpec(
-            name="highScore", cred_def_id=CD_ID, predicate=">=", threshold=1000000
-        )
-    ],
-)
-PRES_PREVIEW_NAMES = IndyPresPreview(
-    attributes=[
-        IndyPresAttrSpec(
-            name="player", cred_def_id=CD_ID, value="Richie Knucklez", referent="0"
-        ),
-        IndyPresAttrSpec(
-            name="screenCapture",
-            cred_def_id=CD_ID,
-            mime_type="image/png",
-            value="aW1hZ2luZSBhIHNjcmVlbiBjYXB0dXJl",
-            referent="0",
-        ),
-    ],
-    predicates=[
-        IndyPresPredSpec(
-            name="highScore", cred_def_id=CD_ID, predicate=">=", threshold=1000000
-        )
-    ],
-)
 PROOF_REQ_NAME = "name"
 PROOF_REQ_VERSION = "1.0"
 PROOF_REQ_NONCE = "12345"
 
 NOW = int(time())
+INDY_PROOF_REQ_NAME = {
+    "name": PROOF_REQ_NAME,
+    "version": PROOF_REQ_VERSION,
+    "nonce": PROOF_REQ_NONCE,
+    "requested_attributes": {
+        "0_player_uuid": {
+            "name": "player",
+            "restrictions": [{"cred_def_id": CD_ID}],
+            "non_revoked": {"from": NOW, "to": NOW},
+        },
+        "1_screencapture_uuid": {
+            "name": "screenCapture",
+            "restrictions": [{"cred_def_id": CD_ID}],
+            "non_revoked": {"from": NOW, "to": NOW},
+        },
+    },
+    "requested_predicates": {
+        "0_highscore_GE_uuid": {
+            "name": "highScore",
+            "p_type": ">=",
+            "p_value": 1000000,
+            "restrictions": [{"cred_def_id": CD_ID}],
+            "non_revoked": {"from": NOW, "to": NOW},
+        }
+    },
+}
+INDY_PROOF_REQ_NAMES = {
+    "name": PROOF_REQ_NAME,
+    "version": PROOF_REQ_VERSION,
+    "nonce": PROOF_REQ_NONCE,
+    "requested_attributes": {
+        "0_player_uuid": {
+            "names": ["player", "screenCapture"],
+            "restrictions": [{"cred_def_id": CD_ID}],
+            "non_revoked": {"from": NOW, "to": NOW},
+        }
+    },
+    "requested_predicates": {
+        "0_highscore_GE_uuid": {
+            "name": "highScore",
+            "p_type": ">=",
+            "p_value": 1000000,
+            "restrictions": [{"cred_def_id": CD_ID}],
+            "non_revoked": {"from": NOW, "to": NOW},
+        }
+    },
+}
+INDY_PROOF_REQ_SELFIE = {
+    "name": PROOF_REQ_NAME,
+    "version": PROOF_REQ_VERSION,
+    "nonce": PROOF_REQ_NONCE,
+    "requested_attributes": {
+        "self_player_uuid": {"name": "player"},
+        "self_screencapture_uuid": {"name": "screenCapture"},
+    },
+    "requested_predicates": {
+        "0_highscore_GE_uuid": {"name": "highScore", "p_type": ">=", "p_value": 1000000}
+    },
+}
 
 
 class TestV20PresManager(AsyncTestCase):
@@ -251,7 +275,7 @@ class TestV20PresManager(AsyncTestCase):
                 )
             ],
             proposal_attach=[
-                AttachDecorator.data_base64(PRES_PREVIEW.serialize(), ident="indy")
+                AttachDecorator.data_base64(INDY_PROOF_REQ_NAME, ident="indy")
             ],
         )
         px_rec = V20PresExRecord(
@@ -293,12 +317,6 @@ class TestV20PresManager(AsyncTestCase):
             assert px_rec_out.state == V20PresExRecord.STATE_REQUEST_RECEIVED
 
     async def test_create_pres(self):
-        indy_proof_req = await PRES_PREVIEW.indy_proof_request(
-            name=PROOF_REQ_NAME,
-            version=PROOF_REQ_VERSION,
-            nonce=PROOF_REQ_NONCE,
-            ledger=self.ledger,
-        )
         pres_request = V20PresRequest(
             formats=[
                 V20PresFormat(
@@ -307,7 +325,7 @@ class TestV20PresManager(AsyncTestCase):
                 )
             ],
             request_presentations_attach=[
-                AttachDecorator.data_base64(indy_proof_req, ident="indy")
+                AttachDecorator.data_base64(INDY_PROOF_REQ_NAME, ident="indy")
             ],
         )
         px_rec_in = V20PresExRecord(pres_request=pres_request.serialize())
@@ -330,7 +348,7 @@ class TestV20PresManager(AsyncTestCase):
             )
 
             req_creds = await indy_proof_req_preview2indy_requested_creds(
-                indy_proof_req, holder=self.holder
+                INDY_PROOF_REQ_NAME, preview=None, holder=self.holder
             )
             assert not req_creds["self_attested_attributes"]
             assert len(req_creds["requested_attributes"]) == 2
@@ -343,13 +361,8 @@ class TestV20PresManager(AsyncTestCase):
             assert px_rec_out.state == V20PresExRecord.STATE_PRESENTATION_SENT
 
     async def test_create_pres_proof_req_non_revoc_interval_none(self):
-        indy_proof_req = await PRES_PREVIEW.indy_proof_request(
-            name=PROOF_REQ_NAME,
-            version=PROOF_REQ_VERSION,
-            nonce=PROOF_REQ_NONCE,
-            ledger=self.ledger,
-        )
-        indy_proof_req["non_revoked"] = None  # simulate interop with indy-vcx
+        indy_proof_req_vcx = deepcopy(INDY_PROOF_REQ_NAME)
+        indy_proof_req_vcx["non_revoked"] = None  # simulate interop with indy-vcx
         pres_request = V20PresRequest(
             formats=[
                 V20PresFormat(
@@ -358,7 +371,7 @@ class TestV20PresManager(AsyncTestCase):
                 )
             ],
             request_presentations_attach=[
-                AttachDecorator.data_base64(indy_proof_req, ident="indy")
+                AttachDecorator.data_base64(indy_proof_req_vcx, ident="indy")
             ],
         )
         px_rec_in = V20PresExRecord(pres_request=pres_request.serialize())
@@ -382,7 +395,7 @@ class TestV20PresManager(AsyncTestCase):
             )
 
             req_creds = await indy_proof_req_preview2indy_requested_creds(
-                indy_proof_req, holder=self.holder
+                indy_proof_req_vcx, preview=None, holder=self.holder
             )
             assert not req_creds["self_attested_attributes"]
             assert len(req_creds["requested_attributes"]) == 2
@@ -395,30 +408,6 @@ class TestV20PresManager(AsyncTestCase):
             assert px_rec_out.state == V20PresExRecord.STATE_PRESENTATION_SENT
 
     async def test_create_pres_self_asserted(self):
-        PRES_PREVIEW_SELFIE = IndyPresPreview(
-            attributes=[
-                IndyPresAttrSpec(name="player", value="Richie Knucklez"),
-                IndyPresAttrSpec(
-                    name="screenCapture",
-                    mime_type="image/png",
-                    value="aW1hZ2luZSBhIHNjcmVlbiBjYXB0dXJl",
-                ),
-            ],
-            predicates=[
-                IndyPresPredSpec(
-                    name="highScore",
-                    cred_def_id=None,
-                    predicate=">=",
-                    threshold=1000000,
-                )
-            ],
-        )
-        indy_proof_req = await PRES_PREVIEW_SELFIE.indy_proof_request(
-            name=PROOF_REQ_NAME,
-            version=PROOF_REQ_VERSION,
-            nonce=PROOF_REQ_NONCE,
-            ledger=self.ledger,
-        )
         pres_request = V20PresRequest(
             formats=[
                 V20PresFormat(
@@ -427,7 +416,7 @@ class TestV20PresManager(AsyncTestCase):
                 )
             ],
             request_presentations_attach=[
-                AttachDecorator.data_base64(indy_proof_req, ident="indy")
+                AttachDecorator.data_base64(INDY_PROOF_REQ_SELFIE, ident="indy")
             ],
         )
         px_rec_in = V20PresExRecord(pres_request=pres_request.serialize())
@@ -451,7 +440,7 @@ class TestV20PresManager(AsyncTestCase):
             )
 
             req_creds = await indy_proof_req_preview2indy_requested_creds(
-                indy_proof_req, holder=self.holder
+                INDY_PROOF_REQ_SELFIE, preview=None, holder=self.holder
             )
             assert len(req_creds["self_attested_attributes"]) == 3
             assert not req_creds["requested_attributes"]
@@ -474,12 +463,6 @@ class TestV20PresManager(AsyncTestCase):
         )
         self.profile.context.injector.bind_instance(BaseLedger, self.ledger)
 
-        indy_proof_req = await PRES_PREVIEW.indy_proof_request(
-            name=PROOF_REQ_NAME,
-            version=PROOF_REQ_VERSION,
-            nonce=PROOF_REQ_NONCE,
-            ledger=self.ledger,
-        )
         pres_request = V20PresRequest(
             formats=[
                 V20PresFormat(
@@ -488,7 +471,7 @@ class TestV20PresManager(AsyncTestCase):
                 )
             ],
             request_presentations_attach=[
-                AttachDecorator.data_base64(indy_proof_req, ident="indy")
+                AttachDecorator.data_base64(INDY_PROOF_REQ_NAME, ident="indy")
             ],
         )
         px_rec_in = V20PresExRecord(pres_request=pres_request.serialize())
@@ -532,7 +515,7 @@ class TestV20PresManager(AsyncTestCase):
             )
 
             req_creds = await indy_proof_req_preview2indy_requested_creds(
-                indy_proof_req, holder=self.holder
+                INDY_PROOF_REQ_NAME, preview=None, holder=self.holder
             )
 
             (px_rec_out, pres_msg) = await self.manager.create_pres(
@@ -542,12 +525,6 @@ class TestV20PresManager(AsyncTestCase):
             assert px_rec_out.state == V20PresExRecord.STATE_PRESENTATION_SENT
 
     async def test_create_pres_bad_revoc_state(self):
-        indy_proof_req = await PRES_PREVIEW.indy_proof_request(
-            name=PROOF_REQ_NAME,
-            version=PROOF_REQ_VERSION,
-            nonce=PROOF_REQ_NONCE,
-            ledger=self.ledger,
-        )
         pres_request = V20PresRequest(
             formats=[
                 V20PresFormat(
@@ -556,7 +533,7 @@ class TestV20PresManager(AsyncTestCase):
                 )
             ],
             request_presentations_attach=[
-                AttachDecorator.data_base64(indy_proof_req, ident="indy")
+                AttachDecorator.data_base64(INDY_PROOF_REQ_NAME, ident="indy")
             ],
         )
         px_rec_in = V20PresExRecord(pres_request=pres_request.serialize())
@@ -612,19 +589,13 @@ class TestV20PresManager(AsyncTestCase):
             )
 
             req_creds = await indy_proof_req_preview2indy_requested_creds(
-                indy_proof_req, holder=self.holder
+                INDY_PROOF_REQ_NAME, preview=None, holder=self.holder
             )
 
             with self.assertRaises(test_module.IndyHolderError):
                 await self.manager.create_pres(px_rec_in, req_creds)
 
     async def test_create_pres_multi_matching_proposal_creds_names(self):
-        indy_proof_req = await PRES_PREVIEW_NAMES.indy_proof_request(
-            name=PROOF_REQ_NAME,
-            version=PROOF_REQ_VERSION,
-            nonce=PROOF_REQ_NONCE,
-            ledger=self.ledger,
-        )
         pres_request = V20PresRequest(
             formats=[
                 V20PresFormat(
@@ -633,7 +604,7 @@ class TestV20PresManager(AsyncTestCase):
                 )
             ],
             request_presentations_attach=[
-                AttachDecorator.data_base64(indy_proof_req, ident="indy")
+                AttachDecorator.data_base64(INDY_PROOF_REQ_NAMES, ident="indy")
             ],
         )
         px_rec_in = V20PresExRecord(pres_request=pres_request.serialize())
@@ -708,7 +679,7 @@ class TestV20PresManager(AsyncTestCase):
             )
 
             req_creds = await indy_proof_req_preview2indy_requested_creds(
-                indy_proof_req, preview=PRES_PREVIEW_NAMES, holder=self.holder
+                INDY_PROOF_REQ_NAMES, preview=None, holder=self.holder
             )
             assert not req_creds["self_attested_attributes"]
             assert len(req_creds["requested_attributes"]) == 1
@@ -721,12 +692,6 @@ class TestV20PresManager(AsyncTestCase):
             assert px_rec_out.state == V20PresExRecord.STATE_PRESENTATION_SENT
 
     async def test_no_matching_creds_for_proof_req(self):
-        indy_proof_req = await PRES_PREVIEW.indy_proof_request(
-            name=PROOF_REQ_NAME,
-            version=PROOF_REQ_VERSION,
-            nonce=PROOF_REQ_NONCE,
-            ledger=self.ledger,
-        )
         pres_request = V20PresRequest(
             formats=[
                 V20PresFormat(
@@ -735,7 +700,7 @@ class TestV20PresManager(AsyncTestCase):
                 )
             ],
             request_presentations_attach=[
-                AttachDecorator.data_base64(indy_proof_req, ident="indy")
+                AttachDecorator.data_base64(INDY_PROOF_REQ_NAMES, ident="indy")
             ],
         )
         px_rec_in = V20PresExRecord(pres_request=pres_request.serialize())
@@ -744,7 +709,7 @@ class TestV20PresManager(AsyncTestCase):
 
         with self.assertRaises(ValueError):
             await indy_proof_req_preview2indy_requested_creds(
-                indy_proof_req, holder=self.holder
+                INDY_PROOF_REQ_NAMES, preview=None, holder=self.holder
             )
 
         get_creds = async_mock.CoroutineMock(
@@ -763,12 +728,6 @@ class TestV20PresManager(AsyncTestCase):
 
     async def test_receive_pres(self):
         connection_record = async_mock.MagicMock(connection_id=CONN_ID)
-        indy_proof_req = await PRES_PREVIEW.indy_proof_request(
-            name=PROOF_REQ_NAME,
-            version=PROOF_REQ_VERSION,
-            nonce=PROOF_REQ_NONCE,
-            ledger=self.ledger,
-        )
         indy_proof = {
             "proof": {"proofs": []},
             "requested_proof": {
@@ -805,7 +764,7 @@ class TestV20PresManager(AsyncTestCase):
                 )
             ],
             proposal_attach=[
-                AttachDecorator.data_base64(PRES_PREVIEW.serialize(), ident="indy")
+                AttachDecorator.data_base64(INDY_PROOF_REQ_NAME, ident="indy")
             ],
         )
         pres_request = V20PresRequest(
@@ -816,7 +775,7 @@ class TestV20PresManager(AsyncTestCase):
                 )
             ],
             request_presentations_attach=[
-                AttachDecorator.data_base64(indy_proof_req, ident="indy")
+                AttachDecorator.data_base64(INDY_PROOF_REQ_NAME, ident="indy")
             ],
         )
         pres = V20Pres(
@@ -838,8 +797,8 @@ class TestV20PresManager(AsyncTestCase):
 
         # cover by_format property
         by_format = px_rec_dummy.by_format
-        assert by_format.get("pres_proposal").get("indy") == PRES_PREVIEW.serialize()
-        assert by_format.get("pres_request").get("indy") == indy_proof_req
+        assert by_format.get("pres_proposal").get("indy") == INDY_PROOF_REQ_NAME
+        assert by_format.get("pres_request").get("indy") == INDY_PROOF_REQ_NAME
 
         with async_mock.patch.object(
             V20PresExRecord, "save", autospec=True
@@ -861,12 +820,12 @@ class TestV20PresManager(AsyncTestCase):
 
     async def test_receive_pres_bait_and_switch(self):
         connection_record = async_mock.MagicMock(connection_id=CONN_ID)
-        indy_proof_req = await PRES_PREVIEW.indy_proof_request(
-            name=PROOF_REQ_NAME,
-            version=PROOF_REQ_VERSION,
-            nonce=PROOF_REQ_NONCE,
-            ledger=self.ledger,
-        )
+        indy_proof_req = deepcopy(INDY_PROOF_REQ_NAME)
+        indy_proof_req["requested_attributes"]["1_screencapture_uuid"]["restrictions"][
+            0
+        ][
+            "attr::screenCapture::value"
+        ] = "c2NyZWVuIGNhcHR1cmUgc2hvd2luZyBzY29yZSBpbiB0aGUgbWlsbGlvbnM="
         indy_proof_x = {
             "proof": {"proofs": []},
             "requested_proof": {
@@ -876,7 +835,7 @@ class TestV20PresManager(AsyncTestCase):
                         "raw": "Richie Knucklez",
                         "encoded": "12345678901234567890",
                     },
-                    "1_screencapture_uuid": {  # mismatch vs PRES_PREVIEW
+                    "1_screencapture_uuid": {  # mismatch vs request
                         "sub_proof_index": 0,
                         "raw": "bm90IHRoZSBzYW1lIHNjcmVlbiBjYXB0dXJl",
                         "encoded": "98765432109876543210",
@@ -902,9 +861,7 @@ class TestV20PresManager(AsyncTestCase):
                     format_=V20PresFormat.Format.INDY.aries,
                 )
             ],
-            proposal_attach=[
-                AttachDecorator.data_base64(PRES_PREVIEW.serialize(), ident="indy")
-            ],
+            proposal_attach=[AttachDecorator.data_base64(indy_proof_req, ident="indy")],
         )
         pres_request = V20PresRequest(
             formats=[
@@ -942,37 +899,59 @@ class TestV20PresManager(AsyncTestCase):
             retrieve_ex.return_value = px_rec_dummy
             with self.assertRaises(V20PresManagerError) as context:
                 await self.manager.receive_pres(pres_x, connection_record)
-            assert "mismatches" in str(context.exception)
+            assert "not in requested value(s)" in str(context.exception)
 
-    async def test_receive_pres_connection_less(self):
-        px_rec_dummy = V20PresExRecord()
-        message = async_mock.MagicMock()
+        indy_proof_req["requested_attributes"]["shenanigans"] = indy_proof_req[
+            "requested_attributes"
+        ].pop("1_screencapture_uuid")
+        pres_proposal = V20PresProposal(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy",
+                    format_=V20PresFormat.Format.INDY.aries,
+                )
+            ],
+            proposal_attach=[AttachDecorator.data_base64(indy_proof_req, ident="indy")],
+        )
+        pres_request = V20PresRequest(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy",
+                    format_=V20PresFormat.Format.INDY.aries,
+                )
+            ],
+            request_presentations_attach=[
+                AttachDecorator.data_base64(indy_proof_req, ident="indy")
+            ],
+        )
+        pres_x = V20Pres(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy",
+                    format_=V20PresFormat.Format.INDY.aries,
+                )
+            ],
+            presentations_attach=[
+                AttachDecorator.data_base64(indy_proof_x, ident="indy")
+            ],
+        )
 
+        px_rec_dummy = V20PresExRecord(
+            pres_proposal=pres_proposal.serialize(),
+            pres_request=pres_request.serialize(),
+            pres=pres_x.serialize(),
+        )
         with async_mock.patch.object(
             V20PresExRecord, "save", autospec=True
         ) as save_ex, async_mock.patch.object(
             V20PresExRecord, "retrieve_by_tag_filter", autospec=True
-        ) as retrieve_ex, async_mock.patch.object(
-            self.profile,
-            "session",
-            async_mock.MagicMock(return_value=self.profile.session()),
-        ) as session:
+        ) as retrieve_ex:
             retrieve_ex.return_value = px_rec_dummy
-            px_rec_out = await self.manager.receive_pres(message, None)
-            retrieve_ex.assert_called_once_with(
-                session.return_value, {"thread_id": message._thread_id}, None
-            )
-            save_ex.assert_called_once()
-
-            assert px_rec_out.state == (V20PresExRecord.STATE_PRESENTATION_RECEIVED)
+            with self.assertRaises(V20PresManagerError) as context:
+                await self.manager.receive_pres(pres_x, connection_record)
+            assert "Presentation referent" in str(context.exception)
 
     async def test_verify_pres(self):
-        indy_proof_req = await PRES_PREVIEW.indy_proof_request(
-            name=PROOF_REQ_NAME,
-            version=PROOF_REQ_VERSION,
-            nonce=PROOF_REQ_NONCE,
-            ledger=self.ledger,
-        )
         indy_proof = {
             "proof": {"proofs": []},
             "requested_proof": {
@@ -1010,7 +989,7 @@ class TestV20PresManager(AsyncTestCase):
             ],
             will_confirm=True,
             request_presentations_attach=[
-                AttachDecorator.data_base64(indy_proof_req, ident="indy")
+                AttachDecorator.data_base64(INDY_PROOF_REQ_NAME, ident="indy")
             ],
         )
         pres = V20Pres(
@@ -1036,12 +1015,6 @@ class TestV20PresManager(AsyncTestCase):
             assert px_rec_out.state == (V20PresExRecord.STATE_DONE)
 
     async def test_verify_pres_with_revocation(self):
-        indy_proof_req = await PRES_PREVIEW.indy_proof_request(
-            name=PROOF_REQ_NAME,
-            version=PROOF_REQ_VERSION,
-            nonce=PROOF_REQ_NONCE,
-            ledger=self.ledger,
-        )
         indy_proof = {
             "proof": {"proofs": []},
             "requested_proof": {
@@ -1078,7 +1051,7 @@ class TestV20PresManager(AsyncTestCase):
                 )
             ],
             request_presentations_attach=[
-                AttachDecorator.data_base64(indy_proof_req, ident="indy")
+                AttachDecorator.data_base64(INDY_PROOF_REQ_NAME, ident="indy")
             ],
         )
         pres = V20Pres(

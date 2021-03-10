@@ -7,7 +7,6 @@ from marshmallow import fields, validate
 from ....messaging.models.base import BaseModel, BaseModelSchema
 from ....messaging.valid import (
     INDY_CRED_DEF_ID,
-    INDY_PREDICATE,
     INDY_REV_REG_ID,
     INDY_SCHEMA_ID,
     INT_EPOCH,
@@ -106,7 +105,7 @@ class IndyGEProofPredSchema(BaseModelSchema):
     attr_name = fields.Str(description="Attribute name, indy-canonicalized")
     p_type = fields.Str(
         description="Predicate type",
-        **INDY_PREDICATE,
+        validate=validate.OneOf([p.fortran for p in Predicate]),
     )
     value = fields.Integer(strict=True, description="Predicate threshold value")
 

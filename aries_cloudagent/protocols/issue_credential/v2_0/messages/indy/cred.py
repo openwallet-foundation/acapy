@@ -2,7 +2,7 @@
 
 from typing import Mapping, Sequence
 
-from marshmallow import EXCLUDE, fields, validate
+from marshmallow import EXCLUDE, fields
 
 from ......messaging.models.base import BaseModel, BaseModelSchema
 from ......messaging.valid import (
@@ -11,11 +11,6 @@ from ......messaging.valid import (
     INDY_SCHEMA_ID,
     NUM_STR_WHOLE,
 )
-from ......wallet.util import b64_to_str
-
-from .....didcomm_prefix import DIDCommPrefix
-
-from ...message_types import CRED_20_PREVIEW
 
 
 class IndyKeyCorrectnessProof(BaseModel):
@@ -164,6 +159,7 @@ class IndyCredRequest(BaseModel):
         nonce: str = None,
         **kwargs,
     ):
+        """Initialize indy credential request."""
         super().__init__(**kwargs)
         self.prover_did = prover_did
         self.cred_def_id = cred_def_id
@@ -215,6 +211,7 @@ class IndyAttrValue(BaseModel):
         schema_class = "IndyAttrValueSchema"
 
     def __init__(self, raw: str = None, encoded: str = None, **kwargs):
+        """Initialize indy (credential) attribute value."""
         super().__init__(**kwargs)
         self.raw = raw
         self.encoded = encoded
@@ -259,6 +256,7 @@ class IndyCredential(BaseModel):
         rev_reg: Mapping = None,
         witness: Mapping = None,
     ):
+        """Initialize indy credential."""
         self.schema_id = schema_id
         self.cred_def_id = cred_def_id
         self.rev_reg_id = rev_reg_id
