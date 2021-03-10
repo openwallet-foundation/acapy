@@ -25,6 +25,7 @@ VC_CONTEXT = "https://www.w3.org/2018/credentials/v1"
 VC_TYPE = "https://www.w3.org/2018/credentials/v1/VerifiableCredential"
 VC_SUBJECT_ID = "did:example:ebfeb1f712ebc6f1c276e12ec21"
 VC_ISSUER_ID = "https://example.edu/issuers/14"
+VC_SCHEMA_ID = "https://example.org/examples/degree.json"
 VC_GIVEN_ID = "http://example.edu/credentials/3732"
 
 
@@ -52,6 +53,7 @@ def test_record(tags={}) -> VCRecord:
         ],
         issuer_id=VC_ISSUER_ID,
         subject_ids=[VC_SUBJECT_ID],
+        schema_id=VC_SCHEMA_ID,
         given_id=VC_GIVEN_ID,
         tags={"tag": "value"},
         value="{}",
@@ -102,6 +104,7 @@ class TestInMemoryVCHolder:
             types=[VC_TYPE],
             subject_id=VC_SUBJECT_ID,
             issuer_id=VC_ISSUER_ID,
+            schema_id=VC_SCHEMA_ID,
         ).fetch()
         assert rows == [record]
 
@@ -115,4 +118,7 @@ class TestInMemoryVCHolder:
         assert not rows
 
         rows = await holder.search_credentials(issuer_id="other issuer").fetch()
+        assert not rows
+
+        rows = await holder.search_credentials(schema_id="other schema").fetch()
         assert not rows

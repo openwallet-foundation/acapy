@@ -13,6 +13,7 @@ class TestVCRecord:
         ]
         issuer_id = "https://example.edu/issuers/14"
         subject_ids = ["did:example:ebfeb1f712ebc6f1c276e12ec21"]
+        schema_id = "https://example.org/examples/degree.json"
         given_id = "http://example.edu/credentials/3732"
         tags = {"tag": "value"}
         value = "{}"
@@ -22,6 +23,7 @@ class TestVCRecord:
             types=types,
             issuer_id=issuer_id,
             subject_ids=subject_ids,
+            schema_id=schema_id,
             value=value,
             given_id=given_id,
             tags=tags,
@@ -31,6 +33,7 @@ class TestVCRecord:
         assert record.types == types
         assert record.subject_ids == subject_ids
         assert record.issuer_id == issuer_id
+        assert record.schema_id == schema_id
         assert record.given_id == given_id
         assert record.record_id and type(record.record_id) is str
         assert record.tags == tags

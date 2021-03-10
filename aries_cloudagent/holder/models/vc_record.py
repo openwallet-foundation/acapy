@@ -18,8 +18,10 @@ class VCRecord:
         issuer_id: str,
         # one or more subject IDs may be present
         subject_ids: Sequence[str],
-        # credential encoded as a string
+        # the credential encoded as a serialized JSON string
         value: str,
+        # credential schema ID, if any
+        schema_id: str,
         # value of the credential 'id' property, if any
         given_id: str = None,
         # array of tags for retrieval (derived from attribute values)
@@ -33,6 +35,7 @@ class VCRecord:
         self.issuer_id = issuer_id
         self.subject_ids = list(subject_ids) if subject_ids else []
         self.value = value
+        self.schema_id = schema_id
         self.given_id = given_id
         self.tags = tags or {}
         self.record_id = record_id or uuid4().hex
@@ -46,6 +49,7 @@ class VCRecord:
             and other.types == self.types
             and other.subject_ids == self.subject_ids
             and other.issuer_id == self.issuer_id
+            and other.schema_id == self.schema_id
             and other.given_id == self.given_id
             and other.record_id == self.record_id
             and other.tags == self.tags
