@@ -104,6 +104,16 @@ class BaseStorage(ABC):
         """Retrieve all records matching a particular type filter and tag query."""
 
     @abstractmethod
+    async def find_all_records_with_limit(
+        self,
+        type_filter: str,
+        tag_query: Mapping = None,
+        options: Mapping = None,
+        limit: int = None,
+    ):
+        """Retrieve a limited number of records matching a particular type filter and tag query."""
+
+    @abstractmethod
     async def delete_all_records(
         self,
         type_filter: str,

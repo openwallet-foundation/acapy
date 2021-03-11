@@ -295,6 +295,51 @@ class BaseRecord(BaseModel):
                 result.append(cls.from_storage(record.id, vals))
         return result
 
+    @classmethod
+    async def query_with_limit(
+        cls,
+        session: ProfileSession,
+        tag_filter: dict = None,
+        *,
+        post_filter_positive: dict = None,
+        post_filter_negative: dict = None,
+        alt: bool = False,
+        limit: int = None,
+    ) -> Sequence["BaseRecord"]:
+        """Query stored records.
+
+        Args:
+            session: The profile session to use
+            tag_filter: An optional dictionary of tag filter clauses
+            post_filter_positive: Additional value filters to apply matching positively
+            post_filter_negative: Additional value filters to apply matching negatively
+            alt: set to match any (positive=True) value or miss all (positive=False)
+                values in post_filter
+        """
+        storage = session.inject(BaseStorage)
+        rows = await storage.find_all_records_with_limit(
+            cls.RECORD_TYPE,
+            cls.prefix_tag_filter(tag_filter),
+            {"retrieveTags": False},
+            limit,
+        )
+        result = []
+        for record in rows:
+            vals = json.loads(record.value)
+            if match_post_filter(
+                vals,
+                post_filter_positive,
+                positive=True,
+                alt=alt,
+            ) and match_post_filter(
+                vals,
+                post_filter_negative,
+                positive=False,
+                alt=alt,
+            ):
+                result.append(cls.from_storage(record.id, vals))
+        return result
+
     async def save(
         self,
         session: ProfileSession,

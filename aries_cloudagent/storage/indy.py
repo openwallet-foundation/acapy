@@ -185,6 +185,21 @@ class IndySdkStorage(BaseStorage, BaseStorageSearch):
                 break
         return results
 
+    async def find_all_records_with_limit(
+        self,
+        type_filter: str,
+        tag_query: Mapping = None,
+        options: Mapping = None,
+        limit: int = None,
+    ):
+        """Retrieve all records matching a particular type filter and tag query."""
+        results = []
+        search = self.search_records(type_filter, tag_query, limit, options)
+        buf = await search.fetch(limit)
+        results.extend(buf)
+        return results
+
+
     async def delete_all_records(
         self,
         type_filter: str,
