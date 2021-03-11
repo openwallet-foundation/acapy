@@ -30,11 +30,11 @@ class V20PresFormat(BaseModel):
         """Attachment format."""
 
         INDY = FormatSpec(
-            "hlindy@v2.0",  # TODO - revisit upon aries-rfcs PR 599 resolution
+            "hlindy@v2.0",
             {"indy", "hyperledgerindy", "hlindy"},
         )
         DIF = FormatSpec(
-            "dif@v1.0",  # TODO - revisit upon aries-rfcs PR 599 resolution
+            "dif@v1.0",
             {"dif", "w3c", "jsonld"},
         )
 

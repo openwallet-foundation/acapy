@@ -36,12 +36,12 @@ class V20CredFormat(BaseModel):
         """Attachment format."""
 
         INDY = FormatSpec(
-            "hlindy-zkp-v1.0",
+            "hlindy@v2.0",
             {"indy", "hyperledgerindy", "hlindy"},
             V20CredExRecordIndy,
         )
         DIF = FormatSpec(
-            "dif/credential-manifest@v1.0",
+            "dif@v1.0",
             {"dif", "w3c", "jsonld"},
             V20CredExRecordDIF,
         )
