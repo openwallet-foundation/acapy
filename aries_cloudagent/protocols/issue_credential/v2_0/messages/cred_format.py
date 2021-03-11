@@ -41,7 +41,7 @@ class V20CredFormat(BaseModel):
             V20CredExRecordIndy,
         )
         DIF = FormatSpec(
-            "dif@v1.0",
+            "dif/cred-manifest@v1.0",
             {"dif", "w3c", "jsonld"},
             V20CredExRecordDIF,
         )

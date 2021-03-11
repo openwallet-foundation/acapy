@@ -34,7 +34,7 @@ class V20PresFormat(BaseModel):
             {"indy", "hyperledgerindy", "hlindy"},
         )
         DIF = FormatSpec(
-            "dif@v1.0",
+            "dif/pres-exch@v1.0",
             {"dif", "w3c", "jsonld"},
         )
 
