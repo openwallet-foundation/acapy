@@ -30,8 +30,7 @@ class TestV20FormatFormat(TestCase):
         assert V20CredFormat.Format.get("no such format") is None
         assert V20CredFormat.Format.get("Indy") is V20CredFormat.Format.INDY
         assert (
-            V20CredFormat.Format.get("HL/INDY").aries
-            == V20CredFormat.Format.INDY.aries
+            V20CredFormat.Format.get("HL/INDY").aries == V20CredFormat.Format.INDY.aries
         )
         assert "indy" in V20CredFormat.Format.get("HL/INDY").aka
         assert (
