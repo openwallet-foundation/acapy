@@ -51,14 +51,14 @@ class TestV20CredOffer(AsyncTestCase):
             credential_preview=TestV20CredOffer.preview,
             formats=[
                 V20CredFormat(
-                    attach_id="abc",
+                    attach_id="indy",
                     format_=V20CredFormat.Format.INDY,
                 )
             ],
             offers_attach=[
                 AttachDecorator.data_base64(
                     mapping=TestV20CredOffer.indy_offer,
-                    ident="abc",
+                    ident="indy",
                 )
             ],
         )
@@ -88,14 +88,14 @@ class TestV20CredOffer(AsyncTestCase):
             credential_preview=TestV20CredOffer.preview,
             formats=[
                 V20CredFormat(
-                    attach_id="abc",
+                    attach_id="indy",
                     format_=V20CredFormat.Format.INDY,
                 )
             ],
             offers_attach=[
                 AttachDecorator.data_base64(
                     mapping=TestV20CredOffer.indy_offer,
-                    ident="abc",
+                    ident="indy",
                 )
             ],
         )
@@ -119,14 +119,14 @@ class TestCredentialOfferSchema(AsyncTestCase):
             credential_preview=TestV20CredOffer.preview,
             formats=[
                 V20CredFormat(
-                    attach_id="abc",
+                    attach_id="indy",
                     format_=V20CredFormat.Format.INDY,
                 )
             ],
             offers_attach=[
                 AttachDecorator.data_base64(
                     mapping=TestV20CredOffer.indy_offer,
-                    ident="abc",
+                    ident="indy",
                 )
             ],
         )

@@ -14,7 +14,7 @@ from ..cred_issue import V20CredIssue
 class TestV20CredIssue(AsyncTestCase):
     """Credential issue tests"""
 
-    indy_cred = {
+    INDY_CRED = {
         "schema_id": "LjgpST2rjsoxYegQDRm7EL:2:bc-reg:1.0",
         "cred_def_id": "LjgpST2rjsoxYegQDRm7EL:3:CL:18:tag",
         "rev_reg_id": "LjgpST2rjsoxYegQDRm7EL:4:LjgpST2rjsoxYegQDRm7EL:3:CL:18:tag:CL_ACCUM:1",
@@ -69,12 +69,19 @@ class TestV20CredIssue(AsyncTestCase):
         },
     }
 
-    cred_issue = V20CredIssue(
+    CRED_ISSUE = V20CredIssue(
+        replacement_id="0",
         comment="Test",
+        formats=[
+            V20CredFormat(
+                attach_id="indy",
+                format_=V20CredFormat.Format.INDY,
+            )
+        ],
         credentials_attach=[
             AttachDecorator.data_base64(
-                mapping=indy_cred,
-                ident="abc",
+                mapping=INDY_CRED,
+                ident="indy",
             )
         ],
     )
@@ -92,19 +99,19 @@ class TestV20CredIssue(AsyncTestCase):
             ],
             credentials_attach=[
                 AttachDecorator.data_base64(
-                    mapping=TestV20CredIssue.indy_cred,
+                    mapping=TestV20CredIssue.INDY_CRED,
                     ident="abc",
                 )
             ],
         )
-        assert cred_issue.credentials_attach[0].content == TestV20CredIssue.indy_cred
+        assert cred_issue.credentials_attach[0].content == TestV20CredIssue.INDY_CRED
         assert cred_issue.credentials_attach[0].ident  # auto-generates UUID4
-        assert cred_issue.attachment() == TestV20CredIssue.indy_cred
+        assert cred_issue.attachment() == TestV20CredIssue.INDY_CRED
         assert cred_issue._type == DIDCommPrefix.qualify_current(CRED_20_ISSUE)
 
     async def test_deserialize(self):
         """Test deserialization."""
-        obj = TestV20CredIssue.cred_issue
+        obj = TestV20CredIssue.CRED_ISSUE
 
         with async_mock.patch.object(
             test_module.V20CredIssueSchema, "load", async_mock.MagicMock()
@@ -116,7 +123,7 @@ class TestV20CredIssue(AsyncTestCase):
 
     async def test_serialize(self):
         """Test serialization."""
-        obj = TestV20CredIssue.cred_issue
+        obj = TestV20CredIssue.CRED_ISSUE
 
         with async_mock.patch.object(
             test_module.V20CredIssueSchema, "dump", async_mock.MagicMock()
@@ -126,17 +133,9 @@ class TestV20CredIssue(AsyncTestCase):
 
             assert cred_issue_dict is mock_dump.return_value
 
-
-class TestV20CredIssueSchema(AsyncTestCase):
-    """Test credential cred issue schema"""
-
     async def test_make_model(self):
         """Test making model."""
-        cred_issue = V20CredIssue(
-            comment="Test",
-            credentials_attach=[AttachDecorator.data_base64({"hello": "world"})],
-        )
 
-        data = cred_issue.serialize()
+        data = TestV20CredIssue.CRED_ISSUE.serialize()
         model_instance = V20CredIssue.deserialize(data)
         assert isinstance(model_instance, V20CredIssue)

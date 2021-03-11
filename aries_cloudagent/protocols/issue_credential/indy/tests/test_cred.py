@@ -1,12 +1,8 @@
 from unittest import TestCase
 
-from ..cred import (
-    IndyAttrValue,
-    IndyCredAbstract,
-    IndyCredential,
-    IndyCredRequest,
-    IndyKeyCorrectnessProof,
-)
+from ..cred import IndyAttrValue, IndyCredential
+from ..cred_abstract import IndyCredAbstract, IndyKeyCorrectnessProof
+from ..cred_request import IndyCredRequest
 
 KC_PROOF = {
     "c": "123467890",
@@ -25,7 +21,6 @@ KC_PROOF = {
             "12345678901234",
         ],
     ],
-    "nonce": "1234567890",
 }
 
 TEST_DID = "LjgpST2rjsoxYegQDRm7EL"

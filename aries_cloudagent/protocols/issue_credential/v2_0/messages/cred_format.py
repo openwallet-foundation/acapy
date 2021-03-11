@@ -13,6 +13,10 @@ from .....messaging.decorators.attach_decorator import AttachDecorator
 from .....messaging.models.base import BaseModel, BaseModelSchema
 from .....messaging.valid import UUIDFour
 
+from ...indy.cred import IndyCredentialSchema
+from ...indy.cred_abstract import IndyCredAbstractSchema
+from ...indy.cred_request import IndyCredRequestSchema
+
 from ..models.detail.dif import V20CredExRecordDIF
 from ..models.detail.indy import V20CredExRecordIndy
 
@@ -77,11 +81,26 @@ class V20CredFormat(BaseModel):
             """Accessor for credential exchange detail class."""
             return self.value.detail
 
-        def validate_filter(self, data: Mapping):
+        def validate_filter_attach(self, data: Mapping):
             """Raise ValidationError for wrong filtration criteria."""
             if self is V20CredFormat.Format.INDY:
                 if data.keys() - set(CRED_DEF_TAGS):
                     raise ValidationError(f"Bad indy credential filter: {data}")
+
+        def validate_offer_attach(self, data: Mapping):
+            """Raise ValidationError for wrong offer attachment format."""
+            if self is V20CredFormat.Format.INDY:
+                IndyCredAbstractSchema().load(data)
+
+        def validate_request_attach(self, data: Mapping):
+            """Raise ValidationError for wrong request attachment format."""
+            if self is V20CredFormat.Format.INDY:
+                IndyCredRequestSchema().load(data)
+
+        def validate_credential_attach(self, data: Mapping):
+            """Raise ValidationError for wrong credential attachment format."""
+            if self is V20CredFormat.Format.INDY:
+                IndyCredentialSchema().load(data)
 
         def get_attachment_data(
             self,

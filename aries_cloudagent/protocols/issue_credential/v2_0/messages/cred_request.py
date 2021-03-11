@@ -2,7 +2,7 @@
 
 from typing import Sequence
 
-from marshmallow import EXCLUDE, fields
+from marshmallow import EXCLUDE, fields, validates_schema, ValidationError
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 from .....messaging.decorators.attach_decorator import (
@@ -98,3 +98,23 @@ class V20CredRequestSchema(AgentMessageSchema):
         data_key="requests~attach",
         description="Request attachments",
     )
+
+    @validates_schema
+    def validate_fields(self, data, **kwargs):
+        """Validate attachments per format."""
+
+        def get_attach_by_id(attach_id):
+            """Return attachment with input identifier."""
+            for f in attachments:
+                if f.ident == attach_id:
+                    return f
+            raise ValidationError(f"No attachment for attach_id {attach_id} in formats")
+
+        formats = data.get("formats") or []
+        attachments = data.get("requests_attach") or []
+        if len(formats) != len(attachments):
+            raise ValidationError("Formats/attachments length mismatch")
+
+        for fmt in formats:
+            atch = get_attach_by_id(fmt.attach_id)
+            V20CredFormat.Format.get(fmt.format).validate_request_attach(atch.content)

@@ -430,8 +430,6 @@ class V20CredManager:
                 f"v2.0 credential exchange {cred_ex_record.cred_ex_id}"
             )
 
-        if "nonce" not in cred_offer:
-            raise V20CredManagerError("Missing nonce in credential offer")
         nonce = cred_offer["nonce"]
         cache_key = f"credential_request::{cred_def_id}::{holder_did}::{nonce}"
         cred_req_result = None

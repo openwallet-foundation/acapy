@@ -2,7 +2,7 @@
 
 from typing import Sequence
 
-from marshmallow import EXCLUDE, fields
+from marshmallow import EXCLUDE, fields, validates_schema, ValidationError
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 from .....messaging.decorators.attach_decorator import (
@@ -112,3 +112,23 @@ class V20CredOfferSchema(AgentMessageSchema):
         data_key="offers~attach",
         description="Offer attachments",
     )
+
+    @validates_schema
+    def validate_fields(self, data, **kwargs):
+        """Validate attachments per format."""
+
+        def get_attach_by_id(attach_id):
+            """Return filter with input attachment identifier."""
+            for f in attachments:
+                if f.ident == attach_id:
+                    return f
+            raise ValidationError(f"No filter matches attach_id {attach_id} in format")
+
+        formats = data.get("formats") or []
+        attachments = data.get("offers_attach") or []
+        if len(formats) != len(attachments):
+            raise ValidationError("Formats/attachments length mismatch")
+
+        for fmt in formats:
+            atch = get_attach_by_id(fmt.attach_id)
+            V20CredFormat.Format.get(fmt.format).validate_offer_attach(atch.content)
