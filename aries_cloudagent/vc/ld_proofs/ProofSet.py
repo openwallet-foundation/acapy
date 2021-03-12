@@ -10,18 +10,17 @@ from .constants import SECURITY_CONTEXT_V2_URL
 
 
 class ProofSet:
+    def __init__(self, document: dict) -> None:
+        self._document = document.copy()
+
     async def add(
         self,
         *,
-        document: Union[dict, str],
-        suite: LinkedDataProof,
+        document: dict,
+        suite: List[LinkedDataProof],
         purpose: ProofPurpose,
         document_loader: DocumentLoader
     ) -> dict:
-
-        if isinstance(document, str):
-            document = await document_loader(document)
-
         input_ = document.copy()
 
         if "proof" in input_:
@@ -97,22 +96,27 @@ class ProofSet:
         purpose: ProofPurpose,
         document_loader: DocumentLoader,
     ):
+        # Matches proof purposes proof set to passed purpose.
+        # Only proofs with a `proofPurpose` that match the purpose are verified
+        # e.g.:
+        #   purpose = {term = 'assertionMethod'}
+        #   proof_set = [ { proofPurpose: 'assertionMethod' }, { proofPurpose: 'anotherPurpose' }]
+        #   return = [ { proofPurpose: 'assertionMethod' } ]
+        matches = [proof for proof in proof_set if purpose.match(proof)]
 
-        result = await asyncio.gather(
-            *[
-                purpose.match(proof["type"], document, document_loader)
-                for proof in proof_set
-            ]
-        )
-
-        matches = [x for i, x in enumerate(proof_set) if result[i]]
-
-        if matches.len() == 0:
+        if len(matches) == 0:
             return []
 
-        out = []
+        results = []
+
+        for proof in matches:
+            for suite in suites:
+                if suite.match_proof(proof["type"]):
+                    suite.verify_proof()
+                    results.append()
 
         for m in matches:
+
             for s in suites:
                 if await s.match_proof(m["type"]):
                     out.append(s.verify_proof(m, document, purpose, document_loader))

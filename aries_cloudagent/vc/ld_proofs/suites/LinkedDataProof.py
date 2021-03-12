@@ -11,17 +11,20 @@ class LinkedDataProof(metaclass=ABCMeta):
 
     @abstractmethod
     async def create_proof(
-        self, *, document: dict, purpose: ProofPurpose, document_loader: DocumentLoader
+        self, document: dict, *, purpose: ProofPurpose, document_loader: DocumentLoader
     ):
         pass
 
     @abstractmethod
-    async def verify_proof(self, **kwargs):
-        """TODO update method signature"""
+    async def verify_proof(
+        self,
+        proof: dict,
+        *,
+        document: dict,
+        purpose: ProofPurpose,
+        document_loader: DocumentLoader
+    ):
         pass
 
-    async def match_proof(self, signature_type: str) -> bool:
+    def match_proof(self, signature_type: str) -> bool:
         return signature_type == self.signature_type
-
-
-__all__ = [LinkedDataProof]

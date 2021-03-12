@@ -10,7 +10,7 @@ from .VerificationException import VerificationException
 
 async def sign(
     *,
-    document: Union[dict, str],
+    document: dict,
     suite: LinkedDataSignature,
     purpose: ProofPurpose,
     document_loader: DocumentLoader,

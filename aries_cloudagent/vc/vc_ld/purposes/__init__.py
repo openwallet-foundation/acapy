@@ -1,3 +1,0 @@
-from .IssueCredentialProofPurpose import IssueCredentialProofPurpose
-
-__all__ = [IssueCredentialProofPurpose]

@@ -1,10 +1,10 @@
-from copy import Error
 from pyld import jsonld
 from datetime import datetime
 from hashlib import sha256
 from typing import Union
 from abc import abstractmethod, ABCMeta
 
+from ..document_loader import DocumentLoader
 from ..purposes import ProofPurpose
 from ..constants import SECURITY_CONTEXT_V2_URL
 from .LinkedDataProof import LinkedDataProof
@@ -28,8 +28,22 @@ class LinkedDataSignature(LinkedDataProof, metaclass=ABCMeta):
             # cast date to datetime if str
             self.date = datetime.strptime(date)
 
+    # ABSTRACT METHODS
+
+    @abstractmethod
+    def sign(self, verify_data: bytes, proof: dict):
+        pass
+
+    @abstractmethod
+    def verify_signature(
+        self, verify_data: bytes, verification_method: dict, proof: dict
+    ):
+        pass
+
+    # PUBLIC METHODS
+
     async def create_proof(
-        self, document: dict, purpose: ProofPurpose, document_loader: callable
+        self, document: dict, *, purpose: ProofPurpose, document_loader: DocumentLoader
     ) -> dict:
         proof = None
         if self.proof:
@@ -62,39 +76,6 @@ class LinkedDataSignature(LinkedDataProof, metaclass=ABCMeta):
         proof = await self.sign(verify_data, proof)
         return proof
 
-    async def create_verify_data(
-        self, document: dict, proof: dict, document_loader: dict
-    ) -> str:
-        c14n_proof_options = await self.canonize_proof(
-            proof, document_loader=document_loader
-        )
-        c14n_doc = await self.canonize(document, document_loader=document_loader)
-        hash = sha256(c14n_proof_options.encode())
-        hash.update(c14n_doc.encode())
-
-        # TODO verify this is the right return type
-        return hash.digest()
-
-    async def canonize(self, input_, *, document_loader: callable = None):
-        return jsonld.normalize(
-            input_,
-            {
-                "algorithm": "URDNA2015",
-                "format": "application/n-quads",
-                "documentLoader": document_loader,
-            },
-        )
-
-    async def canonize_proof(self, proof: dict, *, document_loader: callable = None):
-        proof = proof.copy()
-
-        # TODO check if these values ever exist in our use case
-        # del proof['jws']
-        # del proof['signatureValue']
-        # del proof['proofValue']
-
-        return await self.canonize(proof, document_loader=document_loader)
-
     async def update_proof(self, proof: dict):
         """
         Extending classes may do more
@@ -104,15 +85,16 @@ class LinkedDataSignature(LinkedDataProof, metaclass=ABCMeta):
     async def verify_proof(
         self,
         proof: dict,
+        *,
         document: dict,
         purpose: ProofPurpose,
-        document_loader: callable,
+        document_loader: DocumentLoader,
     ):
         try:
-            verify_data = await self.create_verify_data(
-                document, proof, document_loader=document_loader
+            verify_data = self._create_verify_data(
+                document=document, proof=proof, document_loader=document_loader
             )
-            verification_method = await self.get_verification_method(
+            verification_method = self._get_verification_method(
                 proof, document_loader=document_loader
             )
 
@@ -142,13 +124,13 @@ class LinkedDataSignature(LinkedDataProof, metaclass=ABCMeta):
         except Exception as err:
             return {"verified": False, "error": err}
 
-    async def get_verification_method(self, proof: dict, document_loader: callable):
-
+    def _get_verification_method(self, proof: dict, *, document_loader: DocumentLoader):
         verification_method = proof.get("verificationMethod")
+
         if not verification_method:
             raise Exception('No "verificationMethod" found in proof')
 
-        framed = await jsonld.frame(
+        framed = jsonld.frame(
             verification_method,
             {
                 "@context": SECURITY_CONTEXT_V2_URL,
@@ -166,15 +148,34 @@ class LinkedDataSignature(LinkedDataProof, metaclass=ABCMeta):
 
         return framed
 
-    @abstractmethod
-    def sign(self, verify_data: bytes, proof: dict):
-        pass
+    def _create_verify_data(
+        self, *, document: dict, proof: dict, document_loader: DocumentLoader
+    ) -> str:
+        c14n_proof_options = self._canonize_proof(
+            proof, document_loader=document_loader
+        )
+        c14n_doc = self._canonize(document, document_loader=document_loader)
+        hash = sha256(c14n_proof_options.encode())
+        hash.update(c14n_doc.encode())
 
-    @abstractmethod
-    def verify_signature(
-        self, verify_data: bytes, verification_method: dict, proof: dict
-    ):
-        pass
+        return hash.digest()
 
+    def _canonize(self, input, *, document_loader: DocumentLoader = None) -> str:
+        # application/n-quads format always returns str
+        return jsonld.normalize(
+            input,
+            {
+                "algorithm": "URDNA2015",
+                "format": "application/n-quads",
+                "documentLoader": document_loader,
+            },
+        )
 
-__all__ = [LinkedDataSignature]
+    def _canonize_proof(self, proof: dict, *, document_loader: DocumentLoader = None):
+        proof = proof.copy()
+
+        proof.pop("jws", None)
+        proof.pop("signatureValue", None)
+        proof.pop("proofValue", None)
+
+        return self._canonize(proof, document_loader=document_loader)

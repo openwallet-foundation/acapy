@@ -1,9 +1,10 @@
-from aries_cloudagent.vc.ld_proofs.suites.LinkedDataProof import LinkedDataProof
-from typing import Callable, Mapping
 import asyncio
+from typing import Callable, Mapping
 from pyld.jsonld import JsonLdProcessor
 
 from ..ld_proofs import (
+    LinkedDataProof,
+    CredentialIssuancePurpose,
     DocumentLoader,
     LinkedDataSignature,
     ProofPurpose,
@@ -11,7 +12,6 @@ from ..ld_proofs import (
     verify as ld_proofs_verify,
 )
 from .checker import check_credential
-from .purposes import IssueCredentialProofPurpose
 
 
 async def _verify_credential(
@@ -29,7 +29,7 @@ async def _verify_credential(
         )
 
     if not purpose:
-        purpose = IssueCredentialProofPurpose()
+        purpose = CredentialIssuancePurpose()
 
     result = await ld_proofs_verify(
         document=credential,

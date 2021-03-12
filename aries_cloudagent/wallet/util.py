@@ -70,17 +70,31 @@ def full_verkey(did: str, abbr_verkey: str) -> str:
     )
 
 
+def public_key_base58_to_fingerprint(public_key_base58: str) -> str:
+    key_bytes = b58_to_bytes(public_key_base58)
+    prefixed_key_bytes = add_prefix("ed25519-pub", key_bytes)
+    fingerprint = f"z{bytes_to_b58(prefixed_key_bytes)}"
+
+    return fingerprint
+
+
+def fingerprint_to_public_key_base58(fingerprint: str):
+    assert fingerprint[0] == "z"
+
+    # skip leading `z` that indicates base58 encoding
+    stripped_key_bytes = b58_to_bytes(fingerprint[1:])
+    naked_key_bytes = remove_prefix(stripped_key_bytes)
+    return bytes_to_b58(naked_key_bytes)
+
+
 def naked_to_did_key(key: str) -> str:
     """Convert a naked ed25519 verkey to W3C did:key format."""
-    key_bytes = b58_to_bytes(key)
-    prefixed_key_bytes = add_prefix("ed25519-pub", key_bytes)
-    did_key = f"did:key:z{bytes_to_b58(prefixed_key_bytes)}"
+    fingerprint = public_key_base58_to_fingerprint(key)
+    did_key = f"did:key:{fingerprint}"
     return did_key
 
 
 def did_key_to_naked(did_key: str) -> str:
     """Convert a W3C did:key to naked ed25519 verkey format."""
-    stripped_key = did_key.split("did:key:z").pop()
-    stripped_key_bytes = b58_to_bytes(stripped_key)
-    naked_key_bytes = remove_prefix(stripped_key_bytes)
-    return bytes_to_b58(naked_key_bytes)
+    fingerprint = did_key.split("did:key:").pop()
+    return fingerprint_to_public_key_base58(fingerprint)
