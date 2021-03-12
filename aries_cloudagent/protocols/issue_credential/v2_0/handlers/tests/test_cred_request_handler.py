@@ -61,9 +61,9 @@ class TestV20CredRequestHandler(AsyncTestCase):
             formats=[
                 V20CredFormat(
                     attach_id="0",
-                    format_=ATTACHMENT_FORMAT[
-                        CRED_20_REQUEST
-                    ][V20CredFormat.Format.INDY.api]
+                    format_=ATTACHMENT_FORMAT[CRED_20_REQUEST][
+                        V20CredFormat.Format.INDY.api
+                    ],
                 )
             ],
             filters_attach=[
@@ -116,9 +116,9 @@ class TestV20CredRequestHandler(AsyncTestCase):
             formats=[
                 V20CredFormat(
                     attach_id="0",
-                    format_=ATTACHMENT_FORMAT[
-                        CRED_20_REQUEST
-                    ][V20CredFormat.Format.INDY.api]
+                    format_=ATTACHMENT_FORMAT[CRED_20_REQUEST][
+                        V20CredFormat.Format.INDY.api
+                    ],
                 )
             ],
             filters_attach=[

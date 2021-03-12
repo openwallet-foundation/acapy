@@ -163,9 +163,9 @@ class V20CredManager:
             formats=[
                 V20CredFormat(
                     attach_id=str(ident),
-                    format_=ATTACHMENT_FORMAT[
-                        CRED_20_PROPOSAL
-                    ][V20CredFormat.Format.get(f).api],
+                    format_=ATTACHMENT_FORMAT[CRED_20_PROPOSAL][
+                        V20CredFormat.Format.get(f).api
+                    ],
                 )
                 for ident, f in enumerate(fmt2filter.keys())
             ],
@@ -308,9 +308,9 @@ class V20CredManager:
             formats=[
                 V20CredFormat(
                     attach_id="0",
-                    format_=ATTACHMENT_FORMAT[
-                        CRED_20_OFFER
-                    ][V20CredFormat.Format.INDY.api],
+                    format_=ATTACHMENT_FORMAT[CRED_20_OFFER][
+                        V20CredFormat.Format.INDY.api
+                    ],
                 )
             ],
             offers_attach=[AttachDecorator.data_base64(cred_offer, ident="0")],
@@ -362,9 +362,9 @@ class V20CredManager:
             formats=[
                 V20CredFormat(
                     attach_id="0",
-                    format_=ATTACHMENT_FORMAT[
-                        CRED_20_PROPOSAL
-                    ][V20CredFormat.Format.INDY.api],
+                    format_=ATTACHMENT_FORMAT[CRED_20_PROPOSAL][
+                        V20CredFormat.Format.INDY.api
+                    ],
                 )
             ],
             filters_attach=[
@@ -480,9 +480,9 @@ class V20CredManager:
             formats=[
                 V20CredFormat(
                     attach_id="0",
-                    format_=ATTACHMENT_FORMAT[
-                        CRED_20_REQUEST
-                    ][V20CredFormat.Format.INDY.api],
+                    format_=ATTACHMENT_FORMAT[CRED_20_REQUEST][
+                        V20CredFormat.Format.INDY.api
+                    ],
                 )
             ],
             requests_attach=[
@@ -715,9 +715,9 @@ class V20CredManager:
             formats=[
                 V20CredFormat(
                     attach_id="0",
-                    format_=ATTACHMENT_FORMAT[
-                        CRED_20_ISSUE
-                    ][V20CredFormat.Format.INDY.api],
+                    format_=ATTACHMENT_FORMAT[CRED_20_ISSUE][
+                        V20CredFormat.Format.INDY.api
+                    ],
                 )
             ],
             credentials_attach=[

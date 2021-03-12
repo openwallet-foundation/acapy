@@ -73,9 +73,8 @@ class TestV20CredRequest(AsyncTestCase):
             TestV20CredRequest.CRED_REQUEST.attachment()
             == TestV20CredRequest.indy_cred_req
         )
-        assert (
-            TestV20CredRequest.CRED_REQUEST._type
-            == DIDCommPrefix.qualify_current(CRED_20_REQUEST)
+        assert TestV20CredRequest.CRED_REQUEST._type == DIDCommPrefix.qualify_current(
+            CRED_20_REQUEST
         )
 
     async def test_serde(self):

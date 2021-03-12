@@ -52,9 +52,7 @@ class TestV20CredOffer(AsyncTestCase):
         formats=[
             V20CredFormat(
                 attach_id="indy",
-                format_=ATTACHMENT_FORMAT[CRED_20_OFFER][
-                    V20CredFormat.Format.INDY.api
-                ],
+                format_=ATTACHMENT_FORMAT[CRED_20_OFFER][V20CredFormat.Format.INDY.api],
             )
         ],
         offers_attach=[
@@ -74,12 +72,9 @@ class TestV20CredOffer(AsyncTestCase):
             TestV20CredOffer.CRED_OFFER.offers_attach[0].content
             == TestV20CredOffer.indy_offer
         )
-        assert (
-            TestV20CredOffer.CRED_OFFER.attachment() == TestV20CredOffer.indy_offer
-        )
-        assert (
-            TestV20CredOffer.CRED_OFFER._type
-            == DIDCommPrefix.qualify_current(CRED_20_OFFER)
+        assert TestV20CredOffer.CRED_OFFER.attachment() == TestV20CredOffer.indy_offer
+        assert TestV20CredOffer.CRED_OFFER._type == DIDCommPrefix.qualify_current(
+            CRED_20_OFFER
         )
 
     async def test_serde(self):

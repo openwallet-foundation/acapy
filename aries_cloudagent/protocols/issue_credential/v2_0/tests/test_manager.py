@@ -253,9 +253,9 @@ class TestV20CredManager(AsyncTestCase):
             formats=[
                 V20CredFormat(
                     attach_id="0",
-                    format_=ATTACHMENT_FORMAT[
-                        CRED_20_PROPOSAL
-                    ][V20CredFormat.Format.INDY.api],
+                    format_=ATTACHMENT_FORMAT[CRED_20_PROPOSAL][
+                        V20CredFormat.Format.INDY.api
+                    ],
                 )
             ],
             filters_attach=[
@@ -362,9 +362,9 @@ class TestV20CredManager(AsyncTestCase):
                 formats=[
                     V20CredFormat(
                         attach_id="0",
-                        format_=ATTACHMENT_FORMAT[
-                            CRED_20_PROPOSAL
-                        ][V20CredFormat.Format.INDY.api],
+                        format_=ATTACHMENT_FORMAT[CRED_20_PROPOSAL][
+                            V20CredFormat.Format.INDY.api
+                        ],
                     )
                 ],
                 filters_attach=[
@@ -405,9 +405,9 @@ class TestV20CredManager(AsyncTestCase):
             formats=[
                 V20CredFormat(
                     attach_id="0",
-                    format_=ATTACHMENT_FORMAT[
-                        CRED_20_PROPOSAL
-                    ][V20CredFormat.Format.INDY.api],
+                    format_=ATTACHMENT_FORMAT[CRED_20_PROPOSAL][
+                        V20CredFormat.Format.INDY.api
+                    ],
                 )
             ],
             filters_attach=[
@@ -490,9 +490,9 @@ class TestV20CredManager(AsyncTestCase):
             formats=[
                 V20CredFormat(
                     attach_id="0",
-                    format_=ATTACHMENT_FORMAT[
-                        CRED_20_PROPOSAL
-                    ][V20CredFormat.Format.INDY.api],
+                    format_=ATTACHMENT_FORMAT[CRED_20_PROPOSAL][
+                        V20CredFormat.Format.INDY.api
+                    ],
                 )
             ],
             filters_attach=[
@@ -556,9 +556,9 @@ class TestV20CredManager(AsyncTestCase):
             formats=[
                 V20CredFormat(
                     attach_id="0",
-                    format_=ATTACHMENT_FORMAT[
-                        CRED_20_PROPOSAL
-                    ][V20CredFormat.Format.INDY.api],
+                    format_=ATTACHMENT_FORMAT[CRED_20_PROPOSAL][
+                        V20CredFormat.Format.INDY.api
+                    ],
                 )
             ],
             filters_attach=[AttachDecorator.data_base64({}, ident="0")],
@@ -635,9 +635,9 @@ class TestV20CredManager(AsyncTestCase):
             formats=[
                 V20CredFormat(
                     attach_id="0",
-                    format_=ATTACHMENT_FORMAT[
-                        CRED_20_PROPOSAL
-                    ][V20CredFormat.Format.INDY.api],
+                    format_=ATTACHMENT_FORMAT[CRED_20_PROPOSAL][
+                        V20CredFormat.Format.INDY.api
+                    ],
                 )
             ],
             filters_attach=[AttachDecorator.data_base64({}, ident="0")],
@@ -682,9 +682,9 @@ class TestV20CredManager(AsyncTestCase):
             formats=[
                 V20CredFormat(
                     attach_id="0",
-                    format_=ATTACHMENT_FORMAT[
-                        CRED_20_PROPOSAL
-                    ][V20CredFormat.Format.INDY.api],
+                    format_=ATTACHMENT_FORMAT[CRED_20_PROPOSAL][
+                        V20CredFormat.Format.INDY.api
+                    ],
                 )
             ],
             filters_attach=[AttachDecorator.data_base64({}, ident="0")],
@@ -694,9 +694,9 @@ class TestV20CredManager(AsyncTestCase):
             formats=[
                 V20CredFormat(
                     attach_id="0",
-                    format_=ATTACHMENT_FORMAT[
-                        CRED_20_OFFER
-                    ][V20CredFormat.Format.INDY.api],
+                    format_=ATTACHMENT_FORMAT[CRED_20_OFFER][
+                        V20CredFormat.Format.INDY.api
+                    ],
                 )
             ],
             offers_attach=[AttachDecorator.data_base64(INDY_OFFER, ident="0")],
@@ -754,9 +754,9 @@ class TestV20CredManager(AsyncTestCase):
             formats=[
                 V20CredFormat(
                     attach_id="0",
-                    format_=ATTACHMENT_FORMAT[
-                        CRED_20_OFFER
-                    ][V20CredFormat.Format.INDY.api],
+                    format_=ATTACHMENT_FORMAT[CRED_20_OFFER][
+                        V20CredFormat.Format.INDY.api
+                    ],
                 )
             ],
             offers_attach=[AttachDecorator.data_base64(INDY_OFFER, ident="0")],
@@ -802,9 +802,9 @@ class TestV20CredManager(AsyncTestCase):
             formats=[
                 V20CredFormat(
                     attach_id="0",
-                    format_=ATTACHMENT_FORMAT[
-                        CRED_20_OFFER
-                    ][V20CredFormat.Format.INDY.api],
+                    format_=ATTACHMENT_FORMAT[CRED_20_OFFER][
+                        V20CredFormat.Format.INDY.api
+                    ],
                 )
             ],
             offers_attach=[AttachDecorator.data_base64(INDY_OFFER, ident="0")],
@@ -874,9 +874,9 @@ class TestV20CredManager(AsyncTestCase):
             formats=[
                 V20CredFormat(
                     attach_id="0",
-                    format_=ATTACHMENT_FORMAT[
-                        CRED_20_OFFER
-                    ][V20CredFormat.Format.INDY.api],
+                    format_=ATTACHMENT_FORMAT[CRED_20_OFFER][
+                        V20CredFormat.Format.INDY.api
+                    ],
                 )
             ],
             offers_attach=[AttachDecorator.data_base64(INDY_OFFER, ident="0")],
@@ -930,9 +930,9 @@ class TestV20CredManager(AsyncTestCase):
             formats=[
                 V20CredFormat(
                     attach_id="0",
-                    format_=ATTACHMENT_FORMAT[
-                        CRED_20_OFFER
-                    ][V20CredFormat.Format.INDY.api],
+                    format_=ATTACHMENT_FORMAT[CRED_20_OFFER][
+                        V20CredFormat.Format.INDY.api
+                    ],
                 )
             ],
             offers_attach=[AttachDecorator.data_base64(INDY_OFFER, ident="0")],
@@ -965,9 +965,9 @@ class TestV20CredManager(AsyncTestCase):
             formats=[
                 V20CredFormat(
                     attach_id="0",
-                    format_=ATTACHMENT_FORMAT[
-                        CRED_20_REQUEST
-                    ][V20CredFormat.Format.INDY.api],
+                    format_=ATTACHMENT_FORMAT[CRED_20_REQUEST][
+                        V20CredFormat.Format.INDY.api
+                    ],
                 )
             ],
             requests_attach=[AttachDecorator.data_base64(INDY_CRED_REQ, ident="0")],
@@ -1011,9 +1011,9 @@ class TestV20CredManager(AsyncTestCase):
             formats=[
                 V20CredFormat(
                     attach_id="0",
-                    format_=ATTACHMENT_FORMAT[
-                        CRED_20_PROPOSAL
-                    ][V20CredFormat.Format.INDY.api],
+                    format_=ATTACHMENT_FORMAT[CRED_20_PROPOSAL][
+                        V20CredFormat.Format.INDY.api
+                    ],
                 )
             ],
             filters_attach=[
@@ -1030,9 +1030,9 @@ class TestV20CredManager(AsyncTestCase):
             formats=[
                 V20CredFormat(
                     attach_id="0",
-                    format_=ATTACHMENT_FORMAT[
-                        CRED_20_OFFER
-                    ][V20CredFormat.Format.INDY.api],
+                    format_=ATTACHMENT_FORMAT[CRED_20_OFFER][
+                        V20CredFormat.Format.INDY.api
+                    ],
                 )
             ],
             offers_attach=[AttachDecorator.data_base64(INDY_OFFER, ident="0")],
@@ -1042,9 +1042,9 @@ class TestV20CredManager(AsyncTestCase):
             formats=[
                 V20CredFormat(
                     attach_id="0",
-                    format_=ATTACHMENT_FORMAT[
-                        CRED_20_REQUEST
-                    ][V20CredFormat.Format.INDY.api],
+                    format_=ATTACHMENT_FORMAT[CRED_20_REQUEST][
+                        V20CredFormat.Format.INDY.api
+                    ],
                 )
             ],
             requests_attach=[AttachDecorator.data_base64(INDY_CRED_REQ, ident="0")],
@@ -1144,9 +1144,9 @@ class TestV20CredManager(AsyncTestCase):
             formats=[
                 V20CredFormat(
                     attach_id="0",
-                    format_=ATTACHMENT_FORMAT[
-                        CRED_20_PROPOSAL
-                    ][V20CredFormat.Format.INDY.api],
+                    format_=ATTACHMENT_FORMAT[CRED_20_PROPOSAL][
+                        V20CredFormat.Format.INDY.api
+                    ],
                 )
             ],
             filters_attach=[
@@ -1163,9 +1163,9 @@ class TestV20CredManager(AsyncTestCase):
             formats=[
                 V20CredFormat(
                     attach_id="0",
-                    format_=ATTACHMENT_FORMAT[
-                        CRED_20_OFFER
-                    ][V20CredFormat.Format.INDY.api],
+                    format_=ATTACHMENT_FORMAT[CRED_20_OFFER][
+                        V20CredFormat.Format.INDY.api
+                    ],
                 )
             ],
             offers_attach=[AttachDecorator.data_base64(INDY_OFFER, ident="0")],
@@ -1175,9 +1175,9 @@ class TestV20CredManager(AsyncTestCase):
             formats=[
                 V20CredFormat(
                     attach_id="0",
-                    format_=ATTACHMENT_FORMAT[
-                        CRED_20_REQUEST
-                    ][V20CredFormat.Format.INDY.api],
+                    format_=ATTACHMENT_FORMAT[CRED_20_REQUEST][
+                        V20CredFormat.Format.INDY.api
+                    ],
                 )
             ],
             requests_attach=[AttachDecorator.data_base64(INDY_CRED_REQ, ident="0")],
@@ -1259,9 +1259,9 @@ class TestV20CredManager(AsyncTestCase):
             formats=[
                 V20CredFormat(
                     attach_id="0",
-                    format_=ATTACHMENT_FORMAT[
-                        CRED_20_PROPOSAL
-                    ][V20CredFormat.Format.INDY.api],
+                    format_=ATTACHMENT_FORMAT[CRED_20_PROPOSAL][
+                        V20CredFormat.Format.INDY.api
+                    ],
                 )
             ],
             filters_attach=[
@@ -1278,9 +1278,9 @@ class TestV20CredManager(AsyncTestCase):
             formats=[
                 V20CredFormat(
                     attach_id="0",
-                    format_=ATTACHMENT_FORMAT[
-                        CRED_20_OFFER
-                    ][V20CredFormat.Format.INDY.api],
+                    format_=ATTACHMENT_FORMAT[CRED_20_OFFER][
+                        V20CredFormat.Format.INDY.api
+                    ],
                 )
             ],
             offers_attach=[AttachDecorator.data_base64(INDY_OFFER, ident="0")],
@@ -1290,9 +1290,9 @@ class TestV20CredManager(AsyncTestCase):
             formats=[
                 V20CredFormat(
                     attach_id="0",
-                    format_=ATTACHMENT_FORMAT[
-                        CRED_20_REQUEST
-                    ][V20CredFormat.Format.INDY.api],
+                    format_=ATTACHMENT_FORMAT[CRED_20_REQUEST][
+                        V20CredFormat.Format.INDY.api
+                    ],
                 )
             ],
             requests_attach=[AttachDecorator.data_base64(INDY_CRED_REQ, ident="0")],
@@ -1390,9 +1390,9 @@ class TestV20CredManager(AsyncTestCase):
             formats=[
                 V20CredFormat(
                     attach_id="0",
-                    format_=ATTACHMENT_FORMAT[
-                        CRED_20_PROPOSAL
-                    ][V20CredFormat.Format.INDY.api],
+                    format_=ATTACHMENT_FORMAT[CRED_20_PROPOSAL][
+                        V20CredFormat.Format.INDY.api
+                    ],
                 )
             ],
             filters_attach=[
@@ -1440,9 +1440,9 @@ class TestV20CredManager(AsyncTestCase):
             formats=[
                 V20CredFormat(
                     attach_id="0",
-                    format_=ATTACHMENT_FORMAT[
-                        CRED_20_PROPOSAL
-                    ][V20CredFormat.Format.INDY.api],
+                    format_=ATTACHMENT_FORMAT[CRED_20_PROPOSAL][
+                        V20CredFormat.Format.INDY.api
+                    ],
                 )
             ],
             filters_attach=[
@@ -1459,9 +1459,9 @@ class TestV20CredManager(AsyncTestCase):
             formats=[
                 V20CredFormat(
                     attach_id="0",
-                    format_=ATTACHMENT_FORMAT[
-                        CRED_20_OFFER
-                    ][V20CredFormat.Format.INDY.api],
+                    format_=ATTACHMENT_FORMAT[CRED_20_OFFER][
+                        V20CredFormat.Format.INDY.api
+                    ],
                 )
             ],
             offers_attach=[AttachDecorator.data_base64(INDY_OFFER, ident="0")],
@@ -1471,9 +1471,9 @@ class TestV20CredManager(AsyncTestCase):
             formats=[
                 V20CredFormat(
                     attach_id="0",
-                    format_=ATTACHMENT_FORMAT[
-                        CRED_20_REQUEST
-                    ][V20CredFormat.Format.INDY.api],
+                    format_=ATTACHMENT_FORMAT[CRED_20_REQUEST][
+                        V20CredFormat.Format.INDY.api
+                    ],
                 )
             ],
             requests_attach=[AttachDecorator.data_base64(INDY_CRED_REQ, ident="0")],
@@ -1542,9 +1542,9 @@ class TestV20CredManager(AsyncTestCase):
             formats=[
                 V20CredFormat(
                     attach_id="0",
-                    format_=ATTACHMENT_FORMAT[
-                        CRED_20_PROPOSAL
-                    ][V20CredFormat.Format.INDY.api],
+                    format_=ATTACHMENT_FORMAT[CRED_20_PROPOSAL][
+                        V20CredFormat.Format.INDY.api
+                    ],
                 )
             ],
             filters_attach=[
@@ -1561,9 +1561,9 @@ class TestV20CredManager(AsyncTestCase):
             formats=[
                 V20CredFormat(
                     attach_id="0",
-                    format_=ATTACHMENT_FORMAT[
-                        CRED_20_OFFER
-                    ][V20CredFormat.Format.INDY.api],
+                    format_=ATTACHMENT_FORMAT[CRED_20_OFFER][
+                        V20CredFormat.Format.INDY.api
+                    ],
                 )
             ],
             offers_attach=[AttachDecorator.data_base64(INDY_OFFER, ident="0")],
@@ -1573,9 +1573,9 @@ class TestV20CredManager(AsyncTestCase):
             formats=[
                 V20CredFormat(
                     attach_id="0",
-                    format_=ATTACHMENT_FORMAT[
-                        CRED_20_REQUEST
-                    ][V20CredFormat.Format.INDY.api],
+                    format_=ATTACHMENT_FORMAT[CRED_20_REQUEST][
+                        V20CredFormat.Format.INDY.api
+                    ],
                 )
             ],
             requests_attach=[AttachDecorator.data_base64(INDY_CRED_REQ, ident="0")],
@@ -1648,9 +1648,9 @@ class TestV20CredManager(AsyncTestCase):
             formats=[
                 V20CredFormat(
                     attach_id="0",
-                    format_=ATTACHMENT_FORMAT[
-                        CRED_20_PROPOSAL
-                    ][V20CredFormat.Format.INDY.api],
+                    format_=ATTACHMENT_FORMAT[CRED_20_PROPOSAL][
+                        V20CredFormat.Format.INDY.api
+                    ],
                 )
             ],
             filters_attach=[
@@ -1667,9 +1667,9 @@ class TestV20CredManager(AsyncTestCase):
             formats=[
                 V20CredFormat(
                     attach_id="0",
-                    format_=ATTACHMENT_FORMAT[
-                        CRED_20_OFFER
-                    ][V20CredFormat.Format.INDY.api],
+                    format_=ATTACHMENT_FORMAT[CRED_20_OFFER][
+                        V20CredFormat.Format.INDY.api
+                    ],
                 )
             ],
             offers_attach=[AttachDecorator.data_base64(INDY_OFFER, ident="0")],
@@ -1679,9 +1679,9 @@ class TestV20CredManager(AsyncTestCase):
             formats=[
                 V20CredFormat(
                     attach_id="0",
-                    format_=ATTACHMENT_FORMAT[
-                        CRED_20_REQUEST
-                    ][V20CredFormat.Format.INDY.api],
+                    format_=ATTACHMENT_FORMAT[CRED_20_REQUEST][
+                        V20CredFormat.Format.INDY.api
+                    ],
                 )
             ],
             requests_attach=[AttachDecorator.data_base64(INDY_CRED_REQ, ident="0")],
@@ -1744,9 +1744,9 @@ class TestV20CredManager(AsyncTestCase):
             formats=[
                 V20CredFormat(
                     attach_id="0",
-                    format_=ATTACHMENT_FORMAT[
-                        CRED_20_ISSUE
-                    ][V20CredFormat.Format.INDY.api],
+                    format_=ATTACHMENT_FORMAT[CRED_20_ISSUE][
+                        V20CredFormat.Format.INDY.api
+                    ],
                 )
             ],
             credentials_attach=[AttachDecorator.data_base64(INDY_CRED, ident="0")],
@@ -1797,9 +1797,9 @@ class TestV20CredManager(AsyncTestCase):
             formats=[
                 V20CredFormat(
                     attach_id="0",
-                    format_=ATTACHMENT_FORMAT[
-                        CRED_20_PROPOSAL
-                    ][V20CredFormat.Format.INDY.api],
+                    format_=ATTACHMENT_FORMAT[CRED_20_PROPOSAL][
+                        V20CredFormat.Format.INDY.api
+                    ],
                 )
             ],
             filters_attach=[
@@ -1816,9 +1816,9 @@ class TestV20CredManager(AsyncTestCase):
             formats=[
                 V20CredFormat(
                     attach_id="0",
-                    format_=ATTACHMENT_FORMAT[
-                        CRED_20_OFFER
-                    ][V20CredFormat.Format.INDY.api],
+                    format_=ATTACHMENT_FORMAT[CRED_20_OFFER][
+                        V20CredFormat.Format.INDY.api
+                    ],
                 )
             ],
             offers_attach=[AttachDecorator.data_base64(INDY_OFFER, ident="0")],
@@ -1828,9 +1828,9 @@ class TestV20CredManager(AsyncTestCase):
             formats=[
                 V20CredFormat(
                     attach_id="0",
-                    format_=ATTACHMENT_FORMAT[
-                        CRED_20_REQUEST
-                    ][V20CredFormat.Format.INDY.api],
+                    format_=ATTACHMENT_FORMAT[CRED_20_REQUEST][
+                        V20CredFormat.Format.INDY.api
+                    ],
                 )
             ],
             requests_attach=[AttachDecorator.data_base64(INDY_CRED_REQ, ident="0")],
@@ -1839,9 +1839,9 @@ class TestV20CredManager(AsyncTestCase):
             formats=[
                 V20CredFormat(
                     attach_id="0",
-                    format_=ATTACHMENT_FORMAT[
-                        CRED_20_ISSUE
-                    ][V20CredFormat.Format.INDY.api],
+                    format_=ATTACHMENT_FORMAT[CRED_20_ISSUE][
+                        V20CredFormat.Format.INDY.api
+                    ],
                 )
             ],
             credentials_attach=[AttachDecorator.data_base64(INDY_CRED, ident="0")],
@@ -1966,9 +1966,9 @@ class TestV20CredManager(AsyncTestCase):
             formats=[
                 V20CredFormat(
                     attach_id="0",
-                    format_=ATTACHMENT_FORMAT[
-                        CRED_20_PROPOSAL
-                    ][V20CredFormat.Format.INDY.api],
+                    format_=ATTACHMENT_FORMAT[CRED_20_PROPOSAL][
+                        V20CredFormat.Format.INDY.api
+                    ],
                 )
             ],
             filters_attach=[
@@ -1985,9 +1985,9 @@ class TestV20CredManager(AsyncTestCase):
             formats=[
                 V20CredFormat(
                     attach_id="0",
-                    format_=ATTACHMENT_FORMAT[
-                        CRED_20_OFFER
-                    ][V20CredFormat.Format.INDY.api],
+                    format_=ATTACHMENT_FORMAT[CRED_20_OFFER][
+                        V20CredFormat.Format.INDY.api
+                    ],
                 )
             ],
             offers_attach=[AttachDecorator.data_base64(INDY_OFFER, ident="0")],
@@ -1997,9 +1997,9 @@ class TestV20CredManager(AsyncTestCase):
             formats=[
                 V20CredFormat(
                     attach_id="0",
-                    format_=ATTACHMENT_FORMAT[
-                        CRED_20_REQUEST
-                    ][V20CredFormat.Format.INDY.api],
+                    format_=ATTACHMENT_FORMAT[CRED_20_REQUEST][
+                        V20CredFormat.Format.INDY.api
+                    ],
                 )
             ],
             requests_attach=[AttachDecorator.data_base64(INDY_CRED_REQ, ident="0")],
@@ -2008,9 +2008,9 @@ class TestV20CredManager(AsyncTestCase):
             formats=[
                 V20CredFormat(
                     attach_id="0",
-                    format_=ATTACHMENT_FORMAT[
-                        CRED_20_ISSUE
-                    ][V20CredFormat.Format.INDY.api],
+                    format_=ATTACHMENT_FORMAT[CRED_20_ISSUE][
+                        V20CredFormat.Format.INDY.api
+                    ],
                 )
             ],
             credentials_attach=[AttachDecorator.data_base64(INDY_CRED, ident="0")],
