@@ -2,7 +2,7 @@
 
 from typing import Sequence
 
-from marshmallow import EXCLUDE, fields, validates_schema, ValidationError
+from marshmallow import EXCLUDE, fields, RAISE, validates_schema, ValidationError
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 from .....messaging.decorators.attach_decorator import (
@@ -10,6 +10,8 @@ from .....messaging.decorators.attach_decorator import (
     AttachDecoratorSchema,
 )
 from .....messaging.valid import UUIDFour
+
+from ...indy.cred_abstract import IndyCredAbstractSchema
 
 from ..message_types import CRED_20_OFFER, PROTOCOL_PACKAGE
 
@@ -118,11 +120,11 @@ class V20CredOfferSchema(AgentMessageSchema):
         """Validate attachments per format."""
 
         def get_attach_by_id(attach_id):
-            """Return filter with input attachment identifier."""
+            """Return attachment with input identifier."""
             for f in attachments:
                 if f.ident == attach_id:
                     return f
-            raise ValidationError(f"No filter matches attach_id {attach_id} in format")
+            raise ValidationError(f"No attachment for attach_id {attach_id} in formats")
 
         formats = data.get("formats") or []
         attachments = data.get("offers_attach") or []
@@ -131,4 +133,5 @@ class V20CredOfferSchema(AgentMessageSchema):
 
         for fmt in formats:
             atch = get_attach_by_id(fmt.attach_id)
-            V20CredFormat.Format.get(fmt.format).validate_offer_attach(atch.content)
+            if V20CredFormat.Format.get(fmt.format) is V20CredFormat.Format.INDY:
+                IndyCredAbstractSchema(unknown=RAISE).load(atch.content)

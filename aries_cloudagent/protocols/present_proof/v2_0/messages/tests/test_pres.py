@@ -17,8 +17,7 @@ from ...message_types import PRES_20
 from ..pres_format import V20PresFormat
 from ..pres import V20Pres, V20PresSchema
 
-
-INDY_PROOF = json.loads(
+INDY_PROOF = json.loads(  # indy returns proof json-encoded: json-decode before base64
     """{
         "proof": {
             "proofs": [

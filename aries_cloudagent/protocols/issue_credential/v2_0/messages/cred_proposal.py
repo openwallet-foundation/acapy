@@ -2,9 +2,10 @@
 
 from typing import Sequence
 
-from marshmallow import EXCLUDE, fields, validates_schema, ValidationError
+from marshmallow import EXCLUDE, fields, RAISE, validates_schema, ValidationError
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
+from .....messaging.credential_definitions.util import CredDefQueryStringSchema
 from .....messaging.decorators.attach_decorator import (
     AttachDecorator,
     AttachDecoratorSchema,
@@ -98,7 +99,7 @@ class V20CredProposalSchema(AgentMessageSchema):
         V20CredFormatSchema,
         many=True,
         required=True,
-        description="Acceptable attachment formats",
+        description="Attachment formats",
     )
     filters_attach = fields.Nested(
         AttachDecoratorSchema,
@@ -128,4 +129,5 @@ class V20CredProposalSchema(AgentMessageSchema):
 
         for fmt in formats:
             atch = get_attach_by_id(fmt.attach_id)
-            V20CredFormat.Format.get(fmt.format).validate_filter_attach(atch.content)
+            if V20CredFormat.Format.get(fmt.format) is V20CredFormat.Format.INDY:
+                CredDefQueryStringSchema(unknown=RAISE).load(atch.content)

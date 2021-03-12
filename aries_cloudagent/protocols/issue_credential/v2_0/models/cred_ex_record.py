@@ -61,6 +61,7 @@ class V20CredExRecord(BaseExchangeRecord):
         error_msg: str = None,
         trace: bool = False,
         conn_id: str = None,  # for backward compatibility to restore from storage
+        by_format: Mapping = None,  # formalism for base_record.from_storage()
         **kwargs,
     ):
         """Initialize a new V20CredExRecord."""
@@ -138,6 +139,34 @@ class V20CredExRecord(BaseExchangeRecord):
             )
             await cls.set_cached_key(session, cache_key, record.cred_ex_id)
         return record
+
+    '''
+    @property
+    def by_format(self) -> Mapping:
+        """Record proposal, offer, request, and credential data structures by format."""
+        result = {}
+        for item, cls in {
+            "cred_proposal": V20PresProposal,
+            "cred_offer": V20PresRequest,
+            "cred_request": V20PresRequest,
+            "cred": V20Cred,
+        }.items():
+            mapping = getattr(self, item)
+            if mapping:
+                msg = cls.deserialize(mapping)
+                result.update(
+                    {
+                        item: {
+                            V20PresFormat.Format.get(f.format).api: msg.attachment(
+                                V20PresFormat.Format.get(f.format)
+                            )
+                            for f in msg.formats
+                        }
+                    }
+                )
+
+        return result
+    '''
 
     def __eq__(self, other: Any) -> bool:
         """Comparison between records."""

@@ -2,7 +2,7 @@
 
 from typing import Sequence
 
-from marshmallow import EXCLUDE, fields, validates_schema, ValidationError
+from marshmallow import EXCLUDE, fields, RAISE, validates_schema, ValidationError
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 from .....messaging.decorators.attach_decorator import (
@@ -10,6 +10,8 @@ from .....messaging.decorators.attach_decorator import (
     AttachDecoratorSchema,
 )
 from .....messaging.valid import UUIDFour
+
+from ...indy.cred import IndyCredentialSchema
 
 from ..message_types import CRED_20_ISSUE, PROTOCOL_PACKAGE
 
@@ -124,6 +126,5 @@ class V20CredIssueSchema(AgentMessageSchema):
 
         for fmt in formats:
             atch = get_attach_by_id(fmt.attach_id)
-            V20CredFormat.Format.get(fmt.format).validate_credential_attach(
-                atch.content
-            )
+            if V20CredFormat.Format.get(fmt.format) is V20CredFormat.Format.INDY:
+                IndyCredentialSchema(unknown=RAISE).load(atch.content)
