@@ -1,10 +1,13 @@
 """A simple event bus."""
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ..core.profile import Profile
+
 import logging
 from itertools import chain
 from typing import Any, Callable, Dict, Pattern, Sequence
-
-from ..core.profile import Profile
 
 LOGGER = logging.getLogger(__name__)
 
@@ -45,7 +48,7 @@ class EventBus:
         """Initialize Event Bus."""
         self.topic_patterns_to_subscribers: Dict[Pattern, Sequence[Callable]] = {}
 
-    async def notify(self, profile: Profile, event: Event):
+    async def notify(self, profile: "Profile", event: Event):
         """Notify subscribers of event.
 
         Args:
@@ -103,3 +106,16 @@ class EventBus:
             if not self.topic_patterns_to_subscribers[pattern]:
                 del self.topic_patterns_to_subscribers[pattern]
             LOGGER.debug("Unsubscribed: topic %s, processor %s", pattern, processor)
+
+
+class MockEventBus(EventBus):
+    """A mock EventBus for testing."""
+
+    def __init__(self):
+        """Initialize MockEventBus."""
+        super().__init__()
+        self.events = []
+
+    async def notify(self, profile: "Profile", event: Event):
+        """Append the event to MockEventBus.events."""
+        self.events.append((profile, event))

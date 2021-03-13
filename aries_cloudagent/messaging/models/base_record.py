@@ -16,7 +16,6 @@ from ...storage.base import BaseStorage, StorageDuplicateError, StorageNotFoundE
 from ...storage.record import StorageRecord
 
 from .base import BaseModel, BaseModelSchema
-from ..responder import BaseResponder
 from ..util import datetime_to_str, time_now
 from ..valid import INDY_ISO8601_DATETIME
 
@@ -401,9 +400,8 @@ class BaseRecord(BaseModel):
             topic = self.webhook_topic
             if not topic:
                 return
-        responder = session.inject(BaseResponder, required=False)
-        if responder:
-            await responder.send_webhook(topic, payload)
+
+        await session.profile.notify("acapy::webhook::" + topic, payload)
 
     @classmethod
     def log_state(

@@ -13,7 +13,6 @@ from typing import Callable, Coroutine, Union
 from aiohttp.web import HTTPException
 
 from ..core.profile import Profile
-from ..core.event_bus import EventBus, Event
 from ..messaging.agent_message import AgentMessage
 from ..messaging.error import MessageParseError
 from ..messaging.models.base import BaseModelError
@@ -89,7 +88,6 @@ class Dispatcher:
         profile: Profile,
         inbound_message: InboundMessage,
         send_outbound: Coroutine,
-        send_webhook: Coroutine = None,
         complete: Callable = None,
     ) -> PendingTask:
         """
@@ -99,7 +97,6 @@ class Dispatcher:
             profile: The profile associated with the inbound message
             inbound_message: The inbound message instance
             send_outbound: Async function to send outbound messages
-            send_webhook: Async function to dispatch a webhook
             complete: Function to call when the handler has completed
 
         Returns:
@@ -107,7 +104,7 @@ class Dispatcher:
 
         """
         return self.put_task(
-            self.handle_message(profile, inbound_message, send_outbound, send_webhook),
+            self.handle_message(profile, inbound_message, send_outbound),
             complete,
         )
 
@@ -116,7 +113,6 @@ class Dispatcher:
         profile: Profile,
         inbound_message: InboundMessage,
         send_outbound: Coroutine,
-        send_webhook: Coroutine = None,
     ):
         """
         Configure responder and message context and invoke the message handler.
@@ -125,7 +121,6 @@ class Dispatcher:
             profile: The profile associated with the inbound message
             inbound_message: The inbound message instance
             send_outbound: Async function to send outbound messages
-            send_webhook: Async function to dispatch a webhook
 
         Returns:
             The response from the handler
@@ -157,7 +152,6 @@ class Dispatcher:
             context,
             inbound_message,
             send_outbound,
-            send_webhook,
             reply_session_id=inbound_message.session_id,
             reply_to_verkey=inbound_message.receipt.sender_verkey,
         )
@@ -248,7 +242,6 @@ class DispatcherResponder(BaseResponder):
         context: RequestContext,
         inbound_message: InboundMessage,
         send_outbound: Coroutine,
-        send_webhook: Coroutine = None,
         **kwargs,
     ):
         """
@@ -258,14 +251,12 @@ class DispatcherResponder(BaseResponder):
             context: The request context of the incoming message
             inbound_message: The inbound message triggering this handler
             send_outbound: Async function to send outbound message
-            send_webhook: Async function to dispatch a webhook
 
         """
         super().__init__(**kwargs)
         self._context = context
         self._inbound_message = inbound_message
         self._send = send_outbound
-        self._webhook = send_webhook
 
     async def create_outbound(
         self, message: Union[AgentMessage, str, bytes], **kwargs
@@ -298,16 +289,3 @@ class DispatcherResponder(BaseResponder):
             message: The `OutboundMessage` to be sent
         """
         await self._send(self._context.profile, message, self._inbound_message)
-
-    async def send_webhook(self, topic: str, payload: dict):
-        """
-        Dispatch a webhook.
-
-        Args:
-            topic: the webhook topic identifier
-            payload: the webhook payload value
-        """
-        bus: EventBus = self._context.inject(EventBus)
-        await bus.notify(self._context.profile, Event(topic, payload))
-        if self._webhook:
-            await self._webhook(self._context.profile, topic, payload)

@@ -30,4 +30,6 @@ class ProblemReportHandler(BaseHandler):
             context.message,
         )
 
-        await responder.send_webhook("problem_report", context.message.serialize())
+        await context.profile.notify(
+            "acapy::webhook::problem_report", context.message.serialize()
+        )

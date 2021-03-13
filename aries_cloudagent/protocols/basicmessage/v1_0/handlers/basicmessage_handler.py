@@ -45,7 +45,7 @@ class BasicMessageHandler(BaseHandler):
         if "l10n" in context.message._decorators:
             payload["locale"] = context.message._decorators["l10n"].locale
 
-        await responder.send_webhook("basicmessages", payload)
+        await context.profile.notify("acapy::webhook::basicmessages", payload)
 
         reply = None
         if body:

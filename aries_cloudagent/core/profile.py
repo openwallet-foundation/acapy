@@ -5,6 +5,7 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Any, Mapping, Optional, Type
 
+from .event_bus import EventBus, Event
 from ..config.base import InjectionError
 from ..config.injector import BaseInjector, InjectType
 from ..config.injection_context import InjectionContext
@@ -98,6 +99,12 @@ class Profile(ABC):
 
     async def remove(self):
         """Remove the profile."""
+
+    async def notify(self, topic: str, payload: Any):
+        """Signal an event."""
+        event_bus = self.inject(EventBus, required=False)
+        if event_bus:
+            await event_bus.notify(self, Event(topic, payload))
 
     def __repr__(self) -> str:
         """Get a human readable string."""

@@ -2,7 +2,8 @@
 
 import asyncio
 import logging
-from typing import Callable, Coroutine, Sequence, Set
+import re
+from typing import Callable, Coroutine
 import uuid
 
 from aiohttp import web
@@ -38,6 +39,8 @@ from .request_context import AdminRequestContext
 
 
 LOGGER = logging.getLogger(__name__)
+
+EVENT_PATTERN_WEBHOOK = re.compile("^acapy::webhook::(.*)$")
 
 
 class AdminModulesSchema(OpenAPISchema):
@@ -75,7 +78,6 @@ class AdminResponder(BaseResponder):
         self,
         profile: Profile,
         send: Coroutine,
-        webhook: Coroutine,
         **kwargs,
     ):
         """
@@ -88,7 +90,6 @@ class AdminResponder(BaseResponder):
         super().__init__(**kwargs)
         self._profile = profile
         self._send = send
-        self._webhook = webhook
 
     async def send_outbound(self, message: OutboundMessage):
         """
@@ -98,47 +99,6 @@ class AdminResponder(BaseResponder):
             message: The `OutboundMessage` to be sent
         """
         await self._send(self._profile, message)
-
-    async def send_webhook(self, topic: str, payload: dict):
-        """
-        Dispatch a webhook.
-
-        Args:
-            topic: the webhook topic identifier
-            payload: the webhook payload value
-        """
-        event_bus = self._profile.inject(EventBus)
-        await event_bus.notify(self._profile, Event(topic, payload))
-        await self._webhook(self._profile, topic, payload)
-
-
-class WebhookTarget:
-    """Class for managing webhook target information."""
-
-    def __init__(
-        self,
-        endpoint: str,
-        topic_filter: Sequence[str] = None,
-        max_attempts: int = None,
-    ):
-        """Initialize the webhook target."""
-        self.endpoint = endpoint
-        self.max_attempts = max_attempts
-        self._topic_filter = None
-        self.topic_filter = topic_filter  # call setter
-
-    @property
-    def topic_filter(self) -> Set[str]:
-        """Accessor for the target's topic filter."""
-        return self._topic_filter
-
-    @topic_filter.setter
-    def topic_filter(self, val: Sequence[str]):
-        """Setter for the target's topic filter."""
-        filter = set(val) if val else None
-        if filter and "*" in filter:
-            filter = None
-        self._topic_filter = filter
 
 
 @web.middleware
@@ -236,7 +196,6 @@ class AdminServer(BaseAdminServer):
         self.root_profile = root_profile
         self.task_queue = task_queue
         self.webhook_router = webhook_router
-        self.webhook_targets = {}
         self.websocket_queues = {}
         self.site = None
         self.multitenant_manager = context.inject(MultitenantManager, required=False)
@@ -337,7 +296,6 @@ class AdminServer(BaseAdminServer):
             responder = AdminResponder(
                 profile,
                 self.outbound_message_router,
-                self.send_webhook,
             )
             profile.context.injector.bind_instance(BaseResponder, responder)
 
@@ -429,6 +387,10 @@ class AdminServer(BaseAdminServer):
         plugin_registry = self.context.inject(PluginRegistry, required=False)
         if plugin_registry:
             plugin_registry.post_process_routes(self.app)
+
+        event_bus = self.context.inject(EventBus, required=False)
+        if event_bus:
+            event_bus.subscribe(EVENT_PATTERN_WEBHOOK, self.__on_event_webhook)
 
         # order tags alphabetically, parameters deterministically and pythonically
         swagger_dict = self.app._state["swagger_dict"]
@@ -718,21 +680,11 @@ class AdminServer(BaseAdminServer):
 
         return ws
 
-    def add_webhook_target(
-        self,
-        target_url: str,
-        topic_filter: Sequence[str] = None,
-        max_attempts: int = None,
-    ):
-        """Add a webhook target."""
-        self.webhook_targets[target_url] = WebhookTarget(
-            target_url, topic_filter, max_attempts
-        )
-
-    def remove_webhook_target(self, target_url: str):
-        """Remove a webhook target."""
-        if target_url in self.webhook_targets:
-            del self.webhook_targets[target_url]
+    async def __on_event_webhook(self, profile: Profile, event: Event):
+        match = EVENT_PATTERN_WEBHOOK.search(event.topic)
+        if match:
+            webhook_topic = match.group(1)
+            await self.send_webhook(profile, webhook_topic, event.payload)
 
     async def send_webhook(self, profile: Profile, topic: str, payload: dict):
         """Add a webhook to the queue, to send to all registered targets."""
@@ -744,8 +696,6 @@ class AdminServer(BaseAdminServer):
             metadata = {"x-wallet-id": wallet_id}
 
         if self.webhook_router:
-            # for idx, target in self.webhook_targets.items():
-            #     if not target.topic_filter or topic in target.topic_filter:
             for endpoint in webhook_urls:
                 self.webhook_router(
                     topic,

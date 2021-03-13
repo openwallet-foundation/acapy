@@ -1,6 +1,6 @@
 import pytest
 
-from aries_cloudagent.messaging.base_handler import HandlerException
+from aries_cloudagent.core.event_bus import EventBus, MockEventBus, Event
 from aries_cloudagent.messaging.request_context import RequestContext
 from aries_cloudagent.messaging.responder import MockResponder
 from aries_cloudagent.transport.inbound.receipt import MessageReceipt
@@ -17,6 +17,9 @@ def request_context() -> RequestContext:
 class TestPingHandler:
     @pytest.mark.asyncio
     async def test_problem_report(self, request_context):
+        mock_event_bus = MockEventBus()
+        request_context.profile.context.injector.bind_instance(EventBus, mock_event_bus)
+
         request_context.message_receipt = MessageReceipt()
         request_context.message = ProblemReport()
         request_context.connection_ready = True
@@ -25,6 +28,8 @@ class TestPingHandler:
         await handler.handle(request_context, responder)
         messages = responder.messages
         assert len(messages) == 0
-        hooks = responder.webhooks
-        assert len(hooks) == 1
-        assert hooks[0] == ("problem_report", request_context.message.serialize())
+        assert len(mock_event_bus.events) == 1
+        (profile, event) = mock_event_bus.events[0]
+        assert profile == request_context.profile
+        assert event.topic == "acapy::webhook::problem_report"
+        assert event.payload == request_context.message.serialize()

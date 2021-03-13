@@ -4,10 +4,10 @@ from asynctest import TestCase as AsyncTestCase, mock as async_mock
 from marshmallow import EXCLUDE, fields
 
 from ....cache.base import BaseCache
+from ....core.event_bus import EventBus, MockEventBus, Event
 from ....core.in_memory import InMemoryProfile
 from ....storage.base import BaseStorage, StorageDuplicateError, StorageRecord
 
-from ...responder import BaseResponder, MockResponder
 from ...util import time_now
 
 from ..base_record import BaseRecord, BaseRecordSchema
@@ -256,15 +256,17 @@ class TestBaseRecord(AsyncTestCase):
 
     async def test_webhook(self):
         session = InMemoryProfile.test_session()
-        mock_responder = MockResponder()
-        session.context.injector.bind_instance(BaseResponder, mock_responder)
+        mock_event_bus = MockEventBus()
+        session.profile.context.injector.bind_instance(EventBus, mock_event_bus)
         record = BaseRecordImpl()
         payload = {"test": "payload"}
         topic = "topic"
         await record.send_webhook(session, None, None)  # cover short circuit
         await record.send_webhook(session, "hello", None)  # cover short circuit
         await record.send_webhook(session, payload, topic=topic)
-        assert mock_responder.webhooks == [(topic, payload)]
+        assert mock_event_bus.events == [
+            (session.profile, Event("acapy::webhook::topic", payload))
+        ]
 
     async def test_tag_prefix(self):
         tags = {"~x": "a", "y": "b"}
