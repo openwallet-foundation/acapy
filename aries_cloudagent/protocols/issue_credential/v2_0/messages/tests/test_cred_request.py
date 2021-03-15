@@ -92,7 +92,7 @@ class TestV20CredRequest(AsyncTestCase):
         with self.assertRaises(BaseModelError):
             V20CredRequest.deserialize(obj)
 
-        obj["requests~attach"].append(  # more filters than formats
+        obj["requests~attach"].append(  # more attachments than formats
             {
                 "@id": "def",
                 "mime-type": "application/json",

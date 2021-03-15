@@ -2,13 +2,15 @@
 
 from typing import Sequence
 
-from marshmallow import EXCLUDE, fields, validates_schema, ValidationError
+from marshmallow import EXCLUDE, fields, RAISE, validates_schema, ValidationError
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 from .....messaging.decorators.attach_decorator import (
     AttachDecorator,
     AttachDecoratorSchema,
 )
+
+from ...indy.proof_request import IndyProofRequestSchema
 
 from ..message_types import PRES_20_PROPOSAL, PROTOCOL_PACKAGE
 
@@ -62,7 +64,10 @@ class V20PresProposal(AgentMessage):
         return (
             (
                 fmt or V20PresFormat.Format.get(self.formats[0].format)
-            ).get_attachment_data(self.formats, self.proposal_attach)
+            ).get_attachment_data(
+                self.formats,
+                self.proposal_attach,
+            )
             if self.formats
             else None
         )
@@ -98,20 +103,17 @@ class V20PresProposalSchema(AgentMessageSchema):
 
         def get_attach_by_id(attach_id):
             """Return attachment with input attachment identifier."""
-            for p in proposal_attach:
-                if p.ident == attach_id:
-                    return p
-            raise ValidationError(
-                f"No proposal attachment matches attach_id {attach_id} in format"
-            )
+            for atch in attachments:
+                if atch.ident == attach_id:
+                    return atch
+            raise ValidationError(f"No attachment for attach_id {attach_id} in formats")
 
         formats = data.get("formats") or []
-        proposal_attach = data.get("proposal_attach") or []
-        if len(formats) != len(proposal_attach):
-            raise ValidationError("Formats vs. proposal attachments length mismatch")
+        attachments = data.get("proposal_attach") or []
+        if len(formats) != len(attachments):
+            raise ValidationError("Formats/attachments length mismatch")
 
         for fmt in formats:
-            proposal_atch = get_attach_by_id(fmt.attach_id)
-            V20PresFormat.Format.get(fmt.format).validate_request_attach(
-                proposal_atch.content
-            )
+            atch = get_attach_by_id(fmt.attach_id)
+            if V20PresFormat.Format.get(fmt.format) is V20PresFormat.Format.INDY:
+                IndyProofRequestSchema(unknown=RAISE).load(atch.content)

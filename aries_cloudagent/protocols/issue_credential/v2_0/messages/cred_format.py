@@ -64,7 +64,7 @@ class V20CredFormat(BaseModel):
             formats: Sequence["V20CredFormat"],
             attachments: Sequence[AttachDecorator],
         ):
-            """Find attachment of current format, base64-decode and return its data."""
+            """Find attachment of current format, decode and return its content."""
             for fmt in formats:
                 if V20CredFormat.Format.get(fmt.format) is self:
                     attach_id = fmt.attach_id
@@ -112,7 +112,7 @@ class V20CredFormatSchema(BaseModelSchema):
     format_ = fields.Str(
         required=True,
         allow_none=False,
-        description="Acceptable issue-credential message attachment format specifier",
+        description="Attachment format specifier",
         data_key="format",
         validate=validate.Regexp("^(hlindy/.*@v2.0)|(dif/.*@v1.0)$"),
         example="dif/credential-manifest@v1.0",

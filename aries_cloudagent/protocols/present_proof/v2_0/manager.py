@@ -21,6 +21,7 @@ from ....storage.error import StorageNotFoundError
 from ..indy.xform import indy_proof_req2non_revoc_intervals
 
 from .models.pres_exchange import V20PresExRecord
+from .message_types import ATTACHMENT_FORMAT, PRES_20_REQUEST, PRES_20
 from .messages.pres import V20Pres
 from .messages.pres_ack import V20PresAck
 from .messages.pres_format import V20PresFormat
@@ -146,7 +147,9 @@ class V20PresManager:
             formats=[
                 V20PresFormat(
                     attach_id="indy",
-                    format_=V20PresFormat.Format.INDY.aries,
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.INDY.api
+                    ],
                 )
             ],
             request_presentations_attach=[
@@ -234,10 +237,9 @@ class V20PresManager:
 
         Args:
             pres_ex_record: record to update
-            format_: presentation format
             requested_credentials: indy formatted requested_credentials
             comment: optional human-readable comment
-
+            format_: presentation format
 
         Example `requested_credentials` format, mapping proof request referents (uuid)
         to wallet referents (cred id):
@@ -421,7 +423,9 @@ class V20PresManager:
             formats=[
                 V20PresFormat(
                     attach_id="indy",
-                    format_=V20PresFormat.Format.INDY.aries,
+                    format_=ATTACHMENT_FORMAT[PRES_20][
+                        V20PresFormat.Format.INDY.api
+                    ],
                 )
             ],
             presentations_attach=[
@@ -440,7 +444,9 @@ class V20PresManager:
             formats=[
                 V20PresFormat(
                     attach_id="indy",
-                    format_=V20PresFormat.Format.INDY.aries,
+                    format_=ATTACHMENT_FORMAT[PRES_20][
+                        V20PresFormat.Format.INDY.api
+                    ],
                 ),
             ],
             presentations_attach=[

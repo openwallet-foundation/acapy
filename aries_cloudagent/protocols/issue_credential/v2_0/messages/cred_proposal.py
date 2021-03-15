@@ -48,7 +48,7 @@ class V20CredProposal(AgentMessage):
             comment: optional human-readable comment
             credential_proposal: proposed credential preview
             formats: acceptable attachment formats
-            filter_attach: list of attachments filtering credential proposal
+            filters_attach: list of attachments filtering credential proposal
 
         """
         super().__init__(_id=_id, **kwargs)
@@ -117,9 +117,9 @@ class V20CredProposalSchema(AgentMessageSchema):
 
         def get_attach_by_id(attach_id):
             """Return attachment with input identifier."""
-            for f in attachments:
-                if f.ident == attach_id:
-                    return f
+            for atch in attachments:
+                if atch.ident == attach_id:
+                    return atch
             raise ValidationError(f"No attachment for attach_id {attach_id} in formats")
 
         formats = data.get("formats") or []

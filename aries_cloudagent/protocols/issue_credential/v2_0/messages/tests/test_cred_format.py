@@ -32,6 +32,10 @@ class TestV20FormatFormat(TestCase):
         assert (
             V20CredFormat.Format.get("dif/...").detail.__name__ == "V20CredExRecordDIF"
         )
+        assert (
+            V20CredFormat.Format.get(V20CredFormat.Format.DIF.api)
+            is V20CredFormat.Format.DIF
+        )
 
     def test_get_attachment_data(self):
         assert (

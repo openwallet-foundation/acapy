@@ -24,6 +24,12 @@ from ...indy.xform import indy_proof_req_preview2indy_requested_creds
 
 from .. import manager as test_module
 from ..manager import V20PresManager, V20PresManagerError
+from ..message_types import (
+    ATTACHMENT_FORMAT,
+    PRES_20_PROPOSAL,
+    PRES_20_REQUEST,
+    PRES_20,
+)
 from ..messages.pres import V20Pres
 from ..messages.pres_ack import V20PresAck
 from ..messages.pres_format import V20PresFormat
@@ -271,7 +277,9 @@ class TestV20PresManager(AsyncTestCase):
             formats=[
                 V20PresFormat(
                     attach_id="indy",
-                    format_=V20PresFormat.Format.INDY.aries,
+                    format_=ATTACHMENT_FORMAT[PRES_20_PROPOSAL][
+                        V20PresFormat.Format.INDY.api
+                    ],
                 )
             ],
             proposal_attach=[
@@ -321,7 +329,9 @@ class TestV20PresManager(AsyncTestCase):
             formats=[
                 V20PresFormat(
                     attach_id="indy",
-                    format_=V20PresFormat.Format.INDY.aries,
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.INDY.api
+                    ],
                 )
             ],
             request_presentations_attach=[
@@ -367,7 +377,9 @@ class TestV20PresManager(AsyncTestCase):
             formats=[
                 V20PresFormat(
                     attach_id="indy",
-                    format_=V20PresFormat.Format.INDY.aries,
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.INDY.api
+                    ],
                 )
             ],
             request_presentations_attach=[
@@ -412,7 +424,9 @@ class TestV20PresManager(AsyncTestCase):
             formats=[
                 V20PresFormat(
                     attach_id="indy",
-                    format_=V20PresFormat.Format.INDY.aries,
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.INDY.api
+                    ],
                 )
             ],
             request_presentations_attach=[
@@ -467,7 +481,9 @@ class TestV20PresManager(AsyncTestCase):
             formats=[
                 V20PresFormat(
                     attach_id="indy",
-                    format_=V20PresFormat.Format.INDY.aries,
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.INDY.api
+                    ],
                 )
             ],
             request_presentations_attach=[
@@ -529,7 +545,9 @@ class TestV20PresManager(AsyncTestCase):
             formats=[
                 V20PresFormat(
                     attach_id="indy",
-                    format_=V20PresFormat.Format.INDY.aries,
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.INDY.api
+                    ],
                 )
             ],
             request_presentations_attach=[
@@ -600,7 +618,9 @@ class TestV20PresManager(AsyncTestCase):
             formats=[
                 V20PresFormat(
                     attach_id="indy",
-                    format_=V20PresFormat.Format.INDY.aries,
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.INDY.api
+                    ],
                 )
             ],
             request_presentations_attach=[
@@ -696,7 +716,9 @@ class TestV20PresManager(AsyncTestCase):
             formats=[
                 V20PresFormat(
                     attach_id="indy",
-                    format_=V20PresFormat.Format.INDY.aries,
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.INDY.api
+                    ],
                 )
             ],
             request_presentations_attach=[
@@ -760,7 +782,9 @@ class TestV20PresManager(AsyncTestCase):
             formats=[
                 V20PresFormat(
                     attach_id="indy",
-                    format_=V20PresFormat.Format.INDY.aries,
+                    format_=ATTACHMENT_FORMAT[PRES_20_PROPOSAL][
+                        V20PresFormat.Format.INDY.api
+                    ],
                 )
             ],
             proposal_attach=[
@@ -771,7 +795,9 @@ class TestV20PresManager(AsyncTestCase):
             formats=[
                 V20PresFormat(
                     attach_id="indy",
-                    format_=V20PresFormat.Format.INDY.aries,
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.INDY.api
+                    ],
                 )
             ],
             request_presentations_attach=[
@@ -782,7 +808,7 @@ class TestV20PresManager(AsyncTestCase):
             formats=[
                 V20PresFormat(
                     attach_id="indy",
-                    format_=V20PresFormat.Format.INDY.aries,
+                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.INDY.api],
                 )
             ],
             presentations_attach=[
@@ -858,7 +884,9 @@ class TestV20PresManager(AsyncTestCase):
             formats=[
                 V20PresFormat(
                     attach_id="indy",
-                    format_=V20PresFormat.Format.INDY.aries,
+                    format_=ATTACHMENT_FORMAT[PRES_20_PROPOSAL][
+                        V20PresFormat.Format.INDY.api
+                    ],
                 )
             ],
             proposal_attach=[AttachDecorator.data_base64(indy_proof_req, ident="indy")],
@@ -867,7 +895,9 @@ class TestV20PresManager(AsyncTestCase):
             formats=[
                 V20PresFormat(
                     attach_id="indy",
-                    format_=V20PresFormat.Format.INDY.aries,
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.INDY.api
+                    ],
                 )
             ],
             request_presentations_attach=[
@@ -878,7 +908,7 @@ class TestV20PresManager(AsyncTestCase):
             formats=[
                 V20PresFormat(
                     attach_id="indy",
-                    format_=V20PresFormat.Format.INDY.aries,
+                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.INDY.api],
                 )
             ],
             presentations_attach=[
@@ -908,7 +938,9 @@ class TestV20PresManager(AsyncTestCase):
             formats=[
                 V20PresFormat(
                     attach_id="indy",
-                    format_=V20PresFormat.Format.INDY.aries,
+                    format_=ATTACHMENT_FORMAT[PRES_20_PROPOSAL][
+                        V20PresFormat.Format.INDY.api
+                    ],
                 )
             ],
             proposal_attach=[AttachDecorator.data_base64(indy_proof_req, ident="indy")],
@@ -917,7 +949,7 @@ class TestV20PresManager(AsyncTestCase):
             formats=[
                 V20PresFormat(
                     attach_id="indy",
-                    format_=V20PresFormat.Format.INDY.aries,
+                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.INDY.api],
                 )
             ],
             request_presentations_attach=[
@@ -928,7 +960,7 @@ class TestV20PresManager(AsyncTestCase):
             formats=[
                 V20PresFormat(
                     attach_id="indy",
-                    format_=V20PresFormat.Format.INDY.aries,
+                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.INDY.api],
                 )
             ],
             presentations_attach=[
@@ -984,7 +1016,9 @@ class TestV20PresManager(AsyncTestCase):
             formats=[
                 V20PresFormat(
                     attach_id="indy",
-                    format_=V20PresFormat.Format.INDY.aries,
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.INDY.api
+                    ],
                 )
             ],
             will_confirm=True,
@@ -996,7 +1030,7 @@ class TestV20PresManager(AsyncTestCase):
             formats=[
                 V20PresFormat(
                     attach_id="indy",
-                    format_=V20PresFormat.Format.INDY.aries,
+                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.INDY.api],
                 )
             ],
             presentations_attach=[
@@ -1047,7 +1081,9 @@ class TestV20PresManager(AsyncTestCase):
             formats=[
                 V20PresFormat(
                     attach_id="indy",
-                    format_=V20PresFormat.Format.INDY.aries,
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.INDY.api
+                    ],
                 )
             ],
             request_presentations_attach=[
@@ -1058,7 +1094,7 @@ class TestV20PresManager(AsyncTestCase):
             formats=[
                 V20PresFormat(
                     attach_id="indy",
-                    format_=V20PresFormat.Format.INDY.aries,
+                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.INDY.api],
                 )
             ],
             presentations_attach=[

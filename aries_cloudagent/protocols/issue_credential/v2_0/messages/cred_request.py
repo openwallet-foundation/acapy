@@ -107,9 +107,9 @@ class V20CredRequestSchema(AgentMessageSchema):
 
         def get_attach_by_id(attach_id):
             """Return attachment with input identifier."""
-            for f in attachments:
-                if f.ident == attach_id:
-                    return f
+            for atch in attachments:
+                if atch.ident == attach_id:
+                    return atch
             raise ValidationError(f"No attachment for attach_id {attach_id} in formats")
 
         formats = data.get("formats") or []

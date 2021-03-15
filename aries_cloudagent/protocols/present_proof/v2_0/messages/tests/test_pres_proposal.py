@@ -14,7 +14,7 @@ from ....indy.pres_preview import (
     PRESENTATION_PREVIEW,
 )
 
-from ...message_types import PRES_20_PROPOSAL
+from ...message_types import ATTACHMENT_FORMAT, PRES_20_PROPOSAL
 
 from ..pres_format import V20PresFormat
 from ..pres_proposal import V20PresProposal
@@ -112,7 +112,9 @@ class TestV20PresProposal(TestCase):
                 formats=[
                     V20PresFormat(
                         attach_id="indy",
-                        format_=V20PresFormat.Format.INDY.aries,
+                        format_=ATTACHMENT_FORMAT[PRES_20_PROPOSAL][
+                            V20PresFormat.Format.INDY.api
+                        ],
                     )
                 ],
                 proposal_attach=[AttachDecorator.data_base64(proof_req, ident="indy")],

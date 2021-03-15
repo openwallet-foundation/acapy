@@ -94,22 +94,11 @@ class TestV20FormatFormat(TestCase):
             is V20PresFormat.Format.INDY
         )
         assert V20PresFormat.Format.get("no such format") is None
-        assert V20PresFormat.Format.get("Indy") is V20PresFormat.Format.INDY
+        assert V20PresFormat.Format.get("hlindy/...") is V20PresFormat.Format.INDY
         assert (
-            V20PresFormat.Format.get("HL/INDY").aries == V20PresFormat.Format.INDY.aries
+            V20PresFormat.Format.get(V20PresFormat.Format.DIF.api)
+            is V20PresFormat.Format.DIF
         )
-        assert "indy" in V20PresFormat.Format.get("HL/INDY").aka
-        assert (
-            V20PresFormat.Format.get("HL/INDY").api
-            in V20PresFormat.Format.get("hl-indy").aka
-        )
-        assert (
-            V20PresFormat.Format.get("JSON-LD").aries == V20PresFormat.Format.DIF.aries
-        )
-
-    def test_validate_request_attach_x(self):
-        with self.assertRaises(ValidationError) as context:
-            V20PresFormat.Format.INDY.validate_request_attach(data="not even close")
 
     def test_get_attachment_data(self):
         for proof_req in INDY_PROOF_REQ:

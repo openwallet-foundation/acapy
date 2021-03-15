@@ -12,7 +12,7 @@ from .....didcomm_prefix import DIDCommPrefix
 
 from ....indy.pres_preview import PRESENTATION_PREVIEW
 
-from ...message_types import PRES_20
+from ...message_types import ATTACHMENT_FORMAT, PRES_20
 
 from ..pres_format import V20PresFormat
 from ..pres import V20Pres, V20PresSchema
@@ -1669,7 +1669,7 @@ PRES = V20Pres(
     formats=[
         V20PresFormat(
             attach_id="indy",
-            format_=V20PresFormat.Format.INDY.aries,
+            format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.INDY.api],
         )
     ],
     presentations_attach=[
@@ -1691,141 +1691,26 @@ class TestPresentation(TestCase):
         assert PRES.attachment(V20PresFormat.Format.INDY) == INDY_PROOF
         assert PRES._type == DIDCommPrefix.qualify_current(PRES_20)
 
-    def test_deserialize(self):
+    def test_serde(self):
         """Test deserialization."""
-        dump = json.dumps(
-            {
-                "@type": DIDCommPrefix.qualify_current(PRES_20),
-                "comment": "Hello World",
-                "formats": [
-                    {
-                        "attach_id": "indy",
-                        "format": V20PresFormat.Format.INDY.aries,
-                    }
-                ],
-                "presentations~attach": [
-                    AttachDecorator.data_base64(
-                        mapping=INDY_PROOF,
-                        ident="indy",
-                    ).serialize()
-                ],
-            }
-        )
-
-        pres = V20Pres.deserialize(dump)
-        assert type(pres) == V20Pres
-
-    def test_deserialize_x(self):
-        """Test deserialization failures."""
-        dump_x = json.dumps(  # format/attachments length mismatch
-            {
-                "@type": DIDCommPrefix.qualify_current(PRES_20),
-                "comment": "Hello World",
-                "formats": [
-                    {
-                        "attach_id": "indy",
-                        "format": V20PresFormat.Format.INDY.aries,
-                    }
-                ],
-                "presentations~attach": [],
-            }
-        )
-        with pytest.raises(BaseModelError):
-            V20Pres.deserialize(dump_x)
-
-        dump_x = json.dumps(  # format/attachments identifier miss
-            {
-                "@type": DIDCommPrefix.qualify_current(PRES_20),
-                "comment": "Hello World",
-                "formats": [
-                    {
-                        "attach_id": "indy",
-                        "format": V20PresFormat.Format.INDY.aries,
-                    }
-                ],
-                "presentations~attach": [
-                    AttachDecorator.data_base64(
-                        mapping=INDY_PROOF,
-                        ident="xxx",
-                    ).serialize()
-                ],
-            }
-        )
-        with pytest.raises(BaseModelError):
-            V20Pres.deserialize(dump_x)
-
-        dump_x = json.dumps(  # attachment not of correct shape
-            {
-                "@type": DIDCommPrefix.qualify_current(PRES_20),
-                "comment": "Hello World",
-                "formats": [
-                    {
-                        "attach_id": "indy",
-                        "format": V20PresFormat.Format.INDY.aries,
-                    }
-                ],
-                "presentations~attach": [
-                    AttachDecorator.data_base64(
-                        mapping={"this is": "not an indy proof"},
-                        ident="indy",
-                    ).serialize()
-                ],
-            }
-        )
-        with pytest.raises(BaseModelError):
-            V20Pres.deserialize(dump_x)
-
-    def test_serialize(self):
-        """Test serialization."""
         pres_dict = PRES.serialize()
-        pres_dict.pop("@id")
+        pres_obj = V20Pres.deserialize(pres_dict)
+        assert type(pres_obj) == V20Pres
 
-        serialized = {
-            "@type": DIDCommPrefix.qualify_current(PRES_20),
-            "formats": [
-                {
-                    "attach_id": "indy",
-                    "format": V20PresFormat.Format.INDY.aries,
-                }
-            ],
-            "presentations~attach": [
-                AttachDecorator.data_base64(
-                    mapping=INDY_PROOF,
-                    ident="indy",
-                ).serialize()
-            ],
-            "comment": "Test",
-        }
-        assert pres_dict == serialized
+        pres_dict["presentations~attach"][0]["data"]["base64"] = "eyJub3QiOiAiaW5keSJ9"
+        with self.assertRaises(BaseModelError):
+            V20Pres.deserialize(pres_dict)
 
+        pres_dict["presentations~attach"][0]["@id"] = "xxx"
+        with self.assertRaises(BaseModelError):
+            V20Pres.deserialize(pres_dict)
 
-class TestV20PresSchema(TestCase):
-    """Test presentation schema"""
-
-    def test_make_model(self):
-        """Test making model."""
-        pres_dict = PRES.serialize()
-        """
-        Looks like: {
-            "@type": ".../present-proof/1.0/presentation",
-            "@id": "f49773e3-bd56-4868-a5f1-456d1e6d1a16",
-            "comment": "Test",
-            "formats": [
-                {
-                    "attach_id": "indy",
-                    "format": "hlindy@v2.0"
-                }
-            ],
-            "presentations~attach": [
-                {
-                    "mime-type": "application/json",
-                    "data": {
-                        "base64": "eyJuYW..."
-                    }
-                }
-            ]
-        }
-        """
-
-        model_instance = PRES.deserialize(pres_dict)
-        assert isinstance(model_instance, V20Pres)
+        pres_dict["presentations~attach"].append(
+            {
+                "@id": "def",
+                "mime-type": "application/json",
+                "data": {"base64": "eyJub3QiOiAiaW5keSJ9"},
+            }
+        )  # more attachments than formats
+        with self.assertRaises(BaseModelError):
+            V20Pres.deserialize(pres_dict)

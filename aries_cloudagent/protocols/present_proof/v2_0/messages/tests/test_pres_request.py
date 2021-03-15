@@ -12,7 +12,7 @@ from .....didcomm_prefix import DIDCommPrefix
 
 from ....indy.pres_preview import PRESENTATION_PREVIEW
 
-from ...message_types import PRES_20_REQUEST
+from ...message_types import ATTACHMENT_FORMAT, PRES_20_REQUEST
 
 from ..pres_format import V20PresFormat
 from ..pres_request import V20PresRequest, V20PresRequestSchema
@@ -105,7 +105,9 @@ PRES_REQ = [
         formats=[
             V20PresFormat(
                 attach_id="indy",
-                format_=V20PresFormat.Format.INDY.aries,
+                format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                    V20PresFormat.Format.INDY.api
+                ],
             )
         ],
         request_presentations_attach=[
@@ -120,7 +122,7 @@ class TestV20PresRequest(TestCase):
     """Presentation request tests."""
 
     def test_init_type(self):
-        """Test initializer, type."""
+        """Test initializer and type."""
         for i, pres_req in enumerate(PRES_REQ):
             assert pres_req.will_confirm
             assert len(pres_req.formats) == len(pres_req.request_presentations_attach)
@@ -128,129 +130,29 @@ class TestV20PresRequest(TestCase):
             assert pres_req.attachment(V20PresFormat.Format.INDY) == INDY_PROOF_REQ[i]
             assert pres_req._type == DIDCommPrefix.qualify_current(PRES_20_REQUEST)
 
-    def test_deserialize(self):
-        """Test deserialization."""
-        for proof_req in INDY_PROOF_REQ:
-            dump = json.dumps(
+    def test_serde(self):
+        """Test de/serialization."""
+        for pres_req_msg in PRES_REQ:
+            pres_req_dict = pres_req_msg.serialize()
+            pres_req_obj = V20PresRequest.deserialize(pres_req_dict)
+            assert type(pres_req_obj) == V20PresRequest
+
+            pres_req_dict["request_presentations~attach"][0]["data"][
+                "base64"
+            ] = "eyJub3QiOiAiaW5keSJ9"
+            with self.assertRaises(BaseModelError):
+                V20PresRequest.deserialize(pres_req_dict)
+
+            pres_req_dict["request_presentations~attach"][0]["@id"] = "xxx"
+            with self.assertRaises(BaseModelError):
+                V20PresRequest.deserialize(pres_req_dict)
+
+            pres_req_dict["request_presentations~attach"].append(
                 {
-                    "@type": DIDCommPrefix.qualify_current(PRES_20_REQUEST),
-                    "comment": "Hello World",
-                    "will_confirm": True,
-                    "formats": [
-                        {
-                            "attach_id": "indy",
-                            "format": V20PresFormat.Format.INDY.aries,
-                        }
-                    ],
-                    "request_presentations~attach": [
-                        AttachDecorator.data_base64(
-                            mapping=proof_req,
-                            ident="indy",
-                        ).serialize()
-                    ],
+                    "@id": "def",
+                    "mime-type": "application/json",
+                    "data": {"base64": "eyJub3QiOiAiaW5keSJ9"},
                 }
-            )
-
-            pres_request = V20PresRequest.deserialize(dump)
-            assert type(pres_request) == V20PresRequest
-
-    def test_deserialize_x(self):
-        """Test deserialization failures."""
-        dump_x = json.dumps(
-            {
-                "@type": DIDCommPrefix.qualify_current(PRES_20_REQUEST),
-                "comment": "Hello World",
-                "will_confirm": True,
-                "formats": [
-                    {
-                        "attach_id": "indy",
-                        "format": V20PresFormat.Format.INDY.aries,
-                    }
-                ],
-                "request_presentations~attach": [],
-            }
-        )
-        with pytest.raises(BaseModelError):
-            V20PresRequest.deserialize(dump_x)
-
-        dump_x = json.dumps(
-            {
-                "@type": DIDCommPrefix.qualify_current(PRES_20_REQUEST),
-                "comment": "Hello World",
-                "will_confirm": True,
-                "formats": [
-                    {
-                        "attach_id": "indy",
-                        "format": V20PresFormat.Format.INDY.aries,
-                    }
-                ],
-                "request_presentations~attach": [
-                    AttachDecorator.data_base64(
-                        mapping=INDY_PROOF_REQ[0],
-                        ident="a suffusion of yellow",
-                    ).serialize()
-                ],
-            }
-        )
-        with pytest.raises(BaseModelError):
-            V20PresRequest.deserialize(dump_x)
-
-    def test_serialize(self):
-        """Test serialization."""
-        for i, pres_req in enumerate(PRES_REQ):
-            pres_req_dict = pres_req.serialize()
-            pres_req_dict.pop("@id")
-
-            serialized = {
-                "@type": DIDCommPrefix.qualify_current(PRES_20_REQUEST),
-                "will_confirm": True,
-                "formats": [
-                    {
-                        "attach_id": "indy",
-                        "format": V20PresFormat.Format.INDY.aries,
-                    }
-                ],
-                "request_presentations~attach": [
-                    AttachDecorator.data_base64(
-                        mapping=INDY_PROOF_REQ[i],
-                        ident="indy",
-                    ).serialize()
-                ],
-                "comment": "Test",
-            }
-            assert pres_req_dict == serialized
-
-
-class TestV20PresRequestSchema(TestCase):
-    """Test presentation request schema"""
-
-    def test_make_model(self):
-        """Test making model."""
-        for pres_req in PRES_REQ:
-            pres_req_dict = pres_req.serialize()
-            """
-            Looks like: {
-                "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/present-proof/2.0/..."
-                "@id": "...",
-                "will_confirm": true,
-                "request_presentations~attach": [
-                    {
-                        "@id": "indy",
-                        "mime-type": "application/json",
-                        "data": {
-                            "base64": "eyJu..."
-                        }
-                    }
-                ],
-                "formats": [
-                    {
-                        "attach_id": "indy",
-                        "format": "hlindy@v2.0"
-                    }
-                ],
-                "comment": "Test"
-            }
-            """
-
-            model_instance = pres_req.deserialize(pres_req_dict)
-            assert isinstance(model_instance, V20PresRequest)
+            )  # more attachments than formats
+            with self.assertRaises(BaseModelError):
+                V20PresRequest.deserialize(pres_req_dict)
