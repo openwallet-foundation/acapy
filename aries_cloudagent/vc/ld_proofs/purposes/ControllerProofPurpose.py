@@ -10,14 +10,13 @@ from .ProofPurpose import ProofPurpose
 
 class ControllerProofPurpose(ProofPurpose):
     def __init__(
-        self, term: str, *, date: datetime = None, max_timestamp_delta: timedelta = None
+        self, term: str, date: datetime = None, max_timestamp_delta: timedelta = None
     ):
         super().__init__(term=term, date=date, max_timestamp_delta=max_timestamp_delta)
 
     def validate(
         self,
         proof: dict,
-        *,
         document: dict,
         suite: LinkedDataProof,
         verification_method: dict,
@@ -51,12 +50,14 @@ class ControllerProofPurpose(ProofPurpose):
 
             result["controller"] = framed
 
-            verification_methods = JsonLdProcessor.get_values(framed, self.term)
+            verification_methods = JsonLdProcessor.get_values(
+                result.get("controller"), self.term
+            )
             result["valid"] = any(
                 method == verification_id for method in verification_methods
             )
 
-            if not result["valid"]:
+            if not result.get("valid"):
                 raise Exception(
                     f"Verification method {verification_id} not authorized by controller for proof purpose {self.term}"
                 )

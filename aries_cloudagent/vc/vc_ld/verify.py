@@ -87,7 +87,7 @@ async def _verify_presentation(
         )
 
     if not purpose:
-        purpose = AuthenticationProofPurpose(controller, challenge, domain=domain)
+        purpose = AuthenticationProofPurpose(challenge=challenge, domain=domain)
 
     vp, presentation_result = None, None
 

@@ -10,7 +10,6 @@ class AuthenticationProofPurpose(ControllerProofPurpose):
     def __init__(
         self,
         challenge: str,
-        *,
         domain: str = None,
         date: datetime = None,
         max_timestamp_delta: timedelta = None,
@@ -25,7 +24,6 @@ class AuthenticationProofPurpose(ControllerProofPurpose):
     def validate(
         self,
         proof: dict,
-        *,
         document: dict,
         suite: LinkedDataProof,
         verification_method: dict,
@@ -34,7 +32,7 @@ class AuthenticationProofPurpose(ControllerProofPurpose):
         try:
             if proof.get("challenge") != self.challenge:
                 raise Exception(
-                    f'The challenge is not expected; challenge={proof.get("challenge")}, expected=[{self.challenge}]'
+                    f'The challenge is not expected; challenge={proof.get("challenge")}, expected={self.challenge}'
                 )
 
             if self.domain and (proof.get("domain") != self.domain):
@@ -43,7 +41,7 @@ class AuthenticationProofPurpose(ControllerProofPurpose):
                 )
 
             return super().validate(
-                proof,
+                proof=proof,
                 document=document,
                 suite=suite,
                 verification_method=verification_method,

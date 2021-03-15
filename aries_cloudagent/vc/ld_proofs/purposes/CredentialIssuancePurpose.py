@@ -14,7 +14,6 @@ class CredentialIssuancePurpose(AssertionProofPurpose):
     def validate(
         self,
         proof: dict,
-        *,
         document: dict,
         suite: LinkedDataProof,
         verification_method: str,

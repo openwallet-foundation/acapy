@@ -6,7 +6,7 @@ from ..suites import LinkedDataProof
 
 class ProofPurpose:
     def __init__(
-        self, term: str, *, date: datetime = None, max_timestamp_delta: timedelta = None
+        self, term: str, date: datetime = None, max_timestamp_delta: timedelta = None
     ):
         self.term = term
         self.date = date or datetime.now()
@@ -15,11 +15,10 @@ class ProofPurpose:
     def validate(
         self,
         proof: dict,
-        *,
         document: dict,
         suite: LinkedDataProof,
         verification_method: dict,
-        document_loader: DocumentLoader
+        document_loader: DocumentLoader,
     ) -> dict:
         try:
             if self.max_timestamp_delta is not None:
