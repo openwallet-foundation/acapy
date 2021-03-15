@@ -136,7 +136,9 @@ class V20PresManager:
         """
         indy_proof_request = V20PresProposal.deserialize(
             pres_ex_record.pres_proposal
-        ).attachment(V20PresFormat.Format.INDY)  # will change for DIF
+        ).attachment(
+            V20PresFormat.Format.INDY
+        )  # will change for DIF
 
         indy_proof_request["name"] = name or "proof-request"
         indy_proof_request["version"] = version or "1.0"
@@ -278,9 +280,7 @@ class V20PresManager:
         requested_referents = {}
         proof_request = V20PresRequest.deserialize(
             pres_ex_record.pres_request
-        ).attachment(
-            format_
-        )
+        ).attachment(format_)
         non_revoc_intervals = indy_proof_req2non_revoc_intervals(proof_request)
         attr_creds = requested_credentials.get("requested_attributes", {})
         req_attrs = proof_request.get("requested_attributes", {})
@@ -424,9 +424,7 @@ class V20PresManager:
             formats=[
                 V20PresFormat(
                     attach_id="indy",
-                    format_=ATTACHMENT_FORMAT[PRES_20][
-                        V20PresFormat.Format.INDY.api
-                    ],
+                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.INDY.api],
                 )
             ],
             presentations_attach=[
@@ -445,9 +443,7 @@ class V20PresManager:
             formats=[
                 V20PresFormat(
                     attach_id="indy",
-                    format_=ATTACHMENT_FORMAT[PRES_20][
-                        V20PresFormat.Format.INDY.api
-                    ],
+                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.INDY.api],
                 ),
             ],
             presentations_attach=[
@@ -491,9 +487,9 @@ class V20PresManager:
 
         # Check for bait-and-switch in presented attribute values vs. request
         # TODO: move to verifier.pre_verify(), include attr groups & predicate bounds
-        proof_req = V20PresRequest.deserialize(
-            pres_ex_record.pres_request
-        ).attachment(V20PresFormat.Format.INDY)  # will change for DIF
+        proof_req = V20PresRequest.deserialize(pres_ex_record.pres_request).attachment(
+            V20PresFormat.Format.INDY
+        )  # will change for DIF
 
         for (reft, attr_spec) in proof["requested_proof"]["revealed_attrs"].items():
             proof_req_attr_spec = proof_req["requested_attributes"].get(reft)
@@ -545,9 +541,9 @@ class V20PresManager:
         """
         pres_request_msg = V20PresRequest.deserialize(pres_ex_record.pres_request)
         indy_proof_request = pres_request_msg.attachment(V20PresFormat.Format.INDY)
-        indy_proof = V20Pres.deserialize(
-            pres_ex_record.pres
-        ).attachment(V20PresFormat.Format.INDY)  # will change for DIF
+        indy_proof = V20Pres.deserialize(pres_ex_record.pres).attachment(
+            V20PresFormat.Format.INDY
+        )  # will change for DIF
 
         schema_ids = []
         cred_def_ids = []
