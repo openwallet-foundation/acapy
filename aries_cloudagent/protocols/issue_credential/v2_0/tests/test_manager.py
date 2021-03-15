@@ -1125,6 +1125,10 @@ class TestV20CredManager(AsyncTestCase):
     async def test_issue_credential_non_revocable(self):
         CRED_DEF_NR = deepcopy(CRED_DEF)
         CRED_DEF_NR["value"]["revocation"] = None
+        INDY_FILTER = {
+            "schema_id": SCHEMA_ID,
+            "cred_def_id": CRED_DEF_ID,
+        }
         connection_id = "test_conn_id"
         comment = "comment"
         attr_values = {
@@ -1151,10 +1155,7 @@ class TestV20CredManager(AsyncTestCase):
             ],
             filters_attach=[
                 AttachDecorator.data_base64(
-                    {
-                        "schema_id": SCHEMA_ID,
-                        "cred_def_id": CRED_DEF_ID,
-                    },
+                    INDY_FILTER,
                     ident="0",
                 )
             ],
@@ -1194,6 +1195,12 @@ class TestV20CredManager(AsyncTestCase):
             state=V20CredExRecord.STATE_REQUEST_RECEIVED,
             thread_id=thread_id,
         )
+
+        # cover by_format property
+        by_format = stored_cx_rec.by_format
+        assert by_format.get("cred_proposal").get("indy") == INDY_FILTER
+        assert by_format.get("cred_offer").get("indy") == INDY_OFFER
+        assert by_format.get("cred_request").get("indy") == INDY_CRED_REQ
 
         issuer = async_mock.MagicMock()
         issuer.create_credential = async_mock.CoroutineMock(

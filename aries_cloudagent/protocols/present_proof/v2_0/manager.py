@@ -134,9 +134,10 @@ class V20PresManager:
             A tuple (updated presentation exchange record, presentation request message)
 
         """
-        indy_proof_request = pres_ex_record.by_format["pres_proposal"][
-            V20PresFormat.Format.INDY.api
-        ]
+        indy_proof_request = V20PresProposal.deserialize(
+            pres_ex_record.pres_proposal
+        ).attachment(V20PresFormat.Format.INDY)  # will change for DIF
+
         indy_proof_request["name"] = name or "proof-request"
         indy_proof_request["version"] = version or "1.0"
         indy_proof_request["nonce"] = nonce or await generate_pr_nonce()
@@ -279,7 +280,7 @@ class V20PresManager:
             pres_ex_record.pres_request
         ).attachment(
             format_
-        )  # take format_ = None seamlessly, contrast by_format
+        )
         non_revoc_intervals = indy_proof_req2non_revoc_intervals(proof_request)
         attr_creds = requested_credentials.get("requested_attributes", {})
         req_attrs = proof_request.get("requested_attributes", {})
@@ -490,9 +491,9 @@ class V20PresManager:
 
         # Check for bait-and-switch in presented attribute values vs. request
         # TODO: move to verifier.pre_verify(), include attr groups & predicate bounds
-        proof_req = pres_ex_record.by_format["pres_request"][
-            V20PresFormat.Format.INDY.api
-        ]
+        proof_req = V20PresRequest.deserialize(
+            pres_ex_record.pres_request
+        ).attachment(V20PresFormat.Format.INDY)  # will change for DIF
 
         for (reft, attr_spec) in proof["requested_proof"]["revealed_attrs"].items():
             proof_req_attr_spec = proof_req["requested_attributes"].get(reft)
@@ -544,7 +545,9 @@ class V20PresManager:
         """
         pres_request_msg = V20PresRequest.deserialize(pres_ex_record.pres_request)
         indy_proof_request = pres_request_msg.attachment(V20PresFormat.Format.INDY)
-        indy_proof = pres_ex_record.by_format["pres"][V20PresFormat.Format.INDY.api]
+        indy_proof = V20Pres.deserialize(
+            pres_ex_record.pres
+        ).attachment(V20PresFormat.Format.INDY)  # will change for DIF
 
         schema_ids = []
         cred_def_ids = []
