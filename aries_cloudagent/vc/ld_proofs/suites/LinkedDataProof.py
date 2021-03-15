@@ -11,7 +11,7 @@ class LinkedDataProof(metaclass=ABCMeta):
 
     @abstractmethod
     async def create_proof(
-        self, document: dict, *, purpose: ProofPurpose, document_loader: DocumentLoader
+        self, document: dict, purpose: ProofPurpose, document_loader: DocumentLoader
     ):
         pass
 
@@ -19,10 +19,9 @@ class LinkedDataProof(metaclass=ABCMeta):
     async def verify_proof(
         self,
         proof: dict,
-        *,
         document: dict,
         purpose: ProofPurpose,
-        document_loader: DocumentLoader
+        document_loader: DocumentLoader,
     ):
         pass
 

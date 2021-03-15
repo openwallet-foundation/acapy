@@ -23,7 +23,12 @@ class JwsLinkedDataSignature(LinkedDataSignature):
         date: Union[datetime, str] = None,
     ):
 
-        super().__init__(signature_type, verification_method, proof=proof, date=date)
+        super().__init__(
+            signature_type=signature_type,
+            verification_method=verification_method,
+            proof=proof,
+            date=date,
+        )
 
         self.algorithm = algorithm
         self.key_pair = key_pair
@@ -44,7 +49,10 @@ class JwsLinkedDataSignature(LinkedDataSignature):
         return proof
 
     async def verify_signature(
-        self, verify_data: bytes, verification_method: dict, proof: dict
+        self,
+        verify_data: bytes,
+        proof: dict,
+        verification_method: dict,
     ):
 
         if not (

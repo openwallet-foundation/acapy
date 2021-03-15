@@ -15,11 +15,10 @@ class LinkedDataSignature(LinkedDataProof, metaclass=ABCMeta):
         self,
         signature_type: str,
         verification_method: str,
-        *,
         proof: dict = None,
         date: Union[datetime, str, None] = None,
     ):
-        super().__init__(signature_type)
+        super().__init__(signature_type=signature_type)
         self.verification_method = verification_method
         self.proof = proof
         self.date = date
@@ -36,14 +35,14 @@ class LinkedDataSignature(LinkedDataProof, metaclass=ABCMeta):
 
     @abstractmethod
     def verify_signature(
-        self, verify_data: bytes, verification_method: dict, proof: dict
+        self, verify_data: bytes, proof: dict, verification_method: dict
     ):
         pass
 
     # PUBLIC METHODS
 
     async def create_proof(
-        self, document: dict, *, purpose: ProofPurpose, document_loader: DocumentLoader
+        self, document: dict, purpose: ProofPurpose, document_loader: DocumentLoader
     ) -> dict:
         proof = None
         if self.proof:
@@ -67,13 +66,15 @@ class LinkedDataSignature(LinkedDataProof, metaclass=ABCMeta):
         if self.verification_method:
             proof["verificationMethod"] = self.verification_method
 
-        proof = await self.update_proof(proof)
+        proof = await self.update_proof(proof=proof)
 
         proof = purpose.update(proof)
 
-        verify_data = await self.create_verify_data(document, proof, document_loader)
+        verify_data = await self._create_verify_data(
+            proof=proof, document=document, document_loader=document_loader
+        )
 
-        proof = await self.sign(verify_data, proof)
+        proof = await self.sign(verify_data=verify_data, proof=proof)
         return proof
 
     async def update_proof(self, proof: dict):
@@ -85,17 +86,16 @@ class LinkedDataSignature(LinkedDataProof, metaclass=ABCMeta):
     async def verify_proof(
         self,
         proof: dict,
-        *,
         document: dict,
         purpose: ProofPurpose,
         document_loader: DocumentLoader,
     ):
         try:
             verify_data = self._create_verify_data(
-                document=document, proof=proof, document_loader=document_loader
+                proof=proof, document=document, document_loader=document_loader
             )
             verification_method = self._get_verification_method(
-                proof, document_loader=document_loader
+                proof=proof, document_loader=document_loader
             )
 
             verified = await self.verify_signature(
@@ -110,7 +110,7 @@ class LinkedDataSignature(LinkedDataProof, metaclass=ABCMeta):
                 raise Exception("Invalid signature")
 
             purpose_result = await purpose.validate(
-                proof,
+                proof=proof,
                 document=document,
                 suite=self,
                 verification_method=verification_method,
@@ -124,7 +124,7 @@ class LinkedDataSignature(LinkedDataProof, metaclass=ABCMeta):
         except Exception as err:
             return {"verified": False, "error": err}
 
-    def _get_verification_method(self, proof: dict, *, document_loader: DocumentLoader):
+    def _get_verification_method(self, proof: dict, document_loader: DocumentLoader):
         verification_method = proof.get("verificationMethod")
 
         if not verification_method:
@@ -149,18 +149,18 @@ class LinkedDataSignature(LinkedDataProof, metaclass=ABCMeta):
         return framed
 
     def _create_verify_data(
-        self, *, document: dict, proof: dict, document_loader: DocumentLoader
+        self, proof: dict, document: dict, document_loader: DocumentLoader
     ) -> str:
         c14n_proof_options = self._canonize_proof(
-            proof, document_loader=document_loader
+            proof=proof, document_loader=document_loader
         )
-        c14n_doc = self._canonize(document, document_loader=document_loader)
+        c14n_doc = self._canonize(input=document, document_loader=document_loader)
         hash = sha256(c14n_proof_options.encode())
         hash.update(c14n_doc.encode())
 
         return hash.digest()
 
-    def _canonize(self, input, *, document_loader: DocumentLoader = None) -> str:
+    def _canonize(self, input, document_loader: DocumentLoader = None) -> str:
         # application/n-quads format always returns str
         return jsonld.normalize(
             input,
@@ -171,11 +171,11 @@ class LinkedDataSignature(LinkedDataProof, metaclass=ABCMeta):
             },
         )
 
-    def _canonize_proof(self, proof: dict, *, document_loader: DocumentLoader = None):
+    def _canonize_proof(self, proof: dict, document_loader: DocumentLoader = None):
         proof = proof.copy()
 
         proof.pop("jws", None)
         proof.pop("signatureValue", None)
         proof.pop("proofValue", None)
 
-        return self._canonize(proof, document_loader=document_loader)
+        return self._canonize(input=proof, document_loader=document_loader)
