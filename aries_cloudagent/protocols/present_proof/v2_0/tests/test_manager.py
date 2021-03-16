@@ -751,7 +751,25 @@ class TestV20PresManager(AsyncTestCase):
     async def test_receive_pres(self):
         connection_record = async_mock.MagicMock(connection_id=CONN_ID)
         indy_proof = {
-            "proof": {"proofs": []},
+            "proof": {
+                "proofs": [
+                    {
+                        "primary_proof": {
+                            "eq_proof": "...",
+                            "ge_proofs": [
+                                {
+                                    "...": "...",
+                                    "predicate": {
+                                        "attr_name": "highscore",
+                                        "p_type": "GE",
+                                        "value": 1000000,
+                                    },
+                                }
+                            ],
+                        }
+                    }
+                ]
+            },
             "requested_proof": {
                 "revealed_attrs": {
                     "0_player_uuid": {
@@ -844,7 +862,7 @@ class TestV20PresManager(AsyncTestCase):
             save_ex.assert_called_once()
             assert px_rec_out.state == (V20PresExRecord.STATE_PRESENTATION_RECEIVED)
 
-    async def test_receive_pres_bait_and_switch(self):
+    async def test_receive_pres_bait_and_switch_attr_name(self):
         connection_record = async_mock.MagicMock(connection_id=CONN_ID)
         indy_proof_req = deepcopy(INDY_PROOF_REQ_NAME)
         indy_proof_req["requested_attributes"]["1_screencapture_uuid"]["restrictions"][
@@ -853,7 +871,25 @@ class TestV20PresManager(AsyncTestCase):
             "attr::screenCapture::value"
         ] = "c2NyZWVuIGNhcHR1cmUgc2hvd2luZyBzY29yZSBpbiB0aGUgbWlsbGlvbnM="
         indy_proof_x = {
-            "proof": {"proofs": []},
+            "proof": {
+                "proofs": [
+                    {
+                        "primary_proof": {
+                            "eq_proof": "...",
+                            "ge_proofs": [
+                                {
+                                    "...": "...",
+                                    "predicate": {
+                                        "attr_name": "highscore",
+                                        "p_type": "GE",
+                                        "value": 1000000,
+                                    },
+                                }
+                            ],
+                        }
+                    }
+                ]
+            },
             "requested_proof": {
                 "revealed_attrs": {
                     "0_player_uuid": {
@@ -929,7 +965,7 @@ class TestV20PresManager(AsyncTestCase):
             retrieve_ex.return_value = px_rec_dummy
             with self.assertRaises(V20PresManagerError) as context:
                 await self.manager.receive_pres(pres_x, connection_record)
-            assert "not in requested value(s)" in str(context.exception)
+            assert "not in proposal value(s)" in str(context.exception)
 
         indy_proof_req["requested_attributes"]["shenanigans"] = indy_proof_req[
             "requested_attributes"
@@ -982,6 +1018,434 @@ class TestV20PresManager(AsyncTestCase):
             with self.assertRaises(V20PresManagerError) as context:
                 await self.manager.receive_pres(pres_x, connection_record)
             assert "Presentation referent" in str(context.exception)
+
+    async def test_receive_pres_bait_and_switch_attr_names(self):
+        connection_record = async_mock.MagicMock(connection_id=CONN_ID)
+        indy_proof_req = deepcopy(INDY_PROOF_REQ_NAMES)
+        indy_proof_req["requested_attributes"]["0_player_uuid"]["restrictions"][0][
+            "attr::screenCapture::value"
+        ] = "c2NyZWVuIGNhcHR1cmUgc2hvd2luZyBzY29yZSBpbiB0aGUgbWlsbGlvbnM="
+        indy_proof_x = {
+            "proof": {
+                "proofs": [
+                    {
+                        "primary_proof": {
+                            "eq_proof": "...",
+                            "ge_proofs": [
+                                {
+                                    "...": "...",
+                                    "predicate": {
+                                        "attr_name": "highscore",
+                                        "p_type": "GE",
+                                        "value": 1000000,
+                                    },
+                                }
+                            ],
+                        }
+                    }
+                ]
+            },
+            "requested_proof": {
+                "revealed_attrs": {},
+                "revealed_attr_groups": {
+                    "0_player_uuid": {
+                        "sub_proof_index": 0,
+                        "values": {
+                            "player": {
+                                "raw": "Richie Knucklez",
+                                "encoded": "12345678901234567890",
+                            },
+                            "0_player_uuid": {  # mismatch vs request
+                                "raw": "bm90IHRoZSBzYW1lIHNjcmVlbiBjYXB0dXJl",
+                                "encoded": "98765432109876543210",
+                            },
+                        },
+                    },
+                },
+                "self_attested_attrs": {},
+                "unrevealed_attrs": {},
+                "predicates": {"0_highscore_GE_uuid": {"sub_proof_index": 0}},
+            },
+            "identifiers": [
+                {
+                    "schema_id": S_ID,
+                    "cred_def_id": CD_ID,
+                    "rev_reg_id": None,
+                    "timestamp": None,
+                }
+            ],
+        }
+        pres_proposal = V20PresProposal(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy",
+                    format_=ATTACHMENT_FORMAT[PRES_20_PROPOSAL][
+                        V20PresFormat.Format.INDY.api
+                    ],
+                )
+            ],
+            proposal_attach=[AttachDecorator.data_base64(indy_proof_req, ident="indy")],
+        )
+        pres_request = V20PresRequest(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy",
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.INDY.api
+                    ],
+                )
+            ],
+            request_presentations_attach=[
+                AttachDecorator.data_base64(indy_proof_req, ident="indy")
+            ],
+        )
+        pres_x = V20Pres(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy",
+                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.INDY.api],
+                )
+            ],
+            presentations_attach=[
+                AttachDecorator.data_base64(indy_proof_x, ident="indy")
+            ],
+        )
+
+        px_rec_dummy = V20PresExRecord(
+            pres_proposal=pres_proposal.serialize(),
+            pres_request=pres_request.serialize(),
+            pres=pres_x.serialize(),
+        )
+        with async_mock.patch.object(
+            V20PresExRecord, "save", autospec=True
+        ) as save_ex, async_mock.patch.object(
+            V20PresExRecord, "retrieve_by_tag_filter", autospec=True
+        ) as retrieve_ex:
+            retrieve_ex.return_value = px_rec_dummy
+            with self.assertRaises(V20PresManagerError) as context:
+                await self.manager.receive_pres(pres_x, connection_record)
+            assert "not in proposal value(s)" in str(context.exception)
+
+        indy_proof_req["requested_attributes"]["shenanigans"] = indy_proof_req[
+            "requested_attributes"
+        ].pop("0_player_uuid")
+        pres_proposal = V20PresProposal(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy",
+                    format_=ATTACHMENT_FORMAT[PRES_20_PROPOSAL][
+                        V20PresFormat.Format.INDY.api
+                    ],
+                )
+            ],
+            proposal_attach=[AttachDecorator.data_base64(indy_proof_req, ident="indy")],
+        )
+        pres_request = V20PresRequest(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy",
+                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.INDY.api],
+                )
+            ],
+            request_presentations_attach=[
+                AttachDecorator.data_base64(indy_proof_req, ident="indy")
+            ],
+        )
+        pres_x = V20Pres(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy",
+                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.INDY.api],
+                )
+            ],
+            presentations_attach=[
+                AttachDecorator.data_base64(indy_proof_x, ident="indy")
+            ],
+        )
+
+        px_rec_dummy = V20PresExRecord(
+            pres_proposal=pres_proposal.serialize(),
+            pres_request=pres_request.serialize(),
+            pres=pres_x.serialize(),
+        )
+        with async_mock.patch.object(
+            V20PresExRecord, "save", autospec=True
+        ) as save_ex, async_mock.patch.object(
+            V20PresExRecord, "retrieve_by_tag_filter", autospec=True
+        ) as retrieve_ex:
+            retrieve_ex.return_value = px_rec_dummy
+            with self.assertRaises(V20PresManagerError) as context:
+                await self.manager.receive_pres(pres_x, connection_record)
+            assert "Presentation referent" in str(context.exception)
+
+    async def test_receive_pres_bait_and_switch_pred(self):
+        connection_record = async_mock.MagicMock(connection_id=CONN_ID)
+        indy_proof_req = deepcopy(INDY_PROOF_REQ_NAME)
+        indy_proof_req["requested_predicates"] = {}
+        indy_proof_x = {
+            "proof": {
+                "proofs": [
+                    {
+                        "primary_proof": {
+                            "eq_proof": "...",
+                            "ge_proofs": [
+                                {
+                                    "...": "...",
+                                    "predicate": {
+                                        "attr_name": "highscore",
+                                        "p_type": "GE",
+                                        "value": 1000000,
+                                    },
+                                }
+                            ],
+                        }
+                    }
+                ]
+            },
+            "requested_proof": {
+                "revealed_attrs": {
+                    "0_player_uuid": {
+                        "sub_proof_index": 0,
+                        "raw": "Richie Knucklez",
+                        "encoded": "12345678901234567890",
+                    },
+                    "1_screencapture_uuid": {  # mismatch vs request
+                        "sub_proof_index": 0,
+                        "raw": "bm90IHRoZSBzYW1lIHNjcmVlbiBjYXB0dXJl",
+                        "encoded": "98765432109876543210",
+                    },
+                },
+                "self_attested_attrs": {},
+                "unrevealed_attrs": {},
+                "predicates": {"0_highscore_GE_uuid": {"sub_proof_index": 0}},
+            },
+            "identifiers": [
+                {
+                    "schema_id": S_ID,
+                    "cred_def_id": CD_ID,
+                    "rev_reg_id": None,
+                    "timestamp": None,
+                }
+            ],
+        }
+        pres_proposal = V20PresProposal(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy",
+                    format_=ATTACHMENT_FORMAT[PRES_20_PROPOSAL][
+                        V20PresFormat.Format.INDY.api
+                    ],
+                )
+            ],
+            proposal_attach=[AttachDecorator.data_base64(indy_proof_req, ident="indy")],
+        )
+        pres_request = V20PresRequest(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy",
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.INDY.api
+                    ],
+                )
+            ],
+            request_presentations_attach=[
+                AttachDecorator.data_base64(indy_proof_req, ident="indy")
+            ],
+        )
+        pres_x = V20Pres(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy",
+                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.INDY.api],
+                )
+            ],
+            presentations_attach=[
+                AttachDecorator.data_base64(indy_proof_x, ident="indy")
+            ],
+        )
+
+        px_rec_dummy = V20PresExRecord(
+            pres_proposal=pres_proposal.serialize(),
+            pres_request=pres_request.serialize(),
+            pres=pres_x.serialize(),
+        )
+        with async_mock.patch.object(
+            V20PresExRecord, "save", autospec=True
+        ) as save_ex, async_mock.patch.object(
+            V20PresExRecord, "retrieve_by_tag_filter", autospec=True
+        ) as retrieve_ex:
+            retrieve_ex.return_value = px_rec_dummy
+            with self.assertRaises(V20PresManagerError) as context:
+                await self.manager.receive_pres(pres_x, connection_record)
+            assert "not in proposal request" in str(context.exception)
+
+        indy_proof_req["requested_predicates"]["0_highscore_GE_uuid"] = {
+            "name": "shenanigans",
+            "p_type": ">=",
+            "p_value": 1000000,
+            "restrictions": [{"cred_def_id": CD_ID}],
+            "non_revoked": {"from": NOW, "to": NOW},
+        }
+        pres_proposal = V20PresProposal(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy",
+                    format_=ATTACHMENT_FORMAT[PRES_20_PROPOSAL][
+                        V20PresFormat.Format.INDY.api
+                    ],
+                )
+            ],
+            proposal_attach=[AttachDecorator.data_base64(indy_proof_req, ident="indy")],
+        )
+        pres_request = V20PresRequest(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy",
+                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.INDY.api],
+                )
+            ],
+            request_presentations_attach=[
+                AttachDecorator.data_base64(indy_proof_req, ident="indy")
+            ],
+        )
+        pres_x = V20Pres(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy",
+                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.INDY.api],
+                )
+            ],
+            presentations_attach=[
+                AttachDecorator.data_base64(indy_proof_x, ident="indy")
+            ],
+        )
+
+        px_rec_dummy = V20PresExRecord(
+            pres_proposal=pres_proposal.serialize(),
+            pres_request=pres_request.serialize(),
+            pres=pres_x.serialize(),
+        )
+        with async_mock.patch.object(
+            V20PresExRecord, "save", autospec=True
+        ) as save_ex, async_mock.patch.object(
+            V20PresExRecord, "retrieve_by_tag_filter", autospec=True
+        ) as retrieve_ex:
+            retrieve_ex.return_value = px_rec_dummy
+            with self.assertRaises(V20PresManagerError) as context:
+                await self.manager.receive_pres(pres_x, connection_record)
+            assert "shenanigans not in presentation" in str(context.exception)
+
+        indy_proof_req["requested_predicates"]["0_highscore_GE_uuid"] = {
+            "name": "highScore",
+            "p_type": ">=",
+            "p_value": 8000000,  # propose >= 8 million, prove >= 1 million
+            "restrictions": [{"cred_def_id": CD_ID}],
+            "non_revoked": {"from": NOW, "to": NOW},
+        }
+        pres_proposal = V20PresProposal(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy",
+                    format_=ATTACHMENT_FORMAT[PRES_20_PROPOSAL][
+                        V20PresFormat.Format.INDY.api
+                    ],
+                )
+            ],
+            proposal_attach=[AttachDecorator.data_base64(indy_proof_req, ident="indy")],
+        )
+        pres_request = V20PresRequest(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy",
+                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.INDY.api],
+                )
+            ],
+            request_presentations_attach=[
+                AttachDecorator.data_base64(indy_proof_req, ident="indy")
+            ],
+        )
+        pres_x = V20Pres(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy",
+                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.INDY.api],
+                )
+            ],
+            presentations_attach=[
+                AttachDecorator.data_base64(indy_proof_x, ident="indy")
+            ],
+        )
+
+        px_rec_dummy = V20PresExRecord(
+            pres_proposal=pres_proposal.serialize(),
+            pres_request=pres_request.serialize(),
+            pres=pres_x.serialize(),
+        )
+        with async_mock.patch.object(
+            V20PresExRecord, "save", autospec=True
+        ) as save_ex, async_mock.patch.object(
+            V20PresExRecord, "retrieve_by_tag_filter", autospec=True
+        ) as retrieve_ex:
+            retrieve_ex.return_value = px_rec_dummy
+            with self.assertRaises(V20PresManagerError) as context:
+                await self.manager.receive_pres(pres_x, connection_record)
+            assert "highScore mismatches proposal request" in str(context.exception)
+
+        indy_proof_req["requested_predicates"]["0_highscore_GE_uuid"] = {
+            "name": "highScore",
+            "p_type": ">=",
+            "p_value": 1000000,
+            "restrictions": [{"issuer_did": "FFFFFFFFFFFFFFFFFFFFFF"}],  # fake issuer
+            "non_revoked": {"from": NOW, "to": NOW},
+        }
+        pres_proposal = V20PresProposal(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy",
+                    format_=ATTACHMENT_FORMAT[PRES_20_PROPOSAL][
+                        V20PresFormat.Format.INDY.api
+                    ],
+                )
+            ],
+            proposal_attach=[AttachDecorator.data_base64(indy_proof_req, ident="indy")],
+        )
+        pres_request = V20PresRequest(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy",
+                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.INDY.api],
+                )
+            ],
+            request_presentations_attach=[
+                AttachDecorator.data_base64(indy_proof_req, ident="indy")
+            ],
+        )
+        pres_x = V20Pres(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy",
+                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.INDY.api],
+                )
+            ],
+            presentations_attach=[
+                AttachDecorator.data_base64(indy_proof_x, ident="indy")
+            ],
+        )
+
+        px_rec_dummy = V20PresExRecord(
+            pres_proposal=pres_proposal.serialize(),
+            pres_request=pres_request.serialize(),
+            pres=pres_x.serialize(),
+        )
+        with async_mock.patch.object(
+            V20PresExRecord, "save", autospec=True
+        ) as save_ex, async_mock.patch.object(
+            V20PresExRecord, "retrieve_by_tag_filter", autospec=True
+        ) as retrieve_ex:
+            retrieve_ex.return_value = px_rec_dummy
+            with self.assertRaises(V20PresManagerError) as context:
+                await self.manager.receive_pres(pres_x, connection_record)
+            assert "differs from proposal request" in str(context.exception)
 
     async def test_verify_pres(self):
         indy_proof = {
