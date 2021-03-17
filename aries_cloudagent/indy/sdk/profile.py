@@ -12,6 +12,7 @@ from ...core.error import ProfileError
 from ...ledger.base import BaseLedger
 from ...ledger.indy import IndySdkLedger, IndySdkLedgerPool
 from ...storage.base import BaseStorage, BaseStorageSearch
+from ...storage.vc_holder.base import VCHolder
 from ...wallet.base import BaseWallet
 from ...wallet.indy import IndySdkWallet
 
@@ -73,6 +74,13 @@ class IndySdkProfile(Profile):
         injector.bind_provider(
             IndyIssuer,
             ClassProvider("aries_cloudagent.indy.sdk.issuer.IndySdkIssuer", ref(self)),
+        )
+
+        injector.bind_provider(
+            VCHolder,
+            ClassProvider(
+                "aries_cloudagent.storage.vc_holder.indy.IndySdkVCHolder", self.opened
+            ),
         )
 
         if self.ledger_pool:
