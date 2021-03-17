@@ -39,10 +39,14 @@ from ...problem_report.v1_0.message import ProblemReport
 from ..indy.cred_precis import IndyCredPrecisSchema
 from ..indy.proof import IndyPresSpecSchema
 from ..indy.proof_request import IndyProofRequestSchema
-from ..indy.pres_preview import IndyPresPreviewSchema
 
 from .manager import V20PresManager
-from .message_types import SPEC_URI
+from .message_types import (
+    ATTACHMENT_FORMAT,
+    PRES_20_PROPOSAL,
+    PRES_20_REQUEST,
+    SPEC_URI,
+)
 from .messages.pres_format import V20PresFormat
 from .messages.pres_proposal import V20PresProposal
 from .messages.pres_request import V20PresRequest
@@ -99,11 +103,11 @@ class V20PresExRecordListSchema(OpenAPISchema):
     )
 
 
-class DIFPresPreviewSchema(OpenAPISchema):
-    """DIF presentation preview schema placeholder."""
+class DIFPresProposalSchema(OpenAPISchema):
+    """DIF presentation proposal schema placeholder."""
 
     some_dif = fields.Str(
-        description="Placeholder for W3C/DIF/JSON-LD presentation preview format",
+        description="Placeholder for W3C/DIF/JSON-LD presentation proposal format",
         required=False,
     )
 
@@ -126,18 +130,18 @@ class DIFPresSpecSchema(OpenAPISchema):
     )
 
 
-class V20PresPreviewByFormatSchema(OpenAPISchema):
-    """Schema for presentation preview per format."""
+class V20PresProposalByFormatSchema(OpenAPISchema):
+    """Schema for presentation proposal per format."""
 
     indy = fields.Nested(
-        IndyPresPreviewSchema,
+        IndyProofRequestSchema,
         required=False,
-        description="Presentation preview for indy",
+        description="Presentation proposal for indy",
     )
     dif = fields.Nested(
-        DIFPresPreviewSchema,
+        DIFPresProposalSchema,
         required=False,
-        description="Presentation preview for DIF",
+        description="Presentation proposal for DIF",
     )
 
     @validates_schema
@@ -154,7 +158,7 @@ class V20PresPreviewByFormatSchema(OpenAPISchema):
         """
         if not any(f.api in data for f in V20PresFormat.Format):
             raise ValidationError(
-                "V20PresPreviewByFormatSchema requires indy, dif, or both"
+                "V20PresProposalByFormatSchema requires indy, dif, or both"
             )
 
 
@@ -167,8 +171,8 @@ class V20PresProposalRequestSchema(AdminAPIMessageTracingSchema):
     comment = fields.Str(
         description="Human-readable comment", required=False, allow_none=True
     )
-    presentation_preview = fields.Nested(
-        V20PresPreviewByFormatSchema(),
+    presentation_proposal = fields.Nested(
+        V20PresProposalByFormatSchema(),
         required=True,
     )
     auto_present = fields.Boolean(
@@ -197,7 +201,7 @@ class V20PresRequestByFormatSchema(OpenAPISchema):
     dif = fields.Nested(
         DIFPresRequestSchema,
         required=False,
-        description="Presentation preview for DIF",
+        description="Presentation request for DIF",
     )
 
     @validates_schema
@@ -318,20 +322,20 @@ async def _add_nonce(indy_proof_request: Mapping) -> Mapping:
     return indy_proof_request
 
 
-def _formats_attach(by_format: Mapping, spec: str) -> Mapping:
+def _formats_attach(by_format: Mapping, msg_type: str, spec: str) -> Mapping:
     """Break out formats and proposals/requests/presentations for v2.0 messages."""
 
     return {
         "formats": [
             V20PresFormat(
-                attach_id=fmt_aka,
-                format_=V20PresFormat.Format.get(fmt_aka),
+                attach_id=fmt_api,
+                format_=ATTACHMENT_FORMAT[msg_type][fmt_api],
             )
-            for fmt_aka in by_format
+            for fmt_api in by_format
         ],
         f"{spec}_attach": [
-            AttachDecorator.data_base64(mapping=item_by_fmt, ident=fmt_aka)
-            for (fmt_aka, item_by_fmt) in by_format.items()
+            AttachDecorator.data_base64(mapping=item_by_fmt, ident=fmt_api)
+            for (fmt_api, item_by_fmt) in by_format.items()
         ],
     }
 
@@ -508,14 +512,14 @@ async def present_proof_send_proposal(request: web.BaseRequest):
     comment = body.get("comment")
     connection_id = body.get("connection_id")
 
-    pres_preview = body.get("presentation_preview")
+    pres_proposal = body.get("presentation_proposal")
     conn_record = None
     async with context.session() as session:
         try:
             conn_record = await ConnRecord.retrieve_by_id(session, connection_id)
             pres_proposal_message = V20PresProposal(
                 comment=comment,
-                **_formats_attach(pres_preview, "proposal"),
+                **_formats_attach(pres_proposal, PRES_20_PROPOSAL, "proposal"),
             )
         except (BaseModelError, StorageError) as err:
             return await internal_error(
@@ -598,7 +602,7 @@ async def present_proof_create_request(request: web.BaseRequest):
     pres_request_message = V20PresRequest(
         comment=comment,
         will_confirm=True,
-        **_formats_attach(pres_request_spec, "request_presentations"),
+        **_formats_attach(pres_request_spec, PRES_20_REQUEST, "request_presentations"),
     )
     trace_msg = body.get("trace")
     pres_request_message.assign_trace_decorator(
@@ -672,7 +676,7 @@ async def present_proof_send_free_request(request: web.BaseRequest):
     pres_request_message = V20PresRequest(
         comment=comment,
         will_confirm=True,
-        **_formats_attach(pres_request_spec, "request_presentations"),
+        **_formats_attach(pres_request_spec, PRES_20_REQUEST, "request_presentations"),
     )
     trace_msg = body.get("trace")
     pres_request_message.assign_trace_decorator(
@@ -813,8 +817,8 @@ async def present_proof_send_presentation(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     outbound_handler = request["outbound_message_router"]
     pres_ex_id = request.match_info["pres_ex_id"]
-    fmt = V20PresFormat.Format.get(request.match_info.get("format"))
     body = await request.json()
+    fmt = V20PresFormat.Format.get([f for f in body][0])  # "indy" xor "dif"
 
     pres_ex_record = None
     async with context.session() as session:

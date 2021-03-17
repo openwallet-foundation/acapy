@@ -1,7 +1,6 @@
 """Test OOB Manager."""
 import asyncio
 import json
-from uuid import UUID
 
 from asynctest import mock as async_mock, TestCase as AsyncTestCase
 from copy import deepcopy
@@ -49,6 +48,11 @@ from .....protocols.present_proof.v1_0.models.presentation_exchange import (
     V10PresentationExchange,
 )
 from .....protocols.present_proof.v2_0.manager import V20PresManager
+from .....protocols.present_proof.v2_0.message_types import (
+    ATTACHMENT_FORMAT,
+    PRES_20,
+    PRES_20_REQUEST,
+)
 from .....protocols.present_proof.v2_0.messages.pres import V20Pres
 from .....protocols.present_proof.v2_0.messages.pres_format import V20PresFormat
 from .....protocols.present_proof.v2_0.messages.pres_request import V20PresRequest
@@ -169,7 +173,7 @@ class TestConfig:
         "data": {
             "json": {
                 "@type": DIDCommPrefix.qualify_current(PRESENTATION_REQUEST),
-                "@id": "12345678-1234-5678-1234-567812345678",
+                "@id": "12345678-0123-4567-1234-567812345678",
                 "comment": "some comment",
                 "request_presentations~attach": [pres_req_dict],
             }
@@ -180,7 +184,12 @@ class TestConfig:
         comment="some comment",
         will_confirm=True,
         formats=[
-            V20PresFormat(attach_id="indy", format_=V20PresFormat.Format.INDY.aries)
+            V20PresFormat(
+                attach_id="indy",
+                format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                    V20PresFormat.Format.INDY.api
+                ],
+            )
         ],
         request_presentations_attach=[
             AttachDecorator.data_base64(mapping=INDY_PROOF_REQ, ident="indy")
@@ -1321,7 +1330,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             my_did="Test",
             their_did="Test",
             invitation_msg_id="test_456",
-            connection_id="12345678-1234-5678-1234-567812345678",
+            connection_id="12345678-0123-4567-1234-567812345678",
         )
         with async_mock.patch.object(
             self.ledger, "get_key_for_did", async_mock.CoroutineMock()
@@ -1471,7 +1480,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             my_did="Test",
             their_did="Test",
             invitation_msg_id="test_456",
-            connection_id="12345678-1234-5678-1234-567812345678",
+            connection_id="12345678-0123-4567-1234-567812345678",
         )
         with async_mock.patch.object(
             self.ledger, "get_key_for_did", async_mock.CoroutineMock()
@@ -1499,7 +1508,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             my_did=TestConfig.test_did,
             their_did=TestConfig.test_target_did,
             their_public_did=TestConfig.test_target_did,
-            invitation_msg_id="12345678-1234-5678-1234-567812345678",
+            invitation_msg_id="12345678-0123-4567-1234-567812345678",
             their_role=ConnRecord.Role.REQUESTER,
         )
         await test_exist_conn.save(self.session)
@@ -1574,7 +1583,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 session=self.session,
                 tag_filter={},
                 post_filter_positive={
-                    "invitation_msg_id": "12345678-1234-5678-1234-567812345678"
+                    "invitation_msg_id": "12345678-0123-4567-1234-567812345678"
                 },
                 alt=True,
             )
@@ -1600,7 +1609,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             my_did=TestConfig.test_did,
             their_did="did:sov:LjgpST2rjsoxYegQDRm7EL",
             their_public_did="did:sov:LjgpST2rjsoxYegQDRm7EL",
-            invitation_msg_id="12345678-1234-5678-1234-567812345678",
+            invitation_msg_id="12345678-0123-4567-1234-567812345678",
             their_role=ConnRecord.Role.REQUESTER,
         )
         await test_exist_conn.save(self.session)
@@ -1611,7 +1620,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             my_did=TestConfig.test_did,
             their_did="did:sov:LjgpST2rjsoxYegQDRm7EL",
             their_public_did="did:sov:LjgpST2rjsoxYegQDRm7EL",
-            invitation_msg_id="12345678-1234-5678-1234-1234545454487",
+            invitation_msg_id="12345678-0123-4567-1234-1234545454487",
             their_role=ConnRecord.Role.REQUESTER,
         )
 
@@ -1685,7 +1694,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 session=self.session,
                 tag_filter={},
                 post_filter_positive={
-                    "invitation_msg_id": "12345678-1234-5678-1234-567812345678"
+                    "invitation_msg_id": "12345678-0123-4567-1234-567812345678"
                 },
                 alt=True,
             )
@@ -1705,7 +1714,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             my_did=TestConfig.test_did,
             their_did=TestConfig.test_target_did,
             their_public_did=TestConfig.test_target_did,
-            invitation_msg_id="12345678-1234-5678-1234-567812345678",
+            invitation_msg_id="12345678-0123-4567-1234-567812345678",
             their_role=ConnRecord.Role.REQUESTER,
         )
         await self.test_conn_rec.save(self.session)
@@ -1758,7 +1767,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 session=self.session,
                 tag_filter={},
                 post_filter_positive={
-                    "invitation_msg_id": "12345678-1234-5678-1234-567812345678"
+                    "invitation_msg_id": "12345678-0123-4567-1234-567812345678"
                 },
                 alt=True,
             )
@@ -1772,7 +1781,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             my_did=TestConfig.test_did,
             their_did=TestConfig.test_target_did,
             their_public_did=TestConfig.test_target_did,
-            invitation_msg_id="12345678-1234-5678-1234-567812345678",
+            invitation_msg_id="12345678-0123-4567-1234-567812345678",
             their_role=ConnRecord.Role.REQUESTER,
         )
         await test_exist_conn.save(self.session)
@@ -1834,7 +1843,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             my_did=TestConfig.test_did,
             their_did=TestConfig.test_target_did,
             their_public_did=TestConfig.test_target_did,
-            invitation_msg_id="12345678-1234-5678-1234-567812345678",
+            invitation_msg_id="12345678-0123-4567-1234-567812345678",
             their_role=ConnRecord.Role.REQUESTER,
         )
         await test_exist_conn.save(self.session)
@@ -1883,7 +1892,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             my_did=TestConfig.test_did,
             their_did=TestConfig.test_target_did,
             their_public_did=TestConfig.test_target_did,
-            invitation_msg_id="12345678-1234-5678-1234-567812345678",
+            invitation_msg_id="12345678-0123-4567-1234-567812345678",
             their_role=ConnRecord.Role.REQUESTER,
         )
         await test_exist_conn.save(self.session)
@@ -1965,7 +1974,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             my_did=TestConfig.test_did,
             their_did=TestConfig.test_target_did,
             their_public_did=TestConfig.test_target_did,
-            invitation_msg_id="12345678-1234-5678-1234-567812345678",
+            invitation_msg_id="12345678-0123-4567-1234-567812345678",
             their_role=ConnRecord.Role.REQUESTER,
         )
         await test_exist_conn.save(self.session)
@@ -2085,7 +2094,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             my_did=TestConfig.test_did,
             their_did=TestConfig.test_target_did,
             their_public_did=TestConfig.test_target_did,
-            invitation_msg_id="12345678-1234-5678-1234-567812345678",
+            invitation_msg_id="12345678-0123-4567-1234-567812345678",
             their_role=ConnRecord.Role.REQUESTER,
         )
         await test_exist_conn.save(self.session)
@@ -2192,7 +2201,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             my_did=TestConfig.test_did,
             their_did=TestConfig.test_target_did,
             their_public_did=TestConfig.test_target_did,
-            invitation_msg_id="12345678-1234-5678-1234-567812345678",
+            invitation_msg_id="12345678-0123-4567-1234-567812345678",
             their_role=ConnRecord.Role.REQUESTER,
         )
         await test_exist_conn.save(self.session)
@@ -2274,7 +2283,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             my_did=TestConfig.test_did,
             their_did=TestConfig.test_target_did,
             their_public_did=TestConfig.test_target_did,
-            invitation_msg_id="12345678-1234-5678-1234-567812345678",
+            invitation_msg_id="12345678-0123-4567-1234-567812345678",
             their_role=ConnRecord.Role.REQUESTER,
         )
         await test_exist_conn.save(self.session)
@@ -2346,7 +2355,9 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                     formats=[
                         V20PresFormat(
                             attach_id="indy",
-                            format_=V20PresFormat.Format.INDY.aries,
+                            format_=ATTACHMENT_FORMAT[PRES_20][
+                                V20PresFormat.Format.INDY.api
+                            ],
                         )
                     ],
                     presentations_attach=[
@@ -2403,7 +2414,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             my_did=TestConfig.test_did,
             their_did=TestConfig.test_target_did,
             their_public_did=TestConfig.test_target_did,
-            invitation_msg_id="12345678-1234-5678-1234-567812345678",
+            invitation_msg_id="12345678-0123-4567-1234-567812345678",
             their_role=ConnRecord.Role.REQUESTER,
         )
         await test_exist_conn.save(self.session)
@@ -2475,7 +2486,9 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                     formats=[
                         V20PresFormat(
                             attach_id="indy",
-                            format_=V20PresFormat.Format.INDY.aries,
+                            format_=ATTACHMENT_FORMAT[PRES_20][
+                                V20PresFormat.Format.INDY.api
+                            ],
                         )
                     ],
                     presentations_attach=[
@@ -2521,7 +2534,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             my_did=TestConfig.test_did,
             their_did=TestConfig.test_target_did,
             their_public_did=TestConfig.test_target_did,
-            invitation_msg_id="12345678-1234-5678-1234-567812345678",
+            invitation_msg_id="12345678-0123-4567-1234-567812345678",
             their_role=ConnRecord.Role.REQUESTER,
         )
         await test_exist_conn.save(self.session)

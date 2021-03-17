@@ -10,17 +10,20 @@ from ....connections.models.conn_record import ConnRecord
 from ....core.error import BaseError
 from ....core.profile import Profile
 from ....indy.holder import IndyHolder, IndyHolderError
+from ....indy.util import generate_pr_nonce
 from ....indy.verifier import IndyVerifier
 from ....ledger.base import BaseLedger
 from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....messaging.responder import BaseResponder
+from ....messaging.util import canon
 from ....revocation.models.revocation_registry import RevocationRegistry
 from ....storage.error import StorageNotFoundError
 
-from ..indy.pres_preview import IndyPresPreview
+from ..indy.predicate import Predicate
 from ..indy.xform import indy_proof_req2non_revoc_intervals
 
 from .models.pres_exchange import V20PresExRecord
+from .message_types import ATTACHMENT_FORMAT, PRES_20_REQUEST, PRES_20
 from .messages.pres import V20Pres
 from .messages.pres_ack import V20PresAck
 from .messages.pres_format import V20PresFormat
@@ -133,23 +136,25 @@ class V20PresManager:
             A tuple (updated presentation exchange record, presentation request message)
 
         """
-        pres_preview = IndyPresPreview.deserialize(
-            pres_ex_record.by_format["pres_proposal"][V20PresFormat.Format.INDY.api]
-        )
+        indy_proof_request = V20PresProposal.deserialize(
+            pres_ex_record.pres_proposal
+        ).attachment(
+            V20PresFormat.Format.INDY
+        )  # will change for DIF
 
-        indy_proof_request = await pres_preview.indy_proof_request(
-            name=name,
-            version=version,
-            nonce=nonce,
-            ledger=self._profile.inject(BaseLedger),
-        )
+        indy_proof_request["name"] = name or "proof-request"
+        indy_proof_request["version"] = version or "1.0"
+        indy_proof_request["nonce"] = nonce or await generate_pr_nonce()
+
         pres_request_message = V20PresRequest(
             comment=comment,
             will_confirm=True,
             formats=[
                 V20PresFormat(
                     attach_id="indy",
-                    format_=V20PresFormat.Format.INDY.aries,
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.INDY.api
+                    ],
                 )
             ],
             request_presentations_attach=[
@@ -237,10 +242,9 @@ class V20PresManager:
 
         Args:
             pres_ex_record: record to update
-            format_: presentation format
             requested_credentials: indy formatted requested_credentials
             comment: optional human-readable comment
-
+            format_: presentation format
 
         Example `requested_credentials` format, mapping proof request referents (uuid)
         to wallet referents (cred id):
@@ -276,21 +280,19 @@ class V20PresManager:
 
         # extract credential ids and non_revoked
         requested_referents = {}
-        pres_request = V20PresRequest.deserialize(
+        proof_request = V20PresRequest.deserialize(
             pres_ex_record.pres_request
-        ).attachment(
-            format_
-        )  # take format_ = None seamlessly, contrast by_format
-        non_revoc_intervals = indy_proof_req2non_revoc_intervals(pres_request)
+        ).attachment(format_)
+        non_revoc_intervals = indy_proof_req2non_revoc_intervals(proof_request)
         attr_creds = requested_credentials.get("requested_attributes", {})
-        req_attrs = pres_request.get("requested_attributes", {})
+        req_attrs = proof_request.get("requested_attributes", {})
         for reft in attr_creds:
             requested_referents[reft] = {"cred_id": attr_creds[reft]["cred_id"]}
             if reft in req_attrs and reft in non_revoc_intervals:
                 requested_referents[reft]["non_revoked"] = non_revoc_intervals[reft]
 
         preds_creds = requested_credentials.get("requested_predicates", {})
-        req_preds = pres_request.get("requested_predicates", {})
+        req_preds = proof_request.get("requested_predicates", {})
         for reft in preds_creds:
             requested_referents[reft] = {"cred_id": preds_creds[reft]["cred_id"]}
             if reft in req_preds and reft in non_revoc_intervals:
@@ -411,7 +413,7 @@ class V20PresManager:
                 ] = precis["timestamp"]
 
         indy_proof_json = await holder.create_presentation(
-            pres_request,
+            proof_request,
             requested_credentials,
             schemas,
             cred_defs,
@@ -424,7 +426,7 @@ class V20PresManager:
             formats=[
                 V20PresFormat(
                     attach_id="indy",
-                    format_=V20PresFormat.Format.INDY.aries,
+                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.INDY.api],
                 )
             ],
             presentations_attach=[
@@ -443,7 +445,7 @@ class V20PresManager:
             formats=[
                 V20PresFormat(
                     attach_id="indy",
-                    format_=V20PresFormat.Format.INDY.aries,
+                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.INDY.api],
                 ),
             ],
             presentations_attach=[
@@ -466,7 +468,128 @@ class V20PresManager:
             presentation exchange record, retrieved and updated
 
         """
-        pres = message.attachment(V20PresFormat.Format.INDY)
+
+        def _check_proof_vs_proposal():
+            """Check for bait and switch in presented values vs. proposal request."""
+            proof_req = V20PresRequest.deserialize(
+                pres_ex_record.pres_request
+            ).attachment(
+                V20PresFormat.Format.INDY
+            )  # will change for DIF
+
+            # revealed attrs
+            for reft, attr_spec in proof["requested_proof"]["revealed_attrs"].items():
+                proof_req_attr_spec = proof_req["requested_attributes"].get(reft)
+                if not proof_req_attr_spec:
+                    raise V20PresManagerError(
+                        f"Presentation referent {reft} not in proposal request"
+                    )
+                req_restrictions = proof_req_attr_spec.get("restrictions", {})
+
+                name = proof_req_attr_spec["name"]
+                proof_value = attr_spec["raw"]
+                sub_proof_index = attr_spec["sub_proof_index"]
+                schema_id = proof["identifiers"][sub_proof_index]["schema_id"]
+                cred_def_id = proof["identifiers"][sub_proof_index]["cred_def_id"]
+                criteria = {
+                    "schema_id": schema_id,
+                    "schema_issuer_did": schema_id.split(":")[-4],
+                    "schema_name": schema_id.split(":")[-2],
+                    "schema_version": schema_id.split(":")[-1],
+                    "cred_def_id": cred_def_id,
+                    "issuer_did": cred_def_id.split(":")[-5],
+                    f"attr::{name}::value": proof_value,
+                }
+
+                if not any(r.items() <= criteria.items() for r in req_restrictions):
+                    raise V20PresManagerError(
+                        f"Presentation {name}={proof_value} not in proposal value(s)"
+                    )
+
+            # revealed attr groups
+            for reft, attr_spec in (
+                proof["requested_proof"].get("revealed_attr_groups", {}).items()
+            ):
+                proof_req_attr_spec = proof_req["requested_attributes"].get(reft)
+                if not proof_req_attr_spec:
+                    raise V20PresManagerError(
+                        f"Presentation referent {reft} not in proposal request"
+                    )
+                req_restrictions = proof_req_attr_spec.get("restrictions", {})
+                proof_values = {
+                    name: values["raw"] for name, values in attr_spec["values"].items()
+                }
+                sub_proof_index = attr_spec["sub_proof_index"]
+                schema_id = proof["identifiers"][sub_proof_index]["schema_id"]
+                cred_def_id = proof["identifiers"][sub_proof_index]["cred_def_id"]
+                criteria = {
+                    "schema_id": schema_id,
+                    "schema_issuer_did": schema_id.split(":")[-4],
+                    "schema_name": schema_id.split(":")[-2],
+                    "schema_version": schema_id.split(":")[-1],
+                    "cred_def_id": cred_def_id,
+                    "issuer_did": cred_def_id.split(":")[-5],
+                    **{
+                        f"attr::{name}::value": value
+                        for name, value in proof_values.items()
+                    },
+                }
+
+                if not any(r.items() <= criteria.items() for r in req_restrictions):
+                    raise V20PresManagerError(
+                        f"Presentation attr group {proof_values} "
+                        "not in proposal value(s)"
+                    )
+
+            # predicate bounds
+            for reft, pred_spec in proof["requested_proof"]["predicates"].items():
+                proof_req_pred_spec = proof_req["requested_predicates"].get(reft)
+                if not proof_req_pred_spec:
+                    raise V20PresManagerError(
+                        f"Presentation referent {reft} not in proposal request"
+                    )
+                req_name = proof_req_pred_spec["name"]
+                req_pred = Predicate.get(proof_req_pred_spec["p_type"])
+                req_value = proof_req_pred_spec["p_value"]
+                req_restrictions = proof_req_pred_spec.get("restrictions", {})
+                sub_proof_index = pred_spec["sub_proof_index"]
+                for ge_proof in proof["proof"]["proofs"][sub_proof_index][
+                    "primary_proof"
+                ]["ge_proofs"]:
+                    proof_pred_spec = ge_proof["predicate"]
+                    if proof_pred_spec["attr_name"] != canon(req_name):
+                        continue
+                    if not (
+                        Predicate.get(proof_pred_spec["p_type"]) is req_pred
+                        and proof_pred_spec["value"] == req_value
+                    ):
+                        raise V20PresManagerError(
+                            f"Presentation predicate on {req_name} "
+                            "mismatches proposal request"
+                        )
+                    break
+                else:
+                    raise V20PresManagerError(
+                        f"Proposed request predicate on {req_name} not in presentation"
+                    )
+
+                schema_id = proof["identifiers"][sub_proof_index]["schema_id"]
+                cred_def_id = proof["identifiers"][sub_proof_index]["cred_def_id"]
+                criteria = {
+                    "schema_id": schema_id,
+                    "schema_issuer_did": schema_id.split(":")[-4],
+                    "schema_name": schema_id.split(":")[-2],
+                    "schema_version": schema_id.split(":")[-1],
+                    "cred_def_id": cred_def_id,
+                    "issuer_did": cred_def_id.split(":")[-5],
+                }
+
+                if not any(r.items() <= criteria.items() for r in req_restrictions):
+                    raise V20PresManagerError(
+                        f"Presentation predicate {reft} differs from proposal request"
+                    )
+
+        proof = message.attachment(V20PresFormat.Format.INDY)
 
         thread_id = message._thread_id
         conn_id_filter = (
@@ -485,28 +608,7 @@ class V20PresManager:
                     session, {"thread_id": thread_id}, None
                 )
 
-        # Check for bait-and-switch in presented attribute values vs. proposal
-        if pres_ex_record.pres_proposal:
-            pres_preview = IndyPresPreview.deserialize(
-                pres_ex_record.by_format["pres_proposal"][V20PresFormat.Format.INDY.api]
-            )
-            proof_req = pres_ex_record.by_format["pres_request"][
-                V20PresFormat.Format.INDY.api
-            ]
-
-            for (reft, attr_spec) in pres["requested_proof"]["revealed_attrs"].items():
-                name = proof_req["requested_attributes"][reft]["name"]
-                value = attr_spec["raw"]
-                if not pres_preview.has_attr_spec(
-                    cred_def_id=pres["identifiers"][attr_spec["sub_proof_index"]][
-                        "cred_def_id"
-                    ],
-                    name=name,
-                    value=value,
-                ):
-                    raise V20PresManagerError(
-                        f"Presentation {name}={value} mismatches proposal value"
-                    )
+        _check_proof_vs_proposal()
 
         pres_ex_record.pres = message.serialize()
         pres_ex_record.state = V20PresExRecord.STATE_PRESENTATION_RECEIVED
@@ -530,7 +632,9 @@ class V20PresManager:
         """
         pres_request_msg = V20PresRequest.deserialize(pres_ex_record.pres_request)
         indy_proof_request = pres_request_msg.attachment(V20PresFormat.Format.INDY)
-        indy_proof = pres_ex_record.by_format["pres"][V20PresFormat.Format.INDY.api]
+        indy_proof = V20Pres.deserialize(pres_ex_record.pres).attachment(
+            V20PresFormat.Format.INDY
+        )  # will change for DIF
 
         schema_ids = []
         cred_def_ids = []

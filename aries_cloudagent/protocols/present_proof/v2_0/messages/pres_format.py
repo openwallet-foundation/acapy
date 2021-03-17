@@ -2,8 +2,7 @@
 
 from collections import namedtuple
 from enum import Enum
-from re import sub
-from typing import Mapping, Sequence, Union
+from typing import Sequence, Union
 from uuid import uuid4
 
 from marshmallow import EXCLUDE, fields, validate
@@ -12,10 +11,9 @@ from .....messaging.decorators.attach_decorator import AttachDecorator
 from .....messaging.models.base import BaseModel, BaseModelSchema
 from .....messaging.valid import UUIDFour
 
-from ...indy.pres_preview import IndyPresPreviewSchema
-from ...indy.proof_request import IndyProofRequestSchema
 
-FormatSpec = namedtuple("FormatSpec", "aries aka")  # Aries RFC value, further monikers
+# aries prefix
+FormatSpec = namedtuple("FormatSpec", "aries")
 
 
 class V20PresFormat(BaseModel):
@@ -29,24 +27,15 @@ class V20PresFormat(BaseModel):
     class Format(Enum):
         """Attachment format."""
 
-        INDY = FormatSpec(
-            "hlindy-zkp-v1.0",
-            {"indy", "hyperledgerindy", "hlindy"},
-        )
-        DIF = FormatSpec(
-            "dif/presentation-exchange/definitions@v1.0",
-            {"dif", "w3c", "jsonld"},
-        )
+        INDY = FormatSpec("hlindy/")
+        DIF = FormatSpec("dif/")
 
         @classmethod
         def get(cls, label: Union[str, "V20PresFormat.Format"]):
             """Get format enum for label."""
             if isinstance(label, str):
                 for fmt in V20PresFormat.Format:
-                    if (
-                        fmt.aries == label
-                        or sub("[^a-zA-Z0-9]+", "", label.lower()) in fmt.aka
-                    ):
+                    if label.startswith(fmt.aries) or label == fmt.api:
                         return fmt
             elif isinstance(label, V20PresFormat.Format):
                 return label
@@ -54,36 +43,21 @@ class V20PresFormat(BaseModel):
             return None
 
         @property
-        def aries(self) -> str:
-            """Accessor for aries identifier."""
-            return self.value.aries
-
-        @property
-        def aka(self) -> str:
-            """Accessor for alternative identifier list."""
-            return self.value.aka
-
-        @property
         def api(self) -> str:
             """Admin API specifier."""
             return self.name.lower()
 
-        def validate_proposal_attach(self, data: Mapping):
-            """Raise ValidationError for wrong proposal~attach content."""
-            if self is V20PresFormat.Format.INDY:
-                IndyPresPreviewSchema().load(data)
-
-        def validate_request_attach(self, data: Mapping):
-            """Raise ValidationError for wrong request_presentations~attach content."""
-            if self is V20PresFormat.Format.INDY:
-                IndyProofRequestSchema().load(data)
+        @property
+        def aries(self) -> str:
+            """Accessor for aries identifier."""
+            return self.value.aries
 
         def get_attachment_data(
             self,
             formats: Sequence["V20PresFormat"],
             attachments: Sequence[AttachDecorator],
         ):
-            """Find attachment of current format, base64-decode and return its data."""
+            """Find attachment of current format, decode and return its content."""
             for fmt in formats:
                 if V20PresFormat.Format.get(fmt.format) is self:
                     attach_id = fmt.attach_id
@@ -101,13 +75,11 @@ class V20PresFormat(BaseModel):
         self,
         *,
         attach_id: str = None,
-        format_: Union[str, "V20PresFormat.Format"] = None,
+        format_: str = None,
     ):
         """Initialize present-proof protocol message attachment format."""
         self.attach_id = attach_id or uuid4()
-        self.format_ = (
-            V20PresFormat.Format.get(format_) or V20PresFormat.Format.INDY
-        ).aries
+        self.format_ = format_
 
     @property
     def format(self) -> str:
@@ -133,8 +105,8 @@ class V20PresFormatSchema(BaseModelSchema):
     format_ = fields.Str(
         required=True,
         allow_none=False,
-        description="Acceptable present-proof message attachment format specifier",
+        description="Attachment format specifier",
         data_key="format",
-        validate=validate.OneOf([f.aries for f in V20PresFormat.Format]),
-        example=V20PresFormat.Format.INDY.aries,
+        validate=validate.Regexp("^(hlindy/.*@v2.0)|(dif/.*@v1.0)$"),
+        example="dif/presentation-exchange/submission@v1.0",
     )
