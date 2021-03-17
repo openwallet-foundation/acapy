@@ -29,7 +29,7 @@ class TestIntroductionService(AsyncTestCase):
         self.oob_invi_msg = OOBInvitationMessage(
             label=TEST_LABEL,
             handshake_protocols=[DIDCommPrefix.qualify_current(OOB_INVITATION)],
-            service=[
+            services=[
                 OOBService(
                     _id="#inline",
                     _type="did-communication",
