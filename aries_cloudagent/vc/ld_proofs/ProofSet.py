@@ -1,32 +1,31 @@
 """Class to represent a linked data proof set."""
-import asyncio
-from typing import Union, List
+
+from typing import List
 from pyld.jsonld import JsonLdProcessor
 
-from .suites import LinkedDataProof
-from .purposes.ProofPurpose import ProofPurpose
+from .constants import SECURITY_V2_URL
 from .document_loader import DocumentLoader
-from .constants import SECURITY_CONTEXT_V2_URL
+from .purposes.ProofPurpose import ProofPurpose
+from .suites import LinkedDataProof
 
 
 class ProofSet:
-    def __init__(self, document: dict) -> None:
-        self._document = document.copy()
-
+    @staticmethod
     async def add(
-        self,
         *,
         document: dict,
-        suite: List[LinkedDataProof],
+        suite: LinkedDataProof,
         purpose: ProofPurpose,
         document_loader: DocumentLoader
     ) -> dict:
-        input_ = document.copy()
+        document = document.copy()
 
-        if "proof" in input_:
-            del input_["proof"]
+        if "proof" in document:
+            del document["proof"]
 
-        proof = await suite.create_proof(input_, purpose, document_loader)
+        proof = await suite.create_proof(
+            document=document, purpose=purpose, document_loader=document_loader
+        )
 
         if "@context" in proof:
             del proof["@context"]
@@ -35,36 +34,41 @@ class ProofSet:
 
         return document
 
+    @staticmethod
     async def verify(
-        self,
         *,
-        document: Union[dict, str],
+        document: dict,
         suites: List[LinkedDataProof],
         purpose: ProofPurpose,
         document_loader: DocumentLoader
-    ):
+    ) -> dict:
         try:
-            if isinstance(document, str):
-                document = await document_loader(document)
+            document = document.copy()
 
-            proofs = await ProofSet._get_proofs(document, document_loader)
+            proofs = await ProofSet._get_proofs(document=document)
 
-            results = ProofSet._verify(
-                document, suites, proofs["proof_set"], purpose, document_loader
+            results = await ProofSet._verify(
+                document=document,
+                suites=suites,
+                proof_set=proofs.get("proof_set"),
+                purpose=purpose,
+                document_loader=document_loader,
             )
 
-            if results.len() == 0:
+            if len(results) == 0:
                 raise Exception(
                     "Could not verify any proofs; no proofs matched the required suite and purpose"
                 )
 
-            verified = any(x["verified"] for x in results)
+            verified = any(result.get("verified") for result in results)
 
             if not verified:
-                errors = [r["error"] for r in results if r["error"]]
+                errors = [
+                    result.get("error") for result in results if result.get("error")
+                ]
                 result = {"verified": verified, "results": results}
 
-                if errors.len() > 0:
+                if len(errors) > 0:
                     result["error"] = errors
 
                 return result
@@ -74,17 +78,16 @@ class ProofSet:
             return {"verified": verified, "error": e}
 
     @staticmethod
-    async def _get_proofs(document: dict, document_loader: DocumentLoader) -> dict:
+    async def _get_proofs(document: dict) -> dict:
         proof_set = JsonLdProcessor.get_values(document, "proof")
 
-        del document["proof"]
+        if "proof" in document:
+            del document["proof"]
 
-        if proof_set.len() == 0:
+        if len(proof_set) == 0:
             raise Exception("No matching proofs found in the given document")
 
-        proof_set = [
-            {"@context": SECURITY_CONTEXT_V2_URL, **proof} for proof in proof_set
-        ]
+        proof_set = [{"@context": SECURITY_V2_URL, **proof} for proof in proof_set]
 
         return {"proof_set": proof_set, "document": document}
 
@@ -95,7 +98,7 @@ class ProofSet:
         proof_set: List[dict],
         purpose: ProofPurpose,
         document_loader: DocumentLoader,
-    ):
+    ) -> List[dict]:
         # Matches proof purposes proof set to passed purpose.
         # Only proofs with a `proofPurpose` that match the purpose are verified
         # e.g.:
@@ -111,20 +114,13 @@ class ProofSet:
 
         for proof in matches:
             for suite in suites:
-                if suite.match_proof(proof["type"]):
-                    suite.verify_proof()
-                    results.append()
+                if suite.match_proof(proof.get("type")):
+                    result = await suite.verify_proof(
+                        proof=proof,
+                        document=document,
+                        purpose=purpose,
+                        document_loader=document_loader,
+                    )
+                    results.append({"proof": proof, **result})
 
-        for m in matches:
-
-            for s in suites:
-                if await s.match_proof(m["type"]):
-                    out.append(s.verify_proof(m, document, purpose, document_loader))
-
-        results = await asyncio.gather(
-            *[x.verify_proof(x, document, purpose, document_loader) for x in out]
-        )
-
-        return [
-            None if not r else {"proof": matches[i], **r} for r, i in enumerate(results)
-        ]
+        return results

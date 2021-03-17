@@ -7,5 +7,5 @@ class KeyPair(ABC):
         pass
 
     @abstractmethod
-    async def verify(self, message: bytes) -> bool:
+    async def verify(self, message: bytes, signature: bytes) -> bool:
         pass

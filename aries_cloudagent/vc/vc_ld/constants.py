@@ -1,5 +1,0 @@
-CREDENTIALS_CONTEXT_V1_URL = "https://www.w3.org/2018/credentials/v1"
-SECURITY_CONTEXT_V2_URL = "https://w3id.org/security/v2"
-SECURITY_PROOF_URL = "https://w3id.org/security#proof"
-SECURITY_SIGNATURE_URL = "https://w3id.org/security#signature"
-SECURITY_BBS_URL = "https://w3id.org/security/bbs/v1"

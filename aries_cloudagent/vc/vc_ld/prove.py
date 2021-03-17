@@ -8,14 +8,14 @@ from ..ld_proofs import (
     sign,
     LinkedDataProof,
 )
-from .constants import CREDENTIALS_CONTEXT_V1_URL
+from ..ld_proofs.constants import CREDENTIALS_V1_URL
 
 
 async def create_presentation(
     verifiable_credential: Union[dict, List[dict]], id_: str = None
 ) -> dict:
     presentation = {
-        "@context": [CREDENTIALS_CONTEXT_V1_URL],
+        "@context": [CREDENTIALS_V1_URL],
         "type": ["VerifiablePresentation"],
     }
 

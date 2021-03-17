@@ -31,7 +31,7 @@ class ProofPurpose:
                 ):
                     raise Exception("The proof's created timestamp is out of range.")
 
-                return {"valid": True}
+            return {"valid": True}
         except Exception as err:
             return {"valid": False, "error": err}
 

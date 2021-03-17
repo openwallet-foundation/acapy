@@ -1,10 +1,10 @@
 from datetime import datetime, timedelta
-from pyld import jsonld
 from pyld.jsonld import JsonLdProcessor
 
-from ..constants import SECURITY_CONTEXT_V2_URL
+from ..constants import SECURITY_V2_URL
 from ..suites import LinkedDataProof
 from ..document_loader import DocumentLoader
+from ..util import frame_without_compact_to_relative
 from .ProofPurpose import ProofPurpose
 
 
@@ -23,7 +23,13 @@ class ControllerProofPurpose(ProofPurpose):
         document_loader: DocumentLoader,
     ) -> dict:
         try:
-            result = super().validate(proof)
+            result = super().validate(
+                proof=proof,
+                document=document,
+                suite=suite,
+                verification_method=verification_method,
+                document_loader=document_loader,
+            )
 
             if not result.get("valid"):
                 raise result.get("error")
@@ -38,14 +44,16 @@ class ControllerProofPurpose(ProofPurpose):
             else:
                 raise Exception('"controller" must be a string or dict')
 
-            framed = jsonld.frame(
-                controller_id,
-                {
-                    "@context": SECURITY_CONTEXT_V2_URL,
+            framed = frame_without_compact_to_relative(
+                input=controller_id,
+                frame={
+                    "@context": SECURITY_V2_URL,
                     "id": controller_id,
                     self.term: {"@embed": "@never", "id": verification_id},
                 },
-                {"documentLoader": document_loader},
+                options={
+                    "documentLoader": document_loader,
+                },
             )
 
             result["controller"] = framed

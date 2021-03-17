@@ -1,8 +1,8 @@
 from pyld.jsonld import JsonLdProcessor
 import re
 
-from ...messaging.valid import RFC3339DateTime
-from .constants import CREDENTIALS_CONTEXT_V1_URL
+# from ...messaging.valid import RFC3339DateTime
+from ..ld_proofs.constants import CREDENTIALS_V1_URL
 
 
 def get_id(obj):
@@ -16,12 +16,9 @@ def get_id(obj):
 
 
 def check_credential(credential: dict):
-    if not (
-        credential["@context"]
-        and credential["@context"][0] == CREDENTIALS_CONTEXT_V1_URL
-    ):
+    if not (credential["@context"] and credential["@context"][0] == CREDENTIALS_V1_URL):
         raise Exception(
-            f"{CREDENTIALS_CONTEXT_V1_URL} needs to be first in the list of contexts"
+            f"{CREDENTIALS_V1_URL} needs to be first in the list of contexts"
         )
 
     if not credential["type"]:
@@ -42,10 +39,10 @@ def check_credential(credential: dict):
     if not credential["issuanceDate"]:
         raise Exception('"issuanceDate" property is required')
 
-    if not re.match(RFC3339DateTime.PATTERN, credential["issuanceDate"]):
-        raise Exception(
-            f'"issuanceDate" must be a valid date {credential["issuanceDate"]}'
-        )
+    # if not re.match(RFC3339DateTime.PATTERN, credential["issuanceDate"]):
+    #     raise Exception(
+    #         f'"issuanceDate" must be a valid date {credential["issuanceDate"]}'
+    #     )
 
     if len(JsonLdProcessor.get_values(credential, "issuer")) > 1:
         raise Exception('"issuer" property can only have one value')
@@ -74,9 +71,9 @@ def check_credential(credential: dict):
         if evidence_id and ":" not in evidence_id:
             raise Exception(f'"evidence" id must be a URL: {evidence}')
 
-    if "expirationDate" in credential and not re.match(
-        RFC3339DateTime.PATTERN, credential["issuanceDate"]
-    ):
-        raise Exception(
-            f'"expirationDate" must be a valid date {credential["expirationDate"]}'
-        )
+    # if "expirationDate" in credential and not re.match(
+    #     RFC3339DateTime.PATTERN, credential["issuanceDate"]
+    # ):
+    #     raise Exception(
+    #         f'"expirationDate" must be a valid date {credential["expirationDate"]}'
+    #     )

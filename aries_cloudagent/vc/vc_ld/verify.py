@@ -1,12 +1,11 @@
 import asyncio
-from typing import Callable, Mapping
 from pyld.jsonld import JsonLdProcessor
+from typing import Callable, Mapping
 
 from ..ld_proofs import (
     LinkedDataProof,
     CredentialIssuancePurpose,
     DocumentLoader,
-    LinkedDataSignature,
     ProofPurpose,
     AuthenticationProofPurpose,
     verify as ld_proofs_verify,
@@ -15,14 +14,17 @@ from .checker import check_credential
 
 
 async def _verify_credential(
+    *,
     credential: dict,
     document_loader: DocumentLoader,
-    suite: LinkedDataSignature,
+    suite: LinkedDataProof,
     purpose: ProofPurpose = None,
+    # TODO: add check_status method signature (like DocumentLoader)
     check_status: Callable = None,
 ) -> dict:
     # TODO: validate credential structure
 
+    # TODO: what if we don't want to check for credentialStatus?
     if "credentialStatus" in credential and not check_status:
         raise Exception(
             'A "check_status function must be provided to verify credentials with "credentialStatus" set.'
@@ -38,31 +40,37 @@ async def _verify_credential(
         document_loader=document_loader,
     )
 
-    if not result["verified"]:
+    if not result.get("verified"):
         return result
 
     if "credentialStatus" in credential:
         # CHECK make sure this is how check_status should be called
         result["statusResult"] = await check_status(credential)
 
-    if not result["statusResult"]["verified"]:
-        result["verified"] = False
+        if not result.get("statusResult").get("verified"):
+            result["verified"] = False
 
     return result
 
 
 async def verify_credential(
+    *,
     credential: dict,
+    suite: LinkedDataProof,
     document_loader: DocumentLoader,
-    suite: LinkedDataSignature,
     purpose: ProofPurpose = None,
     check_status: Callable = None,
 ) -> dict:
     try:
         return await _verify_credential(
-            credential, document_loader, suite, purpose, check_status
+            credential=credential,
+            document_loader=document_loader,
+            suite=suite,
+            purpose=purpose,
+            check_status=check_status,
         )
     except Exception as e:
+        # TODO: use class instance OR typed dict, as this is confusing
         return {
             "verified": False,
             "results": [{"credential": credential, "verified": False, "error": e}],
@@ -77,7 +85,6 @@ async def _verify_presentation(
     unsigned_presentation: dict = None,
     suite_map: Mapping[str, LinkedDataProof] = None,
     suite: LinkedDataProof = None,
-    controller: dict = None,
     domain: str = None,
     document_loader: DocumentLoader = None,
 ):
@@ -104,7 +111,8 @@ async def _verify_presentation(
                 'A "challenge" param is required for AuthenticationProofPurpose.'
             )
 
-        suite = suite_map[presentation["proof"]["type"]]()
+        proof_type = presentation.get("proof").get("type")
+        suite = suite_map[proof_type]()
 
         presentation_result = await ld_proofs_verify(
             document=presentation,
@@ -155,13 +163,14 @@ async def _verify_presentation(
     }
 
 
-async def verify(
-    challenge: str,
+async def verify_presentation(
+    *,
     presentation: dict = None,
-    purpose: LinkedDataSignature = None,
+    challenge: str,
+    purpose: ProofPurpose = None,
     unsigned_presentation: dict = None,
-    suite_map: Mapping[str, LinkedDataSignature] = None,
-    suite: LinkedDataSignature = None,
+    suite_map: Mapping[str, LinkedDataProof] = None,
+    suite: LinkedDataProof = None,
     controller: dict = None,
     domain: str = None,
     document_loader: DocumentLoader = None,
@@ -192,4 +201,4 @@ async def verify(
         }
 
 
-__all__ = [verify, verify_credential]
+__all__ = [verify_presentation, verify_credential]

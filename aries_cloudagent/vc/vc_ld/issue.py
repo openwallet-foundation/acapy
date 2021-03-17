@@ -1,15 +1,20 @@
 from ..ld_proofs import (
-    LinkedDataSignature,
+    LinkedDataProof,
     ProofPurpose,
     sign,
     did_key_document_loader,
     CredentialIssuancePurpose,
+    DocumentLoader,
 )
-from .checker import check_credential
+
+# from .checker import check_credential
 
 
 async def issue(
-    credential: dict, suite: LinkedDataSignature, *, purpose: ProofPurpose = None
+    credential: dict,
+    suite: LinkedDataProof,
+    purpose: ProofPurpose = None,
+    document_loader: DocumentLoader = None,
 ) -> dict:
     # TODO: validate credential format
 
@@ -20,6 +25,7 @@ async def issue(
         document=credential,
         suite=suite,
         purpose=purpose,
-        document_loader=did_key_document_loader,
+        document_loader=document_loader or did_key_document_loader,
     )
+
     return signed_credential

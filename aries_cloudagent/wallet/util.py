@@ -29,12 +29,12 @@ def b64_to_str(val: str, urlsafe=False, encoding=None) -> str:
     return b64_to_bytes(val, urlsafe).decode(encoding or "utf-8")
 
 
-def bytes_to_b64(val: bytes, urlsafe=False, pad=True) -> str:
+def bytes_to_b64(val: bytes, urlsafe=False, pad=True, encoding: str = "ascii") -> str:
     """Convert a byte string to base 64."""
     b64 = (
-        base64.urlsafe_b64encode(val).decode("ascii")
+        base64.urlsafe_b64encode(val).decode(encoding)
         if urlsafe
-        else base64.b64encode(val).decode("ascii")
+        else base64.b64encode(val).decode(encoding)
     )
     return b64 if pad else unpad(b64)
 

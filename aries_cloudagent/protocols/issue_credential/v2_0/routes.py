@@ -21,14 +21,10 @@ from ....ledger.error import LedgerError
 from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....messaging.models.base import BaseModelError, OpenAPISchema
 from ....messaging.valid import (
-    CREDENTIAL_CONTEXT,
-    CREDENTIAL_SUBJECT,
-    CREDENTIAL_TYPE,
     INDY_CRED_DEF_ID,
     INDY_DID,
     INDY_SCHEMA_ID,
     INDY_VERSION,
-    URI,
     UUIDFour,
     UUID4,
 )
@@ -50,6 +46,8 @@ from .messages.inner.cred_preview import V20CredPreview, V20CredPreviewSchema
 from .models.cred_ex_record import V20CredExRecord, V20CredExRecordSchema
 from .models.detail.ld_proof import V20CredExRecordLDProofSchema
 from .models.detail.indy import V20CredExRecordIndySchema
+
+from ....vc.vc_ld.models.Credential import LDCredential
 
 
 class V20IssueCredentialModuleResponseSchema(OpenAPISchema):
@@ -150,51 +148,6 @@ class V20CredFilterIndySchema(OpenAPISchema):
     issuer_did = fields.Str(
         description="Credential issuer DID", required=False, **INDY_DID
     )
-
-
-class LDCredential(Schema):
-    context = fields.List(
-        fields.Str(),
-        data_key="@context",
-        required=True,
-        description="The JSON-LD context of the credential",
-        **CREDENTIAL_CONTEXT,
-    )
-    id = fields.Str(
-        required=False,
-        desscription="The ID of the credential",
-        example="http://example.edu/credentials/1872",
-        validate=URI(),
-    )
-    type = fields.List(
-        fields.Str(),
-        required=True,
-        description="The JSON-LD type of the credential",
-        **CREDENTIAL_TYPE,
-    )
-    issuer = fields.Str(
-        required=False, description="The JSON-LD Verifiable Credential Issuer"
-    )
-    issuance_date = fields.DateTime(
-        data_key="issuanceDate",
-        required=False,
-        description="The issuance date",
-        example="2010-01-01T19:73:24Z",
-    )
-    expiration_date = fields.DateTime(
-        data_key="expirationDate",
-        required=False,
-        description="The expiration date",
-        example="2010-01-01T19:73:24Z",
-    )
-    credential_subject = fields.Dict(
-        required=True,
-        keys=fields.Str(),
-        data_key="credentialSubject",
-        **CREDENTIAL_SUBJECT,
-    )
-    # TODO: add typing
-    credential_schema = fields.Dict(required=False, data_key="credentialSchema")
 
 
 class LDCredentialOptions(Schema):

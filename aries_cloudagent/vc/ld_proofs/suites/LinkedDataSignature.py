@@ -1,3 +1,4 @@
+import traceback
 from pyld import jsonld
 from datetime import datetime
 from hashlib import sha256
@@ -6,7 +7,8 @@ from abc import abstractmethod, ABCMeta
 
 from ..document_loader import DocumentLoader
 from ..purposes import ProofPurpose
-from ..constants import SECURITY_CONTEXT_V2_URL
+from ..constants import SECURITY_V2_URL
+from ..util import frame_without_compact_to_relative
 from .LinkedDataProof import LinkedDataProof
 
 
@@ -23,19 +25,24 @@ class LinkedDataSignature(LinkedDataProof, metaclass=ABCMeta):
         self.proof = proof
         self.date = date
 
-        if isinstance(date, datetime):
+        if isinstance(date, str):
             # cast date to datetime if str
-            self.date = datetime.strptime(date)
+            self.date = datetime.strptime(date, "%Y-%m-%dT%H:%M:%SZ")
 
     # ABSTRACT METHODS
 
     @abstractmethod
-    def sign(self, verify_data: bytes, proof: dict):
+    async def sign(self, verify_data: bytes, proof: dict):
         pass
 
     @abstractmethod
-    def verify_signature(
-        self, verify_data: bytes, proof: dict, verification_method: dict
+    async def verify_signature(
+        self,
+        verify_data: bytes,
+        verification_method: dict,
+        document: dict,
+        proof: dict,
+        document_loader: DocumentLoader,
     ):
         pass
 
@@ -50,12 +57,13 @@ class LinkedDataSignature(LinkedDataProof, metaclass=ABCMeta):
             # TODO verify if the other optional params shown in jsonld-signatures are
             # required
             proof = jsonld.compact(
-                self.proof, SECURITY_CONTEXT_V2_URL, {"documentLoader": document_loader}
+                self.proof, SECURITY_V2_URL, {"documentLoader": document_loader}
             )
         else:
-            proof = {"@context": SECURITY_CONTEXT_V2_URL}
+            proof = {"@context": SECURITY_V2_URL}
 
         proof["type"] = self.signature_type
+        proof["verificationMethod"] = self.verification_method
 
         if not self.date:
             self.date = datetime.now()
@@ -63,21 +71,17 @@ class LinkedDataSignature(LinkedDataProof, metaclass=ABCMeta):
         if not proof.get("created"):
             proof["created"] = self.date.isoformat()
 
-        if self.verification_method:
-            proof["verificationMethod"] = self.verification_method
-
-        proof = await self.update_proof(proof=proof)
-
+        proof = self.update_proof(proof=proof)
         proof = purpose.update(proof)
 
-        verify_data = await self._create_verify_data(
+        verify_data = self._create_verify_data(
             proof=proof, document=document, document_loader=document_loader
         )
 
         proof = await self.sign(verify_data=verify_data, proof=proof)
         return proof
 
-    async def update_proof(self, proof: dict):
+    def update_proof(self, proof: dict):
         """
         Extending classes may do more
         """
@@ -89,7 +93,7 @@ class LinkedDataSignature(LinkedDataProof, metaclass=ABCMeta):
         document: dict,
         purpose: ProofPurpose,
         document_loader: DocumentLoader,
-    ):
+    ) -> dict:
         try:
             verify_data = self._create_verify_data(
                 proof=proof, document=document, document_loader=document_loader
@@ -109,7 +113,7 @@ class LinkedDataSignature(LinkedDataProof, metaclass=ABCMeta):
             if not verified:
                 raise Exception("Invalid signature")
 
-            purpose_result = await purpose.validate(
+            purpose_result = purpose.validate(
                 proof=proof,
                 document=document,
                 suite=self,
@@ -122,7 +126,12 @@ class LinkedDataSignature(LinkedDataProof, metaclass=ABCMeta):
 
             return {"verified": True, "purpose_result": purpose_result}
         except Exception as err:
-            return {"verified": False, "error": err}
+            return {
+                "verified": False,
+                "error": err,
+                # TODO: leave trace in error?
+                "trace": traceback.format_exc(),
+            }
 
     def _get_verification_method(self, proof: dict, document_loader: DocumentLoader):
         verification_method = proof.get("verificationMethod")
@@ -130,10 +139,13 @@ class LinkedDataSignature(LinkedDataProof, metaclass=ABCMeta):
         if not verification_method:
             raise Exception('No "verificationMethod" found in proof')
 
-        framed = jsonld.frame(
-            verification_method,
-            {
-                "@context": SECURITY_CONTEXT_V2_URL,
+        if isinstance(verification_method, dict):
+            verification_method: str = verification_method.get("id")
+
+        framed = frame_without_compact_to_relative(
+            input=verification_method,
+            frame={
+                "@context": SECURITY_V2_URL,
                 "@embed": "@always",
                 "id": verification_method,
             },
@@ -150,15 +162,18 @@ class LinkedDataSignature(LinkedDataProof, metaclass=ABCMeta):
 
     def _create_verify_data(
         self, proof: dict, document: dict, document_loader: DocumentLoader
-    ) -> str:
+    ) -> bytes:
         c14n_proof_options = self._canonize_proof(
             proof=proof, document_loader=document_loader
         )
         c14n_doc = self._canonize(input=document, document_loader=document_loader)
-        hash = sha256(c14n_proof_options.encode())
-        hash.update(c14n_doc.encode())
 
-        return hash.digest()
+        # TODO: detect any dropped properties using expand/contract step
+
+        return (
+            sha256(c14n_proof_options.encode("utf-8")).digest()
+            + sha256(c14n_doc.encode("utf-8")).digest()
+        )
 
     def _canonize(self, input, document_loader: DocumentLoader = None) -> str:
         # application/n-quads format always returns str
