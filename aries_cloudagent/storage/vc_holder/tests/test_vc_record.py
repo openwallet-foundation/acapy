@@ -53,7 +53,7 @@ sample_json_cred_2 = """
         "issuer": {
             "id": "https://example.edu/issuers/565049"
         },
-        "issuanceDate": "2010-01-01T19:73:24Z",
+        "issuanceDate": "2011-01-01T19:73:24Z",
         "credentialSchema": [
             {
                 "id": "https://example.org/examples/degree.json",
