@@ -10,12 +10,10 @@ from .....messaging.base_handler import (
 from .....storage.error import StorageNotFoundError
 from .....utils.tracing import trace_event, get_timer
 
-from ...indy.pres_preview import IndyPresPreview
 from ...indy.xform import indy_proof_req_preview2indy_requested_creds
 
 from ..manager import V20PresManager
 from ..messages.pres_format import V20PresFormat
-from ..messages.pres_proposal import V20PresProposal
 from ..messages.pres_request import V20PresRequest
 from ..models.pres_exchange import V20PresExRecord
 
@@ -80,20 +78,12 @@ class V20PresRequestHandler(BaseHandler):
 
         # If auto_present is enabled, respond immediately with presentation
         if pres_ex_record.auto_present:
-            pres_preview = None
             indy_proof_request = context.message.attachment(V20PresFormat.Format.INDY)
-            if pres_ex_record.pres_proposal:
-                exchange_pres_proposal = V20PresProposal.deserialize(
-                    pres_ex_record.pres_proposal
-                )
-                pres_preview = IndyPresPreview.deserialize(
-                    exchange_pres_proposal.attachment(V20PresFormat.Format.INDY)
-                )
 
             try:
                 req_creds = await indy_proof_req_preview2indy_requested_creds(
                     indy_proof_request,
-                    pres_preview,
+                    preview=None,
                     holder=context.inject(IndyHolder),
                 )
             except ValueError as err:
