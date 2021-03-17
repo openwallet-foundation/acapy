@@ -2,13 +2,15 @@
 
 from typing import Sequence
 
-from marshmallow import EXCLUDE, fields, validates_schema, ValidationError
+from marshmallow import EXCLUDE, fields, RAISE, validates_schema, ValidationError
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 from .....messaging.decorators.attach_decorator import (
     AttachDecorator,
     AttachDecoratorSchema,
 )
+
+from ...indy.proof import IndyProofSchema
 
 from ..message_types import PRES_20, PROTOCOL_PACKAGE
 
@@ -84,7 +86,7 @@ class V20PresSchema(AgentMessageSchema):
         V20PresFormatSchema,
         many=True,
         required=True,
-        descrption="Acceptable attachment formats",
+        description="Acceptable attachment formats",
     )
     presentations_attach = fields.Nested(
         AttachDecoratorSchema, required=True, many=True, data_key="presentations~attach"
@@ -92,21 +94,21 @@ class V20PresSchema(AgentMessageSchema):
 
     @validates_schema
     def validate_fields(self, data, **kwargs):
-        """Validate attachments against formats."""
+        """Validate proposal attachment per format."""
 
         def get_attach_by_id(attach_id):
             """Return attachment with input attachment identifier."""
-            for a in presentations_attach:
-                if a.ident == attach_id:
-                    return a
-            raise ValidationError(
-                f"No attachment matches attach_id {attach_id} in format"
-            )
+            for atch in attachments:
+                if atch.ident == attach_id:
+                    return atch
+            raise ValidationError(f"No attachment for attach_id {attach_id} in formats")
 
         formats = data.get("formats") or []
-        presentations_attach = data.get("presentations_attach") or []
-        if len(formats) != len(presentations_attach):
-            raise ValidationError("Formats vs. attachments length mismatch")
+        attachments = data.get("presentations_attach") or []
+        if len(formats) != len(attachments):
+            raise ValidationError("Formats/attachments length mismatch")
 
         for fmt in formats:
-            get_attach_by_id(fmt.attach_id)
+            atch = get_attach_by_id(fmt.attach_id)
+            if V20PresFormat.Format.get(fmt.format) is V20PresFormat.Format.INDY:
+                IndyProofSchema(unknown=RAISE).load(atch.content)

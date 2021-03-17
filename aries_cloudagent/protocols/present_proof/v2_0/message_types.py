@@ -2,9 +2,11 @@
 
 from ...didcomm_prefix import DIDCommPrefix
 
+from .messages.pres_format import V20PresFormat
+
 SPEC_URI = (
     "https://github.com/hyperledger/aries-rfcs/tree/"
-    "de0092a41b7d54c4fe58a69e0dba24ae8bec9360/features/0454-present-proof-v2"
+    "eace815c3e8598d4a8dd7881d8c731fdb2bcc0aa/features/0454-present-proof-v2"
 )
 
 # Message types
@@ -23,3 +25,19 @@ MESSAGE_TYPES = DIDCommPrefix.qualify_all(
         PRES_20_ACK: f"{PROTOCOL_PACKAGE}.messages.pres_ack.V20PresAck",
     }
 )
+
+# Format specifications
+ATTACHMENT_FORMAT = {
+    PRES_20_PROPOSAL: {
+        V20PresFormat.Format.INDY.api: "hlindy/proof-req@v2.0",
+        V20PresFormat.Format.DIF.api: "dif/presentation-exchange/definitions@v1.0",
+    },
+    PRES_20_REQUEST: {
+        V20PresFormat.Format.INDY.api: "hlindy/proof-req@v2.0",
+        V20PresFormat.Format.DIF.api: "dif/presentation-exchange/definitions@v1.0",
+    },
+    PRES_20: {
+        V20PresFormat.Format.INDY.api: "hlindy/proof@v2.0",
+        V20PresFormat.Format.DIF.api: "dif/presentation-exchange/submission@v1.0",
+    },
+}

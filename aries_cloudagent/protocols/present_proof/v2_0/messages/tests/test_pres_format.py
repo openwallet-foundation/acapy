@@ -8,25 +8,81 @@ from ....indy.pres_preview import IndyPresAttrSpec, IndyPresPreview, IndyPresPre
 
 from ..pres_format import V20PresFormat
 
-
-S_ID = "NcYxiDXkpYi6ov5FcYDi1e:2:vidya:1.0"
-CD_ID = f"NcYxiDXkpYi6ov5FcYDi1e:3:CL:{S_ID}:tag1"
-PRES_PREVIEW = IndyPresPreview(
-    attributes=[
-        IndyPresAttrSpec(name="player", cred_def_id=CD_ID, value="Richie Knucklez"),
-        IndyPresAttrSpec(
-            name="screenCapture",
-            cred_def_id=CD_ID,
-            mime_type="image/png",
-            value="aW1hZ2luZSBhIHNjcmVlbiBjYXB0dXJl",
-        ),
-    ],
-    predicates=[
-        IndyPresPredSpec(
-            name="highScore", cred_def_id=CD_ID, predicate=">=", threshold=1000000
-        )
-    ],
-)
+CD_ID = "GMm4vMw8LLrLJjp81kRRLp:3:CL:12:tag"
+INDY_PROOF_REQ = [
+    {
+        "name": "proof-req",
+        "version": "1.0",
+        "nonce": "12345",
+        "requested_attributes": {
+            "0_player_uuid": {
+                "name": "player",
+                "restrictions": [{"cred_def_id": f"{CD_ID}"}],
+                "non_revoked": {
+                    "from": 1234567890,
+                    "to": 1234567890,
+                },
+            },
+            "0_screencapture_uuid": {
+                "name": "screenCapture",
+                "restrictions": [{"cred_def_id": f"{CD_ID}"}],
+                "non_revoked": {
+                    "from": 1234567890,
+                    "to": 1234567890,
+                },
+            },
+        },
+        "requested_predicates": {
+            "0_highscore_GE_uuid": {
+                "name": "highScore",
+                "p_type": ">=",
+                "p_value": 1000000,
+                "restrictions": [{"cred_def_id": f"{CD_ID}"}],
+                "non_revoked": {
+                    "from": 1234567890,
+                    "to": 1234567890,
+                },
+            }
+        },
+    },
+    {
+        "name": "proof-req",
+        "version": "1.0",
+        "nonce": "123456",
+        "requested_attributes": {
+            "0_player_uuid": {
+                "name": "player",
+                "restrictions": [{"cred_def_id": f"{CD_ID}"}],
+            },
+            "0_screencapture_uuid": {
+                "name": "screenCapture",
+                "restrictions": [{"cred_def_id": f"{CD_ID}"}],
+            },
+        },
+        "requested_predicates": {
+            "0_highscore_GE_uuid": {
+                "name": "highScore",
+                "p_type": ">=",
+                "p_value": 1000000,
+                "restrictions": [{"cred_def_id": f"{CD_ID}"}],
+            }
+        },
+    },
+    {
+        "name": "proof-req",
+        "version": "1.0",
+        "nonce": "1234567",
+        "requested_attributes": {},
+        "requested_predicates": {
+            "0_highscore_GE_uuid": {
+                "name": "highScore",
+                "p_type": ">=",
+                "p_value": 1000000,
+                "restrictions": [{"cred_def_id": f"{CD_ID}"}],
+            }
+        },
+    },
+]
 
 
 class TestV20FormatFormat(TestCase):
@@ -38,64 +94,51 @@ class TestV20FormatFormat(TestCase):
             is V20PresFormat.Format.INDY
         )
         assert V20PresFormat.Format.get("no such format") is None
-        assert V20PresFormat.Format.get("Indy") is V20PresFormat.Format.INDY
-        assert V20PresFormat.Format.get("HL/INDY").aries == "hlindy-zkp-v1.0"
-        assert "indy" in V20PresFormat.Format.get("HL/INDY").aka
+        assert V20PresFormat.Format.get("hlindy/...") is V20PresFormat.Format.INDY
         assert (
-            V20PresFormat.Format.get("HL/INDY").api
-            in V20PresFormat.Format.get("hl-indy").aka
+            V20PresFormat.Format.get(V20PresFormat.Format.DIF.api)
+            is V20PresFormat.Format.DIF
         )
-        assert (
-            V20PresFormat.Format.get("JSON-LD").aries
-            == "dif/presentation-exchange/definitions@v1.0"
-        )
-
-    def test_validate_proposal_attach_x(self):
-        with self.assertRaises(ValidationError) as context:
-            V20PresFormat.Format.INDY.validate_proposal_attach(data="not even close")
 
     def test_get_attachment_data(self):
-        assert (
-            V20PresFormat.Format.INDY.get_attachment_data(
-                formats=[
-                    V20PresFormat(attach_id="abc", format_=V20PresFormat.Format.INDY)
-                ],
-                attachments=[
-                    AttachDecorator.data_base64(
-                        mapping=PRES_PREVIEW.serialize(),
-                        ident="abc",
-                    )
-                ],
+        for proof_req in INDY_PROOF_REQ:
+            assert (
+                V20PresFormat.Format.INDY.get_attachment_data(
+                    formats=[
+                        V20PresFormat(
+                            attach_id="indy",
+                            format_=V20PresFormat.Format.INDY,
+                        )
+                    ],
+                    attachments=[
+                        AttachDecorator.data_base64(mapping=proof_req, ident="indy")
+                    ],
+                )
+                == proof_req
             )
-            == PRES_PREVIEW.serialize()
-        )
 
-        assert (
-            V20PresFormat.Format.INDY.get_attachment_data(
-                formats=[
-                    V20PresFormat(attach_id="abc", format_=V20PresFormat.Format.INDY)
-                ],
-                attachments=[
-                    AttachDecorator.data_base64(
-                        PRES_PREVIEW.serialize(),
-                        ident="xxx",
-                    )
-                ],
+            assert (
+                V20PresFormat.Format.INDY.get_attachment_data(
+                    formats=[
+                        V20PresFormat(
+                            attach_id="indy",
+                            format_=V20PresFormat.Format.INDY,
+                        )
+                    ],
+                    attachments=[AttachDecorator.data_base64(proof_req, ident="xxx")],
+                )
+                is None
             )
-            is None
-        )
 
-        assert (
-            V20PresFormat.Format.DIF.get_attachment_data(
-                formats=[
-                    V20PresFormat(attach_id="abc", format_=V20PresFormat.Format.INDY)
-                ],
-                attachments=[
-                    AttachDecorator.data_base64(
-                        PRES_PREVIEW.serialize(),
-                        ident="abc",
-                    )
-                ],
+            assert (
+                V20PresFormat.Format.DIF.get_attachment_data(
+                    formats=[
+                        V20PresFormat(
+                            attach_id="indy",
+                            format_=V20PresFormat.Format.INDY,
+                        )
+                    ],
+                    attachments=[AttachDecorator.data_base64(proof_req, ident="indy")],
+                )
+                is None
             )
-            is None
-        )

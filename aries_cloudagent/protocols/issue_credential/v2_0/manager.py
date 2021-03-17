@@ -20,6 +20,13 @@ from ....revocation.models.issuer_rev_reg_record import IssuerRevRegRecord
 from ....storage.base import BaseStorage
 from ....storage.error import StorageNotFoundError
 
+from .message_types import (
+    ATTACHMENT_FORMAT,
+    CRED_20_PROPOSAL,
+    CRED_20_OFFER,
+    CRED_20_REQUEST,
+    CRED_20_ISSUE,
+)
 from .messages.cred_ack import V20CredAck
 from .messages.cred_format import V20CredFormat
 from .messages.cred_issue import V20CredIssue
@@ -154,7 +161,12 @@ class V20CredManager:
             comment=comment,
             credential_preview=cred_preview,
             formats=[
-                V20CredFormat(attach_id=str(ident), format_=V20CredFormat.Format.get(f))
+                V20CredFormat(
+                    attach_id=str(ident),
+                    format_=ATTACHMENT_FORMAT[CRED_20_PROPOSAL][
+                        V20CredFormat.Format.get(f).api
+                    ],
+                )
                 for ident, f in enumerate(fmt2filter.keys())
             ],
             filters_attach=[
@@ -293,7 +305,14 @@ class V20CredManager:
             replacement_id=replacement_id,
             comment=comment,
             credential_preview=cred_preview,
-            formats=[V20CredFormat(attach_id="0", format_=V20CredFormat.Format.INDY)],
+            formats=[
+                V20CredFormat(
+                    attach_id="0",
+                    format_=ATTACHMENT_FORMAT[CRED_20_OFFER][
+                        V20CredFormat.Format.INDY.api
+                    ],
+                )
+            ],
             offers_attach=[AttachDecorator.data_base64(cred_offer, ident="0")],
         )
 
@@ -340,7 +359,14 @@ class V20CredManager:
         cred_proposal_ser = V20CredProposal(
             comment=cred_offer_message.comment,
             credential_preview=cred_offer_message.credential_preview,
-            formats=[V20CredFormat(attach_id="0", format_=V20CredFormat.Format.INDY)],
+            formats=[
+                V20CredFormat(
+                    attach_id="0",
+                    format_=ATTACHMENT_FORMAT[CRED_20_PROPOSAL][
+                        V20CredFormat.Format.INDY.api
+                    ],
+                )
+            ],
             filters_attach=[
                 AttachDecorator.data_base64(
                     {
@@ -430,8 +456,6 @@ class V20CredManager:
                 f"v2.0 credential exchange {cred_ex_record.cred_ex_id}"
             )
 
-        if "nonce" not in cred_offer:
-            raise V20CredManagerError("Missing nonce in credential offer")
         nonce = cred_offer["nonce"]
         cache_key = f"credential_request::{cred_def_id}::{holder_did}::{nonce}"
         cred_req_result = None
@@ -453,7 +477,14 @@ class V20CredManager:
 
         cred_request_message = V20CredRequest(
             comment=comment,
-            formats=[V20CredFormat(attach_id="0", format_=V20CredFormat.Format.INDY)],
+            formats=[
+                V20CredFormat(
+                    attach_id="0",
+                    format_=ATTACHMENT_FORMAT[CRED_20_REQUEST][
+                        V20CredFormat.Format.INDY.api
+                    ],
+                )
+            ],
             requests_attach=[
                 AttachDecorator.data_base64(cred_req_result["request"], ident="0")
             ],
@@ -681,7 +712,14 @@ class V20CredManager:
         cred_issue_message = V20CredIssue(
             replacement_id=replacement_id,
             comment=comment,
-            formats=[V20CredFormat(attach_id="0", format_=V20CredFormat.Format.INDY)],
+            formats=[
+                V20CredFormat(
+                    attach_id="0",
+                    format_=ATTACHMENT_FORMAT[CRED_20_ISSUE][
+                        V20CredFormat.Format.INDY.api
+                    ],
+                )
+            ],
             credentials_attach=[
                 AttachDecorator.data_base64(json.loads(cred_json), ident="0")
             ],

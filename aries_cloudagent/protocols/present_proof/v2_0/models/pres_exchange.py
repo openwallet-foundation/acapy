@@ -104,11 +104,11 @@ class V20PresExRecord(BaseExchangeRecord):
         }
 
     @property
-    def by_format(self):
-        """Record proposal, request, and presentation data structures by format."""
+    def by_format(self) -> Mapping:
+        """Record proposal, request, and presentation attachments by format."""
         result = {}
         for item, cls in {
-            "pres_proposal": V20PresProposal,
+            "pres_proposal": V20PresProposal,  # note: proof request attached for indy
             "pres_request": V20PresRequest,
             "pres": V20Pres,
         }.items():
