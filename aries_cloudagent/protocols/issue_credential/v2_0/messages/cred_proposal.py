@@ -2,9 +2,10 @@
 
 from typing import Sequence
 
-from marshmallow import EXCLUDE, fields, validates_schema, ValidationError
+from marshmallow import EXCLUDE, fields, RAISE, validates_schema, ValidationError
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
+from .....messaging.credential_definitions.util import CredDefQueryStringSchema
 from .....messaging.decorators.attach_decorator import (
     AttachDecorator,
     AttachDecoratorSchema,
@@ -47,7 +48,7 @@ class V20CredProposal(AgentMessage):
             comment: optional human-readable comment
             credential_proposal: proposed credential preview
             formats: acceptable attachment formats
-            filter_attach: list of attachments filtering credential proposal
+            filters_attach: list of attachments filtering credential proposal
 
         """
         super().__init__(_id=_id, **kwargs)
@@ -98,7 +99,7 @@ class V20CredProposalSchema(AgentMessageSchema):
         V20CredFormatSchema,
         many=True,
         required=True,
-        description="Acceptable attachment formats",
+        description="Attachment formats",
     )
     filters_attach = fields.Nested(
         AttachDecoratorSchema,
@@ -112,20 +113,21 @@ class V20CredProposalSchema(AgentMessageSchema):
 
     @validates_schema
     def validate_fields(self, data, **kwargs):
-        """Validate filter per format."""
+        """Validate attachments per format."""
 
-        def get_filter_attach_by_id(attach_id):
-            """Return filter with input attachment identifier."""
-            for f in filters_attach:
-                if f.ident == attach_id:
-                    return f
-            raise ValidationError(f"No filter matches attach_id {attach_id} in format")
+        def get_attach_by_id(attach_id):
+            """Return attachment with input identifier."""
+            for atch in attachments:
+                if atch.ident == attach_id:
+                    return atch
+            raise ValidationError(f"No attachment for attach_id {attach_id} in formats")
 
         formats = data.get("formats") or []
-        filters_attach = data.get("filters_attach") or []
-        if len(formats) != len(filters_attach):
-            raise ValidationError("Formats/filters length mismatch")
+        attachments = data.get("filters_attach") or []
+        if len(formats) != len(attachments):
+            raise ValidationError("Formats/attachments length mismatch")
 
         for fmt in formats:
-            filt_atch = get_filter_attach_by_id(fmt.attach_id)
-            V20CredFormat.Format.get(fmt.format).validate_filter(filt_atch.content)
+            atch = get_attach_by_id(fmt.attach_id)
+            if V20CredFormat.Format.get(fmt.format) is V20CredFormat.Format.INDY:
+                CredDefQueryStringSchema(unknown=RAISE).load(atch.content)

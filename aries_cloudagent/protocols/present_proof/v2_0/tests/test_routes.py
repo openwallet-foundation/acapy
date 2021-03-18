@@ -1,3 +1,4 @@
+from copy import deepcopy
 from time import time
 
 from asynctest import TestCase as AsyncTestCase
@@ -11,7 +12,6 @@ from .....indy.verifier import IndyVerifier
 from .....ledger.base import BaseLedger
 from .....storage.error import StorageNotFoundError
 
-from ...indy.pres_preview import IndyPresAttrSpec, IndyPresPreview
 from ...indy.proof_request import IndyProofReqAttrSpecSchema
 
 from .. import routes as test_module
@@ -21,23 +21,37 @@ ISSUER_DID = "NcYxiDXkpYi6ov5FcYDi1e"
 S_ID = f"{ISSUER_DID}:2:vidya:1.0"
 CD_ID = f"{ISSUER_DID}:3:CL:{S_ID}:tag1"
 RR_ID = f"{ISSUER_DID}:4:{CD_ID}:CL_ACCUM:0"
-INDY_PRES_PREVIEW = IndyPresPreview(
-    attributes=[
-        IndyPresAttrSpec(
-            name="player",
-            cred_def_id=CD_ID,
-            value="Richie Knucklez",
-        ),
-        IndyPresAttrSpec(
-            name="screenCapture",
-            cred_def_id=CD_ID,
-            mime_type="image/png",
-            value="aW1hZ2luZSBhIHNjcmVlbiBjYXB0dXJl",
-        ),
-    ],
-    predicates=[],
-)
+PROOF_REQ_NAME = "name"
+PROOF_REQ_VERSION = "1.0"
+PROOF_REQ_NONCE = "12345"
+
 NOW = int(time())
+INDY_PROOF_REQ = {
+    "name": PROOF_REQ_NAME,
+    "version": PROOF_REQ_VERSION,
+    "nonce": PROOF_REQ_NONCE,
+    "requested_attributes": {
+        "0_player_uuid": {
+            "name": "player",
+            "restrictions": [{"cred_def_id": CD_ID}],
+            "non_revoked": {"from": NOW, "to": NOW},
+        },
+        "1_screencapture_uuid": {
+            "name": "screenCapture",
+            "restrictions": [{"cred_def_id": CD_ID}],
+            "non_revoked": {"from": NOW, "to": NOW},
+        },
+    },
+    "requested_predicates": {
+        "0_highscore_GE_uuid": {
+            "name": "highScore",
+            "p_type": ">=",
+            "p_value": 1000000,
+            "restrictions": [{"cred_def_id": CD_ID}],
+            "non_revoked": {"from": NOW, "to": NOW},
+        }
+    },
+}
 
 
 class TestPresentProofRoutes(AsyncTestCase):
@@ -102,7 +116,7 @@ class TestPresentProofRoutes(AsyncTestCase):
         )
 
     async def test_validate(self):
-        schema = test_module.V20PresPreviewByFormatSchema()
+        schema = test_module.V20PresProposalByFormatSchema()
         schema.validate_fields({"indy": {"attributes": [], "predicates": []}})
         schema.validate_fields({"dif": {"some_dif_criterion": "..."}})
         schema.validate_fields(
@@ -355,8 +369,8 @@ class TestPresentProofRoutes(AsyncTestCase):
         self.request.json = async_mock.CoroutineMock(
             return_value={
                 "connection_id": "dummy-conn-id",
-                "presentation_preview": {
-                    V20PresFormat.Format.INDY.api: INDY_PRES_PREVIEW.serialize()
+                "presentation_proposal": {
+                    V20PresFormat.Format.INDY.api: INDY_PROOF_REQ
                 },
             }
         )
@@ -427,11 +441,7 @@ class TestPresentProofRoutes(AsyncTestCase):
                 await test_module.present_proof_send_proposal(self.request)
 
     async def test_present_proof_create_request(self):
-        indy_proof_req = await INDY_PRES_PREVIEW.indy_proof_request(
-            name="proof-request",
-            version="v1.0",
-            ledger=self.ledger,
-        )
+        indy_proof_req = deepcopy(INDY_PROOF_REQ)
         indy_proof_req.pop("nonce")  # exercise _add_nonce()
 
         self.request.json = async_mock.CoroutineMock(
@@ -466,15 +476,10 @@ class TestPresentProofRoutes(AsyncTestCase):
             )
 
     async def test_present_proof_create_request_x(self):
-        indy_proof_req = await INDY_PRES_PREVIEW.indy_proof_request(
-            name="proof-request",
-            version="v1.0",
-            ledger=self.ledger,
-        )
         self.request.json = async_mock.CoroutineMock(
             return_value={
                 "comment": "dummy",
-                "presentation_request": {V20PresFormat.Format.INDY.api: indy_proof_req},
+                "presentation_request": {V20PresFormat.Format.INDY.api: INDY_PROOF_REQ},
             }
         )
 
@@ -497,16 +502,11 @@ class TestPresentProofRoutes(AsyncTestCase):
                 await test_module.present_proof_create_request(self.request)
 
     async def test_present_proof_send_free_request(self):
-        indy_proof_req = await INDY_PRES_PREVIEW.indy_proof_request(
-            name="proof-request",
-            version="v1.0",
-            ledger=self.ledger,
-        )
         self.request.json = async_mock.CoroutineMock(
             return_value={
                 "connection_id": "dummy",
                 "comment": "dummy",
-                "presentation_request": {V20PresFormat.Format.INDY.api: indy_proof_req},
+                "presentation_request": {V20PresFormat.Format.INDY.api: INDY_PROOF_REQ},
             }
         )
 
@@ -570,16 +570,11 @@ class TestPresentProofRoutes(AsyncTestCase):
                 await test_module.present_proof_send_free_request(self.request)
 
     async def test_present_proof_send_free_request_x(self):
-        indy_proof_req = await INDY_PRES_PREVIEW.indy_proof_request(
-            name="proof-request",
-            version="v1.0",
-            ledger=self.ledger,
-        )
         self.request.json = async_mock.CoroutineMock(
             return_value={
                 "connection_id": "dummy",
                 "comment": "dummy",
-                "presentation_request": {V20PresFormat.Format.INDY.api: indy_proof_req},
+                "presentation_request": {V20PresFormat.Format.INDY.api: INDY_PROOF_REQ},
             }
         )
 

@@ -40,6 +40,21 @@ class Predicate(Enum):
         lambda x, y: Predicate.to_int(x) <= Predicate.to_int(y),
     )
 
+    @property
+    def fortran(self) -> str:
+        """Fortran nomenclature."""
+        return self.value.fortran
+
+    @property
+    def wql(self) -> str:
+        """WQL nomenclature."""
+        return self.value.wql
+
+    @property
+    def math(self) -> str:
+        """Mathematical nomenclature."""
+        return self.value.math
+
     @staticmethod
     def get(relation: str) -> "Predicate":
         """Return enum instance corresponding to input relation string."""
