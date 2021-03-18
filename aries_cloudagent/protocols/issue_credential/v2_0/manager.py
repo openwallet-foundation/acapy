@@ -8,6 +8,13 @@ from ....core.error import BaseError
 from ....core.profile import Profile
 from ....storage.error import StorageNotFoundError
 
+from .message_types import (
+    ATTACHMENT_FORMAT,
+    CRED_20_PROPOSAL,
+    CRED_20_OFFER,
+    CRED_20_REQUEST,
+    CRED_20_ISSUE,
+)
 from .messages.cred_ack import V20CredAck
 from .messages.cred_format import V20CredFormat
 from .messages.cred_issue import V20CredIssue

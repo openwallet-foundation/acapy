@@ -38,7 +38,7 @@ from ...problem_report.v1_0 import internal_error
 from ...problem_report.v1_0.message import ProblemReport
 
 from .manager import V20CredManager, V20CredManagerError
-from .message_types import SPEC_URI
+from .message_types import ATTACHMENT_FORMAT, CRED_20_PROPOSAL, SPEC_URI
 from .messages.cred_format import V20CredFormat
 from .messages.cred_offer import V20CredOfferSchema
 from .messages.cred_proposal import V20CredProposal
@@ -315,19 +315,19 @@ class V20CredExIdMatchInfoSchema(OpenAPISchema):
 
 
 def _formats_filters(filt_spec: Mapping) -> Mapping:
-    """Break out formats and filters for v2.0 messages."""
+    """Break out formats and filters for v2.0 cred proposal messages."""
 
     return {
         "formats": [
             V20CredFormat(
-                attach_id=fmt_aka,
-                format_=V20CredFormat.Format.get(fmt_aka),
+                attach_id=fmt_api,
+                format_=ATTACHMENT_FORMAT[CRED_20_PROPOSAL][fmt_api],
             )
-            for fmt_aka in filt_spec
+            for fmt_api in filt_spec
         ],
         "filters_attach": [
-            AttachDecorator.data_base64(filt_by_fmt, ident=fmt_aka)
-            for (fmt_aka, filt_by_fmt) in filt_spec.items()
+            AttachDecorator.data_base64(filt_by_fmt, ident=fmt_api)
+            for (fmt_api, filt_by_fmt) in filt_spec.items()
         ],
     }
 
@@ -657,8 +657,8 @@ async def credential_exchange_send_proposal(request: web.BaseRequest):
             cred_preview=cred_preview,
             trace=trace_msg,
             fmt2filter={
-                V20CredFormat.Format.get(fmt_aka): filt_by_fmt
-                for (fmt_aka, filt_by_fmt) in filt_spec.items()
+                V20CredFormat.Format.get(fmt_api): filt_by_fmt
+                for (fmt_api, filt_by_fmt) in filt_spec.items()
             },
         )
 

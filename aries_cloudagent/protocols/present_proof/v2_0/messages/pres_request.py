@@ -2,13 +2,15 @@
 
 from typing import Sequence
 
-from marshmallow import EXCLUDE, fields, validates_schema, ValidationError
+from marshmallow import EXCLUDE, fields, RAISE, validates_schema, ValidationError
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 from .....messaging.decorators.attach_decorator import (
     AttachDecorator,
     AttachDecoratorSchema,
 )
+
+from ...indy.proof_request import IndyProofRequestSchema
 
 from ..message_types import PRES_20_REQUEST, PROTOCOL_PACKAGE
 
@@ -101,24 +103,21 @@ class V20PresRequestSchema(AgentMessageSchema):
 
     @validates_schema
     def validate_fields(self, data, **kwargs):
-        """Validate attachment per format."""
+        """Validate proposal attachment per format."""
 
         def get_attach_by_id(attach_id):
             """Return attachment with input attachment identifier."""
-            for a in request_presentations_attach:
-                if a.ident == attach_id:
-                    return a
-            raise ValidationError(
-                f"No attachment matches attach_id {attach_id} in format"
-            )
+            for atch in attachments:
+                if atch.ident == attach_id:
+                    return atch
+            raise ValidationError(f"No attachment for attach_id {attach_id} in formats")
 
         formats = data.get("formats") or []
-        request_presentations_attach = data.get("request_presentations_attach") or []
-        if len(formats) != len(request_presentations_attach):
-            raise ValidationError("Formats vs. attachments length mismatch")
+        attachments = data.get("request_presentations_attach") or []
+        if len(formats) != len(attachments):
+            raise ValidationError("Formats/attachments length mismatch")
 
         for fmt in formats:
-            request_atch = get_attach_by_id(fmt.attach_id)
-            V20PresFormat.Format.get(fmt.format).validate_request_attach(
-                request_atch.content
-            )
+            atch = get_attach_by_id(fmt.attach_id)
+            if V20PresFormat.Format.get(fmt.format) is V20PresFormat.Format.INDY:
+                IndyProofRequestSchema(unknown=RAISE).load(atch.content)

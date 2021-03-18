@@ -23,6 +23,12 @@ from .....revocation.indy import IndyRevocation
 from .....storage.base import BaseStorage
 from .....storage.error import StorageNotFoundError
 
+from ..message_types import (
+    CRED_20_ISSUE,
+    CRED_20_OFFER,
+    CRED_20_PROPOSAL,
+    CRED_20_REQUEST,
+)
 from ..messages.cred_format import V20CredFormat
 from ..messages.cred_proposal import V20CredProposal
 from ..messages.cred_offer import V20CredOffer
@@ -61,12 +67,8 @@ class IndyCredFormatHandler(V20CredFormatHandler):
     async def create_proposal(
         self, cred_ex_record: V20CredExRecord, filter: Mapping[str, str]
     ) -> Tuple[V20CredFormat, AttachDecorator]:
-        id = uuid.uuid4()
 
-        return (
-            V20CredFormat(attach_id=id, format_=self.format),
-            AttachDecorator.data_base64(filter, ident=id),
-        )
+        return self.get_format_data(CRED_20_PROPOSAL, filter)
 
     async def receive_offer(
         self, cred_ex_record: V20CredExRecord, cred_offer_message: V20CredOffer
@@ -77,17 +79,23 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         cred_def_id = offer["cred_def_id"]
 
         # TODO: this could overwrite proposal for other formats. We should append or something
+        # TODO: move schema_id and cred_def_id to indy record
         cred_proposal_ser = V20CredProposal(
             comment=cred_offer_message.comment,
             credential_preview=cred_offer_message.credential_preview,
-            formats=[V20CredFormat(attach_id="0", format_=self.format)],
+            formats=[
+                V20CredFormat(
+                    attach_id=self.format.api,
+                    format_=self.get_format_identifier(CRED_20_PROPOSAL),
+                )
+            ],
             filters_attach=[
                 AttachDecorator.data_base64(
                     {
                         "schema_id": schema_id,
                         "cred_def_id": cred_def_id,
                     },
-                    ident="0",
+                    ident=self.format.api,
                 )
             ],
         ).serialize()  # proposal houses filters, preview (possibly with MIME types)
@@ -143,11 +151,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         if not cred_offer:
             cred_offer = await _create()
 
-        id = uuid.uuid4()
-        return (
-            V20CredFormat(attach_id=id, format_=self.format),
-            AttachDecorator.data_base64(cred_offer, ident=id),
-        )
+        return self.get_format_data(CRED_20_OFFER, cred_offer)
 
     async def receive_offer(
         self, cred_ex_record: V20CredExRecord, cred_offer_message: V20CredOffer
@@ -229,11 +233,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         async with self.profile.session() as session:
             await detail_record.save(session, reason="create v2.0 credential request")
 
-        id = uuid.uuid4()
-        return (
-            V20CredFormat(attach_id=id, format_=self.format),
-            AttachDecorator.data_base64(cred_req_result["request"], ident=id),
-        )
+        return self.get_format_data(CRED_20_REQUEST, cred_req_result["request"])
 
     async def receive_request(
         self, cred_ex_record: V20CredExRecord, cred_request_message: V20CredRequest
@@ -386,11 +386,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
 
             raise
 
-        id = uuid.uuid4()
-        return (
-            V20CredFormat(attach_id=id, format_=self.format),
-            AttachDecorator.data_base64(json.loads(cred_json), ident=id),
-        )
+        return self.get_format_data(CRED_20_ISSUE, json.loads(cred_json))
 
     async def store_credential(self, cred_ex_record: V20CredExRecord, cred_id: str):
         cred = V20CredIssue.deserialize(cred_ex_record.cred_issue).attachment(

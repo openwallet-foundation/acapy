@@ -1,4 +1,4 @@
-"""V2.0 indy issue-credential cred format."""
+"""V2.0 issue-credential base credential format handler."""
 
 from abc import ABC, abstractclassmethod, abstractmethod
 import logging
@@ -10,6 +10,7 @@ from .....core.profile import Profile
 from .....messaging.decorators.attach_decorator import AttachDecorator
 from .....storage.error import StorageNotFoundError
 
+from ..message_types import ATTACHMENT_FORMAT
 from ..messages.cred_format import V20CredFormat
 from ..messages.cred_offer import V20CredOffer
 from ..messages.cred_request import V20CredRequest
@@ -25,7 +26,7 @@ class V20CredFormatError(BaseError):
 
 
 class V20CredFormatHandler(ABC):
-    "Base credential format handler."
+    """Base credential format handler."""
 
     format: V20CredFormat.Format = None
 
@@ -59,33 +60,70 @@ class V20CredFormatHandler(ABC):
             except StorageNotFoundError:
                 return None
 
+    def get_format_identifier(self, message_type: str) -> str:
+        """Get attachment format identifier for format and message combination.
+
+        Args:
+            message_type (str): Message type for which to return the format identifier
+
+        Returns:
+            str: Issue credential attachment format identifier
+        """
+        return ATTACHMENT_FORMAT[message_type][self.format.api]
+
+    def get_format_data(
+        self, message_type: str, data: dict
+    ) -> Tuple[V20CredFormat, AttachDecorator]:
+        """Get credential format and attachment objects for use in cred ex messages.
+
+        Returns a tuple of both credential format and attachment decorator for use
+        in credential exchange messages. It looks up the correct format identifier and
+        encodes the data as a base64 attachment.
+
+        Args:
+            message_type (str): The message type for which to return the cred format.
+                Should be one of the message types defined in the message types file
+            data (dict): The data to include in the attach decorator
+
+        Returns:
+            Tuple[V20CredFormat, AttachDecorator]: Credential format and
+                attachment data objects
+        """
+        return (
+            V20CredFormat(
+                attach_id=self.format.api,
+                format_=self.get_format_identifier(message_type),
+            ),
+            AttachDecorator.data_base64(data, ident=self.format.api),
+        )
+
     @abstractclassmethod
     def validate_filter(cls, data: Mapping):
-        """"""
+        pass
 
     @abstractmethod
     async def create_proposal(
         self, cred_ex_record: V20CredExRecord, filter: Mapping = None
     ) -> Tuple[V20CredFormat, AttachDecorator]:
-        """"""
+        pass
 
     @abstractmethod
     async def create_offer(
         self, cred_ex_record: V20CredExRecord
     ) -> Tuple[V20CredFormat, AttachDecorator]:
-        """"""
+        pass
 
     @abstractmethod
     async def receive_offer(
         self, cred_ex_record: V20CredExRecord, cred_offer_message: V20CredOffer
     ):
-        """"""
+        pass
 
     @abstractmethod
     async def create_request(
         self, cred_ex_record: V20CredExRecord, holder_did: str = None
     ):
-        """"""
+        pass
 
     async def receive_request(
         self, cred_ex_record: V20CredExRecord, cred_request_message: V20CredRequest
@@ -94,8 +132,8 @@ class V20CredFormatHandler(ABC):
 
     @abstractmethod
     async def issue_credential(self, cred_ex_record: V20CredExRecord, retries: int = 5):
-        """"""
+        pass
 
     @abstractmethod
     async def store_credential(self, cred_ex_record: V20CredExRecord, cred_id: str):
-        """"""
+        pass

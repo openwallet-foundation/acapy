@@ -1,14 +1,15 @@
 """Issue-credential protocol message attachment format."""
 
 from collections import namedtuple
-from re import sub
 from typing import Mapping, Sequence, Type, Union
 from enum import Enum
+from typing import Sequence, Union
 from uuid import uuid4
 
 from marshmallow import EXCLUDE, fields, validate
 
 from .....utils.classloader import ClassLoader
+from .....messaging.decorators.attach_decorator import AttachDecorator
 from .....messaging.models.base import BaseModel, BaseModelSchema
 from .....messaging.valid import UUIDFour
 from .....messaging.decorators.attach_decorator import AttachDecorator
@@ -21,7 +22,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from ..formats.handler import V20CredFormatHandler
 
-FormatSpec = namedtuple("FormatSpec", "aries aka detail handler")
+FormatSpec = namedtuple("FormatSpec", "aries detail handler")
 
 
 class V20CredFormat(BaseModel):
@@ -36,14 +37,12 @@ class V20CredFormat(BaseModel):
         """Attachment format."""
 
         INDY = FormatSpec(
-            "hlindy-zkp-v1.0",
-            ["indy", "hyperledgerindy", "hlindy"],
+            "hlindy/",
             V20CredExRecordIndy,
             f"{PROTOCOL_PACKAGE}.formats.indy.IndyCredFormatHandler",
         )
         LD_PROOF = FormatSpec(
-            "dif/credential-manifest@v1.0",
-            ["ld_proof", "ldproof", "jsonld"],
+            "aries/",
             V20CredExRecordLDProof,
             f"{PROTOCOL_PACKAGE}.formats.ld_proof.LDProofCredFormatHandler",
         )
@@ -53,10 +52,7 @@ class V20CredFormat(BaseModel):
             """Get format enum for label."""
             if isinstance(label, str):
                 for fmt in V20CredFormat.Format:
-                    if (
-                        fmt.aries == label
-                        or sub("[^a-zA-Z0-9]+", "", label.lower()) in fmt.aka
-                    ):
+                    if label.startswith(fmt.aries) or label == fmt.api:
                         return fmt
             elif isinstance(label, V20CredFormat.Format):
                 return label
@@ -64,19 +60,14 @@ class V20CredFormat(BaseModel):
             return None
 
         @property
-        def aries(self) -> str:
-            """Accessor for aries identifier."""
-            return self.value.aries
-
-        @property
-        def aka(self) -> str:
-            """Accessor for alternative identifier list."""
-            return self.value.aka
-
-        @property
         def api(self) -> str:
             """Admin API specifier."""
             return self.name.lower()
+
+        @property
+        def aries(self) -> str:
+            """Aries specifier prefix."""
+            return self.value.aries
 
         @property
         def detail(self) -> str:
@@ -98,7 +89,7 @@ class V20CredFormat(BaseModel):
             formats: Sequence["V20CredFormat"],
             attachments: Sequence[AttachDecorator],
         ):
-            """Find attachment of current format, base64-decode and return its data."""
+            """Find attachment of current format, decode and return its content."""
             for fmt in formats:
                 if V20CredFormat.Format.get(fmt.format) is self:
                     attach_id = fmt.attach_id
@@ -116,13 +107,11 @@ class V20CredFormat(BaseModel):
         self,
         *,
         attach_id: str = None,
-        format_: Union[str, "V20CredFormat.Format"] = None,
+        format_: str = None,
     ):
         """Initialize issue-credential protocol message attachment format."""
         self.attach_id = attach_id or uuid4()
-        self.format_ = (
-            V20CredFormat.Format.get(format_) or V20CredFormat.Format.INDY
-        ).aries
+        self.format_ = format_
 
     @property
     def format(self) -> str:
@@ -148,8 +137,8 @@ class V20CredFormatSchema(BaseModelSchema):
     format_ = fields.Str(
         required=True,
         allow_none=False,
-        description="Acceptable issue-credential message attachment format specifier",
+        description="Attachment format specifier",
         data_key="format",
-        validate=validate.OneOf([f.aries for f in V20CredFormat.Format]),
-        example=V20CredFormat.Format.INDY.aries,
+        validate=validate.Regexp("^(hlindy/.*@v2.0)|(dif/.*@v1.0)$"),
+        example="dif/credential-manifest@v1.0",
     )

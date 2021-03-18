@@ -18,19 +18,6 @@ from .. import pres_request_handler as test_module
 
 S_ID = "NcYxiDXkpYi6ov5FcYDi1e:2:vidya:1.0"
 CD_ID = f"NcYxiDXkpYi6ov5FcYDi1e:3:CL:{S_ID}:tag1"
-INDY_PRES_PREVIEW = IndyPresPreview(
-    attributes=[
-        IndyPresAttrSpec(name="favourite", cred_def_id=CD_ID, value="potato"),
-        IndyPresAttrSpec(
-            name="icon",
-            cred_def_id=CD_ID,
-            mime_type="image/bmp",
-            value="cG90YXRv",
-        ),
-    ],
-    predicates=[],
-)
-
 INDY_PROOF_REQ = {
     "name": "proof-request",
     "version": "1.0",
@@ -161,9 +148,7 @@ class TestPresRequestHandler(AsyncTestCase):
                     format_=V20PresFormat.Format.INDY.aries,
                 )
             ],
-            proposal_attach=[
-                AttachDecorator.data_base64(INDY_PRES_PREVIEW.serialize(), ident="indy")
-            ],
+            proposal_attach=[AttachDecorator.data_base64(INDY_PROOF_REQ, ident="indy")],
         )
 
         px_rec_instance = test_module.V20PresExRecord(
@@ -435,9 +420,7 @@ class TestPresRequestHandler(AsyncTestCase):
                     format_=V20PresFormat.Format.INDY.aries,
                 )
             ],
-            proposal_attach=[
-                AttachDecorator.data_base64(INDY_PRES_PREVIEW.serialize(), ident="indy")
-            ],
+            proposal_attach=[AttachDecorator.data_base64(INDY_PROOF_REQ, ident="indy")],
         )
 
         px_rec_instance = test_module.V20PresExRecord(
@@ -518,120 +501,6 @@ class TestPresRequestHandler(AsyncTestCase):
         (result, target) = messages[0]
         assert result == "pres message"
         assert target == {}
-
-    async def test_called_auto_present_bait_and_switch(self):
-        request_context = RequestContext.test_context()
-        request_context.connection_record = async_mock.MagicMock()
-        request_context.connection_record.connection_id = "dummy"
-        request_context.message = V20PresRequest()
-        request_context.message.attachment = async_mock.MagicMock(
-            return_value={
-                "name": "proof-request",
-                "version": "1.0",
-                "nonce": "1234567890",
-                "requested_attributes": {
-                    "0_favourite_uuid": {
-                        "name": "favourite",
-                        "restrictions": [
-                            {
-                                "cred_def_id": CD_ID,
-                            }
-                        ],
-                    }
-                },
-                "requested_predicates": {},
-            }
-        )
-        request_context.message_receipt = MessageReceipt()
-        pres_proposal = V20PresProposal(
-            formats=[
-                V20PresFormat(
-                    attach_id="indy",
-                    format_=V20PresFormat.Format.INDY.aries,
-                )
-            ],
-            proposal_attach=[
-                AttachDecorator.data_base64(INDY_PRES_PREVIEW.serialize(), ident="indy")
-            ],
-        )
-        px_rec_instance = test_module.V20PresExRecord(
-            pres_proposal=pres_proposal.serialize(),
-            auto_present=True,
-        )
-
-        with async_mock.patch.object(
-            test_module, "V20PresManager", autospec=True
-        ) as mock_pres_mgr, async_mock.patch.object(
-            test_module, "V20PresExRecord", autospec=True
-        ) as mock_pres_ex_rec_cls, async_mock.patch.object(
-            test_module, "IndyHolder", autospec=True
-        ) as mock_holder:
-
-            by_reft = async_mock.CoroutineMock(
-                return_value=[
-                    {
-                        "cred_info": {
-                            "referent": "dummy-0",
-                            "cred_def_id": CD_ID,
-                            "attrs": {
-                                "ident": "zero",
-                                "favourite": "yam",
-                                "icon": "eWFt",
-                            },
-                        }
-                    },
-                    {
-                        "cred_info": {
-                            "referent": "dummy-1",
-                            "cred_def_id": CD_ID,
-                            "attrs": {
-                                "ident": "one",
-                                "favourite": "turnip",
-                                "icon": "dHVybmlw",
-                            },
-                        }
-                    },
-                    {
-                        "cred_info": {
-                            "referent": "dummy-2",
-                            "cred_def_id": CD_ID,
-                            "attrs": {
-                                "ident": "two",
-                                "favourite": "the idea of a potato but not a potato",
-                                "icon": (
-                                    "dGhlIGlkZWEgb2YgYSBwb3RhdG"
-                                    "8gYnV0IG5vdCBhIHBvdGF0bw=="
-                                ),
-                            },
-                        }
-                    },
-                ]
-            )
-            mock_holder.get_credentials_for_presentation_request_by_referent = by_reft
-            request_context.inject = async_mock.MagicMock(return_value=mock_holder)
-
-            mock_pres_ex_rec_cls.return_value = px_rec_instance
-            mock_pres_ex_rec_cls.retrieve_by_tag_filter = async_mock.CoroutineMock(
-                return_value=px_rec_instance
-            )
-            mock_pres_mgr.return_value.receive_pres_request = async_mock.CoroutineMock(
-                return_value=px_rec_instance
-            )
-
-            mock_pres_mgr.return_value.create_pres = async_mock.CoroutineMock(
-                return_value=(px_rec_instance, "pres message")
-            )
-            request_context.connection_ready = True
-            handler_inst = test_module.V20PresRequestHandler()
-            responder = MockResponder()
-
-            await handler_inst.handle(request_context, responder)
-            mock_pres_mgr.return_value.create_pres.assert_not_called()
-
-        mock_pres_mgr.return_value.receive_pres_request.assert_called_once_with(
-            px_rec_instance
-        )
-        assert not responder.messages
 
     async def test_called_not_ready(self):
         request_context = RequestContext.test_context()

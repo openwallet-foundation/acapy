@@ -8,6 +8,12 @@ from .....core.profile import ProfileSession
 from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
 from .....messaging.valid import UUIDFour
 
+from ..messages.cred_format import V20CredFormat
+from ..messages.cred_issue import V20CredIssue
+from ..messages.cred_proposal import V20CredProposal
+from ..messages.cred_offer import V20CredOffer
+from ..messages.cred_request import V20CredRequest
+
 from . import UNENCRYPTED_TAGS
 
 
@@ -60,6 +66,7 @@ class V20CredExRecord(BaseExchangeRecord):
         error_msg: str = None,
         trace: bool = False,
         conn_id: str = None,  # for backward compatibility to restore from storage
+        by_format: Mapping = None,  # formalism for base_record.from_storage()
         **kwargs,
     ):
         """Initialize a new V20CredExRecord."""
@@ -135,6 +142,32 @@ class V20CredExRecord(BaseExchangeRecord):
             )
             await cls.set_cached_key(session, cache_key, record.cred_ex_id)
         return record
+
+    @property
+    def by_format(self) -> Mapping:
+        """Record proposal, offer, request, and credential attachments by format."""
+        result = {}
+        for item, cls in {
+            "cred_proposal": V20CredProposal,
+            "cred_offer": V20CredOffer,
+            "cred_request": V20CredRequest,
+            "cred_issue": V20CredIssue,
+        }.items():
+            mapping = getattr(self, item)
+            if mapping:
+                msg = cls.deserialize(mapping)
+                result.update(
+                    {
+                        item: {
+                            V20CredFormat.Format.get(f.format).api: msg.attachment(
+                                V20CredFormat.Format.get(f.format)
+                            )
+                            for f in msg.formats
+                        }
+                    }
+                )
+
+        return result
 
     def __eq__(self, other: Any) -> bool:
         """Comparison between records."""

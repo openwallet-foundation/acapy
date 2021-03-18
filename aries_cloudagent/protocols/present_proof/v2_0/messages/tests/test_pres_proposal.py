@@ -14,80 +14,127 @@ from ....indy.pres_preview import (
     PRESENTATION_PREVIEW,
 )
 
-from ...message_types import PRES_20_PROPOSAL
+from ...message_types import ATTACHMENT_FORMAT, PRES_20_PROPOSAL
 
 from ..pres_format import V20PresFormat
 from ..pres_proposal import V20PresProposal
 
-
-S_ID = "NcYxiDXkpYi6ov5FcYDi1e:2:vidya:1.0"
-CD_ID = f"NcYxiDXkpYi6ov5FcYDi1e:3:CL:{S_ID}:tag1"
-PRES_PREVIEW = IndyPresPreview(
-    attributes=[
-        IndyPresAttrSpec(name="player", cred_def_id=CD_ID, value="Richie Knucklez"),
-        IndyPresAttrSpec(
-            name="screenCapture",
-            cred_def_id=CD_ID,
-            mime_type="image/png",
-            value="aW1hZ2luZSBhIHNjcmVlbiBjYXB0dXJl",
-        ),
-    ],
-    predicates=[
-        IndyPresPredSpec(
-            name="highScore", cred_def_id=CD_ID, predicate=">=", threshold=1000000
-        )
-    ],
-)
+CD_ID = f"NcYxiDXkpYi6ov5FcYDi1e:3:CL:12:tag1"
+INDY_PROOF_REQ = [
+    {
+        "name": "proof-req",
+        "version": "1.0",
+        "nonce": "12345",
+        "requested_attributes": {
+            "0_player_uuid": {
+                "name": "player",
+                "restrictions": [
+                    {
+                        "cred_def_id": f"{CD_ID}",
+                        "attr::player::value": "Richie Knucklez",
+                    }
+                ],
+                "non_revoked": {
+                    "from": 1234567890,
+                    "to": 1234567890,
+                },
+            },
+            "0_screencapture_uuid": {
+                "name": "screenCapture",
+                "restrictions": [{"cred_def_id": f"{CD_ID}"}],
+                "non_revoked": {
+                    "from": 1234567890,
+                    "to": 1234567890,
+                },
+            },
+        },
+        "requested_predicates": {
+            "0_highscore_GE_uuid": {
+                "name": "highScore",
+                "p_type": ">=",
+                "p_value": 1000000,
+                "restrictions": [{"cred_def_id": f"{CD_ID}"}],
+                "non_revoked": {
+                    "from": 1234567890,
+                    "to": 1234567890,
+                },
+            }
+        },
+    },
+    {
+        "name": "proof-req",
+        "version": "1.0",
+        "nonce": "123456",
+        "requested_attributes": {
+            "0_player_uuid": {
+                "name": "player",
+                "restrictions": [{"cred_def_id": f"{CD_ID}"}],
+            },
+            "0_screencapture_uuid": {
+                "name": "screenCapture",
+                "restrictions": [{"cred_def_id": f"{CD_ID}"}],
+            },
+        },
+        "requested_predicates": {
+            "0_highscore_GE_uuid": {
+                "name": "highScore",
+                "p_type": ">=",
+                "p_value": 1000000,
+                "restrictions": [{"cred_def_id": f"{CD_ID}"}],
+            }
+        },
+    },
+    {
+        "name": "proof-req",
+        "version": "1.0",
+        "nonce": "1234567",
+        "requested_attributes": {},
+        "requested_predicates": {
+            "0_highscore_GE_uuid": {
+                "name": "highScore",
+                "p_type": ">=",
+                "p_value": 1000000,
+                "restrictions": [{"cred_def_id": f"{CD_ID}"}],
+            }
+        },
+    },
+]
 
 
 class TestV20PresProposal(TestCase):
     """Presentation proposal tests."""
 
-    def test_init_type_attachment(self):
-        """Test initializer, type, attachment."""
-        pres_proposal = V20PresProposal(
-            comment="Hello World",
-            formats=[
-                V20PresFormat(
-                    attach_id="indy",
-                    format_=V20PresFormat.Format.INDY.aries,
-                )
-            ],
-            proposal_attach=[
-                AttachDecorator.data_base64(PRES_PREVIEW.serialize(), ident="indy")
-            ],
-        )
-        assert pres_proposal._type == DIDCommPrefix.qualify_current(PRES_20_PROPOSAL)
-        assert (
-            pres_proposal.attachment(V20PresFormat.Format.INDY)
-            == PRES_PREVIEW.serialize()
-        )
+    def test_init_type_attachment_serde(self):
+        """Test initializer, type, attachment, de/serialization."""
+        for proof_req in INDY_PROOF_REQ:
+            pres_proposal = V20PresProposal(
+                comment="Hello World",
+                formats=[
+                    V20PresFormat(
+                        attach_id="indy",
+                        format_=ATTACHMENT_FORMAT[PRES_20_PROPOSAL][
+                            V20PresFormat.Format.INDY.api
+                        ],
+                    )
+                ],
+                proposal_attach=[AttachDecorator.data_base64(proof_req, ident="indy")],
+            )
+            assert pres_proposal._type == DIDCommPrefix.qualify_current(
+                PRES_20_PROPOSAL
+            )
+            assert pres_proposal.attachment(V20PresFormat.Format.INDY) == proof_req
 
-    def test_serde(self):
-        """Test de/serialization."""
-        pres_proposal = V20PresProposal(
-            comment="Hello World",
-            formats=[
-                V20PresFormat(
-                    attach_id="indy",
-                    format_=V20PresFormat.Format.INDY.aries,
-                )
-            ],
-            proposal_attach=[
-                AttachDecorator.data_base64(PRES_PREVIEW.serialize(), ident="indy")
-            ],
-        )
-        pres_proposal_ser = pres_proposal.serialize()
-        pres_proposal_deser = V20PresProposal.deserialize(pres_proposal_ser)
-        assert type(pres_proposal_deser) == V20PresProposal
+            pres_proposal_ser = pres_proposal.serialize()
+            pres_proposal_deser = V20PresProposal.deserialize(pres_proposal_ser)
+            assert type(pres_proposal_deser) == V20PresProposal
 
-        pres_proposal_dict = pres_proposal_deser.serialize()
-        assert pres_proposal_dict == pres_proposal_ser
+            pres_proposal_dict = pres_proposal_deser.serialize()
+            assert pres_proposal_dict == pres_proposal_ser
 
-        pres_proposal_dict["formats"][0]["attach_id"] = "xxx"
-        with pytest.raises(BaseModelError):
-            V20PresProposal.deserialize(pres_proposal_dict)  # id mismatch
+            pres_proposal_dict["formats"][0]["attach_id"] = "xxx"
+            with pytest.raises(BaseModelError):
+                V20PresProposal.deserialize(pres_proposal_dict)  # id mismatch
 
-        pres_proposal_dict["formats"] = []
-        with pytest.raises(BaseModelError):
-            V20PresProposal.deserialize(pres_proposal_dict)  # length mismatch
+            pres_proposal_dict["formats"] = []
+            with pytest.raises(BaseModelError):
+                V20PresProposal.deserialize(pres_proposal_dict)  # length mismatch
