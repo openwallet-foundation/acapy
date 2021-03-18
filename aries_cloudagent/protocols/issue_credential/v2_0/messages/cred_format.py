@@ -13,7 +13,6 @@ from .....messaging.decorators.attach_decorator import AttachDecorator
 from .....messaging.models.base import BaseModel, BaseModelSchema
 from .....messaging.valid import UUIDFour
 from .....messaging.decorators.attach_decorator import AttachDecorator
-from ..message_types import PROTOCOL_PACKAGE
 from ..models.detail.indy import V20CredExRecordIndy
 from ..models.detail.ld_proof import V20CredExRecordLDProof
 from typing import TYPE_CHECKING
@@ -39,12 +38,14 @@ class V20CredFormat(BaseModel):
         INDY = FormatSpec(
             "hlindy/",
             V20CredExRecordIndy,
-            f"{PROTOCOL_PACKAGE}.formats.indy.IndyCredFormatHandler",
+            # TODO: use PROTOCOL_PACKAGE const
+            "aries_cloudagent.protocols.issue_credential.v2_0.formats.indy.IndyCredFormatHandler",
         )
         LD_PROOF = FormatSpec(
             "aries/",
             V20CredExRecordLDProof,
-            f"{PROTOCOL_PACKAGE}.formats.ld_proof.LDProofCredFormatHandler",
+            # TODO: use PROTOCOL_PACKAGE const
+            "aries_cloudagent.protocols.issue_credential.v2_0.formats.ld_proof.LDProofCredFormatHandler",
         )
 
         @classmethod
@@ -80,9 +81,9 @@ class V20CredFormat(BaseModel):
             # TODO: optimize / refactor
             return ClassLoader.load_class(self.value.handler)
 
-        def validate_filter(self, data: Mapping):
-            """Raise ValidationError for wrong filtration criteria."""
-            self.handler.validate_filter(data)
+        def validate_fields(self, message_type: str, attachment_data: Mapping):
+            """Raise ValidationError for invalid attachment formats."""
+            self.handler.validate_fields(message_type, attachment_data)
 
         def get_attachment_data(
             self,

@@ -1,32 +1,37 @@
-"""V2.0 linked data proof issue-credential cred format."""
+"""V2.0 issue-credential linked data proof credential format handler."""
 
 
 import logging
 import json
-import uuid
-from typing import List, Mapping, Tuple
+from typing import List, Mapping
 
 
-from .....messaging.decorators.attach_decorator import AttachDecorator
-from .....vc.vc_ld import issue, verify_credential
-from .....vc.ld_proofs import (
+from ......vc.vc_ld import issue, verify_credential
+from ......vc.ld_proofs import (
     Ed25519Signature2018,
     Ed25519WalletKeyPair,
     did_key_document_loader,
     LinkedDataProof,
 )
-from .....wallet.error import WalletNotFoundError
-from .....wallet.base import BaseWallet
-from .....wallet.util import did_key_to_naked, naked_to_did_key
-from .....storage.vc_holder.base import VCHolder
-from .....storage.vc_holder.vc_record import VCRecord
-from ..messages.cred_format import V20CredFormat
-from ..messages.cred_offer import V20CredOffer
-from ..messages.cred_proposal import V20CredProposal
-from ..messages.cred_issue import V20CredIssue
-from ..messages.cred_request import V20CredRequest
-from ..models.cred_ex_record import V20CredExRecord
-from ..formats.handler import V20CredFormatError, V20CredFormatHandler
+from ......wallet.error import WalletNotFoundError
+from ......wallet.base import BaseWallet
+from ......wallet.util import did_key_to_naked, naked_to_did_key
+from ......storage.vc_holder.base import VCHolder
+from ......storage.vc_holder.vc_record import VCRecord
+
+from ...message_types import (
+    CRED_20_ISSUE,
+    CRED_20_OFFER,
+    CRED_20_PROPOSAL,
+    CRED_20_REQUEST,
+)
+from ...messages.cred_format import V20CredFormat
+from ...messages.cred_offer import V20CredOffer
+from ...messages.cred_proposal import V20CredProposal
+from ...messages.cred_issue import V20CredIssue
+from ...messages.cred_request import V20CredRequest
+from ...models.cred_ex_record import V20CredExRecord
+from ..handler import CredFormatAttachment, V20CredFormatError, V20CredFormatHandler
 
 LOGGER = logging.getLogger(__name__)
 
@@ -46,11 +51,12 @@ SUPPORTED_PROOF_TYPES = {"Ed25519Signature2018"}
 
 
 class LDProofCredFormatHandler(V20CredFormatHandler):
+    """Linked data proof credential format handler."""
 
     format = V20CredFormat.Format.LD_PROOF
 
     @classmethod
-    def validate_filter(cls, data: Mapping):
+    def validate_fields(cls, message_type: str, attachment_data: dict) -> None:
         # TODO: validate LDProof credential filter
         pass
 
@@ -101,51 +107,51 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
         return verification_method
 
     async def create_proposal(
-        self, cred_ex_record: V20CredExRecord, filter: Mapping[str, str]
-    ) -> Tuple[V20CredFormat, AttachDecorator]:
-        # TODO: validate credential proposal structure
-        return (
-            V20CredFormat(attach_id="ld_proof", format_=self.format),
-            AttachDecorator.data_base64(filter, ident="ld_proof"),
-        )
+        self, cred_ex_record: V20CredExRecord, proposal_data: Mapping
+    ) -> CredFormatAttachment:
+        self.validate_fields(CRED_20_PROPOSAL, filter)
 
-    async def receive_offer(
-        self, cred_ex_record: V20CredExRecord, cred_offer_message: V20CredOffer
-    ):
+        return self.get_format_data(CRED_20_PROPOSAL, filter)
+
+    async def receive_proposal(
+        self, cred_ex_record: V20CredExRecord, cred_proposal_message: V20CredProposal
+    ) -> None:
+        # TODO: anything to validate here?
         pass
 
-    # TODO: add filter
     async def create_offer(
-        self, cred_ex_record: V20CredExRecord
-    ) -> Tuple[V20CredFormat, AttachDecorator]:
+        self, cred_ex_record: V20CredExRecord, offer_data: Mapping = None
+    ) -> CredFormatAttachment:
         # TODO:
+        #   - Use offer data
         #   - Check if all fields in credentialSubject are present in context
         #   - Check if all required fields are present (according to RFC). Or is the API going to do this?
         #   - Other checks (credentialStatus, credentialSchema, etc...)
 
-        # TODO: validate credential structure
-        filter = V20CredProposal.deserialize(cred_ex_record.cred_proposal).attachment(
-            self.format
-        )
+        detail: dict = V20CredProposal.deserialize(
+            cred_ex_record.cred_proposal
+        ).attachment(self.format)
 
-        credential = filter["credential"]
-        options = filter["options"]
+        credential = detail["credential"]
+        options = detail["options"]
 
         await self._assert_can_sign_with_did(credential["issuer"])
         await self._assert_can_sign_with_types(options["proofType"])
 
-        id = uuid.uuid4()
-        return (
-            V20CredFormat(attach_id=id, format_=self.format),
-            AttachDecorator.data_json(filter, ident=id),
-        )
+        self.validate_fields(CRED_20_OFFER, detail)
+        return self.get_format_data(CRED_20_OFFER, detail)
+
+    async def receive_offer(
+        self, cred_ex_record: V20CredExRecord, cred_offer_message: V20CredOffer
+    ) -> None:
+        # TODO: anything to validate here?
+        pass
 
     async def create_request(
-        self,
-        cred_ex_record: V20CredExRecord,
-        # TODO subject id?
-        holder_did: str = None,
-    ):
+        self, cred_ex_record: V20CredExRecord, request_data: Mapping = None
+    ) -> CredFormatAttachment:
+        holder_did = request_data.get("holder_did") if request_data else None
+
         if cred_ex_record.cred_offer:
             cred_detail = V20CredOffer.deserialize(
                 cred_ex_record.cred_offer
@@ -164,18 +170,19 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
             # TODO: start from request
             cred_detail = None
 
-        return (
-            V20CredFormat(attach_id="ld_proof", format_=self.format),
-            AttachDecorator.data_json(cred_detail, ident="ld_proof"),
-        )
+        self.validate_fields(CRED_20_REQUEST, cred_detail)
+        return self.get_format_data(CRED_20_REQUEST, cred_detail)
 
     async def receive_request(
         self, cred_ex_record: V20CredExRecord, cred_request_message: V20CredRequest
-    ):
+    ) -> None:
         # TODO: check if request matches offer. (If not send problem report?)
+        # TODO: validate
         pass
 
-    async def issue_credential(self, cred_ex_record: V20CredExRecord, retries: int = 5):
+    async def issue_credential(
+        self, cred_ex_record: V20CredExRecord, retries: int = 5
+    ) -> CredFormatAttachment:
         if cred_ex_record.cred_offer:
             # TODO: match offer with request. Use request (because of credential subject id)
             cred_detail = V20CredOffer.deserialize(
@@ -200,12 +207,18 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
         # TODO: proof options
         vc = await issue(credential=cred_detail["credential"], suite=suite)
 
-        return (
-            V20CredFormat(attach_id="ld_proof", format_=self.format),
-            AttachDecorator.data_json(vc, ident="ld_proof"),
-        )
+        self.validate_fields(CRED_20_ISSUE, vc)
+        return self.get_format_data(CRED_20_ISSUE, vc)
 
-    async def store_credential(self, cred_ex_record: V20CredExRecord, cred_id: str):
+    async def receive_credential(
+        self, cred_ex_record: V20CredExRecord, cred_issue_message: V20CredIssue
+    ) -> None:
+        # TODO: validate
+        pass
+
+    async def store_credential(
+        self, cred_ex_record: V20CredExRecord, cred_id: str = None
+    ) -> None:
         # TODO: validate credential structure (prob in receive credential?)
         credential: dict = V20CredIssue.deserialize(
             cred_ex_record.cred_issue
@@ -251,5 +264,6 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
                 schema_ids=[],
                 value=json.dumps(credential),
                 given_id=credential.get("id"),
+                record_id=cred_id,
             )
             await vc_holder.store_credential(vc_record)

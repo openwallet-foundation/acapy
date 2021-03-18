@@ -1,18 +1,11 @@
-import asyncio
-import json
-
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
-from copy import deepcopy
-from time import time
 
-from ......core.in_memory import InMemoryProfile
-from ......ledger.base import BaseLedger
+from .......core.in_memory import InMemoryProfile
+from .......ledger.base import BaseLedger
 
-from .. import indy as test_module
-from ..indy import IndyCredFormatHandler
-from ...messages.cred_format import V20CredFormat
-from ...models.detail.indy import V20CredExRecordIndy
+from ..handler import IndyCredFormatHandler
+from ....models.detail.indy import V20CredExRecordIndy
 
 
 TEST_DID = "LjgpST2rjsoxYegQDRm7EL"
