@@ -1,10 +1,10 @@
 from datetime import datetime, timedelta
 from pyld.jsonld import JsonLdProcessor
+from pyld import jsonld
 
 from ..constants import SECURITY_V2_URL
 from ..suites import LinkedDataProof
 from ..document_loader import DocumentLoader
-from ..util import frame_without_compact_to_relative
 from .ProofPurpose import ProofPurpose
 
 
@@ -44,8 +44,8 @@ class ControllerProofPurpose(ProofPurpose):
             else:
                 raise Exception('"controller" must be a string or dict')
 
-            framed = frame_without_compact_to_relative(
-                input=controller_id,
+            framed = jsonld.frame(
+                controller_id,
                 frame={
                     "@context": SECURITY_V2_URL,
                     "id": controller_id,
@@ -53,6 +53,11 @@ class ControllerProofPurpose(ProofPurpose):
                 },
                 options={
                     "documentLoader": document_loader,
+                    "expandContext": SECURITY_V2_URL,
+                    # if we don't set base explicitly it will remove the base in returned
+                    # document (e.g. use key:z... instead of did:key:z...)
+                    # same as compactToRelative in jsonld.js
+                    "base": None,
                 },
             )
 

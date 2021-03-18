@@ -11,6 +11,7 @@ from ..ld_proofs import (
 
 
 async def issue(
+    *,
     credential: dict,
     suite: LinkedDataProof,
     purpose: ProofPurpose = None,

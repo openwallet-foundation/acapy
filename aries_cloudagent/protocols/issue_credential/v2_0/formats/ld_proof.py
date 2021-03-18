@@ -2,7 +2,7 @@
 
 
 import logging
-
+import json
 import uuid
 from typing import List, Mapping, Tuple
 
@@ -18,6 +18,8 @@ from .....vc.ld_proofs import (
 from .....wallet.error import WalletNotFoundError
 from .....wallet.base import BaseWallet
 from .....wallet.util import did_key_to_naked, naked_to_did_key
+from .....storage.vc_holder.base import VCHolder
+from .....storage.vc_holder.vc_record import VCRecord
 from ..messages.cred_format import V20CredFormat
 from ..messages.cred_offer import V20CredOffer
 from ..messages.cred_proposal import V20CredProposal
@@ -86,7 +88,9 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
 
                 return Ed25519Signature2018(
                     verification_method=verification_method,
-                    key_pair=Ed25519WalletKeyPair(verkey, wallet),
+                    key_pair=Ed25519WalletKeyPair(
+                        wallet=wallet, public_key_base58=verkey
+                    ),
                 )
             else:
                 raise V20CredFormatError(f"Unsupported proof type {proof_type}")
@@ -120,7 +124,7 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
         #   - Other checks (credentialStatus, credentialSchema, etc...)
 
         # TODO: validate credential structure
-        filter = V20CredProposal.deserialize(cred_ex_record.cred_proposal).filter(
+        filter = V20CredProposal.deserialize(cred_ex_record.cred_proposal).attachment(
             self.format
         )
 
@@ -143,9 +147,9 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
         holder_did: str = None,
     ):
         if cred_ex_record.cred_offer:
-            cred_detail = V20CredOffer.deserialize(cred_ex_record.cred_offer).offer(
-                self.format
-            )
+            cred_detail = V20CredOffer.deserialize(
+                cred_ex_record.cred_offer
+            ).attachment(self.format)
 
             if not cred_detail["credential"]["credentialSubject"]["id"] and holder_did:
                 async with self.profile.session() as session:
@@ -160,10 +164,9 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
             # TODO: start from request
             cred_detail = None
 
-        id = uuid.uuid4()
         return (
-            V20CredFormat(attach_id=id, format_=self.format),
-            AttachDecorator.data_json(cred_detail, ident=id),
+            V20CredFormat(attach_id="ld_proof", format_=self.format),
+            AttachDecorator.data_json(cred_detail, ident="ld_proof"),
         )
 
     async def receive_request(
@@ -175,13 +178,13 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
     async def issue_credential(self, cred_ex_record: V20CredExRecord, retries: int = 5):
         if cred_ex_record.cred_offer:
             # TODO: match offer with request. Use request (because of credential subject id)
-            cred_detail = V20CredOffer.deserialize(cred_ex_record.cred_offer).offer(
-                self.format
-            )
+            cred_detail = V20CredOffer.deserialize(
+                cred_ex_record.cred_offer
+            ).attachment(self.format)
         else:
             cred_detail = V20CredRequest.deserialize(
                 cred_ex_record.cred_request
-            ).cred_request(self.format)
+            ).attachment(self.format)
 
         issuer_did = get_id(cred_detail["credential"]["issuer"])
         proof_types = cred_detail["options"]["proofType"]
@@ -194,7 +197,8 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
         await self._assert_can_sign_with_did(issuer_did)
         suite = await self._get_suite_for_type(issuer_did, proof_types[0])
 
-        vc = await issue(cred_detail["credential"], suite)
+        # TODO: proof options
+        vc = await issue(credential=cred_detail["credential"], suite=suite)
 
         return (
             V20CredFormat(attach_id="ld_proof", format_=self.format),
@@ -202,20 +206,50 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
         )
 
     async def store_credential(self, cred_ex_record: V20CredExRecord, cred_id: str):
-        vc = V20CredIssue.deserialize(cred_ex_record.cred_issue).cred(self.format)
+        # TODO: validate credential structure (prob in receive credential?)
+        credential: dict = V20CredIssue.deserialize(
+            cred_ex_record.cred_issue
+        ).attachment(self.format)
 
         async with self.profile.session() as session:
             wallet = session.inject(BaseWallet)
 
-            verification_method: str = vc["proof"]["verificationMethod"]
+            verification_method = credential.get("proof", {}).get("verificationMethod")
+
+            if type(verification_method) is not str:
+                raise V20CredFormatError(
+                    "Invalid verification method on received credential"
+                )
             verkey = did_key_to_naked(verification_method.split("#")[0])
 
             # TODO: API rework.
             suite = Ed25519Signature2018(
                 verification_method=verification_method,
-                key_pair=Ed25519WalletKeyPair(verkey, wallet),
+                key_pair=Ed25519WalletKeyPair(wallet=wallet, public_key_base58=verkey),
             )
 
-            valid = await verify_credential(vc, did_key_document_loader, suite)
+            result = await verify_credential(
+                credential=credential,
+                suite=suite,
+                document_loader=did_key_document_loader,
+            )
 
-            print("is valid: ", valid)
+            if not result.get("verified"):
+                raise V20CredFormatError(
+                    f"Received invalid credential: {result}",
+                )
+
+            vc_holder = session.inject(VCHolder)
+
+            # TODO: tags
+            vc_record = VCRecord(
+                contexts=credential.get("@context"),
+                types=credential.get("type"),
+                issuer_id=get_id(credential.get("issuer")),
+                # TODO: subject may be array
+                subject_ids=[credential.get("credentialSubject").get("id")],
+                schema_ids=[],
+                value=json.dumps(credential),
+                given_id=credential.get("id"),
+            )
+            await vc_holder.store_credential(vc_record)

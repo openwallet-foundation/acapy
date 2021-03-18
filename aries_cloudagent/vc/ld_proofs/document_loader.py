@@ -5,22 +5,24 @@ from typing import Callable
 
 
 def resolve_ed25519_did_key(did_key: str) -> dict:
-    pub_key_base58 = did_key_to_naked(did_key)
-    key_ref = f"#{did_key[8:]}"
-    did_key_with_key_ref = did_key + key_ref
+    # TODO: optimize
+    without_fragment = did_key.split("#")[0]
+    pub_key_base58 = did_key_to_naked(without_fragment)
+    key_ref = f"#{without_fragment[8:]}"
+    did_key_with_key_ref = without_fragment + key_ref
 
     return {
         "contentType": "application/ld+json",
-        "contextUrl": "https://w3id.org/did/v1",
+        "contextUrl": None,
         "documentUrl": did_key,
         "document": {
             "@context": "https://w3id.org/did/v1",
-            "id": did_key,
+            "id": without_fragment,
             "verificationMethod": [
                 {
                     "id": did_key_with_key_ref,
                     "type": "Ed25519VerificationKey2018",
-                    "controller": did_key,
+                    "controller": without_fragment,
                     "publicKeyBase58": pub_key_base58,
                 }
             ],
@@ -28,7 +30,14 @@ def resolve_ed25519_did_key(did_key: str) -> dict:
             "assertionMethod": [did_key_with_key_ref],
             "capabilityDelegation": [did_key_with_key_ref],
             "capabilityInvocation": [did_key_with_key_ref],
-            "keyAgreement": [],
+            "keyAgreement": [
+                {
+                    "id": "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6LSbkodSr6SU2trs8VUgnrnWtSm7BAPG245ggrBmSrxbv1R",
+                    "type": "X25519KeyAgreementKey2019",
+                    "controller": "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
+                    "publicKeyBase58": "5dTvYHaNaB7mk7iA9LqCJEHG2dGZQsvoi8WGzDRtYEf",
+                }
+            ],
         },
     }
 

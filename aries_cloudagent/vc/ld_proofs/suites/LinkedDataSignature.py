@@ -8,7 +8,6 @@ from abc import abstractmethod, ABCMeta
 from ..document_loader import DocumentLoader
 from ..purposes import ProofPurpose
 from ..constants import SECURITY_V2_URL
-from ..util import frame_without_compact_to_relative
 from .LinkedDataProof import LinkedDataProof
 
 
@@ -133,7 +132,9 @@ class LinkedDataSignature(LinkedDataProof, metaclass=ABCMeta):
                 "trace": traceback.format_exc(),
             }
 
-    def _get_verification_method(self, proof: dict, document_loader: DocumentLoader):
+    def _get_verification_method(
+        self, proof: dict, document_loader: DocumentLoader
+    ) -> dict:
         verification_method = proof.get("verificationMethod")
 
         if not verification_method:
@@ -142,14 +143,21 @@ class LinkedDataSignature(LinkedDataProof, metaclass=ABCMeta):
         if isinstance(verification_method, dict):
             verification_method: str = verification_method.get("id")
 
-        framed = frame_without_compact_to_relative(
-            input=verification_method,
+        framed = jsonld.frame(
+            verification_method,
             frame={
                 "@context": SECURITY_V2_URL,
                 "@embed": "@always",
                 "id": verification_method,
             },
-            options={"documentLoader": document_loader},
+            options={
+                "documentLoader": document_loader,
+                "expandContext": SECURITY_V2_URL,
+                # if we don't set base explicitly it will remove the base in returned
+                # document (e.g. use key:z... instead of did:key:z...)
+                # same as compactToRelative in jsonld.js
+                "base": None,
+            },
         )
 
         if not framed:

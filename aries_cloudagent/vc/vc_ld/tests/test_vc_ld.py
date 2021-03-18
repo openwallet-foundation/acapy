@@ -10,7 +10,6 @@ from ...ld_proofs import (
     Ed25519Signature2018,
     Ed25519WalletKeyPair,
     CredentialIssuancePurpose,
-    AssertionProofPurpose,
 )
 from ...vc_ld import issue, verify_credential
 from ...tests.document_loader import custom_document_loader
@@ -56,7 +55,7 @@ class TestLinkedDataVerifiableCredential(TestCase):
             credential=CREDENTIAL_ISSUED,
             suite=self.suite,
             document_loader=custom_document_loader,
-            purpose=AssertionProofPurpose(),
+            purpose=CredentialIssuancePurpose(),
         )
 
         assert verified == CREDENTIAL_VERIFIED

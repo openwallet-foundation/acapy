@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 from pyld.jsonld import JsonLdProcessor
+from pyld import jsonld
 
 from ..suites import LinkedDataProof
 from ..document_loader import DocumentLoader
@@ -16,7 +17,7 @@ class CredentialIssuancePurpose(AssertionProofPurpose):
         proof: dict,
         document: dict,
         suite: LinkedDataProof,
-        verification_method: str,
+        verification_method: dict,
         document_loader: DocumentLoader,
     ):
         try:
@@ -31,12 +32,23 @@ class CredentialIssuancePurpose(AssertionProofPurpose):
             if not result.get("valid"):
                 raise result.get("error")
 
-            issuer: list = JsonLdProcessor.get_values(document, CREDENTIALS_ISSUER_URL)
+            # TODO: move expansion to better place. But required for querying issuer
+            expanded = jsonld.expand(
+                document,
+                {
+                    "documentLoader": document_loader,
+                },
+            )
+            # TODO: what if array has no values?
+            issuer: list = JsonLdProcessor.get_values(
+                expanded[0], CREDENTIALS_ISSUER_URL
+            )
 
             if not issuer or len(issuer) == 0:
                 raise Exception("Credential issuer is required.")
 
-            if result.get("controller", {}).get("id") != issuer[0].get("id"):
+            # TODO: we're mixing expanded and not-expanded here. Confusing
+            if result.get("controller", {}).get("id") != issuer[0].get("@id"):
                 raise Exception(
                     "Credential issuer must match the verification method controller."
                 )

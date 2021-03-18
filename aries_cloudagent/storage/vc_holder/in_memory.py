@@ -1,10 +1,10 @@
 """Basic in-memory storage implementation of VC holder interface."""
 
-from aries_cloudagent.storage.record import StorageRecord
 from typing import Mapping, Sequence
 
 from ...core.in_memory import InMemoryProfile
 
+from ..record import StorageRecord
 from ..in_memory import InMemoryStorage, InMemoryStorageSearch
 
 from .base import VCHolder, VCRecordSearch
