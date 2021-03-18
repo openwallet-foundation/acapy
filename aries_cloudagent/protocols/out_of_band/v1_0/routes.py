@@ -131,7 +131,7 @@ class InvitationReceiveQueryStringSchema(OpenAPISchema):
 class InvitationReceiveRequestSchema(InvitationMessageSchema):
     """Invitation request schema."""
 
-    service = fields.Field()
+    services = fields.Field()
 
 
 @docs(

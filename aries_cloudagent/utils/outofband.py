@@ -19,7 +19,7 @@ def serialize_outofband(message: AgentMessage, did: DIDInfo, endpoint: str) -> s
     """
     body = message.serialize()
     # FIXME no support for routing keys
-    body["~service"] = {
+    body["~services"] = {
         "recipientKeys": [did.verkey],
         "routingKeys": [],
         "serviceEndpoint": endpoint,

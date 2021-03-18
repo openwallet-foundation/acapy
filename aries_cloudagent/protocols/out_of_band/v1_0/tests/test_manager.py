@@ -877,7 +877,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             invi_msg_cls.deserialize.return_value = mock_oob_invi
 
             invi_rec = await self.manager.receive_invitation(mock_oob_invi)
-            assert invi_rec.invitation["service"]
+            assert invi_rec.invitation["services"]
 
     async def test_receive_invitation_attachment_x(self):
         self.session.context.update_settings({"public_invites": True})

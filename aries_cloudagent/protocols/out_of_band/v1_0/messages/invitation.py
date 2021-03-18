@@ -231,10 +231,10 @@ class InvitationMessageSchema(AgentMessageSchema):
                 "handshake_protocols or requests_attach or both"
             )
 
-        # service = data.get("service")
-        # if not ((service and len(service) > 0)):
+        # services = data.get("services")
+        # if not ((services and len(services) > 0)):
         #     raise ValidationError(
-        #         "Model must include non-empty service array"
+        #         "Model must include non-empty services array"
         #     )
 
     @pre_load
