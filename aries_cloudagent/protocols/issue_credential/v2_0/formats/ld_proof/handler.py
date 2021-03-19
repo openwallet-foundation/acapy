@@ -5,7 +5,9 @@ import logging
 import json
 from typing import List, Mapping
 
+from marshmallow import RAISE
 
+from ......vc.vc_ld.models.credential_schema import LDVerifiableCredentialSchema
 from ......vc.vc_ld import issue, verify_credential
 from ......vc.ld_proofs import (
     Ed25519Signature2018,
@@ -32,6 +34,8 @@ from ...messages.cred_issue import V20CredIssue
 from ...messages.cred_request import V20CredRequest
 from ...models.cred_ex_record import V20CredExRecord
 from ..handler import CredFormatAttachment, V20CredFormatError, V20CredFormatHandler
+from .models.cred_detail import LDProofVCDetail
+
 
 LOGGER = logging.getLogger(__name__)
 
@@ -56,9 +60,20 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
     format = V20CredFormat.Format.LD_PROOF
 
     @classmethod
-    def validate_fields(cls, message_type: str, attachment_data: dict) -> None:
-        # TODO: validate LDProof credential filter
-        pass
+    def validate_fields(cls, message_type: str, attachment_data: Mapping) -> None:
+        mapping = {
+            CRED_20_PROPOSAL: LDProofVCDetail,
+            CRED_20_OFFER: LDProofVCDetail,
+            CRED_20_REQUEST: LDProofVCDetail,
+            CRED_20_ISSUE: LDVerifiableCredentialSchema,
+        }
+
+        # Get schema class
+        Schema = mapping[message_type]
+
+        # Validate, throw if not valid
+        # TODO: unknown should not raise
+        Schema(unknown=RAISE).load(attachment_data)
 
     async def _assert_can_sign_with_did(self, did: str):
         async with self.profile.session() as session:
@@ -74,15 +89,13 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
                     f"Issuer did {did} not found. Unable to issue credential with this DID."
                 )
 
-    async def _assert_can_sign_with_types(self, proof_types: List[str]):
-        # Check if all proof types are supported
-        if not set(proof_types).issubset(SUPPORTED_PROOF_TYPES):
-            raise V20CredFormatError(
-                f"Unsupported proof type(s): {proof_types - SUPPORTED_PROOF_TYPES}."
-            )
+    async def _assert_can_sign_with_type(self, proof_type: str):
+        # Check if proof types are supported
+        if not proof_type in SUPPORTED_PROOF_TYPES:
+            raise V20CredFormatError(f"Unsupported proof type: {proof_type}.")
 
     async def _get_suite_for_type(self, did: str, proof_type: str) -> LinkedDataProof:
-        await self._assert_can_sign_with_types([proof_type])
+        await self._assert_can_sign_with_type(proof_type)
 
         async with self.profile.session() as session:
             # TODO: maybe keypair should start session and inject wallet (for shorter sessions)
@@ -136,7 +149,7 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
         options = detail["options"]
 
         await self._assert_can_sign_with_did(credential["issuer"])
-        await self._assert_can_sign_with_types(options["proofType"])
+        await self._assert_can_sign_with_type(options["proofType"])
 
         self.validate_fields(CRED_20_OFFER, detail)
         return self.get_format_data(CRED_20_OFFER, detail)
@@ -157,7 +170,10 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
                 cred_ex_record.cred_offer
             ).attachment(self.format)
 
-            if not cred_detail["credential"]["credentialSubject"]["id"] and holder_did:
+            if (
+                not cred_detail["credential"]["credentialSubject"].get("id")
+                and holder_did
+            ):
                 async with self.profile.session() as session:
                     wallet = session.inject(BaseWallet)
 
@@ -167,8 +183,21 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
                     cred_detail["credential"]["credentialSubject"]["id"] = did_key
 
         else:
-            # TODO: start from request
-            cred_detail = None
+            cred_detail = V20CredProposal.deserialize(
+                cred_ex_record.cred_proposal
+            ).attachment(self.format)
+
+            if (
+                not cred_detail["credential"]["credentialSubject"].get("id")
+                and holder_did
+            ):
+                async with self.profile.session() as session:
+                    wallet = session.inject(BaseWallet)
+
+                    did_info = await wallet.get_local_did(holder_did)
+                    did_key = naked_to_did_key(did_info.verkey)
+
+                    cred_detail["credential"]["credentialSubject"]["id"] = did_key
 
         self.validate_fields(CRED_20_REQUEST, cred_detail)
         return self.get_format_data(CRED_20_REQUEST, cred_detail)

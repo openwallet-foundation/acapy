@@ -635,7 +635,7 @@ ENDPOINT_TYPE = {"validate": EndpointType(), "example": EndpointType.EXAMPLE}
 CREDENTIAL_TYPE = {"validate": CredentialType(), "example": CredentialType.EXAMPLE}
 CREDENTIAL_CONTEXT = {
     "validate": CredentialContext(),
-    "example": CredentialType.EXAMPLE,
+    "example": CredentialContext.EXAMPLE,
 }
 CREDENTIAL_SUBJECT = {
     "validate": CredentialSubject(),

@@ -46,8 +46,7 @@ from .messages.inner.cred_preview import V20CredPreview, V20CredPreviewSchema
 from .models.cred_ex_record import V20CredExRecord, V20CredExRecordSchema
 from .models.detail.ld_proof import V20CredExRecordLDProofSchema
 from .models.detail.indy import V20CredExRecordIndySchema
-
-from ....vc.vc_ld.models.Credential import LDCredential
+from .formats.ld_proof.models.cred_detail import LDProofVCDetail
 
 
 class V20IssueCredentialModuleResponseSchema(OpenAPISchema):
@@ -150,34 +149,6 @@ class V20CredFilterIndySchema(OpenAPISchema):
     )
 
 
-class LDCredentialOptions(Schema):
-    proof_type = fields.List(
-        fields.Str(
-            validate=validate.OneOf(["Ed25519Signature2018", "BbsBlsSignature2020"])
-        ),
-        required=True,
-        data_key="proofType",
-        description="Proof types to use for the linked data proof. Entries should match suites registered in the Linked Data Cryptographic Suite Registry.",
-        example=[
-            "Ed25519VerificationKey",
-        ],
-    )
-
-    # TODO: add typing
-    credential_status = fields.Dict(required=False, data_key="credentialStatus")
-
-
-class V20CredFilterLDProofSchema(OpenAPISchema):
-    """Linked data proof credential filtration criteria."""
-
-    credential = fields.Nested(
-        LDCredential,
-        required=True,
-        description="JSON-LD credential data",
-    )
-    options = fields.Nested(LDCredentialOptions)
-
-
 class V20CredFilterSchema(OpenAPISchema):
     """Credential filtration criteria."""
 
@@ -187,7 +158,7 @@ class V20CredFilterSchema(OpenAPISchema):
         description="Credential filter for indy",
     )
     ld_proof = fields.Nested(
-        V20CredFilterLDProofSchema,
+        LDProofVCDetail,
         required=False,
         description="Credential filter for linked data proof",
     )
@@ -241,7 +212,8 @@ class V20IssueCredSchemaCore(AdminAPIMessageTracingSchema):
 class V20CredCreateSchema(V20IssueCredSchemaCore):
     """Request schema for creating a credential from attr values."""
 
-    credential_preview = fields.Nested(V20CredPreviewSchema, required=True)
+    # TODO: validate that credential preview is present when indy format is present?
+    credential_preview = fields.Nested(V20CredPreviewSchema, required=False)
 
 
 class V20CredProposalRequestSchemaBase(V20IssueCredSchemaCore):
@@ -260,12 +232,6 @@ class V20CredProposalRequestPreviewOptSchema(V20CredProposalRequestSchemaBase):
     credential_preview = fields.Nested(V20CredPreviewSchema, required=False)
 
 
-class V20CredProposalRequestPreviewMandSchema(V20CredProposalRequestSchemaBase):
-    """Request schema for sending credential proposal on mandatory proposal preview."""
-
-    credential_preview = fields.Nested(V20CredPreviewSchema, required=True)
-
-
 class V20CredOfferRequestSchema(V20IssueCredSchemaCore):
     """Request schema for sending credential offer admin message."""
 
@@ -281,7 +247,8 @@ class V20CredOfferRequestSchema(V20IssueCredSchemaCore):
         ),
         required=False,
     )
-    credential_preview = fields.Nested(V20CredPreviewSchema, required=True)
+    # TODO: validate that credential preview is present when indy format is present?
+    credential_preview = fields.Nested(V20CredPreviewSchema, required=False)
 
 
 class V20CredIssueRequestSchema(OpenAPISchema):
@@ -314,6 +281,7 @@ class V20CredExIdMatchInfoSchema(OpenAPISchema):
     )
 
 
+# TODO: why store as format, we should pass directly to the format handler
 def _formats_filters(filt_spec: Mapping) -> Mapping:
     """Break out formats and filters for v2.0 cred proposal messages."""
 
@@ -344,7 +312,7 @@ async def _get_result_with_details(
             cred_ex_record.cred_ex_id
         )
 
-        result[fmt.aka[0]] = detail_record.serialize() if detail_record else None
+        result[fmt.api] = detail_record.serialize() if detail_record else None
 
     return result
 
@@ -540,8 +508,7 @@ async def credential_exchange_send(request: web.BaseRequest):
     if not filt_spec:
         raise web.HTTPBadRequest(reason="Missing filter")
     preview_spec = body.get("credential_preview")
-    # TODO: use generic format identifier
-    if "indy" in filt_spec and not preview_spec:
+    if V20CredFormat.Format.INDY.api in filt_spec and not preview_spec:
         raise web.HTTPBadRequest(reason="Missing credential_preview for indy filter")
     auto_remove = body.get("auto_remove")
     trace_msg = body.get("trace")
@@ -558,6 +525,8 @@ async def credential_exchange_send(request: web.BaseRequest):
             if not conn_record.is_ready:
                 raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
 
+        # TODO: why do we create a proposal and then use that to create an offer.
+        # Seems easier to just pass the proposal data to the format specific handler
         cred_proposal = V20CredProposal(
             comment=comment,
             credential_preview=cred_preview,
@@ -699,7 +668,7 @@ async def _create_free_offer(
 ):
     """Create a credential offer and related exchange record."""
 
-    cred_preview = V20CredPreview.deserialize(preview_spec)
+    cred_preview = V20CredPreview.deserialize(preview_spec) if preview_spec else None
     cred_proposal = V20CredProposal(
         comment=comment,
         credential_preview=cred_preview,
@@ -762,11 +731,11 @@ async def credential_exchange_create_free_offer(request: web.BaseRequest):
     auto_remove = body.get("auto_remove")
     comment = body.get("comment")
     preview_spec = body.get("credential_preview")
-    if not preview_spec:
-        raise web.HTTPBadRequest(reason=("Missing credential_preview"))
     filt_spec = body.get("filter")
     if not filt_spec:
         raise web.HTTPBadRequest(reason="Missing filter")
+    if V20CredFormat.Format.INDY.api in filt_spec and not preview_spec:
+        raise web.HTTPBadRequest(reason="Missing credential_preview for indy filter")
     connection_id = body.get("connection_id")
     trace_msg = body.get("trace")
 
@@ -865,8 +834,8 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
     auto_remove = body.get("auto_remove")
     comment = body.get("comment")
     preview_spec = body.get("credential_preview")
-    if not preview_spec:
-        raise web.HTTPBadRequest(reason=("Missing credential_preview"))
+    if V20CredFormat.Format.INDY.api in filt_spec and not preview_spec:
+        raise web.HTTPBadRequest(reason="Missing credential_preview for indy filter")
     trace_msg = body.get("trace")
 
     cred_ex_record = None
@@ -996,10 +965,12 @@ async def credential_exchange_send_bound_offer(request: web.BaseRequest):
 
 @docs(
     tags=["issue-credential v2.0"],
-    summary="Send issuer a credential proposal",
+    summary="Send issuer a credential request",
 )
 @request_schema(V20CredProposalRequestPreviewOptSchema())
 @response_schema(V20CredExRecordSchema(), 200, description="")
+# TODO: remove indy from OpenAPI example (to avoid confusion)
+# TODO: remove credential preview from OpenAPI schema and example (to avoid confusion)
 async def credential_exchange_send_free_request(request: web.BaseRequest):
     """
     Request handler for sending free credential request.
@@ -1023,7 +994,8 @@ async def credential_exchange_send_free_request(request: web.BaseRequest):
     filt_spec = body.get("filter")
     if not filt_spec:
         raise web.HTTPBadRequest(reason="Missing filter")
-    if "indy" in filt_spec:
+    # Indy cannot start from request
+    if V20CredFormat.Format.INDY.api in filt_spec:
         raise web.HTTPBadRequest(
             reason="Indy credential exchange cannot start with request"
         )
@@ -1045,7 +1017,7 @@ async def credential_exchange_send_free_request(request: web.BaseRequest):
             **_formats_filters(filt_spec),
         )
 
-        cred_ex_record = await V20CredExRecord(
+        cred_ex_record = V20CredExRecord(
             connection_id=connection_id,
             auto_remove=auto_remove,
             cred_proposal=cred_proposal.serialize(),

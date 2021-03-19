@@ -39,13 +39,13 @@ class V20CredFormat(BaseModel):
             "hlindy/",
             V20CredExRecordIndy,
             # TODO: use PROTOCOL_PACKAGE const
-            "aries_cloudagent.protocols.issue_credential.v2_0.formats.indy.IndyCredFormatHandler",
+            "aries_cloudagent.protocols.issue_credential.v2_0.formats.indy.handler.IndyCredFormatHandler",
         )
         LD_PROOF = FormatSpec(
             "aries/",
             V20CredExRecordLDProof,
             # TODO: use PROTOCOL_PACKAGE const
-            "aries_cloudagent.protocols.issue_credential.v2_0.formats.ld_proof.LDProofCredFormatHandler",
+            "aries_cloudagent.protocols.issue_credential.v2_0.formats.ld_proof.handler.LDProofCredFormatHandler",
         )
 
         @classmethod
@@ -140,6 +140,6 @@ class V20CredFormatSchema(BaseModelSchema):
         allow_none=False,
         description="Attachment format specifier",
         data_key="format",
-        validate=validate.Regexp("^(hlindy/.*@v2.0)|(dif/.*@v1.0)$"),
-        example="dif/credential-manifest@v1.0",
+        validate=validate.Regexp("^(hlindy/.*@v2.0)|(aries/.*@v1.0)$"),
+        example="aries/ld-proof-vc-detail@v1.0",
     )

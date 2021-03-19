@@ -321,14 +321,15 @@ class V20CredManager:
         # start with request (not allowed for indy -> checked in indy format handler)
         else:
             # TODO: where to get data from if starting from request. proposal?
-            cred_proposal = V20CredOffer.deserialize(cred_ex_record.cred_proposal)
+
+            cred_proposal = V20CredProposal.deserialize(cred_ex_record.cred_proposal)
             formats = cred_proposal.formats
 
         # Format specific create_request handler
         request_formats = [
             await V20CredFormat.Format.get(p.format).handler(self.profile)
             # TODO: retrieve holder did from create_request handler?
-            .create_request(cred_ex_record, holder_did)
+            .create_request(cred_ex_record, {"holder_did": holder_did})
             for p in formats
         ]
 

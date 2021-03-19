@@ -1,0 +1,51 @@
+# General
+label: Issuer
+endpoint: http://localhost:3000
+inbound-transport:
+  - [http, 0.0.0.0, 3000]
+outbound-transport: http
+
+# Admin
+admin: [0.0.0.0, 3001]
+admin-insecure-mode: true
+
+# Connections
+debug-connections: true
+debug-credentials: true
+debug-presentations: true
+auto-accept-invites: true
+auto-accept-requests: true
+# auto-accept-requests-peer: true
+# auto-accept-requests-public: true
+auto-ping-connection: true
+auto-respond-messages: true
+auto-respond-credential-proposal: true
+auto-respond-credential-offer: true
+auto-respond-credential-request: true
+auto-respond-presentation-proposal: true
+auto-respond-presentation-request: true
+auto-store-credential: true
+auto-verify-presentation: true
+
+# Webhooks
+# webhook-url: http://localhost:1080/external
+
+# Wallet
+wallet-type: indy
+wallet-name: IndyWallet2
+wallet-key: IndyWallet2
+seed: SEED_000000000000000000000000001
+auto-provision: true
+recreate-wallet: true
+
+### Ledger ###
+# No Ledger
+# no-ledger: true
+# BCovrin
+genesis-url: http://test.bcovrin.vonx.io/genesis
+# Sovrin Builder Net
+# genesis-url: https://raw.githubusercontent.com/sovrin-foundation/sovrin/master/sovrin/pool_transactions_builder_genesis
+
+# Debug
+# log-level: DEBUG
+
