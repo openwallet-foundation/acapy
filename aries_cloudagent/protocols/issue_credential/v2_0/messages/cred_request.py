@@ -2,13 +2,15 @@
 
 from typing import Sequence
 
-from marshmallow import EXCLUDE, fields
+from marshmallow import EXCLUDE, fields, RAISE, validates_schema, ValidationError
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 from .....messaging.decorators.attach_decorator import (
     AttachDecorator,
     AttachDecoratorSchema,
 )
+
+from ...indy.cred_request import IndyCredRequestSchema
 
 from ..message_types import CRED_20_REQUEST, PROTOCOL_PACKAGE
 
@@ -98,3 +100,24 @@ class V20CredRequestSchema(AgentMessageSchema):
         data_key="requests~attach",
         description="Request attachments",
     )
+
+    @validates_schema
+    def validate_fields(self, data, **kwargs):
+        """Validate attachments per format."""
+
+        def get_attach_by_id(attach_id):
+            """Return attachment with input identifier."""
+            for atch in attachments:
+                if atch.ident == attach_id:
+                    return atch
+            raise ValidationError(f"No attachment for attach_id {attach_id} in formats")
+
+        formats = data.get("formats") or []
+        attachments = data.get("requests_attach") or []
+        if len(formats) != len(attachments):
+            raise ValidationError("Formats/attachments length mismatch")
+
+        for fmt in formats:
+            atch = get_attach_by_id(fmt.attach_id)
+            if V20CredFormat.Format.get(fmt.format) is V20CredFormat.Format.INDY:
+                IndyCredRequestSchema(unknown=RAISE).load(atch.content)
