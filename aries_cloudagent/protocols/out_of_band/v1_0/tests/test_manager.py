@@ -15,9 +15,8 @@ from .....indy.holder import IndyHolder
 from .....ledger.base import BaseLedger
 from .....messaging.decorators.attach_decorator import AttachDecorator
 from .....messaging.responder import BaseResponder, MockResponder
-from .....messaging.util import str_to_datetime, str_to_epoch
+from .....messaging.util import str_to_epoch
 from .....multitenant.manager import MultitenantManager
-from .....protocols.connections.v1_0.manager import ConnectionManager
 from .....protocols.coordinate_mediation.v1_0.models.mediation_record import (
     MediationRecord,
 )
@@ -42,7 +41,6 @@ from .....protocols.present_proof.v1_0.messages.presentation_proposal import (
 )
 from .....protocols.present_proof.v1_0.messages.presentation_request import (
     PresentationRequest,
-    PresentationRequestSchema,
 )
 from .....protocols.present_proof.v1_0.models.presentation_exchange import (
     V10PresentationExchange,
@@ -56,12 +54,13 @@ from .....protocols.present_proof.v2_0.message_types import (
 from .....protocols.present_proof.v2_0.messages.pres import V20Pres
 from .....protocols.present_proof.v2_0.messages.pres_format import V20PresFormat
 from .....protocols.present_proof.v2_0.messages.pres_request import V20PresRequest
-from .....storage.error import StorageError, StorageNotFoundError
+from .....storage.error import StorageNotFoundError
 from .....multitenant.manager import MultitenantManager
 from .....transport.inbound.receipt import MessageReceipt
 from .....wallet.base import DIDInfo, KeyInfo
 from .....wallet.in_memory import InMemoryWallet
-from .....wallet.util import did_key_to_naked, naked_to_did_key
+from .....wallet.crypto import KeyType
+from .....did.did_key import DIDKey
 
 from ....didcomm_prefix import DIDCommPrefix
 from ....issue_credential.v1_0.models.credential_exchange import V10CredentialExchange
@@ -70,10 +69,9 @@ from .. import manager as test_module
 from ..manager import (
     OutOfBandManager,
     OutOfBandManagerError,
-    OutOfBandManagerNotImplementedError,
 )
 from ..message_types import INVITATION
-from ..messages.invitation import HSProto, InvitationMessage, InvitationMessageSchema
+from ..messages.invitation import HSProto, InvitationMessage
 from ..messages.reuse import HandshakeReuse
 from ..messages.reuse_accept import HandshakeReuseAccept
 from ..messages.problem_report import ProblemReport, ProblemReportReason
@@ -660,9 +658,9 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             assert service["id"] == "#inline"
             assert service["type"] == "did-communication"
             assert len(service["recipientKeys"]) == 1
-            assert service["routingKeys"][0] == naked_to_did_key(
-                self.test_mediator_routing_keys[0]
-            )
+            assert service["routingKeys"][0] == DIDKey.from_public_key_b58(
+                self.test_mediator_routing_keys[0], KeyType.ED25519
+            ).did
             assert service["serviceEndpoint"] == self.test_mediator_endpoint
 
     async def test_create_invitation_metadata_assigned(self):
@@ -671,7 +669,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             metadata={"hello": "world"},
         )
         service = invi_rec.invitation["service"][0]
-        invitation_key = did_key_to_naked(service["recipientKeys"][0])
+        invitation_key = DIDKey.from_did(service["recipientKeys"][0]).public_key_b58
         record = await ConnRecord.retrieve_by_invitation_key(
             self.session, invitation_key
         )
@@ -806,9 +804,10 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 service_blocks=[
                     async_mock.MagicMock(
                         recipient_keys=[
-                            naked_to_did_key(
-                                "9WCgWKUaAJj3VWxxtzvvMQN3AoFxoBtBDo9ntwJnVVCC"
-                            )
+                            DIDKey.from_public_key_b58(
+                                "9WCgWKUaAJj3VWxxtzvvMQN3AoFxoBtBDo9ntwJnVVCC",
+                                KeyType.ED25519,
+                            ).did
                         ],
                         routing_keys=[],
                         service_endpoint="http://localhost",

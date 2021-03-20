@@ -14,7 +14,6 @@ from .....connections.models.diddoc import (
 )
 from .....core.in_memory import InMemoryProfile
 from .....ledger.base import BaseLedger
-from .....ledger.error import LedgerError
 from .....messaging.responder import BaseResponder, MockResponder
 from .....messaging.decorators.attach_decorator import AttachDecorator
 from .....multitenant.manager import MultitenantManager
@@ -23,13 +22,13 @@ from .....transport.inbound.receipt import MessageReceipt
 from .....multitenant.manager import MultitenantManager
 from .....wallet.base import DIDInfo
 from .....wallet.in_memory import InMemoryWallet
-from .....wallet.util import naked_to_did_key
+from .....wallet.crypto import KeyType
+from .....did.did_key import DIDKey
+
 from .....connections.base_manager import (
-    BaseConnectionManager,
     BaseConnectionManagerError,
 )
 
-from ....connections.v1_0.messages.connection_invitation import ConnectionInvitation
 from ....coordinate_mediation.v1_0.manager import MediationManager
 from ....coordinate_mediation.v1_0.messages.keylist_update import (
     KeylistUpdate,
@@ -111,7 +110,9 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
         assert self.manager.session
         self.oob_manager = OutOfBandManager(self.session)
         self.test_mediator_routing_keys = [
-            naked_to_did_key("3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRR")
+            DIDKey.from_public_key_b58(
+                "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRR", KeyType.ED25519
+            ).did
         ]
         self.test_mediator_conn_id = "mediator-conn-id"
         self.test_mediator_endpoint = "http://mediator.example.com"

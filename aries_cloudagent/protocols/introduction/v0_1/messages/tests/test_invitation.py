@@ -1,9 +1,9 @@
 from asynctest import TestCase as AsyncTestCase
 
-from unittest import mock, TestCase
+from unittest import mock
 
-from ......wallet.util import naked_to_did_key
-from .....out_of_band.v1_0.message_types import INVITATION as OOB_INVITATION
+from ......did.did_key import DIDKey
+from ......wallet.crypto import KeyType
 from .....out_of_band.v1_0.messages.invitation import (
     HSProto,
     InvitationMessage as OOBInvitationMessage,
@@ -33,7 +33,9 @@ class TestInvitation(AsyncTestCase):
                     _id="#inline",
                     _type="did-communication",
                     did=self.test_did,
-                    recipient_keys=[naked_to_did_key(self.key)],
+                    recipient_keys=[
+                        DIDKey.from_public_key_b58(self.key, KeyType.ED25519).did
+                    ],
                     service_endpoint=self.endpoint_url,
                 )
             ],

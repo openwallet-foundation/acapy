@@ -3,7 +3,7 @@
 
 import logging
 import json
-from typing import List, Mapping
+from typing import Mapping
 
 from marshmallow import RAISE
 
@@ -17,7 +17,8 @@ from ......vc.ld_proofs import (
 )
 from ......wallet.error import WalletNotFoundError
 from ......wallet.base import BaseWallet
-from ......wallet.util import did_key_to_naked, naked_to_did_key
+from ......wallet.crypto import KeyType
+from ......did.did_key import DIDKey
 from ......storage.vc_holder.base import VCHolder
 from ......storage.vc_holder.vc_record import VCRecord
 
@@ -79,11 +80,10 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
         async with self.profile.session() as session:
             try:
                 wallet = session.inject(BaseWallet)
+                did_key = DIDKey.from_did(did)
 
                 # Check if issuer is something we can issue with
-                assert did.startswith("did:key")
-                verkey = did_key_to_naked(did)
-                await wallet.get_local_did_for_verkey(verkey)
+                await wallet.get_local_did_for_verkey(did_key.public_key_b58)
             except WalletNotFoundError:
                 raise V20CredFormatError(
                     f"Issuer did {did} not found. Unable to issue credential with this DID."
@@ -103,12 +103,12 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
 
             if proof_type == "Ed25519Signature2018":
                 verification_method = self._get_verification_method(did)
-                verkey = did_key_to_naked(did)
+                did_key = DIDKey.from_did(did)
 
                 return Ed25519Signature2018(
                     verification_method=verification_method,
                     key_pair=Ed25519WalletKeyPair(
-                        wallet=wallet, public_key_base58=verkey
+                        wallet=wallet, public_key_base58=did_key.public_key_b58
                     ),
                 )
             else:
@@ -178,9 +178,11 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
                     wallet = session.inject(BaseWallet)
 
                     did_info = await wallet.get_local_did(holder_did)
-                    did_key = naked_to_did_key(did_info.verkey)
+                    did_key = DIDKey.from_public_key_b58(
+                        did_info.verkey, KeyType.ED25519
+                    )
 
-                    cred_detail["credential"]["credentialSubject"]["id"] = did_key
+                    cred_detail["credential"]["credentialSubject"]["id"] = did_key.did
 
         else:
             cred_detail = V20CredProposal.deserialize(
@@ -195,9 +197,11 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
                     wallet = session.inject(BaseWallet)
 
                     did_info = await wallet.get_local_did(holder_did)
-                    did_key = naked_to_did_key(did_info.verkey)
+                    did_key = DIDKey.from_public_key_b58(
+                        did_info.verkey, KeyType.ED25519
+                    )
 
-                    cred_detail["credential"]["credentialSubject"]["id"] = did_key
+                    cred_detail["credential"]["credentialSubject"]["id"] = did_key.did
 
         self.validate_fields(CRED_20_REQUEST, cred_detail)
         return self.get_format_data(CRED_20_REQUEST, cred_detail)
@@ -262,12 +266,14 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
                 raise V20CredFormatError(
                     "Invalid verification method on received credential"
                 )
-            verkey = did_key_to_naked(verification_method.split("#")[0])
+            did_key = DIDKey.from_did(verification_method)
 
             # TODO: API rework.
             suite = Ed25519Signature2018(
                 verification_method=verification_method,
-                key_pair=Ed25519WalletKeyPair(wallet=wallet, public_key_base58=verkey),
+                key_pair=Ed25519WalletKeyPair(
+                    wallet=wallet, public_key_base58=did_key.public_key_b58
+                ),
             )
 
             result = await verify_credential(

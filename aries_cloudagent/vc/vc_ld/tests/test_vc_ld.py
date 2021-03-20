@@ -3,7 +3,8 @@ from asynctest import TestCase
 from datetime import datetime
 
 from ....wallet.base import KeyInfo
-from ....wallet.util import naked_to_did_key
+from ....wallet.crypto import KeyType
+from ....did.did_key import DIDKey
 from ....wallet.in_memory import InMemoryWallet
 from ....core.in_memory import InMemoryProfile
 from ...ld_proofs import (
@@ -28,9 +29,10 @@ class TestLinkedDataVerifiableCredential(TestCase):
         self.key_pair = Ed25519WalletKeyPair(
             wallet=self.wallet, public_key_base58=self.key_info.verkey
         )
-        self.verification_method = (
-            naked_to_did_key(self.key_info.verkey) + "#" + self.key_pair.fingerprint()
-        )
+
+        self.verification_method = DIDKey.from_public_key_b58(
+            self.key_info.verkey, KeyType.ED25519
+        ).key_id
         self.suite = Ed25519Signature2018(
             # TODO: should we provide verification_method here? Or abstract?
             verification_method=self.verification_method,

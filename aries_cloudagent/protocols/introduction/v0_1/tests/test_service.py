@@ -4,7 +4,8 @@ from .....connections.models.conn_record import ConnRecord
 from .....core.in_memory import InMemoryProfile
 from .....messaging.request_context import RequestContext
 from .....messaging.responder import MockResponder
-from .....wallet.util import naked_to_did_key
+from .....did.did_key import DIDKey
+from .....wallet.crypto import KeyType
 
 from ....didcomm_prefix import DIDCommPrefix
 from ....out_of_band.v1_0.message_types import INVITATION as OOB_INVITATION
@@ -34,8 +35,14 @@ class TestIntroductionService(AsyncTestCase):
                     _id="#inline",
                     _type="did-communication",
                     did=TEST_DID,
-                    recipient_keys=[naked_to_did_key(TEST_VERKEY)],
-                    routing_keys=[naked_to_did_key(TEST_ROUTE_VERKEY)],
+                    recipient_keys=[
+                        DIDKey.from_public_key_b58(TEST_VERKEY, KeyType.ED25519).did
+                    ],
+                    routing_keys=[
+                        DIDKey.from_public_key_b58(
+                            TEST_ROUTE_VERKEY, KeyType.ED25519
+                        ).did
+                    ],
                     service_endpoint=TEST_ENDPOINT,
                 )
             ],

@@ -15,7 +15,7 @@ from ....storage.error import StorageNotFoundError
 from ....transport.inbound.receipt import MessageReceipt
 from ....wallet.base import BaseWallet
 from ....wallet.did_posture import DIDPosture
-from ....wallet.util import did_key_to_naked
+from ....did.did_key import DIDKey
 from ....multitenant.manager import MultitenantManager
 
 from ...coordinate_mediation.v1_0.manager import MediationManager
@@ -111,7 +111,9 @@ class DIDXManager(BaseConnectionManager):
         conn_rec = ConnRecord(
             invitation_key=(
                 # invitation.service_blocks[0].recipient_keys[0]
-                did_key_to_naked(invitation.service_blocks[0].recipient_keys[0])
+                DIDKey.from_did(
+                    invitation.service_blocks[0].recipient_keys[0]
+                ).public_key_b58
                 if invitation.service_blocks
                 else None
             ),

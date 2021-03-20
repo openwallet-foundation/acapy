@@ -1,17 +1,16 @@
 import pytest
 
-from unittest import mock, TestCase
-
-from asynctest import TestCase as AsyncTestCase
+from unittest import TestCase
 
 from ......messaging.models.base import BaseModelError
-from ......wallet.util import naked_to_did_key
+from ......did.did_key import DIDKey
+from ......wallet.crypto import KeyType
 
 from .....connections.v1_0.message_types import ARIES_PROTOCOL as CONN_PROTO
 from .....didcomm_prefix import DIDCommPrefix
 from .....didexchange.v1_0.message_types import ARIES_PROTOCOL as DIDX_PROTO
 
-from ...message_types import INVITATION, PROTOCOL_PACKAGE
+from ...message_types import INVITATION
 
 from .. import invitation as test_module
 from ..invitation import HSProto, InvitationMessage, InvitationMessageSchema
@@ -82,7 +81,9 @@ class TestInvitationMessage(TestCase):
         service = Service(
             _id="#inline",
             _type=DID_COMM,
-            recipient_keys=[naked_to_did_key(TEST_VERKEY)],
+            recipient_keys=[
+                DIDKey.from_public_key_b58(TEST_VERKEY, KeyType.ED25519).did
+            ],
             service_endpoint="http://1.2.3.4:8080/service",
         )
         data_deser = invi_schema.pre_load(
@@ -114,7 +115,9 @@ class TestInvitationMessage(TestCase):
         service = Service(
             _id="#inline",
             _type=DID_COMM,
-            recipient_keys=[naked_to_did_key(TEST_VERKEY)],
+            recipient_keys=[
+                DIDKey.from_public_key_b58(TEST_VERKEY, KeyType.ED25519).did
+            ],
             service_endpoint="http://1.2.3.4:8080/service",
         )
         invi_msg = InvitationMessage(

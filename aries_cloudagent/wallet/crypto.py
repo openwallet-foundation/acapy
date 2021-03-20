@@ -1,9 +1,10 @@
 """Cryptography functions used by BasicWallet."""
 
+from enum import Enum
 import json
 
 from collections import OrderedDict
-from typing import Callable, Optional, Sequence, Tuple
+from typing import Callable, NamedTuple, Optional, Sequence, Tuple, Union
 
 import nacl.bindings
 import nacl.exceptions
@@ -12,7 +13,35 @@ import nacl.utils
 from marshmallow import fields, Schema, ValidationError
 
 from .error import WalletError
-from .util import bytes_to_b58, bytes_to_b64, b64_to_bytes, b58_to_bytes
+# Define keys
+KeySpec = NamedTuple("KeySpec", [("name", str), ("multicodec_name", str)])
+
+
+class KeyTypeException(BaseException):
+    """Key type exception."""
+
+
+class KeyType(Enum):
+    ED25519 = KeySpec("ed25519", "ed25519-pub")
+
+    @property
+    def name(self) -> str:
+        return self.value.name
+
+    @property
+    def multicodec_name(self) -> str:
+        return self.value.multicodec_name
+
+    @classmethod
+    def from_multicodec_name(cls, multicodec_name: str) -> "KeyType":
+        for key_type in KeyType:
+            if key_type.multicodec_name == multicodec_name:
+                return key_type
+
+        raise KeyTypeException(
+            f"No key type found for multicoded name: '{multicodec_name}'"
+        )
+
 
 
 class PackMessageSchema(Schema):
@@ -284,6 +313,10 @@ def prepare_pack_recipient_keys(
 #             cek = nacl.bindings.crypto_box_seal_open(encrypted_key, pk, sk)
 #         return cek, sender_vk, recip_vk_b58
 #     raise ValueError("No corresponding recipient key found in {}".format(not_found))
+
+
+def ed25519_pk_to_curve25519(public_key: bytes) -> bytes:
+    return nacl.bindings.crypto_sign_ed25519_pk_to_curve25519(public_key)
 
 
 def encrypt_plaintext(

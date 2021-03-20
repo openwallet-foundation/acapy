@@ -24,7 +24,9 @@ from ....multitenant.manager import MultitenantManager
 from ....storage.error import StorageNotFoundError
 from ....transport.inbound.receipt import MessageReceipt
 from ....wallet.base import BaseWallet
-from ....wallet.util import naked_to_did_key, b64_to_bytes, did_key_to_naked
+from ....wallet.util import b64_to_bytes
+from ....wallet.crypto import KeyType
+from ....did.did_key import DIDKey
 
 from ...connections.v1_0.manager import ConnectionManager
 from ...connections.v1_0.messages.connection_invitation import ConnectionInvitation
@@ -317,7 +319,9 @@ class OutOfBandManager(BaseConnectionManager):
                         keylist_updates, connection_id=mediation_record.connection_id
                     )
             routing_keys = [
-                key if len(key.split(":")) == 3 else naked_to_did_key(key)
+                key
+                if len(key.split(":")) == 3
+                else DIDKey.from_public_key_b58(key, KeyType.ED25519).did
                 for key in routing_keys
             ]
             # Create connection invitation message
@@ -332,7 +336,11 @@ class OutOfBandManager(BaseConnectionManager):
                     ServiceMessage(
                         _id="#inline",
                         _type="did-communication",
-                        recipient_keys=[naked_to_did_key(connection_key.verkey)],
+                        recipient_keys=[
+                            DIDKey.from_public_key_b58(
+                                connection_key.verkey, KeyType.ED25519
+                            ).did
+                        ],
                         service_endpoint=my_endpoint,
                         routing_keys=routing_keys,
                     )
@@ -405,7 +413,7 @@ class OutOfBandManager(BaseConnectionManager):
             service_did = invi_msg.service_dids[0]
             async with ledger:
                 verkey = await ledger.get_key_for_did(service_did)
-                did_key = naked_to_did_key(verkey)
+                did_key = DIDKey.from_public_key_b58(verkey, KeyType.ED25519).did
                 endpoint = await ledger.get_endpoint_for_did(service_did)
             public_did = service_did.split(":")[-1]
             service = ServiceMessage.deserialize(
@@ -520,10 +528,12 @@ class OutOfBandManager(BaseConnectionManager):
                     )
                 elif proto is HSProto.RFC160:
                     service.recipient_keys = [
-                        did_key_to_naked(key) for key in service.recipient_keys or []
+                        DIDKey.from_did(key).public_key_b58
+                        for key in service.recipient_keys or []
                     ]
                     service.routing_keys = [
-                        did_key_to_naked(key) for key in service.routing_keys
+                        DIDKey.from_did(key).public_key_b58
+                        for key in service.routing_keys
                     ] or []
                     connection_invitation = ConnectionInvitation.deserialize(
                         {

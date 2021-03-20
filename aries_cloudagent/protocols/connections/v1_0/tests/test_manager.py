@@ -8,7 +8,6 @@ from .....config.base import InjectionError
 from .....connections.models.conn_record import ConnRecord
 from .....connections.models.connection_target import ConnectionTarget
 from .....connections.base_manager import (
-    BaseConnectionManager,
     BaseConnectionManagerError,
 )
 from .....connections.models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
@@ -21,7 +20,8 @@ from .....transport.inbound.receipt import MessageReceipt
 from .....wallet.base import DIDInfo, KeyInfo
 from .....wallet.error import WalletNotFoundError
 from .....wallet.in_memory import InMemoryWallet
-from .....wallet.util import naked_to_did_key
+from .....wallet.crypto import KeyType
+from .....did.did_key import DIDKey
 from ....coordinate_mediation.v1_0.models.mediation_record import MediationRecord
 from ....coordinate_mediation.v1_0.manager import MediationManager
 from ....coordinate_mediation.v1_0.messages.keylist_update import KeylistUpdate
@@ -2139,7 +2139,11 @@ class TestConnectionManager(AsyncTestCase):
             service_blocks=[
                 async_mock.MagicMock(
                     service_endpoint=self.test_endpoint,
-                    recipient_keys=[naked_to_did_key(self.test_target_verkey)],
+                    recipient_keys=[
+                        DIDKey.from_public_key_b58(
+                            self.test_target_verkey, KeyType.ED25519
+                        ).did
+                    ],
                     routing_keys=[],
                 )
             ],
