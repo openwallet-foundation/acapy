@@ -1,5 +1,4 @@
 from multicodec.multicodec import add_prefix, get_codec, remove_prefix
-from varint import encode
 
 from ..wallet.crypto import KeyType, ed25519_pk_to_curve25519
 from ..wallet.util import b58_to_bytes, bytes_to_b58

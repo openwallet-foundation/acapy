@@ -3,6 +3,7 @@
 import json
 
 from datetime import datetime
+import re
 
 from base58 import alphabet
 from marshmallow.validate import OneOf, Range, Regexp, Validator
@@ -590,6 +591,20 @@ class CredentialSubject(Validator):
         return value
 
 
+class IndyOrKeyDID(Regexp):
+    """"""
+
+    PATTERN = re.compile("|".join([DIDKey.PATTERN, IndyDID.PATTERN]))
+    EXAMPLE = IndyDID.EXAMPLE
+
+    def __init__(
+        self,
+    ):
+        super().__init__(
+            IndyOrKeyDID, error="Value {input} is not in did:key or indy did format"
+        )
+
+
 # Instances for marshmallow schema specification
 INT_EPOCH = {"validate": IntEpoch(), "example": IntEpoch.EXAMPLE}
 WHOLE_NUM = {"validate": WholeNumber(), "example": WholeNumber.EXAMPLE}
@@ -640,4 +655,8 @@ CREDENTIAL_CONTEXT = {
 CREDENTIAL_SUBJECT = {
     "validate": CredentialSubject(),
     "example": CredentialSubject.EXAMPLE,
+}
+INDY_OR_KEY_DID = {
+    "validate": IndyOrKeyDID(),
+    "example": IndyOrKeyDID.EXAMPLE,
 }

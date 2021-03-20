@@ -2,8 +2,9 @@
 
 from abc import ABC, abstractmethod
 from collections import namedtuple
-from typing import Sequence
+from typing import Sequence, Tuple
 
+from .crypto import DIDMethod, KeyType
 from ..ledger.base import BaseLedger
 from ..ledger.endpoint_type import EndpointType
 
@@ -88,7 +89,13 @@ class BaseWallet(ABC):
 
     @abstractmethod
     async def create_local_did(
-        self, seed: str = None, did: str = None, metadata: dict = None
+        self,
+        seed: str = None,
+        did: str = None,
+        metadata: dict = None,
+        *,
+        method: DIDMethod = DIDMethod.SOV,
+        key_type: KeyType = KeyType.ED25519
     ) -> DIDInfo:
         """
         Create and store a new local DID.
@@ -97,6 +104,8 @@ class BaseWallet(ABC):
             seed: Optional seed to use for DID
             did: The DID to use
             metadata: Metadata to store with DID
+            method: The method to use for the DID. Defaults to did:sov
+            key_type: The key type to use for the DID. defaults to ed25519.
 
         Returns:
             The created `DIDInfo`
@@ -312,7 +321,7 @@ class BaseWallet(ABC):
         """
 
     @abstractmethod
-    async def unpack_message(self, enc_message: bytes) -> (str, str, str):
+    async def unpack_message(self, enc_message: bytes) -> Tuple[str, str, str]:
         """
         Unpack a message.
 

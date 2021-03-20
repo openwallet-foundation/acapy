@@ -4,7 +4,7 @@ from enum import Enum
 import json
 
 from collections import OrderedDict
-from typing import Callable, NamedTuple, Optional, Sequence, Tuple, Union
+from typing import Callable, Mapping, NamedTuple, Optional, Sequence, Tuple, Union, List
 
 import nacl.bindings
 import nacl.exceptions
@@ -13,8 +13,15 @@ import nacl.utils
 from marshmallow import fields, Schema, ValidationError
 
 from .error import WalletError
+from .util import (
+    bytes_to_b58,
+    bytes_to_b64,
+    b64_to_bytes,
+    b58_to_bytes,
+)
+
 # Define keys
-KeySpec = NamedTuple("KeySpec", [("name", str), ("multicodec_name", str)])
+KeySpec = NamedTuple("KeySpec", [("key_type", str), ("multicodec_name", str)])
 
 
 class KeyTypeException(BaseException):
@@ -25,23 +32,70 @@ class KeyType(Enum):
     ED25519 = KeySpec("ed25519", "ed25519-pub")
 
     @property
-    def name(self) -> str:
-        return self.value.name
+    def key_type(self) -> str:
+        return self.value.key_type
 
     @property
     def multicodec_name(self) -> str:
         return self.value.multicodec_name
 
     @classmethod
-    def from_multicodec_name(cls, multicodec_name: str) -> "KeyType":
+    def from_multicodec_name(cls, multicodec_name: str) -> Optional["KeyType"]:
         for key_type in KeyType:
             if key_type.multicodec_name == multicodec_name:
                 return key_type
 
-        raise KeyTypeException(
-            f"No key type found for multicoded name: '{multicodec_name}'"
-        )
+        return None
 
+    @classmethod
+    def from_key_type(cls, key_type: str) -> Optional["DIDMethod"]:
+        for _key_type in KeyType:
+            if _key_type.key_type == key_type:
+                return _key_type
+
+        return None
+
+
+DIDMethodSpec = NamedTuple(
+    "DIDMethodSpec",
+    [
+        ("method_name", str),
+        ("supported_key_types", List[KeyType]),
+    ],
+)
+
+
+class DIDMethod(Enum):
+    SOV = DIDMethodSpec("sov", [KeyType.ED25519])
+    KEY = DIDMethodSpec("key", [KeyType.ED25519])
+
+    @property
+    def method_name(self) -> str:
+        return self.value.method_name
+
+    @property
+    def supported_key_types(self) -> List[KeyType]:
+        return self.value.supported_key_types
+
+    def supports_key_type(self, key_type: KeyType) -> bool:
+        return key_type in self.supported_key_types
+
+    def from_metadata(metadata: Mapping) -> "DIDMethod":
+        method = metadata.get("method")
+
+        # extract from metadata object
+        if method:
+            for did_method in DIDMethod:
+                if method == did_method.method_name:
+                    return did_method
+
+        # return default SOV for backward compat
+        return DIDMethod.SOV
+
+    def from_method(method: str) -> Optional["DIDMethod"]:
+        for did_method in DIDMethod:
+            if method == did_method.method_name:
+                return did_method
 
 
 class PackMessageSchema(Schema):
@@ -128,7 +182,7 @@ def sign_pk_from_sk(secret: bytes) -> bytes:
     return secret[seed_len:]
 
 
-def validate_seed(seed: (str, bytes)) -> bytes:
+def validate_seed(seed: Union[str, bytes]) -> bytes:
     """
     Convert a seed parameter to standard format and check length.
 

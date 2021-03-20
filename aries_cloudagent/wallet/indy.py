@@ -17,10 +17,11 @@ from ..ledger.base import BaseLedger
 from ..ledger.endpoint_type import EndpointType
 from ..ledger.error import LedgerConfigError
 
+from ..did.did_key import DIDKey
 from .base import BaseWallet, KeyInfo, DIDInfo
-from .crypto import validate_seed
+from .crypto import DIDMethod, KeyType, validate_seed
 from .error import WalletError, WalletDuplicateError, WalletNotFoundError
-from .util import bytes_to_b64
+from .util import bytes_to_b58, bytes_to_b64
 
 
 class IndySdkWallet(BaseWallet):
@@ -29,6 +30,20 @@ class IndySdkWallet(BaseWallet):
     def __init__(self, opened: IndyOpenWallet):
         """Create a new IndySdkWallet instance."""
         self.opened = opened
+
+    def __did_info_from_info(self, info):
+        metadata = json.loads(info["metadata"]) if info["metadata"] else {}
+        did = info["did"]
+        verkey = info["verkey"]
+
+        if DIDMethod.from_metadata(metadata) == DIDMethod.KEY:
+            did = DIDKey.from_public_key_b58(info["verkey"], KeyType.ED25519).did
+
+        return DIDInfo(
+            did=did,
+            verkey=verkey,
+            metadata=metadata,
+        )
 
     async def create_signing_key(
         self, seed: str = None, metadata: dict = None
@@ -111,6 +126,7 @@ class IndySdkWallet(BaseWallet):
         await self.get_signing_key(verkey)  # throw exception if key is undefined
         await indy.crypto.set_key_metadata(self.opened.handle, verkey, meta_json)
 
+    # TODO: rotate not possible for did key
     async def rotate_did_keypair_start(self, did: str, next_seed: str = None) -> str:
         """
         Begin key rotation for DID that wallet owns: generate new keypair.
@@ -163,7 +179,13 @@ class IndySdkWallet(BaseWallet):
             ) from x_indy
 
     async def create_local_did(
-        self, seed: str = None, did: str = None, metadata: dict = None
+        self,
+        seed: str = None,
+        did: str = None,
+        metadata: dict = None,
+        *,
+        method: DIDMethod = DIDMethod.SOV,
+        key_type: KeyType = KeyType.ED25519,
     ) -> DIDInfo:
         """
         Create and store a new local DID.
@@ -172,6 +194,8 @@ class IndySdkWallet(BaseWallet):
             seed: Optional seed to use for DID
             did: The DID to use
             metadata: Metadata to store with DID
+            method: The method to use for the DID. Defaults to did:sov
+            key_type: The key type to use for the DID. defaults to ed25519.
 
         Returns:
             A `DIDInfo` instance representing the created DID
@@ -181,6 +205,13 @@ class IndySdkWallet(BaseWallet):
             WalletError: If there is a libindy error
 
         """
+
+        # validate key_type
+        if not method.supports_key_type(key_type):
+            raise WalletError(
+                f"Invalid key type {key_type.key_type} for did method f{method.method_name}"
+            )
+
         cfg = {}
         if seed:
             cfg["seed"] = bytes_to_b64(validate_seed(seed))
@@ -198,10 +229,21 @@ class IndySdkWallet(BaseWallet):
             raise IndyErrorHandler.wrap_error(
                 x_indy, "Wallet {} error".format(self.opened.name), WalletError
             ) from x_indy
+
+        # Store that we're using did:key for this did
+        if method == DIDMethod.KEY:
+            if metadata:
+                metadata["method"] = method.method_name
+            else:
+                metadata = {"method": method.method_name}
         if metadata:
             await self.replace_local_did_metadata(did, metadata)
         else:
             metadata = {}
+
+        if method == DIDMethod.KEY:
+            # Transform the did to a did key
+            did = DIDKey.from_public_key_b58(verkey, key_type).did
         return DIDInfo(did, verkey, metadata)
 
     async def get_local_dids(self) -> Sequence[DIDInfo]:
@@ -216,13 +258,7 @@ class IndySdkWallet(BaseWallet):
         info = json.loads(info_json)
         ret = []
         for did in info:
-            ret.append(
-                DIDInfo(
-                    did=did["did"],
-                    verkey=did["verkey"],
-                    metadata=json.loads(did["metadata"]) if did["metadata"] else {},
-                )
-            )
+            ret.append(self.__did_info_from_info(did))
         return ret
 
     async def get_local_did(self, did: str) -> DIDInfo:
@@ -241,6 +277,13 @@ class IndySdkWallet(BaseWallet):
 
         """
 
+        # Resolve
+        if did.startswith("did:key"):
+            did_key = DIDKey.from_did(did)
+            # Ed25519 did:keys are masked indy dids
+            if did_key.key_type == KeyType.ED25519:
+                did = bytes_to_b58(did_key.public_key[:16])
+
         try:
             info_json = await indy.did.get_my_did_with_meta(self.opened.handle, did)
         except IndyError as x_indy:
@@ -250,11 +293,7 @@ class IndySdkWallet(BaseWallet):
                 x_indy, "Wallet {} error".format(self.opened.name), WalletError
             ) from x_indy
         info = json.loads(info_json)
-        return DIDInfo(
-            did=info["did"],
-            verkey=info["verkey"],
-            metadata=json.loads(info["metadata"]) if info["metadata"] else {},
-        )
+        return self.__did_info_from_info(info)
 
     async def get_local_did_for_verkey(self, verkey: str) -> DIDInfo:
         """

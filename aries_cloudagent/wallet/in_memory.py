@@ -7,6 +7,8 @@ from ..core.in_memory import InMemoryProfile
 
 from .base import BaseWallet, KeyInfo, DIDInfo
 from .crypto import (
+    DIDMethod,
+    KeyType,
     create_keypair,
     random_seed,
     validate_seed,
@@ -15,6 +17,7 @@ from .crypto import (
     encode_pack_message,
     decode_pack_message,
 )
+from ..did.did_key import DIDKey
 from .error import WalletError, WalletDuplicateError, WalletNotFoundError
 from .util import b58_to_bytes, bytes_to_b58
 
@@ -152,7 +155,13 @@ class InMemoryWallet(BaseWallet):
         return DIDInfo(did, verkey_enc, self.profile.local_dids[did]["metadata"].copy())
 
     async def create_local_did(
-        self, seed: str = None, did: str = None, metadata: dict = None
+        self,
+        seed: str = None,
+        did: str = None,
+        metadata: dict = None,
+        *,
+        method: DIDMethod = DIDMethod.SOV,
+        key_type: KeyType = KeyType.ED25519,
     ) -> DIDInfo:
         """
         Create and store a new local DID.
@@ -161,6 +170,8 @@ class InMemoryWallet(BaseWallet):
             seed: Optional seed to use for DID
             did: The DID to use
             metadata: Metadata to store with DID
+            method: The method to use for the DID. Defaults to did:sov
+            key_type: The key type to use for the DID. defaults to ed25519.
 
         Returns:
             A `DIDInfo` instance representing the created DID
@@ -170,10 +181,25 @@ class InMemoryWallet(BaseWallet):
 
         """
         seed = validate_seed(seed) or random_seed()
+
+        # validate key_type
+        if not method.supports_key_type(key_type):
+            raise WalletError(
+                f"Invalid key type {key_type.key_type} for did method f{method.method_name}"
+            )
+
         verkey, secret = create_keypair(seed)
         verkey_enc = bytes_to_b58(verkey)
+
         if not did:
-            did = bytes_to_b58(verkey[:16])
+            # TODO: each method should have it's own class (like DIDKey)
+            # that can handle public key + key type to did id
+            if method == DIDMethod.SOV:
+                did = bytes_to_b58(verkey[:16])
+            elif method == DIDMethod.KEY:
+                did = DIDKey.from_public_key(verkey, key_type).did
+            else:
+                raise WalletError(f"Cannot create did for method: {method.method_name}")
         if (
             did in self.profile.local_dids
             and self.profile.local_dids[did]["verkey"] != verkey_enc
