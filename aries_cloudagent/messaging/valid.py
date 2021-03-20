@@ -601,7 +601,8 @@ class IndyOrKeyDID(Regexp):
         self,
     ):
         super().__init__(
-            IndyOrKeyDID, error="Value {input} is not in did:key or indy did format"
+            IndyOrKeyDID.PATTERN,
+            error="Value {input} is not in did:key or indy did format",
         )
 
 
