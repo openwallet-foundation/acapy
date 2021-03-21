@@ -60,11 +60,11 @@ async def verify_credential(
 async def _verify_presentation(
     *,
     presentation: dict,
+    suites: List[LinkedDataProof],
+    document_loader: DocumentLoader,
     challenge: str = None,
     domain: str = None,
     purpose: ProofPurpose = None,
-    suites: List[LinkedDataProof],
-    document_loader: DocumentLoader = None,
 ):
 
     if not purpose and not challenge:
@@ -95,7 +95,10 @@ async def _verify_presentation(
                 credential=credential,
                 suites=suites,
                 document_loader=document_loader,
-                purpose=purpose,
+                # FIXME: we don't want to interhit the authentication purpose
+                # from the presentation. However we do want to have subject
+                # authentication I guess
+                # purpose=purpose,
             )
             for credential in credentials
         ]
@@ -114,14 +117,13 @@ async def _verify_presentation(
 
 async def verify_presentation(
     *,
-    presentation: dict = None,
-    challenge: str,
+    presentation: dict,
+    suites: List[LinkedDataProof],
+    document_loader: DocumentLoader,
     purpose: ProofPurpose = None,
-    suites: List[LinkedDataProof] = None,
-    controller: dict = None,
+    challenge: str = None,
     domain: str = None,
-    document_loader: DocumentLoader = None,
-):
+) -> PresentationVerificationResult:
 
     try:
         return await _verify_presentation(
@@ -129,7 +131,6 @@ async def verify_presentation(
             challenge=challenge,
             purpose=purpose,
             suites=suites,
-            controller=controller,
             domain=domain,
             document_loader=document_loader,
         )

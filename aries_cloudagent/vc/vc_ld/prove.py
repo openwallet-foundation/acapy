@@ -7,6 +7,7 @@ from ..ld_proofs import (
     DocumentLoader,
     sign,
     LinkedDataProof,
+    LinkedDataProofException,
 )
 from ..ld_proofs.constants import CREDENTIALS_V1_URL
 
@@ -32,19 +33,19 @@ async def create_presentation(
 
 
 async def sign_presentation(
+    *,
     presentation: dict,
     suite: LinkedDataProof,
     document_loader: DocumentLoader,
-    domain: str,
-    challenge: str,
+    challenge: str = None,
+    domain: str = None,
     purpose: ProofPurpose = None,
 ):
-
+    if not purpose and not challenge:
+        raise LinkedDataProofException(
+            'A "challenge" param is required when not providing a "purpose" (for AuthenticationProofPurpose).'
+        )
     if not purpose:
-        if not domain and challenge:
-            raise Exception(
-                '"domain" and "challenge" must be provided when not providing a "purpose"'
-            )
         purpose = AuthenticationProofPurpose(challenge=challenge, domain=domain)
 
     return await sign(

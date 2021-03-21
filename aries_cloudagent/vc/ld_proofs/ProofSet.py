@@ -18,7 +18,7 @@ class ProofSet:
         document: dict,
         suite: LinkedDataProof,
         purpose: ProofPurpose,
-        document_loader: DocumentLoader
+        document_loader: DocumentLoader,
     ) -> dict:
         """Add a proof to the document."""
 
@@ -41,7 +41,7 @@ class ProofSet:
         document: dict,
         suites: List[LinkedDataProof],
         purpose: ProofPurpose,
-        document_loader: DocumentLoader
+        document_loader: DocumentLoader,
     ) -> DocumentVerificationResult:
         """Verify proof on the document"""
         try:
@@ -63,8 +63,9 @@ class ProofSet:
             )
 
             if len(results) == 0:
+                suite_names = ", ".join([suite.signature_type for suite in suites])
                 raise LinkedDataProofException(
-                    "Could not verify any proofs; no proofs matched the required suite and purpose"
+                    f"Could not verify any proofs; no proofs matched the required suites ({suite_names}) and purpose ({purpose.term})"
                 )
 
             # check if all results are valid, create result

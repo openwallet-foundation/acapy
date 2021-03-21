@@ -4,6 +4,7 @@ from ...ld_proofs import (
     PurposeResult,
 )
 
+# All signed documents manually tested for validity on https://univerifier.io
 
 CREDENTIAL_TEMPLATE = {
     "@context": [
@@ -88,14 +89,16 @@ CREDENTIAL_VERIFIED = DocumentVerificationResult(
                     "assertionMethod": [
                         "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
                     ],
-                    "sec:authenticationMethod": "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
-                    "capabilityDelegation": [
+                    "authentication": [
                         {
                             "id": "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
                             "type": "Ed25519VerificationKey2018",
                             "controller": "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
                             "publicKeyBase58": "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx",
                         }
+                    ],
+                    "capabilityDelegation": [
+                        "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
                     ],
                     "capabilityInvocation": [
                         "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
@@ -114,3 +117,77 @@ CREDENTIAL_VERIFIED = DocumentVerificationResult(
         )
     ],
 )
+
+PRESENTATION_UNSIGNED = {
+    "@context": ["https://www.w3.org/2018/credentials/v1"],
+    "type": ["VerifiablePresentation"],
+    "verifiableCredential": [
+        {
+            "@context": [
+                "https://www.w3.org/2018/credentials/v1",
+                "https://www.w3.org/2018/credentials/examples/v1",
+            ],
+            "id": "http://example.gov/credentials/3732",
+            "type": ["VerifiableCredential", "UniversityDegreeCredential"],
+            "issuer": {
+                "id": "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
+            },
+            "issuanceDate": "2020-03-10T04:24:12.164Z",
+            "credentialSubject": {
+                "id": "did:example:456",
+                "degree": {
+                    "type": "BachelorDegree",
+                    "name": "Bachelor of Science and Arts",
+                },
+            },
+            "proof": {
+                "type": "Ed25519Signature2018",
+                "verificationMethod": "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
+                "created": "2019-12-11T03:50:55",
+                "proofPurpose": "assertionMethod",
+                "jws": "eyJhbGciOiAiRWREU0EiLCAiYjY0IjogZmFsc2UsICJjcml0IjogWyJiNjQiXX0..lKJU0Df_keblRKhZAS9Qq6zybm-HqUXNVZ8vgEPNTAjQKBhQDxvXNo7nvtUBb_Eq1Ch6YBKY7UBAjg6iBX5qBQ",
+            },
+        }
+    ],
+}
+
+PRESENTATION_SIGNED = {
+    "@context": ["https://www.w3.org/2018/credentials/v1"],
+    "type": ["VerifiablePresentation"],
+    "verifiableCredential": [
+        {
+            "@context": [
+                "https://www.w3.org/2018/credentials/v1",
+                "https://www.w3.org/2018/credentials/examples/v1",
+            ],
+            "id": "http://example.gov/credentials/3732",
+            "type": ["VerifiableCredential", "UniversityDegreeCredential"],
+            "issuer": {
+                "id": "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
+            },
+            "issuanceDate": "2020-03-10T04:24:12.164Z",
+            "credentialSubject": {
+                "id": "did:example:456",
+                "degree": {
+                    "type": "BachelorDegree",
+                    "name": "Bachelor of Science and Arts",
+                },
+            },
+            "proof": {
+                "type": "Ed25519Signature2018",
+                "verificationMethod": "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
+                "created": "2019-12-11T03:50:55",
+                "proofPurpose": "assertionMethod",
+                "jws": "eyJhbGciOiAiRWREU0EiLCAiYjY0IjogZmFsc2UsICJjcml0IjogWyJiNjQiXX0..lKJU0Df_keblRKhZAS9Qq6zybm-HqUXNVZ8vgEPNTAjQKBhQDxvXNo7nvtUBb_Eq1Ch6YBKY7UBAjg6iBX5qBQ",
+            },
+        }
+    ],
+    "proof": {
+        "type": "Ed25519Signature2018",
+        "verificationMethod": "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
+        "created": "2020-12-11T03:50:55",
+        "proofPurpose": "authentication",
+        "challenge": "2b1bbff6-e608-4368-bf84-67471b27e41c",
+        "jws": "eyJhbGciOiAiRWREU0EiLCAiYjY0IjogZmFsc2UsICJjcml0IjogWyJiNjQiXX0..IOjNkdpk4lF8uU8N7n0OMc3opqU1wtCTu3KbJcdDIKvSt6QLEy-ofRDVgN2xo-21yxzx36mXVjiilWdB6A-dDg",
+    },
+}

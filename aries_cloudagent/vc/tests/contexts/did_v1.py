@@ -22,7 +22,7 @@ DID_V1 = {
         "RsaSignature2015": "sec:RsaSignature2015",
         "RsaSignature2017": "sec:RsaSignature2017",
         "UpdateDidDescription": "didv:UpdateDidDescription",
-        "authentication": "sec:authenticationMethod",
+        # "authentication": "sec:authenticationMethod",
         "authenticationCredential": "sec:authenticationCredential",
         "authorizationCapability": "sec:authorizationCapability",
         "canonicalizationAlgorithm": "sec:canonicalizationAlgorithm",

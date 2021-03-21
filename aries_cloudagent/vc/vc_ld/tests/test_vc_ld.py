@@ -1,5 +1,4 @@
 from asynctest import TestCase
-
 from datetime import datetime
 
 from ....wallet.base import KeyInfo
@@ -11,9 +10,21 @@ from ...ld_proofs import (
     Ed25519Signature2018,
     Ed25519WalletKeyPair,
 )
-from ...vc_ld import issue, verify_credential
+from ...vc_ld import (
+    issue,
+    verify_credential,
+    create_presentation,
+    sign_presentation,
+    verify_presentation,
+)
 from ...tests.document_loader import custom_document_loader
-from .test_credential import CREDENTIAL_TEMPLATE, CREDENTIAL_ISSUED, CREDENTIAL_VERIFIED
+from .test_credential import (
+    CREDENTIAL_TEMPLATE,
+    CREDENTIAL_ISSUED,
+    CREDENTIAL_VERIFIED,
+    PRESENTATION_SIGNED,
+    PRESENTATION_UNSIGNED,
+)
 
 
 class TestLinkedDataVerifiableCredential(TestCase):
@@ -27,6 +38,7 @@ class TestLinkedDataVerifiableCredential(TestCase):
         self.verification_method = DIDKey.from_public_key_b58(
             self.key_info.verkey, KeyType.ED25519
         ).key_id
+        self.presentation_challenge = "2b1bbff6-e608-4368-bf84-67471b27e41c"
 
     async def test_issue(self):
         # Use different key pair and suite for signing and verification
@@ -62,4 +74,47 @@ class TestLinkedDataVerifiableCredential(TestCase):
         assert verified == CREDENTIAL_VERIFIED
 
     async def test_create_presentation(self):
-        pass
+        # TODO: create presentation from subject id controller
+        # TODO: create presentation with multiple credentials
+        unsigned_presentation = await create_presentation(
+            credentials=[CREDENTIAL_ISSUED]
+        )
+
+        suite = Ed25519Signature2018(
+            verification_method=self.verification_method,
+            key_pair=Ed25519WalletKeyPair(
+                wallet=self.wallet, public_key_base58=self.key_info.verkey
+            ),
+            date=datetime.strptime("2020-12-11T03:50:55Z", "%Y-%m-%dT%H:%M:%SZ"),
+        )
+
+        assert unsigned_presentation == PRESENTATION_UNSIGNED
+
+        presentation = await sign_presentation(
+            presentation=unsigned_presentation,
+            suite=suite,
+            document_loader=custom_document_loader,
+            challenge=self.presentation_challenge,
+        )
+
+        assert presentation == PRESENTATION_SIGNED
+
+    async def test_verify_presentation(self):
+        # TODO: verify with multiple suites
+        suite = Ed25519Signature2018(
+            key_pair=Ed25519WalletKeyPair(wallet=self.wallet),
+        )
+        verification_result = await verify_presentation(
+            presentation=PRESENTATION_SIGNED,
+            challenge=self.presentation_challenge,
+            suites=[suite],
+            document_loader=custom_document_loader,
+        )
+
+        if not verification_result.verified:
+            if verification_result.errors and len(verification_result.errors) > 0:
+                raise verification_result.errors[0]
+
+            for credential_result in verification_result.credential_results:
+                if credential_result.errors and len(credential_result.errors) > 0:
+                    raise credential_result.errors[0]
