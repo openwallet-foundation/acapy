@@ -2,9 +2,12 @@
 
 from collections import OrderedDict
 from typing import Any, Mapping, Type
+from weakref import ref
 
 from ..config.injection_context import InjectionContext
+from ..config.provider import ClassProvider
 from ..storage.base import BaseStorage
+from ..storage.vc_holder.base import VCHolder
 from ..utils.classloader import DeferLoad
 from ..wallet.base import BaseWallet
 
@@ -32,6 +35,19 @@ class InMemoryProfile(Profile):
         self.local_dids = {}
         self.pair_dids = {}
         self.records = OrderedDict()
+        self.bind_providers()
+
+    def bind_providers(self):
+        """Initialize the profile-level instance providers."""
+        injector = self._context.injector
+
+        injector.bind_provider(
+            VCHolder,
+            ClassProvider(
+                "aries_cloudagent.storage.vc_holder.in_memory.InMemoryVCHolder",
+                ref(self),
+            ),
+        )
 
     def session(self, context: InjectionContext = None) -> "ProfileSession":
         """Start a new interactive session with no transaction support requested."""

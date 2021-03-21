@@ -2,13 +2,15 @@
 
 from typing import Sequence
 
-from marshmallow import EXCLUDE, fields
+from marshmallow import EXCLUDE, fields, RAISE, validates_schema, ValidationError
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 from .....messaging.decorators.attach_decorator import (
     AttachDecorator,
     AttachDecoratorSchema,
 )
+
+from ...indy.cred_request import IndyCredRequestSchema
 
 from ..message_types import CRED_20_REQUEST, PROTOCOL_PACKAGE
 
@@ -44,6 +46,8 @@ class V20CredRequest(AgentMessage):
         Args:
             requests_attach: requests attachments
             comment: optional comment
+            formats: acceptable attachment formats
+            requests_attach: list of request attachments
 
         """
         super().__init__(_id=_id, **kwargs)
@@ -51,7 +55,7 @@ class V20CredRequest(AgentMessage):
         self.formats = list(formats) if formats else []
         self.requests_attach = list(requests_attach) if requests_attach else []
 
-    def cred_request(self, fmt: V20CredFormat.Format = None) -> dict:
+    def attachment(self, fmt: V20CredFormat.Format = None) -> dict:
         """
         Return attached credential request.
 
@@ -59,9 +63,15 @@ class V20CredRequest(AgentMessage):
             fmt: format of attachment in list to decode and return
 
         """
-        return (fmt or V20CredFormat.Format.INDY).get_attachment_data(
-            self.formats,
-            self.requests_attach,
+        return (
+            (
+                fmt or V20CredFormat.Format.get(self.formats[0].format)
+            ).get_attachment_data(
+                self.formats,
+                self.requests_attach,
+            )
+            if self.formats
+            else None
         )
 
 
@@ -81,8 +91,33 @@ class V20CredRequestSchema(AgentMessageSchema):
         V20CredFormatSchema,
         many=True,
         required=True,
-        description="Acceptable credential formats",
+        description="Acceptable attachment formats",
     )
     requests_attach = fields.Nested(
-        AttachDecoratorSchema, required=True, many=True, data_key="requests~attach"
+        AttachDecoratorSchema,
+        required=True,
+        many=True,
+        data_key="requests~attach",
+        description="Request attachments",
     )
+
+    @validates_schema
+    def validate_fields(self, data, **kwargs):
+        """Validate attachments per format."""
+
+        def get_attach_by_id(attach_id):
+            """Return attachment with input identifier."""
+            for atch in attachments:
+                if atch.ident == attach_id:
+                    return atch
+            raise ValidationError(f"No attachment for attach_id {attach_id} in formats")
+
+        formats = data.get("formats") or []
+        attachments = data.get("requests_attach") or []
+        if len(formats) != len(attachments):
+            raise ValidationError("Formats/attachments length mismatch")
+
+        for fmt in formats:
+            atch = get_attach_by_id(fmt.attach_id)
+            if V20CredFormat.Format.get(fmt.format) is V20CredFormat.Format.INDY:
+                IndyCredRequestSchema(unknown=RAISE).load(atch.content)

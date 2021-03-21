@@ -18,6 +18,7 @@ from ...admin.request_context import AdminRequestContext
 from ...indy.issuer import IndyIssuer
 from ...ledger.base import BaseLedger
 from ...storage.base import BaseStorage
+from ...storage.error import StorageError
 from ...tails.base import BaseTailsServer
 
 from ..models.openapi import OpenAPISchema
@@ -247,11 +248,13 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
         session = await context.session()
 
         transaction_mgr = TransactionManager(session)
-
-        transaction = await transaction_mgr.create_record(
-            messages_attach=cred_def["signed_txn"],
-            expires_time="1597708800",
-        )
+        try:
+            transaction = await transaction_mgr.create_record(
+                messages_attach=cred_def["signed_txn"],
+                expires_time="1597708800",
+            )
+        except StorageError as err:
+            raise web.HTTPBadRequest(reason=err.roll_up) from err
 
         return web.json_response(transaction.serialize())
 

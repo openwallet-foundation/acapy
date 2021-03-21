@@ -18,19 +18,16 @@ from .....indy.sdk.verifier import IndySdkVerifier
 
 from ....didcomm_prefix import DIDCommPrefix
 
+from ...indy.xform import indy_proof_req_preview2indy_requested_creds
+from ...indy.pres_preview import IndyPresAttrSpec, IndyPresPreview, IndyPresPredSpec
+
 from .. import manager as test_module
 from ..manager import PresentationManager, PresentationManagerError
 from ..messages.presentation import Presentation
 from ..messages.presentation_ack import PresentationAck
 from ..messages.presentation_proposal import PresentationProposal
 from ..messages.presentation_request import PresentationRequest
-from ..messages.inner.presentation_preview import (
-    PresAttrSpec,
-    PresentationPreview,
-    PresPredSpec,
-)
 from ..models.presentation_exchange import V10PresentationExchange
-from ..util.indy import indy_proof_req_preview2indy_requested_creds
 
 
 CONN_ID = "connection_id"
@@ -38,10 +35,10 @@ ISSUER_DID = "NcYxiDXkpYi6ov5FcYDi1e"
 S_ID = f"{ISSUER_DID}:2:vidya:1.0"
 CD_ID = f"{ISSUER_DID}:3:CL:{S_ID}:tag1"
 RR_ID = f"{ISSUER_DID}:4:{CD_ID}:CL_ACCUM:0"
-PRES_PREVIEW = PresentationPreview(
+PRES_PREVIEW = IndyPresPreview(
     attributes=[
-        PresAttrSpec(name="player", cred_def_id=CD_ID, value="Richie Knucklez"),
-        PresAttrSpec(
+        IndyPresAttrSpec(name="player", cred_def_id=CD_ID, value="Richie Knucklez"),
+        IndyPresAttrSpec(
             name="screenCapture",
             cred_def_id=CD_ID,
             mime_type="image/png",
@@ -49,17 +46,17 @@ PRES_PREVIEW = PresentationPreview(
         ),
     ],
     predicates=[
-        PresPredSpec(
+        IndyPresPredSpec(
             name="highScore", cred_def_id=CD_ID, predicate=">=", threshold=1000000
         )
     ],
 )
-PRES_PREVIEW_NAMES = PresentationPreview(
+PRES_PREVIEW_NAMES = IndyPresPreview(
     attributes=[
-        PresAttrSpec(
+        IndyPresAttrSpec(
             name="player", cred_def_id=CD_ID, value="Richie Knucklez", referent="0"
         ),
-        PresAttrSpec(
+        IndyPresAttrSpec(
             name="screenCapture",
             cred_def_id=CD_ID,
             mime_type="image/png",
@@ -68,7 +65,7 @@ PRES_PREVIEW_NAMES = PresentationPreview(
         ),
     ],
     predicates=[
-        PresPredSpec(
+        IndyPresPredSpec(
             name="highScore", cred_def_id=CD_ID, predicate=">=", threshold=1000000
         )
     ],
@@ -372,17 +369,17 @@ class TestPresentationManager(AsyncTestCase):
             assert exchange_out.state == V10PresentationExchange.STATE_PRESENTATION_SENT
 
     async def test_create_presentation_self_asserted(self):
-        PRES_PREVIEW_SELFIE = PresentationPreview(
+        PRES_PREVIEW_SELFIE = IndyPresPreview(
             attributes=[
-                PresAttrSpec(name="player", value="Richie Knucklez"),
-                PresAttrSpec(
+                IndyPresAttrSpec(name="player", value="Richie Knucklez"),
+                IndyPresAttrSpec(
                     name="screenCapture",
                     mime_type="image/png",
                     value="aW1hZ2luZSBhIHNjcmVlbiBjYXB0dXJl",
                 ),
             ],
             predicates=[
-                PresPredSpec(
+                IndyPresPredSpec(
                     name="highScore",
                     cred_def_id=None,
                     predicate=">=",
@@ -724,25 +721,23 @@ class TestPresentationManager(AsyncTestCase):
                 },
             },
             presentation={
-                "proof": {
-                    "proofs": [],
-                    "requested_proof": {
-                        "revealed_attrs": {
-                            "0_favourite_uuid": {
-                                "sub_proof_index": 0,
-                                "raw": "potato",
-                                "encoded": "12345678901234567890",
-                            },
-                            "1_icon_uuid": {
-                                "sub_proof_index": 1,
-                                "raw": "cG90YXRv",
-                                "encoded": "12345678901234567890",
-                            },
+                "proof": {"proofs": []},
+                "requested_proof": {
+                    "revealed_attrs": {
+                        "0_favourite_uuid": {
+                            "sub_proof_index": 0,
+                            "raw": "potato",
+                            "encoded": "12345678901234567890",
                         },
-                        "self_attested_attrs": {},
-                        "unrevealed_attrs": {},
-                        "predicates": {},
+                        "1_icon_uuid": {
+                            "sub_proof_index": 1,
+                            "raw": "cG90YXRv",
+                            "encoded": "12345678901234567890",
+                        },
                     },
+                    "self_attested_attrs": {},
+                    "unrevealed_attrs": {},
+                    "predicates": {},
                 },
                 "identifiers": [
                     {
@@ -780,6 +775,87 @@ class TestPresentationManager(AsyncTestCase):
             )
             assert retrieve_ex.call_count == 2
             save_ex.assert_called_once()
+            assert exchange_out.state == (
+                V10PresentationExchange.STATE_PRESENTATION_RECEIVED
+            )
+
+    async def test_receive_presentation_oob(self):
+        connection_record = async_mock.MagicMock(connection_id=CONN_ID)
+
+        exchange_dummy = V10PresentationExchange(
+            presentation_proposal_dict={
+                "presentation_proposal": {
+                    "@type": DIDCommPrefix.qualify_current(
+                        "present-proof/1.0/presentation-preview"
+                    ),
+                    "attributes": [
+                        {"name": "favourite", "cred_def_id": CD_ID, "value": "potato"},
+                        {"name": "icon", "cred_def_id": CD_ID, "value": "cG90YXRv"},
+                    ],
+                    "predicates": [],
+                }
+            },
+            presentation_request={
+                "name": "proof-request",
+                "version": "1.0",
+                "nonce": "1234567890",
+                "requested_attributes": {
+                    "0_favourite_uuid": {
+                        "name": "favourite",
+                        "restrictions": [{"cred_def_id": CD_ID}],
+                    },
+                    "1_icon_uuid": {
+                        "name": "icon",
+                        "restrictions": [{"cred_def_id": CD_ID}],
+                    },
+                },
+            },
+            presentation={
+                "proof": {"proofs": []},
+                "requested_proof": {
+                    "revealed_attrs": {
+                        "0_favourite_uuid": {
+                            "sub_proof_index": 0,
+                            "raw": "potato",
+                            "encoded": "12345678901234567890",
+                        },
+                        "1_icon_uuid": {
+                            "sub_proof_index": 1,
+                            "raw": "cG90YXRv",
+                            "encoded": "12345678901234567890",
+                        },
+                    },
+                    "self_attested_attrs": {},
+                    "unrevealed_attrs": {},
+                    "predicates": {},
+                },
+                "identifiers": [
+                    {
+                        "schema_id": S_ID,
+                        "cred_def_id": CD_ID,
+                        "rev_reg_id": None,
+                        "timestamp": None,
+                    },
+                    {
+                        "schema_id": S_ID,
+                        "cred_def_id": CD_ID,
+                        "rev_reg_id": None,
+                        "timestamp": None,
+                    },
+                ],
+            },
+        )
+        message = async_mock.MagicMock()
+
+        with async_mock.patch.object(
+            V10PresentationExchange, "save", autospec=True
+        ) as save_ex, async_mock.patch.object(
+            V10PresentationExchange, "retrieve_by_tag_filter", autospec=True
+        ) as retrieve_ex:
+            retrieve_ex.side_effect = [StorageNotFoundError(), exchange_dummy]
+            exchange_out = await self.manager.receive_presentation(
+                message, connection_record
+            )
             assert exchange_out.state == (
                 V10PresentationExchange.STATE_PRESENTATION_RECEIVED
             )

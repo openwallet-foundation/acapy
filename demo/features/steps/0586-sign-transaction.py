@@ -7,6 +7,8 @@ from bdd_support.agent_backchannel_client import (
     agent_container_register_did,
     agent_container_GET,
     agent_container_POST,
+    read_schema_data,
+    async_sleep,
 )
 from runners.agent_container import AgentContainer
 
@@ -50,9 +52,104 @@ def step_impl(context, agent_name, connection_job_role):
     connection_id = agent["agent"].agent.connection_id
 
     # set role for agent's connection
-    # updated_connection = agent_container_POST(
-    #    agent['agent'],
-    #    "/transaction/set-job",
-    #    params={"connection": connection_id, "my_job": connection_job_role}
-    # )
-    pass
+    print("Updating role for connection:", connection_id, connection_job_role)
+    updated_connection = agent_container_POST(
+        agent["agent"],
+        "/transactions/" + connection_id + "/set-transaction-jobs",
+        params={"transaction_my_job": connection_job_role},
+    )
+
+    # assert goodness
+    assert updated_connection["transaction_my_job"] == connection_job_role
+    async_sleep(1.0)
+
+
+@when('"{agent_name}" authors a schema transaction with {schema_name}')
+def step_impl(context, agent_name, schema_name):
+    agent = context.active_agents[agent_name]
+
+    schema_info = read_schema_data(schema_name)
+    endorser_did = context.public_dids["ENDORSER"]
+    created_txn = agent_container_POST(
+        agent["agent"],
+        "/schemas",
+        data=schema_info["schema"],
+        params={"auto_endorse": "false", "endorser_did": endorser_did},
+    )
+
+    # assert goodness
+    assert created_txn["state"] == "transaction_created"
+    if not "txn_ids" in context:
+        context.txn_ids = {}
+    context.txn_ids["AUTHOR"] = created_txn["_id"]
+
+
+@when('"{agent_name}" requests endorsement for the transaction')
+def step_impl(context, agent_name):
+    agent = context.active_agents[agent_name]
+
+    async_sleep(1.0)
+    txn_id = context.txn_ids["AUTHOR"]
+    connection_id = agent["agent"].agent.connection_id
+    print("Requesting endorsement for connection:", connection_id)
+    requested_txn = agent_container_POST(
+        agent["agent"],
+        "/transactions/create-request",
+        params={"conn_id": connection_id, "tran_id": txn_id},
+    )
+
+    # assert goodness
+    assert requested_txn["state"] == "request_sent"
+
+
+@when('"{agent_name}" endorses the transaction')
+def step_impl(context, agent_name):
+    agent = context.active_agents[agent_name]
+
+    txns = {"results": []}
+    i = 5
+    while 0 == len(txns["results"]) and i > 0:
+        async_sleep(1.0)
+        txns = agent_container_GET(agent["agent"], "/transactions")
+        i = i - 1
+    requested_txn = txns["results"][0]
+    assert requested_txn["state"] == "request_received"
+    txn_id = requested_txn["_id"]
+
+    endorsed_txn = agent_container_POST(
+        agent["agent"], "/transactions/" + txn_id + "/endorse"
+    )
+
+    assert endorsed_txn["state"] == "transaction_endorsed"
+
+
+@then('"{agent_name}" can write the transaction to the ledger')
+def step_impl(context, agent_name):
+    agent = context.active_agents[agent_name]
+
+    async_sleep(1.0)
+    txns = agent_container_GET(agent["agent"], "/transactions")
+    requested_txn = txns["results"][0]
+    assert requested_txn["state"] == "transaction_endorsed"
+    txn_id = requested_txn["_id"]
+
+    written_txn = agent_container_POST(
+        agent["agent"], "/transactions/" + txn_id + "/write"
+    )
+
+    assert written_txn["state"] == "transaction_completed"
+
+
+@then('"{agent_name}" has written the schema {schema_name} to the ledger')
+def step_impl(context, agent_name, schema_name):
+    agent = context.active_agents[agent_name]
+
+    schema_info = read_schema_data(schema_name)
+
+    schemas = agent_container_GET(agent["agent"], "/schemas/created")
+    assert len(schemas["schema_ids"]) == 1
+
+    schema_id = schemas["schema_ids"][0]
+    schema = agent_container_GET(agent["agent"], "/schemas/" + schema_id)
+
+    # TODO assert goodness

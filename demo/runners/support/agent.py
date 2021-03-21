@@ -394,6 +394,11 @@ class DemoAgent:
             self.seed = self.agency_wallet_seed
             self.did = self.agency_wallet_did
             self.wallet_key = self.agency_wallet_key
+
+            wallet_params = await self.get_id_and_token(self.wallet_name)
+            self.managed_wallet_params["wallet_id"] = wallet_params["id"]
+            self.managed_wallet_params["token"] = wallet_params["token"]
+
             self.log(f"Switching to AGENCY wallet {target_wallet_name}")
             return False
 
@@ -408,6 +413,11 @@ class DemoAgent:
                 self.ident = target_wallet_name
                 # we can't recover the seed so let's set it to None and see what happens
                 self.seed = None
+
+                wallet_params = await self.get_id_and_token(self.wallet_name)
+                self.managed_wallet_params["wallet_id"] = wallet_params["id"]
+                self.managed_wallet_params["token"] = wallet_params["token"]
+
                 self.log(f"Switching to EXISTING wallet {target_wallet_name}")
                 return False
 
@@ -443,6 +453,19 @@ class DemoAgent:
 
         self.log(f"Created NEW wallet {target_wallet_name}")
         return True
+
+    async def get_id_and_token(self, wallet_name):
+        wallet = await self.agency_admin_GET(
+            f"/multitenancy/wallets?wallet_name={wallet_name}"
+        )
+        wallet_id = wallet["results"][0]["wallet_id"]
+
+        wallet = await self.agency_admin_POST(
+            f"/multitenancy/wallet/{wallet_id}/token", {}
+        )
+        token = wallet["token"]
+
+        return {"id": wallet_id, "token": token}
 
     def handle_output(self, *output, source: str = None, **kwargs):
         end = "" if source else "\n"

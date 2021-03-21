@@ -28,25 +28,23 @@ class TestV20FormatFormat(TestCase):
             is V20CredFormat.Format.INDY
         )
         assert V20CredFormat.Format.get("no such format") is None
-        assert V20CredFormat.Format.get("Indy") is V20CredFormat.Format.INDY
-        assert V20CredFormat.Format.get("HL/INDY").aries == "hlindy-zkp-v1.0"
-        assert "indy" in V20CredFormat.Format.get("HL/INDY").aka
+        assert V20CredFormat.Format.get("hlindy/...") is V20CredFormat.Format.INDY
         assert (
-            V20CredFormat.Format.get("JSON-LD").aries == "dif/credential-manifest@v1.0"
+            V20CredFormat.Format.get("dif/...").detail.__name__ == "V20CredExRecordDIF"
         )
         assert (
-            V20CredFormat.Format.get("HL/INDY").detail.__name__ == "V20CredExRecordIndy"
+            V20CredFormat.Format.get(V20CredFormat.Format.DIF.api)
+            is V20CredFormat.Format.DIF
         )
-        assert V20CredFormat.Format.get("dif").detail.__name__ == "V20CredExRecordDIF"
 
     def test_get_attachment_data(self):
         assert (
             V20CredFormat.Format.INDY.get_attachment_data(
                 formats=[
-                    V20CredFormat(attach_id="abc", format_=V20CredFormat.Format.INDY)
+                    V20CredFormat(attach_id="indy", format_=V20CredFormat.Format.INDY)
                 ],
                 attachments=[
-                    AttachDecorator.data_base64(TEST_INDY_FILTER, ident="abc")
+                    AttachDecorator.data_base64(TEST_INDY_FILTER, ident="indy")
                 ],
             )
             == TEST_INDY_FILTER
@@ -55,7 +53,7 @@ class TestV20FormatFormat(TestCase):
         assert (
             V20CredFormat.Format.INDY.get_attachment_data(
                 formats=[
-                    V20CredFormat(attach_id="abc", format_=V20CredFormat.Format.INDY)
+                    V20CredFormat(attach_id="indy", format_=V20CredFormat.Format.INDY)
                 ],
                 attachments=[
                     AttachDecorator.data_base64(TEST_INDY_FILTER, ident="xxx")
@@ -67,10 +65,10 @@ class TestV20FormatFormat(TestCase):
         assert (
             V20CredFormat.Format.DIF.get_attachment_data(
                 formats=[
-                    V20CredFormat(attach_id="abc", format_=V20CredFormat.Format.INDY)
+                    V20CredFormat(attach_id="indy", format_=V20CredFormat.Format.INDY)
                 ],
                 attachments=[
-                    AttachDecorator.data_base64(TEST_INDY_FILTER, ident="abc")
+                    AttachDecorator.data_base64(TEST_INDY_FILTER, ident="indy")
                 ],
             )
             is None
