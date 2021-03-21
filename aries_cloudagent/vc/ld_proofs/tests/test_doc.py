@@ -33,6 +33,24 @@ DOC_SIGNED = {
 
 DOC_VERIFIED = DocumentVerificationResult(
     verified=True,
+    document={
+        "@context": {
+            "schema": "http://schema.org/",
+            "name": "schema:name",
+            "homepage": "schema:url",
+            "image": "schema:image",
+        },
+        "name": "Manu Sporny",
+        "homepage": "https://manu.sporny.org/",
+        "image": "https://manu.sporny.org/images/manu.png",
+        "proof": {
+            "proofPurpose": "assertionMethod",
+            "created": "2019-12-11T03:50:55",
+            "type": "Ed25519Signature2018",
+            "verificationMethod": "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
+            "jws": "eyJhbGciOiAiRWREU0EiLCAiYjY0IjogZmFsc2UsICJjcml0IjogWyJiNjQiXX0..Q6amIrxGiSbM7Ce6DxlfwLCjVcYyclas8fMxaecspXFUcFW9DAAxKzgHx93FWktnlZjM_biitkMgZdStgvivAQ",
+        },
+    },
     results=[
         ProofResult(
             verified=True,

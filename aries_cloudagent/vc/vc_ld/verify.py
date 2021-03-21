@@ -1,6 +1,6 @@
 import asyncio
+from typing import List
 from pyld.jsonld import JsonLdProcessor
-from typing import Mapping
 
 from ..ld_proofs import (
     LinkedDataProof,
@@ -9,16 +9,19 @@ from ..ld_proofs import (
     ProofPurpose,
     AuthenticationProofPurpose,
     verify as ld_proofs_verify,
+    DocumentVerificationResult,
+    LinkedDataProofException,
 )
+from .validation_result import PresentationVerificationResult
 
 
 async def _verify_credential(
     *,
     credential: dict,
+    suites: List[LinkedDataProof],
     document_loader: DocumentLoader,
-    suite: LinkedDataProof,
     purpose: ProofPurpose = None,
-) -> dict:
+) -> DocumentVerificationResult:
     # TODO: validate credential structure
 
     if not purpose:
@@ -26,7 +29,7 @@ async def _verify_credential(
 
     result = await ld_proofs_verify(
         document=credential,
-        suites=[suite],
+        suites=suites,
         purpose=purpose,
         document_loader=document_loader,
     )
@@ -37,24 +40,21 @@ async def _verify_credential(
 async def verify_credential(
     *,
     credential: dict,
-    suite: LinkedDataProof,
+    suites: List[LinkedDataProof],
     document_loader: DocumentLoader,
     purpose: ProofPurpose = None,
-) -> dict:
+) -> DocumentVerificationResult:
     try:
         return await _verify_credential(
             credential=credential,
             document_loader=document_loader,
-            suite=suite,
+            suites=suites,
             purpose=purpose,
         )
     except Exception as e:
-        # TODO: use class instance OR typed dict, as this is confusing
-        return {
-            "verified": False,
-            "results": [{"credential": credential, "verified": False, "error": e}],
-            "error": e,
-        }
+        return DocumentVerificationResult(
+            verified=False, document=credential, errors=[e]
+        )
 
 
 async def _verify_presentation(
@@ -63,28 +63,24 @@ async def _verify_presentation(
     challenge: str = None,
     domain: str = None,
     purpose: ProofPurpose = None,
-    suite_map: Mapping[str, LinkedDataProof] = None,
-    suite: LinkedDataProof = None,
+    suites: List[LinkedDataProof],
     document_loader: DocumentLoader = None,
 ):
 
     if not purpose and not challenge:
-        raise Exception(
+        raise LinkedDataProofException(
             'A "challenge" param is required for AuthenticationProofPurpose.'
         )
-    if not purpose:
+    elif not purpose:
         purpose = AuthenticationProofPurpose(challenge=challenge, domain=domain)
 
     # TODO validate presentation structure here
     if "proof" not in presentation:
-        raise Exception('presentation must contain "proof"')
-
-    proof_type = presentation.get("proof").get("type")
-    suite = suite_map[proof_type]
+        raise LinkedDataProofException('presentation must contain "proof"')
 
     presentation_result = await ld_proofs_verify(
         document=presentation,
-        suite=suite,
+        suites=suites,
         purpose=purpose,
         document_loader=document_loader,
     )
@@ -93,28 +89,27 @@ async def _verify_presentation(
     verified = True
 
     credentials = JsonLdProcessor.get_values(presentation, "verifiableCredential")
+    credential_results = await asyncio.gather(
+        *[
+            verify_credential(
+                credential=credential,
+                suites=suites,
+                document_loader=document_loader,
+                purpose=purpose,
+            )
+            for credential in credentials
+        ]
+    )
 
-    def v(credential: dict):
-        if suite_map:
-            suite = suite_map[credential["proof"]["type"]]()
-        return verify_credential(credential, suite, purpose)
+    verified = all([result.verified for result in credential_results])
 
-    credential_results = asyncio.gather(*[v(x) for x in credentials])
-
-    def d(cred: dict, index: int):
-        cred["credentialId"] = credentials[index]["id"]
-        return cred
-
-    credential_results = [d(x, i) for x, i in enumerate(credential_results)]
-
-    verified = all([x["verified"] for x in credential_results])
-
-    return {
-        "presentation_result": presentation_result,
-        "verified": verified and presentation_result["verified"],
-        "credential_results": credential_results,
-        "error": presentation_result["error"],
-    }
+    return PresentationVerificationResult(
+        verified=verified,
+        presentation_result=presentation_result,
+        credential_results=credential_results,
+        # TODO: should this also include credential results errors?
+        errors=presentation_result.errors,
+    )
 
 
 async def verify_presentation(
@@ -122,36 +117,24 @@ async def verify_presentation(
     presentation: dict = None,
     challenge: str,
     purpose: ProofPurpose = None,
-    suite_map: Mapping[str, LinkedDataProof] = None,
-    suite: LinkedDataProof = None,
+    suites: List[LinkedDataProof] = None,
     controller: dict = None,
     domain: str = None,
     document_loader: DocumentLoader = None,
 ):
 
     try:
-        if not presentation and not unsigned_presentation:
-            raise TypeError(
-                'A "presentation" or "unsignedPresentation" property is required for verifying.'
-            )
-
         return await _verify_presentation(
             presentation=presentation,
-            unsigned_presentation=unsigned_presentation,
             challenge=challenge,
             purpose=purpose,
-            suite=suite,
-            suite_map=suite_map,
+            suites=suites,
             controller=controller,
             domain=domain,
             document_loader=document_loader,
         )
     except Exception as e:
-        return {
-            "verified": False,
-            "results": [{"presentation": presentation, "verified": False, "error": e}],
-            "error": e,
-        }
+        return PresentationVerificationResult(verified=False, errors=[e])
 
 
 __all__ = [verify_presentation, verify_credential]

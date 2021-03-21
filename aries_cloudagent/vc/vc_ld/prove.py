@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import List
 
 
 from ..ld_proofs import (
@@ -12,22 +12,19 @@ from ..ld_proofs.constants import CREDENTIALS_V1_URL
 
 
 async def create_presentation(
-    verifiable_credential: Union[dict, List[dict]], id_: str = None
+    *, credentials: List[dict], presentation_id: str = None
 ) -> dict:
     presentation = {
         "@context": [CREDENTIALS_V1_URL],
         "type": ["VerifiablePresentation"],
     }
 
-    if isinstance(verifiable_credential, dict):
-        verifiable_credential = [verifiable_credential]
-
     # TODO loop through all credentials and validate credential structure
 
-    presentation["verifiableCredential"] = verifiable_credential
+    presentation["verifiableCredential"] = credentials
 
-    if id_:
-        presentation["id"] = id_
+    if presentation_id:
+        presentation["id"] = presentation_id
 
     # TODO validate presentation structure
 

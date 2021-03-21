@@ -45,14 +45,17 @@ class ProofSet:
     ) -> DocumentVerificationResult:
         """Verify proof on the document"""
         try:
-            document = document.copy()
+            input = document.copy()
+
+            if len(suites) == 0:
+                raise LinkedDataProofException("At least one suite is required.")
 
             # Get proof set, remove proof from document
-            proof_set = await ProofSet._get_proofs(document=document)
-            document.pop("proof", None)
+            proof_set = await ProofSet._get_proofs(document=input)
+            input.pop("proof", None)
 
             results = await ProofSet._verify(
-                document=document,
+                document=input,
                 suites=suites,
                 proof_set=proof_set,
                 purpose=purpose,
@@ -66,7 +69,9 @@ class ProofSet:
 
             # check if all results are valid, create result
             verified = any(result.verified for result in results)
-            result = DocumentVerificationResult(verified=verified, results=results)
+            result = DocumentVerificationResult(
+                verified=verified, document=document, results=results
+            )
 
             # If not valid, extract and optionally add errors to result
             if not verified:
@@ -77,7 +82,9 @@ class ProofSet:
 
             return result
         except Exception as e:
-            return DocumentVerificationResult(verified=False, errors=[e])
+            return DocumentVerificationResult(
+                verified=False, document=document, errors=[e]
+            )
 
     @staticmethod
     async def _get_proofs(document: dict) -> list:

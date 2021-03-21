@@ -17,6 +17,7 @@ from ......vc.ld_proofs import (
     LinkedDataProof,
     CredentialIssuancePurpose,
     ProofPurpose,
+    get_default_document_loader,
 )
 from ......wallet.error import WalletNotFoundError
 from ......wallet.base import BaseWallet
@@ -285,8 +286,13 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
         suite = await self._get_suite_for_detail(detail)
         proof_purpose = self._get_proof_purpose(detail.options.proof_purpose)
 
+        # best to pass profile, session, ...?
+        document_loader = get_default_document_loader(profile=self.profile)
         vc = await issue(
-            credential=detail.credential.serialize(), suite=suite, purpose=proof_purpose
+            credential=detail.credential.serialize(),
+            suite=suite,
+            document_loader=document_loader,
+            purpose=proof_purpose,
         )
 
         self.validate_fields(CRED_20_ISSUE, vc)

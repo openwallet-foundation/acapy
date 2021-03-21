@@ -61,25 +61,22 @@ class DocumentVerificationResult:
         self,
         *,
         verified: bool,
+        document: dict = None,
         results: List[ProofResult] = None,
         errors: List[Exception] = None,
     ) -> None:
         """Create new DocumentVerificationResult instance"""
         self.verified = verified
+        self.document = document
         self.results = results
         self.errors = errors
 
     def __eq__(self, other: object) -> bool:
         """Comparison between document verification results."""
         if isinstance(other, DocumentVerificationResult):
-            print(
-                all(
-                    self_result == other_result
-                    for (self_result, other_result) in zip(self.results, other.results)
-                )
-            )
             return (
                 self.verified == other.verified
+                and self.document == other.document
                 # check results list
                 and (
                     # both not present

@@ -16,6 +16,7 @@ from .suites import (
 from .crypto import KeyPair, Ed25519WalletKeyPair
 from .document_loader import DocumentLoader, get_default_document_loader
 from .error import LinkedDataProofException
+from .validation_result import DocumentVerificationResult, ProofResult, PurposeResult
 
 __all__ = [
     sign,
@@ -40,4 +41,8 @@ __all__ = [
     get_default_document_loader,
     # Exceptions
     LinkedDataProofException,
+    # Validation results
+    DocumentVerificationResult,
+    ProofResult,
+    PurposeResult,
 ]

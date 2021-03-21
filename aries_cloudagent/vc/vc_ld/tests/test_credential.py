@@ -1,3 +1,10 @@
+from ...ld_proofs import (
+    DocumentVerificationResult,
+    ProofResult,
+    PurposeResult,
+)
+
+
 CREDENTIAL_TEMPLATE = {
     "@context": [
         "https://www.w3.org/2018/credentials/v1",
@@ -35,11 +42,37 @@ CREDENTIAL_ISSUED = {
     },
 }
 
-CREDENTIAL_VERIFIED = {
-    "verified": True,
-    "results": [
-        {
-            "proof": {
+
+CREDENTIAL_VERIFIED = DocumentVerificationResult(
+    verified=True,
+    document={
+        "@context": [
+            "https://www.w3.org/2018/credentials/v1",
+            "https://www.w3.org/2018/credentials/examples/v1",
+        ],
+        "id": "http://example.gov/credentials/3732",
+        "type": ["VerifiableCredential", "UniversityDegreeCredential"],
+        "issuer": {"id": "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"},
+        "issuanceDate": "2020-03-10T04:24:12.164Z",
+        "credentialSubject": {
+            "id": "did:example:456",
+            "degree": {
+                "type": "BachelorDegree",
+                "name": "Bachelor of Science and Arts",
+            },
+        },
+        "proof": {
+            "type": "Ed25519Signature2018",
+            "verificationMethod": "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
+            "created": "2019-12-11T03:50:55",
+            "proofPurpose": "assertionMethod",
+            "jws": "eyJhbGciOiAiRWREU0EiLCAiYjY0IjogZmFsc2UsICJjcml0IjogWyJiNjQiXX0..lKJU0Df_keblRKhZAS9Qq6zybm-HqUXNVZ8vgEPNTAjQKBhQDxvXNo7nvtUBb_Eq1Ch6YBKY7UBAjg6iBX5qBQ",
+        },
+    },
+    results=[
+        ProofResult(
+            verified=True,
+            proof={
                 "@context": "https://w3id.org/security/v2",
                 "type": "Ed25519Signature2018",
                 "verificationMethod": "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
@@ -47,8 +80,37 @@ CREDENTIAL_VERIFIED = {
                 "proofPurpose": "assertionMethod",
                 "jws": "eyJhbGciOiAiRWREU0EiLCAiYjY0IjogZmFsc2UsICJjcml0IjogWyJiNjQiXX0..lKJU0Df_keblRKhZAS9Qq6zybm-HqUXNVZ8vgEPNTAjQKBhQDxvXNo7nvtUBb_Eq1Ch6YBKY7UBAjg6iBX5qBQ",
             },
-            "verified": True,
-            "purpose_result": {"valid": True},
-        }
+            purpose_result=PurposeResult(
+                valid=True,
+                controller={
+                    "@context": "https://w3id.org/security/v2",
+                    "id": "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
+                    "assertionMethod": [
+                        "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
+                    ],
+                    "sec:authenticationMethod": "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
+                    "capabilityDelegation": [
+                        {
+                            "id": "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
+                            "type": "Ed25519VerificationKey2018",
+                            "controller": "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
+                            "publicKeyBase58": "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx",
+                        }
+                    ],
+                    "capabilityInvocation": [
+                        "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
+                    ],
+                    "keyAgreement": [
+                        {
+                            "id": "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6LSbkodSr6SU2trs8VUgnrnWtSm7BAPG245ggrBmSrxbv1R",
+                            "type": "X25519KeyAgreementKey2019",
+                            "controller": "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
+                            "publicKeyBase58": "5dTvYHaNaB7mk7iA9LqCJEHG2dGZQsvoi8WGzDRtYEf",
+                        }
+                    ],
+                    "verificationMethod": "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
+                },
+            ),
+        )
     ],
-}
+)
