@@ -1,11 +1,27 @@
-from abc import ABC, abstractmethod
+"""Base key pair class"""
+
+from abc import ABC, abstractmethod, abstractproperty
 
 
 class KeyPair(ABC):
+    """Base key pair class."""
+
     @abstractmethod
     async def sign(self, message: bytes) -> bytes:
-        pass
+        """Sign message using key pair"""
 
     @abstractmethod
     async def verify(self, message: bytes, signature: bytes) -> bool:
-        pass
+        """Verify message against signature using key pair"""
+
+    @abstractproperty
+    def has_public_key(self) -> bool:
+        """Whether key pair has a public key.
+
+        Public key is required for verification, but can be set dynamically
+        in the verification process.
+        """
+
+    @abstractmethod
+    def from_verification_method(self, verification_method: dict) -> "KeyPair":
+        """Create new key pair class based on the passed verification method."""

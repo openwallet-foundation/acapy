@@ -1,7 +1,11 @@
-from datetime import datetime, timedelta
+"""Credential Issuance  proof purpose class"""
+
+from typing import List
 from pyld.jsonld import JsonLdProcessor
 from pyld import jsonld
 
+from ..error import LinkedDataProofException
+from ..validation_result import PurposeResult
 from ..suites import LinkedDataProof
 from ..document_loader import DocumentLoader
 from ..constants import CREDENTIALS_ISSUER_URL
@@ -9,17 +13,18 @@ from .AssertionProofPurpose import AssertionProofPurpose
 
 
 class CredentialIssuancePurpose(AssertionProofPurpose):
-    def __init__(self, date: datetime = None, max_timestamp_delta: timedelta = None):
-        super().__init__(date=date, max_timestamp_delta=max_timestamp_delta)
+    """Credential Issuance proof purpose."""
 
     def validate(
         self,
+        *,
         proof: dict,
         document: dict,
         suite: LinkedDataProof,
         verification_method: dict,
         document_loader: DocumentLoader,
-    ):
+    ) -> PurposeResult:
+        """Checks whether the issuer matches the controller of the verification method."""
         try:
             result = super().validate(
                 proof=proof,
@@ -29,31 +34,33 @@ class CredentialIssuancePurpose(AssertionProofPurpose):
                 document_loader=document_loader,
             )
 
-            if not result.get("valid"):
-                raise result.get("error")
+            # Return early if super check was invalid
+            if not result.valid:
+                return result
 
-            # TODO: move expansion to better place. But required for querying issuer
-            expanded = jsonld.expand(
+            # FIXME: Other implementations don't expand, but
+            # if we don't expand we can't get the property using
+            # the full CREDENTIALS_ISSUER_URL.
+            [expanded] = jsonld.expand(
                 document,
                 {
                     "documentLoader": document_loader,
                 },
             )
-            # TODO: what if array has no values?
-            issuer: list = JsonLdProcessor.get_values(
-                expanded[0], CREDENTIALS_ISSUER_URL
+
+            issuer: List[dict] = JsonLdProcessor.get_values(
+                expanded, CREDENTIALS_ISSUER_URL
             )
 
-            if not issuer or len(issuer) == 0:
-                raise Exception("Credential issuer is required.")
+            if len(issuer) == 0:
+                raise LinkedDataProofException("Credential issuer is required.")
 
             # TODO: we're mixing expanded and not-expanded here. Confusing
-            if result.get("controller", {}).get("id") != issuer[0].get("@id"):
-                raise Exception(
+            if result.controller.get("id") != issuer[0].get("@id"):
+                raise LinkedDataProofException(
                     "Credential issuer must match the verification method controller."
                 )
 
-            return {"valid": True}
-
+            return result
         except Exception as e:
-            return {"valid": False, "error": e}
+            return PurposeResult(valid=False, error=e)

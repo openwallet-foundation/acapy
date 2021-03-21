@@ -1,3 +1,5 @@
+from ..validation_result import DocumentVerificationResult, ProofResult, PurposeResult
+
 DOC_TEMPLATE = {
     "@context": {
         "schema": "http://schema.org/",
@@ -29,11 +31,12 @@ DOC_SIGNED = {
     },
 }
 
-DOC_VERIFIED = {
-    "verified": True,
-    "results": [
-        {
-            "proof": {
+DOC_VERIFIED = DocumentVerificationResult(
+    verified=True,
+    results=[
+        ProofResult(
+            verified=True,
+            proof={
                 "@context": "https://w3id.org/security/v2",
                 "proofPurpose": "assertionMethod",
                 "created": "2019-12-11T03:50:55",
@@ -41,25 +44,25 @@ DOC_VERIFIED = {
                 "verificationMethod": "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
                 "jws": "eyJhbGciOiAiRWREU0EiLCAiYjY0IjogZmFsc2UsICJjcml0IjogWyJiNjQiXX0..Q6amIrxGiSbM7Ce6DxlfwLCjVcYyclas8fMxaecspXFUcFW9DAAxKzgHx93FWktnlZjM_biitkMgZdStgvivAQ",
             },
-            "verified": True,
-            "purpose_result": {
-                "valid": True,
-                "controller": {
+            purpose_result=PurposeResult(
+                valid=True,
+                controller={
                     "@context": "https://w3id.org/security/v2",
                     "id": "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
                     "assertionMethod": [
                         "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
                     ],
-                    "authentication": [
+                    # FIXME: this should be authentication instead of sec:authenticationMethod
+                    # SEE: https://github.com/w3c/did-spec-registries/issues/235
+                    # SEE: https://github.com/w3c-ccg/security-vocab/issues/91
+                    "sec:authenticationMethod": "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
+                    "capabilityDelegation": [
                         {
                             "id": "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
                             "type": "Ed25519VerificationKey2018",
                             "controller": "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
                             "publicKeyBase58": "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx",
                         }
-                    ],
-                    "capabilityDelegation": [
-                        "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
                     ],
                     "capabilityInvocation": [
                         "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
@@ -74,7 +77,7 @@ DOC_VERIFIED = {
                     ],
                     "verificationMethod": "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
                 },
-            },
-        }
+            ),
+        )
     ],
-}
+)

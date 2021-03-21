@@ -8,6 +8,7 @@ import re
 from base58 import alphabet
 from marshmallow.validate import OneOf, Range, Regexp, Validator
 from marshmallow.exceptions import ValidationError
+from marshmallow.fields import Field
 
 from .util import epoch_to_str
 
@@ -16,6 +17,51 @@ from ..revocation.models.revocation_registry import RevocationRegistry
 from ..wallet.did_posture import DIDPosture as DIDPostureEnum
 
 B58 = alphabet if isinstance(alphabet, str) else alphabet.decode("ascii")
+
+
+class StrOrDictField(Field):
+    """URI or Dict field for Marshmallow."""
+
+    def _serialize(self, value, attr, obj, **kwargs):
+        return value
+
+    def _deserialize(self, value, attr, data, **kwargs):
+        if isinstance(value, (str, dict)):
+            return value
+        else:
+            raise ValidationError("Field should be str or dict")
+
+
+class DictOrDictListField(Field):
+    """Dict or Dict List field for Marshmallow."""
+
+    def _serialize(self, value, attr, obj, **kwargs):
+        return value
+
+    def _deserialize(self, value, attr, data, **kwargs):
+        # dict
+        if isinstance(value, dict):
+            return value
+        # list of dicts
+        elif isinstance(value, list) and all(isinstance(item, dict) for item in value):
+            return value
+        else:
+            raise ValidationError("Field should be dict or list of dicts")
+
+
+class UriOrDictField(StrOrDictField):
+    """URI or Dict field for Marshmallow."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Insert validation into self.validators so that multiple errors can be stored.
+        self.validators.insert(0, self._uri_validator)
+
+    def _uri_validator(self, value):
+        # Check if URI when
+        if isinstance(value, str):
+            return Uri()(value)
 
 
 class IntEpoch(Range):
@@ -339,6 +385,24 @@ class IndyISO8601DateTime(Regexp):
         )
 
 
+class RFC3339DateTime(Regexp):
+    """Validate value against RFC3339 datetime format."""
+
+    EXAMPLE = "2010-01-01T19:73:24Z"
+    PATTERN = (
+        r"^([0-9]{4})-([0-9]{2})-([0-9]{2})([Tt]([0-9]{2}):([0-9]{2}):"
+        r"([0-9]{2})(\\.[0-9]+)?)?(([Zz]|([+-])([0-9]{2}):([0-9]{2})))?$"
+    )
+
+    def __init__(self):
+        """Initializer."""
+
+        super().__init__(
+            RFC3339DateTime.PATTERN,
+            error="Value {input} is not a date in valid format",
+        )
+
+
 class IndyWQL(Regexp):  # using Regexp brings in nice visual validator cue
     """Validate value as potential WQL query."""
 
@@ -491,14 +555,14 @@ class UUIDFour(Regexp):
         )
 
 
-class URI(Regexp):
+class Uri(Regexp):
     """Validate value against URI on any scheme."""
 
     EXAMPLE = "https://www.w3.org/2018/credentials/v1"
     PATTERN = r"^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?"
 
     def __init__(self):
-        super().__init__(URI.PATTERN, error="Value {input} is not URI")
+        super().__init__(Uri.PATTERN, error="Value {input} is not URI")
 
 
 class Endpoint(Regexp):  # using Regexp brings in nice visual validator cue
@@ -583,10 +647,17 @@ class CredentialSubject(Validator):
         super().__init__()
 
     def __call__(self, value):
-        if "id" in value:
-            uri_validator = URI()
-            if not uri_validator(value["id"]):
-                raise ValidationError(f"credential subject id {value[0]} must be URI")
+        subjects = value if isinstance(value, list) else [value]
+
+        for subject in subjects:
+            if "id" in subject:
+                uri_validator = Uri()
+                try:
+                    uri_validator(value["id"])
+                except ValidationError:
+                    raise ValidationError(
+                        f"credential subject id {value[0]} must be URI"
+                    )
 
         return value
 
@@ -635,6 +706,7 @@ INDY_ISO8601_DATETIME = {
     "validate": IndyISO8601DateTime(),
     "example": IndyISO8601DateTime.EXAMPLE,
 }
+RFC3339_DATETIME = {"validate": RFC3339DateTime(), "example": RFC3339DateTime.EXAMPLE}
 INDY_WQL = {"validate": IndyWQL(), "example": IndyWQL.EXAMPLE}
 INDY_EXTRA_WQL = {"validate": IndyExtraWQL(), "example": IndyExtraWQL.EXAMPLE}
 BASE64 = {"validate": Base64(), "example": Base64.EXAMPLE}
@@ -653,6 +725,7 @@ CREDENTIAL_CONTEXT = {
     "validate": CredentialContext(),
     "example": CredentialContext.EXAMPLE,
 }
+URI = {"validate": Uri(), "example": Uri.EXAMPLE}
 CREDENTIAL_SUBJECT = {
     "validate": CredentialSubject(),
     "example": CredentialSubject.EXAMPLE,

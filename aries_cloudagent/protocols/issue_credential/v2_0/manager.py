@@ -384,6 +384,9 @@ class V20CredManager:
                         "preserve_exchange_records"
                     ),
                     trace=(cred_request_message._trace is not None),
+                    auto_issue=self._profile.settings.get(
+                        "debug.auto_respond_credential_request"
+                    ),
                 )
 
             for cred_format in cred_request_message.formats:

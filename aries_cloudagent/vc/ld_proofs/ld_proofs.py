@@ -3,17 +3,17 @@
 from typing import List
 from pyld.jsonld import JsonLdError
 
+from .validation_result import DocumentVerificationResult
 from .document_loader import DocumentLoader
 from .ProofSet import ProofSet
 from .purposes import ProofPurpose
 from .suites import LinkedDataProof
-from .VerificationException import VerificationException
+from .error import LinkedDataProofException
 
 
 async def sign(
     *,
     document: dict,
-    # TODO: support multiple signature suites
     suite: LinkedDataProof,
     purpose: ProofPurpose,
     document_loader: DocumentLoader,
@@ -31,7 +31,7 @@ async def sign(
         document_loader (DocumentLoader): The document loader to use.
 
     Raises:
-        Exception: When a jsonld url cannot be resolved, OR signing fails.
+        LinkedDataProofException: When a jsonld url cannot be resolved, OR signing fails.
     Returns:
         dict: Signed document.
     """
@@ -45,7 +45,7 @@ async def sign(
 
     except JsonLdError as e:
         if e.type == "jsonld.InvalidUrl":
-            raise Exception(
+            raise LinkedDataProofException(
                 f'A URL "{e.details}" could not be fetched; you need to pass a DocumentLoader function that can resolve this URL, or resolve the URL before calling "sign".'
             )
         raise e
@@ -57,7 +57,7 @@ async def verify(
     suites: List[LinkedDataProof],
     purpose: ProofPurpose,
     document_loader: DocumentLoader,
-) -> dict:
+) -> DocumentVerificationResult:
     """Verifies the linked data signature on the provided document.
 
     Args:
@@ -69,10 +69,10 @@ async def verify(
         document_loader (DocumentLoader): The document loader to use.
 
     Returns:
-        dict: Dict with a `verified` boolean property that is `True` if at least one
+        DocumentVerificationResult: Object with a `verified` boolean property that is `True` if at least one
             proof matching the given purpose and suite verifies and `False` otherwise.
             a `results` property with an array of detailed results.
-            if `False` an `error` property will be present, with `error.errors`
+            if `False` an `errors` property will be present, with a list
             containing all of the errors that occurred during the verification process.
     """
 
@@ -82,16 +82,5 @@ async def verify(
         purpose=purpose,
         document_loader=document_loader,
     )
-
-    if result.get("error"):
-        # TODO: is this necessary? Seems like it is vc-js specific
-        # TODO: error returns list, not object with type??
-        # if result.get("error", {}).get("type") == "jsonld.InvalidUrl":
-        #     url_err = Exception(
-        #         f'A URL "{result.get("error").get("details")}" could not be fetched; you need to pass a DocumentLoader function that can resolve this URL, or resolve the URL before calling "sign".'
-        #     )
-        #     result["error"] = VerificationException(url_err)
-        # else:
-        result["error"] = VerificationException(result.get("error"))
 
     return result

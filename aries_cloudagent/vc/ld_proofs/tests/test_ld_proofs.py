@@ -1,4 +1,5 @@
 from asynctest import TestCase
+import traceback
 
 from datetime import datetime
 
@@ -26,26 +27,24 @@ class TestLDProofs(TestCase):
         self.profile = InMemoryProfile.test_profile()
         self.wallet = InMemoryWallet(self.profile)
         self.key_info = await self.wallet.create_signing_key(self.test_seed)
-
-        self.key_pair = Ed25519WalletKeyPair(
-            wallet=self.wallet, public_key_base58=self.key_info.verkey
-        )
         self.verification_method = DIDKey.from_public_key_b58(
             self.key_info.verkey, KeyType.ED25519
         ).key_id
-        self.suite = Ed25519Signature2018(
-            # TODO: should we provide verification_method here? Or abstract?
+
+    async def test_sign(self):
+        # Use different key pair and suite for signing and verification
+        # as during verification a lot of information can be extracted
+        # from the proof / document
+        suite = Ed25519Signature2018(
             verification_method=self.verification_method,
             key_pair=Ed25519WalletKeyPair(
                 wallet=self.wallet, public_key_base58=self.key_info.verkey
             ),
             date=datetime.strptime("2019-12-11T03:50:55Z", "%Y-%m-%dT%H:%M:%SZ"),
         )
-
-    async def test_sign(self):
         signed = await sign(
             document=DOC_TEMPLATE,
-            suite=self.suite,
+            suite=suite,
             purpose=AssertionProofPurpose(),
             document_loader=custom_document_loader,
         )
@@ -53,11 +52,19 @@ class TestLDProofs(TestCase):
         assert DOC_SIGNED == signed
 
     async def test_verify(self):
-        verified = await verify(
+        # Verification requires lot less input parameters
+        suite = Ed25519Signature2018(
+            key_pair=Ed25519WalletKeyPair(wallet=self.wallet),
+        )
+
+        result = await verify(
             document=DOC_SIGNED,
-            suites=[self.suite],
+            suites=[suite],
             purpose=AssertionProofPurpose(),
             document_loader=custom_document_loader,
         )
 
-        assert DOC_VERIFIED == verified
+        if not result.verified:
+            raise result.errors[0]
+
+        assert DOC_VERIFIED == result

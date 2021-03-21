@@ -1,4 +1,4 @@
-from marshmallow import fields
+from marshmallow import INCLUDE, fields, post_load, post_dump
 
 from ....messaging.models.base import Schema
 from ....messaging.valid import (
@@ -6,14 +6,28 @@ from ....messaging.valid import (
     CREDENTIAL_TYPE,
     CREDENTIAL_SUBJECT,
     DIDKey,
-    DID_KEY,
+    DictOrDictListField,
     INDY_ISO8601_DATETIME,
-    URI,
+    RFC3339_DATETIME,
+    StrOrDictField,
+    Uri,
     UUIDFour,
+    UriOrDictField,
 )
 
 
-class LDSignatureSchema(Schema):
+class LinkedDataProofSchema(Schema):
+    """Linked data proof schema
+
+    Based on https://w3c-ccg.github.io/ld-proofs
+
+    """
+
+    class Meta:
+        """Accept parameter overload."""
+
+        unknown = INCLUDE
+
     type = fields.Str(
         required=True,
         description="Identifies the digital signature suite that was used to create the signature",
@@ -23,7 +37,7 @@ class LDSignatureSchema(Schema):
     proof_purpose = fields.Str(
         data_key="proofPurpose",
         required=True,
-        description="",
+        description="Proof purpose",
         example="assertionMethod",
     )
 
@@ -32,7 +46,7 @@ class LDSignatureSchema(Schema):
         required=True,
         description="Information used for proof verification",
         example="did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
-        validate=URI(),
+        validate=Uri(),
     )
 
     created = fields.Str(
@@ -45,6 +59,7 @@ class LDSignatureSchema(Schema):
         required=False,
         description="A string value specifying the restricted domain of the signature.",
         example="example.com",
+        validate=Uri(),
     )
 
     challenge = fields.Str(
@@ -65,61 +80,99 @@ class LDSignatureSchema(Schema):
         example="z76WGJzY2rXtSiZ8BDwU4VgcLqcMEm2dXdgVVS1QCZQUptZ5P8n5YCcnbuMUASYhVNihae7m8VeYvfViYf2KqTMVEH1BKNF6Xc5S2kPpBwsNos6egnrmDMxhtQppZjb47Mi2xG89jZm654uZUatDvfTCoDWuethfRHPSk81qn6od9zGxBxxAYyUPnY9Fs9QEQETm53AN9uk6erSAhJ2R3K8rosrBkSZbVhbzUJTPg22wpddVY8Xu3vhRVNpzyUvCEedg5EM6i7wE4G1CYsz7tbaApEF9aFRB92v4DoiY5GXGjwH5PhhGstJB9ySh9FyDfSYN8qRVVR7i5No2eBi3AjQ7cqaBiWkoSrCoQK7jJ4PyFsu3ZaAuUx8LAtkhaChmwfxH8E25LcTENJhFxqVnPd7f7Q3cUrFciYRqmg8eJsy1AahqbzJQ63n9RtekmwzqnMYrTwft6cLJJGeTSSxCCJ6HKnRtwE7jjDh6sB2ZeVj494VppdAVJBz2AAiZY9BBnCD8wUVgwqH3qchGRCuC2RugA4eQ9fUrR4Yuycac3caiaaay",
     )
 
+    @post_load
+    def make_proof(self, data, **kwargs):
+        from .credential import LDProof
 
-class LDCredentialSchema(Schema):
+        return LDProof(**data)
+
+    @post_dump
+    def remove_none_values(self, data, **kwargs):
+        return {key: value for key, value in data.items() if value}
+
+
+class CredentialSchema(Schema):
+    """Linked data credential schema
+
+    Does not include proof. Based on https://www.w3.org/TR/vc-data-model
+
+    """
+
+    class Meta:
+        """Accept parameter overload."""
+
+        unknown = INCLUDE
+
     context = fields.List(
-        # TODO: can be Str or Dict (wait for PE type)
-        fields.Str(),
+        UriOrDictField(
+            required=True,
+        ),
         data_key="@context",
         required=True,
         description="The JSON-LD context of the credential",
         **CREDENTIAL_CONTEXT,
     )
+
     id = fields.Str(
         required=False,
         desscription="The ID of the credential",
         example="http://example.edu/credentials/1872",
-        validate=URI(),
+        validate=Uri(),
     )
+
     type = fields.List(
-        fields.Str(),
+        fields.Str(required=True),
         required=True,
         description="The JSON-LD type of the credential",
         **CREDENTIAL_TYPE,
     )
-    # TODO: can be Str or Dict (wait for PE type)
-    issuer = fields.Str(
-        required=False,
-        description="The JSON-LD Verifiable Credential Issuer",
+
+    issuer = StrOrDictField(
+        required=True,
+        description="The JSON-LD Verifiable Credential Issuer. Either string of object with id field.",
         example=DIDKey.EXAMPLE,
     )
-    # TODO: Check for RFC3339 format
+
     issuance_date = fields.Str(
         data_key="issuanceDate",
-        required=False,
+        required=True,
         description="The issuance date",
-        example="2010-01-01T19:73:24Z",
+        **RFC3339_DATETIME,
     )
-    # TODO: Check for RFC3339 format
+
     expiration_date = fields.Str(
         data_key="expirationDate",
         required=False,
         description="The expiration date",
-        example="2010-01-01T19:73:24Z",
+        **RFC3339_DATETIME,
     )
-    # TODO: Can be List or Dict
-    credential_subject = fields.Dict(
+
+    credential_subject = DictOrDictListField(
         required=True,
-        keys=fields.Str(),
         data_key="credentialSubject",
         **CREDENTIAL_SUBJECT,
     )
-    # TODO: Add extra fields
+
+    @post_load
+    def make_credential(self, data, **kwargs):
+        from .credential import VerifiableCredential
+
+        return VerifiableCredential(**data)
+
+    @post_dump
+    def remove_none_values(self, data, **kwargs):
+        return {key: value for key, value in data.items() if value}
 
 
-class LDVerifiableCredentialSchema(LDCredentialSchema):
+class VerifiableCredentialSchema(CredentialSchema):
+    """Linked data verifiable credential schema
+
+    Based on https://www.w3.org/TR/vc-data-model
+
+    """
+
     proof = fields.Nested(
-        LDSignatureSchema,
+        LinkedDataProofSchema(),
         required=True,
         description="The proof of the credential",
         example={

@@ -176,7 +176,6 @@ class IndyCredFormatHandler(V20CredFormatHandler):
     async def create_request(
         self, cred_ex_record: V20CredExRecord, request_data: Mapping = None
     ) -> CredFormatAttachment:
-        # TODO: request data may be None
         holder_did = request_data.get("holder_did") if request_data else None
         cred_offer = V20CredOffer.deserialize(cred_ex_record.cred_offer).attachment(
             self.format

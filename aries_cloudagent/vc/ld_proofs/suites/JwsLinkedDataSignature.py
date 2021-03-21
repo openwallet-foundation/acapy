@@ -1,3 +1,5 @@
+"""JWS Linked Data class"""
+
 from pyld.jsonld import JsonLdProcessor
 from datetime import datetime
 from typing import Union
@@ -6,10 +8,13 @@ import json
 from ....wallet.util import b64_to_bytes, bytes_to_b64, str_to_b64, b64_to_str
 from ..crypto import KeyPair
 from ..document_loader import DocumentLoader
+from ..error import LinkedDataProofException
 from .LinkedDataSignature import LinkedDataSignature
 
 
 class JwsLinkedDataSignature(LinkedDataSignature):
+    """JWS Linked Data class"""
+
     def __init__(
         self,
         *,
@@ -17,10 +22,11 @@ class JwsLinkedDataSignature(LinkedDataSignature):
         algorithm: str,
         required_key_type: str,
         key_pair: KeyPair,
-        verification_method: dict,
+        verification_method: str = None,
         proof: dict = None,
         date: Union[datetime, str] = None,
     ):
+        """Create new JwsLinkedDataSignature instance"""
 
         super().__init__(
             signature_type=signature_type,
@@ -33,11 +39,24 @@ class JwsLinkedDataSignature(LinkedDataSignature):
         self.key_pair = key_pair
         self.required_key_type = required_key_type
 
-    async def sign(self, verify_data: bytes, proof: dict):
+    async def sign(self, *, verify_data: bytes, proof: dict) -> dict:
+        """Sign the data and add it to the proof
+
+        Adds a jws to the proof that can be used for multiple
+        signature algorithms.
+
+        Args:
+            verify_data (bytes): The data to sign.
+            proof (dict): The proof to add the signature to
+
+        Returns:
+            dict: The proof object with the added signature
+        """
+
         header = {"alg": self.algorithm, "b64": False, "crit": ["b64"]}
         encoded_header = self._encode_header(header)
 
-        data = self._create_jws(encoded_header, verify_data)
+        data = self._create_jws(encoded_header=encoded_header, verify_data=verify_data)
         signature = await self.key_pair.sign(data)
 
         encoded_signature = bytes_to_b64(
@@ -50,12 +69,27 @@ class JwsLinkedDataSignature(LinkedDataSignature):
 
     async def verify_signature(
         self,
+        *,
         verify_data: bytes,
         verification_method: dict,
         document: dict,
         proof: dict,
         document_loader: DocumentLoader,
     ):
+        """Verify the data against the proof.
+
+        Checks for a jws on the proof.
+
+        Args:
+            verify_data (bytes): The data to check
+            verification_method (dict): The verification method to use.
+            document (dict): The document the verify data is derived for as extra context
+            proof (dict): The proof to check
+            document_loader (DocumentLoader): Document loader used for resolving
+
+        Returns:
+            bool: Whether the signature is valid for the data
+        """
         if not (isinstance(proof.get("jws"), str) and (".." in proof.get("jws"))):
             raise Exception('The proof does not contain a valid "jws" property.')
 
@@ -65,29 +99,38 @@ class JwsLinkedDataSignature(LinkedDataSignature):
         self._validate_header(header)
 
         signature = b64_to_bytes(encoded_signature, urlsafe=True)
-        data = self._create_jws(encoded_header, verify_data)
+        data = self._create_jws(encoded_header=encoded_header, verify_data=verify_data)
 
-        return await self.key_pair.verify(data, signature)
+        # If the key pair has not public key yet, create a new key pair
+        # from the verification method. We don't want to overwrite data
+        # on the original key pair
+        key_pair = self.key_pair
+        if not key_pair.has_public_key:
+            key_pair = key_pair.from_verification_method(verification_method)
+
+        return await key_pair.verify(data, signature)
 
     def _decode_header(self, encoded_header: str) -> dict:
+        """Decode header"""
         header = None
         try:
             header = json.loads(b64_to_str(encoded_header, urlsafe=True))
         except Exception:
-            raise Exception("Could not parse JWS header.")
+            raise LinkedDataProofException("Could not parse JWS header.")
         return header
 
     def _encode_header(self, header: dict) -> str:
+        """Encode header"""
         return str_to_b64(json.dumps(header), urlsafe=True, pad=False)
 
-    def _create_jws(self, encoded_header: str, verify_data: bytes) -> bytes:
+    def _create_jws(self, *, encoded_header: str, verify_data: bytes) -> bytes:
         """Compose JWS."""
         return (encoded_header + ".").encode("utf-8") + verify_data
 
     def _validate_header(self, header: dict):
         """ Validates the JWS header, throws if not ok """
         if not (header and isinstance(header, dict)):
-            raise Exception("Invalid JWS header.")
+            raise LinkedDataProofException("Invalid JWS header.")
 
         if not (
             header.get("alg") == self.algorithm
@@ -97,17 +140,24 @@ class JwsLinkedDataSignature(LinkedDataSignature):
             and header.get("crit")[0] == "b64"
             and len(header.keys()) == 3
         ):
-            raise Exception(f"Invalid JWS header params for {self.signature_type}")
+            raise LinkedDataProofException(
+                f"Invalid JWS header params for {self.signature_type}"
+            )
 
     def _assert_verification_method(self, verification_method: dict):
+        """Assert verification method. Throws if not ok"""
         if not JsonLdProcessor.has_value(
             verification_method, "type", self.required_key_type
         ):
-            raise Exception(
+            raise LinkedDataProofException(
                 f"Invalid key type. The key type must be {self.required_key_type}"
             )
 
-    def _get_verification_method(self, proof: dict, document_loader: DocumentLoader):
-        verification_method = super()._get_verification_method(proof, document_loader)
+    def _get_verification_method(self, *, proof: dict, document_loader: DocumentLoader):
+        """Get verification method"""
+        verification_method = super()._get_verification_method(
+            proof=proof, document_loader=document_loader
+        )
         self._assert_verification_method(verification_method)
+
         return verification_method

@@ -53,13 +53,13 @@ class V20CredRequestHandler(BaseHandler):
         # If auto_issue is enabled, respond immediately
         if cred_ex_record.auto_issue:
             # TODO: can only auto_issue for indy if cred proposal is present
-            # if (
-            #     cred_ex_record.cred_proposal
-            #     and V20CredProposal.deserialize(
-            #         cred_ex_record.cred_proposal
-            #     ).credential_preview
-            # ):
-            if True:
+            if (
+                cred_ex_record.cred_proposal
+                or cred_ex_record.cred_request
+                # and (V20CredProposal.deserialize(
+                #     cred_ex_record.cred_proposal
+                # ).credential_preview)
+            ):
                 (
                     cred_ex_record,
                     cred_issue_message,

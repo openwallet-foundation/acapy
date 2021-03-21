@@ -1,7 +1,10 @@
-from datetime import datetime, timedelta
+"""Controller proof purpose class"""
+
 from pyld.jsonld import JsonLdProcessor
 from pyld import jsonld
 
+from ..error import LinkedDataProofException
+from ..validation_result import PurposeResult
 from ..constants import SECURITY_V2_URL
 from ..suites import LinkedDataProof
 from ..document_loader import DocumentLoader
@@ -9,19 +12,18 @@ from .ProofPurpose import ProofPurpose
 
 
 class ControllerProofPurpose(ProofPurpose):
-    def __init__(
-        self, term: str, date: datetime = None, max_timestamp_delta: timedelta = None
-    ):
-        super().__init__(term=term, date=date, max_timestamp_delta=max_timestamp_delta)
+    """Controller proof purpose class."""
 
     def validate(
         self,
+        *,
         proof: dict,
         document: dict,
         suite: LinkedDataProof,
         verification_method: dict,
         document_loader: DocumentLoader,
-    ) -> dict:
+    ) -> PurposeResult:
+        """Validate whether verification method of proof is authorized by controller."""
         try:
             result = super().validate(
                 proof=proof,
@@ -31,8 +33,9 @@ class ControllerProofPurpose(ProofPurpose):
                 document_loader=document_loader,
             )
 
-            if not result.get("valid"):
-                raise result.get("error")
+            # Return early if super check was invalid
+            if not result.valid:
+                return result
 
             verification_id = verification_method.get("id")
             controller = verification_method.get("controller")
@@ -42,9 +45,10 @@ class ControllerProofPurpose(ProofPurpose):
             elif isinstance(controller, str):
                 controller_id = controller
             else:
-                raise Exception('"controller" must be a string or dict')
+                raise LinkedDataProofException('"controller" must be a string or dict')
 
-            framed = jsonld.frame(
+            # Get the controller
+            result.controller = jsonld.frame(
                 controller_id,
                 frame={
                     "@context": SECURITY_V2_URL,
@@ -61,21 +65,20 @@ class ControllerProofPurpose(ProofPurpose):
                 },
             )
 
-            result["controller"] = framed
+            # Retrieve al verification methods on controller associated with term
+            verification_methods = JsonLdProcessor.get_values(controller, self.term)
 
-            verification_methods = JsonLdProcessor.get_values(
-                result.get("controller"), self.term
-            )
-            result["valid"] = any(
+            # Check if any of the verification methods matches with the verification id
+            result.valid = any(
                 method == verification_id for method in verification_methods
             )
 
-            if not result.get("valid"):
-                raise Exception(
+            if not result.valid:
+                raise LinkedDataProofException(
                     f"Verification method {verification_id} not authorized by controller for proof purpose {self.term}"
                 )
 
             return result
 
         except Exception as e:
-            return {"valid": False, "error": e}
+            return PurposeResult(valid=False, error=e)

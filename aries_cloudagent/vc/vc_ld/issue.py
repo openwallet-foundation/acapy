@@ -2,12 +2,10 @@ from ..ld_proofs import (
     LinkedDataProof,
     ProofPurpose,
     sign,
-    did_key_document_loader,
+    default_document_loader,
     CredentialIssuancePurpose,
     DocumentLoader,
 )
-
-# from .checker import check_credential
 
 
 async def issue(
@@ -17,7 +15,8 @@ async def issue(
     purpose: ProofPurpose = None,
     document_loader: DocumentLoader = None,
 ) -> dict:
-    # TODO: validate credential format
+    # NOTE: API assumes credential is validated on higher level
+    # we should probably change that, but also want to avoid revalidation on every level
 
     if not purpose:
         purpose = CredentialIssuancePurpose()
@@ -26,7 +25,7 @@ async def issue(
         document=credential,
         suite=suite,
         purpose=purpose,
-        document_loader=document_loader or did_key_document_loader,
+        document_loader=document_loader or default_document_loader,
     )
 
     return signed_credential

@@ -14,23 +14,30 @@ from .suites import (
     Ed25519Signature2018,
 )
 from .crypto import KeyPair, Ed25519WalletKeyPair
-from .document_loader import DocumentLoader, did_key_document_loader
+from .document_loader import DocumentLoader, get_default_document_loader
+from .error import LinkedDataProofException
 
 __all__ = [
     sign,
     verify,
     ProofSet,
+    # Proof purposes
     ProofPurpose,
     ControllerProofPurpose,
     AssertionProofPurpose,
     AuthenticationProofPurpose,
     CredentialIssuancePurpose,
+    # Suites
     LinkedDataProof,
     LinkedDataSignature,
     JwsLinkedDataSignature,
     Ed25519Signature2018,
+    # Key pairs
     KeyPair,
     Ed25519WalletKeyPair,
+    # Document Loaders
     DocumentLoader,
-    did_key_document_loader,
+    get_default_document_loader,
+    # Exceptions
+    LinkedDataProofException,
 ]

@@ -46,7 +46,7 @@ from .messages.inner.cred_preview import V20CredPreview, V20CredPreviewSchema
 from .models.cred_ex_record import V20CredExRecord, V20CredExRecordSchema
 from .models.detail.ld_proof import V20CredExRecordLDProofSchema
 from .models.detail.indy import V20CredExRecordIndySchema
-from .formats.ld_proof.models.cred_detail import LDProofVCDetail
+from .formats.ld_proof.models.cred_detail_schema import LDProofVCDetailSchema
 
 
 class V20IssueCredentialModuleResponseSchema(OpenAPISchema):
@@ -158,7 +158,7 @@ class V20CredFilterSchema(OpenAPISchema):
         description="Credential filter for indy",
     )
     ld_proof = fields.Nested(
-        LDProofVCDetail,
+        LDProofVCDetailSchema,
         required=False,
         description="Credential filter for linked data proof",
     )
@@ -209,10 +209,50 @@ class V20IssueCredSchemaCore(AdminAPIMessageTracingSchema):
     )
 
 
+class V20CredFilterLDProofSchema(OpenAPISchema):
+    """Credential filtration criteria."""
+
+    ld_proof = fields.Nested(
+        LDProofVCDetailSchema,
+        required=True,
+        description="Credential filter for linked data proof",
+    )
+
+
+class V20CredRequestFreeSchema(AdminAPIMessageTracingSchema):
+    """Filter, auto-remove, comment, trace."""
+
+    connection_id = fields.UUID(
+        description="Connection identifier",
+        required=True,
+        example=UUIDFour.EXAMPLE,  # typically but not necessarily a UUID4
+    )
+    filter_ = fields.Nested(
+        V20CredFilterLDProofSchema,
+        required=True,
+        data_key="filter",
+        description="Credential specification criteria by format",
+    )
+    auto_remove = fields.Bool(
+        description=(
+            "Whether to remove the credential exchange record on completion "
+            "(overrides --preserve-exchange-records configuration setting)"
+        ),
+        required=False,
+    )
+    comment = fields.Str(
+        description="Human-readable comment", required=False, allow_none=True
+    )
+    trace = fields.Bool(
+        description="Whether to trace event (default false)",
+        required=False,
+        example=False,
+    )
+
+
 class V20CredCreateSchema(V20IssueCredSchemaCore):
     """Request schema for creating a credential from attr values."""
 
-    # TODO: validate that credential preview is present when indy format is present?
     credential_preview = fields.Nested(V20CredPreviewSchema, required=False)
 
 
@@ -247,7 +287,6 @@ class V20CredOfferRequestSchema(V20IssueCredSchemaCore):
         ),
         required=False,
     )
-    # TODO: validate that credential preview is present when indy format is present?
     credential_preview = fields.Nested(V20CredPreviewSchema, required=False)
 
 
@@ -428,16 +467,19 @@ async def credential_exchange_create(request: web.BaseRequest):
 
     comment = body.get("comment")
     preview_spec = body.get("credential_preview")
-    if not preview_spec:
-        raise web.HTTPBadRequest(reason="Missing credential_preview")
-    auto_remove = body.get("auto_remove")
     filt_spec = body.get("filter")
+    if V20CredFormat.Format.INDY.api in filt_spec and not preview_spec:
+        raise web.HTTPBadRequest(reason="Missing credential_preview for indy filter")
+    auto_remove = body.get("auto_remove")
     if not filt_spec:
         raise web.HTTPBadRequest(reason="Missing filter")
     trace_msg = body.get("trace")
 
     try:
-        cred_preview = V20CredPreview.deserialize(preview_spec)
+        # Not all formats use credential preview
+        cred_preview = (
+            V20CredPreview.deserialize(preview_spec) if preview_spec else None
+        )
         cred_proposal = V20CredProposal(
             comment=comment,
             credential_preview=cred_preview,
@@ -965,12 +1007,10 @@ async def credential_exchange_send_bound_offer(request: web.BaseRequest):
 
 @docs(
     tags=["issue-credential v2.0"],
-    summary="Send issuer a credential request",
+    summary="Send issuer a credential request not bound to an existing thread. Indy credentials cannot start at a request",
 )
-@request_schema(V20CredProposalRequestPreviewOptSchema())
+@request_schema(V20CredRequestFreeSchema())
 @response_schema(V20CredExRecordSchema(), 200, description="")
-# TODO: remove indy from OpenAPI example (to avoid confusion)
-# TODO: remove credential preview from OpenAPI schema and example (to avoid confusion)
 async def credential_exchange_send_free_request(request: web.BaseRequest):
     """
     Request handler for sending free credential request.
@@ -994,11 +1034,6 @@ async def credential_exchange_send_free_request(request: web.BaseRequest):
     filt_spec = body.get("filter")
     if not filt_spec:
         raise web.HTTPBadRequest(reason="Missing filter")
-    # Indy cannot start from request
-    if V20CredFormat.Format.INDY.api in filt_spec:
-        raise web.HTTPBadRequest(
-            reason="Indy credential exchange cannot start with request"
-        )
     auto_remove = body.get("auto_remove")
     trace_msg = body.get("trace")
 

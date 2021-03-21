@@ -1,6 +1,6 @@
 import asyncio
 from pyld.jsonld import JsonLdProcessor
-from typing import Callable, Mapping
+from typing import Mapping
 
 from ..ld_proofs import (
     LinkedDataProof,
@@ -10,7 +10,6 @@ from ..ld_proofs import (
     AuthenticationProofPurpose,
     verify as ld_proofs_verify,
 )
-from .checker import check_credential
 
 
 async def _verify_credential(
@@ -19,16 +18,8 @@ async def _verify_credential(
     document_loader: DocumentLoader,
     suite: LinkedDataProof,
     purpose: ProofPurpose = None,
-    # TODO: add check_status method signature (like DocumentLoader)
-    check_status: Callable = None,
 ) -> dict:
     # TODO: validate credential structure
-
-    # TODO: what if we don't want to check for credentialStatus?
-    if "credentialStatus" in credential and not check_status:
-        raise Exception(
-            'A "check_status function must be provided to verify credentials with "credentialStatus" set.'
-        )
 
     if not purpose:
         purpose = CredentialIssuancePurpose()
@@ -40,16 +31,6 @@ async def _verify_credential(
         document_loader=document_loader,
     )
 
-    if not result.get("verified"):
-        return result
-
-    if "credentialStatus" in credential:
-        # CHECK make sure this is how check_status should be called
-        result["statusResult"] = await check_status(credential)
-
-        if not result.get("statusResult").get("verified"):
-            result["verified"] = False
-
     return result
 
 
@@ -59,7 +40,6 @@ async def verify_credential(
     suite: LinkedDataProof,
     document_loader: DocumentLoader,
     purpose: ProofPurpose = None,
-    check_status: Callable = None,
 ) -> dict:
     try:
         return await _verify_credential(
@@ -67,7 +47,6 @@ async def verify_credential(
             document_loader=document_loader,
             suite=suite,
             purpose=purpose,
-            check_status=check_status,
         )
     except Exception as e:
         # TODO: use class instance OR typed dict, as this is confusing
@@ -79,59 +58,41 @@ async def verify_credential(
 
 
 async def _verify_presentation(
-    challenge: str,
-    presentation: dict = None,
+    *,
+    presentation: dict,
+    challenge: str = None,
+    domain: str = None,
     purpose: ProofPurpose = None,
-    unsigned_presentation: dict = None,
     suite_map: Mapping[str, LinkedDataProof] = None,
     suite: LinkedDataProof = None,
-    domain: str = None,
     document_loader: DocumentLoader = None,
 ):
-    if presentation and unsigned_presentation:
-        raise Exception(
-            'Either "presentation" or "unsigned_presentation" must be present, not both.'
-        )
 
+    if not purpose and not challenge:
+        raise Exception(
+            'A "challenge" param is required for AuthenticationProofPurpose.'
+        )
     if not purpose:
         purpose = AuthenticationProofPurpose(challenge=challenge, domain=domain)
 
-    vp, presentation_result = None, None
+    # TODO validate presentation structure here
+    if "proof" not in presentation:
+        raise Exception('presentation must contain "proof"')
 
-    if presentation:
-        # TODO validate presentation structure here
+    proof_type = presentation.get("proof").get("type")
+    suite = suite_map[proof_type]
 
-        vp = presentation
-
-        if "proof" not in vp:
-            raise Exception('presentation must contain "proof"')
-
-        if not purpose and not challenge:
-            raise Exception(
-                'A "challenge" param is required for AuthenticationProofPurpose.'
-            )
-
-        proof_type = presentation.get("proof").get("type")
-        suite = suite_map[proof_type]()
-
-        presentation_result = await ld_proofs_verify(
-            document=presentation,
-            suite=suite,
-            purpose=purpose,
-            document_loader=document_loader,
-        )
-
-    if unsigned_presentation:
-        # TODO check presentation here
-        vp = unsigned_presentation
-
-        if vp["proof"]:
-            raise Exception('"unsigned_presentation" must not contain "proof"')
+    presentation_result = await ld_proofs_verify(
+        document=presentation,
+        suite=suite,
+        purpose=purpose,
+        document_loader=document_loader,
+    )
 
     credential_results = None
     verified = True
 
-    credentials = JsonLdProcessor.get_values(vp, "verifiableCredential")
+    credentials = JsonLdProcessor.get_values(presentation, "verifiableCredential")
 
     def v(credential: dict):
         if suite_map:
@@ -148,13 +109,6 @@ async def _verify_presentation(
 
     verified = all([x["verified"] for x in credential_results])
 
-    if unsigned_presentation:
-        return {
-            "verified": verified,
-            "results": [vp],
-            "credential_results": credential_results,
-        }
-
     return {
         "presentation_result": presentation_result,
         "verified": verified and presentation_result["verified"],
@@ -168,7 +122,6 @@ async def verify_presentation(
     presentation: dict = None,
     challenge: str,
     purpose: ProofPurpose = None,
-    unsigned_presentation: dict = None,
     suite_map: Mapping[str, LinkedDataProof] = None,
     suite: LinkedDataProof = None,
     controller: dict = None,

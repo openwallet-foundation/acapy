@@ -7,17 +7,19 @@ from typing import Mapping
 
 from marshmallow import RAISE
 
-from ......vc.vc_ld.models.credential_schema import LDVerifiableCredentialSchema
+from ......vc.vc_ld.models.credential_schema import VerifiableCredentialSchema
+from ......vc.vc_ld.models.credential import LDProof, VerifiableCredential
 from ......vc.vc_ld import issue, verify_credential
 from ......vc.ld_proofs import (
     Ed25519Signature2018,
     Ed25519WalletKeyPair,
-    did_key_document_loader,
+    default_document_loader,
     LinkedDataProof,
+    CredentialIssuancePurpose,
+    ProofPurpose,
 )
 from ......wallet.error import WalletNotFoundError
 from ......wallet.base import BaseWallet
-from ......wallet.crypto import KeyType
 from ......did.did_key import DIDKey
 from ......storage.vc_holder.base import VCHolder
 from ......storage.vc_holder.vc_record import VCRecord
@@ -35,21 +37,10 @@ from ...messages.cred_issue import V20CredIssue
 from ...messages.cred_request import V20CredRequest
 from ...models.cred_ex_record import V20CredExRecord
 from ..handler import CredFormatAttachment, V20CredFormatError, V20CredFormatHandler
+from .models.cred_detail_schema import LDProofVCDetailSchema
 from .models.cred_detail import LDProofVCDetail
 
-
 LOGGER = logging.getLogger(__name__)
-
-# TODO: move to vc util
-def get_id(obj) -> str:
-    if type(obj) is str:
-        return obj
-
-    if "id" not in obj:
-        return
-
-    return obj["id"]
-
 
 # TODO: move to vc/proof library
 SUPPORTED_PROOF_TYPES = {"Ed25519Signature2018"}
@@ -63,10 +54,10 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
     @classmethod
     def validate_fields(cls, message_type: str, attachment_data: Mapping) -> None:
         mapping = {
-            CRED_20_PROPOSAL: LDProofVCDetail,
-            CRED_20_OFFER: LDProofVCDetail,
-            CRED_20_REQUEST: LDProofVCDetail,
-            CRED_20_ISSUE: LDVerifiableCredentialSchema,
+            CRED_20_PROPOSAL: LDProofVCDetailSchema,
+            CRED_20_OFFER: LDProofVCDetailSchema,
+            CRED_20_REQUEST: LDProofVCDetailSchema,
+            CRED_20_ISSUE: VerifiableCredentialSchema,
         }
 
         # Get schema class
@@ -76,83 +67,135 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
         # TODO: unknown should not raise
         Schema(unknown=RAISE).load(attachment_data)
 
-    async def _assert_can_sign_with_did(self, did: str):
-        async with self.profile.session() as session:
-            try:
-                wallet = session.inject(BaseWallet)
-                did_key = DIDKey.from_did(did)
-
-                # Check if issuer is something we can issue with
-                await wallet.get_local_did_for_verkey(did_key.public_key_b58)
-            except WalletNotFoundError:
+    async def _assert_can_issue_with_did_and_proof_type(
+        self, did: str, proof_type: str
+    ):
+        try:
+            # We only support ed signatures at the moment
+            if proof_type != "Ed25519Signature2018":
                 raise V20CredFormatError(
-                    f"Issuer did {did} not found. Unable to issue credential with this DID."
+                    f"Unable to sign credential with proof type {proof_type}"
                 )
+            await self._did_info_for_did(did)
+        except WalletNotFoundError:
+            raise V20CredFormatError(
+                f"Issuer did {did} not found. Unable to issue credential with this DID."
+            )
 
-    async def _assert_can_sign_with_type(self, proof_type: str):
-        # Check if proof types are supported
-        if not proof_type in SUPPORTED_PROOF_TYPES:
-            raise V20CredFormatError(f"Unsupported proof type: {proof_type}.")
+    async def _did_info_for_did(self, did: str):
+        async with self.profile.session() as session:
+            wallet = session.inject(BaseWallet)
 
-    async def _get_suite_for_type(self, did: str, proof_type: str) -> LinkedDataProof:
-        await self._assert_can_sign_with_type(proof_type)
+            # If the did starts with did:sov we need to query without
+            if did.startswith("did:sov:"):
+                return await wallet.get_local_did(did.replace("did:sov:", ""))
+            # All other methods we can just query
+            else:
+                return await wallet.get_local_did(did)
+
+    async def _get_suite_for_detail(self, detail: LDProofVCDetail) -> LinkedDataProof:
+        did = detail.credential.issuer_id
+        proof_type = detail.options.proof_type
+
+        await self._assert_can_issue_with_did_and_proof_type(
+            did, detail.options.proof_type
+        )
+
+        proof = LDProof(
+            created=detail.options.created,
+            domain=detail.options.domain,
+            challenge=detail.options.challenge,
+        )
+
+        did_info = await self._did_info_for_did(did)
+        verification_method = self._get_verification_method(did)
 
         async with self.profile.session() as session:
             # TODO: maybe keypair should start session and inject wallet (for shorter sessions)
             wallet = session.inject(BaseWallet)
 
+            # TODO: make enum or something?
+            # TODO: how to abstract keypair from this step?
             if proof_type == "Ed25519Signature2018":
-                verification_method = self._get_verification_method(did)
-                did_key = DIDKey.from_did(did)
-
                 return Ed25519Signature2018(
                     verification_method=verification_method,
+                    proof=proof.serialize(),
                     key_pair=Ed25519WalletKeyPair(
-                        wallet=wallet, public_key_base58=did_key.public_key_b58
+                        wallet=wallet, public_key_base58=did_info.verkey
                     ),
                 )
             else:
                 raise V20CredFormatError(f"Unsupported proof type {proof_type}")
 
+    # TODO: move to better place
+    # TODO: integrate with did resolver classes (did)
     def _get_verification_method(self, did: str):
-        verification_method = did + "#" + did.replace("did:key:", "")
+        if did.startswith("did:sov:"):
+            # TODO: is this correct? uniresolver uses #key-1, SICPA uses #1
+            return did + "#1"
+        elif did.startswith("did:key:"):
+            return DIDKey.from_did(did).key_id
+        else:
+            raise V20CredFormatError(
+                f"Unable to get retrieve verification method for did {did}"
+            )
 
-        return verification_method
+    # TODO: move to better place
+    # TODO: probably needs more input parameters
+    def _get_proof_purpose(self, proof_purpose: str = None) -> ProofPurpose:
+        PROOF_PURPOSE_MAP = {
+            "assertionMethod": CredentialIssuancePurpose,
+            # TODO: authentication
+            # "authentication": AuthenticationProofPurpose,
+        }
+
+        # assertionMethod is default
+        if not proof_purpose:
+            proof_purpose = "assertionMethod"
+
+        if proof_purpose not in PROOF_PURPOSE_MAP:
+            raise V20CredFormatError(f"Unsupported proof purpose {proof_purpose}")
+
+        # TODO: constructor parameters
+        return PROOF_PURPOSE_MAP[proof_purpose]()
 
     async def create_proposal(
         self, cred_ex_record: V20CredExRecord, proposal_data: Mapping
     ) -> CredFormatAttachment:
-        self.validate_fields(CRED_20_PROPOSAL, filter)
-
-        return self.get_format_data(CRED_20_PROPOSAL, filter)
+        return self.get_format_data(CRED_20_PROPOSAL, proposal_data)
 
     async def receive_proposal(
         self, cred_ex_record: V20CredExRecord, cred_proposal_message: V20CredProposal
     ) -> None:
-        # TODO: anything to validate here?
+        """Receive linked data proof credential proposal"""
+        # Structure validation is already done when message is received
+        # no additional checking is required here
         pass
 
     async def create_offer(
         self, cred_ex_record: V20CredExRecord, offer_data: Mapping = None
     ) -> CredFormatAttachment:
         # TODO:
-        #   - Use offer data
-        #   - Check if all fields in credentialSubject are present in context
-        #   - Check if all required fields are present (according to RFC). Or is the API going to do this?
-        #   - Other checks (credentialStatus, credentialSchema, etc...)
+        #   - Check if all fields in credentialSubject are present in context (dropped attributes)
+        #   - offer data is not passed at the moment
 
-        detail: dict = V20CredProposal.deserialize(
-            cred_ex_record.cred_proposal
-        ).attachment(self.format)
+        # use proposal data otherwise
+        if not offer_data and cred_ex_record.cred_proposal:
+            offer_data = V20CredProposal.deserialize(
+                cred_ex_record.cred_proposal
+            ).attachment(self.format)
+        else:
+            raise V20CredFormatError(
+                "Cannot create linked data proof offer without proposal or input data"
+            )
 
-        credential = detail["credential"]
-        options = detail["options"]
+        detail = LDProofVCDetail.deserialize(offer_data)
 
-        await self._assert_can_sign_with_did(credential["issuer"])
-        await self._assert_can_sign_with_type(options["proofType"])
+        await self._assert_can_issue_with_did_and_proof_type(
+            detail.credential.issuer_id, detail.options.proof_type
+        )
 
-        self.validate_fields(CRED_20_OFFER, detail)
-        return self.get_format_data(CRED_20_OFFER, detail)
+        return self.get_format_data(CRED_20_OFFER, detail.serialize())
 
     async def receive_offer(
         self, cred_ex_record: V20CredExRecord, cred_offer_message: V20CredOffer
@@ -163,82 +206,88 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
     async def create_request(
         self, cred_ex_record: V20CredExRecord, request_data: Mapping = None
     ) -> CredFormatAttachment:
-        holder_did = request_data.get("holder_did") if request_data else None
+        # holder_did = request_data.get("holder_did") if request_data else None
+        # TODO: add build_detail method that takes the record
+        # and looks for the best detail to build (dependant on messages and role)
 
+        # TODO: request data now contains holder did. This should
+        # contain the data from the API (if starting from request)
+        # if request_data:
+        #     detail = LDProofVCDetail.deserialize(request_data)
+        # Otherwise use offer if possible
         if cred_ex_record.cred_offer:
-            cred_detail = V20CredOffer.deserialize(
+            request_data = V20CredOffer.deserialize(
                 cred_ex_record.cred_offer
             ).attachment(self.format)
-
-            if (
-                not cred_detail["credential"]["credentialSubject"].get("id")
-                and holder_did
-            ):
-                async with self.profile.session() as session:
-                    wallet = session.inject(BaseWallet)
-
-                    did_info = await wallet.get_local_did(holder_did)
-                    did_key = DIDKey.from_public_key_b58(
-                        did_info.verkey, KeyType.ED25519
-                    )
-
-                    cred_detail["credential"]["credentialSubject"]["id"] = did_key.did
-
-        else:
-            cred_detail = V20CredProposal.deserialize(
+        # API data is stored in proposal (when starting from request)
+        # It is a bit of a strage flow IMO.
+        elif cred_ex_record.cred_proposal:
+            request_data = V20CredProposal.deserialize(
                 cred_ex_record.cred_proposal
             ).attachment(self.format)
 
-            if (
-                not cred_detail["credential"]["credentialSubject"].get("id")
-                and holder_did
-            ):
-                async with self.profile.session() as session:
-                    wallet = session.inject(BaseWallet)
+            # TODO: do we want to set the credential subject id?
+            # if (
+            #     not cred_detail["credential"]["credentialSubject"].get("id")
+            #     and holder_did
+            # ):
+            #     async with self.profile.session() as session:
+            #         wallet = session.inject(BaseWallet)
 
-                    did_info = await wallet.get_local_did(holder_did)
-                    did_key = DIDKey.from_public_key_b58(
-                        did_info.verkey, KeyType.ED25519
-                    )
+            #         did_info = await wallet.get_local_did(holder_did)
+            #         did_key = DIDKey.from_public_key_b58(
+            #             did_info.verkey, KeyType.ED25519
+            #         )
 
-                    cred_detail["credential"]["credentialSubject"]["id"] = did_key.did
+            #         cred_detail["credential"]["credentialSubject"]["id"] = did_key.did
+        else:
+            raise V20CredFormatError(
+                "Cannot create linked data proof request without offer or input data"
+            )
 
-        self.validate_fields(CRED_20_REQUEST, cred_detail)
-        return self.get_format_data(CRED_20_REQUEST, cred_detail)
+        detail = LDProofVCDetail.deserialize(request_data)
+
+        return self.get_format_data(CRED_20_REQUEST, detail.serialize())
 
     async def receive_request(
         self, cred_ex_record: V20CredExRecord, cred_request_message: V20CredRequest
     ) -> None:
-        # TODO: check if request matches offer. (If not send problem report?)
-        # TODO: validate
-        pass
+        # If we sent an offer, check if request matches this
+        if cred_ex_record.cred_offer:
+            cred_request_detail = LDProofVCDetail.deserialize(
+                cred_request_message.attachment(self.format)
+            )
+
+            cred_offer_detail = LDProofVCDetail.deserialize(
+                V20CredOffer.deserialize(cred_ex_record.cred_offer).attachment(
+                    self.format
+                )
+            )
+
+            # TODO: probably some fields can be different
+            # so maybe do partial check?
+            # e.g. options.challenge may be filled in request
+            # OR credentialSubject.id
+            # TODO: Send problem report if no match?s
+            assert cred_offer_detail == cred_request_detail
 
     async def issue_credential(
         self, cred_ex_record: V20CredExRecord, retries: int = 5
     ) -> CredFormatAttachment:
-        if cred_ex_record.cred_offer:
-            # TODO: match offer with request. Use request (because of credential subject id)
-            cred_detail = V20CredOffer.deserialize(
-                cred_ex_record.cred_offer
-            ).attachment(self.format)
-        else:
-            cred_detail = V20CredRequest.deserialize(
-                cred_ex_record.cred_request
-            ).attachment(self.format)
+        # TODO: we need to be sure the request is matched against the offer
+        # and only fields that are allowed to change can change
+        detail_dict = V20CredRequest.deserialize(
+            cred_ex_record.cred_request
+        ).attachment(self.format)
 
-        issuer_did = get_id(cred_detail["credential"]["issuer"])
-        proof_types = cred_detail["options"]["proofType"]
+        detail = LDProofVCDetail.deserialize(detail_dict)
 
-        if len(proof_types) > 1:
-            raise V20CredFormatError(
-                "Issuing credential with multiple proof types not supported."
-            )
+        suite = await self._get_suite_for_detail(detail)
+        proof_purpose = self._get_proof_purpose(detail.options.proof_purpose)
 
-        await self._assert_can_sign_with_did(issuer_did)
-        suite = await self._get_suite_for_type(issuer_did, proof_types[0])
-
-        # TODO: proof options
-        vc = await issue(credential=cred_detail["credential"], suite=suite)
+        vc = await issue(
+            credential=detail.credential.serialize(), suite=suite, purpose=proof_purpose
+        )
 
         self.validate_fields(CRED_20_ISSUE, vc)
         return self.get_format_data(CRED_20_ISSUE, vc)
@@ -246,40 +295,32 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
     async def receive_credential(
         self, cred_ex_record: V20CredExRecord, cred_issue_message: V20CredIssue
     ) -> None:
-        # TODO: validate
+        # TODO: validate? I think structure is already validated on a higher lever
+        # And crypto stuff is better handled in store_credential
         pass
 
     async def store_credential(
         self, cred_ex_record: V20CredExRecord, cred_id: str = None
     ) -> None:
-        # TODO: validate credential structure (prob in receive credential?)
-        credential: dict = V20CredIssue.deserialize(
+        cred_dict: dict = V20CredIssue.deserialize(
             cred_ex_record.cred_issue
         ).attachment(self.format)
+
+        credential = VerifiableCredential.deserialize(cred_dict)
 
         async with self.profile.session() as session:
             wallet = session.inject(BaseWallet)
 
-            verification_method = credential.get("proof", {}).get("verificationMethod")
-
-            if type(verification_method) is not str:
-                raise V20CredFormatError(
-                    "Invalid verification method on received credential"
-                )
-            did_key = DIDKey.from_did(verification_method)
-
-            # TODO: API rework.
+            # TODO: better way to get suite
+            # (possibly combine with creating issuer suite)
             suite = Ed25519Signature2018(
-                verification_method=verification_method,
-                key_pair=Ed25519WalletKeyPair(
-                    wallet=wallet, public_key_base58=did_key.public_key_b58
-                ),
+                key_pair=Ed25519WalletKeyPair(wallet=wallet),
             )
 
             result = await verify_credential(
                 credential=credential,
                 suite=suite,
-                document_loader=did_key_document_loader,
+                document_loader=default_document_loader,
             )
 
             if not result.get("verified"):
@@ -291,14 +332,13 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
 
             # TODO: tags
             vc_record = VCRecord(
-                contexts=credential.get("@context"),
-                types=credential.get("type"),
-                issuer_id=get_id(credential.get("issuer")),
-                # TODO: subject may be array
-                subject_ids=[credential.get("credentialSubject").get("id")],
-                schema_ids=[],
-                value=json.dumps(credential),
-                given_id=credential.get("id"),
+                contexts=credential.context_urls,
+                types=credential.type,
+                issuer_id=credential.issuer_id,
+                subject_ids=[credential.credential_subject_ids],
+                schema_ids=[],  # Schemas not supported yet
+                value=json.dumps(credential.serialize()),
+                given_id=credential.id,
                 record_id=cred_id,
             )
             await vc_holder.store_credential(vc_record)

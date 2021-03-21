@@ -1,3 +1,5 @@
+"""Ed25519Signature2018 suite"""
+
 from datetime import datetime
 from typing import Union
 
@@ -6,13 +8,16 @@ from .JwsLinkedDataSignature import JwsLinkedDataSignature
 
 
 class Ed25519Signature2018(JwsLinkedDataSignature):
+    """Ed25519Signature2018 suite"""
+
     def __init__(
         self,
-        verification_method: str,
         key_pair: Ed25519WalletKeyPair,
+        verification_method: str = None,
         proof: dict = None,
         date: Union[datetime, str] = None,
     ):
+        """Create new Ed25519Signature2018 instance"""
         super().__init__(
             signature_type="Ed25519Signature2018",
             algorithm="EdDSA",

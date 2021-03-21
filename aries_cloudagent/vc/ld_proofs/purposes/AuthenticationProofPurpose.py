@@ -1,19 +1,26 @@
-from datetime import datetime, timedelta
-from typing import Awaitable
+"""Authentication proof purpose class"""
 
+from datetime import datetime, timedelta
+
+from ..error import LinkedDataProofException
+from ..validation_result import PurposeResult
 from ..document_loader import DocumentLoader
 from ..suites import LinkedDataProof
 from .ControllerProofPurpose import ControllerProofPurpose
 
 
 class AuthenticationProofPurpose(ControllerProofPurpose):
+    """Authentication proof purpose."""
+
     def __init__(
         self,
+        *,
         challenge: str,
         domain: str = None,
         date: datetime = None,
         max_timestamp_delta: timedelta = None,
     ):
+        """Initialize new AuthenticationProofPurpose instance."""
         super().__init__(
             term="authentication", date=date, max_timestamp_delta=max_timestamp_delta
         )
@@ -23,20 +30,22 @@ class AuthenticationProofPurpose(ControllerProofPurpose):
 
     def validate(
         self,
+        *,
         proof: dict,
         document: dict,
         suite: LinkedDataProof,
         verification_method: dict,
         document_loader: DocumentLoader,
-    ) -> dict:
+    ) -> PurposeResult:
+        """Validate whether challenge and domain are valid"""
         try:
             if proof.get("challenge") != self.challenge:
-                raise Exception(
-                    f'The challenge is not expected; challenge={proof.get("challenge")}, expected={self.challenge}'
+                raise LinkedDataProofException(
+                    f'The challenge is not as expected; challenge={proof.get("challenge")}, expected={self.challenge}'
                 )
 
             if self.domain and (proof.get("domain") != self.domain):
-                raise Exception(
+                raise LinkedDataProofException(
                     f'The domain is not as expected; domain={proof.get("domain")}, expected={self.domain}'
                 )
 
@@ -48,9 +57,10 @@ class AuthenticationProofPurpose(ControllerProofPurpose):
                 document_loader=document_loader,
             )
         except Exception as e:
-            return {"valid": False, "error": e}
+            PurposeResult(valid=False, error=e)
 
-    async def update(self, proof: dict) -> Awaitable[dict]:
+    def update(self, proof: dict) -> dict:
+        """Update poof purpose, challenge and domain on proof"""
         proof = super().update(proof)
         proof["challenge"] = self.challenge
 
