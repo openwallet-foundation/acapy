@@ -111,10 +111,5 @@ class TestLinkedDataVerifiableCredential(TestCase):
             document_loader=custom_document_loader,
         )
 
-        if not verification_result.verified:
-            if verification_result.errors and len(verification_result.errors) > 0:
-                raise verification_result.errors[0]
-
-            for credential_result in verification_result.credential_results:
-                if credential_result.errors and len(credential_result.errors) > 0:
-                    raise credential_result.errors[0]
+        # TODO match against stored verification result for continuity
+        assert verification_result.verified == True
