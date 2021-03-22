@@ -334,7 +334,7 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
                 contexts=credential.context_urls,
                 types=credential.type,
                 issuer_id=credential.issuer_id,
-                subject_ids=[credential.credential_subject_ids],
+                subject_ids=credential.credential_subject_ids,
                 schema_ids=[],  # Schemas not supported yet
                 value=json.dumps(credential.serialize()),
                 given_id=credential.id,
