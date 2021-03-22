@@ -10,6 +10,7 @@ runs:
   using: "composite"
   steps:
     - name: run-integration-tests-acapy
+      # to run with external ledger and tails server run as follows (and remove the ledger and tails actions from the workflow):
       # run: LEDGER_URL=http://test.bcovrin.vonx.io PUBLIC_TAILS_URL=https://tails.vonx.io ./run_bdd ${{ inputs.TEST_SCOPE }}
       run: ./run_bdd ${{ inputs.TEST_SCOPE }}
       shell: bash

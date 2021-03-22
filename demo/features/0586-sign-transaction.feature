@@ -24,6 +24,7 @@ Feature: RFC 0586 Aries sign (endorse) transactions functions
          | --mediation              | --mediation            | driverslicense |
          | --multitenant            | --multitenant          | driverslicense |
 
+
    @T001.1-RFC0586
    Scenario Outline: endorse a transaction and write to the ledger
       Given we have "2" agents

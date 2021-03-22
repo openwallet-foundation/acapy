@@ -791,7 +791,6 @@ class DemoAgent:
         status_code, status_text = await fetch_status(
             status_url, START_TIMEOUT, headers=headers
         )
-        self.log(status_code, status_text)
 
         if not status_text:
             raise Exception(
