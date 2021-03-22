@@ -7,7 +7,7 @@ from ...indy.sdk.wallet_setup import IndyOpenWallet
 from ..indy import IndySdkStorage, IndySdkStorageSearch
 
 from .base import VCHolder, VCRecordSearch
-from .deser import load_credential, serialize_credential, VC_CRED_RECORD_TYPE
+from .serde import load_credential, serialize_credential, VC_CRED_RECORD_TYPE
 from .vc_record import VCRecord
 
 

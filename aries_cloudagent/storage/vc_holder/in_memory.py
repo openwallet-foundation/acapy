@@ -7,7 +7,7 @@ from ...core.in_memory import InMemoryProfile
 from ..in_memory import InMemoryStorage, InMemoryStorageSearch
 
 from .base import VCHolder, VCRecordSearch
-from .deser import load_credential, serialize_credential, VC_CRED_RECORD_TYPE
+from .serde import load_credential, serialize_credential, VC_CRED_RECORD_TYPE
 from .vc_record import VCRecord
 
 
