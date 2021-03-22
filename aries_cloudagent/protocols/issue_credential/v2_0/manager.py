@@ -132,7 +132,7 @@ class V20CredManager:
             filters_attach=[attach for (_, attach) in formats],
         )
 
-        cred_ex_record.thread_id = (cred_proposal_message._thread_id,)
+        cred_ex_record.thread_id = cred_proposal_message._thread_id
         cred_ex_record.cred_proposal = cred_proposal_message.serialize()
 
         cred_proposal_message.assign_trace_decorator(self._profile.settings, trace)
