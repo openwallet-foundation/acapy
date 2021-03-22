@@ -13,7 +13,6 @@ from ......vc.vc_ld import issue, verify_credential
 from ......vc.ld_proofs import (
     Ed25519Signature2018,
     Ed25519WalletKeyPair,
-    default_document_loader,
     LinkedDataProof,
     CredentialIssuancePurpose,
     ProofPurpose,
