@@ -1,4 +1,13 @@
-"""Utilities for dif presentation exchange attachment."""
+"""
+Utilities for dif presentation exchange attachment.
+
+General Flow:
+create_vp ->
+make_requirement [create a Requirement from SubmissionRequirements and Descriptors] ->
+apply_requirement [filter credentials] ->
+merge [return applicable credential list and descriptor_map for presentation_submission]
+returns VerifiablePresentation
+"""
 import json
 import pytz
 import re
@@ -8,9 +17,9 @@ from jsonpath_ng import parse
 from typing import Sequence, Optional
 from uuid import uuid4
 
+from ....core.error import BaseError
 from ....storage.vc_holder.vc_record import VCRecord
 
-from .error import PresentationExchError
 from .pres_exch import (
     PresentationDefinition,
     InputDescriptors,
@@ -24,6 +33,10 @@ from .pres_exch import (
     InputDescriptorMapping,
     PresentationSubmission,
 )
+
+
+class PresentationExchError(BaseError):
+    """Base class for DIF Presentation Exchange related errors."""
 
 
 CREDENTIAL_JSONLD_CONTEXT = "https://www.w3.org/2018/credentials/v1"
@@ -53,18 +66,18 @@ async def to_requirement(
 
     if sr._from:
         if sr._from != "":
-            for tmp_descriptor in descriptors:
-                if await contains(tmp_descriptor.groups, sr._from):
-                    input_descriptors.append(tmp_descriptor)
+            for descriptor in descriptors:
+                if contains(descriptor.groups, sr._from):
+                    input_descriptors.append(descriptor)
             total_count = len(input_descriptors)
             if total_count == 0:
                 raise PresentationExchError(f"No descriptors for from: {sr._from}")
     else:
-        for tmp_sub_req in sr.from_nested:
+        for submission_requirement in sr.from_nested:
             try:
                 # recursion logic
-                tmp_req = await to_requirement(tmp_sub_req, descriptors)
-                nested.append(tmp_req)
+                requirement = await to_requirement(submission_requirement, descriptors)
+                nested.append(requirement)
             except Exception as err:
                 raise PresentationExchError(
                     (
@@ -117,10 +130,10 @@ async def make_requirement(
         count=len(srs),
         nested_req=[],
     )
-    for tmp_sub_req in srs:
+    for submission_requirement in srs:
         try:
             requirement.nested_req.append(
-                await to_requirement(tmp_sub_req, descriptors)
+                await to_requirement(submission_requirement, descriptors)
             )
         except Exception as err:
             raise PresentationExchError(
@@ -129,7 +142,7 @@ async def make_requirement(
     return requirement
 
 
-async def is_len_applicable(req: Requirement, val: int) -> bool:
+def is_len_applicable(req: Requirement, val: int) -> bool:
     """
     Check and validate requirement minimum, maximum and count.
 
@@ -152,7 +165,7 @@ async def is_len_applicable(req: Requirement, val: int) -> bool:
     return True
 
 
-async def contains(data: Sequence[str], e: str) -> bool:
+def contains(data: Sequence[str], e: str) -> bool:
     """
     Check for e in data.
 
@@ -166,8 +179,8 @@ async def contains(data: Sequence[str], e: str) -> bool:
 
     """
     data_list = list(data) if data else []
-    for tmp_item in data_list:
-        if e == tmp_item:
+    for k in data_list:
+        if e == k:
             return True
     return False
 
@@ -187,21 +200,18 @@ async def filter_constraints(
 
     """
     result = []
-    for tmp_cred in credentials:
-        if (
-            constraints.subject_issuer is not None
-            and constraints.subject_issuer == "required"
-            and not await subject_is_issuer(credential=tmp_cred)
+    for credential in credentials:
+        if constraints.subject_issuer == "required" and not await subject_is_issuer(
+            credential=credential
         ):
             continue
 
         applicable = False
         predicate = False
-        for tmp_field in constraints._fields:
-            applicable = await filter_by_field(tmp_field, tmp_cred)
-            if tmp_field.predicate:
-                if tmp_field.predicate == "required":
-                    predicate = True
+        for field in constraints._fields:
+            applicable = await filter_by_field(field, credential)
+            if field.predicate == "required":
+                predicate = True
             if applicable:
                 break
         if not applicable:
@@ -211,7 +221,7 @@ async def filter_constraints(
         if constraints.limit_disclosure or predicate:
             raise PresentationExchError("Not yet implemented - createNewCredential")
 
-        result.append(tmp_cred)
+        result.append(credential)
     return result
 
 
@@ -228,18 +238,19 @@ async def filter_by_field(field: Field, credential: VCRecord) -> bool:
         bool
 
     """
-    for tmp_path in field.paths:
-        tmp_jsonpath = parse(tmp_path)
-        match = tmp_jsonpath.find(json.loads(credential.value))
+    credential_dict = json.loads(credential.value)
+    for path in field.paths:
+        jsonpath = parse(path)
+        match = jsonpath.find(credential_dict)
         if len(match) == 0:
             continue
         for match_item in match:
-            if await validate_patch(match_item.value, field._filter):
+            if validate_patch(match_item.value, field._filter):
                 return True
     return False
 
 
-async def validate_patch(to_check: any, _filter: Filter) -> bool:
+def validate_patch(to_check: any, _filter: Filter) -> bool:
     """
     Apply filter on match_value.
 
@@ -256,14 +267,14 @@ async def validate_patch(to_check: any, _filter: Filter) -> bool:
     return_val = None
     if _filter._type:
         if _filter._type == "number":
-            return_val = await process_numeric_val(to_check, _filter)
+            return_val = process_numeric_val(to_check, _filter)
         elif _filter._type == "string":
-            return_val = await process_string_val(to_check, _filter)
+            return_val = process_string_val(to_check, _filter)
     else:
         if _filter.enums:
-            return_val = await enum_check(val=to_check, _filter=_filter)
+            return_val = enum_check(val=to_check, _filter=_filter)
         if _filter.const:
-            return_val = await const_check(val=to_check, _filter=_filter)
+            return_val = const_check(val=to_check, _filter=_filter)
 
     if _filter._not:
         return not return_val
@@ -271,7 +282,7 @@ async def validate_patch(to_check: any, _filter: Filter) -> bool:
         return return_val
 
 
-async def process_numeric_val(val: any, _filter: Filter) -> bool:
+def process_numeric_val(val: any, _filter: Filter) -> bool:
     """
     Trigger Filter checks.
 
@@ -286,22 +297,22 @@ async def process_numeric_val(val: any, _filter: Filter) -> bool:
 
     """
     if _filter.exclusive_max:
-        return await exclusive_maximum_check(val, _filter)
+        return exclusive_maximum_check(val, _filter)
     elif _filter.exclusive_min:
-        return await exclusive_minimum_check(val, _filter)
+        return exclusive_minimum_check(val, _filter)
     elif _filter.minimum:
-        return await minimum_check(val, _filter)
+        return minimum_check(val, _filter)
     elif _filter.maximum:
-        return await maximum_check(val, _filter)
+        return maximum_check(val, _filter)
     elif _filter.const:
-        return await const_check(val, _filter)
+        return const_check(val, _filter)
     elif _filter.enums:
-        return await enum_check(val, _filter)
+        return enum_check(val, _filter)
     else:
         return False
 
 
-async def process_string_val(val: any, _filter: Filter) -> bool:
+def process_string_val(val: any, _filter: Filter) -> bool:
     """
     Trigger Filter checks.
 
@@ -316,30 +327,30 @@ async def process_string_val(val: any, _filter: Filter) -> bool:
 
     """
     if _filter.min_length or _filter.max_length:
-        return await length_check(val, _filter)
+        return length_check(val, _filter)
     elif _filter.pattern:
-        return await pattern_check(val, _filter)
+        return pattern_check(val, _filter)
     elif _filter.enums:
-        return await enum_check(val, _filter)
+        return enum_check(val, _filter)
     elif _filter.exclusive_max:
         if _filter.fmt:
-            return await exclusive_maximum_check(val, _filter)
+            return exclusive_maximum_check(val, _filter)
     elif _filter.exclusive_min:
         if _filter.fmt:
-            return await exclusive_minimum_check(val, _filter)
+            return exclusive_minimum_check(val, _filter)
     elif _filter.minimum:
         if _filter.fmt:
-            return await minimum_check(val, _filter)
+            return minimum_check(val, _filter)
     elif _filter.maximum:
         if _filter.fmt:
-            return await maximum_check(val, _filter)
+            return maximum_check(val, _filter)
     elif _filter.const:
-        return await const_check(val, _filter)
+        return const_check(val, _filter)
     else:
         return False
 
 
-async def exclusive_minimum_check(val: any, _filter: Filter) -> bool:
+def exclusive_minimum_check(val: any, _filter: Filter) -> bool:
     """
     Exclusiveminimum check.
 
@@ -356,18 +367,20 @@ async def exclusive_minimum_check(val: any, _filter: Filter) -> bool:
         if _filter.fmt:
             utc = pytz.UTC
             if _filter.fmt == "date" or _filter.fmt == "date-time":
-                tmp_date = dateutil_parser(_filter.exclusive_min).replace(tzinfo=utc)
-                val = dateutil_parser(str(val)).replace(tzinfo=utc)
-                return val > tmp_date
+                to_compare_date = dateutil_parser(_filter.exclusive_min).replace(
+                    tzinfo=utc
+                )
+                given_date = dateutil_parser(str(val)).replace(tzinfo=utc)
+                return given_date > to_compare_date
         else:
-            if await is_numeric(val):
+            if is_numeric(val):
                 return val > _filter.exclusive_min
         return False
     except (TypeError, ValueError):
         return False
 
 
-async def exclusive_maximum_check(val: any, _filter: Filter) -> bool:
+def exclusive_maximum_check(val: any, _filter: Filter) -> bool:
     """
     Exclusivemaximum check.
 
@@ -384,18 +397,20 @@ async def exclusive_maximum_check(val: any, _filter: Filter) -> bool:
         if _filter.fmt:
             utc = pytz.UTC
             if _filter.fmt == "date" or _filter.fmt == "date-time":
-                tmp_date = dateutil_parser(_filter.exclusive_max).replace(tzinfo=utc)
-                val = dateutil_parser(str(val)).replace(tzinfo=utc)
-                return val < tmp_date
+                to_compare_date = dateutil_parser(_filter.exclusive_max).replace(
+                    tzinfo=utc
+                )
+                given_date = dateutil_parser(str(val)).replace(tzinfo=utc)
+                return given_date < to_compare_date
         else:
-            if await is_numeric(val):
+            if is_numeric(val):
                 return val < _filter.exclusive_max
         return False
     except (TypeError, ValueError):
         return False
 
 
-async def maximum_check(val: any, _filter: Filter) -> bool:
+def maximum_check(val: any, _filter: Filter) -> bool:
     """
     Maximum check.
 
@@ -412,18 +427,18 @@ async def maximum_check(val: any, _filter: Filter) -> bool:
         if _filter.fmt:
             utc = pytz.UTC
             if _filter.fmt == "date" or _filter.fmt == "date-time":
-                tmp_date = dateutil_parser(_filter.maximum).replace(tzinfo=utc)
-                val = dateutil_parser(str(val)).replace(tzinfo=utc)
-                return val <= tmp_date
+                to_compare_date = dateutil_parser(_filter.maximum).replace(tzinfo=utc)
+                given_date = dateutil_parser(str(val)).replace(tzinfo=utc)
+                return given_date <= to_compare_date
         else:
-            if await is_numeric(val):
+            if is_numeric(val):
                 return val <= _filter.maximum
         return False
     except (TypeError, ValueError):
         return False
 
 
-async def minimum_check(val: any, _filter: Filter) -> bool:
+def minimum_check(val: any, _filter: Filter) -> bool:
     """
     Minimum check.
 
@@ -440,18 +455,18 @@ async def minimum_check(val: any, _filter: Filter) -> bool:
         if _filter.fmt:
             utc = pytz.UTC
             if _filter.fmt == "date" or _filter.fmt == "date-time":
-                tmp_date = dateutil_parser(_filter.minimum).replace(tzinfo=utc)
-                val = dateutil_parser(str(val)).replace(tzinfo=utc)
-                return val >= tmp_date
+                to_compare_date = dateutil_parser(_filter.minimum).replace(tzinfo=utc)
+                given_date = dateutil_parser(str(val)).replace(tzinfo=utc)
+                return given_date >= to_compare_date
         else:
-            if await is_numeric(val):
+            if is_numeric(val):
                 return val >= _filter.minimum
         return False
     except (TypeError, ValueError):
         return False
 
 
-async def length_check(val: any, _filter: Filter) -> bool:
+def length_check(val: any, _filter: Filter) -> bool:
     """
     Length check.
 
@@ -477,7 +492,7 @@ async def length_check(val: any, _filter: Filter) -> bool:
     return False
 
 
-async def pattern_check(val: any, _filter: Filter) -> bool:
+def pattern_check(val: any, _filter: Filter) -> bool:
     """
     Pattern check.
 
@@ -495,7 +510,7 @@ async def pattern_check(val: any, _filter: Filter) -> bool:
     return False
 
 
-async def const_check(val: any, _filter: Filter) -> bool:
+def const_check(val: any, _filter: Filter) -> bool:
     """
     Const check.
 
@@ -513,7 +528,7 @@ async def const_check(val: any, _filter: Filter) -> bool:
     return False
 
 
-async def enum_check(val: any, _filter: Filter) -> bool:
+def enum_check(val: any, _filter: Filter) -> bool:
     """
     Enum check.
 
@@ -544,9 +559,9 @@ async def subject_is_issuer(credential: VCRecord) -> bool:
 
     """
     subject_ids = credential.subject_ids
-    for tmp_subject_id in subject_ids:
-        tmp_issuer_id = credential.issuer_id
-        if tmp_subject_id != "" and tmp_subject_id == tmp_issuer_id:
+    for subject_id in subject_ids:
+        issuer_id = credential.issuer_id
+        if subject_id != "" and subject_id == issuer_id:
             return True
     return False
 
@@ -568,20 +583,20 @@ async def filter_schema(
 
     """
     result = []
-    for tmp_cred in credentials:
+    for credential in credentials:
         applicable = False
-        for tmp_schema in schemas:
-            applicable = await credential_match_schama(
-                credential=tmp_cred, schema_id=tmp_schema.uri
+        for schema in schemas:
+            applicable = await credential_match_schema(
+                credential=credential, schema_id=schema.uri
             )
-            if tmp_schema.required and not applicable:
+            if schema.required and not applicable:
                 break
         if applicable:
-            result.append(tmp_cred)
+            result.append(credential)
     return result
 
 
-async def credential_match_schama(credential: VCRecord, schema_id: str) -> bool:
+async def credential_match_schema(credential: VCRecord, schema_id: str) -> bool:
     """
     Credential matching by schema.
 
@@ -613,56 +628,69 @@ async def apply_requirements(req: Requirement, credentials: Sequence[VCRecord]) 
     Return:
         dict of input_descriptor ID key to list of credential_json
     """
+    # Dict for storing descriptor_id keys and list of applicable
+    # credentials values
     result = {}
-    descriptor_list = []
-    if not req.input_descriptors:
-        descriptor_list = []
-    else:
-        descriptor_list = req.input_descriptors
-    for tmp_descriptor in descriptor_list:
+    # Get all input_descriptors attached to the PresentationDefinition
+    descriptor_list = req.input_descriptors or []
+    for descriptor in descriptor_list:
+        # Filter credentials to apply filtering upon by matching each credentialSchema.id
+        # or expanded types on each InputDescriptor's schema URIs
         filtered_by_schema = await filter_schema(
-            credentials=credentials, schemas=tmp_descriptor.schemas
+            credentials=credentials, schemas=descriptor.schemas
         )
+        # Filter credentials based upon path expressions specified in constraints
         filtered = await filter_constraints(
-            constraints=tmp_descriptor.constraint, credentials=filtered_by_schema
+            constraints=descriptor.constraint, credentials=filtered_by_schema
         )
         if len(filtered) != 0:
-            result[tmp_descriptor._id] = filtered
+            result[descriptor._id] = filtered
 
     if len(descriptor_list) != 0:
-        if await is_len_applicable(req, len(result)):
+        # Applies min, max or count attributes of submission_requirement
+        if is_len_applicable(req, len(result)):
             return result
         return {}
 
     nested_result = []
     tmp_dict = {}
     # recursion logic for nested requirements
-    for tmp_req in req.nested_req:
-        tmp_result = await apply_requirements(tmp_req, credentials)
-        if tmp_result == {}:
+    for requirement in req.nested_req:
+        # recursive call
+        result = await apply_requirements(requirement, credentials)
+        if result == {}:
             continue
+        # tmp_dict maps applicable credentials to their respective descriptor.
+        # Structure: {cred.given_id: {
+        #           desc_id_1: {}
+        #      },
+        #      ......
+        # }
+        #  This will be used to construct exclude dict.
+        for descriptor_id in result.keys():
+            credential_list = result.get(descriptor_id)
+            for credential in credential_list:
+                if credential.given_id not in tmp_dict:
+                    tmp_dict[credential.given_id] = {}
+                tmp_dict[credential.given_id][descriptor_id] = {}
 
-        for tmp_desc_id in tmp_result.keys():
-            tmp_creds_list = tmp_result.get(tmp_desc_id)
-            for tmp_cred in tmp_creds_list:
-                if await trim_tmp_id(tmp_cred.given_id) not in tmp_dict:
-                    tmp_dict[await trim_tmp_id(tmp_cred.given_id)] = {}
-                tmp_dict[await trim_tmp_id(tmp_cred.given_id)][
-                    tmp_desc_id
-                ] = tmp_cred.given_id
-
-        if len(tmp_result.keys()) != 0:
-            nested_result.append(tmp_result)
+        if len(result.keys()) != 0:
+            nested_result.append(result)
 
     exclude = {}
     for k in tmp_dict.keys():
-        if not await is_len_applicable(req, len(tmp_dict[k])):
-            for desc_id in tmp_dict[k]:
-                exclude[desc_id + (tmp_dict[k][desc_id])] = {}
+        # Check if number of applicable credentials
+        # does not meet requirement specification
+        if not is_len_applicable(req, len(tmp_dict[k])):
+            for descriptor_id in tmp_dict[k]:
+                # Add to exclude dict
+                # with cred.given_id + descriptor_id as key
+                exclude[descriptor_id + k] = {}
+    # merging credentials and excluding credentials that don't satisfy the requirement
     return await merge_nested_results(nested_result=nested_result, exclude=exclude)
 
 
-async def is_numeric(val: any) -> bool:
+def is_numeric(val: any) -> bool:
     """
     Check if val is an int or float.
 
@@ -675,36 +703,6 @@ async def is_numeric(val: any) -> bool:
         return True
     else:
         return False
-
-
-async def get_tmp_id(id: str) -> str:
-    """
-    Create a temporary id.
-
-    Args:
-        id: original id
-    Return:
-        temporary id string
-    """
-    return id + "tmp_unique_id_" + str(uuid4())
-
-
-async def trim_tmp_id(id: str) -> str:
-    """
-    Extract and return original id from a temporary id.
-
-    Args:
-        id: temporary id
-    Raises:
-        ValueError: if tmp_unique_id_ not exists in id
-    Return:
-        temporary id string
-    """
-    try:
-        tmp_index = id.index("tmp_unique_id_")
-        return id[:tmp_index]
-    except ValueError:
-        return id
 
 
 async def merge_nested_results(nested_result: Sequence[dict], exclude: dict) -> dict:
@@ -726,16 +724,16 @@ async def merge_nested_results(nested_result: Sequence[dict], exclude: dict) -> 
             merged_credentials = []
 
             if key in result:
-                for tmp_cred in result[key]:
-                    if tmp_cred.given_id not in tmp_dict:
-                        merged_credentials.append(tmp_cred)
-                        tmp_dict[tmp_cred.given_id] = {}
+                for credential in result[key]:
+                    if credential.given_id not in tmp_dict:
+                        merged_credentials.append(credential)
+                        tmp_dict[credential.given_id] = {}
 
-            for tmp_cred in credentials:
-                if tmp_cred.given_id not in tmp_dict:
-                    if (key + (tmp_cred.given_id)) not in exclude:
-                        merged_credentials.append(tmp_cred)
-                        tmp_dict[tmp_cred.given_id] = {}
+            for credential in credentials:
+                if credential.given_id not in tmp_dict:
+                    if (key + (credential.given_id)) not in exclude:
+                        merged_credentials.append(credential)
+                        tmp_dict[credential.given_id] = {}
             result[key] = merged_credentials
     return result
 
@@ -759,8 +757,8 @@ async def create_vp(
     applicable_creds, descriptor_maps = await merge(result)
     # convert list of verifiable credentials to list to dict
     applicable_cred_dict = []
-    for tmp_cred in applicable_creds:
-        applicable_cred_dict.append(json.loads(tmp_cred.value))
+    for credential in applicable_creds:
+        applicable_cred_dict.append(json.loads(credential.value))
     # submission_property
     submission_property = PresentationSubmission(
         _id=str(uuid4()), definition_id=pd._id, descriptor_maps=descriptor_maps
@@ -793,6 +791,10 @@ async def merge(
     """
     Return applicable credentials and descriptor_map for attachment.
 
+    Used for generating the presentation_submission property with the
+    descriptor_map, mantaining the order in which applicable credential
+    list is returned.
+
     Args:
         dict_descriptor_creds: dict with input_descriptor.id as keys
         and merged_credentials_list
@@ -806,16 +808,19 @@ async def merge(
     sorted_desc_keys = sorted(list(dict_descriptor_creds.keys()))
     for desc_id in sorted_desc_keys:
         credentials = dict_descriptor_creds.get(desc_id)
-        for tmp_cred in credentials:
-            if tmp_cred.given_id not in dict_of_creds:
-                result.append(tmp_cred)
-                dict_of_creds[await trim_tmp_id(tmp_cred.given_id)] = len(descriptors)
+        for credential in credentials:
+            if credential.given_id not in dict_of_creds:
+                result.append(credential)
+                dict_of_creds[credential.given_id] = len(descriptors)
 
-            if f"{tmp_cred.given_id}-{tmp_cred.given_id}" not in dict_of_descriptors:
+            if (
+                f"{credential.given_id}-{credential.given_id}"
+                not in dict_of_descriptors
+            ):
                 descriptor_map = InputDescriptorMapping(
                     _id=desc_id,
                     fmt="ldp_vp",
-                    path=f"$.verifiableCredential[{dict_of_creds[tmp_cred.given_id]}]",
+                    path=f"$.verifiableCredential[{dict_of_creds[credential.given_id]}]",
                 )
                 descriptors.append(descriptor_map)
 

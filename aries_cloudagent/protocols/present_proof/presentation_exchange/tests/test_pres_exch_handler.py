@@ -11,7 +11,6 @@ from uuid import uuid4
 
 from .....storage.vc_holder.vc_record import VCRecord
 
-from ..error import PresentationExchError
 from ..pres_exch import (
     PresentationDefinition,
     Requirement,
@@ -30,12 +29,11 @@ from ..pres_exch_handler import (
     pattern_check,
     subject_is_issuer,
     filter_schema,
-    credential_match_schama,
+    credential_match_schema,
     is_numeric,
-    get_tmp_id,
-    trim_tmp_id,
     merge_nested_results,
     create_vp,
+    PresentationExchError,
 )
 
 from .test_data import get_test_data
@@ -301,19 +299,6 @@ class TestPresExchRequirement(AsyncTestCase):
                 srs=test_pd.submission_requirements,
                 descriptors=test_pd.input_descriptors,
             )
-
-    async def test_is_len_applicable(self):
-        """Test deserialization."""
-
-        tmp_req_a = Requirement(count=1)
-
-        tmp_req_b = Requirement(minimum=3)
-
-        tmp_req_c = Requirement(maximum=5)
-
-        assert await is_len_applicable(tmp_req_a, 2) is False
-        assert await is_len_applicable(tmp_req_b, 2) is False
-        assert await is_len_applicable(tmp_req_c, 6) is False
 
 
 class TestPresExchConstraint(AsyncTestCase):
@@ -1140,55 +1125,6 @@ class TestPresExchFilter(AsyncTestCase):
         assert len(tmp_vp.credentials) == 2
 
     @pytest.mark.asyncio
-    async def test_filter_no_match(self):
-        tmp_filter_excl_min = Filter(exclusive_min=7)
-        assert await exclusive_minimum_check("test", tmp_filter_excl_min) is False
-        tmp_filter_excl_max = Filter(exclusive_max=10)
-        assert await exclusive_maximum_check("test", tmp_filter_excl_max) is False
-        tmp_filter_min = Filter(minimum=10)
-        assert await minimum_check("test", tmp_filter_min) is False
-        tmp_filter_max = Filter(maximum=10)
-        assert await maximum_check("test", tmp_filter_max) is False
-
-    @pytest.mark.asyncio
-    async def test_filter_valueerror(self):
-        tmp_filter_excl_min = Filter(exclusive_min=7, fmt="date")
-        assert await exclusive_minimum_check("test", tmp_filter_excl_min) is False
-        tmp_filter_excl_max = Filter(exclusive_max=10, fmt="date")
-        assert await exclusive_maximum_check("test", tmp_filter_excl_max) is False
-        tmp_filter_min = Filter(minimum=10, fmt="date")
-        assert await minimum_check("test", tmp_filter_min) is False
-        tmp_filter_max = Filter(maximum=10, fmt="date")
-        assert await maximum_check("test", tmp_filter_max) is False
-
-    @pytest.mark.asyncio
-    async def test_filter_length_check(self):
-        tmp_filter_both = Filter(min_length=7, max_length=10)
-        assert await length_check("test12345", tmp_filter_both) is True
-        tmp_filter_min = Filter(min_length=7)
-        assert await length_check("test123", tmp_filter_min) is True
-        tmp_filter_max = Filter(max_length=10)
-        assert await length_check("test", tmp_filter_max) is True
-        assert await length_check("test12", tmp_filter_min) is False
-
-    @pytest.mark.asyncio
-    async def test_filter_pattern_check(self):
-        tmp_filter = Filter(pattern="test1|test2")
-        assert await pattern_check("test3", tmp_filter) is False
-        tmp_filter = Filter(const="test3")
-        assert await pattern_check("test3", tmp_filter) is False
-
-    @pytest.mark.asyncio
-    async def test_subject_is_issuer(self):
-        tmp_cred = deepcopy(cred_list[0])
-        tmp_cred.issuer_id = "4fc82e63-f897-4dad-99cc-f698dff6c425"
-        tmp_cred.subject_ids.add("4fc82e63-f897-4dad-99cc-f698dff6c425")
-        assert tmp_cred.subject_ids is not None
-        assert await subject_is_issuer(tmp_cred) is True
-        tmp_cred.issuer_id = "19b823fb-55ef-49f4-8caf-2a26b8b9286f"
-        assert await subject_is_issuer(tmp_cred) is False
-
-    @pytest.mark.asyncio
     async def test_filter_schema(self):
         tmp_schema_list = [
             SchemaInputDescriptor(
@@ -1203,20 +1139,7 @@ class TestPresExchFilter(AsyncTestCase):
         tmp_cred = deepcopy(cred_list[0])
         tmp_cred.types = ["test1", "test2"]
         tmp_cred.schema_ids = ["test3"]
-        assert await credential_match_schama(tmp_cred, "test2") is True
-
-    @pytest.mark.asyncio
-    async def test_is_numeric(self):
-        assert await is_numeric("test") is False
-        assert await is_numeric(1) is True
-        assert await is_numeric(2 + 3j) is False
-
-    @pytest.mark.asyncio
-    async def test_tmp_id(self):
-        test_id = await get_tmp_id("2e673841-ad41-4124-bcac-ed39263c9c87")
-        assert "tmp_unique_id_" in test_id
-        assert await trim_tmp_id(test_id) == "2e673841-ad41-4124-bcac-ed39263c9c87"
-        assert await trim_tmp_id("test1234") == "test1234"
+        assert await credential_match_schema(tmp_cred, "test2") is True
 
     @pytest.mark.asyncio
     async def test_merge_nested(self):
@@ -1245,3 +1168,64 @@ class TestPresExchFilter(AsyncTestCase):
         test_nested_result.append(test_dict_3)
 
         tmp_result = await merge_nested_results(test_nested_result, {})
+
+    @pytest.mark.asyncio
+    async def test_subject_is_issuer(self):
+        tmp_cred = deepcopy(cred_list[0])
+        tmp_cred.issuer_id = "4fc82e63-f897-4dad-99cc-f698dff6c425"
+        tmp_cred.subject_ids.add("4fc82e63-f897-4dad-99cc-f698dff6c425")
+        assert tmp_cred.subject_ids is not None
+        assert await subject_is_issuer(tmp_cred) is True
+        tmp_cred.issuer_id = "19b823fb-55ef-49f4-8caf-2a26b8b9286f"
+        assert await subject_is_issuer(tmp_cred) is False
+
+
+class UtilityTests(TestCase):
+    def test_is_numeric(self):
+        assert is_numeric("test") is False
+        assert is_numeric(1) is True
+        assert is_numeric(2 + 3j) is False
+
+    def test_filter_no_match(self):
+        tmp_filter_excl_min = Filter(exclusive_min=7)
+        assert exclusive_minimum_check("test", tmp_filter_excl_min) is False
+        tmp_filter_excl_max = Filter(exclusive_max=10)
+        assert exclusive_maximum_check("test", tmp_filter_excl_max) is False
+        tmp_filter_min = Filter(minimum=10)
+        assert minimum_check("test", tmp_filter_min) is False
+        tmp_filter_max = Filter(maximum=10)
+        assert maximum_check("test", tmp_filter_max) is False
+
+    def test_filter_valueerror(self):
+        tmp_filter_excl_min = Filter(exclusive_min=7, fmt="date")
+        assert exclusive_minimum_check("test", tmp_filter_excl_min) is False
+        tmp_filter_excl_max = Filter(exclusive_max=10, fmt="date")
+        assert exclusive_maximum_check("test", tmp_filter_excl_max) is False
+        tmp_filter_min = Filter(minimum=10, fmt="date")
+        assert minimum_check("test", tmp_filter_min) is False
+        tmp_filter_max = Filter(maximum=10, fmt="date")
+        assert maximum_check("test", tmp_filter_max) is False
+
+    def test_filter_length_check(self):
+        tmp_filter_both = Filter(min_length=7, max_length=10)
+        assert length_check("test12345", tmp_filter_both) is True
+        tmp_filter_min = Filter(min_length=7)
+        assert length_check("test123", tmp_filter_min) is True
+        tmp_filter_max = Filter(max_length=10)
+        assert length_check("test", tmp_filter_max) is True
+        assert length_check("test12", tmp_filter_min) is False
+
+    def test_filter_pattern_check(self):
+        tmp_filter = Filter(pattern="test1|test2")
+        assert pattern_check("test3", tmp_filter) is False
+        tmp_filter = Filter(const="test3")
+        assert pattern_check("test3", tmp_filter) is False
+
+    def test_is_len_applicable(self):
+        tmp_req_a = Requirement(count=1)
+        tmp_req_b = Requirement(minimum=3)
+        tmp_req_c = Requirement(maximum=5)
+
+        assert is_len_applicable(tmp_req_a, 2) is False
+        assert is_len_applicable(tmp_req_b, 2) is False
+        assert is_len_applicable(tmp_req_c, 6) is False

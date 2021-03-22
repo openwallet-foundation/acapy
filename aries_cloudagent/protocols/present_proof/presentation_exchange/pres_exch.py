@@ -5,6 +5,7 @@ from marshmallow import (
     EXCLUDE,
     pre_load,
     post_dump,
+    ValidationError,
 )
 from typing import Sequence, Union
 
@@ -12,8 +13,6 @@ from ....messaging.models.base import BaseModelSchema, BaseModel
 from ....messaging.valid import (
     UUID4,
 )
-
-from .error import PresentationExchError
 
 
 class ClaimFormat(BaseModel):
@@ -103,32 +102,20 @@ class ClaimFormatSchema(BaseModelSchema):
     @post_dump
     def serialize_reformat(self, data, **kwargs):
         """Support serialization to format dict (DIF spec)."""
-        reformat = {}
+        new_data = {}
         if "jwt" in data:
-            tmp_dict = {}
-            tmp_dict["alg"] = data.get("jwt")
-            reformat["jwt"] = tmp_dict
+            new_data["jwt"] = {"alg": data.get("jwt")}
         if "jwt_vc" in data:
-            tmp_dict = {}
-            tmp_dict["alg"] = data.get("jwt_vc")
-            reformat["jwt_vc"] = tmp_dict
+            new_data["jwt_vc"] = {"alg": data.get("jwt_vc")}
         if "jwt_vp" in data:
-            tmp_dict = {}
-            tmp_dict["alg"] = data.get("jwt_vp")
-            reformat["jwt_vp"] = tmp_dict
+            new_data["jwt_vp"] = {"alg": data.get("jwt_vp")}
         if "ldp" in data:
-            tmp_dict = {}
-            tmp_dict["proof_type"] = data.get("ldp")
-            reformat["ldp"] = tmp_dict
+            new_data["ldp"] = {"proof_type": data.get("ldp")}
         if "ldp_vc" in data:
-            tmp_dict = {}
-            tmp_dict["proof_type"] = data.get("ldp_vc")
-            reformat["ldp_vc"] = tmp_dict
+            new_data["ldp_vc"] = {"proof_type": data.get("ldp_vc")}
         if "ldp_vp" in data:
-            tmp_dict = {}
-            tmp_dict["proof_type"] = data.get("ldp_vp")
-            reformat["ldp_vp"] = tmp_dict
-        return reformat
+            new_data["ldp_vp"] = {"proof_type": data.get("ldp_vp")}
+        return new_data
 
 
 class SubmissionRequirements(BaseModel):
@@ -213,12 +200,12 @@ class SubmissionRequirementsSchema(BaseModelSchema):
     def validate_from(self, data, **kwargs):
         """Support validation of from and from_nested."""
         if "from" in data and "from_nested" in data:
-            raise PresentationExchError(
+            raise ValidationError(
                 "Both from and from_nested cannot be "
                 "specified in the submission requirement"
             )
         if "from" not in data and "from_nested" not in data:
-            raise PresentationExchError(
+            raise ValidationError(
                 "Either from or from_nested needs to be "
                 "specified in the submission requirement"
             )
@@ -307,15 +294,15 @@ class HolderSchema(BaseModelSchema):
 
 
 # Union of str or int or float
-class CustomStrOrNumberField(fields.Field):
+class StrOrNumberField(fields.Field):
     """Custom Marshmallow field - union of str, int and float."""
 
     def _deserialize(self, value, attr, data, **kwargs):
-        """Return value if type is str, float or int else raise PresentationExchError."""
+        """Return value if type is str, float or int else raise ValidationError."""
         if isinstance(value, str) or isinstance(value, float) or isinstance(value, int):
             return value
         else:
-            raise PresentationExchError("Field should be str or int or float")
+            raise ValidationError("Field should be str or int or float")
 
 
 class Filter(BaseModel):
@@ -377,12 +364,12 @@ class FilterSchema(BaseModelSchema):
         required=False,
         data_key="pattern",
     )
-    minimum = CustomStrOrNumberField(
+    minimum = StrOrNumberField(
         description="Minimum",
         required=False,
         data_key="minimum",
     )
-    maximum = CustomStrOrNumberField(
+    maximum = StrOrNumberField(
         description="Maximum",
         required=False,
         data_key="maximum",
@@ -401,23 +388,23 @@ class FilterSchema(BaseModelSchema):
         required=False,
         data_key="maxLength",
     )
-    exclusive_min = CustomStrOrNumberField(
+    exclusive_min = StrOrNumberField(
         description="ExclusiveMinimum",
         required=False,
         data_key="exclusiveMinimum",
     )
-    exclusive_max = CustomStrOrNumberField(
+    exclusive_max = StrOrNumberField(
         description="ExclusiveMaximum",
         required=False,
         data_key="exclusiveMaximum",
     )
-    const = CustomStrOrNumberField(
+    const = StrOrNumberField(
         description="Const",
         required=False,
         data_key="const",
     )
     enums = fields.List(
-        CustomStrOrNumberField(description="Enum", required=False),
+        StrOrNumberField(description="Enum", required=False),
         required=False,
         data_key="enum",
     )
@@ -431,27 +418,22 @@ class FilterSchema(BaseModelSchema):
     @pre_load
     def extract_info(self, data, **kwargs):
         """Enum validation and not filter logic."""
-        reformat = {}
         if "not" in data:
-            reformat["not"] = True
+            new_data = {"not": True}
             for key, value in data.get("not").items():
-                reformat[key] = value
-            data = reformat
+                new_data[key] = value
+            data = new_data
         if "enum" in data:
             if type(data.get("enum")) is not list:
-                raise PresentationExchError("enum is not specified as a list")
+                raise ValidationError("enum is not specified as a list")
         return data
 
     @post_dump
     def serialize_reformat(self, data, **kwargs):
         """Support serialization of not filter according to DIF spec."""
-        if "not" in data:
-            tmp_flag = data.get("not")
-            del data["not"]
-            if tmp_flag:
-                tmp_dict = {}
-                tmp_dict["not"] = data
-                return tmp_dict
+        if data.pop("not", False):
+            return {"not": data}
+
         return data
 
 
@@ -918,15 +900,15 @@ class PresentationSubmissionSchema(BaseModelSchema):
 
 
 # Union of str or dict
-class CustomValueField(fields.Field):
+class StrOrDictField(fields.Field):
     """Custom Marshmallow field - union of str and dict."""
 
     def _deserialize(self, value, attr, data, **kwargs):
-        """Return value if type is str or dict else raise PresentationExchError."""
+        """Return value if type is str or dict else raise ValidationError."""
         if isinstance(value, str) or isinstance(value, dict):
             return value
         else:
-            raise PresentationExchError("Field should be str or dict")
+            raise ValidationError("Field should be str or dict")
 
 
 class VerifiablePresentation(BaseModel):
@@ -976,7 +958,7 @@ class VerifiablePresentationSchema(BaseModelSchema):
         data_key="id",
     )
     contexts = fields.List(
-        CustomValueField(),
+        StrOrDictField(),
         data_key="@context",
     )
     types = fields.List(
@@ -1006,9 +988,8 @@ class VerifiablePresentationSchema(BaseModelSchema):
         """Support deserialization of W3C spec VP."""
         if "proof" in data:
             if type(data.get("proof")) is not list:
-                tmp_list = []
-                tmp_list.append(data.get("proof"))
-                data["proof"] = tmp_list
+                data["proof"] = [data.get("proof")]
+
         return data
 
     @post_dump

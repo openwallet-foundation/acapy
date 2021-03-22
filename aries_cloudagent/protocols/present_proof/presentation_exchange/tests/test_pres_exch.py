@@ -8,10 +8,9 @@ from time import time
 from unittest import TestCase
 from uuid import uuid4
 
-
+from .....messaging.models.base import BaseModelError
 from .....storage.vc_holder.vc_record import VCRecord
 
-from ..error import PresentationExchError
 from ..pres_exch import (
     VerifiablePresentation,
     ClaimFormat,
@@ -109,12 +108,8 @@ class TestPresExchSchemas(TestCase):
                 "count": 1
             }
         """
-        with self.assertRaises(PresentationExchError) as cm:
+        with self.assertRaises(BaseModelError) as cm:
             (SubmissionRequirements.deserialize(test_json)).serialize()
-            assert (
-                cm.exception
-                == "Both from and from_nested cannot be specified in the submission requirement"
-            )
 
     def test_submission_requirements_from_both_present(self):
         test_json = """
@@ -139,42 +134,8 @@ class TestPresExchSchemas(TestCase):
                 ]
             }
         """
-        with self.assertRaises(PresentationExchError) as cm:
+        with self.assertRaises(BaseModelError) as cm:
             (SubmissionRequirements.deserialize(test_json)).serialize()
-            assert (
-                cm.exception
-                == "Either from or from_nested needs to be specified in the submission requirement"
-            )
-
-    def test_submission_requirements_from_both_present(self):
-        test_json = """
-            {
-                "name": "Citizenship Information",
-                "rule": "pick",
-                "count": 1,
-                "from": "A",
-                "from_nested": [
-                    {
-                    "name": "United States Citizenship Proofs",
-                    "purpose": "We need you to prove you are a US citizen.",
-                    "rule": "all",
-                    "from": "A"
-                    },
-                    {
-                    "name": "European Union Citizenship Proofs",
-                    "purpose": "We need you to prove you are a citizen of a EU country.",
-                    "rule": "all",
-                    "from": "B"
-                    }
-                ]
-            }
-        """
-        with self.assertRaises(PresentationExchError) as cm:
-            (SubmissionRequirements.deserialize(test_json)).serialize()
-            assert (
-                cm.exception
-                == "Either from or from_nested needs to be specified in the submission requirement"
-            )
 
     def test_is_holder(self):
         test_json = """
@@ -261,13 +222,11 @@ class TestPresExchSchemas(TestCase):
             actual_result = (Filter.deserialize(tmp_test_item)).serialize()
             assert expected_result == actual_result
 
-        with self.assertRaises(PresentationExchError) as cm:
+        with self.assertRaises(BaseModelError) as cm:
             (Filter.deserialize(test_json_enum_error)).serialize()
-            assert cm.exception == "enum is not specified as a list"
 
-        with self.assertRaises(PresentationExchError) as cm:
+        with self.assertRaises(BaseModelError) as cm:
             (Filter.deserialize(test_json_custom_field_error)).serialize()
-            assert cm.exception == "Field should be str or int or float"
 
     def test_constraints(self):
         test_json = """
@@ -582,9 +541,8 @@ class TestPresExchSchemas(TestCase):
         ).serialize()
         assert expected_result == actual_result
 
-        with self.assertRaises(PresentationExchError) as cm:
+        with self.assertRaises(BaseModelError) as cm:
             (VerifiablePresentation.deserialize(test_json_context_invalid)).serialize()
-            assert cm.exception == "Field should be str or dict"
 
         vp_with_proof_dict = (
             VerifiablePresentation.deserialize(test_vp_json_with_proof)
