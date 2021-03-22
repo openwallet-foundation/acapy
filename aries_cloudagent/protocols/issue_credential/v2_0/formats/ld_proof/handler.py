@@ -335,9 +335,12 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
                 types=credential.type,
                 issuer_id=credential.issuer_id,
                 subject_ids=credential.credential_subject_ids,
-                schema_ids=[],  # Schemas not supported yet
+                # schema_ids=[],  Schemas not supported yet
                 value=json.dumps(credential.serialize()),
                 given_id=credential.id,
                 record_id=cred_id,
             )
             await vc_holder.store_credential(vc_record)
+
+            # TODO: doesn't work with multiple attachments
+            cred_ex_record.cred_id_stored = vc_record.record_id
