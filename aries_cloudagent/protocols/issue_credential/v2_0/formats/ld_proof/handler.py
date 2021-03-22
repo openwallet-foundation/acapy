@@ -254,22 +254,19 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
     ) -> None:
         # If we sent an offer, check if request matches this
         if cred_ex_record.cred_offer:
-            cred_request_detail = LDProofVCDetail.deserialize(
-                cred_request_message.attachment(self.format)
-            )
-
-            cred_offer_detail = LDProofVCDetail.deserialize(
-                V20CredOffer.deserialize(cred_ex_record.cred_offer).attachment(
-                    self.format
-                )
-            )
+            request_detail = cred_request_message.attachment(self.format)
+            offer_detail = V20CredOffer.deserialize(
+                cred_ex_record.cred_offer
+            ).attachment(self.format)
 
             # TODO: probably some fields can be different
             # so maybe do partial check?
             # e.g. options.challenge may be filled in request
             # OR credentialSubject.id
             # TODO: Send problem report if no match?
-            assert cred_offer_detail == cred_request_detail
+            # TODO: implement __eq__ for all descendant classes
+            # assert cred_offer_detail == cred_request_detail
+            assert offer_detail == request_detail
 
     async def issue_credential(
         self, cred_ex_record: V20CredExRecord, retries: int = 5
