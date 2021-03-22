@@ -282,7 +282,7 @@ class TestV20PresManager(AsyncTestCase):
                     ],
                 )
             ],
-            proposal_attach=[
+            proposals_attach=[
                 AttachDecorator.data_base64(INDY_PROOF_REQ_NAME, ident="indy")
             ],
         )
@@ -805,7 +805,7 @@ class TestV20PresManager(AsyncTestCase):
                     ],
                 )
             ],
-            proposal_attach=[
+            proposals_attach=[
                 AttachDecorator.data_base64(INDY_PROOF_REQ_NAME, ident="indy")
             ],
         )
@@ -925,7 +925,9 @@ class TestV20PresManager(AsyncTestCase):
                     ],
                 )
             ],
-            proposal_attach=[AttachDecorator.data_base64(indy_proof_req, ident="indy")],
+            proposals_attach=[
+                AttachDecorator.data_base64(indy_proof_req, ident="indy")
+            ],
         )
         pres_request = V20PresRequest(
             formats=[
@@ -979,7 +981,9 @@ class TestV20PresManager(AsyncTestCase):
                     ],
                 )
             ],
-            proposal_attach=[AttachDecorator.data_base64(indy_proof_req, ident="indy")],
+            proposals_attach=[
+                AttachDecorator.data_base64(indy_proof_req, ident="indy")
+            ],
         )
         pres_request = V20PresRequest(
             formats=[
@@ -1084,7 +1088,9 @@ class TestV20PresManager(AsyncTestCase):
                     ],
                 )
             ],
-            proposal_attach=[AttachDecorator.data_base64(indy_proof_req, ident="indy")],
+            proposals_attach=[
+                AttachDecorator.data_base64(indy_proof_req, ident="indy")
+            ],
         )
         pres_request = V20PresRequest(
             formats=[
@@ -1138,7 +1144,9 @@ class TestV20PresManager(AsyncTestCase):
                     ],
                 )
             ],
-            proposal_attach=[AttachDecorator.data_base64(indy_proof_req, ident="indy")],
+            proposals_attach=[
+                AttachDecorator.data_base64(indy_proof_req, ident="indy")
+            ],
         )
         pres_request = V20PresRequest(
             formats=[
@@ -1237,7 +1245,9 @@ class TestV20PresManager(AsyncTestCase):
                     ],
                 )
             ],
-            proposal_attach=[AttachDecorator.data_base64(indy_proof_req, ident="indy")],
+            proposals_attach=[
+                AttachDecorator.data_base64(indy_proof_req, ident="indy")
+            ],
         )
         pres_request = V20PresRequest(
             formats=[
@@ -1295,7 +1305,9 @@ class TestV20PresManager(AsyncTestCase):
                     ],
                 )
             ],
-            proposal_attach=[AttachDecorator.data_base64(indy_proof_req, ident="indy")],
+            proposals_attach=[
+                AttachDecorator.data_base64(indy_proof_req, ident="indy")
+            ],
         )
         pres_request = V20PresRequest(
             formats=[
@@ -1351,7 +1363,9 @@ class TestV20PresManager(AsyncTestCase):
                     ],
                 )
             ],
-            proposal_attach=[AttachDecorator.data_base64(indy_proof_req, ident="indy")],
+            proposals_attach=[
+                AttachDecorator.data_base64(indy_proof_req, ident="indy")
+            ],
         )
         pres_request = V20PresRequest(
             formats=[
@@ -1407,7 +1421,9 @@ class TestV20PresManager(AsyncTestCase):
                     ],
                 )
             ],
-            proposal_attach=[AttachDecorator.data_base64(indy_proof_req, ident="indy")],
+            proposals_attach=[
+                AttachDecorator.data_base64(indy_proof_req, ident="indy")
+            ],
         )
         pres_request = V20PresRequest(
             formats=[

@@ -603,7 +603,7 @@ class V20PresManager:
                     session, {"thread_id": thread_id}, conn_id_filter
                 )
             except StorageNotFoundError:
-                # Proof req not bound to any connection: request_attach in OOB message
+                # Proof req not bound to any connection: requests_attach in OOB msg
                 pres_ex_record = await V20PresExRecord.retrieve_by_tag_filter(
                     session, {"thread_id": thread_id}, None
                 )

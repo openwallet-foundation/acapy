@@ -37,7 +37,7 @@ class V20PresProposal(AgentMessage):
         *,
         comment: str = None,
         formats: Sequence[V20PresFormat] = None,
-        proposal_attach: Sequence[AttachDecorator] = None,
+        proposals_attach: Sequence[AttachDecorator] = None,
         **kwargs,
     ):
         """
@@ -46,12 +46,12 @@ class V20PresProposal(AgentMessage):
         Args:
             comment: optional human-readable comment
             formats: acceptable attachment formats
-            proposal_attach: proposal attachments specifying criteria by format
+            proposals_attach: proposal attachments specifying criteria by format
         """
         super().__init__(_id, **kwargs)
         self.comment = comment
         self.formats = list(formats) if formats else []
-        self.proposal_attach = list(proposal_attach) if proposal_attach else []
+        self.proposals_attach = list(proposals_attach) if proposals_attach else []
 
     def attachment(self, fmt: V20PresFormat.Format = None) -> dict:
         """
@@ -66,7 +66,7 @@ class V20PresProposal(AgentMessage):
                 fmt or V20PresFormat.Format.get(self.formats[0].format)
             ).get_attachment_data(
                 self.formats,
-                self.proposal_attach,
+                self.proposals_attach,
             )
             if self.formats
             else None
@@ -89,11 +89,11 @@ class V20PresProposalSchema(AgentMessageSchema):
         required=True,
         descrption="Acceptable attachment formats",
     )
-    proposal_attach = fields.Nested(
+    proposals_attach = fields.Nested(
         AttachDecoratorSchema,
         many=True,
         required=True,
-        data_key="proposal~attach",
+        data_key="proposals~attach",
         description="Attachment per acceptable format on corresponding identifier",
     )
 
@@ -109,7 +109,7 @@ class V20PresProposalSchema(AgentMessageSchema):
             raise ValidationError(f"No attachment for attach_id {attach_id} in formats")
 
         formats = data.get("formats") or []
-        attachments = data.get("proposal_attach") or []
+        attachments = data.get("proposals_attach") or []
         if len(formats) != len(attachments):
             raise ValidationError("Formats/attachments length mismatch")
 
