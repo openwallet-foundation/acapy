@@ -1209,7 +1209,7 @@ async def credential_exchange_issue(request: web.BaseRequest):
             comment=comment,
         )
 
-        result = _get_result_with_details(context.profile, cred_ex_record)
+        result = await _get_result_with_details(context.profile, cred_ex_record)
 
     except (BaseModelError, V20CredManagerError, IndyIssuerError, StorageError) as err:
         await internal_error(
@@ -1284,7 +1284,7 @@ async def credential_exchange_store(request: web.BaseRequest):
             cred_id,
         )
 
-        result = _get_result_with_details(context.profile, cred_ex_record)
+        result = await _get_result_with_details(context.profile, cred_ex_record)
 
     except (StorageError, V20CredManagerError, BaseModelError) as err:
         await internal_error(

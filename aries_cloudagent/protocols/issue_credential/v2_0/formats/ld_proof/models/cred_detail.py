@@ -104,3 +104,9 @@ class LDProofVCDetail:
         schema = LDProofVCDetailSchema()
         detail: dict = schema.dump(copy.deepcopy(self))
         return detail
+
+    def __eq__(self, other: object) -> bool:
+        """Comparison between linked data vc details."""
+        if isinstance(other, LDProofVCDetail):
+            return self.credential == other.credential and self.options == other.options
+        return False
