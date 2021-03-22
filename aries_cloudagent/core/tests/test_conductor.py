@@ -127,6 +127,24 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             mock_inbound_mgr.return_value.stop.assert_awaited_once_with()
             mock_outbound_mgr.return_value.stop.assert_awaited_once_with()
 
+    async def test_startup_admin_server_x(self):
+        builder: ContextBuilder = StubContextBuilder(self.test_settings_admin)
+        conductor = test_module.Conductor(builder)
+
+        with async_mock.patch.object(
+            test_module, "InboundTransportManager", autospec=True
+        ) as mock_inbound_mgr, async_mock.patch.object(
+            test_module, "OutboundTransportManager", autospec=True
+        ) as mock_outbound_mgr, async_mock.patch.object(
+            test_module, "LoggingConfigurator", autospec=True
+        ) as mock_logger, async_mock.patch.object(
+            test_module, "AdminServer", async_mock.MagicMock()
+        ) as mock_admin_server:
+
+            mock_admin_server.side_effect = ValueError()
+            with self.assertRaises(ValueError):
+                await conductor.setup()
+
     async def test_startup_no_public_did(self):
         builder: ContextBuilder = StubContextBuilder(self.test_settings)
         conductor = test_module.Conductor(builder)
@@ -389,6 +407,25 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
                 )
                 await conductor.queue_outbound(conductor.root_profile, message)
                 mock_run_task.assert_called_once()
+
+    async def test_handle_outbound_queue(self):
+        builder: ContextBuilder = StubContextBuilder(self.test_settings)
+        conductor = test_module.Conductor(builder)
+
+        payload = "{}"
+        message = OutboundMessage(
+            payload=payload,
+            connection_id="dummy-conn-id",
+            target=async_mock.MagicMock(),
+            reply_to_verkey=TestDIDs.test_verkey,
+        )
+
+        await conductor.setup()
+        conductor.outbound_queue = async_mock.MagicMock(
+            enqueue_message=async_mock.CoroutineMock()
+        )
+
+        await conductor.queue_outbound(conductor.root_profile, message)
 
     async def test_handle_not_returned_ledger_x(self):
         builder: ContextBuilder = StubContextBuilder(self.test_settings_admin)
