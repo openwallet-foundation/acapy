@@ -269,7 +269,7 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
             # so maybe do partial check?
             # e.g. options.challenge may be filled in request
             # OR credentialSubject.id
-            # TODO: Send problem report if no match?s
+            # TODO: Send problem report if no match?
             assert cred_offer_detail == cred_request_detail
 
     async def issue_credential(
@@ -295,7 +295,6 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
             purpose=proof_purpose,
         )
 
-        self.validate_fields(CRED_20_ISSUE, vc)
         return self.get_format_data(CRED_20_ISSUE, vc)
 
     async def receive_credential(
@@ -312,29 +311,27 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
             cred_ex_record.cred_issue
         ).attachment(self.format)
 
-        credential = VerifiableCredential.deserialize(cred_dict)
-
         async with self.profile.session() as session:
             wallet = session.inject(BaseWallet)
 
-            # TODO: better way to get suite
-            # (possibly combine with creating issuer suite)
-            suite = Ed25519Signature2018(
-                key_pair=Ed25519WalletKeyPair(wallet=wallet),
-            )
+            # TODO: extract to suite provider or something
+            suites = [
+                Ed25519Signature2018(
+                    key_pair=Ed25519WalletKeyPair(wallet=wallet),
+                )
+            ]
 
             result = await verify_credential(
-                credential=credential,
-                suite=suite,
-                document_loader=default_document_loader,
+                credential=cred_dict,
+                suites=suites,
+                document_loader=get_default_document_loader(self.profile),
             )
 
-            if not result.get("verified"):
-                raise V20CredFormatError(
-                    f"Received invalid credential: {result}",
-                )
+            if not result.verified:
+                raise V20CredFormatError(f"Received invalid credential: {result}")
 
             vc_holder = session.inject(VCHolder)
+            credential = VerifiableCredential.deserialize(cred_dict)
 
             # TODO: tags
             vc_record = VCRecord(

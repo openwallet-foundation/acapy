@@ -97,6 +97,8 @@ class DIDMethod(Enum):
             if method == did_method.method_name:
                 return did_method
 
+        return None
+
 
 class PackMessageSchema(Schema):
     """Packed message schema."""
