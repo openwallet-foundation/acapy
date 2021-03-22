@@ -1,39 +1,54 @@
+import uuid
+
+from aiohttp import web
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
+
+from .....cache.base import BaseCache
+from .....cache.in_memory import InMemoryCache
+from .....connections.models.conn_record import ConnRecord
 from .....core.in_memory import InMemoryProfile
-from .....wallet.in_memory import InMemoryWallet
+from .....storage.error import StorageNotFoundError
 
 from ..manager import TransactionManager, TransactionManagerError
 from ..models.transaction_record import TransactionRecord
-from .....connections.models.conn_record import ConnRecord
 from ..messages.messages_attach import MessagesAttach
+from ..transaction_jobs import TransactionJob
 
 from ..messages.transaction_request import TransactionRequest
-import uuid
 
 
 class TestTransactionManager(AsyncTestCase):
     async def setUp(self):
-
         self.session = InMemoryProfile.test_session()
 
-        self.test_messages_attach = """{
-	                                    "endorser": "DJGEjaMunDtFtBVrn1qJMT",
-	                                    "identifier": "C3nJhruVc7feyB6ckJwhi2",
-	                                    "operation": {
-		                                                "data": {
-			                                                    "attr_names": ["score"],
-			                                                    "name": "prefs",
-			                                                    "version": "1.0"
-		                                                        },
-		                                                "type": "101"
-	                                                },
-	                                    "protocolVersion": 2,
-	                                    "reqId": 1613463373859595201,
-	                                    "signatures": {
-		                                                "C3nJhruVc7feyB6ckJwhi2": "2iNTeFy44WK9zpsPfcwfu489aHWroYh3v8mme9tPyNKncrk1tVbWKNU4zFvLAbSBwHWxShQSJrhRgoxwaehCaz2j"
-	                                                  }
-                                    }"""
+        sigs = [
+            (
+                "2iNTeFy44WK9zpsPfcwfu489aHWroYh3v8mme9tPyNKn"
+                "crk1tVbWKNU4zFvLAbSBwHWxShQSJrhRgoxwaehCaz2j"
+            ),
+            (
+                "3hPr2WgAixcXQRQfCZKnmpY7SkQyQW4cegX7QZMPv6Fv"
+                "sNRFV7yW21VaFC5CA3Aze264dkHjX4iZ1495am8fe1qZ"
+            ),
+        ]
+        self.test_messages_attach = f"""{{
+            "endorser": "DJGEjaMunDtFtBVrn1qJMT",
+            "identifier": "C3nJhruVc7feyB6ckJwhi2",
+            "operation": {{
+                "data": {{
+                    "attr_names": ["score"],
+                    "name": "prefs",
+                    "version": "1.0"
+                }},
+                "type": "101"
+            }},
+            "protocolVersion": 2,
+            "reqId": 1613463373859595201,
+            "signatures": {{
+                "C3nJhruVc7feyB6ckJwhi2": {sigs[0]}
+            }}
+        }}"""
 
         self.test_expires_time = "1597708800"
         self.test_connection_id = "3fa85f64-5717-4562-b3fc-2c963f66afa6"
@@ -41,43 +56,43 @@ class TestTransactionManager(AsyncTestCase):
         self.test_author_transaction_id = "3fa85f64-5717-4562-b3fc-2c963f66afa7"
         self.test_endorser_transaction_id = "3fa85f64-5717-4562-b3fc-2c963f66afa8"
 
-        self.test_endorsed_message = """{
-	                                    "endorser": "DJGEjaMunDtFtBVrn1qJMT",
-	                                    "identifier": "C3nJhruVc7feyB6ckJwhi2",
-	                                    "operation": {
-		                                                "data": {
-			                                                    "attr_names": ["score"],
-			                                                    "name": "prefs",
-			                                                    "version": "1.0"
-		                                                        },
-		                                                "type": "101"
-	                                                },
-	                                    "protocolVersion": 2,
-	                                    "reqId": 1613463373859595201,
-	                                    "signatures": {
-		                                                "C3nJhruVc7feyB6ckJwhi2": "2iNTeFy44WK9zpsPfcwfu489aHWroYh3v8mme9tPyNKncrk1tVbWKNU4zFvLAbSBwHWxShQSJrhRgoxwaehCaz2j",
-		                                                "DJGEjaMunDtFtBVrn1qJMT": "3hPr2WgAixcXQRQfCZKnmpY7SkQyQW4cegX7QZMPv6FvsNRFV7yW21VaFC5CA3Aze264dkHjX4iZ1495am8fe1qZ"
-	                                                  }
-                                    }"""
+        self.test_endorsed_message = f"""{{
+            "endorser": "DJGEjaMunDtFtBVrn1qJMT",
+            "identifier": "C3nJhruVc7feyB6ckJwhi2",
+            "operation": {{
+                "data": {{
+                    "attr_names": ["score"],
+                    "name": "prefs",
+                    "version": "1.0"
+                }},
+                "type": "101"
+            }},
+            "protocolVersion": 2,
+            "reqId": 1613463373859595201,
+            "signatures": {{
+                "C3nJhruVc7feyB6ckJwhi2": {sigs[0]},
+                "DJGEjaMunDtFtBVrn1qJMT": {sigs[1]}
+            }}
+        }}"""
 
-        self.test_signature = """{
-	                                    "endorser": "DJGEjaMunDtFtBVrn1qJMT",
-	                                    "identifier": "C3nJhruVc7feyB6ckJwhi2",
-	                                    "operation": {
-		                                                "data": {
-			                                                    "attr_names": ["score"],
-			                                                    "name": "prefs",
-			                                                    "version": "1.0"
-		                                                        },
-		                                                "type": "101"
-	                                                },
-	                                    "protocolVersion": 2,
-	                                    "reqId": 1613463373859595201,
-	                                    "signatures": {
-		                                                "C3nJhruVc7feyB6ckJwhi2": "2iNTeFy44WK9zpsPfcwfu489aHWroYh3v8mme9tPyNKncrk1tVbWKNU4zFvLAbSBwHWxShQSJrhRgoxwaehCaz2j",
-		                                                "DJGEjaMunDtFtBVrn1qJMT": "3hPr2WgAixcXQRQfCZKnmpY7SkQyQW4cegX7QZMPv6FvsNRFV7yW21VaFC5CA3Aze264dkHjX4iZ1495am8fe1qZ"
-	                                                  }
-                                    }"""
+        self.test_signature = f"""{{
+            "endorser": "DJGEjaMunDtFtBVrn1qJMT",
+            "identifier": "C3nJhruVc7feyB6ckJwhi2",
+            "operation": {{
+                "data": {{
+                    "attr_names": ["score"],
+                    "name": "prefs",
+                    "version": "1.0"
+                }},
+                "type": "101"
+            }},
+            "protocolVersion": 2,
+            "reqId": 1613463373859595201,
+            "signatures": {{
+                "C3nJhruVc7feyB6ckJwhi2": {sigs[0]},
+                "DJGEjaMunDtFtBVrn1qJMT": {sigs[1]}
+            }}
+        }}"""
         self.test_endorser_did = "DJGEjaMunDtFtBVrn1qJMT"
         self.test_endorser_verkey = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
         self.test_refuser_did = "AGDEjaMunDtFtBVrn1qPKQ"
@@ -86,8 +101,12 @@ class TestTransactionManager(AsyncTestCase):
 
         assert self.manager.session
 
-    async def test_create_record(self):
+    async def test_transaction_jobs(self):
+        author = TransactionJob.TRANSACTION_AUTHOR
+        endorser = TransactionJob.TRANSACTION_ENDORSER
+        assert author != endorser
 
+    async def test_create_record(self):
         with async_mock.patch.object(
             TransactionRecord, "save", autospec=True
         ) as save_record:
@@ -114,8 +133,26 @@ class TestTransactionManager(AsyncTestCase):
                 transaction_record.state == TransactionRecord.STATE_TRANSACTION_CREATED
             )
 
-    async def test_create_request_bad_state(self):
+    async def test_txn_rec_retrieve_by_connection_and_thread_caching(self):
+        async with self.session.profile.session() as sesn:
+            sesn.context.injector.bind_instance(BaseCache, InMemoryCache())
+            txn_rec = TransactionRecord(
+                connection_id="123",
+                thread_id="456",
+            )
+            await txn_rec.save(self.session)
+            await TransactionRecord.retrieve_by_connection_and_thread(
+                session=sesn,
+                connection_id="123",
+                thread_id="456",
+            )  # set in cache
+            await TransactionRecord.retrieve_by_connection_and_thread(
+                session=sesn,
+                connection_id="123",
+                thread_id="456",
+            )  # get from cache
 
+    async def test_create_request_bad_state(self):
         transaction_record = await self.manager.create_record(
             messages_attach=self.test_messages_attach,
             expires_time=self.test_expires_time,
@@ -128,7 +165,6 @@ class TestTransactionManager(AsyncTestCase):
             )
 
     async def test_create_request(self):
-
         transaction_record = await self.manager.create_record(
             messages_attach=self.test_messages_attach,
             expires_time=self.test_expires_time,
@@ -167,7 +203,6 @@ class TestTransactionManager(AsyncTestCase):
         )
 
     async def test_recieve_request(self):
-
         mock_request = async_mock.MagicMock()
         mock_request.transaction_id = self.test_author_transaction_id
         mock_request.signature_request = {
@@ -205,7 +240,6 @@ class TestTransactionManager(AsyncTestCase):
         assert transaction_record.state == TransactionRecord.STATE_REQUEST_RECEIVED
 
     async def test_create_endorse_response_bad_state(self):
-
         transaction_record = await self.manager.create_record(
             messages_attach=self.test_messages_attach,
             expires_time=self.test_expires_time,
@@ -223,7 +257,6 @@ class TestTransactionManager(AsyncTestCase):
             )
 
     async def test_create_endorse_response(self):
-
         transaction_record = await self.manager.create_record(
             messages_attach=self.test_messages_attach,
             expires_time=self.test_expires_time,
@@ -283,7 +316,6 @@ class TestTransactionManager(AsyncTestCase):
         assert endorsed_transaction_response.endorser_did == self.test_endorser_did
 
     async def test_receive_endorse_response(self):
-
         transaction_record = await self.manager.create_record(
             messages_attach=self.test_messages_attach,
             expires_time=self.test_expires_time,
@@ -327,8 +359,22 @@ class TestTransactionManager(AsyncTestCase):
             transaction_record.messages_attach[0]["data"]["json"] == self.test_signature
         )
 
-    async def test_create_refuse_response_bad_state(self):
+    async def test_complete_transaction(self):
+        transaction_record = await self.manager.create_record(
+            messages_attach=self.test_messages_attach,
+            expires_time=self.test_expires_time,
+        )
+        with async_mock.patch.object(
+            TransactionRecord, "save", autospec=True
+        ) as save_record:
+            transaction_record = await self.manager.complete_transaction(
+                transaction_record
+            )
+            save_record.assert_called_once()
 
+        assert transaction_record.state == TransactionRecord.STATE_TRANSACTION_COMPLETED
+
+    async def test_create_refuse_response_bad_state(self):
         transaction_record = await self.manager.create_record(
             messages_attach=self.test_messages_attach,
             expires_time=self.test_expires_time,
@@ -343,7 +389,6 @@ class TestTransactionManager(AsyncTestCase):
             )
 
     async def test_create_refuse_response(self):
-
         transaction_record = await self.manager.create_record(
             messages_attach=self.test_messages_attach,
             expires_time=self.test_expires_time,
@@ -392,7 +437,6 @@ class TestTransactionManager(AsyncTestCase):
         assert refused_transaction_response.endorser_did == self.test_refuser_did
 
     async def test_receive_refuse_response(self):
-
         transaction_record = await self.manager.create_record(
             messages_attach=self.test_messages_attach,
             expires_time=self.test_expires_time,
@@ -430,7 +474,6 @@ class TestTransactionManager(AsyncTestCase):
         assert transaction_record.thread_id == self.test_endorser_transaction_id
 
     async def test_cancel_transaction_bad_state(self):
-
         transaction_record = await self.manager.create_record(
             messages_attach=self.test_messages_attach,
             expires_time=self.test_expires_time,
@@ -444,7 +487,6 @@ class TestTransactionManager(AsyncTestCase):
             )
 
     async def test_cancel_transaction(self):
-
         transaction_record = await self.manager.create_record(
             messages_attach=self.test_messages_attach,
             expires_time=self.test_expires_time,
@@ -475,7 +517,6 @@ class TestTransactionManager(AsyncTestCase):
         )
 
     async def test_receive_cancel_transaction(self):
-
         author_transaction_record = await self.manager.create_record(
             messages_attach=self.test_messages_attach,
             expires_time=self.test_expires_time,
@@ -509,7 +550,6 @@ class TestTransactionManager(AsyncTestCase):
         )
 
     async def test_transaction_resend_bad_state(self):
-
         transaction_record = await self.manager.create_record(
             messages_attach=self.test_messages_attach,
             expires_time=self.test_expires_time,
@@ -523,7 +563,6 @@ class TestTransactionManager(AsyncTestCase):
             )
 
     async def test_transaction_resend(self):
-
         transaction_record = await self.manager.create_record(
             messages_attach=self.test_messages_attach,
             expires_time=self.test_expires_time,
@@ -552,7 +591,6 @@ class TestTransactionManager(AsyncTestCase):
         )
 
     async def test_receive_transaction_resend(self):
-
         author_transaction_record = await self.manager.create_record(
             messages_attach=self.test_messages_attach,
             expires_time=self.test_expires_time,
@@ -584,3 +622,49 @@ class TestTransactionManager(AsyncTestCase):
             endorser_transaction_record.state
             == TransactionRecord.STATE_TRANSACTION_RESENT_RECEIEVED
         )
+
+    async def test_set_transaction_my_job(self):
+        conn_record = async_mock.MagicMock(
+            metadata_get=async_mock.CoroutineMock(
+                side_effect=[
+                    None,
+                    {"meta": "data"},
+                ]
+            ),
+            metadata_set=async_mock.CoroutineMock(),
+        )
+
+        for i in range(2):
+            await self.manager.set_transaction_my_job(conn_record, "Hello")
+
+    async def test_set_transaction_their_job(self):
+        mock_job = async_mock.MagicMock()
+        mock_receipt = async_mock.MagicMock()
+
+        with async_mock.patch.object(
+            ConnRecord, "retrieve_by_did", async_mock.CoroutineMock()
+        ) as mock_retrieve:
+            mock_retrieve.return_value = async_mock.MagicMock(
+                metadata_get=async_mock.CoroutineMock(
+                    side_effect=[
+                        None,
+                        {"meta": "data"},
+                    ]
+                ),
+                metadata_set=async_mock.CoroutineMock(),
+            )
+
+            for i in range(2):
+                await self.manager.set_transaction_their_job(mock_job, mock_receipt)
+
+    async def test_set_transaction_their_job_conn_not_found(self):
+        mock_job = async_mock.MagicMock()
+        mock_receipt = async_mock.MagicMock()
+
+        with async_mock.patch.object(
+            ConnRecord, "retrieve_by_did", async_mock.CoroutineMock()
+        ) as mock_retrieve:
+            mock_retrieve.side_effect = StorageNotFoundError()
+
+            with self.assertRaises(web.HTTPNotFound):
+                await self.manager.set_transaction_their_job(mock_job, mock_receipt)

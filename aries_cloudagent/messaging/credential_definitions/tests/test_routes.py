@@ -24,10 +24,14 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
         self.ledger = async_mock.create_autospec(BaseLedger)
         self.ledger.__aenter__ = async_mock.CoroutineMock(return_value=self.ledger)
         self.ledger.create_and_send_credential_definition = async_mock.CoroutineMock(
-            return_value=(CRED_DEF_ID, {"cred": "def"}, True)
+            return_value=(
+                CRED_DEF_ID,
+                {"cred": "def", "signed_txn": "..."},
+                True,
+            )
         )
         self.ledger.get_credential_definition = async_mock.CoroutineMock(
-            return_value={"cred": "def"}
+            return_value={"cred": "def", "signed_txn": "..."}
         )
         self.profile_injector.bind_instance(BaseLedger, self.ledger)
 
@@ -246,6 +250,62 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
                     self.request
                 )
 
+    async def test_send_credential_definition_no_auto_endorse(self):
+        self.request.json = async_mock.CoroutineMock(
+            return_value={
+                "schema_id": "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0",
+                "support_revocation": False,
+                "tag": "tag",
+            }
+        )
+
+        self.request.query = {"auto_endorse": "false"}
+
+        with async_mock.patch.object(
+            test_module, "TransactionManager", async_mock.MagicMock()
+        ) as mock_txn_mgr, async_mock.patch.object(
+            test_module.web, "json_response", async_mock.MagicMock()
+        ) as mock_response:
+            mock_txn_mgr.return_value = async_mock.MagicMock(
+                create_record=async_mock.CoroutineMock(
+                    return_value=async_mock.MagicMock(
+                        serialize=async_mock.MagicMock(return_value={"...": "..."})
+                    )
+                )
+            )
+            result = (
+                await test_module.credential_definitions_send_credential_definition(
+                    self.request
+                )
+            )
+            assert result == mock_response.return_value
+            mock_response.assert_called_once_with({"...": "..."})
+
+    async def test_send_credential_definition_no_auto_endorse_storage_x(self):
+        self.request.json = async_mock.CoroutineMock(
+            return_value={
+                "schema_id": "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0",
+                "support_revocation": False,
+                "tag": "tag",
+            }
+        )
+
+        self.request.query = {"auto_endorse": "false"}
+
+        with async_mock.patch.object(
+            test_module, "TransactionManager", async_mock.MagicMock()
+        ) as mock_txn_mgr:
+            mock_txn_mgr.return_value = async_mock.MagicMock(
+                create_record=async_mock.CoroutineMock(
+                    side_effect=test_module.StorageError()
+                )
+            )
+
+            with self.assertRaises(test_module.web.HTTPBadRequest):
+                await test_module.credential_definitions_send_credential_definition(
+                    self.request
+                )
+
     async def test_send_credential_definition_no_ledger(self):
         self.request.json = async_mock.CoroutineMock(
             return_value={
@@ -300,7 +360,7 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
             )
             assert result == mock_response.return_value
             mock_response.assert_called_once_with(
-                {"credential_definition": {"cred": "def"}}
+                {"credential_definition": {"cred": "def", "signed_txn": "..."}}
             )
 
     async def test_get_credential_definition_no_ledger(self):

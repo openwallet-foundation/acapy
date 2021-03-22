@@ -20,6 +20,7 @@ from ...indy.issuer import IndyIssuer, IndyIssuerError
 from ...ledger.base import BaseLedger
 from ...ledger.error import LedgerError
 from ...storage.base import BaseStorage
+from ...storage.error import StorageError
 from ..models.openapi import OpenAPISchema
 from ..valid import B58, NATURAL_NUM, INDY_SCHEMA_ID, INDY_VERSION
 from .util import SchemaQueryStringSchema, SCHEMA_SENT_RECORD_TYPE, SCHEMA_TAGS
@@ -178,11 +179,13 @@ async def schemas_send_schema(request: web.BaseRequest):
         session = await context.session()
 
         transaction_mgr = TransactionManager(session)
-
-        transaction = await transaction_mgr.create_record(
-            messages_attach=schema_def["signed_txn"],
-            expires_time="1597708800",
-        )
+        try:
+            transaction = await transaction_mgr.create_record(
+                messages_attach=schema_def["signed_txn"],
+                expires_time="1597708800",
+            )
+        except StorageError as err:
+            raise web.HTTPBadRequest(reason=err.roll_up) from err
 
         return web.json_response(transaction.serialize())
 
