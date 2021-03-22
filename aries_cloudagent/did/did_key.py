@@ -142,7 +142,7 @@ def construct_did_signature_key_base(
     """
 
     return {
-        "@context": "https://w3id.org/did/v1",
+        "@context": "https://www.w3.org/ns/did/v1",
         "id": id,
         "verificationMethod": [verification_method],
         "authentication": [key_id],

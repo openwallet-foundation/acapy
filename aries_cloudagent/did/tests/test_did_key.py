@@ -59,7 +59,7 @@ class TestDIDKey(TestCase):
 
         # resolved using uniresolver, updated to did v1
         expected = {
-            "@context": "https://w3id.org/did/v1",
+            "@context": "https://www.w3.org/ns/did/v1",
             "id": "did:key:z6MkmjY8GnV5i9YTDtPETC2uUAW6ejw3nk5mXF5yci5ab7th",
             "verificationMethod": [
                 {

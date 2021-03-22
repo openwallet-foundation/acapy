@@ -166,6 +166,9 @@ async def verify_presentation(
             indicates whether the verification was successful
     """
 
+    # TODO: I think we should add some sort of options to authenticate the subject id
+    # to the presentation verification method controller
+
     try:
         return await _verify_presentation(
             presentation=presentation,

@@ -2,7 +2,7 @@
 
 SECURITY_V1_URL = "https://w3id.org/security/v1"
 SECURITY_V2_URL = "https://w3id.org/security/v2"
-DID_V1_URL = "https://w3id.org/did/v1"
+DID_V1_URL = "https://www.w3.org/ns/did/v1"
 CREDENTIALS_ISSUER_URL = "https://www.w3.org/2018/credentials#issuer"
 CREDENTIALS_V1_URL = "https://www.w3.org/2018/credentials/v1"
 VERIFIABLE_CREDENTIAL_TYPE = "VerifiableCredential"

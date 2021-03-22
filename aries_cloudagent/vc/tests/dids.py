@@ -1,5 +1,5 @@
 DID_z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL = {
-    "@context": "https://w3id.org/did/v1",
+    "@context": "https://www.w3.org/ns/did/v1",
     "id": "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
     "verificationMethod": [
         {
