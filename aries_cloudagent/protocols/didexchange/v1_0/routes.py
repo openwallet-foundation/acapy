@@ -17,7 +17,7 @@ from ....admin.request_context import AdminRequestContext
 from ....connections.models.conn_record import ConnRecord, ConnRecordSchema
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
-from ....messaging.valid import ENDPOINT, INDY_DID, UUIDFour, UUID4
+from ....messaging.valid import DID, ENDPOINT, UUIDFour, UUID4
 from ....storage.error import StorageError, StorageNotFoundError
 from ....wallet.error import WalletError
 
@@ -42,7 +42,7 @@ class DIDXCreateRequestImplicitQueryStringSchema(OpenAPISchema):
         required=True,
         allow_none=False,
         description="Public DID to which to request connection",
-        **INDY_DID,
+        **DID,
     )
     my_endpoint = fields.Str(description="My URL endpoint", required=False, **ENDPOINT)
     my_label = fields.Str(

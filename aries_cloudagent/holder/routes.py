@@ -3,7 +3,13 @@
 import json
 
 from aiohttp import web
-from aiohttp_apispec import docs, match_info_schema, querystring_schema, response_schema
+from aiohttp_apispec import (
+    docs,
+    match_info_schema,
+    querystring_schema,
+    request_schema,
+    response_schema,
+)
 from marshmallow import fields
 
 from ..admin.request_context import AdminRequestContext
@@ -12,6 +18,7 @@ from ..ledger.base import BaseLedger
 from ..ledger.error import LedgerError
 from ..messaging.models.openapi import OpenAPISchema
 from ..messaging.valid import (
+    ENDPOINT,
     INDY_CRED_DEF_ID,
     INDY_CRED_REV_ID,
     INDY_REV_REG_ID,
@@ -21,6 +28,9 @@ from ..messaging.valid import (
     NUM_STR_WHOLE,
     UUIDFour,
 )
+from ..storage.error import StorageError, StorageNotFoundError
+from ..storage.vc_holder.base import VCHolder
+from ..storage.vc_holder.vc_record import VCRecordSchema
 from ..wallet.error import WalletNotFoundError
 
 
@@ -33,7 +43,7 @@ class AttributeMimeTypesResultSchema(OpenAPISchema):
 
 
 class CredBriefSchema(OpenAPISchema):
-    """Result schema with credential brief for a credential query."""
+    """Result schema with credential brief for credential query."""
 
     referent = fields.Str(description="Credential referent", example=UUIDFour.EXAMPLE)
     attrs = fields.Dict(
@@ -54,7 +64,7 @@ class CredBriefSchema(OpenAPISchema):
 
 
 class CredBriefListSchema(OpenAPISchema):
-    """Result schema for a credential query."""
+    """Result schema for credential query."""
 
     results = fields.List(fields.Nested(CredBriefSchema()))
 
@@ -77,6 +87,55 @@ class CredentialsListQueryStringSchema(OpenAPISchema):
         required=False,
         **INDY_WQL,
     )
+
+
+class DIFCredentialsListRequestSchema(OpenAPISchema):
+    """Parameters and validators for DIF credentials request."""
+
+    contexts = fields.List(
+        fields.Str(
+            description="Credential context to match",
+            **ENDPOINT,
+        ),
+        required=False,
+    )
+    types = fields.List(
+        fields.Str(
+            description="Credential type to match",
+            **ENDPOINT,
+        ),
+        required=False,
+    )
+    schema_ids = fields.List(
+        fields.Str(
+            description="Credential schema identifier to match",
+            **ENDPOINT,
+        ),
+        required=False,
+    )
+    issuer_id = fields.Str(
+        required=False,
+        description="Credential issuer identifier to match",
+    )
+    subject_id = fields.Str(
+        required=False,
+        description="Subject identifier to match",
+    )
+    tag_query = fields.Dict(
+        keys=fields.Str(description="Tag name"),
+        values=fields.Str(description="Tag value"),
+        required=False,
+        description="Tag filter",
+    )
+    max_results = fields.Int(
+        strict=True, description="Maximum number of results to return", required=False
+    )
+
+
+class VCRecordListSchema(OpenAPISchema):
+    """Result schema for DIF credential query."""
+
+    results = fields.List(fields.Nested(VCRecordSchema()))
 
 
 class CredIdMatchInfoSchema(OpenAPISchema):
@@ -109,25 +168,24 @@ class CredRevokedResultSchema(OpenAPISchema):
     revoked = fields.Bool(description="Whether credential is revoked on the ledger")
 
 
-@docs(tags=["credentials"], summary="Fetch a credential from wallet by id")
+@docs(tags=["credentials"], summary="Fetch credential from wallet by id")
 @match_info_schema(CredIdMatchInfoSchema())
 @response_schema(CredBriefSchema(), 200, description="")
 async def credentials_get(request: web.BaseRequest):
     """
-    Request handler for retrieving a credential.
+    Request handler for retrieving credential.
 
     Args:
         request: aiohttp request object
 
     Returns:
-        The credential response
+        The credential brief
 
     """
     context: AdminRequestContext = request["context"]
-
     credential_id = request.match_info["credential_id"]
-
     session = await context.session()
+
     holder = session.inject(IndyHolder)
     try:
         credential = await holder.get_credential(credential_id)
@@ -150,12 +208,11 @@ async def credentials_revoked(request: web.BaseRequest):
         request: aiohttp request object
 
     Returns:
-        The credential response
+        Empty production
 
     """
     context: AdminRequestContext = request["context"]
     session = await context.session()
-
     credential_id = request.match_info["credential_id"]
     fro = request.query.get("from")
     to = request.query.get("to")
@@ -201,12 +258,12 @@ async def credentials_attr_mime_types_get(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     session = await context.session()
     credential_id = request.match_info["credential_id"]
-    holder = session.inject(IndyHolder)
 
+    holder = session.inject(IndyHolder)
     return web.json_response(await holder.get_mime_type(credential_id))
 
 
-@docs(tags=["credentials"], summary="Remove a credential from the wallet by id")
+@docs(tags=["credentials"], summary="Remove credential from wallet by id")
 @match_info_schema(CredIdMatchInfoSchema())
 @response_schema(HolderModuleResponseSchema(), description="")
 async def credentials_remove(request: web.BaseRequest):
@@ -217,11 +274,10 @@ async def credentials_remove(request: web.BaseRequest):
         request: aiohttp request object
 
     Returns:
-        The connection list response
+        Empty production
 
     """
     context: AdminRequestContext = request["context"]
-
     credential_id = request.match_info["credential_id"]
 
     session = await context.session()
@@ -253,7 +309,6 @@ async def credentials_list(request: web.BaseRequest):
     """
     context: AdminRequestContext = request["context"]
     session = await context.session()
-
     start = request.query.get("start")
     count = request.query.get("count")
 
@@ -274,6 +329,114 @@ async def credentials_list(request: web.BaseRequest):
     return web.json_response({"results": credentials})
 
 
+@docs(
+    tags=["credentials"],
+    summary="Fetch DIF credential from wallet by id",
+)
+@match_info_schema(CredIdMatchInfoSchema())
+@response_schema(VCRecordSchema(), 200, description="")
+async def dif_cred_get(request: web.BaseRequest):
+    """
+    Request handler for retrieving DIF credential.
+
+    Args:
+        request: aiohttp request object
+
+    Returns:
+        Verifiable credential record
+
+    """
+    context: AdminRequestContext = request["context"]
+    credential_id = request.match_info["credential_id"]
+
+    session = await context.session()
+    holder = session.inject(VCHolder)
+    try:
+        vc_record = await holder.retrieve_credential_by_given_id(credential_id)
+    except StorageNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
+    except StorageError as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+    return web.json_response(vc_record)
+
+
+@docs(
+    tags=["credentials"],
+    summary="Remove DIF credential from wallet by id",
+)
+@match_info_schema(CredIdMatchInfoSchema())
+@response_schema(HolderModuleResponseSchema(), 200, description="")
+async def dif_cred_remove(request: web.BaseRequest):
+    """
+    Request handler for deleting DIF credential.
+
+    Args:
+        request: aiohttp request object
+
+    Returns:
+        Empty production
+
+    """
+    context: AdminRequestContext = request["context"]
+    credential_id = request.match_info["credential_id"]
+
+    session = await context.session()
+    holder = session.inject(VCHolder)
+    try:
+        vc_record = await holder.retrieve_credential_by_given_id(credential_id)
+        await holder.delete_credential(vc_record)
+    except StorageNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
+    except StorageError as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+    return web.json_response({})
+
+
+@docs(
+    tags=["credentials"],
+    summary="Fetch DIF credentials from wallet",
+)
+@request_schema(DIFCredentialsListRequestSchema())
+@querystring_schema(CredentialsListQueryStringSchema())
+@response_schema(VCRecordListSchema(), 200, description="")
+async def dif_creds_list(request: web.BaseRequest):
+    """
+    Request handler for searching DIF credential records.
+
+    Args:
+        request: aiohttp request object
+
+    Returns:
+        The credential record list response
+
+    """
+    context: AdminRequestContext = request["context"]
+    session = await context.session()
+    body = await request.json()
+    contexts = body.get("contexts")
+    types = body.get("types")
+    schema_ids = body.get("schema_ids")
+    issuer_id = body.get("issuer_id")
+    subject_id = body.get("subject_id")
+    tag_query = body.get("tag_query")
+    max_results = body.get("max_results")
+
+    holder = session.inject(VCHolder)
+    try:
+        search = holder.search_credentials(
+            contexts, types, schema_ids, issuer_id, subject_id, tag_query
+        )
+        records = await search.fetch(max_results)
+    except StorageNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
+    except StorageError as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+    return web.json_response({"results": records})
+
+
 async def register(app: web.Application):
     """Register routes."""
 
@@ -292,6 +455,13 @@ async def register(app: web.Application):
             ),
             web.delete("/credential/{credential_id}", credentials_remove),
             web.get("/credentials", credentials_list, allow_head=False),
+            web.get(
+                "/credential/dif/{credential_id}",
+                dif_cred_get,
+                allow_head=False,
+            ),
+            web.delete("/credential/dif/{credential_id}", dif_cred_remove),
+            web.get("/credentials/dif", dif_creds_list, allow_head=False),
         ]
     )
 

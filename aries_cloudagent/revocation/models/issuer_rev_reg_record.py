@@ -19,8 +19,8 @@ from ...indy.issuer import IndyIssuer, IndyIssuerError
 from ...messaging.models.base_record import BaseRecord, BaseRecordSchema
 from ...messaging.valid import (
     BASE58_SHA256_HASH,
+    DID,
     INDY_CRED_DEF_ID,
-    INDY_DID,
     INDY_REV_REG_ID,
     UUIDFour,
 )
@@ -419,7 +419,7 @@ class IssuerRevRegRecordSchema(BaseRecordSchema):
         description="Error message",
         example="Revocation registry undefined",
     )
-    issuer_did = fields.Str(required=False, description="Issuer DID", **INDY_DID)
+    issuer_did = fields.Str(required=False, description="Issuer DID", **DID)
     max_cred_num = fields.Int(
         required=False,
         description="Maximum number of credentials for revocation registry",

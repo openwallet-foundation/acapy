@@ -190,18 +190,18 @@ class DIDPosture(OneOf):
         )
 
 
-class IndyDID(Regexp):
-    """Validate value against indy DID."""
+class DecentralizedId(Regexp):
+    """Validate value against DID."""
 
     EXAMPLE = "WgWxqztrNooG92RXvxSTWv"
-    PATTERN = rf"^(did:sov:)?[{B58}]{{21,22}}$"
+    PATTERN = rf"^(did:[^:]+:)?[{B58}]{{21,22}}$"
 
     def __init__(self):
         """Initializer."""
 
         super().__init__(
-            IndyDID.PATTERN,
-            error="Value {input} is not an indy decentralized identifier (DID)",
+            DecentralizedId.PATTERN,
+            error="Value {input} is not a decentralized identifier (DID)",
         )
 
 
@@ -356,11 +356,11 @@ class IndyWQL(Regexp):  # using Regexp brings in nice visual validator cue
         """Validate input value."""
 
         super().__call__(value or "")
-        message = "Value {input} is not a valid WQL query".format(input=value)
+        message = f"Value {value} is not a valid WQL query"
 
         try:
             json.loads(value)
-        except Exception:
+        except (json.JSONDecodeError, TypeError):
             raise ValidationError(message)
 
         return value
@@ -384,11 +384,11 @@ class IndyExtraWQL(Regexp):  # using Regexp brings in nice visual validator cue
         """Validate input value."""
 
         super().__call__(value or "")
-        message = "Value {input} is not a valid extra WQL query".format(input=value)
+        message = f"Value {value} is not a valid extra WQL query"
 
         try:
             json.loads(value)
-        except Exception:
+        except (json.JSONDecodeError, TypeError):
             raise ValidationError(message)
 
         return value
@@ -524,6 +524,31 @@ class EndpointType(OneOf):
         )
 
 
+class JSONDump(Regexp):  # using Regexp brings in nice visual validator cue
+    """Validate value as JSON dump."""
+
+    EXAMPLE = json.dumps({"abc": 123})
+
+    def __init__(self):
+        """Initializer."""
+
+        super().__init__(
+            ".*",
+            error="Value {input} is not a valid WQL query",
+        )
+
+    def __call__(self, value: str):
+        """Validate input value."""
+
+        message = f"Value {value} is not a valid JSON dump"
+        try:
+            json.loads(value)
+        except (json.JSONDecodeError, TypeError):
+            raise ValidationError(message)
+
+        return value
+
+
 # Instances for marshmallow schema specification
 INT_EPOCH = {"validate": IntEpoch(), "example": IntEpoch.EXAMPLE}
 WHOLE_NUM = {"validate": WholeNumber(), "example": WholeNumber.EXAMPLE}
@@ -538,7 +563,7 @@ JWS_HEADER_KID = {"validate": JWSHeaderKid(), "example": JWSHeaderKid.EXAMPLE}
 JWT = {"validate": JSONWebToken(), "example": JSONWebToken.EXAMPLE}
 DID_KEY = {"validate": DIDKey(), "example": DIDKey.EXAMPLE}
 DID_POSTURE = {"validate": DIDPosture(), "example": DIDPosture.EXAMPLE}
-INDY_DID = {"validate": IndyDID(), "example": IndyDID.EXAMPLE}
+DID = {"validate": DecentralizedId(), "example": DecentralizedId.EXAMPLE}
 INDY_RAW_PUBLIC_KEY = {
     "validate": IndyRawPublicKey(),
     "example": IndyRawPublicKey.EXAMPLE,
@@ -566,3 +591,4 @@ BASE58_SHA256_HASH = {
 UUID4 = {"validate": UUIDFour(), "example": UUIDFour.EXAMPLE}
 ENDPOINT = {"validate": Endpoint(), "example": Endpoint.EXAMPLE}
 ENDPOINT_TYPE = {"validate": EndpointType(), "example": EndpointType.EXAMPLE}
+JSON_DUMP = {"validate": JSONDump(), "example": JSONDump.EXAMPLE}

@@ -7,7 +7,7 @@ from .....messaging.decorators.attach_decorator import (
     AttachDecorator,
     AttachDecoratorSchema,
 )
-from .....messaging.valid import INDY_DID
+from .....messaging.valid import DID
 
 from ..message_types import DIDX_RESPONSE, PROTOCOL_PACKAGE
 
@@ -52,7 +52,7 @@ class DIDXResponseSchema(AgentMessageSchema):
         model_class = DIDXResponse
         unknown = EXCLUDE
 
-    did = fields.Str(description="DID of exchange", **INDY_DID)
+    did = fields.Str(description="DID of exchange", **DID)
     did_doc_attach = fields.Nested(
         AttachDecoratorSchema,
         required=False,

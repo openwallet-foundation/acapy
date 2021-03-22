@@ -4,8 +4,8 @@ from marshmallow import fields, validate, validates_schema, ValidationError
 
 from ....messaging.models.openapi import OpenAPISchema
 from ....messaging.valid import (
+    DID,
     INDY_CRED_DEF_ID,
-    INDY_DID,
     INDY_PREDICATE,
     INDY_SCHEMA_ID,
     INDY_VERSION,
@@ -20,7 +20,7 @@ class IndyProofReqPredSpecRestrictionsSchema(OpenAPISchema):
         description="Schema identifier", required=False, **INDY_SCHEMA_ID
     )
     schema_issuer_did = fields.String(
-        description="Schema issuer (origin) DID", required=False, **INDY_DID
+        description="Schema issuer (origin) DID", required=False, **DID
     )
     schema_name = fields.String(
         example="transcript", description="Schema name", required=False
@@ -29,7 +29,7 @@ class IndyProofReqPredSpecRestrictionsSchema(OpenAPISchema):
         description="Schema version", required=False, **INDY_VERSION
     )
     issuer_did = fields.String(
-        description="Credential issuer DID", required=False, **INDY_DID
+        description="Credential issuer DID", required=False, **DID
     )
     cred_def_id = fields.String(
         description="Credential definition identifier",

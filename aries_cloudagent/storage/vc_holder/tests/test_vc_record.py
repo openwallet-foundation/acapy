@@ -1,3 +1,9 @@
+import json
+
+from asynctest import mock as async_mock, TestCase as AsyncTestCase
+
+from ....messaging.models.base import BaseModelError
+
 from ..vc_record import VCRecord
 
 contexts = [
@@ -12,8 +18,8 @@ issuer_id = "https://example.edu/issuers/14"
 subject_ids = ["did:example:ebfeb1f712ebc6f1c276e12ec21"]
 schema_ids = ["https://example.org/examples/degree.json"]
 given_id = "http://example.edu/credentials/3732"
-tags = {"tag": "value"}
-value = "{}"
+cred_tags = {"tag": "value"}
+value_json = json.dumps({})
 
 
 def test_record() -> VCRecord:
@@ -23,13 +29,13 @@ def test_record() -> VCRecord:
         schema_ids=schema_ids,
         issuer_id=issuer_id,
         subject_ids=subject_ids,
-        value=value,
+        value_json=value_json,
         given_id=given_id,
-        tags=tags,
+        cred_tags=cred_tags,
     )
 
 
-class TestVCRecord:
+class TestVCRecord(AsyncTestCase):
     def test_create(self):
         record = test_record()
 
@@ -40,8 +46,8 @@ class TestVCRecord:
         assert record.issuer_id == issuer_id
         assert record.given_id == given_id
         assert record.record_id and type(record.record_id) is str
-        assert record.tags == tags
-        assert record.value == value
+        assert record.cred_tags == cred_tags
+        assert record.value_json == value_json
 
     def test_eq(self):
         record_a = test_record()
@@ -53,3 +59,21 @@ class TestVCRecord:
         assert record_a != object()
         record_b.contexts.clear()
         assert record_a != record_b
+
+        record_a = test_record()
+        record_b = test_record()
+        record_b.record_id = record_a.record_id
+        value = {"a": 0, "b": 1}
+        record_a.value = json.dumps(value, separators=(",", ":"))
+        record_b.value = json.dumps(value, separators=(", ", ": "))
+        assert record_a == record_b
+
+    async def test_serde(self):
+        obj = test_record().serialize()
+        record = VCRecord.deserialize(obj)
+        assert type(record) == VCRecord
+
+        obj_x = test_record()
+        obj_x.cred_tags = -1  # not a dict
+        with self.assertRaises(BaseModelError):
+            obj_x.serialize()

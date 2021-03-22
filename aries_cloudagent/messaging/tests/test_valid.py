@@ -10,13 +10,13 @@ from ..valid import (
     BASE64,
     BASE64URL,
     BASE64URL_NO_PAD,
+    DID,
     DID_KEY,
     DID_POSTURE,
     ENDPOINT,
     ENDPOINT_TYPE,
     INDY_CRED_DEF_ID,
     INDY_CRED_REV_ID,
-    INDY_DID,
     INDY_EXTRA_WQL,
     INDY_ISO8601_DATETIME,
     INDY_PREDICATE,
@@ -27,6 +27,7 @@ from ..valid import (
     INDY_VERSION,
     INDY_WQL,
     INT_EPOCH,
+    JSON_DUMP,
     NATURAL_NUM,
     NUM_STR_NATURAL,
     NUM_STR_WHOLE,
@@ -99,20 +100,20 @@ class TestValid(TestCase):
         INDY_REV_REG_SIZE["validate"](32767)
         INDY_REV_REG_SIZE["validate"](32768)
 
-    def test_indy_did(self):
-        non_indy_dids = [
+    def test_decentralized_id(self):
+        non_dids = [
             "Q4zqM7aXqm7gDQkUVLng9I",  # 'I' not a base58 char
             "Q4zqM7aXqm7gDQkUVLng",  # too short
             "Q4zqM7aXqm7gDQkUVLngZZZ",  # too long
             "did:sov:Q4zqM7aXqm7gDQkUVLngZZZ",  # too long
-            "did:other:Q4zqM7aXqm7gDQkUVLng9h",  # specifies non-indy DID
         ]
-        for non_indy_did in non_indy_dids:
+        for non_did in non_dids:
             with self.assertRaises(ValidationError):
-                INDY_DID["validate"](non_indy_did)
+                DID["validate"](non_did)
 
-        INDY_DID["validate"]("Q4zqM7aXqm7gDQkUVLng9h")  # TODO: accept non-indy dids
-        INDY_DID["validate"]("did:sov:Q4zqM7aXqm7gDQkUVLng9h")
+        DID["validate"]("Q4zqM7aXqm7gDQkUVLng9h")
+        DID["validate"]("did:sov:Q4zqM7aXqm7gDQkUVLng9h")
+        DID["validate"]("did:example:Q4zqM7aXqm7gDQkUVLng9h")
 
     def test_indy_raw_public_key(self):
         non_indy_raw_public_keys = [
@@ -495,3 +496,23 @@ class TestValid(TestCase):
         ENDPOINT_TYPE["validate"]("Endpoint")
         ENDPOINT_TYPE["validate"]("Profile")
         ENDPOINT_TYPE["validate"]("LinkedDomains")
+
+    def test_json_dump(self):
+        non_json_dumps = [
+            "nope",
+            "[a, b, c]",
+            "{1, 2, 3}",
+            set(),
+            None,
+            "",
+            False,
+        ]
+        for non_json_dump in non_json_dumps:
+            with self.assertRaises(ValidationError):
+                JSON_DUMP["validate"](non_json_dump)
+
+        JSON_DUMP["validate"](json.dumps({}))
+        JSON_DUMP["validate"](json.dumps({"a": "1234"}))
+        JSON_DUMP["validate"](json.dumps({"a": "1234", "b": {"$not": "0"}}))
+        JSON_DUMP["validate"](json.dumps(["zero", "one", "two"]))
+        JSON_DUMP["validate"](json.dumps("encoded string"))
