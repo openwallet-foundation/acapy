@@ -109,29 +109,47 @@ def construct_did_key_ed25519(did_key: "DIDKey") -> dict:
     # TODO: update once https://github.com/multiformats/py-multicodec/pull/14 is merged
     curve25519_fingerprint = "z" + bytes_to_b58(b"".join([b"\xec\x01", curve25519]))
 
+    did_doc = construct_did_signature_key_base(
+        id=did_key.did,
+        key_id=did_key.key_id,
+        verification_method={
+            "id": did_key.key_id,
+            "type": "Ed25519VerificationKey2018",
+            "controller": did_key.did,
+            "publicKeyBase58": did_key.public_key_b58,
+        },
+    )
+
+    # Ed25519 has pair with X25519
+    did_doc["keyAgreement"].append(
+        {
+            "id": f"{did_key.did}#{curve25519_fingerprint}",
+            "type": "X25519KeyAgreementKey2019",
+            "controller": did_key.did,
+            "publicKeyBase58": bytes_to_b58(curve25519),
+        }
+    )
+
+    return did_doc
+
+
+def construct_did_signature_key_base(
+    *, id: str, key_id: str, verification_method: dict
+):
+    """Creates base did key structure used for most signature keys.
+
+    May not be suitable for all did key types
+    """
+
     return {
         "@context": "https://w3id.org/did/v1",
-        "id": did_key.did,
-        "verificationMethod": [
-            {
-                "id": did_key.key_id,
-                "type": "Ed25519VerificationKey2018",
-                "controller": did_key.did,
-                "publicKeyBase58": did_key.public_key_b58,
-            }
-        ],
-        "authentication": [did_key.key_id],
-        "assertionMethod": [did_key.key_id],
-        "capabilityDelegation": [did_key.key_id],
-        "capabilityInvocation": [did_key.key_id],
-        "keyAgreement": [
-            {
-                "id": f"{did_key.did}#{curve25519_fingerprint}",
-                "type": "X25519KeyAgreementKey2019",
-                "controller": did_key.did,
-                "publicKeyBase58": bytes_to_b58(curve25519),
-            }
-        ],
+        "id": id,
+        "verificationMethod": [verification_method],
+        "authentication": [key_id],
+        "assertionMethod": [key_id],
+        "capabilityDelegation": [key_id],
+        "capabilityInvocation": [key_id],
+        "keyAgreement": [],
     }
 
 
