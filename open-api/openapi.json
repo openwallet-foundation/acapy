@@ -3228,7 +3228,7 @@
     },
     "InvitationReceiveRequest" : {
       "type" : "object",
-      "required" : [ "request~attach" ],
+      "required" : [ "requests~attach" ],
       "properties" : {
         "@id" : {
           "type" : "string",
@@ -3252,13 +3252,13 @@
           "example" : "Bob",
           "description" : "Optional label"
         },
-        "request~attach" : {
+        "requests~attach" : {
           "type" : "array",
           "items" : {
             "$ref" : "#/definitions/AttachDecorator"
           }
         },
-        "service" : { },
+        "services" : { },
         "service_blocks" : {
           "type" : "array",
           "items" : {
