@@ -6,7 +6,11 @@ from datetime import datetime
 
 from ....messaging.valid import Uri
 from ...ld_proofs.constants import CREDENTIALS_V1_URL, VERIFIABLE_CREDENTIAL_TYPE
-from .credential_schema import VerifiableCredentialSchema, LinkedDataProofSchema
+from .credential_schema import (
+    CredentialSchema,
+    VerifiableCredentialSchema,
+    LinkedDataProofSchema,
+)
 
 
 class LDProof:
@@ -97,18 +101,21 @@ class VerifiableCredential:
         self.extra = kwargs
 
     @classmethod
-    def deserialize(cls, credential: Union[dict, str]) -> "VerifiableCredential":
+    def deserialize(
+        cls, credential: Union[dict, str], without_proof=False
+    ) -> "VerifiableCredential":
         """Deserialize a dict into a VerifiableCredential object.
 
         Args:
-            credential: credential
+            credential: The credential to deserialize
+            without_proof: To deserialize without checking for required proof property
 
         Returns:
             VerifiableCredential: The deserialized VerifiableCredential object
         """
         if isinstance(credential, str):
             credential = json.loads(credential)
-        schema = VerifiableCredentialSchema()
+        schema = CredentialSchema() if without_proof else VerifiableCredentialSchema()
         credential = schema.load(credential)
         return credential
 

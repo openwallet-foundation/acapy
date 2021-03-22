@@ -4,7 +4,9 @@ from ..ld_proofs import (
     sign,
     CredentialIssuancePurpose,
     DocumentLoader,
+    LinkedDataProofException,
 )
+from .models.credential_schema import CredentialSchema
 
 
 async def issue(
@@ -14,8 +16,12 @@ async def issue(
     document_loader: DocumentLoader,
     purpose: ProofPurpose = None,
 ) -> dict:
-    # NOTE: API assumes credential is validated on higher level
-    # we should probably change that, but also want to avoid revalidation on every level
+    # Validate credential
+    errors = CredentialSchema().validate(credential)
+    if len(errors) > 0:
+        raise LinkedDataProofException(
+            f"Credential contains invalid structure: {errors}"
+        )
 
     if not purpose:
         purpose = CredentialIssuancePurpose()

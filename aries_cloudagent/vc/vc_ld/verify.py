@@ -1,3 +1,5 @@
+"""Verifiable Credential and Presentation verification methods."""
+
 import asyncio
 from typing import List
 from pyld.jsonld import JsonLdProcessor
@@ -12,6 +14,7 @@ from ..ld_proofs import (
     DocumentVerificationResult,
     LinkedDataProofException,
 )
+from .models.credential_schema import VerifiableCredentialSchema
 from .validation_result import PresentationVerificationResult
 
 
@@ -22,7 +25,14 @@ async def _verify_credential(
     document_loader: DocumentLoader,
     purpose: ProofPurpose = None,
 ) -> DocumentVerificationResult:
-    # TODO: validate credential structure
+    """Verify credential structure, proof purpose and signature"""
+
+    # Validate credential structure
+    errors = VerifiableCredentialSchema().validate(credential)
+    if len(errors) > 0:
+        raise LinkedDataProofException(
+            f"Unable to verify credential with invalid structure: {errors}"
+        )
 
     if not purpose:
         purpose = CredentialIssuancePurpose()
@@ -44,6 +54,19 @@ async def verify_credential(
     document_loader: DocumentLoader,
     purpose: ProofPurpose = None,
 ) -> DocumentVerificationResult:
+    """Verify credential structure, proof purpose and signature
+
+    Args:
+        credential (dict): The credential to verify
+        suites (List[LinkedDataProof]): The signature suites to verify with
+        document_loader (DocumentLoader): Document loader used for resolving of documents
+        purpose (ProofPurpose, optional): Proof purpose to use.
+            Defaults to CredentialIssuancePurpose
+
+    Returns:
+        DocumentVerificationResult: The result of the verification. Verified property
+            indicates whether the verification was successful
+    """
     try:
         return await _verify_credential(
             credential=credential,
@@ -66,6 +89,7 @@ async def _verify_presentation(
     domain: str = None,
     purpose: ProofPurpose = None,
 ):
+    """Verify presentation structure, credentials, proof purpose and signature"""
 
     if not purpose and not challenge:
         raise LinkedDataProofException(
@@ -124,6 +148,23 @@ async def verify_presentation(
     challenge: str = None,
     domain: str = None,
 ) -> PresentationVerificationResult:
+    """Verify presentation structure, credentials, proof purpose and signature
+
+    Args:
+        presentation (dict): The presentation to verify
+        suites (List[LinkedDataProof]): The signature suites to verify with
+        document_loader (DocumentLoader): Document loader used for resolving of documents
+        purpose (ProofPurpose, optional): Proof purpose to use.
+            Defaults to AuthenticationProofPurpose
+        challenge (str, optional): The challenge to use for authentication.
+            Required if purpose is not passed, not used if purpose is passed
+        domain (str, optional): Domain to use for the authentication proof purpose.
+            Not used if purpose is passed
+
+    Returns:
+        PresentationVerificationResult: The result of the verification. Verified property
+            indicates whether the verification was successful
+    """
 
     try:
         return await _verify_presentation(
