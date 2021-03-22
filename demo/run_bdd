@@ -123,7 +123,7 @@ done
 
 AGENT_MODULE="agent_container"
 AGENT_PORT=8020
-AGENT_PORT_RANGE=8020-8099
+AGENT_PORT_RANGE=8020-8079
 
 echo "Preparing agent image..."
 docker build -q -t faber-alice-demo -f ../docker/Dockerfile.demo .. || exit 1
@@ -225,7 +225,7 @@ if [ "$OSTYPE" = "msys" ]; then
 fi
 DOCKER=${DOCKER:-docker}
 
-$DOCKER run --name $AGENT --rm -it ${DOCKER_OPTS} \
+$DOCKER run --name $AGENT --rm ${DOCKER_OPTS} \
   --network=${DOCKER_NET} \
   -p 0.0.0.0:$AGENT_PORT_RANGE:$AGENT_PORT_RANGE \
   -v "/$(pwd)/../logs:/home/indy/logs" \

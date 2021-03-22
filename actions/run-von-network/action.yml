@@ -1,0 +1,20 @@
+name: "Run von-network"
+description: "Build and run Indy network using von-network"
+author: "iancostanzo@gmail.com"
+runs:
+  using: "composite"
+  steps:
+    - name: checkout-von-network
+      run: git clone https://github.com/bcgov/von-network.git
+      shell: bash
+    - name: build-von-network
+      run: ./manage build
+      shell: bash
+      working-directory: von-network
+    - name: run-von-network
+      run: ./manage start
+      shell: bash
+      working-directory: von-network
+branding:
+  icon: "cloud-lightning"
+  color: "blue"

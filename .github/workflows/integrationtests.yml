@@ -1,0 +1,25 @@
+name: acapy-integration-tests
+on:
+  workflow_dispatch:
+  #schedule:
+  #  - cron: "0 0 * * *"
+defaults:
+  run:
+    shell: bash
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    #if: (github.event_name == 'schedule' && github.repository == 'hyperledger/aries-cloudagent-python') || (github.event_name != 'schedule')
+    steps:
+      - name: checkout-acapy
+        uses: actions/checkout@v2
+        with:
+          path: acapy
+      - name: run-von-network
+        uses: ./acapy/actions/run-von-network
+      - name: run-indy-tails-server
+        uses: ./acapy/actions/run-indy-tails-server
+      - name: run-integration-tests
+        uses: ./acapy/actions/run-integration-tests
+        # with:
+        #   TEST_SCOPE: "-t @T001-RFC0037"

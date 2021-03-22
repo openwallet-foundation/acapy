@@ -223,6 +223,7 @@ class DemoAgent:
         log_json(json.dumps(schema_response), label="Schema:")
         schema_id = schema_response["schema_id"]
         log_msg("Schema ID:", schema_id)
+        await asyncio.sleep(2.0)
 
         # Create a cred def for the schema
         cred_def_tag = (
@@ -493,6 +494,7 @@ class DemoAgent:
             stderr=subprocess.PIPE,
             env=env,
             encoding="utf-8",
+            close_fds=True,
         )
         loop.run_in_executor(
             None,
@@ -526,9 +528,10 @@ class DemoAgent:
 
         # start agent sub-process
         loop = asyncio.get_event_loop()
-        self.proc = await loop.run_in_executor(
+        future = loop.run_in_executor(
             None, self._process, agent_args, my_env, loop
         )
+        self.proc = await asyncio.wait_for(future, 20, loop=loop)
         if wait:
             await asyncio.sleep(1.0)
             await self.detect_process()
@@ -546,18 +549,16 @@ class DemoAgent:
 
     async def terminate(self):
         # close session to admin api
-        self.log("Shutting down admin api session")
         await self.client_session.close()
         # shut down web hooks first
-        self.log("Shutting down web hooks site")
         if self.webhook_site:
             await self.webhook_site.stop()
             await asyncio.sleep(0.5)
         # now shut down the agent
-        self.log("Shutting down agent")
         loop = asyncio.get_event_loop()
         if self.proc:
-            await loop.run_in_executor(None, self._terminate)
+            future = loop.run_in_executor(None, self._terminate)
+            result = await asyncio.wait_for(future, 10, loop=loop)
 
     async def listen_webhooks(self, webhook_port):
         self.webhook_port = webhook_port
@@ -790,6 +791,7 @@ class DemoAgent:
         status_code, status_text = await fetch_status(
             status_url, START_TIMEOUT, headers=headers
         )
+        self.log(status_code, status_text)
 
         if not status_text:
             raise Exception(

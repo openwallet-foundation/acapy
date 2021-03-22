@@ -1,6 +1,6 @@
 Feature: RFC 0036 Aries agent issue credential
 
-  @T003-RFC0036 @AcceptanceTest @P1 @critical @Indy @RFC0036
+  @T003-RFC0036 @GHA
   Scenario Outline: Issue a credential with the Issuer beginning with an offer
     Given we have "2" agents
       | name  | role    | capabilities        |
@@ -17,10 +17,9 @@ Feature: RFC 0036 Aries agent issue credential
        | --public-did --did-exchange            | --did-exchange            | driverslicense | Data_DL_NormalizedValues |
        | --public-did --mediation               | --mediation               | driverslicense | Data_DL_NormalizedValues |
        | --public-did --multitenant             | --multitenant             | driverslicense | Data_DL_NormalizedValues |
-       | --public-did --mediation --multitenant | --mediation --multitenant | driverslicense | Data_DL_NormalizedValues |
 
 
-  @T004-RFC0036 @AcceptanceTest @P1 @critical @Indy @RFC0036
+  @T004-RFC0036 @GHA
   Scenario Outline: Issue a credential with revocation, with the Issuer beginning with an offer, and then revoking the credential
     Given we have "2" agents
       | name  | role    | capabilities        |
