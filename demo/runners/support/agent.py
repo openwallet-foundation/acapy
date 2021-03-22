@@ -528,9 +528,7 @@ class DemoAgent:
 
         # start agent sub-process
         loop = asyncio.get_event_loop()
-        future = loop.run_in_executor(
-            None, self._process, agent_args, my_env, loop
-        )
+        future = loop.run_in_executor(None, self._process, agent_args, my_env, loop)
         self.proc = await asyncio.wait_for(future, 20, loop=loop)
         if wait:
             await asyncio.sleep(1.0)
