@@ -77,6 +77,7 @@ class LinkedDataSignature(LinkedDataProof, metaclass=ABCMeta):
             # required
             # TODO: digitalbazaar changed this implementation after we wrote it. Should
             # double check to make sure we're doing it correctly
+            # https://github.com/digitalbazaar/jsonld-signatures/commit/2c98a2fb626b85e31d16b16e7ea6a90fd83534c5
             proof = jsonld.compact(
                 self.proof, SECURITY_V2_URL, {"documentLoader": document_loader}
             )

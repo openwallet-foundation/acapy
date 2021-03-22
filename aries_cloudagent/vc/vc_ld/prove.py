@@ -10,6 +10,7 @@ from ..ld_proofs import (
     LinkedDataProofException,
 )
 from ..ld_proofs.constants import CREDENTIALS_V1_URL
+from .models.credential_schema import VerifiableCredentialSchema
 
 
 async def create_presentation(
@@ -20,14 +21,17 @@ async def create_presentation(
         "type": ["VerifiablePresentation"],
     }
 
-    # TODO loop through all credentials and validate credential structure
+    # Validate structure of all credentials
+    errors = VerifiableCredentialSchema().validate(credentials, many=True)
+    if len(errors) > 0:
+        raise LinkedDataProofException(
+            f"Not all credentials have a valid structure: {errors}"
+        )
 
     presentation["verifiableCredential"] = credentials
 
     if presentation_id:
         presentation["id"] = presentation_id
-
-    # TODO validate presentation structure
 
     return presentation
 
@@ -47,6 +51,8 @@ async def sign_presentation(
         )
     if not purpose:
         purpose = AuthenticationProofPurpose(challenge=challenge, domain=domain)
+
+    # TODO: validate structure of presentation
 
     return await sign(
         document=presentation,

@@ -98,8 +98,8 @@ class ProofSet:
             )
 
         # TODO: digitalbazaar changed this to use the document context
-        # in jsonld-signatures. Does that mean we need to provide this
-        # ourselves?
+        # in jsonld-signatures. Does that mean we need to provide this ourselves?
+        # https://github.com/digitalbazaar/jsonld-signatures/commit/5046805653ea7db47540e5c9c77578d134a559e1
         proof_set = [{"@context": SECURITY_V2_URL, **proof} for proof in proof_set]
 
         return proof_set

@@ -14,6 +14,7 @@ def get_default_document_loader(profile: Profile) -> "DocumentLoader":
     def default_document_loader(url: str, options: dict):
         """Default document loader implementation"""
         # TODO: integrate with did resolver interface
+        # https://github.com/hyperledger/aries-cloudagent-python/pull/1033
         if url.startswith("did:key:"):
             did_key = DIDKey.from_did(url)
 
