@@ -519,7 +519,7 @@ async def present_proof_send_proposal(request: web.BaseRequest):
             conn_record = await ConnRecord.retrieve_by_id(session, connection_id)
             pres_proposal_message = V20PresProposal(
                 comment=comment,
-                **_formats_attach(pres_proposal, PRES_20_PROPOSAL, "proposal"),
+                **_formats_attach(pres_proposal, PRES_20_PROPOSAL, "proposals"),
             )
         except (BaseModelError, StorageError) as err:
             return await internal_error(
