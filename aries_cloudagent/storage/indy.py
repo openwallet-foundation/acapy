@@ -56,13 +56,8 @@ class IndySdkStorage(BaseStorage, BaseStorageSearch):
         validate_record(record)
         tags_json = json.dumps(record.tags) if record.tags else None
         try:
-
-            rec_value = record.value
-            if isinstance(rec_value, dict):
-                rec_value = json.dumps(rec_value)
-
             await non_secrets.add_wallet_record(
-                self._wallet.handle, record.type, record.id, rec_value, tags_json
+                self._wallet.handle, record.type, record.id, record.value, tags_json
             )
         except IndyError as x_indy:
             if x_indy.error_code == ErrorCode.WalletItemAlreadyExists:

@@ -536,11 +536,9 @@ class ConnectionManager(BaseConnectionManager):
             raise ConnectionManagerError(
                 "No DIDDoc provided; cannot connect to public DID"
             )
-        if request.connection.did.split(":")[-1] != conn_did_doc.id.split(":")[-1]:
+        if request.connection.did != conn_did_doc.id:
             raise ConnectionManagerError(
-                'Connection DID "{}" does not match DIDDoc id "{}"'.format(
-                    request.connection.did, conn_did_doc.id
-                ),
+                "Connection DID does not match DIDDoc id",
                 error_code=ProblemReportReason.REQUEST_NOT_ACCEPTED,
             )
         await self.store_did_document(conn_did_doc)
@@ -793,16 +791,8 @@ class ConnectionManager(BaseConnectionManager):
             raise ConnectionManagerError(
                 "No DIDDoc provided; cannot connect to public DID"
             )
-        if isinstance(conn_did_doc, DIDDoc):
-            did_id = conn_did_doc.id.split(":")[-1]
-        else:
-            did_id = conn_did_doc.did.split(":")[-1]
-        if their_did.split(":")[-1] != did_id:
-            raise ConnectionManagerError(
-                'Connection DID "{}" does not match DIDDoc id "{}"'.format(
-                    their_did, did_id
-                ),
-            )
+        if their_did != conn_did_doc.did:
+            raise ConnectionManagerError("Connection DID does not match DIDDoc id")
         await self.store_did_document(conn_did_doc)
 
         connection.their_did = their_did
@@ -1015,7 +1005,6 @@ class ConnectionManager(BaseConnectionManager):
         if receipt.sender_verkey:
             try:
                 receipt.sender_did = await self.find_did_for_key(receipt.sender_verkey)
-                receipt.sender_did = receipt.sender_did.split(":")[-1]
             except StorageNotFoundError:
                 self._logger.warning(
                     "No corresponding DID found for sender verkey: %s",

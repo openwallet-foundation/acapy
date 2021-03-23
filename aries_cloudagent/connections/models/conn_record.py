@@ -336,17 +336,12 @@ class ConnRecord(BaseRecord):
             self.RECORD_TYPE_INVITATION,
             {"connection_id": self.connection_id},
         )
-
-        ser = json.loads(str(result.value))
-
-        if isinstance(ser, str):
-            ser = json.loads(ser)
-
+        ser = json.loads(result.value)
         return (
             ConnectionInvitation
             if DIDCommPrefix.unqualify(ser["@type"]) == CONNECTION_INVITATION
             else OOBInvitation
-        ).deserialize(dict(ser))
+        ).deserialize(ser)
 
     async def attach_request(
         self,
@@ -383,15 +378,11 @@ class ConnRecord(BaseRecord):
             self.RECORD_TYPE_REQUEST, {"connection_id": self.connection_id}
         )
         ser = json.loads(result.value)
-
-        if isinstance(ser, str):
-            ser = json.loads(ser)
-
         return (
             ConnectionRequest
             if DIDCommPrefix.unqualify(ser["@type"]) == CONNECTION_REQUEST
             else DIDXRequest
-        ).deserialize(dict(ser))
+        ).deserialize(ser)
 
     @property
     def is_ready(self) -> str:

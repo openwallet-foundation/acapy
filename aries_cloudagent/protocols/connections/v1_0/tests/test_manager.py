@@ -2023,7 +2023,7 @@ class TestConnectionManager(AsyncTestCase):
         conn_invite = ConnectionInvitation(
             did=self.test_target_did,
             endpoint=self.test_endpoint,
-            recipient_keys=["{}#1".format(did_doc.id)],
+            recipient_keys=[self.test_target_verkey],
             routing_keys=[self.test_verkey],
             label="label",
         )

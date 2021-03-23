@@ -54,9 +54,6 @@ def match_post_filter(
             )
         )
 
-    if isinstance(record, str):
-        record = json.loads(record)
-
     for k, v in post_filter.items():
         if record.get(k) != v:
             return not positive
@@ -107,16 +104,8 @@ class BaseRecord(BaseModel):
             record: The stored representation
         """
         record_id_name = cls.RECORD_ID_NAME
-
-        if isinstance(record, str):
-            record = json.loads(record)
-
         if record_id_name in record:
             raise ValueError(f"Duplicate {record_id_name} inputs; {record}")
-
-        if isinstance(record, str):
-            record = json.loads(record)
-
         params = dict(**record)
         params[record_id_name] = record_id
         return cls(**params)

@@ -152,19 +152,8 @@ class BaseConnectionManager:
         assert did_doc.id
         storage: BaseStorage = self._session.inject(BaseStorage)
         try:
-            try:
-                self._logger.info(
-                    "Before store a DID, check if DID {} already exists".format(
-                        did_doc.id
-                    )
-                )
-                stored_doc, record = await self.fetch_did_document(did_doc.id)
-            except Exception as e:
-                self._logger.error(str(e))
-                did_str = str(did_doc.id).split(":")[-1]
-                stored_doc, record = await self.fetch_did_document(did_str)
+            stored_doc, record = await self.fetch_did_document(did_doc.id)
         except StorageNotFoundError:
-            self._logger.warning("DID {} not found".format(did_doc.id))
             record = StorageRecord(
                 self.RECORD_TYPE_DID_DOC,
                 did_doc.serialize(),
@@ -354,8 +343,6 @@ class BaseConnectionManager:
         Args:
             did: The DID to search for
         """
-        if did.find(":") < 0:
-            did = "did:sov:{}".format(did)
         storage = self._session.inject(BaseStorage)
         record = await storage.find_record(self.RECORD_TYPE_DID_DOC, {"did": did})
         return DIDDoc.deserialize(record.value), record
