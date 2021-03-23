@@ -105,7 +105,7 @@ class TestValid(TestCase):
             "Q4zqM7aXqm7gDQkUVLng",  # too short
             "Q4zqM7aXqm7gDQkUVLngZZZ",  # too long
             "did:sov:Q4zqM7aXqm7gDQkUVLngZZZ",  # too long
-            "did:other:Q4zqM7aXqm7gDQkUVLngZZZ",  # specifies non-indy DID
+            "did:other:Q4zqM7aXqm7gDQkUVLng9h",  # specifies non-indy DID
         ]
         for non_indy_did in non_indy_dids:
             with self.assertRaises(ValidationError):
