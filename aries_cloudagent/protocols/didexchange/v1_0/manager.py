@@ -422,7 +422,8 @@ class DIDXManager(BaseConnectionManager):
             )  # null=manual; oob-manager calculated at conn rec creation
 
             conn_rec.their_label = request.label
-            conn_rec.alias = alias
+            if alias:
+                conn_rec.alias = alias
             conn_rec.their_did = request.did
             conn_rec.state = ConnRecord.State.REQUEST.rfc23
             conn_rec.request_id = request._id

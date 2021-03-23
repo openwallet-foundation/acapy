@@ -224,8 +224,8 @@ class OutOfBandManager(BaseConnectionManager):
             invi_msg = InvitationMessage(  # create invitation message
                 label=my_label or self._session.settings.get("default_label"),
                 handshake_protocols=handshake_protocols,
-                request_attach=message_attachments,
-                service=[f"did:sov:{public_did.did}"],
+                requests_attach=message_attachments,
+                services=[f"did:sov:{public_did.did}"],
             )
             keylist_updates = await mediation_mgr.add_key(
                 public_did.verkey, keylist_updates
@@ -327,8 +327,8 @@ class OutOfBandManager(BaseConnectionManager):
             invi_msg = InvitationMessage(
                 label=my_label or self._session.settings.get("default_label"),
                 handshake_protocols=handshake_protocols,
-                request_attach=message_attachments,
-                service=[
+                requests_attach=message_attachments,
+                services=[
                     ServiceMessage(
                         _id="#inline",
                         _type="did-communication",
@@ -390,9 +390,9 @@ class OutOfBandManager(BaseConnectionManager):
         if len(invi_msg.service_blocks) + len(invi_msg.service_dids) != 1:
             raise OutOfBandManagerError("service array must have exactly one element")
 
-        if not (invi_msg.request_attach or invi_msg.handshake_protocols):
+        if not (invi_msg.requests_attach or invi_msg.handshake_protocols):
             raise OutOfBandManagerError(
-                "Invitation must specify handshake_protocols, request_attach, or both"
+                "Invitation must specify handshake_protocols, requests_attach, or both"
             )
         # Get the single service item
         if len(invi_msg.service_blocks) >= 1:
@@ -440,7 +440,7 @@ class OutOfBandManager(BaseConnectionManager):
             )
         if conn_rec is not None:
             num_included_protocols = len(unq_handshake_protos)
-            num_included_req_attachments = len(invi_msg.request_attach)
+            num_included_req_attachments = len(invi_msg.requests_attach)
             # With handshake protocol, request attachment; use existing connection
             if (
                 num_included_protocols >= 1
@@ -547,8 +547,8 @@ class OutOfBandManager(BaseConnectionManager):
                     break
 
         # Request Attach
-        if len(invi_msg.request_attach) >= 1 and conn_rec is not None:
-            req_attach = invi_msg.request_attach[0]
+        if len(invi_msg.requests_attach) >= 1 and conn_rec is not None:
+            req_attach = invi_msg.requests_attach[0]
             if isinstance(req_attach, AttachDecorator):
                 if req_attach.data is not None:
                     unq_req_attach_type = DIDCommPrefix.unqualify(
@@ -571,13 +571,13 @@ class OutOfBandManager(BaseConnectionManager):
                     else:
                         raise OutOfBandManagerError(
                             (
-                                "Unsupported request~attach type "
+                                "Unsupported requests~attach type "
                                 f"{req_attach.content['@type']}: must unqualify to"
                                 f"{PRESENTATION_REQUEST} or {PRES_20_REQUEST}"
                             )
                         )
             else:
-                raise OutOfBandManagerError("request~attach is not properly formatted")
+                raise OutOfBandManagerError("requests~attach is not properly formatted")
 
         return conn_rec.serialize()
 

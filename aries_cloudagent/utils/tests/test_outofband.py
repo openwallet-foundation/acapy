@@ -14,7 +14,7 @@ class TestOutOfBand(TestCase):
 
     def test_serialize_oob(self):
         invi = InvitationMessage(
-            comment="my sister", label=u"ma sœur", service=[TestOutOfBand.test_did]
+            comment="my sister", label=u"ma sœur", services=[TestOutOfBand.test_did]
         )
 
         result = test_module.serialize_outofband(

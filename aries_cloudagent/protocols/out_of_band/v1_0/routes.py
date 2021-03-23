@@ -131,7 +131,7 @@ class InvitationReceiveQueryStringSchema(OpenAPISchema):
 class InvitationReceiveRequestSchema(InvitationMessageSchema):
     """Invitation request schema."""
 
-    service = fields.Field()
+    services = fields.Field()
 
 
 @docs(
@@ -159,12 +159,12 @@ async def invitation_create(request: web.BaseRequest):
     handshake_protocols = body.get("handshake_protocols", [])
     use_public_did = body.get("use_public_did", False)
     metadata = body.get("metadata")
-    my_label = request.query.get("my_label")
-    alias = request.query.get("alias")
+    my_label = body.get("my_label")
+    alias = body.get("alias")
+    mediation_id = body.get("mediation_id")
 
     multi_use = json.loads(request.query.get("multi_use", "false"))
     auto_accept = json.loads(request.query.get("auto_accept", "null"))
-    mediation_id = body.get("mediation_id")
     session = await context.session()
     oob_mgr = OutOfBandManager(session)
     try:
