@@ -117,7 +117,7 @@ class TestV20PresProposal(TestCase):
                         ],
                     )
                 ],
-                proposal_attach=[AttachDecorator.data_base64(proof_req, ident="indy")],
+                proposals_attach=[AttachDecorator.data_base64(proof_req, ident="indy")],
             )
             assert pres_proposal._type == DIDCommPrefix.qualify_current(
                 PRES_20_PROPOSAL

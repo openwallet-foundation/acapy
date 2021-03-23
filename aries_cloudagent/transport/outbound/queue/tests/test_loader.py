@@ -29,25 +29,28 @@ from .fixtures import QueueClassValid
 
 
 class TestQueueLoader(AsyncTestCase):
+    async def test_config_error(self):
+        assert OutboundQueueConfigurationError("hello").message == "hello"
+
     async def test_get_class(self):
-        with self.assertRaises(OutboundQueueConfigurationError) as context:
+        with self.assertRaises(OutboundQueueConfigurationError) as x_ctx:
             get_class(
                 "aries_cloudagent.transport.outbound.queue.tests.fixtures:"
                 "QueueClassNoBaseClass"
             )
-        self.assertIn("does not inherit", context.exception.message)
-        with self.assertRaises(OutboundQueueConfigurationError) as context:
+        self.assertIn("does not inherit", x_ctx.exception.message)
+        with self.assertRaises(OutboundQueueConfigurationError) as x_ctx:
             get_class(
                 "aries_cloudagent.transport.outbound.queue.tests.fixtures:"
                 "NoClassThere"
             )
-        self.assertIn("not found", context.exception.message)
-        with self.assertRaises(OutboundQueueConfigurationError) as context:
+        self.assertIn("not found", x_ctx.exception.message)
+        with self.assertRaises(OutboundQueueConfigurationError) as x_ctx:
             get_class(
                 "aries_cloudagent.transport.outbound.queue.tests.fixtures:"
                 "QueueClassNoProtocol"
             )
-        self.assertIn("requires a defined 'protocol'", context.exception.message)
+        self.assertIn("requires a defined 'protocol'", x_ctx.exception.message)
         self.assertIs(
             get_class(
                 "aries_cloudagent.transport.outbound.queue.tests.fixtures:"
@@ -56,11 +59,24 @@ class TestQueueLoader(AsyncTestCase):
             QueueClassValid,
         )
 
+    async def test_get_class_import_x(self):
+        with self.assertRaises(OutboundQueueConfigurationError) as x_ctx:
+            get_class("no-colon")
+        assert "Malformed input" in str(x_ctx.exception)
+
+        with self.assertRaises(OutboundQueueConfigurationError) as x_ctx:
+            get_class("no_such_path:_no_such_class")
+        assert "Module not found" in str(x_ctx.exception)
+
     async def test_get_connection_parts(self):
         protocol, host, port = get_connection_parts("redis://127.0.0.1:8000")
         self.assertEqual(protocol, "redis")
         self.assertEqual(host, "127.0.0.1")
         self.assertEqual(port, "8000")
+
+    async def test_get_connection_parts_x(self):
+        with self.assertRaises(OutboundQueueConfigurationError):
+            protocol, host, port = get_connection_parts("clearly-incorrect")
 
     async def test_get_outbound_queue_valid(self):
         context = InjectionContext()
@@ -76,3 +92,20 @@ class TestQueueLoader(AsyncTestCase):
             QueueClassValid,
         )
         self.assertEqual(queue.connection, "testprotocol://127.0.0.1:8000")
+
+    async def test_get_outbound_no_connection(self):
+        context = InjectionContext()
+        context.settings["transport.outbound_queue"] = None
+        assert get_outbound_queue(context.settings) is None
+
+    async def test_get_outbound_queue_protocol_x(self):
+        context = InjectionContext()
+        context.settings["transport.outbound_queue"] = "wrong_protocol://127.0.0.1:8000"
+        context.settings["transport.outbound_queue_prefix"] = "test_prefix"
+        context.settings["transport.outbound_queue_class"] = (
+            "aries_cloudagent.transport.outbound.queue.tests.fixtures:"
+            "QueueClassValid"
+        )
+        with self.assertRaises(OutboundQueueConfigurationError) as x_ctx:
+            get_outbound_queue(context.settings)
+        assert "not matched with protocol" in str(x_ctx.exception)
