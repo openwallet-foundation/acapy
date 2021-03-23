@@ -148,7 +148,9 @@ class TestPresRequestHandler(AsyncTestCase):
                     format_=V20PresFormat.Format.INDY.aries,
                 )
             ],
-            proposal_attach=[AttachDecorator.data_base64(INDY_PROOF_REQ, ident="indy")],
+            proposals_attach=[
+                AttachDecorator.data_base64(INDY_PROOF_REQ, ident="indy")
+            ],
         )
 
         px_rec_instance = test_module.V20PresExRecord(
@@ -420,7 +422,9 @@ class TestPresRequestHandler(AsyncTestCase):
                     format_=V20PresFormat.Format.INDY.aries,
                 )
             ],
-            proposal_attach=[AttachDecorator.data_base64(INDY_PROOF_REQ, ident="indy")],
+            proposals_attach=[
+                AttachDecorator.data_base64(INDY_PROOF_REQ, ident="indy")
+            ],
         )
 
         px_rec_instance = test_module.V20PresExRecord(
