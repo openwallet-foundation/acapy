@@ -660,7 +660,7 @@ async def apply_requirements(req: Requirement, credentials: Sequence[VCRecord]) 
         result = await apply_requirements(requirement, credentials)
         if result == {}:
             continue
-        # tmp_dict maps applicable credentials to their respective descriptor.
+        # given_id_descriptors maps applicable credentials to their respective descriptor.
         # Structure: {cred.given_id: {
         #           desc_id_1: {}
         #      },
@@ -671,8 +671,8 @@ async def apply_requirements(req: Requirement, credentials: Sequence[VCRecord]) 
             credential_list = result.get(descriptor_id)
             for credential in credential_list:
                 if credential.given_id not in given_id_descriptors:
-                    tmp_dict[credential.given_id] = {}
-                tmp_dict[credential.given_id][descriptor_id] = {}
+                    given_id_descriptors[credential.given_id] = {}
+                given_id_descriptors[credential.given_id][descriptor_id] = {}
 
         if len(result.keys()) != 0:
             nested_result.append(result)
@@ -720,20 +720,20 @@ async def merge_nested_results(nested_result: Sequence[dict], exclude: dict) -> 
     for res in nested_result:
         for key in res.keys():
             credentials = res[key]
-            tmp_dict = {}
+            given_id_dict = {}
             merged_credentials = []
 
             if key in result:
                 for credential in result[key]:
-                    if credential.given_id not in tmp_dict:
+                    if credential.given_id not in given_id_dict:
                         merged_credentials.append(credential)
-                        tmp_dict[credential.given_id] = {}
+                        given_id_dict[credential.given_id] = {}
 
             for credential in credentials:
-                if credential.given_id not in tmp_dict:
+                if credential.given_id not in given_id_dict:
                     if (key + (credential.given_id)) not in exclude:
                         merged_credentials.append(credential)
-                        tmp_dict[credential.given_id] = {}
+                        given_id_dict[credential.given_id] = {}
             result[key] = merged_credentials
     return result
 
