@@ -125,9 +125,9 @@ class BaseModel(ABC):
         schema = cls._get_schema_class()(unknown=EXCLUDE)
         try:
             return schema.loads(obj) if isinstance(obj, str) else schema.load(obj)
-        except ValidationError as e:
+        except (AttributeError, ValidationError) as err:
             LOGGER.exception(f"{cls.__name__} message validation error:")
-            raise BaseModelError(f"{cls.__name__} schema validation failed") from e
+            raise BaseModelError(f"{cls.__name__} schema validation failed") from err
 
     def serialize(self, as_string=False) -> dict:
         """
@@ -147,11 +147,11 @@ class BaseModel(ABC):
                 if as_string
                 else schema.dump(self)
             )
-        except ValidationError as e:
+        except (AttributeError, ValidationError) as err:
             LOGGER.exception(f"{self.__class__.__name__} message serialization error:")
             raise BaseModelError(
                 f"{self.__class__.__name__} schema validation failed"
-            ) from e
+            ) from err
 
     def validate(self):
         """Validate a constructed model."""
