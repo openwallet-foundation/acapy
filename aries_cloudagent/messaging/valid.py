@@ -356,11 +356,11 @@ class IndyWQL(Regexp):  # using Regexp brings in nice visual validator cue
         """Validate input value."""
 
         super().__call__(value or "")
-        message = "Value {input} is not a valid WQL query".format(input=value)
+        message = f"Value {value} is not a valid WQL query"
 
         try:
             json.loads(value)
-        except Exception:
+        except (json.JSONDecodeError, TypeError):
             raise ValidationError(message)
 
         return value
@@ -384,11 +384,11 @@ class IndyExtraWQL(Regexp):  # using Regexp brings in nice visual validator cue
         """Validate input value."""
 
         super().__call__(value or "")
-        message = "Value {input} is not a valid extra WQL query".format(input=value)
+        message = f"Value {value} is not a valid extra WQL query"
 
         try:
             json.loads(value)
-        except Exception:
+        except (json.JSONDecodeError, TypeError):
             raise ValidationError(message)
 
         return value
