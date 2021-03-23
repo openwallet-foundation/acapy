@@ -27,7 +27,6 @@ from ..valid import (
     INDY_VERSION,
     INDY_WQL,
     INT_EPOCH,
-    JSON_DUMP,
     NATURAL_NUM,
     NUM_STR_NATURAL,
     NUM_STR_WHOLE,
@@ -496,23 +495,3 @@ class TestValid(TestCase):
         ENDPOINT_TYPE["validate"]("Endpoint")
         ENDPOINT_TYPE["validate"]("Profile")
         ENDPOINT_TYPE["validate"]("LinkedDomains")
-
-    def test_json_dump(self):
-        non_json_dumps = [
-            "nope",
-            "[a, b, c]",
-            "{1, 2, 3}",
-            set(),
-            None,
-            "",
-            False,
-        ]
-        for non_json_dump in non_json_dumps:
-            with self.assertRaises(ValidationError):
-                JSON_DUMP["validate"](non_json_dump)
-
-        JSON_DUMP["validate"](json.dumps({}))
-        JSON_DUMP["validate"](json.dumps({"a": "1234"}))
-        JSON_DUMP["validate"](json.dumps({"a": "1234", "b": {"$not": "0"}}))
-        JSON_DUMP["validate"](json.dumps(["zero", "one", "two"]))
-        JSON_DUMP["validate"](json.dumps("encoded string"))
