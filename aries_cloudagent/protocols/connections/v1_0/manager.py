@@ -7,6 +7,7 @@ from typing import Coroutine, Sequence, Tuple
 from aries_cloudagent.protocols.coordinate_mediation.v1_0.manager import (
     MediationManager,
 )
+from aries_cloudagent.connections.models.diddoc_v2 import DIDDoc
 
 from ....cache.base import BaseCache
 from ....config.base import InjectionError
@@ -535,9 +536,11 @@ class ConnectionManager(BaseConnectionManager):
             raise ConnectionManagerError(
                 "No DIDDoc provided; cannot connect to public DID"
             )
-        if request.connection.did != conn_did_doc.id:
+        if request.connection.did.split(":")[-1] != conn_did_doc.id.split(":")[-1]:
             raise ConnectionManagerError(
-                "Connection DID does not match DIDDoc id",
+                'Connection DID "{}" does not match DIDDoc id "{}"'.format(
+                    request.connection.did, conn_did_doc.id
+                ),
                 error_code=ProblemReportReason.REQUEST_NOT_ACCEPTED,
             )
         await self.store_did_document(conn_did_doc)
@@ -790,8 +793,16 @@ class ConnectionManager(BaseConnectionManager):
             raise ConnectionManagerError(
                 "No DIDDoc provided; cannot connect to public DID"
             )
-        if their_did != conn_did_doc.did:
-            raise ConnectionManagerError("Connection DID does not match DIDDoc id")
+        if isinstance(conn_did_doc, DIDDoc):
+            did_id = conn_did_doc.id.split(":")[-1]
+        else:
+            did_id = conn_did_doc.did.split(":")[-1]
+        if their_did.split(":")[-1] != did_id:
+            raise ConnectionManagerError(
+                'Connection DID "{}" does not match DIDDoc id "{}"'.format(
+                    their_did, did_id
+                ),
+            )
         await self.store_did_document(conn_did_doc)
 
         connection.their_did = their_did
@@ -1004,6 +1015,7 @@ class ConnectionManager(BaseConnectionManager):
         if receipt.sender_verkey:
             try:
                 receipt.sender_did = await self.find_did_for_key(receipt.sender_verkey)
+                receipt.sender_did = receipt.sender_did.split(":")[-1]
             except StorageNotFoundError:
                 self._logger.warning(
                     "No corresponding DID found for sender verkey: %s",

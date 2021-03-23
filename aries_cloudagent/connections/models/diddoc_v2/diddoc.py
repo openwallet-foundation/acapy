@@ -114,7 +114,6 @@ class DIDDoc:
         for index, key in enumerate(keys):
             if isinstance(key, str):
                 if not self.dereference(key):
-
                     raise ValueError("Key '{}' not found on DIDDoc".format(key))
             else:
                 self._set(key)
@@ -179,9 +178,12 @@ class DIDDoc:
         did_doc = schema.load(did_doc)
         return did_doc
 
-    def serialize(self) -> dict:
+    def serialize(self, key_redundancy=True) -> dict:
         """
         Serialize the DIDDoc object into dict.
+
+        Args:
+            key_redundancy: Add the keys without references
 
         Returns: Dict
         """
@@ -189,6 +191,21 @@ class DIDDoc:
         did_doc = schema.dump(copy.deepcopy(self))
         did_doc["@context"] = self.CONTEXT
         did_doc.update(self.extra)
+        if not key_redundancy:
+            verification_key = list(self._index.keys())
+            ref_content = copy.deepcopy(self._ref_content)
+            ref_content.pop("service")
+            for item in self._ref_content.get("service"):
+                verification_key.remove(item)
+
+            for key in ref_content.keys():
+                value = ref_content.get(key)
+                if value:
+                    did_doc[key] = value
+            ver_methods = [
+                self.dereference(key).serialize() for key in verification_key
+            ]
+            did_doc["verificationMethod"] = ver_methods
         return did_doc
 
     @property
@@ -453,6 +470,20 @@ class DIDDoc:
         DIDUrl.parse(did_url)
 
         return self._index.get(did_url)
+
+    def get_service_by_type(self, service_type: str = "did-communication") -> list:
+        """
+        Retrieve the services filtered by type.
+
+        Args:
+            service_type: type to filter
+        """
+        aux_list = []
+        for service in self.service:
+            if service.type == service_type:
+                aux_list.append(service)
+        aux_list = sorted(aux_list, key=lambda x: x.priority, reverse=True)
+        return aux_list
 
 
 class AntiquatedDIDDoc(DIDDoc):

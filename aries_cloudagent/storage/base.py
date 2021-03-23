@@ -89,7 +89,11 @@ class BaseStorage(ABC):
         results = await scan.fetch(2)
         await scan.close()
         if not results:
-            raise StorageNotFoundError("Record not found")
+            raise StorageNotFoundError(
+                "Record not found (type: {}, tag_query: {}, options: {})".format(
+                    type_filter, tag_query, options
+                )
+            )
         if len(results) > 1:
             raise StorageDuplicateError("Duplicate records found")
         return results[0]

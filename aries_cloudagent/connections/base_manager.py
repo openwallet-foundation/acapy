@@ -8,9 +8,10 @@ import logging
 
 from typing import Sequence, Tuple, List
 
+from aries_cloudagent.resolver.base import ResolverError
+from aries_cloudagent.resolver.did_resolver import DIDResolver
 from ..core.error import BaseError
 from ..core.profile import ProfileSession
-from ..ledger.base import BaseLedger
 from ..protocols.connections.v1_0.messages.connection_invitation import (
     ConnectionInvitation,
 )
@@ -151,8 +152,19 @@ class BaseConnectionManager:
         assert did_doc.id
         storage: BaseStorage = self._session.inject(BaseStorage)
         try:
-            stored_doc, record = await self.fetch_did_document(did_doc.id)
+            try:
+                self._logger.info(
+                    "Before store a DID, check if DID {} already exists".format(
+                        did_doc.id
+                    )
+                )
+                stored_doc, record = await self.fetch_did_document(did_doc.id)
+            except Exception as e:
+                self._logger.error(str(e))
+                did_str = str(did_doc.id).split(":")[-1]
+                stored_doc, record = await self.fetch_did_document(did_str)
         except StorageNotFoundError:
+            self._logger.warning("DID {} not found".format(did_doc.id))
             record = StorageRecord(
                 self.RECORD_TYPE_DID_DOC,
                 did_doc.serialize(),
@@ -198,6 +210,30 @@ class BaseConnectionManager:
         storage = self._session.inject(BaseStorage)
         await storage.delete_all_records(self.RECORD_TYPE_DID_KEY, {"did": did})
 
+    async def resolve_invitation(self, did: str):
+        """
+        Resolve invitation with the DID Resolver.
+
+        Args:
+            did: Document ID to resolve
+        """
+        # populate recipient keys and endpoint from the ledger
+        resolver = self._session.inject(DIDResolver, required=False)
+        if not resolver:
+            raise ResolverError("Cannot resolve DID without ledger instance")
+        async with resolver:
+            doc = await resolver.resolve(self._session, did)
+            service = doc.get_service_by_type()
+            if not service:
+                raise ResolverError("Cannot resolve DID without document services")
+            service = service[0]
+            endpoint = service.service_endpoint
+            recipient_keys = service.recipient_keys
+
+            routing_keys = service.routing_keys
+
+        return endpoint, recipient_keys, routing_keys
+
     async def fetch_connection_targets(
         self, connection: ConnRecord
     ) -> Sequence[ConnectionTarget]:
@@ -214,7 +250,6 @@ class BaseConnectionManager:
 
         wallet = self._session.inject(BaseWallet)
         my_info = await wallet.get_local_did(connection.my_did)
-        results = None
 
         if (
             ConnRecord.State.get(connection.state)
@@ -224,36 +259,26 @@ class BaseConnectionManager:
             invitation = await connection.retrieve_invitation(self._session)
             if isinstance(invitation, ConnectionInvitation):  # conn protocol invitation
                 if invitation.did:
-                    # populate recipient keys and endpoint from the ledger
-                    ledger = self._session.inject(BaseLedger, required=False)
-                    if not ledger:
-                        raise BaseConnectionManagerError(
-                            "Cannot resolve DID without ledger instance"
-                        )
-                    async with ledger:
-                        endpoint = await ledger.get_endpoint_for_did(invitation.did)
-                        recipient_keys = [await ledger.get_key_for_did(invitation.did)]
-                        routing_keys = []
+                    did = invitation.did
+                    (
+                        endpoint,
+                        recipient_keys,
+                        routing_keys,
+                    ) = await self.resolve_invitation(did)
+
                 else:
                     endpoint = invitation.endpoint
                     recipient_keys = invitation.recipient_keys
                     routing_keys = invitation.routing_keys
             else:  # out-of-band invitation
                 if invitation.service_dids:
-                    # populate recipient keys and endpoint from the ledger
-                    ledger = self._session.inject(BaseLedger, required=False)
-                    if not ledger:
-                        raise BaseConnectionManagerError(
-                            "Cannot resolve DID without ledger instance"
-                        )
-                    async with ledger:
-                        endpoint = await ledger.get_endpoint_for_did(
-                            invitation.service_dids[0]
-                        )
-                        recipient_keys = [
-                            await ledger.get_key_for_did(invitation.service_dids[0])
-                        ]
-                        routing_keys = []
+                    did = invitation.service_dids[0]
+                    (
+                        endpoint,
+                        recipient_keys,
+                        routing_keys,
+                    ) = await self.resolve_invitation(did)
+
                 else:
                     endpoint = invitation.service_blocks[0].service_endpoint
                     recipient_keys = [
@@ -329,6 +354,8 @@ class BaseConnectionManager:
         Args:
             did: The DID to search for
         """
+        if did.find(":") < 0:
+            did = "did:sov:{}".format(did)
         storage = self._session.inject(BaseStorage)
         record = await storage.find_record(self.RECORD_TYPE_DID_DOC, {"did": did})
         return DIDDoc.deserialize(record.value), record

@@ -242,7 +242,9 @@ class TestDIDDoc(AsyncTestCase):
         assert len(result.authentication) == 1
         assert result.authentication[0].serialize() == publicKey
 
-        result = DIDDoc.deserialize(json.dumps(result.serialize()))
+        did_doc = result.serialize(key_redundancy=False)
+        did_doc_json = json.dumps(did_doc)
+        result = DIDDoc.deserialize(did_doc_json)
         assert result.id == did["id"]
         assert len(result.service) == 1
         assert result.service[0].serialize() == service
@@ -354,6 +356,12 @@ class TestDIDDoc(AsyncTestCase):
                 backward_compatibility=False,
             )
 
+    async def test_add_duplicy_service(self):
+        did = DIDDoc("did:sov:LjgpST2rjsoxYegQDRm7EL")
+        did.add_service(type="test", endpoint="localhost", ident="duplicy")
+        with self.assertRaises(ValueError):
+            did.add_service(type="test2", endpoint="localhost", ident="duplicy")
+
     async def test_update_service(self):
         did = {"id": "did:sov:LjgpST2rjsoxYegQDRm7EL", "service": [service]}
         serv_inst = Service.deserialize(service)
@@ -423,7 +431,7 @@ class TestDIDDoc(AsyncTestCase):
             "authentication": [publicKey],
         }
 
-        result = DIDDoc.deserialize(did).serialize()
+        result = DIDDoc.deserialize(did).serialize(key_redundancy=True)
 
         assert result["id"] == did["id"]
         assert len(result["service"]) == 1
