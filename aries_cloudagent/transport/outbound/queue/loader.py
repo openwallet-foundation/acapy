@@ -2,6 +2,7 @@
 import importlib
 
 from ....config.settings import Settings
+from ....core.error import BaseError
 
 
 def get_outbound_queue(settings: Settings):
@@ -81,9 +82,9 @@ def get_connection_parts(connection: str):
         )
 
 
-class OutboundQueueConfigurationError(Exception):
+class OutboundQueueConfigurationError(BaseError):
     """An error with the queue configuration."""
 
     def __init__(self, message):
         """Initialize the exception instance."""
-        self.message = message
+        super().__init__(message)
