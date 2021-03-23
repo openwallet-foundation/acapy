@@ -579,25 +579,19 @@ class ConstraintsSchema(BaseModelSchema):
     def reformat_data(self, data, **kwargs):
         """Support serialization of statuses according to DIF spec."""
         if "status_active" in data:
-            tmp_dict = {}
-            tmp_dict["directive"] = data.get("status_active")
-            tmp_dict2 = data.get("statuses") or {}
-            tmp_dict2["active"] = tmp_dict
-            data["statuses"] = tmp_dict2
+            statuses = data.get("statuses", {})
+            statuses["active"] = {"directive": data.get("status_active")}
+            data["statuses"] = statuses
             del data["status_active"]
         if "status_suspended" in data:
-            tmp_dict = {}
-            tmp_dict["directive"] = data.get("status_suspended")
-            tmp_dict2 = data.get("statuses") or {}
-            tmp_dict2["suspended"] = tmp_dict
-            data["statuses"] = tmp_dict2
+            statuses = data.get("statuses", {})
+            statuses["suspended"] = {"directive": data.get("status_suspended")}
+            data["statuses"] = statuses
             del data["status_suspended"]
         if "status_revoked" in data:
-            tmp_dict = {}
-            tmp_dict["directive"] = data.get("status_revoked")
-            tmp_dict2 = data.get("statuses") or {}
-            tmp_dict2["revoked"] = tmp_dict
-            data["statuses"] = tmp_dict2
+            statuses = data.get("statuses", {})
+            statuses["revoked"] = {"directive": data.get("status_revoked")}
+            data["statuses"] = statuses
             del data["status_revoked"]
         return data
 

@@ -137,7 +137,7 @@ async def make_requirement(
             )
         except Exception as err:
             raise PresentationExchError(
-                "Error creating requirement " f"inside to_requirement function, {err}"
+                f"Error creating requirement inside to_requirement function, {err}"
             )
     return requirement
 
@@ -653,7 +653,7 @@ async def apply_requirements(req: Requirement, credentials: Sequence[VCRecord]) 
         return {}
 
     nested_result = []
-    tmp_dict = {}
+    given_id_descriptors = {}
     # recursion logic for nested requirements
     for requirement in req.nested_req:
         # recursive call
@@ -670,7 +670,7 @@ async def apply_requirements(req: Requirement, credentials: Sequence[VCRecord]) 
         for descriptor_id in result.keys():
             credential_list = result.get(descriptor_id)
             for credential in credential_list:
-                if credential.given_id not in tmp_dict:
+                if credential.given_id not in given_id_descriptors:
                     tmp_dict[credential.given_id] = {}
                 tmp_dict[credential.given_id][descriptor_id] = {}
 
@@ -678,11 +678,11 @@ async def apply_requirements(req: Requirement, credentials: Sequence[VCRecord]) 
             nested_result.append(result)
 
     exclude = {}
-    for k in tmp_dict.keys():
+    for given_id in given_id_descriptors.keys():
         # Check if number of applicable credentials
         # does not meet requirement specification
-        if not is_len_applicable(req, len(tmp_dict[k])):
-            for descriptor_id in tmp_dict[k]:
+        if not is_len_applicable(req, len(given_id_descriptors[k])):
+            for descriptor_id in given_id_descriptors[given_id]:
                 # Add to exclude dict
                 # with cred.given_id + descriptor_id as key
                 exclude[descriptor_id + k] = {}
