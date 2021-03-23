@@ -8,11 +8,11 @@ from ....core.profile import Profile
 from ....ledger.base import BaseLedger
 from ....ledger.error import LedgerError
 from ...base import DIDNotFound, ResolverError
-from ...tests.test_did import TEST_DID0
 from .. import indy as test_module
 from ..indy import IndyDIDResolver
 
 # pylint: disable=W0621
+TEST_DID0 = "did:sov:123"
 
 
 @pytest.fixture
