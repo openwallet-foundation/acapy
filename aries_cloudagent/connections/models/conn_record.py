@@ -9,7 +9,7 @@ from marshmallow import fields, validate
 
 from ...core.profile import ProfileSession
 from ...messaging.models.base_record import BaseRecord, BaseRecordSchema
-from ...messaging.valid import DID, INDY_RAW_PUBLIC_KEY, UUIDFour
+from ...messaging.valid import INDY_DID, INDY_RAW_PUBLIC_KEY, UUIDFour
 
 from ...protocols.connections.v1_0.message_types import (
     CONNECTION_INVITATION,
@@ -512,9 +512,11 @@ class ConnRecordSchema(BaseRecordSchema):
     connection_id = fields.Str(
         required=False, description="Connection identifier", example=UUIDFour.EXAMPLE
     )
-    my_did = fields.Str(required=False, description="Our DID for connection", **DID)
+    my_did = fields.Str(
+        required=False, description="Our DID for connection", **INDY_DID
+    )
     their_did = fields.Str(
-        required=False, description="Their DID for connection", **DID
+        required=False, description="Their DID for connection", **INDY_DID
     )
     their_label = fields.Str(
         required=False, description="Their label for connection", example="Bob"

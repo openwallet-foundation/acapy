@@ -5,7 +5,7 @@ from typing import Sequence
 from marshmallow import EXCLUDE, fields, post_dump
 
 from .....messaging.models.base import BaseModel, BaseModelSchema
-from .....messaging.valid import DID, DID_KEY
+from .....messaging.valid import DID_KEY, INDY_DID
 
 
 class Service(BaseModel):
@@ -56,7 +56,7 @@ class ServiceSchema(BaseModelSchema):
 
     _id = fields.Str(required=True, description="Service identifier", data_key="id")
     _type = fields.Str(required=True, description="Service type", data_key="type")
-    did = fields.Str(required=False, description="Service DID", **DID)
+    did = fields.Str(required=False, description="Service DID", **INDY_DID)
 
     recipient_keys = fields.List(
         fields.Str(description="Recipient public key", **DID_KEY),

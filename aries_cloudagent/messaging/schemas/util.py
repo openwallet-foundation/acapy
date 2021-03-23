@@ -3,7 +3,7 @@
 from marshmallow import fields
 
 from ..models.openapi import OpenAPISchema
-from ..valid import DID, INDY_SCHEMA_ID, INDY_VERSION
+from ..valid import INDY_DID, INDY_SCHEMA_ID, INDY_VERSION
 
 
 class SchemaQueryStringSchema(OpenAPISchema):
@@ -17,7 +17,7 @@ class SchemaQueryStringSchema(OpenAPISchema):
     schema_issuer_did = fields.Str(
         description="Schema issuer DID",
         required=False,
-        **DID,
+        **INDY_DID,
     )
     schema_name = fields.Str(
         description="Schema name",

@@ -21,8 +21,8 @@ from ....ledger.error import LedgerError
 from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....messaging.models.base import BaseModelError, OpenAPISchema
 from ....messaging.valid import (
-    DID,
     INDY_CRED_DEF_ID,
+    INDY_DID,
     INDY_SCHEMA_ID,
     INDY_VERSION,
     UUIDFour,
@@ -134,7 +134,7 @@ class V20CredFilterIndySchema(OpenAPISchema):
         description="Schema identifier", required=False, **INDY_SCHEMA_ID
     )
     schema_issuer_did = fields.Str(
-        description="Schema issuer DID", required=False, **DID
+        description="Schema issuer DID", required=False, **INDY_DID
     )
     schema_name = fields.Str(
         description="Schema name", required=False, example="preferences"
@@ -142,7 +142,9 @@ class V20CredFilterIndySchema(OpenAPISchema):
     schema_version = fields.Str(
         description="Schema version", required=False, **INDY_VERSION
     )
-    issuer_did = fields.Str(description="Credential issuer DID", required=False, **DID)
+    issuer_did = fields.Str(
+        description="Credential issuer DID", required=False, **INDY_DID
+    )
 
 
 class V20CredFilterDIFSchema(OpenAPISchema):

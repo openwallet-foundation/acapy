@@ -58,18 +58,20 @@ class VCHolder(ABC):
         types: Sequence[str] = None,
         schema_ids: str = None,
         issuer_id: str = None,
-        subject_id: str = None,
+        subject_ids: str = None,
+        given_id: str = None,
         tag_query: Mapping = None,
     ) -> "VCRecordSearch":
         """
         Start a new VC record search.
 
         Args:
-            contexts: An inclusive list of JSON-LD contexts to filter for
-            types: An inclusive list of JSON-LD types to filter for
+            contexts: An inclusive list of JSON-LD contexts to match
+            types: An inclusive list of JSON-LD types to match
             schema_ids: An inclusive list of credential schema identifiers
             issuer_id: The ID of the credential issuer
-            subject_id: The ID of one of the credential subjects
+            subject_ids: The IDs of any credential subjects all of which to match
+            given_id: The given id of the credential
             tag_query: A tag filter clause
 
         """

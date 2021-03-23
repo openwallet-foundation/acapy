@@ -10,13 +10,13 @@ from ..valid import (
     BASE64,
     BASE64URL,
     BASE64URL_NO_PAD,
-    DID,
     DID_KEY,
     DID_POSTURE,
     ENDPOINT,
     ENDPOINT_TYPE,
     INDY_CRED_DEF_ID,
     INDY_CRED_REV_ID,
+    INDY_DID,
     INDY_EXTRA_WQL,
     INDY_ISO8601_DATETIME,
     INDY_PREDICATE,
@@ -100,20 +100,20 @@ class TestValid(TestCase):
         INDY_REV_REG_SIZE["validate"](32767)
         INDY_REV_REG_SIZE["validate"](32768)
 
-    def test_decentralized_id(self):
-        non_dids = [
+    def test_indy_did(self):
+        non_indy_dids = [
             "Q4zqM7aXqm7gDQkUVLng9I",  # 'I' not a base58 char
             "Q4zqM7aXqm7gDQkUVLng",  # too short
             "Q4zqM7aXqm7gDQkUVLngZZZ",  # too long
             "did:sov:Q4zqM7aXqm7gDQkUVLngZZZ",  # too long
+            "did:other:Q4zqM7aXqm7gDQkUVLngZZZ",  # specifies non-indy DID
         ]
-        for non_did in non_dids:
+        for non_indy_did in non_indy_dids:
             with self.assertRaises(ValidationError):
-                DID["validate"](non_did)
+                INDY_DID["validate"](non_indy_did)
 
-        DID["validate"]("Q4zqM7aXqm7gDQkUVLng9h")
-        DID["validate"]("did:sov:Q4zqM7aXqm7gDQkUVLng9h")
-        DID["validate"]("did:example:Q4zqM7aXqm7gDQkUVLng9h")
+        INDY_DID["validate"]("Q4zqM7aXqm7gDQkUVLng9h")
+        INDY_DID["validate"]("did:sov:Q4zqM7aXqm7gDQkUVLng9h")
 
     def test_indy_raw_public_key(self):
         non_indy_raw_public_keys = [

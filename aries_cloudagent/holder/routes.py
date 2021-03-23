@@ -89,8 +89,8 @@ class CredentialsListQueryStringSchema(OpenAPISchema):
     )
 
 
-class DIFCredentialsListRequestSchema(OpenAPISchema):
-    """Parameters and validators for DIF credentials request."""
+class W3CCredentialsListRequestSchema(OpenAPISchema):
+    """Parameters and validators for W3C credentials request."""
 
     contexts = fields.List(
         fields.Str(
@@ -108,19 +108,22 @@ class DIFCredentialsListRequestSchema(OpenAPISchema):
     )
     schema_ids = fields.List(
         fields.Str(
-            description="Credential schema identifier to match",
+            description="Credential schema identifier",
             **ENDPOINT,
         ),
+        description="Schema identifiers, all of which to match",
         required=False,
     )
     issuer_id = fields.Str(
         required=False,
         description="Credential issuer identifier to match",
     )
-    subject_id = fields.Str(
+    subject_ids = fields.List(
+        fields.Str(description="Subject identifier"),
+        description="Subject identifiers, all of which to match",
         required=False,
-        description="Subject identifier to match",
     )
+    given_id = fields.Str(required=False, description="Given credential id to match")
     tag_query = fields.Dict(
         keys=fields.Str(description="Tag name"),
         values=fields.Str(description="Tag value"),
@@ -133,7 +136,7 @@ class DIFCredentialsListRequestSchema(OpenAPISchema):
 
 
 class VCRecordListSchema(OpenAPISchema):
-    """Result schema for DIF credential query."""
+    """Result schema for W3C credential query."""
 
     results = fields.List(fields.Nested(VCRecordSchema()))
 
@@ -331,13 +334,13 @@ async def credentials_list(request: web.BaseRequest):
 
 @docs(
     tags=["credentials"],
-    summary="Fetch DIF credential from wallet by id",
+    summary="Fetch W3C credential from wallet by id",
 )
 @match_info_schema(CredIdMatchInfoSchema())
 @response_schema(VCRecordSchema(), 200, description="")
-async def dif_cred_get(request: web.BaseRequest):
+async def w3c_cred_get(request: web.BaseRequest):
     """
-    Request handler for retrieving DIF credential.
+    Request handler for retrieving W3C credential.
 
     Args:
         request: aiohttp request object
@@ -352,24 +355,24 @@ async def dif_cred_get(request: web.BaseRequest):
     session = await context.session()
     holder = session.inject(VCHolder)
     try:
-        vc_record = await holder.retrieve_credential_by_given_id(credential_id)
+        vc_record = await holder.retrieve_credential_by_id(credential_id)
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
     except StorageError as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-    return web.json_response(vc_record)
+    return web.json_response(vc_record.serialize())
 
 
 @docs(
     tags=["credentials"],
-    summary="Remove DIF credential from wallet by id",
+    summary="Remove W3C credential from wallet by id",
 )
 @match_info_schema(CredIdMatchInfoSchema())
 @response_schema(HolderModuleResponseSchema(), 200, description="")
-async def dif_cred_remove(request: web.BaseRequest):
+async def w3c_cred_remove(request: web.BaseRequest):
     """
-    Request handler for deleting DIF credential.
+    Request handler for deleting W3C credential.
 
     Args:
         request: aiohttp request object
@@ -384,7 +387,7 @@ async def dif_cred_remove(request: web.BaseRequest):
     session = await context.session()
     holder = session.inject(VCHolder)
     try:
-        vc_record = await holder.retrieve_credential_by_given_id(credential_id)
+        vc_record = await holder.retrieve_credential_by_id(credential_id)
         await holder.delete_credential(vc_record)
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
@@ -396,14 +399,14 @@ async def dif_cred_remove(request: web.BaseRequest):
 
 @docs(
     tags=["credentials"],
-    summary="Fetch DIF credentials from wallet",
+    summary="Fetch W3C credentials from wallet",
 )
-@request_schema(DIFCredentialsListRequestSchema())
+@request_schema(W3CCredentialsListRequestSchema())
 @querystring_schema(CredentialsListQueryStringSchema())
 @response_schema(VCRecordListSchema(), 200, description="")
-async def dif_creds_list(request: web.BaseRequest):
+async def w3c_creds_list(request: web.BaseRequest):
     """
-    Request handler for searching DIF credential records.
+    Request handler for searching W3C credential records.
 
     Args:
         request: aiohttp request object
@@ -419,14 +422,21 @@ async def dif_creds_list(request: web.BaseRequest):
     types = body.get("types")
     schema_ids = body.get("schema_ids")
     issuer_id = body.get("issuer_id")
-    subject_id = body.get("subject_id")
+    subject_ids = body.get("subject_ids")
+    given_id = body.get("given_id")
     tag_query = body.get("tag_query")
     max_results = body.get("max_results")
 
     holder = session.inject(VCHolder)
     try:
         search = holder.search_credentials(
-            contexts, types, schema_ids, issuer_id, subject_id, tag_query
+            contexts=contexts,
+            types=types,
+            schema_ids=schema_ids,
+            issuer_id=issuer_id,
+            subject_ids=subject_ids,
+            given_id=given_id,
+            tag_query=tag_query,
         )
         records = await search.fetch(max_results)
     except StorageNotFoundError as err:
@@ -434,7 +444,7 @@ async def dif_creds_list(request: web.BaseRequest):
     except StorageError as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-    return web.json_response({"results": records})
+    return web.json_response({"results": [record.serialize() for record in records]})
 
 
 async def register(app: web.Application):
@@ -456,12 +466,12 @@ async def register(app: web.Application):
             web.delete("/credential/{credential_id}", credentials_remove),
             web.get("/credentials", credentials_list, allow_head=False),
             web.get(
-                "/credential/dif/{credential_id}",
-                dif_cred_get,
+                "/credential/w3c/{credential_id}",
+                w3c_cred_get,
                 allow_head=False,
             ),
-            web.delete("/credential/dif/{credential_id}", dif_cred_remove),
-            web.get("/credentials/dif", dif_creds_list, allow_head=False),
+            web.delete("/credential/w3c/{credential_id}", w3c_cred_remove),
+            web.post("/credentials/w3c", w3c_creds_list),
         ]
     )
 

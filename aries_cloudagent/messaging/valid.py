@@ -190,18 +190,18 @@ class DIDPosture(OneOf):
         )
 
 
-class DecentralizedId(Regexp):
-    """Validate value against DID."""
+class IndyDID(Regexp):
+    """Validate value against indy DID."""
 
     EXAMPLE = "WgWxqztrNooG92RXvxSTWv"
-    PATTERN = rf"^(did:[^:]+:)?[{B58}]{{21,22}}$"
+    PATTERN = rf"^(did:sov:)?[{B58}]{{21,22}}$"
 
     def __init__(self):
         """Initializer."""
 
         super().__init__(
-            DecentralizedId.PATTERN,
-            error="Value {input} is not a decentralized identifier (DID)",
+            IndyDID.PATTERN,
+            error="Value {input} is not an indy decentralized identifier (DID)",
         )
 
 
@@ -563,7 +563,7 @@ JWS_HEADER_KID = {"validate": JWSHeaderKid(), "example": JWSHeaderKid.EXAMPLE}
 JWT = {"validate": JSONWebToken(), "example": JSONWebToken.EXAMPLE}
 DID_KEY = {"validate": DIDKey(), "example": DIDKey.EXAMPLE}
 DID_POSTURE = {"validate": DIDPosture(), "example": DIDPosture.EXAMPLE}
-DID = {"validate": DecentralizedId(), "example": DecentralizedId.EXAMPLE}
+INDY_DID = {"validate": IndyDID(), "example": IndyDID.EXAMPLE}
 INDY_RAW_PUBLIC_KEY = {
     "validate": IndyRawPublicKey(),
     "example": IndyRawPublicKey.EXAMPLE,

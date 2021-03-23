@@ -7,7 +7,7 @@ from marshmallow import fields, validate
 
 from ..admin.request_context import AdminRequestContext
 from ..messaging.models.openapi import OpenAPISchema
-from ..messaging.valid import ENDPOINT_TYPE, DID, INDY_RAW_PUBLIC_KEY, INT_EPOCH
+from ..messaging.valid import ENDPOINT_TYPE, INDY_DID, INDY_RAW_PUBLIC_KEY, INT_EPOCH
 from ..storage.error import StorageError
 from ..wallet.error import WalletError, WalletNotFoundError
 
@@ -73,7 +73,7 @@ class RegisterLedgerNymQueryStringSchema(OpenAPISchema):
     did = fields.Str(
         description="DID to register",
         required=True,
-        **DID,
+        **INDY_DID,
     )
     verkey = fields.Str(
         description="Verification key", required=True, **INDY_RAW_PUBLIC_KEY
@@ -95,13 +95,13 @@ class RegisterLedgerNymQueryStringSchema(OpenAPISchema):
 class QueryStringDIDSchema(OpenAPISchema):
     """Parameters and validators for query string with DID only."""
 
-    did = fields.Str(description="DID of interest", required=True, **DID)
+    did = fields.Str(description="DID of interest", required=True, **INDY_DID)
 
 
 class QueryStringEndpointSchema(OpenAPISchema):
     """Parameters and validators for query string with DID and endpoint type."""
 
-    did = fields.Str(description="DID of interest", required=True, **DID)
+    did = fields.Str(description="DID of interest", required=True, **INDY_DID)
     endpoint_type = fields.Str(
         description=(
             f"Endpoint type of interest (default '{EndpointType.ENDPOINT.w3c}')"

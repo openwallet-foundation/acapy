@@ -1,15 +1,14 @@
 """Model for representing a stored verifiable credential."""
 
-import json
 import logging
 
-from typing import Sequence
+from typing import Mapping, Sequence
 from uuid import uuid4
 
 from marshmallow import EXCLUDE, fields
 
 from ...messaging.models.base import BaseModel, BaseModelSchema
-from ...messaging.valid import DecentralizedId, ENDPOINT, JSON_DUMP, UUIDFour
+from ...messaging.valid import ENDPOINT, UUIDFour
 
 LOGGER = logging.getLogger(__name__)
 
@@ -30,9 +29,9 @@ class VCRecord(BaseModel):
         issuer_id: str,  # issuer ID is required by spec
         subject_ids: Sequence[str],  # one or more subject IDs may be present
         schema_ids: Sequence[str],  # one or more credential schema IDs may be present
-        value_json: str,  # the credential encoded as a serialized JSON string
+        cred_value: Mapping,  # the credential value as a JSON-serializable mapping
         given_id: str = None,  # value of the credential 'id' property, if any
-        cred_tags: dict = None,  # tags for retrieval (derived from attribute values)
+        cred_tags: Mapping = None,  # tags for retrieval (derived from attribute values)
         record_id: str = None,  # specify the storage record ID
     ):
         """Initialize some defaults on record."""
@@ -42,7 +41,7 @@ class VCRecord(BaseModel):
         self.schema_ids = set(schema_ids) if schema_ids else set()
         self.issuer_id = issuer_id
         self.subject_ids = set(subject_ids) if subject_ids else set()
-        self.value_json = value_json
+        self.cred_value = cred_value
         self.given_id = given_id
         self.cred_tags = cred_tags or {}
         self.record_id = record_id or uuid4().hex
@@ -79,7 +78,7 @@ class VCRecord(BaseModel):
             and other.given_id == self.given_id
             and other.record_id == self.record_id
             and other.cred_tags == self.cred_tags
-            and json.loads(other.value_json) == json.loads(self.value_json)
+            and other.cred_value == self.cred_value
         )
 
 
@@ -107,7 +106,7 @@ class VCRecordSchema(BaseModelSchema):
     )
     issuer_id = fields.Str(
         description="Issuer identifier",
-        example=DecentralizedId.EXAMPLE,
+        example="https://example.edu/issuers/14",
     )
     subject_ids = fields.List(
         fields.Str(
@@ -115,7 +114,7 @@ class VCRecordSchema(BaseModelSchema):
             example="did:example:ebfeb1f712ebc6f1c276e12ec21",
         )
     )
-    value_json = fields.Str(description="(JSON) credential value", **JSON_DUMP)
+    cred_value = fields.Dict(description="(JSON-serializable) credential value")
     given_id = fields.Str(
         description="Credential identifier",
         example="http://example.edu/credentials/3732",

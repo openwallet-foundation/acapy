@@ -1,4 +1,6 @@
-"""De/serialization between StorageRecord and VCRecord."""
+"""Transformation between StorageRecord and VCRecord."""
+
+import json
 
 from aries_cloudagent.storage.record import StorageRecord
 
@@ -7,7 +9,7 @@ from .vc_record import VCRecord
 VC_CRED_RECORD_TYPE = "vc_cred"
 
 
-def load_credential(record: StorageRecord) -> VCRecord:
+def storage_to_vc_record(record: StorageRecord) -> VCRecord:
     """Convert an Indy-SDK stored record into a VC record."""
     cred_tags = {}
     contexts = []
@@ -37,14 +39,14 @@ def load_credential(record: StorageRecord) -> VCRecord:
         schema_ids=schema_ids,
         issuer_id=issuer_id,
         subject_ids=subject_ids,
-        value_json=record.value,
+        cred_value=json.loads(record.value),
         given_id=given_id,
         cred_tags=cred_tags,
         record_id=record.id,
     )
 
 
-def serialize_credential(cred: VCRecord) -> StorageRecord:
+def vc_to_storage_record(cred: VCRecord) -> StorageRecord:
     """Convert a VC record into an in-memory stored record."""
     tags = {}
     for ctx_val in cred.contexts:
@@ -61,4 +63,10 @@ def serialize_credential(cred: VCRecord) -> StorageRecord:
         tags["given_id"] = cred.given_id
     if cred.cred_tags:
         tags.update(cred.cred_tags)
-    return StorageRecord(VC_CRED_RECORD_TYPE, cred.value_json, tags, cred.record_id)
+
+    return StorageRecord(
+        VC_CRED_RECORD_TYPE,
+        json.dumps(cred.cred_value),
+        tags,
+        cred.record_id,
+    )

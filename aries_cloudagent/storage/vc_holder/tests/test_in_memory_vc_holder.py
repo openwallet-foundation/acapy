@@ -40,7 +40,7 @@ def test_record() -> VCRecord:
         subject_ids=[VC_SUBJECT_ID],
         given_id=VC_GIVEN_ID,
         cred_tags={"tag": "value"},
-        value_json="{}",
+        cred_value={"...": "..."},
     )
 
 
@@ -98,8 +98,9 @@ class TestInMemoryVCHolder:
             contexts=[VC_CONTEXT],
             types=[VC_TYPE],
             schema_ids=[VC_SCHEMA_ID],
-            subject_id=VC_SUBJECT_ID,
+            subject_ids=[VC_SUBJECT_ID],
             issuer_id=VC_ISSUER_ID,
+            given_id=VC_GIVEN_ID,
             tag_query={"tag": "value"},
         )
         rows = await search.fetch()
@@ -114,10 +115,13 @@ class TestInMemoryVCHolder:
         rows = await holder.search_credentials(schema_ids=["other schema"]).fetch()
         assert not rows
 
-        rows = await holder.search_credentials(subject_id="other subject").fetch()
+        rows = await holder.search_credentials(subject_ids=["other subject"]).fetch()
         assert not rows
 
         rows = await holder.search_credentials(issuer_id="other issuer").fetch()
+        assert not rows
+
+        rows = await holder.search_credentials(given_id="other given id").fetch()
         assert not rows
 
         await search.close()

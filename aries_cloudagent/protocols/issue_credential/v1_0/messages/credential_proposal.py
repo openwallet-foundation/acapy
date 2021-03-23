@@ -3,7 +3,12 @@
 from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
-from .....messaging.valid import DID, INDY_CRED_DEF_ID, INDY_SCHEMA_ID, INDY_VERSION
+from .....messaging.valid import (
+    INDY_CRED_DEF_ID,
+    INDY_DID,
+    INDY_SCHEMA_ID,
+    INDY_VERSION,
+)
 
 from ..message_types import CREDENTIAL_PROPOSAL, PROTOCOL_PACKAGE
 
@@ -79,8 +84,8 @@ class CredentialProposalSchema(AgentMessageSchema):
         CredentialPreviewSchema, required=False, allow_none=False
     )
     schema_id = fields.Str(required=False, allow_none=False, **INDY_SCHEMA_ID)
-    schema_issuer_did = fields.Str(required=False, allow_none=False, **DID)
+    schema_issuer_did = fields.Str(required=False, allow_none=False, **INDY_DID)
     schema_name = fields.Str(required=False, allow_none=False)
     schema_version = fields.Str(required=False, allow_none=False, **INDY_VERSION)
     cred_def_id = fields.Str(required=False, allow_none=False, **INDY_CRED_DEF_ID)
-    issuer_did = fields.Str(required=False, allow_none=False, **DID)
+    issuer_did = fields.Str(required=False, allow_none=False, **INDY_DID)

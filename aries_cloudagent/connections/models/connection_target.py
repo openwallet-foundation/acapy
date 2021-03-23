@@ -5,7 +5,7 @@ from typing import Sequence
 from marshmallow import EXCLUDE, fields
 
 from ...messaging.models.base import BaseModel, BaseModelSchema
-from ...messaging.valid import DID, INDY_RAW_PUBLIC_KEY
+from ...messaging.valid import INDY_DID, INDY_RAW_PUBLIC_KEY
 
 
 class ConnectionTarget(BaseModel):
@@ -53,7 +53,7 @@ class ConnectionTargetSchema(BaseModelSchema):
         model_class = ConnectionTarget
         unknown = EXCLUDE
 
-    did = fields.Str(required=False, description="", **DID)
+    did = fields.Str(required=False, description="", **INDY_DID)
     endpoint = fields.Str(
         required=False,
         description="Connection endpoint",

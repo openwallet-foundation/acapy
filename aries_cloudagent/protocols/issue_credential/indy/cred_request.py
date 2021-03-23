@@ -5,7 +5,7 @@ from typing import Mapping
 from marshmallow import EXCLUDE, fields
 
 from ....messaging.models.base import BaseModel, BaseModelSchema
-from ....messaging.valid import DID, INDY_CRED_DEF_ID, NUM_STR_WHOLE
+from ....messaging.valid import INDY_CRED_DEF_ID, INDY_DID, NUM_STR_WHOLE
 
 
 class IndyCredRequest(BaseModel):
@@ -46,7 +46,7 @@ class IndyCredRequestSchema(BaseModelSchema):
     prover_did = fields.Str(
         requred=True,
         description="Prover DID",
-        **DID,
+        **INDY_DID,
     )
     cred_def_id = fields.Str(
         required=True,

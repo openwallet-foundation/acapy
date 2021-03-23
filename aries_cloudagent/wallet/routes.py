@@ -21,7 +21,7 @@ from ..messaging.valid import (
     ENDPOINT,
     ENDPOINT_TYPE,
     INDY_CRED_DEF_ID,
-    DID,
+    INDY_DID,
     INDY_RAW_PUBLIC_KEY,
 )
 from ..multitenant.manager import MultitenantManager
@@ -38,7 +38,7 @@ class WalletModuleResponseSchema(OpenAPISchema):
 class DIDSchema(OpenAPISchema):
     """Result schema for a DID."""
 
-    did = fields.Str(description="DID of interest", **DID)
+    did = fields.Str(description="DID of interest", **INDY_DID)
     verkey = fields.Str(description="Public verification key", **INDY_RAW_PUBLIC_KEY)
     posture = fields.Str(
         description=(
@@ -65,7 +65,7 @@ class DIDListSchema(OpenAPISchema):
 class DIDEndpointWithTypeSchema(OpenAPISchema):
     """Request schema to set DID endpoint of particular type."""
 
-    did = fields.Str(description="DID of interest", required=True, **DID)
+    did = fields.Str(description="DID of interest", required=True, **INDY_DID)
     endpoint = fields.Str(
         description="Endpoint to set (omit to delete)", required=False, **ENDPOINT
     )
@@ -82,7 +82,7 @@ class DIDEndpointWithTypeSchema(OpenAPISchema):
 class DIDEndpointSchema(OpenAPISchema):
     """Request schema to set DID endpoint; response schema to get DID endpoint."""
 
-    did = fields.Str(description="DID of interest", required=True, **DID)
+    did = fields.Str(description="DID of interest", required=True, **INDY_DID)
     endpoint = fields.Str(
         description="Endpoint to set (omit to delete)", required=False, **ENDPOINT
     )
@@ -91,7 +91,7 @@ class DIDEndpointSchema(OpenAPISchema):
 class DIDListQueryStringSchema(OpenAPISchema):
     """Parameters and validators for DID list request query string."""
 
-    did = fields.Str(description="DID of interest", required=False, **DID)
+    did = fields.Str(description="DID of interest", required=False, **INDY_DID)
     verkey = fields.Str(
         description="Verification key of interest",
         required=False,
@@ -111,7 +111,7 @@ class DIDListQueryStringSchema(OpenAPISchema):
 class DIDQueryStringSchema(OpenAPISchema):
     """Parameters and validators for set public DID request query string."""
 
-    did = fields.Str(description="DID of interest", required=True, **DID)
+    did = fields.Str(description="DID of interest", required=True, **INDY_DID)
 
 
 class CredDefIdMatchInfoSchema(OpenAPISchema):

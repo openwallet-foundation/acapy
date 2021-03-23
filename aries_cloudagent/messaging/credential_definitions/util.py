@@ -4,7 +4,7 @@ from marshmallow import fields
 
 from ..models.openapi import OpenAPISchema
 from ..valid import (
-    DID,
+    INDY_DID,
     INDY_CRED_DEF_ID,
     INDY_SCHEMA_ID,
     INDY_VERSION,
@@ -25,7 +25,7 @@ class CredDefQueryStringSchema(OpenAPISchema):
     schema_issuer_did = fields.Str(
         description="Schema issuer DID",
         required=False,
-        **DID,
+        **INDY_DID,
     )
     schema_name = fields.Str(
         description="Schema name",
@@ -38,7 +38,7 @@ class CredDefQueryStringSchema(OpenAPISchema):
     issuer_did = fields.Str(
         description="Issuer DID",
         required=False,
-        **DID,
+        **INDY_DID,
     )
     cred_def_id = fields.Str(
         description="Credential definition id",
