@@ -1,8 +1,9 @@
 import asyncio
 import json
-from os import path
 import tempfile
 import pytest
+
+from os import path
 
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
@@ -266,15 +267,17 @@ class TestIndySdkLedger(AsyncTestCase):
     @async_mock.patch("indy.pool.open_pool_ledger")
     @async_mock.patch("indy.pool.close_pool_ledger")
     @async_mock.patch("indy.ledger.sign_and_submit_request")
+    @async_mock.patch("indy.ledger.multi_sign_request")
     async def test_submit_signed(
         self,
+        mock_indy_multi_sign,
         mock_sign_submit,
         mock_close_pool,
         mock_open_ledger,
         mock_create_config,
         mock_set_proto,
     ):
-
+        mock_indy_multi_sign.return_value = json.dumps({"endorsed": "content"})
         mock_sign_submit.return_value = '{"op": "REPLY"}'
 
         mock_wallet = async_mock.MagicMock()
@@ -292,12 +295,29 @@ class TestIndySdkLedger(AsyncTestCase):
             mock_did = mock_wallet.get_public_did.return_value
             mock_did.did = self.test_did
 
-            await ledger._submit("{}", True, False)
+            await ledger._submit(
+                request_json="{}",
+                sign=True,
+                taa_accept=False,
+            )
 
             mock_wallet.get_public_did.assert_called_once_with()
-
             mock_sign_submit.assert_called_once_with(
                 ledger.pool_handle, mock_wallet.opened.handle, mock_did.did, "{}"
+            )
+
+            result_json = await ledger._submit(  # multi-sign for later endorsement
+                request_json="{}",
+                sign=True,
+                taa_accept=False,
+                write_ledger=False,
+            )
+            assert json.loads(result_json) == {"endorsed": "content"}
+
+            await ledger.txn_submit(  # cover txn_submit()
+                request_json="{}",
+                sign=True,
+                taa_accept=False,
             )
 
     @async_mock.patch("indy.pool.set_protocol_version")
@@ -462,6 +482,44 @@ class TestIndySdkLedger(AsyncTestCase):
                 await ledger._submit("{}", False)
             assert "Ledger rejected transaction request" in str(context.exception)
 
+    @async_mock.patch("indy.pool.set_protocol_version")
+    @async_mock.patch("indy.pool.create_pool_ledger_config")
+    @async_mock.patch("indy.pool.open_pool_ledger")
+    @async_mock.patch("indy.pool.close_pool_ledger")
+    @async_mock.patch("indy.ledger.multi_sign_request")
+    async def test_txn_endorse(
+        self,
+        mock_indy_multi_sign,
+        mock_indy_close,
+        mock_indy_open,
+        mock_create_config,
+        mock_set_proto,
+    ):
+        mock_indy_multi_sign.return_value = json.dumps({"endorsed": "content"})
+        mock_indy_open.return_value = 1
+
+        mock_wallet = async_mock.MagicMock(
+            get_public_did=async_mock.CoroutineMock(return_value=None)
+        )
+        ledger = IndySdkLedger(IndySdkLedgerPool("name", checked=True), mock_wallet)
+
+        with self.assertRaises(ClosedPoolError):
+            await ledger.txn_endorse(request_json=json.dumps({"...": "..."}))
+
+        async with ledger:
+            with self.assertRaises(BadLedgerRequestError):
+                await ledger.txn_endorse(request_json=json.dumps({"...": "..."}))
+
+            mock_wallet.get_public_did.return_value = TestIndySdkLedger.test_did_info
+
+            endorsed_json = await ledger.txn_endorse(
+                request_json=json.dumps({"...": "..."})
+            )
+            assert json.loads(endorsed_json) == {"endorsed": "content"}
+
+    '''
+    # 463, 470, 731, 738  TODO
+    '''
     @async_mock.patch("aries_cloudagent.ledger.indy.IndySdkLedgerPool.context_open")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndySdkLedgerPool.context_close")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndySdkLedger._submit")
