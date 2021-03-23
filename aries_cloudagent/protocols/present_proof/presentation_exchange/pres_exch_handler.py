@@ -681,11 +681,11 @@ async def apply_requirements(req: Requirement, credentials: Sequence[VCRecord]) 
     for given_id in given_id_descriptors.keys():
         # Check if number of applicable credentials
         # does not meet requirement specification
-        if not is_len_applicable(req, len(given_id_descriptors[k])):
+        if not is_len_applicable(req, len(given_id_descriptors[given_id])):
             for descriptor_id in given_id_descriptors[given_id]:
                 # Add to exclude dict
                 # with cred.given_id + descriptor_id as key
-                exclude[descriptor_id + k] = {}
+                exclude[descriptor_id + given_id] = {}
     # merging credentials and excluding credentials that don't satisfy the requirement
     return await merge_nested_results(nested_result=nested_result, exclude=exclude)
 
