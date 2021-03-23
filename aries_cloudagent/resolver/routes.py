@@ -29,8 +29,6 @@ Resolve did document admin routes.
 }
 """
 
-import re
-
 from aiohttp import web
 from aiohttp_apispec import docs, match_info_schema, response_schema
 from marshmallow import fields, validate
