@@ -11,9 +11,8 @@ from ...resolver.base import (
     DIDNotFound,
     ResolverType,
 )
-from ...resolver.did import DID
+from pydid import DID, DIDDocument, VerificationMethod
 from . import DOC
-from ...connections.models.diddoc_v2 import DIDDoc, VerificationMethod
 from ..did_resolver import DIDResolver
 from ..did_resolver_registry import DIDResolverRegistry
 
@@ -84,7 +83,7 @@ class MockResolver(BaseDIDResolver):
 def resolver():
     did_resolver_registry = DIDResolverRegistry()
     for method in TEST_DID_METHODS:
-        resolver = MockResolver([method], DIDDoc.deserialize(DOC))
+        resolver = MockResolver([method], DIDDocument.deserialize(DOC))
         did_resolver_registry.register(resolver)
     return DIDResolver(did_resolver_registry)
 
@@ -149,7 +148,7 @@ async def test_dereference(resolver, profile):
 @pytest.mark.parametrize("did", TEST_DIDS)
 async def test_resolve(resolver, profile, did):
     did_doc = await resolver.resolve(profile, did)
-    assert isinstance(did_doc, DIDDoc)
+    assert isinstance(did_doc, DIDDocument)
 
 
 @pytest.mark.asyncio
@@ -157,7 +156,7 @@ async def test_resolve(resolver, profile, did):
 async def test_resolve_did(resolver, profile, did):
     did = DID(did)
     did_doc = await resolver.resolve(profile, did)
-    assert isinstance(did_doc, DIDDoc)
+    assert isinstance(did_doc, DIDDocument)
 
 
 @pytest.mark.asyncio

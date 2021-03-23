@@ -36,7 +36,7 @@ from marshmallow import fields, validate
 from ..admin.request_context import AdminRequestContext
 from ..messaging.models.openapi import OpenAPISchema
 from .base import DIDMethodNotSupported, DIDNotFound, ResolverError
-from .did import DID_PATTERN
+from pydid.common import DID_PATTERN
 from .did_resolver import DIDResolver
 
 
