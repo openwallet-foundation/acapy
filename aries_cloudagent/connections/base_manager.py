@@ -97,24 +97,24 @@ class BaseConnectionManager:
                     f"No services defined by routing DIDDocument: {router_id}"
                 )
             for service in routing_doc.service:
-                if not service.service_endpoint:
+                if not service.endpoint:
                     raise BaseConnectionManagerError(
                         "Routing DIDDocument service has no service endpoint"
                     )
-                if not service.recipient_keys:
+                if not service.extra.get('recipientKeys'):
                     raise BaseConnectionManagerError(
                         "Routing DIDDocument service has no recipient key(s)"
                     )
 
                 self.method = builder.verification_methods.add(
-                    type="Ed25519VerificationKey2018",
-                    value=routing_doc.dereference(service.recipient_keys[0]).value,
+                    suite=routing_doc.dereference(service.extra.get('recipientKeys')[0]).suite,
+                    material=routing_doc.dereference(service.extra.get('recipientKeys')[0]).material,
                     ident="routing-{}".format(router_idx),
                 )
 
                 rk = self.method
                 routing_keys.append(rk)
-                svc_endpoints = [service.service_endpoint]
+                svc_endpoints = [service.endpoint]
                 break
             router_id = router.inbound_connection_id
 
@@ -122,8 +122,9 @@ class BaseConnectionManager:
             for mediation_record in mediation_records:
                 mediator_routing_keys = [
                     builder.verification_methods.add(
-                        type="Ed25519VerificationKey2018",
-                        value=key,
+                        suite=VerificationSuite("Ed25519VerificationKey2018",
+                                          "publicKeyBase58"),
+                        material=key,
                         ident="routing-{}".format(idx),
                     )
                     for idx, key in enumerate(mediation_record.routing_keys)
@@ -132,14 +133,17 @@ class BaseConnectionManager:
                 routing_keys = [*routing_keys, *mediator_routing_keys]
 
                 svc_endpoints = [mediation_record.endpoint]
-
+        index = 1
         for (endpoint_index, svc_endpoint) in enumerate(svc_endpoints or []):
+
             builder.services.add_didcomm(
                 recipient_keys=[vmethod],
                 type_="IndyAgent", # TODO: remove hardcoding
                 routing_keys=routing_keys,
                 endpoint=svc_endpoint,
+                ident="service-{}".format(index)
             )
+            index += 1
 
         return builder.build()
 
@@ -165,9 +169,9 @@ class BaseConnectionManager:
                 record, did_doc.serialize(), {"did": did_doc.id}
             )
         await self.remove_keys_for_did(did_doc.id)
-        for key in did_doc.public_key:
+        for key in did_doc.verification_method:
             if key.controller == did_doc.id:
-                await self.add_key_for_did(did_doc.id, key.value)
+                await self.add_key_for_did(did_doc.id, key.material)
 
     async def add_key_for_did(self, did: str, key: str):
         """Store a verkey for lookup against a DID.

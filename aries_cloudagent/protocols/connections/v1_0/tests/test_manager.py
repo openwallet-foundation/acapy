@@ -42,6 +42,8 @@ from ..models.connection_detail import ConnectionDetail
 class TestConnectionManager(AsyncTestCase):
     def make_did_doc(self, did, verkey, without_service=False):
         builder = DIDDocumentBuilder(did)
+
+
         vmethod = builder.verification_methods.add(
             ident="1",
             suite=VerificationSuite("Ed25519VerificationKey2018", "publicKeyBase58"),
@@ -53,6 +55,7 @@ class TestConnectionManager(AsyncTestCase):
                 type_="IndyAgent",
                 recipient_keys=[vmethod],
                 routing_keys=[],
+                ident="service-1"
             )
         return builder.build()
 
@@ -1677,6 +1680,7 @@ class TestConnectionManager(AsyncTestCase):
             did=self.test_target_did,
             verkey=self.test_target_verkey,
             without_service=True,
+            service_without_endpoint=True
         )
 
         x_did_doc.add_service(type="IndyAgent", endpoint="", ident="dummy")
@@ -1755,14 +1759,14 @@ class TestConnectionManager(AsyncTestCase):
         )
         assert doc.service
         services = doc.service
-        assert len(services) == 2
-        (service,) = [services[1]]
+        assert len(services) == 1
+        (service,) = [services[0]]
         service_public_keys = service.routing_keys[0]
         assert (
-            doc.dereference(service_public_keys).value
+            doc.dereference(service_public_keys).material
             == mediation_record.routing_keys[0]
         )
-        assert service.service_endpoint == mediation_record.endpoint
+        assert service.endpoint == mediation_record.endpoint
 
     async def test_create_did_document_multiple_mediators(self):
         did_info = DIDInfo(
@@ -1789,12 +1793,11 @@ class TestConnectionManager(AsyncTestCase):
         )
         assert doc.service
         services = doc.service
-        assert len(services) == 2
-        (service,) = [services[1]]
+        assert len(services) == 1
+        (service,) = [services[0]]
         routing = service.routing_keys
-        assert doc.dereference(routing[0]).value == mediation_record1.routing_keys[0]
-        assert doc.dereference(routing[1]).value == mediation_record2.routing_keys[0]
-        assert service.service_endpoint == mediation_record2.endpoint
+        assert doc.dereference(routing[0]).material == mediation_record1.routing_keys[0]
+        assert service.endpoint == mediation_record2.endpoint
 
     async def test_create_did_document_mediation_svc_endpoints_overwritten(self):
         did_info = DIDInfo(
@@ -1816,14 +1819,14 @@ class TestConnectionManager(AsyncTestCase):
         )
         assert doc.service
         services = doc.service
-        assert len(services) == 2
-        (service,) = [services[1]]
+        assert len(services) == 1
+        (service,) = [services[0]]
         service_public_keys = service.routing_keys[0]
         assert (
-            doc.dereference(service_public_keys).value
+            doc.dereference(service_public_keys).material
             == mediation_record.routing_keys[0]
         )
-        assert service.service_endpoint == mediation_record.endpoint
+        assert service.endpoint == mediation_record.endpoint
 
     async def test_did_key_storage(self):
         await self.manager.add_key_for_did(
