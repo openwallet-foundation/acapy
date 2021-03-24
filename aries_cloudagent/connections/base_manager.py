@@ -349,4 +349,7 @@ class BaseConnectionManager:
         """
         storage = self._session.inject(BaseStorage)
         record = await storage.find_record(self.RECORD_TYPE_DID_DOC, {"did": did})
+        for service in record.value.get("service", []):  # TODO: remove after pydid update.
+            if not service.get("serviceEndpoint"):
+                raise BaseConnectionManagerError()
         return DIDDocument.deserialize(record.value), record

@@ -708,7 +708,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 data=async_mock.MagicMock(
                     verify=async_mock.CoroutineMock(return_value=True),
                     signed=async_mock.MagicMock(
-                        decode=async_mock.MagicMock(return_value="dummy-did-doc")
+                        decode=async_mock.MagicMock(return_value="{}")
                     ),
                 )
             ),
@@ -746,7 +746,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 data=async_mock.MagicMock(
                     verify=async_mock.CoroutineMock(return_value=True),
                     signed=async_mock.MagicMock(
-                        decode=async_mock.MagicMock(return_value="dummy-did-doc")
+                        decode=async_mock.MagicMock(return_value="{}")
                     ),
                 )
             ),
@@ -853,7 +853,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 data=async_mock.MagicMock(
                     verify=async_mock.CoroutineMock(return_value=True),
                     signed=async_mock.MagicMock(
-                        decode=async_mock.MagicMock(return_value="dummy-did-doc")
+                        decode=async_mock.MagicMock(return_value="{}")
                     ),
                 )
             ),
@@ -896,7 +896,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 data=async_mock.MagicMock(
                     verify=async_mock.CoroutineMock(return_value=True),
                     signed=async_mock.MagicMock(
-                        decode=async_mock.MagicMock(return_value="dummy-did-doc")
+                        decode=async_mock.MagicMock(return_value="{}")
                     ),
                 )
             ),
@@ -965,7 +965,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 data=async_mock.MagicMock(
                     verify=async_mock.CoroutineMock(return_value=True),
                     signed=async_mock.MagicMock(
-                        decode=async_mock.MagicMock(return_value="dummy-did-doc")
+                        decode=async_mock.MagicMock(return_value="{}")
                     ),
                 )
             ),
@@ -1048,7 +1048,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 data=async_mock.MagicMock(
                     verify=async_mock.CoroutineMock(return_value=True),
                     signed=async_mock.MagicMock(
-                        decode=async_mock.MagicMock(return_value="dummy-did-doc")
+                        decode=async_mock.MagicMock(return_value="{}")
                     ),
                 )
             ),
@@ -1190,7 +1190,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 data=async_mock.MagicMock(
                     verify=async_mock.CoroutineMock(return_value=True),
                     signed=async_mock.MagicMock(
-                        decode=async_mock.MagicMock(return_value="dummy-did-doc")
+                        decode=async_mock.MagicMock(return_value="{}")
                     ),
                 )
             ),
