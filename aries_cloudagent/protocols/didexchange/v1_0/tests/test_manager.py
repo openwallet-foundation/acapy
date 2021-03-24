@@ -53,7 +53,7 @@ class TestConfig:
     test_target_did = "did:sov:GbuDUYXaUZRfHD2jeDuQuP"
     test_target_verkey = "9WCgWKUaAJj3VWxxtzvvMQN3AoFxoBtBDo9ntwJnVVCC"
 
-    def make_did_doc(self, did, verkey, without_services=False):
+    def make_did_doc(self, did, verkey, with_services=True):
         builder = DIDDocumentBuilder(did)
         vmethod = builder.verification_methods.add(
             ident="1",
@@ -61,14 +61,15 @@ class TestConfig:
             material=verkey,
         )
 
-        if not without_services:
-            builder.services.add_didcomm(
-                ident="1",
-                endpoint=self.test_endpoint,
-                type_="IndyAgent",
-                recipient_keys=[vmethod],
-                routing_keys=[],
-            )
+        if with_services:
+            with builder.services.defaults() as services:
+                services.add_didcomm(
+                    ident="services-1",
+                    endpoint=self.test_endpoint,
+                    type_="IndyAgent",
+                    recipient_keys=[vmethod],
+                    routing_keys=[],
+                )
         return builder.build()
 
 
@@ -388,7 +389,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 data=async_mock.MagicMock(
                     verify=async_mock.CoroutineMock(return_value=True),
                     signed=async_mock.MagicMock(
-                        decode=async_mock.MagicMock(return_value="dummy-did-doc")
+                        decode=async_mock.MagicMock(return_value="{}")
                     ),
                 )
             ),
@@ -1110,7 +1111,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 data=async_mock.MagicMock(
                     verify=async_mock.CoroutineMock(return_value=True),
                     signed=async_mock.MagicMock(
-                        decode=async_mock.MagicMock(return_value="dummy-did-doc")
+                        decode=async_mock.MagicMock(return_value="{}")
                     ),
                 )
             ),
@@ -1782,10 +1783,10 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
         x_did_doc = self.make_did_doc(
             did=TestConfig.test_target_did,
             verkey=TestConfig.test_target_verkey,
-            without_services=True,
+            with_services=False,
         )
 
-        for i in range(2):  # first cover store-record, then update-value
+        for _ in range(2):  # first cover store-record, then update-value
             await self.manager.store_did_document(x_did_doc)
 
         with async_mock.patch.object(
@@ -1817,14 +1818,18 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
         x_did_doc = self.make_did_doc(
             did=TestConfig.test_target_did,
             verkey=TestConfig.test_target_verkey,
-            without_services=True,
+            with_services=False,
         )
-        x_did_doc._service = {}
-        x_did_doc.add_didcomm_service(
-            type="IndyAgent", recipient_keys=[], routing_keys=[], endpoint=""
+        builder = DIDDocumentBuilder.from_doc(x_did_doc)
+        builder.services.add_didcomm(
+            ident="services-1",
+            type_="IndyAgent",
+            recipient_keys=[],
+            routing_keys=[],
+            endpoint="",
         )
-
-        for i in range(2):  # first cover store-record, then update-value
+        x_did_doc = builder.build()
+        for _ in range(2):  # first cover store-record, then update-value
             await self.manager.store_did_document(x_did_doc)
 
         with async_mock.patch.object(
@@ -1856,16 +1861,19 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
         x_did_doc = self.make_did_doc(
             did=TestConfig.test_target_did,
             verkey=TestConfig.test_target_verkey,
-            without_services=True,
+            with_services=False,
         )
-        x_did_doc.add_didcomm_service(
-            type="IndyAgent",
+        builder = DIDDocumentBuilder.from_doc(x_did_doc)
+        builder.services.add_didcomm(
+            ident="services-1",
+            type_="IndyAgent",
             recipient_keys=[],
             routing_keys=[],
             endpoint=self.test_endpoint,
         )
+        x_did_doc = builder.build()
 
-        for i in range(2):  # first cover store-record, then update-value
+        for _ in range(2):  # first cover store-record, then update-value
             await self.manager.store_did_document(x_did_doc)
 
         with async_mock.patch.object(
@@ -1917,7 +1925,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
         x_did_doc = self.make_did_doc(
             did=TestConfig.test_target_did,
             verkey=TestConfig.test_target_verkey,
-            without_services=True,
+            with_services=False,
         )
         with self.assertRaises(BaseConnectionManagerError):
             self.manager.diddoc_connection_targets(x_did_doc, TestConfig.test_verkey)

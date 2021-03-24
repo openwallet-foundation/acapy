@@ -101,15 +101,19 @@ class BaseConnectionManager:
                     raise BaseConnectionManagerError(
                         "Routing DIDDocument service has no service endpoint"
                     )
-                if not service.extra.get('recipientKeys'):
+                if not service.extra.get("recipientKeys"):
                     raise BaseConnectionManagerError(
                         "Routing DIDDocument service has no recipient key(s)"
                     )
 
                 self.method = builder.verification_methods.add(
-                    suite=routing_doc.dereference(service.extra.get('recipientKeys')[0]).suite,
-                    material=routing_doc.dereference(service.extra.get('recipientKeys')[0]).material,
-                    ident="routing-{}".format(router_idx),
+                    suite=routing_doc.dereference(
+                        service.extra.get("recipientKeys")[0]
+                    ).suite,
+                    material=routing_doc.dereference(
+                        service.extra.get("recipientKeys")[0]
+                    ).material,
+                    ident=f"routing-{router_idx}",
                 )
 
                 rk = self.method
@@ -122,10 +126,11 @@ class BaseConnectionManager:
             for mediation_record in mediation_records:
                 mediator_routing_keys = [
                     builder.verification_methods.add(
-                        suite=VerificationSuite("Ed25519VerificationKey2018",
-                                          "publicKeyBase58"),
+                        suite=VerificationSuite(
+                            "Ed25519VerificationKey2018", "publicKeyBase58"
+                        ),
                         material=key,
-                        ident="routing-{}".format(idx),
+                        ident=f"routing-{idx}",
                     )
                     for idx, key in enumerate(mediation_record.routing_keys)
                 ]
@@ -138,10 +143,10 @@ class BaseConnectionManager:
 
             builder.services.add_didcomm(
                 recipient_keys=[vmethod],
-                type_="IndyAgent", # TODO: remove hardcoding
+                type_="IndyAgent",  # TODO: remove hardcoding
                 routing_keys=routing_keys,
                 endpoint=svc_endpoint,
-                ident="service-{}".format(index)
+                ident="service-{}".format(index),
             )
             index += 1
 
@@ -283,7 +288,7 @@ class BaseConnectionManager:
                         for k in invitation.service_blocks[0].routing_keys
                     ]
 
-            results = [
+            return [
                 ConnectionTarget(
                     did=connection.their_did,
                     endpoint=endpoint,
@@ -299,11 +304,9 @@ class BaseConnectionManager:
                 return None
 
             did_doc, _ = await self.fetch_did_document(connection.their_did)
-            results = self.diddoc_connection_targets(
+            return self.diddoc_connection_targets(
                 did_doc, my_info.verkey, connection.their_label
             )
-
-        return results
 
     def diddoc_connection_targets(
         self, doc: DIDDocument, sender_verkey: str, their_label: str = None
@@ -323,25 +326,20 @@ class BaseConnectionManager:
         if not doc.service:
             raise BaseConnectionManagerError("No services defined by DIDDocument")
 
-        targets = []
-        for service in doc.service:
-            if service.recipient_keys:
-                targets.append(
-                    ConnectionTarget(
-                        did=doc.id,
-                        endpoint=service.service_endpoint,
-                        label=their_label,
-                        recipient_keys=[
-                            doc.dereference(key).value
-                            for key in (service.recipient_keys or ())
-                        ],
-                        routing_keys=[
-                            key.value for key in (service.routing_keys or ())
-                        ],
-                        sender_key=sender_verkey,
-                    )
-                )
-        return targets
+        return [
+            ConnectionTarget(
+                did=doc.id,
+                endpoint=service.service_endpoint,
+                label=their_label,
+                recipient_keys=[
+                    doc.dereference(key).value for key in (service.recipient_keys or ())
+                ],
+                routing_keys=[key.value for key in (service.routing_keys or ())],
+                sender_key=sender_verkey,
+            )
+            for service in doc.service
+            if service.recipient_keys
+        ]
 
     async def fetch_did_document(self, did: str) -> Tuple[DIDDocument, StorageRecord]:
         """Retrieve a DID Document for a given DID.

@@ -404,7 +404,7 @@ class DIDXManager(BaseConnectionManager):
         if not await request.did_doc_attach.data.verify(wallet):
             raise DIDXManagerError("DID Doc signature failed verification")
         conn_did_doc = DIDDocument.deserialize(
-            request.did_doc_attach.data.signed.decode()
+            json.loads(request.did_doc_attach.data.signed.decode())
         )
         if request.did != conn_did_doc.id:
             raise DIDXManagerError(
@@ -669,7 +669,7 @@ class DIDXManager(BaseConnectionManager):
             raise DIDXManagerError(
                 "No DIDDocument attached; cannot connect to public DID"
             )
-        conn_did_doc = await self.verify_DIDDocument(wallet, response.did_doc_attach)
+        conn_did_doc = await self.verify_diddoc(wallet, response.did_doc_attach)
         if their_did != conn_did_doc.did:
             raise DIDXManagerError(
                 f"Connection DID {their_did} "

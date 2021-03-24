@@ -43,7 +43,6 @@ class TestConnectionManager(AsyncTestCase):
     def make_did_doc(self, did, verkey, without_service=False):
         builder = DIDDocumentBuilder(did)
 
-
         vmethod = builder.verification_methods.add(
             ident="1",
             suite=VerificationSuite("Ed25519VerificationKey2018", "publicKeyBase58"),
@@ -55,7 +54,7 @@ class TestConnectionManager(AsyncTestCase):
                 type_="IndyAgent",
                 recipient_keys=[vmethod],
                 routing_keys=[],
-                ident="service-1"
+                ident="service-1",
             )
         return builder.build()
 
@@ -1680,7 +1679,7 @@ class TestConnectionManager(AsyncTestCase):
             did=self.test_target_did,
             verkey=self.test_target_verkey,
             without_service=True,
-            service_without_endpoint=True
+            service_without_endpoint=True,
         )
 
         x_did_doc.add_service(type="IndyAgent", endpoint="", ident="dummy")
