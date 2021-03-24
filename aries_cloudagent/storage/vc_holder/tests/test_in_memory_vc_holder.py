@@ -25,7 +25,7 @@ def holder():
     yield profile.inject(VCHolder)
 
 
-def test_record(tags={}) -> VCRecord:
+def test_record() -> VCRecord:
     return VCRecord(
         contexts=[
             VC_CONTEXT,
@@ -39,8 +39,8 @@ def test_record(tags={}) -> VCRecord:
         issuer_id=VC_ISSUER_ID,
         subject_ids=[VC_SUBJECT_ID],
         given_id=VC_GIVEN_ID,
-        tags={"tag": "value"},
-        value="{}",
+        cred_tags={"tag": "value"},
+        cred_value={"...": "..."},
     )
 
 
@@ -80,8 +80,10 @@ class TestInMemoryVCHolder:
         record = test_record()
         await holder.store_credential(record)
 
-        rows = await holder.search_credentials().fetch()
+        search = holder.search_credentials()
+        rows = await search.fetch()
         assert rows == [record]
+        await search.close()
 
         # test async iter and repr
         search = holder.search_credentials()
@@ -90,14 +92,18 @@ class TestInMemoryVCHolder:
         async for row in search:
             rows.append(row)
         assert rows == [record]
+        await search.close()
 
-        rows = await holder.search_credentials(
+        search = holder.search_credentials(
             contexts=[VC_CONTEXT],
             types=[VC_TYPE],
             schema_ids=[VC_SCHEMA_ID],
-            subject_id=VC_SUBJECT_ID,
+            subject_ids=[VC_SUBJECT_ID],
             issuer_id=VC_ISSUER_ID,
-        ).fetch()
+            given_id=VC_GIVEN_ID,
+            tag_query={"tag": "value"},
+        )
+        rows = await search.fetch()
         assert rows == [record]
 
         rows = await holder.search_credentials(contexts=["other-context"]).fetch()
@@ -109,8 +115,13 @@ class TestInMemoryVCHolder:
         rows = await holder.search_credentials(schema_ids=["other schema"]).fetch()
         assert not rows
 
-        rows = await holder.search_credentials(subject_id="other subject").fetch()
+        rows = await holder.search_credentials(subject_ids=["other subject"]).fetch()
         assert not rows
 
         rows = await holder.search_credentials(issuer_id="other issuer").fetch()
         assert not rows
+
+        rows = await holder.search_credentials(given_id="other given id").fetch()
+        assert not rows
+
+        await search.close()
