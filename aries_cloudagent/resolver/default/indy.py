@@ -62,7 +62,7 @@ class IndyDIDResolver(BaseDIDResolver):
                 type_=self.AGENT_SERVICE_TYPE,
                 endpoint=endpoint,
                 recipient_keys=[vmethod],
-                routing_keys=[]
+                routing_keys=[],
             )
 
         return builder.build()
