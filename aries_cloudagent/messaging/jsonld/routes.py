@@ -11,7 +11,7 @@ from ...config.base import InjectionError
 from ...wallet.error import WalletError
 from ...resolver.did_resolver import DIDResolver
 from ...resolver.base import ResolverError
-from ...resolver.did import DIDError
+from pydid import DIDError
 from .credential import sign_credential, verify_credential
 
 

@@ -26,7 +26,7 @@ from ..wallet.util import did_key_to_naked
 
 from .models.conn_record import ConnRecord
 from .models.connection_target import ConnectionTarget
-from .models.diddoc_v2 import AntiquatedDIDDoc, DIDDoc, PublicKeyType
+from pydid import DIDDocument, DIDDocumentBuilder, VerificationSuite
 
 
 class BaseConnectionManagerError(BaseError):
@@ -55,7 +55,7 @@ class BaseConnectionManager:
         inbound_connection_id: str = None,
         svc_endpoints: Sequence[str] = None,
         mediation_records: List[MediationRecord] = None,
-    ) -> DIDDoc:
+    ) -> DIDDocument:
         """Create our DID doc for a given DID.
 
         Args:
@@ -66,20 +66,19 @@ class BaseConnectionManager:
                 service endpoint
 
         Returns:
-            The prepared `DIDDoc` instance
+            The prepared `DIDDocument` instance
 
         """
         did = did_info.did
         if len(did_info.did.split(":")) < 2:
-            did_doc = AntiquatedDIDDoc(did)
-        else:
-            did_doc = DIDDoc(did)
-
-        pk = did_doc.add_verification_method(
-            type=PublicKeyType.ED25519_SIG_2018,
-            value=did_info.verkey,
+            did = "did:sov:" + did
+        builder = DIDDocumentBuilder(did)
+        vmethod = builder.verification_methods.add(
             ident="1",
-            authentication=True,
+            suite=VerificationSuite(
+                "Ed25519VerificationKey2018", "publicKeyBase58"
+            ),  # TODO: remove hardcoding
+            material=did_info.verkey,
         )
 
         router_id = inbound_connection_id
@@ -95,23 +94,22 @@ class BaseConnectionManager:
             routing_doc, _ = await self.fetch_did_document(router.their_did)
             if not routing_doc.service:
                 raise BaseConnectionManagerError(
-                    f"No services defined by routing DIDDoc: {router_id}"
+                    f"No services defined by routing DIDDocument: {router_id}"
                 )
             for service in routing_doc.service:
                 if not service.service_endpoint:
                     raise BaseConnectionManagerError(
-                        "Routing DIDDoc service has no service endpoint"
+                        "Routing DIDDocument service has no service endpoint"
                     )
                 if not service.recipient_keys:
                     raise BaseConnectionManagerError(
-                        "Routing DIDDoc service has no recipient key(s)"
+                        "Routing DIDDocument service has no recipient key(s)"
                     )
 
-                self.method = did_doc.add_verification_method(
-                    type=PublicKeyType.ED25519_SIG_2018,
+                self.method = builder.verification_methods.add(
+                    type="Ed25519VerificationKey2018",
                     value=routing_doc.dereference(service.recipient_keys[0]).value,
                     ident="routing-{}".format(router_idx),
-                    authentication=True,
                 )
 
                 rk = self.method
@@ -123,11 +121,10 @@ class BaseConnectionManager:
         if mediation_records:
             for mediation_record in mediation_records:
                 mediator_routing_keys = [
-                    did_doc.add_verification_method(
-                        type=PublicKeyType.ED25519_SIG_2018,
+                    builder.verification_methods.add(
+                        type="Ed25519VerificationKey2018",
                         value=key,
                         ident="routing-{}".format(idx),
-                        authentication=True,
                     )
                     for idx, key in enumerate(mediation_record.routing_keys)
                 ]
@@ -137,17 +134,20 @@ class BaseConnectionManager:
                 svc_endpoints = [mediation_record.endpoint]
 
         for (endpoint_index, svc_endpoint) in enumerate(svc_endpoints or []):
-            did_doc.add_didcomm_service(
-                recipient_keys=[pk], routing_keys=routing_keys, endpoint=svc_endpoint
+            builder.services.add_didcomm(
+                recipient_keys=[vmethod],
+                type_="IndyAgent", # TODO: remove hardcoding
+                routing_keys=routing_keys,
+                endpoint=svc_endpoint,
             )
 
-        return did_doc
+        return builder.build()
 
-    async def store_did_document(self, did_doc: DIDDoc):
+    async def store_did_document(self, did_doc: DIDDocument):
         """Store a DID document.
 
         Args:
-            did_doc: The `DIDDoc` instance to persist
+            did_doc: The `DIDDocument` instance to persist
         """
         assert did_doc.id
         storage: BaseStorage = self._session.inject(BaseStorage)
@@ -229,7 +229,7 @@ class BaseConnectionManager:
         """Get a list of connection target from a `ConnRecord`.
 
         Args:
-            connection: The connection record (with associated `DIDDoc`)
+            connection: The connection record (with associated `DIDDocument`)
                 used to generate the connection target
         """
 
@@ -302,7 +302,7 @@ class BaseConnectionManager:
         return results
 
     def diddoc_connection_targets(
-        self, doc: DIDDoc, sender_verkey: str, their_label: str = None
+        self, doc: DIDDocument, sender_verkey: str, their_label: str = None
     ) -> Sequence[ConnectionTarget]:
         """Get a list of connection targets from a DID Document.
 
@@ -313,9 +313,11 @@ class BaseConnectionManager:
         """
 
         if not doc:
-            raise BaseConnectionManagerError("No DIDDoc provided for connection target")
+            raise BaseConnectionManagerError(
+                "No DIDDocument provided for connection target"
+            )
         if not doc.service:
-            raise BaseConnectionManagerError("No services defined by DIDDoc")
+            raise BaseConnectionManagerError("No services defined by DIDDocument")
 
         targets = []
         for service in doc.service:
@@ -337,7 +339,7 @@ class BaseConnectionManager:
                 )
         return targets
 
-    async def fetch_did_document(self, did: str) -> Tuple[DIDDoc, StorageRecord]:
+    async def fetch_did_document(self, did: str) -> Tuple[DIDDocument, StorageRecord]:
         """Retrieve a DID Document for a given DID.
 
         Args:
@@ -345,4 +347,4 @@ class BaseConnectionManager:
         """
         storage = self._session.inject(BaseStorage)
         record = await storage.find_record(self.RECORD_TYPE_DID_DOC, {"did": did})
-        return DIDDoc.deserialize(record.value), record
+        return DIDDocument.deserialize(record.value), record

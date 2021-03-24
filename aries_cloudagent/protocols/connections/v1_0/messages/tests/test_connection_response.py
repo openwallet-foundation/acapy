@@ -2,12 +2,7 @@ from unittest import mock, TestCase
 
 from asynctest import TestCase as AsyncTestCase
 
-from ......connections.models.diddoc_v2 import (
-    DIDDoc,
-    VerificationMethod,
-    PublicKeyType,
-    Service,
-)
+from pydid import DIDDocumentBuilder, VerificationSuite
 from ......core.in_memory import InMemoryProfile
 
 from .....didcomm_prefix import DIDCommPrefix
@@ -26,19 +21,19 @@ class TestConfig:
     test_endpoint = "http://localhost"
 
     def make_did_doc(self):
-        did = self.test_did
-        verkey = self.test_verkey
-        endpoint = self.test_endpoint
-        doc = DIDDoc(did)
-
-        pk = doc.add_verification_method(
-            type=PublicKeyType.ED25519_SIG_2018, controller=did, value=verkey, ident="1"
+        builder = DIDDocumentBuilder(self.test_did)
+        vmethod = builder.verification_methods.add(
+            ident="1",
+            suite=VerificationSuite("Ed25519VerificationKey2018", "publicKeyBase58"),
+            material=self.test_verkey,
         )
-
-        doc.add_didcomm_service(
-            type="IndyAgent", recipient_keys=[pk], routing_keys=[], endpoint=endpoint
+        builder.services.add_didcomm(
+            endpoint=self.test_endpoint,
+            type_="IndyAgent",
+            recipient_keys=[vmethod],
+            routing_keys=[],
         )
-        return doc
+        return builder.build()
 
 
 class TestConnectionResponse(TestCase, TestConfig):

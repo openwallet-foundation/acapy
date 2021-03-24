@@ -7,7 +7,6 @@ from typing import Coroutine, Sequence, Tuple
 from aries_cloudagent.protocols.coordinate_mediation.v1_0.manager import (
     MediationManager,
 )
-from aries_cloudagent.connections.models.diddoc_v2 import DIDDoc
 
 from ....cache.base import BaseCache
 from ....config.base import InjectionError
@@ -534,11 +533,11 @@ class ConnectionManager(BaseConnectionManager):
         conn_did_doc = request.connection.did_doc
         if not conn_did_doc:
             raise ConnectionManagerError(
-                "No DIDDoc provided; cannot connect to public DID"
+                "No DIDDocument provided; cannot connect to public DID"
             )
         if request.connection.did != conn_did_doc.id:
             raise ConnectionManagerError(
-                "Connection DID does not match DIDDoc id",
+                "Connection DID does not match DIDDocument id",
                 error_code=ProblemReportReason.REQUEST_NOT_ACCEPTED,
             )
         await self.store_did_document(conn_did_doc)
@@ -789,10 +788,10 @@ class ConnectionManager(BaseConnectionManager):
         conn_did_doc = response.connection.did_doc
         if not conn_did_doc:
             raise ConnectionManagerError(
-                "No DIDDoc provided; cannot connect to public DID"
+                "No DIDDocument provided; cannot connect to public DID"
             )
         if their_did != conn_did_doc.did:
-            raise ConnectionManagerError("Connection DID does not match DIDDoc id")
+            raise ConnectionManagerError("Connection DID does not match DIDDocument id")
         await self.store_did_document(conn_did_doc)
 
         connection.their_did = their_did

@@ -1,7 +1,7 @@
 from unittest import mock
 
 from asynctest import TestCase as AsyncTestCase
-from pydid import DIDDocumentBuilder, VerificationSuite
+from pydid import DIDDocument, VerificationSuite
 
 from ......core.in_memory import InMemoryProfile
 from ......messaging.decorators.attach_decorator import AttachDecorator
@@ -24,13 +24,13 @@ class TestConfig:
         vmethod = builder.verification_methods.add(
             ident="1",
             suite=VerificationSuite("Ed25519VerificationKey2018", "publicKeyBase58"),
-            material=verkey
+            material=verkey,
         )
         builder.services.add_didcomm(
             endpoint=endpoint,
             type_="IndyAgent",
             recipient_keys=[vmethod],
-            routing_keys=[]
+            routing_keys=[],
         )
 
         return builder.build()

@@ -14,12 +14,7 @@ from .....connections.base_manager import (
     BaseConnectionManager,
     BaseConnectionManagerError,
 )
-from .....connections.models.diddoc_v2 import (
-    DIDDoc,
-    VerificationMethod,
-    PublicKeyType,
-    Service,
-)
+from pydid import DIDDocumentBuilder, VerificationSuite
 from .....core.in_memory import InMemoryProfile
 from .....messaging.responder import BaseResponder, MockResponder
 from .....protocols.routing.v1_0.manager import RoutingManager
@@ -46,18 +41,20 @@ from ..models.connection_detail import ConnectionDetail
 
 class TestConnectionManager(AsyncTestCase):
     def make_did_doc(self, did, verkey, without_service=False):
-        doc = DIDDoc(did)
-
-        pk = doc.add_verification_method(
-            type=PublicKeyType.ED25519_SIG_2018, controller=did, value=verkey, ident="1"
+        builder = DIDDocumentBuilder(did)
+        vmethod = builder.verification_methods.add(
+            ident="1",
+            suite=VerificationSuite("Ed25519VerificationKey2018", "publicKeyBase58"),
+            material=verkey,
         )
         if not without_service:
-            doc.add_didcomm_service(
-                recipient_keys=[pk],
+            builder.services.add_didcomm(
+                endpoint="http://localhost",
+                type_="IndyAgent",
+                recipient_keys=[vmethod],
                 routing_keys=[],
-                endpoint=self.test_endpoint,
             )
-        return doc
+        return builder.build()
 
     async def setUp(self):
         self.test_seed = "testseed000000000000000000000001"
@@ -2047,24 +2044,33 @@ class TestConnectionManager(AsyncTestCase):
         assert target.sender_key == local_did.verkey
 
     async def test_fetch_connection_targets_conn_invitation_btcr_ledger(self):
-        did_doc = DIDDoc("did:btcr:x705-jznz-q3nl-srs")
-        key = did_doc.add_verification_method(
-            type=PublicKeyType.ED25519_SIG_2018,
-            value="02e0e01a8c302976e1556e95c54146e8464adac8626a5d29474718a7281133ff49",
+        builder = DIDDocumentBuilder("did:btcr:x705-jznz-q3nl-srs")
+        vmethod = builder.verification_methods.add(
+            ident="1",
+            suite=VerificationSuite("Ed25519VerificationKey2018", "publicKeyBase58"),
+            material="02e0e01a8c302976e1556e95c54146e8464adac8626a5d29474718a7281133ff49",
             verification_type="verificationMethod",
         )
-        did_doc.add_didcomm_service(
-            recipient_keys=[key],
-            routing_keys=[key],
+        builder.services.add_didcomm(
+            type_="IndyAgent",
+            recipient_keys=[vmethod],
+            routing_keys=[vmethod],
             endpoint=self.test_endpoint,
             priority=0,
         )
-        did_doc.add_didcomm_service(
-            recipient_keys=[key],
-            routing_keys=[key],
+        builder.services.add_didcomm(
+            recipient_keys=[vmethod],
+            routing_keys=[vmethod],
+            endpoint=self.test_endpoint,
+            priority=0,
+        )
+        builder.services.add_didcomm(
+            recipient_keys=[vmethod],
+            routing_keys=[vmethod],
             endpoint="{}/priority2".format(self.test_endpoint),
             priority=2,
         )
+        did_doc = builder.build()
 
         self.ledger = async_mock.MagicMock()
         self.ledger.get_endpoint_for_did = async_mock.CoroutineMock(

@@ -16,9 +16,9 @@ from .. import routes as test_module
 from ....resolver.did_resolver import DIDResolver
 from ....resolver.base import DIDNotFound, DIDMethodNotSupported
 from ....resolver.tests import DOC
-from ....connections.models.diddoc_v2.diddoc import DIDDoc
+from pydid import DIDDocument
 
-did_doc = DIDDoc.deserialize(DOC)
+did_doc = DIDDocument.deserialize(DOC)
 
 
 @pytest.fixture
