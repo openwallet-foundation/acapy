@@ -96,6 +96,123 @@ class DIDKey:
         return f"{self.did}#{self.fingerprint}"
 
 
+def construct_did_key_bls12381g2(did_key: "DIDKey") -> dict:
+    """Construct BLS12381G2 did:key
+
+    Args:
+        did_key (DIDKey): did key instance to parse bls12381g2 did:key document from
+
+    Returns:
+        dict: The bls12381g2 did:key did document
+    """
+
+    return construct_did_signature_key_base(
+        id=did_key.did,
+        key_id=did_key.key_id,
+        verification_method={
+            "id": did_key.key_id,
+            "type": "Bls12381G2Key2020",
+            "controller": did_key.did,
+            "publicKeyBase58": did_key.public_key_b58,
+        },
+    )
+
+
+def construct_did_key_bls12381g1(did_key: "DIDKey") -> dict:
+    """Construct BLS12381G1 did:key
+
+    Args:
+        did_key (DIDKey): did key instance to parse bls12381g1 did:key document from
+
+    Returns:
+        dict: The bls12381g1 did:key did document
+    """
+
+    return construct_did_signature_key_base(
+        id=did_key.did,
+        key_id=did_key.key_id,
+        verification_method={
+            "id": did_key.key_id,
+            "type": "Bls12381G1Key2020",
+            "controller": did_key.did,
+            "publicKeyBase58": did_key.public_key_b58,
+        },
+    )
+
+
+def construct_did_key_bls12381g1g2(did_key: "DIDKey") -> dict:
+    """Construct BLS12381G1G2 did:key
+
+    Args:
+        did_key (DIDKey): did key instance to parse bls12381g1g2 did:key document from
+
+    Returns:
+        dict: The bls12381g1g2 did:key did document
+    """
+
+    g1_public_key = did_key.public_key[:48]
+    g2_public_key = did_key.public_key[48:]
+
+    bls12381g1_key = DIDKey.from_public_key(g1_public_key, KeyType.BLS12381G1)
+    bls12381g2_key = DIDKey.from_public_key(g2_public_key, KeyType.BLS12381G2)
+
+    bls12381g1_key_id = f"{did_key.did}#{bls12381g1_key.fingerprint}"
+    bls12381g2_key_id = f"{did_key.did}#{bls12381g2_key.fingerprint}"
+
+    return {
+        "@context": "https://www.w3.org/ns/did/v1",
+        "id": did_key.did,
+        "verificationMethod": [
+            {
+                "id": bls12381g1_key_id,
+                "type": "Bls12381G1Key2020",
+                "controller": did_key.did,
+                "publicKeyBase58": bls12381g1_key.public_key_b58,
+            },
+            {
+                "id": bls12381g2_key_id,
+                "type": "Bls12381G2Key2020",
+                "controller": did_key.did,
+                "publicKeyBase58": bls12381g2_key.public_key_b58,
+            },
+        ],
+        "authentication": [bls12381g1_key_id, bls12381g2_key_id],
+        "assertionMethod": [bls12381g1_key_id, bls12381g2_key_id],
+        "capabilityDelegation": [bls12381g1_key_id, bls12381g2_key_id],
+        "capabilityInvocation": [bls12381g1_key_id, bls12381g2_key_id],
+        "keyAgreement": [],
+    }
+
+
+def construct_did_key_x25519(did_key: "DIDKey") -> dict:
+    """Construct X25519 did:key
+
+    Args:
+        did_key (DIDKey): did key instance to parse x25519 did:key document from
+
+    Returns:
+        dict: The x25519 did:key did document
+    """
+
+    return {
+        "@context": "https://www.w3.org/ns/did/v1",
+        "id": did_key.did,
+        "verificationMethod": [
+            {
+                "id": did_key.key_id,
+                "type": "X25519KeyAgreementKey2019",
+                "controller": did_key.did,
+                "publicKeyBase58": did_key.public_key_b58,
+            },
+        ],
+        "authentication": [],
+        "assertionMethod": [],
+        "capabilityDelegation": [],
+        "capabilityInvocation": [],
+        "keyAgreement": [did_key.key_id],
+    }
+
+
 def construct_did_key_ed25519(did_key: "DIDKey") -> dict:
     """Construct Ed25519 did:key
 
@@ -106,8 +223,7 @@ def construct_did_key_ed25519(did_key: "DIDKey") -> dict:
         dict: The ed25519 did:key did document
     """
     curve25519 = ed25519_pk_to_curve25519(did_key.public_key)
-    # TODO: update once https://github.com/multiformats/py-multicodec/pull/14 is merged
-    curve25519_fingerprint = "z" + bytes_to_b58(b"".join([b"\xec\x01", curve25519]))
+    x25519 = DIDKey.from_public_key(curve25519, KeyType.X25519)
 
     did_doc = construct_did_signature_key_base(
         id=did_key.did,
@@ -123,7 +239,7 @@ def construct_did_key_ed25519(did_key: "DIDKey") -> dict:
     # Ed25519 has pair with X25519
     did_doc["keyAgreement"].append(
         {
-            "id": f"{did_key.did}#{curve25519_fingerprint}",
+            "id": f"{did_key.did}#{x25519.fingerprint}",
             "type": "X25519KeyAgreementKey2019",
             "controller": did_key.did,
             "publicKeyBase58": bytes_to_b58(curve25519),
@@ -153,4 +269,10 @@ def construct_did_signature_key_base(
     }
 
 
-DID_KEY_RESOLVERS = {KeyType.ED25519: construct_did_key_ed25519}
+DID_KEY_RESOLVERS = {
+    KeyType.ED25519: construct_did_key_ed25519,
+    KeyType.X25519: construct_did_key_x25519,
+    KeyType.BLS12381G2: construct_did_key_bls12381g2,
+    KeyType.BLS12381G1: construct_did_key_bls12381g1,
+    KeyType.BLS12381G1G2: construct_did_key_bls12381g1g2,
+}
