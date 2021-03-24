@@ -28,7 +28,7 @@ class TestInvitation(AsyncTestCase):
         self.oob_invi_msg = OOBInvitationMessage(
             label=self.label,
             handshake_protocols=[DIDCommPrefix.qualify_current(HSProto.RFC23.name)],
-            service=[
+            services=[
                 OOBService(
                     _id="#inline",
                     _type="did-communication",

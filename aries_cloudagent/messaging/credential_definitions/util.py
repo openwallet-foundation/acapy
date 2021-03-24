@@ -4,8 +4,8 @@ from marshmallow import fields
 
 from ..models.openapi import OpenAPISchema
 from ..valid import (
-    INDY_CRED_DEF_ID,
     INDY_DID,
+    INDY_CRED_DEF_ID,
     INDY_SCHEMA_ID,
     INDY_VERSION,
 )

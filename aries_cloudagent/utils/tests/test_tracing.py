@@ -25,7 +25,7 @@ class TestTracing(AsyncTestCase):
 
     def test_tracing_enabled(self):
         invi = InvitationMessage(
-            comment="no comment", label="cable guy", service=[TestTracing.test_did]
+            comment="no comment", label="cable guy", services=[TestTracing.test_did]
         )
         assert not test_module.tracing_enabled({}, invi)
         invi._trace = TraceDecorator(target="message")
@@ -73,7 +73,7 @@ class TestTracing(AsyncTestCase):
 
     def test_decode_inbound_message(self):
         invi = InvitationMessage(
-            comment="no comment", label="cable guy", service=[TestTracing.test_did]
+            comment="no comment", label="cable guy", services=[TestTracing.test_did]
         )
         message = OutboundMessage(payload=invi)
         assert invi == test_module.decode_inbound_message(message)

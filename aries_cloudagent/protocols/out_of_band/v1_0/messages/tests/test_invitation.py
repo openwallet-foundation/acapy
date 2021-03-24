@@ -48,7 +48,7 @@ class TestInvitationMessage(TestCase):
             comment="Hello",
             label="A label",
             handshake_protocols=[DIDCommPrefix.qualify_current(DIDX_PROTO)],
-            service=[TEST_DID],
+            services=[TEST_DID],
         )
         assert invi.service_dids == [TEST_DID]
         assert not invi.service_blocks
@@ -59,7 +59,7 @@ class TestInvitationMessage(TestCase):
             comment="Hello",
             label="A label",
             handshake_protocols=[DIDCommPrefix.qualify_current(DIDX_PROTO)],
-            service=[service],
+            services=[service],
         )
         assert invi_msg.service_blocks == [service]
         assert invi_msg._type == DIDCommPrefix.qualify_current(INVITATION)
@@ -70,7 +70,7 @@ class TestInvitationMessage(TestCase):
         deco = InvitationMessage.wrap_message(msg)
         assert deco.ident == "request-0"
 
-        obj_x = {"label": "label", "service": ["sample-did"]}
+        obj_x = {"label": "label", "services": ["sample-did"]}
         with pytest.raises(BaseModelError):
             InvitationMessage.deserialize(obj_x)
 
@@ -89,27 +89,27 @@ class TestInvitationMessage(TestCase):
         data_deser = invi_schema.pre_load(
             {
                 "label": "label",
-                "request~attach": [deco.serialize()],
-                "service": [{"a": service.serialize()}],
+                "requests~attach": [deco.serialize()],
+                "services": [{"a": service.serialize()}],
             }
         )
-        assert "service" not in data_deser
+        assert "services" not in data_deser
 
         data_ser = invi_schema.post_dump(data_deser)
-        assert "service" in data_ser
+        assert "services" in data_ser
 
         service = Service(_id="#inline", _type=DID_COMM, did=TEST_DID)
         data_deser = invi_schema.pre_load(
             {
                 "label": "label",
-                "request~attach": [deco.serialize()],
-                "service": [TEST_DID],
+                "requests~attach": [deco.serialize()],
+                "services": [TEST_DID],
             }
         )
-        assert "service" not in data_deser
+        assert "services" not in data_deser
 
         data_ser = invi_schema.post_dump(data_deser)
-        assert "service" in data_ser
+        assert "services" in data_ser
 
     def test_url_round_trip(self):
         service = Service(
@@ -124,7 +124,7 @@ class TestInvitationMessage(TestCase):
             comment="Hello",
             label="A label",
             handshake_protocols=[DIDCommPrefix.qualify_current(DIDX_PROTO)],
-            service=[service],
+            services=[service],
         )
 
         url = invi_msg.to_url()

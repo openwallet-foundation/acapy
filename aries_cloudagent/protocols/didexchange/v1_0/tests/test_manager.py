@@ -190,9 +190,9 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
     async def test_receive_invitation_bad_invitation(self):
         x_invites = [
             InvitationMessage(),
-            InvitationMessage(service=[OOBService()]),
+            InvitationMessage(services=[OOBService()]),
             InvitationMessage(
-                service=[
+                services=[
                     OOBService(
                         recipient_keys=["3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"]
                     )

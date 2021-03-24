@@ -288,12 +288,12 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             assert invi_rec.invitation["@type"] == DIDCommPrefix.qualify_current(
                 INVITATION
             )
-            assert not invi_rec.invitation.get("request~attach")
+            assert not invi_rec.invitation.get("requests~attach")
             assert (
                 DIDCommPrefix.qualify_current(HSProto.RFC23.name)
                 in invi_rec.invitation["handshake_protocols"]
             )
-            assert invi_rec.invitation["service"] == [f"did:sov:{TestConfig.test_did}"]
+            assert invi_rec.invitation["services"] == [f"did:sov:{TestConfig.test_did}"]
 
     async def test_create_invitation_mediation_overwrites_routing_and_endpoint(self):
         mock_conn_rec = async_mock.MagicMock()
@@ -494,7 +494,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 attachments=[{"type": "credential-offer", "id": "dummy-id"}],
             )
 
-            assert invi_rec.invitation["request~attach"]
+            assert invi_rec.invitation["requests~attach"]
 
     async def test_create_invitation_attachment_present_proof_v1_0(self):
         self.session.context.update_settings({"public_invites": True})
@@ -519,7 +519,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 attachments=[{"type": "present-proof", "id": "dummy-id"}],
             )
 
-            assert invi_rec.invitation["request~attach"]
+            assert invi_rec.invitation["requests~attach"]
             mock_retrieve_pxid.assert_called_once_with(self.manager.session, "dummy-id")
 
     async def test_create_invitation_attachment_present_proof_v2_0(self):
@@ -550,7 +550,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 attachments=[{"type": "present-proof", "id": "dummy-id"}],
             )
 
-            assert invi_rec.invitation["request~attach"]
+            assert invi_rec.invitation["requests~attach"]
             mock_retrieve_pxid_1.assert_called_once_with(
                 self.manager.session, "dummy-id"
             )
@@ -648,13 +648,13 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             assert invi_rec.invitation["@type"] == DIDCommPrefix.qualify_current(
                 INVITATION
             )
-            assert not invi_rec.invitation.get("request~attach")
+            assert not invi_rec.invitation.get("requests~attach")
             assert invi_rec.invitation["label"] == "That guy"
             assert (
                 DIDCommPrefix.qualify_current(HSProto.RFC23.name)
                 in invi_rec.invitation["handshake_protocols"]
             )
-            service = invi_rec.invitation["service"][0]
+            service = invi_rec.invitation["services"][0]
             assert service["id"] == "#inline"
             assert service["type"] == "did-communication"
             assert len(service["recipientKeys"]) == 1
@@ -668,7 +668,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             hs_protos=[test_module.HSProto.RFC23],
             metadata={"hello": "world"},
         )
-        service = invi_rec.invitation["service"][0]
+        service = invi_rec.invitation["services"][0]
         invitation_key = DIDKey.from_did(service["recipientKeys"][0]).public_key_b58
         record = await ConnRecord.retrieve_by_invitation_key(
             self.session, invitation_key
@@ -761,7 +761,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 receive_invitation=async_mock.CoroutineMock()
             )
             mock_oob_invi = async_mock.MagicMock(
-                request_attach=[],
+                requests_attach=[],
                 handshake_protocols=[
                     pfx.qualify(HSProto.RFC23.name) for pfx in DIDCommPrefix
                 ],
@@ -813,7 +813,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                         service_endpoint="http://localhost",
                     )
                 ],
-                request_attach=[],
+                requests_attach=[],
             )
             invi_msg_cls.deserialize.return_value = mock_oob_invi
             result = await self.manager.receive_invitation(mock_oob_invi)
@@ -871,12 +871,12 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 ],
                 service_dids=[TestConfig.test_did],
                 service_blocks=[],
-                request_attach=[],
+                requests_attach=[],
             )
             invi_msg_cls.deserialize.return_value = mock_oob_invi
 
             invi_rec = await self.manager.receive_invitation(mock_oob_invi)
-            assert invi_rec.invitation["service"]
+            assert invi_rec.invitation["services"]
 
     async def test_receive_invitation_attachment_x(self):
         self.session.context.update_settings({"public_invites": True})
@@ -896,13 +896,13 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 handshake_protocols=[
                     pfx.qualify(HSProto.RFC23.name) for pfx in DIDCommPrefix
                 ],
-                request_attach=[{"having": "attachment", "is": "no", "good": "here"}],
+                requests_attach=[{"having": "attachment", "is": "no", "good": "here"}],
             )
             inv_message_cls.deserialize.return_value = mock_oob_invi
 
             with self.assertRaises(OutOfBandManagerError) as context:
                 await self.manager.receive_invitation(mock_oob_invi)
-            assert "request~attach is not properly formatted" in str(context.exception)
+            assert "requests~attach is not properly formatted" in str(context.exception)
 
     async def test_receive_invitation_req_pres_v1_0_attachment_x(self):
         self.session.context.update_settings({"public_invites": True})
@@ -922,7 +922,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 ],
                 service_dids=[TestConfig.test_did],
                 service_blocks=[],
-                request_attach=[
+                requests_attach=[
                     async_mock.MagicMock(
                         data=async_mock.MagicMock(
                             json={
@@ -943,7 +943,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                     connection_id.hex == result.get("connection_id")
                     and len(result.get("connection_id")) > 5
                 )
-            assert "request~attach is not properly formatted" in str(context.exception)
+            assert "requests~attach is not properly formatted" in str(context.exception)
 
     async def test_receive_invitation_invalid_request_type_x(self):
         self.session.context.update_settings({"public_invites": True})
@@ -961,7 +961,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 service_blocks=[],
                 service_dids=[TestConfig.test_did],
                 handshake_protocols=[],
-                request_attach=[],
+                requests_attach=[],
             )
             inv_message_cls.deserialize.return_value = mock_oob_invi
 
@@ -1571,7 +1571,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 ],
                 service_dids=[TestConfig.test_target_did],
                 service_blocks=[],
-                request_attach=[],
+                requests_attach=[],
             )
             inv_message_cls.deserialize.return_value = mock_oob_invi
 
@@ -1682,7 +1682,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 ],
                 service_dids=[TestConfig.test_target_did],
                 service_blocks=[],
-                request_attach=[],
+                requests_attach=[],
             )
             inv_message_cls.deserialize.return_value = mock_oob_invi
 
@@ -1755,7 +1755,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 ],
                 service_dids=[TestConfig.test_target_did],
                 service_blocks=[],
-                request_attach=[],
+                requests_attach=[],
             )
             inv_message_cls.deserialize.return_value = mock_oob_invi
 
@@ -1821,7 +1821,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 ],
                 service_dids=[TestConfig.test_target_did],
                 service_blocks=[],
-                request_attach=[],
+                requests_attach=[],
             )
             inv_message_cls.deserialize.return_value = mock_oob_invi
 
@@ -1876,7 +1876,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 handshake_protocols=[],
                 service_dids=[TestConfig.test_target_did],
                 service_blocks=[],
-                request_attach=[{"having": "attachment", "is": "no", "good": "here"}],
+                requests_attach=[{"having": "attachment", "is": "no", "good": "here"}],
             )
             inv_message_cls.deserialize.return_value = mock_oob_invi
             with self.assertRaises(OutOfBandManagerError) as context:
@@ -1953,7 +1953,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 ],
                 service_dids=[TestConfig.test_target_did],
                 service_blocks=[],
-                request_attach=[AttachDecorator.deserialize(TestConfig.req_attach_v1)],
+                requests_attach=[AttachDecorator.deserialize(TestConfig.req_attach_v1)],
             )
 
             inv_message_cls.deserialize.return_value = mock_oob_invi
@@ -2074,7 +2074,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 ],
                 service_dids=[TestConfig.test_target_did],
                 service_blocks=[],
-                request_attach=[AttachDecorator.deserialize(TestConfig.req_attach_v1)],
+                requests_attach=[AttachDecorator.deserialize(TestConfig.req_attach_v1)],
             )
 
             inv_message_cls.deserialize.return_value = mock_oob_invi
@@ -2184,7 +2184,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 ],
                 service_dids=[TestConfig.test_target_did],
                 service_blocks=[],
-                request_attach=[AttachDecorator.deserialize(TestConfig.req_attach_v1)],
+                requests_attach=[AttachDecorator.deserialize(TestConfig.req_attach_v1)],
             )
 
             inv_message_cls.deserialize.return_value = mock_oob_invi
@@ -2262,7 +2262,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 ],
                 service_dids=[TestConfig.test_target_did],
                 service_blocks=[],
-                request_attach=[AttachDecorator.deserialize(TestConfig.req_attach_v2)],
+                requests_attach=[AttachDecorator.deserialize(TestConfig.req_attach_v2)],
             )
 
             inv_message_cls.deserialize.return_value = mock_oob_invi
@@ -2394,7 +2394,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 ],
                 service_dids=[TestConfig.test_target_did],
                 service_blocks=[],
-                request_attach=[AttachDecorator.deserialize(TestConfig.req_attach_v2)],
+                requests_attach=[AttachDecorator.deserialize(TestConfig.req_attach_v2)],
             )
 
             inv_message_cls.deserialize.return_value = mock_oob_invi
@@ -2514,7 +2514,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 ],
                 service_dids=[TestConfig.test_target_did],
                 service_blocks=[],
-                request_attach=[AttachDecorator.deserialize(TestConfig.req_attach_v2)],
+                requests_attach=[AttachDecorator.deserialize(TestConfig.req_attach_v2)],
             )
 
             inv_message_cls.deserialize.return_value = mock_oob_invi
@@ -2613,11 +2613,11 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 ],
                 service_dids=[TestConfig.test_target_did],
                 service_blocks=[],
-                request_attach=[AttachDecorator.deserialize(req_attach)],
+                requests_attach=[AttachDecorator.deserialize(req_attach)],
             )
             inv_message_cls.deserialize.return_value = mock_oob_invi
             with self.assertRaises(OutOfBandManagerError) as context:
                 result = await self.manager.receive_invitation(
                     mock_oob_invi, use_existing_connection=True
                 )
-            assert "Unsupported request~attach type" in str(context.exception)
+            assert "Unsupported requests~attach type" in str(context.exception)

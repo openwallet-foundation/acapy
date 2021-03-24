@@ -222,25 +222,14 @@ class TransactionManager:
             # eventual transaction write
             transaction.messages_attach[0]["data"]["json"] = endorsed_msg
 
-        if signature:
-            signature_response = {
-                "message_id": transaction.messages_attach[0]["@id"],
-                "context": TransactionRecord.SIGNATURE_CONTEXT,
-                "method": TransactionRecord.ADD_SIGNATURE,
-                "signer_goal_code": TransactionRecord.ENDORSE_TRANSACTION,
-                "signature_type": TransactionRecord.SIGNATURE_TYPE,
-                "signature": {endorser_did: signature},
-            }
-
-        else:
-            signature_response = {
-                "message_id": transaction.messages_attach[0]["@id"],
-                "context": TransactionRecord.SIGNATURE_CONTEXT,
-                "method": TransactionRecord.ADD_SIGNATURE,
-                "signer_goal_code": TransactionRecord.ENDORSE_TRANSACTION,
-                "signature_type": TransactionRecord.SIGNATURE_TYPE,
-                "signature": {endorser_did: endorser_verkey},
-            }
+        signature_response = {
+            "message_id": transaction.messages_attach[0]["@id"],
+            "context": TransactionRecord.SIGNATURE_CONTEXT,
+            "method": TransactionRecord.ADD_SIGNATURE,
+            "signer_goal_code": TransactionRecord.ENDORSE_TRANSACTION,
+            "signature_type": TransactionRecord.SIGNATURE_TYPE,
+            "signature": {endorser_did: signature or endorser_verkey},
+        }
 
         transaction.signature_response.clear()
         transaction.signature_response.append(signature_response)
