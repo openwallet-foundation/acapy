@@ -2,7 +2,7 @@ from unittest import mock, TestCase
 
 from asynctest import TestCase as AsyncTestCase
 
-from pydid import DIDDocumentBuilder, VerificationSuite
+from pydid import DIDDocumentBuilder, VerificationSuite, DIDDocument
 
 from .....didcomm_prefix import DIDCommPrefix
 
@@ -26,12 +26,13 @@ class TestConfig:
             suite=VerificationSuite("Ed25519VerificationKey2018", "publicKeyBase58"),
             material=self.test_verkey,
         )
-        builder.services.add_didcomm(
-            endpoint=self.test_endpoint,
+
+        with builder.services.defaults() as services:
+            services.add_didcomm(endpoint=self.test_endpoint,
             type_="IndyAgent",
             recipient_keys=[vmethod],
-            routing_keys=[],
-        )
+            routing_keys=[])
+
         return builder.build()
 
 
@@ -102,7 +103,7 @@ class TestConnectionRequestSchema(AsyncTestCase, TestConfig):
     async def test_make_model_conn_detail_interpolate_authn_service(self):
         did_doc_dict = self.make_did_doc().serialize()
         del did_doc_dict["service"]
-        did_doc = DIDDoc.deserialize(did_doc_dict)
+        did_doc = DIDDocument.deserialize(did_doc_dict)
 
         connection_request = ConnectionRequest(
             connection=ConnectionDetail(did=self.test_did, did_doc=did_doc),

@@ -58,7 +58,7 @@ async def sign(request: web.BaseRequest):
         ver_meth_expanded = await resolver.dereference(session, ver_meth)
         if ver_meth_expanded is None:
             raise ResolverError(f"Verification method {ver_meth} not found.")
-        verkey = ver_meth_expanded.value
+        verkey = ver_meth_expanded.material
         doc_with_proof = await sign_credential(
             session, doc, {"verificationMethod": ver_meth}, verkey
         )
@@ -89,7 +89,7 @@ async def verify(request: web.BaseRequest):
         ver_meth_expanded = await resolver.dereference(session, ver_meth)
         if ver_meth_expanded is None:
             raise ResolverError(f"Verification method {ver_meth} not found.")
-        verkey = ver_meth_expanded.value
+        verkey = ver_meth_expanded.material
         result = await verify_credential(session, doc, verkey)
     except (DIDError, ResolverError, WalletError, InjectionError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err

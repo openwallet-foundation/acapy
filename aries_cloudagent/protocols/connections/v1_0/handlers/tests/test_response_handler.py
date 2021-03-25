@@ -39,12 +39,13 @@ def did_doc():
         suite=VerificationSuite("Ed25519VerificationKey2018", "publicKeyBase58"),
         material=TEST_VERKEY,
     )
-    builder.services.add_didcomm(
-        endpoint=TEST_ENDPOINT,
-        type_="IndyAgent",
-        recipient_keys=[vmethod],
-        routing_keys=[],
-    )
+
+    with builder.services.defaults() as services:
+        services.add_didcomm(endpoint=TEST_ENDPOINT,
+                             type_="IndyAgent",
+                             recipient_keys=[vmethod],
+                             routing_keys=[])
+
     yield builder.build()
 
 
