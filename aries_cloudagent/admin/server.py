@@ -142,10 +142,10 @@ class WebhookTarget:
     @topic_filter.setter
     def topic_filter(self, val: Sequence[str]):
         """Setter for the target's topic filter."""
-        filter = set(val) if val else None
-        if filter and "*" in filter:
-            filter = None
-        self._topic_filter = filter
+        filt = set(val) if val else None
+        if filt and "*" in filt:
+            filt = None
+        self._topic_filter = filt
 
 
 @web.middleware
@@ -336,7 +336,7 @@ class AdminServer(BaseAdminServer):
                         self.context, token
                     )
                 except MultitenantManagerError as err:
-                    raise web.HTTPUnauthorized(err.roll_up)
+                    raise web.HTTPUnauthorized(reason=err.roll_up)
                 except (jwt.InvalidTokenError, StorageNotFoundError):
                     raise web.HTTPUnauthorized()
 
