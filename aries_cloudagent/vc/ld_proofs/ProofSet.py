@@ -1,6 +1,6 @@
 """Class to represent a linked data proof set."""
 
-from typing import List
+from typing import List, Union
 from pyld.jsonld import JsonLdProcessor
 
 from .error import LinkedDataProofException
@@ -88,9 +88,82 @@ class ProofSet:
             )
 
     @staticmethod
-    async def _get_proofs(document: dict) -> list:
-        "Get proof set from document" ""
+    async def derive(
+        *,
+        document: dict,
+        reveal_document: dict,
+        # TODO: I think this could support multiple suites?
+        # But then, why do multiple proofs?
+        suite: LinkedDataProof,
+        document_loader: DocumentLoader,
+        nonce: bytes = None,
+    ) -> dict:
+        """Derive proof(s), return derived document
+
+        Args:
+            document (dict): The document to derive the proof for
+            reveal_document (dict): The JSON-LD frame specifying the revealed attributes
+            suite (LinkedDataProof): The suite to derive the proof with
+            document_loader (DocumentLoader): Document loader used for resolving
+            nonce (bytes, optional): Nonce to use for the proof. Defaults to None.
+
+        Returns:
+            dict: The document with derived proofs
+        """
+        input = document.copy()
+
+        if not suite.supported_derive_proof_types:
+            raise LinkedDataProofException(
+                f"{suite.signature_type} does not support derivation"
+            )
+
+        # Get proof set, remove proof from document
+        proof_set = await ProofSet._get_proofs(
+            document=input, proof_types=suite.supported_derive_proof_types
+        )
+        input.pop("proof", None)
+
+        # Derive proof, remove context
+        derived_proof = await suite.derive_proof(
+            proof=proof_set[0],
+            document=input,
+            reveal_document=reveal_document,
+            document_loader=document_loader,
+            nonce=nonce,
+        )
+        derived_proof["proof"].pop("@context", None)
+
+        if len(proof_set) > 1:
+            derived_proof["proof"] = [derived_proof["proof"]]
+
+            proof_set.pop(0)
+
+            for proof in proof_set:
+                additional_derived_proof = await suite.derive_proof(
+                    proof=proof,
+                    document=input,
+                    reveal_document=reveal_document,
+                    document_loader=document_loader,
+                )
+                additional_derived_proof["proof"].pop("@context", None)
+                derived_proof["proof"].append(additional_derived_proof["proof"])
+
+        JsonLdProcessor.add_value(
+            derived_proof["document"], "proof", derived_proof["proof"]
+        )
+
+        return derived_proof["document"]
+
+    @staticmethod
+    async def _get_proofs(
+        document: dict, proof_types: Union[List[str], None] = None
+    ) -> list:
+        "Get proof set from document, optionally filtered by proof_types" ""
         proof_set = JsonLdProcessor.get_values(document, "proof")
+
+        # If proof_types is present, only take proofs that match
+        if proof_types:
+            proof_set = list(filter(lambda _: _ in proof_types, proof_set))
 
         if len(proof_set) == 0:
             raise LinkedDataProofException(

@@ -2,6 +2,7 @@
 
 from typing import Optional
 
+from ....wallet.util import b58_to_bytes
 from ....wallet.base import BaseWallet
 from ..error import LinkedDataProofException
 from .WalletKeyPair import WalletKeyPair
@@ -10,6 +11,8 @@ from .WalletKeyPair import WalletKeyPair
 class Ed25519WalletKeyPair(WalletKeyPair):
     """Ed25519 wallet key pair"""
 
+    # TODO: maybe make public key buffer default input?
+    # This way we can make it an input on the lower level key pair class
     def __init__(self, *, wallet: BaseWallet, public_key_base58: Optional[str] = None):
         """Initialize new Ed25519WalletKeyPair instance."""
         super().__init__(wallet=wallet)
@@ -50,6 +53,10 @@ class Ed25519WalletKeyPair(WalletKeyPair):
         return Ed25519WalletKeyPair(
             wallet=self.wallet, public_key_base58=verification_method["publicKeyBase58"]
         )
+
+    @property
+    def public_key(self) -> Optional[bytes]:
+        return b58_to_bytes(self.public_key_base58)
 
     @property
     def has_public_key(self) -> bool:

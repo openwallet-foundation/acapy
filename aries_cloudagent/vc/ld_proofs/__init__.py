@@ -1,4 +1,4 @@
-from .ld_proofs import sign, verify
+from .ld_proofs import sign, verify, derive
 from .ProofSet import ProofSet
 from .purposes import (
     ProofPurpose,
@@ -12,6 +12,8 @@ from .suites import (
     LinkedDataSignature,
     JwsLinkedDataSignature,
     Ed25519Signature2018,
+    BbsBlsSignature2020,
+    BbsBlsSignatureProof2020,
 )
 from .crypto import KeyPair, Ed25519WalletKeyPair
 from .document_loader import DocumentLoader, get_default_document_loader
@@ -33,6 +35,8 @@ __all__ = [
     LinkedDataSignature,
     JwsLinkedDataSignature,
     Ed25519Signature2018,
+    BbsBlsSignature2020,
+    BbsBlsSignatureProof2020,
     # Key pairs
     KeyPair,
     Ed25519WalletKeyPair,

@@ -84,3 +84,39 @@ async def verify(
     )
 
     return result
+
+
+async def derive(
+    *,
+    document: dict,
+    reveal_document: dict,
+    suite: LinkedDataProof,
+    document_loader: DocumentLoader,
+    nonce: bytes = None,
+) -> dict:
+    """Derive proof(s) for document with reveal document.
+
+    All proofs matching the signature suite type will be replaced with a derived
+    proof. Other proofs will be discarded.
+
+    Args:
+        document (dict): The document with one or more proofs to be derived
+        reveal_document (dict): The JSON-LD frame specifying the revealed attributes
+        suite (LinkedDataProof): The linked data signature cryptographic suite
+            with which to derive the proof
+        document_loader (DocumentLoader): The document loader to use.
+        nonce (bytes, optional): Nonce to use for the proof. Defaults to None.
+
+    Returns:
+        dict: The document with derived proof(s).
+    """
+
+    result = await ProofSet.derive(
+        document=document,
+        reveal_document=reveal_document,
+        suite=suite,
+        document_loader=document_loader,
+        nonce=nonce,
+    )
+
+    return result

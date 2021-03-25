@@ -91,7 +91,9 @@ class JwsLinkedDataSignature(LinkedDataSignature):
             bool: Whether the signature is valid for the data
         """
         if not (isinstance(proof.get("jws"), str) and (".." in proof.get("jws"))):
-            raise Exception('The proof does not contain a valid "jws" property.')
+            raise LinkedDataProofException(
+                'The proof does not contain a valid "jws" property.'
+            )
 
         encoded_header, payload, encoded_signature = proof.get("jws").split(".")
 

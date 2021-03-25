@@ -1,17 +1,20 @@
 """Base key pair class"""
 
 from abc import ABC, abstractmethod, abstractproperty
+from typing import List, Optional, Union
 
 
 class KeyPair(ABC):
     """Base key pair class."""
 
     @abstractmethod
-    async def sign(self, message: bytes) -> bytes:
+    async def sign(self, message: Union[List[bytes], bytes]) -> bytes:
         """Sign message using key pair"""
 
     @abstractmethod
-    async def verify(self, message: bytes, signature: bytes) -> bool:
+    async def verify(
+        self, message: Union[List[bytes], bytes], signature: bytes
+    ) -> bool:
         """Verify message against signature using key pair"""
 
     @abstractproperty
@@ -20,6 +23,14 @@ class KeyPair(ABC):
 
         Public key is required for verification, but can be set dynamically
         in the verification process.
+        """
+
+    @abstractproperty
+    def public_key(self) -> Optional[bytes]:
+        """Getter for the public key bytes
+
+        Returns:
+            bytes: The public key
         """
 
     @abstractmethod
