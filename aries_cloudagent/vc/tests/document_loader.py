@@ -9,11 +9,11 @@ from .contexts import (
     ODRL,
 )
 from ..ld_proofs.constants import (
-    SECURITY_V2_URL,
-    SECURITY_V1_URL,
+    SECURITY_CONTEXT_V2_URL,
+    SECURITY_CONTEXT_V1_URL,
     DID_V1_URL,
-    SECURITY_BBS_URL,
-    CREDENTIALS_V1_URL,
+    SECURITY_CONTEXT_BBS_URL,
+    CREDENTIALS_CONTEXT_V1_URL,
 )
 from .dids import DID_z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL
 
@@ -21,11 +21,11 @@ DOCUMENTS = {
     DID_z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL.get(
         "id"
     ): DID_z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL,
-    SECURITY_V1_URL: SECURITY_V1,
-    SECURITY_V2_URL: SECURITY_V2,
+    SECURITY_CONTEXT_V1_URL: SECURITY_V1,
+    SECURITY_CONTEXT_V2_URL: SECURITY_V2,
     DID_V1_URL: DID_V1,
-    CREDENTIALS_V1_URL: CREDENTIALS_V1,
-    SECURITY_BBS_URL: BBS_V1,
+    CREDENTIALS_CONTEXT_V1_URL: CREDENTIALS_V1,
+    SECURITY_CONTEXT_BBS_URL: BBS_V1,
     "https://www.w3.org/2018/credentials/examples/v1": EXAMPLES_V1,
     "https://w3id.org/citizenship/v1": CITIZENSHIP_V1,
     "https://www.w3.org/ns/odrl.jsonld": ODRL,

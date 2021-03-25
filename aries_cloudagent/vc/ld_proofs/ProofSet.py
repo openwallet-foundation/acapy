@@ -5,7 +5,7 @@ from pyld.jsonld import JsonLdProcessor
 
 from .error import LinkedDataProofException
 from .validation_result import DocumentVerificationResult, ProofResult
-from .constants import SECURITY_V2_URL
+from .constants import SECURITY_CONTEXT_URL
 from .document_loader import DocumentLoader
 from .purposes.ProofPurpose import ProofPurpose
 from .suites import LinkedDataProof
@@ -100,7 +100,7 @@ class ProofSet:
         # TODO: digitalbazaar changed this to use the document context
         # in jsonld-signatures. Does that mean we need to provide this ourselves?
         # https://github.com/digitalbazaar/jsonld-signatures/commit/5046805653ea7db47540e5c9c77578d134a559e1
-        proof_set = [{"@context": SECURITY_V2_URL, **proof} for proof in proof_set]
+        proof_set = [{"@context": SECURITY_CONTEXT_URL, **proof} for proof in proof_set]
 
         return proof_set
 

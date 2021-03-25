@@ -5,7 +5,10 @@ from typing import List, Optional, Union
 from datetime import datetime
 
 from ....messaging.valid import Uri
-from ...ld_proofs.constants import CREDENTIALS_V1_URL, VERIFIABLE_CREDENTIAL_TYPE
+from ...ld_proofs.constants import (
+    CREDENTIALS_CONTEXT_V1_URL,
+    VERIFIABLE_CREDENTIAL_TYPE,
+)
 from .credential_schema import (
     CredentialSchema,
     VerifiableCredentialSchema,
@@ -84,7 +87,7 @@ class VerifiableCredential:
         **kwargs,
     ) -> None:
         """Initialize the VerifiableCredential instance."""
-        self._context = context or [CREDENTIALS_V1_URL]
+        self._context = context or [CREDENTIALS_CONTEXT_V1_URL]
         self._id = id
         self._type = type or [VERIFIABLE_CREDENTIAL_TYPE]
         self._issuer = issuer
@@ -141,7 +144,7 @@ class VerifiableCredential:
 
         First item must be credentials v1 url
         """
-        assert context[0] == CREDENTIALS_V1_URL
+        assert context[0] == CREDENTIALS_CONTEXT_V1_URL
 
         self._context = context
 

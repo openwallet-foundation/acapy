@@ -9,7 +9,7 @@ from ..ld_proofs import (
     LinkedDataProof,
     LinkedDataProofException,
 )
-from ..ld_proofs.constants import CREDENTIALS_V1_URL
+from ..ld_proofs.constants import CREDENTIALS_CONTEXT_V1_URL
 from .models.credential_schema import VerifiableCredentialSchema
 
 
@@ -17,7 +17,7 @@ async def create_presentation(
     *, credentials: List[dict], presentation_id: str = None
 ) -> dict:
     presentation = {
-        "@context": [CREDENTIALS_V1_URL],
+        "@context": [CREDENTIALS_CONTEXT_V1_URL],
         "type": ["VerifiablePresentation"],
     }
 

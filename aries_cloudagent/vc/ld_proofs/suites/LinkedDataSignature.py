@@ -10,7 +10,7 @@ from ..error import LinkedDataProofException
 from ..validation_result import ProofResult
 from ..document_loader import DocumentLoader
 from ..purposes import ProofPurpose
-from ..constants import SECURITY_V2_URL
+from ..constants import SECURITY_CONTEXT_URL
 from .LinkedDataProof import LinkedDataProof
 
 
@@ -79,10 +79,10 @@ class LinkedDataSignature(LinkedDataProof, metaclass=ABCMeta):
             # double check to make sure we're doing it correctly
             # https://github.com/digitalbazaar/jsonld-signatures/commit/2c98a2fb626b85e31d16b16e7ea6a90fd83534c5
             proof = jsonld.compact(
-                self.proof, SECURITY_V2_URL, {"documentLoader": document_loader}
+                self.proof, SECURITY_CONTEXT_URL, {"documentLoader": document_loader}
             )
         else:
-            proof = {"@context": SECURITY_V2_URL}
+            proof = {"@context": SECURITY_CONTEXT_URL}
 
         # TODO: validate if verification_method is set?
         proof["type"] = self.signature_type
@@ -162,13 +162,13 @@ class LinkedDataSignature(LinkedDataProof, metaclass=ABCMeta):
         framed = jsonld.frame(
             verification_method,
             frame={
-                "@context": SECURITY_V2_URL,
+                "@context": SECURITY_CONTEXT_URL,
                 "@embed": "@always",
                 "id": verification_method,
             },
             options={
                 "documentLoader": document_loader,
-                "expandContext": SECURITY_V2_URL,
+                "expandContext": SECURITY_CONTEXT_URL,
                 # if we don't set base explicitly it will remove the base in returned
                 # document (e.g. use key:z... instead of did:key:z...)
                 # same as compactToRelative in jsonld.js
