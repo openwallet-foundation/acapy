@@ -15,7 +15,7 @@ from .....connections.base_manager import (
     BaseConnectionManagerError,
 )
 from .....connections.models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
-from pydid import DIDDocumentBuilder, VerificationSuite, DIDDocument
+from pydid import DIDDocumentBuilder, VerificationSuite, DIDDocument, options
 from .....core.in_memory import InMemoryProfile
 from .....messaging.responder import BaseResponder, MockResponder
 from .....protocols.routing.v1_0.manager import RoutingManager
@@ -2073,20 +2073,20 @@ class TestConnectionManager(AsyncTestCase):
                 recipient_keys=[vmethod],
                 routing_keys=[vmethod],
                 endpoint=self.test_endpoint,
-                priority=1,
+                # priority=1, # TODO: add back in after pydid update
             )
 
             services.add_didcomm(
                 recipient_keys=[vmethod],
                 routing_keys=[vmethod],
                 endpoint=self.test_endpoint,
-                priority=0,
+                # priority=0, # TODO: add back in after pydid update
             )
             services.add_didcomm(
                 recipient_keys=[vmethod],
                 routing_keys=[vmethod],
                 endpoint="{}/priority2".format(self.test_endpoint),
-                priority=2,
+                # priority=2, # TODO: add back in after pydid update
             )
         did_doc = builder.build()
 
@@ -2104,7 +2104,7 @@ class TestConnectionManager(AsyncTestCase):
         conn_invite = ConnectionInvitation(
             did=did_doc.id,
             endpoint=self.test_endpoint,
-            recipient_keys=[key.id],
+            recipient_keys=[vmethod],
             routing_keys=[self.test_verkey],
             label="label",
         )
@@ -2155,7 +2155,8 @@ class TestConnectionManager(AsyncTestCase):
                 }
             ],
         }
-        did_doc = DIDDocument.deserialize(did_doc_json)
+        # TODO: move options
+        did_doc = DIDDocument.deserialize(did_doc_json, options={options.vm_allow_missing_controller} )
         self.ledger = async_mock.MagicMock()
         self.ledger.get_endpoint_for_did = async_mock.CoroutineMock(
             return_value=self.test_endpoint
