@@ -62,12 +62,18 @@ def bytes_to_b58(val: bytes) -> str:
 
 
 def full_verkey(did: str, abbr_verkey: str) -> str:
-    """Given a DID and a short verkey, return the full verkey."""
+    """Given a DID and abbreviated verkey, return the full verkey."""
     return (
         bytes_to_b58(b58_to_bytes(did.split(":")[-1]) + b58_to_bytes(abbr_verkey[1:]))
         if abbr_verkey.startswith("~")
         else abbr_verkey
     )
+
+
+def abbr_verkey(full_verkey: str, did: str = None) -> str:
+    """Given a full verkey and DID, return the abbreviated verkey."""
+    did_len = len(b58_to_bytes(did.split(":")[-1])) if did else 16
+    return f"~{bytes_to_b58(b58_to_bytes(full_verkey)[did_len:])}"
 
 
 def naked_to_did_key(key: str) -> str:
