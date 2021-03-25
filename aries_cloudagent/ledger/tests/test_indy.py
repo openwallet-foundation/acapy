@@ -1,11 +1,11 @@
 import asyncio
 import json
-from os import path
 import tempfile
 import pytest
 
-from asynctest import TestCase as AsyncTestCase
-from asynctest import mock as async_mock
+from os import path
+
+from asynctest import mock as async_mock, TestCase as AsyncTestCase
 
 from ...cache.in_memory import InMemoryCache
 from ...indy.issuer import IndyIssuer, IndyIssuerError

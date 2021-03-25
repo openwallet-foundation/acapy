@@ -7,8 +7,8 @@ import indy.anoncreds
 import indy.crypto
 import indy.did
 import indy.wallet
-from indy.error import ErrorCode
 
+from indy.error import ErrorCode
 from asynctest import mock as async_mock
 
 from ...config.injection_context import InjectionContext

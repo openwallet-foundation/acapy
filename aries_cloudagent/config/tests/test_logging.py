@@ -1,7 +1,8 @@
 import contextlib
 
-from asynctest import mock as async_mock
 from io import StringIO
+
+from asynctest import mock as async_mock
 from tempfile import NamedTemporaryFile
 
 from .. import logging as test_module

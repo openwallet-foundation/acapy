@@ -1,4 +1,4 @@
-from aries_cloudagent.storage.record import StorageRecord
+from ...storage.record import StorageRecord
 
 
 class TestStorageRecord:
