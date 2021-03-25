@@ -15,7 +15,7 @@ from .....connections.base_manager import (
     BaseConnectionManagerError,
 )
 from .....connections.models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
-from pydid import DIDDocumentBuilder, VerificationSuite
+from pydid import DIDDocumentBuilder, VerificationSuite, DIDDocument
 from .....core.in_memory import InMemoryProfile
 from .....messaging.responder import BaseResponder, MockResponder
 from .....protocols.routing.v1_0.manager import RoutingManager
@@ -2018,7 +2018,7 @@ class TestConnectionManager(AsyncTestCase):
             retrieve_invitation=async_mock.CoroutineMock(return_value=conn_invite),
         )
 
-        with self.assertRaises(ResolverError):
+        with self.assertRaises(BaseConnectionManagerError):
             await self.manager.fetch_connection_targets(mock_conn)
 
     async def test_fetch_connection_targets_conn_invitation_did_ledger(self):
@@ -2066,27 +2066,28 @@ class TestConnectionManager(AsyncTestCase):
             ident="1",
             suite=VerificationSuite("Ed25519VerificationKey2018", "publicKeyBase58"),
             material="02e0e01a8c302976e1556e95c54146e8464adac8626a5d29474718a7281133ff49",
-            verification_type="verificationMethod",
         )
-        builder.services.add_didcomm(
-            type_="IndyAgent",
-            recipient_keys=[vmethod],
-            routing_keys=[vmethod],
-            endpoint=self.test_endpoint,
-            priority=0,
-        )
-        builder.services.add_didcomm(
-            recipient_keys=[vmethod],
-            routing_keys=[vmethod],
-            endpoint=self.test_endpoint,
-            priority=0,
-        )
-        builder.services.add_didcomm(
-            recipient_keys=[vmethod],
-            routing_keys=[vmethod],
-            endpoint="{}/priority2".format(self.test_endpoint),
-            priority=2,
-        )
+        with builder.services.defaults() as services:
+            services.add_didcomm(
+                type_="IndyAgent",
+                recipient_keys=[vmethod],
+                routing_keys=[vmethod],
+                endpoint=self.test_endpoint,
+                priority=1,
+            )
+
+            services.add_didcomm(
+                recipient_keys=[vmethod],
+                routing_keys=[vmethod],
+                endpoint=self.test_endpoint,
+                priority=0,
+            )
+            services.add_didcomm(
+                recipient_keys=[vmethod],
+                routing_keys=[vmethod],
+                endpoint="{}/priority2".format(self.test_endpoint),
+                priority=2,
+            )
         did_doc = builder.build()
 
         self.ledger = async_mock.MagicMock()
@@ -2154,7 +2155,7 @@ class TestConnectionManager(AsyncTestCase):
                 }
             ],
         }
-        did_doc = DIDDoc.deserialize(did_doc_json)
+        did_doc = DIDDocument.deserialize(did_doc_json)
         self.ledger = async_mock.MagicMock()
         self.ledger.get_endpoint_for_did = async_mock.CoroutineMock(
             return_value=self.test_endpoint
