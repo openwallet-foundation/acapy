@@ -23,7 +23,7 @@ from ..storage.error import StorageNotFoundError
 from ..storage.record import StorageRecord
 from ..wallet.base import BaseWallet, DIDInfo
 from ..wallet.util import did_key_to_naked
-
+import json
 from .models.conn_record import ConnRecord
 from .models.connection_target import ConnectionTarget
 from pydid import DIDDocument, DIDDocumentBuilder, VerificationSuite
@@ -325,11 +325,10 @@ class BaseConnectionManager:
             )
         if not doc.service:
             raise BaseConnectionManagerError("No services defined by DIDDocument")
-
         return [
             ConnectionTarget(
                 did=doc.id,
-                endpoint=service.service_endpoint,
+                endpoint=service.serviceEndpoint,
                 label=their_label,
                 recipient_keys=[
                     doc.dereference(key).value for key in (service.recipient_keys or ())
@@ -350,6 +349,10 @@ class BaseConnectionManager:
         storage = self._session.inject(BaseStorage)
         record = await storage.find_record(self.RECORD_TYPE_DID_DOC, {"did": did})
         for service in record.value.get("service", []):  # TODO: remove after pydid update.
-            if not service.get("serviceEndpoint"):
+            try:
+                service = json.loads(service)
+            except Exception:
+                pass
+            if service["serviceEndpoint"] == '':
                 raise BaseConnectionManagerError()
         return DIDDocument.deserialize(record.value), record

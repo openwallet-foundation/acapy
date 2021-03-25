@@ -1836,8 +1836,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
         ) as mock_conn_rec_retrieve_by_id:
             mock_conn_rec_retrieve_by_id.return_value = mock_conn
-
-            with self.assertRaises(BaseConnectionManagerError):
+            with pytest.raises(BaseConnectionManagerError):
                 await self.manager.create_did_document(
                     did_info=did_info,
                     inbound_connection_id="dummy",
@@ -1911,6 +1910,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
         did_doc = self.make_did_doc(
             TestConfig.test_target_did,
             TestConfig.test_target_verkey,
+            with_services=True
         )
         targets = self.manager.diddoc_connection_targets(
             did_doc,
