@@ -10,6 +10,7 @@ from aiohttp_apispec import (
 
 from marshmallow import fields, validate, ValidationError
 
+from ..did.did_key import DIDKey
 from ..admin.request_context import AdminRequestContext
 from ..ledger.base import BaseLedger
 from ..ledger.endpoint_type import EndpointType
@@ -46,6 +47,10 @@ class DIDSchema(OpenAPISchema):
             "or local to the wallet"
         ),
         **DID_POSTURE,
+    )
+    key_type = fields.Str(
+        description="Key type associated with the DID",
+        validate=validate.OneOf([KeyType.ED25519, KeyType.BLS12381G2]),
     )
 
 
@@ -125,7 +130,7 @@ class DIDCreateOptionsSchema(OpenAPISchema):
     key_type = fields.Str(
         required=True,
         example=KeyType.ED25519.key_type,
-        validate=validate.OneOf([key_type.key_type for key_type in KeyType]),
+        validate=validate.OneOf([KeyType.ED25519, KeyType.BLS12381G2]),
     )
 
 
@@ -148,11 +153,17 @@ class DIDCreateSchema(OpenAPISchema):
 
 def format_did_info(info: DIDInfo):
     """Serialize a DIDInfo object."""
+    key_type = KeyType.ED25519  # default from did:sov
+    did_method = DIDMethod.from_metadata(info.metadata)
+
+    if did_method == DIDMethod.KEY:
+        key_type = DIDKey.from_did(info.did).key_type
     if info:
         return {
             "did": info.did,
             "verkey": info.verkey,
             "posture": DIDPosture.get(info.metadata).moniker,
+            "key_type": key_type,
         }
 
 

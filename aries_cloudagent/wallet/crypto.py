@@ -52,7 +52,7 @@ class KeyType(Enum):
         return None
 
     @classmethod
-    def from_key_type(cls, key_type: str) -> Optional["DIDMethod"]:
+    def from_key_type(cls, key_type: str) -> Optional["KeyType"]:
         for _key_type in KeyType:
             if _key_type.key_type == key_type:
                 return _key_type
@@ -71,7 +71,7 @@ DIDMethodSpec = NamedTuple(
 
 class DIDMethod(Enum):
     SOV = DIDMethodSpec("sov", [KeyType.ED25519])
-    KEY = DIDMethodSpec("key", [KeyType.ED25519])
+    KEY = DIDMethodSpec("key", [KeyType.ED25519, KeyType.BLS12381G2])
 
     @property
     def method_name(self) -> str:
