@@ -31,5 +31,5 @@ class ProblemReportHandler(BaseHandler):
         )
 
         await context.profile.notify(
-            "acapy::webhook::problem_report", context.message.serialize()
+            "acapy::problem_report", context.message.serialize()
         )

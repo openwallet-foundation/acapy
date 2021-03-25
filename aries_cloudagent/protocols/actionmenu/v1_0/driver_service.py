@@ -30,7 +30,7 @@ class DriverMenuService(BaseMenuService):
             thread_id: The thread identifier from the requesting message.
         """
         await profile.notify(
-            "acapy::webhook::get-active-menu",
+            "acapy::actionmenu::get-active-menu",
             {
                 "connection_id": connection and connection.connection_id,
                 "thread_id": thread_id,
@@ -57,7 +57,7 @@ class DriverMenuService(BaseMenuService):
             thread_id: The thread identifier from the requesting message.
         """
         await profile.notify(
-            "acapy::webhook::perform-menu-action",
+            "acapy::actionmenu::perform-menu-action",
             {
                 "connection_id": connection and connection.connection_id,
                 "thread_id": thread_id,

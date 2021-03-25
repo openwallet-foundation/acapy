@@ -52,7 +52,7 @@ class TestActionMenuUtil(AsyncTestCase):
 
             assert len(mock_event_bus.events) == 1
             (_, event) = mock_event_bus.events[0]
-            assert event.topic == "acapy::webhook::actionmenu"
+            assert event.topic == "acapy::actionmenu::received"
             assert event.payload["connection_id"] == connection_id
             assert event.payload["menu"] == menu.serialize()
             mock_event_bus.events.clear()
@@ -67,7 +67,7 @@ class TestActionMenuUtil(AsyncTestCase):
 
         assert len(mock_event_bus.events) == 1
         (_, event) = mock_event_bus.events[0]
-        assert event.topic == "acapy::webhook::actionmenu"
+        assert event.topic == "acapy::actionmenu::received"
         assert event.payload == {"connection_id": connection_id, "menu": None}
         mock_event_bus.events.clear()
 

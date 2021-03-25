@@ -33,7 +33,7 @@ class TestBasicMessageHandler:
         assert mock_event_bus.events[0] == (
             request_context.profile,
             Event(
-                "acapy::webhook::basicmessages",
+                "acapy::basicmessage::received",
                 {
                     "connection_id": request_context.connection_record.connection_id,
                     "message_id": request_context.message._id,

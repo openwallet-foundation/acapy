@@ -41,7 +41,18 @@ from .request_context import AdminRequestContext
 
 LOGGER = logging.getLogger(__name__)
 
+EVENT_PATTERN_ACAPY = re.compile("^acapy::(.*)$")
 EVENT_PATTERN_WEBHOOK = re.compile("^acapy::webhook::(.*)$")
+
+EVENT_WEBHOOK_MAPPING = {
+    "acapy::basicmessage::received": "basicmessages",
+    "acapy::problem_report": "problem_report",
+    "acapy::ping::received": "ping",
+    "acapy::ping::response_received": "ping",
+    "acapy::actionmenu::received": "actionmenu",
+    "acapy::actionmenu::get-active-menu": "get-active-menu",
+    "acapy::actionmenu::perform-menu-action": "perform-menu-action",
+}
 
 
 class AdminModulesSchema(OpenAPISchema):
@@ -405,7 +416,7 @@ class AdminServer(BaseAdminServer):
 
         event_bus = self.context.inject(EventBus, required=False)
         if event_bus:
-            event_bus.subscribe(EVENT_PATTERN_WEBHOOK, self.__on_event_webhook)
+            event_bus.subscribe(EVENT_PATTERN_ACAPY, self.__on_acapy_event)
 
         # order tags alphabetically, parameters deterministically and pythonically
         swagger_dict = self.app._state["swagger_dict"]
@@ -695,10 +706,13 @@ class AdminServer(BaseAdminServer):
 
         return ws
 
-    async def __on_event_webhook(self, profile: Profile, event: Event):
-        match = EVENT_PATTERN_WEBHOOK.search(event.topic)
-        if match:
-            webhook_topic = match.group(1)
+    async def __on_acapy_event(self, profile: Profile, event: Event):
+        webhook_topic = EVENT_WEBHOOK_MAPPING.get(event.topic)
+        if not webhook_topic:
+            match = EVENT_PATTERN_WEBHOOK.search(event.topic)
+            webhook_topic = match.group(1) if match else None
+
+        if webhook_topic:
             await self.send_webhook(profile, webhook_topic, event.payload)
 
     async def send_webhook(self, profile: Profile, topic: str, payload: dict):

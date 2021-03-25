@@ -31,5 +31,5 @@ class TestPingHandler:
         assert len(mock_event_bus.events) == 1
         (profile, event) = mock_event_bus.events[0]
         assert profile == request_context.profile
-        assert event.topic == "acapy::webhook::problem_report"
+        assert event.topic == "acapy::problem_report"
         assert event.payload == request_context.message.serialize()
