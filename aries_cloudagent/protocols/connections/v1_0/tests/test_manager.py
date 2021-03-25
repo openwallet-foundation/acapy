@@ -14,7 +14,7 @@ from .....connections.base_manager import (
     BaseConnectionManager,
     BaseConnectionManagerError,
 )
-from pydid import DIDDocumentBuilder, VerificationSuite
+from pydid import DIDDocumentBuilder, VerificationSuite, DIDDocument
 from .....core.in_memory import InMemoryProfile
 from .....messaging.responder import BaseResponder, MockResponder
 from .....protocols.routing.v1_0.manager import RoutingManager
@@ -1718,12 +1718,16 @@ class TestConnectionManager(AsyncTestCase):
             verkey=self.test_target_verkey,
             without_service=True,
         )
-        x_did_doc.add_didcomm_service(
-            type="IndyAgent",
-            recipient_keys=[],
-            routing_keys=[],
-            endpoint=self.test_endpoint,
-        )
+        x_did_doc = DIDDocumentBuilder.from_doc(x_did_doc)
+        with x_did_doc.services.defaults() as services:
+            services.add_didcomm(
+                endpoint=self.test_endpoint,
+                type_="IndyAgent",
+                recipient_keys=[],
+                routing_keys=[]
+            )
+
+        x_did_doc = x_did_doc.build()
 
         for i in range(2):  # first cover store-record, then update-value
             await self.manager.store_did_document(x_did_doc)
@@ -2041,7 +2045,7 @@ class TestConnectionManager(AsyncTestCase):
         assert target.did == mock_conn.their_did
         assert target.endpoint == conn_invite.endpoint
         assert target.label == conn_invite.label
-        assert target.recipient_keys == conn_invite.recipient_keys
+        assert did_doc.dereference(target.recipient_keys[0].url).material == conn_invite.recipient_keys[0]
         assert target.routing_keys == []
         assert target.sender_key == local_did.verkey
 
@@ -2051,27 +2055,28 @@ class TestConnectionManager(AsyncTestCase):
             ident="1",
             suite=VerificationSuite("Ed25519VerificationKey2018", "publicKeyBase58"),
             material="02e0e01a8c302976e1556e95c54146e8464adac8626a5d29474718a7281133ff49",
-            verification_type="verificationMethod",
         )
-        builder.services.add_didcomm(
-            type_="IndyAgent",
-            recipient_keys=[vmethod],
-            routing_keys=[vmethod],
-            endpoint=self.test_endpoint,
-            priority=0,
-        )
-        builder.services.add_didcomm(
-            recipient_keys=[vmethod],
-            routing_keys=[vmethod],
-            endpoint=self.test_endpoint,
-            priority=0,
-        )
-        builder.services.add_didcomm(
-            recipient_keys=[vmethod],
-            routing_keys=[vmethod],
-            endpoint="{}/priority2".format(self.test_endpoint),
-            priority=2,
-        )
+        with builder.services.defaults() as services:
+            services.add_didcomm(
+                type_="IndyAgent",
+                recipient_keys=[vmethod],
+                routing_keys=[vmethod],
+                endpoint=self.test_endpoint,
+                priority=1,
+            )
+
+            services.add_didcomm(
+                recipient_keys=[vmethod],
+                routing_keys=[vmethod],
+                endpoint=self.test_endpoint,
+                priority=0,
+            )
+            services.add_didcomm(
+                recipient_keys=[vmethod],
+                routing_keys=[vmethod],
+                endpoint="{}/priority2".format(self.test_endpoint),
+                priority=2,
+            )
         did_doc = builder.build()
 
         self.ledger = async_mock.MagicMock()
@@ -2139,7 +2144,7 @@ class TestConnectionManager(AsyncTestCase):
                 }
             ],
         }
-        did_doc = DIDDoc.deserialize(did_doc_json)
+        did_doc = DIDDocument.deserialize(did_doc_json)
         self.ledger = async_mock.MagicMock()
         self.ledger.get_endpoint_for_did = async_mock.CoroutineMock(
             return_value=self.test_endpoint
@@ -2295,7 +2300,7 @@ class TestConnectionManager(AsyncTestCase):
         )
 
         targets = await self.manager.fetch_connection_targets(mock_conn)
-        assert len(targets) == 2
+        assert len(targets) == 1
         target = targets[0]
         assert target.did == mock_conn.their_did
         assert target.endpoint == self.test_endpoint

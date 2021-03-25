@@ -221,11 +221,11 @@ class BaseConnectionManager:
             raise ResolverError("Cannot resolve DID without ledger instance")
         async with resolver:
             doc = await resolver.resolve(self._session, did)
-            service = doc.get_service_by_type()
+            service = doc.service
             if not service:
                 raise ResolverError("Cannot resolve DID without document services")
             service = service[0]
-            endpoint = service.service_endpoint
+            endpoint = service.endpoint
             recipient_keys = service.recipient_keys
 
             routing_keys = service.routing_keys
@@ -325,19 +325,23 @@ class BaseConnectionManager:
             )
         if not doc.service:
             raise BaseConnectionManagerError("No services defined by DIDDocument")
+
         return [
             ConnectionTarget(
                 did=doc.id,
-                endpoint=service.serviceEndpoint,
+                endpoint=service.endpoint,
                 label=their_label,
                 recipient_keys=[
-                    doc.dereference(key).value for key in (service.recipient_keys or ())
+                    doc.dereference(key).material
+                    for key in (service.extra.get("recipientKeys") or ())
                 ],
-                routing_keys=[key.value for key in (service.routing_keys or ())],
+                routing_keys=[
+                    key.material for key in (service.extra.get("routingKeys") or ())
+                ],
                 sender_key=sender_verkey,
             )
             for service in doc.service
-            if service.recipient_keys
+            if service.extra.get("recipientKeys")
         ]
 
     async def fetch_did_document(self, did: str) -> Tuple[DIDDocument, StorageRecord]:
@@ -348,11 +352,13 @@ class BaseConnectionManager:
         """
         storage = self._session.inject(BaseStorage)
         record = await storage.find_record(self.RECORD_TYPE_DID_DOC, {"did": did})
-        for service in record.value.get("service", []):  # TODO: remove after pydid update.
+        for service in record.value.get(
+            "service", []
+        ):  # TODO: remove after pydid update.
             try:
                 service = json.loads(service)
             except Exception:
                 pass
-            if service["serviceEndpoint"] == '':
+            if service["serviceEndpoint"] == "":
                 raise BaseConnectionManagerError()
         return DIDDocument.deserialize(record.value), record
