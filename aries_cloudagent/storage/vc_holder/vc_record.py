@@ -161,7 +161,7 @@ class VCRecord(BaseModel):
             subject_ids=subject_ids,
             given_id=given_id,
             cred_value=value,
-            tags=tags,
+            cred_tags=tags,
             record_id=record_id,
             schema_ids=schema_ids,
         )

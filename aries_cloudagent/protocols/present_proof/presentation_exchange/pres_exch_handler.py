@@ -17,6 +17,10 @@ from jsonpath_ng import parse
 from typing import Sequence, Optional
 from uuid import uuid4
 
+from ....vc.ld_proofs.constants import (
+    CREDENTIALS_CONTEXT_V1_URL,
+    VERIFIABLE_PRESENTATION_TYPE,
+)
 from ....core.error import BaseError
 from ....storage.vc_holder.vc_record import VCRecord
 
@@ -39,11 +43,9 @@ class PresentationExchError(BaseError):
     """Base class for DIF Presentation Exchange related errors."""
 
 
-CREDENTIAL_JSONLD_CONTEXT = "https://www.w3.org/2018/credentials/v1"
 PRESENTATION_SUBMISSION_JSONLD_CONTEXT = (
     "https://identity.foundation/presentation-exchange/submission/v1"
 )
-VERIFIABLE_PRESENTATION_JSONLD_TYPE = "VerifiablePresentation"
 PRESENTATION_SUBMISSION_JSONLD_TYPE = "PresentationSubmission"
 
 
@@ -766,12 +768,12 @@ async def create_vp(
 
     # defaultVPContext
     default_vp_context = [
-        CREDENTIAL_JSONLD_CONTEXT,
+        CREDENTIALS_CONTEXT_V1_URL,
         PRESENTATION_SUBMISSION_JSONLD_CONTEXT,
     ]
     # defaultVPType
     default_vp_type = [
-        VERIFIABLE_PRESENTATION_JSONLD_TYPE,
+        VERIFIABLE_PRESENTATION_TYPE,
         PRESENTATION_SUBMISSION_JSONLD_TYPE,
     ]
 

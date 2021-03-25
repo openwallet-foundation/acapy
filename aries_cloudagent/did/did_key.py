@@ -2,6 +2,7 @@ from multicodec.multicodec import add_prefix, get_codec, remove_prefix
 
 from ..wallet.crypto import KeyType, ed25519_pk_to_curve25519
 from ..wallet.util import b58_to_bytes, bytes_to_b58
+from ..vc.ld_proofs.constants import DID_V1_CONTEXT_URL
 
 
 class DIDKey:
@@ -160,7 +161,7 @@ def construct_did_key_bls12381g1g2(did_key: "DIDKey") -> dict:
     bls12381g2_key_id = f"{did_key.did}#{bls12381g2_key.fingerprint}"
 
     return {
-        "@context": "https://www.w3.org/ns/did/v1",
+        "@context": DID_V1_CONTEXT_URL,
         "id": did_key.did,
         "verificationMethod": [
             {
@@ -195,7 +196,7 @@ def construct_did_key_x25519(did_key: "DIDKey") -> dict:
     """
 
     return {
-        "@context": "https://www.w3.org/ns/did/v1",
+        "@context": DID_V1_CONTEXT_URL,
         "id": did_key.did,
         "verificationMethod": [
             {
@@ -258,7 +259,7 @@ def construct_did_signature_key_base(
     """
 
     return {
-        "@context": "https://www.w3.org/ns/did/v1",
+        "@context": DID_V1_CONTEXT_URL,
         "id": id,
         "verificationMethod": [verification_method],
         "authentication": [key_id],
