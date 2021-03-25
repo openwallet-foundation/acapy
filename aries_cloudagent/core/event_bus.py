@@ -1,13 +1,11 @@
 """A simple event bus."""
 
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from ..core.profile import Profile
-
 import logging
 from itertools import chain
-from typing import Any, Callable, Dict, Pattern, Sequence
+from typing import TYPE_CHECKING, Any, Callable, Dict, Pattern, Sequence
+
+if TYPE_CHECKING:  # To avoid circular import error
+    from .profile import Profile
 
 LOGGER = logging.getLogger(__name__)
 

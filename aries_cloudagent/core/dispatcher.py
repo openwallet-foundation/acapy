@@ -9,6 +9,7 @@ import asyncio
 import logging
 import os
 from typing import Callable, Coroutine, Union
+import warnings
 
 from aiohttp.web import HTTPException
 
@@ -289,3 +290,17 @@ class DispatcherResponder(BaseResponder):
             message: The `OutboundMessage` to be sent
         """
         await self._send(self._context.profile, message, self._inbound_message)
+
+    async def send_webhook(self, topic: str, payload: dict):
+        """
+        Dispatch a webhook. DEPRECATED: use the event bus instead.
+
+        Args:
+            topic: the webhook topic identifier
+            payload: the webhook payload value
+        """
+        warnings.warn(
+            "responder.send_webhook is deprecated; please use the event bus instead.",
+            DeprecationWarning,
+        )
+        await self._context.profile.notify("acapy::webhook::" + topic, payload)

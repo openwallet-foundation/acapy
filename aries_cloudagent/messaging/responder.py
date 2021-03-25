@@ -113,6 +113,16 @@ class BaseResponder(ABC):
             message: The `OutboundMessage` to be sent
         """
 
+    @abstractmethod
+    async def send_webhook(self, topic: str, payload: dict):
+        """
+        Dispatch a webhook. DEPRECATED: use the event bus instead.
+
+        Args:
+            topic: the webhook topic identifier
+            payload: the webhook payload value
+        """
+
 
 class MockResponder(BaseResponder):
     """Mock responder implementation for use by tests."""
@@ -132,3 +142,9 @@ class MockResponder(BaseResponder):
     async def send_outbound(self, message: OutboundMessage):
         """Send an outbound message."""
         self.messages.append((message, None))
+
+    async def send_webhook(self, topic: str, payload: dict):
+        """Send an outbound message."""
+        raise Exception(
+            "responder.send_webhook is deprecated; please use the event bus instead."
+        )

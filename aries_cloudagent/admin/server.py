@@ -5,6 +5,7 @@ import logging
 import re
 from typing import Callable, Coroutine
 import uuid
+import warnings
 
 from aiohttp import web
 from aiohttp_apispec import (
@@ -99,6 +100,20 @@ class AdminResponder(BaseResponder):
             message: The `OutboundMessage` to be sent
         """
         await self._send(self._profile, message)
+
+    async def send_webhook(self, topic: str, payload: dict):
+        """
+        Dispatch a webhook. DEPRECATED: use the event bus instead.
+
+        Args:
+            topic: the webhook topic identifier
+            payload: the webhook payload value
+        """
+        warnings.warn(
+            "responder.send_webhook is deprecated; please use the event bus instead.",
+            DeprecationWarning,
+        )
+        await self._profile.notify("acapy::webhook::" + topic, payload)
 
 
 @web.middleware
