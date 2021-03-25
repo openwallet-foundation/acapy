@@ -1829,8 +1829,10 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             endpoint="",
         )
         x_did_doc = builder.build()
-        for _ in range(2):  # first cover store-record, then update-value
-            await self.manager.store_did_document(x_did_doc)
+        # code coverage call for store-record
+        await self.manager.store_did_document(x_did_doc)
+        # code coverage call for update-value
+        await self.manager.store_did_document(x_did_doc)
 
         with async_mock.patch.object(
             ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()

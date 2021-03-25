@@ -14,7 +14,7 @@ from .....connections.base_manager import (
     BaseConnectionManager,
     BaseConnectionManagerError,
 )
-from pydid import DIDDocumentBuilder, VerificationSuite, DIDDocument
+from pydid import DIDDocumentBuilder, VerificationSuite, DIDDocument, options
 from .....core.in_memory import InMemoryProfile
 from .....messaging.responder import BaseResponder, MockResponder
 from .....protocols.routing.v1_0.manager import RoutingManager
@@ -1679,13 +1679,20 @@ class TestConnectionManager(AsyncTestCase):
             did=self.test_target_did,
             verkey=self.test_target_verkey,
             without_service=True,
-            service_without_endpoint=True,
         )
-
-        x_did_doc.add_service(type="IndyAgent", endpoint="", ident="dummy")
-
-        for i in range(2):  # first cover store-record, then update-value
-            await self.manager.store_did_document(x_did_doc)
+        builder = DIDDocumentBuilder.from_doc(x_did_doc)
+        builder.services.add_didcomm(
+            ident="dummy",
+            type_="IndyAgent",
+            recipient_keys=[],
+            routing_keys=[],
+            endpoint="",
+        )
+        x_did_doc = builder.build()
+        # code coverage call for store-record
+        await self.manager.store_did_document(x_did_doc)
+        # code coverage call for update-value
+        await self.manager.store_did_document(x_did_doc)
 
         with async_mock.patch.object(
             ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
@@ -1724,7 +1731,7 @@ class TestConnectionManager(AsyncTestCase):
                 endpoint=self.test_endpoint,
                 type_="IndyAgent",
                 recipient_keys=[],
-                routing_keys=[]
+                routing_keys=[],
             )
 
         x_did_doc = x_did_doc.build()
@@ -2045,7 +2052,10 @@ class TestConnectionManager(AsyncTestCase):
         assert target.did == mock_conn.their_did
         assert target.endpoint == conn_invite.endpoint
         assert target.label == conn_invite.label
-        assert did_doc.dereference(target.recipient_keys[0].url).material == conn_invite.recipient_keys[0]
+        assert (
+            did_doc.dereference(target.recipient_keys[0].url).material
+            == conn_invite.recipient_keys[0]
+        )
         assert target.routing_keys == []
         assert target.sender_key == local_did.verkey
 
@@ -2062,20 +2072,20 @@ class TestConnectionManager(AsyncTestCase):
                 recipient_keys=[vmethod],
                 routing_keys=[vmethod],
                 endpoint=self.test_endpoint,
-                priority=1,
+                # priority=1, # TODO: add back in after pydid update
             )
 
             services.add_didcomm(
                 recipient_keys=[vmethod],
                 routing_keys=[vmethod],
                 endpoint=self.test_endpoint,
-                priority=0,
+                # priority=0, # TODO: add back in after pydid update
             )
             services.add_didcomm(
                 recipient_keys=[vmethod],
                 routing_keys=[vmethod],
                 endpoint="{}/priority2".format(self.test_endpoint),
-                priority=2,
+                # priority=2, # TODO: add back in after pydid update
             )
         did_doc = builder.build()
 
@@ -2093,7 +2103,7 @@ class TestConnectionManager(AsyncTestCase):
         conn_invite = ConnectionInvitation(
             did=did_doc.id,
             endpoint=self.test_endpoint,
-            recipient_keys=[key.id],
+            recipient_keys=[vmethod],
             routing_keys=[self.test_verkey],
             label="label",
         )
@@ -2144,7 +2154,8 @@ class TestConnectionManager(AsyncTestCase):
                 }
             ],
         }
-        did_doc = DIDDocument.deserialize(did_doc_json)
+        # TODO: move options
+        did_doc = DIDDocument.deserialize(did_doc_json, options={options.vm_allow_missing_controller} )
         self.ledger = async_mock.MagicMock()
         self.ledger.get_endpoint_for_did = async_mock.CoroutineMock(
             return_value=self.test_endpoint
