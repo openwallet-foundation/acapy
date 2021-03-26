@@ -25,7 +25,8 @@ from ..wallet.base import BaseWallet, DIDInfo
 from ..wallet.util import did_key_to_naked
 from .models.conn_record import ConnRecord
 from .models.connection_target import ConnectionTarget
-from pydid import DIDDocument, DIDDocumentBuilder, VerificationSuite, options
+from pydid import DIDDocument, DIDDocumentBuilder, VerificationSuite, options, DID
+import json
 
 
 class BaseConnectionManagerError(BaseError):
@@ -164,13 +165,13 @@ class BaseConnectionManager:
         except StorageNotFoundError:
             record = StorageRecord(
                 self.RECORD_TYPE_DID_DOC,
-                did_doc.serialize(),
-                {"did": did_doc.id},
+                json.dumps(did_doc.serialize()),
+                {"did": str(did_doc.id)},
             )
             await storage.add_record(record)
         else:
             await storage.update_record(
-                record, did_doc.serialize(), {"did": did_doc.id}
+                record, did_doc.serialize(), {"did": str(did_doc.id)}
             )
         await self.remove_keys_for_did(did_doc.id)
         for key in did_doc.verification_method:
@@ -184,7 +185,9 @@ class BaseConnectionManager:
             did: The DID to associate with this key
             key: The verkey to be added
         """
-        record = StorageRecord(self.RECORD_TYPE_DID_KEY, key, {"did": did, "key": key})
+        record = StorageRecord(
+            self.RECORD_TYPE_DID_KEY, key, {"did": str(did), "key": key}
+        )
         storage = self._session.inject(BaseStorage)
         await storage.add_record(record)
 
@@ -205,7 +208,7 @@ class BaseConnectionManager:
             did: The DID for which to remove keys
         """
         storage = self._session.inject(BaseStorage)
-        await storage.delete_all_records(self.RECORD_TYPE_DID_KEY, {"did": did})
+        await storage.delete_all_records(self.RECORD_TYPE_DID_KEY, {"did": str(did)})
 
     async def resolve_invitation(self, did: str):
         """
@@ -350,8 +353,19 @@ class BaseConnectionManager:
             did: The DID to search for
         """
         storage = self._session.inject(BaseStorage)
-        record = await storage.find_record(self.RECORD_TYPE_DID_DOC, {"did": did})
-        return DIDDocument.deserialize(
-            record.value,
-            options={options.vm_allow_missing_controller}
-            ), record
+
+        record = await storage.find_record(
+            self.RECORD_TYPE_DID_DOC, {"did": "did:sov:{}".format(did)}
+        )
+
+        value = json.loads(record.value)
+        did_doc = DIDDocument.deserialize(
+            value, options={options.vm_allow_missing_controller}
+        )
+
+        return did_doc, record
+
+    def _did_without_method(self, did: str) -> str:
+        """Retrieve the DID without method from a Sting."""
+
+        return DID(did).method_specific_id
