@@ -1586,8 +1586,8 @@ class TestConnectionManager(AsyncTestCase):
         did_doc = self.make_did_doc(
             did=self.test_target_did, verkey=self.test_target_verkey
         )
-        for i in range(2):  # first cover store-record, then update-value
-            await self.manager.store_did_document(did_doc)
+        await self.manager.store_did_document(did_doc)
+        await self.manager.store_did_document(did_doc)
 
         with async_mock.patch.object(
             ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()

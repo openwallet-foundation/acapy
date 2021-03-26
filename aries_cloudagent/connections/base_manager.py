@@ -166,12 +166,12 @@ class BaseConnectionManager:
             record = StorageRecord(
                 self.RECORD_TYPE_DID_DOC,
                 json.dumps(did_doc.serialize()),
-                {"did": str(did_doc.id)},
+                {"did": did_doc.id},
             )
             await storage.add_record(record)
         else:
             await storage.update_record(
-                record, did_doc.serialize(), {"did": str(did_doc.id)}
+                record, did_doc.serialize(), {"did": did_doc.id}
             )
         await self.remove_keys_for_did(did_doc.id)
         for key in did_doc.verification_method:
@@ -186,7 +186,7 @@ class BaseConnectionManager:
             key: The verkey to be added
         """
         record = StorageRecord(
-            self.RECORD_TYPE_DID_KEY, key, {"did": str(did), "key": key}
+            self.RECORD_TYPE_DID_KEY, key, {"did": did, "key": key}
         )
         storage = self._session.inject(BaseStorage)
         await storage.add_record(record)
@@ -208,7 +208,7 @@ class BaseConnectionManager:
             did: The DID for which to remove keys
         """
         storage = self._session.inject(BaseStorage)
-        await storage.delete_all_records(self.RECORD_TYPE_DID_KEY, {"did": str(did)})
+        await storage.delete_all_records(self.RECORD_TYPE_DID_KEY, {"did": did})
 
     async def resolve_invitation(self, did: str):
         """
@@ -353,9 +353,12 @@ class BaseConnectionManager:
             did: The DID to search for
         """
         storage = self._session.inject(BaseStorage)
-
+        did = str(did)
+        tag = {"did": did}
+        if "did:" not in did:
+            tag = {"did": f"did:sov:{did}"}
         record = await storage.find_record(
-            self.RECORD_TYPE_DID_DOC, {"did": "did:sov:{}".format(did)}
+            self.RECORD_TYPE_DID_DOC, tag
         )
 
         value = json.loads(record.value)
