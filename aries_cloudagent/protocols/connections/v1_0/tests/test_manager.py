@@ -1103,9 +1103,8 @@ class TestConnectionManager(AsyncTestCase):
         mock_response = async_mock.MagicMock()
         mock_response._thread = async_mock.MagicMock()
         mock_response.connection = async_mock.MagicMock()
-        mock_response.connection.did = self.test_target_did
-        mock_response.connection.did_doc = async_mock.MagicMock()
-        mock_response.connection.did_doc.did = self.test_target_did
+        mock_response.connection.did = self.test_target_did.split(":")[-1]
+        mock_response.connection.did_doc = self.make_did_doc(self.test_target_did, self.test_verkey)
 
         receipt = MessageReceipt(recipient_did=self.test_did, recipient_did_public=True)
 
@@ -1125,15 +1124,15 @@ class TestConnectionManager(AsyncTestCase):
                 connection_id="test-conn-id",
             )
             conn_rec = await self.manager.accept_response(mock_response, receipt)
-            assert conn_rec.their_did == self.test_target_did
+            assert conn_rec.their_did == self.test_target_did.split(":")[-1]
             assert ConnRecord.State.get(conn_rec.state) is ConnRecord.State.RESPONSE
 
     async def test_accept_response_not_found_by_thread_id_receipt_has_sender_did(self):
         mock_response = async_mock.MagicMock()
         mock_response._thread = async_mock.MagicMock()
         mock_response.connection = async_mock.MagicMock()
-        mock_response.connection.did = self.test_target_did
-        mock_response.connection.did_doc = async_mock.MagicMock()
+        mock_response.connection.did = self.test_target_did.split(":")[-1]
+        mock_response.connection.did_doc = self.make_did_doc(self.test_target_did, self.test_verkey)
         mock_response.connection.did_doc.did = self.test_target_did
 
         receipt = MessageReceipt(sender_did=self.test_target_did)
@@ -1158,7 +1157,7 @@ class TestConnectionManager(AsyncTestCase):
             )
 
             conn_rec = await self.manager.accept_response(mock_response, receipt)
-            assert conn_rec.their_did == self.test_target_did
+            assert conn_rec.their_did == self.test_target_did.split(":")[-1]
             assert ConnRecord.State.get(conn_rec.state) is ConnRecord.State.RESPONSE
 
             assert not self.responder.messages
@@ -1259,9 +1258,10 @@ class TestConnectionManager(AsyncTestCase):
         mock_response = async_mock.MagicMock()
         mock_response._thread = async_mock.MagicMock()
         mock_response.connection = async_mock.MagicMock()
-        mock_response.connection.did = self.test_target_did
-        mock_response.connection.did_doc = async_mock.MagicMock()
-        mock_response.connection.did_doc.did = self.test_target_did
+        mock_response.connection.did = self.test_target_did.split(":")[-1]
+        mock_response.connection.did_doc = self.make_did_doc(self.test_target_did, self.test_verkey)#async_mock.MagicMock()
+        #mock_response.connection.did_doc.id = async_mock.MagicMock()
+        #mock_response.connection.did_doc.id.method_specific_id = self.test_target_did
 
         receipt = MessageReceipt(recipient_did=self.test_did, recipient_did_public=True)
 
@@ -1281,7 +1281,7 @@ class TestConnectionManager(AsyncTestCase):
                 connection_id="test-conn-id",
             )
             conn_rec = await self.manager.accept_response(mock_response, receipt)
-            assert conn_rec.their_did == self.test_target_did
+            assert conn_rec.their_did == self.test_target_did.split(":")[-1]
             assert ConnRecord.State.get(conn_rec.state) is ConnRecord.State.RESPONSE
 
             assert len(self.responder.messages) == 1
@@ -1579,7 +1579,7 @@ class TestConnectionManager(AsyncTestCase):
         mock_conn = async_mock.MagicMock(
             connection_id="dummy",
             inbound_connection_id=None,
-            their_did=self.test_target_did,
+            their_did=self.test_target_did.split(":")[-1],
             state=ConnRecord.State.COMPLETED.rfc23,
         )
 
