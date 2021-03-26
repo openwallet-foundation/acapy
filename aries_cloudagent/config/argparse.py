@@ -78,8 +78,10 @@ def load_argument_groups(parser: ArgumentParser, *groups: Type[ArgumentGroup]):
             for group in group_inst:
                 settings.update(group.get_settings(args))
         except ArgsParseError as e:
-            parser.print_help()
-            raise e
+            # this is defined to exit or raise an exception and is
+            # consistent with an error being raised while the arguments
+            # are being parsed
+            parser.error(str(e))
         return settings
 
     return get_settings
