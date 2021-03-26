@@ -5,11 +5,10 @@ For Connection, DIDExchange and OutOfBand Manager.
 """
 
 import logging
+from typing import List, Sequence, Tuple
 
-from typing import Sequence, Tuple, List
+from pydid import DIDDocument as ResolvedDocument
 
-from aries_cloudagent.resolver.base import ResolverError
-from aries_cloudagent.resolver.did_resolver import DIDResolver
 from ..core.error import BaseError
 from ..core.profile import ProfileSession
 from ..protocols.connections.v1_0.messages.connection_invitation import (
@@ -18,20 +17,16 @@ from ..protocols.connections.v1_0.messages.connection_invitation import (
 from ..protocols.coordinate_mediation.v1_0.models.mediation_record import (
     MediationRecord,
 )
+from ..resolver.base import ResolverError
+from ..resolver.did_resolver import DIDResolver
 from ..storage.base import BaseStorage
 from ..storage.error import StorageNotFoundError
 from ..storage.record import StorageRecord
 from ..wallet.base import BaseWallet, DIDInfo
 from ..wallet.util import did_key_to_naked
-
 from .models.conn_record import ConnRecord
 from .models.connection_target import ConnectionTarget
-from .models.diddoc import (
-    DIDDoc,
-    PublicKey,
-    PublicKeyType,
-    Service,
-)
+from .models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
 
 
 class BaseConnectionManagerError(BaseError):
@@ -218,19 +213,26 @@ class BaseConnectionManager:
             did: Document ID to resolve
         """
         # populate recipient keys and endpoint from the ledger
-        resolver = self._session.inject(DIDResolver, required=False)
-        if not resolver:
-            raise ResolverError("Cannot resolve DID without ledger instance")
-        async with resolver:
-            doc = await resolver.resolve(self._session, did)
-            service = doc.get_service_by_type()
-            if not service:
-                raise ResolverError("Cannot resolve DID without document services")
-            service = service[0]
-            endpoint = service.service_endpoint
-            recipient_keys = service.recipient_keys
+        resolver = self._session.inject(DIDResolver)
+        try:
+            doc: ResolvedDocument = await resolver.resolve(self._session.profile, did)
+        except ResolverError as error:
+            raise BaseConnectionManagerError(
+                "Failed to resolve public DID in invitation"
+            ) from error
 
-            routing_keys = service.routing_keys
+        if not doc.service:
+            raise BaseConnectionManagerError(
+                "Cannot connect via public DID that has no associated services"
+            )
+
+        endpoint = doc.service[0].endpoint
+        recipient_keys = [
+            doc.dereference(url) for url in doc.service[0].extra["recipient_keys"]
+        ]
+        routing_keys = [
+            doc.dereference(url) for url in doc.service[0].extra["routing_keys"]
+        ]
 
         return endpoint, recipient_keys, routing_keys
 
