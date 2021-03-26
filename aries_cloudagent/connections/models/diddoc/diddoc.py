@@ -25,7 +25,7 @@ from typing import List, Sequence, Union
 
 from .publickey import PublicKey, PublicKeyType
 from .service import Service
-from .util import canon_did, canon_ref, ok_did, resource
+from .util import canon_ref
 
 LOGGER = logging.getLogger(__name__)
 
@@ -55,7 +55,7 @@ class DIDDoc:
 
         """
 
-        self._did = canon_did(did) if did else None  # allow specification post-hoc
+        self._did = did
         self._pubkey = {}
         self._service = {}
 
@@ -78,7 +78,7 @@ class DIDDoc:
 
         """
 
-        self._did = canon_did(value) if value else None
+        self._did = value
 
     @property
     def pubkey(self) -> dict:
@@ -132,7 +132,7 @@ class DIDDoc:
 
         return {
             "@context": DIDDoc.CONTEXT,
-            "id": canon_ref(self.did, self.did),
+            "id": self.did,
             "publicKey": [pubkey.to_dict() for pubkey in self.pubkey.values()],
             "authentication": [
                 {
@@ -228,25 +228,11 @@ class DIDDoc:
 
         """
 
-        rv = None
-        if "id" in did_doc:
-            rv = DIDDoc(did_doc["id"])
-        else:
-            # heuristic: get DID to serve as DID document identifier from
-            # the first OK-looking public key
-            for section in ("publicKey", "authentication"):
-                if rv is None and section in did_doc:
-                    for key_spec in did_doc[section]:
-                        try:
-                            pubkey_did = canon_did(resource(key_spec.get("id", "")))
-                            if ok_did(pubkey_did):
-                                rv = DIDDoc(pubkey_did)
-                                break
-                        except ValueError:  # no identifier here, move on to next
-                            break
-            if rv is None:
-                LOGGER.debug("no identifier in DID document")
-                raise ValueError("No identifier in DID document")
+        if "id" not in did_doc:
+            LOGGER.debug("no identifier in DID document")
+            raise ValueError("No identifier in DID document")
+
+        rv = DIDDoc(did_doc["id"])
 
         for pubkey in did_doc.get(
             "publicKey", {}
@@ -263,7 +249,7 @@ class DIDDoc:
                 pubkey["id"],
                 pubkey[pubkey_type.specifier],
                 pubkey_type,
-                canon_did(pubkey["controller"]),
+                pubkey["controller"],
                 authn,
             )
             rv.pubkey[key.id] = key
@@ -278,7 +264,7 @@ class DIDDoc:
                     akey["id"],
                     akey[pubkey_type.specifier],
                     pubkey_type,
-                    canon_did(akey["controller"]),
+                    akey["controller"],
                     True,
                 )
                 rv.pubkey[key.id] = key

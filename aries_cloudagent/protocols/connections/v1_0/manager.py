@@ -34,6 +34,8 @@ from .messages.connection_response import ConnectionResponse
 from .messages.problem_report import ProblemReportReason
 from .models.connection_detail import ConnectionDetail
 
+LOGGER = logging.getLogger(__name__)
+
 
 class ConnectionManagerError(BaseError):
     """Connection error."""
@@ -50,7 +52,6 @@ class ConnectionManager(BaseConnectionManager):
             session: The profile session for this connection manager
         """
         self._session = session
-        self._logger = logging.getLogger(__name__)
         super().__init__(self._session)
 
     @property
@@ -332,7 +333,7 @@ class ConnectionManager(BaseConnectionManager):
                     self._session, connection.connection_id
                 )
         else:
-            self._logger.debug("Connection invitation will await acceptance")
+            LOGGER.debug("Connection invitation will await acceptance")
         return connection
 
     async def create_request(
@@ -378,7 +379,7 @@ class ConnectionManager(BaseConnectionManager):
             my_info = await wallet.get_local_did(connection.my_did)
         else:
             # Create new DID for connection
-            my_info = await wallet.create_local_did()
+            my_info = await wallet.create_local_did(method_name="peer")
             connection.my_did = my_info.did
             mediation_mgr = MediationManager(self._session.profile)
             keylist_updates = await mediation_mgr.add_key(
@@ -497,7 +498,7 @@ class ConnectionManager(BaseConnectionManager):
 
             if connection.is_multiuse_invitation:
                 wallet = self._session.inject(BaseWallet)
-                my_info = await wallet.create_local_did()
+                my_info = await wallet.create_local_did(method_name="peer")
                 keylist_updates = await mediation_mgr.add_key(
                     my_info.verkey, keylist_updates
                 )
@@ -554,7 +555,7 @@ class ConnectionManager(BaseConnectionManager):
         elif not self._session.settings.get("public_invites"):
             raise ConnectionManagerError("Public invitations are not enabled")
         else:  # request from public did
-            my_info = await wallet.create_local_did()
+            my_info = await wallet.create_local_did(method_name="peer")
             # send update-keylist message with new recipient keys
             keylist_updates = await mediation_mgr.add_key(
                 my_info.verkey, keylist_updates
@@ -605,7 +606,7 @@ class ConnectionManager(BaseConnectionManager):
                     self._session, connection.connection_id
                 )
         else:
-            self._logger.debug("Connection request will await acceptance")
+            LOGGER.debug("Connection request will await acceptance")
 
         return connection
 
@@ -657,7 +658,7 @@ class ConnectionManager(BaseConnectionManager):
         if connection.my_did:
             my_info = await wallet.get_local_did(connection.my_did)
         else:
-            my_info = await wallet.create_local_did()
+            my_info = await wallet.create_local_did(method_name="peer")
             connection.my_did = my_info.did
             mediation_mgr = MediationManager(self._session.profile)
             keylist_updates = await mediation_mgr.add_key(
@@ -873,7 +874,7 @@ class ConnectionManager(BaseConnectionManager):
         base_mediation_record = None
 
         # seed and DID optional
-        my_info = await wallet.create_local_did(my_seed, my_did)
+        my_info = await wallet.create_local_did(seed=my_seed, did=my_did)
 
         # must provide their DID and verkey if the seed is not known
         if (not their_did or not their_verkey) and not their_seed:
@@ -1033,7 +1034,7 @@ class ConnectionManager(BaseConnectionManager):
             try:
                 receipt.sender_did = await self.find_did_for_key(receipt.sender_verkey)
             except StorageNotFoundError:
-                self._logger.warning(
+                LOGGER.warning(
                     "No corresponding DID found for sender verkey: %s",
                     receipt.sender_verkey,
                 )
@@ -1048,13 +1049,13 @@ class ConnectionManager(BaseConnectionManager):
                 if "public" in my_info.metadata and my_info.metadata["public"] is True:
                     receipt.recipient_did_public = True
             except InjectionError:
-                self._logger.warning(
+                LOGGER.warning(
                     "Cannot resolve recipient verkey, no wallet defined by "
                     "context: %s",
                     receipt.recipient_verkey,
                 )
             except WalletNotFoundError:
-                self._logger.warning(
+                LOGGER.warning(
                     "No corresponding DID found for recipient verkey: %s",
                     receipt.recipient_verkey,
                 )
@@ -1112,7 +1113,7 @@ class ConnectionManager(BaseConnectionManager):
             my_info = await wallet.get_local_did(connection.my_did)
         else:
             # Create new DID for connection
-            my_info = await wallet.create_local_did()
+            my_info = await wallet.create_local_did(method_name="peer")
             connection.my_did = my_info.did
 
         try:
