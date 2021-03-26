@@ -57,7 +57,7 @@ class TestConnectionManager(AsyncTestCase):
 
     async def setUp(self):
         self.test_seed = "testseed000000000000000000000001"
-        self.test_did = "55GkHamhTU1ZbTbV2ab9DE"
+        self.test_did = "did:peer:55GkHamhTU1ZbTbV2ab9DE"
         self.test_verkey = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
         self.test_endpoint = "http://localhost"
 
@@ -520,7 +520,7 @@ class TestConnectionManager(AsyncTestCase):
                 mediation_id=mediation_record.mediation_id,
                 my_endpoint=self.test_endpoint,
             )
-            create_local_did.assert_called_once_with()
+            create_local_did.assert_called_once_with(method_name="peer")
             create_did_document.assert_called_once_with(
                 self.manager,
                 did_info,
@@ -574,7 +574,7 @@ class TestConnectionManager(AsyncTestCase):
                 record,
                 my_endpoint=self.test_endpoint,
             )
-            create_local_did.assert_called_once_with()
+            create_local_did.assert_called_once_with(method_name="peer")
             create_did_document.assert_called_once_with(
                 self.manager,
                 did_info,
