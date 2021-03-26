@@ -218,19 +218,25 @@ class BaseConnectionManager:
             did: Document ID to resolve
         """
         # populate recipient keys and endpoint from the ledger
-        resolver = self._session.inject(DIDResolver, required=False)
-        if not resolver:
-            raise ResolverError("Cannot resolve DID without ledger instance")
-        async with resolver:
-            doc = await resolver.resolve(self._session, did)
-            service = doc.service
-            if not service:
-                raise ResolverError("Cannot resolve DID without document services")
-            service = service[0]
-            endpoint = service.endpoint
-            recipient_keys = service.recipient_keys
+        resolver = self._session.inject(DIDResolver)
+        try:
+            doc: DIDDocument = await resolver.resolve(self._session.profile, did)
+        except ResolverError as error:
+            raise BaseConnectionManagerError(
+                "Failed to resolve public DID in invitation"
+            ) from error
 
-            routing_keys = service.routing_keys
+        if not doc.service:
+            raise ResolverError("Cannot resolve DID without document services")
+        endpoint = doc.service[0].endpoint
+        recipient_keys = [
+            doc.dereference(url)
+            for url in doc.service[0].extra["recipient_keys"]
+        ]
+        routing_keys = [
+            doc.dereference(url)
+            for url in doc.service[0].extra["routing_keys"]
+        ]
 
         return endpoint, recipient_keys, routing_keys
 
