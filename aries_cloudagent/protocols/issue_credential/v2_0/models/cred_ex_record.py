@@ -59,12 +59,12 @@ class V20CredExRecord(BaseExchangeRecord):
         cred_offer: Mapping = None,  # serialized cred offer message
         cred_request: Mapping = None,  # serialized cred request message
         cred_issue: Mapping = None,  # serialized cred issue message
-        cred_id_stored: str = None,
         auto_offer: bool = False,
         auto_issue: bool = False,
         auto_remove: bool = True,
         error_msg: str = None,
         trace: bool = False,
+        cred_id_stored: str = None,  # for backward compatibility to restore from storage
         conn_id: str = None,  # for backward compatibility to restore from storage
         by_format: Mapping = None,  # formalism for base_record.from_storage()
         **kwargs,

@@ -11,7 +11,7 @@ from aiohttp_apispec import (
     request_schema,
     response_schema,
 )
-from marshmallow import fields, validate, validates_schema, ValidationError, Schema
+from marshmallow import fields, validate, validates_schema, ValidationError
 
 from ....admin.request_context import AdminRequestContext
 from ....connections.models.conn_record import ConnRecord
@@ -46,6 +46,7 @@ from .messages.inner.cred_preview import V20CredPreview, V20CredPreviewSchema
 from .models.cred_ex_record import V20CredExRecord, V20CredExRecordSchema
 from .models.detail.ld_proof import V20CredExRecordLDProofSchema
 from .models.detail.indy import V20CredExRecordIndySchema
+from .formats.handler import V20CredFormatError
 from .formats.ld_proof.models.cred_detail_schema import LDProofVCDetailSchema
 
 
@@ -255,6 +256,15 @@ class V20CredCreateSchema(V20IssueCredSchemaCore):
 
     credential_preview = fields.Nested(V20CredPreviewSchema, required=False)
 
+    @validates_schema
+    def validate(self, data, **kwargs):
+        """Make sure preview is present when indy format is present."""
+
+        if data.get("filter", {}).get("indy") and not data.get("credential_preview"):
+            raise ValidationError(
+                "Credential preview is required if indy filter is present"
+            )
+
 
 class V20CredProposalRequestSchemaBase(V20IssueCredSchemaCore):
     """Base class for request schema for sending credential proposal admin message."""
@@ -266,10 +276,19 @@ class V20CredProposalRequestSchemaBase(V20IssueCredSchemaCore):
     )
 
 
-class V20CredProposalRequestPreviewOptSchema(V20CredProposalRequestSchemaBase):
+class V20CredProposalRequestPreviewIndyRequiredSchema(V20CredProposalRequestSchemaBase):
     """Request schema for sending credential proposal on optional proposal preview."""
 
     credential_preview = fields.Nested(V20CredPreviewSchema, required=False)
+
+    @validates_schema
+    def validate(self, data, **kwargs):
+        """Make sure preview is present when indy format is present."""
+
+        if data.get("filter", {}).get("indy") and not data.get("credential_preview"):
+            raise ValidationError(
+                "Credential preview is required if indy filter is present"
+            )
 
 
 class V20CredOfferRequestSchema(V20IssueCredSchemaCore):
@@ -288,6 +307,15 @@ class V20CredOfferRequestSchema(V20IssueCredSchemaCore):
         required=False,
     )
     credential_preview = fields.Nested(V20CredPreviewSchema, required=False)
+
+    @validates_schema
+    def validate(self, data, **kwargs):
+        """Make sure preview is present when indy format is present."""
+
+        if data.get("filter", {}).get("indy") and not data.get("credential_preview"):
+            raise ValidationError(
+                "Credential preview is required if indy filter is present"
+            )
 
 
 class V20CredIssueRequestSchema(OpenAPISchema):
@@ -320,7 +348,6 @@ class V20CredExIdMatchInfoSchema(OpenAPISchema):
     )
 
 
-# TODO: why store as format, we should pass directly to the format handler
 def _formats_filters(filt_spec: Mapping) -> Mapping:
     """Break out formats and filters for v2.0 cred proposal messages."""
 
@@ -468,8 +495,6 @@ async def credential_exchange_create(request: web.BaseRequest):
     comment = body.get("comment")
     preview_spec = body.get("credential_preview")
     filt_spec = body.get("filter")
-    if V20CredFormat.Format.INDY.api in filt_spec and not preview_spec:
-        raise web.HTTPBadRequest(reason="Missing credential_preview for indy filter")
     auto_remove = body.get("auto_remove")
     if not filt_spec:
         raise web.HTTPBadRequest(reason="Missing filter")
@@ -519,8 +544,7 @@ async def credential_exchange_create(request: web.BaseRequest):
     tags=["issue-credential v2.0"],
     summary="Send holder a credential, automating entire flow",
 )
-# TODO: make credential preview mandatory if indy filter is present
-@request_schema(V20CredProposalRequestPreviewOptSchema())
+@request_schema(V20CredProposalRequestPreviewIndyRequiredSchema())
 @response_schema(V20CredExRecordSchema(), 200, description="")
 async def credential_exchange_send(request: web.BaseRequest):
     """
@@ -550,8 +574,6 @@ async def credential_exchange_send(request: web.BaseRequest):
     if not filt_spec:
         raise web.HTTPBadRequest(reason="Missing filter")
     preview_spec = body.get("credential_preview")
-    if V20CredFormat.Format.INDY.api in filt_spec and not preview_spec:
-        raise web.HTTPBadRequest(reason="Missing credential_preview for indy filter")
     auto_remove = body.get("auto_remove")
     trace_msg = body.get("trace")
 
@@ -593,7 +615,12 @@ async def credential_exchange_send(request: web.BaseRequest):
         )
         result = cred_ex_record.serialize()
 
-    except (StorageError, BaseModelError, V20CredManagerError) as err:
+    except (
+        StorageError,
+        BaseModelError,
+        V20CredManagerError,
+        V20CredFormatError,
+    ) as err:
         await internal_error(
             err,
             web.HTTPBadRequest,
@@ -620,7 +647,7 @@ async def credential_exchange_send(request: web.BaseRequest):
     tags=["issue-credential v2.0"],
     summary="Send issuer a credential proposal",
 )
-@request_schema(V20CredProposalRequestPreviewOptSchema())
+@request_schema(V20CredProposalRequestPreviewIndyRequiredSchema())
 @response_schema(V20CredExRecordSchema(), 200, description="")
 async def credential_exchange_send_proposal(request: web.BaseRequest):
     """
@@ -776,8 +803,6 @@ async def credential_exchange_create_free_offer(request: web.BaseRequest):
     filt_spec = body.get("filter")
     if not filt_spec:
         raise web.HTTPBadRequest(reason="Missing filter")
-    if V20CredFormat.Format.INDY.api in filt_spec and not preview_spec:
-        raise web.HTTPBadRequest(reason="Missing credential_preview for indy filter")
     connection_id = body.get("connection_id")
     trace_msg = body.get("trace")
 
@@ -827,7 +852,12 @@ async def credential_exchange_create_free_offer(request: web.BaseRequest):
         oob_url = serialize_outofband(cred_offer_message, conn_did, endpoint)
         result = cred_ex_record.serialize()
 
-    except (BaseModelError, V20CredManagerError, LedgerError) as err:
+    except (
+        BaseModelError,
+        V20CredManagerError,
+        LedgerError,
+        V20CredFormatError,
+    ) as err:
         await internal_error(
             err,
             web.HTTPBadRequest,
@@ -876,8 +906,6 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
     auto_remove = body.get("auto_remove")
     comment = body.get("comment")
     preview_spec = body.get("credential_preview")
-    if V20CredFormat.Format.INDY.api in filt_spec and not preview_spec:
-        raise web.HTTPBadRequest(reason="Missing credential_preview for indy filter")
     trace_msg = body.get("trace")
 
     cred_ex_record = None
@@ -905,6 +933,7 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
         BaseModelError,
         V20CredManagerError,
         LedgerError,
+        V20CredFormatError,
     ) as err:
         await internal_error(
             err,
@@ -985,7 +1014,13 @@ async def credential_exchange_send_bound_offer(request: web.BaseRequest):
 
         result = cred_ex_record.serialize()
 
-    except (StorageError, BaseModelError, V20CredManagerError, LedgerError) as err:
+    except (
+        StorageError,
+        BaseModelError,
+        V20CredManagerError,
+        LedgerError,
+        V20CredFormatError,
+    ) as err:
         await internal_error(
             err,
             web.HTTPBadRequest,
@@ -1007,7 +1042,10 @@ async def credential_exchange_send_bound_offer(request: web.BaseRequest):
 
 @docs(
     tags=["issue-credential v2.0"],
-    summary="Send issuer a credential request not bound to an existing thread. Indy credentials cannot start at a request",
+    summary=(
+        "Send issuer a credential request not bound to an existing thread."
+        " Indy credentials cannot start at a request"
+    ),
 )
 @request_schema(V20CredRequestFreeSchema())
 @response_schema(V20CredExRecordSchema(), 200, description="")
@@ -1138,7 +1176,12 @@ async def credential_exchange_send_bound_request(request: web.BaseRequest):
 
         result = cred_ex_record.serialize()
 
-    except (StorageError, V20CredManagerError, BaseModelError) as err:
+    except (
+        StorageError,
+        V20CredManagerError,
+        BaseModelError,
+        V20CredFormatError,
+    ) as err:
         await internal_error(
             err,
             web.HTTPBadRequest,
@@ -1211,7 +1254,13 @@ async def credential_exchange_issue(request: web.BaseRequest):
 
         result = await _get_result_with_details(context.profile, cred_ex_record)
 
-    except (BaseModelError, V20CredManagerError, IndyIssuerError, StorageError) as err:
+    except (
+        BaseModelError,
+        V20CredManagerError,
+        IndyIssuerError,
+        StorageError,
+        V20CredFormatError,
+    ) as err:
         await internal_error(
             err,
             web.HTTPBadRequest,
@@ -1286,7 +1335,12 @@ async def credential_exchange_store(request: web.BaseRequest):
 
         result = await _get_result_with_details(context.profile, cred_ex_record)
 
-    except (StorageError, V20CredManagerError, BaseModelError) as err:
+    except (
+        StorageError,
+        V20CredManagerError,
+        BaseModelError,
+        V20CredFormatError,
+    ) as err:
         await internal_error(
             err,
             web.HTTPBadRequest,

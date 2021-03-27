@@ -29,6 +29,7 @@ class V20CredExRecordIndy(BaseRecord):
         cred_ex_indy_id: str = None,
         *,
         cred_ex_id: str = None,
+        cred_id_stored: str = None,
         cred_request_metadata: Mapping = None,
         rev_reg_id: str = None,
         cred_rev_id: str = None,
@@ -38,6 +39,7 @@ class V20CredExRecordIndy(BaseRecord):
         super().__init__(cred_ex_indy_id, **kwargs)
 
         self.cred_ex_id = cred_ex_id
+        self.cred_id_stored = cred_id_stored
         self.cred_request_metadata = cred_request_metadata
         self.rev_reg_id = rev_reg_id
         self.cred_rev_id = cred_rev_id
@@ -53,6 +55,7 @@ class V20CredExRecordIndy(BaseRecord):
         return {
             prop: getattr(self, prop)
             for prop in (
+                "cred_id_stored",
                 "cred_request_metadata",
                 "rev_reg_id",
                 "cred_rev_id",
@@ -94,6 +97,11 @@ class V20CredExRecordIndySchema(BaseRecordSchema):
     cred_ex_id = fields.Str(
         required=False,
         description="Corresponding v2.0 credential exchange record identifier",
+        example=UUIDFour.EXAMPLE,
+    )
+    cred_id_stored = fields.Str(
+        required=False,
+        description="Credential identifier stored in wallet",
         example=UUIDFour.EXAMPLE,
     )
     cred_request_metadata = fields.Dict(

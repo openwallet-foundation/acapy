@@ -13,7 +13,7 @@ from .cred_detail_schema import LDProofVCDetailOptionsSchema, LDProofVCDetailSch
 
 
 class LDProofVCDetailOptions:
-    """Linked Data Proof verifiable credential options model"""
+    """Linked Data Proof verifiable credential options model."""
 
     def __init__(
         self,
@@ -44,6 +44,7 @@ class LDProofVCDetailOptions:
 
         Returns:
             LDProofVCDetailOptions: The deserialized LDProofVCDetailOptions object
+
         """
         if isinstance(detail_options, str):
             detail_options = json.loads(detail_options)
@@ -56,6 +57,7 @@ class LDProofVCDetailOptions:
 
         Returns:
             dict: The LDProofVCDetailOptions serialized as dict.
+
         """
         schema = LDProofVCDetailOptionsSchema()
         detail_options: dict = schema.dump(copy.deepcopy(self))
@@ -71,6 +73,7 @@ class LDProofVCDetail:
         credential: Optional[Union[dict, VerifiableCredential]],
         options: Optional[Union[dict, LDProofVCDetailOptions]],
     ) -> None:
+        """Initialize the LDProofVCDetail instance."""
         if isinstance(credential, dict):
             credential = VerifiableCredential.deserialize(credential)
         self.credential = credential
@@ -88,6 +91,7 @@ class LDProofVCDetail:
 
         Returns:
             LDProofVCDetail: The deserialized LDProofVCDetail object
+
         """
         if isinstance(detail, str):
             detail = json.loads(detail)
@@ -100,6 +104,7 @@ class LDProofVCDetail:
 
         Returns:
             dict: The LDProofVCDetail serialized as dict.
+
         """
         schema = LDProofVCDetailSchema()
         detail: dict = schema.dump(copy.deepcopy(self))

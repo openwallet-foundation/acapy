@@ -52,6 +52,23 @@ class IndyCredFormatHandler(V20CredFormatHandler):
 
     @classmethod
     def validate_fields(cls, message_type: str, attachment_data: Mapping):
+        """Validate attachment data for a specific message type.
+
+        Uses marshmallow schemas to validate if format specific attachment data
+        is valid for the specified message type. Only does structural and type
+        checks, does not validate if .e.g. the issuer value is valid.
+
+
+        Args:
+            message_type (str): The message type to validate the attachment data for.
+                Should be one of the message types as defined in message_types.py
+            attachment_data (Mapping): [description]
+                The attachment data to valide
+
+        Raises:
+            Exception: When the data is not valid.
+
+        """
         mapping = {
             CRED_20_PROPOSAL: CredDefQueryStringSchema,
             CRED_20_OFFER: IndyCredAbstractSchema,
@@ -82,22 +99,29 @@ class IndyCredFormatHandler(V20CredFormatHandler):
     async def create_proposal(
         self, cred_ex_record: V20CredExRecord, filter: Mapping[str, str]
     ) -> Tuple[V20CredFormat, AttachDecorator]:
+        """Create indy credential proposal."""
 
         return self.get_format_data(CRED_20_PROPOSAL, filter)
 
     async def receive_proposal(
         self, cred_ex_record: V20CredExRecord, cred_proposal_message: V20CredProposal
     ) -> None:
+        """Receive indy credential proposal.
+
+        No custom handling is required for this step.
+
+        """
         pass
 
     async def create_offer(
         self, cred_ex_record: V20CredExRecord
     ) -> CredFormatAttachment:
+        """Create indy credential offer."""
+
         issuer = self.profile.inject(IndyIssuer)
         ledger = self.profile.inject(BaseLedger)
         cache = self.profile.inject(BaseCache, required=False)
 
-        # TODO: can't we move cred_def_id and schema_id to detail record?
         cred_proposal_message = V20CredProposal.deserialize(
             cred_ex_record.cred_proposal
         )
@@ -141,14 +165,13 @@ class IndyCredFormatHandler(V20CredFormatHandler):
     async def receive_offer(
         self, cred_ex_record: V20CredExRecord, cred_offer_message: V20CredOffer
     ) -> None:
-        # TODO: Why move from offer to proposal?
+        """Receive indy credential offer."""
         offer = cred_offer_message.attachment(self.format)
         schema_id = offer["schema_id"]
         cred_def_id = offer["cred_def_id"]
 
-        # TODO: this could overwrite proposal for other formats. We should append or something
-        # TODO: move schema_id and cred_def_id to indy record
-        cred_proposal_ser = V20CredProposal(
+        # FIXME: this will overwrite proposal for other formats.
+        cred_ex_record.cred_proposal = V20CredProposal(
             comment=cred_offer_message.comment,
             credential_preview=cred_offer_message.credential_preview,
             formats=[
@@ -168,14 +191,10 @@ class IndyCredFormatHandler(V20CredFormatHandler):
             ],
         ).serialize()  # proposal houses filters, preview (possibly with MIME types)
 
-        async with self.profile.session() as session:
-            # TODO: we should probably not modify cred_ex_record here
-            cred_ex_record.cred_proposal = cred_proposal_ser
-            await cred_ex_record.save(session, reason="receive v2.0 credential offer")
-
     async def create_request(
         self, cred_ex_record: V20CredExRecord, request_data: Mapping = None
     ) -> CredFormatAttachment:
+        """Create indy credential request."""
         holder_did = request_data.get("holder_did") if request_data else None
         cred_offer = V20CredOffer.deserialize(cred_ex_record.cred_offer).attachment(
             self.format
@@ -228,11 +247,16 @@ class IndyCredFormatHandler(V20CredFormatHandler):
     async def receive_request(
         self, cred_ex_record: V20CredExRecord, cred_request_message: V20CredRequest
     ) -> None:
-        assert cred_ex_record.cred_offer
+        """Receive indy credential request."""
+        if not cred_ex_record.cred_offer:
+            raise V20CredFormatError(
+                "Indy issue credential format cannot start from credential offer"
+            )
 
     async def issue_credential(
         self, cred_ex_record: V20CredExRecord, retries: int = 5
     ) -> CredFormatAttachment:
+        """Issue indy credential."""
         cred_offer = V20CredOffer.deserialize(cred_ex_record.cred_offer).attachment(
             self.format
         )
@@ -383,12 +407,16 @@ class IndyCredFormatHandler(V20CredFormatHandler):
     async def receive_credential(
         self, cred_ex_record: V20CredExRecord, cred_issue_message: V20CredIssue
     ) -> None:
-        # TODO: validate
+        """Receive indy credential.
+
+        Validation is done in the store credential step.
+        """
         pass
 
     async def store_credential(
         self, cred_ex_record: V20CredExRecord, cred_id: str = None
     ) -> None:
+        """Store indy credential."""
         cred = V20CredIssue.deserialize(cred_ex_record.cred_issue).attachment(
             self.format
         )
@@ -427,8 +455,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
                 rev_reg_def=rev_reg_def,
             )
 
-            # TODO: doesn't work with multiple attachments
-            cred_ex_record.cred_id_stored = cred_id_stored
+            detail_record.cred_id_stored = cred_id_stored
             detail_record.rev_reg_id = cred.get("rev_reg_id", None)
             detail_record.cred_rev_id = cred.get("cred_rev_id", None)
 

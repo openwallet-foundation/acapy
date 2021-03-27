@@ -72,6 +72,7 @@ class V20CredFormatHandler(ABC):
 
         Returns:
             str: Issue credential attachment format identifier
+
         """
         return ATTACHMENT_FORMAT[message_type][self.format.api]
 
@@ -89,6 +90,7 @@ class V20CredFormatHandler(ABC):
 
         Returns:
             CredFormatAttachment: Credential format and attachment data objects
+
         """
         return (
             V20CredFormat(
@@ -100,59 +102,58 @@ class V20CredFormatHandler(ABC):
 
     @abstractclassmethod
     def validate_fields(cls, message_type: str, attachment_data: dict) -> None:
-        """Validate attachment data for specific message type and format"""
+        """Validate attachment data for specific message type and format."""
 
     @abstractmethod
     async def create_proposal(
         self, cred_ex_record: V20CredExRecord, proposal_data: Mapping
     ) -> CredFormatAttachment:
-        """Format specific handler for creating credential proposal attachment format data"""
+        """Create format specific credential proposal attachment data."""
 
     @abstractmethod
     async def receive_proposal(
         self, cred_ex_record: V20CredExRecord, cred_proposal_message: V20CredProposal
     ) -> None:
-        """Format specific handler for receiving credential proposal message"""
+        """Receive format specific credential proposal message."""
 
     @abstractmethod
     async def create_offer(
         self, cred_ex_record: V20CredExRecord, offer_data: Mapping = None
     ) -> CredFormatAttachment:
-        """Format specific handler for creating credential offer attachment format data"""
+        """Create format specific credential offer attachment data."""
 
     @abstractmethod
     async def receive_offer(
         self, cred_ex_record: V20CredExRecord, cred_offer_message: V20CredOffer
     ) -> None:
-        """Format specific handler for receiving credential offer message"""
+        """Receive foramt specific credential offer message."""
 
     @abstractmethod
     async def create_request(
         self, cred_ex_record: V20CredExRecord, request_data: Mapping = None
     ) -> CredFormatAttachment:
-        """Format specific handler for creating credential request attachment format data"""
+        """Create format specific credential request attachment data."""
 
     @abstractmethod
     async def receive_request(
         self, cred_ex_record: V20CredExRecord, cred_request_message: V20CredRequest
     ) -> None:
-        """Format specific handler for receiving credential request message"""
+        """Receive format specific credential request message."""
 
     @abstractmethod
-    # TODO: add issue_data or is this never needed?
     async def issue_credential(
         self, cred_ex_record: V20CredExRecord, retries: int = 5
     ) -> CredFormatAttachment:
-        """Format specific handler for creating issue credential attachment format data"""
+        """Create format specific issue credential attachment data."""
 
     @abstractmethod
     async def receive_credential(
         self, cred_ex_record: V20CredExRecord, cred_issue_message: V20CredIssue
     ) -> None:
-        """Format specific handler for receiving issue credential message"""
+        """Create format specific issue credential message."""
 
     @abstractmethod
     async def store_credential(
         self, cred_ex_record: V20CredExRecord, cred_id: str = None
     ) -> None:
-        """Format specific handler for storing credential from issue credential message"""
+        """Store format specific credential from issue credential message."""

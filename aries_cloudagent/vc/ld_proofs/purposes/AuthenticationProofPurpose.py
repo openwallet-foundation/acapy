@@ -12,6 +12,8 @@ from .ControllerProofPurpose import ControllerProofPurpose
 class AuthenticationProofPurpose(ControllerProofPurpose):
     """Authentication proof purpose."""
 
+    term = "authentication"
+
     def __init__(
         self,
         *,
@@ -22,7 +24,9 @@ class AuthenticationProofPurpose(ControllerProofPurpose):
     ):
         """Initialize new AuthenticationProofPurpose instance."""
         super().__init__(
-            term="authentication", date=date, max_timestamp_delta=max_timestamp_delta
+            term=AuthenticationProofPurpose.term,
+            date=date,
+            max_timestamp_delta=max_timestamp_delta,
         )
 
         self.challenge = challenge

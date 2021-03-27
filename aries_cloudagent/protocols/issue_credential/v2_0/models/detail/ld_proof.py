@@ -29,16 +29,14 @@ class V20CredExRecordLDProof(BaseRecord):
         cred_ex_ld_proof_id: str = None,
         *,
         cred_ex_id: str = None,
-        # TODO: REMOVE THIS COMMENT AND SET LDProof ITEMS BELOW
-        item: str = None,
+        cred_id_stored: str = None,
         **kwargs,
     ):
         """Initialize LD Proof credential exchange record details."""
         super().__init__(cred_ex_ld_proof_id, **kwargs)
 
         self.cred_ex_id = cred_ex_id
-        # TODO: REMOVE THIS COMMENT AND SET LDProof ITEMS BELOW
-        self.item = item
+        self.cred_id_stored = cred_id_stored
 
     @property
     def cred_ex_ld_proof_id(self) -> str:
@@ -48,13 +46,7 @@ class V20CredExRecordLDProof(BaseRecord):
     @property
     def record_value(self) -> dict:
         """Accessor for the JSON record value generated for this credential exchange."""
-        return {
-            prop: getattr(self, prop)
-            for prop in (
-                # TODO: REMOVE THIS COMMENT AND SET LDProof ITEMS BELOW
-                "item",
-            )
-        }
+        return {prop: getattr(self, prop) for prop in ("cred_id_stored",)}
 
     @classmethod
     async def retrieve_by_cred_ex_id(
@@ -93,9 +85,8 @@ class V20CredExRecordLDProofSchema(BaseRecordSchema):
         description="Corresponding v2.0 credential exchange record identifier",
         example=UUIDFour.EXAMPLE,
     )
-    # TODO: REMOVE THIS COMMENT AND SET LDProof ITEMS BELOW
-    item = fields.Dict(
+    cred_id_stored = fields.Str(
         required=False,
-        description="LDProof item",
+        description="Credential identifier stored in wallet",
         example=UUIDFour.EXAMPLE,
     )

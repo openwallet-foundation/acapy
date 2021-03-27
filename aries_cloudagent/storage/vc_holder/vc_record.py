@@ -6,7 +6,7 @@ from pyld import jsonld
 from pyld.jsonld import JsonLdProcessor
 import logging
 
-from typing import Mapping, Sequence, Sequence
+from typing import Mapping, Sequence
 from uuid import uuid4
 
 from marshmallow import EXCLUDE, fields
@@ -86,82 +86,54 @@ class VCRecord(BaseModel):
         )
 
     @classmethod
-    def deserialize_jsonld_cred(cls, cred_json: str) -> "VCRecord":
+    def deserialize_jsonld_cred(cls, cred_json_str: str) -> "VCRecord":
         """
         Return VCRecord.
 
-        Deserialize JSONLD cred to a VCRecord
+        Deserialize JSON-LD cred to a VCRecord
 
         Args:
-            cred_json: credential json string
+            cred_json_str: credential json string
         Return:
             VCRecord
 
         """
-        given_id = None
-        tags = None
-        value = ""
-        record_id = None
-        subject_ids = set()
-        issuer_id = ""
-        contexts = set()
-        types = set()
-        schema_ids = set()
-        cred_dict = json.loads(cred_json)
-        if "vc" in cred_dict:
-            cred_dict = cred_dict.get("vc")
-        if "id" in cred_dict:
-            given_id = cred_dict.get("id")
-        if "@context" in cred_dict:
-            # Should not happen
-            if type(cred_dict.get("@context")) is not list:
-                if type(cred_dict.get("@context")) is str:
-                    contexts.add(cred_dict.get("@context"))
-            else:
-                for tmp_item in cred_dict.get("@context"):
-                    if type(tmp_item) is str:
-                        contexts.add(tmp_item)
-        if "issuer" in cred_dict:
-            if type(cred_dict.get("issuer")) is dict:
-                issuer_id = cred_dict.get("issuer").get("id")
-            else:
-                issuer_id = cred_dict.get("issuer")
-        if "type" in cred_dict:
-            expanded = jsonld.expand(cred_dict)
-            types = JsonLdProcessor.get_values(
-                expanded[0],
-                "@type",
-            )
-        if "credentialSubject" in cred_dict:
-            if type(cred_dict.get("credentialSubject")) is list:
-                tmp_list = cred_dict.get("credentialSubject")
-                for tmp_dict in tmp_list:
-                    subject_ids.add(tmp_dict.get("id"))
-            elif type(cred_dict.get("credentialSubject")) is dict:
-                tmp_dict = cred_dict.get("credentialSubject")
-                subject_ids.add(tmp_dict.get("id"))
-            elif type(cred_dict.get("credentialSubject")) is str:
-                subject_ids.add(cred_dict.get("credentialSubject"))
-        if "credentialSchema" in cred_dict:
-            if type(cred_dict.get("credentialSchema")) is list:
-                tmp_list = cred_dict.get("credentialSchema")
-                for tmp_dict in tmp_list:
-                    schema_ids.add(tmp_dict.get("id"))
-            elif type(cred_dict.get("credentialSchema")) is dict:
-                tmp_dict = cred_dict.get("credentialSchema")
-                schema_ids.add(tmp_dict.get("id"))
-            elif type(cred_dict.get("credentialSchema")) is str:
-                schema_ids.add(cred_dict.get("credentialSchema"))
-        value = cred_json
+        cred_dict = json.loads(cred_json_str)
+        # FIXME: why are we expanding here?
+        expanded = jsonld.expand(cred_dict)
+
+        given_id = cred_dict.get("id")
+        contexts = [ctx for ctx in cred_dict.get("@context") if type(ctx) is str]
+
+        # issuer
+        issuer = cred_dict.get("issuer")
+        if type(issuer) is dict:
+            issuer = issuer.get("id")
+
+        # types
+        types = JsonLdProcessor.get_values(
+            expanded[0],
+            "@type",
+        )
+
+        # subjects
+        subjects = cred_dict.get("credentialSubject")
+        if type(subjects) is dict:
+            subjects = [subjects]
+        subject_ids = [subject.get("id") for subject in subjects if subject.get("id")]
+
+        schemas = cred_dict.get("schemas")
+        if type(schemas) is dict:
+            schemas = [schemas]
+        schema_ids = [schema.get("id") for schema in schemas]
+
         return VCRecord(
             contexts=contexts,
             types=types,
-            issuer_id=issuer_id,
+            issuer_id=issuer,
             subject_ids=subject_ids,
             given_id=given_id,
-            cred_value=value,
-            cred_tags=tags,
-            record_id=record_id,
+            cred_value=cred_json_str,
             schema_ids=schema_ids,
         )
 
