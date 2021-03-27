@@ -14,7 +14,9 @@ from ......vc.vc_ld import (
 )
 from ......vc.ld_proofs import (
     Ed25519Signature2018,
+    BbsBlsSignature2020,
     Ed25519WalletKeyPair,
+    Bls12381G2WalletKeyPair,
     LinkedDataProof,
     CredentialIssuancePurpose,
     ProofPurpose,
@@ -46,7 +48,11 @@ from ...models.detail.ld_proof import V20CredExRecordLDProof
 
 LOGGER = logging.getLogger(__name__)
 
-SUPPORTED_ISSUANCE_PROOF_TYPES = {Ed25519Signature2018.signature_type}
+SUPPORTED_ISSUANCE_PROOF_TYPES = {
+    Ed25519Signature2018.signature_type,
+    BbsBlsSignature2020.signature_type,
+}
+
 SUPPORTED_ISSUANCE_PROOF_PURPOSES = {
     CredentialIssuancePurpose.term,
     AuthenticationProofPurpose.term,
@@ -206,6 +212,15 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
                     verification_method=verification_method,
                     proof=proof,
                     key_pair=Ed25519WalletKeyPair(
+                        wallet=wallet,
+                        public_key_base58=did_info.verkey if did_info else None,
+                    ),
+                )
+            elif proof_type == BbsBlsSignature2020.signature_type:
+                return BbsBlsSignature2020(
+                    verification_method=verification_method,
+                    proof=proof,
+                    key_pair=Bls12381G2WalletKeyPair(
                         wallet=wallet,
                         public_key_base58=did_info.verkey if did_info else None,
                     ),

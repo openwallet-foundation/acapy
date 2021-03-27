@@ -20,6 +20,8 @@ from ..constants import SECURITY_CONTEXT_V3_URL
 class BbsBlsSignatureProof2020(BbsBlsSignature2020Base):
     """BbsBlsSignatureProof2020 class."""
 
+    signature_type = "BbsBlsSignatureProof2020"
+
     def __init__(
         self,
         *,
@@ -32,10 +34,10 @@ class BbsBlsSignatureProof2020(BbsBlsSignature2020Base):
 
         """
         super().__init__(
-            signature_type="BbsBlsSignatureProof2020",
+            signature_type=BbsBlsSignatureProof2020.signature_type,
             proof={
                 "@context": SECURITY_CONTEXT_V3_URL,
-                "type": "BbsBlsSignatureProof2020",
+                "type": BbsBlsSignatureProof2020.signature_type,
             },
             supported_derive_proof_types=(
                 BbsBlsSignatureProof2020.supported_derive_proof_types

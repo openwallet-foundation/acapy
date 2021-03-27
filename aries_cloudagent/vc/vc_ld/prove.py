@@ -33,6 +33,7 @@ async def create_presentation(
 
     Returns:
         dict: The unsigned presentation object
+
     """
     presentation = {
         "@context": [CREDENTIALS_CONTEXT_V1_URL],
@@ -84,7 +85,8 @@ async def sign_presentation(
     """
     if not purpose and not challenge:
         raise LinkedDataProofException(
-            'A "challenge" param is required when not providing a "purpose" (for AuthenticationProofPurpose).'
+            'A "challenge" param is required when not providing a'
+            ' "purpose" (for AuthenticationProofPurpose).'
         )
     if not purpose:
         purpose = AuthenticationProofPurpose(challenge=challenge, domain=domain)

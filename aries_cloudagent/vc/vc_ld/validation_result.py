@@ -1,4 +1,4 @@
-"""Presentation verification and validation result classes"""
+"""Presentation verification and validation result classes."""
 
 from typing import List
 

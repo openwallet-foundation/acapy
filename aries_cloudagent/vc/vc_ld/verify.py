@@ -66,6 +66,7 @@ async def verify_credential(
     Returns:
         DocumentVerificationResult: The result of the verification. Verified property
             indicates whether the verification was successful
+
     """
     try:
         return await _verify_credential(
@@ -134,7 +135,6 @@ async def _verify_presentation(
         verified=verified,
         presentation_result=presentation_result,
         credential_results=credential_results,
-        # TODO: should this also include credential results errors?
         errors=presentation_result.errors,
     )
 

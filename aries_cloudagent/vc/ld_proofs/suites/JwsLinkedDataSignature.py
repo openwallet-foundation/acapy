@@ -172,7 +172,10 @@ class JwsLinkedDataSignature(LinkedDataSignature):
             )
 
     def _get_verification_method(self, *, proof: dict, document_loader: DocumentLoader):
-        """Get verification method."""
+        """Get verification method.
+
+        Overwrites base get verification method to assert key type.
+        """
         verification_method = super()._get_verification_method(
             proof=proof, document_loader=document_loader
         )
