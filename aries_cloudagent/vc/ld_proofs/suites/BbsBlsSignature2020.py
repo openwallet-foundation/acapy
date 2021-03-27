@@ -1,6 +1,5 @@
-"""BbsBlsSignature2020 class"""
+"""BbsBlsSignature2020 class."""
 
-from pyld import jsonld
 from datetime import datetime
 from typing import List, Union
 
@@ -11,21 +10,30 @@ from ..error import LinkedDataProofException
 from ..validation_result import ProofResult
 from ..document_loader import DocumentLoader
 from ..purposes import ProofPurpose
-from ..constants import SECURITY_CONTEXT_URL
 
 
 class BbsBlsSignature2020(BbsBlsSignature2020Base):
-    """BbsBlsSignature2020 class"""
+    """BbsBlsSignature2020 class."""
 
     def __init__(
         self,
         *,
         key_pair: KeyPair,
-        verification_method: str = None,
         proof: dict = None,
+        verification_method: str = None,
         date: Union[datetime, None] = None,
     ):
-        """Create new BbsBlsSignature2020 instance"""
+        """Create new BbsBlsSignature2020 instance.
+
+        Args:
+            key_pair (KeyPair): Key pair to use. Must provide BBS signatures
+            proof (dict, optional): A JSON-LD document with options to use for the
+                `proof` node (e.g. any other custom fields can be provided here
+                using a context different from security-v2).
+            verification_method (str, optional): A key id URL to the paired public key.
+            date (datetime, optional): Signing date to use. Defaults to now
+
+        """
         super().__init__(signature_type="BbsBlsSignature2020", proof=proof)
         self.key_pair = key_pair
         self.verification_method = verification_method
@@ -34,33 +42,34 @@ class BbsBlsSignature2020(BbsBlsSignature2020Base):
     async def create_proof(
         self, *, document: dict, purpose: ProofPurpose, document_loader: DocumentLoader
     ) -> dict:
-        """Create proof for document, return proof"""
-        proof = None
-        if self.proof:
-            proof = jsonld.compact(
-                self.proof, SECURITY_CONTEXT_URL, {"documentLoader": document_loader}
-            )
-        else:
-            proof = {"@context": SECURITY_CONTEXT_URL}
+        """Create proof for document, return proof."""
+        proof = self.proof.copy() if self.proof else {}
 
         proof["type"] = self.signature_type
         proof["verificationMethod"] = self.verification_method
 
-        if not self.date:
-            self.date = datetime.now()
-
+        # Set created if not already set
         if not proof.get("created"):
-            proof["created"] = self.date.isoformat()
+            # Use class date, or now
+            date = self.date or datetime.now()
+            proof["created"] = date.isoformat()
 
+        # Allow purpose to update the proof; the `proof` is in the
+        # SECURITY_CONTEXT_URL `@context` -- therefore the `purpose` must
+        # ensure any added fields are also represented in that same `@context`
         proof = purpose.update(proof)
 
+        # Create statements to sign
         verify_data = self._create_verify_data(
             proof=proof, document=document, document_loader=document_loader
         )
 
+        # Encode statements as bytes
         verify_data = list(map(lambda item: item.encode("utf-8"), verify_data))
 
+        # Sign statements
         proof = await self.sign(verify_data=verify_data, proof=proof)
+
         return proof
 
     async def verify_proof(
@@ -73,13 +82,20 @@ class BbsBlsSignature2020(BbsBlsSignature2020Base):
     ) -> ProofResult:
         """Verify proof against document and proof purpose."""
         try:
+            # Create statements to verify
             verify_data = self._create_verify_data(
                 proof=proof, document=document, document_loader=document_loader
             )
+
+            # Encode statements as bytes
+            verify_data = list(map(lambda item: item.encode("utf-8"), verify_data))
+
+            # Fetch verification method
             verification_method = self._get_verification_method(
                 proof=proof, document_loader=document_loader
             )
 
+            # Verify signature on data
             verified = await self.verify_signature(
                 verify_data=verify_data,
                 verification_method=verification_method,
@@ -87,12 +103,12 @@ class BbsBlsSignature2020(BbsBlsSignature2020Base):
                 proof=proof,
                 document_loader=document_loader,
             )
-
             if not verified:
                 raise LinkedDataProofException(
                     f"Invalid signature on document {document}"
                 )
 
+            # Ensure proof was performed for a valid purpose
             purpose_result = purpose.validate(
                 proof=proof,
                 document=document,
@@ -118,6 +134,7 @@ class BbsBlsSignature2020(BbsBlsSignature2020Base):
         """Create verification data.
 
         Returns a list of canonized statements
+
         """
         proof_statements = self._create_verify_proof_data(
             proof=proof, document_loader=document_loader
@@ -139,7 +156,7 @@ class BbsBlsSignature2020(BbsBlsSignature2020Base):
         return self._canonize(input=proof, document_loader=document_loader)
 
     async def sign(self, *, verify_data: List[bytes], proof: dict) -> dict:
-        """Sign the data and add it to the proof
+        """Sign the data and add it to the proof.
 
         Args:
             verify_data (List[bytes]): The data to sign.
@@ -147,6 +164,7 @@ class BbsBlsSignature2020(BbsBlsSignature2020Base):
 
         Returns:
             dict: The proof object with the added signature
+
         """
         signature = await self.key_pair.sign(verify_data)
 
@@ -176,6 +194,7 @@ class BbsBlsSignature2020(BbsBlsSignature2020Base):
 
         Returns:
             bool: Whether the signature is valid for the data
+
         """
 
         if not (isinstance(proof.get("proofValue"), str)):

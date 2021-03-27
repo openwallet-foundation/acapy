@@ -1,4 +1,4 @@
-"""BbsBlsSignatureProof2020 class"""
+"""BbsBlsSignatureProof2020 class."""
 
 from os import urandom
 from pyld import jsonld
@@ -14,25 +14,32 @@ from ..error import LinkedDataProofException
 from ..validation_result import ProofResult
 from ..document_loader import DocumentLoader
 from ..purposes import ProofPurpose
-from ..constants import SECURITY_CONTEXT_URL, SECURITY_CONTEXT_V3_URL
+from ..constants import SECURITY_CONTEXT_V3_URL
 
 
 class BbsBlsSignatureProof2020(BbsBlsSignature2020Base):
-    """BbsBlsSignatureProof2020 class"""
+    """BbsBlsSignatureProof2020 class."""
 
     def __init__(
         self,
         *,
         key_pair: KeyPair,
     ):
-        """Create new BbsBlsSignatureProof2020 instance"""
+        """Create new BbsBlsSignatureProof2020 instance.
+
+        Args:
+            key_pair (KeyPair): Key pair to use. Must provide BBS signatures
+
+        """
         super().__init__(
             signature_type="BbsBlsSignatureProof2020",
             proof={
                 "@context": SECURITY_CONTEXT_V3_URL,
                 "type": "BbsBlsSignatureProof2020",
             },
-            supported_derive_proof_types=BbsBlsSignatureProof2020.supported_derive_proof_types,
+            supported_derive_proof_types=(
+                BbsBlsSignatureProof2020.supported_derive_proof_types
+            ),
         )
         self.key_pair = key_pair
         self.mapped_derived_proof_type = "https://w3id.org/security#BbsBlsSignature2020"
@@ -46,13 +53,13 @@ class BbsBlsSignatureProof2020(BbsBlsSignature2020Base):
         document_loader: DocumentLoader,
         nonce: bytes = None,
     ):
-        """Derive proof for document, return dict with derived document and proof"""
+        """Derive proof for document, return dict with derived document and proof."""
 
         # Validate that the input proof document has a proof compatible with this suite
         if proof.get("type") not in self.supported_derive_proof_types:
             raise LinkedDataProofException(
-                f"Proof document proof incompatible, expected proof types of {self.supported_derive_proof_types}, received "
-                + proof["type"]
+                f"Proof document proof incompatible, expected proof types of"
+                f" {self.supported_derive_proof_types}, received " + proof["type"]
             )
 
         # Extract the BBS signature from the input proof
@@ -65,16 +72,9 @@ class BbsBlsSignatureProof2020(BbsBlsSignature2020Base):
         suite = BbsBlsSignature2020(key_pair=self.key_pair)
 
         # Initialize the derived proof
-        derived_proof = None
-        if self.proof:
-            # Use proof JSON-LD document passed to API
-            derived_proof = jsonld.compact(
-                self.proof, SECURITY_CONTEXT_URL, {"documentLoader": document_loader}
-            )
-        else:
-            # create proof JSON-LD document
-            derived_proof = {"@context": SECURITY_CONTEXT_URL}
+        derived_proof = self.proof.copy() or {}
 
+        # Ensure proof type is set
         derived_proof["type"] = self.signature_type
 
         # Get the input document and proof statements
@@ -108,11 +108,11 @@ class BbsBlsSignatureProof2020(BbsBlsSignature2020Base):
 
         # Canonicalize the resulting reveal document
         reveal_document_statements = suite._create_verify_document_data(
-            reveal_document_result, {"document_loader": document_loader}
+            document=reveal_document_result, document_loader=document_loader
         )
 
-        # Get the indices of the revealed statements from the transformed input document offset
-        # by the number of proof statements
+        # Get the indices of the revealed statements from the transformed input document
+        # offset by the number of proof statements
         number_of_proof_statements = len(proof_statements)
 
         # Always reveal all the statements associated to the original proof
@@ -155,10 +155,12 @@ class BbsBlsSignatureProof2020(BbsBlsSignature2020Base):
             )
         )
 
+        # Fetch the verification method
         verification_method = self._get_verification_method(
             proof=proof, document_loader=document_loader
         )
 
+        # Create key pair from public key in verification method
         key_pair = self.key_pair.from_verification_method(verification_method)
 
         # Compute the proof
@@ -196,7 +198,7 @@ class BbsBlsSignatureProof2020(BbsBlsSignature2020Base):
     ) -> ProofResult:
         """Verify proof against document and proof purpose."""
         try:
-
+            # TODO: I'm not sure why we use the base signature (BbsBlsSignature2020) here
             proof["type"] = self.mapped_derived_proof_type
 
             # Get the proof and document statements
@@ -262,7 +264,7 @@ class BbsBlsSignatureProof2020(BbsBlsSignature2020Base):
             return ProofResult(verified=False, error=err)
 
     def _canonize_proof(self, *, proof: dict, document_loader: DocumentLoader = None):
-        """Canonize proof dictionary. Removes proofValue"""
+        """Canonize proof dictionary. Removes proofValue."""
         proof = proof.copy()
 
         proof.pop("proofValue", None)
@@ -273,7 +275,7 @@ class BbsBlsSignatureProof2020(BbsBlsSignature2020Base):
     def _transform_blank_node_ids_into_placeholder_node_ids(
         statements: List[str],
     ) -> List[str]:
-        """Transform any blank node identifiers for the input into actual node identifiers
+        """Transform blank node identifiers for the input into actual node identifiers.
 
         e.g _:c14n0 => urn:bnid:_:c14n0
 
@@ -282,6 +284,7 @@ class BbsBlsSignatureProof2020(BbsBlsSignature2020Base):
 
         Returns:
             List[str]: List of transformed output statements
+
         """
         transformed_statements = []
 
@@ -304,7 +307,7 @@ class BbsBlsSignatureProof2020(BbsBlsSignature2020Base):
     def _transform_placeholder_node_ids_into_blank_node_ids(
         statements: List[str],
     ) -> List[str]:
-        """Transform the blank node placeholder identifiers back into actual blank nodes
+        """Transform the blank node placeholder identifiers back into actual blank nodes.
 
         e.g urn:bnid:_:c14n0 => _:c14n0
 
@@ -313,6 +316,7 @@ class BbsBlsSignatureProof2020(BbsBlsSignature2020Base):
 
         Returns:
             List[str]: List of transformed output statements
+
         """
         transformed_statements = []
 
@@ -323,9 +327,12 @@ class BbsBlsSignatureProof2020(BbsBlsSignature2020Base):
                 prefix_index = statement.index(prefix_string)
                 closing_index = statement.index(">", prefix_index)
 
+                urn_id_close = closing_index + 1  # >
+                urn_id_prefix_end = prefix_index + len(prefix_string)  # <urn:bnid:
+
                 statement = statement.replace(
-                    statement[prefix_index : closing_index + 1],
-                    statement[prefix_index + len(prefix_string), closing_index],
+                    statement[prefix_index:urn_id_close],
+                    statement[urn_id_prefix_end:closing_index],
                 )
 
             transformed_statements.append(statement)

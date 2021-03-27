@@ -23,6 +23,7 @@ from .validation_result import DocumentVerificationResult, ProofResult, PurposeR
 __all__ = [
     sign,
     verify,
+    derive,
     ProofSet,
     # Proof purposes
     ProofPurpose,
