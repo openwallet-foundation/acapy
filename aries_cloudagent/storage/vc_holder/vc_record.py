@@ -122,7 +122,7 @@ class VCRecord(BaseModel):
             subjects = [subjects]
         subject_ids = [subject.get("id") for subject in subjects if subject.get("id")]
 
-        schemas = cred_dict.get("schemas")
+        schemas = cred_dict.get("credentialsSchema", [])
         if type(schemas) is dict:
             schemas = [schemas]
         schema_ids = [schema.get("id") for schema in schemas]

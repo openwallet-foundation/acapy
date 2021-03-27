@@ -32,17 +32,17 @@ class V20CredFormat(BaseModel):
     class Format(Enum):
         """Attachment format."""
 
-        from ..message_types import PROTOCOL_PACKAGE
-
         INDY = FormatSpec(
             "hlindy/",
             V20CredExRecordIndy,
-            f"{PROTOCOL_PACKAGE}.formats.indy.handler.IndyCredFormatHandler",
+            "aries_cloudagent.protocols.issue_credential.v2_0"
+            ".formats.indy.handler.IndyCredFormatHandler",
         )
         LD_PROOF = FormatSpec(
             "aries/",
             V20CredExRecordLDProof,
-            f"{PROTOCOL_PACKAGE}.formats.ld_proof.handler.LDProofCredFormatHandler",
+            "aries_cloudagent.protocols.issue_credential.v2_0"
+            ".formats.ld_proof.handler.LDProofCredFormatHandler",
         )
 
         @classmethod

@@ -53,6 +53,7 @@ class UriOrDictField(StrOrDictField):
     """URI or Dict field for Marshmallow."""
 
     def __init__(self, *args, **kwargs):
+        """Initialize new UriOrDictField instance."""
         super().__init__(*args, **kwargs)
 
         # Insert validation into self.validators so that multiple errors can be stored.
@@ -562,6 +563,7 @@ class Uri(Regexp):
     PATTERN = r"^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?"
 
     def __init__(self):
+        """Initializer."""
         super().__init__(Uri.PATTERN, error="Value {input} is not URI")
 
 
@@ -600,14 +602,17 @@ class EndpointType(OneOf):
 
 
 class CredentialType(Validator):
+    """Credential Type."""
 
     FIRST_TYPE = "VerifiableCredential"
     EXAMPLE = [FIRST_TYPE, "AlumniCredential"]
 
     def __init__(self) -> None:
+        """Initializer."""
         super().__init__()
 
     def __call__(self, value):
+        """Validate input value."""
         length = len(value)
 
         if length < 1 or value[0] != CredentialType.FIRST_TYPE:
@@ -619,13 +624,17 @@ class CredentialType(Validator):
 
 
 class CredentialContext(Validator):
+    """Credential Context."""
+
     FIRST_CONTEXT = "https://www.w3.org/2018/credentials/v1"
     EXAMPLE = [FIRST_CONTEXT, "https://www.w3.org/2018/credentials/examples/v1"]
 
     def __init__(self) -> None:
+        """Initializer."""
         super().__init__()
 
     def __call__(self, value):
+        """Validate input value."""
         length = len(value)
 
         if length < 1 or value[0] != CredentialContext.FIRST_CONTEXT:
@@ -637,6 +646,7 @@ class CredentialContext(Validator):
 
 
 class CredentialSubject(Validator):
+    """Credential subject."""
 
     EXAMPLE = {
         "id": "did:example:ebfeb1f712ebc6f1c276e12ec21",
@@ -644,9 +654,11 @@ class CredentialSubject(Validator):
     }
 
     def __init__(self) -> None:
+        """Initializer."""
         super().__init__()
 
     def __call__(self, value):
+        """Validate input value."""
         subjects = value if isinstance(value, list) else [value]
 
         for subject in subjects:
@@ -663,7 +675,7 @@ class CredentialSubject(Validator):
 
 
 class IndyOrKeyDID(Regexp):
-    """"""
+    """Indy or Key DID class."""
 
     PATTERN = re.compile("|".join([DIDKey.PATTERN, IndyDID.PATTERN]))
     EXAMPLE = IndyDID.EXAMPLE
@@ -671,6 +683,7 @@ class IndyOrKeyDID(Regexp):
     def __init__(
         self,
     ):
+        """Initializer."""
         super().__init__(
             IndyOrKeyDID.PATTERN,
             error="Value {input} is not in did:key or indy did format",

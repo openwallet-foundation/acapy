@@ -116,36 +116,34 @@ cred_json_3 = """
 """
 cred_json_4 = """
     {
-      "vc": {
-        "@context": "https://www.w3.org/2018/credentials/v1",
-        "id": "https://eu.com/claims/DriversLicense",
-        "type": ["EUDriversLicense"],
-        "issuer": "did:example:123",
-        "issuanceDate": "2010-01-01T19:73:24Z",
-        "credentialSchema": {
-          "id": "https://eu.com/claims/DriversLicense.json",
-          "type": "JsonSchemaValidator2018"
-        },
-        "credentialSubject": {
-          "id": "did:example:ebfeb1f712ebc6f1c276e12ec21",
-          "accounts": [
-            {
-              "id": "1234567890",
-              "route": "DE-9876543210"
-            },
-            {
-              "id": "2457913570",
-              "route": "DE-0753197542"
-            }
-          ]
-        }
+      "@context": ["https://www.w3.org/2018/credentials/v1"],
+      "id": "https://eu.com/claims/DriversLicense",
+      "type": ["EUDriversLicense"],
+      "issuer": "did:example:123",
+      "issuanceDate": "2010-01-01T19:73:24Z",
+      "credentialSchema": {
+        "id": "https://eu.com/claims/DriversLicense.json",
+        "type": "JsonSchemaValidator2018"
+      },
+      "credentialSubject": {
+        "id": "did:example:ebfeb1f712ebc6f1c276e12ec21",
+        "accounts": [
+          {
+            "id": "1234567890",
+            "route": "DE-9876543210"
+          },
+          {
+            "id": "2457913570",
+            "route": "DE-0753197542"
+          }
+        ]
       }
     }
 """
 
 cred_json_5 = """
     {
-      "@context": "https://www.w3.org/2018/credentials/v1",
+      "@context": ["https://www.w3.org/2018/credentials/v1"],
       "id": "https://business-standards.org/schemas/employment-history.json",
       "type": ["VerifiableCredential", "GenericEmploymentCredential"],
       "issuer": "did:foo:123",
@@ -170,7 +168,7 @@ cred_json_5 = """
 """
 cred_json_6 = """
     {
-      "@context": "https://www.w3.org/2018/credentials/v1",
+      "@context": ["https://www.w3.org/2018/credentials/v1"],
       "id": "https://eu.com/claims/DriversLicense2",
       "type": ["EUDriversLicense"],
       "issuer": "did:foo:123",
@@ -579,28 +577,33 @@ pres_exch_number_const_met = """
 
 
 def get_test_data():
-    creds_json_list = []
-    creds_json_list.append(cred_json_1)
-    creds_json_list.append(cred_json_2)
-    creds_json_list.append(cred_json_3)
-    creds_json_list.append(cred_json_4)
-    creds_json_list.append(cred_json_5)
-    creds_json_list.append(cred_json_6)
+    creds_json_list = [
+        cred_json_1,
+        cred_json_2,
+        cred_json_3,
+        cred_json_4,
+        cred_json_5,
+        cred_json_6,
+    ]
 
     vc_record_list = []
-    for tmp_cred in creds_json_list:
-        vc_record_list.append(VCRecord.deserialize_jsonld_cred(tmp_cred))
+    for cred in creds_json_list:
+        vc_record_list.append(VCRecord.deserialize_jsonld_cred(cred))
 
-    pd_json_list = []
-    pd_json_list.append((pres_exch_nested_srs, 5))
-    pd_json_list.append((pres_exch_multiple_srs_not_met, 0))
-    pd_json_list.append((pres_exch_multiple_srs_met, 2))
-    pd_json_list.append((pres_exch_datetime_minimum_not_met, 0))
-    pd_json_list.append((pres_exch_number_const_met, 2))
+    pd_json_list = [
+        (pres_exch_nested_srs, 5),
+        (pres_exch_multiple_srs_not_met, 0),
+        (pres_exch_multiple_srs_met, 2),
+        (pres_exch_datetime_minimum_not_met, 0),
+        (pres_exch_number_const_met, 2),
+    ]
 
     pd_list = []
-    for tmp_pd in pd_json_list:
+    for pd in pd_json_list:
         pd_list.append(
-            (PresentationDefinition.deserialize(json.loads(tmp_pd[0])), tmp_pd[1])
+            (
+                PresentationDefinition.deserialize(json.loads(pd[0])),
+                pd[1],
+            )
         )
     return (vc_record_list, pd_list)

@@ -53,7 +53,7 @@ class DIDKey:
 
     @classmethod
     def from_did(cls, did: str) -> "DIDKey":
-        """Initialize a new DIDKey instance from a fully qualified did:key string
+        """Initialize a new DIDKey instance from a fully qualified did:key string.
 
         Extracts the fingerprint from the did:key and uses that to constrcut the did:key.
         """
@@ -64,51 +64,52 @@ class DIDKey:
 
     @property
     def fingerprint(self) -> str:
-        """Getter for did key fingerprint"""
+        """Getter for did key fingerprint."""
         prefixed_key_bytes = add_prefix(self.key_type.multicodec_name, self.public_key)
 
         return f"z{bytes_to_b58(prefixed_key_bytes)}"
 
     @property
     def did(self) -> str:
-        """Getter for full did:key string"""
+        """Getter for full did:key string."""
         return f"did:key:{self.fingerprint}"
 
     @property
     def did_doc(self) -> dict:
-        """Getter for did document associated with did:key"""
+        """Getter for did document associated with did:key."""
         resolver = DID_KEY_RESOLVERS[self.key_type]
         return resolver(self)
 
     @property
     def public_key(self) -> bytes:
-        """Getter for public key"""
+        """Getter for public key."""
         return self._public_key
 
     @property
     def public_key_b58(self) -> str:
-        """Getter for base58 encoded public key"""
+        """Getter for base58 encoded public key."""
         return bytes_to_b58(self.public_key)
 
     @property
     def key_type(self) -> KeyType:
-        """Getter for key type"""
+        """Getter for key type."""
         return self._key_type
 
     @property
     def key_id(self) -> str:
-        """Getter for key id"""
+        """Getter for key id."""
         return f"{self.did}#{self.fingerprint}"
 
 
 def construct_did_key_bls12381g2(did_key: "DIDKey") -> dict:
-    """Construct BLS12381G2 did:key
+    """Construct BLS12381G2 did:key.
 
     Args:
         did_key (DIDKey): did key instance to parse bls12381g2 did:key document from
 
     Returns:
         dict: The bls12381g2 did:key did document
+
     """
 
     return construct_did_signature_key_base(
@@ -124,13 +125,14 @@ def construct_did_key_bls12381g2(did_key: "DIDKey") -> dict:
 
 
 def construct_did_key_bls12381g1(did_key: "DIDKey") -> dict:
-    """Construct BLS12381G1 did:key
+    """Construct BLS12381G1 did:key.
 
     Args:
         did_key (DIDKey): did key instance to parse bls12381g1 did:key document from
 
     Returns:
         dict: The bls12381g1 did:key did document
+
     """
 
     return construct_did_signature_key_base(
@@ -146,13 +148,14 @@ def construct_did_key_bls12381g1(did_key: "DIDKey") -> dict:
 
 
 def construct_did_key_bls12381g1g2(did_key: "DIDKey") -> dict:
-    """Construct BLS12381G1G2 did:key
+    """Construct BLS12381G1G2 did:key.
 
     Args:
         did_key (DIDKey): did key instance to parse bls12381g1g2 did:key document from
 
     Returns:
         dict: The bls12381g1g2 did:key did document
+
     """
 
     g1_public_key = did_key.public_key[:48]
@@ -190,13 +193,14 @@ def construct_did_key_bls12381g1g2(did_key: "DIDKey") -> dict:
 
 
 def construct_did_key_x25519(did_key: "DIDKey") -> dict:
-    """Construct X25519 did:key
+    """Construct X25519 did:key.
 
     Args:
         did_key (DIDKey): did key instance to parse x25519 did:key document from
 
     Returns:
         dict: The x25519 did:key did document
+
     """
 
     return {
@@ -219,13 +223,14 @@ def construct_did_key_x25519(did_key: "DIDKey") -> dict:
 
 
 def construct_did_key_ed25519(did_key: "DIDKey") -> dict:
-    """Construct Ed25519 did:key
+    """Construct Ed25519 did:key.
 
     Args:
         did_key (DIDKey): did key instance to parse ed25519 did:key document from
 
     Returns:
         dict: The ed25519 did:key did document
+
     """
     curve25519 = ed25519_pk_to_curve25519(did_key.public_key)
     x25519 = DIDKey.from_public_key(curve25519, KeyType.X25519)
@@ -257,9 +262,10 @@ def construct_did_key_ed25519(did_key: "DIDKey") -> dict:
 def construct_did_signature_key_base(
     *, id: str, key_id: str, verification_method: dict
 ):
-    """Creates base did key structure used for most signature keys.
+    """Create base did key structure to use for most signature keys.
 
     May not be suitable for all did key types
+
     """
 
     return {

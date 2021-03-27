@@ -1,15 +1,9 @@
-import json
 import pytest
 
-from asynctest import mock as async_mock
 from asynctest import TestCase as AsyncTestCase
 from copy import deepcopy
-from time import time
 from unittest import TestCase
-from uuid import uuid4
 
-
-from .....storage.vc_holder.vc_record import VCRecord
 
 from ..pres_exch import (
     PresentationDefinition,
@@ -18,7 +12,6 @@ from ..pres_exch import (
     SchemaInputDescriptor,
 )
 from ..pres_exch_handler import (
-    to_requirement,
     make_requirement,
     is_len_applicable,
     exclusive_maximum_check,

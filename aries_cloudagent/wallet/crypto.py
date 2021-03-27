@@ -29,7 +29,7 @@ class KeyTypeException(BaseException):
 
 
 class KeyType(Enum):
-    """KeyType Enum specifying key types with multicodec name"""
+    """KeyType Enum specifying key types with multicodec name."""
 
     ED25519 = KeySpec("ed25519", "ed25519-pub")
     X25519 = KeySpec("x25519", "x25519-pub")
@@ -39,12 +39,12 @@ class KeyType(Enum):
 
     @property
     def key_type(self) -> str:
-        """Getter for key type identifier"""
+        """Getter for key type identifier."""
         return self.value.key_type
 
     @property
     def multicodec_name(self) -> str:
-        """Getter for multicodec name"""
+        """Getter for multicodec name."""
         return self.value.multicodec_name
 
     @classmethod
@@ -83,16 +83,16 @@ class DIDMethod(Enum):
 
     @property
     def method_name(self) -> str:
-        """Getter for did method name. e.g. sov or key"""
+        """Getter for did method name. e.g. sov or key."""
         return self.value.method_name
 
     @property
     def supported_key_types(self) -> List[KeyType]:
-        """Getter for supported key types of method"""
+        """Getter for supported key types of method."""
         return self.value.supported_key_types
 
     def supports_key_type(self, key_type: KeyType) -> bool:
-        """Check whether the current method supports the key type"""
+        """Check whether the current method supports the key type."""
         return key_type in self.supported_key_types
 
     def from_metadata(metadata: Mapping) -> "DIDMethod":
@@ -112,7 +112,7 @@ class DIDMethod(Enum):
         return DIDMethod.SOV
 
     def from_method(method: str) -> Optional["DIDMethod"]:
-        """Get DID method instance from the method name"""
+        """Get DID method instance from the method name."""
         for did_method in DIDMethod:
             if method == did_method.method_name:
                 return did_method
@@ -392,6 +392,7 @@ def prepare_pack_recipient_keys(
 
 
 def ed25519_pk_to_curve25519(public_key: bytes) -> bytes:
+    """Covert a public Ed25519 key to a public Curve25519 key as bytes."""
     return nacl.bindings.crypto_sign_ed25519_pk_to_curve25519(public_key)
 
 
