@@ -103,47 +103,6 @@ class TestLinkedDataVerifiableCredential(TestCase):
 
         assert presentation == PRESENTATION_SIGNED
 
-    async def test_create_presentation_same_subject(self):
-        # TODO: subject is holder proof purpose or something?
-        issuer_suite = Ed25519Signature2018(
-            verification_method=self.issuer_verification_method,
-            key_pair=Ed25519WalletKeyPair(
-                wallet=self.wallet, public_key_base58=self.issuer_key_info.verkey
-            ),
-            date=datetime.strptime("2020-12-11T03:50:55Z", "%Y-%m-%dT%H:%M:%SZ"),
-        )
-
-        holder_did = DIDKey.from_public_key_b58(
-            self.holder_key_info.verkey, KeyType.ED25519
-        )
-        holder_verification_method = holder_did.key_id
-
-        holder_suite = Ed25519Signature2018(
-            verification_method=holder_verification_method,
-            key_pair=Ed25519WalletKeyPair(
-                wallet=self.wallet, public_key_base58=self.holder_key_info.verkey
-            ),
-            date=datetime.strptime("2021-12-11T03:50:55Z", "%Y-%m-%dT%H:%M:%SZ"),
-        )
-
-        credential_template = CREDENTIAL_TEMPLATE.copy()
-        credential_template["credentialSubject"]["id"] = holder_did.did
-
-        issued = await issue(
-            credential=credential_template,
-            suite=issuer_suite,
-            document_loader=custom_document_loader,
-        )
-
-        unsigned_presentation = await create_presentation(credentials=[issued])
-
-        presentation = await sign_presentation(
-            presentation=unsigned_presentation,
-            suite=holder_suite,
-            document_loader=custom_document_loader,
-            challenge=self.presentation_challenge,
-        )
-
     async def test_verify_presentation(self):
         # TODO: verify with multiple suites
         suite = Ed25519Signature2018(

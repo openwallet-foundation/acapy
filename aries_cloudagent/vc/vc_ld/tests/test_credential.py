@@ -74,7 +74,10 @@ CREDENTIAL_VERIFIED = DocumentVerificationResult(
         ProofResult(
             verified=True,
             proof={
-                "@context": "https://w3id.org/security/v2",
+                "@context": [
+                    "https://www.w3.org/2018/credentials/v1",
+                    "https://www.w3.org/2018/credentials/examples/v1",
+                ],
                 "type": "Ed25519Signature2018",
                 "verificationMethod": "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
                 "created": "2019-12-11T03:50:55",

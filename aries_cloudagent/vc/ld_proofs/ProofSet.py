@@ -233,10 +233,9 @@ class ProofSet:
                 "No matching proofs found in the given document"
             )
 
-        # TODO: digitalbazaar changed this to use the document context
-        # in jsonld-signatures. Does that mean we need to provide this ourselves?
-        # https://github.com/digitalbazaar/jsonld-signatures/commit/5046805653ea7db47540e5c9c77578d134a559e1
-        proof_set = [{"@context": SECURITY_CONTEXT_URL, **proof} for proof in proof_set]
+        # Shallow copy proofs and add document context or SECURITY_CONTEXT_URL
+        context = document.get("@context") or SECURITY_CONTEXT_URL
+        proof_set = [{"@context": context, **proof} for proof in proof_set]
 
         return proof_set
 
