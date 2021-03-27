@@ -143,10 +143,15 @@ class BaseConnectionManager:
 
         for (endpoint_index, svc_endpoint) in enumerate(svc_endpoints or []):
             endpoint_ident = "indy" if endpoint_index == 0 else f"indy{endpoint_index}"
+            service_type = (
+                "did-communication"
+                if self._session.settings.get("aip_version", 1) >= 2
+                else "IndyAgent"
+            )
             service = Service(
                 did_info.did,
                 endpoint_ident,
-                "IndyAgent",
+                service_type,
                 [pk],
                 routing_keys,
                 svc_endpoint,
