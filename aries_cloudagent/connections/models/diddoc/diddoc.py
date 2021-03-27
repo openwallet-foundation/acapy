@@ -30,6 +30,11 @@ from .util import canon_ref
 LOGGER = logging.getLogger(__name__)
 
 
+def parseError(msg: str):
+    LOGGER.debug(msg)
+    raise ValueError(msg)
+
+
 class DIDDoc:
     """
     DID document, grouping a DID with verification keys and services.
@@ -38,7 +43,8 @@ class DIDDoc:
     everything else as URIs (oriented toward W3C-facing operations).
     """
 
-    CONTEXT = "https://w3id.org/did/v1"
+    CONTEXT_V0 = "https://w3id.org/did/v1"
+    CONTEXT_V1 = "https://www.w3.org/ns/did/v1"
 
     def __init__(self, did: str = None) -> None:
         """
@@ -121,29 +127,47 @@ class DIDDoc:
                 "Cannot add item {} to DIDDoc on DID {}".format(item, self.did)
             )
 
-    def serialize(self) -> dict:
+    def serialize(self, *, version: int = 0) -> dict:
         """
         Dump current object to a JSON-compatible dictionary.
+
+        Args:
+            version: Define the version of the spec to use in serialization
 
         Returns:
             dict representation of current DIDDoc
 
         """
 
-        return {
-            "@context": DIDDoc.CONTEXT,
-            "id": self.did,
-            "publicKey": [pubkey.to_dict() for pubkey in self.pubkey.values()],
-            "authentication": [
-                {
-                    "type": pubkey.type.authn_type,
-                    "publicKey": canon_ref(self.did, pubkey.id),
-                }
-                for pubkey in self.pubkey.values()
-                if pubkey.authn
-            ],
-            "service": [service.to_dict() for service in self.service.values()],
-        }
+        if version == 0:
+            return {
+                "@context": DIDDoc.CONTEXT_V0,
+                "id": self.did,
+                "publicKey": [pubkey.to_dict() for pubkey in self.pubkey.values()],
+                "authentication": [
+                    {
+                        "type": pubkey.type.authn_type,
+                        "publicKey": canon_ref(self.did, pubkey.id),
+                    }
+                    for pubkey in self.pubkey.values()
+                    if pubkey.authn
+                ],
+                "service": [service.to_dict() for service in self.service.values()],
+            }
+        elif version == 1:
+            return {
+                "@context": DIDDoc.CONTEXT_V1,
+                "id": self.did,
+                "verificationMethod": [
+                    pubkey.to_dict() for pubkey in self.pubkey.values()
+                ],
+                "authentication": [
+                    pubkey.id for pubkey in self.pubkey.values() if pubkey.authn
+                ],
+                "service": [service.to_dict() for service in self.service.values()],
+            }
+        else:
+            raise ValueError(f"Unsupported version for serialization: {version}")
 
     def to_json(self) -> str:
         """
@@ -229,35 +253,20 @@ class DIDDoc:
         """
 
         if "id" not in did_doc:
-            LOGGER.debug("no identifier in DID document")
-            raise ValueError("No identifier in DID document")
+            parseError("no identifier in DID document")
 
         rv = DIDDoc(did_doc["id"])
 
-        for pubkey in did_doc.get(
-            "publicKey", {}
-        ):  # include all public keys, authentication pubkeys by reference
-            pubkey_type = PublicKeyType.get(pubkey["type"])
-            authn = any(
-                canon_ref(rv.did, ak.get("publicKey", ""))
-                == canon_ref(rv.did, pubkey["id"])
-                for ak in did_doc.get("authentication", {})
-                if isinstance(ak.get("publicKey", None), str)
-            )
-            key = PublicKey(  # initialization canonicalizes id
-                rv.did,
-                pubkey["id"],
-                pubkey[pubkey_type.specifier],
-                pubkey_type,
-                pubkey["controller"],
-                authn,
-            )
-            rv.pubkey[key.id] = key
-
+        auth_key_ids = set()
         for akey in did_doc.get(
             "authentication", {}
         ):  # include embedded authentication keys
-            if "publicKey" not in akey:  # not yet got it with public keys
+            if isinstance(akey, str):
+                auth_key_ids.add(canon_ref(rv.did, akey))
+            elif "publicKey" in akey:
+                # v0 representation
+                auth_key_ids.add(canon_ref(rv.did, akey["publicKey"]))
+            else:
                 pubkey_type = PublicKeyType.get(akey["type"])
                 key = PublicKey(  # initialization canonicalized id
                     rv.did,
@@ -267,7 +276,28 @@ class DIDDoc:
                     akey["controller"],
                     True,
                 )
+                if key.id in rv.pubkey:
+                    parseError(f"duplicate key id: {key.id}")
                 rv.pubkey[key.id] = key
+
+        pubkeys = did_doc.get("verificationMethod", did_doc.get("publicKey")) or {}
+        for (
+            pubkey
+        ) in pubkeys:  # include all public keys, authentication pubkeys by reference
+            pubkey_type = PublicKeyType.get(pubkey["type"])
+            key = PublicKey(  # initialization canonicalizes id
+                rv.did,
+                pubkey["id"],
+                pubkey[pubkey_type.specifier],
+                pubkey_type,
+                pubkey["controller"],
+                False,
+            )
+            if key.id in auth_key_ids:
+                key.authn = True
+            if key.id in rv.pubkey:
+                parseError(f"duplicate key id: {key.id}")
+            rv.pubkey[key.id] = key
 
         for service in did_doc.get("service", {}):
             endpoint = service["serviceEndpoint"]
