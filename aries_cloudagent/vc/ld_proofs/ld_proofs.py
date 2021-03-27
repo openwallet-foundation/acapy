@@ -23,7 +23,7 @@ async def sign(
     Proof is added based on the provided suite and proof purpose
 
     Args:
-        document (dict): The document to be signed.
+        document (dict): JSON-LD document to be signed.
         suite (LinkedDataProof): The linked data signature cryptographic suite
             with which to sign the document
         purpose (ProofPurpose): A proof purpose instance that will match proofs to be
@@ -34,6 +34,7 @@ async def sign(
         LinkedDataProofException: When a jsonld url cannot be resolved, OR signing fails.
     Returns:
         dict: Signed document.
+
     """
     try:
         return await ProofSet.add(
@@ -46,7 +47,9 @@ async def sign(
     except JsonLdError as e:
         if e.type == "jsonld.InvalidUrl":
             raise LinkedDataProofException(
-                f'A URL "{e.details}" could not be fetched; you need to pass a DocumentLoader function that can resolve this URL, or resolve the URL before calling "sign".'
+                f'A URL "{e.details}" could not be fetched; you need to pass a '
+                "DocumentLoader function that can resolve this URL, or resolve"
+                ' the URL before calling "sign".'
             )
         raise e
 
@@ -58,7 +61,7 @@ async def verify(
     purpose: ProofPurpose,
     document_loader: DocumentLoader,
 ) -> DocumentVerificationResult:
-    """Verifies the linked data signature on the provided document.
+    """Verify the linked data signature on the provided document.
 
     Args:
         document (dict): The document with one or more proofs to be verified.
@@ -69,11 +72,12 @@ async def verify(
         document_loader (DocumentLoader): The document loader to use.
 
     Returns:
-        DocumentVerificationResult: Object with a `verified` boolean property that is `True` if at least one
-            proof matching the given purpose and suite verifies and `False` otherwise.
-            a `results` property with an array of detailed results.
-            if `False` an `errors` property will be present, with a list
+        DocumentVerificationResult: Object with a `verified` boolean property that is
+            `True` if at least one proof matching the given purpose and suite verifies
+            and `False` otherwise. a `results` property with an array of detailed
+            results. if `False` an `errors` property will be present, with a list
             containing all of the errors that occurred during the verification process.
+
     """
 
     result = await ProofSet.verify(
@@ -109,6 +113,7 @@ async def derive(
 
     Returns:
         dict: The document with derived proof(s).
+
     """
 
     result = await ProofSet.derive(

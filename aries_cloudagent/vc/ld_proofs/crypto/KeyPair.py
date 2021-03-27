@@ -1,4 +1,4 @@
-"""Base key pair class"""
+"""Base key pair class."""
 
 from abc import ABC, abstractmethod, abstractproperty
 from typing import List, Optional, Union
@@ -9,13 +9,13 @@ class KeyPair(ABC):
 
     @abstractmethod
     async def sign(self, message: Union[List[bytes], bytes]) -> bytes:
-        """Sign message using key pair"""
+        """Sign message using key pair."""
 
     @abstractmethod
     async def verify(
         self, message: Union[List[bytes], bytes], signature: bytes
     ) -> bool:
-        """Verify message against signature using key pair"""
+        """Verify message against signature using key pair."""
 
     @abstractproperty
     def has_public_key(self) -> bool:
@@ -27,10 +27,11 @@ class KeyPair(ABC):
 
     @abstractproperty
     def public_key(self) -> Optional[bytes]:
-        """Getter for the public key bytes
+        """Getter for the public key bytes.
 
         Returns:
             bytes: The public key
+
         """
 
     @abstractmethod

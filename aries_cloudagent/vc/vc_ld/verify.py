@@ -25,7 +25,7 @@ async def _verify_credential(
     document_loader: DocumentLoader,
     purpose: ProofPurpose = None,
 ) -> DocumentVerificationResult:
-    """Verify credential structure, proof purpose and signature"""
+    """Verify credential structure, proof purpose and signature."""
 
     # Validate credential structure
     errors = VerifiableCredentialSchema().validate(credential)
@@ -54,7 +54,7 @@ async def verify_credential(
     document_loader: DocumentLoader,
     purpose: ProofPurpose = None,
 ) -> DocumentVerificationResult:
-    """Verify credential structure, proof purpose and signature
+    """Verify credential structure, proof purpose and signature.
 
     Args:
         credential (dict): The credential to verify
@@ -89,7 +89,7 @@ async def _verify_presentation(
     domain: str = None,
     purpose: ProofPurpose = None,
 ):
-    """Verify presentation structure, credentials, proof purpose and signature"""
+    """Verify presentation structure, credentials, proof purpose and signature."""
 
     if not purpose and not challenge:
         raise LinkedDataProofException(
@@ -148,7 +148,7 @@ async def verify_presentation(
     challenge: str = None,
     domain: str = None,
 ) -> PresentationVerificationResult:
-    """Verify presentation structure, credentials, proof purpose and signature
+    """Verify presentation structure, credentials, proof purpose and signature.
 
     Args:
         presentation (dict): The presentation to verify
@@ -164,6 +164,7 @@ async def verify_presentation(
     Returns:
         PresentationVerificationResult: The result of the verification. Verified property
             indicates whether the verification was successful
+
     """
 
     # TODO: I think we should add some sort of options to authenticate the subject id

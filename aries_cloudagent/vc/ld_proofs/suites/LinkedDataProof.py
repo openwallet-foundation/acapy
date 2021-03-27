@@ -18,14 +18,14 @@ if TYPE_CHECKING:
 
 
 class DeriveProofResult(TypedDict):
-    """Result dict for deriving a proof"""
+    """Result dict for deriving a proof."""
 
     document: dict
     proof: Union[dict, List[dict]]
 
 
 class LinkedDataProof(ABC):
-    """Base Linked data proof"""
+    """Base Linked data proof."""
 
     def __init__(
         self,
@@ -34,7 +34,7 @@ class LinkedDataProof(ABC):
         proof: dict = None,
         supported_derive_proof_types: Union[List[str], None] = None,
     ):
-        """Initialize new LinkedDataProof instance"""
+        """Initialize new LinkedDataProof instance."""
         self.signature_type = signature_type
         self.proof = proof
         self.supported_derive_proof_types = supported_derive_proof_types
@@ -46,7 +46,7 @@ class LinkedDataProof(ABC):
         purpose: "ProofPurpose",
         document_loader: DocumentLoader,
     ) -> dict:
-        """Create proof for document
+        """Create proof for document.
 
         Args:
             document (dict): The document to create the proof for
@@ -55,6 +55,7 @@ class LinkedDataProof(ABC):
 
         Returns:
             dict: The proof object
+
         """
         raise LinkedDataProofException(
             f"{self.signature_type} signature suite does not support creating proofs"
@@ -78,6 +79,7 @@ class LinkedDataProof(ABC):
 
         Returns:
             ValidationResult: The results of the proof verification
+
         """
         raise LinkedDataProofException(
             f"{self.signature_type} signature suite does not support verifying proofs"
@@ -103,6 +105,7 @@ class LinkedDataProof(ABC):
 
         Returns:
             DeriveProofResult: The derived document and proof
+
         """
         raise LinkedDataProofException(
             f"{self.signature_type} signature suite does not support deriving proofs"
@@ -111,7 +114,7 @@ class LinkedDataProof(ABC):
     def _get_verification_method(
         self, *, proof: dict, document_loader: DocumentLoader
     ) -> dict:
-        """Get verification method for proof"""
+        """Get verification method for proof."""
 
         verification_method = proof.get("verificationMethod")
 
@@ -149,5 +152,5 @@ class LinkedDataProof(ABC):
         return framed
 
     def match_proof(self, signature_type: str) -> bool:
-        """Match signature type to signature type of this suite"""
+        """Match signature type to signature type of this suite."""
         return signature_type == self.signature_type

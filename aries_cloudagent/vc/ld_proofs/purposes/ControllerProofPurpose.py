@@ -1,4 +1,4 @@
-"""Controller proof purpose class"""
+"""Controller proof purpose class."""
 
 from pyld.jsonld import JsonLdProcessor
 from pyld import jsonld
@@ -75,7 +75,8 @@ class ControllerProofPurpose(ProofPurpose):
 
             if not result.valid:
                 raise LinkedDataProofException(
-                    f"Verification method {verification_id} not authorized by controller for proof purpose {self.term}"
+                    f"Verification method {verification_id} not authorized"
+                    f" by controller for proof purpose {self.term}"
                 )
 
             return result

@@ -303,7 +303,7 @@ async def wallet_create_did(request: web.BaseRequest):
 
     try:
         body = await request.json()
-    except:
+    except Exception:
         body = {}
 
     key_type = (

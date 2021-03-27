@@ -6,7 +6,7 @@ from ..ld_proofs import DocumentVerificationResult
 
 
 class PresentationVerificationResult:
-    """Presentation verification result class"""
+    """Presentation verification result class."""
 
     def __init__(
         self,
@@ -16,7 +16,7 @@ class PresentationVerificationResult:
         credential_results: List[DocumentVerificationResult] = None,
         errors: List[Exception] = None,
     ) -> None:
-        """Create new PresentationVerificationResult instance"""
+        """Create new PresentationVerificationResult instance."""
         self.verified = verified
         self.presentation_result = presentation_result
         self.credential_results = credential_results

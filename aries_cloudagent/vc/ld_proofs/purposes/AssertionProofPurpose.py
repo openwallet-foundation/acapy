@@ -1,4 +1,4 @@
-"""Assertion proof purpose class"""
+"""Assertion proof purpose class."""
 
 from datetime import datetime, timedelta
 
@@ -6,7 +6,7 @@ from .ControllerProofPurpose import ControllerProofPurpose
 
 
 class AssertionProofPurpose(ControllerProofPurpose):
-    """Assertion proof purpose class"""
+    """Assertion proof purpose class."""
 
     def __init__(self, *, date: datetime = None, max_timestamp_delta: timedelta = None):
         """Initialize new instance of AssertionProofPurpose."""

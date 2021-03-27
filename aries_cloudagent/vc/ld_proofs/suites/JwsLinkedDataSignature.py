@@ -1,4 +1,4 @@
-"""JWS Linked Data class"""
+"""JWS Linked Data class."""
 
 from pyld.jsonld import JsonLdProcessor
 from datetime import datetime
@@ -13,7 +13,7 @@ from .LinkedDataSignature import LinkedDataSignature
 
 
 class JwsLinkedDataSignature(LinkedDataSignature):
-    """JWS Linked Data class"""
+    """JWS Linked Data class."""
 
     def __init__(
         self,
@@ -22,11 +22,25 @@ class JwsLinkedDataSignature(LinkedDataSignature):
         algorithm: str,
         required_key_type: str,
         key_pair: KeyPair,
-        verification_method: str = None,
         proof: dict = None,
+        verification_method: str = None,
         date: Union[datetime, str] = None,
     ):
-        """Create new JwsLinkedDataSignature instance"""
+        """Create new JwsLinkedDataSignature instance.
+
+        Must be subclassed, not initialized directly.
+
+        Args:
+            signature_type (str): Signature type for the proof, provided by subclass
+            algorithm (str): JWS alg to use, provided by subclass
+            required_key_type (str): Required key type in verification method.
+            key_pair (KeyPair): Key pair to use, provided by subclass
+            proof (dict, optional): A JSON-LD document with options to use for the
+                `proof` node (e.g. any other custom fields can be provided here
+                using a context different from security-v2).
+            verification_method (str, optional): A key id URL to the paired public key.
+            date (datetime, optional): Signing date to use. Defaults to now
+        """
 
         super().__init__(
             signature_type=signature_type,
@@ -40,7 +54,7 @@ class JwsLinkedDataSignature(LinkedDataSignature):
         self.required_key_type = required_key_type
 
     async def sign(self, *, verify_data: bytes, proof: dict) -> dict:
-        """Sign the data and add it to the proof
+        """Sign the data and add it to the proof.
 
         Adds a jws to the proof that can be used for multiple
         signature algorithms.
@@ -51,6 +65,7 @@ class JwsLinkedDataSignature(LinkedDataSignature):
 
         Returns:
             dict: The proof object with the added signature
+
         """
 
         header = {"alg": self.algorithm, "b64": False, "crit": ["b64"]}
@@ -89,6 +104,7 @@ class JwsLinkedDataSignature(LinkedDataSignature):
 
         Returns:
             bool: Whether the signature is valid for the data
+
         """
         if not (isinstance(proof.get("jws"), str) and (".." in proof.get("jws"))):
             raise LinkedDataProofException(
@@ -113,7 +129,7 @@ class JwsLinkedDataSignature(LinkedDataSignature):
         return await key_pair.verify(data, signature)
 
     def _decode_header(self, encoded_header: str) -> dict:
-        """Decode header"""
+        """Decode header."""
         header = None
         try:
             header = json.loads(b64_to_str(encoded_header, urlsafe=True))
@@ -122,7 +138,7 @@ class JwsLinkedDataSignature(LinkedDataSignature):
         return header
 
     def _encode_header(self, header: dict) -> str:
-        """Encode header"""
+        """Encode header."""
         return str_to_b64(json.dumps(header), urlsafe=True, pad=False)
 
     def _create_jws(self, *, encoded_header: str, verify_data: bytes) -> bytes:
@@ -130,7 +146,7 @@ class JwsLinkedDataSignature(LinkedDataSignature):
         return (encoded_header + ".").encode("utf-8") + verify_data
 
     def _validate_header(self, header: dict):
-        """ Validates the JWS header, throws if not ok """
+        """Validate the JWS header, throws if not ok."""
         if not (header and isinstance(header, dict)):
             raise LinkedDataProofException("Invalid JWS header.")
 
@@ -147,7 +163,7 @@ class JwsLinkedDataSignature(LinkedDataSignature):
             )
 
     def _assert_verification_method(self, verification_method: dict):
-        """Assert verification method. Throws if not ok"""
+        """Assert verification method. Throws if not ok."""
         if not JsonLdProcessor.has_value(
             verification_method, "type", self.required_key_type
         ):
@@ -156,7 +172,7 @@ class JwsLinkedDataSignature(LinkedDataSignature):
             )
 
     def _get_verification_method(self, *, proof: dict, document_loader: DocumentLoader):
-        """Get verification method"""
+        """Get verification method."""
         verification_method = super()._get_verification_method(
             proof=proof, document_loader=document_loader
         )

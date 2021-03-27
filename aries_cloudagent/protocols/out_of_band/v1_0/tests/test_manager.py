@@ -658,9 +658,12 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             assert service["id"] == "#inline"
             assert service["type"] == "did-communication"
             assert len(service["recipientKeys"]) == 1
-            assert service["routingKeys"][0] == DIDKey.from_public_key_b58(
-                self.test_mediator_routing_keys[0], KeyType.ED25519
-            ).did
+            assert (
+                service["routingKeys"][0]
+                == DIDKey.from_public_key_b58(
+                    self.test_mediator_routing_keys[0], KeyType.ED25519
+                ).did
+            )
             assert service["serviceEndpoint"] == self.test_mediator_endpoint
 
     async def test_create_invitation_metadata_assigned(self):

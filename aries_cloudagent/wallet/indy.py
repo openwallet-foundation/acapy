@@ -209,7 +209,8 @@ class IndySdkWallet(BaseWallet):
         # validate key_type
         if not method.supports_key_type(key_type):
             raise WalletError(
-                f"Invalid key type {key_type.key_type} for did method f{method.method_name}"
+                f"Invalid key type {key_type.key_type}"
+                f" for did method {method.method_name}"
             )
 
         cfg = {}

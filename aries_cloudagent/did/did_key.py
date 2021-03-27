@@ -1,8 +1,12 @@
+"""DID Key class and resolver methods."""
+
 from multicodec.multicodec import add_prefix, get_codec, remove_prefix
 
 from ..wallet.crypto import KeyType, ed25519_pk_to_curve25519
 from ..wallet.util import b58_to_bytes, bytes_to_b58
-from ..vc.ld_proofs.constants import DID_V1_CONTEXT_URL
+
+# FIXME: importing this from vc.constants gives circular dependency error
+DID_V1_CONTEXT_URL = "https://www.w3.org/ns/did/v1"
 
 
 class DIDKey:

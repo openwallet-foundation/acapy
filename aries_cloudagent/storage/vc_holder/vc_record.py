@@ -4,7 +4,6 @@ import json
 
 from pyld import jsonld
 from pyld.jsonld import JsonLdProcessor
-from typing import Sequence
 import logging
 
 from typing import Mapping, Sequence, Sequence

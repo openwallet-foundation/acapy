@@ -1,3 +1,5 @@
+"""Verifiable Credential and Presentation proving methods."""
+
 from typing import List
 
 

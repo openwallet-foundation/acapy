@@ -1,4 +1,4 @@
-"""Credential Issuance  proof purpose class"""
+"""Credential Issuance proof purpose class."""
 
 from typing import List
 from pyld.jsonld import JsonLdProcessor
@@ -24,7 +24,7 @@ class CredentialIssuancePurpose(AssertionProofPurpose):
         verification_method: dict,
         document_loader: DocumentLoader,
     ) -> PurposeResult:
-        """Checks whether the issuer matches the controller of the verification method."""
+        """Validate if the issuer matches the controller of the verification method."""
         try:
             result = super().validate(
                 proof=proof,

@@ -29,6 +29,8 @@ class KeyTypeException(BaseException):
 
 
 class KeyType(Enum):
+    """KeyType Enum specifying key types with multicodec name"""
+
     ED25519 = KeySpec("ed25519", "ed25519-pub")
     X25519 = KeySpec("x25519", "x25519-pub")
     BLS12381G1 = KeySpec("bls12381g1", "bls12_381-g1-pub")
@@ -37,14 +39,17 @@ class KeyType(Enum):
 
     @property
     def key_type(self) -> str:
+        """Getter for key type identifier"""
         return self.value.key_type
 
     @property
     def multicodec_name(self) -> str:
+        """Getter for multicodec name"""
         return self.value.multicodec_name
 
     @classmethod
     def from_multicodec_name(cls, multicodec_name: str) -> Optional["KeyType"]:
+        """Get KeyType instance based on multicoded name. Returns None if not found."""
         for key_type in KeyType:
             if key_type.multicodec_name == multicodec_name:
                 return key_type
@@ -53,6 +58,7 @@ class KeyType(Enum):
 
     @classmethod
     def from_key_type(cls, key_type: str) -> Optional["KeyType"]:
+        """Get KeyType instance from the key type identifier."""
         for _key_type in KeyType:
             if _key_type.key_type == key_type:
                 return _key_type
@@ -70,21 +76,30 @@ DIDMethodSpec = NamedTuple(
 
 
 class DIDMethod(Enum):
+    """DID Method class specifying DID methods with supported key types."""
+
     SOV = DIDMethodSpec("sov", [KeyType.ED25519])
     KEY = DIDMethodSpec("key", [KeyType.ED25519, KeyType.BLS12381G2])
 
     @property
     def method_name(self) -> str:
+        """Getter for did method name. e.g. sov or key"""
         return self.value.method_name
 
     @property
     def supported_key_types(self) -> List[KeyType]:
+        """Getter for supported key types of method"""
         return self.value.supported_key_types
 
     def supports_key_type(self, key_type: KeyType) -> bool:
+        """Check whether the current method supports the key type"""
         return key_type in self.supported_key_types
 
     def from_metadata(metadata: Mapping) -> "DIDMethod":
+        """Get DID method instance from metadata object.
+
+        Returns SOV if no metadata was found for backwards compatability.
+        """
         method = metadata.get("method")
 
         # extract from metadata object
@@ -97,6 +112,7 @@ class DIDMethod(Enum):
         return DIDMethod.SOV
 
     def from_method(method: str) -> Optional["DIDMethod"]:
+        """Get DID method instance from the method name"""
         for did_method in DIDMethod:
             if method == did_method.method_name:
                 return did_method

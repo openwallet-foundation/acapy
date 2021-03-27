@@ -1,4 +1,4 @@
-"""Authentication proof purpose class"""
+"""Authentication proof purpose class."""
 
 from datetime import datetime, timedelta
 
@@ -37,16 +37,18 @@ class AuthenticationProofPurpose(ControllerProofPurpose):
         verification_method: dict,
         document_loader: DocumentLoader,
     ) -> PurposeResult:
-        """Validate whether challenge and domain are valid"""
+        """Validate whether challenge and domain are valid."""
         try:
             if proof.get("challenge") != self.challenge:
                 raise LinkedDataProofException(
-                    f'The challenge is not as expected; challenge={proof.get("challenge")}, expected={self.challenge}'
+                    f"The challenge is not as expected; challenge="
+                    f'{proof.get("challenge")}, expected={self.challenge}'
                 )
 
             if self.domain and (proof.get("domain") != self.domain):
                 raise LinkedDataProofException(
-                    f'The domain is not as expected; domain={proof.get("domain")}, expected={self.domain}'
+                    f"The domain is not as expected; "
+                    f'domain={proof.get("domain")}, expected={self.domain}'
                 )
 
             return super().validate(
@@ -60,7 +62,7 @@ class AuthenticationProofPurpose(ControllerProofPurpose):
             PurposeResult(valid=False, error=e)
 
     def update(self, proof: dict) -> dict:
-        """Update poof purpose, challenge and domain on proof"""
+        """Update poof purpose, challenge and domain on proof."""
         proof = super().update(proof)
         proof["challenge"] = self.challenge
 

@@ -1,15 +1,15 @@
-"""Proof verification and validation result classes"""
+"""Proof verification and validation result classes."""
 
 from typing import List
 
 
 class PurposeResult:
-    """Proof purpose result class"""
+    """Proof purpose result class."""
 
     def __init__(
         self, *, valid: bool, error: Exception = None, controller: dict = None
     ) -> None:
-        """Create new PurposeResult instance"""
+        """Create new PurposeResult instance."""
         self.valid = valid
         self.error = error
         self.controller = controller
@@ -26,7 +26,7 @@ class PurposeResult:
 
 
 class ProofResult:
-    """Proof result class"""
+    """Proof result class."""
 
     def __init__(
         self,
@@ -36,7 +36,7 @@ class ProofResult:
         error: Exception = None,
         purpose_result: PurposeResult = None,
     ) -> None:
-        """Create new ProofResult instance"""
+        """Create new ProofResult instance."""
         self.verified = verified
         self.proof = proof
         self.error = error
@@ -55,7 +55,7 @@ class ProofResult:
 
 
 class DocumentVerificationResult:
-    """Domain verification result class"""
+    """Domain verification result class."""
 
     def __init__(
         self,
@@ -65,7 +65,7 @@ class DocumentVerificationResult:
         results: List[ProofResult] = None,
         errors: List[Exception] = None,
     ) -> None:
-        """Create new DocumentVerificationResult instance"""
+        """Create new DocumentVerificationResult instance."""
         self.verified = verified
         self.document = document
         self.results = results

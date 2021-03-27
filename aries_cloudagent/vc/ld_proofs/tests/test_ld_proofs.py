@@ -1,5 +1,4 @@
 from asynctest import TestCase
-import traceback
 
 from datetime import datetime
 

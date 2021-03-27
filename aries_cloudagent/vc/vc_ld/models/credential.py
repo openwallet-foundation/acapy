@@ -1,3 +1,5 @@
+"""Verifiable Credential model classes"""
+
 from marshmallow import ValidationError
 import copy
 import json
@@ -17,7 +19,7 @@ from .credential_schema import (
 
 
 class LDProof:
-    """Linked Data Proof model"""
+    """Linked Data Proof model."""
 
     def __init__(
         self,
@@ -52,6 +54,7 @@ class LDProof:
 
         Returns:
             LDProof: The deserialized LDProof object
+
         """
         if isinstance(proof, str):
             proof = json.loads(proof)
@@ -64,6 +67,7 @@ class LDProof:
 
         Returns:
             dict: The LDProof serialized as dict.
+
         """
         schema = LinkedDataProofSchema()
         proof: dict = schema.dump(copy.deepcopy(self))
@@ -72,7 +76,7 @@ class LDProof:
 
 
 class VerifiableCredential:
-    """Verifiable Credential model"""
+    """Verifiable Credential model."""
 
     def __init__(
         self,
@@ -115,6 +119,7 @@ class VerifiableCredential:
 
         Returns:
             VerifiableCredential: The deserialized VerifiableCredential object
+
         """
         if isinstance(credential, str):
             credential = json.loads(credential)
@@ -127,6 +132,7 @@ class VerifiableCredential:
 
         Returns:
             dict: The VerifiableCredential serialized as dict.
+
         """
         schema = VerifiableCredentialSchema()
         credential: dict = schema.dump(copy.deepcopy(self))

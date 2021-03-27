@@ -1,4 +1,4 @@
-"""JSON-LD document loader methods"""
+"""JSON-LD document loader methods."""
 
 from pyld.documentloader import requests
 from typing import Callable
@@ -9,10 +9,10 @@ from .error import LinkedDataProofException
 
 
 def get_default_document_loader(profile: Profile) -> "DocumentLoader":
-    """Return the default document loader"""
+    """Return the default document loader."""
 
     def default_document_loader(url: str, options: dict):
-        """Default document loader implementation"""
+        """Retrieve http(s) or did:key document."""
         # TODO: integrate with did resolver interface
         # https://github.com/hyperledger/aries-cloudagent-python/pull/1033
         if url.startswith("did:key:"):
@@ -29,7 +29,8 @@ def get_default_document_loader(profile: Profile) -> "DocumentLoader":
             return loader(url, options)
         else:
             raise LinkedDataProofException(
-                "Unrecognized url format. Must start with 'did:key:', 'http://' or 'https://'"
+                "Unrecognized url format. Must start with "
+                "'did:key:', 'http://' or 'https://'"
             )
 
     return default_document_loader

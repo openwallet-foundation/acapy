@@ -1,4 +1,4 @@
-"""JSON-LD, Linked Data Proof and Verifiable Credential constants"""
+"""JSON-LD, Linked Data Proof and Verifiable Credential constants."""
 
 SECURITY_CONTEXT_V1_URL = "https://w3id.org/security/v1"
 SECURITY_CONTEXT_V2_URL = "https://w3id.org/security/v2"
