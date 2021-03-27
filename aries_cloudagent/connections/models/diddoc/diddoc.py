@@ -30,7 +30,7 @@ from .util import canon_ref
 LOGGER = logging.getLogger(__name__)
 
 
-def parseError(msg: str):
+def _parseError(msg: str):
     LOGGER.debug(msg)
     raise ValueError(msg)
 
@@ -253,7 +253,7 @@ class DIDDoc:
         """
 
         if "id" not in did_doc:
-            parseError("no identifier in DID document")
+            _parseError("no identifier in DID document")
 
         rv = DIDDoc(did_doc["id"])
 
@@ -277,7 +277,7 @@ class DIDDoc:
                     True,
                 )
                 if key.id in rv.pubkey:
-                    parseError(f"duplicate key id: {key.id}")
+                    _parseError(f"duplicate key id: {key.id}")
                 rv.pubkey[key.id] = key
 
         pubkeys = did_doc.get("verificationMethod", did_doc.get("publicKey")) or {}
@@ -296,7 +296,7 @@ class DIDDoc:
             if key.id in auth_key_ids:
                 key.authn = True
             if key.id in rv.pubkey:
-                parseError(f"duplicate key id: {key.id}")
+                _parseError(f"duplicate key id: {key.id}")
             rv.pubkey[key.id] = key
 
         for service in did_doc.get("service", {}):
