@@ -3,13 +3,15 @@
 from datetime import datetime
 from typing import List, Union
 
-from .BbsBlsSignature2020Base import BbsBlsSignature2020Base
+
 from ....wallet.util import b64_to_bytes, bytes_to_b64
+from ..constants import SECURITY_CONTEXT_V3_URL
 from ..crypto import KeyPair
 from ..error import LinkedDataProofException
 from ..validation_result import ProofResult
 from ..document_loader import DocumentLoader
 from ..purposes import ProofPurpose
+from .BbsBlsSignature2020Base import BbsBlsSignature2020Base
 
 
 class BbsBlsSignature2020(BbsBlsSignature2020Base):
@@ -139,7 +141,7 @@ class BbsBlsSignature2020(BbsBlsSignature2020Base):
 
         """
         proof_statements = self._create_verify_proof_data(
-            proof=proof, document_loader=document_loader
+            proof=proof, document=document, document_loader=document_loader
         )
         document_statements = self._create_verify_document_data(
             document=document, document_loader=document_loader
@@ -149,9 +151,15 @@ class BbsBlsSignature2020(BbsBlsSignature2020Base):
 
         return [*proof_statements, *document_statements]
 
-    def _canonize_proof(self, *, proof: dict, document_loader: DocumentLoader = None):
-        """Canonize proof dictionary. Removes jws, signature, etc..."""
-        proof = proof.copy()
+    def _canonize_proof(
+        self, *, proof: dict, document: dict, document_loader: DocumentLoader
+    ):
+        """Canonize proof dictionary. Removes value that are not part of signature."""
+        # Use default security context url if document has no context
+        proof = {
+            "@context": document.get("@context") or SECURITY_CONTEXT_V3_URL,
+            **proof,
+        }
 
         proof.pop("proofValue", None)
 
@@ -213,4 +221,4 @@ class BbsBlsSignature2020(BbsBlsSignature2020Base):
         if not key_pair.has_public_key:
             key_pair = key_pair.from_verification_method(verification_method)
 
-        return await self.key_pair.verify(verify_data, signature)
+        return await key_pair.verify(verify_data, signature)

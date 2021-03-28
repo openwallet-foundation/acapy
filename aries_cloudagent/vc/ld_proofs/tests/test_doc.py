@@ -37,6 +37,45 @@ DOC_SIGNED = {
     },
 }
 
+DOC_TEMPLATE_BBS = {
+    "@context": [
+        "https://w3id.org/security/v2",
+        "https://w3id.org/security/bbs/v1",
+        {
+            "schema": "http://schema.org/",
+            "name": "schema:name",
+            "homepage": "schema:url",
+            "image": "schema:image",
+        },
+    ],
+    "name": "Manu Sporny",
+    "homepage": "https://manu.sporny.org/",
+    "image": "https://manu.sporny.org/images/manu.png",
+}
+
+DOC_SIGNED_BBS = {
+    "@context": [
+        "https://w3id.org/security/v2",
+        "https://w3id.org/security/bbs/v1",
+        {
+            "schema": "http://schema.org/",
+            "name": "schema:name",
+            "homepage": "schema:url",
+            "image": "schema:image",
+        },
+    ],
+    "name": "Manu Sporny",
+    "homepage": "https://manu.sporny.org/",
+    "image": "https://manu.sporny.org/images/manu.png",
+    "proof": {
+        "type": "BbsBlsSignature2020",
+        "verificationMethod": "did:key:zUC72Q7XD4PE4CrMiDVXuvZng3sBvMmaGgNeTUJuzavH2BS7ThbHL9FhsZM9QYY5fqAQ4MB8M9oudz3tfuaX36Ajr97QRW7LBt6WWmrtESe6Bs5NYzFtLWEmeVtvRYVAgjFcJSa#zUC72Q7XD4PE4CrMiDVXuvZng3sBvMmaGgNeTUJuzavH2BS7ThbHL9FhsZM9QYY5fqAQ4MB8M9oudz3tfuaX36Ajr97QRW7LBt6WWmrtESe6Bs5NYzFtLWEmeVtvRYVAgjFcJSa",
+        "created": "2019-12-11T03:50:55",
+        "proofPurpose": "assertionMethod",
+        "proofValue": "jYdVXtAFahqd9Zp09EEQuALXFDhKTz/GfbfvjksFEzOl4zrk4xprdJo5eRcpKr2URlpAFRZ9Civr4h3++a2/Vk9sLZ5cm4/LWeY2H0PQEIcizdIX83n0LvNZoS1+jeCI2b2C6UDva3CzFyVHHKOZfw==",
+    },
+}
+
 DOC_VERIFIED = DocumentVerificationResult(
     verified=True,
     document={

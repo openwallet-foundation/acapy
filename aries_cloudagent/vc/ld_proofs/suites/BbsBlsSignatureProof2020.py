@@ -4,10 +4,6 @@ from os import urandom
 from pyld import jsonld
 from typing import List
 
-
-from .LinkedDataProof import DeriveProofResult
-from .BbsBlsSignature2020Base import BbsBlsSignature2020Base
-from .BbsBlsSignature2020 import BbsBlsSignature2020
 from ....wallet.util import b64_to_bytes, bytes_to_b64
 from ..crypto import KeyPair
 from ..error import LinkedDataProofException
@@ -15,6 +11,9 @@ from ..validation_result import ProofResult
 from ..document_loader import DocumentLoader
 from ..purposes import ProofPurpose
 from ..constants import SECURITY_CONTEXT_V3_URL
+from .BbsBlsSignature2020Base import BbsBlsSignature2020Base
+from .BbsBlsSignature2020 import BbsBlsSignature2020
+from .LinkedDataProof import DeriveProofResult
 
 
 class BbsBlsSignatureProof2020(BbsBlsSignature2020Base):
@@ -35,10 +34,6 @@ class BbsBlsSignatureProof2020(BbsBlsSignature2020Base):
         """
         super().__init__(
             signature_type=BbsBlsSignatureProof2020.signature_type,
-            proof={
-                "@context": SECURITY_CONTEXT_V3_URL,
-                "type": BbsBlsSignatureProof2020.signature_type,
-            },
             supported_derive_proof_types=(
                 BbsBlsSignatureProof2020.supported_derive_proof_types
             ),
@@ -265,9 +260,15 @@ class BbsBlsSignatureProof2020(BbsBlsSignature2020Base):
         except Exception as err:
             return ProofResult(verified=False, error=err)
 
-    def _canonize_proof(self, *, proof: dict, document_loader: DocumentLoader = None):
+    def _canonize_proof(
+        self, *, proof: dict, document: dict, document_loader: DocumentLoader
+    ):
         """Canonize proof dictionary. Removes proofValue."""
-        proof = proof.copy()
+        # Use default security context url if document has no context
+        proof = {
+            "@context": document.get("@context") or SECURITY_CONTEXT_V3_URL,
+            **proof,
+        }
 
         proof.pop("proofValue", None)
         proof.pop("nonce", None)

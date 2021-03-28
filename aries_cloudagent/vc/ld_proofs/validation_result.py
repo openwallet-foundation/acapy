@@ -14,6 +14,17 @@ class PurposeResult:
         self.error = error
         self.controller = controller
 
+    def __repr__(self) -> str:
+        """
+        Return a human readable representation of this class.
+
+        Returns:
+            A human readable string for this class
+
+        """
+        items = ("{}={}".format(k, repr(v)) for k, v in self.__dict__.items())
+        return "<{}({})>".format(self.__class__.__name__, ", ".join(items))
+
     def __eq__(self, other: object) -> bool:
         """Comparison between proof purpose results."""
         if isinstance(other, PurposeResult):
@@ -41,6 +52,17 @@ class ProofResult:
         self.proof = proof
         self.error = error
         self.purpose_result = purpose_result
+
+    def __repr__(self) -> str:
+        """
+        Return a human readable representation of this class.
+
+        Returns:
+            A human readable string for this class
+
+        """
+        items = ("{}={}".format(k, repr(v)) for k, v in self.__dict__.items())
+        return "<{}({})>".format(self.__class__.__name__, ", ".join(items))
 
     def __eq__(self, other: object) -> bool:
         """Comparison between proof results."""
@@ -70,6 +92,17 @@ class DocumentVerificationResult:
         self.document = document
         self.results = results
         self.errors = errors
+
+    def __repr__(self) -> str:
+        """
+        Return a human readable representation of this class.
+
+        Returns:
+            A human readable string for this class
+
+        """
+        items = ("{}={}".format(k, repr(v)) for k, v in self.__dict__.items())
+        return "<{}({})>".format(self.__class__.__name__, ", ".join(items))
 
     def __eq__(self, other: object) -> bool:
         """Comparison between document verification results."""

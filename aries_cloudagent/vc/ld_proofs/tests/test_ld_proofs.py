@@ -10,12 +10,20 @@ from ....core.in_memory import InMemoryProfile
 from ...ld_proofs import (
     sign,
     Ed25519Signature2018,
-    Ed25519WalletKeyPair,
+    WalletKeyPair,
     AssertionProofPurpose,
     verify,
+    BbsBlsSignature2020,
+    Bls12381G2WalletKeyPair,
 )
 from ...tests.document_loader import custom_document_loader
-from .test_doc import DOC_TEMPLATE, DOC_SIGNED, DOC_VERIFIED
+from .test_doc import (
+    DOC_SIGNED_BBS,
+    DOC_TEMPLATE,
+    DOC_SIGNED,
+    DOC_TEMPLATE_BBS,
+    DOC_VERIFIED,
+)
 
 
 class TestLDProofs(TestCase):
@@ -25,19 +33,32 @@ class TestLDProofs(TestCase):
     async def setUp(self):
         self.profile = InMemoryProfile.test_profile()
         self.wallet = InMemoryWallet(self.profile)
-        self.key_info = await self.wallet.create_signing_key(self.test_seed)
-        self.verification_method = DIDKey.from_public_key_b58(
-            self.key_info.verkey, KeyType.ED25519
+
+        self.ed25519_key_info = await self.wallet.create_signing_key(
+            key_type=KeyType.ED25519, seed=self.test_seed
+        )
+        self.ed25519_verification_method = DIDKey.from_public_key_b58(
+            self.ed25519_key_info.verkey, KeyType.ED25519
         ).key_id
 
-    async def test_sign(self):
+        self.bls12381g2_key_info = await self.wallet.create_signing_key(
+            key_type=KeyType.BLS12381G2, seed=self.test_seed
+        )
+
+        self.bls12381g2_verification_method = DIDKey.from_public_key_b58(
+            self.bls12381g2_key_info.verkey, KeyType.BLS12381G2
+        ).key_id
+
+    async def test_sign_Ed25519Signature2018(self):
         # Use different key pair and suite for signing and verification
         # as during verification a lot of information can be extracted
         # from the proof / document
         suite = Ed25519Signature2018(
-            verification_method=self.verification_method,
-            key_pair=Ed25519WalletKeyPair(
-                wallet=self.wallet, public_key_base58=self.key_info.verkey
+            verification_method=self.ed25519_verification_method,
+            key_pair=WalletKeyPair(
+                wallet=self.wallet,
+                key_type=KeyType.ED25519,
+                public_key_base58=self.ed25519_key_info.verkey,
             ),
             date=datetime.strptime("2019-12-11T03:50:55Z", "%Y-%m-%dT%H:%M:%SZ"),
         )
@@ -48,12 +69,12 @@ class TestLDProofs(TestCase):
             document_loader=custom_document_loader,
         )
 
-        assert DOC_SIGNED == signed
+        assert signed == DOC_SIGNED
 
-    async def test_verify(self):
+    async def test_verify_Ed25519Signature2018(self):
         # Verification requires lot less input parameters
         suite = Ed25519Signature2018(
-            key_pair=Ed25519WalletKeyPair(wallet=self.wallet),
+            key_pair=WalletKeyPair(wallet=self.wallet, key_type=KeyType.ED25519),
         )
 
         result = await verify(
@@ -66,4 +87,51 @@ class TestLDProofs(TestCase):
         if not result.verified:
             raise result.errors[0]
 
-        assert DOC_VERIFIED == result
+        assert result == DOC_VERIFIED
+
+    async def test_sign_BbsBlsSignature2020(self):
+        # Use different key pair and suite for signing and verification
+        # as during verification a lot of information can be extracted
+        # from the proof / document
+        suite = BbsBlsSignature2020(
+            verification_method=self.bls12381g2_verification_method,
+            key_pair=WalletKeyPair(
+                wallet=self.wallet,
+                key_type=KeyType.BLS12381G2,
+                public_key_base58=self.bls12381g2_key_info.verkey,
+            ),
+            date=datetime.strptime("2019-12-11T03:50:55Z", "%Y-%m-%dT%H:%M:%SZ"),
+        )
+        signed = await sign(
+            document=DOC_TEMPLATE_BBS,
+            suite=suite,
+            purpose=AssertionProofPurpose(),
+            document_loader=custom_document_loader,
+        )
+
+        # BBS generates unique signature every time so we cant compare signatures
+        assert signed
+
+        result = await verify(
+            document=signed,
+            suites=[suite],
+            purpose=AssertionProofPurpose(),
+            document_loader=custom_document_loader,
+        )
+
+        assert result.verified
+
+    async def test_verify_BbsBlsSignature2020(self):
+        # Verification requires lot less input parameters
+        suite = BbsBlsSignature2020(
+            key_pair=WalletKeyPair(wallet=self.wallet, key_type=KeyType.BLS12381G2),
+        )
+
+        result = await verify(
+            document=DOC_SIGNED_BBS,
+            suites=[suite],
+            purpose=AssertionProofPurpose(),
+            document_loader=custom_document_loader,
+        )
+
+        assert result.verified

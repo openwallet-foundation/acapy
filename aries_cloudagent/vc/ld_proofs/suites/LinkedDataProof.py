@@ -124,6 +124,7 @@ class LinkedDataProof(ABC):
         if not verification_method:
             raise LinkedDataProofException('No "verificationMethod" found in proof')
 
+        # TODO: This should optionally use the context of the document?
         framed = jsonld.frame(
             verification_method,
             frame={

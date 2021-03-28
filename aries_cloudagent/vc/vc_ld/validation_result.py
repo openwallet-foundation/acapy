@@ -22,6 +22,17 @@ class PresentationVerificationResult:
         self.credential_results = credential_results
         self.errors = errors
 
+    def __repr__(self) -> str:
+        """
+        Return a human readable representation of this class.
+
+        Returns:
+            A human readable string for this class
+
+        """
+        items = ("{}={}".format(k, repr(v)) for k, v in self.__dict__.items())
+        return "<{}({})>".format(self.__class__.__name__, ", ".join(items))
+
     def __eq__(self, other: object) -> bool:
         """Comparison between presentation verification results."""
         if isinstance(other, PresentationVerificationResult):

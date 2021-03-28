@@ -4,6 +4,7 @@ from typing import List, Optional, Union
 
 from ....wallet.util import b58_to_bytes
 from ....wallet.base import BaseWallet
+from ....wallet.crypto import KeyType
 from ..error import LinkedDataProofException
 from .WalletKeyPair import WalletKeyPair
 
@@ -25,24 +26,25 @@ class Bls12381G2WalletKeyPair(WalletKeyPair):
             )
 
         return await self.wallet.sign_message(
-            message=messages if type(messages) is list else [messages],
+            message=messages,
             from_verkey=self.public_key_base58,
         )
 
     async def verify(
         self, messages: Union[List[bytes], bytes], signature: bytes
     ) -> bool:
-        """Verify message against signature using Ed25519 key."""
+        """Verify message against signature using Bls12381G2 key."""
         if not self.public_key_base58:
             raise LinkedDataProofException(
-                "Unable to verify message with Ed25519WalletKeyPair"
+                "Unable to verify message with Bls12381G2WalletKeyPair"
                 ": No key to verify with"
             )
 
         return await self.wallet.verify_message(
-            message=messages if type(messages) is list else [messages],
+            message=messages,
             signature=signature,
             from_verkey=self.public_key_base58,
+            key_type=KeyType.BLS12381G2,
         )
 
     def from_verification_method(

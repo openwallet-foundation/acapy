@@ -180,7 +180,7 @@ class LinkedDataSignature(LinkedDataProof, metaclass=ABCMeta):
             + sha256(c14n_doc.encode("utf-8")).digest()
         )
 
-    def _canonize(self, *, input, document_loader: DocumentLoader = None) -> str:
+    def _canonize(self, *, input, document_loader: DocumentLoader) -> str:
         """Canonize input document using URDNA2015 algorithm."""
         # application/n-quads format always returns str
         return jsonld.normalize(
@@ -193,10 +193,11 @@ class LinkedDataSignature(LinkedDataProof, metaclass=ABCMeta):
         )
 
     def _canonize_proof(
-        self, *, proof: dict, document: dict, document_loader: DocumentLoader = None
+        self, *, proof: dict, document: dict, document_loader: DocumentLoader
     ):
         """Canonize proof dictionary. Removes jws, signature, etc..."""
-        proof = {"@context": proof.get("@context") or SECURITY_CONTEXT_URL, **proof}
+        # Use default security context url if document has no context
+        proof = {"@context": document.get("@context") or SECURITY_CONTEXT_URL, **proof}
 
         proof.pop("jws", None)
         proof.pop("signatureValue", None)

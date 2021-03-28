@@ -15,7 +15,12 @@ from .suites import (
     BbsBlsSignature2020,
     BbsBlsSignatureProof2020,
 )
-from .crypto import KeyPair, Ed25519WalletKeyPair, Bls12381G2WalletKeyPair
+from .crypto import (
+    KeyPair,
+    Ed25519WalletKeyPair,
+    Bls12381G2WalletKeyPair,
+    WalletKeyPair,
+)
 from .document_loader import DocumentLoader, get_default_document_loader
 from .error import LinkedDataProofException
 from .validation_result import DocumentVerificationResult, ProofResult, PurposeResult
@@ -40,6 +45,7 @@ __all__ = [
     BbsBlsSignatureProof2020,
     # Key pairs
     KeyPair,
+    WalletKeyPair,
     Ed25519WalletKeyPair,
     Bls12381G2WalletKeyPair,
     # Document Loaders

@@ -2,6 +2,7 @@
 
 from typing import Optional
 
+from ....wallet.crypto import KeyType
 from ....wallet.util import b58_to_bytes
 from ....wallet.base import BaseWallet
 from ..error import LinkedDataProofException
@@ -37,7 +38,7 @@ class Ed25519WalletKeyPair(WalletKeyPair):
             )
 
         return await self.wallet.verify_message(
-            message, signature, self.public_key_base58
+            message, signature, self.public_key_base58, KeyType.ED25519
         )
 
     def from_verification_method(
