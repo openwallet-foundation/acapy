@@ -1,4 +1,4 @@
-"""Verifiable Credential model classes"""
+"""Verifiable Credential model classes."""
 
 from marshmallow import ValidationError
 import copy

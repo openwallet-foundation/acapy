@@ -75,11 +75,8 @@ class V20CredFormat(BaseModel):
         @property
         def handler(self) -> Type["V20CredFormatHandler"]:
             """Accessor for credential exchange format handler."""
-            # stupid cyclic imports
-            if not self._class:
-                self._class = ClassLoader.load_class(self.value.handler)
-
-            return self._class
+            # TODO: optimize
+            return ClassLoader.load_class(self.value.handler)
 
         def validate_fields(self, message_type: str, attachment_data: Mapping):
             """Raise ValidationError for invalid attachment formats."""

@@ -7,30 +7,28 @@ from ..vc_record import VCRecord
 
 sample_json_cred_1 = """
     {
-      "vc": {
-        "@context": "https://www.w3.org/2018/credentials/v1",
+        "@context": ["https://www.w3.org/2018/credentials/v1"],
         "id": "https://eu.com/claims/DriversLicense",
         "type": ["EUDriversLicense"],
         "issuer": "did:example:123",
         "issuanceDate": "2010-01-01T19:73:24Z",
         "credentialSchema": {
-          "id": "https://eu.com/claims/DriversLicense.json",
-          "type": "JsonSchemaValidator2018"
+            "id": "https://eu.com/claims/DriversLicense.json",
+            "type": "JsonSchemaValidator2018"
         },
         "credentialSubject": {
-          "id": "did:example:ebfeb1f712ebc6f1c276e12ec21",
-          "accounts": [
+            "id": "did:example:ebfeb1f712ebc6f1c276e12ec21",
+            "accounts": [
             {
-              "id": "1234567890",
-              "route": "DE-9876543210"
+                "id": "1234567890",
+                "route": "DE-9876543210"
             },
             {
-              "id": "2457913570",
-              "route": "DE-0753197542"
+                "id": "2457913570",
+                "route": "DE-0753197542"
             }
-          ]
+            ]
         }
-      }
     }
 """
 sample_json_cred_2 = """
@@ -88,7 +86,7 @@ sample_json_cred_3 = """
         },
         "issuanceDate": "2010-01-01T19:73:24Z",
         "credentialSchema": "https://example.org/examples/degree.json",
-        "credentialSubject": "did:example:ebfeb1f712ebc6f1c276e12ec21",
+        "credentialSubject": { "id": "did:example:ebfeb1f712ebc6f1c276e12ec21" },
         "proof": {
             "type": "RsaSignature2018",
             "created": "2017-06-18T21:19:10Z",

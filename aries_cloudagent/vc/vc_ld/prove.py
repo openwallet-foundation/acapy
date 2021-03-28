@@ -82,6 +82,7 @@ async def sign_presentation(
 
     Returns:
         dict: A verifiable presentation object
+
     """
     if not purpose and not challenge:
         raise LinkedDataProofException(
@@ -121,6 +122,7 @@ async def derive_credential(
 
     Returns:
         dict: The derived credential.
+
     """
 
     return await derive(

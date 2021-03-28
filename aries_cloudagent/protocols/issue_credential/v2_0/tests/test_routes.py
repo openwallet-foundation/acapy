@@ -1,6 +1,8 @@
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
+from ..formats.indy.handler import IndyCredFormatHandler
+from ..formats.ld_proof.handler import LDProofCredFormatHandler
 from .....admin.request_context import AdminRequestContext
 from .....wallet.base import BaseWallet, DIDInfo
 
@@ -995,7 +997,7 @@ class TestV20CredRoutes(AsyncTestCase):
                 async_mock.MagicMock(),
             )
 
-            await test_module.credential_exchange_send_request(self.request)
+            await test_module.credential_exchange_send_bound_request(self.request)
 
             mock_response.assert_called_once_with(mock_cx_rec.serialize.return_value)
 
@@ -1012,7 +1014,7 @@ class TestV20CredRoutes(AsyncTestCase):
             mock_cx_rec.retrieve_by_id.side_effect = test_module.StorageNotFoundError()
 
             with self.assertRaises(test_module.web.HTTPNotFound):
-                await test_module.credential_exchange_send_request(self.request)
+                await test_module.credential_exchange_send_bound_request(self.request)
 
     async def test_credential_exchange_send_request_no_conn_record(self):
         self.request.json = async_mock.CoroutineMock()
@@ -1044,7 +1046,7 @@ class TestV20CredRoutes(AsyncTestCase):
             )
 
             with self.assertRaises(test_module.web.HTTPBadRequest):
-                await test_module.credential_exchange_send_request(self.request)
+                await test_module.credential_exchange_send_bound_request(self.request)
 
     async def test_credential_exchange_send_request_not_ready(self):
         self.request.json = async_mock.CoroutineMock()
@@ -1075,7 +1077,7 @@ class TestV20CredRoutes(AsyncTestCase):
             )
 
             with self.assertRaises(test_module.web.HTTPForbidden):
-                await test_module.credential_exchange_send_request(self.request)
+                await test_module.credential_exchange_send_bound_request(self.request)
 
     async def test_credential_exchange_issue(self):
         self.request.json = async_mock.CoroutineMock()
@@ -1318,7 +1320,11 @@ class TestV20CredRoutes(AsyncTestCase):
             test_module, "V20CredExRecord", autospec=True
         ) as mock_cls_cx_rec, async_mock.patch.object(
             test_module.web, "json_response"
-        ) as mock_response:
+        ) as mock_response, async_mock.patch.object(
+            LDProofCredFormatHandler, "get_detail_record", autospec=True
+        ) as mock_ld_proof_get_detail_record, async_mock.patch.object(
+            IndyCredFormatHandler, "get_detail_record", autospec=True
+        ) as mock_indy_get_detail_record:
 
             mock_cls_cx_rec.retrieve_by_id = async_mock.CoroutineMock()
             mock_cls_cx_rec.retrieve_by_id.return_value.state = (
@@ -1327,14 +1333,10 @@ class TestV20CredRoutes(AsyncTestCase):
 
             mock_cx_rec = async_mock.MagicMock()
 
-            mock_cred_mgr.return_value.get_detail_record = async_mock.CoroutineMock(
-                side_effect=[
-                    async_mock.MagicMock(  # indy
-                        serialize=async_mock.MagicMock(return_value={"...": "..."})
-                    ),
-                    None,  # ld_proof
-                ]
+            mock_indy_get_detail_record.return_value = async_mock.MagicMock(  # indy
+                serialize=async_mock.MagicMock(return_value={"...": "..."})
             )
+            mock_ld_proof_get_detail_record.return_value = None  # ld_proof
 
             mock_cred_mgr.return_value.store_credential.return_value = (
                 mock_cx_rec,

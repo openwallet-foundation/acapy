@@ -163,7 +163,7 @@ def format_did_info(info: DIDInfo):
             "did": info.did,
             "verkey": info.verkey,
             "posture": DIDPosture.get(info.metadata).moniker,
-            "key_type": key_type,
+            "key_type": key_type.key_type,
         }
 
 

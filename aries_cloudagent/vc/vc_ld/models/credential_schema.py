@@ -151,7 +151,10 @@ class CredentialSchema(Schema):
 
     issuer = StrOrDictField(
         required=True,
-        description="The JSON-LD Verifiable Credential Issuer. Either string of object with id field.",
+        description=(
+            "The JSON-LD Verifiable Credential Issuer."
+            " Either string of object with id field."
+        ),
         example=DIDKey.EXAMPLE,
     )
 

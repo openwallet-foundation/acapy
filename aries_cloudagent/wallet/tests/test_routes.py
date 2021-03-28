@@ -7,7 +7,7 @@ from ...admin.request_context import AdminRequestContext
 from ...ledger.base import BaseLedger
 from ...wallet.base import BaseWallet, DIDInfo
 from ...multitenant.manager import MultitenantManager
-
+from ...wallet.crypto import KeyType
 from .. import routes as test_module
 from ..did_posture import DIDPosture
 
@@ -91,6 +91,7 @@ class TestWalletRoutes(AsyncTestCase):
                         "did": self.test_did,
                         "verkey": self.test_verkey,
                         "posture": DIDPosture.WALLET_ONLY.moniker,
+                        "key_type": KeyType.ED25519.key_type,
                     }
                 }
             )
@@ -123,11 +124,13 @@ class TestWalletRoutes(AsyncTestCase):
                             "did": self.test_posted_did,
                             "verkey": self.test_posted_verkey,
                             "posture": DIDPosture.POSTED.moniker,
+                            "key_type": KeyType.ED25519.key_type,
                         },
                         {
                             "did": self.test_did,
                             "verkey": self.test_verkey,
                             "posture": DIDPosture.WALLET_ONLY.moniker,
+                            "key_type": KeyType.ED25519.key_type,
                         },
                     ]
                 }
@@ -158,6 +161,7 @@ class TestWalletRoutes(AsyncTestCase):
                             "did": self.test_did,
                             "verkey": self.test_verkey,
                             "posture": DIDPosture.PUBLIC.moniker,
+                            "key_type": KeyType.ED25519.key_type,
                         }
                     ]
                 }
@@ -191,6 +195,7 @@ class TestWalletRoutes(AsyncTestCase):
                             "did": self.test_posted_did,
                             "verkey": self.test_posted_verkey,
                             "posture": DIDPosture.POSTED.moniker,
+                            "key_type": KeyType.ED25519.key_type,
                         }
                     ]
                 }
@@ -214,6 +219,7 @@ class TestWalletRoutes(AsyncTestCase):
                             "did": self.test_did,
                             "verkey": self.test_verkey,
                             "posture": DIDPosture.WALLET_ONLY.moniker,
+                            "key_type": KeyType.ED25519.key_type,
                         }
                     ]
                 }
@@ -248,6 +254,7 @@ class TestWalletRoutes(AsyncTestCase):
                             "did": self.test_did,
                             "verkey": self.test_verkey,
                             "posture": DIDPosture.WALLET_ONLY.moniker,
+                            "key_type": KeyType.ED25519.key_type,
                         }
                     ]
                 }
@@ -280,6 +287,7 @@ class TestWalletRoutes(AsyncTestCase):
                         "did": self.test_did,
                         "verkey": self.test_verkey,
                         "posture": DIDPosture.PUBLIC.moniker,
+                        "key_type": KeyType.ED25519.key_type,
                     }
                 }
             )
@@ -316,6 +324,7 @@ class TestWalletRoutes(AsyncTestCase):
                         "did": self.test_did,
                         "verkey": self.test_verkey,
                         "posture": DIDPosture.PUBLIC.moniker,
+                        "key_type": KeyType.ED25519.key_type,
                     }
                 }
             )
@@ -453,6 +462,7 @@ class TestWalletRoutes(AsyncTestCase):
                         "did": self.test_did,
                         "verkey": self.test_verkey,
                         "posture": DIDPosture.PUBLIC.moniker,
+                        "key_type": KeyType.ED25519.key_type,
                     }
                 }
             )
@@ -492,6 +502,7 @@ class TestWalletRoutes(AsyncTestCase):
                         "did": self.test_did,
                         "verkey": self.test_verkey,
                         "posture": DIDPosture.PUBLIC.moniker,
+                        "key_type": KeyType.ED25519.key_type,
                     }
                 }
             )
