@@ -937,6 +937,7 @@ class TestV20CredManager(AsyncTestCase):
             connection_id=connection_id,
             initiator=V20CredExRecord.INITIATOR_EXTERNAL,
             role=V20CredExRecord.ROLE_ISSUER,
+            state=V20CredExRecord.STATE_OFFER_SENT,
         )
         cred_request = V20CredRequest(
             formats=[

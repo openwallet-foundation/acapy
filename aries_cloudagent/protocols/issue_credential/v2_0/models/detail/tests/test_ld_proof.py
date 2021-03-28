@@ -6,16 +6,16 @@ from ..ld_proof import V20CredExRecordLDProof
 class TestV20CredExRecordLDProof(AsyncTestCase):
     async def test_record(self):
         same = [
-            V20CredExRecordLDProof(
-                cred_ex_ld_proof_id="dummy-0", cred_ex_id="abc", item="my-item"
-            )
+            V20CredExRecordLDProof(cred_ex_ld_proof_id="dummy-0", cred_ex_id="abc")
         ] * 2
         diff = [
             V20CredExRecordLDProof(
-                cred_ex_ld_proof_id="dummy-0", cred_ex_id="def", item="my-cred"
+                cred_ex_ld_proof_id="dummy-0",
+                cred_ex_id="def",
             ),
             V20CredExRecordLDProof(
-                cred_ex_ld_proof_id="dummy-0", cred_ex_id="abc", item="your-item"
+                cred_ex_ld_proof_id="dummy-0",
+                cred_ex_id="abc",
             ),
         ]
 

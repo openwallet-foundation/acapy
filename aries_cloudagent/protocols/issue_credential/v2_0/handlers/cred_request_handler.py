@@ -1,5 +1,11 @@
 """Credential request message handler."""
 
+from aries_cloudagent.protocols.issue_credential.v2_0.messages.cred_proposal import (
+    V20CredProposal,
+)
+from aries_cloudagent.protocols.issue_credential.v2_0.messages.cred_format import (
+    V20CredFormat,
+)
 from .....messaging.base_handler import (
     BaseHandler,
     BaseResponder,
@@ -51,7 +57,22 @@ class V20CredRequestHandler(BaseHandler):
 
         # If auto_issue is enabled, respond immediately
         if cred_ex_record.auto_issue:
-            if cred_ex_record.cred_proposal or cred_ex_record.cred_request:
+            cred_formats = [
+                V20CredFormat.Format.get(format.format)
+                for format in context.message.formats
+            ]
+
+            # TODO: this should be removed here and handled in the format
+            # specific handler. This way we don't bloat this file
+            can_respond_indy = (
+                V20CredFormat.Format.INDY in cred_formats
+                and V20CredProposal.deserialize(
+                    cred_ex_record.cred_proposal
+                ).credential_preview
+            )
+            can_respond_ld_proof = V20CredFormat.Format.LD_PROOF in cred_formats
+
+            if can_respond_indy or can_respond_ld_proof:
                 (
                     cred_ex_record,
                     cred_issue_message,
