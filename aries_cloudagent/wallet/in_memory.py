@@ -1,7 +1,7 @@
 """In-memory implementation of BaseWallet interface."""
 
 import asyncio
-from typing import Sequence
+from typing import List, Sequence, Tuple, Union
 
 from ..core.in_memory import InMemoryProfile
 
@@ -36,7 +36,10 @@ class InMemoryWallet(BaseWallet):
         self.profile = profile
 
     async def create_signing_key(
-        self, seed: str = None, metadata: dict = None
+        self,
+        key_type: KeyType,
+        seed: str = None,
+        metadata: dict = None,
     ) -> KeyInfo:
         """
         Create a new public/private signing keypair.
@@ -44,6 +47,7 @@ class InMemoryWallet(BaseWallet):
         Args:
             seed: Seed to use for signing key
             metadata: Optional metadata to store with the keypair
+            key_type: Key type to generate. Default to ed25519
 
         Returns:
             A `KeyInfo` representing the new record
@@ -53,7 +57,7 @@ class InMemoryWallet(BaseWallet):
 
         """
         seed = validate_seed(seed) or random_seed()
-        verkey, secret = create_keypair(seed)
+        verkey, secret = create_keypair(key_type, seed)
         verkey_enc = bytes_to_b58(verkey)
         if verkey_enc in self.profile.keys:
             raise WalletDuplicateError("Verification key already present in wallet")
@@ -62,8 +66,13 @@ class InMemoryWallet(BaseWallet):
             "secret": secret,
             "verkey": verkey_enc,
             "metadata": metadata.copy() if metadata else {},
+            "key_type": key_type,
         }
-        return KeyInfo(verkey_enc, self.profile.keys[verkey_enc]["metadata"].copy())
+        return KeyInfo(
+            verkey=verkey_enc,
+            metadata=self.profile.keys[verkey_enc]["metadata"].copy(),
+            key_type=key_type,
+        )
 
     async def get_signing_key(self, verkey: str) -> KeyInfo:
         """
@@ -82,7 +91,11 @@ class InMemoryWallet(BaseWallet):
         if verkey not in self.profile.keys:
             raise WalletNotFoundError("Key not found: {}".format(verkey))
         key = self.profile.keys[verkey]
-        return KeyInfo(key["verkey"], key["metadata"].copy())
+        return KeyInfo(
+            verkey=key["verkey"],
+            metadata=key["metadata"].copy(),
+            key_type=key["key_type"],
+        )
 
     async def replace_signing_key_metadata(self, verkey: str, metadata: dict):
         """
@@ -115,10 +128,19 @@ class InMemoryWallet(BaseWallet):
             WalletNotFoundError: if wallet does not own DID
 
         """
-        if did not in self.profile.local_dids:
+        local_did = self.profile.local_dids.get(did)
+        if not local_did:
             raise WalletNotFoundError("Wallet owns no such DID: {}".format(did))
 
-        key_info = await self.create_signing_key(next_seed, {"did": did})
+        did_method = DIDMethod.from_did(did)
+        if not did_method.supports_rotation:
+            raise WalletError(
+                f"Did method {did_method.method_name} does not support key rotation."
+            )
+
+        key_info = await self.create_signing_key(
+            local_did["key_type"], next_seed, {"did": did}
+        )
         return key_info.verkey
 
     async def rotate_did_keypair_apply(self, did: str) -> None:
@@ -144,7 +166,9 @@ class InMemoryWallet(BaseWallet):
             raise WalletError("Key rotation not in progress for DID: {}".format(did))
         verkey_enc = temp_keys[0]
 
-        self.profile.local_dids[did].update(
+        local_did = self.profile.local_dids[did]
+
+        local_did.update(
             {
                 "seed": self.profile.keys[verkey_enc]["seed"],
                 "secret": self.profile.keys[verkey_enc]["secret"],
@@ -152,26 +176,31 @@ class InMemoryWallet(BaseWallet):
             }
         )
         self.profile.keys.pop(verkey_enc)
-        return DIDInfo(did, verkey_enc, self.profile.local_dids[did]["metadata"].copy())
+        return DIDInfo(
+            did=did,
+            verkey=verkey_enc,
+            metadata=local_did["metadata"].copy(),
+            method=local_did["method"],
+            key_type=local_did["key_type"],
+        )
 
     async def create_local_did(
         self,
+        method: DIDMethod,
+        key_type: KeyType,
         seed: str = None,
         did: str = None,
         metadata: dict = None,
-        *,
-        method: DIDMethod = DIDMethod.SOV,
-        key_type: KeyType = KeyType.ED25519,
     ) -> DIDInfo:
         """
         Create and store a new local DID.
 
         Args:
+            method: The method to use for the DID
+            key_type: The key type to use for the DID
             seed: Optional seed to use for DID
             did: The DID to use
             metadata: Metadata to store with DID
-            method: The method to use for the DID. Defaults to did:sov
-            key_type: The key type to use for the DID. defaults to ed25519.
 
         Returns:
             A `DIDInfo` instance representing the created DID
@@ -185,22 +214,25 @@ class InMemoryWallet(BaseWallet):
         # validate key_type
         if not method.supports_key_type(key_type):
             raise WalletError(
-                f"Invalid key type {key_type.key_type}"
-                f" for did method {method.method_name}"
+                f"Invalid key type {key_type.key_type} for method {method.method_name}"
             )
 
-        verkey, secret = create_keypair(seed)
+        verkey, secret = create_keypair(key_type, seed)
         verkey_enc = bytes_to_b58(verkey)
 
-        if not did:
-            # TODO: each method should have it's own class (like DIDKey)
-            # that can handle public key + key type to did id
-            if method == DIDMethod.SOV:
+        # We need some did method specific handling. If more did methods
+        # are added it is probably better create a did method specific handler
+        if method == DIDMethod.KEY:
+            if did:
+                raise WalletError("Not allowed to set did for did method key")
+
+            did = DIDKey.from_public_key(verkey, key_type).did
+        elif method == DIDMethod.SOV:
+            if not did:
                 did = bytes_to_b58(verkey[:16])
-            elif method == DIDMethod.KEY:
-                did = DIDKey.from_public_key(verkey, key_type).did
-            else:
-                raise WalletError(f"Cannot create did for method: {method.method_name}")
+        else:
+            raise WalletError(f"Unsupported did method: {method.method_name}")
+
         if (
             did in self.profile.local_dids
             and self.profile.local_dids[did]["verkey"] != verkey_enc
@@ -211,8 +243,16 @@ class InMemoryWallet(BaseWallet):
             "secret": secret,
             "verkey": verkey_enc,
             "metadata": metadata.copy() if metadata else {},
+            "key_type": key_type,
+            "method": method,
         }
-        return DIDInfo(did, verkey_enc, self.profile.local_dids[did]["metadata"].copy())
+        return DIDInfo(
+            did=did,
+            verkey=verkey_enc,
+            metadata=self.profile.local_dids[did]["metadata"].copy(),
+            method=method,
+            key_type=key_type,
+        )
 
     def _get_did_info(self, did: str) -> DIDInfo:
         """
@@ -226,7 +266,13 @@ class InMemoryWallet(BaseWallet):
 
         """
         info = self.profile.local_dids[did]
-        return DIDInfo(did=did, verkey=info["verkey"], metadata=info["metadata"].copy())
+        return DIDInfo(
+            did=did,
+            verkey=info["verkey"],
+            metadata=info["metadata"].copy(),
+            method=info["method"],
+            key_type=info["key_type"],
+        )
 
     async def get_local_dids(self) -> Sequence[DIDInfo]:
         """
@@ -316,12 +362,14 @@ class InMemoryWallet(BaseWallet):
 
         raise WalletError("Private key not found for verkey: {}".format(verkey))
 
-    async def sign_message(self, message: bytes, from_verkey: str) -> bytes:
+    async def sign_message(
+        self, message: Union[List[bytes], bytes], from_verkey: str
+    ) -> bytes:
         """
-        Sign a message using the private key associated with a given verkey.
+        Sign message(s) using the private key associated with a given verkey.
 
         Args:
-            message: Message bytes to sign
+            message: Message(s) bytes to sign
             from_verkey: The verkey to use to sign
 
         Returns:
@@ -336,20 +384,31 @@ class InMemoryWallet(BaseWallet):
             raise WalletError("Message not provided")
         if not from_verkey:
             raise WalletError("Verkey not provided")
+
+        try:
+            key_info = await self.get_signing_key(from_verkey)
+        except WalletNotFoundError:
+            key_info = await self.get_local_did_for_verkey(from_verkey)
+
         secret = self._get_private_key(from_verkey)
-        signature = sign_message(message, secret)
+        signature = sign_message(message, secret, key_info.key_type)
         return signature
 
     async def verify_message(
-        self, message: bytes, signature: bytes, from_verkey: str
+        self,
+        message: Union[List[bytes], bytes],
+        signature: bytes,
+        from_verkey: str,
+        key_type: KeyType,
     ) -> bool:
         """
         Verify a signature against the public key of the signer.
 
         Args:
-            message: Message to verify
+            message: Message(s) to verify
             signature: Signature to verify
             from_verkey: Verkey to use in verification
+            key_type: The key type to derive the signature verification algorithm from
 
         Returns:
             True if verified, else False
@@ -367,7 +426,8 @@ class InMemoryWallet(BaseWallet):
         if not message:
             raise WalletError("Message not provided")
         verkey_bytes = b58_to_bytes(from_verkey)
-        verified = verify_signed_message(signature + message, verkey_bytes)
+
+        verified = verify_signed_message(message, signature, verkey_bytes, key_type)
         return verified
 
     async def pack_message(
@@ -398,7 +458,7 @@ class InMemoryWallet(BaseWallet):
         )
         return result
 
-    async def unpack_message(self, enc_message: bytes) -> (str, str, str):
+    async def unpack_message(self, enc_message: bytes) -> Tuple[str, str, str]:
         """
         Unpack a message.
 

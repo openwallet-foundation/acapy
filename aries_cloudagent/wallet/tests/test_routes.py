@@ -7,7 +7,7 @@ from ...admin.request_context import AdminRequestContext
 from ...ledger.base import BaseLedger
 from ...wallet.base import BaseWallet, DIDInfo
 from ...multitenant.manager import MultitenantManager
-from ...wallet.crypto import KeyType
+from ...wallet.crypto import DIDMethod, KeyType
 from .. import routes as test_module
 from ..did_posture import DIDPosture
 
@@ -56,7 +56,11 @@ class TestWalletRoutes(AsyncTestCase):
 
     def test_format_did_info(self):
         did_info = DIDInfo(
-            self.test_did, self.test_verkey, DIDPosture.WALLET_ONLY.metadata
+            self.test_did,
+            self.test_verkey,
+            DIDPosture.WALLET_ONLY.metadata,
+            DIDMethod.SOV,
+            KeyType.ED25519,
         )
         result = test_module.format_did_info(did_info)
         assert (
@@ -66,13 +70,21 @@ class TestWalletRoutes(AsyncTestCase):
         )
 
         did_info = DIDInfo(
-            self.test_did, self.test_verkey, {"posted": True, "public": True}
+            self.test_did,
+            self.test_verkey,
+            {"posted": True, "public": True},
+            DIDMethod.SOV,
+            KeyType.ED25519,
         )
         result = test_module.format_did_info(did_info)
         assert result["posture"] == DIDPosture.PUBLIC.moniker
 
         did_info = DIDInfo(
-            self.test_did, self.test_verkey, {"posted": True, "public": False}
+            self.test_did,
+            self.test_verkey,
+            {"posted": True, "public": False},
+            DIDMethod.SOV,
+            KeyType.ED25519,
         )
         result = test_module.format_did_info(did_info)
         assert result["posture"] == DIDPosture.POSTED.moniker
@@ -82,7 +94,11 @@ class TestWalletRoutes(AsyncTestCase):
             test_module.web, "json_response", async_mock.Mock()
         ) as json_response:
             self.wallet.create_local_did.return_value = DIDInfo(
-                self.test_did, self.test_verkey, DIDPosture.WALLET_ONLY.metadata
+                self.test_did,
+                self.test_verkey,
+                DIDPosture.WALLET_ONLY.metadata,
+                DIDMethod.SOV,
+                KeyType.ED25519,
             )
             result = await test_module.wallet_create_did(self.request)
             json_response.assert_called_once_with(
@@ -108,12 +124,18 @@ class TestWalletRoutes(AsyncTestCase):
         ) as json_response:  # , async_mock.patch.object(
             self.wallet.get_local_dids.return_value = [
                 DIDInfo(
-                    self.test_did, self.test_verkey, DIDPosture.WALLET_ONLY.metadata
+                    self.test_did,
+                    self.test_verkey,
+                    DIDPosture.WALLET_ONLY.metadata,
+                    DIDMethod.SOV,
+                    KeyType.ED25519,
                 ),
                 DIDInfo(
                     self.test_posted_did,
                     self.test_posted_verkey,
                     DIDPosture.POSTED.metadata,
+                    DIDMethod.SOV,
+                    KeyType.ED25519,
                 ),
             ]
             result = await test_module.wallet_did_list(self.request)
@@ -144,13 +166,19 @@ class TestWalletRoutes(AsyncTestCase):
             test_module.web, "json_response", async_mock.Mock()
         ) as json_response:
             self.wallet.get_public_did.return_value = DIDInfo(
-                self.test_did, self.test_verkey, DIDPosture.PUBLIC.metadata
+                self.test_did,
+                self.test_verkey,
+                DIDPosture.PUBLIC.metadata,
+                DIDMethod.SOV,
+                KeyType.ED25519,
             )
             self.wallet.get_posted_dids.return_value = [
                 DIDInfo(
                     self.test_posted_did,
                     self.test_posted_verkey,
                     DIDPosture.POSTED.metadata,
+                    DIDMethod.SOV,
+                    KeyType.ED25519,
                 )
             ]
             result = await test_module.wallet_did_list(self.request)
@@ -175,7 +203,11 @@ class TestWalletRoutes(AsyncTestCase):
             test_module.web, "json_response", async_mock.Mock()
         ) as json_response:
             self.wallet.get_public_did.return_value = DIDInfo(
-                self.test_did, self.test_verkey, DIDPosture.PUBLIC.metadata
+                self.test_did,
+                self.test_verkey,
+                DIDPosture.PUBLIC.metadata,
+                DIDMethod.SOV,
+                KeyType.ED25519,
             )
             self.wallet.get_posted_dids.return_value = [
                 DIDInfo(
@@ -185,6 +217,8 @@ class TestWalletRoutes(AsyncTestCase):
                         "posted": True,
                         "public": False,
                     },
+                    DIDMethod.SOV,
+                    KeyType.ED25519,
                 )
             ]
             result = await test_module.wallet_did_list(self.request)
@@ -209,7 +243,11 @@ class TestWalletRoutes(AsyncTestCase):
             test_module.web, "json_response", async_mock.Mock()
         ) as json_response:
             self.wallet.get_local_did.return_value = DIDInfo(
-                self.test_did, self.test_verkey, DIDPosture.WALLET_ONLY.metadata
+                self.test_did,
+                self.test_verkey,
+                DIDPosture.WALLET_ONLY.metadata,
+                DIDMethod.SOV,
+                KeyType.ED25519,
             )
             result = await test_module.wallet_did_list(self.request)
             json_response.assert_called_once_with(
@@ -244,7 +282,11 @@ class TestWalletRoutes(AsyncTestCase):
             test_module.web, "json_response", async_mock.Mock()
         ) as json_response:
             self.wallet.get_local_did_for_verkey.return_value = DIDInfo(
-                self.test_did, self.test_verkey, DIDPosture.WALLET_ONLY.metadata
+                self.test_did,
+                self.test_verkey,
+                DIDPosture.WALLET_ONLY.metadata,
+                DIDMethod.SOV,
+                KeyType.ED25519,
             )
             result = await test_module.wallet_did_list(self.request)
             json_response.assert_called_once_with(
@@ -278,7 +320,11 @@ class TestWalletRoutes(AsyncTestCase):
             test_module.web, "json_response", async_mock.Mock()
         ) as json_response:
             self.wallet.get_public_did.return_value = DIDInfo(
-                self.test_did, self.test_verkey, DIDPosture.PUBLIC.metadata
+                self.test_did,
+                self.test_verkey,
+                DIDPosture.PUBLIC.metadata,
+                DIDMethod.SOV,
+                KeyType.ED25519,
             )
             result = await test_module.wallet_get_public_did(self.request)
             json_response.assert_called_once_with(
@@ -312,7 +358,11 @@ class TestWalletRoutes(AsyncTestCase):
             test_module.web, "json_response", async_mock.Mock()
         ) as json_response:
             self.wallet.set_public_did.return_value = DIDInfo(
-                self.test_did, self.test_verkey, DIDPosture.PUBLIC.metadata
+                self.test_did,
+                self.test_verkey,
+                DIDPosture.PUBLIC.metadata,
+                DIDMethod.SOV,
+                KeyType.ED25519,
             )
             result = await test_module.wallet_set_public_did(self.request)
             self.wallet.set_public_did.assert_awaited_once_with(
@@ -351,7 +401,11 @@ class TestWalletRoutes(AsyncTestCase):
             test_module.web, "json_response", async_mock.Mock()
         ):
             self.wallet.set_public_did.return_value = DIDInfo(
-                self.test_did, self.test_verkey, DIDPosture.PUBLIC.metadata
+                self.test_did,
+                self.test_verkey,
+                DIDPosture.PUBLIC.metadata,
+                DIDMethod.SOV,
+                KeyType.ED25519,
             )
             await test_module.wallet_set_public_did(self.request)
 
@@ -408,7 +462,11 @@ class TestWalletRoutes(AsyncTestCase):
             test_module.web, "json_response", async_mock.Mock()
         ) as json_response:
             self.wallet.get_public_did.return_value = DIDInfo(
-                self.test_did, self.test_verkey, DIDPosture.PUBLIC.metadata
+                self.test_did,
+                self.test_verkey,
+                DIDPosture.PUBLIC.metadata,
+                DIDMethod.SOV,
+                KeyType.ED25519,
             )
             self.wallet.set_public_did.side_effect = test_module.WalletError()
             with self.assertRaises(test_module.web.HTTPBadRequest):
@@ -428,7 +486,11 @@ class TestWalletRoutes(AsyncTestCase):
             test_module.web, "json_response", async_mock.Mock()
         ) as json_response:
             self.wallet.get_public_did.return_value = DIDInfo(
-                self.test_did, self.test_verkey, DIDPosture.PUBLIC.metadata
+                self.test_did,
+                self.test_verkey,
+                DIDPosture.PUBLIC.metadata,
+                DIDMethod.SOV,
+                KeyType.ED25519,
             )
             self.wallet.set_public_did.side_effect = test_module.WalletNotFoundError()
             with self.assertRaises(test_module.web.HTTPNotFound):
@@ -451,6 +513,8 @@ class TestWalletRoutes(AsyncTestCase):
                 self.test_did,
                 self.test_verkey,
                 {**DIDPosture.PUBLIC.metadata, "endpoint": "https://endpoint.com"},
+                DIDMethod.SOV,
+                KeyType.ED25519,
             )
             result = await test_module.wallet_set_public_did(self.request)
             self.wallet.set_public_did.assert_awaited_once_with(
@@ -485,7 +549,11 @@ class TestWalletRoutes(AsyncTestCase):
             test_module.web, "json_response", async_mock.Mock()
         ) as json_response:
             did_info = DIDInfo(
-                self.test_did, self.test_verkey, DIDPosture.PUBLIC.metadata
+                self.test_did,
+                self.test_verkey,
+                DIDPosture.PUBLIC.metadata,
+                DIDMethod.SOV,
+                KeyType.ED25519,
             )
             self.wallet.get_local_did.return_value = did_info
             self.wallet.set_public_did.return_value = did_info
@@ -526,9 +594,15 @@ class TestWalletRoutes(AsyncTestCase):
             self.test_did,
             self.test_verkey,
             {"public": False, "endpoint": "http://old-endpoint.ca"},
+            DIDMethod.SOV,
+            KeyType.ED25519,
         )
         self.wallet.get_public_did.return_value = DIDInfo(
-            self.test_did, self.test_verkey, DIDPosture.PUBLIC.metadata
+            self.test_did,
+            self.test_verkey,
+            DIDPosture.PUBLIC.metadata,
+            DIDMethod.SOV,
+            KeyType.ED25519,
         )
 
         with async_mock.patch.object(
@@ -549,9 +623,16 @@ class TestWalletRoutes(AsyncTestCase):
             self.test_did,
             self.test_verkey,
             {"public": False, "endpoint": "http://old-endpoint.ca"},
+            DIDMethod.SOV,
+            KeyType.ED25519,
         )
         self.wallet.get_public_did.return_value = DIDInfo(
-            self.test_did, self.test_verkey, DIDPosture.PUBLIC.metadata
+            self.test_did,
+            self.test_verkey,
+            DIDPosture.PUBLIC.metadata,
+            KeyType.ED25519,
+            DIDMethod.SOV,
+            KeyType.ED25519,
         )
         self.wallet.set_did_endpoint.side_effect = test_module.LedgerConfigError()
 
@@ -603,6 +684,8 @@ class TestWalletRoutes(AsyncTestCase):
             self.test_did,
             self.test_verkey,
             {"public": False, "endpoint": "http://old-endpoint.ca"},
+            DIDMethod.SOV,
+            KeyType.ED25519,
         )
 
         with async_mock.patch.object(
@@ -645,7 +728,13 @@ class TestWalletRoutes(AsyncTestCase):
             test_module.web, "json_response", async_mock.Mock()
         ) as json_response:
             self.wallet.get_local_did = async_mock.CoroutineMock(
-                return_value=DIDInfo("did", "verkey", {"public": False})
+                return_value=DIDInfo(
+                    "did",
+                    "verkey",
+                    {"public": False},
+                    DIDMethod.SOV,
+                    KeyType.ED25519,
+                )
             )
             self.wallet.rotate_did_keypair_start = async_mock.CoroutineMock()
             self.wallet.rotate_did_keypair_apply = async_mock.CoroutineMock()
@@ -674,7 +763,13 @@ class TestWalletRoutes(AsyncTestCase):
             await test_module.wallet_rotate_did_keypair(self.request)
 
         self.wallet.get_local_did = async_mock.CoroutineMock(
-            return_value=DIDInfo("did", "verkey", {"posted": True, "public": True})
+            return_value=DIDInfo(
+                "did",
+                "verkey",
+                {"posted": True, "public": True},
+                DIDMethod.SOV,
+                KeyType.ED25519,
+            )
         )
         with self.assertRaises(test_module.web.HTTPBadRequest):
             await test_module.wallet_rotate_did_keypair(self.request)
@@ -683,7 +778,13 @@ class TestWalletRoutes(AsyncTestCase):
         self.request.query = {"did": "did"}
 
         self.wallet.get_local_did = async_mock.CoroutineMock(
-            return_value=DIDInfo("did", "verkey", {"public": False})
+            return_value=DIDInfo(
+                "did",
+                "verkey",
+                {"public": False},
+                DIDMethod.SOV,
+                KeyType.ED25519,
+            )
         )
         self.wallet.rotate_did_keypair_start = async_mock.CoroutineMock(
             side_effect=test_module.WalletError()

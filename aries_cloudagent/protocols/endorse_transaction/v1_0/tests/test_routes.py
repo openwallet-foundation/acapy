@@ -7,6 +7,7 @@ from .....connections.models.conn_record import ConnRecord
 from .....core.in_memory import InMemoryProfile
 from .....ledger.base import BaseLedger
 from .....wallet.base import BaseWallet, DIDInfo
+from .....wallet.crypto import DIDMethod, KeyType
 
 from .. import routes as test_module
 from ..models.transaction_record import TransactionRecord
@@ -387,7 +388,13 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
 
         self.session_inject[BaseWallet] = async_mock.MagicMock(
             get_public_did=async_mock.CoroutineMock(
-                return_value=DIDInfo("did", "verkey", {"meta": "data"})
+                return_value=DIDInfo(
+                    "did",
+                    "verkey",
+                    {"meta": "data"},
+                    method=DIDMethod.SOV,
+                    key_type=KeyType.ED25519,
+                )
             )
         )
 
@@ -445,7 +452,13 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
 
         self.session_inject[BaseWallet] = async_mock.MagicMock(
             get_public_did=async_mock.CoroutineMock(
-                return_value=DIDInfo("did", "verkey", {"meta": "data"})
+                return_value=DIDInfo(
+                    "did",
+                    "verkey",
+                    {"meta": "data"},
+                    method=DIDMethod.SOV,
+                    key_type=KeyType.ED25519,
+                )
             )
         )
 
@@ -462,7 +475,13 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
 
         self.session_inject[BaseWallet] = async_mock.MagicMock(
             get_public_did=async_mock.CoroutineMock(
-                return_value=DIDInfo("did", "verkey", {"meta": "data"})
+                return_value=DIDInfo(
+                    "did",
+                    "verkey",
+                    {"meta": "data"},
+                    method=DIDMethod.SOV,
+                    key_type=KeyType.ED25519,
+                )
             )
         )
 
@@ -484,7 +503,13 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
 
         self.session_inject[BaseWallet] = async_mock.MagicMock(
             get_public_did=async_mock.CoroutineMock(
-                return_value=DIDInfo("did", "verkey", {"meta": "data"})
+                return_value=DIDInfo(
+                    "did",
+                    "verkey",
+                    {"meta": "data"},
+                    method=DIDMethod.SOV,
+                    key_type=KeyType.ED25519,
+                )
             )
         )
 
@@ -508,7 +533,13 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
         self.context.injector.clear_binding(BaseLedger)
         self.session_inject[BaseWallet] = async_mock.MagicMock(
             get_public_did=async_mock.CoroutineMock(
-                return_value=DIDInfo("did", "verkey", {"meta": "data"})
+                return_value=DIDInfo(
+                    "did",
+                    "verkey",
+                    {"meta": "data"},
+                    method=DIDMethod.SOV,
+                    key_type=KeyType.ED25519,
+                )
             )
         )
 
@@ -550,7 +581,13 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
 
         self.session_inject[BaseWallet] = async_mock.MagicMock(
             get_public_did=async_mock.CoroutineMock(
-                return_value=DIDInfo("did", "verkey", {"meta": "data"})
+                return_value=DIDInfo(
+                    "did",
+                    "verkey",
+                    {"meta": "data"},
+                    method=DIDMethod.SOV,
+                    key_type=KeyType.ED25519,
+                )
             )
         )
 
@@ -580,7 +617,13 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
 
         self.session_inject[BaseWallet] = async_mock.MagicMock(
             get_public_did=async_mock.CoroutineMock(
-                return_value=DIDInfo("did", "verkey", {"meta": "data"})
+                return_value=DIDInfo(
+                    "did",
+                    "verkey",
+                    {"meta": "data"},
+                    method=DIDMethod.SOV,
+                    key_type=KeyType.ED25519,
+                )
             )
         )
         self.ledger.txn_endorse = async_mock.CoroutineMock(
@@ -625,7 +668,13 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
 
         self.session_inject[BaseWallet] = async_mock.MagicMock(
             get_public_did=async_mock.CoroutineMock(
-                return_value=DIDInfo("did", "verkey", {"meta": "data"})
+                return_value=DIDInfo(
+                    "did",
+                    "verkey",
+                    {"meta": "data"},
+                    method=DIDMethod.SOV,
+                    key_type=KeyType.ED25519,
+                )
             )
         )
 
@@ -664,7 +713,13 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
 
         self.session_inject[BaseWallet] = async_mock.MagicMock(
             get_public_did=async_mock.CoroutineMock(
-                return_value=DIDInfo("did", "verkey", {"meta": "data"})
+                return_value=DIDInfo(
+                    "did",
+                    "verkey",
+                    {"meta": "data"},
+                    method=DIDMethod.SOV,
+                    key_type=KeyType.ED25519,
+                )
             )
         )
 
@@ -723,7 +778,13 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
 
         self.session_inject[BaseWallet] = async_mock.MagicMock(
             get_public_did=async_mock.CoroutineMock(
-                return_value=DIDInfo("did", "verkey", {"meta": "data"})
+                return_value=DIDInfo(
+                    "did",
+                    "verkey",
+                    {"meta": "data"},
+                    method=DIDMethod.SOV,
+                    key_type=KeyType.ED25519,
+                )
             )
         )
 
@@ -740,7 +801,13 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
 
         self.session_inject[BaseWallet] = async_mock.MagicMock(
             get_public_did=async_mock.CoroutineMock(
-                return_value=DIDInfo("did", "verkey", {"meta": "data"})
+                return_value=DIDInfo(
+                    "did",
+                    "verkey",
+                    {"meta": "data"},
+                    method=DIDMethod.SOV,
+                    key_type=KeyType.ED25519,
+                )
             )
         )
 
@@ -762,7 +829,13 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
 
         self.session_inject[BaseWallet] = async_mock.MagicMock(
             get_public_did=async_mock.CoroutineMock(
-                return_value=DIDInfo("did", "verkey", {"meta": "data"})
+                return_value=DIDInfo(
+                    "did",
+                    "verkey",
+                    {"meta": "data"},
+                    method=DIDMethod.SOV,
+                    key_type=KeyType.ED25519,
+                )
             )
         )
 
@@ -786,7 +859,13 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
 
         self.session_inject[BaseWallet] = async_mock.MagicMock(
             get_public_did=async_mock.CoroutineMock(
-                return_value=DIDInfo("did", "verkey", {"meta": "data"})
+                return_value=DIDInfo(
+                    "did",
+                    "verkey",
+                    {"meta": "data"},
+                    method=DIDMethod.SOV,
+                    key_type=KeyType.ED25519,
+                )
             )
         )
 
@@ -816,7 +895,13 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
 
         self.session_inject[BaseWallet] = async_mock.MagicMock(
             get_public_did=async_mock.CoroutineMock(
-                return_value=DIDInfo("did", "verkey", {"meta": "data"})
+                return_value=DIDInfo(
+                    "did",
+                    "verkey",
+                    {"meta": "data"},
+                    method=DIDMethod.SOV,
+                    key_type=KeyType.ED25519,
+                )
             )
         )
 

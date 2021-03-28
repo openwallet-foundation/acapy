@@ -3,6 +3,7 @@ from asynctest import mock as async_mock
 
 from .....admin.request_context import AdminRequestContext
 from .....wallet.base import BaseWallet, DIDInfo
+from .....wallet.crypto import DIDMethod, KeyType
 
 from .. import routes as test_module
 
@@ -408,10 +409,22 @@ class TestCredentialRoutes(AsyncTestCase):
         self.context.update_settings({"default_endpoint": "http://1.2.3.4:8081"})
         self.session_inject[BaseWallet] = async_mock.MagicMock(
             get_local_did=async_mock.CoroutineMock(
-                return_value=DIDInfo("did", "verkey", {"meta": "data"})
+                return_value=DIDInfo(
+                    "did",
+                    "verkey",
+                    {"meta": "data"},
+                    method=DIDMethod.SOV,
+                    key_type=KeyType.ED25519,
+                )
             ),
             get_public_did=async_mock.CoroutineMock(
-                return_value=DIDInfo("public-did", "verkey", {"meta": "data"})
+                return_value=DIDInfo(
+                    "public-did",
+                    "verkey",
+                    {"meta": "data"},
+                    method=DIDMethod.SOV,
+                    key_type=KeyType.ED25519,
+                )
             ),
         )
 
@@ -502,10 +515,22 @@ class TestCredentialRoutes(AsyncTestCase):
         self.context.update_settings({"default_endpoint": "http://1.2.3.4:8081"})
         self.session_inject[BaseWallet] = async_mock.MagicMock(
             get_public_did=async_mock.CoroutineMock(
-                return_value=DIDInfo("public-did", "verkey", {"meta": "data"})
+                return_value=DIDInfo(
+                    "public-did",
+                    "verkey",
+                    {"meta": "data"},
+                    method=DIDMethod.SOV,
+                    key_type=KeyType.ED25519,
+                )
             ),
             get_local_did=async_mock.CoroutineMock(
-                return_value=DIDInfo("did", "verkey", {"meta": "data"})
+                return_value=DIDInfo(
+                    "did",
+                    "verkey",
+                    {"meta": "data"},
+                    method=DIDMethod.SOV,
+                    key_type=KeyType.ED25519,
+                )
             ),
         )
 
@@ -573,7 +598,13 @@ class TestCredentialRoutes(AsyncTestCase):
 
         self.session_inject[BaseWallet] = async_mock.MagicMock(
             get_public_did=async_mock.CoroutineMock(
-                return_value=DIDInfo("did", "verkey", {"meta": "data"})
+                return_value=DIDInfo(
+                    "did",
+                    "verkey",
+                    {"meta": "data"},
+                    method=DIDMethod.SOV,
+                    key_type=KeyType.ED25519,
+                )
             ),
         )
 
@@ -595,10 +626,22 @@ class TestCredentialRoutes(AsyncTestCase):
         self.context.update_settings({"default_endpoint": "http://1.2.3.4:8081"})
         self.session_inject[BaseWallet] = async_mock.MagicMock(
             get_local_did=async_mock.CoroutineMock(
-                return_value=DIDInfo("did", "verkey", {"meta": "data"})
+                return_value=DIDInfo(
+                    "did",
+                    "verkey",
+                    {"meta": "data"},
+                    method=DIDMethod.SOV,
+                    key_type=KeyType.ED25519,
+                )
             ),
             get_public_did=async_mock.CoroutineMock(
-                return_value=DIDInfo("public-did", "verkey", {"meta": "data"})
+                return_value=DIDInfo(
+                    "public-did",
+                    "verkey",
+                    {"meta": "data"},
+                    method=DIDMethod.SOV,
+                    key_type=KeyType.ED25519,
+                )
             ),
         )
 

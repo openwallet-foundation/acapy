@@ -1,17 +1,28 @@
 """Wallet base class."""
 
 from abc import ABC, abstractmethod
-from collections import namedtuple
-from typing import Sequence, Tuple
+from typing import List, NamedTuple, Sequence, Tuple, Union
 
 from .crypto import DIDMethod, KeyType
 from ..ledger.base import BaseLedger
 from ..ledger.endpoint_type import EndpointType
+from .error import WalletError
 
 from .did_posture import DIDPosture
 
-KeyInfo = namedtuple("KeyInfo", "verkey metadata")
-DIDInfo = namedtuple("DIDInfo", "did verkey metadata")
+KeyInfo = NamedTuple(
+    "KeyInfo", [("verkey", str), ("metadata", dict), ("key_type", KeyType)]
+)
+DIDInfo = NamedTuple(
+    "DIDInfo",
+    [
+        ("did", str),
+        ("verkey", str),
+        ("metadata", dict),
+        ("method", DIDMethod),
+        ("key_type", KeyType),
+    ],
+)
 
 
 class BaseWallet(ABC):
@@ -19,11 +30,12 @@ class BaseWallet(ABC):
 
     @abstractmethod
     async def create_signing_key(
-        self, seed: str = None, metadata: dict = None
+        self, key_type: KeyType, seed: str = None, metadata: dict = None
     ) -> KeyInfo:
         """Create a new public/private signing keypair.
 
         Args:
+            key_type: Key type to create
             seed: Optional seed allowing deterministic key creation
             metadata: Optional metadata to store with the keypair
 
@@ -90,22 +102,21 @@ class BaseWallet(ABC):
     @abstractmethod
     async def create_local_did(
         self,
+        method: DIDMethod,
+        key_type: KeyType,
         seed: str = None,
         did: str = None,
         metadata: dict = None,
-        *,
-        method: DIDMethod = DIDMethod.SOV,
-        key_type: KeyType = KeyType.ED25519
     ) -> DIDInfo:
         """
         Create and store a new local DID.
 
         Args:
+            method: The method to use for the DID
+            key_type: The key type to use for the DID
             seed: Optional seed to use for DID
             did: The DID to use
             metadata: Metadata to store with DID
-            method: The method to use for the DID. Defaults to did:sov
-            key_type: The key type to use for the DID. defaults to ed25519.
 
         Returns:
             The created `DIDInfo`
@@ -113,7 +124,12 @@ class BaseWallet(ABC):
         """
 
     async def create_public_did(
-        self, seed: str = None, did: str = None, metadata: dict = {}
+        self,
+        method: DIDMethod,
+        key_type: KeyType,
+        seed: str = None,
+        did: str = None,
+        metadata: dict = {},
     ) -> DIDInfo:
         """
         Create and store a new public DID.
@@ -129,6 +145,14 @@ class BaseWallet(ABC):
             The created `DIDInfo`
 
         """
+        if method != DIDMethod.SOV:
+            raise WalletError("Creating public did is only allowed for did:sov dids")
+
+        # validate key_type
+        if not method.supports_key_type(key_type):
+            raise WalletError(
+                f"Invalid key type {key_type.key_type} for method {method.method_name}"
+            )
 
         metadata = DIDPosture.PUBLIC.metadata
         dids = await self.get_local_dids()
@@ -162,6 +186,10 @@ class BaseWallet(ABC):
             The created `DIDInfo`
 
         """
+
+        did_info = self.get_local_did(did)
+        if did_info.method != DIDMethod.SOV:
+            raise WalletError("Setting public did is only allowed for did:sov dids")
 
         # will raise an exception if not found
         info = None if did is None else await self.get_local_did(did)
@@ -264,6 +292,9 @@ class BaseWallet(ABC):
                 'endpoint' affects local wallet
         """
         did_info = await self.get_local_did(did)
+
+        if did_info.method != DIDMethod.SOV:
+            raise WalletError("Setting did endpoint is only allowed for did:sov dids")
         metadata = {**did_info.metadata}
         if not endpoint_type:
             endpoint_type = EndpointType.ENDPOINT
@@ -273,12 +304,14 @@ class BaseWallet(ABC):
         await self.replace_local_did_metadata(did, metadata)
 
     @abstractmethod
-    async def sign_message(self, message: bytes, from_verkey: str) -> bytes:
+    async def sign_message(
+        self, message: Union[List[bytes], bytes], from_verkey: str
+    ) -> bytes:
         """
-        Sign a message using the private key associated with a given verkey.
+        Sign message(s) using the private key associated with a given verkey.
 
         Args:
-            message: The message to sign
+            message: The message(s) to sign
             from_verkey: Sign using the private key related to this verkey
 
         Returns:
@@ -288,7 +321,11 @@ class BaseWallet(ABC):
 
     @abstractmethod
     async def verify_message(
-        self, message: bytes, signature: bytes, from_verkey: str
+        self,
+        message: Union[List[bytes], bytes],
+        signature: bytes,
+        from_verkey: str,
+        key_type: KeyType,
     ) -> bool:
         """
         Verify a signature against the public key of the signer.
@@ -297,6 +334,7 @@ class BaseWallet(ABC):
             message: The message to verify
             signature: The signature to verify
             from_verkey: Verkey to use in verification
+            key_type: The key type to derive the signature verification algorithm from
 
         Returns:
             True if verified, else False

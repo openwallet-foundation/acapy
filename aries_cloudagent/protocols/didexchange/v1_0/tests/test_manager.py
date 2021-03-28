@@ -22,7 +22,7 @@ from .....transport.inbound.receipt import MessageReceipt
 from .....multitenant.manager import MultitenantManager
 from .....wallet.base import DIDInfo
 from .....wallet.in_memory import InMemoryWallet
-from .....wallet.crypto import KeyType
+from .....wallet.crypto import DIDMethod, KeyType
 from .....did.did_key import DIDKey
 
 from .....connections.base_manager import (
@@ -274,7 +274,11 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 serialize=async_mock.MagicMock(return_value={})
             )
             mock_wallet_create_local_did.return_value = DIDInfo(
-                TestConfig.test_did, TestConfig.test_verkey, None
+                TestConfig.test_did,
+                TestConfig.test_verkey,
+                None,
+                method=DIDMethod.SOV,
+                key_type=KeyType.ED25519,
             )
             mock_attach_deco.data_base64 = async_mock.MagicMock(
                 return_value=async_mock.MagicMock(
@@ -1087,7 +1091,11 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 return_value=mock_conn_rec
             )
             mock_wallet_create_local_did.return_value = DIDInfo(
-                new_info.did, new_info.verkey, None
+                new_info.did,
+                new_info.verkey,
+                None,
+                method=DIDMethod.SOV,
+                key_type=KeyType.ED25519,
             )
             mock_did_doc.from_json = async_mock.MagicMock(
                 return_value=async_mock.MagicMock(did=TestConfig.test_did)
@@ -1163,13 +1171,21 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             )
 
             mock_wallet_create_local_did.return_value = DIDInfo(
-                new_info.did, new_info.verkey, None
+                new_info.did,
+                new_info.verkey,
+                None,
+                method=DIDMethod.SOV,
+                key_type=KeyType.ED25519,
             )
             mock_did_doc.from_json = async_mock.MagicMock(
                 return_value=async_mock.MagicMock(did=TestConfig.test_did)
             )
             mock_wallet_get_local_did.return_value = DIDInfo(
-                TestConfig.test_did, TestConfig.test_verkey, None
+                TestConfig.test_did,
+                TestConfig.test_verkey,
+                None,
+                method=DIDMethod.SOV,
+                key_type=KeyType.ED25519,
             )
             await self.manager.receive_request(
                 request=mock_request,
@@ -1373,7 +1389,11 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             InMemoryWallet, "create_local_did", autospec=True
         ) as mock_wallet_create_local_did:
             mock_wallet_create_local_did.return_value = DIDInfo(
-                TestConfig.test_did, TestConfig.test_verkey, None
+                TestConfig.test_did,
+                TestConfig.test_verkey,
+                None,
+                method=DIDMethod.SOV,
+                key_type=KeyType.ED25519,
             )
             mock_create_did_doc.return_value = async_mock.MagicMock(
                 serialize=async_mock.MagicMock()
@@ -1715,6 +1735,8 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             TestConfig.test_did,
             TestConfig.test_verkey,
             None,
+            method=DIDMethod.SOV,
+            key_type=KeyType.ED25519,
         )
 
         mock_conn = async_mock.MagicMock(
@@ -1747,6 +1769,8 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             TestConfig.test_did,
             TestConfig.test_verkey,
             None,
+            method=DIDMethod.SOV,
+            key_type=KeyType.ED25519,
         )
 
         mock_conn = async_mock.MagicMock(
@@ -1773,6 +1797,8 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             TestConfig.test_did,
             TestConfig.test_verkey,
             None,
+            method=DIDMethod.SOV,
+            key_type=KeyType.ED25519,
         )
 
         mock_conn = async_mock.MagicMock(
@@ -1806,6 +1832,8 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             TestConfig.test_did,
             TestConfig.test_verkey,
             None,
+            method=DIDMethod.SOV,
+            key_type=KeyType.ED25519,
         )
 
         mock_conn = async_mock.MagicMock(
@@ -1842,6 +1870,8 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             TestConfig.test_did,
             TestConfig.test_verkey,
             None,
+            method=DIDMethod.SOV,
+            key_type=KeyType.ED25519,
         )
 
         mock_conn = async_mock.MagicMock(
@@ -1886,6 +1916,8 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             TestConfig.test_did,
             TestConfig.test_verkey,
             None,
+            method=DIDMethod.SOV,
+            key_type=KeyType.ED25519,
         )
 
         did_doc = self.make_did_doc(

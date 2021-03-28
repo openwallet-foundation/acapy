@@ -36,13 +36,14 @@ class IndySdkWallet(BaseWallet):
         did = info["did"]
         verkey = info["verkey"]
 
-        if DIDMethod.from_metadata(metadata) == DIDMethod.KEY:
+        method = DIDMethod.from_metadata(metadata)
+        key_type = KeyType.ED25519
+
+        if method == DIDMethod.KEY:
             did = DIDKey.from_public_key_b58(info["verkey"], KeyType.ED25519).did
 
         return DIDInfo(
-            did=did,
-            verkey=verkey,
-            metadata=metadata,
+            did=did, verkey=verkey, metadata=metadata, method=method, key_type=key_type
         )
 
     async def create_signing_key(
@@ -245,7 +246,9 @@ class IndySdkWallet(BaseWallet):
         if method == DIDMethod.KEY:
             # Transform the did to a did key
             did = DIDKey.from_public_key_b58(verkey, key_type).did
-        return DIDInfo(did, verkey, metadata)
+        return DIDInfo(
+            did=did, verkey=verkey, metadata=metadata, method=method, key_type=key_type
+        )
 
     async def get_local_dids(self) -> Sequence[DIDInfo]:
         """

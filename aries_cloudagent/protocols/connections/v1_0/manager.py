@@ -4,10 +4,6 @@ import logging
 
 from typing import Coroutine, Sequence, Tuple
 
-from aries_cloudagent.protocols.coordinate_mediation.v1_0.manager import (
-    MediationManager,
-)
-
 from ....cache.base import BaseCache
 from ....config.base import InjectionError
 from ....connections.base_manager import BaseConnectionManager
@@ -21,7 +17,13 @@ from ....protocols.routing.v1_0.manager import RoutingManager
 from ....storage.error import StorageError, StorageNotFoundError
 from ....transport.inbound.receipt import MessageReceipt
 from ....wallet.base import BaseWallet, DIDInfo
-from ....wallet.crypto import create_keypair, seed_to_did
+from ....wallet.crypto import (
+    DIDMethod,
+    KeyType,
+    create_keypair,
+    seed_to_did,
+)
+from ...coordinate_mediation.v1_0.manager import MediationManager
 from ....wallet.error import WalletNotFoundError
 from ....wallet.util import bytes_to_b58
 from ....multitenant.manager import MultitenantManager
@@ -883,9 +885,11 @@ class ConnectionManager(BaseConnectionManager):
         if not their_did:
             their_did = seed_to_did(their_seed)
         if not their_verkey:
-            their_verkey_bin, _ = create_keypair(their_seed.encode())
+            their_verkey_bin, _ = create_keypair(KeyType.ED25519, their_seed.encode())
             their_verkey = bytes_to_b58(their_verkey_bin)
-        their_info = DIDInfo(their_did, their_verkey, {})
+        their_info = DIDInfo(
+            their_did, their_verkey, {}, method=DIDMethod.SOV, key_type=KeyType.ED25519
+        )
 
         # Create connection record
         connection = ConnRecord(

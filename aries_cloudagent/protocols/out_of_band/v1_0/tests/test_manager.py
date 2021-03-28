@@ -59,7 +59,7 @@ from .....multitenant.manager import MultitenantManager
 from .....transport.inbound.receipt import MessageReceipt
 from .....wallet.base import DIDInfo, KeyInfo
 from .....wallet.in_memory import InMemoryWallet
-from .....wallet.crypto import KeyType
+from .....wallet.crypto import DIDMethod, KeyType
 from .....did.did_key import DIDKey
 
 from ....didcomm_prefix import DIDCommPrefix
@@ -277,7 +277,11 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             InMemoryWallet, "get_public_did", autospec=True
         ) as mock_wallet_get_public_did:
             mock_wallet_get_public_did.return_value = DIDInfo(
-                TestConfig.test_did, TestConfig.test_verkey, None
+                TestConfig.test_did,
+                TestConfig.test_verkey,
+                None,
+                method=DIDMethod.SOV,
+                key_type=KeyType.ED25519,
             )
             invi_rec = await self.manager.create_invitation(
                 my_endpoint=TestConfig.test_endpoint,
@@ -338,7 +342,11 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         ) as mock_ledger_get_endpoint_for_did:
             mock_ledger_get_endpoint_for_did.side_effect = test_module.LedgerError()
             mock_wallet_get_public_did.return_value = DIDInfo(
-                TestConfig.test_did, TestConfig.test_verkey, None
+                TestConfig.test_did,
+                TestConfig.test_verkey,
+                None,
+                method=DIDMethod.SOV,
+                key_type=KeyType.ED25519,
             )
             with self.assertRaises(OutOfBandManagerError) as context:
                 await self.manager.create_invitation(
@@ -364,7 +372,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             self.multitenant_mgr, "get_default_mediator"
         ) as mock_get_default_mediator:
             mock_wallet_create_signing_key.return_value = KeyInfo(
-                TestConfig.test_verkey, None
+                TestConfig.test_verkey, None, KeyType.ED25519
             )
             mock_get_default_mediator.return_value = MediationRecord()
             await self.manager.create_invitation(
@@ -392,7 +400,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             InMemoryWallet, "get_public_did", autospec=True
         ) as mock_wallet_get_public_did:
             mock_wallet_get_public_did.return_value = DIDInfo(
-                self.test_did, self.test_verkey, None
+                self.test_did, self.test_verkey, None, method=DIDMethod.SOV, key_type=KeyType.ED25519
             )
             await self.manager.create_invitation(
                 hs_protos=[HSProto.RFC23],
@@ -424,7 +432,11 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             async_mock.CoroutineMock(),
         ) as mock_retrieve_cxid:
             mock_wallet_get_public_did.return_value = DIDInfo(
-                TestConfig.test_did, TestConfig.test_verkey, None
+                TestConfig.test_did,
+                TestConfig.test_verkey,
+                None,
+                method=DIDMethod.SOV,
+                key_type=KeyType.ED25519,
             )
             mock_retrieve_cxid.return_value = async_mock.MagicMock(
                 credential_offer_dict={"cred": "offer"}
@@ -449,7 +461,11 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             async_mock.CoroutineMock(),
         ) as mock_retrieve_cxid:
             mock_wallet_get_public_did.return_value = DIDInfo(
-                TestConfig.test_did, TestConfig.test_verkey, None
+                TestConfig.test_did,
+                TestConfig.test_verkey,
+                None,
+                method=DIDMethod.SOV,
+                key_type=KeyType.ED25519,
             )
             mock_retrieve_cxid.return_value = async_mock.MagicMock(
                 credential_offer_dict={"cred": "offer"}
@@ -480,7 +496,11 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             async_mock.CoroutineMock(),
         ) as mock_retrieve_cxid_v2:
             mock_wallet_get_public_did.return_value = DIDInfo(
-                TestConfig.test_did, TestConfig.test_verkey, None
+                TestConfig.test_did,
+                TestConfig.test_verkey,
+                None,
+                method=DIDMethod.SOV,
+                key_type=KeyType.ED25519,
             )
             mock_v20_cred_offer_deser.return_value = async_mock.MagicMock(
                 offer=async_mock.MagicMock(return_value={"cred": "offer"})
@@ -506,7 +526,11 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             async_mock.CoroutineMock(),
         ) as mock_retrieve_pxid:
             mock_wallet_get_public_did.return_value = DIDInfo(
-                TestConfig.test_did, TestConfig.test_verkey, None
+                TestConfig.test_did,
+                TestConfig.test_verkey,
+                None,
+                method=DIDMethod.SOV,
+                key_type=KeyType.ED25519,
             )
             mock_retrieve_pxid.return_value = async_mock.MagicMock(
                 presentation_request_dict={"pres": "req"}
@@ -536,7 +560,11 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             async_mock.CoroutineMock(),
         ) as mock_retrieve_pxid_2:
             mock_wallet_get_public_did.return_value = DIDInfo(
-                TestConfig.test_did, TestConfig.test_verkey, None
+                TestConfig.test_did,
+                TestConfig.test_verkey,
+                None,
+                method=DIDMethod.SOV,
+                key_type=KeyType.ED25519,
             )
             mock_retrieve_pxid_1.side_effect = StorageNotFoundError()
             mock_retrieve_pxid_2.return_value = async_mock.MagicMock(
@@ -606,7 +634,11 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             InMemoryWallet, "get_public_did", autospec=True
         ) as mock_wallet_get_public_did:
             mock_wallet_get_public_did.return_value = DIDInfo(
-                TestConfig.test_did, TestConfig.test_verkey, None
+                TestConfig.test_did,
+                TestConfig.test_verkey,
+                None,
+                method=DIDMethod.SOV,
+                key_type=KeyType.ED25519,
             )
             with self.assertRaises(OutOfBandManagerError) as context:
                 await self.manager.create_invitation(
@@ -684,7 +716,11 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             InMemoryWallet, "get_public_did", autospec=True
         ) as mock_wallet_get_public_did:
             mock_wallet_get_public_did.return_value = DIDInfo(
-                TestConfig.test_did, TestConfig.test_verkey, None
+                TestConfig.test_did,
+                TestConfig.test_verkey,
+                None,
+                method=DIDMethod.SOV,
+                key_type=KeyType.ED25519,
             )
             with self.assertRaises(OutOfBandManagerError) as context:
                 await self.manager.create_invitation(

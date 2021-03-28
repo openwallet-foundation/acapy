@@ -23,6 +23,7 @@ class Bls12381G2WalletKeyPair(WalletKeyPair):
             raise LinkedDataProofException(
                 "Unable to sign message with Bls12381G2WalletKeyPair: No key to sign with"
             )
+
         return await self.wallet.sign_message(
             message=messages if type(messages) is list else [messages],
             from_verkey=self.public_key_base58,

@@ -17,6 +17,7 @@ from ...protocols.coordinate_mediation.v1_0.manager import (
     MediationRecord,
     MediationManager,
 )
+from ...wallet.crypto import DIDMethod, KeyType
 from ..manager import MultitenantManager, MultitenantManagerError
 from ..error import WalletKeyMissingError
 
@@ -371,7 +372,13 @@ class TestMultitenantManager(AsyncTestCase):
             assert wallet_record.wallet_key == "test_key"
 
     async def test_create_wallet_adds_wallet_route(self):
-        did_info = DIDInfo("public-did", "test_verkey", {"meta": "data"})
+        did_info = DIDInfo(
+            did="public-did",
+            verkey="test_verkey",
+            metadata={"meta": "data"},
+            method=DIDMethod.SOV,
+            key_type=KeyType.ED25519,
+        )
 
         with async_mock.patch.object(
             WalletRecord, "save"
