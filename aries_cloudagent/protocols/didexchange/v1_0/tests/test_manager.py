@@ -1436,7 +1436,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
     async def test_accept_response_find_by_thread_id(self):
         mock_response = async_mock.MagicMock()
         mock_response._thread = async_mock.MagicMock()
-        mock_response.did = TestConfig.test_target_did
+        mock_response.did = TestConfig.test_target_did.split(":")[-1]
         mock_response.did_doc_attach = async_mock.MagicMock(
             data=async_mock.MagicMock(
                 verify=async_mock.CoroutineMock(return_value=True),
@@ -1449,7 +1449,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
         )
 
         receipt = MessageReceipt(
-            recipient_did=TestConfig.test_did,
+            recipient_did=TestConfig.test_did.split(":")[-1],
             recipient_did_public=True,
         )
 
@@ -1462,9 +1462,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
         ) as mock_conn_retrieve_by_id, async_mock.patch.object(
             DIDDocument, "deserialize", async_mock.MagicMock()
         ) as mock_did_doc_deser:
-            mock_did_doc_deser.return_value = async_mock.MagicMock(
-                did=TestConfig.test_target_did
-            )
+            mock_did_doc_deser.return_value = self.make_did_doc(self.test_target_did, self.test_verkey)
             mock_conn_retrieve_by_req_id.return_value = async_mock.MagicMock(
                 did=TestConfig.test_target_did,
                 did_doc_attach=async_mock.MagicMock(
@@ -1483,18 +1481,18 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 connection_id="test-conn-id",
             )
             mock_conn_retrieve_by_id.return_value = async_mock.MagicMock(
-                their_did=TestConfig.test_target_did,
+                their_did=TestConfig.test_target_did.split(":")[-1],
                 save=async_mock.CoroutineMock(),
             )
 
             conn_rec = await self.manager.accept_response(mock_response, receipt)
-            assert conn_rec.their_did == TestConfig.test_target_did
+            assert conn_rec.their_did == TestConfig.test_target_did.split(":")[-1]
             assert ConnRecord.State.get(conn_rec.state) is ConnRecord.State.COMPLETED
 
     async def test_accept_response_not_found_by_thread_id_receipt_has_sender_did(self):
         mock_response = async_mock.MagicMock()
         mock_response._thread = async_mock.MagicMock()
-        mock_response.did = TestConfig.test_target_did
+        mock_response.did = TestConfig.test_target_did.split(":")[-1]
         mock_response.did_doc_attach = async_mock.MagicMock(
             data=async_mock.MagicMock(
                 verify=async_mock.CoroutineMock(return_value=True),
@@ -1517,9 +1515,8 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
         ) as mock_conn_retrieve_by_did, async_mock.patch.object(
             DIDDocument, "deserialize", async_mock.MagicMock()
         ) as mock_did_doc_deser:
-            mock_did_doc_deser.return_value = async_mock.MagicMock(
-                did=TestConfig.test_target_did
-            )
+            mock_did_doc_deser.return_value = self.make_did_doc(self.test_target_did, self.test_verkey)
+
             mock_conn_retrieve_by_req_id.side_effect = StorageNotFoundError()
             mock_conn_retrieve_by_did.return_value = async_mock.MagicMock(
                 did=TestConfig.test_target_did,
@@ -1540,7 +1537,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             )
 
             conn_rec = await self.manager.accept_response(mock_response, receipt)
-            assert conn_rec.their_did == TestConfig.test_target_did
+            assert conn_rec.their_did == self.test_target_did.split(":")[-1]
             assert ConnRecord.State.get(conn_rec.state) is ConnRecord.State.COMPLETED
 
     async def test_accept_response_not_found_by_thread_id_nor_receipt_sender_did(self):

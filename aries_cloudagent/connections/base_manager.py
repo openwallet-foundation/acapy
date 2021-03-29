@@ -161,7 +161,7 @@ class BaseConnectionManager:
         assert did_doc.id
         storage: BaseStorage = self._session.inject(BaseStorage)
         try:
-            stored_doc, record = await self.fetch_did_document(did_doc.id)
+            stored_doc, record = await self.fetch_did_document(str(did_doc.id))
         except StorageNotFoundError:
             record = StorageRecord(
                 self.RECORD_TYPE_DID_DOC,
@@ -231,11 +231,11 @@ class BaseConnectionManager:
         endpoint = doc.service[0].endpoint
         recipient_keys = [
             doc.dereference(url)
-            for url in doc.service[0].extra["recipient_keys"]
+            for url in doc.service[0].recipient_keys
         ]
         routing_keys = [
             doc.dereference(url)
-            for url in doc.service[0].extra["routing_keys"]
+            for url in doc.service[0].routing_keys
         ]
 
         return endpoint, recipient_keys, routing_keys
@@ -359,12 +359,15 @@ class BaseConnectionManager:
             did: The DID to search for
         """
         storage = self._session.inject(BaseStorage)
-
+        if did.find(":") < 1:
+            did = "did:sov:{}".format(did)
         record = await storage.find_record(
-            self.RECORD_TYPE_DID_DOC, {"did": "did:sov:{}".format(did)}
+            self.RECORD_TYPE_DID_DOC, {"did": did}
         )
-
-        value = json.loads(record.value)
+        if not isinstance(record.value, dict):
+            value = json.loads(record.value)
+        else:
+            value = record.value
         did_doc = DIDDocument.deserialize(
             value, options={options.vm_allow_missing_controller}
         )

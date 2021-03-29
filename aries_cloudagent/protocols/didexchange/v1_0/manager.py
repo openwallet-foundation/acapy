@@ -670,7 +670,7 @@ class DIDXManager(BaseConnectionManager):
                 "No DIDDocument attached; cannot connect to public DID"
             )
         conn_did_doc = await self.verify_diddoc(wallet, response.did_doc_attach)
-        if their_did != conn_did_doc.did:
+        if their_did != conn_did_doc.id.method_specific_id:
             raise DIDXManagerError(
                 f"Connection DID {their_did} "
                 f"does not match DID doc id {conn_did_doc.did}"
