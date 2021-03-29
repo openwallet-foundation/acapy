@@ -189,3 +189,5 @@ _build/
 
 # Open API build
 open-api/.build
+
+!ursa_bbs_signatures/libbbs.so
