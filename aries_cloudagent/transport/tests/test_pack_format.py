@@ -8,6 +8,7 @@ from ...protocols.routing.v1_0.message_types import FORWARD
 from ...protocols.didcomm_prefix import DIDCommPrefix
 from ...wallet.base import BaseWallet
 from ...wallet.error import WalletError
+from ...wallet.crypto import KeyType, DIDMethod
 
 from ..error import WireFormatEncodeError, WireFormatParseError, RecipientKeysError
 from ..pack_format import PackWireFormat
@@ -136,7 +137,9 @@ class TestPackWireFormat(AsyncTestCase):
         assert message_dict == message
 
     async def test_encode_decode(self):
-        local_did = await self.wallet.create_local_did(self.test_seed)
+        local_did = await self.wallet.create_local_did(
+            method=DIDMethod.SOV, key_type=KeyType.ED25519, seed=self.test_seed
+        )
         serializer = PackWireFormat()
         recipient_keys = (local_did.verkey,)
         routing_keys = ()
@@ -168,8 +171,12 @@ class TestPackWireFormat(AsyncTestCase):
         )
 
     async def test_forward(self):
-        local_did = await self.wallet.create_local_did(self.test_seed)
-        router_did = await self.wallet.create_local_did(self.test_routing_seed)
+        local_did = await self.wallet.create_local_did(
+            method=DIDMethod.SOV, key_type=KeyType.ED25519, seed=self.test_seed
+        )
+        router_did = await self.wallet.create_local_did(
+            method=DIDMethod.SOV, key_type=KeyType.ED25519, seed=self.test_routing_seed
+        )
         serializer = PackWireFormat()
         recipient_keys = (local_did.verkey,)
         routing_keys = (router_did.verkey,)

@@ -1,11 +1,9 @@
-import pytest
+from asynctest import TestCase as AsyncTestCase
 
-from asynctest import TestCase as AsyncTestCase, mock as async_mock
-
+from ....wallet.crypto import KeyType
 from ....core.in_memory import InMemoryProfile
 from ....protocols.trustping.v1_0.messages.ping import Ping
 from ....wallet.in_memory import InMemoryWallet
-from .. import signature_decorator as test_module
 from ..signature_decorator import SignatureDecorator
 
 TEST_VERKEY = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
@@ -45,7 +43,7 @@ class TestSignatureDecorator(AsyncTestCase):
 
         profile = InMemoryProfile.test_profile()
         wallet = InMemoryWallet(profile)
-        key_info = await wallet.create_signing_key()
+        key_info = await wallet.create_signing_key(KeyType.ED25519)
 
         deco = await SignatureDecorator.create(
             Ping(), key_info.verkey, wallet, timestamp=None

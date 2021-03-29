@@ -23,6 +23,7 @@ from ...wallet.util import (
     str_to_b64,
     unpad,
 )
+from ...wallet.crypto import KeyType
 from ..models.base import BaseModel, BaseModelError, BaseModelSchema
 from ..valid import (
     BASE64,
@@ -437,7 +438,9 @@ class AttachDecoratorData(BaseModel):
             sign_input = (b64_protected + "." + b64_payload).encode("ascii")
             b_sig = b64_to_bytes(b64_sig, urlsafe=True)
             verkey = bytes_to_b58(b64_to_bytes(protected["jwk"]["x"], urlsafe=True))
-            if not await wallet.verify_message(sign_input, b_sig, verkey):
+            if not await wallet.verify_message(
+                sign_input, b_sig, verkey, KeyType.ED25519
+            ):
                 return False
         return True
 

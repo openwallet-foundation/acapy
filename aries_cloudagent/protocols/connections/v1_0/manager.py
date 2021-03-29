@@ -183,7 +183,9 @@ class ConnectionManager(BaseConnectionManager):
             invitation_key = recipient_keys[0]  # TODO first key appropriate?
         else:
             # Create and store new invitation key
-            invitation_signing_key = await wallet.create_signing_key()
+            invitation_signing_key = await wallet.create_signing_key(
+                key_type=KeyType.ED25519
+            )
             invitation_key = invitation_signing_key.verkey
             recipient_keys = [invitation_key]
             mediation_mgr = MediationManager(self._session.profile)
@@ -380,7 +382,7 @@ class ConnectionManager(BaseConnectionManager):
             my_info = await wallet.get_local_did(connection.my_did)
         else:
             # Create new DID for connection
-            my_info = await wallet.create_local_did()
+            my_info = await wallet.create_local_did(DIDMethod.SOV, KeyType.ED25519)
             connection.my_did = my_info.did
             mediation_mgr = MediationManager(self._session.profile)
             keylist_updates = await mediation_mgr.add_key(
@@ -499,7 +501,7 @@ class ConnectionManager(BaseConnectionManager):
 
             if connection.is_multiuse_invitation:
                 wallet = self._session.inject(BaseWallet)
-                my_info = await wallet.create_local_did()
+                my_info = await wallet.create_local_did(DIDMethod.SOV, KeyType.ED25519)
                 keylist_updates = await mediation_mgr.add_key(
                     my_info.verkey, keylist_updates
                 )
@@ -556,7 +558,7 @@ class ConnectionManager(BaseConnectionManager):
         elif not self._session.settings.get("public_invites"):
             raise ConnectionManagerError("Public invitations are not enabled")
         else:  # request from public did
-            my_info = await wallet.create_local_did()
+            my_info = await wallet.create_local_did(DIDMethod.SOV, KeyType.ED25519)
             # send update-keylist message with new recipient keys
             keylist_updates = await mediation_mgr.add_key(
                 my_info.verkey, keylist_updates
@@ -659,7 +661,7 @@ class ConnectionManager(BaseConnectionManager):
         if connection.my_did:
             my_info = await wallet.get_local_did(connection.my_did)
         else:
-            my_info = await wallet.create_local_did()
+            my_info = await wallet.create_local_did(DIDMethod.SOV, KeyType.ED25519)
             connection.my_did = my_info.did
             mediation_mgr = MediationManager(self._session.profile)
             keylist_updates = await mediation_mgr.add_key(
@@ -875,7 +877,9 @@ class ConnectionManager(BaseConnectionManager):
         base_mediation_record = None
 
         # seed and DID optional
-        my_info = await wallet.create_local_did(my_seed, my_did)
+        my_info = await wallet.create_local_did(
+            DIDMethod.SOV, KeyType.ED25519, my_seed, my_did
+        )
 
         # must provide their DID and verkey if the seed is not known
         if (not their_did or not their_verkey) and not their_seed:
@@ -1116,7 +1120,7 @@ class ConnectionManager(BaseConnectionManager):
             my_info = await wallet.get_local_did(connection.my_did)
         else:
             # Create new DID for connection
-            my_info = await wallet.create_local_did()
+            my_info = await wallet.create_local_did(DIDMethod.SOV, KeyType.ED25519)
             connection.my_did = my_info.did
 
         try:

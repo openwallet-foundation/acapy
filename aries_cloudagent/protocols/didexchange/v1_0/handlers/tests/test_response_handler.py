@@ -14,6 +14,7 @@ from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
 from ......protocols.trustping.v1_0.messages.ping import Ping
 from ......transport.inbound.receipt import MessageReceipt
+from ......wallet.crypto import KeyType, DIDMethod
 
 from ...handlers import response_handler as test_module
 from ...manager import DIDXManagerError
@@ -60,7 +61,10 @@ class TestDIDXResponseHandler(AsyncTestCase):
         self.ctx.message_receipt = MessageReceipt()
 
         wallet = (await self.ctx.session()).wallet
-        self.did_info = await wallet.create_local_did()
+        self.did_info = await wallet.create_local_did(
+            method=DIDMethod.SOV,
+            key_type=KeyType.ED25519,
+        )
 
         self.did_doc_attach = AttachDecorator.data_base64(self.did_doc().serialize())
         await self.did_doc_attach.data.sign(self.did_info.verkey, wallet)

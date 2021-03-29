@@ -4,6 +4,7 @@ import time
 from ...core.in_memory import InMemoryProfile
 from ...messaging.decorators.signature_decorator import SignatureDecorator
 from ...wallet.in_memory import InMemoryWallet
+from ...wallet.crypto import DIDMethod, KeyType
 from ...wallet.error import (
     WalletError,
     WalletDuplicateError,
@@ -20,8 +21,11 @@ async def wallet():
 
 class TestInMemoryWallet:
     test_seed = "testseed000000000000000000000001"
-    test_did = "55GkHamhTU1ZbTbV2ab9DE"
-    test_verkey = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
+    test_sov_did = "55GkHamhTU1ZbTbV2ab9DE"
+    test_key_ed25519_did = "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
+    test_key_bls12381g2_did = "did:key:zUC72Q7XD4PE4CrMiDVXuvZng3sBvMmaGgNeTUJuzavH2BS7ThbHL9FhsZM9QYY5fqAQ4MB8M9oudz3tfuaX36Ajr97QRW7LBt6WWmrtESe6Bs5NYzFtLWEmeVtvRYVAgjFcJSa"
+    test_ed25519_verkey = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
+    test_bls12381g2_verkey = "nZZe9Nizhaz9JGpgjysaNkWGg5TNEhpib5j6WjTUHJ5K46dedUrZ57PUFZBq9Xckv8mFJjx6G6Vvj2rPspq22BagdADEEEy2F8AVLE1DhuwWC5vHFa4fUhUwxMkH7B6joqG"
     test_target_seed = "testseed000000000000000000000002"
     test_target_did = "GbuDUYXaUZRfHD2jeDuQuP"
     test_target_verkey = "9WCgWKUaAJj3VWxxtzvvMQN3AoFxoBtBDo9ntwJnVVCC"
@@ -38,32 +42,64 @@ class TestInMemoryWallet:
     )
 
     @pytest.mark.asyncio
-    async def test_create_signing_key_random(self, wallet):
+    async def test_create_signing_key_ed25519_random(self, wallet: InMemoryWallet):
         assert str(wallet)
-        info = await wallet.create_signing_key()
+        info = await wallet.create_signing_key(KeyType.ED25519)
         assert info and info.verkey
 
     @pytest.mark.asyncio
-    async def test_create_signing_key_seeded(self, wallet):
-        info = await wallet.create_signing_key(self.test_seed)
-        assert info.verkey == self.test_verkey
-
-        with pytest.raises(WalletDuplicateError):
-            await wallet.create_signing_key(self.test_seed)
-
-        with pytest.raises(WalletError):
-            await wallet.create_signing_key("invalid-seed", None)
+    async def test_create_signing_key_bls12381g2_random(self, wallet: InMemoryWallet):
+        assert str(wallet)
+        info = await wallet.create_signing_key(KeyType.BLS12381G2)
+        assert info and info.verkey
 
     @pytest.mark.asyncio
-    async def test_signing_key_metadata(self, wallet):
-        info = await wallet.create_signing_key(self.test_seed, self.test_metadata)
+    async def test_create_signing_key_ed25519_seeded(self, wallet: InMemoryWallet):
+        info = await wallet.create_signing_key(KeyType.ED25519, self.test_seed)
+        assert info.verkey == self.test_ed25519_verkey
+
+        with pytest.raises(WalletDuplicateError):
+            await wallet.create_signing_key(KeyType.ED25519, self.test_seed)
+
+        with pytest.raises(WalletError):
+            await wallet.create_signing_key(KeyType.ED25519, "invalid-seed", None)
+
+    @pytest.mark.asyncio
+    async def test_create_signing_key_bls12381g2_seeded(self, wallet: InMemoryWallet):
+        info = await wallet.create_signing_key(KeyType.BLS12381G2, self.test_seed)
+        assert info.verkey == self.test_bls12381g2_verkey
+
+        with pytest.raises(WalletDuplicateError):
+            await wallet.create_signing_key(KeyType.BLS12381G2, self.test_seed)
+
+        with pytest.raises(WalletError):
+            await wallet.create_signing_key(KeyType.BLS12381G2, "invalid-seed", None)
+
+    @pytest.mark.asyncio
+    async def test_create_signing_key_unsupported_key_type(
+        self, wallet: InMemoryWallet
+    ):
+        with pytest.raises(WalletError):
+            await wallet.create_signing_key(KeyType.X25519)
+
+        with pytest.raises(WalletError):
+            await wallet.create_signing_key(KeyType.BLS12381G1)
+
+        with pytest.raises(WalletError):
+            await wallet.create_signing_key(KeyType.BLS12381G1G2)
+
+    @pytest.mark.asyncio
+    async def test_signing_key_metadata(self, wallet: InMemoryWallet):
+        info = await wallet.create_signing_key(
+            KeyType.ED25519, self.test_seed, self.test_metadata
+        )
         assert info.metadata == self.test_metadata
-        info2 = await wallet.get_signing_key(self.test_verkey)
+        info2 = await wallet.get_signing_key(self.test_ed25519_verkey)
         assert info2.metadata == self.test_metadata
         await wallet.replace_signing_key_metadata(
-            self.test_verkey, self.test_update_metadata
+            self.test_ed25519_verkey, self.test_update_metadata
         )
-        info3 = await wallet.get_signing_key(self.test_verkey)
+        info3 = await wallet.get_signing_key(self.test_ed25519_verkey)
         assert info3.metadata == self.test_update_metadata
 
         with pytest.raises(WalletNotFoundError):
@@ -75,64 +111,129 @@ class TestInMemoryWallet:
             await wallet.get_signing_key(self.missing_verkey)
 
     @pytest.mark.asyncio
-    async def test_create_local_random(self, wallet):
-        info = await wallet.create_local_did(None, None)
+    async def test_create_local_sov_random(self, wallet: InMemoryWallet):
+        info = await wallet.create_local_did(DIDMethod.SOV, KeyType.ED25519, None, None)
         assert info and info.did and info.verkey
 
     @pytest.mark.asyncio
-    async def test_create_local_seeded(self, wallet):
-        info = await wallet.create_local_did(self.test_seed, None)
-        assert info.did == self.test_did
-        assert info.verkey == self.test_verkey
+    async def test_create_local_key_random(self, wallet: InMemoryWallet):
+        info = await wallet.create_local_did(DIDMethod.KEY, KeyType.ED25519, None, None)
+        assert info and info.did and info.verkey
 
-        # should not raise WalletDuplicateError - same verkey
-        await wallet.create_local_did(self.test_seed, None)
-
-        with pytest.raises(WalletError):
-            _ = await wallet.create_local_did("invalid-seed", None)
+        info = await wallet.create_local_did(
+            DIDMethod.KEY, KeyType.BLS12381G2, None, None
+        )
+        assert info and info.did and info.verkey
 
     @pytest.mark.asyncio
-    async def test_rotate_did_keypair(self, wallet):
-        with pytest.raises(WalletNotFoundError):
-            await wallet.rotate_did_keypair_start(self.test_did)
+    async def test_create_local_incorrect_key_type_for_did_method(
+        self, wallet: InMemoryWallet
+    ):
+        with pytest.raises(WalletError):
+            await wallet.create_local_did(DIDMethod.SOV, KeyType.BLS12381G2, None, None)
 
-        with pytest.raises(WalletNotFoundError):
-            await wallet.rotate_did_keypair_apply(self.test_did)
+    @pytest.mark.asyncio
+    async def test_create_local_sov_seeded(self, wallet: InMemoryWallet):
+        info = await wallet.create_local_did(
+            DIDMethod.SOV, KeyType.ED25519, self.test_seed, None
+        )
+        assert info.did == self.test_sov_did
+        assert info.verkey == self.test_ed25519_verkey
 
-        info = await wallet.create_local_did(self.test_seed, self.test_did)
+        # should not raise WalletDuplicateError - same verkey
+        await wallet.create_local_did(
+            DIDMethod.SOV, KeyType.ED25519, self.test_seed, None
+        )
 
         with pytest.raises(WalletError):
-            await wallet.rotate_did_keypair_apply(self.test_did)
+            _ = await wallet.create_local_did(
+                DIDMethod.SOV, KeyType.ED25519, "invalid-seed", None
+            )
 
-        new_verkey = await wallet.rotate_did_keypair_start(self.test_did)
+    @pytest.mark.asyncio
+    async def test_create_local_key_seeded(self, wallet: InMemoryWallet):
+        info = await wallet.create_local_did(
+            DIDMethod.KEY, KeyType.ED25519, self.test_seed, None
+        )
+        assert info.did == self.test_key_ed25519_did
+        assert info.verkey == self.test_ed25519_verkey
+
+        info = await wallet.create_local_did(
+            DIDMethod.KEY, KeyType.BLS12381G2, self.test_seed, None
+        )
+        assert info.did == self.test_key_bls12381g2_did
+        assert info.verkey == self.test_bls12381g2_verkey
+
+        # should not raise WalletDuplicateError - same verkey
+        await wallet.create_local_did(
+            DIDMethod.KEY, KeyType.ED25519, self.test_seed, None
+        )
+
+        # should not raise WalletDuplicateError - same verkey
+        await wallet.create_local_did(
+            DIDMethod.KEY, KeyType.BLS12381G2, self.test_seed, None
+        )
+
+        with pytest.raises(WalletError):
+            _ = await wallet.create_local_did(
+                DIDMethod.KEY, KeyType.ED25519, "invalid-seed", None
+            )
+
+        with pytest.raises(WalletError):
+            _ = await wallet.create_local_did(
+                DIDMethod.KEY, KeyType.BLS12381G2, "invalid-seed", None
+            )
+
+    @pytest.mark.asyncio
+    async def test_rotate_did_keypair(self, wallet: InMemoryWallet):
+        with pytest.raises(WalletNotFoundError):
+            await wallet.rotate_did_keypair_start(self.test_sov_did)
+
+        with pytest.raises(WalletNotFoundError):
+            await wallet.rotate_did_keypair_apply(self.test_sov_did)
+
+        info = await wallet.create_local_did(
+            DIDMethod.SOV, KeyType.ED25519, self.test_seed, self.test_sov_did
+        )
+
+        with pytest.raises(WalletError):
+            await wallet.rotate_did_keypair_apply(self.test_sov_did)
+
+        new_verkey = await wallet.rotate_did_keypair_start(self.test_sov_did)
         assert info.verkey != new_verkey
-        await wallet.rotate_did_keypair_apply(self.test_did)
+        await wallet.rotate_did_keypair_apply(self.test_sov_did)
 
-        new_info = await wallet.get_local_did(self.test_did)
-        assert new_info.did == self.test_did
+        new_info = await wallet.get_local_did(self.test_sov_did)
+        assert new_info.did == self.test_sov_did
         assert new_info.verkey != info.verkey
 
     @pytest.mark.asyncio
-    async def test_create_local_with_did(self, wallet):
-        info = await wallet.create_local_did(None, self.test_did)
-        assert info.did == self.test_did
+    async def test_create_local_with_did(self, wallet: InMemoryWallet):
+        info = await wallet.create_local_did(
+            DIDMethod.SOV, KeyType.ED25519, None, self.test_sov_did
+        )
+        assert info.did == self.test_sov_did
 
         with pytest.raises(WalletDuplicateError):
-            await wallet.create_local_did(None, self.test_did)
+            await wallet.create_local_did(
+                DIDMethod.SOV, KeyType.ED25519, None, self.test_sov_did
+            )
 
     @pytest.mark.asyncio
-    async def test_local_verkey(self, wallet):
-        info = await wallet.create_local_did(self.test_seed, self.test_did)
-        assert info.did == self.test_did
-        assert info.verkey == self.test_verkey
+    async def test_local_verkey(self, wallet: InMemoryWallet):
+        info = await wallet.create_local_did(
+            DIDMethod.SOV, KeyType.ED25519, self.test_seed, self.test_sov_did
+        )
+        assert info.did == self.test_sov_did
+        assert info.verkey == self.test_ed25519_verkey
 
-        info2 = await wallet.get_local_did(self.test_did)
-        assert info2.did == self.test_did
-        assert info2.verkey == self.test_verkey
+        info2 = await wallet.get_local_did(self.test_sov_did)
+        assert info2.did == self.test_sov_did
+        assert info2.verkey == self.test_ed25519_verkey
 
-        info3 = await wallet.get_local_did_for_verkey(self.test_verkey)
-        assert info3.did == self.test_did
-        assert info3.verkey == self.test_verkey
+        info3 = await wallet.get_local_did_for_verkey(self.test_ed25519_verkey)
+        assert info3.did == self.test_sov_did
+        assert info3.verkey == self.test_ed25519_verkey
 
         with pytest.raises(WalletNotFoundError):
             _ = await wallet.get_local_did(self.missing_did)
@@ -140,19 +241,23 @@ class TestInMemoryWallet:
             _ = await wallet.get_local_did_for_verkey(self.missing_verkey)
 
     @pytest.mark.asyncio
-    async def test_local_metadata(self, wallet):
+    async def test_local_metadata(self, wallet: InMemoryWallet):
         info = await wallet.create_local_did(
-            self.test_seed, self.test_did, self.test_metadata
+            DIDMethod.SOV,
+            KeyType.ED25519,
+            self.test_seed,
+            self.test_sov_did,
+            self.test_metadata,
         )
-        assert info.did == self.test_did
-        assert info.verkey == self.test_verkey
+        assert info.did == self.test_sov_did
+        assert info.verkey == self.test_ed25519_verkey
         assert info.metadata == self.test_metadata
-        info2 = await wallet.get_local_did(self.test_did)
+        info2 = await wallet.get_local_did(self.test_sov_did)
         assert info2.metadata == self.test_metadata
         await wallet.replace_local_did_metadata(
-            self.test_did, self.test_update_metadata
+            self.test_sov_did, self.test_update_metadata
         )
-        info3 = await wallet.get_local_did(self.test_did)
+        info3 = await wallet.get_local_did(self.test_sov_did)
         assert info3.metadata == self.test_update_metadata
 
         with pytest.raises(WalletNotFoundError):
@@ -160,14 +265,18 @@ class TestInMemoryWallet:
                 self.missing_did, self.test_update_metadata
             )
 
-        await wallet.set_did_endpoint(self.test_did, "http://1.2.3.4:8021", None)
-        info4 = await wallet.get_local_did(self.test_did)
+        await wallet.set_did_endpoint(self.test_sov_did, "http://1.2.3.4:8021", None)
+        info4 = await wallet.get_local_did(self.test_sov_did)
         assert info4.metadata["endpoint"] == "http://1.2.3.4:8021"
 
     @pytest.mark.asyncio
-    async def test_create_public_did(self, wallet):
+    async def test_create_public_did(self, wallet: InMemoryWallet):
         info = await wallet.create_local_did(
-            self.test_seed, self.test_did, self.test_metadata
+            DIDMethod.SOV,
+            KeyType.ED25519,
+            self.test_seed,
+            self.test_sov_did,
+            self.test_metadata,
         )
         assert not info.metadata.get("public")
         assert not info.metadata.get("posted")
@@ -175,12 +284,18 @@ class TestInMemoryWallet:
         posted = await wallet.get_posted_dids()
         assert not posted
 
-        info_public = await wallet.create_public_did()
+        info_public = await wallet.create_public_did(
+            DIDMethod.SOV,
+            KeyType.ED25519,
+        )
         assert info_public.metadata.get("public")
         assert info_public.metadata.get("posted")
 
         # test replace
-        info_replace = await wallet.create_public_did()
+        info_replace = await wallet.create_public_did(
+            DIDMethod.SOV,
+            KeyType.ED25519,
+        )
         assert info_replace.metadata.get("public")
         assert info_replace.metadata.get("posted")
         info_check = await wallet.get_local_did(info_public.did)
@@ -191,9 +306,13 @@ class TestInMemoryWallet:
         assert posted and posted[0].did == info_public.did
 
     @pytest.mark.asyncio
-    async def test_set_public_did(self, wallet):
+    async def test_set_public_did(self, wallet: InMemoryWallet):
         info = await wallet.create_local_did(
-            self.test_seed, self.test_did, self.test_metadata
+            DIDMethod.SOV,
+            KeyType.ED25519,
+            self.test_seed,
+            self.test_sov_did,
+            self.test_metadata,
         )
         assert not info.metadata.get("public")
 
@@ -205,11 +324,11 @@ class TestInMemoryWallet:
         assert info_same.did == info.did
         assert info_same.metadata.get("public")
 
-        info_new = await wallet.create_local_did()
+        info_new = await wallet.create_local_did(DIDMethod.SOV, KeyType.ED25519)
         assert info_new.did != info_same.did
         assert not info_new.metadata.get("public")
 
-        loc = await wallet.get_local_did(self.test_did)
+        loc = await wallet.get_local_did(self.test_sov_did)
         pub = await wallet.set_public_did(loc.did)
         assert pub.did == loc.did
         assert pub.metadata.get("public") == loc.metadata.get("public")
@@ -220,22 +339,30 @@ class TestInMemoryWallet:
         assert info_final.metadata.get("public")
 
     @pytest.mark.asyncio
-    async def test_sign_verify(self, wallet):
-        info = await wallet.create_local_did(self.test_seed, self.test_did)
+    async def test_sign_verify(self, wallet: InMemoryWallet):
+        info = await wallet.create_local_did(
+            DIDMethod.SOV, KeyType.ED25519, self.test_seed, self.test_sov_did
+        )
         message_bin = self.test_message.encode("ascii")
         signature = await wallet.sign_message(message_bin, info.verkey)
         assert signature == self.test_signature
-        verify = await wallet.verify_message(message_bin, signature, info.verkey)
+        verify = await wallet.verify_message(
+            message_bin, signature, info.verkey, KeyType.ED25519
+        )
         assert verify
 
         bad_sig = b"x" + signature[1:]
-        verify = await wallet.verify_message(message_bin, bad_sig, info.verkey)
+        verify = await wallet.verify_message(
+            message_bin, bad_sig, info.verkey, KeyType.ED25519
+        )
         assert not verify
         bad_msg = b"x" + message_bin[1:]
-        verify = await wallet.verify_message(bad_msg, signature, info.verkey)
+        verify = await wallet.verify_message(
+            bad_msg, signature, info.verkey, KeyType.ED25519
+        )
         assert not verify
         verify = await wallet.verify_message(
-            message_bin, signature, self.test_target_verkey
+            message_bin, signature, self.test_target_verkey, KeyType.ED25519
         )
         assert not verify
 
@@ -251,38 +378,44 @@ class TestInMemoryWallet:
         assert "Verkey not provided" in str(excinfo.value)
 
         with pytest.raises(WalletError) as excinfo:
-            await wallet.verify_message(message_bin, signature, None)
+            await wallet.verify_message(message_bin, signature, None, KeyType.ED25519)
         assert "Verkey not provided" in str(excinfo.value)
 
         with pytest.raises(WalletError) as excinfo:
-            await wallet.verify_message(message_bin, None, info.verkey)
+            await wallet.verify_message(message_bin, None, info.verkey, KeyType.ED25519)
         assert "Signature not provided" in str(excinfo.value)
 
         with pytest.raises(WalletError) as excinfo:
-            await wallet.verify_message(None, message_bin, info.verkey)
+            await wallet.verify_message(None, message_bin, info.verkey, KeyType.ED25519)
         assert "Message not provided" in str(excinfo.value)
 
     @pytest.mark.asyncio
-    async def test_pack_unpack(self, wallet):
-        await wallet.create_local_did(self.test_seed, self.test_did)
+    async def test_pack_unpack(self, wallet: InMemoryWallet):
+        await wallet.create_local_did(
+            DIDMethod.SOV, KeyType.ED25519, self.test_seed, self.test_sov_did
+        )
 
-        packed_anon = await wallet.pack_message(self.test_message, [self.test_verkey])
+        packed_anon = await wallet.pack_message(
+            self.test_message, [self.test_ed25519_verkey]
+        )
         unpacked_anon, from_verkey, to_verkey = await wallet.unpack_message(packed_anon)
         assert unpacked_anon == self.test_message
         assert from_verkey is None
-        assert to_verkey == self.test_verkey
+        assert to_verkey == self.test_ed25519_verkey
 
         with pytest.raises(WalletError) as excinfo:
             await wallet.pack_message(None, [])
         assert "Message not provided" in str(excinfo.value)
 
-        await wallet.create_local_did(self.test_target_seed, self.test_target_did)
+        await wallet.create_local_did(
+            DIDMethod.SOV, KeyType.ED25519, self.test_target_seed, self.test_target_did
+        )
         packed_auth = await wallet.pack_message(
-            self.test_message, [self.test_target_verkey], self.test_verkey
+            self.test_message, [self.test_target_verkey], self.test_ed25519_verkey
         )
         unpacked_auth, from_verkey, to_verkey = await wallet.unpack_message(packed_auth)
         assert unpacked_auth == self.test_message
-        assert from_verkey == self.test_verkey
+        assert from_verkey == self.test_ed25519_verkey
         assert to_verkey == self.test_target_verkey
 
         with pytest.raises(WalletError):
@@ -293,8 +426,8 @@ class TestInMemoryWallet:
             await wallet.unpack_message(None)
 
     @pytest.mark.asyncio
-    async def test_signature_round_trip(self, wallet):
-        key_info = await wallet.create_signing_key()
+    async def test_signature_round_trip(self, wallet: InMemoryWallet):
+        key_info = await wallet.create_signing_key(KeyType.ED25519)
         msg = {"test": "signed field"}
         timestamp = int(time.time())
         sig = await SignatureDecorator.create(msg, key_info.verkey, wallet, timestamp)

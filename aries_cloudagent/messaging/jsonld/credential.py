@@ -10,6 +10,7 @@ from ...wallet.util import (
     bytes_to_b64,
     str_to_b64,
 )
+from ...wallet.crypto import KeyType
 
 from .create_verify_data import create_verify_data
 
@@ -88,7 +89,9 @@ async def jws_verify(verify_data, signature, public_key, wallet):
 
     jws_to_verify = create_jws(encoded_header, verify_data)
 
-    verified = await wallet.verify_message(jws_to_verify, decoded_signature, public_key)
+    verified = await wallet.verify_message(
+        jws_to_verify, decoded_signature, public_key, KeyType.ED25519
+    )
 
     return verified
 

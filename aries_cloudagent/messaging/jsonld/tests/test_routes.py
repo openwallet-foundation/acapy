@@ -2,6 +2,7 @@ from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
 from ....admin.request_context import AdminRequestContext
+from ....wallet.crypto import KeyType, DIDMethod
 
 from .. import routes as test_module
 
@@ -10,7 +11,9 @@ from .. import routes as test_module
 class TestJSONLDRoutes(AsyncTestCase):
     async def setUp(self):
         self.context = AdminRequestContext.test_context()
-        self.did_info = await (await self.context.session()).wallet.create_local_did()
+        self.did_info = await (await self.context.session()).wallet.create_local_did(
+            DIDMethod.SOV, KeyType.ED25519
+        )
         self.request_dict = {
             "context": self.context,
             "outbound_message_router": async_mock.CoroutineMock(),

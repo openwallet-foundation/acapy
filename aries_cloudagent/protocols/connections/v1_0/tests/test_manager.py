@@ -247,7 +247,11 @@ class TestConnectionManager(AsyncTestCase):
 
     async def test_create_invitation_recipient_routing_endpoint(self):
         await self.session.wallet.create_local_did(
-            seed=self.test_seed, did=self.test_did, metadata=None
+            method=DIDMethod.SOV,
+            key_type=KeyType.ED25519,
+            seed=self.test_seed,
+            did=self.test_did,
+            metadata=None,
         )
         connect_record, connect_invite = await self.manager.create_invitation(
             my_endpoint=self.test_endpoint,
@@ -466,7 +470,9 @@ class TestConnectionManager(AsyncTestCase):
         assert conn_req
 
     async def test_create_request_my_did(self):
-        await self.session.wallet.create_local_did(seed=None, did=self.test_did)
+        await self.session.wallet.create_local_did(
+            method=DIDMethod.SOV, key_type=KeyType.ED25519, seed=None, did=self.test_did
+        )
         conn_req = await self.manager.create_request(
             ConnRecord(
                 invitation_key=self.test_verkey,
@@ -661,7 +667,9 @@ class TestConnectionManager(AsyncTestCase):
 
         receipt = MessageReceipt(recipient_did=self.test_did, recipient_did_public=True)
 
-        await self.session.wallet.create_local_did(seed=None, did=self.test_did)
+        await self.session.wallet.create_local_did(
+            method=DIDMethod.SOV, key_type=KeyType.ED25519, seed=None, did=self.test_did
+        )
 
         self.context.update_settings({"public_invites": True})
         with async_mock.patch.object(
@@ -685,8 +693,12 @@ class TestConnectionManager(AsyncTestCase):
         assert "connection_id" in target
 
     async def test_receive_request_multi_use_multitenant(self):
-        multiuse_info = await self.session.wallet.create_local_did()
-        new_info = await self.session.wallet.create_local_did()
+        multiuse_info = await self.session.wallet.create_local_did(
+            DIDMethod.SOV, KeyType.ED25519
+        )
+        new_info = await self.session.wallet.create_local_did(
+            DIDMethod.SOV, KeyType.ED25519
+        )
 
         mock_request = async_mock.MagicMock()
         mock_request.connection = async_mock.MagicMock(
@@ -728,7 +740,9 @@ class TestConnectionManager(AsyncTestCase):
             )
 
     async def test_receive_request_public_multitenant(self):
-        new_info = await self.session.wallet.create_local_did()
+        new_info = await self.session.wallet.create_local_did(
+            DIDMethod.SOV, KeyType.ED25519
+        )
 
         mock_request = async_mock.MagicMock()
         mock_request.connection = async_mock.MagicMock(accept=ConnRecord.ACCEPT_MANUAL)
@@ -785,7 +799,9 @@ class TestConnectionManager(AsyncTestCase):
 
         receipt = MessageReceipt(recipient_did=self.test_did, recipient_did_public=True)
 
-        await self.session.wallet.create_local_did(seed=None, did=self.test_did)
+        await self.session.wallet.create_local_did(
+            method=DIDMethod.SOV, key_type=KeyType.ED25519, seed=None, did=self.test_did
+        )
 
         self.context.update_settings({"public_invites": True})
         with async_mock.patch.object(
@@ -809,7 +825,9 @@ class TestConnectionManager(AsyncTestCase):
 
         receipt = MessageReceipt(recipient_did=self.test_did, recipient_did_public=True)
 
-        await self.session.wallet.create_local_did(seed=None, did=self.test_did)
+        await self.session.wallet.create_local_did(
+            method=DIDMethod.SOV, key_type=KeyType.ED25519, seed=None, did=self.test_did
+        )
 
         self.context.update_settings({"public_invites": True})
         with async_mock.patch.object(
@@ -833,7 +851,9 @@ class TestConnectionManager(AsyncTestCase):
 
         receipt = MessageReceipt(recipient_did=self.test_did, recipient_did_public=True)
 
-        await self.session.wallet.create_local_did(seed=None, did=self.test_did)
+        await self.session.wallet.create_local_did(
+            method=DIDMethod.SOV, key_type=KeyType.ED25519, seed=None, did=self.test_did
+        )
 
         self.context.update_settings({"public_invites": False})
         with async_mock.patch.object(
@@ -857,7 +877,9 @@ class TestConnectionManager(AsyncTestCase):
 
         receipt = MessageReceipt(recipient_did=self.test_did, recipient_did_public=True)
 
-        await self.session.wallet.create_local_did(seed=None, did=self.test_did)
+        await self.session.wallet.create_local_did(
+            method=DIDMethod.SOV, key_type=KeyType.ED25519, seed=None, did=self.test_did
+        )
 
         self.context.update_settings(
             {"public_invites": True, "debug.auto_accept_requests": False}
@@ -888,7 +910,9 @@ class TestConnectionManager(AsyncTestCase):
             recipient_did=self.test_did, recipient_did_public=False
         )
 
-        await self.session.wallet.create_local_did(seed=None, did=self.test_did)
+        await self.session.wallet.create_local_did(
+            method=DIDMethod.SOV, key_type=KeyType.ED25519, seed=None, did=self.test_did
+        )
 
         mediation_record = MediationRecord(
             role=MediationRecord.ROLE_CLIENT,
@@ -1937,7 +1961,11 @@ class TestConnectionManager(AsyncTestCase):
 
     async def test_get_connection_targets_conn_invitation_no_did(self):
         local_did = await self.session.wallet.create_local_did(
-            seed=self.test_seed, did=self.test_did, metadata=None
+            method=DIDMethod.SOV,
+            key_type=KeyType.ED25519,
+            seed=self.test_seed,
+            did=self.test_did,
+            metadata=None,
         )
 
         did_doc = self.make_did_doc(
@@ -1991,7 +2019,11 @@ class TestConnectionManager(AsyncTestCase):
 
     async def test_get_connection_targets_retrieve_connection(self):
         local_did = await self.session.wallet.create_local_did(
-            seed=self.test_seed, did=self.test_did, metadata=None
+            method=DIDMethod.SOV,
+            key_type=KeyType.ED25519,
+            seed=self.test_seed,
+            did=self.test_did,
+            metadata=None,
         )
 
         did_doc = self.make_did_doc(
@@ -2039,7 +2071,11 @@ class TestConnectionManager(AsyncTestCase):
     async def test_get_conn_targets_conn_invitation_no_cache(self):
         self.context.injector.clear_binding(BaseCache)
         local_did = await self.session.wallet.create_local_did(
-            seed=self.test_seed, did=self.test_did, metadata=None
+            method=DIDMethod.SOV,
+            key_type=KeyType.ED25519,
+            seed=self.test_seed,
+            did=self.test_did,
+            metadata=None,
         )
 
         did_doc = self.make_did_doc(
@@ -2083,7 +2119,11 @@ class TestConnectionManager(AsyncTestCase):
 
     async def test_fetch_connection_targets_conn_invitation_did_no_ledger(self):
         await self.session.wallet.create_local_did(
-            seed=self.test_seed, did=self.test_did, metadata=None
+            method=DIDMethod.SOV,
+            key_type=KeyType.ED25519,
+            seed=self.test_seed,
+            did=self.test_did,
+            metadata=None,
         )
 
         conn_invite = ConnectionInvitation(
@@ -2116,7 +2156,11 @@ class TestConnectionManager(AsyncTestCase):
         self.context.injector.bind_instance(BaseLedger, self.ledger)
 
         local_did = await self.session.wallet.create_local_did(
-            seed=self.test_seed, did=self.test_did, metadata=None
+            method=DIDMethod.SOV,
+            key_type=KeyType.ED25519,
+            seed=self.test_seed,
+            did=self.test_did,
+            metadata=None,
         )
 
         conn_invite = ConnectionInvitation(
@@ -2147,7 +2191,11 @@ class TestConnectionManager(AsyncTestCase):
 
     async def test_fetch_connection_targets_oob_invitation_svc_did_no_ledger(self):
         await self.session.wallet.create_local_did(
-            seed=self.test_seed, did=self.test_did, metadata=None
+            method=DIDMethod.SOV,
+            key_type=KeyType.ED25519,
+            seed=self.test_seed,
+            did=self.test_did,
+            metadata=None,
         )
 
         mock_oob_invite = async_mock.MagicMock(service_dids=["dummy"])
@@ -2173,7 +2221,11 @@ class TestConnectionManager(AsyncTestCase):
         self.context.injector.bind_instance(BaseLedger, self.ledger)
 
         local_did = await self.session.wallet.create_local_did(
-            seed=self.test_seed, did=self.test_did, metadata=None
+            method=DIDMethod.SOV,
+            key_type=KeyType.ED25519,
+            seed=self.test_seed,
+            did=self.test_did,
+            metadata=None,
         )
 
         mock_oob_invite = async_mock.MagicMock(
@@ -2211,7 +2263,11 @@ class TestConnectionManager(AsyncTestCase):
         self.context.injector.bind_instance(BaseLedger, self.ledger)
 
         local_did = await self.session.wallet.create_local_did(
-            seed=self.test_seed, did=self.test_did, metadata=None
+            method=DIDMethod.SOV,
+            key_type=KeyType.ED25519,
+            seed=self.test_seed,
+            did=self.test_did,
+            metadata=None,
         )
 
         mock_oob_invite = async_mock.MagicMock(
@@ -2251,7 +2307,11 @@ class TestConnectionManager(AsyncTestCase):
 
     async def test_fetch_connection_targets_conn_initiator_completed_no_their_did(self):
         await self.session.wallet.create_local_did(
-            seed=self.test_seed, did=self.test_did, metadata=None
+            method=DIDMethod.SOV,
+            key_type=KeyType.ED25519,
+            seed=self.test_seed,
+            did=self.test_did,
+            metadata=None,
         )
 
         mock_conn = async_mock.MagicMock(
@@ -2263,7 +2323,11 @@ class TestConnectionManager(AsyncTestCase):
 
     async def test_fetch_connection_targets_conn_completed_their_did(self):
         local_did = await self.session.wallet.create_local_did(
-            seed=self.test_seed, did=self.test_did, metadata=None
+            method=DIDMethod.SOV,
+            key_type=KeyType.ED25519,
+            seed=self.test_seed,
+            did=self.test_did,
+            metadata=None,
         )
 
         did_doc = self.make_did_doc(did=self.test_did, verkey=self.test_verkey)
@@ -2304,7 +2368,11 @@ class TestConnectionManager(AsyncTestCase):
 
     async def test_establish_inbound(self):
         await self.session.wallet.create_local_did(
-            seed=self.test_seed, did=self.test_did, metadata=None
+            method=DIDMethod.SOV,
+            key_type=KeyType.ED25519,
+            seed=self.test_seed,
+            did=self.test_did,
+            metadata=None,
         )
 
         mock_conn = async_mock.MagicMock(
@@ -2329,7 +2397,11 @@ class TestConnectionManager(AsyncTestCase):
 
     async def test_establish_inbound_conn_rec_no_my_did(self):
         await self.session.wallet.create_local_did(
-            seed=self.test_seed, did=self.test_did, metadata=None
+            method=DIDMethod.SOV,
+            key_type=KeyType.ED25519,
+            seed=self.test_seed,
+            did=self.test_did,
+            metadata=None,
         )
 
         mock_conn = async_mock.MagicMock()
@@ -2353,7 +2425,11 @@ class TestConnectionManager(AsyncTestCase):
 
     async def test_establish_inbound_no_conn_record(self):
         await self.session.wallet.create_local_did(
-            seed=self.test_seed, did=self.test_did, metadata=None
+            method=DIDMethod.SOV,
+            key_type=KeyType.ED25519,
+            seed=self.test_seed,
+            did=self.test_did,
+            metadata=None,
         )
 
         mock_conn = async_mock.MagicMock()
@@ -2375,7 +2451,11 @@ class TestConnectionManager(AsyncTestCase):
 
     async def test_establish_inbound_router_not_ready(self):
         await self.session.wallet.create_local_did(
-            seed=self.test_seed, did=self.test_did, metadata=None
+            method=DIDMethod.SOV,
+            key_type=KeyType.ED25519,
+            seed=self.test_seed,
+            did=self.test_did,
+            metadata=None,
         )
 
         mock_conn = async_mock.MagicMock()

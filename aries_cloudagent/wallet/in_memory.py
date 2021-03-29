@@ -139,7 +139,7 @@ class InMemoryWallet(BaseWallet):
             )
 
         key_info = await self.create_signing_key(
-            local_did["key_type"], next_seed, {"did": did}
+            key_type=local_did["key_type"], seed=next_seed, metadata={"did": did}
         )
         return key_info.verkey
 

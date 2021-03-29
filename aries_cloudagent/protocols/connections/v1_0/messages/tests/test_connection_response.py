@@ -2,6 +2,7 @@ from unittest import mock, TestCase
 
 from asynctest import TestCase as AsyncTestCase
 
+from ......wallet.crypto import KeyType
 from ......connections.models.diddoc import (
     DIDDoc,
     PublicKey,
@@ -11,7 +12,6 @@ from ......connections.models.diddoc import (
 from ......core.in_memory import InMemoryProfile
 
 from .....didcomm_prefix import DIDCommPrefix
-
 from ...message_types import CONNECTION_RESPONSE
 from ...models.connection_detail import ConnectionDetail
 
@@ -108,7 +108,7 @@ class TestConnectionResponseSchema(AsyncTestCase, TestConfig):
         )
         session = InMemoryProfile.test_session()
         wallet = session.wallet
-        key_info = await wallet.create_signing_key()
+        key_info = await wallet.create_signing_key(KeyType.ED25519)
         await connection_response.sign_field("connection", key_info.verkey, wallet)
         data = connection_response.serialize()
         model_instance = ConnectionResponse.deserialize(data)

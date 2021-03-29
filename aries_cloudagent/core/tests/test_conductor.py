@@ -29,6 +29,7 @@ from ...transport.wire_format import BaseWireFormat
 from ...transport.pack_format import PackWireFormat
 from ...utils.stats import Collector
 from ...wallet.base import BaseWallet
+from ...wallet.crypto import KeyType, DIDMethod
 
 from .. import conductor as test_module
 
@@ -107,7 +108,10 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             session = await conductor.root_profile.session()
 
             wallet = session.inject(BaseWallet)
-            await wallet.create_public_did()
+            await wallet.create_public_did(
+                DIDMethod.SOV,
+                KeyType.ED25519,
+            )
 
             mock_inbound_mgr.return_value.setup.assert_awaited_once()
             mock_outbound_mgr.return_value.setup.assert_awaited_once()
@@ -499,7 +503,10 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
 
         session = await conductor.root_profile.session()
         wallet = session.inject(BaseWallet)
-        await wallet.create_public_did()
+        await wallet.create_public_did(
+            DIDMethod.SOV,
+            KeyType.ED25519,
+        )
 
         with async_mock.patch.object(
             admin, "start", autospec=True
@@ -529,7 +536,10 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
 
         session = await conductor.root_profile.session()
         wallet = session.inject(BaseWallet)
-        await wallet.create_public_did()
+        await wallet.create_public_did(
+            DIDMethod.SOV,
+            KeyType.ED25519,
+        )
 
         with async_mock.patch.object(
             admin, "start", autospec=True
@@ -577,7 +587,10 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
 
             session = await conductor.root_profile.session()
             wallet = session.inject(BaseWallet)
-            await wallet.create_public_did()
+            await wallet.create_public_did(
+                DIDMethod.SOV,
+                KeyType.ED25519,
+            )
 
             mock_mgr.return_value.create_static_connection = async_mock.CoroutineMock()
             await conductor.start()
@@ -695,7 +708,10 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
 
             session = await conductor.root_profile.session()
             wallet = session.inject(BaseWallet)
-            await wallet.create_public_did()
+            await wallet.create_public_did(
+                DIDMethod.SOV,
+                KeyType.ED25519,
+            )
 
             await conductor.start()
             await conductor.stop()

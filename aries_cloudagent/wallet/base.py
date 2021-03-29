@@ -160,7 +160,9 @@ class BaseWallet(ABC):
             info_meta = info.metadata
             info_meta["public"] = False
             await self.replace_local_did_metadata(info.did, info_meta)
-        return await self.create_local_did(seed, did, metadata)
+        return await self.create_local_did(
+            method=method, key_type=key_type, seed=seed, did=did, metadata=metadata
+        )
 
     async def get_public_did(self) -> DIDInfo:
         """
@@ -187,7 +189,7 @@ class BaseWallet(ABC):
 
         """
 
-        did_info = self.get_local_did(did)
+        did_info = await self.get_local_did(did)
         if did_info.method != DIDMethod.SOV:
             raise WalletError("Setting public did is only allowed for did:sov dids")
 

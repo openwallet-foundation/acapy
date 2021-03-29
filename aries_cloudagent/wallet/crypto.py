@@ -1,5 +1,6 @@
 """Cryptography functions used by BasicWallet."""
 
+import uuid
 from enum import Enum
 import json
 
@@ -10,6 +11,8 @@ import nacl.bindings
 import nacl.exceptions
 import nacl.utils
 
+from ..storage.base import BaseStorage
+from ..storage.record import StorageRecord
 from marshmallow import fields, Schema, ValidationError
 from ursa_bbs_signatures.models.SignRequest import SignRequest
 from ursa_bbs_signatures.models.VerifyRequest import VerifyRequest
@@ -184,6 +187,81 @@ class PackRecipientsSchema(Schema):
     typ = fields.Constant("JWM/1.0", required=True)
     alg = fields.Str(required=True)
     recipients = fields.List(fields.Nested(PackRecipientSchema()), required=True)
+
+
+async def store_key_pair(
+    *,
+    storage: BaseStorage,
+    public_key: bytes,
+    secret_key: bytes,
+    key_type: KeyType,
+    metadata: dict,
+    tags={},
+):
+    """Store signing key pair in storage.
+
+    Args:
+        storage (BaseStorage): [description]
+        public_key (bytes): [description]
+        secret_key (bytes): [description]
+        key_type (KeyType): [description]
+        metadata (dict): [description]
+    """
+    verkey = bytes_to_b58(public_key)
+    data = {
+        "verkey": verkey,
+        "secret_key": bytes_to_b58(secret_key),
+        "key_type": key_type.key_type,
+        "metadata": metadata,
+    }
+    record = StorageRecord(
+        "key_pair",
+        json.dumps(data),
+        {**tags, "verkey": verkey, "key_type": key_type.key_type},
+        uuid.uuid4().hex,
+    )
+
+    await storage.add_record(record)
+
+
+async def get_key_pair(*, storage: BaseStorage, verkey: str) -> dict:
+    """Retrieve signing key pair from storage by verkey.
+
+    Args:
+        storage (BaseStorage): The storage to use for querying
+        verkey (str): The verkey to query for
+
+    Raises:
+        StorageDuplicateError: If more than one key pair is found for this verkey
+        StorageNotFoundError: If no key pair is found for this verkey
+
+    Returns
+        dict: The key pair data
+
+    """
+
+    record = await storage.find_record("key_pair", {"verkey": verkey})
+    data = json.loads(record.value)
+
+    return data
+
+
+async def get_key_pairs(
+    *, storage: BaseStorage, tag_query: Optional[Mapping] = None
+) -> List[dict]:
+    records = await storage.find_all_records("key_pair", tag_query)
+
+    return [json.loads(record) for record in records]
+
+
+async def update_key_pair_metadata(
+    *, storage: BaseStorage, verkey: str, metadata: dict
+):
+    record = await storage.find_record("key_pair", {"verkey": verkey})
+    data = json.loads(record.value)
+    data["metadata"] = metadata
+
+    await storage.update_record(record, json.dumps(data), record.tags)
 
 
 def create_keypair(key_type: KeyType, seed: bytes = None) -> Tuple[bytes, bytes]:

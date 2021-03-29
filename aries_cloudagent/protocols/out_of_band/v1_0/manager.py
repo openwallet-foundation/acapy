@@ -6,10 +6,6 @@ import logging
 
 from typing import Mapping, Sequence, Optional
 
-from aries_cloudagent.protocols.coordinate_mediation.v1_0.manager import (
-    MediationManager,
-)
-
 from ....connections.base_manager import BaseConnectionManager
 from ....connections.models.conn_record import ConnRecord
 from ....connections.util import mediation_record_if_id
@@ -28,6 +24,7 @@ from ....wallet.util import b64_to_bytes
 from ....wallet.crypto import KeyType
 from ....did.did_key import DIDKey
 
+from ...coordinate_mediation.v1_0.manager import MediationManager
 from ...connections.v1_0.manager import ConnectionManager
 from ...connections.v1_0.messages.connection_invitation import ConnectionInvitation
 from ...didcomm_prefix import DIDCommPrefix
@@ -271,7 +268,7 @@ class OutOfBandManager(BaseConnectionManager):
                 my_endpoint = self._session.settings.get("default_endpoint")
 
             # Create and store new invitation key
-            connection_key = await wallet.create_signing_key()
+            connection_key = await wallet.create_signing_key(KeyType.ED25519)
             keylist_updates = await mediation_mgr.add_key(
                 connection_key.verkey, keylist_updates
             )

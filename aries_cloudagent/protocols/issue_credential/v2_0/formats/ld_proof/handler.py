@@ -1,5 +1,6 @@
 """V2.0 issue-credential linked data proof credential format handler."""
 
+from aries_cloudagent.wallet.crypto import KeyType
 import logging
 from typing import Mapping
 
@@ -15,8 +16,7 @@ from ......vc.vc_ld import (
 from ......vc.ld_proofs import (
     Ed25519Signature2018,
     BbsBlsSignature2020,
-    Ed25519WalletKeyPair,
-    Bls12381G2WalletKeyPair,
+    WalletKeyPair,
     LinkedDataProof,
     CredentialIssuancePurpose,
     ProofPurpose,
@@ -207,12 +207,14 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
             # for shorter sessions
             wallet = session.inject(BaseWallet)
 
+            # TODO: we can abstract this
             if proof_type == Ed25519Signature2018.signature_type:
                 return Ed25519Signature2018(
                     verification_method=verification_method,
                     proof=proof,
-                    key_pair=Ed25519WalletKeyPair(
+                    key_pair=WalletKeyPair(
                         wallet=wallet,
+                        key_type=KeyType.ED25519,
                         public_key_base58=did_info.verkey if did_info else None,
                     ),
                 )
@@ -220,8 +222,9 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
                 return BbsBlsSignature2020(
                     verification_method=verification_method,
                     proof=proof,
-                    key_pair=Bls12381G2WalletKeyPair(
+                    key_pair=WalletKeyPair(
                         wallet=wallet,
+                        key_type=KeyType.BLS12381G2,
                         public_key_base58=did_info.verkey if did_info else None,
                     ),
                 )

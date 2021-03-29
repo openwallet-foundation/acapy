@@ -9,6 +9,7 @@ from marshmallow import EXCLUDE, fields
 from ...protocols.didcomm_prefix import DIDCommPrefix
 from ...wallet.base import BaseWallet
 from ...wallet.util import b64_to_bytes, bytes_to_b64
+from ...wallet.crypto import KeyType
 
 from ..models.base import BaseModel, BaseModelSchema
 from ..valid import Base64URL, BASE64URL, INDY_RAW_PUBLIC_KEY
@@ -110,7 +111,9 @@ class SignatureDecorator(BaseModel):
             return False
         msg_bin = b64_to_bytes(self.sig_data, urlsafe=True)
         sig_bin = b64_to_bytes(self.signature, urlsafe=True)
-        return await wallet.verify_message(msg_bin, sig_bin, self.signer)
+        return await wallet.verify_message(
+            msg_bin, sig_bin, self.signer, KeyType.ED25519
+        )
 
     def __str__(self):
         """Get a string representation of this class."""

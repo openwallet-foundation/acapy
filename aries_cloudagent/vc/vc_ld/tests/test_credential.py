@@ -43,6 +43,48 @@ CREDENTIAL_ISSUED = {
     },
 }
 
+CREDENTIAL_TEMPLATE_BBS = {
+    "@context": [
+        "https://www.w3.org/2018/credentials/v1",
+        "https://w3id.org/security/bbs/v1",
+        "https://www.w3.org/2018/credentials/examples/v1",
+    ],
+    "id": "http://example.gov/credentials/3732",
+    "type": ["VerifiableCredential", "UniversityDegreeCredential"],
+    "issuer": {
+        "id": "did:key:zUC72Q7XD4PE4CrMiDVXuvZng3sBvMmaGgNeTUJuzavH2BS7ThbHL9FhsZM9QYY5fqAQ4MB8M9oudz3tfuaX36Ajr97QRW7LBt6WWmrtESe6Bs5NYzFtLWEmeVtvRYVAgjFcJSa"
+    },
+    "issuanceDate": "2020-03-10T04:24:12.164Z",
+    "credentialSubject": {
+        "id": "did:example:456",
+        "degree": {"type": "BachelorDegree", "name": "Bachelor of Science and Arts"},
+    },
+}
+
+CREDENTIAL_ISSUED_BBS = {
+    "@context": [
+        "https://www.w3.org/2018/credentials/v1",
+        "https://w3id.org/security/bbs/v1",
+        "https://www.w3.org/2018/credentials/examples/v1",
+    ],
+    "id": "http://example.gov/credentials/3732",
+    "type": ["VerifiableCredential", "UniversityDegreeCredential"],
+    "issuer": {
+        "id": "did:key:zUC72Q7XD4PE4CrMiDVXuvZng3sBvMmaGgNeTUJuzavH2BS7ThbHL9FhsZM9QYY5fqAQ4MB8M9oudz3tfuaX36Ajr97QRW7LBt6WWmrtESe6Bs5NYzFtLWEmeVtvRYVAgjFcJSa"
+    },
+    "issuanceDate": "2020-03-10T04:24:12.164Z",
+    "credentialSubject": {
+        "id": "did:example:456",
+        "degree": {"type": "BachelorDegree", "name": "Bachelor of Science and Arts"},
+    },
+    "proof": {
+        "type": "BbsBlsSignature2020",
+        "verificationMethod": "did:key:zUC72Q7XD4PE4CrMiDVXuvZng3sBvMmaGgNeTUJuzavH2BS7ThbHL9FhsZM9QYY5fqAQ4MB8M9oudz3tfuaX36Ajr97QRW7LBt6WWmrtESe6Bs5NYzFtLWEmeVtvRYVAgjFcJSa#zUC72Q7XD4PE4CrMiDVXuvZng3sBvMmaGgNeTUJuzavH2BS7ThbHL9FhsZM9QYY5fqAQ4MB8M9oudz3tfuaX36Ajr97QRW7LBt6WWmrtESe6Bs5NYzFtLWEmeVtvRYVAgjFcJSa",
+        "created": "2019-12-11T03:50:55",
+        "proofPurpose": "assertionMethod",
+        "proofValue": "saCdwWlzoYB0Ayo7xthCGK462T4x95lkI7yINra+r/DRY8PH4udviBebYIMA0pHkFX/nW+ilcdipr8jdN+WbHElg2wIrpWEqdvbT/vrjTWM2iXS7MmsMvpQbLfJVohDCBrm4b6BuE6QYO4Va6tYsKw==",
+    },
+}
 
 CREDENTIAL_VERIFIED = DocumentVerificationResult(
     verified=True,

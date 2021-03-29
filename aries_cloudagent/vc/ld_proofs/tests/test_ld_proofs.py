@@ -14,7 +14,6 @@ from ...ld_proofs import (
     AssertionProofPurpose,
     verify,
     BbsBlsSignature2020,
-    Bls12381G2WalletKeyPair,
 )
 from ...tests.document_loader import custom_document_loader
 from .test_doc import (
@@ -28,7 +27,6 @@ from .test_doc import (
 
 class TestLDProofs(TestCase):
     test_seed = "testseed000000000000000000000001"
-    key_info: KeyInfo = None
 
     async def setUp(self):
         self.profile = InMemoryProfile.test_profile()
