@@ -1333,7 +1333,12 @@ async def credential_exchange_store(request: web.BaseRequest):
             cred_id,
         )
 
+        # We first need to retrieve the the cred_ex_record with detail record
+        # as the record may be auto removed
         result = await _get_result_with_details(context.profile, cred_ex_record)
+
+        if cred_ex_record.auto_remove:
+            await cred_manager.delete_cred_ex_record(cred_ex_record.cred_ex_id)
 
     except (
         StorageError,

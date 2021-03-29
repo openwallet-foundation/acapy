@@ -579,9 +579,6 @@ class V20CredManager:
             self._profile.settings, cred_ex_record.trace
         )
 
-        if cred_ex_record.auto_remove:
-            await self.delete_cred_ex_record(cred_ex_record.cred_ex_id)
-
         return (cred_ex_record, cred_ack_message)
 
     async def receive_credential_ack(
