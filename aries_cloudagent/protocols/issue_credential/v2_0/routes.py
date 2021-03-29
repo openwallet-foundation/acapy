@@ -997,7 +997,7 @@ async def credential_exchange_send_bound_offer(request: web.BaseRequest):
                 V20CredExRecord.STATE_PROPOSAL_RECEIVED
             ):  # check state here: manager call creates free offers too
                 raise V20CredManagerError(
-                    f"Credential exchange record {cred_ex_record.cred_exchange_id} "
+                    f"Credential exchange record {cred_ex_record.cred_ex_id} "
                     f"in {cred_ex_record.state} state "
                     f"(must be {V20CredExRecord.STATE_PROPOSAL_RECEIVED})"
                 )

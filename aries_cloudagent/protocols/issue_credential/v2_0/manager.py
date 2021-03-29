@@ -178,8 +178,8 @@ class V20CredManager:
                 self.profile
             ).receive_proposal(cred_ex_record, cred_proposal_message)
 
-        cred_ex_record.cred_proposal = (cred_proposal_message.serialize(),)
-        cred_ex_record.state = (V20CredExRecord.STATE_PROPOSAL_RECEIVED,)
+        cred_ex_record.cred_proposal = cred_proposal_message.serialize()
+        cred_ex_record.state = V20CredExRecord.STATE_PROPOSAL_RECEIVED
 
         async with self._profile.session() as session:
             await cred_ex_record.save(
