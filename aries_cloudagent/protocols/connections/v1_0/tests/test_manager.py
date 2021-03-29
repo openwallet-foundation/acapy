@@ -113,7 +113,7 @@ class TestConnectionManager(AsyncTestCase):
 
         requestA = ConnectionRequest(
             connection=ConnectionDetail(
-                did=self.test_target_did,
+                did=self.test_target_did.split(":")[-1],
                 did_doc=self.make_did_doc(
                     self.test_target_did, self.test_target_verkey
                 ),
@@ -125,7 +125,7 @@ class TestConnectionManager(AsyncTestCase):
 
         requestB = ConnectionRequest(
             connection=ConnectionDetail(
-                did=self.test_did,
+                did=self.test_did.split(":")[-1],
                 did_doc=self.make_did_doc(self.test_did, self.test_verkey),
             ),
             label="SameInviteRequestB",
@@ -216,7 +216,7 @@ class TestConnectionManager(AsyncTestCase):
 
         requestA = ConnectionRequest(
             connection=ConnectionDetail(
-                did=self.test_target_did,
+                did=self.test_target_did.split(":")[-1],
                 did_doc=self.make_did_doc(
                     self.test_target_did, self.test_target_verkey
                 ),
@@ -228,7 +228,7 @@ class TestConnectionManager(AsyncTestCase):
 
         requestB = ConnectionRequest(
             connection=ConnectionDetail(
-                did=self.test_did,
+                did=self.test_did.split(":")[-1],
                 did_doc=self.make_did_doc(self.test_did, self.test_verkey),
             ),
             label="SameInviteRequestB",
@@ -250,7 +250,7 @@ class TestConnectionManager(AsyncTestCase):
 
         requestA = ConnectionRequest(
             connection=ConnectionDetail(
-                did=self.test_target_did,
+                did=self.test_target_did.split(":")[-1],
                 did_doc=self.make_did_doc(
                     self.test_target_did, self.test_target_verkey
                 ),
@@ -288,7 +288,7 @@ class TestConnectionManager(AsyncTestCase):
 
         request = ConnectionRequest(
             connection=ConnectionDetail(
-                did=self.test_target_did,
+                did=self.test_target_did.split(":")[-1],
                 did_doc=self.make_did_doc(
                     self.test_target_did, self.test_target_verkey
                 ),
@@ -624,9 +624,10 @@ class TestConnectionManager(AsyncTestCase):
     async def test_receive_request_public_did(self):
         mock_request = async_mock.MagicMock()
         mock_request.connection = async_mock.MagicMock()
-        mock_request.connection.did = self.test_did
+        mock_request.connection.did = self.test_did.split(":")[-1]
         mock_request.connection.did_doc = async_mock.MagicMock()
-        mock_request.connection.did_doc.id = self.test_did
+        mock_did_doc = self.make_did_doc(self.test_did, self.test_verkey)
+        mock_request.connection.did_doc = mock_did_doc
 
         receipt = MessageReceipt(recipient_did=self.test_did, recipient_did_public=True)
 
@@ -661,9 +662,10 @@ class TestConnectionManager(AsyncTestCase):
         mock_request.connection = async_mock.MagicMock(
             is_multiuse_invitation=True, invitation_key=multiuse_info.verkey
         )
-        mock_request.connection.did = self.test_did
-        mock_request.connection.did_doc = async_mock.MagicMock()
-        mock_request.connection.did_doc.id = self.test_did
+        mock_request.connection.did = self.test_did.split(":")[-1]
+        mock_request.connection.did_doc = self.make_did_doc(self.test_did,
+                                                            self.test_verkey)
+
         receipt = MessageReceipt(recipient_verkey=multiuse_info.verkey)
 
         self.context.update_settings(
@@ -697,9 +699,8 @@ class TestConnectionManager(AsyncTestCase):
 
         mock_request = async_mock.MagicMock()
         mock_request.connection = async_mock.MagicMock(accept=ConnRecord.ACCEPT_MANUAL)
-        mock_request.connection.did = self.test_did
-        mock_request.connection.did_doc = async_mock.MagicMock()
-        mock_request.connection.did_doc.id = self.test_did
+        mock_request.connection.did = self.test_did.split(":")[-1]
+        mock_request.connection.did_doc = self.make_did_doc(self.test_did, self.test_verkey)
         receipt = MessageReceipt(recipient_did_public=True)
 
         self.context.update_settings(
@@ -808,9 +809,8 @@ class TestConnectionManager(AsyncTestCase):
     async def test_receive_request_public_did_no_auto_accept(self):
         mock_request = async_mock.MagicMock()
         mock_request.connection = async_mock.MagicMock()
-        mock_request.connection.did = self.test_did
-        mock_request.connection.did_doc = async_mock.MagicMock()
-        mock_request.connection.did_doc.id = self.test_did
+        mock_request.connection.did = self.test_did.split(":")[-1]
+        mock_request.connection.did_doc = self.make_did_doc(self.test_did, self.test_verkey)
 
         receipt = MessageReceipt(recipient_did=self.test_did, recipient_did_public=True)
 
@@ -837,9 +837,10 @@ class TestConnectionManager(AsyncTestCase):
     async def test_receive_request_mediation_id(self):
         mock_request = async_mock.MagicMock()
         mock_request.connection = async_mock.MagicMock()
-        mock_request.connection.did = self.test_did
-        mock_request.connection.did_doc = async_mock.MagicMock()
-        mock_request.connection.did_doc.id = self.test_did
+
+        mock_request.connection.did = self.test_did.split(":")[-1]
+        mock_request.connection.did_doc = self.make_did_doc(self.test_did,
+                                                            self.test_verkey)
 
         receipt = MessageReceipt(
             recipient_did=self.test_did, recipient_did_public=False
@@ -885,9 +886,9 @@ class TestConnectionManager(AsyncTestCase):
     async def test_receive_request_bad_mediation(self):
         mock_request = async_mock.MagicMock()
         mock_request.connection = async_mock.MagicMock()
-        mock_request.connection.did = self.test_did
-        mock_request.connection.did_doc = async_mock.MagicMock()
-        mock_request.connection.did_doc.id = self.test_did
+        mock_request.connection.did = self.test_did.split(":")[-1]
+        mock_request.connection.did_doc = self.make_did_doc(self.test_did,
+                                                            self.test_verkey)
         receipt = MessageReceipt(
             recipient_did=self.test_did, recipient_did_public=False
         )
@@ -910,7 +911,7 @@ class TestConnectionManager(AsyncTestCase):
     async def test_receive_request_mediation_not_granted(self):
         mock_request = async_mock.MagicMock()
         mock_request.connection = async_mock.MagicMock()
-        mock_request.connection.did = self.test_target_did
+        mock_request.connection.did = self.test_target_did.split(":")[-1]
         mock_request.connection.did_doc = self.make_did_doc(
             self.test_target_did, self.test_target_verkey
         )
@@ -1571,7 +1572,7 @@ class TestConnectionManager(AsyncTestCase):
 
     async def test_create_did_document(self):
         did_info = DIDInfo(
-            self.test_did,
+            self.test_did.split(":")[-1],
             self.test_verkey,
             None,
         )
@@ -2053,7 +2054,7 @@ class TestConnectionManager(AsyncTestCase):
         assert target.endpoint == conn_invite.endpoint
         assert target.label == conn_invite.label
         assert (
-            did_doc.dereference(target.recipient_keys[0].url).material
+            target.recipient_keys[0].material
             == conn_invite.recipient_keys[0]
         )
         assert target.routing_keys == []
@@ -2120,10 +2121,10 @@ class TestConnectionManager(AsyncTestCase):
         assert len(targets) == 1
         target = targets[0]
         assert target.did == mock_conn.their_did
-        assert target.endpoint == "{}/priority2".format(self.test_endpoint)
+        assert target.endpoint == self.test_endpoint
         assert target.label == conn_invite.label
         assert target.recipient_keys == conn_invite.recipient_keys
-        assert target.routing_keys == [key.id]
+        #assert target.routing_keys == [key.id]
         assert target.sender_key == local_did.verkey
 
     async def test_fetch_connection_targets_conn_invitation_btcr_without_services(self):
@@ -2233,7 +2234,7 @@ class TestConnectionManager(AsyncTestCase):
         assert target.did == mock_conn.their_did
         assert target.endpoint == self.test_endpoint
         assert target.label == mock_oob_invite.label
-        assert target.recipient_keys == did_doc.service[0].recipient_keys
+        assert target.recipient_keys[0].id == did_doc.service[0].recipient_keys[0]
         assert target.routing_keys == []
         assert target.sender_key == local_did.verkey
 

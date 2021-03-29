@@ -25,7 +25,14 @@ from ..wallet.base import BaseWallet, DIDInfo
 from ..wallet.util import did_key_to_naked
 from .models.conn_record import ConnRecord
 from .models.connection_target import ConnectionTarget
-from pydid import DIDDocument, DIDDocumentBuilder, VerificationSuite, options, DID
+from pydid import (
+    DIDDocument,
+    DIDDocumentBuilder,
+    VerificationSuite,
+    options,
+    DID,
+    DIDCommService,
+)
 import json
 
 
@@ -161,7 +168,7 @@ class BaseConnectionManager:
         assert did_doc.id
         storage: BaseStorage = self._session.inject(BaseStorage)
         try:
-            stored_doc, record = await self.fetch_did_document(did_doc.id)
+            stored_doc, record = await self.fetch_did_document(str(did_doc.id))
         except StorageNotFoundError:
             record = StorageRecord(
                 self.RECORD_TYPE_DID_DOC,
@@ -230,12 +237,11 @@ class BaseConnectionManager:
             raise ResolverError("Cannot resolve DID without document services")
         endpoint = doc.service[0].endpoint
         recipient_keys = [
-            doc.dereference(url)
-            for url in doc.service[0].extra["recipient_keys"]
+            doc.dereference(url) for url in self._retrieve_service_key(doc.service[0])
         ]
         routing_keys = [
             doc.dereference(url)
-            for url in doc.service[0].extra["routing_keys"]
+            for url in self._retrieve_service_key(doc.service[0], routing=True)
         ]
 
         return endpoint, recipient_keys, routing_keys
@@ -341,15 +347,16 @@ class BaseConnectionManager:
                 label=their_label,
                 recipient_keys=[
                     doc.dereference(key).material
-                    for key in (service.extra.get("recipientKeys") or ())
+                    for key in (self._retrieve_service_key(service) or ())
                 ],
                 routing_keys=[
-                    key.material for key in (service.extra.get("routingKeys") or ())
+                    key.material
+                    for key in (self._retrieve_service_key(service, routing=True) or ())
                 ],
                 sender_key=sender_verkey,
             )
             for service in doc.service
-            if service.extra.get("recipientKeys")
+            if self._retrieve_service_key(service)
         ]
 
     async def fetch_did_document(self, did: str) -> Tuple[DIDDocument, StorageRecord]:
@@ -377,3 +384,25 @@ class BaseConnectionManager:
         """Retrieve the DID without method from a Sting."""
 
         return DID(did).method_specific_id
+
+    def _retrieve_service_key(self, service, routing=False):
+        """Retrieve service keys from Service or DIDCommService.
+
+        Args:
+            service: pydid Service or DIDCommService instance.
+            routing: Boolean that indicate if it is a routing key.
+        """
+
+        if routing:
+            if isinstance(service, DIDCommService):
+                result = service.routing_keys
+            else:
+                result = service.extra["routingKeys"]
+
+        else:
+            if isinstance(service, DIDCommService):
+                result = service.recipient_keys
+            else:
+                result = service.extra["recipientKeys"]
+
+        return result
