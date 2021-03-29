@@ -6,6 +6,7 @@ from aiohttp_apispec import (
     docs,
     response_schema,
     querystring_schema,
+    request_schema,
     match_info_schema,
 )
 from asyncio import shield
@@ -69,6 +70,28 @@ class ConnIdMatchInfoSchema(OpenAPISchema):
 
     conn_id = fields.Str(
         description="Connection identifier", required=True, example=UUIDFour.EXAMPLE
+    )
+
+
+class DateSchema(OpenAPISchema):
+    """Sets Expiry date, till when the transaction should be endorsed."""
+
+    expires_time = fields.DateTime(
+        description="Expiry Date", required=True, example="2021-03-29T05:22:19Z"
+    )
+
+
+class EndorserInfoSchema(OpenAPISchema):
+    """Class for user to input the DID associated with the requested endorser."""
+
+    endorser_did = fields.Str(
+        description="Endorser DID",
+        required=True,
+    )
+
+    endorser_name = fields.Str(
+        description="Endorser Name",
+        required=False,
     )
 
 
@@ -145,6 +168,7 @@ async def transactions_retrieve(request: web.BaseRequest):
 )
 @querystring_schema(TranIdMatchInfoSchema())
 @querystring_schema(ConnIdMatchInfoSchema())
+@request_schema(DateSchema())
 @response_schema(TransactionRecordSchema(), 200)
 async def transaction_create_request(request: web.BaseRequest):
     """
@@ -162,6 +186,9 @@ async def transaction_create_request(request: web.BaseRequest):
     outbound_handler = request["outbound_message_router"]
     connection_id = request.query.get("conn_id")
     transaction_id = request.query.get("tran_id")
+
+    body = await request.json()
+    expires_time = body.get("expires_time")
 
     try:
         async with context.session() as session:
@@ -197,7 +224,9 @@ async def transaction_create_request(request: web.BaseRequest):
     transaction_mgr = TransactionManager(session)
     try:
         transaction_record, transaction_request = await transaction_mgr.create_request(
-            transaction=transaction_record, connection_id=connection_id
+            transaction=transaction_record,
+            connection_id=connection_id,
+            expires_time=expires_time,
         )
     except (StorageError, TransactionManagerError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
@@ -528,7 +557,7 @@ async def transaction_resend(request: web.BaseRequest):
 )
 @querystring_schema(AssignTransactionJobsSchema())
 @match_info_schema(ConnIdMatchInfoSchema())
-async def set_transaction_jobs(request: web.BaseRequest):
+async def set_endorser_role(request: web.BaseRequest):
     """
     Request handler for assigning transaction jobs.
 
@@ -561,6 +590,74 @@ async def set_transaction_jobs(request: web.BaseRequest):
 
     await outbound_handler(tx_job_to_send, connection_id=connection_id)
     return web.json_response(jobs)
+
+
+@docs(
+    tags=["endorse-transaction"],
+    summary="Set Endorser Info",
+)
+@querystring_schema(EndorserInfoSchema())
+@match_info_schema(ConnIdMatchInfoSchema())
+async def set_endorser_info(request: web.BaseRequest):
+    """
+    Request handler for assigning endorser information.
+
+    Args:
+        request: aiohttp request object
+
+    Returns:
+        The assigned endorser information
+
+    """
+
+    context: AdminRequestContext = request["context"]
+    connection_id = request.match_info["conn_id"]
+    endorser_did = request.query.get("endorser_did")
+    endorser_name = request.query.get("endorser_name")
+    session = await context.session()
+
+    try:
+        record = await ConnRecord.retrieve_by_id(session, connection_id)
+    except StorageNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
+    except BaseModelError as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
+    jobs = await record.metadata_get(session, "transaction_jobs")
+    if not jobs:
+        raise web.HTTPForbidden(
+            reason="The transaction related jobs are not set up in "
+            "connection metadata for this connection record"
+        )
+    if "transaction_my_job" not in jobs.keys():
+        raise web.HTTPForbidden(
+            reason='The "transaction_my_job" is not set in "transaction_jobs"'
+            " in connection metadata for this connection record"
+        )
+    if "transaction_their_job" not in jobs.keys():
+        raise web.HTTPForbidden(
+            reason='Ask the other agent to set up "transaction_my_job" '
+            ' in "transaction_jobs" in connection metadata for their connection record'
+        )
+    if jobs["transaction_my_job"] != TransactionJob.TRANSACTION_AUTHOR.name:
+        raise web.HTTPForbidden(
+            reason="Only a TRANSACTION_AUTHOR can add endorser_info "
+            "to metadata of it's connection record"
+        )
+    if jobs["transaction_their_job"] != TransactionJob.TRANSACTION_ENDORSER.name:
+        raise web.HTTPForbidden(
+            reason="The Other agent should have a job of " "TRANSACTION_ENDORSER"
+        )
+    value = await record.metadata_get(session, "endorser_info")
+    if value:
+        value["endorser_did"] = endorser_did
+        value["endorser_name"] = endorser_name
+    else:
+        value = {"endorser_did": endorser_did, "endorser_name": endorser_name}
+    await record.metadata_set(session, key="endorser_info", value=value)
+
+    endorser_info = await record.metadata_get(session, "endorser_info")
+
+    return web.json_response(endorser_info)
 
 
 @docs(
@@ -711,9 +808,8 @@ async def register(app: web.Application):
             web.post("/transactions/{tran_id}/refuse", refuse_transaction_response),
             web.post("/transactions/{tran_id}/cancel", cancel_transaction),
             web.post("/transaction/{tran_id}/resend", transaction_resend),
-            web.post(
-                "/transactions/{conn_id}/set-transaction-jobs", set_transaction_jobs
-            ),
+            web.post("/transactions/{conn_id}/set-endorser-role", set_endorser_role),
+            web.post("/transactions/{conn_id}/set-endorser-info", set_endorser_info),
             web.post("/transactions/{tran_id}/write", transaction_write),
         ]
     )
