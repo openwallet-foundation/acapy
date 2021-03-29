@@ -406,11 +406,11 @@ class DIDXManager(BaseConnectionManager):
         conn_did_doc = DIDDocument.deserialize(
             json.loads(request.did_doc_attach.data.signed.decode())
         )
-        if request.did != conn_did_doc.id:
+        if request.did != conn_did_doc.did:
             raise DIDXManagerError(
                 (
                     f"Connection DID {request.did} does not match "
-                    f"DID Doc id {conn_did_doc.id}"
+                    f"DID Doc id {conn_did_doc.did}"
                 ),
                 error_code=ProblemReportReason.REQUEST_NOT_ACCEPTED,
             )
@@ -670,7 +670,7 @@ class DIDXManager(BaseConnectionManager):
                 "No DIDDocument attached; cannot connect to public DID"
             )
         conn_did_doc = await self.verify_diddoc(wallet, response.did_doc_attach)
-        if their_did != conn_did_doc.id.method_specific_id:
+        if their_did != conn_did_doc.did.method_specific_id:
             raise DIDXManagerError(
                 f"Connection DID {their_did} "
                 f"does not match DID doc id {conn_did_doc.did}"

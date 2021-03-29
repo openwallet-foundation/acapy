@@ -1,6 +1,7 @@
 from unittest.mock import call
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
+from typing import cast
 
 from aries_cloudagent.resolver.did_resolver import DIDResolver
 from aries_cloudagent.resolver.did_resolver_registry import DIDResolverRegistry
@@ -14,7 +15,7 @@ from .....connections.base_manager import (
     BaseConnectionManager,
     BaseConnectionManagerError,
 )
-from pydid import DIDDocumentBuilder, VerificationSuite, DIDDocument, options
+from pydid import DIDDocumentBuilder, VerificationSuite, DIDDocument, options, DID
 from .....core.in_memory import InMemoryProfile
 from .....messaging.responder import BaseResponder, MockResponder
 from .....protocols.routing.v1_0.manager import RoutingManager
@@ -625,7 +626,6 @@ class TestConnectionManager(AsyncTestCase):
         mock_request = async_mock.MagicMock()
         mock_request.connection = async_mock.MagicMock()
         mock_request.connection.did = self.test_did.split(":")[-1]
-        mock_request.connection.did_doc = async_mock.MagicMock()
         mock_did_doc = self.make_did_doc(self.test_did, self.test_verkey)
         mock_request.connection.did_doc = mock_did_doc
 
@@ -762,8 +762,8 @@ class TestConnectionManager(AsyncTestCase):
         mock_request = async_mock.MagicMock()
         mock_request.connection = async_mock.MagicMock()
         mock_request.connection.did = self.test_did
-        mock_request.connection.did_doc = async_mock.MagicMock()
-        mock_request.connection.did_doc.did = "dummy"
+        mock_request.connection.did_doc = cast(DIDDocument, async_mock.MagicMock())
+        mock_request.connection.did_doc.did = cast(DID, async_mock.MagicMock(return_value="dummy"))
 
         receipt = MessageReceipt(recipient_did=self.test_did, recipient_did_public=True)
 
@@ -786,8 +786,8 @@ class TestConnectionManager(AsyncTestCase):
         mock_request = async_mock.MagicMock()
         mock_request.connection = async_mock.MagicMock()
         mock_request.connection.did = self.test_did
-        mock_request.connection.did_doc = async_mock.MagicMock()
-        mock_request.connection.did_doc.did = self.test_did
+        mock_request.connection.did_doc = cast(DIDDocument, async_mock.MagicMock())
+        mock_request.connection.did_doc.did = cast(DID, async_mock.MagicMock(return_value=self.test_did))
 
         receipt = MessageReceipt(recipient_did=self.test_did, recipient_did_public=True)
 
@@ -915,7 +915,7 @@ class TestConnectionManager(AsyncTestCase):
         mock_request.connection.did_doc = self.make_did_doc(
             self.test_target_did, self.test_target_verkey
         )
-        mock_request.connection.did_doc.did = self.test_target_did
+        #mock_request.connection.did_doc.did = self.test_target_did
         receipt = MessageReceipt(
             recipient_did=self.test_did, recipient_did_public=False
         )
@@ -1141,7 +1141,7 @@ class TestConnectionManager(AsyncTestCase):
         with async_mock.patch.object(
             ConnRecord, "save", autospec=True
         ) as mock_conn_rec_save, async_mock.patch.object(
-            ConnRecord, "retrieve_by_request_id", async_mock.CoroutineMock()
+            ConnRecord, "retrieve_by_request_id", cast(ConnRecord, async_mock.CoroutineMock())
         ) as mock_conn_retrieve_by_req_id, async_mock.patch.object(
             ConnRecord, "retrieve_by_did", async_mock.CoroutineMock()
         ) as mock_conn_retrieve_by_did, async_mock.patch.object(
@@ -1236,8 +1236,8 @@ class TestConnectionManager(AsyncTestCase):
         mock_response._thread = async_mock.MagicMock()
         mock_response.connection = async_mock.MagicMock()
         mock_response.connection.did = self.test_target_did
-        mock_response.connection.did_doc = async_mock.MagicMock()
-        mock_response.connection.did_doc.did = self.test_did
+        mock_response.connection.did_doc = cast(DIDDocument, async_mock.MagicMock())
+        mock_response.connection.did_doc.did = cast(DID, async_mock.MagicMock(return_value=self.test_did))
 
         receipt = MessageReceipt(sender_did=self.test_target_did)
 
@@ -1577,17 +1577,16 @@ class TestConnectionManager(AsyncTestCase):
             None,
         )
 
-        mock_conn = async_mock.MagicMock(
+        mock_conn = cast(ConnRecord, async_mock.MagicMock(
             connection_id="dummy",
             inbound_connection_id=None,
             their_did=self.test_target_did.split(":")[-1],
             state=ConnRecord.State.COMPLETED.rfc23,
-        )
+        ))
 
         did_doc = self.make_did_doc(
             did=self.test_target_did, verkey=self.test_target_verkey
         )
-        await self.manager.store_did_document(did_doc)
         await self.manager.store_did_document(did_doc)
 
         with async_mock.patch.object(
@@ -2150,6 +2149,7 @@ class TestConnectionManager(AsyncTestCase):
             ],
             "authentication": [
                 {
+                    "id": "did:btcr:x705-jznz-q3nl-srs",
                     "type": "EcdsaSecp256k1SignatureAuthentication2019",
                     "verificationMethod": "#satoshi",
                 }
@@ -2187,18 +2187,24 @@ class TestConnectionManager(AsyncTestCase):
             await self.manager.fetch_connection_targets(mock_conn)
 
     async def test_fetch_connection_targets_oob_invitation_svc_did_no_ledger(self):
+        #self.ledger = async_mock.MagicMock()
+        #self.ledger.get_endpoint_for_did = async_mock.CoroutineMock(
+        #    return_value=self.test_endpoint
+        #)
+        #self.ledger.resolve = async_mock.CoroutineMock(return_value={})
+        #self.context.injector.bind_instance(DIDResolver, self.ledger)
         await self.session.wallet.create_local_did(
             seed=self.test_seed, did=self.test_did, metadata=None
         )
 
         mock_oob_invite = async_mock.MagicMock(service_dids=[self.test_did])
 
-        mock_conn = async_mock.MagicMock(
+        mock_conn = cast(ConnRecord, async_mock.MagicMock(
             my_did=self.test_did,
             retrieve_invitation=async_mock.CoroutineMock(return_value=mock_oob_invite),
             state=ConnRecord.State.INVITATION.rfc23,
             their_role=ConnRecord.Role.RESPONDER.rfc23,
-        )
+        ))
 
         with self.assertRaises(ResolverError):
             await self.manager.fetch_connection_targets(mock_conn)

@@ -33,7 +33,7 @@ from .messages.connection_request import ConnectionRequest
 from .messages.connection_response import ConnectionResponse
 from .messages.problem_report import ProblemReportReason
 from .models.connection_detail import ConnectionDetail
-
+from pydid import DIDDocument
 
 class ConnectionManagerError(BaseError):
     """Connection error."""
@@ -530,12 +530,12 @@ class ConnectionManager(BaseConnectionManager):
                 keylist_updates = await mediation_mgr.remove_key(
                     connection_key, keylist_updates
                 )
-        conn_did_doc = request.connection.did_doc
-        if not conn_did_doc:
+        conn_did_doc: DIDDocument = request.connection.did_doc
+        if conn_did_doc is None:
             raise ConnectionManagerError(
                 "No DIDDocument provided; cannot connect to public DID"
             )
-        if request.connection.did != conn_did_doc.id.method_specific_id:
+        if request.connection.did != conn_did_doc.did.method_specific_id:
             raise ConnectionManagerError(
                 "Connection DID does not match DIDDocument id",
                 error_code=ProblemReportReason.REQUEST_NOT_ACCEPTED,
@@ -790,7 +790,7 @@ class ConnectionManager(BaseConnectionManager):
             raise ConnectionManagerError(
                 "No DIDDocument provided; cannot connect to public DID"
             )
-        if their_did != conn_did_doc.id.method_specific_id:
+        if their_did != conn_did_doc.did.method_specific_id:
             raise ConnectionManagerError("Connection DID does not match DIDDocument id")
         await self.store_did_document(conn_did_doc)
 

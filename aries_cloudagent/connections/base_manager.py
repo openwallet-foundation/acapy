@@ -373,9 +373,8 @@ class BaseConnectionManager:
             self.RECORD_TYPE_DID_DOC, tag
         )
 
-        value = json.loads(record.value)
-        did_doc = DIDDocument.deserialize(
-            value, options={options.vm_allow_missing_controller}
+        did_doc = DIDDocument.from_json(
+            record.value, options={options.vm_allow_missing_controller}
         )
 
         return did_doc, record
