@@ -228,10 +228,12 @@ class BaseConnectionManager:
 
         endpoint = doc.service[0].endpoint
         recipient_keys = [
-            doc.dereference(url) for url in doc.service[0].extra["recipient_keys"]
+            doc.dereference(url)
+            for url in doc.service[0].recipient_keys
         ]
         routing_keys = [
-            doc.dereference(url) for url in doc.service[0].extra["routing_keys"]
+            doc.dereference(url)
+            for url in doc.service[0].routing_keys
         ]
 
         return endpoint, recipient_keys, routing_keys
