@@ -527,6 +527,7 @@ class TestConnectionManager(AsyncTestCase):
                 None,
                 [self.test_endpoint],
                 mediation_records=[mediation_record],
+                svc_type=DIDDoc.SERVICE_TYPE_V0,
             )
             mock_get_default_mediator.assert_not_called()
 
@@ -581,6 +582,7 @@ class TestConnectionManager(AsyncTestCase):
                 None,
                 [self.test_endpoint],
                 mediation_records=[mediation_record],
+                svc_type=DIDDoc.SERVICE_TYPE_V0,
             )
             mock_get_default_mediator.assert_called_once()
 
@@ -1399,9 +1401,14 @@ class TestConnectionManager(AsyncTestCase):
                         None,
                         [self.test_endpoint],
                         mediation_records=[default_mediator],
+                        svc_type=DIDDoc.SERVICE_TYPE_V0,
                     ),
                     call(
-                        their_info, None, [self.test_endpoint], mediation_records=None
+                        their_info,
+                        None,
+                        [self.test_endpoint],
+                        mediation_records=None,
+                        svc_type=DIDDoc.SERVICE_TYPE_V0,
                     ),
                 ]
             )

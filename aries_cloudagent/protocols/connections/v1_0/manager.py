@@ -1,5 +1,6 @@
 """Classes to manage connections."""
 
+from aries_cloudagent.connections.models.diddoc.diddoc import DIDDoc
 import logging
 
 from typing import Coroutine, Sequence, Tuple
@@ -407,6 +408,7 @@ class ConnectionManager(BaseConnectionManager):
             mediation_records=list(
                 filter(None, [base_mediation_record, mediation_record])
             ),
+            svc_type=DIDDoc.SERVICE_TYPE_V0,
         )
 
         if not my_label:
@@ -685,6 +687,7 @@ class ConnectionManager(BaseConnectionManager):
             mediation_records=list(
                 filter(None, [base_mediation_record, mediation_record])
             ),
+            svc_type=DIDDoc.SERVICE_TYPE_V0,
         )
 
         response = ConnectionResponse(
@@ -912,6 +915,7 @@ class ConnectionManager(BaseConnectionManager):
             mediation_records=[base_mediation_record]
             if base_mediation_record
             else None,
+            svc_type=DIDDoc.SERVICE_TYPE_V0,
         )
         await self.store_did_document(did_doc)
 

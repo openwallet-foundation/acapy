@@ -59,6 +59,7 @@ class BaseConnectionManager:
         inbound_connection_id: str = None,
         svc_endpoints: Sequence[str] = None,
         mediation_records: List[MediationRecord] = None,
+        svc_type: str = None,
     ) -> DIDDoc:
         """Create our DID doc for a given DID.
 
@@ -68,6 +69,7 @@ class BaseConnectionManager:
             svc_endpoints: Custom endpoints for the DID Document
             mediation_record: The record for mediation that contains routing_keys and
                 service endpoint
+            svc_type: Customize the type used in service entries
 
         Returns:
             The prepared `DIDDoc` instance
@@ -143,15 +145,10 @@ class BaseConnectionManager:
 
         for (endpoint_index, svc_endpoint) in enumerate(svc_endpoints or []):
             endpoint_ident = "indy" if endpoint_index == 0 else f"indy{endpoint_index}"
-            service_type = (
-                "did-communication"
-                if self._session.settings.get("aip_version", 1) >= 2
-                else "IndyAgent"
-            )
             service = Service(
                 did_info.did,
                 endpoint_ident,
-                service_type,
+                svc_type or DIDDoc.SERVICE_TYPE_V1,
                 [pk],
                 routing_keys,
                 svc_endpoint,

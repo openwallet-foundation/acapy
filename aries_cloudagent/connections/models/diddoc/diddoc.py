@@ -46,6 +46,9 @@ class DIDDoc:
     CONTEXT_V0 = "https://w3id.org/did/v1"
     CONTEXT_V1 = "https://www.w3.org/ns/did/v1"
 
+    SERVICE_TYPE_V0 = "IndyAgent"
+    SERVICE_TYPE_V1 = "did-communication"
+
     def __init__(self, did: str = None) -> None:
         """
         Initialize the DIDDoc instance.
