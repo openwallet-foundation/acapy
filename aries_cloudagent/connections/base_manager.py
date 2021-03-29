@@ -359,7 +359,6 @@ class BaseConnectionManager:
             did: The DID to search for
         """
         storage = self._session.inject(BaseStorage)
-        did = str(did)
         tag = {"did": did}
         if "did:" not in did:
             tag = {"did": f"did:sov:{did}"}
