@@ -249,9 +249,11 @@ async def get_key_pair(*, storage: BaseStorage, verkey: str) -> dict:
 async def get_key_pairs(
     *, storage: BaseStorage, tag_query: Optional[Mapping] = None
 ) -> List[dict]:
-    records = await storage.find_all_records("key_pair", tag_query)
+    records: Sequence[StorageRecord] = await storage.find_all_records(
+        "key_pair", tag_query
+    )
 
-    return [json.loads(record) for record in records]
+    return [json.loads(record.value) for record in records]
 
 
 async def update_key_pair_metadata(

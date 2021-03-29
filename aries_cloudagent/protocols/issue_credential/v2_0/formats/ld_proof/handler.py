@@ -409,8 +409,10 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
                 " that does not match credential request"
             )
 
+        # TODO: if created wasn't present in the detail options, should we verify
+        # it is ~now (e.g. some time in the past + future)?
         # Check if created property matches
-        if vc.proof.created != detail.options.created:
+        if detail.options.created and vc.proof.created != detail.options.created:
             raise V20CredFormatError(
                 "Received credential proof.created does not"
                 " match options.created from credential request"
@@ -440,7 +442,7 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
         detail = LDProofVCDetail.deserialize(detail_dict)
 
         # Get signature suite, proof purpose and document loader
-        suite = await self._get_suite(credential.proof.type)
+        suite = await self._get_suite(proof_type=credential.proof.type)
         purpose = self._get_proof_purpose(detail)
         document_loader = get_default_document_loader(self.profile)
 

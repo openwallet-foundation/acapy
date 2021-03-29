@@ -291,7 +291,7 @@ class V20CredManager:
                 )
 
             # Format specific receive_offer handler
-            for cred_format in cred_offer_message.formats:
+            for format in cred_offer_message.formats:
                 cred_format = V20CredFormat.Format.get(format.format)
 
                 if cred_format:
@@ -556,7 +556,7 @@ class V20CredManager:
 
         # Format specific store_credential handler
         for format in V20CredIssue.deserialize(cred_ex_record.cred_issue).formats:
-            cred_format = await V20CredFormat.Format.get(format.format)
+            cred_format = V20CredFormat.Format.get(format.format)
 
             if cred_format:
                 await cred_format.handler(self.profile).store_credential(

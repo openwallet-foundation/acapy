@@ -60,7 +60,7 @@ class IndySdkWallet(BaseWallet):
         )
 
     def __did_info_from_key_pair_info(self, info: dict):
-        metadata = json.loads(info["metadata"]) if info["metadata"] else {}
+        metadata = info["metadata"]
         verkey = info["verkey"]
 
         # this needs to change if other did methods are added
@@ -172,7 +172,10 @@ class IndySdkWallet(BaseWallet):
             )
         except IndyError as x_indy:
             if x_indy.error_code == ErrorCode.WalletItemNotFound:
-                raise WalletNotFoundError("Unknown key: {}".format(verkey))
+                raise WalletNotFoundError(f"Unknown key: {verkey}")
+            # # If we resolve a key that is not 32 bytes we get CommonInvalidStructure
+            # elif x_indy.error_code == ErrorCode.CommonInvalidStructure:
+            #     raise WalletNotFoundError(f"Unknown key: {verkey}")
             else:
                 raise IndyErrorHandler.wrap_error(
                     x_indy, "Wallet {} error".format(self.opened.name), WalletError
@@ -207,9 +210,14 @@ class IndySdkWallet(BaseWallet):
             WalletError: If there is a libindy error
 
         """
-        try:
-            return await self.__get_indy_signing_key(verkey)
-        except WalletNotFoundError:
+        # Only try to load indy signing key if the verkey is 32 bytes
+        # this may change if indy is going to support verkeys of different byte length
+        if len(b58_to_bytes(verkey)) == 32:
+            try:
+                return await self.__get_indy_signing_key(verkey)
+            except WalletNotFoundError:
+                return await self.__get_keypair_signing_key(verkey)
+        else:
             return await self.__get_keypair_signing_key(verkey)
 
     async def replace_signing_key_metadata(self, verkey: str, metadata: dict):
@@ -678,7 +686,7 @@ class IndySdkWallet(BaseWallet):
         else:
             storage = IndySdkStorage(self.opened)
             key_pair = await get_key_pair(storage=storage, verkey=key_info.verkey)
-            result = await sign_message(
+            result = sign_message(
                 message=message,
                 secret=b58_to_bytes(key_pair["secret_key"]),
                 key_type=key_info.key_type,

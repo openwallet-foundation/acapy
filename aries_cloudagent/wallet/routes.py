@@ -299,7 +299,9 @@ async def wallet_create_did(request: web.BaseRequest):
     method = DIDMethod.from_method(body.get("method")) or DIDMethod.SOV
 
     if not method.supports_key_type(key_type):
-        raise ValidationError(f"method {method} does not support key type {key_type}")
+        raise web.HTTPForbidden(
+            reason=f"method {method.method_name} does not support key type {key_type.key_type}"
+        )
 
     session = await context.session()
     wallet = session.inject(BaseWallet, required=False)

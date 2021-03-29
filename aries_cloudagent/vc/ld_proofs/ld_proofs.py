@@ -1,14 +1,12 @@
 """Linked data proof signing and verification methods."""
 
 from typing import List
-from pyld.jsonld import JsonLdError
 
 from .validation_result import DocumentVerificationResult
 from .document_loader import DocumentLoader
 from .ProofSet import ProofSet
 from .purposes import ProofPurpose
 from .suites import LinkedDataProof
-from .error import LinkedDataProofException
 
 
 async def sign(
@@ -36,22 +34,12 @@ async def sign(
         dict: Signed document.
 
     """
-    try:
-        return await ProofSet.add(
-            document=document,
-            suite=suite,
-            purpose=purpose,
-            document_loader=document_loader,
-        )
-
-    except JsonLdError as e:
-        if e.type == "jsonld.InvalidUrl":
-            raise LinkedDataProofException(
-                f'A URL "{e.details}" could not be fetched; you need to pass a '
-                "DocumentLoader function that can resolve this URL, or resolve"
-                ' the URL before calling "sign".'
-            )
-        raise e
+    return await ProofSet.add(
+        document=document,
+        suite=suite,
+        purpose=purpose,
+        document_loader=document_loader,
+    )
 
 
 async def verify(
