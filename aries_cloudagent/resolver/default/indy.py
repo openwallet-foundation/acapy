@@ -45,8 +45,8 @@ class IndyDIDResolver(BaseDIDResolver):
 
         try:
             async with ledger:
-                recipient_key = await ledger.get_key_for_did(str(did))
-                endpoint = await ledger.get_endpoint_for_did(str(did))
+                recipient_key = await ledger.get_key_for_did(did)
+                endpoint = await ledger.get_endpoint_for_did(did)
         except LedgerError as err:
             raise DIDNotFound(f"DID {did} could not be resolved") from err
 
