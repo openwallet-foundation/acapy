@@ -2,13 +2,16 @@
 Contains the functions needed to produce and verify a json-ld signature.
 
 This file was ported from
-https://github.com/transmute-industries/Ed25519Signature2018/blob/master/src/createVerifyData/index.js
+https://github.com/transmute-industries/Ed25519Signature2018/blob/master/
+    src/createVerifyData/index.js
 """
 
 import datetime
 import hashlib
 
 from pyld import jsonld
+
+from .error import DroppedAttributeError, MissingVerificationMethodError
 
 
 def _canonize(data):
@@ -21,7 +24,7 @@ def _sha256(data):
     return hashlib.sha256(data.encode("utf-8")).hexdigest()
 
 
-def _cannonize_signature_options(signatureOptions):
+def _canonize_signature_options(signatureOptions):
     _signatureOptions = {**signatureOptions, "@context": "https://w3id.org/security/v2"}
     _signatureOptions.pop("jws", None)
     _signatureOptions.pop("signatureValue", None)
@@ -29,16 +32,10 @@ def _cannonize_signature_options(signatureOptions):
     return _canonize(_signatureOptions)
 
 
-def _cannonize_document(doc):
+def _canonize_document(doc):
     _doc = {**doc}
     _doc.pop("proof", None)
     return _canonize(_doc)
-
-
-class DroppedAttributeException(Exception):
-    """Exception used to track that an attribute was removed."""
-
-    pass
 
 
 def create_verify_data(data, signature_options):
@@ -47,8 +44,10 @@ def create_verify_data(data, signature_options):
     if "creator" in signature_options:
         signature_options["verificationMethod"] = signature_options["creator"]
 
-    if not signature_options["verificationMethod"]:
-        raise Exception("signature_options.verificationMethod is required")
+    if not signature_options.get("verificationMethod"):
+        raise MissingVerificationMethodError(
+            "signature_options.verificationMethod is required"
+        )
 
     if "created" not in signature_options:
         signature_options["created"] = datetime.datetime.now(
@@ -67,26 +66,25 @@ def create_verify_data(data, signature_options):
     )
 
     # Detect any dropped attributes during the expand/contract step.
-
     if len(data) != len(framed):
-        raise DroppedAttributeException("Extra Attribute Detected")
+        raise DroppedAttributeError("Extra Attribute Detected")
     if (
         "proof" in data
         and "proof" in framed
         and len(data["proof"]) != len(framed["proof"])
     ):
-        raise DroppedAttributeException("Extra Attribute Detected")
+        raise DroppedAttributeError("Extra Attribute Detected")
     if (
         "credentialSubject" in data
         and "https://www.w3.org/2018/credentials#credentialSubject" in framed
         and len(data["credentialSubject"])
         != len(framed["https://www.w3.org/2018/credentials#credentialSubject"])
     ):
-        raise DroppedAttributeException("Extra Attribute Detected")
+        raise DroppedAttributeError("Extra Attribute Detected")
 
-    cannonized_signature_options = _cannonize_signature_options(signature_options)
-    hash_of_cannonized_signature_options = _sha256(cannonized_signature_options)
-    cannonized_document = _cannonize_document(framed)
-    hash_of_cannonized_document = _sha256(cannonized_document)
+    canonized_signature_options = _canonize_signature_options(signature_options)
+    hash_of_canonized_signature_options = _sha256(canonized_signature_options)
+    canonized_document = _canonize_document(framed)
+    hash_of_canonized_document = _sha256(canonized_document)
 
-    return (framed, hash_of_cannonized_signature_options + hash_of_cannonized_document)
+    return (framed, hash_of_canonized_signature_options + hash_of_canonized_document)
