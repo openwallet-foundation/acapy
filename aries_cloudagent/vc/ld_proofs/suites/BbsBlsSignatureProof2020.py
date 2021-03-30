@@ -50,7 +50,7 @@ class BbsBlsSignatureProof2020(BbsBlsSignature2020Base):
             ),
         )
         self.key_pair = key_pair
-        self.mapped_derived_proof_type = "https://w3id.org/security#BbsBlsSignature2020"
+        self.mapped_derived_proof_type = "BbsBlsSignature2020"
 
     async def derive_proof(
         self,
@@ -154,14 +154,11 @@ class BbsBlsSignatureProof2020(BbsBlsSignature2020Base):
             nonce, urlsafe=False, pad=True, encoding="utf-8"
         )
 
-        # Combine all the input statements that
-        # were originally signed to generate the proof
-        all_input_statements = list(
-            map(
-                lambda item: item.encode("utf-8"),
-                [*proof_statements, *document_statements],
-            )
-        )
+        # Combine all the input statements that were originally signed
+        # NOTE: we use plain strings here as input for the bbs lib.
+        # the MATTR lib uses bytes, but the wrapper expects strings
+        # it also works if we pass bytes as input
+        all_input_statements = [*proof_statements, *document_statements]
 
         # Fetch the verification method
         verification_method = self._get_verification_method(
@@ -227,7 +224,6 @@ class BbsBlsSignatureProof2020(BbsBlsSignature2020Base):
     ) -> ProofResult:
         """Verify proof against document and proof purpose."""
         try:
-            # TODO: I'm not sure why we use the base signature (BbsBlsSignature2020) here
             proof["type"] = self.mapped_derived_proof_type
 
             # Get the proof and document statements
@@ -247,12 +243,10 @@ class BbsBlsSignatureProof2020(BbsBlsSignature2020Base):
             )
 
             # Combine all the statements to be verified
-            statements_to_verify = list(
-                map(
-                    lambda item: item.encode("utf-8"),
-                    [*proof_statements, *transformed_document_statements],
-                )
-            )
+            # NOTE: we use plain strings here as input for the bbs lib.
+            # the MATTR lib uses bytes, but the wrapper expects strings
+            # it also works if we pass bytes as input
+            statements_to_verify = [*proof_statements, *transformed_document_statements]
 
             # Fetch the verification method
             verification_method = self._get_verification_method(
@@ -307,10 +301,9 @@ class BbsBlsSignatureProof2020(BbsBlsSignature2020Base):
         self, *, proof: dict, document: dict, document_loader: DocumentLoader
     ):
         """Canonize proof dictionary. Removes proofValue."""
-        # Use default security context url if document has no context
         proof = {
-            "@context": document.get("@context") or SECURITY_CONTEXT_V3_URL,
             **proof,
+            "@context": document.get("@context") or SECURITY_CONTEXT_V3_URL,
         }
 
         proof.pop("proofValue", None)

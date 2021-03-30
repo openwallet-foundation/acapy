@@ -86,9 +86,6 @@ class TestLDProofs(TestCase):
             document_loader=custom_document_loader,
         )
 
-        if not result.verified:
-            raise result.errors[0]
-
         assert result == DOC_VERIFIED
 
     async def test_sign_BbsBlsSignature2020(self):

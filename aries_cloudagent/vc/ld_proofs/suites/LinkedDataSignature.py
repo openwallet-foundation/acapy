@@ -197,7 +197,10 @@ class LinkedDataSignature(LinkedDataProof, metaclass=ABCMeta):
     ):
         """Canonize proof dictionary. Removes jws, signature, etc..."""
         # Use default security context url if document has no context
-        proof = {"@context": document.get("@context") or SECURITY_CONTEXT_URL, **proof}
+        proof = {
+            **proof,
+            "@context": document.get("@context") or SECURITY_CONTEXT_URL,
+        }
 
         proof.pop("jws", None)
         proof.pop("signatureValue", None)
