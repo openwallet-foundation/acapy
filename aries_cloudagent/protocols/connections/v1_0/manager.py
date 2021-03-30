@@ -35,6 +35,7 @@ from .messages.problem_report import ProblemReportReason
 from .models.connection_detail import ConnectionDetail
 from pydid import DIDDocument
 
+
 class ConnectionManagerError(BaseError):
     """Connection error."""
 

@@ -108,17 +108,18 @@ class BaseConnectionManager:
                     raise BaseConnectionManagerError(
                         "Routing DIDDocument service has no service endpoint"
                     )
-                if not service.extra.get("recipientKeys"):
+                service_id = self._retrieve_service_key(service)
+                if not service_id:
                     raise BaseConnectionManagerError(
                         "Routing DIDDocument service has no recipient key(s)"
                     )
 
                 self.method = builder.verification_methods.add(
                     suite=routing_doc.dereference(
-                        service.extra.get("recipientKeys")[0]
+                        service_id[0]
                     ).suite,
                     material=routing_doc.dereference(
-                        service.extra.get("recipientKeys")[0]
+                        service_id[0]
                     ).material,
                     ident=f"routing-{router_idx}",
                 )
@@ -373,9 +374,14 @@ class BaseConnectionManager:
             self.RECORD_TYPE_DID_DOC, tag
         )
 
-        did_doc = DIDDocument.from_json(
-            record.value, options={options.vm_allow_missing_controller}
-        )
+        if isinstance(record.value, dict):
+            did_doc = DIDDocument.deserialize(
+                record.value, options={options.vm_allow_missing_controller}
+            )
+        else:
+            did_doc = DIDDocument.from_json(
+                record.value, options={options.vm_allow_missing_controller}
+            )
 
         return did_doc, record
 
