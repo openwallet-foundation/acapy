@@ -28,10 +28,12 @@ class TestConfig:
             material=self.test_verkey,
         )
         with builder.services.defaults() as services:
-            services.add_didcomm(endpoint=self.test_endpoint,
-                                 type_="IndyAgent",
-                                 recipient_keys=[vmethod],
-                                 routing_keys=[])
+            services.add_didcomm(
+                endpoint=self.test_endpoint,
+                type_="IndyAgent",
+                recipient_keys=[vmethod],
+                routing_keys=[],
+            )
         return builder.build()
 
 

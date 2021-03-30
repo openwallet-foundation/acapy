@@ -41,10 +41,12 @@ def did_doc():
     )
 
     with builder.services.defaults() as services:
-        services.add_didcomm(endpoint=TEST_ENDPOINT,
-                             type_="IndyAgent",
-                             recipient_keys=[vmethod],
-                             routing_keys=[])
+        services.add_didcomm(
+            endpoint=TEST_ENDPOINT,
+            type_="IndyAgent",
+            recipient_keys=[vmethod],
+            routing_keys=[],
+        )
 
     yield builder.build()
 

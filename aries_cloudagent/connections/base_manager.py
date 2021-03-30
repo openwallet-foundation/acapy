@@ -115,12 +115,8 @@ class BaseConnectionManager:
                     )
 
                 self.method = builder.verification_methods.add(
-                    suite=routing_doc.dereference(
-                        service_id[0]
-                    ).suite,
-                    material=routing_doc.dereference(
-                        service_id[0]
-                    ).material,
+                    suite=routing_doc.dereference(service_id[0]).suite,
+                    material=routing_doc.dereference(service_id[0]).material,
                     ident=f"routing-{router_idx}",
                 )
 
@@ -193,9 +189,7 @@ class BaseConnectionManager:
             did: The DID to associate with this key
             key: The verkey to be added
         """
-        record = StorageRecord(
-            self.RECORD_TYPE_DID_KEY, key, {"did": did, "key": key}
-        )
+        record = StorageRecord(self.RECORD_TYPE_DID_KEY, key, {"did": did, "key": key})
         storage = self._session.inject(BaseStorage)
         await storage.add_record(record)
 
@@ -370,9 +364,7 @@ class BaseConnectionManager:
         tag = {"did": did}
         if "did:" not in did:
             tag = {"did": f"did:sov:{did}"}
-        record = await storage.find_record(
-            self.RECORD_TYPE_DID_DOC, tag
-        )
+        record = await storage.find_record(self.RECORD_TYPE_DID_DOC, tag)
 
         if isinstance(record.value, dict):
             did_doc = DIDDocument.deserialize(
