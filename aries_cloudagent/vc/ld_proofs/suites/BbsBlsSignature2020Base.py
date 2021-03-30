@@ -54,14 +54,23 @@ class BbsBlsSignature2020Base(LinkedDataProof, metaclass=ABCMeta):
 
     def _assert_verification_method(self, verification_method: dict):
         """Assert verification method. Throws if not ok."""
-        # FIXME: bls is not in security yet. (may be fixed in lower level class)
-        required_key_type = "sec:Bls12381G2Key2020"
-        if not jsonld.JsonLdProcessor.has_value(
-            verification_method, "type", required_key_type
-        ):
-            raise LinkedDataProofException(
-                f"Invalid key type. The key type must be {required_key_type}"
-            )
+        # NOTE: These keys are not in the stable security yet, so we check for all of them
+        required_key_types = [
+            "Bls12381G2Key2020",
+            "sec:Bls12381G2Key2020",
+            "https://w3id.org/security#Bls12381G2Key2020",
+        ]
+
+        # Check for all key types if it is present in the verification method type
+        for key_type in required_key_types:
+            if jsonld.JsonLdProcessor.has_value(verification_method, "type", key_type):
+                return
+
+        # If not returned yet, throw an error
+        values = jsonld.JsonLdProcessor.get_values(verification_method, "type")
+        raise LinkedDataProofException(
+            f"Invalid key type {values}. The key type must be one of {required_key_types}"
+        )
 
     def _get_verification_method(self, *, proof: dict, document_loader: DocumentLoader):
         """Get verification method.
