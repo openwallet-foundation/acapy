@@ -226,7 +226,7 @@ class ProofSet:
 
         # If proof_types is present, only take proofs that match
         if proof_types:
-            proof_set = list(filter(lambda _: _ in proof_types, proof_set))
+            proof_set = list(filter(lambda _: _["type"] in proof_types, proof_set))
 
         if len(proof_set) == 0:
             raise LinkedDataProofException(

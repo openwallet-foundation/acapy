@@ -14,13 +14,17 @@ from ...ld_proofs import (
     AssertionProofPurpose,
     verify,
     BbsBlsSignature2020,
+    BbsBlsSignatureProof2020,
+    derive,
 )
 from ...tests.document_loader import custom_document_loader
 from .test_doc import (
+    DOC_DERIVED_BBS,
     DOC_SIGNED_BBS,
     DOC_TEMPLATE,
     DOC_SIGNED,
     DOC_TEMPLATE_BBS,
+    DOC_FRAME_BBS,
     DOC_VERIFIED,
 )
 
@@ -127,6 +131,36 @@ class TestLDProofs(TestCase):
 
         result = await verify(
             document=DOC_SIGNED_BBS,
+            suites=[suite],
+            purpose=AssertionProofPurpose(),
+            document_loader=custom_document_loader,
+        )
+
+        assert result.verified
+
+    async def test_derive_BbsBlsSignatureProof2020(self):
+        # Verification requires lot less input parameters
+        suite = BbsBlsSignatureProof2020(
+            key_pair=WalletKeyPair(wallet=self.wallet, key_type=KeyType.BLS12381G2),
+        )
+
+        result = await derive(
+            document=DOC_SIGNED_BBS,
+            reveal_document=DOC_FRAME_BBS,
+            suite=suite,
+            document_loader=custom_document_loader,
+        )
+
+        assert result
+
+    async def test_verify_BbsBlsSignatureProof2020(self):
+        # Verification requires lot less input parameters
+        suite = BbsBlsSignatureProof2020(
+            key_pair=WalletKeyPair(wallet=self.wallet, key_type=KeyType.BLS12381G2),
+        )
+
+        result = await verify(
+            document=DOC_DERIVED_BBS,
             suites=[suite],
             purpose=AssertionProofPurpose(),
             document_loader=custom_document_loader,

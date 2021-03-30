@@ -3,6 +3,17 @@
 from os import urandom
 from pyld import jsonld
 from typing import List
+from ursa_bbs_signatures.api import (
+    create_proof as bls_create_proof,
+    verify_proof as bls_verify_proof,
+    CreateProofRequest,
+    VerifyProofRequest,
+)
+from ursa_bbs_signatures.foreign_function_interface.bindings.bbs_verify_proof import (
+    bbs_get_total_messages_count_for_proof,
+)
+from ursa_bbs_signatures.models.ProofMessage import ProofMessage, ProofMessageType
+from ursa_bbs_signatures.models.keys import BlsKeyPair
 
 from ....wallet.util import b64_to_bytes, bytes_to_b64
 from ..crypto import KeyPair
@@ -69,7 +80,7 @@ class BbsBlsSignatureProof2020(BbsBlsSignature2020Base):
         suite = BbsBlsSignature2020(key_pair=self.key_pair)
 
         # Initialize the derived proof
-        derived_proof = self.proof.copy() or {}
+        derived_proof = self.proof.copy() if self.proof else {}
 
         # Ensure proof type is set
         derived_proof["type"] = self.signature_type
@@ -79,7 +90,7 @@ class BbsBlsSignatureProof2020(BbsBlsSignature2020Base):
             document=document, document_loader=document_loader
         )
         proof_statements = suite._create_verify_proof_data(
-            proof=proof, document_loader=document_loader
+            proof=proof, document=document, document_loader=document_loader
         )
 
         # Transform any blank node identifiers for the input
@@ -160,16 +171,37 @@ class BbsBlsSignatureProof2020(BbsBlsSignature2020Base):
         # Create key pair from public key in verification method
         key_pair = self.key_pair.from_verification_method(verification_method)
 
-        # Compute the proof
-        # TODO: should this be key_pair.create_proof?
-        # TODO: add bls_create_proof method
-        output_proof = await bls_create_proof(
-            signature=signature,
-            public_key=key_pair.public_key,
-            messages=all_input_statements,
-            nonce=nonce,
-            revealed=reveal_indices,
+        # Get the proof messages (revealed or not)
+        proof_messages = []
+        for input_statement_index in range(len(all_input_statements)):
+            # if input statement index in revealed messages indexes use revealed type
+            # otherwise use blinding
+            proof_type = (
+                ProofMessageType.Revealed
+                if input_statement_index in reveal_indices
+                else ProofMessageType.HiddenProofSpecificBlinding
+            )
+            proof_messages.append(
+                ProofMessage(
+                    message=all_input_statements[input_statement_index],
+                    proof_type=proof_type,
+                )
+            )
+
+        # get bbs key from bls key pair
+        bbs_public_key = BlsKeyPair(public_key=key_pair.public_key).get_bbs_key(
+            len(all_input_statements)
         )
+
+        # Compute the proof
+        proof_request = CreateProofRequest(
+            public_key=bbs_public_key,
+            messages=proof_messages,
+            signature=signature,
+            nonce=nonce,
+        )
+
+        output_proof = bls_create_proof(proof_request)
 
         # Set the proof value on the derived proof
         derived_proof["proofValue"] = bytes_to_b64(
@@ -200,7 +232,7 @@ class BbsBlsSignatureProof2020(BbsBlsSignature2020Base):
 
             # Get the proof and document statements
             proof_statements = self._create_verify_proof_data(
-                proof=proof, document_loader=document_loader
+                proof=proof, document=document, document_loader=document_loader
             )
             document_statements = self._create_verify_document_data(
                 document=document, document_loader=document_loader
@@ -228,13 +260,24 @@ class BbsBlsSignatureProof2020(BbsBlsSignature2020Base):
             )
 
             key_pair = self.key_pair.from_verification_method(verification_method)
+            proof_bytes = b64_to_bytes(proof["proofValue"])
 
-            verified = await bls_verify_proof(
-                proof=b64_to_bytes(proof["proofValue"]),
-                public_key=key_pair.public_key,
+            total_message_count = bbs_get_total_messages_count_for_proof(proof_bytes)
+
+            # get bbs key from bls key pair
+            bbs_public_key = BlsKeyPair(public_key=key_pair.public_key).get_bbs_key(
+                total_message_count
+            )
+
+            # verify dervied proof
+            verify_request = VerifyProofRequest(
+                public_key=bbs_public_key,
+                proof=proof_bytes,
                 messages=statements_to_verify,
                 nonce=b64_to_bytes(proof["nonce"]),
             )
+
+            verified = bls_verify_proof(verify_request)
 
             if not verified:
                 raise LinkedDataProofException(
@@ -276,6 +319,7 @@ class BbsBlsSignatureProof2020(BbsBlsSignature2020Base):
         return self._canonize(input=proof, document_loader=document_loader)
 
     def _transform_blank_node_ids_into_placeholder_node_ids(
+        self,
         statements: List[str],
     ) -> List[str]:
         """Transform blank node identifiers for the input into actual node identifiers.
@@ -308,6 +352,7 @@ class BbsBlsSignatureProof2020(BbsBlsSignature2020Base):
         return transformed_statements
 
     def _transform_placeholder_node_ids_into_blank_node_ids(
+        self,
         statements: List[str],
     ) -> List[str]:
         """Transform the blank node placeholder identifiers back into actual blank nodes.
