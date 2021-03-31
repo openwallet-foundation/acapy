@@ -218,20 +218,39 @@ class TestV20CredManager(AsyncTestCase):
 
     async def test_get_indy_detail_record(self):
         cred_ex_id = "dummy"
-        detail_indy = V20CredExRecordIndy(
-            cred_ex_id=cred_ex_id,
-            rev_reg_id="rr-id",
-            cred_rev_id="0",
-        )
-        await detail_indy.save(self.session)
-        assert (
-            await self.manager.get_detail_record(cred_ex_id, V20CredFormat.Format.INDY)
-            == detail_indy
-        )
-        assert (
-            await self.manager.get_detail_record(cred_ex_id, V20CredFormat.Format.DIF)
-            is None
-        )
+        details_indy = [
+            V20CredExRecordIndy(
+                cred_ex_id=cred_ex_id,
+                rev_reg_id="rr-id",
+                cred_rev_id="0",
+            ),
+            V20CredExRecordIndy(
+                cred_ex_id=cred_ex_id,
+                rev_reg_id="rr-id",
+                cred_rev_id="1",
+            ),
+        ]
+        await details_indy[0].save(self.session)
+        await details_indy[1].save(self.session)  # exercise logger warning on get()
+
+        with async_mock.patch.object(
+            test_module.LOGGER, "warning", async_mock.MagicMock()
+        ) as mock_warning:
+            assert (
+                await self.manager.get_detail_record(
+                    cred_ex_id,
+                    V20CredFormat.Format.INDY,
+                )
+                in details_indy
+            )
+            assert (
+                await self.manager.get_detail_record(
+                    cred_ex_id,
+                    V20CredFormat.Format.DIF,
+                )
+                is None
+            )
+            mock_warning.assert_called_once()
 
     async def test_get_dif_detail_record(self):
         cred_ex_id = "dummy"
@@ -792,6 +811,35 @@ class TestV20CredManager(AsyncTestCase):
                 == cred_preview.attributes
             )
 
+    async def test_check_uniqueness(self):
+        with async_mock.patch.object(
+            V20CredFormat.Format.INDY.detail,
+            "query_by_cred_ex_id",
+            async_mock.CoroutineMock(),
+        ) as mock_indy_query, async_mock.patch.object(
+            V20CredFormat.Format.DIF.detail,
+            "query_by_cred_ex_id",
+            async_mock.CoroutineMock(),
+        ) as mock_dif_query:
+            mock_indy_query.return_value = []
+            mock_dif_query.return_value = []
+            await self.manager._check_uniqueness("dummy-cx-id")
+
+        with async_mock.patch.object(
+            V20CredFormat.Format.INDY.detail,
+            "query_by_cred_ex_id",
+            async_mock.CoroutineMock(),
+        ) as mock_indy_query, async_mock.patch.object(
+            V20CredFormat.Format.DIF.detail,
+            "query_by_cred_ex_id",
+            async_mock.CoroutineMock(),
+        ) as mock_dif_query:
+            mock_indy_query.return_value = [async_mock.MagicMock()]
+            mock_dif_query.return_value = [async_mock.MagicMock()]
+            with self.assertRaises(V20CredManagerError) as context:
+                await self.manager._check_uniqueness("dummy-cx-id")
+            assert "detail record already exists" in str(context.exception)
+
     async def test_create_request(self):
         connection_id = "test_conn_id"
         nonce = "0"
@@ -825,6 +873,8 @@ class TestV20CredManager(AsyncTestCase):
         self.context.injector.bind_instance(BaseCache, self.cache)
 
         with async_mock.patch.object(
+            self.manager, "_check_uniqueness", async_mock.CoroutineMock()
+        ) as mock_unique, async_mock.patch.object(
             V20CredExRecord, "save", autospec=True
         ) as mock_save:
             cred_def = {"cred": "def"}
@@ -894,6 +944,8 @@ class TestV20CredManager(AsyncTestCase):
         )
 
         with async_mock.patch.object(
+            self.manager, "_check_uniqueness", async_mock.CoroutineMock()
+        ) as mock_unique, async_mock.patch.object(
             V20CredExRecord, "save", autospec=True
         ) as mock_save:
             cred_def = {"cred": "def"}
@@ -952,6 +1004,60 @@ class TestV20CredManager(AsyncTestCase):
         with self.assertRaises(V20CredManagerError) as context:
             await self.manager.create_request(stored_cx_rec, holder_did)
         assert " state " in str(context.exception)
+
+    async def test_create_request_not_unique_x(self):
+        connection_id = "test_conn_id"
+        nonce = "0"
+        thread_id = "thread-id"
+        holder_did = "did"
+
+        cred_offer = V20CredOffer(
+            formats=[
+                V20CredFormat(
+                    attach_id="0",
+                    format_=ATTACHMENT_FORMAT[CRED_20_OFFER][
+                        V20CredFormat.Format.INDY.api
+                    ],
+                )
+            ],
+            offers_attach=[AttachDecorator.data_base64(INDY_OFFER, ident="0")],
+        )
+        cred_offer.assign_thread_id(thread_id)
+
+        stored_cx_rec = V20CredExRecord(
+            cred_ex_id="dummy-cxid",
+            connection_id=connection_id,
+            cred_offer=cred_offer.serialize(),
+            initiator=V20CredExRecord.INITIATOR_SELF,
+            role=V20CredExRecord.ROLE_HOLDER,
+            state=V20CredExRecord.STATE_OFFER_RECEIVED,
+            thread_id=thread_id,
+        )
+
+        self.cache = InMemoryCache()
+        self.context.injector.bind_instance(BaseCache, self.cache)
+
+        with async_mock.patch.object(
+            self.manager, "_check_uniqueness", async_mock.CoroutineMock()
+        ) as mock_unique:
+            mock_unique.side_effect = V20CredManagerError(
+                "detail record already exists"
+            )
+            cred_def = {"cred": "def"}
+            self.ledger.get_credential_definition = async_mock.CoroutineMock(
+                return_value=cred_def
+            )
+
+            cred_req_meta = {}
+            holder = async_mock.MagicMock()
+            holder.create_credential_request = async_mock.CoroutineMock(
+                return_value=(json.dumps(INDY_CRED_REQ), json.dumps(cred_req_meta))
+            )
+            self.context.injector.bind_instance(IndyHolder, holder)
+
+            with self.assertRaises(V20CredManagerError) as context:
+                await self.manager.create_request(stored_cx_rec, holder_did)
+            assert "detail record already exists" in str(context.exception)
 
     async def test_receive_request(self):
         connection_id = "test_conn_id"
@@ -1074,6 +1180,8 @@ class TestV20CredManager(AsyncTestCase):
         ) as revoc, async_mock.patch.object(
             asyncio, "ensure_future", autospec=True
         ) as asyncio_mock, async_mock.patch.object(
+            self.manager, "_check_uniqueness", async_mock.CoroutineMock()
+        ) as mock_unique, async_mock.patch.object(
             V20CredExRecord, "save", autospec=True
         ) as mock_save:
             revoc.return_value.get_active_issuer_rev_reg_record = (
@@ -1219,6 +1327,8 @@ class TestV20CredManager(AsyncTestCase):
         self.context.injector.bind_instance(BaseLedger, self.ledger)
 
         with async_mock.patch.object(
+            self.manager, "_check_uniqueness", async_mock.CoroutineMock()
+        ) as mock_unique, async_mock.patch.object(
             V20CredExRecord, "save", autospec=True
         ) as mock_save:
             (ret_cx_rec, ret_cred_issue) = await self.manager.issue_credential(
@@ -1244,6 +1354,114 @@ class TestV20CredManager(AsyncTestCase):
             assert ret_cred_issue.attachment() == INDY_CRED
             assert ret_cx_rec.state == V20CredExRecord.STATE_ISSUED
             assert ret_cred_issue._thread_id == thread_id
+
+    async def test_issue_credential_non_unique_x(self):
+        CRED_DEF_NR = deepcopy(CRED_DEF)
+        CRED_DEF_NR["value"]["revocation"] = None
+        INDY_FILTER = {
+            "schema_id": SCHEMA_ID,
+            "cred_def_id": CRED_DEF_ID,
+        }
+        connection_id = "test_conn_id"
+        comment = "comment"
+        attr_values = {
+            "legalName": "value",
+            "jurisdictionId": "value",
+            "incorporationDate": "value",
+        }
+        thread_id = "thread-id"
+
+        cred_preview = V20CredPreview(
+            attributes=[
+                V20CredAttrSpec(name=k, value=v) for (k, v) in attr_values.items()
+            ]
+        )
+        cred_proposal = V20CredProposal(
+            credential_preview=cred_preview,
+            formats=[
+                V20CredFormat(
+                    attach_id="0",
+                    format_=ATTACHMENT_FORMAT[CRED_20_PROPOSAL][
+                        V20CredFormat.Format.INDY.api
+                    ],
+                )
+            ],
+            filters_attach=[
+                AttachDecorator.data_base64(
+                    INDY_FILTER,
+                    ident="0",
+                )
+            ],
+        )
+        cred_offer = V20CredOffer(
+            formats=[
+                V20CredFormat(
+                    attach_id="0",
+                    format_=ATTACHMENT_FORMAT[CRED_20_OFFER][
+                        V20CredFormat.Format.INDY.api
+                    ],
+                )
+            ],
+            offers_attach=[AttachDecorator.data_base64(INDY_OFFER, ident="0")],
+        )
+        cred_offer.assign_thread_id(thread_id)
+        cred_request = V20CredRequest(
+            formats=[
+                V20CredFormat(
+                    attach_id="0",
+                    format_=ATTACHMENT_FORMAT[CRED_20_REQUEST][
+                        V20CredFormat.Format.INDY.api
+                    ],
+                )
+            ],
+            requests_attach=[AttachDecorator.data_base64(INDY_CRED_REQ, ident="0")],
+        )
+
+        stored_cx_rec = V20CredExRecord(
+            cred_ex_id="dummy-cxid",
+            connection_id=connection_id,
+            cred_proposal=cred_proposal.serialize(),
+            cred_offer=cred_offer.serialize(),
+            cred_request=cred_request.serialize(),
+            initiator=V20CredExRecord.INITIATOR_SELF,
+            role=V20CredExRecord.ROLE_ISSUER,
+            state=V20CredExRecord.STATE_REQUEST_RECEIVED,
+            thread_id=thread_id,
+        )
+
+        # cover by_format property
+        by_format = stored_cx_rec.by_format
+        assert by_format.get("cred_proposal").get("indy") == INDY_FILTER
+        assert by_format.get("cred_offer").get("indy") == INDY_OFFER
+        assert by_format.get("cred_request").get("indy") == INDY_CRED_REQ
+
+        issuer = async_mock.MagicMock()
+        issuer.create_credential = async_mock.CoroutineMock(
+            return_value=(json.dumps(INDY_CRED), None)
+        )
+        self.context.injector.bind_instance(IndyIssuer, issuer)
+
+        Ledger = async_mock.MagicMock()
+        self.ledger = Ledger()
+        self.ledger.get_schema = async_mock.CoroutineMock(return_value=SCHEMA)
+        self.ledger.get_credential_definition = async_mock.CoroutineMock(
+            return_value=CRED_DEF_NR
+        )
+        self.ledger.__aenter__ = async_mock.CoroutineMock(return_value=self.ledger)
+        self.context.injector.clear_binding(BaseLedger)
+        self.context.injector.bind_instance(BaseLedger, self.ledger)
+
+        with async_mock.patch.object(
+            self.manager, "_check_uniqueness", async_mock.CoroutineMock()
+        ) as mock_unique:
+            mock_unique.side_effect = V20CredManagerError(
+                "detail record already exists"
+            )
+            with self.assertRaises(V20CredManagerError) as context:
+                await self.manager.issue_credential(
+                    stored_cx_rec, comment=comment, retries=0
+                )
+            assert "detail record already exists" in str(context.exception)
 
     async def test_issue_credential_fills_rr(self):
         connection_id = "test_conn_id"
@@ -1328,6 +1546,8 @@ class TestV20CredManager(AsyncTestCase):
         ) as revoc, async_mock.patch.object(
             asyncio, "ensure_future", autospec=True
         ) as asyncio_mock, async_mock.patch.object(
+            self.manager, "_check_uniqueness", async_mock.CoroutineMock()
+        ) as mock_unique, async_mock.patch.object(
             V20CredExRecord, "save", autospec=True
         ) as mock_save:
             revoc.return_value = async_mock.MagicMock(
@@ -1510,6 +1730,8 @@ class TestV20CredManager(AsyncTestCase):
         ) as issuer_rr_rec, async_mock.patch.object(
             test_module, "IndyRevocation", autospec=True
         ) as revoc, async_mock.patch.object(
+            self.manager, "_check_uniqueness", async_mock.CoroutineMock()
+        ) as mock_unique, async_mock.patch.object(
             V20CredExRecord, "save", autospec=True
         ) as mock_save:
             revoc.return_value.get_active_issuer_rev_reg_record = (
@@ -1612,6 +1834,8 @@ class TestV20CredManager(AsyncTestCase):
         ) as issuer_rr_rec, async_mock.patch.object(
             test_module, "IndyRevocation", autospec=True
         ) as revoc, async_mock.patch.object(
+            self.manager, "_check_uniqueness", async_mock.CoroutineMock()
+        ) as mock_unique, async_mock.patch.object(
             V20CredExRecord, "save", autospec=True
         ) as mock_save:
             revoc.return_value.get_active_issuer_rev_reg_record = (
@@ -1713,6 +1937,8 @@ class TestV20CredManager(AsyncTestCase):
         self.context.injector.bind_instance(IndyIssuer, issuer)
 
         with async_mock.patch.object(
+            self.manager, "_check_uniqueness", async_mock.CoroutineMock()
+        ) as mock_unique, async_mock.patch.object(
             test_module, "IndyRevocation", autospec=True
         ) as revoc:
             revoc.return_value.get_active_issuer_rev_reg_record = (
@@ -2118,16 +2344,17 @@ class TestV20CredManager(AsyncTestCase):
             mock_cred_format.Format = [
                 async_mock.MagicMock(
                     detail=async_mock.MagicMock(
-                        retrieve_by_cred_ex_id=async_mock.CoroutineMock(
-                            return_value=stored_indy
+                        query_by_cred_ex_id=async_mock.CoroutineMock(
+                            return_value=[
+                                stored_indy,
+                                stored_indy,
+                            ]  # deletion should get all, although there oughn't be >1
                         )
                     )
                 ),
                 async_mock.MagicMock(
                     detail=async_mock.MagicMock(
-                        retrieve_by_cred_ex_id=async_mock.CoroutineMock(
-                            side_effect=StorageNotFoundError()
-                        )
+                        query_by_cred_ex_id=async_mock.CoroutineMock(return_value=[])
                     )
                 ),
             ]
