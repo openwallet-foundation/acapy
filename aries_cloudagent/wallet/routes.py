@@ -123,6 +123,14 @@ class DIDListQueryStringSchema(OpenAPISchema):
         validate=validate.OneOf([DIDMethod.KEY.method_name, DIDMethod.SOV.method_name]),
         description="DID method to query for. e.g. sov to only fetch indy/sov DIDs",
     )
+    key_type = fields.Str(
+        required=False,
+        example=KeyType.ED25519.key_type,
+        validate=validate.OneOf(
+            [KeyType.ED25519.key_type, KeyType.BLS12381G2.key_type]
+        ),
+        description="Key type to query for.",
+    )
 
 
 class DIDQueryStringSchema(OpenAPISchema):
@@ -195,6 +203,7 @@ async def wallet_did_list(request: web.BaseRequest):
     filter_verkey = request.query.get("verkey")
     filter_method = DIDMethod.from_method(request.query.get("method"))
     filter_posture = DIDPosture.get(request.query.get("posture"))
+    filter_key_type = KeyType.from_key_type(request.query.get("key_type"))
     results = []
     public_did_info = await wallet.get_public_did()
     posted_did_infos = await wallet.get_posted_dids()
@@ -205,6 +214,7 @@ async def wallet_did_list(request: web.BaseRequest):
             and (not filter_verkey or public_did_info.verkey == filter_verkey)
             and (not filter_did or public_did_info.did == filter_did)
             and (not filter_method or public_did_info.method == filter_method)
+            and (not filter_key_type or public_did_info.key_type == filter_key_type)
         ):
             results.append(format_did_info(public_did_info))
     elif filter_posture is DIDPosture.POSTED:
@@ -214,6 +224,7 @@ async def wallet_did_list(request: web.BaseRequest):
                 (not filter_verkey or info.verkey == filter_verkey)
                 and (not filter_did or info.did == filter_did)
                 and (not filter_method or info.method == filter_method)
+                and (not filter_key_type or info.key_type == filter_key_type)
             ):
                 results.append(format_did_info(info))
     elif filter_did:
@@ -226,6 +237,7 @@ async def wallet_did_list(request: web.BaseRequest):
             info
             and (not filter_verkey or info.verkey == filter_verkey)
             and (not filter_method or info.method == filter_method)
+            and (not filter_key_type or info.key_type == filter_key_type)
             and (
                 filter_posture is None
                 or (
@@ -243,6 +255,7 @@ async def wallet_did_list(request: web.BaseRequest):
         if (
             info
             and (not filter_method or info.method == filter_method)
+            and (not filter_key_type or info.key_type == filter_key_type)
             and (
                 filter_posture is None
                 or (
@@ -262,6 +275,7 @@ async def wallet_did_list(request: web.BaseRequest):
                 or DIDPosture.get(info.metadata) is DIDPosture.WALLET_ONLY
             )
             and (not filter_method or info.method == filter_method)
+            and (not filter_key_type or info.key_type == filter_key_type)
         ]
 
     results.sort(
