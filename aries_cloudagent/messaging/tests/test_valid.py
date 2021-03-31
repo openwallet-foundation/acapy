@@ -2,7 +2,6 @@ import json
 import pytest
 
 from unittest import TestCase
-
 from marshmallow import ValidationError
 
 from ..valid import (

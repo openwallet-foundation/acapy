@@ -13,7 +13,7 @@ from ...wallet.util import (
 from ...wallet.crypto import KeyType
 
 from .create_verify_data import create_verify_data
-
+from .error import BadJWSHeaderError
 
 MULTIBASE_B58_BTC = "z"
 MULTICODEC_ED25519_PUB = b"\xed"
@@ -22,11 +22,11 @@ MULTICODEC_ED25519_PUB = b"\xed"
 def did_key(verkey: str) -> str:
     """Qualify verkey into DID key if need be."""
 
-    if verkey.startswith(f"did:key:{MULTIBASE_B58_BTC}"):
-        return verkey
-
-    return f"did:key:{MULTIBASE_B58_BTC}" + bytes_to_b58(
-        MULTICODEC_ED25519_PUB + b58_to_bytes(verkey)
+    return (
+        verkey
+        if verkey.startswith(f"did:key:{MULTIBASE_B58_BTC}")
+        else f"did:key:{MULTIBASE_B58_BTC}"
+        + bytes_to_b58(MULTICODEC_ED25519_PUB + b58_to_bytes(verkey))
     )
 
 
@@ -64,17 +64,10 @@ async def jws_sign(verify_data, verkey, wallet):
 def verify_jws_header(header):
     """Check header requirements."""
 
-    if (
-        not (
-            header["alg"] == "EdDSA"
-            and header["b64"] is False
-            and isinstance(header["crit"], list)
-            and len(header["crit"]) == 1
-            and header["crit"][0] == "b64"
+    if header != {"alg": "EdDSA", "b64": False, "crit": ["b64"]}:
+        raise BadJWSHeaderError(
+            "Invalid JWS header parameters for Ed25519Signature2018."
         )
-        and len(header) == 3
-    ):
-        raise Exception("Invalid JWS header parameters for Ed25519Signature2018.")
 
 
 async def jws_verify(verify_data, signature, public_key, wallet):

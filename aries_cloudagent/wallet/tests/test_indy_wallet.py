@@ -19,10 +19,10 @@ from ...ledger.endpoint_type import EndpointType
 from ...wallet.crypto import DIDMethod, KeyType
 from ...ledger.indy import IndySdkLedgerPool
 
+from .. import indy as test_module
 from ..base import BaseWallet
 from ..in_memory import InMemoryWallet
 from ..indy import IndySdkWallet
-from .. import indy as test_module
 
 from . import test_in_memory_wallet
 

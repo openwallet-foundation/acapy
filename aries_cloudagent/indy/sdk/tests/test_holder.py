@@ -1,11 +1,10 @@
 import json
-
 import pytest
 
-from asynctest import TestCase as AsyncTestCase
-from asynctest import mock as async_mock
+from asynctest import mock as async_mock, TestCase as AsyncTestCase
 
 import indy.anoncreds
+
 from indy.error import IndyError, ErrorCode
 
 from ...holder import IndyHolder

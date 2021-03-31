@@ -1,6 +1,6 @@
-from asynctest import TestCase as AsyncTestCase
-from asynctest import mock as async_mock
 import pytest
+
+from asynctest import mock as async_mock, TestCase as AsyncTestCase
 
 from ...config.base import ConfigError
 from ...config.error import ArgsParseError

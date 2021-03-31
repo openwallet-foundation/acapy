@@ -3,11 +3,11 @@ from tempfile import NamedTemporaryFile
 
 from asynctest import TestCase as AsyncTestCase, mock as async_mock
 
+from .. import argparse
 from ...core.in_memory import InMemoryProfile
 from ...ledger.base import BaseLedger
 from ...ledger.error import LedgerError
 from ...wallet.base import BaseWallet
-from .. import argparse
 
 from .. import ledger as test_module
 from ..injection_context import InjectionContext

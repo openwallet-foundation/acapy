@@ -1,8 +1,7 @@
 import json
 import pytest
 
-from asynctest import TestCase as AsyncTestCase
-from asynctest import mock as async_mock
+from asynctest import mock as async_mock, TestCase as AsyncTestCase
 
 from indy.error import (
     AnoncredsRevocationRegistryFullError,
@@ -15,8 +14,9 @@ from ....config.injection_context import InjectionContext
 from ....indy.sdk.profile import IndySdkProfile
 from ....indy.sdk.wallet_setup import IndyWalletConfig
 from ....wallet.indy import IndySdkWallet
-from ...issuer import IndyIssuerRevocationRegistryFullError
 from ....ledger.indy import IndySdkLedgerPool
+
+from ...issuer import IndyIssuerRevocationRegistryFullError
 
 from .. import issuer as test_module
 

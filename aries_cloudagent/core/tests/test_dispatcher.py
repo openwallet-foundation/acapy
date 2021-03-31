@@ -2,7 +2,6 @@ import asyncio
 import json
 
 from asynctest import TestCase as AsyncTestCase, mock as async_mock
-
 from marshmallow import EXCLUDE
 
 from ...config.injection_context import InjectionContext

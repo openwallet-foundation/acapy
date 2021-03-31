@@ -1,12 +1,13 @@
 import pytest
+
 from os import makedirs
 from os.path import join
 from pathlib import Path
 from shutil import rmtree
 
-from asynctest import TestCase as AsyncTestCase, mock as async_mock
-
 import indy.blob_storage
+
+from asynctest import mock as async_mock, TestCase as AsyncTestCase
 
 from ...util import indy_client_dir, generate_pr_nonce, tails_path
 

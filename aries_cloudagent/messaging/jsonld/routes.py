@@ -11,6 +11,11 @@ from ...wallet.base import BaseWallet
 from ..models.openapi import OpenAPISchema
 
 from .credential import sign_credential, verify_credential
+from .error import (
+    BadJWSHeaderError,
+    DroppedAttributeError,
+    MissingVerificationMethodError,
+)
 
 
 class SignRequestSchema(OpenAPISchema):
@@ -49,14 +54,14 @@ async def sign(request: web.BaseRequest):
         async with context.session() as session:
             wallet = session.inject(BaseWallet, required=False)
             if not wallet:
-                raise web.HTTPForbidden()
+                raise web.HTTPForbidden(reason="No wallet available")
             document_with_proof = await sign_credential(
                 credential, signature_options, verkey, wallet
             )
 
         response["signed_doc"] = document_with_proof
-    except Exception as e:
-        response["error"] = str(e)
+    except (DroppedAttributeError, MissingVerificationMethodError) as err:
+        response["error"] = str(err)
 
     return web.json_response(response)
 
@@ -95,11 +100,11 @@ async def verify(request: web.BaseRequest):
         async with context.session() as session:
             wallet = session.inject(BaseWallet, required=False)
             if not wallet:
-                raise web.HTTPForbidden()
+                raise web.HTTPForbidden(reason="No wallet available")
             valid = await verify_credential(doc, verkey, wallet)
 
         response["valid"] = valid
-    except Exception as e:
+    except (BadJWSHeaderError, DroppedAttributeError) as e:
         response["error"] = str(e)
 
     return web.json_response(response)

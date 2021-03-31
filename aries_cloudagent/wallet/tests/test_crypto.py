@@ -1,6 +1,7 @@
 import base64
-import json
 import pytest
+import json
+
 from unittest import mock, TestCase
 
 from ..util import str_to_b64
