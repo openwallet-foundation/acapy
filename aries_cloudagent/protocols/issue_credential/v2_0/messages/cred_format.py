@@ -7,7 +7,7 @@ from uuid import uuid4
 
 from marshmallow import EXCLUDE, fields, validate
 
-from .....utils.classloader import ClassLoader
+from .....utils.classloader import DeferLoad
 from .....messaging.decorators.attach_decorator import AttachDecorator
 from .....messaging.models.base import BaseModel, BaseModelSchema
 from .....messaging.valid import UUIDFour
@@ -35,14 +35,18 @@ class V20CredFormat(BaseModel):
         INDY = FormatSpec(
             "hlindy/",
             V20CredExRecordIndy,
-            "aries_cloudagent.protocols.issue_credential.v2_0"
-            ".formats.indy.handler.IndyCredFormatHandler",
+            DeferLoad(
+                "aries_cloudagent.protocols.issue_credential.v2_0"
+                ".formats.indy.handler.IndyCredFormatHandler"
+            ),
         )
         LD_PROOF = FormatSpec(
             "aries/",
             V20CredExRecordLDProof,
-            "aries_cloudagent.protocols.issue_credential.v2_0"
-            ".formats.ld_proof.handler.LDProofCredFormatHandler",
+            DeferLoad(
+                "aries_cloudagent.protocols.issue_credential.v2_0"
+                ".formats.ld_proof.handler.LDProofCredFormatHandler"
+            ),
         )
 
         @classmethod
@@ -75,8 +79,7 @@ class V20CredFormat(BaseModel):
         @property
         def handler(self) -> Type["V20CredFormatHandler"]:
             """Accessor for credential exchange format handler."""
-            # TODO: optimize
-            return ClassLoader.load_class(self.value.handler)
+            return self.value.handler.resolved
 
         def validate_fields(self, message_type: str, attachment_data: Mapping):
             """Raise ValidationError for invalid attachment formats."""
