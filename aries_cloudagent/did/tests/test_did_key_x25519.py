@@ -9,6 +9,7 @@ TEST_X25519_BASE58_KEY = "6fUMuABnqSDsaGKojbUF3P7ZkEL3wi2njsDdUWZGNgCU"
 TEST_X25519_FINGERPRINT = "z6LShLeXRTzevtwcfehaGEzCMyL3bNsAeKCwcqwJxyCo63yE"
 TEST_X25519_DID = f"did:key:{TEST_X25519_FINGERPRINT}"
 TEST_X25519_KEY_ID = f"{TEST_X25519_DID}#{TEST_X25519_FINGERPRINT}"
+TEST_X25519_PREFIX_BYTES = b"".join([b"\xec\x01", b58_to_bytes(TEST_X25519_BASE58_KEY)])
 
 
 class TestDIDKey(TestCase):
@@ -43,6 +44,7 @@ class TestDIDKey(TestCase):
         assert did_key.public_key == b58_to_bytes(TEST_X25519_BASE58_KEY)
         assert did_key.key_type == KeyType.X25519
         assert did_key.key_id == TEST_X25519_KEY_ID
+        assert did_key.prefixed_public_key == TEST_X25519_PREFIX_BYTES
 
     def test_x25519_diddoc(self):
         did_key = DIDKey.from_did(TEST_X25519_DID)

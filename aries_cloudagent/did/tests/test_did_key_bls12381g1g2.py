@@ -22,6 +22,9 @@ TEST_BLS12381G1_DID = f"did:key:{TEST_BLS12381G1_FINGERPRINT}"
 TEST_BLS12381G2_BASE58_KEY = "26d2BdqELsXg7ZHCWKL2D5Y2S7mYrpkdhJemSEEvokd4qy4TULJeeU44hYPGKo4x4DbBp5ARzkv1D6xuB3bmhpdpKAXuXtode67wzh9PCtW8kTqQhH19VSiFZkLNkhe9rtf3"
 TEST_BLS12381G2_FINGERPRINT = "zUC7LTa4hWtaE9YKyDsMVGiRNqPMN3s4rjBdB3MFi6PcVWReNfR72y3oGW2NhNcaKNVhMobh7aHp8oZB3qdJCs7RebM2xsodrSm8MmePbN25NTGcpjkJMwKbcWfYDX7eHCJjPGM"
 TEST_BLS12381G2_DID = f"did:key:{TEST_BLS12381G2_FINGERPRINT}"
+TEST_BLS12381G1G2_PREFIX_BYTES = b"".join(
+    [b"\xee\x01", b58_to_bytes(TEST_BLS12381G1G2_BASE58_KEY)]
+)
 
 # The tests here are a bit quirky because g1g2 is a concatenation of g1 and g2 public key bytes
 # but it works with the already existing did key implementation.
@@ -58,6 +61,7 @@ class TestDIDKey(TestCase):
         assert did_key.public_key_b58 == TEST_BLS12381G1G2_BASE58_KEY
         assert did_key.public_key == b58_to_bytes(TEST_BLS12381G1G2_BASE58_KEY)
         assert did_key.key_type == KeyType.BLS12381G1G2
+        assert did_key.prefixed_public_key == TEST_BLS12381G1G2_PREFIX_BYTES
 
     def test_bls12381g1g2_diddoc(self):
         did_key = DIDKey.from_did(TEST_BLS12381G1G2_DID)

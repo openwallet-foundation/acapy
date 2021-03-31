@@ -1,7 +1,5 @@
 """DID Key class and resolver methods."""
 
-from multicodec.multicodec import add_prefix, get_codec, remove_prefix
-
 from ..wallet.crypto import KeyType, ed25519_pk_to_curve25519
 from ..wallet.util import b58_to_bytes, bytes_to_b58
 
@@ -41,13 +39,20 @@ class DIDKey:
         # Assert fingerprint is in multibase format
         assert fingerprint[0] == "z"
 
-        # Get key bytes, remove multicoded prefix
+        # Get key bytes, remove multicodec prefix
         key_bytes_with_prefix = b58_to_bytes(fingerprint[1:])
-        public_key_bytes = remove_prefix(key_bytes_with_prefix)
 
-        # Detect multicodec name from prefix, get associated key type
-        multicodec_name = get_codec(key_bytes_with_prefix)
-        key_type = KeyType.from_multicodec_name(multicodec_name)
+        # Get associated key type with prefixed bytes
+        key_type = KeyType.from_prefixed_bytes(key_bytes_with_prefix)
+
+        if not key_type:
+            raise Exception(
+                f"No key type for prefixed public key '{key_bytes_with_prefix}' found."
+            )
+
+        # Remove the prefix bytes to get the public key
+        prefix_len = len(key_type.multicodec_prefix)
+        public_key_bytes = key_bytes_with_prefix[prefix_len:]
 
         return cls(public_key_bytes, key_type)
 
@@ -63,11 +68,14 @@ class DIDKey:
         return cls.from_fingerprint(fingerprint)
 
     @property
+    def prefixed_public_key(self) -> bytes:
+        """Getter for multicodec prefixed public key."""
+        return b"".join([self.key_type.multicodec_prefix, self.public_key])
+
+    @property
     def fingerprint(self) -> str:
         """Getter for did key fingerprint."""
-        prefixed_key_bytes = add_prefix(self.key_type.multicodec_name, self.public_key)
-
-        return f"z{bytes_to_b58(prefixed_key_bytes)}"
+        return f"z{bytes_to_b58(self.prefixed_public_key)}"
 
     @property
     def did(self) -> str:

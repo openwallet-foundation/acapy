@@ -11,6 +11,9 @@ TEST_BLS12381G2_BASE58_KEY = "mxE4sHTpbPcmxNviRVR9r7D2taXcNyVJmf9TBUFS1gRt3j3Ej9
 TEST_BLS12381G2_FINGERPRINT = "zUC71nmwvy83x1UzNKbZbS7N9QZx8rqpQx3Ee3jGfKiEkZngTKzsRoqobX6wZdZF5F93pSGYYco3gpK9tc53ruWUo2tkBB9bxPCFBUjq2th8FbtT4xih6y6Q1K9EL4Th86NiCGT"
 TEST_BLS12381G2_DID = f"did:key:{TEST_BLS12381G2_FINGERPRINT}"
 TEST_BLS12381G2_KEY_ID = f"{TEST_BLS12381G2_DID}#{TEST_BLS12381G2_FINGERPRINT}"
+TEST_BLS12381G2_PREFIX_BYTES = b"".join(
+    [b"\xeb\x01", b58_to_bytes(TEST_BLS12381G2_BASE58_KEY)]
+)
 
 
 class TestDIDKey(TestCase):
@@ -47,6 +50,7 @@ class TestDIDKey(TestCase):
         assert did_key.public_key == b58_to_bytes(TEST_BLS12381G2_BASE58_KEY)
         assert did_key.key_type == KeyType.BLS12381G2
         assert did_key.key_id == TEST_BLS12381G2_KEY_ID
+        assert did_key.prefixed_public_key == TEST_BLS12381G2_PREFIX_BYTES
 
     def test_bls12381g2_diddoc(self):
         did_key = DIDKey.from_did(TEST_BLS12381G2_DID)
