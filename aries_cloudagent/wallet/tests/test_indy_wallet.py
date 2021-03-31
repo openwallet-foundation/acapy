@@ -156,7 +156,7 @@ class TestIndySdkWallet(test_in_memory_wallet.TestInMemoryWallet):
             )
             with pytest.raises(test_module.WalletError) as excinfo:
                 await wallet.get_signing_key(None)
-            assert "outlier" in str(excinfo.value)
+            assert "Missing required input parameter: verkey" in str(excinfo.value)
 
     @pytest.mark.asyncio
     async def test_get_local_did_x(self, wallet: IndySdkWallet):

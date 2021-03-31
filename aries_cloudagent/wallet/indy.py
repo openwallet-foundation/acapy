@@ -23,14 +23,11 @@ from .crypto import (
     DIDMethod,
     KeyType,
     create_keypair,
-    get_key_pair,
-    get_key_pairs,
     sign_message,
-    store_key_pair,
-    update_key_pair_metadata,
     validate_seed,
     verify_signed_message,
 )
+from .key_pair import KeyPairStorageManager
 from ..storage.indy import IndySdkStorage
 from ..storage.error import StorageDuplicateError, StorageNotFoundError
 from .error import WalletError, WalletDuplicateError, WalletNotFoundError
@@ -106,7 +103,7 @@ class IndySdkWallet(BaseWallet):
 
         public_key, secret_key = create_keypair(key_type, validate_seed(seed))
         verkey = bytes_to_b58(public_key)
-        storage = IndySdkStorage(self.opened)
+        key_pair_mgr = KeyPairStorageManager(IndySdkStorage(self.opened))
 
         # Check if key already exists
         try:
@@ -118,8 +115,7 @@ class IndySdkWallet(BaseWallet):
             # this is good
             pass
 
-        await store_key_pair(
-            storage=storage,
+        await key_pair_mgr.store_key_pair(
             public_key=public_key,
             secret_key=secret_key,
             key_type=key_type,
@@ -183,8 +179,8 @@ class IndySdkWallet(BaseWallet):
 
     async def __get_keypair_signing_key(self, verkey: str) -> KeyInfo:
         try:
-            storage = IndySdkStorage(self.opened)
-            key_pair = await get_key_pair(storage=storage, verkey=verkey)
+            key_pair_mgr = KeyPairStorageManager(IndySdkStorage(self.opened))
+            key_pair = await key_pair_mgr.get_key_pair(verkey)
             return KeyInfo(
                 verkey=verkey,
                 metadata=key_pair["metadata"],
@@ -210,6 +206,9 @@ class IndySdkWallet(BaseWallet):
             WalletError: If there is a libindy error
 
         """
+        if not verkey:
+            raise WalletError("Missing required input parameter: verkey")
+
         # Only try to load indy signing key if the verkey is 32 bytes
         # this may change if indy is going to support verkeys of different byte length
         if len(b58_to_bytes(verkey)) == 32:
@@ -244,9 +243,9 @@ class IndySdkWallet(BaseWallet):
             )
         # All other (only bls12381g2 atm) are handled outside of indy
         else:
-            storage = IndySdkStorage(self.opened)
-            await update_key_pair_metadata(
-                storage=storage, verkey=key_info.verkey, metadata=metadata
+            key_pair_mgr = KeyPairStorageManager(IndySdkStorage(self.opened))
+            await key_pair_mgr.update_key_pair_metadata(
+                verkey=key_info.verkey, metadata=metadata
             )
 
     async def rotate_did_keypair_start(self, did: str, next_seed: str = None) -> str:
@@ -378,7 +377,7 @@ class IndySdkWallet(BaseWallet):
             )
 
         public_key, secret_key = create_keypair(key_type, validate_seed(seed))
-        storage = IndySdkStorage(self.opened)
+        key_pair_mgr = KeyPairStorageManager(IndySdkStorage(self.opened))
         # should change if other did methods are supported
         did_key = DIDKey.from_public_key(public_key, key_type)
 
@@ -386,8 +385,7 @@ class IndySdkWallet(BaseWallet):
             metadata = {}
         metadata["method"] = method.method_name
 
-        await store_key_pair(
-            storage=storage,
+        await key_pair_mgr.store_key_pair(
             public_key=public_key,
             secret_key=secret_key,
             key_type=key_type,
@@ -465,9 +463,9 @@ class IndySdkWallet(BaseWallet):
 
         # retrieve key pairs with method set to key
         # this needs to change if more did methods are added
-        storage = IndySdkStorage(self.opened)
-        key_pairs = await get_key_pairs(
-            storage=storage, tag_query={"method": DIDMethod.KEY.method_name}
+        key_pair_mgr = KeyPairStorageManager(IndySdkStorage(self.opened))
+        key_pairs = await key_pair_mgr.find_key_pairs(
+            tag_query={"method": DIDMethod.KEY.method_name}
         )
         for key_pair in key_pairs:
             ret.append(self.__did_info_from_key_pair_info(key_pair))
@@ -519,8 +517,8 @@ class IndySdkWallet(BaseWallet):
         # method is always did:key
         did_key = DIDKey.from_did(did)
 
-        storage = IndySdkStorage(self.opened)
-        key_pair = await get_key_pair(storage=storage, verkey=did_key.public_key_b58)
+        key_pair_mgr = KeyPairStorageManager(IndySdkStorage(self.opened))
+        key_pair = await key_pair_mgr.get_key_pair(verkey=did_key.public_key_b58)
         return self.__did_info_from_key_pair_info(key_pair)
 
     async def get_local_did(self, did: str) -> DIDInfo:
@@ -597,9 +595,9 @@ class IndySdkWallet(BaseWallet):
                 ) from x_indy
         # all other keys are handled by key pair
         else:
-            storage = IndySdkStorage(self.opened)
-            await update_key_pair_metadata(
-                storage=storage, verkey=did_info.verkey, metadata=metadata
+            key_pair_mgr = KeyPairStorageManager(IndySdkStorage(self.opened))
+            await key_pair_mgr.update_key_pair_metadata(
+                verkey=did_info.verkey, metadata=metadata
             )
 
     async def set_did_endpoint(
@@ -684,8 +682,8 @@ class IndySdkWallet(BaseWallet):
                 raise WalletError("Exception when signing message")
         # other keys are handled outside of indy
         else:
-            storage = IndySdkStorage(self.opened)
-            key_pair = await get_key_pair(storage=storage, verkey=key_info.verkey)
+            key_pair_mgr = KeyPairStorageManager(IndySdkStorage(self.opened))
+            key_pair = await key_pair_mgr.get_key_pair(verkey=key_info.verkey)
             result = sign_message(
                 message=message,
                 secret=b58_to_bytes(key_pair["secret_key"]),
