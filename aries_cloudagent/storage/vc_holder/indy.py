@@ -12,7 +12,7 @@ from .xform import storage_to_vc_record, vc_to_storage_record, VC_CRED_RECORD_TY
 
 
 class IndySdkVCHolder(VCHolder):
-    """Indy-SDK in-memory storage class."""
+    """Indy-SDK storage class."""
 
     def __init__(self, wallet: IndyOpenWallet):
         """Initialize the Indy-SDK VC holder instance."""
