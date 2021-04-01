@@ -280,7 +280,7 @@ At this point Alice has simply stored the invitation in her wallet. You can see 
     <img src="./collateral/2-Alice-Invitation-3.png" alt="Invitation Status">
 </details>
 
-To complete a connection with Faber, she must accept the invitation and send a corresponding connection request to Faber. Find the `connection_id` in the connection response from the previous **`POST /connections/receive-invitation`** endpoint call. You may note that the same data was sent to the controller as an event from ACA-Py and is visible in the terminal. Scroll to the **`POST /connections/{id}/accept-invitation`** endpoint and paste the `connection_id` in the `id` parameter field (you will have to click the `Try it out` button to see the available URL parameters). The response from clicking `Execute` should show that the connection has a state of `request`.
+To complete a connection with Faber, she must accept the invitation and send a corresponding connection request to Faber. Find the `connection_id` in the connection response from the previous **`POST /connections/receive-invitation`** endpoint call. You may note that the same data was sent to the controller as an event from ACA-Py and is visible in the terminal. Scroll to the **`POST /connections/{conn_id}/accept-invitation`** endpoint and paste the `connection_id` in the `id` parameter field (you will have to click the `Try it out` button to see the available URL parameters). The response from clicking `Execute` should show that the connection has a state of `request`.
 
 <details>
     <summary>Show me a screenshot - Accept Invitation Request</summary>
@@ -305,7 +305,7 @@ Note that the connection ID held by Alice is different from the one held by Fabe
 
 ### The Faber Agent Completes the Connection
 
-To complete the connection process, Faber will respond to the connection request from Alice. Scroll to the **`POST /connections/{id}/accept-request`** endpoint and paste the `connection_id` you previously copied into the `id` parameter field (you will have to click the `Try it out` button to see the available URL parameters). The response from clicking the `Execute` button should show that the connection has a state of `response`, which indicates that Faber has accepted Alice's connection request.
+To complete the connection process, Faber will respond to the connection request from Alice. Scroll to the **`POST /connections/{conn_id}/accept-request`** endpoint and paste the `connection_id` you previously copied into the `id` parameter field (you will have to click the `Try it out` button to see the available URL parameters). The response from clicking the `Execute` button should show that the connection has a state of `response`, which indicates that Faber has accepted Alice's connection request.
 
 <details>
     <summary>Show me a screenshot - Accept Connection Request</summary>
@@ -350,7 +350,7 @@ Once you have a connection between two agents, you have a channel to exchange se
 
 ### Sending a message from Alice to Faber
 
-On Alice's swagger page, scroll to the **`POST /connections/{id}/send-message`** endpoint. Click on `Try it Out` and enter a message in the body provided (for example `{"content": "Hello Faber"}`). Enter the connection id of Alice's connection in the field provided. Then click on `Execute`.
+On Alice's swagger page, scroll to the **`POST /connections/{conn_id}/send-message`** endpoint. Click on `Try it Out` and enter a message in the body provided (for example `{"content": "Hello Faber"}`). Enter the connection id of Alice's connection in the field provided. Then click on `Execute`.
 
 <details>
     <summary>Show me a screenshot</summary>
@@ -450,7 +450,7 @@ The one time setup work for issuing a credential is complete&mdash;creating a DI
 
 ## Issuing a Credential
 
-Triggering the issuance of a credential from the Faber agent to Alice’s agent is done with another API call. In the Faber browser tab, scroll down to the **`POST /issue-credential/send`** and get ready to (but don’t yet) execute the request. Before execution, you need to update most of the data elements in the JSON. We cover how to update all the fields in the following.
+Triggering the issuance of a credential from the Faber agent to Alice’s agent is done with another API call. In the Faber browser tab, scroll down to the **`POST /issue-credential-2.0/send`** and get ready to (but don’t yet) execute the request. Before execution, you need to update most of the data elements in the JSON. We now cover how to update all the fields.
 
 ### Faber - Preparing to Issue a Credential
 
@@ -467,22 +467,22 @@ For the following fields, scroll on Faber's Swagger page to the listed endpoint,
 - `schema_id` the Id of the schema Faber created (use **`GET /schemas/created`**) and,
 - `cred_def_id` the Id of the credential definition Faber created (use **`GET /credential-definitions/created`**)
 
-For these items set the values as follows:
+into the `filter` section's `indy` subsection. Remove the `"dif"` subsection of the `filter` section within the JSON, and specify the remaining indy filter criteria as follows:
 
-- `schema_version` set to the last segment of the `schema_id`, a three part version number that was randomly generated on startup of the Faber agent. Segments of the `schema_id` are separated by ":"s.
-- `auto_remove` set to `true` (no quotes), see note below
-- `revoc_reg_id` set to `null` (no quotes), see note below
-- `comment` any string. It's intended to let Alice know something about the credential being offered.
-- `schema_issuer_did:` set to the same the value as in `issuer_did`,
-- `schema_name` set to the second last segment of the `schema_id`, in this case `degree schema`
+- `schema_version`: set to the last segment of the `schema_id`, a three part version number that was randomly generated on startup of the Faber agent. Segments of the `schema_id` are separated by ":"s.
+- `schema_issuer_did`: set to the same the value as in `issuer_did`,
+- `schema_name`: set to the second last segment of the `schema_id`, in this case `degree schema`
 
-The `revoc_reg_id` being `null` means that we won't be using a revocation registry and therefore can't revoke the credentials we issue. 
+Finally, set the remaining values as follows:
+- `auto_remove`: set to `true` (no quotes), see note below
+- `comment`: set to any string. It's intended to let Alice know something about the credential being offered.
+- `trace`: set to `false` (no quotes). It's for troubleshooting, performance profiling, and/or diagnostics.
 
 By setting `auto_remove` to true, ACA-Py will automatically remove the credential exchange record after the protocol completes. When implementing a controller, this is the likely setting to use to reduce agent storage usage, but implies if a record of the issuance of the credential is needed, the controller must save it somewhere else. For example, Faber College might extend their Student Information System, where they track all their students, to record when credentials are issued to students, and the Ids of the issued credentials.
 
 ### Faber - Issuing the Credential
 
-Finally, we need put into the JSON the data values for the credential proposal section of the JSON. Copy the following and paste it between the square brackets of the `attributes` item, replacing what is there. Feel free to change the attribute `value` items, but don't change the labels or names:
+Finally, we need put into the JSON the data values for the `credential_preview` section of the JSON. Copy the following and paste it between the square brackets of the `attributes` item, replacing what is there. Feel free to change the attribute `value` items, but don't change the labels or names:
 
 ```
       {
@@ -507,7 +507,7 @@ Finally, we need put into the JSON the data values for the credential proposal s
       }
 ```
 
-Ok, finally, you are ready to click `Execute`. The request should work, but if it doesn’t - check your JSON! Did you get all the quotes and commas right?
+OK, finally, you are ready to click `Execute`. The request should work, but if it doesn’t - check your JSON! Did you get all the quotes and commas right?
 
 <details>
     <summary>Show me a screenshot - credential offer</summary>
@@ -515,23 +515,22 @@ Ok, finally, you are ready to click `Execute`. The request should work, but if i
     <img src="./collateral/C-4-Faber-Credential-Offer-2.png" alt="Faber Submit Credential Offer">
 </details>
 
-To confirm the issuance worked, scroll up on the Faber Swagger page to the `issue-credential` section and execute the **`GET /issue-credential/records`** endpoint. You should see a lot of information about the exchange just initiated, including the state of the exchange&mdash;`credential_issued`.
+To confirm the issuance worked, scroll up on the Faber Swagger page to the `issue-credential v2.0` section and execute the **`GET /issue-credential-2.0/records`** endpoint. You should see a lot of information about the exchange just initiated.
 
 ### Alice Receives Credential
 
-Let’s look at it from Alice’s side. Alice's ACA-Py instance was started with the options to automatically handle credential offers by immediately responding with a credential request. Scroll back in the Alice terminal to where the credential issuance started. If you've followed the full script, that is just after where we used the basic message protocol to send text messages between Alice and Faber.
+Let’s look at it from Alice’s side. Alice's agent source code automatically handles credential offers by immediately responding with a credential request. Scroll back in the Alice terminal to where the credential issuance started. If you've followed the full script, that is just after where we used the basic message protocol to send text messages between Alice and Faber.
 
 Alice's agent first received a notification of a Credential Offer, to which it responded with a Credential Request. Faber received the Credential Request and responded in turn with an Issue Credential message. Scroll down through the events from ACA-Py to the controller to see the notifications of those messages. Make sure you scroll all the way to the bottom of the terminal so you can continue with the process.
 
 <details>
     <summary>Show me a screenshot - issue credential</summary>
     <img src="./collateral/C-5-Alice-Credential-Offer-1.png" alt="Issue Credential">
-    <img src="./collateral/C-5-Alice-Credential-Offer-2.png" alt="Issue Credential">
 </details>
 
 ### Alice Stores Credential in her Wallet
 
-We can check (via Alice's Swagger interface) the issue credential status by hitting the **`GET /issue-credential/records`** endpoint. Note in the above that the credential status is "credential_received", but not yet "stored". Let's address that.
+We can check (via Alice's Swagger interface) the issue credential status by hitting the **`GET /issue-credential-2.0/records`** endpoint. Note that within the results, the `cred_ex_record` just received has a `state` of `credential-received`, but not yet `done`. Let's address that.
 
 <details>
     <summary>Show me a screenshot - check credential exchange status</summary>
@@ -539,7 +538,7 @@ We can check (via Alice's Swagger interface) the issue credential status by hitt
     <img src="./collateral/C-7-Alice-Store-Credential-2.png" alt="">
 </details>
 
-First, we need the `credential_exchange_id` from API call response above, or from the event in the terminal, and use the endpoint **`POST /issue-credential/records/{id}/store`** to tell Alice's ACA-Py instance to store the credential in agent storage (aka the Indy Wallet). Note that in the JSON for that endpoint we can provide a credential Id by setting a value in the `credential_id` string. A real controller might use the `credential_exchange_id` for that, or use something else that makes sense in the agent's business scenario.
+First, we need the `cred_ex_id` from the API call response above, or from the event in the terminal; use the endpoint **`POST /issue-credential-2.0/records/{cred_ex_id}/store`** to tell Alice's ACA-Py instance to store the credential in agent storage (aka the Indy Wallet). Note that in the JSON for that endpoint we can provide a credential Id to store in the wallet by setting a value in the `credential_id` string. A real controller might use the `cred_ex_id` for that, or use something else that makes sense in the agent's business scenario (but the agent generates a random credential identifier by default).
 
 <details>
     <summary>Show me a screenshot - store credential</summary>
@@ -547,7 +546,7 @@ First, we need the `credential_exchange_id` from API call response above, or fro
     <img src="./collateral/C-7-Alice-Store-Credential-4.png" alt="">
 </details>
 
-Now, in Alice’s swagger browser tab, find the `credentials` section and within that, execute the **`GET /credentials`** endpoint. There should be a list of credentials held by Alice, with just a single entry, the credential issued from the Faber agent. Note that the element `referent` is the value of the `credential_id` element used in other calls. `referent` is the name returned in the `indy-sdk` call to get the set of credentials for the wallet and ACA-Py code is not changing it in the response.
+Now, in Alice’s swagger browser tab, find the `credentials` section and within that, execute the **`GET /credentials`** endpoint. There should be a list of credentials held by Alice, with just a single entry, the credential issued from the Faber agent. Note that the element `referent` is the value of the `credential_id` element used in other calls. `referent` is the name returned in the `indy-sdk` call to get the set of credentials for the wallet and ACA-Py code does not change it in the response.
 
 ### Faber Receives Acknowledgment that the Credential was Received
 
@@ -559,7 +558,7 @@ On the Faber side, we can see by scanning back in the terminal that it receive e
     <img src="./collateral/C-8-Faber-Credential-Ack-0.png" alt="">
 </details>
 
-Note that once the credential processing completed, Faber's agent deleted the credential exchange record from its wallet. This can be confirmed by executing the endpoint **`GET /issue-credential/records`**
+Note that once the credential processing completed, Faber's agent deleted the credential exchange record from its wallet. This can be confirmed by executing the endpoint **`GET /issue-credential-2.0/records`**
 
 <details>
     <summary>Show me a screenshot</summary>
@@ -573,25 +572,25 @@ You’ve done it, issued a credential!  w00t!
 
 Those that know something about the Indy process for issuing a credential and the DIDComm `Issue Credential` protocol know that there multiple steps to issuing credentials, a back and forth between the issuer and the holder to (at least) offer, request and issue the credential. All of those messages happened, but the two agents took care of those details rather than bothering the controller (you, in this case) with managing the back and forth.
 
-* On the Faber agent side, this is because we used the **`POST /issue-credential/send`** administrative message, which handles the back and forth for the issuer automatically. We could have used the other `/issue-credential/` endpoints to allow the controller to handle each step of the protocol.
-* On Alice's agent side, this is because in the startup options for the agent, we used the `--auto-respond-credential-offer` parameter.
+* On the Faber agent side, this is because we used the **`POST /issue-credential-2.0/send`** administrative message, which handles the back and forth for the issuer automatically. We could have used the other `/issue-credential-2.0/` endpoints to allow the controller to handle each step of the protocol.
+* On Alice's agent side, this is because the handler for the `issue_credential_v2_0` event always responds to credential offers with corresponding credential requests.
 
 ### Bonus Points
 
-If you would like to perform all of the issuance steps manually on the Faber agent side, use a sequence of the other `/issue-credential/` messages. Use the **`GET /issue-credential/records`** to both check the credential exchange state as you progress through the protocol and to find some of the data you’ll need in executing the sequence of requests.
+If you would like to perform all of the issuance steps manually on the Faber agent side, use a sequence of the other `/issue-credential-2.0/` messages. Use the **`GET /issue-credential-2.0/records`** to both check the credential exchange state as you progress through the protocol and to find some of the data you’ll need in executing the sequence of requests.
 
 The following table lists endpoints that you need to call ("REST service") and callbacks that your agent will receive ("callback") that your need to respond to. See the [detailed API docs](../AdminAPI.md).
 
 | Protocol Step        | Faber (Issuer)         | Alice (Holder)     | Notes |
 | -------------------- | ---------------------- | ------------------ | ----- |
-| Send Credential Offer | **`POST /issue-credential/send-offer`** | | REST service |
-| Receive Offer | | <agent_cb>/issue_credential/ | callback |
-| Send Credential Request | | **`POST /issue-credential/records/{cred_ex_id}/send-request`** | REST service |
-| Receive Request | <agent_cb>/issue_credential/ | | callback |
-| Issue Credential | **`POST /issue-credential/records/{cred_ex_id}/issue`** | | REST service |
-| Receive Credential | | <agent_cb>/issue_credential/ | callback |
-| Store Credential | | **`POST /issue-credential/records/{cred_ex_id}/store`** | REST service |
-| Receive Acknowledgement | <agent_cb>/issue_credential/ | | callback |
+| Send Credential Offer | **`POST /issue-credential-2.0/send-offer`** | | REST service |
+| Receive Offer | | <agent_cb>/issue_credential_v2_0/ | callback |
+| Send Credential Request | | **`POST /issue-credential-2.0/records/{cred_ex_id}/send-request`** | REST service |
+| Receive Request | <agent_cb>/issue_credential_v2_0/ | | callback |
+| Issue Credential | **`POST /issue-credential-2.0/records/{cred_ex_id}/issue`** | | REST service |
+| Receive Credential | | <agent_cb>/issue_credential_v2_0/ | callback |
+| Store Credential | | **`POST /issue-credential-2.0/records/{cred_ex_id}/store`** | REST service |
+| Receive Acknowledgement | <agent_cb>/issue_credential_v2_0/ | | callback |
 | Store Credential Id | | | application function |
 
 ## Requesting/Presenting a Proof
@@ -602,52 +601,54 @@ Alice now has her Faber credential. Let’s have the Faber agent send a request 
 
 From the Faber browser tab, get ready to execute the **`POST /present-proof/send-request`** endpoint. After hitting `Try it Now`, erase the data in the block labelled "Edit Value Model", replacing it with the text below. Once that is done, replace in the JSON each instance of `cred_def_id` (there are four instances) and `connection_id` with the values found using the same techniques we've used earlier in this tutorial. Both can be found by scrolling back a little in the Faber terminal, or you can execute API endpoints we've already covered. You can also change the value of the `comment` item to whatever you want.
 
-``` JSONC
+```jsonc
 {
-  "connection_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
   "comment": "This is a comment about the reason for the proof",
-  "proof_request": {
-    "name": "Proof of Education",
-    "version": "1.0",
-    "requested_attributes": {
-      "0_name_uuid": {
-        "name": "name",
-        "restrictions": [
-          {
-            "cred_def_id": "WgWxqztrNooG92RXvxSTWv:3:CL:20:tag"
-          }
-        ]
+  "connection_id": "e469e0f3-2b4d-4b12-9ac7-293f23e8a816",
+  "presentation_request": {
+    "indy": {
+      "name": "Proof of Education",
+      "version": "1.0",
+      "requested_attributes": {
+        "0_name_uuid": {
+          "name": "name",
+          "restrictions": [
+            {
+              "cred_def_id": "SsX9siFWXJyCAmXnHY514N:3:CL:8:faber.agent.degree_schema"
+            }
+          ]
+        },
+        "0_date_uuid": {
+          "name": "date",
+          "restrictions": [
+            {
+              "cred_def_id": "SsX9siFWXJyCAmXnHY514N:3:CL:8:faber.agent.degree_schema"
+            }
+          ]
+        },
+        "0_degree_uuid": {
+          "name": "degree",
+          "restrictions": [
+            {
+              "cred_def_id": "SsX9siFWXJyCAmXnHY514N:3:CL:8:faber.agent.degree_schema"
+            }
+          ]
+        },
+        "0_self_attested_thing_uuid": {
+          "name": "self_attested_thing"
+        }
       },
-      "0_date_uuid": {
-        "name": "date",
-        "restrictions": [
-          {
-            "cred_def_id": "WgWxqztrNooG92RXvxSTWv:3:CL:20:tag"
-          }
-        ]
-      },
-      "0_degree_uuid": {
-        "name": "degree",
-        "restrictions": [
-          {
-            "cred_def_id": "WgWxqztrNooG92RXvxSTWv:3:CL:20:tag"
-          }
-        ]
-      },
-      "0_self_attested_thing_uuid": {
-        "name": "self_attested_thing"
-      }
-    },
-    "requested_predicates": {
-      "0_age_GE_uuid": {
-        "name": "age",
-        "p_type": ">=",
-        "p_value": 18,
-        "restrictions": [
-          {
-            "cred_def_id": "WgWxqztrNooG92RXvxSTWv:3:CL:20:tag"
-          }
-        ]
+      "requested_predicates": {
+        "0_age_GE_uuid": {
+          "name": "age",
+          "p_type": ">=",
+          "p_value": 18,
+          "restrictions": [
+            {
+              "cred_def_id": "SsX9siFWXJyCAmXnHY514N:3:CL:8:faber.agent.degree_schema"
+            }
+          ]
+        }
       }
     }
   }
@@ -676,9 +677,7 @@ In a real scenario, for example if Alice had a mobile agent on her smartphone, t
 
 ### Faber - Verifying the Proof
 
-> **NOTE** 2020.03.16 - The verification step of the tutorial may not be working. We're investigating and will update these instructions as soon as we have a response.
-
-Note that in the response, the state is `request_sent`. That is because when the HTTP response was generated (immediately after sending the request), Alice’s agent had not yet responded to the request. We’ll have to do another request to verify the presentation worked. Copy the value of the `presentation_exchange_id` field from the event in the Faber terminal and use it in executing the **`GET /present-proof/records/{pres_ex_id}`** endpoint. That should return a result showing the `state` as `verified` and `verified` as `true`. Proof positive!
+Note that in the response, the state is `request-sent`. That is because when the HTTP response was generated (immediately after sending the request), Alice's agent had not yet responded to the request. We’ll have to do another request to verify the presentation worked. Copy the value of the `pres_ex_id` field from the event in the Faber terminal and use it in executing the **`GET /present-proof-2.0/records/{pres_ex_id}`** endpoint. That should return a result showing the `state` as `done` and `verified` as `true`. Proof positive!
 
 You can see some of Faber's activity below:
 
@@ -687,28 +686,27 @@ You can see some of Faber's activity below:
     <img src="./collateral/P-3-Faber-Proof-1.png" alt="Receive and Verify Proof">
     <img src="./collateral/P-3-Faber-Proof-2.png" alt="Receive and Verify Proof">
     <img src="./collateral/P-3-Faber-Proof-3.png" alt="Receive and Verify Proof">
-    <img src="./collateral/P-3-Faber-Proof-4.png" alt="Receive and Verify Proof">
 </details>
 
 ### Present Proof Notes
 
-As with the issue credential process, the agents handled some of the presentation steps without bothering the controller. In this case, Alice’s agent processed the presentation request automatically because it was started with the `--auto-respond-presentation-request` parameter set, and her wallet contained exactly one credential that satisfied the presentation-request from the Faber agent. Similarly, the Faber agent was started with the `--auto-verify-presentation` parameter and so on receipt of the presentation, it verified the presentation and updated the status accordingly.
+As with the issue credential process, the agents handled some of the presentation steps without bothering the controller. In this case, Alice's agent processed the presentation request automatically through its handler for the `present_proof_v2_0` event, and her wallet contained exactly one credential that satisfied the presentation-request from the Faber agent. Similarly, the Faber agent's handler for the event responds automatically and so on receipt of the presentation, it verified the presentation and updated the status accordingly.
 
 ### Bonus Points
 
-If you would like to perform all of the proof request/response steps manually, you cal call all of the individual `/present-proof` messages.
+If you would like to perform all of the proof request/response steps manually, you can call all of the individual `/present-proof-2.0` messages.
 
 The following table lists endpoints that you need to call ("REST service") and callbacks that your agent will receive ("callback") that your need to respond to. See the [detailed API docs](../AdminAPI.md).
 
 | Protocol Step        | Faber (Verifier)       | Alice (Holder/Prover)     | Notes |
 | -------------------- | ---------------------- | ------------------------- | ----- |
-| Send Proof Request | **`POST /present-proof/send-request`** | | REST service |
-| Receive Proof Request | | <agent_cb>/present_proof | callback |
-| Find Credentials | | **`GET /present-proof/records/{id}/credentials`** | REST service |
+| Send Proof Request | **`POST /present-proof-2.0/send-request`** | | REST service |
+| Receive Proof Request | | <agent_cb>/present_proof_v2_0 | callback |
+| Find Credentials | | **`GET /present-proof-2.0/records/{pres_ex_id}/credentials`** | REST service |
 | Select Credentials | | | application or user function |
-| Send Proof | | **`POST /present-proof/records/{id}/send-presentation`** | REST service |
-| Receive Proof | <agent_cb>/present_proof | | callback |
-| Validate Proof | **`POST /present-proof/records/{id}/verify-presentation`** | | REST service |
+| Send Proof | | **`POST /present-proof-2.0/records/{pres_ex_id}/send-presentation`** | REST service |
+| Receive Proof | <agent_cb>/present_proof_v2_0 | | callback |
+| Validate Proof | **`POST /present-proof-2.0/records/{pres_ex_id}/verify-presentation`** | | REST service |
 | Save Proof | | | application data |
 
 ## Conclusion
