@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 from unittest import mock, TestCase
 
 from ..util import (
+    abbr_verkey,
     b58_to_bytes,
     b64_to_bytes,
     b64_to_str,
@@ -66,15 +67,20 @@ class TestUtil(TestCase):
         b58 = bytes_to_b58(BYTES)
         assert b58_to_bytes(b58) == BYTES
 
-    def test_full_verkey(self):
+    def test_full_abbr_verkey(self):
         did = "N76kAdywAdHCySjgymbZ9t"
         full_vk = "CWBBfFmEVUDbs7rSCeKaFKfaeYXS2dKynAk7e2sCv23b"
-        abbr_verkey = "~79woMYnyEk6XnQaBA39i57"
+        abbr_vk = "~79woMYnyEk6XnQaBA39i57"
 
-        full = full_verkey(did, abbr_verkey)
+        full = full_verkey(did, abbr_vk)
         assert full == full_vk
-        assert full == full_verkey(f"did:sov:{did}", abbr_verkey)
+        assert full == full_verkey(f"did:sov:{did}", abbr_vk)
         assert full_verkey(did, full_vk) == full_vk
+
+        abbr = abbr_verkey(full_vk)
+        abbr_did = abbr_verkey(full_vk, did)
+        abbr_qdid = abbr_verkey(full_vk, f"did:sov:{did}")
+        assert abbr_did == abbr_qdid == abbr == abbr_vk
 
     def test_naked_to_did_key(self):
         assert (

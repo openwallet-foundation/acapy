@@ -94,7 +94,7 @@ class V20PresSchema(AgentMessageSchema):
 
     @validates_schema
     def validate_fields(self, data, **kwargs):
-        """Validate proposal attachment per format."""
+        """Validate presentation attachment per format."""
 
         def get_attach_by_id(attach_id):
             """Return attachment with input attachment identifier."""

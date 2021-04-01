@@ -84,7 +84,7 @@ class TestRedisOutboundQueue(AsyncTestCase):
                 "rpush",
                 side_effect=aioredis.RedisError,
                 new_callable=AsyncMock,
-            ) as pool_mock:
+            ) as mock_rpush:
                 with self.assertRaises(OutboundQueueError):
                     await self.transport.enqueue_message(
                         payload=transmitted_str,
@@ -93,15 +93,107 @@ class TestRedisOutboundQueue(AsyncTestCase):
 
 
 class TestRedisConnection(AsyncTestCase):
+    TEST_REDIS_ENDPOINT = "redis://test_redis_endpoint:6379"
+
     async def test_endpoint_goes_into_class(self):
-        TEST_REDIS_ENDPOINT = "redis://test_redis_endpoint:6379"
-        transport = RedisOutboundQueue(connection=TEST_REDIS_ENDPOINT)
+        transport = RedisOutboundQueue(
+            connection=TestRedisConnection.TEST_REDIS_ENDPOINT
+        )
+        assert str(transport)
+        with async_mock.patch.object(
+            aioredis, "create_redis_pool", async_mock.CoroutineMock()
+        ) as mock_pool:
+            mock_pool.return_value = async_mock.MagicMock(
+                close=async_mock.MagicMock(),
+                wait_closed=async_mock.CoroutineMock(),
+            )
+            async with transport:
+                pass
+
+        mock_pool.assert_called_once()
+        self.assertEqual(
+            mock_pool.call_args[0][0], TestRedisConnection.TEST_REDIS_ENDPOINT
+        )
+
+    async def test_outbound_aexit_x(self):
+        transport = RedisOutboundQueue(
+            connection=TestRedisConnection.TEST_REDIS_ENDPOINT
+        )
         with unittest.mock.patch.object(
             aioredis, "create_redis_pool", new_callable=AsyncMock
-        ) as pool_mock:
-            await transport.start()
-        pool_mock.assert_called_once()
-        self.assertEqual(pool_mock.call_args[0][0], TEST_REDIS_ENDPOINT)
+        ) as mock_pool, unittest.mock.patch.object(
+            transport.logger, "exception", autospec=True
+        ) as mock_log_exc:
+            mock_pool.return_value = async_mock.MagicMock(
+                close=async_mock.MagicMock(),
+                wait_closed=async_mock.CoroutineMock(),
+            )
+            try:
+                async with transport:
+                    raise ValueError("oops")
+            except ValueError:
+                pass
+
+        mock_log_exc.assert_called_once()
+        mock_pool.assert_called_once()
+        self.assertEqual(
+            mock_pool.call_args[0][0], TestRedisConnection.TEST_REDIS_ENDPOINT
+        )
+
+    async def test_enqueue(self):
+        transport = RedisOutboundQueue(
+            connection=TestRedisConnection.TEST_REDIS_ENDPOINT
+        )
+
+        with async_mock.patch.object(
+            aioredis, "create_redis_pool", async_mock.CoroutineMock()
+        ) as mock_pool:
+            mock_pool.return_value = async_mock.MagicMock(
+                close=async_mock.MagicMock(),
+                wait_closed=async_mock.CoroutineMock(),
+            )
+            async with transport:
+                with async_mock.patch.object(
+                    transport.redis, "rpush", async_mock.CoroutineMock()
+                ) as mock_redis_push:
+                    await transport.enqueue_message("Hello", "localhost:8999")
+                    await transport.enqueue_message(b"Hello", "localhost:8999")
+
+    async def test_enqueue_push_x(self):
+        transport = RedisOutboundQueue(
+            connection=TestRedisConnection.TEST_REDIS_ENDPOINT
+        )
+
+        with async_mock.patch.object(
+            aioredis, "create_redis_pool", async_mock.CoroutineMock()
+        ) as mock_pool:
+            mock_pool.return_value = async_mock.MagicMock(
+                close=async_mock.MagicMock(),
+                wait_closed=async_mock.CoroutineMock(),
+            )
+            async with transport:
+                with async_mock.patch.object(
+                    transport.redis, "rpush", async_mock.CoroutineMock()
+                ) as mock_redis_push:
+                    mock_redis_push.side_effect = aioredis.RedisError()
+                    with self.assertRaises(OutboundQueueError):
+                        await transport.enqueue_message("Hello", "localhost:8999")
+
+    async def test_enqueue_no_endpoint_x(self):
+        transport = RedisOutboundQueue(
+            connection=TestRedisConnection.TEST_REDIS_ENDPOINT
+        )
+
+        with async_mock.patch.object(
+            aioredis, "create_redis_pool", async_mock.CoroutineMock()
+        ) as mock_pool:
+            mock_pool.return_value = async_mock.MagicMock(
+                close=async_mock.MagicMock(),
+                wait_closed=async_mock.CoroutineMock(),
+            )
+            async with transport:
+                with self.assertRaises(OutboundQueueError):  # cover exc
+                    await transport.enqueue_message(None, None)
 
 
 class AsyncMock(unittest.mock.MagicMock):

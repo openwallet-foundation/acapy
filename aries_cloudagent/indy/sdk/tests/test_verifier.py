@@ -4,9 +4,7 @@ import pytest
 from copy import deepcopy
 from time import time
 
-from asynctest import TestCase as AsyncTestCase
-from asynctest import mock as async_mock
-
+from asynctest import mock as async_mock, TestCase as AsyncTestCase
 from indy.error import IndyError
 
 from .. import verifier as test_module

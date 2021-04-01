@@ -1,4 +1,5 @@
 import json
+
 from base64 import b64encode
 
 from asynctest import TestCase as AsyncTestCase, mock as async_mock
@@ -9,9 +10,9 @@ from ...protocols.didcomm_prefix import DIDCommPrefix
 from ...wallet.base import BaseWallet
 from ...wallet.error import WalletError
 
+from .. import pack_format as test_module
 from ..error import WireFormatEncodeError, WireFormatParseError, RecipientKeysError
 from ..pack_format import PackWireFormat
-from .. import pack_format as test_module
 
 
 class TestPackWireFormat(AsyncTestCase):

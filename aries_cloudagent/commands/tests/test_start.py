@@ -1,9 +1,9 @@
 import sys
 
-from asynctest import TestCase as AsyncTestCase
-from asynctest import mock as async_mock
+from asynctest import mock as async_mock, TestCase as AsyncTestCase
 
 from ...config.error import ArgsParseError
+
 from .. import start as test_module
 
 
