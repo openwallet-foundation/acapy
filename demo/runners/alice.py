@@ -12,10 +12,9 @@ from aiohttp import ClientError
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from runners.agent_container import (
+from runners.agent_container import (  # noqa:E402
     arg_parser,
     create_agent_with_args,
-    AgentContainer,
     AriesAgent,
 )
 from runners.support.agent import (  # noqa:E402
@@ -52,13 +51,7 @@ class AliceAgent(AriesAgent):
             http_port,
             admin_port,
             prefix="Alice",
-            extra_args=[]
-            if no_auto
-            else [
-                "--auto-accept-invites",
-                "--auto-accept-requests",
-                "--auto-store-credential",
-            ],
+            no_auto=no_auto,
             seed=None,
             **kwargs,
         )

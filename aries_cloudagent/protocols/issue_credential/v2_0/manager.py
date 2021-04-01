@@ -91,10 +91,15 @@ class V20CredManager:
 
         async with self._profile.session() as session:
             detail_cls = fmt.detail
-            try:
-                return await detail_cls.retrieve_by_cred_ex_id(session, cred_ex_id)
-            except StorageNotFoundError:
-                return None
+            records = await detail_cls.query_by_cred_ex_id(session, cred_ex_id)
+            if len(records) > 1:
+                LOGGER.warning(
+                    "Cred ex id %s has %d %s detail records: should be 1",
+                    cred_ex_id,
+                    len(records),
+                    fmt.api,
+                )
+            return records[0] if records else None
 
     async def prepare_send(
         self,
@@ -408,6 +413,16 @@ class V20CredManager:
 
         return cred_ex_record
 
+    async def _check_uniqueness(self, cred_ex_id: str):
+        """Raise exception on evidence that cred ex already has cred issued to it."""
+        async with self._profile.session() as session:
+            for fmt in V20CredFormat.Format:
+                if await fmt.detail.query_by_cred_ex_id(session, cred_ex_id):
+                    raise V20CredManagerError(
+                        f"{fmt.api} detail record already "
+                        f"exists for cred ex id {cred_ex_id}"
+                    )
+
     async def create_request(
         self, cred_ex_record: V20CredExRecord, holder_did: str, comment: str = None
     ) -> Tuple[V20CredExRecord, V20CredRequest]:
@@ -470,6 +485,7 @@ class V20CredManager:
         if not cred_req_result:
             cred_req_result = await _create_indy()
 
+        await self._check_uniqueness(cred_ex_record.cred_ex_id)
         detail_record = V20CredExRecordIndy(
             cred_ex_id=cred_ex_record.cred_ex_id,
             cred_request_metadata=cred_req_result["metadata"],
@@ -629,7 +645,7 @@ class V20CredManager:
                         )
                 if retries > 0:
                     LOGGER.info(
-                        ("Waiting 2s on posted rev reg " "for cred def %s, retrying"),
+                        "Waiting 2s on posted rev reg for cred def %s, retrying",
                         cred_def_id,
                     )
                     await asyncio.sleep(2)
@@ -640,7 +656,7 @@ class V20CredManager:
                     )
 
                 raise V20CredManagerError(
-                    f"Cred def id {cred_def_id} " "has no active revocation registry"
+                    f"Cred def id {cred_def_id} has no active revocation registry"
                 )
             del revoc
 
@@ -658,7 +674,7 @@ class V20CredManager:
                 rev_reg_id,
                 tails_path,
             )
-
+            await self._check_uniqueness(cred_ex_record.cred_ex_id)
             detail_record = V20CredExRecordIndy(
                 cred_ex_id=cred_ex_record.cred_ex_id,
                 rev_reg_id=rev_reg_id,
@@ -894,14 +910,11 @@ class V20CredManager:
 
         async with self._profile.session() as session:
             for fmt in V20CredFormat.Format:  # details first: do not strand any orphans
-                try:
-                    detail_record = await fmt.detail.retrieve_by_cred_ex_id(
-                        session,
-                        cred_ex_id,
-                    )
-                    await detail_record.delete_record(session)
-                except StorageNotFoundError:
-                    pass
+                for record in await fmt.detail.query_by_cred_ex_id(
+                    session,
+                    cred_ex_id,
+                ):
+                    await record.delete_record(session)
 
             cred_ex_record = await V20CredExRecord.retrieve_by_id(session, cred_ex_id)
             await cred_ex_record.delete_record(session)
