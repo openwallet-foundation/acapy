@@ -46,7 +46,6 @@ class AriesAgent(DemoAgent):
         admin_port: int,
         prefix: str = "Aries",
         no_auto: bool = False,
-        extra_args: list = [],
         **kwargs,
     ):
         super().__init__(
@@ -54,13 +53,15 @@ class AriesAgent(DemoAgent):
             http_port,
             admin_port,
             prefix=prefix,
-            extra_args=[]
-            if no_auto
-            else [
-                "--auto-accept-invites",
-                "--auto-accept-requests",
-                "--auto-store-credential",
-            ],
+            extra_args=(
+                []
+                if no_auto
+                else [
+                    "--auto-accept-invites",
+                    "--auto-accept-requests",
+                    "--auto-store-credential",
+                ]
+            ),
             **kwargs,
         )
         self.connection_id = None

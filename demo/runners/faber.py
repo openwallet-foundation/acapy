@@ -13,14 +13,12 @@ from aiohttp import ClientError
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from runners.agent_container import (
+from runners.agent_container import (  # noqa:E402
     arg_parser,
     create_agent_with_args,
-    AgentContainer,
     AriesAgent,
 )
 from runners.support.agent import (  # noqa:E402
-    DemoAgent,
     default_genesis_txns,
     start_mediator_agent,
     connect_wallet_to_mediator,
@@ -57,9 +55,7 @@ class FaberAgent(AriesAgent):
             http_port,
             admin_port,
             prefix="Faber",
-            extra_args=[]
-            if no_auto
-            else ["--auto-accept-invites", "--auto-accept-requests"],
+            no_auto=no_auto,
             **kwargs,
         )
         self.connection_id = None
@@ -109,11 +105,12 @@ class FaberAgent(AriesAgent):
 
         if state == "request-received":
             log_status("#17 Issue credential to X")
-            # issue credential based on offer preview in cred ex record
-            await self.admin_POST(
-                f"/issue-credential-2.0/records/{cred_ex_id}/issue",
-                {"comment": f"Issuing credential, exchange {cred_ex_id}"},
-            )
+            if not message.get("auto_issue"):
+                # issue credential based on offer preview in cred ex record
+                await self.admin_POST(
+                    f"/issue-credential-2.0/records/{cred_ex_id}/issue",
+                    {"comment": f"Issuing credential, exchange {cred_ex_id}"},
+                )
 
     async def handle_issue_credential_v2_0_indy(self, message):
         rev_reg_id = message.get("rev_reg_id")
