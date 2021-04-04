@@ -1,6 +1,5 @@
 """Linked Data Signature class."""
 
-from pyld import jsonld
 from datetime import datetime
 from hashlib import sha256
 from typing import Union
@@ -178,18 +177,6 @@ class LinkedDataSignature(LinkedDataProof, metaclass=ABCMeta):
         return (
             sha256(c14n_proof_options.encode("utf-8")).digest()
             + sha256(c14n_doc.encode("utf-8")).digest()
-        )
-
-    def _canonize(self, *, input, document_loader: DocumentLoader) -> str:
-        """Canonize input document using URDNA2015 algorithm."""
-        # application/n-quads format always returns str
-        return jsonld.normalize(
-            input,
-            {
-                "algorithm": "URDNA2015",
-                "format": "application/n-quads",
-                "documentLoader": document_loader,
-            },
         )
 
     def _canonize_proof(

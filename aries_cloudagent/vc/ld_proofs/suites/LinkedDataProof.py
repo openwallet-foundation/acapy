@@ -7,6 +7,7 @@ from typing import List, TYPE_CHECKING, Union
 
 from typing_extensions import TypedDict
 
+from ..check import get_properties_without_context
 from ..constants import SECURITY_CONTEXT_URL
 from ..error import LinkedDataProofException
 from ..document_loader import DocumentLoader
@@ -109,6 +110,26 @@ class LinkedDataProof(ABC):
         """
         raise LinkedDataProofException(
             f"{self.signature_type} signature suite does not support deriving proofs"
+        )
+
+    def _canonize(self, *, input, document_loader: DocumentLoader) -> str:
+        """Canonize input document using URDNA2015 algorithm."""
+        # application/n-quads format always returns str
+        missing_properties = get_properties_without_context(input, document_loader)
+
+        if len(missing_properties) > 0:
+            raise LinkedDataProofException(
+                f"{len(missing_properties)} attributes dropped. "
+                f"Provide definitions in context to correct. {missing_properties}"
+            )
+
+        return jsonld.normalize(
+            input,
+            {
+                "algorithm": "URDNA2015",
+                "format": "application/n-quads",
+                "documentLoader": document_loader,
+            },
         )
 
     def _get_verification_method(

@@ -53,10 +53,6 @@ class ProofSet:
             document=input, purpose=purpose, document_loader=document_loader
         )
 
-        # remove context from proof, if it exists
-        # TODO: not needed anymore?
-        # proof.pop("@context", None)
-
         JsonLdProcessor.add_value(document, "proof", proof)
         return document
 

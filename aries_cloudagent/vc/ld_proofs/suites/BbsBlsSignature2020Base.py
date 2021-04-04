@@ -34,21 +34,9 @@ class BbsBlsSignature2020Base(LinkedDataProof, metaclass=ABCMeta):
         # e.g. "aa\nbb\n\n\ncccdkea\n" -> ['aa', 'bb', 'cccdkea']
         return list(filter(lambda _: len(_) > 0, c14n_doc.split("\n")))
 
-    def _canonize(self, *, input, document_loader: DocumentLoader = None) -> str:
-        """Canonize input document using URDNA2015 algorithm."""
-        # application/n-quads format always returns str
-        return jsonld.normalize(
-            input,
-            {
-                "algorithm": "URDNA2015",
-                "format": "application/n-quads",
-                "documentLoader": document_loader,
-            },
-        )
-
     @abstractmethod
     def _canonize_proof(
-        self, *, proof: dict, document: dict, document_loader: DocumentLoader = None
+        self, *, proof: dict, document: dict, document_loader: DocumentLoader
     ):
         """Canonize proof dictionary. Removes values that are not part of signature."""
 

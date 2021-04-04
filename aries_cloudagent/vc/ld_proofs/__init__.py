@@ -24,6 +24,7 @@ from .crypto import (
 from .document_loader import DocumentLoader, get_default_document_loader
 from .error import LinkedDataProofException
 from .validation_result import DocumentVerificationResult, ProofResult, PurposeResult
+from .check import get_properties_without_context
 
 __all__ = [
     sign,
@@ -57,4 +58,5 @@ __all__ = [
     DocumentVerificationResult,
     ProofResult,
     PurposeResult,
+    get_properties_without_context,
 ]
