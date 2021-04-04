@@ -245,7 +245,9 @@ with the following code:
                     "credential_preview": cred_preview,
                     "filter": {"indy": {"cred_def_id": cred_def_id}},
                 }
-                await agent.admin_POST("/issue-credential-2.0/send-offer", offer_request)
+                await agent.admin_POST(
+                    "/issue-credential-2.0/send-offer", offer_request
+                )
 ```
 
 ... and then locate the code that handles the credential request callback:
@@ -260,10 +262,11 @@ with the following code:
 
 ```
             # issue credentials based on offer preview in cred ex record
-            await self.admin_POST(
-                f"/issue-credential-2.0/records/{cred_ex_id}/issue",
-                {"comment": f"Issuing credential, exchange {cred_ex_id}"},
-            )
+            if not message.get("auto_issue"):
+                await self.admin_POST(
+                    f"/issue-credential-2.0/records/{cred_ex_id}/issue",
+                    {"comment": f"Issuing credential, exchange {cred_ex_id}"},
+                )
 ```
 
 Now you can run the Faber/Alice/Acme script again.  You should be able to receive a proof and then issue a credential to Alice.

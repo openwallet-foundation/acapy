@@ -1,6 +1,6 @@
 """Linked data proof specific credential exchange information with non-secrets storage."""
 
-from typing import Any
+from typing import Any, Sequence
 
 from marshmallow import EXCLUDE, fields
 
@@ -49,16 +49,15 @@ class V20CredExRecordLDProof(BaseRecord):
         return {prop: getattr(self, prop) for prop in ("cred_id_stored",)}
 
     @classmethod
-    async def retrieve_by_cred_ex_id(
+    async def query_by_cred_ex_id(
         cls,
         session: ProfileSession,
         cred_ex_id: str,
-    ) -> "V20CredExRecordLDProof":
+    ) -> Sequence["V20CredExRecordLDProof"]:
         """Retrieve a credential exchange LDProof detail record by its cred ex id."""
-        return await cls.retrieve_by_tag_filter(
-            session,
-            {"cred_ex_id": cred_ex_id},
-            None,
+        return await cls.query(
+            session=session,
+            tag_filter={"cred_ex_id": cred_ex_id},
         )
 
     def __eq__(self, other: Any) -> bool:

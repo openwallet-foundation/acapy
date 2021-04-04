@@ -72,7 +72,7 @@ class V20CredFormat(BaseModel):
             return self.value.aries
 
         @property
-        def detail(self) -> str:
+        def detail(self) -> Union[V20CredExRecordIndy, V20CredExRecordLDProof]:
             """Accessor for credential exchange detail class."""
             return self.value.detail
 

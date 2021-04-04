@@ -5,8 +5,8 @@ from .......core.in_memory import InMemoryProfile
 from .......ledger.base import BaseLedger
 
 from ..handler import IndyCredFormatHandler
+from ...handler import LOGGER, V20CredFormatError
 from ....models.detail.indy import V20CredExRecordIndy
-
 
 TEST_DID = "LjgpST2rjsoxYegQDRm7EL"
 SCHEMA_NAME = "bc-reg"
@@ -103,12 +103,44 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
         self.handler = IndyCredFormatHandler(self.profile)
         assert self.handler.profile
 
-    async def test_get_detail_record(self):
+    async def test_get_indy_detail_record(self):
         cred_ex_id = "dummy"
-        detail_indy = V20CredExRecordIndy(
-            cred_ex_id=cred_ex_id,
-            rev_reg_id="rr-id",
-            cred_rev_id="0",
-        )
-        await detail_indy.save(self.session)
-        assert await self.handler.get_detail_record(cred_ex_id) == detail_indy
+        details_indy = [
+            V20CredExRecordIndy(
+                cred_ex_id=cred_ex_id,
+                rev_reg_id="rr-id",
+                cred_rev_id="0",
+            ),
+            V20CredExRecordIndy(
+                cred_ex_id=cred_ex_id,
+                rev_reg_id="rr-id",
+                cred_rev_id="1",
+            ),
+        ]
+        await details_indy[0].save(self.session)
+        await details_indy[1].save(self.session)  # exercise logger warning on get()
+
+        with async_mock.patch.object(
+            LOGGER, "warning", async_mock.MagicMock()
+        ) as mock_warning:
+            assert await self.handler.get_detail_record(cred_ex_id) in details_indy
+            mock_warning.assert_called_once()
+
+    async def test_check_uniqueness(self):
+        with async_mock.patch.object(
+            self.handler.format.detail,
+            "query_by_cred_ex_id",
+            async_mock.CoroutineMock(),
+        ) as mock_indy_query:
+            mock_indy_query.return_value = []
+            await self.handler._check_uniqueness("dummy-cx-id")
+
+        with async_mock.patch.object(
+            self.handler.format.detail,
+            "query_by_cred_ex_id",
+            async_mock.CoroutineMock(),
+        ) as mock_indy_query:
+            mock_indy_query.return_value = [async_mock.MagicMock()]
+            with self.assertRaises(V20CredFormatError) as context:
+                await self.handler._check_uniqueness("dummy-cx-id")
+            assert "detail record already exists" in str(context.exception)
