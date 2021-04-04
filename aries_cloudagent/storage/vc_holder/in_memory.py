@@ -73,6 +73,7 @@ class InMemoryVCHolder(VCHolder):
         schema_ids: str = None,
         issuer_id: str = None,
         subject_ids: str = None,
+        proof_types: Sequence[str] = None,
         given_id: str = None,
         tag_query: Mapping = None,
     ) -> "VCRecordSearch":
@@ -85,6 +86,7 @@ class InMemoryVCHolder(VCHolder):
             schema_ids: An inclusive list of credential schema identifiers
             issuer_id: The ID of the credential issuer
             subject_ids: The IDs of credential subjects all of which to match
+            proof_types: The signature suite types used for the proof objects.
             given_id: The given id of the credential
             tag_query: A tag filter clause
 
@@ -102,6 +104,9 @@ class InMemoryVCHolder(VCHolder):
         if subject_ids:
             for subject_id in subject_ids:
                 query[f"subj:{subject_id}"] = "1"
+        if proof_types:
+            for proof_type in proof_types:
+                query[f"ptyp:{proof_type}"] = "1"
         if issuer_id:
             query["issuer_id"] = issuer_id
         if given_id:

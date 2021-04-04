@@ -16,6 +16,7 @@ def storage_to_vc_record(record: StorageRecord) -> VCRecord:
     types = []
     schema_ids = []
     subject_ids = []
+    proof_types = []
     issuer_id = None
     given_id = None
     for tagname, tagval in (record.tags or {}).items():
@@ -27,6 +28,8 @@ def storage_to_vc_record(record: StorageRecord) -> VCRecord:
             schema_ids.append(tagname[5:])
         elif tagname.startswith("subj:"):
             subject_ids.append(tagname[5:])
+        elif tagname.startswith("ptyp:"):
+            proof_types.append(tagname[5:])
         elif tagname == "issuer_id":
             issuer_id = tagval
         elif tagname == "given_id":
@@ -39,6 +42,7 @@ def storage_to_vc_record(record: StorageRecord) -> VCRecord:
         schema_ids=schema_ids,
         issuer_id=issuer_id,
         subject_ids=subject_ids,
+        proof_types=proof_types,
         cred_value=json.loads(record.value),
         given_id=given_id,
         cred_tags=cred_tags,
@@ -57,6 +61,8 @@ def vc_to_storage_record(cred: VCRecord) -> StorageRecord:
         tags[f"schm:{schema_val}"] = "1"
     for subj_id in cred.subject_ids:
         tags[f"subj:{subj_id}"] = "1"
+    for proof_type in cred.proof_types:
+        tags[f"ptyp:{proof_type}"] = "1"
     if cred.issuer_id:
         tags["issuer_id"] = cred.issuer_id
     if cred.given_id:

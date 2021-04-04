@@ -8,7 +8,7 @@ from aiohttp_apispec import (
     response_schema,
 )
 
-from marshmallow import fields, validate, ValidationError
+from marshmallow import fields, validate
 
 from ..admin.request_context import AdminRequestContext
 from ..ledger.base import BaseLedger

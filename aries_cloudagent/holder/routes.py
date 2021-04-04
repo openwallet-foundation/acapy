@@ -123,6 +123,11 @@ class W3CCredentialsListRequestSchema(OpenAPISchema):
         description="Subject identifiers, all of which to match",
         required=False,
     )
+    proof_types = fields.List(
+        fields.Str(
+            description="Signature suite used for proof", example="Ed25519Signature2018"
+        )
+    )
     given_id = fields.Str(required=False, description="Given credential id to match")
     tag_query = fields.Dict(
         keys=fields.Str(description="Tag name"),
@@ -423,6 +428,7 @@ async def w3c_creds_list(request: web.BaseRequest):
     schema_ids = body.get("schema_ids")
     issuer_id = body.get("issuer_id")
     subject_ids = body.get("subject_ids")
+    proof_types = body.get("proof_types")
     given_id = body.get("given_id")
     tag_query = body.get("tag_query")
     max_results = body.get("max_results")
@@ -435,6 +441,7 @@ async def w3c_creds_list(request: web.BaseRequest):
             schema_ids=schema_ids,
             issuer_id=issuer_id,
             subject_ids=subject_ids,
+            proof_types=proof_types,
             given_id=given_id,
             tag_query=tag_query,
         )
