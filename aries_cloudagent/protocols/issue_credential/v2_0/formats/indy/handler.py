@@ -234,6 +234,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         if not cred_req_result:
             cred_req_result = await _create()
 
+        await self._check_uniqueness(cred_ex_record.cred_ex_id)
         detail_record = V20CredExRecordIndy(
             cred_ex_id=cred_ex_record.cred_ex_id,
             cred_request_metadata=cred_req_result["metadata"],
@@ -350,6 +351,13 @@ class IndyCredFormatHandler(V20CredFormatHandler):
                 tails_path,
             )
 
+            await self._check_uniqueness(cred_ex_record.cred_ex_id)
+            detail_record = V20CredExRecordIndy(
+                cred_ex_id=cred_ex_record.cred_ex_id,
+                rev_reg_id=rev_reg_id,
+                cred_rev_id=cred_rev_id,
+            )
+
             # If the rev reg is now full
             if rev_reg and rev_reg.max_creds == int(cred_rev_id):
                 async with self.profile.session() as session:
@@ -370,12 +378,6 @@ class IndyCredFormatHandler(V20CredFormatHandler):
                         max_attempts=16,
                     )
                 )
-
-            detail_record = V20CredExRecordIndy(
-                cred_ex_id=cred_ex_record.cred_ex_id,
-                rev_reg_id=rev_reg_id,
-                cred_rev_id=cred_rev_id,
-            )
 
             async with self.profile.session() as session:
                 await detail_record.save(session, reason="v2.0 issue credential")

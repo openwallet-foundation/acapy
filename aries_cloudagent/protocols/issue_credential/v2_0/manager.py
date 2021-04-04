@@ -306,16 +306,6 @@ class V20CredManager:
 
         return cred_ex_record
 
-    async def _check_uniqueness(self, cred_ex_id: str):
-        """Raise exception on evidence that cred ex already has cred issued to it."""
-        async with self._profile.session() as session:
-            for fmt in V20CredFormat.Format:
-                if await fmt.detail.query_by_cred_ex_id(session, cred_ex_id):
-                    raise V20CredManagerError(
-                        f"{fmt.api} detail record already "
-                        f"exists for cred ex id {cred_ex_id}"
-                    )
-
     async def create_request(
         self, cred_ex_record: V20CredExRecord, holder_did: str, comment: str = None
     ) -> Tuple[V20CredExRecord, V20CredRequest]:
