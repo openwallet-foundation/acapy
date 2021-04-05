@@ -21,7 +21,7 @@ class V10PresentationExchange(BaseExchangeRecord):
 
     RECORD_TYPE = "presentation_exchange_v10"
     RECORD_ID_NAME = "presentation_exchange_id"
-    WEBHOOK_TOPIC = "present_proof"
+    RECORD_TOPIC = "present_proof"
     TAG_NAMES = {"~thread_id"} if unencrypted_tags else {"thread_id"}
 
     INITIATOR_SELF = "self"

@@ -43,6 +43,7 @@ LOGGER = logging.getLogger(__name__)
 
 EVENT_PATTERN_ACAPY = re.compile("^acapy::(.*)$")
 EVENT_PATTERN_WEBHOOK = re.compile("^acapy::webhook::(.*)$")
+EVENT_PATTERN_RECORD = re.compile("^acapy::record::(.*)::(.*)$")
 
 EVENT_WEBHOOK_MAPPING = {
     "acapy::basicmessage::received": "basicmessages",
@@ -708,6 +709,11 @@ class AdminServer(BaseAdminServer):
 
     async def __on_acapy_event(self, profile: Profile, event: Event):
         webhook_topic = EVENT_WEBHOOK_MAPPING.get(event.topic)
+
+        if not webhook_topic:
+            match = EVENT_PATTERN_RECORD.search(event.topic)
+            webhook_topic = match.group(1) if match else None
+
         if not webhook_topic:
             match = EVENT_PATTERN_WEBHOOK.search(event.topic)
             webhook_topic = match.group(1) if match else None

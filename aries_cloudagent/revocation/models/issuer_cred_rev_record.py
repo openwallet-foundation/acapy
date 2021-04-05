@@ -24,7 +24,7 @@ class IssuerCredRevRecord(BaseRecord):
 
     RECORD_TYPE = "issuer_cred_rev"
     RECORD_ID_NAME = "record_id"
-    WEBHOOK_TOPIC = "issuer_cred_rev"
+    RECORD_TOPIC = "issuer_cred_rev"
     TAG_NAMES = {
         "cred_ex_id",
         "cred_def_id",
