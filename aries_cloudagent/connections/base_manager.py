@@ -365,16 +365,9 @@ class BaseConnectionManager:
         if "did:" not in did:
             tag = {"did": f"did:sov:{did}"}
         record = await storage.find_record(self.RECORD_TYPE_DID_DOC, tag)
-
-        if isinstance(record.value, dict):
-            did_doc = DIDDocument.deserialize(
-                record.value, options={options.vm_allow_missing_controller}
-            )
-        else:
-            did_doc = DIDDocument.from_json(
-                record.value, options={options.vm_allow_missing_controller}
-            )
-
+        did_doc = DIDDocument.from_json(
+            record.value, options={options.vm_allow_missing_controller}
+        )
         return did_doc, record
 
     def _did_without_method(self, did: str) -> str:
