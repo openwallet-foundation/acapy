@@ -167,7 +167,6 @@ async def transactions_retrieve(request: web.BaseRequest):
     summary="For author to send a transaction request",
 )
 @querystring_schema(TranIdMatchInfoSchema())
-@querystring_schema(ConnIdMatchInfoSchema())
 @request_schema(DateSchema())
 @response_schema(TransactionRecordSchema(), 200)
 async def transaction_create_request(request: web.BaseRequest):
@@ -184,7 +183,6 @@ async def transaction_create_request(request: web.BaseRequest):
 
     context: AdminRequestContext = request["context"]
     outbound_handler = request["outbound_message_router"]
-    connection_id = request.query.get("conn_id")
     transaction_id = request.query.get("tran_id")
 
     body = await request.json()
@@ -192,9 +190,18 @@ async def transaction_create_request(request: web.BaseRequest):
 
     try:
         async with context.session() as session:
-            connection_record = await ConnRecord.retrieve_by_id(session, connection_id)
             transaction_record = await TransactionRecord.retrieve_by_id(
                 session, transaction_id
+            )
+    except StorageNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
+    except BaseModelError as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+    try:
+        async with context.session() as session:
+            connection_record = await ConnRecord.retrieve_by_id(
+                session, transaction_record.connection_id
             )
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
@@ -225,7 +232,6 @@ async def transaction_create_request(request: web.BaseRequest):
     try:
         transaction_record, transaction_request = await transaction_mgr.create_request(
             transaction=transaction_record,
-            connection_id=connection_id,
             expires_time=expires_time,
         )
     except (StorageError, TransactionManagerError) as err:

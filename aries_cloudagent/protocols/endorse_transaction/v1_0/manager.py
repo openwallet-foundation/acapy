@@ -48,7 +48,7 @@ class TransactionManager:
         """
         return self._session
 
-    async def create_record(self, messages_attach: str):
+    async def create_record(self, messages_attach: str, connection_id: str):
         """
         Create a new Transaction Record.
 
@@ -79,6 +79,7 @@ class TransactionManager:
         transaction.messages_attach.clear()
         transaction.messages_attach.append(messages_attach_dict)
         transaction.state = TransactionRecord.STATE_TRANSACTION_CREATED
+        transaction.connection_id = connection_id
 
         profile_session = await self.session
         async with profile_session.profile.session() as session:
@@ -91,7 +92,6 @@ class TransactionManager:
     async def create_request(
         self,
         transaction: TransactionRecord,
-        connection_id: str,
         signature: str = None,
         signed_request: dict = None,
         expires_time: str = None,
@@ -126,7 +126,6 @@ class TransactionManager:
         transaction.signature_request.append(signature_request)
 
         transaction.state = TransactionRecord.STATE_REQUEST_SENT
-        transaction.connection_id = connection_id
 
         timing = {"expires_time": expires_time}
         transaction.timing = timing

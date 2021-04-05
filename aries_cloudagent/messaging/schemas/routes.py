@@ -215,7 +215,7 @@ async def schemas_send_schema(request: web.BaseRequest):
         transaction_mgr = TransactionManager(session)
         try:
             transaction = await transaction_mgr.create_record(
-                messages_attach=schema_def["signed_txn"]
+                messages_attach=schema_def["signed_txn"], connection_id=connection_id
             )
         except StorageError as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err
