@@ -30,8 +30,8 @@ class PingResponseHandler(BaseHandler):
         )
 
         if context.settings.get("debug.monitor_ping"):
-            await responder.send_webhook(
-                "ping",
+            await context.profile.notify(
+                "acapy::ping::response_received",
                 {
                     "comment": context.message.comment,
                     "connection_id": context.message_receipt.connection_id,

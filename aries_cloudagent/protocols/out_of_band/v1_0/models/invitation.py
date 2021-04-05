@@ -19,7 +19,7 @@ class InvitationRecord(BaseExchangeRecord):
 
     RECORD_TYPE = "oob_invitation"
     RECORD_ID_NAME = "invitation_id"
-    WEBHOOK_TOPIC = "oob_invitation"
+    RECORD_TOPIC = "oob_invitation"
     TAG_NAMES = {"invi_msg_id", "public_did"}
 
     STATE_INITIAL = "initial"

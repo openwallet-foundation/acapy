@@ -21,7 +21,7 @@ class V20CredExRecord(BaseExchangeRecord):
 
     RECORD_TYPE = "cred_ex_v20"
     RECORD_ID_NAME = "cred_ex_id"
-    WEBHOOK_TOPIC = "issue_credential_v2_0"
+    RECORD_TOPIC = "issue_credential_v2_0"
     TAG_NAMES = {"~thread_id"} if UNENCRYPTED_TAGS else {"thread_id"}
 
     INITIATOR_SELF = "self"

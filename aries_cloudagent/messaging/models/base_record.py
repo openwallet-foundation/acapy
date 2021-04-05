@@ -5,7 +5,7 @@ import sys
 import uuid
 
 from datetime import datetime
-from typing import Any, Mapping, Sequence, Union
+from typing import Any, Mapping, Optional, Sequence, Union
 
 from marshmallow import fields
 
@@ -16,7 +16,6 @@ from ...storage.base import BaseStorage, StorageDuplicateError, StorageNotFoundE
 from ...storage.record import StorageRecord
 
 from .base import BaseModel, BaseModelSchema
-from ..responder import BaseResponder
 from ..util import datetime_to_str, time_now
 from ..valid import INDY_ISO8601_DATETIME
 
@@ -70,7 +69,7 @@ class BaseRecord(BaseModel):
     DEFAULT_CACHE_TTL = 60
     RECORD_ID_NAME = "id"
     RECORD_TYPE = None
-    WEBHOOK_TOPIC = None
+    RECORD_TOPIC: Optional[str] = None
     LOG_STATE_FLAG = None
     TAG_NAMES = {"state"}
 
@@ -302,7 +301,7 @@ class BaseRecord(BaseModel):
         reason: str = None,
         log_params: Mapping[str, Any] = None,
         log_override: bool = False,
-        webhook: bool = None,
+        event: bool = None,
     ) -> str:
         """Persist the record to storage.
 
@@ -310,7 +309,7 @@ class BaseRecord(BaseModel):
             session: The profile session to use
             reason: A reason to add to the log
             log_params: Additional parameters to log
-            webhook: Flag to override whether the webhook is sent
+            event: Flag to override whether the event is sent
         """
         new_record = None
         log_reason = reason or ("Updated record" if self._id else "Created record")
@@ -336,7 +335,7 @@ class BaseRecord(BaseModel):
                 log_reason, params, override=log_override, settings=session.settings
             )
 
-        await self.post_save(session, new_record, self._last_state, webhook)
+        await self.post_save(session, new_record, self._last_state, event)
         self._last_state = self.state
 
         return self._id
@@ -345,8 +344,8 @@ class BaseRecord(BaseModel):
         self,
         session: ProfileSession,
         new_record: bool,
-        last_state: str,
-        webhook: bool = None,
+        last_state: Optional[str],
+        event: bool = None,
     ):
         """Perform post-save actions.
 
@@ -354,15 +353,12 @@ class BaseRecord(BaseModel):
             session: The profile session to use
             new_record: Flag indicating if the record was just created
             last_state: The previous state value
-            webhook: Adjust whether the webhook is called
+            event: Flag to override whether the event is sent
         """
-        webhook_topic = self.webhook_topic
-        if webhook is None:
-            webhook = bool(webhook_topic) and (new_record or (last_state != self.state))
-        if webhook:
-            await self.send_webhook(
-                session, self.webhook_payload, topic=self.webhook_topic
-            )
+        if event is None:
+            event = new_record or (last_state != self.state)
+        if event:
+            await self.emit_event(session, self.serialize())
 
     async def delete_record(self, session: ProfileSession):
         """Remove the stored record.
@@ -375,35 +371,20 @@ class BaseRecord(BaseModel):
             await storage.delete_record(self.storage_record)
         # FIXME - update state and send webhook?
 
-    @property
-    def webhook_payload(self):
-        """Return a JSON-serialized version of the record for the webhook."""
-        return self.serialize()
-
-    @property
-    def webhook_topic(self):
-        """Return the webhook topic value."""
-        return self.WEBHOOK_TOPIC
-
-    async def send_webhook(
-        self, session: ProfileSession, payload: Any, topic: str = None
-    ):
-        """Send a standard webhook.
+    async def emit_event(self, session: ProfileSession, payload: Any):
+        """Emit an event.
 
         Args:
             session: The profile session to use
-            payload: The webhook payload
-            topic: The webhook topic, defaulting to WEBHOOK_TOPIC
+            payload: The event payload
         """
-        if not payload:
+
+        if not self.RECORD_TOPIC or not self.state or not payload:
             return
-        if not topic:
-            topic = self.webhook_topic
-            if not topic:
-                return
-        responder = session.inject(BaseResponder, required=False)
-        if responder:
-            await responder.send_webhook(topic, payload)
+
+        await session.profile.notify(
+            f"acapy::record::{self.RECORD_TOPIC}::{self.state}", payload
+        )
 
     @classmethod
     def log_state(

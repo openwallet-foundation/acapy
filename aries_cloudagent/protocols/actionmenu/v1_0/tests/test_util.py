@@ -1,7 +1,7 @@
 from asynctest import TestCase as AsyncTestCase
 
+from .....core.event_bus import EventBus, MockEventBus
 from .....admin.request_context import AdminRequestContext
-from .....messaging.responder import MockResponder
 
 from .. import util as test_module
 from ..models.menu_form_param import MenuFormParam
@@ -13,8 +13,8 @@ class TestActionMenuUtil(AsyncTestCase):
     async def test_save_retrieve_delete_connection_menu(self):
         context = AdminRequestContext.test_context()
 
-        responder = MockResponder()
-        context.injector.bind_instance(test_module.BaseResponder, responder)
+        mock_event_bus = MockEventBus()
+        context.profile.context.injector.bind_instance(EventBus, mock_event_bus)
 
         menu = test_module.Menu(
             title="title",
@@ -50,13 +50,12 @@ class TestActionMenuUtil(AsyncTestCase):
         for i in range(2):  # once to add, once to update
             await test_module.save_connection_menu(menu, connection_id, context)
 
-            webhooks = responder.webhooks
-            assert len(webhooks) == 1
-            (result, target) = webhooks[0]
-            assert result == "actionmenu"
-            assert target["connection_id"] == connection_id
-            assert target["menu"] == menu.serialize()
-            responder.webhooks.clear()
+            assert len(mock_event_bus.events) == 1
+            (_, event) = mock_event_bus.events[0]
+            assert event.topic == "acapy::actionmenu::received"
+            assert event.payload["connection_id"] == connection_id
+            assert event.payload["menu"] == menu.serialize()
+            mock_event_bus.events.clear()
 
         # retrieve connection menu
         assert (
@@ -66,12 +65,11 @@ class TestActionMenuUtil(AsyncTestCase):
         # delete connection menu
         await test_module.save_connection_menu(None, connection_id, context)
 
-        webhooks = responder.webhooks
-        assert len(webhooks) == 1
-        (result, target) = webhooks[0]
-        assert result == "actionmenu"
-        assert target == {"connection_id": connection_id, "menu": None}
-        responder.webhooks.clear()
+        assert len(mock_event_bus.events) == 1
+        (_, event) = mock_event_bus.events[0]
+        assert event.topic == "acapy::actionmenu::received"
+        assert event.payload == {"connection_id": connection_id, "menu": None}
+        mock_event_bus.events.clear()
 
         # retrieve no menu
         assert (

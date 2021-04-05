@@ -4,10 +4,10 @@ from asynctest import TestCase as AsyncTestCase, mock as async_mock
 from marshmallow import EXCLUDE, fields
 
 from ....cache.base import BaseCache
+from ....core.event_bus import EventBus, MockEventBus, Event
 from ....core.in_memory import InMemoryProfile
 from ....storage.base import BaseStorage, StorageDuplicateError, StorageRecord
 
-from ...responder import BaseResponder, MockResponder
 from ...util import time_now
 
 from ..base_record import BaseRecord, BaseRecordSchema
@@ -86,7 +86,7 @@ class TestBaseRecord(AsyncTestCase):
         with async_mock.patch.object(
             record, "post_save", async_mock.CoroutineMock()
         ) as post_save:
-            await record.save(session, reason="reason", webhook=True)
+            await record.save(session, reason="reason", event=True)
             post_save.assert_called_once_with(session, True, None, True)
         mock_storage.add_record.assert_called_once()
 
@@ -102,7 +102,7 @@ class TestBaseRecord(AsyncTestCase):
         with async_mock.patch.object(
             record, "post_save", async_mock.CoroutineMock()
         ) as post_save:
-            await record.save(session, reason="reason", webhook=False)
+            await record.save(session, reason="reason", event=False)
             post_save.assert_called_once_with(session, False, last_state, False)
         mock_storage.update_record.assert_called_once()
 
@@ -254,17 +254,22 @@ class TestBaseRecord(AsyncTestCase):
         record.log_state("state", settings=None)
         mock_print.assert_not_called()
 
-    async def test_webhook(self):
+    async def test_emit_event(self):
         session = InMemoryProfile.test_session()
-        mock_responder = MockResponder()
-        session.context.injector.bind_instance(BaseResponder, mock_responder)
+        mock_event_bus = MockEventBus()
+        session.profile.context.injector.bind_instance(EventBus, mock_event_bus)
         record = BaseRecordImpl()
         payload = {"test": "payload"}
-        topic = "topic"
-        await record.send_webhook(session, None, None)  # cover short circuit
-        await record.send_webhook(session, "hello", None)  # cover short circuit
-        await record.send_webhook(session, payload, topic=topic)
-        assert mock_responder.webhooks == [(topic, payload)]
+        await record.emit_event(session, None)  # cover short circuit
+        await record.emit_event(session, payload)  # cover short circuit
+        record.RECORD_TOPIC = "topic"
+        await record.emit_event(session, payload)  # cover short circuit
+        assert mock_event_bus.events == []
+        record.state = "test_state"
+        await record.emit_event(session, payload)
+        assert mock_event_bus.events == [
+            (session.profile, Event("acapy::record::topic::test_state", payload))
+        ]
 
     async def test_tag_prefix(self):
         tags = {"~x": "a", "y": "b"}
