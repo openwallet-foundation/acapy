@@ -1,52 +1,50 @@
-aries\_cloudagent\.storage package
-==================================
+aries\_cloudagent.storage package
+=================================
 
 .. automodule:: aries_cloudagent.storage
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
 Submodules
 ----------
 
-aries\_cloudagent\.storage\.base module
----------------------------------------
+aries\_cloudagent.storage.base module
+-------------------------------------
 
 .. automodule:: aries_cloudagent.storage.base
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
-aries\_cloudagent\.storage\.error module
-----------------------------------------
+aries\_cloudagent.storage.error module
+--------------------------------------
 
 .. automodule:: aries_cloudagent.storage.error
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
-aries\_cloudagent\.storage\.in\_memory module
----------------------------------------------
+aries\_cloudagent.storage.in\_memory module
+-------------------------------------------
 
 .. automodule:: aries_cloudagent.storage.in_memory
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
-aries\_cloudagent\.storage\.indy module
----------------------------------------
+aries\_cloudagent.storage.indy module
+-------------------------------------
 
 .. automodule:: aries_cloudagent.storage.indy
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
-aries\_cloudagent\.storage\.record module
------------------------------------------
+aries\_cloudagent.storage.record module
+---------------------------------------
 
 .. automodule:: aries_cloudagent.storage.record
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-
+   :members:
+   :undoc-members:
+   :show-inheritance:

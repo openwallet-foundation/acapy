@@ -102,9 +102,9 @@ class InvitationMessage(AgentMessage):
         comment: str = None,
         label: str = None,
         handshake_protocols: Sequence[Text] = None,
-        request_attach: Sequence[AttachDecorator] = None,
-        # When loading, we sort service in the two lists
-        service: Sequence[Union[Service, Text]] = None,
+        requests_attach: Sequence[AttachDecorator] = None,
+        # When loading, we sort services in the two lists
+        services: Sequence[Union[Service, Text]] = None,
         service_blocks: Sequence[Service] = None,
         service_dids: Sequence[Text] = None,
         **kwargs,
@@ -113,7 +113,7 @@ class InvitationMessage(AgentMessage):
         Initialize invitation message object.
 
         Args:
-            request_attach: request attachments
+            requests_attach: request attachments
 
         """
         # super().__init__(_id=_id, **kwargs)
@@ -122,7 +122,7 @@ class InvitationMessage(AgentMessage):
         self.handshake_protocols = (
             list(handshake_protocols) if handshake_protocols else []
         )
-        self.request_attach = list(request_attach) if request_attach else []
+        self.requests_attach = list(requests_attach) if requests_attach else []
 
         # In order to accept and validate both string entries and
         # dict block entries, we include both in schema and manipulate
@@ -132,7 +132,7 @@ class InvitationMessage(AgentMessage):
 
         # In the case of loading, we need to sort
         # the entries into relevant lists for schema validation
-        for s in service or []:
+        for s in services or []:
             if type(s) is Service:
                 self.service_blocks.append(s)
             elif type(s) is str:
@@ -141,7 +141,7 @@ class InvitationMessage(AgentMessage):
     @classmethod
     def wrap_message(cls, message: dict) -> AttachDecorator:
         """Convert an aries message to an attachment decorator."""
-        return AttachDecorator.from_aries_msg(message=message, ident="request-0")
+        return AttachDecorator.data_json(mapping=message, ident="request-0")
 
     def to_url(self, base_url: str = None) -> str:
         """
@@ -199,11 +199,11 @@ class InvitationMessageSchema(AgentMessageSchema):
         ),
         required=False,
     )
-    request_attach = fields.Nested(
+    requests_attach = fields.Nested(
         AttachDecoratorSchema,
         required=False,
         many=True,
-        data_key="request~attach",
+        data_key="requests~attach",
         description="Optional request attachment",
     )
 
@@ -221,20 +221,20 @@ class InvitationMessageSchema(AgentMessageSchema):
             ValidationError: If any of the fields do not validate
         """
         handshake_protocols = data.get("handshake_protocols")
-        request_attach = data.get("request_attach")
+        requests_attach = data.get("requests_attach")
         if not (
             (handshake_protocols and len(handshake_protocols) > 0)
-            or (request_attach and len(request_attach) > 0)
+            or (requests_attach and len(requests_attach) > 0)
         ):
             raise ValidationError(
                 "Model must include non-empty "
-                "handshake_protocols or request_attach or both"
+                "handshake_protocols or requests_attach or both"
             )
 
-        # service = data.get("service")
-        # if not ((service and len(service) > 0)):
+        # services = data.get("services")
+        # if not ((services and len(services) > 0)):
         #     raise ValidationError(
-        #         "Model must include non-empty service array"
+        #         "Model must include non-empty services array"
         #     )
 
     @pre_load
@@ -243,30 +243,30 @@ class InvitationMessageSchema(AgentMessageSchema):
         data["service_dids"] = []
         data["service_blocks"] = []
 
-        for service_entry in data["service"]:
+        for service_entry in data["services"]:
             if type(service_entry) is str:
                 data["service_dids"].append(service_entry)
             if type(service_entry) is dict:
                 data["service_blocks"].append(service_entry)
 
-        del data["service"]
+        del data["services"]
 
         return data
 
     @post_dump
     def post_dump(self, data, **kwargs):
         """Post dump hook."""
-        data["service"] = []
+        data["services"] = []
 
         for service_entry in data["service_dids"]:
-            data["service"].append(service_entry)
+            data["services"].append(service_entry)
         for service_entry in data["service_blocks"]:
-            data["service"].append(service_entry)
+            data["services"].append(service_entry)
 
         del data["service_dids"]
         del data["service_blocks"]
 
-        if "request~attach" in data and not data["request~attach"]:
-            del data["request~attach"]
+        if "requests~attach" in data and not data["requests~attach"]:
+            del data["requests~attach"]
 
         return data

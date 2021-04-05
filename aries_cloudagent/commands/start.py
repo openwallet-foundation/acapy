@@ -3,8 +3,8 @@
 import asyncio
 import functools
 import logging
-import os
 import signal
+import sys
 from configargparse import ArgumentParser
 from typing import Coroutine, Sequence
 
@@ -52,13 +52,6 @@ def execute(argv: Sequence[str] = None):
     # set ledger to read only if explicitely specified
     settings["ledger.read_only"] = settings.get("read_only_ledger", False)
 
-    # Support WEBHOOK_URL environment variable
-    webhook_url = os.environ.get("WEBHOOK_URL")
-    if webhook_url:
-        webhook_urls = list(settings.get("admin.webhook_urls") or [])
-        webhook_urls.append(webhook_url)
-        settings["admin.webhook_urls"] = webhook_urls
-
     # Create the Conductor instance
     context_builder = DefaultContextBuilder(settings)
     conductor = Conductor(context_builder)
@@ -84,11 +77,15 @@ def run_loop(startup: Coroutine, shutdown: Coroutine):
     async def done():
         """Run shutdown and clean up any outstanding tasks."""
         await shutdown
-        tasks = [
-            task
-            for task in asyncio.Task.all_tasks()
-            if task is not asyncio.Task.current_task()
-        ]
+
+        if sys.version_info.major == 3 and sys.version_info.minor > 6:
+            all_tasks = asyncio.all_tasks()
+            current_task = asyncio.current_task()
+        else:
+            all_tasks = asyncio.Task.all_tasks()
+            current_task = asyncio.Task.current_task()
+
+        tasks = [task for task in all_tasks if task is not current_task]
         for task in tasks:
             task.cancel()
         if tasks:

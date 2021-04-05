@@ -13,7 +13,7 @@
 import os
 import sys
 
-sys.path.insert(0, os.path.abspath("../.."))
+sys.path.insert(0, os.path.abspath(".."))
 
 autodoc_mock_imports = [
     "setup",
@@ -31,6 +31,9 @@ autodoc_mock_imports = [
     "prompt_toolkit",
     "aries_cloudagent.base_handler",
     "aries_cloudagent.logging",
+    "multicodec",
+    "configargparse",
+    "pyld",
 ]
 
 #    "aries_cloudagent.tests.test_conductor",
@@ -43,7 +46,7 @@ autodoc_mock_imports = [
 # -- Project information -----------------------------------------------------
 
 project = "Aries Cloud Agent - Python"
-copyright = "2019, Province of British Columbia"
+copyright = "2021, Province of British Columbia"
 author = "Province of British Columbia"
 
 # The short X.Y version
@@ -91,7 +94,14 @@ language = None
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
+exclude_patterns = [
+    "_build",
+    "Thumbs.db",
+    ".DS_Store",
+    "README.md",
+    "GettingStartedAriesDev/*",
+    "assets/*",
+]
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = None
@@ -107,7 +117,7 @@ html_theme = "sphinx_rtd_theme"
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ["_static"]
+html_static_path = []
 
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.
@@ -156,7 +166,7 @@ latex_documents = [
         master_doc,
         "AriesCloudAgentPython.tex",
         "Aries Cloud Agent Python Documentation",
-        "Nicholas Rempel, Andrew Whitehead, Ian Costanzo, Stephen Klump",
+        "See Contributors list on GitHub",
         "manual",
     )
 ]
@@ -211,7 +221,7 @@ epub_title = project
 # epub_uid = ''
 
 # A list of files that should not be packed into the epub file.
-epub_exclude_files = ["search.html"]
+epub_exclude_files = ["search.html", "README.md"]
 
 
 # -- Extension configuration -------------------------------------------------

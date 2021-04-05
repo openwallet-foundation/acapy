@@ -2,7 +2,6 @@ import json
 import pytest
 
 from unittest import TestCase
-
 from marshmallow import ValidationError
 
 from ..valid import (
@@ -111,7 +110,7 @@ class TestValid(TestCase):
             with self.assertRaises(ValidationError):
                 INDY_DID["validate"](non_indy_did)
 
-        INDY_DID["validate"]("Q4zqM7aXqm7gDQkUVLng9h")  # TODO: accept non-indy dids
+        INDY_DID["validate"]("Q4zqM7aXqm7gDQkUVLng9h")
         INDY_DID["validate"]("did:sov:Q4zqM7aXqm7gDQkUVLng9h")
 
     def test_indy_raw_public_key(self):

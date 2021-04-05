@@ -1,10 +1,11 @@
 from asynctest import mock as async_mock, TestCase as AsyncTestCase
 
 from ......messaging.decorators.attach_decorator import AttachDecorator
+from ......messaging.models.base import BaseModelError
 
 from .....didcomm_prefix import DIDCommPrefix
 
-from ...message_types import CRED_20_OFFER
+from ...message_types import ATTACHMENT_FORMAT, CRED_20_OFFER
 
 from .. import cred_offer as test_module
 from ..cred_format import V20CredFormat
@@ -38,91 +39,68 @@ class TestV20CredOffer(AsyncTestCase):
             ],
         },
     }
+
     preview = V20CredPreview(
         attributes=V20CredAttrSpec.list_plain(
             {"member": "James Bond", "favourite": "martini"}
         )
     )
-    offer = V20CredOffer(
+
+    CRED_OFFER = V20CredOffer(
         comment="shaken, not stirred",
         credential_preview=preview,
         formats=[
             V20CredFormat(
-                attach_id="abc",
-                format_=V20CredFormat.Format.INDY,
+                attach_id="indy",
+                format_=ATTACHMENT_FORMAT[CRED_20_OFFER][V20CredFormat.Format.INDY.api],
             )
         ],
         offers_attach=[
-            AttachDecorator.from_indy_dict(
-                indy_dict=indy_offer,
-                ident="abc",
+            AttachDecorator.data_base64(
+                mapping=indy_offer,
+                ident="indy",
             )
         ],
     )
 
     async def test_init_type(self):
         """Test initializer and type."""
-        cred_offer = V20CredOffer(
-            comment="shaken, not stirred",
-            credential_preview=TestV20CredOffer.preview,
-            formats=[
-                V20CredFormat(
-                    attach_id="abc",
-                    format_=V20CredFormat.Format.INDY,
-                )
-            ],
-            offers_attach=[
-                AttachDecorator.from_indy_dict(
-                    indy_dict=TestV20CredOffer.indy_offer,
-                    ident="abc",
-                )
-            ],
+        assert (
+            TestV20CredOffer.CRED_OFFER.credential_preview == TestV20CredOffer.preview
         )
-        assert cred_offer.credential_preview == TestV20CredOffer.preview
-        assert cred_offer.offers_attach[0].indy_dict == TestV20CredOffer.indy_offer
-        assert cred_offer.offer() == TestV20CredOffer.indy_offer
-        assert cred_offer._type == DIDCommPrefix.qualify_current(CRED_20_OFFER)
-
-    async def test_deserialize(self):
-        """Test deserialization."""
-        obj = TestV20CredOffer.indy_offer
-
-        with async_mock.patch.object(
-            test_module.V20CredOfferSchema, "load", async_mock.MagicMock()
-        ) as mock_load:
-            cred_offer = V20CredOffer.deserialize(obj)
-            mock_load.assert_called_once_with(obj)
-
-            assert cred_offer is mock_load.return_value
-
-    def test_serialize(self):
-        """
-        Test serialization.
-        """
-        cred_offer = V20CredOffer(
-            comment="shaken, not stirred",
-            credential_preview=TestV20CredOffer.preview,
-            formats=[
-                V20CredFormat(
-                    attach_id="abc",
-                    format_=V20CredFormat.Format.INDY,
-                )
-            ],
-            offers_attach=[
-                AttachDecorator.from_indy_dict(
-                    indy_dict=TestV20CredOffer.indy_offer,
-                    ident="abc",
-                )
-            ],
+        assert (
+            TestV20CredOffer.CRED_OFFER.offers_attach[0].content
+            == TestV20CredOffer.indy_offer
+        )
+        assert TestV20CredOffer.CRED_OFFER.attachment() == TestV20CredOffer.indy_offer
+        assert TestV20CredOffer.CRED_OFFER._type == DIDCommPrefix.qualify_current(
+            CRED_20_OFFER
         )
 
-        with async_mock.patch.object(
-            test_module.V20CredOfferSchema, "dump", async_mock.MagicMock()
-        ) as mock_dump:
-            cred_offer_dict = cred_offer.serialize()
-            mock_dump.assert_called_once_with(cred_offer)
+    async def test_serde(self):
+        """Test de/serialization."""
+        obj = TestV20CredOffer.CRED_OFFER.serialize()
 
-            assert cred_offer_dict is mock_dump.return_value
+        cred_offer = V20CredOffer.deserialize(obj)
+        assert type(cred_offer) == V20CredOffer
+
+        obj["offers~attach"][0]["data"]["base64"] = "eyJub3QiOiAiaW5keSJ9"
+        with self.assertRaises(BaseModelError):
+            V20CredOffer.deserialize(obj)
+
+        obj["offers~attach"][0]["@id"] = "xxx"
+        with self.assertRaises(BaseModelError):
+            V20CredOffer.deserialize(obj)
+
+        obj["offers~attach"].append(  # more attachments than formats
+            {
+                "@id": "def",
+                "mime-type": "application/json",
+                "data": {"base64": "eyJub3QiOiAiaW5keSJ9"},
+            }
+        )
+        with self.assertRaises(BaseModelError):
+            V20CredOffer.deserialize(obj)
 
 
 class TestCredentialOfferSchema(AsyncTestCase):
@@ -135,14 +113,16 @@ class TestCredentialOfferSchema(AsyncTestCase):
             credential_preview=TestV20CredOffer.preview,
             formats=[
                 V20CredFormat(
-                    attach_id="abc",
-                    format_=V20CredFormat.Format.INDY,
+                    attach_id="indy",
+                    format_=ATTACHMENT_FORMAT[CRED_20_OFFER][
+                        V20CredFormat.Format.INDY.api
+                    ],
                 )
             ],
             offers_attach=[
-                AttachDecorator.from_indy_dict(
-                    indy_dict=TestV20CredOffer.indy_offer,
-                    ident="abc",
+                AttachDecorator.data_base64(
+                    mapping=TestV20CredOffer.indy_offer,
+                    ident="indy",
                 )
             ],
         )

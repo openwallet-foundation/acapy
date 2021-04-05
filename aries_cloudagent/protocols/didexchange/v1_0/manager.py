@@ -14,6 +14,7 @@ from ....messaging.responder import BaseResponder
 from ....storage.error import StorageNotFoundError
 from ....transport.inbound.receipt import MessageReceipt
 from ....wallet.base import BaseWallet
+from ....wallet.did_posture import DIDPosture
 from ....wallet.util import did_key_to_naked
 from ....multitenant.manager import MultitenantManager
 
@@ -69,11 +70,11 @@ class DIDXManager(BaseConnectionManager):
         Create a new connection record to track a received invitation.
 
         Args:
-            invitation: The invitation to store
-            auto_accept: set to auto-accept the invitation (None to use config)
-            alias: optional alias to set on the record
-            mediation_id: The record id for mediation that contains routing_keys and
-                service endpoint
+            invitation: invitation to store
+            their_public_did: their public DID
+            auto_accept: set to auto-accept invitation (None to use config)
+            alias: optional alias to set on record
+            mediation_id: record id for mediation with routing_keys, service endpoint
 
         Returns:
             The new `ConnRecord` instance
@@ -151,6 +152,46 @@ class DIDXManager(BaseConnectionManager):
 
         return conn_rec
 
+    async def create_request_implicit(
+        self,
+        their_public_did: str,
+        my_label: str = None,
+        my_endpoint: str = None,
+        mediation_id: str = None,
+    ) -> DIDXRequest:
+        """
+        Create a request against a public DID only (no explicit invitation).
+
+        Args:
+            their_public_did: public DID to which to request a connection
+            my_label: my label for request
+            my_endpoint: my endpoint
+            mediation_id: record id for mediation with routing_keys, service endpoint
+
+        Returns:
+            DID exchange request
+
+        """
+
+        conn_rec = ConnRecord(
+            my_did=None,  # create-request will fill in on local DID creation
+            their_did=their_public_did,
+            their_label=None,
+            their_role=ConnRecord.Role.RESPONDER.rfc23,
+            invitation_key=None,
+            invitation_msg_id=None,
+            state=ConnRecord.State.REQUEST.rfc23,
+            accept=None,
+            alias=my_label,
+            their_public_did=their_public_did,
+        )
+        return await self.create_request(  # saves and updates conn_rec
+            conn_rec=conn_rec,
+            my_label=my_label,
+            my_endpoint=my_endpoint,
+            mediation_id=mediation_id,
+        )
+
     async def create_request(
         self,
         conn_rec: ConnRecord,
@@ -163,7 +204,7 @@ class DIDXManager(BaseConnectionManager):
 
         Args:
             conn_rec: The `ConnRecord` representing the invitation to accept
-            my_label: My label
+            my_label: My label for request
             my_endpoint: My endpoint
             mediation_id: The record id for mediation that contains routing_keys and
                 service endpoint
@@ -219,9 +260,8 @@ class DIDXManager(BaseConnectionManager):
                 filter(None, [base_mediation_record, mediation_record])
             ),
         )
-        invitation = await conn_rec.retrieve_invitation(self._session)
-        pthid = invitation._id
-        attach = AttachDecorator.from_indy_dict(did_doc.serialize())
+        pthid = conn_rec.invitation_msg_id or f"did:sov:{conn_rec.their_public_did}"
+        attach = AttachDecorator.data_base64(did_doc.serialize())
         await attach.data.sign(my_info.verkey, wallet)
         if not my_label:
             my_label = self._session.settings.get("default_label")
@@ -248,7 +288,11 @@ class DIDXManager(BaseConnectionManager):
     async def receive_request(
         self,
         request: DIDXRequest,
-        receipt: MessageReceipt,
+        recipient_did: str,
+        recipient_verkey: str = None,
+        my_endpoint: str = None,
+        alias: str = None,
+        auto_accept_implicit: bool = None,
         mediation_id: str = None,
     ) -> ConnRecord:
         """
@@ -256,7 +300,11 @@ class DIDXManager(BaseConnectionManager):
 
         Args:
             request: The `DIDXRequest` to accept
-            receipt: The message receipt
+            recipient_did: The (unqualified) recipient DID
+            recipient_verkey: The recipient verkey: None for public recipient DID
+            my_endpoint: My endpoint
+            alias: Alias for the connection
+            auto_accept: Auto-accept request against implicit invitation
             mediation_id: The record id for mediation that contains routing_keys and
                 service endpoint
         Returns:
@@ -281,15 +329,20 @@ class DIDXManager(BaseConnectionManager):
         wallet_id = self._session.settings.get("wallet.id")
 
         # Determine what key will need to sign the response
-        if receipt.recipient_did_public:
+        if recipient_verkey:  # peer DID
+            connection_key = recipient_verkey
+        else:
             if not self._session.settings.get("public_invites"):
                 raise DIDXManagerError(
                     "Public invitations are not enabled: connection request refused"
                 )
-            my_info = await wallet.get_local_did(receipt.recipient_did)
+            my_info = await wallet.get_local_did(recipient_did)
+            if DIDPosture.get(my_info.metadata) not in (
+                DIDPosture.PUBLIC,
+                DIDPosture.POSTED,
+            ):
+                raise DIDXManagerError(f"Request DID {recipient_did} is not public")
             connection_key = my_info.verkey
-        else:
-            connection_key = receipt.recipient_verkey
 
         try:
             conn_rec = await ConnRecord.retrieve_by_invitation_key(
@@ -298,9 +351,11 @@ class DIDXManager(BaseConnectionManager):
                 their_role=ConnRecord.Role.REQUESTER.rfc23,
             )
         except StorageNotFoundError:
-            if not receipt.recipient_did_public:
+            if recipient_verkey:
                 raise DIDXManagerError(
-                    "No explicit invitation found for pairwise connection"
+                    "No explicit invitation found for pairwise connection "
+                    f"in state {ConnRecord.State.INVITATION.rfc23}: "
+                    "a prior connection request may have updated the connection state"
                 )
 
         if conn_rec:  # invitation was explicit
@@ -367,6 +422,8 @@ class DIDXManager(BaseConnectionManager):
             )  # null=manual; oob-manager calculated at conn rec creation
 
             conn_rec.their_label = request.label
+            if alias:
+                conn_rec.alias = alias
             conn_rec.their_did = request.did
             conn_rec.state = ConnRecord.State.REQUEST.rfc23
             conn_rec.request_id = request._id
@@ -385,22 +442,27 @@ class DIDXManager(BaseConnectionManager):
             if multitenant_mgr and wallet_id:
                 await multitenant_mgr.add_key(wallet_id, my_info.verkey)
 
-            auto_accept = self._session.settings.get(
-                "debug.auto_accept_requests", False
+            auto_accept = bool(
+                auto_accept_implicit
+                or (
+                    auto_accept_implicit is None
+                    and self._session.settings.get("debug.auto_accept_requests", False)
+                )
             )
 
             conn_rec = ConnRecord(
                 my_did=my_info.did,
+                accept=(
+                    ConnRecord.ACCEPT_AUTO if auto_accept else ConnRecord.ACCEPT_MANUAL
+                ),
                 their_did=request.did,
                 their_label=request.label,
+                alias=alias,
                 their_role=ConnRecord.Role.REQUESTER.rfc23,
                 invitation_key=connection_key,
                 invitation_msg_id=None,
                 request_id=request._id,
                 state=ConnRecord.State.REQUEST.rfc23,
-                accept=(
-                    ConnRecord.ACCEPT_AUTO if auto_accept else ConnRecord.ACCEPT_MANUAL
-                ),
             )
             await conn_rec.save(
                 self._session, reason="Received connection request from public DID"
@@ -418,7 +480,11 @@ class DIDXManager(BaseConnectionManager):
             )
 
         if auto_accept:
-            response = await self.create_response(conn_rec, mediation_id=mediation_id)
+            response = await self.create_response(
+                conn_rec,
+                my_endpoint,
+                mediation_id=mediation_id,
+            )
             responder = self._session.inject(BaseResponder, required=False)
             if responder:
                 await responder.send_reply(
@@ -503,7 +569,7 @@ class DIDXManager(BaseConnectionManager):
                 filter(None, [base_mediation_record, mediation_record])
             ),
         )
-        attach = AttachDecorator.from_indy_dict(did_doc.serialize())
+        attach = AttachDecorator.data_base64(did_doc.serialize())
         await attach.data.sign(conn_rec.invitation_key, wallet)
         response = DIDXResponse(did=my_info.did, did_doc_attach=attach)
         # Assign thread information

@@ -8,6 +8,7 @@ from aiohttp import ClientSession, DummyCookieJar, TCPConnector
 from ...core.profile import Profile
 
 from ..stats import StatsTracer
+from ..wire_format import DIDCOMM_V0_MIME_TYPE, DIDCOMM_V1_MIME_TYPE
 
 from .base import BaseOutboundTransport, OutboundTransportError
 
@@ -26,14 +27,16 @@ class HttpTransport(BaseOutboundTransport):
 
     async def start(self):
         """Start the transport."""
-        session_args = {}
         self.connector = TCPConnector(limit=200, limit_per_host=50)
+        session_args = {
+            "cookie_jar": DummyCookieJar(),
+            "connector": self.connector,
+            "trust_env": True,
+        }
         if self.collector:
             session_args["trace_configs"] = [
                 StatsTracer(self.collector, "outbound-http:")
             ]
-        session_args["cookie_jar"] = DummyCookieJar()
-        session_args["connector"] = self.connector
         self.client_session = ClientSession(**session_args)
         return self
 
@@ -65,7 +68,10 @@ class HttpTransport(BaseOutboundTransport):
         if api_key is not None:
             headers["x-api-key"] = api_key
         if isinstance(payload, bytes):
-            headers["Content-Type"] = "application/ssi-agent-wire"
+            if profile.settings.get("emit_new_didcomm_mime_type"):
+                headers["Content-Type"] = DIDCOMM_V1_MIME_TYPE
+            else:
+                headers["Content-Type"] = DIDCOMM_V0_MIME_TYPE
         else:
             headers["Content-Type"] = "application/json"
         self.logger.debug(

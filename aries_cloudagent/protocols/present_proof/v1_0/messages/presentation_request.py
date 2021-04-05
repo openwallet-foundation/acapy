@@ -59,7 +59,7 @@ class PresentationRequest(AgentMessage):
                 (typically, list has length 1)
 
         """
-        return self.request_presentations_attach[index].indy_dict
+        return self.request_presentations_attach[index].content
 
 
 class PresentationRequestSchema(AgentMessageSchema):

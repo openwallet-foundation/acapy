@@ -8,6 +8,7 @@ from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
 from ......transport.inbound.receipt import MessageReceipt
 
+from ...message_types import ATTACHMENT_FORMAT, CRED_20_REQUEST
 from ...messages.cred_request import V20CredRequest
 from ...messages.cred_format import V20CredFormat
 from ...messages.cred_proposal import V20CredProposal
@@ -57,9 +58,16 @@ class TestV20CredRequestHandler(AsyncTestCase):
         )
         cred_proposal = V20CredProposal(
             credential_preview=cred_preview,
-            formats=[V20CredFormat(attach_id="0", format_=V20CredFormat.Format.INDY)],
+            formats=[
+                V20CredFormat(
+                    attach_id="0",
+                    format_=ATTACHMENT_FORMAT[CRED_20_REQUEST][
+                        V20CredFormat.Format.INDY.api
+                    ],
+                )
+            ],
             filters_attach=[
-                AttachDecorator.from_indy_dict(
+                AttachDecorator.data_base64(
                     {
                         "cred_def_id": "LjgpST2rjsoxYegQDRm7EL:3:CL:12:tag1",
                     },
@@ -105,12 +113,17 @@ class TestV20CredRequestHandler(AsyncTestCase):
 
         cred_proposal = V20CredProposal(
             credential_preview=None,
-            formats=[V20CredFormat(attach_id="0", format_=V20CredFormat.Format.INDY)],
+            formats=[
+                V20CredFormat(
+                    attach_id="0",
+                    format_=ATTACHMENT_FORMAT[CRED_20_REQUEST][
+                        V20CredFormat.Format.INDY.api
+                    ],
+                )
+            ],
             filters_attach=[
-                AttachDecorator.from_indy_dict(
-                    {
-                        "cred_def_id": "LjgpST2rjsoxYegQDRm7EL:3:CL:12:tag1",
-                    },
+                AttachDecorator.data_base64(
+                    {"cred_def_id": "LjgpST2rjsoxYegQDRm7EL:3:CL:12:tag1"},
                     ident="0",
                 )
             ],

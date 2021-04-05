@@ -5,7 +5,7 @@ from ......messaging.models.base import BaseModelError
 
 from .....didcomm_prefix import DIDCommPrefix
 
-from ...message_types import CRED_20_PREVIEW, CRED_20_PROPOSAL
+from ...message_types import ATTACHMENT_FORMAT, CRED_20_PREVIEW, CRED_20_PROPOSAL
 
 from ..cred_format import V20CredFormat
 from ..cred_proposal import V20CredProposal, V20CredFormat
@@ -35,16 +35,18 @@ class TestV20CredProposal(AsyncTestCase):
             credential_preview=TEST_PREVIEW,
             formats=[
                 V20CredFormat(
-                    attach_id="abc",
-                    format_=V20CredFormat.Format.INDY.aries,
+                    attach_id="indy",
+                    format_=ATTACHMENT_FORMAT[CRED_20_PROPOSAL][
+                        V20CredFormat.Format.INDY.api
+                    ],
                 )
             ],
             filters_attach=[
-                AttachDecorator.from_indy_dict(TEST_INDY_FILTER, ident="abc")
+                AttachDecorator.data_base64(TEST_INDY_FILTER, ident="indy")
             ],
         )
         assert cred_proposal.credential_preview == TEST_PREVIEW
-        assert cred_proposal.filter() == TEST_INDY_FILTER
+        assert cred_proposal.attachment() == TEST_INDY_FILTER
         assert cred_proposal._type == DIDCommPrefix.qualify_current(CRED_20_PROPOSAL)
 
     async def test_deserialize(self):
@@ -61,9 +63,17 @@ class TestV20CredProposal(AsyncTestCase):
                     {"name": "icon", "mime-type": "image/png", "value": "cG90YXRv"},
                 ],
             },
+            "formats": [
+                {
+                    "attach_id": "indy",
+                    "format": ATTACHMENT_FORMAT[CRED_20_PROPOSAL][
+                        V20CredFormat.Format.INDY.api
+                    ],
+                }
+            ],
             "filters~attach": [
                 {
-                    "@id": "abc",
+                    "@id": "indy",
                     "mime-type": "application/json",
                     "data": {
                         "base64": (
@@ -74,9 +84,6 @@ class TestV20CredProposal(AsyncTestCase):
                         )
                     },
                 }
-            ],
-            "formats": [
-                {"attach_id": "abc", "format": V20CredFormat.Format.INDY.aries}
             ],
         }
         cred_proposal = V20CredProposal.deserialize(obj)
@@ -90,7 +97,7 @@ class TestV20CredProposal(AsyncTestCase):
         with self.assertRaises(BaseModelError):
             V20CredProposal.deserialize(obj)
 
-        obj["filters~attach"].append(  # more filters than formats
+        obj["filters~attach"].append(  # more attachments than formats
             {
                 "@id": "def",
                 "mime-type": "application/json",
@@ -108,12 +115,14 @@ class TestV20CredProposal(AsyncTestCase):
             credential_preview=TEST_PREVIEW,
             formats=[
                 V20CredFormat(
-                    attach_id="abc",
-                    format_=V20CredFormat.Format.INDY.aries,
+                    attach_id="indy",
+                    format_=ATTACHMENT_FORMAT[CRED_20_PROPOSAL][
+                        V20CredFormat.Format.INDY.api
+                    ],
                 )
             ],
             filters_attach=[
-                AttachDecorator.from_indy_dict(TEST_INDY_FILTER, ident="abc")
+                AttachDecorator.data_base64(TEST_INDY_FILTER, ident="indy")
             ],
         )
 
@@ -132,11 +141,16 @@ class TestV20CredProposal(AsyncTestCase):
                 ],
             },
             "formats": [
-                {"attach_id": "abc", "format": V20CredFormat.Format.INDY.aries}
+                {
+                    "attach_id": "indy",
+                    "format": ATTACHMENT_FORMAT[CRED_20_PROPOSAL][
+                        V20CredFormat.Format.INDY.api
+                    ],
+                }
             ],
             "filters~attach": [
                 {
-                    "@id": "abc",
+                    "@id": "indy",
                     "mime-type": "application/json",
                     "data": {
                         "base64": (
@@ -157,11 +171,13 @@ class TestV20CredProposal(AsyncTestCase):
             credential_preview=None,
             formats=[
                 V20CredFormat(
-                    attach_id="abc",
-                    format_=V20CredFormat.Format.INDY.aries,
+                    attach_id="indy",
+                    format_=ATTACHMENT_FORMAT[CRED_20_PROPOSAL][
+                        V20CredFormat.Format.INDY.api
+                    ],
                 )
             ],
-            filters_attach=[AttachDecorator.from_indy_dict({}, ident="abc")],
+            filters_attach=[AttachDecorator.data_base64({}, ident="indy")],
         )
 
         cred_proposal_dict = cred_proposal.serialize()
@@ -171,15 +187,17 @@ class TestV20CredProposal(AsyncTestCase):
             "@type": DIDCommPrefix.qualify_current(CRED_20_PROPOSAL),
             "filters~attach": [
                 {
-                    "@id": "abc",
+                    "@id": "indy",
                     "mime-type": "application/json",
                     "data": {"base64": "e30="},
                 }
             ],
             "formats": [
                 {
-                    "attach_id": "abc",
-                    "format": V20CredFormat.Format.INDY.aries,
+                    "attach_id": "indy",
+                    "format": ATTACHMENT_FORMAT[CRED_20_PROPOSAL][
+                        V20CredFormat.Format.INDY.api
+                    ],
                 }
             ],
         }
@@ -194,12 +212,14 @@ class TestV20CredProposalSchema(AsyncTestCase):
             credential_preview=TEST_PREVIEW,
             formats=[
                 V20CredFormat(
-                    attach_id="abc",
-                    format_=V20CredFormat.Format.INDY.aries,
+                    attach_id="indy",
+                    format_=ATTACHMENT_FORMAT[CRED_20_PROPOSAL][
+                        V20CredFormat.Format.INDY.api
+                    ],
                 )
             ],
             filters_attach=[
-                AttachDecorator.from_indy_dict(TEST_INDY_FILTER, ident="abc")
+                AttachDecorator.data_base64(TEST_INDY_FILTER, ident="indy")
             ],
         )
 

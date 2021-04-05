@@ -1,4 +1,3 @@
-from aries_cloudagent.ledger.indy import IndySdkLedgerPool
 import base64
 import json
 import os
@@ -9,8 +8,7 @@ import indy.did
 import indy.wallet
 import pytest
 
-from asynctest import TestCase as AsyncTestCase
-from asynctest import mock as async_mock
+from asynctest import mock as async_mock, TestCase as AsyncTestCase
 
 from ...core.in_memory import InMemoryProfile
 from ...config.injection_context import InjectionContext
@@ -19,11 +17,12 @@ from ...indy.sdk import wallet_setup as test_setup_module
 from ...indy.sdk.profile import IndySdkProfileManager
 from ...indy.sdk.wallet_setup import IndyWalletConfig
 from ...ledger.endpoint_type import EndpointType
+from ...ledger.indy import IndySdkLedgerPool
 
+from .. import indy as test_module
 from ..base import BaseWallet
 from ..in_memory import InMemoryWallet
 from ..indy import IndySdkWallet
-from .. import indy as test_module
 
 from . import test_in_memory_wallet
 

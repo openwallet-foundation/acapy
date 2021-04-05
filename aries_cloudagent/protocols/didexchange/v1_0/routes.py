@@ -1,10 +1,13 @@
 """Connection handling admin routes."""
 
+import json
+
 from aiohttp import web
 from aiohttp_apispec import (
     docs,
     match_info_schema,
     querystring_schema,
+    request_schema,
     response_schema,
 )
 
@@ -14,17 +17,13 @@ from ....admin.request_context import AdminRequestContext
 from ....connections.models.conn_record import ConnRecord, ConnRecordSchema
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
-from ....messaging.valid import ENDPOINT, UUIDFour
+from ....messaging.valid import ENDPOINT, INDY_DID, UUIDFour, UUID4
 from ....storage.error import StorageError, StorageNotFoundError
 from ....wallet.error import WalletError
 
 from .manager import DIDXManager, DIDXManagerError
 from .message_types import SPEC_URI
-
-MEDIATION_ID_SCHEMA = {
-    "validate": UUIDFour(),
-    "example": UUIDFour.EXAMPLE,
-}
+from .messages.request import DIDXRequest, DIDXRequestSchema
 
 
 class DIDXAcceptInvitationQueryStringSchema(OpenAPISchema):
@@ -32,23 +31,58 @@ class DIDXAcceptInvitationQueryStringSchema(OpenAPISchema):
 
     my_endpoint = fields.Str(description="My URL endpoint", required=False, **ENDPOINT)
     my_label = fields.Str(
-        description="Label for connection", required=False, example="Broker"
+        description="Label for connection request", required=False, example="Broker"
+    )
+
+
+class DIDXCreateRequestImplicitQueryStringSchema(OpenAPISchema):
+    """Parameters and validators for create-request-implicit request query string."""
+
+    their_public_did = fields.Str(
+        required=True,
+        allow_none=False,
+        description="Public DID to which to request connection",
+        **INDY_DID,
+    )
+    my_endpoint = fields.Str(description="My URL endpoint", required=False, **ENDPOINT)
+    my_label = fields.Str(
+        description="Label for connection request", required=False, example="Broker"
     )
     mediation_id = fields.Str(
         required=False,
         description="Identifier for active mediation record to be used",
-        **MEDIATION_ID_SCHEMA
+        **UUID4,
+    )
+
+
+class DIDXReceiveRequestImplicitQueryStringSchema(OpenAPISchema):
+    """Parameters and validators for receive-request-implicit request query string."""
+
+    alias = fields.Str(
+        description="Alias for connection",
+        required=False,
+        example="Barry",
+    )
+    my_endpoint = fields.Str(description="My URL endpoint", required=False, **ENDPOINT)
+    auto_accept = fields.Boolean(
+        description="Auto-accept connection (defaults to configuration)",
+        required=False,
+    )
+    mediation_id = fields.Str(
+        required=False,
+        description="Identifier for active mediation record to be used",
+        **UUID4,
     )
 
 
 class DIDXAcceptRequestQueryStringSchema(OpenAPISchema):
-    """Parameters and validators for accept conn-request web-request query string."""
+    """Parameters and validators for accept-request request query string."""
 
     my_endpoint = fields.Str(description="My URL endpoint", required=False, **ENDPOINT)
     mediation_id = fields.Str(
         required=False,
         description="Identifier for active mediation record to be used",
-        **MEDIATION_ID_SCHEMA
+        **UUID4,
     )
 
 
@@ -97,14 +131,18 @@ async def didx_accept_invitation(request: web.BaseRequest):
     connection_id = request.match_info["conn_id"]
     session = await context.session()
 
+    my_label = request.query.get("my_label") or None
+    my_endpoint = request.query.get("my_endpoint") or None
+    mediation_id = request.query.get("mediation_id") or None
+
+    didx_mgr = DIDXManager(session)
     try:
         conn_rec = await ConnRecord.retrieve_by_id(session, connection_id)
-        didx_mgr = DIDXManager(session)
-        my_label = request.query.get("my_label") or None
-        my_endpoint = request.query.get("my_endpoint") or None
-        mediation_id = request.query.get("mediation_id") or None
         request = await didx_mgr.create_request(
-            conn_rec, my_label, my_endpoint, mediation_id=mediation_id
+            conn_rec=conn_rec,
+            my_label=my_label,
+            my_endpoint=my_endpoint,
+            mediation_id=mediation_id,
         )
         result = conn_rec.serialize()
     except StorageNotFoundError as err:
@@ -113,6 +151,94 @@ async def didx_accept_invitation(request: web.BaseRequest):
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     await outbound_handler(request, connection_id=conn_rec.connection_id)
+
+    return web.json_response(result)
+
+
+@docs(
+    tags=["did-exchange"],
+    summary="Create request against public DID's implicit invitation",
+)
+@querystring_schema(DIDXCreateRequestImplicitQueryStringSchema())
+@response_schema(DIDXRequestSchema(), 200, description="")
+async def didx_create_request_implicit(request: web.BaseRequest):
+    """
+    Request handler for creating a request to an implicit invitation.
+
+    Args:
+        request: aiohttp request object
+
+    Returns:
+        The resulting connection record details
+
+    """
+    context: AdminRequestContext = request["context"]
+    session = await context.session()
+
+    their_public_did = request.query.get("their_public_did")
+    my_label = request.query.get("my_label") or None
+    my_endpoint = request.query.get("my_endpoint") or None
+    mediation_id = request.query.get("mediation_id") or None
+
+    didx_mgr = DIDXManager(session)
+    try:
+        request = await didx_mgr.create_request_implicit(
+            their_public_did=their_public_did,
+            my_label=my_label,
+            my_endpoint=my_endpoint,
+            mediation_id=mediation_id,
+        )
+    except StorageNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
+    except (StorageError, WalletError, DIDXManagerError, BaseModelError) as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+    return web.json_response(request.serialize())
+
+
+@docs(
+    tags=["did-exchange"],
+    summary="Receive request against public DID's implicit invitation",
+)
+@querystring_schema(DIDXReceiveRequestImplicitQueryStringSchema())
+@request_schema(DIDXRequestSchema())
+@response_schema(ConnRecordSchema(), 200, description="")
+async def didx_receive_request_implicit(request: web.BaseRequest):
+    """
+    Request handler for receiving a request against public DID's implicit invitation.
+
+    Args:
+        request: aiohttp request object
+
+    Returns:
+        The resulting connection record details
+
+    """
+    context: AdminRequestContext = request["context"]
+    session = await context.session()
+
+    body = await request.json()
+    alias = request.query.get("alias")
+    my_endpoint = request.query.get("my_endpoint")
+    auto_accept = json.loads(request.query.get("auto_accept", "null"))
+    mediation_id = request.query.get("mediation_id") or None
+
+    didx_mgr = DIDXManager(session)
+    try:
+        request = DIDXRequest.deserialize(body)
+        conn_rec = await didx_mgr.receive_request(
+            request=request,
+            recipient_did=request._thread.pthid.split(":")[-1],
+            alias=alias,
+            my_endpoint=my_endpoint,
+            auto_accept_implicit=auto_accept,
+            mediation_id=mediation_id,
+        )
+        result = conn_rec.serialize()
+    except StorageNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
+    except (StorageError, WalletError, DIDXManagerError, BaseModelError) as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     return web.json_response(result)
 
@@ -140,13 +266,16 @@ async def didx_accept_request(request: web.BaseRequest):
     connection_id = request.match_info["conn_id"]
     session = await context.session()
 
+    my_endpoint = request.query.get("my_endpoint") or None
+    mediation_id = request.query.get("mediation_id") or None
+
+    didx_mgr = DIDXManager(session)
     try:
         conn_rec = await ConnRecord.retrieve_by_id(session, connection_id)
-        didx_mgr = DIDXManager(session)
-        my_endpoint = request.query.get("my_endpoint") or None
-        mediation_id = request.query.get("mediation_id") or None
         response = await didx_mgr.create_response(
-            conn_rec, my_endpoint, mediation_id=mediation_id
+            conn_rec=conn_rec,
+            my_endpoint=my_endpoint,
+            mediation_id=mediation_id,
         )
         result = conn_rec.serialize()
     except StorageNotFoundError as err:
@@ -167,6 +296,8 @@ async def register(app: web.Application):
                 "/didexchange/{conn_id}/accept-invitation",
                 didx_accept_invitation,
             ),
+            web.post("/didexchange/create-request", didx_create_request_implicit),
+            web.post("/didexchange/receive-request", didx_receive_request_implicit),
             web.post("/didexchange/{conn_id}/accept-request", didx_accept_request),
         ]
     )

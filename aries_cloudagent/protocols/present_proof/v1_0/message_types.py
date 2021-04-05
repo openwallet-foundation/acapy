@@ -1,4 +1,4 @@
-"""Message and inner object type identifiers for Connections."""
+"""Message and inner object type identifiers for present-proof protocol v1.0."""
 
 from ...didcomm_prefix import DIDCommPrefix
 
@@ -29,9 +29,6 @@ MESSAGE_TYPES = DIDCommPrefix.qualify_all(
         ),
     }
 )
-
-# Inner object types
-PRESENTATION_PREVIEW = "present-proof/1.0/presentation-preview"
 
 # Identifiers to use in attachment decorators
 ATTACH_DECO_IDS = {

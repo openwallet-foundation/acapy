@@ -30,10 +30,10 @@ class TestSchemaRoutes(AsyncTestCase):
         self.ledger = async_mock.create_autospec(BaseLedger)
         self.ledger.__aenter__ = async_mock.CoroutineMock(return_value=self.ledger)
         self.ledger.create_and_send_schema = async_mock.CoroutineMock(
-            return_value=(SCHEMA_ID, {"schema": "def"})
+            return_value=(SCHEMA_ID, {"schema": "def", "signed_txn": "..."})
         )
         self.ledger.get_schema = async_mock.CoroutineMock(
-            return_value={"schema": "def"}
+            return_value={"schema": "def", "signed_txn": "..."}
         )
         self.context.injector.bind_instance(BaseLedger, self.ledger)
 
@@ -55,12 +55,72 @@ class TestSchemaRoutes(AsyncTestCase):
             }
         )
 
+        self.request.query = {"auto_endorse": "true"}
+
         with async_mock.patch.object(test_module.web, "json_response") as mock_response:
             result = await test_module.schemas_send_schema(self.request)
             assert result == mock_response.return_value
             mock_response.assert_called_once_with(
-                {"schema_id": SCHEMA_ID, "schema": {"schema": "def"}}
+                {
+                    "schema_id": SCHEMA_ID,
+                    "schema": {
+                        "schema": "def",
+                        "signed_txn": "...",
+                    },
+                }
             )
+
+    async def test_send_schema_no_auto_endorse(self):
+        self.request.json = async_mock.CoroutineMock(
+            return_value={
+                "schema_name": "schema_name",
+                "schema_version": "1.0",
+                "attributes": ["table", "drink", "colour"],
+            }
+        )
+
+        self.request.query = {"auto_endorse": "false"}
+
+        with async_mock.patch.object(
+            test_module, "TransactionManager", async_mock.MagicMock()
+        ) as mock_txn_mgr, async_mock.patch.object(
+            test_module.web, "json_response", async_mock.MagicMock()
+        ) as mock_response:
+            mock_txn_mgr.return_value = async_mock.MagicMock(
+                create_record=async_mock.CoroutineMock(
+                    return_value=async_mock.MagicMock(
+                        serialize=async_mock.MagicMock(return_value={"...": "..."})
+                    )
+                )
+            )
+            result = await test_module.schemas_send_schema(self.request)
+            assert result == mock_response.return_value
+            mock_response.assert_called_once_with({"...": "..."})
+
+    async def test_send_schema_no_auto_endorse_storage_x(self):
+        self.request.json = async_mock.CoroutineMock(
+            return_value={
+                "schema_name": "schema_name",
+                "schema_version": "1.0",
+                "attributes": ["table", "drink", "colour"],
+            }
+        )
+
+        self.request.query = {"auto_endorse": "false"}
+
+        with async_mock.patch.object(
+            test_module, "TransactionManager", async_mock.MagicMock()
+        ) as mock_txn_mgr, async_mock.patch.object(
+            test_module.web, "json_response", async_mock.MagicMock()
+        ) as mock_response:
+            mock_txn_mgr.return_value = async_mock.MagicMock(
+                create_record=async_mock.CoroutineMock(
+                    side_effect=test_module.StorageError()
+                )
+            )
+
+            with self.assertRaises(test_module.web.HTTPBadRequest):
+                await test_module.schemas_send_schema(self.request)
 
     async def test_send_schema_no_ledger(self):
         self.request.json = async_mock.CoroutineMock(
@@ -83,6 +143,7 @@ class TestSchemaRoutes(AsyncTestCase):
                 "attributes": ["table", "drink", "colour"],
             }
         )
+        self.request.query = {"auto_endorse": "true"}
         self.ledger.create_and_send_schema = async_mock.CoroutineMock(
             side_effect=test_module.LedgerError("Down for routine maintenance")
         )
@@ -104,7 +165,9 @@ class TestSchemaRoutes(AsyncTestCase):
         with async_mock.patch.object(test_module.web, "json_response") as mock_response:
             result = await test_module.schemas_get_schema(self.request)
             assert result == mock_response.return_value
-            mock_response.assert_called_once_with({"schema": {"schema": "def"}})
+            mock_response.assert_called_once_with(
+                {"schema": {"schema": "def", "signed_txn": "..."}}
+            )
 
     async def test_get_schema_on_seq_no(self):
         self.request.match_info = {"schema_id": "12345"}
@@ -112,7 +175,9 @@ class TestSchemaRoutes(AsyncTestCase):
         with async_mock.patch.object(test_module.web, "json_response") as mock_response:
             result = await test_module.schemas_get_schema(self.request)
             assert result == mock_response.return_value
-            mock_response.assert_called_once_with({"schema": {"schema": "def"}})
+            mock_response.assert_called_once_with(
+                {"schema": {"schema": "def", "signed_txn": "..."}}
+            )
 
     async def test_get_schema_no_ledger(self):
         self.request.match_info = {"schema_id": SCHEMA_ID}

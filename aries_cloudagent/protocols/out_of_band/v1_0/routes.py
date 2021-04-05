@@ -12,7 +12,7 @@ from ....admin.request_context import AdminRequestContext
 from ....connections.models.conn_record import ConnRecordSchema
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
-from ....messaging.valid import UUIDFour
+from ....messaging.valid import UUID4
 from ....storage.error import StorageError, StorageNotFoundError
 
 from ...didcomm_prefix import DIDCommPrefix
@@ -24,10 +24,6 @@ from .message_types import SPEC_URI
 from .models.invitation import InvitationRecordSchema
 
 LOGGER = logging.getLogger(__name__)
-MEDIATION_ID_SCHEMA = {
-    "validate": UUIDFour(),
-    "example": UUIDFour.EXAMPLE,
-}
 
 
 class OutOfBandModuleResponseSchema(OpenAPISchema):
@@ -38,9 +34,7 @@ class InvitationCreateQueryStringSchema(OpenAPISchema):
     """Parameters and validators for create invitation request query string."""
 
     auto_accept = fields.Boolean(
-        description=(
-            "Auto-accept connection (defaults to configuration by peer or public DID)"
-        ),
+        description="Auto-accept connection (defaults to configuration)",
         required=False,
     )
     multi_use = fields.Boolean(
@@ -93,10 +87,20 @@ class InvitationCreateRequestSchema(OpenAPISchema):
         ),
         required=False,
     )
+    my_label = fields.Str(
+        description="Label for connection invitation",
+        required=False,
+        example="Invitation to Barry",
+    )
+    alias = fields.Str(
+        description="Alias for connection",
+        required=False,
+        example="Barry",
+    )
     mediation_id = fields.Str(
         required=False,
         description="Identifier for active mediation record to be used",
-        **MEDIATION_ID_SCHEMA
+        **UUID4,
     )
 
 
@@ -104,14 +108,12 @@ class InvitationReceiveQueryStringSchema(OpenAPISchema):
     """Parameters and validators for receive invitation request query string."""
 
     alias = fields.Str(
-        description="Alias",
+        description="Alias for connection",
         required=False,
         example="Barry",
     )
     auto_accept = fields.Boolean(
-        description=(
-            "Auto-accept connection (defaults to configuration by peer or public DID)"
-        ),
+        description="Auto-accept connection (defaults to configuration)",
         required=False,
     )
     use_existing_connection = fields.Boolean(
@@ -122,14 +124,14 @@ class InvitationReceiveQueryStringSchema(OpenAPISchema):
     mediation_id = fields.Str(
         required=False,
         description="Identifier for active mediation record to be used",
-        **MEDIATION_ID_SCHEMA
+        **UUID4,
     )
 
 
 class InvitationReceiveRequestSchema(InvitationMessageSchema):
     """Invitation request schema."""
 
-    service = fields.Field()
+    services = fields.Field()
 
 
 @docs(
@@ -157,14 +159,17 @@ async def invitation_create(request: web.BaseRequest):
     handshake_protocols = body.get("handshake_protocols", [])
     use_public_did = body.get("use_public_did", False)
     metadata = body.get("metadata")
+    my_label = body.get("my_label")
+    alias = body.get("alias")
+    mediation_id = body.get("mediation_id")
 
     multi_use = json.loads(request.query.get("multi_use", "false"))
     auto_accept = json.loads(request.query.get("auto_accept", "null"))
-    mediation_id = body.get("mediation_id")
     session = await context.session()
     oob_mgr = OutOfBandManager(session)
     try:
         invi_rec = await oob_mgr.create_invitation(
+            my_label=my_label,
             auto_accept=auto_accept,
             public=use_public_did,
             hs_protos=[
@@ -173,6 +178,7 @@ async def invitation_create(request: web.BaseRequest):
             multi_use=multi_use,
             attachments=attachments,
             metadata=metadata,
+            alias=alias,
             mediation_id=mediation_id,
         )
     except (StorageNotFoundError, ValidationError, OutOfBandManagerError) as e:

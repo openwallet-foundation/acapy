@@ -1288,6 +1288,28 @@ class TestConnectionManager(AsyncTestCase):
             assert isinstance(message, MediationRequest)
             assert target["connection_id"] == conn_rec.connection_id
 
+    async def test_get_endpoints(self):
+        conn_id = "dummy"
+
+        with async_mock.patch.object(
+            ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
+        ) as mock_retrieve, async_mock.patch.object(
+            InMemoryWallet, "get_local_did", autospec=True
+        ) as mock_wallet_get_local_did, async_mock.patch.object(
+            self.manager, "get_connection_targets", async_mock.CoroutineMock()
+        ) as mock_get_conn_targets:
+            mock_retrieve.return_value = async_mock.MagicMock()
+            mock_wallet_get_local_did.return_value = async_mock.MagicMock(
+                metadata={"endpoint": "localhost:8020"}
+            )
+            mock_get_conn_targets.return_value = [
+                async_mock.MagicMock(endpoint="10.20.30.40:5060")
+            ]
+            assert await self.manager.get_endpoints(conn_id) == (
+                "localhost:8020",
+                "10.20.30.40:5060",
+            )
+
     async def test_create_static_connection(self):
         with async_mock.patch.object(
             ConnRecord, "save", autospec=True

@@ -10,9 +10,12 @@ from ..core.profile import ProfileSession
 from ..messaging.util import time_now
 
 from .inbound.receipt import MessageReceipt
-from .error import MessageParseError
+from .error import WireFormatParseError
 
 LOGGER = logging.getLogger(__name__)
+
+DIDCOMM_V0_MIME_TYPE = "application/ssi-agent-wire"
+DIDCOMM_V1_MIME_TYPE = "application/didcomm-envelope-enc"
 
 
 class BaseWireFormat:
@@ -38,7 +41,7 @@ class BaseWireFormat:
             A tuple of the parsed message and a message receipt instance
 
         Raises:
-            MessageParseError: If the message can't be parsed
+            WireFormatParseError: If the message can't be parsed
 
         """
 
@@ -106,7 +109,7 @@ class JsonWireFormat(BaseWireFormat):
             A tuple of the parsed message and a message receipt instance
 
         Raises:
-            MessageParseError: If the JSON parsing failed
+            WireFormatParseError: If the JSON parsing failed
 
         """
         receipt = MessageReceipt()
@@ -117,14 +120,14 @@ class JsonWireFormat(BaseWireFormat):
         message_json = message_body
 
         if not message_json:
-            raise MessageParseError("Message body is empty")
+            raise WireFormatParseError("Message body is empty")
 
         try:
             message_dict = json.loads(message_json)
         except ValueError:
-            raise MessageParseError("Message JSON parsing failed")
+            raise WireFormatParseError("Message JSON parsing failed")
         if not isinstance(message_dict, dict):
-            raise MessageParseError("Message JSON result is not an object")
+            raise WireFormatParseError("Message JSON result is not an object")
 
         # parse thread ID
         thread_dec = message_dict.get("~thread")

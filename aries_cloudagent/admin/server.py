@@ -126,6 +126,11 @@ class AdminResponder(BaseResponder):
         )
         await self._profile.notify("acapy::webhook::" + topic, payload)
 
+    @property
+    def send_fn(self) -> Coroutine:
+        """Accessor for async function to send outbound message."""
+        return self._send
+
 
 @web.middleware
 async def ready_middleware(request: web.BaseRequest, handler: Coroutine):
@@ -314,7 +319,7 @@ class AdminServer(BaseAdminServer):
                         self.context, token
                     )
                 except MultitenantManagerError as err:
-                    raise web.HTTPUnauthorized(err.roll_up)
+                    raise web.HTTPUnauthorized(reason=err.roll_up)
                 except (jwt.InvalidTokenError, StorageNotFoundError):
                     raise web.HTTPUnauthorized()
 

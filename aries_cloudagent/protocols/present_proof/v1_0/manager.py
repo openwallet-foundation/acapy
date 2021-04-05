@@ -15,13 +15,14 @@ from ....messaging.responder import BaseResponder
 from ....revocation.models.revocation_registry import RevocationRegistry
 from ....storage.error import StorageNotFoundError
 
+from ..indy.xform import indy_proof_req2non_revoc_intervals
+
 from .models.presentation_exchange import V10PresentationExchange
 from .messages.presentation_ack import PresentationAck
 from .messages.presentation_proposal import PresentationProposal
 from .messages.presentation_request import PresentationRequest
 from .messages.presentation import Presentation
 from .message_types import ATTACH_DECO_IDS, PRESENTATION, PRESENTATION_REQUEST
-from .util.indy import indy_proof_req2non_revoc_intervals
 
 LOGGER = logging.getLogger(__name__)
 
@@ -142,8 +143,8 @@ class PresentationManager:
         presentation_request_message = PresentationRequest(
             comment=comment,
             request_presentations_attach=[
-                AttachDecorator.from_indy_dict(
-                    indy_dict=indy_proof_request,
+                AttachDecorator.data_base64(
+                    mapping=indy_proof_request,
                     ident=ATTACH_DECO_IDS[PRESENTATION_REQUEST],
                 )
             ],
@@ -411,8 +412,8 @@ class PresentationManager:
         presentation_message = Presentation(
             comment=comment,
             presentations_attach=[
-                AttachDecorator.from_indy_dict(
-                    indy_dict=indy_proof, ident=ATTACH_DECO_IDS[PRESENTATION]
+                AttachDecorator.data_base64(
+                    mapping=indy_proof, ident=ATTACH_DECO_IDS[PRESENTATION]
                 )
             ],
         )
@@ -460,7 +461,7 @@ class PresentationManager:
                     session, {"thread_id": thread_id}, connection_id_filter
                 )
             except StorageNotFoundError:
-                # Proof Request not bound to any connection: request_attach in OOB message
+                # Proof Request not bound to any connection: requests_attach in OOB msg
                 (
                     presentation_exchange_record
                 ) = await V10PresentationExchange.retrieve_by_tag_filter(

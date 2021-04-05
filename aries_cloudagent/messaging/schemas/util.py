@@ -29,5 +29,5 @@ class SchemaQueryStringSchema(OpenAPISchema):
     )
 
 
-SCHEMA_TAGS = [tag for tag in vars(SchemaQueryStringSchema)["_declared_fields"]]
+SCHEMA_TAGS = [tag for tag in vars(SchemaQueryStringSchema).get("_declared_fields", [])]
 SCHEMA_SENT_RECORD_TYPE = "schema_sent"

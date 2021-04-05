@@ -4,9 +4,8 @@ from typing import Any
 
 from marshmallow import fields
 
-from .....core.profile import ProfileSession
 from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
-from .....messaging.valid import INDY_DID, UUIDFour
+from .....messaging.valid import UUIDFour
 
 
 class InvitationRecord(BaseExchangeRecord):
@@ -20,7 +19,7 @@ class InvitationRecord(BaseExchangeRecord):
     RECORD_TYPE = "oob_invitation"
     RECORD_ID_NAME = "invitation_id"
     RECORD_TOPIC = "oob_invitation"
-    TAG_NAMES = {"invi_msg_id", "public_did"}
+    TAG_NAMES = {"invi_msg_id"}
 
     STATE_INITIAL = "initial"
     STATE_AWAIT_RESPONSE = "await_response"
@@ -44,7 +43,6 @@ class InvitationRecord(BaseExchangeRecord):
         self.state = state
         self.invi_msg_id = invi_msg_id
         self.invitation = invitation
-        self.public_did = public_did
         self.invitation_url = invitation_url
         self.trace = trace
 
@@ -65,21 +63,6 @@ class InvitationRecord(BaseExchangeRecord):
                 "trace",
             )
         }
-
-    @classmethod
-    async def retrieve_by_public_did(cls, session: ProfileSession, public_did: str):
-        """Retrieve by public DID."""
-        cache_key = f"oob_invi_rec::{public_did}"
-        record_id = await cls.get_cached_key(session, cache_key)
-        if record_id:
-            record = await cls.retrieve_by_id(session, record_id)
-        else:
-            record = await cls.retrieve_by_tag_filter(
-                session=session,
-                tag_filter={"public_did": public_did},
-            )
-            await cls.set_cached_key(session, cache_key, record.invitation_id)
-        return record
 
     def __eq__(self, other: Any) -> bool:
         """Comparison between records."""
@@ -120,7 +103,4 @@ class InvitationRecordSchema(BaseExchangeSchema):
             "https://example.com/endpoint?"
             "c_i=eyJAdHlwZSI6ICIuLi4iLCAiLi4uIjogIi4uLiJ9XX0="
         ),
-    )
-    public_did = fields.Str(
-        description="Public DID, if applicable", required=False, **INDY_DID
     )

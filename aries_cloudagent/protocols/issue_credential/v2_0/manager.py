@@ -20,6 +20,13 @@ from ....revocation.models.issuer_rev_reg_record import IssuerRevRegRecord
 from ....storage.base import BaseStorage
 from ....storage.error import StorageNotFoundError
 
+from .message_types import (
+    ATTACHMENT_FORMAT,
+    CRED_20_PROPOSAL,
+    CRED_20_OFFER,
+    CRED_20_REQUEST,
+    CRED_20_ISSUE,
+)
 from .messages.cred_ack import V20CredAck
 from .messages.cred_format import V20CredFormat
 from .messages.cred_issue import V20CredIssue
@@ -84,14 +91,19 @@ class V20CredManager:
 
         async with self._profile.session() as session:
             detail_cls = fmt.detail
-            try:
-                return await detail_cls.retrieve_by_cred_ex_id(session, cred_ex_id)
-            except StorageNotFoundError:
-                return None
+            records = await detail_cls.query_by_cred_ex_id(session, cred_ex_id)
+            if len(records) > 1:
+                LOGGER.warning(
+                    "Cred ex id %s has %d %s detail records: should be 1",
+                    cred_ex_id,
+                    len(records),
+                    fmt.api,
+                )
+            return records[0] if records else None
 
     async def prepare_send(
         self,
-        conn_id: str,
+        connection_id: str,
         cred_proposal: V20CredProposal,
         auto_remove: bool = None,
     ) -> Tuple[V20CredExRecord, V20CredOffer]:
@@ -99,7 +111,7 @@ class V20CredManager:
         Set up a new credential exchange record for an automated send.
 
         Args:
-            conn_id: connection for which to create offer
+            connection_id: connection for which to create offer
             cred_proposal: credential proposal with preview
             auto_remove: flag to remove the record automatically on completion
 
@@ -110,7 +122,7 @@ class V20CredManager:
         if auto_remove is None:
             auto_remove = not self._profile.settings.get("preserve_exchange_records")
         cred_ex_record = V20CredExRecord(
-            conn_id=conn_id,
+            connection_id=connection_id,
             initiator=V20CredExRecord.INITIATOR_SELF,
             role=V20CredExRecord.ROLE_ISSUER,
             cred_proposal=cred_proposal.serialize(),
@@ -126,7 +138,7 @@ class V20CredManager:
 
     async def create_proposal(
         self,
-        conn_id: str,
+        connection_id: str,
         *,
         auto_remove: bool = None,
         comment: str = None,
@@ -138,7 +150,7 @@ class V20CredManager:
         Create a credential proposal.
 
         Args:
-            conn_id: connection for which to create proposal
+            connection_id: connection for which to create proposal
             auto_remove: whether to remove record automatically on completion
             comment: optional human-readable comment to include in proposal
             cred_preview: credential preview to use to create credential proposal
@@ -154,11 +166,16 @@ class V20CredManager:
             comment=comment,
             credential_preview=cred_preview,
             formats=[
-                V20CredFormat(attach_id=str(ident), format_=V20CredFormat.Format.get(f))
+                V20CredFormat(
+                    attach_id=str(ident),
+                    format_=ATTACHMENT_FORMAT[CRED_20_PROPOSAL][
+                        V20CredFormat.Format.get(f).api
+                    ],
+                )
                 for ident, f in enumerate(fmt2filter.keys())
             ],
             filters_attach=[
-                AttachDecorator.from_indy_dict(f or {}, ident=str(ident))
+                AttachDecorator.data_base64(f or {}, ident=str(ident))
                 for ident, f in enumerate(fmt2filter.values())
             ],
         )
@@ -167,7 +184,7 @@ class V20CredManager:
         if auto_remove is None:
             auto_remove = not self._profile.settings.get("preserve_exchange_records")
         cred_ex_record = V20CredExRecord(
-            conn_id=conn_id,
+            connection_id=connection_id,
             thread_id=cred_proposal_message._thread_id,
             initiator=V20CredExRecord.INITIATOR_SELF,
             role=V20CredExRecord.ROLE_HOLDER,
@@ -186,7 +203,7 @@ class V20CredManager:
     async def receive_proposal(
         self,
         cred_proposal_message: V20CredProposal,
-        conn_id: str,
+        connection_id: str,
     ) -> V20CredExRecord:
         """
         Receive a credential proposal.
@@ -197,7 +214,7 @@ class V20CredManager:
         """
         # at this point, cred def and schema still open to potential negotiation
         cred_ex_record = V20CredExRecord(
-            conn_id=conn_id,
+            connection_id=connection_id,
             thread_id=cred_proposal_message._thread_id,
             initiator=V20CredExRecord.INITIATOR_EXTERNAL,
             role=V20CredExRecord.ROLE_ISSUER,
@@ -293,8 +310,15 @@ class V20CredManager:
             replacement_id=replacement_id,
             comment=comment,
             credential_preview=cred_preview,
-            formats=[V20CredFormat(attach_id="0", format_=V20CredFormat.Format.INDY)],
-            offers_attach=[AttachDecorator.from_indy_dict(cred_offer, ident="0")],
+            formats=[
+                V20CredFormat(
+                    attach_id="0",
+                    format_=ATTACHMENT_FORMAT[CRED_20_OFFER][
+                        V20CredFormat.Format.INDY.api
+                    ],
+                )
+            ],
+            offers_attach=[AttachDecorator.data_base64(cred_offer, ident="0")],
         )
 
         cred_offer_message._thread = {"thid": cred_ex_record.thread_id}
@@ -314,14 +338,14 @@ class V20CredManager:
     async def receive_offer(
         self,
         cred_offer_message: V20CredOffer,
-        conn_id: str,
+        connection_id: str,
     ) -> V20CredExRecord:
         """
         Receive a credential offer.
 
         Args:
             cred_offer_message: credential offer message
-            conn_id: connection identifier
+            connection_id: connection identifier
 
         Returns:
             The credential exchange record, updated
@@ -331,7 +355,7 @@ class V20CredManager:
             V20CredFormat.Format.get(p.format) for p in cred_offer_message.formats
         ]  # until DIF support
 
-        offer = cred_offer_message.offer(
+        offer = cred_offer_message.attachment(
             V20CredFormat.Format.INDY
         )  # may change for DIF
         schema_id = offer["schema_id"]
@@ -340,9 +364,16 @@ class V20CredManager:
         cred_proposal_ser = V20CredProposal(
             comment=cred_offer_message.comment,
             credential_preview=cred_offer_message.credential_preview,
-            formats=[V20CredFormat(attach_id="0", format_=V20CredFormat.Format.INDY)],
+            formats=[
+                V20CredFormat(
+                    attach_id="0",
+                    format_=ATTACHMENT_FORMAT[CRED_20_PROPOSAL][
+                        V20CredFormat.Format.INDY.api
+                    ],
+                )
+            ],
             filters_attach=[
-                AttachDecorator.from_indy_dict(
+                AttachDecorator.data_base64(
                     {
                         "schema_id": schema_id,
                         "cred_def_id": cred_def_id,
@@ -358,13 +389,13 @@ class V20CredManager:
             try:
                 cred_ex_record = await (
                     V20CredExRecord.retrieve_by_conn_and_thread(
-                        session, conn_id, cred_offer_message._thread_id
+                        session, connection_id, cred_offer_message._thread_id
                     )
                 )
                 cred_ex_record.cred_proposal = cred_proposal_ser
             except StorageNotFoundError:  # issuer sent this offer free of any proposal
                 cred_ex_record = V20CredExRecord(
-                    conn_id=conn_id,
+                    connection_id=connection_id,
                     thread_id=cred_offer_message._thread_id,
                     initiator=V20CredExRecord.INITIATOR_EXTERNAL,
                     role=V20CredExRecord.ROLE_HOLDER,
@@ -381,6 +412,16 @@ class V20CredManager:
             await cred_ex_record.save(session, reason="receive v2.0 credential offer")
 
         return cred_ex_record
+
+    async def _check_uniqueness(self, cred_ex_id: str):
+        """Raise exception on evidence that cred ex already has cred issued to it."""
+        async with self._profile.session() as session:
+            for fmt in V20CredFormat.Format:
+                if await fmt.detail.query_by_cred_ex_id(session, cred_ex_id):
+                    raise V20CredManagerError(
+                        f"{fmt.api} detail record already "
+                        f"exists for cred ex id {cred_ex_id}"
+                    )
 
     async def create_request(
         self, cred_ex_record: V20CredExRecord, holder_did: str, comment: str = None
@@ -405,7 +446,7 @@ class V20CredManager:
             )
 
         cred_offer_message = V20CredOffer.deserialize(cred_ex_record.cred_offer)
-        cred_offer = cred_offer_message.offer(
+        cred_offer = cred_offer_message.attachment(
             V20CredFormat.Format.INDY
         )  # will change for DIF
         cred_def_id = cred_offer["cred_def_id"]
@@ -430,8 +471,6 @@ class V20CredManager:
                 f"v2.0 credential exchange {cred_ex_record.cred_ex_id}"
             )
 
-        if "nonce" not in cred_offer:
-            raise V20CredManagerError("Missing nonce in credential offer")
         nonce = cred_offer["nonce"]
         cache_key = f"credential_request::{cred_def_id}::{holder_did}::{nonce}"
         cred_req_result = None
@@ -446,6 +485,7 @@ class V20CredManager:
         if not cred_req_result:
             cred_req_result = await _create_indy()
 
+        await self._check_uniqueness(cred_ex_record.cred_ex_id)
         detail_record = V20CredExRecordIndy(
             cred_ex_id=cred_ex_record.cred_ex_id,
             cred_request_metadata=cred_req_result["metadata"],
@@ -453,9 +493,16 @@ class V20CredManager:
 
         cred_request_message = V20CredRequest(
             comment=comment,
-            formats=[V20CredFormat(attach_id="0", format_=V20CredFormat.Format.INDY)],
+            formats=[
+                V20CredFormat(
+                    attach_id="0",
+                    format_=ATTACHMENT_FORMAT[CRED_20_REQUEST][
+                        V20CredFormat.Format.INDY.api
+                    ],
+                )
+            ],
             requests_attach=[
-                AttachDecorator.from_indy_dict(cred_req_result["request"], ident="0")
+                AttachDecorator.data_base64(cred_req_result["request"], ident="0")
             ],
         )
 
@@ -472,14 +519,14 @@ class V20CredManager:
         return (cred_ex_record, cred_request_message)
 
     async def receive_request(
-        self, cred_request_message: V20CredRequest, conn_id: str
+        self, cred_request_message: V20CredRequest, connection_id: str
     ) -> V20CredExRecord:
         """
         Receive a credential request.
 
         Args:
             cred_request_message: credential request to receive
-            conn_id: connection identifier
+            connection_id: connection identifier
 
         Returns:
             credential exchange record, retrieved and updated
@@ -490,7 +537,7 @@ class V20CredManager:
         async with self._profile.session() as session:
             cred_ex_record = await (
                 V20CredExRecord.retrieve_by_conn_and_thread(
-                    session, conn_id, cred_request_message._thread_id
+                    session, connection_id, cred_request_message._thread_id
                 )
             )
             cred_ex_record.cred_request = cred_request_message.serialize()
@@ -528,13 +575,13 @@ class V20CredManager:
 
         cred_offer_message = V20CredOffer.deserialize(cred_ex_record.cred_offer)
         replacement_id = cred_offer_message.replacement_id
-        cred_offer = cred_offer_message.offer(V20CredFormat.Format.INDY)
+        cred_offer = cred_offer_message.attachment(V20CredFormat.Format.INDY)
         schema_id = cred_offer["schema_id"]
         cred_def_id = cred_offer["cred_def_id"]
 
         cred_request = V20CredRequest.deserialize(
             cred_ex_record.cred_request
-        ).cred_request(
+        ).attachment(
             V20CredFormat.Format.INDY
         )  # will change for DIF
 
@@ -598,7 +645,7 @@ class V20CredManager:
                         )
                 if retries > 0:
                     LOGGER.info(
-                        ("Waiting 2s on posted rev reg " "for cred def %s, retrying"),
+                        "Waiting 2s on posted rev reg for cred def %s, retrying",
                         cred_def_id,
                     )
                     await asyncio.sleep(2)
@@ -609,7 +656,7 @@ class V20CredManager:
                     )
 
                 raise V20CredManagerError(
-                    f"Cred def id {cred_def_id} " "has no active revocation registry"
+                    f"Cred def id {cred_def_id} has no active revocation registry"
                 )
             del revoc
 
@@ -627,7 +674,7 @@ class V20CredManager:
                 rev_reg_id,
                 tails_path,
             )
-
+            await self._check_uniqueness(cred_ex_record.cred_ex_id)
             detail_record = V20CredExRecordIndy(
                 cred_ex_id=cred_ex_record.cred_ex_id,
                 rev_reg_id=rev_reg_id,
@@ -681,9 +728,16 @@ class V20CredManager:
         cred_issue_message = V20CredIssue(
             replacement_id=replacement_id,
             comment=comment,
-            formats=[V20CredFormat(attach_id="0", format_=V20CredFormat.Format.INDY)],
+            formats=[
+                V20CredFormat(
+                    attach_id="0",
+                    format_=ATTACHMENT_FORMAT[CRED_20_ISSUE][
+                        V20CredFormat.Format.INDY.api
+                    ],
+                )
+            ],
             credentials_attach=[
-                AttachDecorator.from_indy_dict(json.loads(cred_json), ident="0")
+                AttachDecorator.data_base64(json.loads(cred_json), ident="0")
             ],
         )
 
@@ -702,7 +756,7 @@ class V20CredManager:
         return (cred_ex_record, cred_issue_message)
 
     async def receive_credential(
-        self, cred_issue_message: V20CredIssue, conn_id: str
+        self, cred_issue_message: V20CredIssue, connection_id: str
     ) -> V20CredExRecord:
         """
         Receive a credential issue message from an issuer.
@@ -720,7 +774,7 @@ class V20CredManager:
             cred_ex_record = await (
                 V20CredExRecord.retrieve_by_conn_and_thread(
                     session,
-                    conn_id,
+                    connection_id,
                     cred_issue_message._thread_id,
                 )
             )
@@ -752,7 +806,7 @@ class V20CredManager:
                 f"(must be {V20CredExRecord.STATE_CREDENTIAL_RECEIVED})"
             )
 
-        cred = V20CredIssue.deserialize(cred_ex_record.cred_issue).cred(
+        cred = V20CredIssue.deserialize(cred_ex_record.cred_issue).attachment(
             V20CredFormat.Format.INDY
         )
 
@@ -820,14 +874,14 @@ class V20CredManager:
         return (cred_ex_record, cred_ack_message)
 
     async def receive_credential_ack(
-        self, cred_ack_message: V20CredAck, conn_id: str
+        self, cred_ack_message: V20CredAck, connection_id: str
     ) -> V20CredExRecord:
         """
         Receive credential ack from holder.
 
         Args:
             cred_ack_message: credential ack message to receive
-            conn_id: connection identifier
+            connection_id: connection identifier
 
         Returns:
             credential exchange record, retrieved and updated
@@ -838,7 +892,7 @@ class V20CredManager:
             cred_ex_record = await (
                 V20CredExRecord.retrieve_by_conn_and_thread(
                     session,
-                    conn_id,
+                    connection_id,
                     cred_ack_message._thread_id,
                 )
             )
@@ -856,14 +910,11 @@ class V20CredManager:
 
         async with self._profile.session() as session:
             for fmt in V20CredFormat.Format:  # details first: do not strand any orphans
-                try:
-                    detail_record = await fmt.detail.retrieve_by_cred_ex_id(
-                        session,
-                        cred_ex_id,
-                    )
-                    await detail_record.delete_record(session)
-                except StorageNotFoundError:
-                    pass
+                for record in await fmt.detail.query_by_cred_ex_id(
+                    session,
+                    cred_ex_id,
+                ):
+                    await record.delete_record(session)
 
             cred_ex_record = await V20CredExRecord.retrieve_by_id(session, cred_ex_id)
             await cred_ex_record.delete_record(session)

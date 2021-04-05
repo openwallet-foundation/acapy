@@ -1,5 +1,4 @@
-from asynctest import TestCase as AsyncTestCase
-from asynctest import mock as async_mock
+from asynctest import mock as async_mock, TestCase as AsyncTestCase
 
 from ...config.injection_context import InjectionContext
 
@@ -28,7 +27,7 @@ class TestIndyTailsServer(AsyncTestCase):
         indy_tails = test_module.IndyTailsServer()
 
         with async_mock.patch.object(
-            test_module, "put", async_mock.CoroutineMock()
+            test_module, "put_file", async_mock.CoroutineMock()
         ) as mock_put:
             mock_put.return_value = "tails-hash"
             (ok, text) = await indy_tails.upload_tails_file(
@@ -49,7 +48,7 @@ class TestIndyTailsServer(AsyncTestCase):
         indy_tails = test_module.IndyTailsServer()
 
         with async_mock.patch.object(
-            test_module, "put", async_mock.CoroutineMock()
+            test_module, "put_file", async_mock.CoroutineMock()
         ) as mock_put:
             mock_put.side_effect = test_module.PutError("Server down for maintenance")
 

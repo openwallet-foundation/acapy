@@ -8,7 +8,7 @@ An attach decorator embeds content or specifies appended content.
 import json
 import uuid
 
-from typing import Any, Mapping, Sequence, Union
+from typing import Any, Mapping, Sequence, Tuple, Union
 
 from marshmallow import EXCLUDE, fields, pre_load
 
@@ -228,7 +228,7 @@ class AttachDecoratorData(BaseModel):
         *,
         jws_: AttachDecoratorDataJWS = None,
         sha256_: str = None,
-        links_: Union[list, str] = None,
+        links_: Union[Sequence[str], str] = None,
         base64_: str = None,
         json_: dict = None,
     ):
@@ -244,7 +244,7 @@ class AttachDecoratorData(BaseModel):
         Args:
             jws_: detached JSON Web Signature over base64 or linked attachment content
             sha256_: optional sha-256 hash for content
-            links_: list or single URL of hyperlinks
+            links_: URL or list of URLs
             base64_: base64 encoded content for inclusion
             json_: dict content for inclusion as json
 
@@ -258,7 +258,7 @@ class AttachDecoratorData(BaseModel):
         elif json_:
             self.json_ = json_
         else:
-            assert isinstance(links_, (str, list))
+            assert isinstance(links_, (str, Sequence))
             self.links_ = [links_] if isinstance(links_, str) else list(links_)
         if sha256_:
             self.sha256_ = sha256_
@@ -546,20 +546,31 @@ class AttachDecorator(BaseModel):
         self.data = data
 
     @property
-    def indy_dict(self):
+    def content(self) -> Union[Mapping, Tuple[Sequence[str], str]]:
         """
-        Return indy data structure encoded in attachment.
+        Return attachment content.
 
-        Returns: dict with indy object in data attachment
+        Returns:
+            data attachment, decoded if necessary and json-loaded, or data links
+            and sha-256 hash.
 
         """
-        assert hasattr(self.data, "base64_")
-        return json.loads(b64_to_bytes(self.data.base64))
+        if hasattr(self.data, "base64_"):
+            return json.loads(b64_to_bytes(self.data.base64))
+        elif hasattr(self.data, "json_"):
+            return self.data.json
+        elif hasattr(self.data, "links_"):
+            return (  # fetching would be async; we want a property here
+                self.data.links,
+                self.data.sha256,
+            )
+        else:
+            return None
 
     @classmethod
-    def from_indy_dict(
+    def data_base64(
         cls,
-        indy_dict: dict,
+        mapping: Mapping,
         *,
         ident: str = None,
         description: str = None,
@@ -568,13 +579,13 @@ class AttachDecorator(BaseModel):
         byte_count: int = None,
     ):
         """
-        Create `AttachDecorator` instance from indy object (dict).
+        Create `AttachDecorator` instance on base64-encoded data from input mapping.
 
-        Given indy object (dict), JSON dump, base64-encode, and embed
+        Given mapping, JSON dump, base64-encode, and embed
         it as data; mark `application/json` MIME type.
 
         Args:
-            indy_dict: indy (dict) data structure
+            mapping: (dict) data structure; e.g., indy production
             ident: optional attachment identifier (default random UUID4)
             description: optional attachment description
             filename: optional attachment filename
@@ -590,14 +601,14 @@ class AttachDecorator(BaseModel):
             lastmod_time=lastmod_time,
             byte_count=byte_count,
             data=AttachDecoratorData(
-                base64_=bytes_to_b64(json.dumps(indy_dict).encode())
+                base64_=bytes_to_b64(json.dumps(mapping).encode())
             ),
         )
 
     @classmethod
-    def from_aries_msg(
+    def data_json(
         cls,
-        message: dict,
+        mapping: dict,
         *,
         ident: str = None,
         description: str = None,
@@ -606,13 +617,13 @@ class AttachDecorator(BaseModel):
         byte_count: int = None,
     ):
         """
-        Create `AttachDecorator` instance from an aries message.
+        Create `AttachDecorator` instance on json-encoded data from input mapping.
 
         Given message object (dict), JSON dump, and embed
         it as data; mark `application/json` MIME type.
 
         Args:
-            message: aries message (dict) data structure
+            mapping: (dict) data structure; e.g., Aries message
             ident: optional attachment identifier (default random UUID4)
             description: optional attachment description
             filename: optional attachment filename
@@ -627,7 +638,47 @@ class AttachDecorator(BaseModel):
             mime_type="application/json",
             lastmod_time=lastmod_time,
             byte_count=byte_count,
-            data=AttachDecoratorData(json_=message),
+            data=AttachDecoratorData(json_=mapping),
+        )
+
+    @classmethod
+    def data_links(
+        cls,
+        links: Union[str, Sequence[str]],
+        sha256: str = None,
+        *,
+        ident: str = None,
+        mime_type: str = None,
+        description: str = None,
+        filename: str = None,
+        lastmod_time: str = None,
+        byte_count: int = None,
+    ):
+        """
+        Create `AttachDecorator` instance on json-encoded data from input mapping.
+
+        Given message object (dict), JSON dump, and embed
+        it as data; mark `application/json` MIME type.
+
+        Args:
+            links: URL or list of URLs
+            sha256: optional sha-256 hash for content
+            ident: optional attachment identifier (default random UUID4)
+            mime_type: optional MIME type
+            description: optional attachment description
+            filename: optional attachment filename
+            lastmod_time: optional attachment last modification time
+            byte_count: optional attachment byte count
+
+        """
+        return AttachDecorator(
+            ident=ident or str(uuid.uuid4()),
+            description=description,
+            filename=filename,
+            mime_type=mime_type or "application/json",
+            lastmod_time=lastmod_time,
+            byte_count=byte_count,
+            data=AttachDecoratorData(sha256_=sha256, links_=links),
         )
 
 

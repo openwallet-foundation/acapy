@@ -1,68 +1,66 @@
-aries\_cloudagent\.utils package
-================================
+aries\_cloudagent.utils package
+===============================
 
 .. automodule:: aries_cloudagent.utils
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
 Submodules
 ----------
 
-aries\_cloudagent\.utils\.classloader module
---------------------------------------------
-
-.. automodule:: aries_cloudagent.utils.classloader
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-aries\_cloudagent\.utils\.http module
--------------------------------------
-
-.. automodule:: aries_cloudagent.utils.http
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-aries\_cloudagent\.utils\.outofband module
+aries\_cloudagent.utils.classloader module
 ------------------------------------------
 
-.. automodule:: aries_cloudagent.utils.outofband
-    :members:
-    :undoc-members:
-    :show-inheritance:
+.. automodule:: aries_cloudagent.utils.classloader
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
-aries\_cloudagent\.utils\.repeat module
----------------------------------------
+aries\_cloudagent.utils.http module
+-----------------------------------
 
-.. automodule:: aries_cloudagent.utils.repeat
-    :members:
-    :undoc-members:
-    :show-inheritance:
+.. automodule:: aries_cloudagent.utils.http
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
-aries\_cloudagent\.utils\.stats module
---------------------------------------
-
-.. automodule:: aries_cloudagent.utils.stats
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-aries\_cloudagent\.utils\.task\_queue module
---------------------------------------------
-
-.. automodule:: aries_cloudagent.utils.task_queue
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-aries\_cloudagent\.utils\.tracing module
+aries\_cloudagent.utils.outofband module
 ----------------------------------------
 
+.. automodule:: aries_cloudagent.utils.outofband
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+aries\_cloudagent.utils.repeat module
+-------------------------------------
+
+.. automodule:: aries_cloudagent.utils.repeat
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+aries\_cloudagent.utils.stats module
+------------------------------------
+
+.. automodule:: aries_cloudagent.utils.stats
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+aries\_cloudagent.utils.task\_queue module
+------------------------------------------
+
+.. automodule:: aries_cloudagent.utils.task_queue
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+aries\_cloudagent.utils.tracing module
+--------------------------------------
+
 .. automodule:: aries_cloudagent.utils.tracing
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-
+   :members:
+   :undoc-members:
+   :show-inheritance:

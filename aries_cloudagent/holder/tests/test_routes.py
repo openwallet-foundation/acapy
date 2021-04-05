@@ -9,8 +9,27 @@ from ...wallet.base import BaseWallet
 from ...admin.request_context import AdminRequestContext
 from ...indy.holder import IndyHolder
 from ...ledger.base import BaseLedger
+from ...storage.vc_holder.base import VCHolder
+from ...storage.vc_holder.vc_record import VCRecord
 
 from .. import routes as test_module
+
+VC_RECORD = VCRecord(
+    contexts=[
+        "https://www.w3.org/2018/credentials/v1",
+        "https://www.w3.org/2018/credentials/v1/examples",
+    ],
+    types=[
+        "VerifiableCredential",
+        "AlumniCredential",
+    ],
+    issuer_id="https://example.edu/issuers/565049",
+    subject_ids=["did:example:ebfeb1f712ebc6f1c276e12ec21"],
+    schema_ids=["https://example.org/examples/degree.json"],
+    cred_value={"...": "..."},
+    given_id="http://example.edu/credentials/3732",
+    cred_tags={"some": "tag"},
+)
 
 
 class TestHolderRoutes(AsyncTestCase):
@@ -165,7 +184,7 @@ class TestHolderRoutes(AsyncTestCase):
             IndyHolder,
             async_mock.MagicMock(
                 get_credentials=async_mock.CoroutineMock(
-                    return_value={"hello": "world"}
+                    return_value=[{"hello": "world"}]
                 )
             ),
         )
@@ -174,7 +193,7 @@ class TestHolderRoutes(AsyncTestCase):
             test_module.web, "json_response", async_mock.Mock()
         ) as json_response:
             result = await test_module.credentials_list(self.request)
-            json_response.assert_called_once_with({"results": {"hello": "world"}})
+            json_response.assert_called_once_with({"results": [{"hello": "world"}]})
             assert result is json_response.return_value
 
     async def test_credentials_list_x_holder(self):
@@ -190,6 +209,186 @@ class TestHolderRoutes(AsyncTestCase):
 
         with self.assertRaises(test_module.web.HTTPBadRequest):
             await test_module.credentials_list(self.request)
+
+    async def test_w3c_cred_get(self):
+        self.request.match_info = {"credential_id": "dummy"}
+        self.context.injector.bind_instance(
+            VCHolder,
+            async_mock.MagicMock(
+                retrieve_credential_by_id=async_mock.CoroutineMock(
+                    return_value=VC_RECORD
+                )
+            ),
+        )
+
+        with async_mock.patch.object(
+            test_module.web, "json_response", async_mock.Mock()
+        ) as json_response:
+            result = await test_module.w3c_cred_get(self.request)
+            json_response.assert_called_once_with(VC_RECORD.serialize())
+
+    async def test_w3c_cred_get_not_found_x(self):
+        self.request.match_info = {"credential_id": "dummy"}
+        self.context.injector.bind_instance(
+            VCHolder,
+            async_mock.MagicMock(
+                retrieve_credential_by_id=async_mock.CoroutineMock(
+                    side_effect=test_module.StorageNotFoundError()
+                )
+            ),
+        )
+
+        with self.assertRaises(test_module.web.HTTPNotFound):
+            await test_module.w3c_cred_get(self.request)
+
+    async def test_w3c_cred_get_storage_x(self):
+        self.request.match_info = {"credential_id": "dummy"}
+        self.context.injector.bind_instance(
+            VCHolder,
+            async_mock.MagicMock(
+                retrieve_credential_by_id=async_mock.CoroutineMock(
+                    side_effect=test_module.StorageError()
+                )
+            ),
+        )
+
+        with self.assertRaises(test_module.web.HTTPBadRequest):
+            await test_module.w3c_cred_get(self.request)
+
+    async def test_w3c_cred_remove(self):
+        self.request.match_info = {"credential_id": "dummy"}
+        self.context.injector.bind_instance(
+            VCHolder,
+            async_mock.MagicMock(
+                retrieve_credential_by_id=async_mock.CoroutineMock(
+                    return_value=VC_RECORD
+                ),
+                delete_credential=async_mock.CoroutineMock(return_value=None),
+            ),
+        )
+
+        with async_mock.patch.object(
+            test_module.web, "json_response", async_mock.Mock()
+        ) as json_response:
+            result = await test_module.w3c_cred_remove(self.request)
+            json_response.assert_called_once_with({})
+            assert result is json_response.return_value
+
+    async def test_w3c_cred_remove_not_found_x(self):
+        self.request.match_info = {"credential_id": "dummy"}
+        self.context.injector.bind_instance(
+            VCHolder,
+            async_mock.MagicMock(
+                retrieve_credential_by_id=async_mock.CoroutineMock(
+                    side_effect=test_module.StorageNotFoundError()
+                )
+            ),
+        )
+
+        with self.assertRaises(test_module.web.HTTPNotFound):
+            await test_module.w3c_cred_remove(self.request)
+
+    async def test_w3c_cred_remove_storage_x(self):
+        self.request.match_info = {"credential_id": "dummy"}
+        self.context.injector.bind_instance(
+            VCHolder,
+            async_mock.MagicMock(
+                retrieve_credential_by_id=async_mock.CoroutineMock(
+                    return_value=VC_RECORD
+                ),
+                delete_credential=async_mock.CoroutineMock(
+                    side_effect=test_module.StorageError()
+                ),
+            ),
+        )
+
+        with self.assertRaises(test_module.web.HTTPBadRequest):
+            await test_module.w3c_cred_remove(self.request)
+
+    async def test_w3c_creds_list(self):
+        self.request.json = async_mock.CoroutineMock(
+            return_value={
+                "types": [
+                    "VerifiableCredential",
+                    "AlumniCredential",
+                ],
+                "issuer_id": "https://example.edu/issuers/565049",
+                "subject_id": "did:example:ebfeb1f712ebc6f1c276e12ec21",
+                "max_results": "1",
+            }
+        )
+        self.context.injector.bind_instance(
+            VCHolder,
+            async_mock.MagicMock(
+                search_credentials=async_mock.MagicMock(
+                    return_value=async_mock.MagicMock(
+                        fetch=async_mock.CoroutineMock(return_value=[VC_RECORD])
+                    )
+                )
+            ),
+        )
+
+        with async_mock.patch.object(
+            test_module.web, "json_response", async_mock.Mock()
+        ) as json_response:
+            result = await test_module.w3c_creds_list(self.request)
+            json_response.assert_called_once_with({"results": [VC_RECORD.serialize()]})
+
+    async def test_w3c_creds_list_not_found_x(self):
+        self.request.json = async_mock.CoroutineMock(
+            return_value={
+                "types": [
+                    "VerifiableCredential",
+                    "AlumniCredential",
+                ],
+                "issuer_id": "https://example.edu/issuers/565049",
+                "subject_id": "did:example:ebfeb1f712ebc6f1c276e12ec21",
+                "max_results": "1",
+            }
+        )
+        self.context.injector.bind_instance(
+            VCHolder,
+            async_mock.MagicMock(
+                search_credentials=async_mock.MagicMock(
+                    return_value=async_mock.MagicMock(
+                        fetch=async_mock.CoroutineMock(
+                            side_effect=test_module.StorageNotFoundError()
+                        )
+                    )
+                )
+            ),
+        )
+
+        with self.assertRaises(test_module.web.HTTPNotFound):
+            await test_module.w3c_creds_list(self.request)
+
+    async def test_w3c_creds_list_storage_x(self):
+        self.request.json = async_mock.CoroutineMock(
+            return_value={
+                "types": [
+                    "VerifiableCredential",
+                    "AlumniCredential",
+                ],
+                "issuer_id": "https://example.edu/issuers/565049",
+                "subject_id": "did:example:ebfeb1f712ebc6f1c276e12ec21",
+                "max_results": "1",
+            }
+        )
+        self.context.injector.bind_instance(
+            VCHolder,
+            async_mock.MagicMock(
+                search_credentials=async_mock.MagicMock(
+                    return_value=async_mock.MagicMock(
+                        fetch=async_mock.CoroutineMock(
+                            side_effect=test_module.StorageError()
+                        )
+                    )
+                )
+            ),
+        )
+
+        with self.assertRaises(test_module.web.HTTPBadRequest):
+            await test_module.w3c_creds_list(self.request)
 
     async def test_register(self):
         mock_app = async_mock.MagicMock()

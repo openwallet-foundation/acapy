@@ -61,7 +61,10 @@ class TestDIDXRequestHandler(AsyncTestCase):
 
     async def setUp(self):
         self.ctx = RequestContext.test_context()
-        self.ctx.message_receipt = MessageReceipt()
+        self.ctx.message_receipt = MessageReceipt(
+            recipient_did="dummy",
+            recipient_did_public=True,
+        )
         self.session = InMemoryProfile.test_session(
             {
                 "default_endpoint": "http://localhost",
@@ -85,7 +88,7 @@ class TestDIDXRequestHandler(AsyncTestCase):
         wallet = self.session.wallet
         self.did_info = await wallet.create_local_did()
 
-        self.did_doc_attach = AttachDecorator.from_indy_dict(self.did_doc().serialize())
+        self.did_doc_attach = AttachDecorator.data_base64(self.did_doc().serialize())
         await self.did_doc_attach.data.sign(self.did_info.verkey, wallet)
 
         self.request = DIDXRequest(
@@ -128,8 +131,9 @@ class TestDIDXRequestHandler(AsyncTestCase):
         responder = MockResponder()
         await handler_inst.handle(self.ctx, responder)
         mock_didx_mgr.return_value.receive_request.assert_called_once_with(
-            self.ctx.message,
-            self.ctx.message_receipt,
+            request=self.ctx.message,
+            recipient_did=self.ctx.message_receipt.recipient_did,
+            recipient_verkey=None,
             mediation_id=None,
         )
         assert not responder.messages
@@ -143,7 +147,10 @@ class TestDIDXRequestHandler(AsyncTestCase):
         await handler_inst.handle(self.ctx, responder)
 
         mock_didx_mgr.return_value.receive_request.assert_called_once_with(
-            self.ctx.message, self.ctx.message_receipt, mediation_id=None
+            request=self.ctx.message,
+            recipient_did=self.ctx.message_receipt.recipient_did,
+            recipient_verkey=None,
+            mediation_id=None,
         )
         assert not responder.messages
 

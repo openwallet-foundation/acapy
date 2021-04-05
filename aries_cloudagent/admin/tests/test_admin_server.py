@@ -185,6 +185,93 @@ class TestAdminServer(AsyncTestCase):
         server = self.get_admin_server({"admin.admin_insecure_mode": True}, context)
         app = await server.make_application()
 
+    async def test_import_routes_multitenant_middleware(self):
+        # imports all default admin routes
+        context = InjectionContext()
+        context.injector.bind_instance(ProtocolRegistry, ProtocolRegistry())
+        profile = InMemoryProfile.test_profile()
+        context.injector.bind_instance(
+            test_module.MultitenantManager,
+            test_module.MultitenantManager(profile),
+        )
+        await DefaultContextBuilder().load_plugins(context)
+        server = self.get_admin_server(
+            {
+                "admin.admin_insecure_mode": False,
+                "admin.admin_api_key": "test-api-key",
+            },
+            context,
+        )
+
+        # cover multitenancy start code
+        app = await server.make_application()
+        app["swagger_dict"] = {}
+        await server.on_startup(app)
+
+        # multitenant authz
+        [mt_authz_middle] = [
+            m for m in app.middlewares if ".check_multitenant_authorization" in str(m)
+        ]
+
+        mock_request = async_mock.MagicMock(
+            method="GET",
+            headers={"Authorization": "Bearer ..."},
+            path="/multitenancy/etc",
+            text=async_mock.CoroutineMock(return_value="abc123"),
+        )
+        with self.assertRaises(test_module.web.HTTPUnauthorized):
+            await mt_authz_middle(mock_request, None)
+
+        mock_request = async_mock.MagicMock(
+            method="GET",
+            headers={},
+            path="/protected/non-multitenancy/non-server",
+            text=async_mock.CoroutineMock(return_value="abc123"),
+        )
+        with self.assertRaises(test_module.web.HTTPUnauthorized):
+            await mt_authz_middle(mock_request, None)
+
+        mock_request = async_mock.MagicMock(
+            method="GET",
+            headers={"Authorization": "Bearer ..."},
+            path="/protected/non-multitenancy/non-server",
+            text=async_mock.CoroutineMock(return_value="abc123"),
+        )
+        mock_handler = async_mock.CoroutineMock()
+        await mt_authz_middle(mock_request, mock_handler)
+        assert mock_handler.called_once_with(mock_request)
+
+        # multitenant setup context exception paths
+        [setup_ctx_middle] = [m for m in app.middlewares if ".setup_context" in str(m)]
+
+        mock_request = async_mock.MagicMock(
+            method="GET",
+            headers={"Authorization": "Non-bearer ..."},
+            path="/protected/non-multitenancy/non-server",
+            text=async_mock.CoroutineMock(return_value="abc123"),
+        )
+        with self.assertRaises(test_module.web.HTTPUnauthorized):
+            await setup_ctx_middle(mock_request, None)
+
+        mock_request = async_mock.MagicMock(
+            method="GET",
+            headers={"Authorization": "Bearer ..."},
+            path="/protected/non-multitenancy/non-server",
+            text=async_mock.CoroutineMock(return_value="abc123"),
+        )
+        with async_mock.patch.object(
+            server.multitenant_manager,
+            "get_profile_for_token",
+            async_mock.CoroutineMock(),
+        ) as mock_get_profile:
+            mock_get_profile.side_effect = [
+                test_module.MultitenantManagerError("corrupt token"),
+                test_module.StorageNotFoundError("out of memory"),
+            ]
+            for i in range(2):
+                with self.assertRaises(test_module.web.HTTPUnauthorized):
+                    await setup_ctx_middle(mock_request, None)
+
     async def test_register_external_plugin_x(self):
         context = InjectionContext()
         context.injector.bind_instance(ProtocolRegistry, ProtocolRegistry())

@@ -4,8 +4,8 @@ from marshmallow import fields
 
 from ..models.openapi import OpenAPISchema
 from ..valid import (
-    INDY_CRED_DEF_ID,
     INDY_DID,
+    INDY_CRED_DEF_ID,
     INDY_SCHEMA_ID,
     INDY_VERSION,
 )
@@ -47,4 +47,6 @@ class CredDefQueryStringSchema(OpenAPISchema):
     )
 
 
-CRED_DEF_TAGS = [tag for tag in vars(CredDefQueryStringSchema)["_declared_fields"]]
+CRED_DEF_TAGS = [
+    tag for tag in vars(CredDefQueryStringSchema).get("_declared_fields", [])
+]

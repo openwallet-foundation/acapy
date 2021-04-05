@@ -1340,8 +1340,6 @@ class TestCredentialRoutes(AsyncTestCase):
         with async_mock.patch.object(
             test_module, "ConnRecord", autospec=True
         ) as mock_conn_rec, async_mock.patch.object(
-            test_module, "CredentialManager", autospec=True
-        ) as mock_credential_manager, async_mock.patch.object(
             test_module, "V10CredentialExchange", autospec=True
         ) as mock_cred_ex, async_mock.patch.object(
             test_module, "ProblemReport", autospec=True
@@ -1359,7 +1357,7 @@ class TestCredentialRoutes(AsyncTestCase):
                 connection_id=mock_cred_ex.retrieve_by_id.return_value.connection_id,
             )
 
-    async def test_credential_exchange_problem_report_bad_cred_id(self):
+    async def test_credential_exchange_problem_report_bad_cred_ex_id(self):
         self.request.json = async_mock.CoroutineMock()
         self.request.match_info = {"cred_ex_id": "dummy"}
 

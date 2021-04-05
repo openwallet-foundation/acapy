@@ -8,6 +8,12 @@ from .....core.profile import ProfileSession
 from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
 from .....messaging.valid import UUIDFour
 
+from ..messages.cred_format import V20CredFormat
+from ..messages.cred_issue import V20CredIssue
+from ..messages.cred_proposal import V20CredProposal
+from ..messages.cred_offer import V20CredOffer
+from ..messages.cred_request import V20CredRequest
+
 from . import UNENCRYPTED_TAGS
 
 
@@ -43,7 +49,7 @@ class V20CredExRecord(BaseExchangeRecord):
         self,
         *,
         cred_ex_id: str = None,
-        conn_id: str = None,
+        connection_id: str = None,
         thread_id: str = None,
         parent_thread_id: str = None,
         initiator: str = None,
@@ -60,12 +66,14 @@ class V20CredExRecord(BaseExchangeRecord):
         auto_remove: bool = True,
         error_msg: str = None,
         trace: bool = False,
+        conn_id: str = None,  # for backward compatibility to restore from storage
+        by_format: Mapping = None,  # formalism for base_record.from_storage()
         **kwargs,
     ):
         """Initialize a new V20CredExRecord."""
         super().__init__(cred_ex_id, state, trace=trace, **kwargs)
         self._id = cred_ex_id
-        self.conn_id = conn_id
+        self.connection_id = connection_id or conn_id
         self.thread_id = thread_id
         self.parent_thread_id = parent_thread_id
         self.initiator = initiator
@@ -89,11 +97,6 @@ class V20CredExRecord(BaseExchangeRecord):
         return self._id
 
     @property
-    def connection_id(self) -> str:
-        """Synonym for conn_id."""
-        return self.conn_id
-
-    @property
     def cred_preview(self) -> Mapping:
         """Credential preview from credential proposal."""
         return (
@@ -106,7 +109,7 @@ class V20CredExRecord(BaseExchangeRecord):
         return {
             prop: getattr(self, prop)
             for prop in (
-                "conn_id",
+                "connection_id",
                 "parent_thread_id",
                 "initiator",
                 "role",
@@ -127,10 +130,10 @@ class V20CredExRecord(BaseExchangeRecord):
 
     @classmethod
     async def retrieve_by_conn_and_thread(
-        cls, session: ProfileSession, conn_id: str, thread_id: str
+        cls, session: ProfileSession, connection_id: str, thread_id: str
     ) -> "V20CredExRecord":
         """Retrieve a credential exchange record by connection and thread ID."""
-        cache_key = f"credential_exchange_ctidx::{conn_id}::{thread_id}"
+        cache_key = f"credential_exchange_ctidx::{connection_id}::{thread_id}"
         record_id = await cls.get_cached_key(session, cache_key)
         if record_id:
             record = await cls.retrieve_by_id(session, record_id)
@@ -138,10 +141,36 @@ class V20CredExRecord(BaseExchangeRecord):
             record = await cls.retrieve_by_tag_filter(
                 session,
                 {"thread_id": thread_id},
-                {"conn_id": conn_id} if conn_id else None,
+                {"connection_id": connection_id} if connection_id else None,
             )
             await cls.set_cached_key(session, cache_key, record.cred_ex_id)
         return record
+
+    @property
+    def by_format(self) -> Mapping:
+        """Record proposal, offer, request, and credential attachments by format."""
+        result = {}
+        for item, cls in {
+            "cred_proposal": V20CredProposal,
+            "cred_offer": V20CredOffer,
+            "cred_request": V20CredRequest,
+            "cred_issue": V20CredIssue,
+        }.items():
+            mapping = getattr(self, item)
+            if mapping:
+                msg = cls.deserialize(mapping)
+                result.update(
+                    {
+                        item: {
+                            V20CredFormat.Format.get(f.format).api: msg.attachment(
+                                V20CredFormat.Format.get(f.format)
+                            )
+                            for f in msg.formats
+                        }
+                    }
+                )
+
+        return result
 
     def __eq__(self, other: Any) -> bool:
         """Comparison between records."""
@@ -161,7 +190,7 @@ class V20CredExRecordSchema(BaseExchangeSchema):
         description="Credential exchange identifier",
         example=UUIDFour.EXAMPLE,
     )
-    conn_id = fields.Str(
+    connection_id = fields.Str(
         required=False, description="Connection identifier", example=UUIDFour.EXAMPLE
     )
     thread_id = fields.Str(

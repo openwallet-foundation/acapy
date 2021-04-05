@@ -1,0 +1,16 @@
+{
+   "presentation_proposal": {
+      "requested_attributes": {
+         "health_attrs": {
+            "name": "health_id_num",
+            "restrictions": [
+               {
+                  "schema_name": "Schema_Health_ID",
+                  "schema_version": "1.0.0"
+               }
+            ]
+         }
+      },
+      "version": "0.1.0"
+   }
+}

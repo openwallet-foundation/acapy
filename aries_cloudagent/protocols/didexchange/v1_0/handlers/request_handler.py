@@ -32,8 +32,13 @@ class DIDXRequestHandler(BaseHandler):
             mediation_metadata = {}
         try:
             await mgr.receive_request(
-                context.message,
-                context.message_receipt,
+                request=context.message,
+                recipient_did=context.message_receipt.recipient_did,
+                recipient_verkey=(
+                    None
+                    if context.message_receipt.recipient_did_public
+                    else context.message_receipt.recipient_verkey
+                ),
                 mediation_id=mediation_metadata.get("id"),
             )
         except DIDXManagerError as e:

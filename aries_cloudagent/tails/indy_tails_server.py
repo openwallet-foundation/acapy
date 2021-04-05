@@ -1,6 +1,8 @@
 """Indy tails server interface class."""
 
-from ..utils.http import put, PutError
+from typing import Tuple
+
+from ..utils.http import put_file, PutError
 
 from .base import BaseTailsServer
 from .error import TailsServerNotConfiguredError
@@ -17,7 +19,7 @@ class IndyTailsServer(BaseTailsServer):
         interval: float = 1.0,
         backoff: float = 0.25,
         max_attempts: int = 5,
-    ) -> (bool, str):
+    ) -> Tuple[bool, str]:
         """Upload tails file to tails server.
 
         Args:
@@ -40,7 +42,7 @@ class IndyTailsServer(BaseTailsServer):
         try:
             return (
                 True,
-                await put(
+                await put_file(
                     f"{tails_server_upload_url}/{rev_reg_id}",
                     {"tails": tails_file_path},
                     {"genesis": genesis_transactions},

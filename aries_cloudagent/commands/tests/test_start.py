@@ -1,7 +1,9 @@
-from asynctest import TestCase as AsyncTestCase
-from asynctest import mock as async_mock
+import sys
+
+from asynctest import mock as async_mock, TestCase as AsyncTestCase
 
 from ...config.error import ArgsParseError
+
 from .. import start as test_module
 
 
@@ -32,7 +34,6 @@ class TestStart(AsyncTestCase):
         ) as shutdown_app, async_mock.patch.object(
             test_module, "uvloop", async_mock.MagicMock()
         ) as mock_uvloop:
-            test_module.os.environ["WEBHOOK_URL"] = "http://localhost"
             mock_uvloop.install = async_mock.MagicMock()
             test_module.execute(
                 [
@@ -80,8 +81,14 @@ class TestStart(AsyncTestCase):
                 async_mock.MagicMock(cancel=async_mock.MagicMock()),
             ]
             mock_asyncio.gather = async_mock.CoroutineMock()
-            mock_asyncio.Task.all_tasks.return_value = tasks
-            mock_asyncio.Task.current_task.return_value = tasks[0]
+
+            if sys.version_info.major == 3 and sys.version_info.minor > 6:
+                mock_asyncio.all_tasks.return_value = tasks
+                mock_asyncio.current_task.return_value = tasks[0]
+            else:
+                mock_asyncio.Task.all_tasks.return_value = tasks
+                mock_asyncio.Task.current_task.return_value = tasks[0]
+
             await done_coro
             shutdown.assert_awaited_once()
 
@@ -110,8 +117,14 @@ class TestStart(AsyncTestCase):
             done_coro = mock_asyncio.ensure_future.call_args[0][0]
             task = async_mock.MagicMock()
             mock_asyncio.gather = async_mock.CoroutineMock()
-            mock_asyncio.Task.all_tasks.return_value = [task]
-            mock_asyncio.Task.current_task.return_value = task
+
+            if sys.version_info.major == 3 and sys.version_info.minor > 6:
+                mock_asyncio.all_tasks.return_value = [task]
+                mock_asyncio.current_task.return_value = task
+            else:
+                mock_asyncio.Task.all_tasks.return_value = [task]
+                mock_asyncio.Task.current_task.return_value = task
+
             await done_coro
             shutdown.assert_awaited_once()
             mock_logger.exception.assert_called_once()

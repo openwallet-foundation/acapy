@@ -1,0 +1,30 @@
+{
+    "presentation_proposal": {
+        "name": "Biological Indicator A Proof",
+        "requested_attributes": {
+            "bioindicators_attrs": {
+                "name": "name",
+                "restrictions": [
+                    {
+                        "schema_name": "Schema_Biological_Indicators",
+                        "schema_version": "0.2.0"
+                    }
+                ]
+            }
+        },
+        "requested_predicates": {
+            "concentration": {
+                "name": "concentration",
+                "p_type": ">",
+                "p_value": 1,
+                "restrictions": [
+                    {
+                        "schema_name": "Schema_Biological_Indicators",
+                        "schema_version": "0.2.0"
+                    }
+                ]
+            }
+        },
+        "version": "0.1.0"
+    }
+}

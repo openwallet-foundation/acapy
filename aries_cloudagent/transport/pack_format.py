@@ -14,7 +14,7 @@ from ..utils.task_queue import TaskQueue
 from ..wallet.base import BaseWallet
 from ..wallet.error import WalletError
 
-from .error import MessageParseError, MessageEncodeError, RecipientKeysError
+from .error import WireFormatParseError, WireFormatEncodeError, RecipientKeysError
 from .inbound.receipt import MessageReceipt
 from .wire_format import BaseWireFormat
 
@@ -45,8 +45,8 @@ class PackWireFormat(BaseWireFormat):
             A tuple of the parsed message and a message receipt instance
 
         Raises:
-            MessageParseError: If the JSON parsing failed
-            MessageParseError: If a wallet is required but can't be located
+            WireFormatParseError: If the JSON parsing failed
+            WireFormatParseError: If a wallet is required but can't be located
 
         """
 
@@ -58,14 +58,14 @@ class PackWireFormat(BaseWireFormat):
         message_json = message_body
 
         if not message_json:
-            raise MessageParseError("Message body is empty")
+            raise WireFormatParseError("Message body is empty")
 
         try:
             message_dict = json.loads(message_json)
         except ValueError:
-            raise MessageParseError("Message JSON parsing failed")
+            raise WireFormatParseError("Message JSON parsing failed")
         if not isinstance(message_dict, dict):
-            raise MessageParseError("Message JSON result is not an object")
+            raise WireFormatParseError("Message JSON result is not an object")
 
         # packed messages are detected by the absence of @type
         if "@type" not in message_dict:
@@ -75,16 +75,16 @@ class PackWireFormat(BaseWireFormat):
                 message_json = await (
                     self.task_queue and self.task_queue.run(unpack) or unpack
                 )
-            except MessageParseError:
+            except WireFormatParseError:
                 LOGGER.debug("Message unpack failed, falling back to JSON")
             else:
                 receipt.raw_message = message_json
                 try:
                     message_dict = json.loads(message_json)
                 except ValueError:
-                    raise MessageParseError("Message JSON parsing failed")
+                    raise WireFormatParseError("Message JSON parsing failed")
                 if not isinstance(message_dict, dict):
-                    raise MessageParseError("Message JSON result is not an object")
+                    raise WireFormatParseError("Message JSON result is not an object")
 
         # parse thread ID
         thread_dec = message_dict.get("~thread")
@@ -110,7 +110,7 @@ class PackWireFormat(BaseWireFormat):
         """Look up the wallet instance and perform the message unpack."""
         wallet = session.inject(BaseWallet, required=False)
         if not wallet:
-            raise MessageParseError("Wallet not defined in profile session")
+            raise WireFormatParseError("Wallet not defined in profile session")
 
         try:
             unpacked = await wallet.unpack_message(message_body)
@@ -121,7 +121,7 @@ class PackWireFormat(BaseWireFormat):
             ) = unpacked
             return message_json
         except WalletError as e:
-            raise MessageParseError("Message unpack failed") from e
+            raise WireFormatParseError("Message unpack failed") from e
 
     async def encode_message(
         self,
@@ -168,18 +168,18 @@ class PackWireFormat(BaseWireFormat):
     ):
         """Look up the wallet instance and perform the message pack."""
         if not sender_key or not recipient_keys:
-            raise MessageEncodeError("Cannot pack message without associated keys")
+            raise WireFormatEncodeError("Cannot pack message without associated keys")
 
         wallet = session.inject(BaseWallet, required=False)
         if not wallet:
-            raise MessageEncodeError("No wallet instance")
+            raise WireFormatEncodeError("No wallet instance")
 
         try:
             message = await wallet.pack_message(
                 message_json, recipient_keys, sender_key
             )
         except WalletError as e:
-            raise MessageEncodeError("Message pack failed") from e
+            raise WireFormatEncodeError("Message pack failed") from e
 
         if routing_keys:
             recip_keys = recipient_keys
@@ -191,7 +191,7 @@ class PackWireFormat(BaseWireFormat):
                 try:
                     message = await wallet.pack_message(fwd_msg.to_json(), recip_keys)
                 except WalletError as e:
-                    raise MessageEncodeError("Forward message pack failed") from e
+                    raise WireFormatEncodeError("Forward message pack failed") from e
         return message
 
     def get_recipient_keys(self, message_body: Union[str, bytes]) -> List[str]:
