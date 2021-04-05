@@ -41,8 +41,8 @@ from .request_context import AdminRequestContext
 
 LOGGER = logging.getLogger(__name__)
 
-EVENT_PATTERN_ACAPY = re.compile("^acapy::(.*)$")
 EVENT_PATTERN_WEBHOOK = re.compile("^acapy::webhook::(.*)$")
+EVENT_PATTERN_RECORD = re.compile("^acapy::record::(.*)::(.*)$")
 
 EVENT_WEBHOOK_MAPPING = {
     "acapy::basicmessage::received": "basicmessages",
@@ -416,7 +416,16 @@ class AdminServer(BaseAdminServer):
 
         event_bus = self.context.inject(EventBus, required=False)
         if event_bus:
-            event_bus.subscribe(EVENT_PATTERN_ACAPY, self.__on_acapy_event)
+            event_bus.subscribe(EVENT_PATTERN_WEBHOOK, self.__on_webhook_event)
+            event_bus.subscribe(EVENT_PATTERN_RECORD, self.__on_record_event)
+
+            for event_topic, webhook_topic in EVENT_WEBHOOK_MAPPING.items():
+                event_bus.subscribe(
+                    re.compile(re.escape(event_topic)),
+                    lambda profile, event: self.send_webhook(
+                        profile, webhook_topic, event.payload
+                    ),
+                )
 
         # order tags alphabetically, parameters deterministically and pythonically
         swagger_dict = self.app._state["swagger_dict"]
@@ -706,12 +715,15 @@ class AdminServer(BaseAdminServer):
 
         return ws
 
-    async def __on_acapy_event(self, profile: Profile, event: Event):
-        webhook_topic = EVENT_WEBHOOK_MAPPING.get(event.topic)
-        if not webhook_topic:
-            match = EVENT_PATTERN_WEBHOOK.search(event.topic)
-            webhook_topic = match.group(1) if match else None
+    async def __on_webhook_event(self, profile: Profile, event: Event):
+        match = EVENT_PATTERN_WEBHOOK.search(event.topic)
+        webhook_topic = match.group(1) if match else None
+        if webhook_topic:
+            await self.send_webhook(profile, webhook_topic, event.payload)
 
+    async def __on_record_event(self, profile: Profile, event: Event):
+        match = EVENT_PATTERN_RECORD.search(event.topic)
+        webhook_topic = match.group(1) if match else None
         if webhook_topic:
             await self.send_webhook(profile, webhook_topic, event.payload)
 
