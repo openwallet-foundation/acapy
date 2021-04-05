@@ -33,7 +33,6 @@ from pydid import (
     DID,
     DIDCommService,
 )
-import json
 
 
 class BaseConnectionManagerError(BaseError):
@@ -169,14 +168,12 @@ class BaseConnectionManager:
         except StorageNotFoundError:
             record = StorageRecord(
                 self.RECORD_TYPE_DID_DOC,
-                json.dumps(did_doc.serialize()),
+                did_doc.to_json(),
                 {"did": did_doc.id},
             )
             await storage.add_record(record)
         else:
-            await storage.update_record(
-                record, did_doc.serialize(), {"did": did_doc.id}
-            )
+            await storage.update_record(record, did_doc.to_json(), {"did": did_doc.id})
         await self.remove_keys_for_did(did_doc.id)
         for key in did_doc.verification_method:
             if key.controller == did_doc.id:
