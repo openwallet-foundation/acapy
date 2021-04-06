@@ -76,7 +76,7 @@ class MockResolver(BaseDIDResolver):
     async def _resolve(self, profile, did):
         if isinstance(self.resolved, Exception):
             raise self.resolved
-        return self.resolved
+        return self.resolved.serialize()
 
 
 @pytest.fixture

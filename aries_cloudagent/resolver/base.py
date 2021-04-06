@@ -68,8 +68,12 @@ class BaseDIDResolver(ABC):
             raise DIDMethodNotSupported(
                 f"{did.method} is not supported by {self.__class__.__name__} resolver."
             )
-        return await self._resolve(profile, did)
+
+        did = str(did)
+        did_document = await self._resolve(profile, did)
+        result = DIDDocument.deserialize(did_document)
+        return result
 
     @abstractmethod
-    async def _resolve(self, profile: Profile, did: DID) -> DIDDocument:
+    async def _resolve(self, profile: Profile, did: DID) -> dict:
         """Resolve a DID using this resolver."""
