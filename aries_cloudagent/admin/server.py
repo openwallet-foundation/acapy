@@ -367,10 +367,10 @@ class AdminServer(BaseAdminServer):
         app = web.Application(
             middlewares=middlewares,
             client_max_size=(
-                self.context.settings.get(
-                    "admin.admin_client_max_request_size", 1
-                ) * 1024 * 1024
-            )
+                self.context.settings.get("admin.admin_client_max_request_size", 1)
+                * 1024
+                * 1024
+            ),
         )
 
         server_routes = [
