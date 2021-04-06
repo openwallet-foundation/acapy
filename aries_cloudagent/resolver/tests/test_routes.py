@@ -4,15 +4,15 @@
 
 import pytest
 from asynctest import mock as async_mock
+from pydid import DIDDocument
 
 from ...admin.request_context import AdminRequestContext
-from ...connections.models.diddoc_v2.diddoc import DIDDoc
 from .. import routes as test_module
 from ..base import DIDMethodNotSupported, DIDNotFound, ResolverError
 from ..did_resolver import DIDResolver
 from . import DOC
 
-did_doc = DIDDoc.deserialize(DOC)
+did_doc = DIDDocument.deserialize(DOC)
 
 
 @pytest.fixture

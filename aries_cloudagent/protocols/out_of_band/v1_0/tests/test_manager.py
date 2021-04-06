@@ -10,12 +10,8 @@ from uuid import UUID
 
 from .....connections.models.conn_record import ConnRecord
 from .....connections.models.connection_target import ConnectionTarget
-from .....connections.models.diddoc_v2 import (
-    DIDDoc,
-    VerificationMethod,
-    PublicKeyType,
-    Service,
-)
+from pydid import DIDDocumentBuilder, VerificationSuite
+
 from .....core.in_memory import InMemoryProfile
 from .....indy.holder import IndyHolder
 from .....ledger.base import BaseLedger
@@ -189,28 +185,24 @@ class TestConfig:
     cred_req_meta = {}
 
     def make_did_doc(self, did, verkey):
-        doc = DIDDoc(did)
-        controller = did
+        builder = DIDDocumentBuilder(did)
         pk_value = verkey
-        pk = VerificationMethod(
+        pk = builder.verification_methods.add(
             "{}#{}".format(did, "1"),
-            PublicKeyType.ED25519_SIG_2018,
-            controller,
-            value=pk_value,
+            ident="1",
+            suite=VerificationSuite("Ed25519VerificationKey2018", "publicKeyBase58"),
+            material=verkey,
             authn=False,
         )
-        doc.set(pk)
-        recip_keys = [pk]
-        router_keys = []
-        service = Service(
+        builder.services.add_didcomm(
             "{}#{}".format(did, "indy"),
-            "IndyAgent",
-            recip_keys,
-            router_keys,
-            self.test_endpoint,
+            endpoint=self.test_endpoint,
+            type_="IndyAgent",
+            recipient_keys=[pk],
+            routing_keys=[],
         )
-        doc.set(service)
-        return doc
+
+        return builder.build()
 
 
 class TestOOBManager(AsyncTestCase, TestConfig):

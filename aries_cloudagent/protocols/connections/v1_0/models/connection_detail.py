@@ -2,30 +2,30 @@
 
 from marshmallow import EXCLUDE, fields
 
-from .....connections.models.diddoc_v2 import DIDDoc
+from pydid import DIDDocument
 from .....messaging.models.base import BaseModel, BaseModelSchema
 from .....messaging.valid import INDY_DID
 
 
 class DIDDocWrapper(fields.Field):
-    """Field that loads and serializes DIDDoc."""
+    """Field that loads and serializes DIDDocument."""
 
     def _serialize(self, value, attr, obj, **kwargs):
         """
-        Serialize the DIDDoc.
+        Serialize the DIDDocument.
 
         Args:
             value: The value to serialize
 
         Returns:
-            The serialized DIDDoc
+            The serialized DIDDocument
 
         """
         return value.serialize()
 
     def _deserialize(self, value, attr, data, **kwargs):
         """
-        Deserialize a value into a DIDDoc.
+        Deserialize a value into a DIDDocument.
 
         Args:
             value: The value to deserialize
@@ -34,7 +34,7 @@ class DIDDocWrapper(fields.Field):
             The deserialized value
 
         """
-        return DIDDoc.deserialize(value)
+        return DIDDocument.deserialize(value)
 
 
 class ConnectionDetail(BaseModel):
@@ -45,13 +45,13 @@ class ConnectionDetail(BaseModel):
 
         schema_class = "ConnectionDetailSchema"
 
-    def __init__(self, *, did: str = None, did_doc: DIDDoc = None, **kwargs):
+    def __init__(self, *, did: str = None, did_doc: DIDDocument = None, **kwargs):
         """
         Initialize a ConnectionDetail instance.
 
         Args:
             did: DID for the connection detail
-            did_doc: DIDDoc for connection detail
+            did_doc: DIDDocument for connection detail
 
         """
         super().__init__(**kwargs)
@@ -70,12 +70,12 @@ class ConnectionDetail(BaseModel):
         return self._did
 
     @property
-    def did_doc(self) -> DIDDoc:
+    def did_doc(self) -> DIDDocument:
         """
         Accessor for the connection DID Document.
 
         Returns:
-            The DIDDoc for this connection
+            The DIDDocument for this connection
 
         """
         return self._did_doc

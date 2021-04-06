@@ -7,12 +7,8 @@ from ...config.base_context import ContextBuilder
 from ...config.injection_context import InjectionContext
 from ...connections.models.conn_record import ConnRecord
 from ...connections.models.connection_target import ConnectionTarget
-from ...connections.models.diddoc_v2 import (
-    DIDDoc,
-    VerificationMethod,
-    PublicKeyType,
-    Service,
-)
+from pydid import DIDDocumentBuilder, VerificationSuite
+
 from ...core.in_memory import InMemoryProfileManager
 from ...core.profile import ProfileManager
 from ...core.protocol_registry import ProtocolRegistry
@@ -52,15 +48,20 @@ class TestDIDs:
     test_target_verkey = "9WCgWKUaAJj3VWxxtzvvMQN3AoFxoBtBDo9ntwJnVVCC"
 
     def make_did_doc(self, did, verkey):
-        doc = DIDDoc(did)
+        builder = DIDDocumentBuilder(did)
+        vmethod = builder.verification_methods.add(
+            ident="1",
+            suite=VerificationSuite("Ed25519VerificationKey2018", "publicKeyBase58"),
+            material=verkey,
+        )
+        builder.services.add_didcomm(
+            endpoint=self.test_endpoint,
+            type_="IndyAgent",
+            recipient_keys=[vmethod],
+            routing_keys=[],
+        )
 
-        pk = doc.add_verification_method(type=PublicKeyType.ED25519_SIG_2018,
-                                         controller=did, value=verkey, ident="1")
-
-
-        doc.add_didcomm_service(type="IndyAgent", recipient_keys=[pk], routing_keys=[],
-                                endpoint=self.test_endpoint)
-        return doc, pk
+        return builder.build(), vmethod
 
 
 class StubContextBuilder(ContextBuilder):

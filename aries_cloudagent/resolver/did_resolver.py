@@ -9,10 +9,10 @@ import logging
 from itertools import chain
 from typing import Union
 
+from pydid import DID, DIDUrl, DIDDocument, Service, VerificationMethod
+
 from ..core.profile import Profile
 from ..resolver.base import BaseDIDResolver, DIDMethodNotSupported, DIDNotFound
-from ..resolver.did import DID, DIDUrl
-from ..connections.models.diddoc_v2 import DIDDoc, Service, VerificationMethod
 from .did_resolver_registry import DIDResolverRegistry
 
 LOGGER = logging.getLogger(__name__)
@@ -25,7 +25,7 @@ class DIDResolver:
         """Initialize a `didresolver` instance."""
         self.did_resolver_registry = registry
 
-    async def resolve(self, profile: Profile, did: Union[str, DID]) -> DIDDoc:
+    async def resolve(self, profile: Profile, did: Union[str, DID]) -> DIDDocument:
         """Retrieve did doc from public registry."""
         # TODO Cache results
         if isinstance(did, str):

@@ -1,20 +1,12 @@
 from unittest import mock
 
 from asynctest import TestCase as AsyncTestCase
+from pydid import DIDDocument, VerificationSuite, DIDDocumentBuilder
 
-from ......connections.models.diddoc_v2 import (
-    DIDDoc,
-    VerificationMethod,
-    PublicKeyType,
-    Service,
-)
 from ......core.in_memory import InMemoryProfile
 from ......messaging.decorators.attach_decorator import AttachDecorator
-
 from .....didcomm_prefix import DIDCommPrefix
-
 from ...message_types import DIDX_RESPONSE
-
 from ..response import DIDXResponse
 
 
@@ -28,16 +20,21 @@ class TestConfig:
         did = self.test_did
         verkey = self.test_verkey
         endpoint = self.test_endpoint
-        doc = DIDDoc(did)
-
-        pk = doc.add_verification_method(
-            type=PublicKeyType.ED25519_SIG_2018, controller=did, value=verkey, ident="1"
+        builder = DIDDocumentBuilder(did)
+        vmethod = builder.verification_methods.add(
+            ident="1",
+            suite=VerificationSuite("Ed25519VerificationKey2018", "publicKeyBase58"),
+            material=verkey,
         )
+        with builder.services.defaults() as services:
+            services.add_didcomm(
+                endpoint=endpoint,
+                type_="IndyAgent",
+                recipient_keys=[vmethod],
+                routing_keys=[],
+            )
 
-        doc.add_didcomm_service(
-            type="IndyAgent", recipient_keys=[pk], routing_keys=[], endpoint=endpoint
-        )
-        return doc
+        return builder.build()
 
 
 class TestDIDXResponse(AsyncTestCase, TestConfig):

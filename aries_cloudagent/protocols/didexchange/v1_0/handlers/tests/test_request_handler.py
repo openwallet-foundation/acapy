@@ -2,12 +2,7 @@ from asynctest import mock as async_mock
 from asynctest import TestCase as AsyncTestCase
 
 from ......connections.models import connection_target, conn_record
-from ......connections.models.diddoc_v2 import (
-    DIDDoc,
-    VerificationMethod,
-    PublicKeyType,
-    Service,
-)
+from pydid import DIDDocumentBuilder, VerificationSuite
 from ......core.profile import ProfileSession
 from ......core.in_memory import InMemoryProfile
 from ......messaging.decorators.attach_decorator import AttachDecorator
@@ -36,16 +31,21 @@ class TestDIDXRequestHandler(AsyncTestCase):
         did = TEST_DID
         verkey = TEST_VERKEY
         endpoint = TEST_ENDPOINT
-        doc = DIDDoc(did)
-
-        pk = doc.add_verification_method(
-            type=PublicKeyType.ED25519_SIG_2018, controller=did, value=verkey, ident="1"
+        builder = DIDDocumentBuilder(did)
+        vmethod = builder.verification_methods.add(
+            ident="1",
+            suite=VerificationSuite("Ed25519VerificationKey2018", "publicKeyBase58"),
+            material=verkey,
         )
+        with builder.services.defaults() as services:
+            services.add_didcomm(
+                endpoint=endpoint,
+                type_="IndyAgent",
+                recipient_keys=[vmethod],
+                routing_keys=[],
+            )
 
-        doc.add_didcomm_service(
-            type="IndyAgent", recipient_keys=[pk], routing_keys=[], endpoint=endpoint
-        )
-        return doc
+        return builder.build()
 
     async def setUp(self):
         self.ctx = RequestContext.test_context()

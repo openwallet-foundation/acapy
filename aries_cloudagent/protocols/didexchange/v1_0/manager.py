@@ -4,7 +4,7 @@ import json
 import logging
 
 from ....connections.models.conn_record import ConnRecord
-from ....connections.models.diddoc_v2 import DIDDoc
+from pydid import DIDDocument
 from ....connections.base_manager import BaseConnectionManager
 from ....connections.util import mediation_record_if_id
 from ....core.error import BaseError
@@ -403,12 +403,14 @@ class DIDXManager(BaseConnectionManager):
             )
         if not await request.did_doc_attach.data.verify(wallet):
             raise DIDXManagerError("DID Doc signature failed verification")
-        conn_did_doc = DIDDoc.deserialize(request.did_doc_attach.data.signed.decode())
-        if request.did != conn_did_doc.id:
+        conn_did_doc = DIDDocument.from_json(
+            request.did_doc_attach.data.signed.decode()
+        )
+        if request.did != conn_did_doc.did:
             raise DIDXManagerError(
                 (
                     f"Connection DID {request.did} does not match "
-                    f"DID Doc id {conn_did_doc.id}"
+                    f"DID Doc id {conn_did_doc.did}"
                 ),
                 error_code=ProblemReportReason.REQUEST_NOT_ACCEPTED,
             )
@@ -664,9 +666,11 @@ class DIDXManager(BaseConnectionManager):
 
         their_did = response.did
         if not response.did_doc_attach:
-            raise DIDXManagerError("No DIDDoc attached; cannot connect to public DID")
+            raise DIDXManagerError(
+                "No DIDDocument attached; cannot connect to public DID"
+            )
         conn_did_doc = await self.verify_diddoc(wallet, response.did_doc_attach)
-        if their_did != conn_did_doc.did:
+        if their_did != conn_did_doc.did.method_specific_id:
             raise DIDXManagerError(
                 f"Connection DID {their_did} "
                 f"does not match DID doc id {conn_did_doc.did}"
@@ -745,12 +749,12 @@ class DIDXManager(BaseConnectionManager):
         self,
         wallet: BaseWallet,
         attached: AttachDecorator,
-    ) -> DIDDoc:
-        """Verify DIDDoc attachment and return signed data."""
-        signed_diddoc_bytes = attached.data.signed
-        if not signed_diddoc_bytes:
+    ) -> DIDDocument:
+        """Verify DIDDocument attachment and return signed data."""
+        signed_DIDDocument_bytes = attached.data.signed
+        if not signed_DIDDocument_bytes:
             raise DIDXManagerError("DID doc attachment is not signed.")
         if not await attached.data.verify(wallet):
             raise DIDXManagerError("DID doc attachment signature failed verification")
 
-        return DIDDoc.deserialize(json.loads(signed_diddoc_bytes.decode()))
+        return DIDDocument.deserialize(json.loads(signed_DIDDocument_bytes.decode()))

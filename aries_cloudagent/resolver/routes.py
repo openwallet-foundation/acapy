@@ -29,8 +29,6 @@ Resolve did document admin routes.
 }
 """
 
-import re
-
 from aiohttp import web
 from aiohttp_apispec import docs, match_info_schema, response_schema
 from marshmallow import fields, validate
@@ -38,7 +36,7 @@ from marshmallow import fields, validate
 from ..admin.request_context import AdminRequestContext
 from ..messaging.models.openapi import OpenAPISchema
 from .base import DIDMethodNotSupported, DIDNotFound, ResolverError
-from .did import DID_PATTERN
+from pydid.common import DID_PATTERN
 from .did_resolver import DIDResolver
 
 

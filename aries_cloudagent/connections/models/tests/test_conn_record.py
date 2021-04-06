@@ -10,7 +10,7 @@ from ....storage.base import BaseStorage
 from ....storage.error import StorageNotFoundError
 
 from ..conn_record import ConnRecord
-from ..diddoc_v2.diddoc import DIDDoc
+from pydid import DIDDocumentBuilder
 
 
 class TestConnRecord(AsyncTestCase):
@@ -240,10 +240,10 @@ class TestConnRecord(AsyncTestCase):
             state=ConnRecord.State.INVITATION.rfc23,
         )
         connection_id = await record.save(self.session)
-
+        DIDDocumentBuilder(self.test_did)
         req = ConnectionRequest(
             connection=ConnectionDetail(
-                did=self.test_did, did_doc=DIDDoc(self.test_did)
+                did=self.test_did, did_doc=DIDDocumentBuilder(self.test_did).build()
             ),
             label="abc123",
         )

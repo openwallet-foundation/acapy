@@ -4,11 +4,11 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Sequence, Union
 
+from pydid import DID, DIDDocument
+
 from ..config.injection_context import InjectionContext
-from ..connections.models.diddoc_v2.diddoc import DIDDoc
 from ..core.error import BaseError
 from ..core.profile import Profile
-from .did import DID
 
 
 class ResolverError(BaseError):
@@ -59,7 +59,7 @@ class BaseDIDResolver(ABC):
         """Return if this resolver supports the given method."""
         return method in self.supported_methods
 
-    async def resolve(self, profile: Profile, did: Union[str, DID]) -> DIDDoc:
+    async def resolve(self, profile: Profile, did: Union[str, DID]) -> DIDDocument:
         """Resolve a DID using this resolver."""
         if isinstance(did, str):
             did = DID(did)
@@ -68,8 +68,12 @@ class BaseDIDResolver(ABC):
             raise DIDMethodNotSupported(
                 f"{did.method} is not supported by {self.__class__.__name__} resolver."
             )
-        return await self._resolve(profile, did)
+
+        did = str(did)
+        did_document = await self._resolve(profile, did)
+        result = DIDDocument.deserialize(did_document)
+        return result
 
     @abstractmethod
-    async def _resolve(self, profile: Profile, did: DID) -> DIDDoc:
+    async def _resolve(self, profile: Profile, did: DID) -> dict:
         """Resolve a DID using this resolver."""

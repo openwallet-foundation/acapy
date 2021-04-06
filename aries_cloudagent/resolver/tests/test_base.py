@@ -1,7 +1,7 @@
 """Test Base DID Resolver methods."""
 
 import pytest
-from ...connections.models.diddoc_v2.diddoc import DIDDoc
+from pydid import DIDDocument
 from ..base import BaseDIDResolver, ResolverType
 
 
@@ -18,8 +18,8 @@ class ExampleDIDResolver(BaseDIDResolver):
     def supported_methods(self):
         return ["test"]
 
-    async def _resolve(self, profile, did) -> DIDDoc:
-        return DIDDoc("did:example:123")
+    async def _resolve(self, profile, did) -> DIDDocument:
+        return DIDDocument("did:example:123")
 
 
 @pytest.fixture

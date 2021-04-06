@@ -2,6 +2,8 @@
 
 from typing import Mapping, Sequence
 
+from pydid import DID
+
 from ..core.in_memory import InMemoryProfile
 
 from .base import (
@@ -216,6 +218,8 @@ def tag_query_match(tags: dict, tag_query: dict) -> bool:
                 raise StorageSearchError("Unexpected filter operator: {}".format(k))
             elif isinstance(v, str):
                 chk = tags.get(k) == v
+            elif isinstance(v, DID):
+                chk = tags.get(str(k)) == v
             elif isinstance(v, dict):
                 chk = tag_value_match(tags.get(k), v)
             else:

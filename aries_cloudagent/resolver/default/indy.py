@@ -4,14 +4,14 @@ Resolution is performed using the IndyLedger class.
 """
 from typing import Sequence
 
+from pydid import DID, DIDDocumentBuilder, VerificationSuite
+
 from ...config.injection_context import InjectionContext
-from ...connections.models.diddoc_v2.diddoc import DIDDoc
 from ...core.profile import Profile
 from ...ledger.base import BaseLedger
 from ...ledger.error import LedgerError
 from ...ledger.indy import IndySdkLedger
 from ..base import BaseDIDResolver, DIDNotFound, ResolverError, ResolverType
-from ..did import DID
 
 
 class NoIndyLedger(ResolverError):
@@ -23,6 +23,7 @@ class IndyDIDResolver(BaseDIDResolver):
 
     VERIFICATION_METHOD_TYPE = "Ed25519VerificationKey2018"
     AGENT_SERVICE_TYPE = "did-communication"
+    SUITE = VerificationSuite(VERIFICATION_METHOD_TYPE, "publicKeyBase58")
 
     def __init__(self):
         """Initialize Indy Resolver."""
@@ -36,42 +37,34 @@ class IndyDIDResolver(BaseDIDResolver):
         """Return supported methods of Indy DID Resolver."""
         return ["sov"]
 
-    async def _resolve(self, profile: Profile, did: DID) -> DIDDoc:
+    async def _resolve(self, profile: Profile, did: str) -> dict:
         """Resolve an indy DID."""
+        did = DID(did)
         ledger = profile.inject(BaseLedger, required=False)
         if not ledger or not isinstance(ledger, IndySdkLedger):
             raise NoIndyLedger("No Indy ledger instance is configured.")
 
         try:
             async with ledger:
-                recipient_key = await ledger.get_key_for_did(str(did))
-                endpoint = await ledger.get_endpoint_for_did(str(did))
+                recipient_key = await ledger.get_key_for_did(did)
+                endpoint = await ledger.get_endpoint_for_did(did)
         except LedgerError as err:
             raise DIDNotFound(f"DID {did} could not be resolved") from err
 
-        raw_doc = {
-            "id": str(did),
-            "verificationMethod": [
-                {
-                    "id": did.ref(1),
-                    "type": self.VERIFICATION_METHOD_TYPE,
-                    "controller": str(did),
-                    "publicKeyBase58": recipient_key,
-                }
-            ],
-            "authentication": [did.ref(1)],
-        }
+        builder = DIDDocumentBuilder(did)
 
+        vmethod = builder.verification_methods.add(
+            ident="keys-1", suite=self.SUITE, material=recipient_key
+        )
+        builder.authentication.reference(vmethod.id)
         if endpoint:
-            raw_doc["service"] = [
-                {
-                    "id": did.ref(self.AGENT_SERVICE_TYPE),
-                    "type": self.AGENT_SERVICE_TYPE,
-                    "priority": 0,
-                    "recipientKeys": [did.ref(1)],
-                    "routingKeys": [],
-                    "serviceEndpoint": endpoint,
-                }
-            ]
-
-        return DIDDoc.deserialize(raw_doc)
+            # TODO add priority
+            builder.services.add_didcomm(
+                ident=self.AGENT_SERVICE_TYPE,
+                type_=self.AGENT_SERVICE_TYPE,
+                endpoint=endpoint,
+                recipient_keys=[vmethod],
+                routing_keys=[],
+            )
+        result = builder.build()
+        return result.serialize()

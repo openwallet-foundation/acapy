@@ -4,12 +4,7 @@ from asynctest import mock as async_mock
 from ......core.profile import ProfileSession
 from ......connections.models import connection_target
 from ......connections.models.conn_record import ConnRecord
-from ......connections.models.diddoc_v2 import (
-    DIDDoc,
-    VerificationMethod,
-    PublicKeyType,
-    Service,
-)
+from pydid import DIDDocumentBuilder, VerificationSuite
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
 from ......transport.inbound.receipt import MessageReceipt
@@ -51,21 +46,21 @@ TEST_IMAGE_URL = "http://aries.ca/images/sample.png"
 
 @pytest.fixture()
 def did_doc():
-    did = TEST_DID
-    verkey = TEST_VERKEY
-    endpoint = TEST_ENDPOINT
-
-    doc = DIDDoc(did)
-
-    pk = doc.add_verification_method(
-        type=PublicKeyType.ED25519_SIG_2018, controller=did, value=verkey, ident="1"
+    builder = DIDDocumentBuilder(TEST_DID)
+    vmethod = builder.verification_methods.add(
+        ident="1",
+        suite=VerificationSuite("Ed25519VerificationKey2018", "publicKeyBase58"),
+        material=TEST_VERKEY,
     )
 
-    doc.add_didcomm_service(
-        type="IndyAgent", recipient_keys=[pk], routing_keys=[], endpoint=endpoint
-    )
-
-    yield doc
+    with builder.services.defaults() as services:
+        services.add_didcomm(
+            endpoint=TEST_ENDPOINT,
+            type_="IndyAgent",
+            recipient_keys=[vmethod],
+            routing_keys=[],
+        )
+    yield builder.build()
 
 
 class TestRequestHandler:

@@ -8,11 +8,11 @@ from ....core.profile import Profile
 from ....ledger.base import BaseLedger
 from ....ledger.error import LedgerError
 from ...base import DIDNotFound, ResolverError
-from ...tests.test_did import TEST_DID0
 from .. import indy as test_module
 from ..indy import IndyDIDResolver
 
 # pylint: disable=W0621
+TEST_DID0 = "did:sov:123"
 
 
 @pytest.fixture
@@ -25,7 +25,7 @@ def resolver():
 def ledger():
     """Ledger fixture."""
     ledger = async_mock.MagicMock(spec=test_module.IndySdkLedger)
-    ledger.get_endpoint_for_did = async_mock.CoroutineMock(return_value="endpoint")
+    ledger.get_endpoint_for_did = async_mock.CoroutineMock(return_value="https://github.com/")
     ledger.get_key_for_did = async_mock.CoroutineMock(return_value="key")
     yield ledger
 

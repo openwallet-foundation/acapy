@@ -2,12 +2,7 @@ from unittest import mock, TestCase
 
 from asynctest import TestCase as AsyncTestCase
 
-from ......connections.models.diddoc_v2 import (
-    DIDDoc,
-    VerificationMethod,
-    PublicKeyType,
-    Service,
-)
+from pydid import DIDDocumentBuilder, VerificationSuite, DIDDocument
 
 from .....didcomm_prefix import DIDCommPrefix
 
@@ -25,19 +20,22 @@ class TestConfig:
     test_endpoint = "http://localhost"
 
     def make_did_doc(self):
-        did = self.test_did
-        verkey = self.test_verkey
-        endpoint = self.test_endpoint
-        doc = DIDDoc(did)
-
-        pk = doc.add_verification_method(
-            type=PublicKeyType.ED25519_SIG_2018, controller=did, value=verkey, ident="1"
+        builder = DIDDocumentBuilder(self.test_did)
+        vmethod = builder.verification_methods.add(
+            ident="1",
+            suite=VerificationSuite("Ed25519VerificationKey2018", "publicKeyBase58"),
+            material=self.test_verkey,
         )
 
-        doc.add_didcomm_service(
-            type="IndyAgent", recipient_keys=[pk], routing_keys=[], endpoint=endpoint
-        )
-        return doc
+        with builder.services.defaults() as services:
+            services.add_didcomm(
+                endpoint=self.test_endpoint,
+                type_="IndyAgent",
+                recipient_keys=[vmethod],
+                routing_keys=[],
+            )
+
+        return builder.build()
 
 
 class TestConnectionRequest(TestCase, TestConfig):
@@ -107,7 +105,7 @@ class TestConnectionRequestSchema(AsyncTestCase, TestConfig):
     async def test_make_model_conn_detail_interpolate_authn_service(self):
         did_doc_dict = self.make_did_doc().serialize()
         del did_doc_dict["service"]
-        did_doc = DIDDoc.deserialize(did_doc_dict)
+        did_doc = DIDDocument.deserialize(did_doc_dict)
 
         connection_request = ConnectionRequest(
             connection=ConnectionDetail(did=self.test_did, did_doc=did_doc),
