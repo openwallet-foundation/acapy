@@ -114,7 +114,7 @@ class TestConnectionManager(AsyncTestCase):
 
         requestA = ConnectionRequest(
             connection=ConnectionDetail(
-                did=self.test_target_did.split(":")[-1],
+                did=self.test_target_did,
                 did_doc=self.make_did_doc(
                     self.test_target_did, self.test_target_verkey
                 ),
@@ -126,7 +126,7 @@ class TestConnectionManager(AsyncTestCase):
 
         requestB = ConnectionRequest(
             connection=ConnectionDetail(
-                did=self.test_did.split(":")[-1],
+                did=self.test_did,
                 did_doc=self.make_did_doc(self.test_did, self.test_verkey),
             ),
             label="SameInviteRequestB",
@@ -217,7 +217,7 @@ class TestConnectionManager(AsyncTestCase):
 
         requestA = ConnectionRequest(
             connection=ConnectionDetail(
-                did=self.test_target_did.split(":")[-1],
+                did=self.test_target_did,
                 did_doc=self.make_did_doc(
                     self.test_target_did, self.test_target_verkey
                 ),
@@ -229,7 +229,7 @@ class TestConnectionManager(AsyncTestCase):
 
         requestB = ConnectionRequest(
             connection=ConnectionDetail(
-                did=self.test_did.split(":")[-1],
+                did=self.test_did,
                 did_doc=self.make_did_doc(self.test_did, self.test_verkey),
             ),
             label="SameInviteRequestB",
@@ -251,7 +251,7 @@ class TestConnectionManager(AsyncTestCase):
 
         requestA = ConnectionRequest(
             connection=ConnectionDetail(
-                did=self.test_target_did.split(":")[-1],
+                did=self.test_target_did,
                 did_doc=self.make_did_doc(
                     self.test_target_did, self.test_target_verkey
                 ),
@@ -289,7 +289,7 @@ class TestConnectionManager(AsyncTestCase):
 
         request = ConnectionRequest(
             connection=ConnectionDetail(
-                did=self.test_target_did.split(":")[-1],
+                did=self.test_target_did,
                 did_doc=self.make_did_doc(
                     self.test_target_did, self.test_target_verkey
                 ),
@@ -625,7 +625,7 @@ class TestConnectionManager(AsyncTestCase):
     async def test_receive_request_public_did(self):
         mock_request = async_mock.MagicMock()
         mock_request.connection = async_mock.MagicMock()
-        mock_request.connection.did = self.test_did.split(":")[-1]
+        mock_request.connection.did = self.test_did
         mock_did_doc = self.make_did_doc(self.test_did, self.test_verkey)
         mock_request.connection.did_doc = mock_did_doc
 
@@ -662,7 +662,7 @@ class TestConnectionManager(AsyncTestCase):
         mock_request.connection = async_mock.MagicMock(
             is_multiuse_invitation=True, invitation_key=multiuse_info.verkey
         )
-        mock_request.connection.did = self.test_did.split(":")[-1]
+        mock_request.connection.did = self.test_did
         mock_request.connection.did_doc = self.make_did_doc(
             self.test_did, self.test_verkey
         )
@@ -700,7 +700,7 @@ class TestConnectionManager(AsyncTestCase):
 
         mock_request = async_mock.MagicMock()
         mock_request.connection = async_mock.MagicMock(accept=ConnRecord.ACCEPT_MANUAL)
-        mock_request.connection.did = self.test_did.split(":")[-1]
+        mock_request.connection.did = self.test_did
         mock_request.connection.did_doc = self.make_did_doc(
             self.test_did, self.test_verkey
         )
@@ -816,7 +816,7 @@ class TestConnectionManager(AsyncTestCase):
     async def test_receive_request_public_did_no_auto_accept(self):
         mock_request = async_mock.MagicMock()
         mock_request.connection = async_mock.MagicMock()
-        mock_request.connection.did = self.test_did.split(":")[-1]
+        mock_request.connection.did = self.test_did
         mock_request.connection.did_doc = self.make_did_doc(
             self.test_did, self.test_verkey
         )
@@ -847,7 +847,7 @@ class TestConnectionManager(AsyncTestCase):
         mock_request = async_mock.MagicMock()
         mock_request.connection = async_mock.MagicMock()
 
-        mock_request.connection.did = self.test_did.split(":")[-1]
+        mock_request.connection.did = self.test_did
         mock_request.connection.did_doc = self.make_did_doc(
             self.test_did, self.test_verkey
         )
@@ -896,7 +896,7 @@ class TestConnectionManager(AsyncTestCase):
     async def test_receive_request_bad_mediation(self):
         mock_request = async_mock.MagicMock()
         mock_request.connection = async_mock.MagicMock()
-        mock_request.connection.did = self.test_did.split(":")[-1]
+        mock_request.connection.did = self.test_did
         mock_request.connection.did_doc = self.make_did_doc(
             self.test_did, self.test_verkey
         )
@@ -922,7 +922,7 @@ class TestConnectionManager(AsyncTestCase):
     async def test_receive_request_mediation_not_granted(self):
         mock_request = async_mock.MagicMock()
         mock_request.connection = async_mock.MagicMock()
-        mock_request.connection.did = self.test_target_did.split(":")[-1]
+        mock_request.connection.did = self.test_target_did
         mock_request.connection.did_doc = self.make_did_doc(
             self.test_target_did, self.test_target_verkey
         )
@@ -1115,7 +1115,7 @@ class TestConnectionManager(AsyncTestCase):
         mock_response = async_mock.MagicMock()
         mock_response._thread = async_mock.MagicMock()
         mock_response.connection = async_mock.MagicMock()
-        mock_response.connection.did = self.test_target_did.split(":")[-1]
+        mock_response.connection.did = self.test_target_did
         mock_response.connection.did_doc = self.make_did_doc(
             self.test_target_did, self.test_verkey
         )
@@ -1138,14 +1138,14 @@ class TestConnectionManager(AsyncTestCase):
                 connection_id="test-conn-id",
             )
             conn_rec = await self.manager.accept_response(mock_response, receipt)
-            assert conn_rec.their_did == self.test_target_did.split(":")[-1]
+            assert conn_rec.their_did == self.test_target_did
             assert ConnRecord.State.get(conn_rec.state) is ConnRecord.State.RESPONSE
 
     async def test_accept_response_not_found_by_thread_id_receipt_has_sender_did(self):
         mock_response = async_mock.MagicMock()
         mock_response._thread = async_mock.MagicMock()
         mock_response.connection = async_mock.MagicMock()
-        mock_response.connection.did = self.test_target_did.split(":")[-1]
+        mock_response.connection.did = self.test_target_did
         mock_response.connection.did_doc = self.make_did_doc(
             self.test_target_did, self.test_verkey
         )
@@ -1174,7 +1174,7 @@ class TestConnectionManager(AsyncTestCase):
             )
 
             conn_rec = await self.manager.accept_response(mock_response, receipt)
-            assert conn_rec.their_did == self.test_target_did.split(":")[-1]
+            assert conn_rec.their_did == self.test_target_did
             assert ConnRecord.State.get(conn_rec.state) is ConnRecord.State.RESPONSE
 
             assert not self.responder.messages
@@ -1277,7 +1277,7 @@ class TestConnectionManager(AsyncTestCase):
         mock_response = async_mock.MagicMock()
         mock_response._thread = async_mock.MagicMock()
         mock_response.connection = async_mock.MagicMock()
-        mock_response.connection.did = self.test_target_did.split(":")[-1]
+        mock_response.connection.did = self.test_target_did
         mock_response.connection.did_doc = self.make_did_doc(
             self.test_target_did, self.test_verkey
         )  # async_mock.MagicMock()
@@ -1302,7 +1302,7 @@ class TestConnectionManager(AsyncTestCase):
                 connection_id="test-conn-id",
             )
             conn_rec = await self.manager.accept_response(mock_response, receipt)
-            assert conn_rec.their_did == self.test_target_did.split(":")[-1]
+            assert conn_rec.their_did == self.test_target_did
             assert ConnRecord.State.get(conn_rec.state) is ConnRecord.State.RESPONSE
 
             assert len(self.responder.messages) == 1
@@ -1592,7 +1592,7 @@ class TestConnectionManager(AsyncTestCase):
 
     async def test_create_did_document(self):
         did_info = DIDInfo(
-            self.test_did.split(":")[-1],
+            self.test_did,
             self.test_verkey,
             None,
         )
@@ -1602,7 +1602,7 @@ class TestConnectionManager(AsyncTestCase):
             async_mock.MagicMock(
                 connection_id="dummy",
                 inbound_connection_id=None,
-                their_did=self.test_target_did.split(":")[-1],
+                their_did=self.test_target_did,
                 state=ConnRecord.State.COMPLETED.rfc23,
             ),
         )
