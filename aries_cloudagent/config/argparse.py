@@ -165,7 +165,7 @@ class AdminGroup(ArgumentGroup):
             default=1,
             type=BoundedInt(min=1, max=16),
             env_var="ACAPY_ADMIN_CLIENT_MAX_REQUEST_SIZE",
-            help="Maximum client request size to admin server, in megabytes: default 1"
+            help="Maximum client request size to admin server, in megabytes: default 1",
         )
 
     def get_settings(self, args: Namespace):
@@ -200,7 +200,7 @@ class AdminGroup(ArgumentGroup):
             settings["admin.webhook_urls"] = hook_urls
 
             settings["admin.admin_client_max_request_size"] = (
-                args.admin_client_max_request_size
+                args.admin_client_max_request_size or 1
             )
         return settings
 
