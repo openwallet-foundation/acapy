@@ -403,8 +403,8 @@ class DIDXManager(BaseConnectionManager):
             )
         if not await request.did_doc_attach.data.verify(wallet):
             raise DIDXManagerError("DID Doc signature failed verification")
-        conn_did_doc = DIDDocument.deserialize(
-            json.loads(request.did_doc_attach.data.signed.decode())
+        conn_did_doc = DIDDocument.from_json(
+            request.did_doc_attach.data.signed.decode()
         )
         if request.did != conn_did_doc.did:
             raise DIDXManagerError(
