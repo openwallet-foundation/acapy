@@ -6,7 +6,6 @@ from typing import Mapping, Sequence
 from .error import StorageError, StorageDuplicateError, StorageNotFoundError
 from .record import StorageRecord
 
-
 DEFAULT_PAGE_SIZE = 100
 
 
@@ -90,7 +89,8 @@ class BaseStorage(ABC):
         await scan.close()
         if not results:
             raise StorageNotFoundError(
-                f"Record not found (type: {type_filter}, tag_query: {tag_query}, options: {options})"
+                f"Record not found "
+                f"(type: {type_filter}, tag_query: {tag_query}, options: {options})"
             )
         if len(results) > 1:
             raise StorageDuplicateError("Duplicate records found")

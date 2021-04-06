@@ -4,7 +4,7 @@ Resolution is performed using the IndyLedger class.
 """
 from typing import Sequence
 
-from pydid import DID, DIDDocument, DIDDocumentBuilder, VerificationSuite
+from pydid import DID, DIDDocumentBuilder, VerificationSuite
 
 from ...config.injection_context import InjectionContext
 from ...core.profile import Profile
