@@ -148,6 +148,13 @@ class AdminGroup(ArgumentGroup):
             and respond to those events using the admin API. If not specified, \
             webhooks are not published by the agent.",
         )
+        parser.add_argument(
+            "--admin-client-max-request-size",
+            default=1,
+            type=BoundedInt(min=1, max=16),
+            env_var="ACAPY_ADMIN_CLIENT_MAX_REQUEST_SIZE",
+            help="Maximum client request size to admin server, in megabytes: default 1"
+        )
 
     def get_settings(self, args: Namespace):
         """Extract admin settings."""
@@ -179,6 +186,10 @@ class AdminGroup(ArgumentGroup):
             if hook_url:
                 hook_urls.append(hook_url)
             settings["admin.webhook_urls"] = hook_urls
+
+            settings["admin.admin_client_max_request_size"] = (
+                args.admin_client_max_request_size
+            )
         return settings
 
 

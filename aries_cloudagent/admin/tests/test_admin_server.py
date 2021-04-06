@@ -194,6 +194,8 @@ class TestAdminServer(AsyncTestCase):
         }
         server = self.get_admin_server(settings)
         await server.start()
+        assert server.app._client_max_size == 1 * 1024 * 1024
+
         with async_mock.patch.object(
             server, "websocket_queues", async_mock.MagicMock()
         ) as mock_wsq:
@@ -315,9 +317,14 @@ class TestAdminServer(AsyncTestCase):
             await builder.load_plugins(context)
 
     async def test_visit_insecure_mode(self):
-        settings = {"admin.admin_insecure_mode": True, "task_queue": True}
+        settings = {
+            "admin.admin_insecure_mode": True,
+            "admin.admin_client_max_request_size": 4,
+            "task_queue": True,
+        }
         server = self.get_admin_server(settings)
         await server.start()
+        assert server.app._client_max_size == 4 * 1024 * 1024
 
         async with self.client_session.post(
             f"http://127.0.0.1:{self.port}/status/reset", headers={}
