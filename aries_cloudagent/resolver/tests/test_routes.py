@@ -9,7 +9,9 @@ from pydid import DIDDocument
 from ...admin.request_context import AdminRequestContext
 from .. import routes as test_module
 from ..base import (
-    DIDMethodNotSupported, DIDNotFound, ResolverError,
+    DIDMethodNotSupported,
+    DIDNotFound,
+    ResolverError,
 )
 from ..did_resolver import DIDResolver
 from . import DOC

@@ -25,7 +25,9 @@ def resolver():
 def ledger():
     """Ledger fixture."""
     ledger = async_mock.MagicMock(spec=test_module.IndySdkLedger)
-    ledger.get_endpoint_for_did = async_mock.CoroutineMock(return_value="https://github.com/")
+    ledger.get_endpoint_for_did = async_mock.CoroutineMock(
+        return_value="https://github.com/"
+    )
     ledger.get_key_for_did = async_mock.CoroutineMock(return_value="key")
     yield ledger
 
