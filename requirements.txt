@@ -16,3 +16,4 @@ py_multicodec==0.2.1
 pyyaml~=5.3.1
 ConfigArgParse~=1.2.3
 pyjwt~=1.7.1
+pydid==0.2.3
