@@ -293,19 +293,21 @@ class PresentationManager:
                 credentials[credential_id] = json.loads(
                     await holder.get_credential(credential_id)
                 )
-                if not credentials[credential_id].get("rev_reg_id"):
-                    # timestamp, if present, cannot correspond to non-revoc interval
-                    for r in ("requested_attributes", "requested_predicates"):
-                        if (
-                            requested_credentials.get(r, {})
-                            .get(reft, {})
-                            .pop("timestamp", None)
-                        ):
-                            LOGGER.info(
-                                "Removed superfluous timestamp from "
-                                f"requested_credentials {r} {reft} for non-revocable "
-                                f"credential {credential_id}"
-                            )
+
+        for cred_id in credentials:
+            if not credentials[credential_id].get("rev_reg_id"):
+                # timestamp, if present, cannot correspond to non-revoc interval: remove
+                for r in ("requested_attributes", "requested_predicates"):
+                    if (
+                        requested_credentials.get(r, {})
+                        .get(reft, {})
+                        .pop("timestamp", None)
+                    ):
+                        LOGGER.info(
+                            "Removed superfluous timestamp from "
+                            f"requested_credentials {r} {reft} for non-revocable "
+                            f"credential {credential_id}"
+                        )
 
         # Get all schemas, credential definitions, and revocation registries in use
         ledger = self._profile.inject(BaseLedger)
