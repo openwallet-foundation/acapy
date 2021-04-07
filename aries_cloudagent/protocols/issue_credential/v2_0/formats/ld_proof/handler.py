@@ -1,6 +1,5 @@
 """V2.0 issue-credential linked data proof credential format handler."""
 
-from aries_cloudagent.wallet.crypto import KeyType
 import logging
 from typing import Mapping
 
@@ -22,7 +21,9 @@ from ......vc.ld_proofs import (
     ProofPurpose,
     get_default_document_loader,
     AuthenticationProofPurpose,
+    SECURITY_CONTEXT_BBS_URL,
 )
+from ......wallet.crypto import KeyType
 from ......wallet.error import WalletNotFoundError
 from ......wallet.base import BaseWallet, DIDInfo
 from ......did.did_key import DIDKey
@@ -48,14 +49,25 @@ from ...models.detail.ld_proof import V20CredExRecordLDProof
 
 LOGGER = logging.getLogger(__name__)
 
-SUPPORTED_ISSUANCE_PROOF_TYPES = {
-    Ed25519Signature2018.signature_type,
-    BbsBlsSignature2020.signature_type,
-}
-
 SUPPORTED_ISSUANCE_PROOF_PURPOSES = {
     CredentialIssuancePurpose.term,
     AuthenticationProofPurpose.term,
+}
+
+SUPPORTED_ISSUANCE_SUITES = {Ed25519Signature2018, BbsBlsSignature2020}
+
+SIGNATURE_SUITE_KEY_TYPE_MAPPING = {
+    Ed25519Signature2018: KeyType.ED25519,
+    BbsBlsSignature2020: KeyType.BLS12381G2,
+}
+
+PROOF_TYPE_SIGNATURE_SUITE_MAPPING = {
+    suite.signature_type: suite
+    for suite, key_type in SIGNATURE_SUITE_KEY_TYPE_MAPPING.items()
+}
+
+KEY_TYPE_SIGNATURE_SUITE_MAPPING = {
+    key_type: suite for suite, key_type in SIGNATURE_SUITE_KEY_TYPE_MAPPING.items()
 }
 
 
@@ -115,23 +127,32 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
         """
         try:
             # Check if it is a proof type we can issue with
-            if proof_type not in SUPPORTED_ISSUANCE_PROOF_TYPES:
+            if proof_type not in PROOF_TYPE_SIGNATURE_SUITE_MAPPING.keys():
                 raise V20CredFormatError(
                     f"Unable to sign credential with unsupported proof type {proof_type}"
-                    f". Supported proof types: {SUPPORTED_ISSUANCE_PROOF_TYPES}"
+                    f". Supported proof types: {PROOF_TYPE_SIGNATURE_SUITE_MAPPING.keys()}"
                 )
 
-            # TODO: use proper did (regex) validator
-            # Assert issuer id is a did
             if not issuer_id.startswith("did:"):
                 raise V20CredFormatError(
                     f"Unable to issue credential with issuer id: {issuer_id}."
                     " Only issuance with DIDs is supported"
                 )
 
-            # TODO: check if did supports the proof type
             # Retrieve did from wallet. Will throw if not found
-            await self._did_info_for_did(issuer_id)
+            did = await self._did_info_for_did(issuer_id)
+
+            # Raise error if we cannot issue a credential with this proof type
+            # using this DID from
+            did_proof_type = KEY_TYPE_SIGNATURE_SUITE_MAPPING[
+                did.key_type
+            ].signature_type
+            if proof_type != did_proof_type:
+                raise V20CredFormatError(
+                    f"Unable to issue credential with issuer id {issuer_id} and proof "
+                    f"type {proof_type}. DID only supports proof type {did_proof_type}"
+                )
+
         except WalletNotFoundError:
             raise V20CredFormatError(
                 f"Issuer did {issuer_id} not found."
@@ -158,12 +179,11 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
             wallet = session.inject(BaseWallet)
 
             # If the did starts with did:sov we need to query without
-            # FIXME: could be that the did is actually stored as did:sov in the wallet
             if did.startswith("did:sov:"):
                 return await wallet.get_local_did(did.replace("did:sov:", ""))
+
             # All other methods we can just query
-            else:
-                return await wallet.get_local_did(did)
+            return await wallet.get_local_did(did)
 
     async def _get_suite_for_detail(self, detail: LDProofVCDetail) -> LinkedDataProof:
         issuer_id = detail.credential.issuer_id
@@ -203,51 +223,41 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
     ):
         """Get signature suite for issuance of verification."""
         async with self.profile.session() as session:
-            # TODO: maybe keypair should start session and inject wallet
-            # for shorter sessions
             wallet = session.inject(BaseWallet)
 
-            # TODO: we can abstract this
-            if proof_type == Ed25519Signature2018.signature_type:
-                return Ed25519Signature2018(
-                    verification_method=verification_method,
-                    proof=proof,
-                    key_pair=WalletKeyPair(
-                        wallet=wallet,
-                        key_type=KeyType.ED25519,
-                        public_key_base58=did_info.verkey if did_info else None,
-                    ),
-                )
-            elif proof_type == BbsBlsSignature2020.signature_type:
-                return BbsBlsSignature2020(
-                    verification_method=verification_method,
-                    proof=proof,
-                    key_pair=WalletKeyPair(
-                        wallet=wallet,
-                        key_type=KeyType.BLS12381G2,
-                        public_key_base58=did_info.verkey if did_info else None,
-                    ),
-                )
-            else:
-                raise V20CredFormatError(f"Unsupported proof type {proof_type}")
+            # Get signature class based on proof type
+            SignatureClass = PROOF_TYPE_SIGNATURE_SUITE_MAPPING[proof_type]
 
-    # TODO: this should be integrated with the SICPA universal resolver work
+            # Generically create signature class
+            return SignatureClass(
+                verification_method=verification_method,
+                proof=proof,
+                key_pair=WalletKeyPair(
+                    wallet=wallet,
+                    key_type=SIGNATURE_SUITE_KEY_TYPE_MAPPING[SignatureClass],
+                    public_key_base58=did_info.verkey if did_info else None,
+                ),
+            )
+
     def _get_verification_method(self, did: str):
-        if did.startswith("did:sov:"):
-            # TODO: is this correct? uniresolver uses #key-1, SICPA uses #1
-            return did + "#1"
-        elif did.startswith("did:key:"):
+        """Get the verification method for a did."""
+
+        if did.startswith("did:key:"):
             return DIDKey.from_did(did).key_id
         else:
             raise V20CredFormatError(
                 f"Unable to get retrieve verification method for did {did}"
             )
 
-    def _get_proof_purpose(self, detail: LDProofVCDetail) -> ProofPurpose:
+    def _get_proof_purpose(
+        self, *, proof_purpose: str, challenge: str = None, domain: str = None
+    ) -> ProofPurpose:
         """Get the proof purpose for a credential detail.
 
         Args:
-            detail (LDProofVCDetail): The credential detail to extract the purpose from
+            proof_purpose (str): The proof purpose string value
+            challenge (str, optional): Challenge
+            domain (str, optional): domain
 
         Raises:
             V20CredFormatError:
@@ -258,35 +268,41 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
             ProofPurpose: Proof purpose instance that can be used for issuance.
 
         """
-        # TODO: add date to proof purposes. Not really needed now but this will allow
-        # other checks in the future
-
         # Default proof purpose is assertionMethod
-        proof_purpose = detail.options.proof_purpose or CredentialIssuancePurpose.term
+        proof_purpose = proof_purpose or CredentialIssuancePurpose.term
 
         if proof_purpose == CredentialIssuancePurpose.term:
             return CredentialIssuancePurpose()
         elif proof_purpose == AuthenticationProofPurpose.term:
             # assert challenge is present for authentication proof purpose
-            if not detail.options.challenge:
+            if not challenge:
                 raise V20CredFormatError(
                     f"Challenge is required for '{proof_purpose}' proof purpose."
                 )
 
-            return AuthenticationProofPurpose(
-                challenge=detail.options.challenge, domain=detail.options.domain
-            )
+            return AuthenticationProofPurpose(challenge=challenge, domain=domain)
         else:
             raise V20CredFormatError(
                 f"Unsupported proof purse: {proof_purpose}. "
                 f"Supported  proof types are: {SUPPORTED_ISSUANCE_PROOF_PURPOSES}"
             )
 
+    async def _prepare_detail(self, detail: LDProofVCDetail) -> LDProofVCDetail:
+        # Add BBS context if not present yet
+        if (
+            detail.options.proof_type == BbsBlsSignature2020.signature_type
+            and SECURITY_CONTEXT_BBS_URL not in detail.credential.context_urls
+        ):
+            detail.credential.add_context(SECURITY_CONTEXT_BBS_URL)
+
     async def create_proposal(
         self, cred_ex_record: V20CredExRecord, proposal_data: Mapping
     ) -> CredFormatAttachment:
         """Create linked data proof credential proposal."""
-        return self.get_format_data(CRED_20_PROPOSAL, proposal_data)
+        detail = LDProofVCDetail.deserialize(proposal_data)
+        detail = await self._prepare_detail(detail)
+
+        return self.get_format_data(CRED_20_PROPOSAL, detail.serialize())
 
     async def receive_proposal(
         self, cred_ex_record: V20CredExRecord, cred_proposal_message: V20CredProposal
@@ -294,7 +310,7 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
         """Receive linked data proof credential proposal."""
 
     async def create_offer(
-        self, cred_ex_record: V20CredExRecord, offer_data: Mapping = None
+        self, cred_ex_record: V20CredExRecord
     ) -> CredFormatAttachment:
         """Create linked data proof credential offer."""
         if not cred_ex_record.cred_proposal:
@@ -308,6 +324,7 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
             cred_ex_record.cred_proposal
         ).attachment(self.format)
         detail = LDProofVCDetail.deserialize(offer_data)
+        detail = await self._prepare_detail(detail)
 
         # Make sure we can issue with the did and proof type
         await self._assert_can_issue_with_id_and_proof_type(
@@ -322,7 +339,7 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
         """Receive linked data proof credential offer."""
 
     async def create_request(
-        self, cred_ex_record: V20CredExRecord, request_data: Mapping = None
+        self, cred_ex_record: V20CredExRecord
     ) -> CredFormatAttachment:
         """Create linked data proof credential request."""
         if cred_ex_record.cred_offer:
@@ -340,7 +357,10 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
                 "Cannot create linked data proof request without offer or input data"
             )
 
-        return self.get_format_data(CRED_20_REQUEST, request_data)
+        detail = LDProofVCDetail.deserialize(request_data)
+        detail = await self._prepare_detail(detail)
+
+        return self.get_format_data(CRED_20_REQUEST, detail.serialize())
 
     async def receive_request(
         self, cred_ex_record: V20CredExRecord, cred_request_message: V20CredRequest
@@ -355,10 +375,15 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
             cred_ex_record.cred_request
         ).attachment(self.format)
         detail = LDProofVCDetail.deserialize(detail_dict)
+        detail = await self._prepare_detail(detail)
 
         # Get signature suite, proof purpose and document loader
         suite = await self._get_suite_for_detail(detail)
-        proof_purpose = self._get_proof_purpose(detail)
+        proof_purpose = self._get_proof_purpose(
+            proof_purpose=detail.options.proof_purpose,
+            challenge=detail.options.challenge,
+            domain=detail.options.domain,
+        )
         document_loader = get_default_document_loader(profile=self.profile)
 
         # issue the credential
@@ -433,17 +458,18 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
         cred_dict: dict = V20CredIssue.deserialize(
             cred_ex_record.cred_issue
         ).attachment(self.format)
-        detail_dict = V20CredRequest.deserialize(
-            cred_ex_record.cred_request
-        ).attachment(self.format)
 
         # Deserialize objects
         credential = VerifiableCredential.deserialize(cred_dict)
-        detail = LDProofVCDetail.deserialize(detail_dict)
 
         # Get signature suite, proof purpose and document loader
         suite = await self._get_suite(proof_type=credential.proof.type)
-        purpose = self._get_proof_purpose(detail)
+
+        purpose = self._get_proof_purpose(
+            proof_purpose=credential.proof.proof_purpose,
+            challenge=credential.proof.challenge,
+            domain=credential.proof.domain,
+        )
         document_loader = get_default_document_loader(self.profile)
 
         # Verify the credential

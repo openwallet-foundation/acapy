@@ -97,11 +97,11 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         return max(found, key=lambda r: int(r.tags["epoch"])).tags["cred_def_id"]
 
     async def create_proposal(
-        self, cred_ex_record: V20CredExRecord, filter: Mapping[str, str]
+        self, cred_ex_record: V20CredExRecord, proposal_data: Mapping[str, str]
     ) -> Tuple[V20CredFormat, AttachDecorator]:
         """Create indy credential proposal."""
 
-        return self.get_format_data(CRED_20_PROPOSAL, filter)
+        return self.get_format_data(CRED_20_PROPOSAL, proposal_data)
 
     async def receive_proposal(
         self, cred_ex_record: V20CredExRecord, cred_proposal_message: V20CredProposal
@@ -109,9 +109,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         """Receive indy credential proposal.
 
         No custom handling is required for this step.
-
         """
-        pass
 
     async def create_offer(
         self, cred_ex_record: V20CredExRecord
@@ -166,35 +164,16 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         self, cred_ex_record: V20CredExRecord, cred_offer_message: V20CredOffer
     ) -> None:
         """Receive indy credential offer."""
-        offer = cred_offer_message.attachment(self.format)
-        schema_id = offer["schema_id"]
-        cred_def_id = offer["cred_def_id"]
-
-        # FIXME: this will overwrite proposal for other formats.
-        cred_ex_record.cred_proposal = V20CredProposal(
-            comment=cred_offer_message.comment,
-            credential_preview=cred_offer_message.credential_preview,
-            formats=[
-                V20CredFormat(
-                    attach_id=self.format.api,
-                    format_=self.get_format_identifier(CRED_20_PROPOSAL),
-                )
-            ],
-            filters_attach=[
-                AttachDecorator.data_base64(
-                    {
-                        "schema_id": schema_id,
-                        "cred_def_id": cred_def_id,
-                    },
-                    ident=self.format.api,
-                )
-            ],
-        ).serialize()  # proposal houses filters, preview (possibly with MIME types)
 
     async def create_request(
         self, cred_ex_record: V20CredExRecord, request_data: Mapping = None
     ) -> CredFormatAttachment:
         """Create indy credential request."""
+        if cred_ex_record.state != V20CredExRecord.STATE_OFFER_RECEIVED:
+            raise V20CredFormatError(
+                "Indy issue credential format cannot start from credential request"
+            )
+
         holder_did = request_data.get("holder_did") if request_data else None
         cred_offer = V20CredOffer.deserialize(cred_ex_record.cred_offer).attachment(
             self.format
@@ -251,7 +230,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         """Receive indy credential request."""
         if not cred_ex_record.cred_offer:
             raise V20CredFormatError(
-                "Indy issue credential format cannot start from credential offer"
+                "Indy issue credential format cannot start from credential request"
             )
 
     async def issue_credential(
@@ -336,8 +315,8 @@ class IndyCredFormatHandler(V20CredFormatHandler):
                 )
             del revoc
 
-        cred_values = V20CredProposal.deserialize(
-            cred_ex_record.cred_proposal
+        cred_values = V20CredOffer.deserialize(
+            cred_ex_record.cred_offer
         ).credential_preview.attr_dict(decode=False)
         issuer = self.profile.inject(IndyIssuer)
         try:
@@ -431,12 +410,10 @@ class IndyCredFormatHandler(V20CredFormatHandler):
                 rev_reg_def = await ledger.get_revoc_reg_def(cred["rev_reg_id"])
 
         holder = self.profile.inject(IndyHolder)
-        cred_proposal_message = V20CredProposal.deserialize(
-            cred_ex_record.cred_proposal
-        )
+        cred_offer_message = V20CredOffer.deserialize(cred_ex_record.cred_offer)
         mime_types = None
-        if cred_proposal_message and cred_proposal_message.credential_preview:
-            mime_types = cred_proposal_message.credential_preview.mime_types() or None
+        if cred_offer_message and cred_offer_message.credential_preview:
+            mime_types = cred_offer_message.credential_preview.mime_types() or None
 
         if rev_reg_def:
             rev_reg = RevocationRegistry.from_definition(rev_reg_def, True)
