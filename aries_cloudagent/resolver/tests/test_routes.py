@@ -13,7 +13,6 @@ from ..base import (
 )
 from ..did_resolver import DIDResolver
 from . import DOC
-from .test_diddoc import DOC
 
 did_doc = DIDDocument.deserialize(DOC)
 
