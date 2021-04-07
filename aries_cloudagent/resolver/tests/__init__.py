@@ -36,7 +36,7 @@ DOC = {
             "type": "did-communication",
             "priority": 0,
             "recipientKeys": ["did:example:1234abcd#4"],
-            "routingKeys": ["did:example:1234abcd#3"],
+            "routingKeys": ["did:example:1234abcd#6"],
             "serviceEndpoint": "did:example:xd45fr567794lrzti67;did-communication",
         }
     ],
