@@ -3,17 +3,17 @@
 from os import urandom
 from pyld import jsonld
 from typing import List
-from ursa_bbs_signatures.api import (
+
+from ursa_bbs_signatures import (
     create_proof as bls_create_proof,
     verify_proof as bls_verify_proof,
     CreateProofRequest,
     VerifyProofRequest,
+    get_total_message_count,
+    ProofMessage,
+    BlsKeyPair,
+    ProofMessageType,
 )
-from ursa_bbs_signatures.foreign_function_interface.bindings.bbs_verify_proof import (
-    bbs_get_total_messages_count_for_proof,
-)
-from ursa_bbs_signatures.models.ProofMessage import ProofMessage, ProofMessageType
-from ursa_bbs_signatures.models.keys import BlsKeyPair
 
 from ....wallet.util import b64_to_bytes, bytes_to_b64
 from ..crypto import KeyPair
@@ -256,7 +256,7 @@ class BbsBlsSignatureProof2020(BbsBlsSignature2020Base):
             key_pair = self.key_pair.from_verification_method(verification_method)
             proof_bytes = b64_to_bytes(proof["proofValue"])
 
-            total_message_count = bbs_get_total_messages_count_for_proof(proof_bytes)
+            total_message_count = get_total_message_count(proof_bytes)
 
             # get bbs key from bls key pair
             bbs_public_key = BlsKeyPair(public_key=key_pair.public_key).get_bbs_key(

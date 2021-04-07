@@ -11,10 +11,14 @@ import nacl.exceptions
 import nacl.utils
 
 from marshmallow import fields, Schema, ValidationError
-from ursa_bbs_signatures.models.SignRequest import SignRequest
-from ursa_bbs_signatures.models.VerifyRequest import VerifyRequest
-from ursa_bbs_signatures.models.keys.BlsKeyPair import BlsKeyPair
-from ursa_bbs_signatures.api import sign as bbs_sign, verify as bbs_verify
+
+from ursa_bbs_signatures import (
+    SignRequest,
+    VerifyRequest,
+    BlsKeyPair,
+    sign as bbs_sign,
+    verify as bbs_verify,
+)
 
 from .error import WalletError
 from ..core.error import BaseError
