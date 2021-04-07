@@ -2,7 +2,7 @@
 
 import logging
 
-from typing import Mapping, Tuple
+from typing import Mapping, Tuple, cast
 
 from ....core.error import BaseError
 from ....core.profile import Profile
@@ -457,7 +457,6 @@ class V20CredManager:
                 f"cred ex record {cred_ex_record.cred_ex_id}"
             )
 
-        # TODO: replacement id for jsonld start from request
         replacement_id = None
         input_formats = V20CredRequest.deserialize(cred_ex_record.cred_request).formats
 
@@ -476,6 +475,11 @@ class V20CredManager:
                         cred_ex_record
                     )
                 )
+
+        if len(issue_formats) == 0:
+            raise V20CredManagerError(
+                "Unable to issue credential. No supported formats"
+            )
 
         cred_issue_message = V20CredIssue(
             replacement_id=replacement_id,
@@ -521,11 +525,38 @@ class V20CredManager:
                 )
             )
 
-            for format in cred_issue_message.formats:
-                cred_format = V20CredFormat.Format.get(format.format)
-                await cred_format.handler(self.profile).receive_credential(
-                    cred_ex_record, cred_issue_message
+            cred_request_message = cast(
+                V20CredRequest, V20CredRequest.deserialize(cred_ex_record.cred_request)
+            )
+            req_formats = list(
+                map(lambda fmt: fmt.format, cred_request_message.formats)
+            )
+            issue_formats = list(
+                map(lambda fmt: fmt.format, cred_issue_message.formats)
+            )
+            handled_formats = []
+
+            for issue_format in issue_formats:
+                cred_format = V20CredFormat.Format.get(issue_format)
+
+                # Make sure the format was present in the request
+                assert issue_format in req_formats
+
+                if cred_format:
+                    await cred_format.handler(self.profile).receive_credential(
+                        cred_ex_record, cred_issue_message
+                    )
+                    handled_formats.append(issue_format)
+
+            # check that we didn't receive any formats not present in the request
+            if set(issue_formats) - set(req_formats):
+                raise V20CredManagerError(
+                    "Received issue credential format(s) not present in credential "
+                    f"request: {set(issue_formats) - set(req_formats)}"
                 )
+
+            if len(handled_formats) == 0:
+                raise V20CredManagerError("No supported credential formats received.")
 
             cred_ex_record.cred_issue = cred_issue_message.serialize()
             cred_ex_record.state = V20CredExRecord.STATE_CREDENTIAL_RECEIVED
