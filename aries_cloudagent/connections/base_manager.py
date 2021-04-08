@@ -8,6 +8,8 @@ import logging
 from typing import List, Sequence, Tuple
 
 from pydid import DIDDocument as ResolvedDocument
+from pydid.doc.didcomm_service import DIDCommService
+from pydid.doc.verification_method import VerificationMethod
 
 from ..core.error import BaseError
 from ..core.profile import ProfileSession
@@ -38,6 +40,9 @@ class BaseConnectionManager:
 
     RECORD_TYPE_DID_DOC = "did_doc"
     RECORD_TYPE_DID_KEY = "did_key"
+    SUPPORTED_KEY_TYPES = (
+        PublicKeyType.ED25519_SIG_2018.ver_type,
+    )
 
     def __init__(self, session: ProfileSession):
         """
@@ -212,7 +217,11 @@ class BaseConnectionManager:
         Args:
             did: Document ID to resolve
         """
-        # populate recipient keys and endpoint from the ledger
+        if not did.startswith("did:"):
+            # DID is bare indy "nym"
+            # prefix with did:sov: for backwards compatibility
+            did = f"did:sov:{did}"
+
         resolver = self._session.inject(DIDResolver)
         try:
             doc: ResolvedDocument = await resolver.resolve(self._session.profile, did)
@@ -226,17 +235,39 @@ class BaseConnectionManager:
                 "Cannot connect via public DID that has no associated services"
             )
 
-        endpoint = doc.service[0].endpoint
-        recipient_keys = [
+        didcomm_services = sorted([
+            service for service in doc.service
+            if isinstance(service, DIDCommService)
+        ], key=lambda service: service.priority)
+
+        if not didcomm_services:
+            raise BaseConnectionManagerError(
+                "Cannot connect via public DID that has no associated DIDComm services"
+            )
+
+        first_didcomm_service, *_ = didcomm_services
+
+        endpoint = first_didcomm_service.endpoint
+        recipient_keys: List[VerificationMethod] = [
             doc.dereference(url)
-            for url in doc.service[0].recipient_keys
+            for url in first_didcomm_service.recipient_keys
         ]
-        routing_keys = [
+        routing_keys: List[VerificationMethod] = [
             doc.dereference(url)
-            for url in doc.service[0].routing_keys
+            for url in first_didcomm_service.routing_keys
         ]
 
-        return endpoint, recipient_keys, routing_keys
+        for key in [*recipient_keys, *routing_keys]:
+            if key.suite.type not in self.SUPPORTED_KEY_TYPES:
+                raise BaseConnectionManagerError(
+                    "Key type {key.suite.type} is not supported"
+                )
+
+        return (
+            endpoint,
+            [key.material for key in recipient_keys],
+            [key.material for key in routing_keys],
+        )
 
     async def fetch_connection_targets(
         self, connection: ConnRecord
