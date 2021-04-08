@@ -2,8 +2,13 @@
 
 import asyncio
 import logging
-from typing import Callable, Coroutine, Sequence, Set
+import re
 import uuid
+
+from typing import Callable, Coroutine, Sequence, Set
+
+import aiohttp_cors
+import jwt
 
 from aiohttp import web
 from aiohttp_apispec import (
@@ -12,8 +17,6 @@ from aiohttp_apispec import (
     setup_aiohttp_apispec,
     validation_middleware,
 )
-import aiohttp_cors
-import jwt
 
 from marshmallow import fields
 
@@ -537,11 +540,36 @@ class AdminServer(BaseAdminServer):
             The web response
 
         """
+        config = {
+            k: self.context.settings[k]
+            for k in self.context.settings
+            if k not in [
+                "admin.admin_api_key",
+                "multitenant.jwt_secret",
+                "wallet.key",
+                "wallet.rekey",
+                "wallet.seed",
+                "wallet.storage.creds",
+            ]
+        }
+        for index in range(len(config.get("admin.webhook_urls", []))):
+            config["admin.webhook_urls"][index] = re.sub(
+                r"#.*",
+                "",
+                config["admin.webhook_urls"][index],
+            )
+        
         return web.json_response(
             {
                 k: self.context.settings[k]
                 for k in self.context.settings
-                if k != "admin.admin_api_key"
+                if k not in [
+                    "admin.admin_api_key",
+                    "wallet.key",
+                    "wallet.seed",
+                    "wallet.rekey",
+                    "admin.webhook_urls",
+                ]
             }
         )
 
