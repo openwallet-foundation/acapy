@@ -434,7 +434,7 @@ class AdminServer(BaseAdminServer):
             for event_topic, webhook_topic in EVENT_WEBHOOK_MAPPING.items():
                 event_bus.subscribe(
                     re.compile(re.escape(event_topic)),
-                    lambda profile, event: self.send_webhook(
+                    lambda profile, event, webhook_topic=webhook_topic: self.send_webhook(
                         profile, webhook_topic, event.payload
                     ),
                 )
