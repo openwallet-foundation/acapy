@@ -2185,7 +2185,7 @@ class TestConnectionManager(AsyncTestCase):
             state=ConnRecord.State.INVITATION.rfc23,
             retrieve_invitation=async_mock.CoroutineMock(return_value=conn_invite),
         )
-        with self.assertRaises(ResolverError):
+        with self.assertRaises(BaseConnectionManagerError):
             await self.manager.fetch_connection_targets(mock_conn)
 
     async def test_fetch_connection_targets_oob_invitation_svc_did_no_ledger(self):
@@ -2202,7 +2202,7 @@ class TestConnectionManager(AsyncTestCase):
             their_role=ConnRecord.Role.RESPONDER.rfc23,
         )
 
-        with self.assertRaises(ResolverError):
+        with self.assertRaises(BaseConnectionManagerError):
             await self.manager.fetch_connection_targets(mock_conn)
 
     async def test_fetch_connection_targets_oob_invitation_svc_did_ledger(self):
