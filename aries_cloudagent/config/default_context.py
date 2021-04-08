@@ -10,6 +10,8 @@ from ..core.event_bus import EventBus
 from ..core.plugin_registry import PluginRegistry
 from ..core.profile import ProfileManager, ProfileManagerProvider
 from ..core.protocol_registry import ProtocolRegistry
+from ..resolver.did_resolver import DIDResolver
+from ..resolver.did_resolver_registry import DIDResolverRegistry
 from ..tails.base import BaseTailsServer
 from ..ledger.indy import IndySdkLedgerPool, IndySdkLedgerPoolProvider
 
@@ -18,7 +20,6 @@ from ..protocols.actionmenu.v1_0.driver_service import DriverMenuService
 from ..protocols.didcomm_prefix import DIDCommPrefix
 from ..protocols.introduction.v0_1.base_service import BaseIntroductionService
 from ..protocols.introduction.v0_1.demo_service import DemoIntroductionService
-
 from ..transport.wire_format import BaseWireFormat
 from ..utils.stats import Collector
 
@@ -44,6 +45,13 @@ class DefaultContextBuilder(ContextBuilder):
 
         # Global event bus
         context.injector.bind_instance(EventBus, EventBus())
+
+        # Global did resolver registry
+        did_resolver_registry = DIDResolverRegistry()
+        context.injector.bind_instance(DIDResolverRegistry, did_resolver_registry)
+
+        # Global did resolver
+        context.injector.bind_instance(DIDResolver, DIDResolver(did_resolver_registry))
 
         await self.bind_providers(context)
         await self.load_plugins(context)
@@ -107,7 +115,9 @@ class DefaultContextBuilder(ContextBuilder):
             "aries_cloudagent.messaging.credential_definitions"
         )
         plugin_registry.register_plugin("aries_cloudagent.messaging.schemas")
+        # plugin_registry.register_plugin("aries_cloudagent.messaging.jsonld")
         plugin_registry.register_plugin("aries_cloudagent.revocation")
+        plugin_registry.register_plugin("aries_cloudagent.resolver")
         plugin_registry.register_plugin("aries_cloudagent.wallet")
 
         if context.settings.get("multitenant.admin_enabled"):
