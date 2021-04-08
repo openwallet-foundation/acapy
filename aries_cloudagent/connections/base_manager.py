@@ -260,7 +260,7 @@ class BaseConnectionManager:
         for key in [*recipient_keys, *routing_keys]:
             if key.suite.type not in self.SUPPORTED_KEY_TYPES:
                 raise BaseConnectionManagerError(
-                    "Key type {key.suite.type} is not supported"
+                    f"Key type {key.suite.type} is not supported"
                 )
 
         return (
