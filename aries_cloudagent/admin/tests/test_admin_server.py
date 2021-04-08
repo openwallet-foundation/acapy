@@ -1,3 +1,5 @@
+import json
+
 from aiohttp import ClientSession, DummyCookieJar, TCPConnector, web
 from aiohttp.test_utils import unused_port
 
@@ -357,6 +359,13 @@ class TestAdminServer(AsyncTestCase):
             f"http://127.0.0.1:{self.port}/status", headers={"x-api-key": "wrong-key"}
         ) as response:
             assert response.status == 401
+
+        async with self.client_session.get(
+            f"http://127.0.0.1:{self.port}/status/config",
+            headers={"x-api-key": "test-api-key"},
+        ) as response:
+            assert "admin.admin_insecure_mode" in json.loads(await response.text())
+            assert "admin.admin_api_key" not in json.loads(await response.text())
 
         async with self.client_session.get(
             f"http://127.0.0.1:{self.port}/status",

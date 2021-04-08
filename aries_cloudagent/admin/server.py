@@ -370,6 +370,7 @@ class AdminServer(BaseAdminServer):
             web.get("/", self.redirect_handler, allow_head=False),
             web.get("/plugins", self.plugins_handler, allow_head=False),
             web.get("/status", self.status_handler, allow_head=False),
+            web.get("/status/config", self.config_handler, allow_head=False),
             web.post("/status/reset", self.status_reset_handler),
             web.get("/status/live", self.liveliness_handler, allow_head=False),
             web.get("/status/ready", self.readiness_handler, allow_head=False),
@@ -522,6 +523,27 @@ class AdminServer(BaseAdminServer):
         registry = self.context.inject(PluginRegistry, required=False)
         plugins = registry and sorted(registry.plugin_names) or []
         return web.json_response({"result": plugins})
+
+    @docs(tags=["server"], summary="Fetch the server configuration")
+    @response_schema(AdminStatusSchema(), 200, description="")
+    async def config_handler(self, request: web.BaseRequest):
+        """
+        Request handler for the server configuration.
+
+        Args:
+            request: aiohttp request object
+
+        Returns:
+            The web response
+
+        """
+        return web.json_response(
+            {
+                k: self.context.settings[k]
+                for k in self.context.settings
+                if k != "admin.admin_api_key"
+            }
+        )
 
     @docs(tags=["server"], summary="Fetch the server status")
     @response_schema(AdminStatusSchema(), 200, description="")
