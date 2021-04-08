@@ -2156,7 +2156,9 @@ class TestConnectionManager(AsyncTestCase):
             ],
         }
         # TODO: move options
-        did_doc = DIDDocument.deserialize(did_doc_json, options={options.vm_allow_missing_controller} )
+        did_doc = DIDDocument.deserialize(
+            did_doc_json, options={options.vm_allow_missing_controller}
+        )
         self.ledger = async_mock.MagicMock()
         self.ledger.get_endpoint_for_did = async_mock.CoroutineMock(
             return_value=self.test_endpoint
