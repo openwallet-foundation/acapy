@@ -10,13 +10,13 @@ from .crypto import (
     DIDMethod,
     KeyType,
     create_keypair,
-    random_seed,
     validate_seed,
     sign_message,
     verify_signed_message,
     encode_pack_message,
     decode_pack_message,
 )
+from .util import random_seed
 from ..did.did_key import DIDKey
 from .error import WalletError, WalletDuplicateError, WalletNotFoundError
 from .util import b58_to_bytes, bytes_to_b58

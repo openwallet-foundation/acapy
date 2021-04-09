@@ -130,6 +130,30 @@ def stub_indy_vdr() -> Stub:
     return Stub(mock.patch.dict(sys.modules, modules))
 
 
+def stub_ursa_bbs_signatures() -> Stub:
+    # detect ursa_bbs_signatures library
+    try:
+        from ursa_bbs_signatures._ffi.ffi_util import get_library
+
+        get_library()
+        return Stub(None)
+    except ImportError:
+        print(
+            "Skipping Ursa-BBS-Signatures-specific tests:"
+            " ursa_bbs_signatures module not installed."
+        )
+    except OSError:
+        print(
+            "Skipping Ursa-BBS-Signatures-specific tests: bbs shared library"
+            "could not be loaded."
+        )
+
+    modules = {}
+    package_name = "ursa_bbs_signatures"
+    modules[package_name] = mock.MagicMock()
+    return Stub(mock.patch.dict(sys.modules, modules))
+
+
 def pytest_sessionstart(session):
     global STUBS, POSTGRES_URL, ENABLE_PTVSD
     ENABLE_PTVSD = os.getenv("ENABLE_PTVSD", False)
@@ -154,6 +178,7 @@ def pytest_sessionstart(session):
             "indy": stub_indy(),
             "indy_credx": stub_indy_credx(),
             "indy_vdr": stub_indy_vdr(),
+            "ursa_bbs_signatures": stub_ursa_bbs_signatures(),
         }
     )
     for stub in STUBS.values():
@@ -182,6 +207,12 @@ def pytest_runtest_setup(item: pytest.Item):
 
     if tuple(item.iter_markers(name="indy_vdr")) and not STUBS["indy_vdr"].found:
         pytest.skip("test requires Indy-VDR support")
+
+    if (
+        tuple(item.iter_markers(name="ursa_bbs_signatures"))
+        and not STUBS["ursa_bbs_signatures"].found
+    ):
+        pytest.skip("test requires Ursa-BBS-Signatures support")
 
     if tuple(item.iter_markers(name="postgres")) and not POSTGRES_URL:
         pytest.skip("test requires Postgres support")

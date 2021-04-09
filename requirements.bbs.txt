@@ -1,0 +1,1 @@
+git+git://github.com/animo/ffi-bbs-signatures@master#egg=ursa_bbs_signatures&subdirectory=wrappers/python

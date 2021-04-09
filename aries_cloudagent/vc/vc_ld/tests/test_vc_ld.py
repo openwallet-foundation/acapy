@@ -1,6 +1,8 @@
 from asynctest import TestCase
 from datetime import datetime
 
+import pytest
+
 from ....wallet.crypto import KeyType
 from ....did.did_key import DIDKey
 from ....wallet.in_memory import InMemoryWallet
@@ -84,6 +86,7 @@ class TestLinkedDataVerifiableCredential(TestCase):
 
         assert verified == CREDENTIAL_VERIFIED
 
+    @pytest.mark.ursa_bbs_signatures
     async def test_issue_BbsBlsSignature2020(self):
         # Use different key pair and suite for signing and verification
         # as during verification a lot of information can be extracted

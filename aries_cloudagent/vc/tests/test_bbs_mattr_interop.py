@@ -1,5 +1,5 @@
-import json
 from asynctest import TestCase
+import pytest
 
 from ...wallet.crypto import KeyType
 from ...wallet.util import b58_to_bytes
@@ -30,6 +30,7 @@ from .data import (
 )
 
 
+@pytest.mark.ursa_bbs_signatures
 class TestBbsMattrInterop(TestCase):
     async def setUp(self):
         self.profile = InMemoryProfile.test_profile()

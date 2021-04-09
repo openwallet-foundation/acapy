@@ -2,6 +2,8 @@ from asynctest import TestCase
 
 from datetime import datetime
 
+import pytest
+
 from ....wallet.base import KeyInfo
 from ....wallet.crypto import KeyType
 from ....did.did_key import DIDKey
@@ -88,6 +90,7 @@ class TestLDProofs(TestCase):
 
         assert result == DOC_VERIFIED
 
+    @pytest.mark.ursa_bbs_signatures
     async def test_sign_BbsBlsSignature2020(self):
         # Use different key pair and suite for signing and verification
         # as during verification a lot of information can be extracted
@@ -120,6 +123,7 @@ class TestLDProofs(TestCase):
 
         assert result.verified
 
+    @pytest.mark.ursa_bbs_signatures
     async def test_verify_BbsBlsSignature2020(self):
         # Verification requires lot less input parameters
         suite = BbsBlsSignature2020(
@@ -135,6 +139,7 @@ class TestLDProofs(TestCase):
 
         assert result.verified
 
+    @pytest.mark.ursa_bbs_signatures
     async def test_derive_BbsBlsSignatureProof2020(self):
         # Verification requires lot less input parameters
         suite = BbsBlsSignatureProof2020(
@@ -150,6 +155,7 @@ class TestLDProofs(TestCase):
 
         assert result
 
+    @pytest.mark.ursa_bbs_signatures
     async def test_verify_BbsBlsSignatureProof2020(self):
         # Verification requires lot less input parameters
         suite = BbsBlsSignatureProof2020(

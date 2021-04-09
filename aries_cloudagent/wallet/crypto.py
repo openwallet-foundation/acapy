@@ -12,22 +12,9 @@ import nacl.utils
 
 from marshmallow import fields, Schema, ValidationError
 
-from ursa_bbs_signatures import (
-    SignRequest,
-    VerifyRequest,
-    BlsKeyPair,
-    sign as bbs_sign,
-    verify as bbs_verify,
-)
-
 from .error import WalletError
 from ..core.error import BaseError
-from .util import (
-    bytes_to_b58,
-    bytes_to_b64,
-    b64_to_bytes,
-    b58_to_bytes,
-)
+from .util import bytes_to_b58, bytes_to_b64, b64_to_bytes, b58_to_bytes, random_seed
 
 # Define keys
 KeySpec = NamedTuple(
@@ -237,6 +224,9 @@ def create_keypair(key_type: KeyType, seed: bytes = None) -> Tuple[bytes, bytes]
     if key_type == KeyType.ED25519:
         return create_ed25519_keypair(seed)
     elif key_type == KeyType.BLS12381G2:
+        # This ensures python won't crash if bbs is not installed and not used
+        from .bbs import create_bls12381g2_keypair
+
         return create_bls12381g2_keypair(seed)
     else:
         raise WalletError(f"Unsupported key type: {key_type.key_type}")
@@ -257,35 +247,6 @@ def create_ed25519_keypair(seed: bytes = None) -> Tuple[bytes, bytes]:
         seed = random_seed()
     pk, sk = nacl.bindings.crypto_sign_seed_keypair(seed)
     return pk, sk
-
-
-def create_bls12381g2_keypair(seed: bytes = None) -> Tuple[bytes, bytes]:
-    """
-    Create a public and private bls12381g2 keypair from a seed value.
-
-    Args:
-        seed: Seed for keypair
-
-    Returns:
-        A tuple of (public key, secret key)
-
-    """
-    if not seed:
-        seed = random_seed()
-
-    key_pair = BlsKeyPair.generate_g2(seed)
-    return key_pair.public_key, key_pair.secret_key
-
-
-def random_seed() -> bytes:
-    """
-    Generate a random seed value.
-
-    Returns:
-        A new random seed
-
-    """
-    return nacl.utils.random(nacl.bindings.crypto_box_SEEDBYTES)
 
 
 def seed_to_did(seed: str) -> str:
@@ -363,6 +324,8 @@ def sign_message(
             secret=secret,
         )
     elif key_type == KeyType.BLS12381G2:
+        from .bbs import sign_messages_bls12381g2
+
         return sign_messages_bls12381g2(messages=messages, secret=secret)
     else:
         raise WalletError(f"Unsupported key type: {key_type.key_type}")
@@ -382,26 +345,6 @@ def sign_message_ed25519(message: bytes, secret: bytes) -> bytes:
     result = nacl.bindings.crypto_sign(message, secret)
     sig = result[: nacl.bindings.crypto_sign_BYTES]
     return sig
-
-
-def sign_messages_bls12381g2(messages: List[bytes], secret: bytes):
-    """Sign messages using a bls12381g2 private signing key.
-
-    Args:
-        messages (List[bytes]): The messages to sign
-        secret (bytes): The private signing key
-
-    Returns:
-        bytes: The signature
-
-    """
-    key_pair = BlsKeyPair.from_secret_key(secret)
-
-    messages = [message.decode("utf-8") for message in messages]
-
-    sign_request = SignRequest(key_pair=key_pair, messages=messages)
-
-    return bbs_sign(sign_request)
 
 
 def verify_signed_message(
@@ -434,6 +377,8 @@ def verify_signed_message(
             message=messages[0], signature=signature, verkey=verkey
         )
     elif key_type == KeyType.BLS12381G2:
+        from .bbs import verify_signed_messages_bls12381g2
+
         return verify_signed_messages_bls12381g2(
             messages=messages, signature=signature, public_key=verkey
         )
@@ -461,30 +406,6 @@ def verify_signed_message_ed25519(
     except nacl.exceptions.BadSignatureError:
         return False
     return True
-
-
-def verify_signed_messages_bls12381g2(
-    messages: List[bytes], signature: bytes, public_key: bytes
-) -> bool:
-    """
-    Verify an ed25519 signed message according to a public verification key.
-
-    Args:
-        signed: The signed messages
-        public_key: The public key to use in verification
-
-    Returns:
-        True if verified, else False
-
-    """
-    key_pair = BlsKeyPair(public_key=public_key)
-    messages = [message.decode("utf-8") for message in messages]
-
-    verify_request = VerifyRequest(
-        key_pair=key_pair, signature=signature, messages=messages
-    )
-
-    return bbs_verify(verify_request)
 
 
 def prepare_pack_recipient_keys(

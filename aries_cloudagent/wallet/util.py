@@ -3,6 +3,20 @@
 import base58
 import base64
 
+import nacl.utils
+import nacl.bindings
+
+
+def random_seed() -> bytes:
+    """
+    Generate a random seed value.
+
+    Returns:
+        A new random seed
+
+    """
+    return nacl.utils.random(nacl.bindings.crypto_box_SEEDBYTES)
+
 
 def pad(val: str) -> str:
     """Pad base64 values if need be: JWT calls to omit trailing padding."""
