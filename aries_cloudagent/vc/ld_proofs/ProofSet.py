@@ -21,7 +21,6 @@ class ProofSet:
         suite: LinkedDataProof,
         purpose: ProofPurpose,
         document_loader: DocumentLoader,
-        # TODO: add expandContext property
     ) -> dict:
         """Add a Linked Data proof to the document.
 
@@ -188,8 +187,6 @@ class ProofSet:
             document_loader=document_loader,
             nonce=nonce,
         )
-        # TODO: I think this is also not needed anymore then?
-        derived_proof["proof"].pop("@context", None)
 
         if len(proof_set) > 1:
             derived_proof["proof"] = [derived_proof["proof"]]
@@ -203,8 +200,6 @@ class ProofSet:
                     reveal_document=reveal_document,
                     document_loader=document_loader,
                 )
-                # TODO: also not needed anymore?
-                # additional_derived_proof["proof"].pop("@context", None)
                 derived_proof["proof"].append(additional_derived_proof["proof"])
 
         JsonLdProcessor.add_value(
