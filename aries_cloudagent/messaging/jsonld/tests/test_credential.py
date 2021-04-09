@@ -10,7 +10,7 @@ TEST_VERKEY = "5yKdnU7ToTjAoRNDzfuzVTfWBH38qyhE1b9xh4v8JaWF"
 class TestCredential(AsyncTestCase):
     async def test_did_key(self):
         did_key = test_module.did_key(TEST_VERKEY)
-        assert did_key.startswith(f"did:key:{test_module.MULTIBASE_B58_BTC}")
+        assert did_key.startswith("did:key:z")
         assert did_key == test_module.did_key(did_key)
 
     async def test_verify_jws_header(self):

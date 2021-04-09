@@ -1,9 +1,9 @@
 import pytest
 
-from aries_cloudagent.messaging.base_handler import HandlerException
-from aries_cloudagent.messaging.request_context import RequestContext
-from aries_cloudagent.messaging.responder import MockResponder
-from aries_cloudagent.transport.inbound.receipt import MessageReceipt
+from .....messaging.base_handler import HandlerException
+from .....messaging.request_context import RequestContext
+from .....messaging.responder import MockResponder
+from .....transport.inbound.receipt import MessageReceipt
 
 from ..handler import ProblemReportHandler
 from ..message import ProblemReport

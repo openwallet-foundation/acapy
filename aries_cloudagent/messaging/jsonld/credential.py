@@ -2,32 +2,21 @@
 
 import json
 
-from ...wallet.util import (
-    b58_to_bytes,
-    b64_to_bytes,
-    b64_to_str,
-    bytes_to_b58,
-    bytes_to_b64,
-    str_to_b64,
-)
+from ...wallet.util import b64_to_bytes, b64_to_str, bytes_to_b64, str_to_b64
 from ...wallet.crypto import KeyType
+from ...did.did_key import DIDKey
 
 from .create_verify_data import create_verify_data
 from .error import BadJWSHeaderError
-
-MULTIBASE_B58_BTC = "z"
-MULTICODEC_ED25519_PUB = b"\xed"
 
 
 def did_key(verkey: str) -> str:
     """Qualify verkey into DID key if need be."""
 
-    return (
-        verkey
-        if verkey.startswith(f"did:key:{MULTIBASE_B58_BTC}")
-        else f"did:key:{MULTIBASE_B58_BTC}"
-        + bytes_to_b58(MULTICODEC_ED25519_PUB + b58_to_bytes(verkey))
-    )
+    if verkey.startswith("did:key:"):
+        return verkey
+
+    return DIDKey.from_public_key_b58(verkey).did
 
 
 def b64encode(str):
