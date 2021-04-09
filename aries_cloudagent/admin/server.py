@@ -550,7 +550,8 @@ class AdminServer(BaseAdminServer):
         config = {
             k: self.context.settings[k]
             for k in self.context.settings
-            if k not in [
+            if k
+            not in [
                 "admin.admin_api_key",
                 "multitenant.jwt_secret",
                 "wallet.key",
@@ -565,7 +566,7 @@ class AdminServer(BaseAdminServer):
                 "",
                 config["admin.webhook_urls"][index],
             )
-        
+
         return web.json_response(config)
 
     @docs(tags=["server"], summary="Fetch the server status")
