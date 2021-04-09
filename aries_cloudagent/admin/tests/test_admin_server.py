@@ -361,13 +361,6 @@ class TestAdminServer(AsyncTestCase):
             assert response.status == 401
 
         async with self.client_session.get(
-            f"http://127.0.0.1:{self.port}/status/config",
-            headers={"x-api-key": "test-api-key"},
-        ) as response:
-            assert "admin.admin_insecure_mode" in json.loads(await response.text())
-            assert "admin.admin_api_key" not in json.loads(await response.text())
-
-        async with self.client_session.get(
             f"http://127.0.0.1:{self.port}/status",
             headers={"x-api-key": "test-api-key"},
         ) as response:
@@ -380,6 +373,30 @@ class TestAdminServer(AsyncTestCase):
             assert result["topic"] == "settings"
 
         await server.stop()
+
+    async def test_query_config(self):
+        settings = {
+            "admin.admin_insecure_mode": False,
+            "admin.admin_api_key": "test-api-key",
+            "wallet.key": "abc123",
+            "multitenant.jwt_secret": "abc123",
+        }
+        server = self.get_admin_server(settings)
+        await server.start()
+
+        async with self.client_session.get(
+            f"http://127.0.0.1:{self.port}/status/config",
+            headers={"x-api-key": "test-api-key"},
+        ) as response:
+            assert "admin.admin_insecure_mode" in json.loads(await response.text())
+            assert all(
+                k not in json.loads(await response.text())
+                for k in [
+                    "admin.admin_api_key",
+                    "multitenant.jwt_secret",
+                    "wallet.key",
+                ]
+            )
 
     async def test_visit_shutting_down(self):
         settings = {

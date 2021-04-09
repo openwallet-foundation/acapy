@@ -559,19 +559,7 @@ class AdminServer(BaseAdminServer):
                 config["admin.webhook_urls"][index],
             )
         
-        return web.json_response(
-            {
-                k: self.context.settings[k]
-                for k in self.context.settings
-                if k not in [
-                    "admin.admin_api_key",
-                    "wallet.key",
-                    "wallet.seed",
-                    "wallet.rekey",
-                    "admin.webhook_urls",
-                ]
-            }
-        )
+        return web.json_response(config)
 
     @docs(tags=["server"], summary="Fetch the server status")
     @response_schema(AdminStatusSchema(), 200, description="")
