@@ -21,8 +21,8 @@ from ......vc.ld_proofs import (
     ProofPurpose,
     get_default_document_loader,
     AuthenticationProofPurpose,
-    SECURITY_CONTEXT_BBS_URL,
 )
+from ......vc.ld_proofs.constants import SECURITY_CONTEXT_BBS_URL
 from ......wallet.crypto import KeyType
 from ......wallet.error import WalletNotFoundError
 from ......wallet.base import BaseWallet, DIDInfo
@@ -129,8 +129,8 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
             # Check if it is a proof type we can issue with
             if proof_type not in PROOF_TYPE_SIGNATURE_SUITE_MAPPING.keys():
                 raise V20CredFormatError(
-                    f"Unable to sign credential with unsupported proof type {proof_type}"
-                    f". Supported proof types: {PROOF_TYPE_SIGNATURE_SUITE_MAPPING.keys()}"
+                    f"Unable to sign credential with unsupported proof type {proof_type}."
+                    f" Supported proof types: {PROOF_TYPE_SIGNATURE_SUITE_MAPPING.keys()}"
                 )
 
             if not issuer_id.startswith("did:"):
@@ -298,6 +298,8 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
         ):
             detail.credential.add_context(SECURITY_CONTEXT_BBS_URL)
 
+        return detail
+
     async def create_proposal(
         self, cred_ex_record: V20CredExRecord, proposal_data: Mapping
     ) -> CredFormatAttachment:
@@ -313,7 +315,7 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
         """Receive linked data proof credential proposal."""
 
     async def create_offer(
-        self, cred_ex_record: V20CredExRecord
+        self, cred_ex_record: V20CredExRecord, offer_data: Mapping = None
     ) -> CredFormatAttachment:
         """Create linked data proof credential offer."""
         if not cred_ex_record.cred_proposal:
@@ -342,7 +344,7 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
         """Receive linked data proof credential offer."""
 
     async def create_request(
-        self, cred_ex_record: V20CredExRecord
+        self, cred_ex_record: V20CredExRecord, request_data: Mapping = None
     ) -> CredFormatAttachment:
         """Create linked data proof credential request."""
         if cred_ex_record.cred_offer:
