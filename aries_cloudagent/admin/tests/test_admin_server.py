@@ -192,10 +192,12 @@ class TestAdminServer(AsyncTestCase):
 
         settings = {
             "admin.admin_insecure_mode": False,
+            "admin.admin_client_max_request_size": 4,
             "admin.admin_api_key": "test-api-key",
         }
         server = self.get_admin_server(settings)
         await server.start()
+        assert server.app._client_max_size == 4 * 1024 * 1024
         with async_mock.patch.object(
             server, "websocket_queues", async_mock.MagicMock()
         ) as mock_wsq:
