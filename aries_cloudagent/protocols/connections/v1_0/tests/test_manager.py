@@ -2245,9 +2245,7 @@ class TestConnectionManager(AsyncTestCase):
         )
         with builder.services.defaults() as services:
             services.add_didcomm(
-                type_="IndyAgent",
-                endpoint=self.test_endpoint,
-                recipient_keys=[vmethod]
+                type_="IndyAgent", endpoint=self.test_endpoint, recipient_keys=[vmethod]
             )
         did_doc = builder.build()
         self.resolver = async_mock.MagicMock()
