@@ -86,6 +86,7 @@ BBS_V1 = {
                 },
             },
         },
+        "Bls12381G1Key2020": "https://w3id.org/security#Bls12381G1Key2020",
         "Bls12381G2Key2020": "https://w3id.org/security#Bls12381G2Key2020",
     }
 }
