@@ -4,14 +4,12 @@ from asynctest import mock as async_mock
 
 from aries_cloudagent.resolver.did_resolver import DIDResolver
 from aries_cloudagent.resolver.did_resolver_registry import DIDResolverRegistry
-from aries_cloudagent.resolver.base import ResolverError
 from .....cache.base import BaseCache
 from .....cache.in_memory import InMemoryCache
 from .....config.base import InjectionError
 from .....connections.models.conn_record import ConnRecord
 from .....connections.models.connection_target import ConnectionTarget
 from .....connections.base_manager import (
-    BaseConnectionManager,
     BaseConnectionManagerError,
 )
 from .....connections.models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
@@ -2167,6 +2165,91 @@ class TestConnectionManager(AsyncTestCase):
         did_doc = DIDDocument.deserialize(
             did_doc_json, options={options.vm_allow_missing_controller}
         )
+        self.resolver = async_mock.MagicMock()
+        self.resolver.get_endpoint_for_did = async_mock.CoroutineMock(
+            return_value=self.test_endpoint
+        )
+        self.resolver.resolve = async_mock.CoroutineMock(return_value=did_doc)
+        self.context.injector.bind_instance(DIDResolver, self.resolver)
+
+        local_did = await self.session.wallet.create_local_did(
+            seed=self.test_seed, did=did_doc.id, metadata=None
+        )
+
+        conn_invite = ConnectionInvitation(
+            did=did_doc.id,
+            endpoint=self.test_endpoint,
+            recipient_keys=["{}#1".format(did_doc.id)],
+            routing_keys=[self.test_verkey],
+            label="label",
+        )
+        mock_conn = async_mock.MagicMock(
+            my_did=did_doc.id,
+            their_did=self.test_target_did,
+            connection_id="dummy",
+            their_role=ConnRecord.Role.RESPONDER.rfc23,
+            state=ConnRecord.State.INVITATION.rfc23,
+            retrieve_invitation=async_mock.CoroutineMock(return_value=conn_invite),
+        )
+        with self.assertRaises(BaseConnectionManagerError):
+            await self.manager.fetch_connection_targets(mock_conn)
+
+    async def test_fetch_connection_targets_conn_invitation_no_didcomm_services(self):
+        builder = DIDDocumentBuilder("did:btcr:x705-jznz-q3nl-srs")
+        vmethod = builder.verification_methods.add(
+            ident="1",
+            suite=VerificationSuite("Ed25519VerificationKey2018", "publicKeyBase58"),
+            material="02e0e01a8c302976e1556e95c54146e8464adac8626a5d29474718a7281133ff49",
+        )
+        with builder.services.defaults() as services:
+            services.add(
+                type_="LinkedData",
+                endpoint=self.test_endpoint,
+            )
+        did_doc = builder.build()
+        self.resolver = async_mock.MagicMock()
+        self.resolver.get_endpoint_for_did = async_mock.CoroutineMock(
+            return_value=self.test_endpoint
+        )
+        self.resolver.resolve = async_mock.CoroutineMock(return_value=did_doc)
+        self.context.injector.bind_instance(DIDResolver, self.resolver)
+
+        local_did = await self.session.wallet.create_local_did(
+            seed=self.test_seed, did=did_doc.id, metadata=None
+        )
+
+        conn_invite = ConnectionInvitation(
+            did=did_doc.id,
+            endpoint=self.test_endpoint,
+            recipient_keys=["{}#1".format(did_doc.id)],
+            routing_keys=[self.test_verkey],
+            label="label",
+        )
+        mock_conn = async_mock.MagicMock(
+            my_did=did_doc.id,
+            their_did=self.test_target_did,
+            connection_id="dummy",
+            their_role=ConnRecord.Role.RESPONDER.rfc23,
+            state=ConnRecord.State.INVITATION.rfc23,
+            retrieve_invitation=async_mock.CoroutineMock(return_value=conn_invite),
+        )
+        with self.assertRaises(BaseConnectionManagerError):
+            await self.manager.fetch_connection_targets(mock_conn)
+
+    async def test_fetch_connection_targets_conn_invitation_unsupported_key_type(self):
+        builder = DIDDocumentBuilder("did:btcr:x705-jznz-q3nl-srs")
+        vmethod = builder.verification_methods.add(
+            ident="1",
+            suite=VerificationSuite("JsonWebKey2020", "publicKeyJwk"),
+            material={"jwk": "stuff"},
+        )
+        with builder.services.defaults() as services:
+            services.add_didcomm(
+                type_="IndyAgent",
+                endpoint=self.test_endpoint,
+                recipient_keys=[vmethod]
+            )
+        did_doc = builder.build()
         self.resolver = async_mock.MagicMock()
         self.resolver.get_endpoint_for_did = async_mock.CoroutineMock(
             return_value=self.test_endpoint
