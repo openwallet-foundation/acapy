@@ -2032,7 +2032,9 @@ class TestConnectionManager(AsyncTestCase):
             material=self.test_target_verkey,
         )
         builder.services.add_didcomm(
-            ident="did-communication", endpoint=self.test_endpoint, recipient_keys=[vmethod]
+            ident="did-communication",
+            endpoint=self.test_endpoint,
+            recipient_keys=[vmethod],
         )
         did_doc = builder.build()
         self.resolver = async_mock.MagicMock()
@@ -2136,7 +2138,7 @@ class TestConnectionManager(AsyncTestCase):
         assert target.endpoint == self.test_endpoint
         assert target.label == conn_invite.label
         assert target.recipient_keys == conn_invite.recipient_keys
-        #assert target.routing_keys == [key.id]
+        assert target.routing_keys == [vmethod.material]
         assert target.sender_key == local_did.verkey
 
     async def test_fetch_connection_targets_conn_invitation_btcr_without_services(self):
@@ -2223,7 +2225,9 @@ class TestConnectionManager(AsyncTestCase):
             material=self.test_target_verkey,
         )
         builder.services.add_didcomm(
-            ident="did-communication", endpoint=self.test_endpoint, recipient_keys=[vmethod]
+            ident="did-communication",
+            endpoint=self.test_endpoint,
+            recipient_keys=[vmethod],
         )
         did_doc = builder.build()
 
@@ -2255,8 +2259,7 @@ class TestConnectionManager(AsyncTestCase):
         assert target.did == mock_conn.their_did
         assert target.endpoint == self.test_endpoint
         assert target.label == mock_oob_invite.label
-        assert target.recipient_keys[0] == \
-            did_doc.dereference(did_doc.service[0].recipient_keys[0]).material
+        assert target.recipient_keys == [vmethod.material]
         assert target.routing_keys == []
         assert target.sender_key == local_did.verkey
 

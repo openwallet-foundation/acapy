@@ -40,9 +40,7 @@ class BaseConnectionManager:
 
     RECORD_TYPE_DID_DOC = "did_doc"
     RECORD_TYPE_DID_KEY = "did_key"
-    SUPPORTED_KEY_TYPES = (
-        PublicKeyType.ED25519_SIG_2018.ver_type,
-    )
+    SUPPORTED_KEY_TYPES = (PublicKeyType.ED25519_SIG_2018.ver_type,)
 
     def __init__(self, session: ProfileSession):
         """
@@ -235,10 +233,10 @@ class BaseConnectionManager:
                 "Cannot connect via public DID that has no associated services"
             )
 
-        didcomm_services = sorted([
-            service for service in doc.service
-            if isinstance(service, DIDCommService)
-        ], key=lambda service: service.priority)
+        didcomm_services = sorted(
+            [service for service in doc.service if isinstance(service, DIDCommService)],
+            key=lambda service: service.priority,
+        )
 
         if not didcomm_services:
             raise BaseConnectionManagerError(
@@ -249,12 +247,10 @@ class BaseConnectionManager:
 
         endpoint = first_didcomm_service.endpoint
         recipient_keys: List[VerificationMethod] = [
-            doc.dereference(url)
-            for url in first_didcomm_service.recipient_keys
+            doc.dereference(url) for url in first_didcomm_service.recipient_keys
         ]
         routing_keys: List[VerificationMethod] = [
-            doc.dereference(url)
-            for url in first_didcomm_service.routing_keys
+            doc.dereference(url) for url in first_didcomm_service.routing_keys
         ]
 
         for key in [*recipient_keys, *routing_keys]:
