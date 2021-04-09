@@ -66,7 +66,7 @@ class BaseDIDResolver(ABC):
 
         if not self.supports(did.method):
             raise DIDMethodNotSupported(
-                f"{did.method} is not supported by {self.__class__.__name__} resolver."
+                f"{self.__class__.__name__} does not support DID method {did.method}"
             )
 
         did = str(did)
