@@ -25,7 +25,7 @@ def get_default_document_loader(profile: Profile) -> "DocumentLoader":
 
         # Try to get from cache
         if cache:
-            document = cache.get(cache_key)
+            document = await cache.get(cache_key)
             if document:
                 return document
 
