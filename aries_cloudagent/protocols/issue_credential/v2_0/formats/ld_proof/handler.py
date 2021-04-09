@@ -244,6 +244,9 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
 
         if did.startswith("did:key:"):
             return DIDKey.from_did(did).key_id
+        elif did.startswith("did:sov:"):
+            # key-1 is what uniresolver uses for key id
+            return did + "#key-1"
         else:
             raise V20CredFormatError(
                 f"Unable to get retrieve verification method for did {did}"

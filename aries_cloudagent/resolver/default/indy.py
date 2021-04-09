@@ -54,7 +54,7 @@ class IndyDIDResolver(BaseDIDResolver):
         builder = DIDDocumentBuilder(did_obj)
 
         vmethod = builder.verification_methods.add(
-            ident="keys-1", suite=self.SUITE, material=recipient_key
+            ident="key-1", suite=self.SUITE, material=recipient_key
         )
         builder.authentication.reference(vmethod.id)
         if endpoint:
