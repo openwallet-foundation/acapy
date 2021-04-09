@@ -20,8 +20,14 @@ async def setup(context: InjectionContext):
         LOGGER.warning("Ledger is not configured, not loading IndyDIDResolver")
         return
 
-    resolver = ClassProvider(
+    indy_resolver = ClassProvider(
         "aries_cloudagent.resolver.default.indy.IndyDIDResolver"
     ).provide(context.settings, context.injector)
-    await resolver.setup(context)
-    registry.register(resolver)
+    await indy_resolver.setup(context)
+    registry.register(indy_resolver)
+
+    key_resolver = ClassProvider(
+        "aries_cloudagent.resolver.default.key.KeyDIDResolver"
+    ).provide(context.settings, context.injector)
+    await key_resolver.setup(context)
+    registry.register(key_resolver)

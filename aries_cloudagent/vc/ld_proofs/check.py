@@ -96,6 +96,7 @@ def get_properties_without_context(
     # that gives incorrect and inconsistent output. This is caused by other
     # pyld operations in ACA-Py, so we use a separate context cache just for
     # this task.
+    # See: https://github.com/digitalbazaar/pyld/issues/123
     context_resolver = ContextResolver(_resolved_context_cache, document_loader)
 
     # Removes unknown keys from object
