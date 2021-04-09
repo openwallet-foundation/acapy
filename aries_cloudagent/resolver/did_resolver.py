@@ -37,7 +37,7 @@ class DIDResolver:
             except DIDNotFound:
                 LOGGER.debug("DID %s not found by resolver %s", did, resolver)
 
-        raise DIDNotFound(f"DID {did} could not be resolved.")
+        raise DIDNotFound(f"DID {did} could not be resolved")
 
     def _match_did_to_resolver(self, did: DID) -> BaseDIDResolver:
         """Generate supported DID Resolvers.
