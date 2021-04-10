@@ -132,7 +132,7 @@ class VCRecord(BaseModel):
         schema_ids = [schema.get("id") for schema in schemas]
 
         # Proofs (this can be done easier if we use the expanded version)
-        proofs = cred_dict.get("proof")
+        proofs = cred_dict.get("proof") or []
         if type(proofs) is dict:
             proofs = [proofs]
         proof_types = [proof.get("type") for proof in proofs]
