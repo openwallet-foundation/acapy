@@ -1,5 +1,6 @@
 """JSON-LD document loader methods."""
 
+from pydid.did_url import DIDUrl
 from pyld.documentloader import requests
 from typing import Callable
 import asyncio
@@ -33,7 +34,12 @@ def get_default_document_loader(profile: Profile) -> "DocumentLoader":
 
         # Resolve DIDs using did resolver
         if url.startswith("did:"):
-            did_document = await resolver.resolve(profile, url)
+            # Resolver expects plain did without path, query, etc...
+            # DIDUrl throws error if it contains no path, query etc...
+            # This makes sure we get a plain did
+            did = DIDUrl.parse(url).did if DIDUrl.is_valid(url) else url
+
+            did_document = await resolver.resolve(profile, did)
 
             document = {
                 "contentType": "application/ld+json",
