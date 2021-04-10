@@ -57,6 +57,7 @@ class IndyDIDResolver(BaseDIDResolver):
             ident="key-1", suite=self.SUITE, material=recipient_key
         )
         builder.authentication.reference(vmethod.id)
+        builder.assertion_method.reference(vmethod.id)
         if endpoint:
             # TODO add priority
             builder.services.add_didcomm(
