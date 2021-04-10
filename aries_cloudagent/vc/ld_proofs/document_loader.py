@@ -3,6 +3,7 @@
 from pyld.documentloader import requests
 from typing import Callable
 import asyncio
+import concurrent.futures
 
 from ...resolver.did_resolver import DIDResolver
 from ...cache.base import BaseCache
@@ -13,11 +14,12 @@ from .error import LinkedDataProofException
 def get_default_document_loader(profile: Profile) -> "DocumentLoader":
     """Return the default document loader."""
 
-    loop = asyncio.get_event_loop()
+    executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
     cache = profile.inject(BaseCache, required=False)
     resolver = profile.inject(DIDResolver)
     requests_loader = requests.requests_document_loader()
 
+    # Async document loader can use await for cache and did resolver
     async def async_document_loader(url: str, options: dict):
         """Retrieve http(s) or did:key document."""
 
@@ -43,16 +45,25 @@ def get_default_document_loader(profile: Profile) -> "DocumentLoader":
             document = requests_loader(url, options)
             # Only cache http document at the moment
             if cache:
-                cache.set(cache_key, document)
+                await cache.set(cache_key, document)
         else:
             raise LinkedDataProofException(
                 "Unrecognized url format. Must start with "
                 "'did:', 'http://' or 'https://'"
             )
 
-    # PyLD document loaders must be sync.
-    def loader(url: str, options: dict):
+        return document
+
+    # Thread document loader makes async document loader sync
+    def thread_document_loader(url: str, options: dict):
+        loop = asyncio.new_event_loop()
         return loop.run_until_complete(async_document_loader(url, options))
+
+    # Loader must be run in separate thread because we can't nest asyncio
+    # loop calls.
+    def loader(url: str, options: dict):
+        future = executor.submit(thread_document_loader, url, options)
+        return future.result()
 
     return loader
 
