@@ -142,9 +142,9 @@ def stub_ursa_bbs_signatures() -> Stub:
             "Skipping Ursa-BBS-Signatures-specific tests:"
             " ursa_bbs_signatures module not installed."
         )
-    except OSError:
+    except (OSError, Exception):
         print(
-            "Skipping Ursa-BBS-Signatures-specific tests: bbs shared library"
+            "Skipping Ursa-BBS-Signatures-specific tests: bbs shared library "
             "could not be loaded."
         )
 
