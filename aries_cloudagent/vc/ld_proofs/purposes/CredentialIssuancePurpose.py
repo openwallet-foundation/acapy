@@ -55,8 +55,10 @@ class CredentialIssuancePurpose(AssertionProofPurpose):
             if len(issuer) == 0:
                 raise LinkedDataProofException("Credential issuer is required.")
 
-            # TODO: we're mixing expanded and not-expanded here. Confusing
-            if result.controller.get("id") != issuer[0].get("@id"):
+            controller_id = result.controller.get("id")
+            issuer_id = issuer[0].get("@id")
+
+            if controller_id != issuer_id:
                 raise LinkedDataProofException(
                     "Credential issuer must match the verification method controller."
                 )
