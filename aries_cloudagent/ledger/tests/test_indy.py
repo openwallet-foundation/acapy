@@ -1234,7 +1234,11 @@ class TestIndySdkLedger(AsyncTestCase):
         async with ledger:
             mock_wallet.get_public_did = async_mock.CoroutineMock()
             mock_wallet.get_public_did.return_value = DIDInfo(
-                TestIndySdkLedger.test_did, TestIndySdkLedger.test_verkey, None
+                TestIndySdkLedger.test_did,
+                TestIndySdkLedger.test_verkey,
+                None,
+                DIDMethod.SOV,
+                KeyType.ED25519,
             )
 
             (

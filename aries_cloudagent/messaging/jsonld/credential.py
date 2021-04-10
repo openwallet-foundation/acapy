@@ -16,7 +16,7 @@ def did_key(verkey: str) -> str:
     if verkey.startswith("did:key:"):
         return verkey
 
-    return DIDKey.from_public_key_b58(verkey).did
+    return DIDKey.from_public_key_b58(verkey, KeyType.ED25519).did
 
 
 def b64encode(str):
