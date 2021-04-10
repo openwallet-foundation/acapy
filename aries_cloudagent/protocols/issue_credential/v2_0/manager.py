@@ -528,25 +528,27 @@ class V20CredManager:
             cred_request_message = cast(
                 V20CredRequest, V20CredRequest.deserialize(cred_ex_record.cred_request)
             )
-            req_formats = list(
-                map(lambda fmt: fmt.format, cred_request_message.formats)
-            )
-            issue_formats = list(
-                map(lambda fmt: fmt.format, cred_issue_message.formats)
-            )
+
+            req_formats = [
+                V20CredFormat.Format.get(fmt.format)
+                for fmt in cred_request_message.formats
+                if V20CredFormat.Format.get(fmt.format)
+            ]
+            issue_formats = [
+                V20CredFormat.Format.get(fmt.format)
+                for fmt in cred_issue_message.formats
+                if V20CredFormat.Format.get(fmt.format)
+            ]
             handled_formats = []
 
             for issue_format in issue_formats:
-                cred_format = V20CredFormat.Format.get(issue_format)
-
                 # Make sure the format was present in the request
                 assert issue_format in req_formats
 
-                if cred_format:
-                    await cred_format.handler(self.profile).receive_credential(
-                        cred_ex_record, cred_issue_message
-                    )
-                    handled_formats.append(issue_format)
+                await issue_format.handler(self.profile).receive_credential(
+                    cred_ex_record, cred_issue_message
+                )
+                handled_formats.append(issue_format)
 
             # check that we didn't receive any formats not present in the request
             if set(issue_formats) - set(req_formats):
