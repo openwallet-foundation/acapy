@@ -1,9 +1,7 @@
 """Validator methods to check for properties without a context."""
 
 from typing import Sequence, Tuple, Union
-from cachetools import LRUCache
 from pyld import jsonld
-from pyld.context_resolver import ContextResolver
 
 
 from .document_loader import DocumentLoader
@@ -78,10 +76,11 @@ def diff_dict_keys(full: dict, with_missing: dict, prefix: str = None) -> Sequen
     return missing
 
 
-RESOLVED_CONTEXT_CACHE_MAX_SIZE = 100
-_resolved_context_cache = LRUCache(maxsize=100)
-
-
+# FIXME: It seems like there is a bug in pyld with scoped contexts
+# that gives incorrect and inconsistent output. This is caused by other
+# pyld operations in ACA-Py. Therefore it is not possible to check for dropped properties
+# at the moment.
+# See: https://github.com/digitalbazaar/pyld/issues/123
 def get_properties_without_context(
     document: dict, document_loader: DocumentLoader
 ) -> Sequence[str]:
@@ -92,17 +91,11 @@ def get_properties_without_context(
 
     document = document.copy()
 
-    # FIXME: It seems like there is a bug in pyld with scoped contexts
-    # that gives incorrect and inconsistent output. This is caused by other
-    # pyld operations in ACA-Py, so we use a separate context cache just for
-    # this task. See: https://github.com/digitalbazaar/pyld/issues/123
-    context_resolver = ContextResolver(_resolved_context_cache, document_loader)
-
     # Removes unknown keys from object
     compact = jsonld.compact(
         document,
         document["@context"],
-        {"documentLoader": document_loader, "contextResolver": context_resolver},
+        {"documentLoader": document_loader},
     )
 
     missing = diff_dict_keys(document, compact)
