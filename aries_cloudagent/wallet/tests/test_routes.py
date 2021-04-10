@@ -106,6 +106,7 @@ class TestWalletRoutes(AsyncTestCase):
                         "verkey": self.test_verkey,
                         "posture": DIDPosture.WALLET_ONLY.moniker,
                         "key_type": KeyType.ED25519.key_type,
+                        "method": DIDMethod.SOV.method_name,
                     }
                 }
             )
@@ -145,12 +146,14 @@ class TestWalletRoutes(AsyncTestCase):
                             "verkey": self.test_posted_verkey,
                             "posture": DIDPosture.POSTED.moniker,
                             "key_type": KeyType.ED25519.key_type,
+                            "method": DIDMethod.SOV.method_name,
                         },
                         {
                             "did": self.test_did,
                             "verkey": self.test_verkey,
                             "posture": DIDPosture.WALLET_ONLY.moniker,
                             "key_type": KeyType.ED25519.key_type,
+                            "method": DIDMethod.SOV.method_name,
                         },
                     ]
                 }
@@ -188,6 +191,7 @@ class TestWalletRoutes(AsyncTestCase):
                             "verkey": self.test_verkey,
                             "posture": DIDPosture.PUBLIC.moniker,
                             "key_type": KeyType.ED25519.key_type,
+                            "method": DIDMethod.SOV.method_name,
                         }
                     ]
                 }
@@ -228,6 +232,7 @@ class TestWalletRoutes(AsyncTestCase):
                             "verkey": self.test_posted_verkey,
                             "posture": DIDPosture.POSTED.moniker,
                             "key_type": KeyType.ED25519.key_type,
+                            "method": DIDMethod.SOV.method_name,
                         }
                     ]
                 }
@@ -256,6 +261,7 @@ class TestWalletRoutes(AsyncTestCase):
                             "verkey": self.test_verkey,
                             "posture": DIDPosture.WALLET_ONLY.moniker,
                             "key_type": KeyType.ED25519.key_type,
+                            "method": DIDMethod.SOV.method_name,
                         }
                     ]
                 }
@@ -295,6 +301,7 @@ class TestWalletRoutes(AsyncTestCase):
                             "verkey": self.test_verkey,
                             "posture": DIDPosture.WALLET_ONLY.moniker,
                             "key_type": KeyType.ED25519.key_type,
+                            "method": DIDMethod.SOV.method_name,
                         }
                     ]
                 }
@@ -332,6 +339,7 @@ class TestWalletRoutes(AsyncTestCase):
                         "verkey": self.test_verkey,
                         "posture": DIDPosture.PUBLIC.moniker,
                         "key_type": KeyType.ED25519.key_type,
+                        "method": DIDMethod.SOV.method_name,
                     }
                 }
             )
@@ -373,6 +381,7 @@ class TestWalletRoutes(AsyncTestCase):
                         "verkey": self.test_verkey,
                         "posture": DIDPosture.PUBLIC.moniker,
                         "key_type": KeyType.ED25519.key_type,
+                        "method": DIDMethod.SOV.method_name,
                     }
                 }
             )
@@ -525,6 +534,7 @@ class TestWalletRoutes(AsyncTestCase):
                         "verkey": self.test_verkey,
                         "posture": DIDPosture.PUBLIC.moniker,
                         "key_type": KeyType.ED25519.key_type,
+                        "method": DIDMethod.SOV.method_name,
                     }
                 }
             )
@@ -569,6 +579,7 @@ class TestWalletRoutes(AsyncTestCase):
                         "verkey": self.test_verkey,
                         "posture": DIDPosture.PUBLIC.moniker,
                         "key_type": KeyType.ED25519.key_type,
+                        "method": DIDMethod.SOV.method_name,
                     }
                 }
             )
@@ -628,7 +639,6 @@ class TestWalletRoutes(AsyncTestCase):
             self.test_did,
             self.test_verkey,
             DIDPosture.PUBLIC.metadata,
-            KeyType.ED25519,
             DIDMethod.SOV,
             KeyType.ED25519,
         )

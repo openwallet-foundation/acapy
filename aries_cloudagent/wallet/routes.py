@@ -314,7 +314,10 @@ async def wallet_create_did(request: web.BaseRequest):
 
     if not method.supports_key_type(key_type):
         raise web.HTTPForbidden(
-            reason=f"method {method.method_name} does not support key type {key_type.key_type}"
+            reason=(
+                f"method {method.method_name} does not"
+                f" support key type {key_type.key_type}"
+            )
         )
 
     session = await context.session()
