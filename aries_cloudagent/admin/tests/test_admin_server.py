@@ -1,3 +1,5 @@
+import json
+
 from aiohttp import ClientSession, DummyCookieJar, TCPConnector, web
 from aiohttp.test_utils import unused_port
 
@@ -190,10 +192,12 @@ class TestAdminServer(AsyncTestCase):
 
         settings = {
             "admin.admin_insecure_mode": False,
+            "admin.admin_client_max_request_size": 4,
             "admin.admin_api_key": "test-api-key",
         }
         server = self.get_admin_server(settings)
         await server.start()
+        assert server.app._client_max_size == 4 * 1024 * 1024
         with async_mock.patch.object(
             server, "websocket_queues", async_mock.MagicMock()
         ) as mock_wsq:
@@ -371,6 +375,42 @@ class TestAdminServer(AsyncTestCase):
             assert result["topic"] == "settings"
 
         await server.stop()
+
+    async def test_query_config(self):
+        settings = {
+            "admin.admin_insecure_mode": False,
+            "admin.admin_api_key": "test-api-key",
+            "admin.webhook_urls": ["localhost:8123/abc#secret", "localhost:8123/def"],
+            "multitenant.jwt_secret": "abc123",
+            "wallet.key": "abc123",
+            "wallet.rekey": "def456",
+            "wallet.seed": "00000000000000000000000000000000",
+            "wallet.storage.creds": "secret",
+        }
+        server = self.get_admin_server(settings)
+        await server.start()
+
+        async with self.client_session.get(
+            f"http://127.0.0.1:{self.port}/status/config",
+            headers={"x-api-key": "test-api-key"},
+        ) as response:
+            result = json.loads(await response.text())
+            assert "admin.admin_insecure_mode" in result
+            assert all(
+                k not in result
+                for k in [
+                    "admin.admin_api_key",
+                    "multitenant.jwt_secret",
+                    "wallet.key",
+                    "wallet.rekey",
+                    "wallet.seed",
+                    "wallet.storage.creds",
+                ]
+            )
+            assert result["admin.webhook_urls"] == [
+                "localhost:8123/abc",
+                "localhost:8123/def",
+            ]
 
     async def test_visit_shutting_down(self):
         settings = {
