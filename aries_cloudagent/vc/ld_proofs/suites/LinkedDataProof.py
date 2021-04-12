@@ -10,7 +10,7 @@ from typing_extensions import TypedDict
 from ..check import get_properties_without_context
 from ..constants import SECURITY_CONTEXT_URL
 from ..error import LinkedDataProofException
-from ..document_loader import DocumentLoader
+from ..document_loader import DocumentLoaderMethod
 from ..validation_result import ProofResult
 
 # ProofPurpose and LinkedDataProof depend on each other
@@ -45,7 +45,7 @@ class LinkedDataProof(ABC):
         *,
         document: dict,
         purpose: "ProofPurpose",
-        document_loader: DocumentLoader,
+        document_loader: DocumentLoaderMethod,
     ) -> dict:
         """Create proof for document.
 
@@ -68,7 +68,7 @@ class LinkedDataProof(ABC):
         proof: dict,
         document: dict,
         purpose: "ProofPurpose",
-        document_loader: DocumentLoader,
+        document_loader: DocumentLoaderMethod,
     ) -> ProofResult:
         """Verify proof against document and proof purpose.
 
@@ -92,7 +92,7 @@ class LinkedDataProof(ABC):
         proof: dict,
         document: dict,
         reveal_document: dict,
-        document_loader: DocumentLoader,
+        document_loader: DocumentLoaderMethod,
         nonce: bytes = None,
     ) -> DeriveProofResult:
         """Derive proof for document, returning derived document and proof.
@@ -112,7 +112,7 @@ class LinkedDataProof(ABC):
             f"{self.signature_type} signature suite does not support deriving proofs"
         )
 
-    def _canonize(self, *, input, document_loader: DocumentLoader) -> str:
+    def _canonize(self, *, input, document_loader: DocumentLoaderMethod) -> str:
         """Canonize input document using URDNA2015 algorithm."""
         # application/n-quads format always returns str
         missing_properties = get_properties_without_context(input, document_loader)
@@ -133,7 +133,7 @@ class LinkedDataProof(ABC):
         )
 
     def _get_verification_method(
-        self, *, proof: dict, document_loader: DocumentLoader
+        self, *, proof: dict, document_loader: DocumentLoaderMethod
     ) -> dict:
         """Get verification method for proof."""
 

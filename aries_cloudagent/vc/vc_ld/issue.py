@@ -5,7 +5,7 @@ from ..ld_proofs import (
     ProofPurpose,
     sign,
     CredentialIssuancePurpose,
-    DocumentLoader,
+    DocumentLoaderMethod,
     LinkedDataProofException,
 )
 from .models.credential_schema import CredentialSchema
@@ -15,7 +15,7 @@ async def issue(
     *,
     credential: dict,
     suite: LinkedDataProof,
-    document_loader: DocumentLoader,
+    document_loader: DocumentLoaderMethod,
     purpose: ProofPurpose = None,
 ) -> dict:
     """Issue a verifiable credential.

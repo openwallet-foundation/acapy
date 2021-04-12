@@ -7,7 +7,7 @@ from pyld.jsonld import JsonLdProcessor
 from ..ld_proofs import (
     LinkedDataProof,
     CredentialIssuancePurpose,
-    DocumentLoader,
+    DocumentLoaderMethod,
     ProofPurpose,
     AuthenticationProofPurpose,
     verify as ld_proofs_verify,
@@ -22,7 +22,7 @@ async def _verify_credential(
     *,
     credential: dict,
     suites: List[LinkedDataProof],
-    document_loader: DocumentLoader,
+    document_loader: DocumentLoaderMethod,
     purpose: ProofPurpose = None,
 ) -> DocumentVerificationResult:
     """Verify credential structure, proof purpose and signature."""
@@ -51,7 +51,7 @@ async def verify_credential(
     *,
     credential: dict,
     suites: List[LinkedDataProof],
-    document_loader: DocumentLoader,
+    document_loader: DocumentLoaderMethod,
     purpose: ProofPurpose = None,
 ) -> DocumentVerificationResult:
     """Verify credential structure, proof purpose and signature.
@@ -85,7 +85,7 @@ async def _verify_presentation(
     *,
     presentation: dict,
     suites: List[LinkedDataProof],
-    document_loader: DocumentLoader,
+    document_loader: DocumentLoaderMethod,
     challenge: str = None,
     domain: str = None,
     purpose: ProofPurpose = None,
@@ -143,7 +143,7 @@ async def verify_presentation(
     *,
     presentation: dict,
     suites: List[LinkedDataProof],
-    document_loader: DocumentLoader,
+    document_loader: DocumentLoaderMethod,
     purpose: ProofPurpose = None,
     challenge: str = None,
     domain: str = None,

@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 
 from ....messaging.util import str_to_datetime
 from ..validation_result import PurposeResult
-from ..document_loader import DocumentLoader
+from ..document_loader import DocumentLoaderMethod
 from ..suites import LinkedDataProof
 
 
@@ -26,7 +26,7 @@ class ProofPurpose:
         document: dict,
         suite: LinkedDataProof,
         verification_method: dict,
-        document_loader: DocumentLoader,
+        document_loader: DocumentLoaderMethod,
     ) -> PurposeResult:
         """Validate whether created date of proof is out of max_timestamp_delta range."""
         try:

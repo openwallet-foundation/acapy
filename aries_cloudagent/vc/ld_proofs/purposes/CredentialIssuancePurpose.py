@@ -7,7 +7,7 @@ from pyld import jsonld
 from ..error import LinkedDataProofException
 from ..validation_result import PurposeResult
 from ..suites import LinkedDataProof
-from ..document_loader import DocumentLoader
+from ..document_loader import DocumentLoaderMethod
 from ..constants import CREDENTIALS_ISSUER_URL
 from .AssertionProofPurpose import AssertionProofPurpose
 
@@ -22,7 +22,7 @@ class CredentialIssuancePurpose(AssertionProofPurpose):
         document: dict,
         suite: LinkedDataProof,
         verification_method: dict,
-        document_loader: DocumentLoader,
+        document_loader: DocumentLoaderMethod,
     ) -> PurposeResult:
         """Validate if the issuer matches the controller of the verification method."""
         try:

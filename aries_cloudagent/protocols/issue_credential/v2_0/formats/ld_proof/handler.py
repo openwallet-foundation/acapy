@@ -19,7 +19,7 @@ from ......vc.ld_proofs import (
     LinkedDataProof,
     CredentialIssuancePurpose,
     ProofPurpose,
-    get_default_document_loader,
+    DocumentLoader,
     AuthenticationProofPurpose,
 )
 from ......vc.ld_proofs.constants import SECURITY_CONTEXT_BBS_URL
@@ -389,7 +389,7 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
             challenge=detail.options.challenge,
             domain=detail.options.domain,
         )
-        document_loader = get_default_document_loader(profile=self.profile)
+        document_loader = self.profile.inject(DocumentLoader)
 
         # issue the credential
         vc = await issue(
@@ -475,7 +475,7 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
             challenge=credential.proof.challenge,
             domain=credential.proof.domain,
         )
-        document_loader = get_default_document_loader(self.profile)
+        document_loader = self.profile.inject(DocumentLoader)
 
         # Verify the credential
         result = await verify_credential(

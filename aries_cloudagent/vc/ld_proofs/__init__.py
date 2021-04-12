@@ -21,7 +21,10 @@ from .crypto import (
     Bls12381G2WalletKeyPair,
     WalletKeyPair,
 )
-from .document_loader import DocumentLoader, get_default_document_loader
+from .document_loader import (
+    DocumentLoader,
+    DocumentLoaderMethod,
+)
 from .error import LinkedDataProofException
 from .validation_result import DocumentVerificationResult, ProofResult, PurposeResult
 from .check import get_properties_without_context
@@ -50,8 +53,8 @@ __all__ = [
     Ed25519WalletKeyPair,
     Bls12381G2WalletKeyPair,
     # Document Loaders
+    DocumentLoaderMethod,
     DocumentLoader,
-    get_default_document_loader,
     # Exceptions
     LinkedDataProofException,
     # Validation results

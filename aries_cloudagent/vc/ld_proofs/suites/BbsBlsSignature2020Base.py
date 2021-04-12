@@ -5,7 +5,7 @@ from pyld import jsonld
 from typing import List
 
 from ..error import LinkedDataProofException
-from ..document_loader import DocumentLoader
+from ..document_loader import DocumentLoaderMethod
 from .LinkedDataProof import LinkedDataProof
 
 
@@ -13,7 +13,7 @@ class BbsBlsSignature2020Base(LinkedDataProof, metaclass=ABCMeta):
     """Base class for BbsBlsSignature suites."""
 
     def _create_verify_proof_data(
-        self, *, proof: dict, document: dict, document_loader: DocumentLoader
+        self, *, proof: dict, document: dict, document_loader: DocumentLoaderMethod
     ) -> List[str]:
         """Create proof verification data."""
         c14_proof_options = self._canonize_proof(
@@ -25,7 +25,7 @@ class BbsBlsSignature2020Base(LinkedDataProof, metaclass=ABCMeta):
         return list(filter(lambda _: len(_) > 0, c14_proof_options.split("\n")))
 
     def _create_verify_document_data(
-        self, *, document: dict, document_loader: DocumentLoader
+        self, *, document: dict, document_loader: DocumentLoaderMethod
     ) -> List[str]:
         """Create document verification data."""
         c14n_doc = self._canonize(input=document, document_loader=document_loader)
@@ -36,7 +36,7 @@ class BbsBlsSignature2020Base(LinkedDataProof, metaclass=ABCMeta):
 
     @abstractmethod
     def _canonize_proof(
-        self, *, proof: dict, document: dict, document_loader: DocumentLoader
+        self, *, proof: dict, document: dict, document_loader: DocumentLoaderMethod
     ):
         """Canonize proof dictionary. Removes values that are not part of signature."""
 
@@ -60,7 +60,9 @@ class BbsBlsSignature2020Base(LinkedDataProof, metaclass=ABCMeta):
             f"Invalid key type {values}. The key type must be one of {required_key_types}"
         )
 
-    def _get_verification_method(self, *, proof: dict, document_loader: DocumentLoader):
+    def _get_verification_method(
+        self, *, proof: dict, document_loader: DocumentLoaderMethod
+    ):
         """Get verification method.
 
         Overwrites base get verification method to assert key type.

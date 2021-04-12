@@ -6,7 +6,7 @@ from typing import List
 from ..ld_proofs import (
     AuthenticationProofPurpose,
     ProofPurpose,
-    DocumentLoader,
+    DocumentLoaderMethod,
     sign,
     LinkedDataProof,
     LinkedDataProofException,
@@ -59,7 +59,7 @@ async def sign_presentation(
     *,
     presentation: dict,
     suite: LinkedDataProof,
-    document_loader: DocumentLoader,
+    document_loader: DocumentLoaderMethod,
     purpose: ProofPurpose = None,
     challenge: str = None,
     domain: str = None,
@@ -107,7 +107,7 @@ async def derive_credential(
     credential: dict,
     reveal_document: dict,
     suite: LinkedDataProof,
-    document_loader: DocumentLoader,
+    document_loader: DocumentLoaderMethod,
 ) -> dict:
     """Derive new credential from the existing credential and the reveal document.
 

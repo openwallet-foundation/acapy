@@ -3,7 +3,7 @@
 from typing import List
 
 from .validation_result import DocumentVerificationResult
-from .document_loader import DocumentLoader
+from .document_loader import DocumentLoaderMethod
 from .ProofSet import ProofSet
 from .purposes import ProofPurpose
 from .suites import LinkedDataProof
@@ -14,7 +14,7 @@ async def sign(
     document: dict,
     suite: LinkedDataProof,
     purpose: ProofPurpose,
-    document_loader: DocumentLoader,
+    document_loader: DocumentLoaderMethod,
 ) -> dict:
     """Cryptographically signs the provided document by adding a `proof` section.
 
@@ -47,7 +47,7 @@ async def verify(
     document: dict,
     suites: List[LinkedDataProof],
     purpose: ProofPurpose,
-    document_loader: DocumentLoader,
+    document_loader: DocumentLoaderMethod,
 ) -> DocumentVerificationResult:
     """Verify the linked data signature on the provided document.
 
@@ -83,7 +83,7 @@ async def derive(
     document: dict,
     reveal_document: dict,
     suite: LinkedDataProof,
-    document_loader: DocumentLoader,
+    document_loader: DocumentLoaderMethod,
     nonce: bytes = None,
 ) -> dict:
     """Derive proof(s) for document with reveal document.

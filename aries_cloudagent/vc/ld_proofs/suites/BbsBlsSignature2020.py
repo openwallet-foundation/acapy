@@ -9,7 +9,7 @@ from ..constants import SECURITY_CONTEXT_V3_URL
 from ..crypto import KeyPair
 from ..error import LinkedDataProofException
 from ..validation_result import ProofResult
-from ..document_loader import DocumentLoader
+from ..document_loader import DocumentLoaderMethod
 from ..purposes import ProofPurpose
 from .BbsBlsSignature2020Base import BbsBlsSignature2020Base
 
@@ -44,7 +44,11 @@ class BbsBlsSignature2020(BbsBlsSignature2020Base):
         self.date = date
 
     async def create_proof(
-        self, *, document: dict, purpose: ProofPurpose, document_loader: DocumentLoader
+        self,
+        *,
+        document: dict,
+        purpose: ProofPurpose,
+        document_loader: DocumentLoaderMethod,
     ) -> dict:
         """Create proof for document, return proof."""
         proof = self.proof.copy() if self.proof else {}
@@ -82,7 +86,7 @@ class BbsBlsSignature2020(BbsBlsSignature2020Base):
         proof: dict,
         document: dict,
         purpose: ProofPurpose,
-        document_loader: DocumentLoader,
+        document_loader: DocumentLoaderMethod,
     ) -> ProofResult:
         """Verify proof against document and proof purpose."""
         try:
@@ -133,7 +137,7 @@ class BbsBlsSignature2020(BbsBlsSignature2020Base):
             return ProofResult(verified=False, error=err)
 
     def _create_verify_data(
-        self, *, proof: dict, document: dict, document_loader: DocumentLoader
+        self, *, proof: dict, document: dict, document_loader: DocumentLoaderMethod
     ) -> List[str]:
         """Create verification data.
 
@@ -152,7 +156,7 @@ class BbsBlsSignature2020(BbsBlsSignature2020Base):
         return [*proof_statements, *document_statements]
 
     def _canonize_proof(
-        self, *, proof: dict, document: dict, document_loader: DocumentLoader
+        self, *, proof: dict, document: dict, document_loader: DocumentLoaderMethod
     ):
         """Canonize proof dictionary. Removes value that are not part of signature."""
         # Use default security context url if document has no context
@@ -191,7 +195,7 @@ class BbsBlsSignature2020(BbsBlsSignature2020Base):
         verification_method: dict,
         document: dict,
         proof: dict,
-        document_loader: DocumentLoader,
+        document_loader: DocumentLoaderMethod,
     ) -> bool:
         """Verify the data against the proof.
 

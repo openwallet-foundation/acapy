@@ -7,7 +7,7 @@ from abc import abstractmethod, ABCMeta
 
 from ..error import LinkedDataProofException
 from ..validation_result import ProofResult
-from ..document_loader import DocumentLoader
+from ..document_loader import DocumentLoaderMethod
 from ..purposes import ProofPurpose
 from ..constants import SECURITY_CONTEXT_URL
 from .LinkedDataProof import LinkedDataProof
@@ -63,7 +63,7 @@ class LinkedDataSignature(LinkedDataProof, metaclass=ABCMeta):
         verification_method: dict,
         document: dict,
         proof: dict,
-        document_loader: DocumentLoader,
+        document_loader: DocumentLoaderMethod,
     ) -> bool:
         """Verify the data against the proof.
 
@@ -80,7 +80,11 @@ class LinkedDataSignature(LinkedDataProof, metaclass=ABCMeta):
         """
 
     async def create_proof(
-        self, *, document: dict, purpose: ProofPurpose, document_loader: DocumentLoader
+        self,
+        *,
+        document: dict,
+        purpose: ProofPurpose,
+        document_loader: DocumentLoaderMethod,
     ) -> dict:
         """Create proof for document, return proof."""
         proof = self.proof.copy() if self.proof else {}
@@ -116,7 +120,7 @@ class LinkedDataSignature(LinkedDataProof, metaclass=ABCMeta):
         proof: dict,
         document: dict,
         purpose: ProofPurpose,
-        document_loader: DocumentLoader,
+        document_loader: DocumentLoaderMethod,
     ) -> ProofResult:
         """Verify proof against document and proof purpose."""
         try:
@@ -164,7 +168,7 @@ class LinkedDataSignature(LinkedDataProof, metaclass=ABCMeta):
             return ProofResult(verified=False, error=err)
 
     def _create_verify_data(
-        self, *, proof: dict, document: dict, document_loader: DocumentLoader
+        self, *, proof: dict, document: dict, document_loader: DocumentLoaderMethod
     ) -> bytes:
         """Create signing or verification data."""
         c14n_proof_options = self._canonize_proof(
@@ -180,7 +184,7 @@ class LinkedDataSignature(LinkedDataProof, metaclass=ABCMeta):
         )
 
     def _canonize_proof(
-        self, *, proof: dict, document: dict, document_loader: DocumentLoader
+        self, *, proof: dict, document: dict, document_loader: DocumentLoaderMethod
     ):
         """Canonize proof dictionary. Removes jws, signature, etc..."""
         # Use default security context url if document has no context

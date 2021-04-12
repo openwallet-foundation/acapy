@@ -7,7 +7,7 @@ from ..error import LinkedDataProofException
 from ..validation_result import PurposeResult
 from ..constants import SECURITY_CONTEXT_URL
 from ..suites import LinkedDataProof
-from ..document_loader import DocumentLoader
+from ..document_loader import DocumentLoaderMethod
 from .ProofPurpose import ProofPurpose
 
 
@@ -21,7 +21,7 @@ class ControllerProofPurpose(ProofPurpose):
         document: dict,
         suite: LinkedDataProof,
         verification_method: dict,
-        document_loader: DocumentLoader,
+        document_loader: DocumentLoaderMethod,
     ) -> PurposeResult:
         """Validate whether verification method of proof is authorized by controller."""
         try:

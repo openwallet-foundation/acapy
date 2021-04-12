@@ -4,7 +4,7 @@ from typing import Sequence, Tuple, Union
 from pyld import jsonld
 
 
-from .document_loader import DocumentLoader
+from .document_loader import DocumentLoaderMethod
 
 
 def diff_dict_keys(full: dict, with_missing: dict, prefix: str = None) -> Sequence[str]:
@@ -82,7 +82,7 @@ def diff_dict_keys(full: dict, with_missing: dict, prefix: str = None) -> Sequen
 # at the moment.
 # See: https://github.com/digitalbazaar/pyld/issues/123
 def get_properties_without_context(
-    document: dict, document_loader: DocumentLoader
+    document: dict, document_loader: DocumentLoaderMethod
 ) -> Sequence[str]:
     """Get the properties from document that don't have an context definition."""
     # FIXME: this doesn't work with nested @context structures...

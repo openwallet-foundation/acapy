@@ -7,7 +7,7 @@ import json
 
 from ....wallet.util import b64_to_bytes, bytes_to_b64, str_to_b64, b64_to_str
 from ..crypto import KeyPair
-from ..document_loader import DocumentLoader
+from ..document_loader import DocumentLoaderMethod
 from ..error import LinkedDataProofException
 from .LinkedDataSignature import LinkedDataSignature
 
@@ -89,7 +89,7 @@ class JwsLinkedDataSignature(LinkedDataSignature):
         verification_method: dict,
         document: dict,
         proof: dict,
-        document_loader: DocumentLoader,
+        document_loader: DocumentLoaderMethod,
     ):
         """Verify the data against the proof.
 
@@ -171,7 +171,9 @@ class JwsLinkedDataSignature(LinkedDataSignature):
                 f"Invalid key type. The key type must be {self.required_key_type}"
             )
 
-    def _get_verification_method(self, *, proof: dict, document_loader: DocumentLoader):
+    def _get_verification_method(
+        self, *, proof: dict, document_loader: DocumentLoaderMethod
+    ):
         """Get verification method.
 
         Overwrites base get verification method to assert key type.

@@ -6,7 +6,7 @@ from pyld.jsonld import JsonLdProcessor
 from .error import LinkedDataProofException
 from .validation_result import DocumentVerificationResult, ProofResult
 from .constants import SECURITY_CONTEXT_URL
-from .document_loader import DocumentLoader
+from .document_loader import DocumentLoaderMethod
 from .purposes.ProofPurpose import ProofPurpose
 from .suites import LinkedDataProof
 
@@ -20,7 +20,7 @@ class ProofSet:
         document: dict,
         suite: LinkedDataProof,
         purpose: ProofPurpose,
-        document_loader: DocumentLoader,
+        document_loader: DocumentLoaderMethod,
     ) -> dict:
         """Add a Linked Data proof to the document.
 
@@ -61,7 +61,7 @@ class ProofSet:
         document: dict,
         suites: List[LinkedDataProof],
         purpose: ProofPurpose,
-        document_loader: DocumentLoader,
+        document_loader: DocumentLoaderMethod,
     ) -> DocumentVerificationResult:
         """Verify Linked Data proof(s) on a document.
 
@@ -143,7 +143,7 @@ class ProofSet:
         # TODO: I think this could support multiple suites?
         # But then, why do multiple proofs?
         suite: LinkedDataProof,
-        document_loader: DocumentLoader,
+        document_loader: DocumentLoaderMethod,
         nonce: bytes = None,
     ) -> dict:
         """Create new derived Linked Data proof(s) on document using the reveal document.
@@ -236,7 +236,7 @@ class ProofSet:
         suites: List[LinkedDataProof],
         proof_set: List[dict],
         purpose: ProofPurpose,
-        document_loader: DocumentLoader,
+        document_loader: DocumentLoaderMethod,
     ) -> List[ProofResult]:
         """Verify proofs in proof set.
 

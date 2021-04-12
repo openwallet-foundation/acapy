@@ -19,7 +19,7 @@ from ....wallet.util import b64_to_bytes, bytes_to_b64
 from ..crypto import KeyPair
 from ..error import LinkedDataProofException
 from ..validation_result import ProofResult
-from ..document_loader import DocumentLoader
+from ..document_loader import DocumentLoaderMethod
 from ..purposes import ProofPurpose
 from ..constants import SECURITY_CONTEXT_V3_URL
 from .BbsBlsSignature2020Base import BbsBlsSignature2020Base
@@ -58,7 +58,7 @@ class BbsBlsSignatureProof2020(BbsBlsSignature2020Base):
         proof: dict,
         document: dict,
         reveal_document: dict,
-        document_loader: DocumentLoader,
+        document_loader: DocumentLoaderMethod,
         nonce: bytes = None,
     ):
         """Derive proof for document, return dict with derived document and proof."""
@@ -220,7 +220,7 @@ class BbsBlsSignatureProof2020(BbsBlsSignature2020Base):
         proof: dict,
         document: dict,
         purpose: ProofPurpose,
-        document_loader: DocumentLoader,
+        document_loader: DocumentLoaderMethod,
     ) -> ProofResult:
         """Verify proof against document and proof purpose."""
         try:
@@ -298,7 +298,7 @@ class BbsBlsSignatureProof2020(BbsBlsSignature2020Base):
             return ProofResult(verified=False, error=err)
 
     def _canonize_proof(
-        self, *, proof: dict, document: dict, document_loader: DocumentLoader
+        self, *, proof: dict, document: dict, document_loader: DocumentLoaderMethod
     ):
         """Canonize proof dictionary. Removes proofValue."""
         proof = {

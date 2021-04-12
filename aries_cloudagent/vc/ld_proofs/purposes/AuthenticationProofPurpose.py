@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 
 from ..error import LinkedDataProofException
 from ..validation_result import PurposeResult
-from ..document_loader import DocumentLoader
+from ..document_loader import DocumentLoaderMethod
 from ..suites import LinkedDataProof
 from .ControllerProofPurpose import ControllerProofPurpose
 
@@ -39,7 +39,7 @@ class AuthenticationProofPurpose(ControllerProofPurpose):
         document: dict,
         suite: LinkedDataProof,
         verification_method: dict,
-        document_loader: DocumentLoader,
+        document_loader: DocumentLoaderMethod,
     ) -> PurposeResult:
         """Validate whether challenge and domain are valid."""
         try:
