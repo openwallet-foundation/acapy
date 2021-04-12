@@ -291,10 +291,10 @@ class V20PresManager:
             if reft in req_attrs and reft in non_revoc_intervals:
                 requested_referents[reft]["non_revoked"] = non_revoc_intervals[reft]
 
-        preds_creds = requested_credentials.get("requested_predicates", {})
+        pred_creds = requested_credentials.get("requested_predicates", {})
         req_preds = proof_request.get("requested_predicates", {})
-        for reft in preds_creds:
-            requested_referents[reft] = {"cred_id": preds_creds[reft]["cred_id"]}
+        for reft in pred_creds:
+            requested_referents[reft] = {"cred_id": pred_creds[reft]["cred_id"]}
             if reft in req_preds and reft in non_revoc_intervals:
                 requested_referents[reft]["non_revoked"] = non_revoc_intervals[reft]
 
@@ -305,6 +305,17 @@ class V20PresManager:
                 credentials[credential_id] = json.loads(
                     await holder.get_credential(credential_id)
                 )
+
+        # remove any timestamps that cannot correspond to non-revoc intervals
+        for r in ("requested_attributes", "requested_predicates"):
+            for reft, req_item in requested_credentials.get(r, {}).items():
+                if not credentials[req_item["cred_id"]].get(
+                    "rev_reg_id"
+                ) and req_item.pop("timestamp", None):
+                    LOGGER.info(
+                        f"Removed superfluous timestamp from requested_credentials {r} "
+                        f"{reft} for non-revocable credential {req_item['cred_id']}"
+                    )
 
         # Get all schemas, credential definitions, and revocation registries in use
         ledger = self._profile.inject(BaseLedger)
