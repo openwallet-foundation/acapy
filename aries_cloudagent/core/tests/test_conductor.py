@@ -20,6 +20,7 @@ from ...core.protocol_registry import ProtocolRegistry
 from ...protocols.coordinate_mediation.v1_0.models.mediation_record import (
     MediationRecord,
 )
+from ...resolver.did_resolver import DIDResolver, DIDResolverRegistry
 from ...multitenant.manager import MultitenantManager
 from ...transport.inbound.message import InboundMessage
 from ...transport.inbound.receipt import MessageReceipt
@@ -81,6 +82,7 @@ class StubContextBuilder(ContextBuilder):
         context.injector.bind_instance(ProfileManager, InMemoryProfileManager())
         context.injector.bind_instance(ProtocolRegistry, ProtocolRegistry())
         context.injector.bind_instance(BaseWireFormat, self.wire_format)
+        context.injector.bind_instance(DIDResolver, DIDResolver(DIDResolverRegistry()))
         return context
 
 
