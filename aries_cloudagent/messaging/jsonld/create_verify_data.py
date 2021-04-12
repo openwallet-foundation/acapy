@@ -56,8 +56,9 @@ def create_verify_data(data, signature_options):
     if type_ and type_ != "Ed25519Signature2018":
         raise SignatureTypeError(f"invalid signature type {type_}.")
 
-    if "creator" in signature_options:
-        signature_options["verificationMethod"] = signature_options["creator"]
+    signature_options["verificationMethod"] = signature_options.get(
+        "creator", signature_options.get("verificationMethod")
+    )
 
     if not signature_options.get("verificationMethod"):
         raise MissingVerificationMethodError(
@@ -71,9 +72,8 @@ def create_verify_data(data, signature_options):
     )
 
     # Detect any dropped attributes during the expand/contract step.
-    if len(data) > len(
-        framed
-    ):  # > check indicates dropped attrs < is a different error
+    if len(data) > len(framed):
+        # > check indicates dropped attrs < is a different error
         # attempt to collect error report data
         for_diff = jsonld.compact(expanded, data.get("@context"))
         dropped = set(data.keys()) - set(for_diff.keys())
@@ -95,7 +95,7 @@ def create_verify_data(data, signature_options):
             for_diff_attribute = for_diff.get(mapping[1], {})
             dropped = set(data_attribute.keys()) - set(for_diff_attribute.keys())
             raise DroppedAttributeError(
-                f"in {mapping[0]}, {dropped} attributes dropped."
+                f"in {mapping[0]}, {dropped} attributes dropped. "
                 "Provide definitions in context to correct."
             )
 

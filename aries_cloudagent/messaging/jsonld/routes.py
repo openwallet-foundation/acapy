@@ -47,8 +47,8 @@ async def sign(request: web.BaseRequest):
         body = await request.json()
         verkey = body.get("verkey")
         doc = body.get("doc")
-        credential = doc["credential"]
-        signature_options = doc["options"]
+        credential = doc.get("credential")
+        signature_options = doc.get("options")
         doc_with_proof = await sign_credential(
             session, credential, signature_options, verkey
         )
