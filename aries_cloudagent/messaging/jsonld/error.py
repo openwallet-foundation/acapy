@@ -8,7 +8,7 @@ class BaseJSONLDMessagingError(BaseError):
 
 
 class BadJWSHeaderError(BaseJSONLDMessagingError):
-    """Exception indicating invalid JWS header."""
+    """Invalid JWS header provided."""
 
 
 class DroppedAttributeError(BaseJSONLDMessagingError):
@@ -17,3 +17,11 @@ class DroppedAttributeError(BaseJSONLDMessagingError):
 
 class MissingVerificationMethodError(BaseJSONLDMessagingError):
     """Exception indicating missing verification method from signature options."""
+
+
+class VerificationMethodMissing(BaseJSONLDMessagingError):
+    """VerificationMethod is required."""
+
+
+class SignatureTypeError(BaseJSONLDMessagingError):
+    """Signature type error."""

@@ -11,7 +11,11 @@ import hashlib
 
 from pyld import jsonld
 
-from .error import DroppedAttributeError, MissingVerificationMethodError
+from .error import (
+    DroppedAttributeError,
+    MissingVerificationMethodError,
+    SignatureTypeError,
+)
 
 
 def _canonize(data):
@@ -48,7 +52,10 @@ def _created_at():
 def create_verify_data(data, signature_options):
     """Encapsulate the process of constructing the string used during sign and verify."""
 
-    signature_options["type"] = "Ed25519Signature2018"
+    type_ = signature_options.get("type")
+    if type_ and type_ != "Ed25519Signature2018":
+        raise SignatureTypeError(f"invalid signature type {type_}.")
+
     if "creator" in signature_options:
         signature_options["verificationMethod"] = signature_options["creator"]
 
