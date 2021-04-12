@@ -552,7 +552,7 @@ class TestConnectionManager(AsyncTestCase):
                 mediation_id=mediation_record.mediation_id,
                 my_endpoint=self.test_endpoint,
             )
-            create_local_did.assert_called_once_with()
+            create_local_did.assert_called_once_with(DIDMethod.SOV, KeyType.ED25519)
             create_did_document.assert_called_once_with(
                 self.manager,
                 did_info,
@@ -612,7 +612,7 @@ class TestConnectionManager(AsyncTestCase):
                 record,
                 my_endpoint=self.test_endpoint,
             )
-            create_local_did.assert_called_once_with()
+            create_local_did.assert_called_once_with(DIDMethod.SOV, KeyType.ED25519)
             create_did_document.assert_called_once_with(
                 self.manager,
                 did_info,
