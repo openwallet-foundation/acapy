@@ -100,6 +100,8 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         self, cred_ex_record: V20CredExRecord, proposal_data: Mapping[str, str]
     ) -> Tuple[V20CredFormat, AttachDecorator]:
         """Create indy credential proposal."""
+        if proposal_data is None:
+            proposal_data = {}
 
         return self.get_format_data(CRED_20_PROPOSAL, proposal_data)
 
@@ -174,6 +176,8 @@ class IndyCredFormatHandler(V20CredFormatHandler):
                 "Indy issue credential format cannot start from credential request"
             )
 
+        await self._check_uniqueness(cred_ex_record.cred_ex_id)
+
         holder_did = request_data.get("holder_did") if request_data else None
         cred_offer = V20CredOffer.deserialize(cred_ex_record.cred_offer).attachment(
             self.format
@@ -213,7 +217,6 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         if not cred_req_result:
             cred_req_result = await _create()
 
-        await self._check_uniqueness(cred_ex_record.cred_ex_id)
         detail_record = V20CredExRecordIndy(
             cred_ex_id=cred_ex_record.cred_ex_id,
             cred_request_metadata=cred_req_result["metadata"],
@@ -237,6 +240,8 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         self, cred_ex_record: V20CredExRecord, retries: int = 5
     ) -> CredFormatAttachment:
         """Issue indy credential."""
+        await self._check_uniqueness(cred_ex_record.cred_ex_id)
+
         cred_offer = V20CredOffer.deserialize(cred_ex_record.cred_offer).attachment(
             self.format
         )
@@ -330,7 +335,6 @@ class IndyCredFormatHandler(V20CredFormatHandler):
                 tails_path,
             )
 
-            await self._check_uniqueness(cred_ex_record.cred_ex_id)
             detail_record = V20CredExRecordIndy(
                 cred_ex_id=cred_ex_record.cred_ex_id,
                 rev_reg_id=rev_reg_id,
@@ -392,7 +396,6 @@ class IndyCredFormatHandler(V20CredFormatHandler):
 
         Validation is done in the store credential step.
         """
-        pass
 
     async def store_credential(
         self, cred_ex_record: V20CredExRecord, cred_id: str = None

@@ -321,6 +321,12 @@ class V20CredManager:
             A tuple (credential exchange record, credential request message)
 
         """
+        if cred_ex_record.cred_request:
+            raise V20CredManagerError(
+                "create_request() called multiple times for "
+                f"v2.0 credential exchange {cred_ex_record.cred_ex_id}"
+            )
+
         # react to credential offer, use offer formats
         if cred_ex_record.state:
             if cred_ex_record.state != V20CredExRecord.STATE_OFFER_RECEIVED:
@@ -541,21 +547,18 @@ class V20CredManager:
             ]
             handled_formats = []
 
-            for issue_format in issue_formats:
-                # Make sure the format was present in the request
-                assert issue_format in req_formats
-
-                await issue_format.handler(self.profile).receive_credential(
-                    cred_ex_record, cred_issue_message
-                )
-                handled_formats.append(issue_format)
-
             # check that we didn't receive any formats not present in the request
             if set(issue_formats) - set(req_formats):
                 raise V20CredManagerError(
                     "Received issue credential format(s) not present in credential "
                     f"request: {set(issue_formats) - set(req_formats)}"
                 )
+
+            for issue_format in issue_formats:
+                await issue_format.handler(self.profile).receive_credential(
+                    cred_ex_record, cred_issue_message
+                )
+                handled_formats.append(issue_format)
 
             if len(handled_formats) == 0:
                 raise V20CredManagerError("No supported credential formats received.")

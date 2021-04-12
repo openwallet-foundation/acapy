@@ -249,6 +249,13 @@ class V20CredExRecordSchema(BaseExchangeSchema):
     cred_issue = fields.Dict(
         required=False, description="Serialized credential issue message"
     )
+    by_format = fields.Dict(
+        required=False,
+        description=(
+            "Attachment content by format for proposal, offer, request, and issue"
+        ),
+        dump_only=True,
+    )
     auto_offer = fields.Bool(
         required=False,
         description="Holder choice to accept offer in this credential exchange",

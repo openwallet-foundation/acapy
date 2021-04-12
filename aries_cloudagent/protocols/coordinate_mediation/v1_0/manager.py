@@ -77,6 +77,7 @@ class MediationManager:
 
         """
         storage = session.inject(BaseStorage)
+        wallet = session.inject(BaseWallet)
         try:
             record = await storage.get_record(
                 record_type=self.ROUTING_DID_RECORD_TYPE,
@@ -84,7 +85,9 @@ class MediationManager:
             )
             info = json.loads(record.value)
             info.update(record.tags)
-            return DIDInfo(**info)
+            did_info = await wallet.get_local_did(record.tags["did"])
+
+            return did_info
         except StorageNotFoundError:
             return None
 
