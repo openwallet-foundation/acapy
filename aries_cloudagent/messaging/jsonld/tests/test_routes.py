@@ -252,4 +252,4 @@ class TestJSONLDRoutes(AsyncTestCase):
         mock_app.add_routes = async_mock.MagicMock()
 
         await test_module.register(mock_app)
-        assert mock_app.add_routes.call_count == 2
+        mock_app.add_routes.assert_called_once()
