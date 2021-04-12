@@ -482,8 +482,9 @@ class TestPresentationManager(AsyncTestCase):
             V10PresentationExchange, "save", autospec=True
         ) as save_ex, async_mock.patch.object(
             test_module, "AttachDecorator", autospec=True
-        ) as mock_attach_decorator:
-
+        ) as mock_attach_decorator, async_mock.patch.object(
+            test_module.LOGGER, "info", async_mock.MagicMock()
+        ) as mock_log_info:
             mock_attach_decorator.data_base64 = async_mock.MagicMock(
                 return_value=mock_attach_decorator
             )
@@ -497,6 +498,12 @@ class TestPresentationManager(AsyncTestCase):
             )
             save_ex.assert_called_once()
             assert exchange_out.state == V10PresentationExchange.STATE_PRESENTATION_SENT
+
+            # exercise superfluous timestamp removal
+            for pred_reft_spec in req_creds["requested_predicates"].values():
+                pred_reft_spec["timestamp"] = 1234567890
+            await self.manager.create_presentation(exchange_in, req_creds)
+            mock_log_info.assert_called_once()
 
     async def test_create_presentation_bad_revoc_state(self):
         exchange_in = V10PresentationExchange()
