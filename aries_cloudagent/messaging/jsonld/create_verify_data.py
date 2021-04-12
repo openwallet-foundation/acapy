@@ -52,14 +52,14 @@ def _created_at():
 def create_verify_data(data, signature_options):
     """Encapsulate the process of constructing the string used during sign and verify."""
 
-    type_ = signature_options.get("type")
+    type_ = signature_options.get("type", "Ed25519Signature2018")
     if type_ and type_ != "Ed25519Signature2018":
         raise SignatureTypeError(f"invalid signature type {type_}.")
 
     if "creator" in signature_options:
         signature_options["verificationMethod"] = signature_options["creator"]
 
-    if not signature_options["verificationMethod"]:
+    if not signature_options.get("verificationMethod"):
         raise MissingVerificationMethodError(
             "signature_options.verificationMethod is required"
         )
