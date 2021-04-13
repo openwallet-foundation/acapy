@@ -198,9 +198,9 @@ class FaberAgent(BaseAgent):
         credential_definition_response = await self.admin_POST(
             "/credential-definitions", credential_definition_body
         )
-        self.credential_definition_id = (
-            credential_definition_response["sent"]["credential_definition_id"]
-        )
+        self.credential_definition_id = credential_definition_response["sent"][
+            "credential_definition_id"
+        ]
         self.log(f"Credential Definition ID: {self.credential_definition_id}")
 
         # create revocation registry
