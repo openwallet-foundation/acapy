@@ -130,6 +130,11 @@ class PluginRegistry:
                 LOGGER.error(f"Module doesn't exist: {module_name}")
                 return None
 
+            # Any plugin with a setup method is considered valid.
+            if hasattr(mod, "setup"):
+                self._plugins[module_name] = mod
+                return mod
+
             # Make an exception for non-protocol modules
             # that contain admin routes and for old-style protocol
             # modules without version support
