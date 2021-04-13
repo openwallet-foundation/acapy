@@ -50,6 +50,10 @@ async def sign(request: web.BaseRequest):
     try:
         context: AdminRequestContext = request["context"]
         session = await context.session()
+        try:
+            session.inject(BaseWallet, required=True)
+        except Exception:
+            raise web.HTTPForbidden(reason="No wallet available")
         body = await request.json()
         verkey = body.get("verkey")
         doc = body.get("doc")
@@ -98,17 +102,22 @@ async def verify(request: web.BaseRequest):
         profile = context.profile
         body = await request.json()
         verkey = body.get("verkey")
-        ver_meth = body.get("verification_method")
         doc = body.get("doc")
         async with context.session() as session:
-            wallet = session.inject(BaseWallet, required=False)
-            if not wallet:
+            try:
+                session.inject(BaseWallet, required=True)
+            except Exception:
                 raise web.HTTPForbidden(reason="No wallet available")
-            if ver_meth:
+            if verkey is None:
                 resolver = session.inject(DIDResolver)
-                ver_meth_expanded = await resolver.dereference(profile, ver_meth)
+                ver_meth_expanded = await resolver.dereference(
+                    profile, doc["proof"]["verificationMethod"]
+                )
                 if ver_meth_expanded is None:
-                    raise ResolverError(f"Verification method {ver_meth} not found.")
+                    raise ResolverError(
+                        f"Verification method "
+                        f"{doc['proof']['verificationMethod']} not found."
+                    )
                 verkey = ver_meth_expanded.material
             valid = await verify_credential(session, doc, verkey)
         response["valid"] = valid

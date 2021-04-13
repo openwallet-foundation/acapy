@@ -32,7 +32,14 @@ from ....resolver.base import (
 from ..error import BadJWSHeaderError
 from ....resolver.tests import DOC
 from ....resolver.default.indy import IndyDIDResolver
-from pydid import DIDDocument, VerificationMethod, DID, DIDUrl, VerificationSuite, DIDError
+from pydid import (
+    DIDDocument,
+    VerificationMethod,
+    DID,
+    DIDUrl,
+    VerificationSuite,
+    DIDError,
+)
 
 did_doc = DIDDocument.deserialize(DOC)
 
@@ -165,8 +172,17 @@ async def test_verify(mock_verify_request, mock_response):
 
 
 @pytest.mark.parametrize(
-    "error", [BadJWSHeaderError, DroppedAttributeError, DIDError,
-        ResolverError, DIDNotFound, DIDMethodNotSupported, WalletError, InjectionError]
+    "error",
+    [
+        BadJWSHeaderError,
+        DroppedAttributeError,
+        DIDError,
+        ResolverError,
+        DIDNotFound,
+        DIDMethodNotSupported,
+        WalletError,
+        InjectionError,
+    ],
 )
 @pytest.mark.asyncio
 async def test_verify_bad_req_error(mock_verify_request, mock_response, error):
