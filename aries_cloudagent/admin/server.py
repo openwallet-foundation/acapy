@@ -11,7 +11,10 @@ import aiohttp_cors
 import jwt
 from aiohttp import web
 from aiohttp_apispec import (
-    docs, response_schema, setup_aiohttp_apispec, validation_middleware
+    docs,
+    response_schema,
+    setup_aiohttp_apispec,
+    validation_middleware,
 )
 from marshmallow import fields
 
