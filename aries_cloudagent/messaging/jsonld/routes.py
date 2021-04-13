@@ -6,19 +6,13 @@ from aiohttp_apispec import docs, request_schema, response_schema
 from marshmallow import fields
 
 from ...admin.request_context import AdminRequestContext
-from ...wallet.base import BaseWallet
 
 from ..models.openapi import OpenAPISchema
 from ...config.base import InjectionError
 from ...wallet.error import WalletError
 from ...resolver.did_resolver import DIDResolver
-from ...resolver.base import ResolverError, DIDNotFound
-from pydid import DIDError
-from .error import (
-    DroppedAttributeError,
-    MissingVerificationMethodError,
-    BadJWSHeaderError,
-)
+from ...resolver.base import ResolverError
+from .error import MissingVerificationMethodError, BaseJSONLDMessagingError
 from .credential import sign_credential, verify_credential
 
 
@@ -63,21 +57,19 @@ async def sign(request: web.BaseRequest):
 
     """
     response = {}
+    body = await request.json()
+    doc = body.get("doc")
     try:
         context: AdminRequestContext = request["context"]
-        session = await context.session()
-        try:
-            session.inject(BaseWallet, required=True)
-        except Exception:
-            raise web.HTTPForbidden(reason="No wallet available")
-        body = await request.json()
-        doc = body.get("doc")
-        doc_with_proof = await sign_credential(
-            session, doc.get("credential"), doc.get("options"), body.get("verkey")
-        )
-        response["signed_doc"] = doc_with_proof
-    except (WalletError, DroppedAttributeError, MissingVerificationMethodError) as err:
+        async with context.session() as session:
+            doc_with_proof = await sign_credential(
+                session, doc.get("credential"), doc.get("options"), body.get("verkey")
+            )
+            response["signed_doc"] = doc_with_proof
+    except (BaseJSONLDMessagingError) as err:
         response["error"] = repr(err)
+    except (WalletError, InjectionError):
+        raise web.HTTPForbidden(reason="No wallet available")
     return web.json_response(response)
 
 
@@ -131,17 +123,13 @@ async def verify(request: web.BaseRequest):
         verkey = body.get("verkey")
         doc = body.get("doc")
         async with context.session() as session:
-            try:
-                session.inject(BaseWallet, required=True)
-            except Exception:
-                raise web.HTTPForbidden(reason="No wallet available")
             if verkey is None:
                 resolver = session.inject(DIDResolver)
                 ver_meth_expanded = await resolver.dereference(
                     profile, doc["proof"]["verificationMethod"]
                 )
                 if ver_meth_expanded is None:
-                    raise ResolverError(
+                    raise MissingVerificationMethodError(
                         f"Verification method "
                         f"{doc['proof']['verificationMethod']} not found."
                     )
@@ -149,16 +137,12 @@ async def verify(request: web.BaseRequest):
             valid = await verify_credential(session, doc, verkey)
         response["valid"] = valid
     except (
-        BadJWSHeaderError,
-        DroppedAttributeError,
-        DIDError,
-        DIDNotFound,
+        BaseJSONLDMessagingError,
         ResolverError,
-        WalletError,
-        InjectionError,
     ) as e:
         response["error"] = repr(e)
-
+    except (WalletError, InjectionError):
+        raise web.HTTPForbidden(reason="No wallet available")
     return web.json_response(response)
 
 

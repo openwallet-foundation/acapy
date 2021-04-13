@@ -1,14 +1,11 @@
 import pytest
-import unittest
-import asyncio
-import pytest
+from aiohttp import web
 from asynctest import mock as async_mock, TestCase as AsyncTestCase
 from ....messaging.models.base import BaseModelError
 from ....wallet.error import WalletError
 from ....config.base import InjectionError
 from ..error import DroppedAttributeError, MissingVerificationMethodError
 import json
-
 from copy import deepcopy
 
 from asynctest import mock as async_mock, TestCase as AsyncTestCase
@@ -18,27 +15,17 @@ from ....admin.request_context import AdminRequestContext
 from ....wallet.base import BaseWallet
 
 from .. import routes as test_module
-from .. import credential
 
 from ....resolver.did_resolver import DIDResolver
-from ....resolver.did_resolver_registry import DIDResolverRegistry
 from ....resolver.base import (
     DIDNotFound,
     DIDMethodNotSupported,
     ResolverError,
-    BaseDIDResolver,
-    ResolverType,
 )
 from ..error import BadJWSHeaderError
 from ....resolver.tests import DOC
-from ....resolver.default.indy import IndyDIDResolver
 from pydid import (
     DIDDocument,
-    VerificationMethod,
-    DID,
-    DIDUrl,
-    VerificationSuite,
-    DIDError,
 )
 
 did_doc = DIDDocument.deserialize(DOC)
@@ -156,13 +143,21 @@ async def test_sign(mock_sign_request, mock_response):
 
 
 @pytest.mark.parametrize(
-    "error", [WalletError, DroppedAttributeError, MissingVerificationMethodError]
+    "error", [DroppedAttributeError, MissingVerificationMethodError]
 )
 @pytest.mark.asyncio
 async def test_sign_bad_req_error(mock_sign_request, mock_response, error):
     test_module.sign_credential = async_mock.CoroutineMock(side_effect=error())
     await test_module.sign(mock_sign_request)
     assert "error" in mock_response.call_args[0][0]
+
+
+@pytest.mark.parametrize("error", [WalletError])
+@pytest.mark.asyncio
+async def test_sign_bad_req_http_error(mock_sign_request, mock_response, error):
+    test_module.sign_credential = async_mock.CoroutineMock(side_effect=error())
+    with pytest.raises(web.HTTPForbidden):
+        await test_module.sign(mock_sign_request)
 
 
 @pytest.mark.asyncio
@@ -176,12 +171,9 @@ async def test_verify(mock_verify_request, mock_response):
     [
         BadJWSHeaderError,
         DroppedAttributeError,
-        DIDError,
         ResolverError,
         DIDNotFound,
         DIDMethodNotSupported,
-        WalletError,
-        InjectionError,
     ],
 )
 @pytest.mark.asyncio
@@ -189,6 +181,20 @@ async def test_verify_bad_req_error(mock_verify_request, mock_response, error):
     test_module.verify_credential = async_mock.CoroutineMock(side_effect=error())
     await test_module.verify(mock_verify_request)
     assert "error" in mock_response.call_args[0][0]
+
+
+@pytest.mark.parametrize(
+    "error",
+    [
+        WalletError,
+        InjectionError,
+    ],
+)
+@pytest.mark.asyncio
+async def test_verify_bad_req_http_error(mock_verify_request, mock_response, error):
+    test_module.verify_credential = async_mock.CoroutineMock(side_effect=error())
+    with pytest.raises(web.HTTPForbidden):
+        await test_module.verify(mock_verify_request)
 
 
 @pytest.mark.asyncio
