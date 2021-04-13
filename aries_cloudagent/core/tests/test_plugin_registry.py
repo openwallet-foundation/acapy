@@ -430,7 +430,7 @@ class TestPluginRegistry(AsyncTestCase):
             ClassLoader, "load_module", async_mock.MagicMock()
         ) as load_module:
             load_module.side_effect = [
-                async_mock.MagicMock(),  # module
+                {},  # module
                 None,  # routes
                 None,  # message types
                 None,  # definition
@@ -442,19 +442,35 @@ class TestPluginRegistry(AsyncTestCase):
             ClassLoader, "load_module", async_mock.MagicMock()
         ) as load_module:
             load_module.side_effect = [
-                async_mock.MagicMock(),  # module
+                {},  # module
                 None,  # routes
                 None,  # message types
                 "str-has-no-versions-attr",  # definition without versions attr
             ]
             assert self.registry.register_plugin("dummy") is None
 
+    async def test_register_plugin_has_setup(self):
+        class MODULE:
+            setup = "present"
+
+        obj = MODULE()
+        with async_mock.patch.object(
+            ClassLoader, "load_module", async_mock.MagicMock()
+        ) as load_module:
+            load_module.side_effect = [
+                obj,  # module
+                None,  # routes
+                None,  # message types
+                None,  # definition without versions attr
+            ]
+            assert self.registry.register_plugin("dummy") == obj
+
     async def test_register_definitions_malformed(self):
         with async_mock.patch.object(
             ClassLoader, "load_module", async_mock.MagicMock()
         ) as load_module:
             load_module.side_effect = [
-                async_mock.MagicMock(),  # module
+                {},  # module
                 None,  # routes
                 None,  # message types
                 async_mock.MagicMock(versions="not-a-list"),
