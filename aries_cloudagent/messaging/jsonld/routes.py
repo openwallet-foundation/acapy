@@ -13,7 +13,7 @@ from ...wallet.error import WalletError
 from ...resolver.did_resolver import DIDResolver
 from ...resolver.base import ResolverError, BaseError
 from pydid import DIDError
-
+from .error import DroppedAttributeError, MissingVerificationMethodError
 from .credential import sign_credential, verify_credential
 
 
@@ -47,19 +47,11 @@ async def sign(request: web.BaseRequest):
         body = await request.json()
         verkey = body.get("verkey")
         doc = body.get("doc")
-        credential = doc.get("credential")
-        signature_options = doc.get("options")
         doc_with_proof = await sign_credential(
-            session, credential, signature_options, verkey
+            session, doc.get("credential"), doc.get("options"), verkey
         )
-    except (DIDError, ResolverError, WalletError, InjectionError) as err:
-        if isinstance(err, BaseError):
-            raise web.HTTPBadRequest(reason=err.roll_up) from err
-        # TODO: PyDID errors should be wrapped in did resolver classes to support .roll_up
-        else:
-            raise web.HTTPBadRequest(
-                reason=f"internal raised error: '{repr(err)}'"
-            ) from err
+    except (WalletError, DroppedAttributeError, MissingVerificationMethodError) as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
     return web.json_response({"signed_doc": doc_with_proof})
 
 
