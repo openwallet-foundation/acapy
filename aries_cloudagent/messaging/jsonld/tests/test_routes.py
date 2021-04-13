@@ -6,7 +6,7 @@ from asynctest import mock as async_mock, TestCase as AsyncTestCase
 from ....messaging.models.base import BaseModelError
 from ....wallet.error import WalletError
 from ....config.base import InjectionError
-from ....storage.error import StorageError, StorageNotFoundError
+from ..error import DroppedAttributeError, MissingVerificationMethodError
 import json
 
 from copy import deepcopy
@@ -22,7 +22,12 @@ from .. import credential
 
 from ....resolver.did_resolver import DIDResolver
 from ....resolver.did_resolver_registry import DIDResolverRegistry
-from ....resolver.base import DIDNotFound, DIDMethodNotSupported, BaseDIDResolver, ResolverType
+from ....resolver.base import (
+    DIDNotFound,
+    DIDMethodNotSupported,
+    BaseDIDResolver,
+    ResolverType,
+)
 from ....resolver.tests import DOC
 from ....resolver.default.indy import IndyDIDResolver
 from pydid import DIDDocument, VerificationMethod, DID, DIDUrl, VerificationSuite
@@ -60,8 +65,8 @@ def mock_verify_credential():
 
 
 @pytest.fixture
-def mock_sign_request(mock_sign_credential, mock_resolver):
-    context = AdminRequestContext.test_context({DIDResolver: mock_resolver})
+def mock_sign_request(mock_sign_credential):
+    context = AdminRequestContext.test_context()
     outbound_message_router = async_mock.CoroutineMock()
     request_dict = {
         "context": context,
@@ -141,20 +146,11 @@ async def test_sign(mock_sign_request, mock_response):
 
 
 @pytest.mark.parametrize(
-    "error", [DIDNotFound, DIDMethodNotSupported, WalletError, InjectionError]
+    "error", [WalletError, DroppedAttributeError, MissingVerificationMethodError]
 )
 @pytest.mark.asyncio
 async def test_sign_bad_req_error(mock_sign_request, mock_response, error):
     test_module.sign_credential = async_mock.CoroutineMock(side_effect=error())
-    with pytest.raises(test_module.web.HTTPBadRequest):
-        await test_module.sign(mock_sign_request)
-
-
-@pytest.mark.asyncio
-async def test_sign_bad_ver_meth_deref_req_error(
-    mock_resolver, mock_sign_request, mock_response
-):
-    mock_resolver.dereference.return_value = None
     with pytest.raises(test_module.web.HTTPBadRequest):
         await test_module.sign(mock_sign_request)
 
@@ -300,7 +296,7 @@ class TestJSONLDRoutes(AsyncTestCase):
             result = await test_module.verify(self.request)
             assert "error" in json.loads(result)
 
-        print("\n>> START X-ATTR-CRED-SUBJECT")
+        # print("\n>> START X-ATTR-CRED-SUBJECT")
         with async_mock.patch.object(
             jsonld, "compact", async_mock.MagicMock()
         ) as mock_compact, async_mock.patch.object(
