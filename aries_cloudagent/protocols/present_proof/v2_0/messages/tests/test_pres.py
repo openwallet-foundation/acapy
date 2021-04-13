@@ -1714,3 +1714,19 @@ class TestPresentation(TestCase):
         )  # more attachments than formats
         with self.assertRaises(BaseModelError):
             V20Pres.deserialize(pres_dict)
+
+        pres_obj.formats.append(  # unknown format: no validation
+            V20PresFormat(
+                attach_id="not_indy",
+                format_="not_indy",
+            )
+        )
+        pres_dict = pres_obj.serialize()
+        pres_dict["presentations~attach"].append(
+            {
+                "@id": "not_indy",
+                "mime-type": "application/json",
+                "data": {"base64": "eyJub3QiOiAiaW5keSJ9"},
+            }
+        )
+        V20Pres.deserialize(pres_dict)

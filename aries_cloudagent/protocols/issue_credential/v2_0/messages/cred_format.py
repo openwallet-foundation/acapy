@@ -114,6 +114,5 @@ class V20CredFormatSchema(BaseModelSchema):
         allow_none=False,
         description="Attachment format specifier",
         data_key="format",
-        validate=validate.Regexp("^(hlindy/.*@v2.0)|(dif/.*@v1.0)$"),
         example="dif/credential-manifest@v1.0",
     )

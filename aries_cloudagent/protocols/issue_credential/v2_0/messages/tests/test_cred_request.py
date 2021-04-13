@@ -102,6 +102,22 @@ class TestV20CredRequest(AsyncTestCase):
         with self.assertRaises(BaseModelError):
             V20CredRequest.deserialize(obj)
 
+        cred_request.formats.append(  # unknown format: no validation
+            V20CredFormat(
+                attach_id="not_indy",
+                format_="not_indy",
+            )
+        )
+        obj = cred_request.serialize()
+        obj["requests~attach"].append(
+            {
+                "@id": "not_indy",
+                "mime-type": "application/json",
+                "data": {"base64": "eyJub3QiOiAiaW5keSJ9"},
+            }
+        )
+        V20CredRequest.deserialize(obj)
+
 
 class TestV20CredRequestSchema(AsyncTestCase):
     """Test credential request schema"""

@@ -118,13 +118,29 @@ class TestV20CredIssue(AsyncTestCase):
 
         obj["credentials~attach"].append(  # more attachments than formats
             {
-                "@id": "def",
+                "@id": "not_indy",
                 "mime-type": "application/json",
                 "data": {"base64": "eyJub3QiOiAiaW5keSJ9"},
             }
         )
         with self.assertRaises(BaseModelError):
             V20CredIssue.deserialize(obj)
+
+        cred_issue.formats.append(  # unknown format: no validation
+            V20CredFormat(
+                attach_id="not_indy",
+                format_="not_indy",
+            )
+        )
+        obj = cred_issue.serialize()
+        obj["credentials~attach"].append(
+            {
+                "@id": "not_indy",
+                "mime-type": "application/json",
+                "data": {"base64": "eyJub3QiOiAiaW5keSJ9"},
+            }
+        )
+        V20CredIssue.deserialize(obj)
 
     async def test_serialize(self):
         """Test serialization."""

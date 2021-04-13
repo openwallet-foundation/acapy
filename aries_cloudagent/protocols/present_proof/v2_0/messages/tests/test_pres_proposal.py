@@ -138,3 +138,19 @@ class TestV20PresProposal(TestCase):
             pres_proposal_dict["formats"] = []
             with pytest.raises(BaseModelError):
                 V20PresProposal.deserialize(pres_proposal_dict)  # length mismatch
+
+            pres_proposal.formats.append(  # unknown format: no validation
+                V20PresFormat(
+                    attach_id="not_indy",
+                    format_="not_indy",
+                )
+            )
+            obj = pres_proposal.serialize()
+            obj["proposals~attach"].append(
+                {
+                    "@id": "not_indy",
+                    "mime-type": "application/json",
+                    "data": {"base64": "eyJub3QiOiAiaW5keSJ9"},
+                }
+            )
+            V20PresProposal.deserialize(obj)
