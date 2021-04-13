@@ -1,11 +1,5 @@
 """Credential request message handler."""
 
-from aries_cloudagent.protocols.issue_credential.v2_0.messages.cred_proposal import (
-    V20CredProposal,
-)
-from aries_cloudagent.protocols.issue_credential.v2_0.messages.cred_format import (
-    V20CredFormat,
-)
 from .....messaging.base_handler import (
     BaseHandler,
     BaseResponder,
@@ -57,40 +51,15 @@ class V20CredRequestHandler(BaseHandler):
 
         # If auto_issue is enabled, respond immediately
         if cred_ex_record.auto_issue:
-            cred_formats = [
-                V20CredFormat.Format.get(format.format)
-                for format in context.message.formats
-            ]
-
-            # TODO: this should be removed here and handled in the format
-            # specific handler. This way we don't bloat this file
-            can_respond_indy = (
-                V20CredFormat.Format.INDY in cred_formats
-                and V20CredProposal.deserialize(
-                    cred_ex_record.cred_proposal
-                ).credential_preview
+            (cred_ex_record, cred_issue_message,) = await cred_manager.issue_credential(
+                cred_ex_record=cred_ex_record, comment=context.message.comment
             )
-            can_respond_ld_proof = V20CredFormat.Format.LD_PROOF in cred_formats
 
-            if can_respond_indy or can_respond_ld_proof:
-                (
-                    cred_ex_record,
-                    cred_issue_message,
-                ) = await cred_manager.issue_credential(
-                    cred_ex_record=cred_ex_record, comment=context.message.comment
-                )
+            await responder.send_reply(cred_issue_message)
 
-                await responder.send_reply(cred_issue_message)
-
-                trace_event(
-                    context.settings,
-                    cred_issue_message,
-                    outcome="V20CredRequestHandler.issue.END",
-                    perf_counter=r_time,
-                )
-            else:
-                self._logger.warning(
-                    "Operation set for auto-issue but v2.0 credential exchange record "
-                    f"{cred_ex_record.cred_ex_id} "
-                    "has no attribute values"
-                )
+            trace_event(
+                context.settings,
+                cred_issue_message,
+                outcome="V20CredRequestHandler.issue.END",
+                perf_counter=r_time,
+            )

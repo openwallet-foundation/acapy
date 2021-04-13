@@ -35,13 +35,14 @@ class TestV20CredRequest(AsyncTestCase):
     }
 
     ld_proof_cred_req = {
-        "credential-manifest": {
-            "issuer": "did:example:123",
-            "credential": {
-                "name": "Banana sticker",
-                "schema": "...",
-            },
-        }
+        "credential": {
+            "@context": ["https://www.w3.org/2018/credentials/v1"],
+            "type": ["VerifiableCredential"],
+            "credentialSubject": {"test": "key"},
+            "issuanceDate": "2021-04-12",
+            "issuer": "did:sov:something",
+        },
+        "options": {"proofType": "Ed25519Signature2018"},
     }
 
     CRED_REQUEST = V20CredRequest(
@@ -119,7 +120,7 @@ class TestV20CredRequestSchema(AsyncTestCase):
                 V20CredFormat(
                     attach_id="ld-proof-json",
                     format_=ATTACHMENT_FORMAT[CRED_20_REQUEST][
-                        V20CredFormat.Format.DIF.api
+                        V20CredFormat.Format.LD_PROOF.api
                     ],
                 ),
             ],
@@ -157,7 +158,7 @@ class TestV20CredRequestSchema(AsyncTestCase):
                 V20CredFormat(
                     attach_id="ld-proof-links",
                     format_=ATTACHMENT_FORMAT[CRED_20_REQUEST][
-                        V20CredFormat.Format.DIF.api
+                        V20CredFormat.Format.LD_PROOF.api
                     ],
                 ),
             ],
