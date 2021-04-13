@@ -19,9 +19,5 @@ class MissingVerificationMethodError(BaseJSONLDMessagingError):
     """Exception indicating missing verification method from signature options."""
 
 
-class VerificationMethodMissing(BaseJSONLDMessagingError):
-    """VerificationMethod is required."""
-
-
 class SignatureTypeError(BaseJSONLDMessagingError):
     """Signature type error."""
