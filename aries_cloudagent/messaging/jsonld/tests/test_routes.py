@@ -25,12 +25,14 @@ from ....resolver.did_resolver_registry import DIDResolverRegistry
 from ....resolver.base import (
     DIDNotFound,
     DIDMethodNotSupported,
+    ResolverError,
     BaseDIDResolver,
     ResolverType,
 )
+from ..error import BadJWSHeaderError
 from ....resolver.tests import DOC
 from ....resolver.default.indy import IndyDIDResolver
-from pydid import DIDDocument, VerificationMethod, DID, DIDUrl, VerificationSuite
+from pydid import DIDDocument, VerificationMethod, DID, DIDUrl, VerificationSuite, DIDError
 
 did_doc = DIDDocument.deserialize(DOC)
 
@@ -143,6 +145,7 @@ def mock_response():
 async def test_sign(mock_sign_request, mock_response):
     await test_module.sign(mock_sign_request)
     mock_response.assert_called_once_with({"signed_doc": "fake_signage"})
+    assert "error" not in mock_response.call_args[0][0]
 
 
 @pytest.mark.parametrize(
@@ -151,8 +154,8 @@ async def test_sign(mock_sign_request, mock_response):
 @pytest.mark.asyncio
 async def test_sign_bad_req_error(mock_sign_request, mock_response, error):
     test_module.sign_credential = async_mock.CoroutineMock(side_effect=error())
-    with pytest.raises(test_module.web.HTTPBadRequest):
-        await test_module.sign(mock_sign_request)
+    await test_module.sign(mock_sign_request)
+    assert "error" in mock_response.call_args[0][0]
 
 
 @pytest.mark.asyncio
@@ -162,13 +165,14 @@ async def test_verify(mock_verify_request, mock_response):
 
 
 @pytest.mark.parametrize(
-    "error", [DIDNotFound, DIDMethodNotSupported, WalletError, InjectionError]
+    "error", [BadJWSHeaderError, DroppedAttributeError, DIDError,
+        ResolverError, DIDNotFound, DIDMethodNotSupported, WalletError, InjectionError]
 )
 @pytest.mark.asyncio
 async def test_verify_bad_req_error(mock_verify_request, mock_response, error):
     test_module.verify_credential = async_mock.CoroutineMock(side_effect=error())
-    with pytest.raises(test_module.web.HTTPBadRequest):
-        await test_module.verify(mock_verify_request)
+    await test_module.verify(mock_verify_request)
+    assert "error" in mock_response.call_args[0][0]
 
 
 @pytest.mark.asyncio
@@ -176,8 +180,8 @@ async def test_verify_bad_ver_meth_deref_req_error(
     mock_resolver, mock_verify_request, mock_response
 ):
     mock_resolver.dereference.return_value = None
-    with pytest.raises(test_module.web.HTTPBadRequest):
-        await test_module.verify(mock_verify_request)
+    await test_module.verify(mock_verify_request)
+    assert "error" in mock_response.call_args[0][0]
 
 
 @pytest.mark.asyncio
