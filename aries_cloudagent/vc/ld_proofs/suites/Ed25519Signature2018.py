@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import Union
 
-from ..crypto import Ed25519WalletKeyPair
+from ..crypto import KeyPair
 from .JwsLinkedDataSignature import JwsLinkedDataSignature
 
 
@@ -15,7 +15,7 @@ class Ed25519Signature2018(JwsLinkedDataSignature):
     def __init__(
         self,
         *,
-        key_pair: Ed25519WalletKeyPair,
+        key_pair: KeyPair,
         proof: dict = None,
         verification_method: str = None,
         date: Union[datetime, str] = None,

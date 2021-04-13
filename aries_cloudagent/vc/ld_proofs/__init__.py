@@ -17,8 +17,6 @@ from .suites import (
 )
 from .crypto import (
     KeyPair,
-    Ed25519WalletKeyPair,
-    Bls12381G2WalletKeyPair,
     WalletKeyPair,
 )
 from .document_loader import (
@@ -50,8 +48,6 @@ __all__ = [
     # Key pairs
     KeyPair,
     WalletKeyPair,
-    Ed25519WalletKeyPair,
-    Bls12381G2WalletKeyPair,
     # Document Loaders
     DocumentLoaderMethod,
     DocumentLoader,
