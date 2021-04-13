@@ -185,7 +185,7 @@ class FaberAgent(BaseAgent):
             "attributes": ["name", "date", "degree", "age"],
         }
         schema_response = await self.admin_POST("/schemas", schema_body)
-        self.schema_id = schema_response["schema_id"]
+        self.schema_id = schema_response["sent"]["schema_id"]
         self.log(f"Schema ID: {self.schema_id}")
 
         # create a cred def for the schema
@@ -198,7 +198,7 @@ class FaberAgent(BaseAgent):
         credential_definition_response = await self.admin_POST(
             "/credential-definitions", credential_definition_body
         )
-        self.credential_definition_id = credential_definition_response[
+        self.credential_definition_id = credential_definition_response["sent"][
             "credential_definition_id"
         ]
         self.log(f"Credential Definition ID: {self.credential_definition_id}")
