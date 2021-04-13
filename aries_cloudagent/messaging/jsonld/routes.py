@@ -41,6 +41,7 @@ async def sign(request: web.BaseRequest):
         request: aiohttp request object
 
     """
+    response = {}
     try:
         context: AdminRequestContext = request["context"]
         session = await context.session()
@@ -50,9 +51,10 @@ async def sign(request: web.BaseRequest):
         doc_with_proof = await sign_credential(
             session, doc.get("credential"), doc.get("options"), verkey
         )
+        response["signed_doc"] = doc_with_proof
     except (WalletError, DroppedAttributeError, MissingVerificationMethodError) as err:
-        raise web.HTTPBadRequest(reason=err.roll_up) from err
-    return web.json_response({"signed_doc": doc_with_proof})
+        response["error"] = str(err)
+    return web.json_response(response)
 
 
 class VerifyRequestSchema(OpenAPISchema):
