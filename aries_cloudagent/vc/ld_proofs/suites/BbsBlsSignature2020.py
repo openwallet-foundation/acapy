@@ -151,8 +151,6 @@ class BbsBlsSignature2020(BbsBlsSignature2020Base):
             document=document, document_loader=document_loader
         )
 
-        # TODO: detect any dropped properties using expand/contract step?
-
         return [*proof_statements, *document_statements]
 
     def _canonize_proof(
@@ -161,8 +159,8 @@ class BbsBlsSignature2020(BbsBlsSignature2020Base):
         """Canonize proof dictionary. Removes value that are not part of signature."""
         # Use default security context url if document has no context
         proof = {
-            "@context": document.get("@context") or SECURITY_CONTEXT_V3_URL,
             **proof,
+            "@context": document.get("@context") or SECURITY_CONTEXT_V3_URL,
         }
 
         proof.pop("proofValue", None)
