@@ -2,7 +2,7 @@
 
 import json
 
-from aries_cloudagent.storage.record import StorageRecord
+from ...storage.record import StorageRecord
 
 from .vc_record import VCRecord
 

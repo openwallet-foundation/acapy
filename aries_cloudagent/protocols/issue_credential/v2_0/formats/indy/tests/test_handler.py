@@ -1,38 +1,32 @@
-from aries_cloudagent.storage.error import StorageNotFoundError
 import asyncio
 from copy import deepcopy
-from aries_cloudagent.protocols.issue_credential.v2_0.messages.cred_request import (
-    V20CredRequest,
-)
-from aries_cloudagent.indy.holder import IndyHolder
-from aries_cloudagent.protocols.issue_credential.v2_0.messages.cred_offer import (
-    V20CredOffer,
-)
 from time import time
-from aries_cloudagent.messaging.credential_definitions.util import (
-    CRED_DEF_SENT_RECORD_TYPE,
-)
-from aries_cloudagent.storage.record import StorageRecord
-from aries_cloudagent.cache.base import BaseCache
-from aries_cloudagent.cache.in_memory import InMemoryCache
-from aries_cloudagent.indy.issuer import IndyIssuer
 import json
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
+
 from .. import handler as test_module
 
 
 from .......core.in_memory import InMemoryProfile
 from .......ledger.base import BaseLedger
-
+from .......indy.issuer import IndyIssuer
+from .......cache.in_memory import InMemoryCache
+from .......cache.base import BaseCache
+from .......storage.record import StorageRecord
+from .......storage.error import StorageNotFoundError
+from .......messaging.credential_definitions.util import CRED_DEF_SENT_RECORD_TYPE
 from .......messaging.decorators.attach_decorator import AttachDecorator
-from ..handler import IndyCredFormatHandler
-from ...handler import LOGGER, V20CredFormatError
+from .......indy.holder import IndyHolder
 from ....models.detail.indy import V20CredExRecordIndy
 from ....messages.cred_proposal import V20CredProposal
 from ....messages.cred_format import V20CredFormat
 from ....messages.cred_issue import V20CredIssue
 from ....messages.inner.cred_preview import V20CredPreview, V20CredAttrSpec
+from ....messages.cred_offer import V20CredOffer
+from ....messages.cred_request import (
+    V20CredRequest,
+)
 from ....models.cred_ex_record import V20CredExRecord
 from ....message_types import (
     ATTACHMENT_FORMAT,
@@ -41,6 +35,8 @@ from ....message_types import (
     CRED_20_REQUEST,
     CRED_20_ISSUE,
 )
+from ..handler import IndyCredFormatHandler
+from ...handler import LOGGER, V20CredFormatError
 
 TEST_DID = "LjgpST2rjsoxYegQDRm7EL"
 SCHEMA_NAME = "bc-reg"
