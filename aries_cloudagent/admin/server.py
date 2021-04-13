@@ -50,8 +50,23 @@ class AdminModulesSchema(OpenAPISchema):
     )
 
 
+class AdminConfigSchema(OpenAPISchema):
+    """Schema for the config endpoint."""
+
+    config = fields.Dict(description="Configuration settings")
+
+
 class AdminStatusSchema(OpenAPISchema):
     """Schema for the status endpoint."""
+
+    version = fields.Str(description="Version code")
+    label = fields.Str(description="Default label", allow_none=True)
+    timing = fields.Dict(description="Timing results", required=False)
+    conductor = fields.Dict(description="Conductor statistics", required=False)
+
+
+class AdminResetSchema(OpenAPISchema):
+    """Schema for the reset endpoint."""
 
 
 class AdminStatusLivelinessSchema(OpenAPISchema):
@@ -230,6 +245,7 @@ class AdminServer(BaseAdminServer):
             webhook_router: Callable for delivering webhooks
             conductor_stop: Conductor (graceful) stop for shutdown API call
             task_queue: An optional task queue for handlers
+            conductor_stats: Conductor statistics API call
         """
         self.app = None
         self.admin_api_key = context.settings.get("admin.admin_api_key")
@@ -535,7 +551,7 @@ class AdminServer(BaseAdminServer):
         return web.json_response({"result": plugins})
 
     @docs(tags=["server"], summary="Fetch the server configuration")
-    @response_schema(AdminStatusSchema(), 200, description="")
+    @response_schema(AdminConfigSchema(), 200, description="")
     async def config_handler(self, request: web.BaseRequest):
         """
         Request handler for the server configuration.
@@ -567,7 +583,7 @@ class AdminServer(BaseAdminServer):
                 config["admin.webhook_urls"][index],
             )
 
-        return web.json_response(config)
+        return web.json_response({"config": config})
 
     @docs(tags=["server"], summary="Fetch the server status")
     @response_schema(AdminStatusSchema(), 200, description="")
@@ -592,7 +608,7 @@ class AdminServer(BaseAdminServer):
         return web.json_response(status)
 
     @docs(tags=["server"], summary="Reset statistics")
-    @response_schema(AdminStatusSchema(), 200, description="")
+    @response_schema(AdminResetSchema(), 200, description="")
     async def status_reset_handler(self, request: web.BaseRequest):
         """
         Request handler for resetting the timing statistics.

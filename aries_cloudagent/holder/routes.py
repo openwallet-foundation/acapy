@@ -41,6 +41,12 @@ class HolderModuleResponseSchema(OpenAPISchema):
 class AttributeMimeTypesResultSchema(OpenAPISchema):
     """Result schema for credential attribute MIME type."""
 
+    results = fields.Dict(
+        keys=fields.Str(description="Attribute name"),
+        values=fields.Str(description="MIME type"),
+        allow_none=True,
+    )
+
 
 class CredBriefSchema(OpenAPISchema):
     """Result schema with credential brief for credential query."""
@@ -263,7 +269,7 @@ async def credentials_attr_mime_types_get(request: web.BaseRequest):
     credential_id = request.match_info["credential_id"]
 
     holder = session.inject(IndyHolder)
-    return web.json_response(await holder.get_mime_type(credential_id))
+    return web.json_response({"results": await holder.get_mime_type(credential_id)})
 
 
 @docs(tags=["credentials"], summary="Remove credential from wallet by id")
