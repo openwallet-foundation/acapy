@@ -5,7 +5,7 @@ from enum import Enum
 from typing import Sequence, Union
 from uuid import uuid4
 
-from marshmallow import EXCLUDE, fields, validate
+from marshmallow import EXCLUDE, fields
 
 from .....messaging.decorators.attach_decorator import AttachDecorator
 from .....messaging.models.base import BaseModel, BaseModelSchema
