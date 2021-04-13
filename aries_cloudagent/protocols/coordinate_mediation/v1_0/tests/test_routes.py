@@ -78,7 +78,7 @@ class TestCoordinateMediationRoutes(AsyncTestCase):
         ) as json_response:
             await test_module.list_mediation_requests(self.request)
             json_response.assert_called_once_with(
-                [self.mock_record.serialize.return_value]
+                {"results": [self.mock_record.serialize.return_value]}
             )
             mock_query.assert_called_once_with(self.context.session.return_value, {})
 
@@ -97,7 +97,7 @@ class TestCoordinateMediationRoutes(AsyncTestCase):
         ) as json_response:
             await test_module.list_mediation_requests(self.request)
             json_response.assert_called_once_with(
-                [self.mock_record.serialize.return_value]
+                {"results": [self.mock_record.serialize.return_value]}
             )
             mock_query.assert_called_once_with(
                 self.context.session.return_value,
@@ -127,7 +127,7 @@ class TestCoordinateMediationRoutes(AsyncTestCase):
             test_module.web, "json_response"
         ) as mock_response:
             await test_module.list_mediation_requests(self.request)
-            mock_response.assert_called_once_with([])
+            mock_response.assert_called_once_with({"results": []})
 
     async def test_retrieve_mediation_request(self):
         with async_mock.patch.object(
@@ -410,7 +410,7 @@ class TestCoordinateMediationRoutes(AsyncTestCase):
         ) as mock_response:
             await test_module.get_keylist(self.request)
             mock_response.assert_called_once_with(
-                [{"serialized": "route record"}], status=200
+                {"results": [{"serialized": "route record"}]}, status=200
             )
             mock_query.assert_called_once_with(
                 mock_session.return_value,
@@ -431,7 +431,7 @@ class TestCoordinateMediationRoutes(AsyncTestCase):
         ) as mock_response:
             await test_module.get_keylist(self.request)
             mock_query.assert_called_once_with(mock_session.return_value, {})
-            mock_response.assert_called_once_with([], status=200)
+            mock_response.assert_called_once_with({"results": []}, status=200)
 
     async def test_get_keylist_storage_error(self):
         with async_mock.patch.object(

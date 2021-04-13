@@ -221,7 +221,7 @@ class DemoAgent:
         }
         schema_response = await self.admin_POST("/schemas", schema_body)
         log_json(json.dumps(schema_response), label="Schema:")
-        schema_id = schema_response["schema_id"]
+        schema_id = schema_response["sent"]["schema_id"]
         log_msg("Schema ID:", schema_id)
 
         # Create a cred def for the schema
@@ -241,9 +241,9 @@ class DemoAgent:
         credential_definition_response = await self.admin_POST(
             "/credential-definitions", credential_definition_body
         )
-        credential_definition_id = credential_definition_response[
-            "credential_definition_id"
-        ]
+        credential_definition_id = (
+            credential_definition_response["sent"]["credential_definition_id"]
+        )
         log_msg("Cred def ID:", credential_definition_id)
         return schema_id, credential_definition_id
 
