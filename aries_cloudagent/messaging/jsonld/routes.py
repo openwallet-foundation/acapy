@@ -26,7 +26,23 @@ class SignRequestSchema(OpenAPISchema):
     """Request schema for signing a jsonld doc."""
 
     verkey = fields.Str(required=True, description="verkey to use for signing")
-    doc = fields.Dict(required=True, description="JSON-LD Doc to sign")
+    doc = fields.Dict(
+        required=True,
+        description="JSON-LD Doc to sign",
+        doc=fields.Dict(
+            credential=fields.Dict(
+                required=True,
+                description="credential to sign",
+            ),
+            options=fields.Dict(
+                description="option describing how to sign",
+                required=True,
+                creator=fields.Str(required=False),
+                verificationMethod=fields.Str(required=False),
+                proofPurpose=fields.Str(required=False),
+            ),
+        ),
+    )
 
 
 class SignResponseSchema(OpenAPISchema):
@@ -55,10 +71,9 @@ async def sign(request: web.BaseRequest):
         except Exception:
             raise web.HTTPForbidden(reason="No wallet available")
         body = await request.json()
-        verkey = body.get("verkey")
         doc = body.get("doc")
         doc_with_proof = await sign_credential(
-            session, doc.get("credential"), doc.get("options"), verkey
+            session, doc.get("credential"), doc.get("options"), body.get("verkey")
         )
         response["signed_doc"] = doc_with_proof
     except (WalletError, DroppedAttributeError, MissingVerificationMethodError) as err:
@@ -72,11 +87,23 @@ class VerifyRequestSchema(OpenAPISchema):
     verkey = fields.Str(
         required=False, description="verkey to use for doc verification"
     )
-    verification_method = fields.Str(
-        required=False,
-        description="DID URL to the Verification Method to use to verify doc",
+    doc = fields.Dict(
+        required=True,
+        description="JSON-LD Doc to verify",
+        doc=fields.Dict(
+            credential=fields.Dict(
+                required=True,
+                description="credential to verify",
+            ),
+            options=fields.Dict(
+                description="option describing how to verify",
+                required=True,
+                creator=fields.Str(required=False),
+                verificationMethod=fields.Str(required=False),
+                proofPurpose=fields.Str(required=False),
+            ),
+        ),
     )
-    doc = fields.Dict(required=True, description="JSON-LD Doc to verify")
 
 
 class VerifyResponseSchema(OpenAPISchema):
