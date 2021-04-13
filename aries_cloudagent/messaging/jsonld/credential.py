@@ -17,11 +17,7 @@ from .error import BadJWSHeaderError
 def did_key(verkey: str) -> str:
     """Qualify verkey into DID key if need be."""
 
-    return (
-        verkey
-        if verkey.startswith("did:key:")
-        else naked_to_did_key(verkey)
-    )
+    return verkey if verkey.startswith("did:key:") else naked_to_did_key(verkey)
 
 
 def b64encode(str):

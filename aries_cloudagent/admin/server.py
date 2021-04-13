@@ -3,41 +3,35 @@
 import asyncio
 import logging
 import re
-from typing import Callable, Coroutine
 import uuid
 import warnings
+from typing import Callable, Coroutine
 
-from aiohttp import web
-from aiohttp_apispec import (
-    docs,
-    response_schema,
-    setup_aiohttp_apispec,
-    validation_middleware,
-)
 import aiohttp_cors
 import jwt
-
+from aiohttp import web
+from aiohttp_apispec import (
+    docs, response_schema, setup_aiohttp_apispec, validation_middleware
+)
 from marshmallow import fields
 
 from ..config.injection_context import InjectionContext
-from ..core.event_bus import EventBus, Event
-from ..core.profile import Profile
+from ..core.event_bus import Event, EventBus
 from ..core.plugin_registry import PluginRegistry
+from ..core.profile import Profile
 from ..ledger.error import LedgerConfigError, LedgerTransactionError
 from ..messaging.models.openapi import OpenAPISchema
 from ..messaging.responder import BaseResponder
-from ..transport.queue.basic import BasicMessageQueue
+from ..multitenant.manager import MultitenantManager, MultitenantManagerError
+from ..storage.error import StorageNotFoundError
 from ..transport.outbound.message import OutboundMessage
+from ..transport.queue.basic import BasicMessageQueue
 from ..utils.stats import Collector
 from ..utils.task_queue import TaskQueue
 from ..version import __version__
-from ..multitenant.manager import MultitenantManager, MultitenantManagerError
-
-from ..storage.error import StorageNotFoundError
 from .base_server import BaseAdminServer
 from .error import AdminSetupError
 from .request_context import AdminRequestContext
-
 
 LOGGER = logging.getLogger(__name__)
 
@@ -359,6 +353,7 @@ class AdminServer(BaseAdminServer):
             web.get("/", self.redirect_handler, allow_head=False),
             web.get("/plugins", self.plugins_handler, allow_head=False),
             web.get("/status", self.status_handler, allow_head=False),
+            web.get("/status/config", self.config_handler, allow_head=False),
             web.post("/status/reset", self.status_reset_handler),
             web.get("/status/live", self.liveliness_handler, allow_head=False),
             web.get("/status/ready", self.readiness_handler, allow_head=False),
@@ -524,6 +519,41 @@ class AdminServer(BaseAdminServer):
         registry = self.context.inject(PluginRegistry, required=False)
         plugins = registry and sorted(registry.plugin_names) or []
         return web.json_response({"result": plugins})
+
+    @docs(tags=["server"], summary="Fetch the server configuration")
+    @response_schema(AdminStatusSchema(), 200, description="")
+    async def config_handler(self, request: web.BaseRequest):
+        """
+        Request handler for the server configuration.
+
+        Args:
+            request: aiohttp request object
+
+        Returns:
+            The web response
+
+        """
+        config = {
+            k: self.context.settings[k]
+            for k in self.context.settings
+            if k
+            not in [
+                "admin.admin_api_key",
+                "multitenant.jwt_secret",
+                "wallet.key",
+                "wallet.rekey",
+                "wallet.seed",
+                "wallet.storage.creds",
+            ]
+        }
+        for index in range(len(config.get("admin.webhook_urls", []))):
+            config["admin.webhook_urls"][index] = re.sub(
+                r"#.*",
+                "",
+                config["admin.webhook_urls"][index],
+            )
+
+        return web.json_response(config)
 
     @docs(tags=["server"], summary="Fetch the server status")
     @response_schema(AdminStatusSchema(), 200, description="")
