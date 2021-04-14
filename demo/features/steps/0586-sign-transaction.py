@@ -78,7 +78,7 @@ def step_impl(context, agent_name, schema_name):
     )
 
     # assert goodness
-    assert created_txn["state"] == "transaction_created"
+    assert created_txn["txn"]["state"] == "transaction_created"
     if not "txn_ids" in context:
         context.txn_ids = {}
     context.txn_ids["AUTHOR"] = created_txn["_id"]
