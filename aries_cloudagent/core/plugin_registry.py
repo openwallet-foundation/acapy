@@ -154,8 +154,8 @@ class PluginRegistry:
             # definition.py must include versions attribute
             if not hasattr(definition, "versions"):
                 LOGGER.error(
-                    "Protocol definition does not "
-                    + f"include versions attribute: {module_name}"
+                    "Protocol definition does not include "
+                    f"versions attribute: {module_name}"
                 )
                 return None
 
