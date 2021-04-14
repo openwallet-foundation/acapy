@@ -21,14 +21,15 @@ from .error import (
 class SignRequestSchema(OpenAPISchema):
     """Request schema for signing a jsonld doc."""
 
-    verkey = fields.Str(required=True, description="verkey to use for signing")
-    doc = fields.Dict(required=True, description="JSON-LD Doc to sign")
+    verkey = fields.Str(required=True, description="Verkey to use for signing")
+    doc = fields.Dict(required=True, description="JSON-LD document to sign")
 
 
 class SignResponseSchema(OpenAPISchema):
     """Response schema for a signed jsonld doc."""
 
-    signed_doc = fields.Dict(required=True)
+    signed_doc = fields.Dict(description="Signed document", required=False)
+    error = fields.Str(description="Error text", required=False)
 
 
 @docs(tags=["jsonld"], summary="Sign a JSON-LD structure and return it")
@@ -69,14 +70,15 @@ async def sign(request: web.BaseRequest):
 class VerifyRequestSchema(OpenAPISchema):
     """Request schema for signing a jsonld doc."""
 
-    verkey = fields.Str(required=True, description="verkey to use for doc verification")
-    doc = fields.Dict(required=True, description="JSON-LD Doc to verify")
+    verkey = fields.Str(required=True, description="Verkey to use for doc verification")
+    doc = fields.Dict(required=True, description="JSON-LD doc to verify")
 
 
 class VerifyResponseSchema(OpenAPISchema):
     """Response schema for verification result."""
 
     valid = fields.Bool(required=True)
+    error = fields.Str(description="Error text", required=False)
 
 
 @docs(tags=["jsonld"], summary="Verify a JSON-LD structure.")
@@ -115,3 +117,21 @@ async def register(app: web.Application):
 
     app.add_routes([web.post("/jsonld/sign", sign)])
     app.add_routes([web.post("/jsonld/verify", verify)])
+
+
+def post_process_routes(app: web.Application):
+    """Amend swagger API."""
+
+    # Add top-level tags description
+    if "tags" not in app._state["swagger_dict"]:
+        app._state["swagger_dict"]["tags"] = []
+    app._state["swagger_dict"]["tags"].append(
+        {
+            "name": "jsonld",
+            "description": "JSON-LD message operations",
+            "externalDocs": {
+                "description": "Specification",
+                "url": "https://tools.ietf.org/html/rfc7515",
+            },
+        }
+    )

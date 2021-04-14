@@ -19,6 +19,7 @@ from ....ledger.error import LedgerError
 from ....messaging.credential_definitions.util import CRED_DEF_TAGS
 from ....messaging.models.base import BaseModelError, OpenAPISchema
 from ....messaging.valid import (
+    ENDPOINT,
     INDY_CRED_DEF_ID,
     INDY_DID,
     INDY_SCHEMA_ID,
@@ -38,7 +39,6 @@ from ...problem_report.v1_0.message import ProblemReport
 from .manager import CredentialManager, CredentialManagerError
 from .message_types import SPEC_URI
 from .messages.credential_proposal import CredentialProposal
-from .messages.credential_offer import CredentialOfferSchema
 from .messages.inner.credential_preview import (
     CredentialPreview,
     CredentialPreviewSchema,
@@ -239,6 +239,19 @@ class V10CredentialOfferRequestSchema(AdminAPIMessageTracingSchema):
         description="Whether to trace event (default false)",
         required=False,
         example=False,
+    )
+
+
+class V10CreateFreeOfferResultSchema(OpenAPISchema):
+    """Result schema for creating free offer."""
+
+    response = fields.Nested(
+        V10CredentialExchange(),
+        description="Credential exchange record",
+    )
+    oob_url = fields.Str(
+        description="Out-of-band URL",
+        **ENDPOINT,
     )
 
 
@@ -646,7 +659,7 @@ async def _create_free_offer(
     summary="Create a credential offer, independent of any proposal",
 )
 @request_schema(V10CredentialOfferRequestSchema())
-@response_schema(CredentialOfferSchema(), 200, description="")
+@response_schema(V10CreateFreeOfferResultSchema(), 200, description="")
 async def credential_exchange_create_free_offer(request: web.BaseRequest):
     """
     Request handler for creating free credential offer.
