@@ -3,8 +3,7 @@
 import logging
 from typing import Mapping
 
-from marshmallow import RAISE
-from marshmallow.utils import EXCLUDE, INCLUDE
+from marshmallow import EXCLUDE, INCLUDE
 
 from ......vc.vc_ld import (
     issue,
