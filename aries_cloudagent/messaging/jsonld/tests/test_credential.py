@@ -27,12 +27,10 @@ from . import (
     TEST_VERIFY_ERROR,
 )
 
-TEST_VERKEY_ = "5yKdnU7ToTjAoRNDzfuzVTfWBH38qyhE1b9xh4v8JaWF"
-
 
 class TestCredential(AsyncTestCase):
     async def test_did_key(self):
-        did_key = test_module.did_key(TEST_VERKEY_)
+        did_key = test_module.did_key(TEST_VERKEY)
         assert did_key.startswith("did:key:z")
         assert did_key == test_module.did_key(did_key)
 
