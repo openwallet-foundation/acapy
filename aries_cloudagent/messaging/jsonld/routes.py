@@ -21,20 +21,25 @@ class SignRequestSchema(OpenAPISchema):
 
     verkey = fields.Str(required=True, description="verkey to use for signing")
     doc = fields.Nested(
-        Schema.from_dict({
-            "credential": fields.Dict(
-                required=True,
-                description="credential to sign",
-            ),
-            "options": fields.Nested(Schema.from_dict(
-                {
-                    "creator": fields.Str(required=False),
-                    "verificationMethod": fields.Str(required=False),
-                    "proofPurpose": fields.Str(required=False),
-                }),
-                required=True),
-        }),
-        required=True
+        Schema.from_dict(
+            {
+                "credential": fields.Dict(
+                    required=True,
+                    description="credential to sign",
+                ),
+                "options": fields.Nested(
+                    Schema.from_dict(
+                        {
+                            "creator": fields.Str(required=False),
+                            "verificationMethod": fields.Str(required=False),
+                            "proofPurpose": fields.Str(required=False),
+                        }
+                    ),
+                    required=True,
+                ),
+            }
+        ),
+        required=True,
     )
 
 
@@ -79,20 +84,24 @@ class VerifyRequestSchema(OpenAPISchema):
         required=False, description="verkey to use for doc verification"
     )
     doc = fields.Nested(
-        Schema.from_dict({
-            "credential": fields.Dict(
-                required=True,
-                description="credential to verify",
-            ),
-            "options": fields.Nested(Schema.from_dict(
-                {
-                    "creator": fields.Str(required=False),
-                    "verificationMethod": fields.Str(required=False),
-                    "proofPurpose": fields.Str(required=False),
-                }),
-                required=True,
+        Schema.from_dict(
+            {
+                "credential": fields.Dict(
+                    required=True,
+                    description="credential to verify",
                 ),
-        }),
+                "options": fields.Nested(
+                    Schema.from_dict(
+                        {
+                            "creator": fields.Str(required=False),
+                            "verificationMethod": fields.Str(required=False),
+                            "proofPurpose": fields.Str(required=False),
+                        }
+                    ),
+                    required=True,
+                ),
+            }
+        ),
         required=True,
     )
 
