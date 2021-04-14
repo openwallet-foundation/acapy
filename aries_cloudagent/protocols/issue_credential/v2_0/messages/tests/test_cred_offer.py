@@ -77,6 +77,20 @@ class TestV20CredOffer(AsyncTestCase):
             CRED_20_OFFER
         )
 
+    async def test_attachment_no_target_format(self):
+        """Test attachment behaviour for only unknown formats."""
+
+        x_cred_offer = V20CredOffer(
+            comment="Test",
+            formats=[V20CredFormat(attach_id="not_indy", format_="not_indy")],
+            offers_attach=[
+                AttachDecorator.data_base64(
+                    ident="not_indy", mapping=TestV20CredOffer.CRED_OFFER.serialize()
+                )
+            ],
+        )
+        assert x_cred_offer.attachment() is None
+
     async def test_serde(self):
         """Test de/serialization."""
         obj = TestV20CredOffer.CRED_OFFER.serialize()

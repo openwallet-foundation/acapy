@@ -130,6 +130,20 @@ class TestV20PresRequest(TestCase):
             assert pres_req.attachment(V20PresFormat.Format.INDY) == INDY_PROOF_REQ[i]
             assert pres_req._type == DIDCommPrefix.qualify_current(PRES_20_REQUEST)
 
+    def test_attachment_no_target_format(self):
+        """Test attachment behaviour for only unknown formats."""
+
+        x_pres_req = V20PresRequest(
+            comment="Test",
+            formats=[V20PresFormat(attach_id="not_indy", format_="not_indy")],
+            request_presentations_attach=[
+                AttachDecorator.data_base64(
+                    ident="not_indy", mapping=PRES_REQ[0].serialize()
+                )
+            ],
+        )
+        assert x_pres_req.attachment() is None
+
     def test_serde(self):
         """Test de/serialization."""
         for pres_req_msg in PRES_REQ:

@@ -154,3 +154,15 @@ class TestV20PresProposal(TestCase):
                 }
             )
             V20PresProposal.deserialize(obj)
+
+    def test_attachment_no_target_format(self):
+        """Test attachment behaviour for only unknown formats."""
+
+        x_pres_proposal = V20PresProposal(
+            comment="Test",
+            formats=[V20PresFormat(attach_id="not_indy", format_="not_indy")],
+            proposals_attach=[
+                AttachDecorator.data_base64(ident="not_indy", mapping=INDY_PROOF_REQ[0])
+            ],
+        )
+        assert x_pres_proposal.attachment() is None

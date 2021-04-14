@@ -101,6 +101,20 @@ class TestV20CredIssue(AsyncTestCase):
             CRED_20_ISSUE
         )
 
+    async def test_attachment_no_target_format(self):
+        """Test attachment behaviour for only unknown formats."""
+
+        x_cred = V20CredIssue(
+            comment="Test",
+            formats=[V20CredFormat(attach_id="not_indy", format_="not_indy")],
+            credentials_attach=[
+                AttachDecorator.data_base64(
+                    ident="not_indy", mapping=TestV20CredIssue.CRED_ISSUE.serialize()
+                )
+            ],
+        )
+        assert x_cred.attachment() is None
+
     async def test_deserialize(self):
         """Test deserialization."""
         obj = TestV20CredIssue.CRED_ISSUE.serialize()
