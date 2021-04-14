@@ -46,7 +46,8 @@ class SignRequestSchema(OpenAPISchema):
 class SignResponseSchema(OpenAPISchema):
     """Response schema for a signed jsonld doc."""
 
-    signed_doc = fields.Dict(required=True)
+    signed_doc = fields.Dict(description="Signed document", required=False)
+    error = fields.Str(description="Error text", required=False)
 
 
 @docs(tags=["jsonld"], summary="Sign a JSON-LD structure and return it")
@@ -110,6 +111,7 @@ class VerifyResponseSchema(OpenAPISchema):
     """Response schema for verification result."""
 
     valid = fields.Bool(required=True)
+    error = fields.Str(description="Error text", required=False)
 
 
 @docs(tags=["jsonld"], summary="Verify a JSON-LD structure.")
@@ -167,8 +169,11 @@ def post_process_routes(app: web.Application):
         app._state["swagger_dict"]["tags"] = []
     app._state["swagger_dict"]["tags"].append(
         {
-            "name": "json-ld sign/verify",
+            "name": "jsonld  sign/verify",
             "description": "sign and verify json-ld data.",
-            "externalDocs": {"description": "Specification"},  # , "url": SPEC_URI},
+            "externalDocs": {
+                "description": "Specification",
+                "url": "https://tools.ietf.org/html/rfc7515",
+            },
         }
     )

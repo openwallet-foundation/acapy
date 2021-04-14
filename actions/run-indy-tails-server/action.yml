@@ -1,0 +1,20 @@
+name: "Run Tails Server"
+description: "Build and Run Indy Tails Server"
+author: "iancostanzo@gmail.com"
+runs:
+  using: "composite"
+  steps:
+    - name: checkout-indy-tails-server
+      run: git clone https://github.com/bcgov/indy-tails-server.git
+      shell: bash
+    - name: build-indy-tails-server
+      run: ./manage build
+      shell: bash
+      working-directory: indy-tails-server/docker
+    - name: run-indy-tails-server
+      run: ./manage start
+      shell: bash
+      working-directory: indy-tails-server/docker
+branding:
+  icon: "scissors"
+  color: "purple"
