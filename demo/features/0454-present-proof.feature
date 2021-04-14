@@ -1,6 +1,6 @@
-Feature: RFC 0037 Aries agent present proof
+Feature: RFC 0454 Aries agent present proof
 
-   @T001-RFC0037 @GHA
+   @T001-RFC0454 @GHA
    Scenario Outline: Present Proof where the prover does not propose a presentation of the proof and is acknowledged
       Given we have "2" agents
          | name  | role     | capabilities        |
@@ -18,7 +18,7 @@ Feature: RFC 0037 Aries agent present proof
          | Faber  | --public-did --did-exchange            | --did-exchange            | driverslicense | Data_DL_NormalizedValues | DL_age_over_19 |
 
 
-   @T001.1-RFC0037
+   @T001.1-RFC0454
    Scenario Outline: Present Proof where the prover does not propose a presentation of the proof and is acknowledged
       Given we have "3" agents
          | name  | role     | capabilities        |
@@ -38,7 +38,7 @@ Feature: RFC 0037 Aries agent present proof
          | Acme   | --public-did --mediation --multitenant | --mediation --multitenant | driverslicense | Data_DL_NormalizedValues | DL_age_over_19 |
 
 
-   @T002-RFC0037 @GHA
+   @T002-RFC0454 @GHA
    Scenario Outline: Present Proof where the issuer revokes the credential and the proof fails
       Given we have "2" agents
          | name  | role     | capabilities        |
@@ -57,7 +57,7 @@ Feature: RFC 0037 Aries agent present proof
          | Faber  | --revocation --public-did --did-exchange   | --did-exchange   | driverslicense | Data_DL_NormalizedValues | DL_age_over_19 |
 
 
-   @T002.1-RFC0037
+   @T002.1-RFC0454
    Scenario Outline: Present Proof where the issuer revokes the credential and the proof fails
       Given we have "3" agents
          | name  | role     | capabilities        |
