@@ -169,7 +169,7 @@ def post_process_routes(app: web.Application):
         app._state["swagger_dict"]["tags"] = []
     app._state["swagger_dict"]["tags"].append(
         {
-            "name": "jsonld  sign/verify",
+            "name": "jsonld",
             "description": "sign and verify json-ld data.",
             "externalDocs": {
                 "description": "Specification",
