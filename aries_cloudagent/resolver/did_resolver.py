@@ -75,4 +75,6 @@ class DIDResolver:
             doc = await self.resolve(profile, did_url.did)
             return doc.dereference(did_url)
         except (DIDError) as err:
-            raise ResolverError(reason=repr(err))
+            raise ResolverError(
+                reason="Failed to parse DID URL from {}".format(did_url)
+            ) from err

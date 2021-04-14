@@ -3,7 +3,7 @@
 from aiohttp import web
 from aiohttp_apispec import docs, request_schema, response_schema
 
-from marshmallow import fields
+from marshmallow import fields, Schema
 
 from ...admin.request_context import AdminRequestContext
 
@@ -20,22 +20,20 @@ class SignRequestSchema(OpenAPISchema):
     """Request schema for signing a jsonld doc."""
 
     verkey = fields.Str(required=True, description="verkey to use for signing")
-    doc = fields.Dict(
-        required=True,
-        description="JSON-LD Doc to sign",
-        doc=fields.Dict(
-            credential=fields.Dict(
+    doc = fields.Nested(
+        Schema.from_dict({
+            "credential": fields.Dict(
                 required=True,
                 description="credential to sign",
             ),
-            options=fields.Dict(
-                description="option describing how to sign",
-                required=True,
-                creator=fields.Str(required=False),
-                verificationMethod=fields.Str(required=False),
-                proofPurpose=fields.Str(required=False),
+            "options": Schema.from_dict(
+                {
+                    "creator": fields.Str(required=False),
+                    "verificationMethod": fields.Str(required=False),
+                    "proofPurpose": fields.Str(required=False),
+                }
             ),
-        ),
+        })
     )
 
 
@@ -79,22 +77,20 @@ class VerifyRequestSchema(OpenAPISchema):
     verkey = fields.Str(
         required=False, description="verkey to use for doc verification"
     )
-    doc = fields.Dict(
-        required=True,
-        description="JSON-LD Doc to verify",
-        doc=fields.Dict(
-            credential=fields.Dict(
+    doc = fields.Nested(
+        Schema.from_dict({
+            "credential": fields.Dict(
                 required=True,
                 description="credential to verify",
             ),
-            options=fields.Dict(
-                description="option describing how to verify",
-                required=True,
-                creator=fields.Str(required=False),
-                verificationMethod=fields.Str(required=False),
-                proofPurpose=fields.Str(required=False),
+            "options": Schema.from_dict(
+                {
+                    "creator": fields.Str(required=False),
+                    "verificationMethod": fields.Str(required=False),
+                    "proofPurpose": fields.Str(required=False),
+                }
             ),
-        ),
+        })
     )
 
 
