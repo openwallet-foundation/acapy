@@ -5,7 +5,7 @@ from .....core.in_memory import InMemoryProfile
 from .....messaging.request_context import RequestContext
 from .....messaging.responder import MockResponder
 from .....did.did_key import DIDKey
-from .....wallet.crypto import KeyType
+from .....wallet.key_type import KeyType
 
 from ....didcomm_prefix import DIDCommPrefix
 from ....out_of_band.v1_0.message_types import INVITATION as OOB_INVITATION

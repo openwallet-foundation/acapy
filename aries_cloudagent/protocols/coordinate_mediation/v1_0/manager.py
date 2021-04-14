@@ -9,7 +9,8 @@ from ....storage.base import BaseStorage
 from ....storage.error import StorageNotFoundError
 from ....storage.record import StorageRecord
 from ....wallet.base import BaseWallet, DIDInfo
-from ....wallet.crypto import KeyType, DIDMethod
+from ....wallet.key_type import KeyType
+from ....wallet.did_method import DIDMethod
 from ...routing.v1_0.manager import RoutingManager
 from ...routing.v1_0.models.route_record import RouteRecord
 from ...routing.v1_0.models.route_update import RouteUpdate

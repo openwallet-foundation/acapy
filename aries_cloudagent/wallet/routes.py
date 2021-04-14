@@ -24,7 +24,8 @@ from ..messaging.valid import (
     INDY_RAW_PUBLIC_KEY,
 )
 from ..multitenant.manager import MultitenantManager
-from .crypto import DIDMethod, KeyType
+from .key_type import KeyType
+from .did_method import DIDMethod
 from .base import DIDInfo, BaseWallet
 from .did_posture import DIDPosture
 from .error import WalletError, WalletNotFoundError

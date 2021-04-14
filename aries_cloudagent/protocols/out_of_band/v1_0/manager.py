@@ -21,7 +21,7 @@ from ....storage.error import StorageNotFoundError
 from ....transport.inbound.receipt import MessageReceipt
 from ....wallet.base import BaseWallet
 from ....wallet.util import b64_to_bytes
-from ....wallet.crypto import KeyType
+from ....wallet.key_type import KeyType
 from ....did.did_key import DIDKey
 
 from ...coordinate_mediation.v1_0.manager import MediationManager

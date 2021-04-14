@@ -59,7 +59,8 @@ from .....multitenant.manager import MultitenantManager
 from .....transport.inbound.receipt import MessageReceipt
 from .....wallet.base import DIDInfo, KeyInfo
 from .....wallet.in_memory import InMemoryWallet
-from .....wallet.crypto import DIDMethod, KeyType
+from .....wallet.key_type import KeyType
+from .....wallet.did_method import DIDMethod
 from .....did.did_key import DIDKey
 
 from ....didcomm_prefix import DIDCommPrefix

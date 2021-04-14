@@ -1,6 +1,6 @@
 from asynctest import TestCase as AsyncTestCase
 
-from ....wallet.crypto import KeyType
+from ....wallet.key_type import KeyType
 from ....core.in_memory import InMemoryProfile
 from ....protocols.trustping.v1_0.messages.ping import Ping
 from ....wallet.in_memory import InMemoryWallet

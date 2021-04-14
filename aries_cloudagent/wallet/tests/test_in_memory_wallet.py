@@ -4,7 +4,8 @@ import time
 from ...core.in_memory import InMemoryProfile
 from ...messaging.decorators.signature_decorator import SignatureDecorator
 from ...wallet.in_memory import InMemoryWallet
-from ...wallet.crypto import DIDMethod, KeyType
+from ...wallet.key_type import KeyType
+from ...wallet.did_method import DIDMethod
 from ...wallet.error import (
     WalletError,
     WalletDuplicateError,

@@ -3,7 +3,7 @@ from datetime import datetime
 
 import pytest
 
-from ....wallet.crypto import KeyType
+from ....wallet.key_type import KeyType
 from ....did.did_key import DIDKey
 from ....wallet.in_memory import InMemoryWallet
 from ....core.in_memory import InMemoryProfile

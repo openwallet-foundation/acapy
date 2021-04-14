@@ -31,7 +31,8 @@ from ...transport.wire_format import BaseWireFormat
 from ...transport.pack_format import PackWireFormat
 from ...utils.stats import Collector
 from ...wallet.base import BaseWallet
-from ...wallet.crypto import KeyType, DIDMethod
+from ...wallet.key_type import KeyType
+from ...wallet.did_method import DIDMethod
 
 from .. import conductor as test_module
 

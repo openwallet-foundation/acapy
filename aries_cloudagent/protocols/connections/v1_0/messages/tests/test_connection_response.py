@@ -2,7 +2,7 @@ from unittest import mock, TestCase
 
 from asynctest import TestCase as AsyncTestCase
 
-from ......wallet.crypto import KeyType
+from ......wallet.key_type import KeyType
 from ......connections.models.diddoc import (
     DIDDoc,
     PublicKey,

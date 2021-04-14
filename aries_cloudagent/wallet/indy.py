@@ -20,13 +20,13 @@ from ..ledger.error import LedgerConfigError
 from ..did.did_key import DIDKey
 from .base import BaseWallet, KeyInfo, DIDInfo
 from .crypto import (
-    DIDMethod,
-    KeyType,
     create_keypair,
     sign_message,
     validate_seed,
     verify_signed_message,
 )
+from .key_type import KeyType
+from .did_method import DIDMethod
 from .key_pair import KeyPairStorageManager
 from ..storage.indy import IndySdkStorage
 from ..storage.error import StorageDuplicateError, StorageNotFoundError

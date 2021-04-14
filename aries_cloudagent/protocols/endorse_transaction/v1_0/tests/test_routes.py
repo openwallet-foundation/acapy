@@ -7,7 +7,8 @@ from .....connections.models.conn_record import ConnRecord
 from .....core.in_memory import InMemoryProfile
 from .....ledger.base import BaseLedger
 from .....wallet.base import BaseWallet, DIDInfo
-from .....wallet.crypto import DIDMethod, KeyType
+from .....wallet.did_method import DIDMethod
+from .....wallet.key_type import KeyType
 
 from .. import routes as test_module
 from ..models.transaction_record import TransactionRecord

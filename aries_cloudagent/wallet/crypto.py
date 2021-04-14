@@ -1,176 +1,19 @@
 """Cryptography functions used by BasicWallet."""
 
-from enum import Enum
 import json
 
 from collections import OrderedDict
-from typing import Callable, Mapping, NamedTuple, Optional, Sequence, Tuple, Union, List
+from typing import Callable, Optional, Sequence, Tuple, Union, List
+from marshmallow import fields, Schema, ValidationError
 
 import nacl.bindings
 import nacl.exceptions
 import nacl.utils
 
-from marshmallow import fields, Schema, ValidationError
 
 from .error import WalletError
-from ..core.error import BaseError
 from .util import bytes_to_b58, bytes_to_b64, b64_to_bytes, b58_to_bytes, random_seed
-
-# Define keys
-KeySpec = NamedTuple(
-    "KeySpec",
-    [("key_type", str), ("multicodec_name", str), ("multicodec_prefix", int)],
-)
-
-
-class KeyTypeException(BaseException):
-    """Key type exception."""
-
-
-class KeyType(Enum):
-    """KeyType Enum specifying key types with multicodec name."""
-
-    # NOTE: the py_multicodec library is outdated. We use hardcoded prefixes here
-    # until this PR gets merged: https://github.com/multiformats/py-multicodec/pull/14
-    # multicodec is also not used now, but may be used again if py_multicodec is updated
-    ED25519 = KeySpec("ed25519", "ed25519-pub", b"\xed\x01")
-    X25519 = KeySpec("x25519", "x25519-pub", b"\xec\x01")
-    BLS12381G1 = KeySpec("bls12381g1", "bls12_381-g1-pub", b"\xea\x01")
-    BLS12381G2 = KeySpec("bls12381g2", "bls12_381-g2-pub", b"\xeb\x01")
-    BLS12381G1G2 = KeySpec("bls12381g1g2", "bls12_381-g1g2-pub", b"\xee\x01")
-
-    @property
-    def key_type(self) -> str:
-        """Getter for key type identifier."""
-        return self.value.key_type
-
-    @property
-    def multicodec_name(self) -> str:
-        """Getter for multicodec name."""
-        return self.value.multicodec_name
-
-    @property
-    def multicodec_prefix(self) -> bytes:
-        """Getter for multicodec prefix."""
-        return self.value.multicodec_prefix
-
-    @classmethod
-    def from_multicodec_name(cls, multicodec_name: str) -> Optional["KeyType"]:
-        """Get KeyType instance based on multicodec name. Returns None if not found."""
-        for key_type in KeyType:
-            if key_type.multicodec_name == multicodec_name:
-                return key_type
-
-        return None
-
-    @classmethod
-    def from_multicodec_prefix(cls, multicodec_prefix: bytes) -> Optional["KeyType"]:
-        """Get KeyType instance based on multicodec prefix. Returns None if not found."""
-        for key_type in KeyType:
-            if key_type.multicodec_prefix == multicodec_prefix:
-                return key_type
-
-        return None
-
-    @classmethod
-    def from_prefixed_bytes(cls, prefixed_bytes: bytes) -> Optional["KeyType"]:
-        """Get KeyType instance based on prefix in bytes. Returns None if not found."""
-        for key_type in KeyType:
-            if prefixed_bytes.startswith(key_type.multicodec_prefix):
-                return key_type
-
-        return None
-
-    @classmethod
-    def from_key_type(cls, key_type: str) -> Optional["KeyType"]:
-        """Get KeyType instance from the key type identifier."""
-        for _key_type in KeyType:
-            if _key_type.key_type == key_type:
-                return _key_type
-
-        return None
-
-
-DIDMethodSpec = NamedTuple(
-    "DIDMethodSpec",
-    [
-        ("method_name", str),
-        ("supported_key_types", List[KeyType]),
-        ("supports_rotation", bool),
-    ],
-)
-
-
-class DIDMethod(Enum):
-    """DID Method class specifying DID methods with supported key types."""
-
-    SOV = DIDMethodSpec(
-        method_name="sov", supported_key_types=[KeyType.ED25519], supports_rotation=True
-    )
-    KEY = DIDMethodSpec(
-        method_name="key",
-        supported_key_types=[KeyType.ED25519, KeyType.BLS12381G2],
-        supports_rotation=False,
-    )
-
-    @property
-    def method_name(self) -> str:
-        """Getter for did method name. e.g. sov or key."""
-        return self.value.method_name
-
-    @property
-    def supported_key_types(self) -> List[KeyType]:
-        """Getter for supported key types of method."""
-        return self.value.supported_key_types
-
-    @property
-    def supports_rotation(self) -> bool:
-        """Check whether the current method supports key rotation."""
-        return self.value.supports_rotation
-
-    def supports_key_type(self, key_type: KeyType) -> bool:
-        """Check whether the current method supports the key type."""
-        return key_type in self.supported_key_types
-
-    def from_metadata(metadata: Mapping) -> "DIDMethod":
-        """Get DID method instance from metadata object.
-
-        Returns SOV if no metadata was found for backwards compatability.
-        """
-        method = metadata.get("method")
-
-        # extract from metadata object
-        if method:
-            for did_method in DIDMethod:
-                if method == did_method.method_name:
-                    return did_method
-
-        # return default SOV for backward compat
-        return DIDMethod.SOV
-
-    def from_method(method: str) -> Optional["DIDMethod"]:
-        """Get DID method instance from the method name."""
-        for did_method in DIDMethod:
-            if method == did_method.method_name:
-                return did_method
-
-        return None
-
-    def from_did(did: str) -> "DIDMethod":
-        """Get DID method instance from the method name."""
-        if not did.startswith("did:"):
-            # sov has no prefix
-            return DIDMethod.SOV
-
-        parts = did.split(":")
-        method_str = parts[1]
-
-        method = DIDMethod.from_method(method_str)
-
-        if not method:
-            raise BaseError(f"Unsupported did method: {method_str}")
-
-        return method
+from .key_type import KeyType
 
 
 class PackMessageSchema(Schema):

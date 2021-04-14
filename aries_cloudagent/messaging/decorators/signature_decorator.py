@@ -9,7 +9,7 @@ from marshmallow import EXCLUDE, fields
 from ...protocols.didcomm_prefix import DIDCommPrefix
 from ...wallet.base import BaseWallet
 from ...wallet.util import b64_to_bytes, bytes_to_b64
-from ...wallet.crypto import KeyType
+from ...wallet.key_type import KeyType
 
 from ..models.base import BaseModel, BaseModelSchema
 from ..valid import Base64URL, BASE64URL, INDY_RAW_PUBLIC_KEY

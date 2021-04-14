@@ -7,8 +7,6 @@ from ..core.in_memory import InMemoryProfile
 
 from .base import BaseWallet, KeyInfo, DIDInfo
 from .crypto import (
-    DIDMethod,
-    KeyType,
     create_keypair,
     validate_seed,
     sign_message,
@@ -16,6 +14,8 @@ from .crypto import (
     encode_pack_message,
     decode_pack_message,
 )
+from .key_type import KeyType
+from .did_method import DIDMethod
 from .util import random_seed
 from ..did.did_key import DIDKey
 from .error import WalletError, WalletDuplicateError, WalletNotFoundError

@@ -3,7 +3,7 @@
 from typing import List, Optional, Union
 
 from ....wallet.util import b58_to_bytes
-from ....wallet.crypto import KeyType
+from ....wallet.key_type import KeyType
 from ....wallet.base import BaseWallet
 from ..error import LinkedDataProofException
 from .KeyPair import KeyPair

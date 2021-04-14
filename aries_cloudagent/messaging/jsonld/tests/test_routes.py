@@ -6,7 +6,8 @@ from asynctest import mock as async_mock, TestCase as AsyncTestCase
 from pyld import jsonld
 
 from ....admin.request_context import AdminRequestContext
-from ....wallet.crypto import KeyType, DIDMethod
+from ....wallet.key_type import KeyType
+from ....wallet.did_method import DIDMethod
 from ....wallet.base import BaseWallet
 
 from .. import routes as test_module

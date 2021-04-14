@@ -23,7 +23,7 @@ from ......vc.ld_proofs import (
     AuthenticationProofPurpose,
 )
 from ......vc.ld_proofs.constants import SECURITY_CONTEXT_BBS_URL
-from ......wallet.crypto import KeyType
+from ......wallet.key_type import KeyType
 from ......wallet.error import WalletNotFoundError
 from ......wallet.base import BaseWallet, DIDInfo
 from ......did.did_key import DIDKey

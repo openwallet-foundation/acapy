@@ -10,7 +10,8 @@ from ....indy.sdk.wallet_setup import IndyWalletConfig
 from ....messaging.models.base import BaseModelError
 from ....wallet.indy import IndySdkWallet
 from ....wallet.util import b64_to_bytes, bytes_to_b64
-from ....wallet.crypto import KeyType, DIDMethod
+from ....wallet.key_type import KeyType
+from ....wallet.did_method import DIDMethod
 
 from ..attach_decorator import (
     AttachDecorator,

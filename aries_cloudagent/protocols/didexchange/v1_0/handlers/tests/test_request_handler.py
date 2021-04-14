@@ -10,7 +10,8 @@ from ......connections.models.diddoc import (
 )
 from ......core.profile import ProfileSession
 from ......core.in_memory import InMemoryProfile
-from ......wallet.crypto import KeyType, DIDMethod
+from ......wallet.key_type import KeyType
+from ......wallet.did_method import DIDMethod
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder

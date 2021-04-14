@@ -16,7 +16,8 @@ from ...indy.sdk import wallet_setup as test_setup_module
 from ...indy.sdk.profile import IndySdkProfileManager
 from ...indy.sdk.wallet_setup import IndyWalletConfig
 from ...ledger.endpoint_type import EndpointType
-from ...wallet.crypto import DIDMethod, KeyType
+from ...wallet.key_type import KeyType
+from ...wallet.did_method import DIDMethod
 from ...ledger.indy import IndySdkLedgerPool
 
 from .. import indy as test_module

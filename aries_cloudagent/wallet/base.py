@@ -3,7 +3,8 @@
 from abc import ABC, abstractmethod
 from typing import List, NamedTuple, Sequence, Tuple, Union
 
-from .crypto import DIDMethod, KeyType
+from .key_type import KeyType
+from .did_method import DIDMethod
 from ..ledger.base import BaseLedger
 from ..ledger.endpoint_type import EndpointType
 from .error import WalletError

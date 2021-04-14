@@ -5,7 +5,8 @@ from ...admin.request_context import AdminRequestContext
 from ...ledger.base import BaseLedger
 from ...wallet.base import BaseWallet, DIDInfo
 from ...multitenant.manager import MultitenantManager
-from ...wallet.crypto import DIDMethod, KeyType
+from ...wallet.key_type import KeyType
+from ...wallet.did_method import DIDMethod
 from .. import routes as test_module
 from ..did_posture import DIDPosture
 

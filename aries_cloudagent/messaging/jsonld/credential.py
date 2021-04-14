@@ -3,7 +3,7 @@
 import json
 
 from ...wallet.util import b64_to_bytes, b64_to_str, bytes_to_b64, str_to_b64
-from ...wallet.crypto import KeyType
+from ...wallet.key_type import KeyType
 from ...did.did_key import DIDKey
 
 from .create_verify_data import create_verify_data

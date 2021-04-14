@@ -1,7 +1,7 @@
 from asynctest import TestCase
 import pytest
 
-from ...wallet.crypto import KeyType
+from ...wallet.key_type import KeyType
 from ...wallet.util import b58_to_bytes
 from ...wallet.in_memory import InMemoryWallet
 from ...core.in_memory import InMemoryProfile

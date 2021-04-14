@@ -6,7 +6,9 @@ from typing import Tuple
 from ..core.error import ProfileNotFoundError
 from ..core.profile import Profile, ProfileManager
 from ..wallet.base import BaseWallet, DIDInfo
-from ..wallet.crypto import DIDMethod, KeyType, seed_to_did
+from ..wallet.crypto import seed_to_did
+from ..wallet.key_type import KeyType
+from ..wallet.did_method import DIDMethod
 
 from .base import ConfigError
 from .injection_context import InjectionContext

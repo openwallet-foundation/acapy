@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from ...wallet.crypto import KeyType
+from ...wallet.key_type import KeyType
 from ...wallet.util import b58_to_bytes
 from ..did_key import DIDKey, DID_KEY_RESOLVERS
 from .test_dids import DID_X25519_z6LShLeXRTzevtwcfehaGEzCMyL3bNsAeKCwcqwJxyCo63yE

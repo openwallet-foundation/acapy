@@ -17,7 +17,8 @@ from ...protocols.coordinate_mediation.v1_0.manager import (
     MediationRecord,
     MediationManager,
 )
-from ...wallet.crypto import DIDMethod, KeyType
+from ...wallet.key_type import KeyType
+from ...wallet.did_method import DIDMethod
 from ..manager import MultitenantManager, MultitenantManagerError
 from ..error import WalletKeyMissingError
 

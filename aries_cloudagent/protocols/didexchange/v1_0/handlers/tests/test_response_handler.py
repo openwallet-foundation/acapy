@@ -14,7 +14,8 @@ from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
 from ......protocols.trustping.v1_0.messages.ping import Ping
 from ......transport.inbound.receipt import MessageReceipt
-from ......wallet.crypto import KeyType, DIDMethod
+from ......wallet.key_type import KeyType
+from ......wallet.did_method import DIDMethod
 
 from ...handlers import response_handler as test_module
 from ...manager import DIDXManagerError

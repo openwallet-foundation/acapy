@@ -14,7 +14,8 @@ from ....messaging.responder import BaseResponder
 from ....storage.error import StorageNotFoundError
 from ....transport.inbound.receipt import MessageReceipt
 from ....wallet.base import BaseWallet
-from ....wallet.crypto import KeyType, DIDMethod
+from ....wallet.key_type import KeyType
+from ....wallet.did_method import DIDMethod
 from ....wallet.did_posture import DIDPosture
 from ....did.did_key import DIDKey
 from ....multitenant.manager import MultitenantManager

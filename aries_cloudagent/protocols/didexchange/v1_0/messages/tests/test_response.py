@@ -8,7 +8,8 @@ from ......connections.models.diddoc import (
     PublicKeyType,
     Service,
 )
-from ......wallet.crypto import DIDMethod, KeyType
+from ......wallet.did_method import DIDMethod
+from ......wallet.key_type import KeyType
 from ......core.in_memory import InMemoryProfile
 from ......messaging.decorators.attach_decorator import AttachDecorator
 

@@ -23,7 +23,7 @@ from ...wallet.util import (
     str_to_b64,
     unpad,
 )
-from ...wallet.crypto import KeyType
+from ...wallet.key_type import KeyType
 from ...did.did_key import DIDKey
 from ..models.base import BaseModel, BaseModelError, BaseModelSchema
 from ..valid import (

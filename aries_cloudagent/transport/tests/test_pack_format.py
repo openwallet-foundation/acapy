@@ -9,7 +9,8 @@ from ...protocols.routing.v1_0.message_types import FORWARD
 from ...protocols.didcomm_prefix import DIDCommPrefix
 from ...wallet.base import BaseWallet
 from ...wallet.error import WalletError
-from ...wallet.crypto import KeyType, DIDMethod
+from ...wallet.key_type import KeyType
+from ...wallet.did_method import DIDMethod
 
 from .. import pack_format as test_module
 from ..error import WireFormatEncodeError, WireFormatParseError, RecipientKeysError

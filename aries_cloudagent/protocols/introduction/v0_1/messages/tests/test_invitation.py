@@ -3,7 +3,7 @@ from asynctest import TestCase as AsyncTestCase
 from unittest import mock
 
 from ......did.did_key import DIDKey
-from ......wallet.crypto import KeyType
+from ......wallet.key_type import KeyType
 from .....out_of_band.v1_0.messages.invitation import (
     HSProto,
     InvitationMessage as OOBInvitationMessage,

@@ -17,12 +17,9 @@ from ....protocols.routing.v1_0.manager import RoutingManager
 from ....storage.error import StorageError, StorageNotFoundError
 from ....transport.inbound.receipt import MessageReceipt
 from ....wallet.base import BaseWallet, DIDInfo
-from ....wallet.crypto import (
-    DIDMethod,
-    KeyType,
-    create_keypair,
-    seed_to_did,
-)
+from ....wallet.crypto import create_keypair, seed_to_did
+from ....wallet.key_type import KeyType
+from ....wallet.did_method import DIDMethod
 from ...coordinate_mediation.v1_0.manager import MediationManager
 from ....wallet.error import WalletNotFoundError
 from ....wallet.util import bytes_to_b58

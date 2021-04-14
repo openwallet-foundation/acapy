@@ -6,7 +6,8 @@ from ..formats.indy.handler import IndyCredFormatHandler
 from ..formats.ld_proof.handler import LDProofCredFormatHandler
 from .....admin.request_context import AdminRequestContext
 from .....wallet.base import BaseWallet, DIDInfo
-from .....wallet.crypto import DIDMethod, KeyType
+from .....wallet.key_type import KeyType
+from .....wallet.did_method import DIDMethod
 
 from .. import routes as test_module
 

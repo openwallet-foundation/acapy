@@ -7,7 +7,7 @@ import uuid
 from ..storage.base import BaseStorage
 from ..storage.record import StorageRecord
 from .util import bytes_to_b58
-from .crypto import KeyType
+from .key_type import KeyType
 
 KEY_PAIR_STORAGE_TYPE = "key_pair"
 

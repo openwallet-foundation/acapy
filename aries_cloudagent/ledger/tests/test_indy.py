@@ -6,7 +6,6 @@ import pytest
 from os import path
 
 from asynctest import mock as async_mock, TestCase as AsyncTestCase
-from asynctest import mock as async_mock
 
 from ...cache.in_memory import InMemoryCache
 from ...indy.issuer import IndyIssuer, IndyIssuerError
@@ -14,7 +13,8 @@ from ...storage.record import StorageRecord
 from ...wallet.base import DIDInfo
 from ...wallet.did_posture import DIDPosture
 from ...wallet.error import WalletNotFoundError
-from ...wallet.crypto import DIDMethod, KeyType
+from ...wallet.key_type import KeyType
+from ...wallet.did_method import DIDMethod
 
 from ..endpoint_type import EndpointType
 from ..indy import (
