@@ -26,14 +26,15 @@ class SignRequestSchema(OpenAPISchema):
                 required=True,
                 description="credential to sign",
             ),
-            "options": Schema.from_dict(
+            "options": fields.Nested(Schema.from_dict(
                 {
                     "creator": fields.Str(required=False),
                     "verificationMethod": fields.Str(required=False),
                     "proofPurpose": fields.Str(required=False),
-                }
-            ),
-        })
+                }),
+                required=True),
+        }),
+        required=True
     )
 
 
@@ -65,7 +66,7 @@ async def sign(request: web.BaseRequest):
             )
             response["signed_doc"] = doc_with_proof
     except (BaseJSONLDMessagingError) as err:
-        response["error"] = repr(err)
+        response["error"] = str(err)
     except (WalletError, InjectionError):
         raise web.HTTPForbidden(reason="No wallet available")
     return web.json_response(response)
@@ -83,14 +84,16 @@ class VerifyRequestSchema(OpenAPISchema):
                 required=True,
                 description="credential to verify",
             ),
-            "options": Schema.from_dict(
+            "options": fields.Nested(Schema.from_dict(
                 {
                     "creator": fields.Str(required=False),
                     "verificationMethod": fields.Str(required=False),
                     "proofPurpose": fields.Str(required=False),
-                }
-            ),
-        })
+                }),
+                required=True,
+                ),
+        }),
+        required=True,
     )
 
 
@@ -136,7 +139,7 @@ async def verify(request: web.BaseRequest):
         BaseJSONLDMessagingError,
         ResolverError,
     ) as e:
-        response["error"] = repr(e)
+        response["error"] = str(e)
     except (WalletError, InjectionError):
         raise web.HTTPForbidden(reason="No wallet available")
     return web.json_response(response)
