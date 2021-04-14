@@ -1,82 +1,39 @@
-"""Verifiable Credential model classes."""
+"""Verifiable Credential marshmallow schema classes."""
 
-from marshmallow import ValidationError
-import copy
-import json
-from typing import List, Optional, Union
 from datetime import datetime
+from typing import List, Optional, Union
 
-from ....messaging.valid import Uri
+from marshmallow import INCLUDE, fields, post_dump, ValidationError
+
+from ....messaging.models.base import BaseModel, BaseModelSchema
+from ....messaging.valid import (
+    CREDENTIAL_CONTEXT,
+    CREDENTIAL_TYPE,
+    CREDENTIAL_SUBJECT,
+    DIDKey,
+    DictOrDictListField,
+    RFC3339_DATETIME,
+    StrOrDictField,
+    Uri,
+    UriOrDictField,
+)
 from ...ld_proofs.constants import (
     CREDENTIALS_CONTEXT_V1_URL,
     VERIFIABLE_CREDENTIAL_TYPE,
 )
-from .credential_schema import (
-    CredentialSchema,
-    VerifiableCredentialSchema,
+from .linked_data_proof import (
+    LDProof,
     LinkedDataProofSchema,
 )
 
 
-class LDProof:
-    """Linked Data Proof model."""
-
-    def __init__(
-        self,
-        type: Optional[str] = None,
-        proof_purpose: Optional[str] = None,
-        verification_method: Optional[str] = None,
-        created: Optional[str] = None,
-        domain: Optional[str] = None,
-        challenge: Optional[str] = None,
-        jws: Optional[str] = None,
-        proof_value: Optional[str] = None,
-        **kwargs,
-    ) -> None:
-        """Initialize the LDProof instance."""
-
-        self.type = type
-        self.proof_purpose = proof_purpose
-        self.verification_method = verification_method
-        self.created = created
-        self.domain = domain
-        self.challenge = challenge
-        self.jws = jws
-        self.proof_value = proof_value
-        self.extra = kwargs
-
-    @classmethod
-    def deserialize(cls, proof: Union[dict, str]) -> "LDProof":
-        """Deserialize a dict into a LDProof object.
-
-        Args:
-            proof: proof
-
-        Returns:
-            LDProof: The deserialized LDProof object
-
-        """
-        if isinstance(proof, str):
-            proof = json.loads(proof)
-        schema = LinkedDataProofSchema()
-        proof = schema.load(proof)
-        return proof
-
-    def serialize(self) -> dict:
-        """Serialize the LDProof object into dict.
-
-        Returns:
-            dict: The LDProof serialized as dict.
-
-        """
-        schema = LinkedDataProofSchema()
-        proof: dict = schema.dump(copy.deepcopy(self))
-        proof.update(self.extra)
-        return proof
-
-
-class VerifiableCredential:
+class VerifiableCredential(BaseModel):
     """Verifiable Credential model."""
+
+    class Meta:
+        """VerifiableCredential metadata."""
+
+        schema_class = "CredentialSchema"
 
     def __init__(
         self,
@@ -106,38 +63,6 @@ class VerifiableCredential:
         self._proof = proof
 
         self.extra = kwargs
-
-    @classmethod
-    def deserialize(
-        cls, credential: Union[dict, str], without_proof=False
-    ) -> "VerifiableCredential":
-        """Deserialize a dict into a VerifiableCredential object.
-
-        Args:
-            credential: The credential to deserialize
-            without_proof: To deserialize without checking for required proof property
-
-        Returns:
-            VerifiableCredential: The deserialized VerifiableCredential object
-
-        """
-        if isinstance(credential, str):
-            credential = json.loads(credential)
-        schema = CredentialSchema() if without_proof else VerifiableCredentialSchema()
-        credential = schema.load(credential)
-        return credential
-
-    def serialize(self) -> dict:
-        """Serialize the VerifiableCredential object into dict.
-
-        Returns:
-            dict: The VerifiableCredential serialized as dict.
-
-        """
-        schema = VerifiableCredentialSchema()
-        credential: dict = schema.dump(copy.deepcopy(self))
-        credential.update(self.extra)
-        return credential
 
     @property
     def context(self):
@@ -311,3 +236,124 @@ class VerifiableCredential:
     def proof(self, proof: LDProof):
         """Setter for proof."""
         self._proof = proof
+
+
+class CredentialSchema(BaseModelSchema):
+    """Linked data credential schema.
+
+    Does not include proof. Based on https://www.w3.org/TR/vc-data-model
+
+    """
+
+    class Meta:
+        """Accept parameter overload."""
+
+        unknown = INCLUDE
+        model_class = VerifiableCredential
+
+    context = fields.List(
+        UriOrDictField(
+            required=True,
+        ),
+        data_key="@context",
+        required=True,
+        description="The JSON-LD context of the credential",
+        **CREDENTIAL_CONTEXT,
+    )
+
+    id = fields.Str(
+        required=False,
+        desscription="The ID of the credential",
+        example="http://example.edu/credentials/1872",
+        validate=Uri(),
+    )
+
+    type = fields.List(
+        fields.Str(required=True),
+        required=True,
+        description="The JSON-LD type of the credential",
+        **CREDENTIAL_TYPE,
+    )
+
+    issuer = StrOrDictField(
+        required=True,
+        description=(
+            "The JSON-LD Verifiable Credential Issuer."
+            " Either string of object with id field."
+        ),
+        example=DIDKey.EXAMPLE,
+    )
+
+    issuance_date = fields.Str(
+        data_key="issuanceDate",
+        required=True,
+        description="The issuance date",
+        **RFC3339_DATETIME,
+    )
+
+    expiration_date = fields.Str(
+        data_key="expirationDate",
+        required=False,
+        description="The expiration date",
+        **RFC3339_DATETIME,
+    )
+
+    credential_subject = DictOrDictListField(
+        required=True,
+        data_key="credentialSubject",
+        **CREDENTIAL_SUBJECT,
+    )
+
+    proof = fields.Nested(
+        LinkedDataProofSchema(),
+        required=False,
+        description="The proof of the credential",
+        example={
+            "type": "Ed25519Signature2018",
+            "verificationMethod": (
+                "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyG"
+                "o38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
+            ),
+            "created": "2019-12-11T03:50:55",
+            "proofPurpose": "assertionMethod",
+            "jws": (
+                "eyJhbGciOiAiRWREU0EiLCAiYjY0IjogZmFsc2UsICJjcml0JiNjQiXX0..lKJU0Df"
+                "_keblRKhZAS9Qq6zybm-HqUXNVZ8vgEPNTAjQKBhQDxvXNo7nvtUBb_Eq1Ch6YBKY5qBQ"
+            ),
+        },
+    )
+
+    @post_dump(pass_original=True)
+    def add_unknown_properties(self, data: dict, original, **kwargs):
+        """Add back unknown properties before outputting."""
+
+        data.update(original.extra)
+
+        return data
+
+
+class VerifiableCredentialSchema(CredentialSchema):
+    """Linked data verifiable credential schema.
+
+    Based on https://www.w3.org/TR/vc-data-model
+
+    """
+
+    proof = fields.Nested(
+        LinkedDataProofSchema(),
+        required=True,
+        description="The proof of the credential",
+        example={
+            "type": "Ed25519Signature2018",
+            "verificationMethod": (
+                "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyG"
+                "o38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
+            ),
+            "created": "2019-12-11T03:50:55",
+            "proofPurpose": "assertionMethod",
+            "jws": (
+                "eyJhbGciOiAiRWREU0EiLCAiYjY0IjogZmFsc2UsICJjcml0JiNjQiXX0..lKJU0Df"
+                "_keblRKhZAS9Qq6zybm-HqUXNVZ8vgEPNTAjQKBhQDxvXNo7nvtUBb_Eq1Ch6YBKY5qBQ"
+            ),
+        },
+    )

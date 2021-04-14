@@ -9,12 +9,9 @@ from time import time
 from .....core.in_memory import InMemoryProfile
 from .....cache.base import BaseCache
 from .....cache.in_memory import InMemoryCache
-from .....indy.holder import IndyHolder
 from .....indy.issuer import IndyIssuer
-from .....messaging.credential_definitions.util import CRED_DEF_SENT_RECORD_TYPE
 from .....messaging.decorators.attach_decorator import AttachDecorator
 from .....ledger.base import BaseLedger
-from .....storage.base import StorageRecord
 from .....storage.error import StorageNotFoundError
 
 from .. import manager as test_module
@@ -34,8 +31,6 @@ from ..messages.cred_proposal import V20CredProposal
 from ..messages.cred_request import V20CredRequest
 from ..messages.inner.cred_preview import V20CredPreview, V20CredAttrSpec
 from ..models.cred_ex_record import V20CredExRecord
-from ..models.detail.ld_proof import V20CredExRecordLDProof
-from ..models.detail.indy import V20CredExRecordIndy
 
 
 TEST_DID = "LjgpST2rjsoxYegQDRm7EL"
@@ -503,6 +498,27 @@ class TestV20CredManager(AsyncTestCase):
             )
             assert ret_offer.credential_preview.attributes == cred_preview.attributes
 
+    async def test_create_offer_x_no_formats(self):
+        comment = "comment"
+
+        cred_proposal = V20CredProposal(
+            formats=[],
+            filters_attach=[],
+        )
+
+        cx_rec = V20CredExRecord(
+            cred_ex_id="dummy-cxid",
+            role=V20CredExRecord.ROLE_ISSUER,
+            cred_proposal=cred_proposal.serialize(),
+        )
+
+        with self.assertRaises(V20CredManagerError) as context:
+            await self.manager.create_offer(
+                cred_ex_record=cx_rec,
+                comment=comment,
+            )
+        assert "No supported formats" in str(context.exception)
+
     async def test_receive_offer_proposed(self):
         connection_id = "test_conn_id"
         thread_id = "thread-id"
@@ -703,6 +719,28 @@ class TestV20CredManager(AsyncTestCase):
 
             assert ret_cx_rec.state == V20CredExRecord.STATE_REQUEST_SENT
 
+    async def test_create_request_x_no_formats(self):
+        comment = "comment"
+
+        cred_proposal = V20CredProposal(
+            formats=[],
+            filters_attach=[],
+        )
+
+        cx_rec = V20CredExRecord(
+            cred_ex_id="dummy-cxid",
+            role=V20CredExRecord.ROLE_ISSUER,
+            cred_proposal=cred_proposal.serialize(),
+        )
+
+        with self.assertRaises(V20CredManagerError) as context:
+            await self.manager.create_request(
+                cred_ex_record=cx_rec,
+                holder_did="holder_did",
+                comment=comment,
+            )
+        assert "No supported formats" in str(context.exception)
+
     async def test_create_free_request(self):
         connection_id = "test_conn_id"
         thread_id = "thread-id"
@@ -811,9 +849,9 @@ class TestV20CredManager(AsyncTestCase):
         ) as mock_retrieve, async_mock.patch.object(
             V20CredFormat.Format, "handler"
         ) as mock_handler:
-
+            mock_retrieve.side_effect = (StorageNotFoundError(),)
             mock_handler.return_value.receive_request = async_mock.CoroutineMock()
-            mock_retrieve.return_value = stored_cx_rec
+            # mock_retrieve.return_value = stored_cx_rec
 
             cx_rec = await self.manager.receive_request(cred_request, connection_id)
 
@@ -943,6 +981,28 @@ class TestV20CredManager(AsyncTestCase):
             assert ret_cred_issue.attachment() == INDY_CRED
             assert ret_cx_rec.state == V20CredExRecord.STATE_ISSUED
             assert ret_cred_issue._thread_id == thread_id
+
+    async def test_issue_credential_x_no_formats(self):
+        comment = "comment"
+
+        cred_request = V20CredRequest(
+            formats=[],
+            requests_attach=[],
+        )
+
+        cx_rec = V20CredExRecord(
+            cred_ex_id="dummy-cxid",
+            role=V20CredExRecord.ROLE_ISSUER,
+            state=V20CredExRecord.STATE_REQUEST_RECEIVED,
+            cred_request=cred_request.serialize(),
+        )
+
+        with self.assertRaises(V20CredManagerError) as context:
+            await self.manager.issue_credential(
+                cred_ex_record=cx_rec,
+                comment=comment,
+            )
+        assert "No supported formats" in str(context.exception)
 
     async def test_issue_credential_existing_cred(self):
         stored_cx_rec = V20CredExRecord(

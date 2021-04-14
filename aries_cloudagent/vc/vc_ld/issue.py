@@ -8,7 +8,7 @@ from ..ld_proofs import (
     DocumentLoaderMethod,
     LinkedDataProofException,
 )
-from .models.credential_schema import CredentialSchema
+from .models.credential import CredentialSchema
 
 
 async def issue(

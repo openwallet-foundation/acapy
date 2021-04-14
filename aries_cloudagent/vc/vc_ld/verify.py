@@ -14,7 +14,7 @@ from ..ld_proofs import (
     DocumentVerificationResult,
     LinkedDataProofException,
 )
-from .models.credential_schema import VerifiableCredentialSchema
+from .models.credential import VerifiableCredentialSchema
 from .validation_result import PresentationVerificationResult
 
 

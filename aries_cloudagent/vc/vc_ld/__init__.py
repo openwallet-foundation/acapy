@@ -6,8 +6,8 @@ from .models import (
     VerifiableCredential,
     LDProof,
     LinkedDataProofSchema,
-    CredentialSchema,
     VerifiableCredentialSchema,
+    CredentialSchema,
 )
 
 __all__ = [

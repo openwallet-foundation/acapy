@@ -1,11 +1,37 @@
-"""Linked data proof verifiable credential artifacts to attach to RFC 453 messages."""
+"""LDProofVCDetailOptions."""
 
-from marshmallow import fields, Schema, INCLUDE, post_load, post_dump
+from typing import Optional
+from marshmallow import fields, Schema, INCLUDE
 
+from .......messaging.models.base import BaseModel, BaseModelSchema
 from .......messaging.valid import INDY_ISO8601_DATETIME, UUIDFour
-from .......vc.vc_ld.models.credential_schema import (
-    CredentialSchema,
-)
+
+
+class LDProofVCDetailOptions(BaseModel):
+    """Linked Data Proof verifiable credential options model."""
+
+    class Meta:
+        """LDProofVCDetailOptions metadata."""
+
+        schema_class = "LDProofVCDetailOptionsSchema"
+
+    def __init__(
+        self,
+        proof_type: Optional[str] = None,
+        proof_purpose: Optional[str] = None,
+        created: Optional[str] = None,
+        domain: Optional[str] = None,
+        challenge: Optional[str] = None,
+        credential_status: Optional[dict] = None,
+    ) -> None:
+        """Initialize the LDProofVCDetailOptions instance."""
+
+        self.proof_type = proof_type
+        self.proof_purpose = proof_purpose
+        self.created = created
+        self.domain = domain
+        self.challenge = challenge
+        self.credential_status = credential_status
 
 
 class CredentialStatusOptionsSchema(Schema):
@@ -25,19 +51,15 @@ class CredentialStatusOptionsSchema(Schema):
         example="CredentialStatusList2017",
     )
 
-    @post_dump
-    def remove_none_values(self, data, **kwargs):
-        """Remove none values."""
-        return {key: value for key, value in data.items() if value}
 
-
-class LDProofVCDetailOptionsSchema(Schema):
+class LDProofVCDetailOptionsSchema(BaseModelSchema):
     """Linked data proof verifiable credential options schema."""
 
     class Meta:
         """Accept parameter overload."""
 
         unknown = INCLUDE
+        model_class = LDProofVCDetailOptions
 
     proof_type = fields.Str(
         data_key="proofType",
@@ -93,48 +115,3 @@ class LDProofVCDetailOptionsSchema(Schema):
             " will not include a credential status"
         ),
     )
-
-    @post_load
-    def make_ld_proof_detail_options(self, data, **kwargs):
-        """Make LDProofDetailOptions."""
-        from .cred_detail import LDProofVCDetailOptions
-
-        return LDProofVCDetailOptions(**data)
-
-    @post_dump
-    def remove_none_values(self, data, **kwargs):
-        """Remove none values."""
-        return {key: value for key, value in data.items() if value}
-
-
-class LDProofVCDetailSchema(Schema):
-    """Linked data proof verifiable credential detail schema."""
-
-    class Meta:
-        """Accept parameter overload."""
-
-        unknown = INCLUDE
-
-    credential = fields.Nested(
-        CredentialSchema(),
-        required=True,
-        description="Detail of the JSON-LD Credential to be issued",
-    )
-
-    options = fields.Nested(
-        LDProofVCDetailOptionsSchema(),
-        required=True,
-        description="Options for specifying how the linked data proof is created.",
-    )
-
-    @post_load
-    def make_ld_proof_detail(self, data, **kwargs):
-        """Make LDProofVCDetail."""
-        from .cred_detail import LDProofVCDetail
-
-        return LDProofVCDetail(**data)
-
-    @post_dump
-    def remove_none_values(self, data, **kwargs):
-        """Remove none values."""
-        return {key: value for key, value in data.items() if value}

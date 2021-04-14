@@ -4,9 +4,9 @@ from time import time
 import json
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
+from marshmallow import ValidationError
 
 from .. import handler as test_module
-
 
 from .......core.in_memory import InMemoryProfile
 from .......ledger.base import BaseLedger
@@ -227,6 +227,37 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
         self.handler = IndyCredFormatHandler(self.profile)
         assert self.handler.profile
 
+    async def test_validate_fields(self):
+        # Test correct data
+        self.handler.validate_fields(CRED_20_PROPOSAL, {"cred_def_id": CRED_DEF_ID})
+        self.handler.validate_fields(CRED_20_OFFER, INDY_OFFER)
+        self.handler.validate_fields(CRED_20_REQUEST, INDY_CRED_REQ)
+        self.handler.validate_fields(CRED_20_ISSUE, INDY_CRED)
+
+        # test incorrect proposal
+        with self.assertRaises(ValidationError):
+            self.handler.validate_fields(
+                CRED_20_PROPOSAL, {"some_random_key": "some_random_value"}
+            )
+
+        # test incorrect offer
+        with self.assertRaises(ValidationError):
+            offer = INDY_OFFER.copy()
+            offer.pop("nonce")
+            self.handler.validate_fields(CRED_20_OFFER, offer)
+
+        # test incorrect request
+        with self.assertRaises(ValidationError):
+            req = INDY_CRED_REQ.copy()
+            req.pop("nonce")
+            self.handler.validate_fields(CRED_20_REQUEST, req)
+
+        # test incorrect cred
+        with self.assertRaises(ValidationError):
+            cred = INDY_CRED.copy()
+            cred.pop("schema_id")
+            self.handler.validate_fields(CRED_20_ISSUE, cred)
+
     async def test_get_indy_detail_record(self):
         cred_ex_id = "dummy"
         details_indy = [
@@ -372,10 +403,76 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
         assert attachment.data.base64
 
         self.issuer.create_credential_offer.reset_mock()
+        (cred_format, attachment) = await self.handler.create_offer(cred_ex_record)
+        self.issuer.create_credential_offer.assert_not_called()
+
+    async def test_create_offer_no_cache(self):
+        schema_id_parts = SCHEMA_ID.split(":")
+
+        cred_preview = V20CredPreview(
+            attributes=(
+                V20CredAttrSpec(name="legalName", value="value"),
+                V20CredAttrSpec(name="jurisdictionId", value="value"),
+                V20CredAttrSpec(name="incorporationDate", value="value"),
+            )
+        )
+
+        cred_proposal = V20CredProposal(
+            credential_preview=cred_preview,
+            formats=[
+                V20CredFormat(
+                    attach_id="0",
+                    format_=ATTACHMENT_FORMAT[CRED_20_PROPOSAL][
+                        V20CredFormat.Format.INDY.api
+                    ],
+                )
+            ],
+            filters_attach=[
+                AttachDecorator.data_base64({"cred_def_id": CRED_DEF_ID}, ident="0")
+            ],
+        )
+
+        cred_ex_record = V20CredExRecord(
+            cred_ex_id="dummy-cxid",
+            role=V20CredExRecord.ROLE_ISSUER,
+            cred_proposal=cred_proposal.serialize(),
+        )
+
+        cred_def_record = StorageRecord(
+            CRED_DEF_SENT_RECORD_TYPE,
+            CRED_DEF_ID,
+            {
+                "schema_id": SCHEMA_ID,
+                "schema_issuer_did": schema_id_parts[0],
+                "schema_name": schema_id_parts[-2],
+                "schema_version": schema_id_parts[-1],
+                "issuer_did": TEST_DID,
+                "cred_def_id": CRED_DEF_ID,
+                "epoch": str(int(time())),
+            },
+        )
+
+        # Remove cache from injection context
+        self.context.injector.clear_binding(BaseCache)
+
+        await self.session.storage.add_record(cred_def_record)
+
+        self.issuer.create_credential_offer = async_mock.CoroutineMock(
+            return_value=json.dumps(INDY_OFFER)
+        )
 
         (cred_format, attachment) = await self.handler.create_offer(cred_ex_record)
 
-        self.issuer.create_credential_offer.assert_not_called()
+        self.issuer.create_credential_offer.assert_called_once_with(CRED_DEF_ID)
+
+        # assert identifier match
+        assert cred_format.attach_id == self.handler.format.api == attachment.ident
+
+        # assert content of attachment is proposal data
+        assert attachment.content == INDY_OFFER
+
+        # assert data is encoded as base64
+        assert attachment.data.base64
 
     async def test_create_offer_attr_mismatch(self):
         schema_id_parts = SCHEMA_ID.split(":")
@@ -514,6 +611,11 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
 
         # cover case with cache (change ID to prevent already exists error)
         cred_ex_record._id = "dummy-id2"
+        await self.handler.create_request(cred_ex_record, {"holder_did": holder_did})
+
+        # cover case with no cache in injection context
+        self.context.injector.clear_binding(BaseCache)
+        cred_ex_record._id = "dummy-id3"
         await self.handler.create_request(cred_ex_record, {"holder_did": holder_did})
 
     async def test_create_request_bad_state(self):

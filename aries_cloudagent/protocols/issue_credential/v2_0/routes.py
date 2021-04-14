@@ -47,7 +47,7 @@ from .models.cred_ex_record import V20CredExRecord, V20CredExRecordSchema
 from .models.detail.ld_proof import V20CredExRecordLDProofSchema
 from .models.detail.indy import V20CredExRecordIndySchema
 from .formats.handler import V20CredFormatError
-from .formats.ld_proof.models.cred_detail_schema import LDProofVCDetailSchema
+from .formats.ld_proof.models.cred_detail import LDProofVCDetailSchema
 
 
 class V20IssueCredentialModuleResponseSchema(OpenAPISchema):
@@ -209,6 +209,17 @@ class V20IssueCredSchemaCore(AdminAPIMessageTracingSchema):
         example=False,
     )
 
+    credential_preview = fields.Nested(V20CredPreviewSchema, required=False)
+
+    @validates_schema
+    def validate(self, data, **kwargs):
+        """Make sure preview is present when indy format is present."""
+
+        if data.get("filter", {}).get("indy") and not data.get("credential_preview"):
+            raise ValidationError(
+                "Credential preview is required if indy filter is present"
+            )
+
 
 class V20CredFilterLDProofSchema(OpenAPISchema):
     """Credential filtration criteria."""
@@ -228,6 +239,7 @@ class V20CredRequestFreeSchema(AdminAPIMessageTracingSchema):
         required=True,
         example=UUIDFour.EXAMPLE,  # typically but not necessarily a UUID4
     )
+    # Request can only start with LD Proof
     filter_ = fields.Nested(
         V20CredFilterLDProofSchema,
         required=True,
@@ -251,21 +263,6 @@ class V20CredRequestFreeSchema(AdminAPIMessageTracingSchema):
     )
 
 
-class V20CredCreateSchema(V20IssueCredSchemaCore):
-    """Request schema for creating a credential from attr values."""
-
-    credential_preview = fields.Nested(V20CredPreviewSchema, required=False)
-
-    @validates_schema
-    def validate(self, data, **kwargs):
-        """Make sure preview is present when indy format is present."""
-
-        if data.get("filter", {}).get("indy") and not data.get("credential_preview"):
-            raise ValidationError(
-                "Credential preview is required if indy filter is present"
-            )
-
-
 class V20CredProposalRequestSchemaBase(V20IssueCredSchemaCore):
     """Base class for request schema for sending credential proposal admin message."""
 
@@ -274,21 +271,6 @@ class V20CredProposalRequestSchemaBase(V20IssueCredSchemaCore):
         required=True,
         example=UUIDFour.EXAMPLE,  # typically but not necessarily a UUID4
     )
-
-
-class V20CredProposalRequestPreviewIndyRequiredSchema(V20CredProposalRequestSchemaBase):
-    """Request schema for sending credential proposal on optional proposal preview."""
-
-    credential_preview = fields.Nested(V20CredPreviewSchema, required=False)
-
-    @validates_schema
-    def validate(self, data, **kwargs):
-        """Make sure preview is present when indy format is present."""
-
-        if data.get("filter", {}).get("indy") and not data.get("credential_preview"):
-            raise ValidationError(
-                "Credential preview is required if indy filter is present"
-            )
 
 
 class V20CredOfferRequestSchema(V20IssueCredSchemaCore):
@@ -306,16 +288,6 @@ class V20CredOfferRequestSchema(V20IssueCredSchemaCore):
         ),
         required=False,
     )
-    credential_preview = fields.Nested(V20CredPreviewSchema, required=False)
-
-    @validates_schema
-    def validate(self, data, **kwargs):
-        """Make sure preview is present when indy format is present."""
-
-        if data.get("filter", {}).get("indy") and not data.get("credential_preview"):
-            raise ValidationError(
-                "Credential preview is required if indy filter is present"
-            )
 
 
 class V20CredIssueRequestSchema(OpenAPISchema):
@@ -373,7 +345,6 @@ async def _get_result_with_details(
     result = {"cred_ex_record": cred_ex_record.serialize()}
 
     for fmt in V20CredFormat.Format:
-        # TODO: optimize so we don't need to initialize it for each record
         detail_record = await fmt.handler(profile).get_detail_record(
             cred_ex_record.cred_ex_id
         )
@@ -469,7 +440,7 @@ async def credential_exchange_retrieve(request: web.BaseRequest):
     tags=["issue-credential v2.0"],
     summary="Send holder a credential, automating entire flow",
 )
-@request_schema(V20CredCreateSchema())
+@request_schema(V20IssueCredSchemaCore())
 @response_schema(V20CredExRecordSchema(), 200, description="")
 async def credential_exchange_create(request: web.BaseRequest):
     """
@@ -544,7 +515,7 @@ async def credential_exchange_create(request: web.BaseRequest):
     tags=["issue-credential v2.0"],
     summary="Send holder a credential, automating entire flow",
 )
-@request_schema(V20CredProposalRequestPreviewIndyRequiredSchema())
+@request_schema(V20IssueCredSchemaCore())
 @response_schema(V20CredExRecordSchema(), 200, description="")
 async def credential_exchange_send(request: web.BaseRequest):
     """
@@ -647,7 +618,7 @@ async def credential_exchange_send(request: web.BaseRequest):
     tags=["issue-credential v2.0"],
     summary="Send issuer a credential proposal",
 )
-@request_schema(V20CredProposalRequestPreviewIndyRequiredSchema())
+@request_schema(V20IssueCredSchemaCore())
 @response_schema(V20CredExRecordSchema(), 200, description="")
 async def credential_exchange_send_proposal(request: web.BaseRequest):
     """

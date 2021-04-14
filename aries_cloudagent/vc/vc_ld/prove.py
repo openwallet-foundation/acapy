@@ -13,7 +13,7 @@ from ..ld_proofs import (
     derive,
 )
 from ..ld_proofs.constants import CREDENTIALS_CONTEXT_V1_URL
-from .models.credential_schema import VerifiableCredentialSchema
+from .models.credential import VerifiableCredentialSchema
 
 
 async def create_presentation(

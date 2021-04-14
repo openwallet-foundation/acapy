@@ -1,14 +1,17 @@
-from .credential import VerifiableCredential, LDProof
-from .credential_schema import (
-    LinkedDataProofSchema,
-    CredentialSchema,
+from .credential import (
+    VerifiableCredential,
     VerifiableCredentialSchema,
+    CredentialSchema,
+)
+from .linked_data_proof import (
+    LDProof,
+    LinkedDataProofSchema,
 )
 
 __all__ = [
     VerifiableCredential,
-    LDProof,
-    LinkedDataProofSchema,
     CredentialSchema,
     VerifiableCredentialSchema,
+    LDProof,
+    LinkedDataProofSchema,
 ]
