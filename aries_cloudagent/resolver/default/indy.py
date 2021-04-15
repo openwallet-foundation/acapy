@@ -37,21 +37,20 @@ class IndyDIDResolver(BaseDIDResolver):
         """Return supported methods of Indy DID Resolver."""
         return ["sov"]
 
-    async def _resolve(self, profile: Profile, did: str) -> dict:
+    async def _resolve(self, profile: Profile, py_did: DID) -> dict:
         """Resolve an indy DID."""
-        did = DID(did)
         ledger = profile.inject(BaseLedger, required=False)
         if not ledger or not isinstance(ledger, IndySdkLedger):
             raise NoIndyLedger("No Indy ledger instance is configured.")
 
         try:
             async with ledger:
-                recipient_key = await ledger.get_key_for_did(did)
-                endpoint = await ledger.get_endpoint_for_did(did)
+                recipient_key = await ledger.get_key_for_did(str(py_did))
+                endpoint = await ledger.get_endpoint_for_did(str(py_did))
         except LedgerError as err:
-            raise DIDNotFound(f"DID {did} could not be resolved") from err
+            raise DIDNotFound(f"DID {py_did} could not be resolved") from err
 
-        builder = DIDDocumentBuilder(did)
+        builder = DIDDocumentBuilder(py_did)
 
         vmethod = builder.verification_methods.add(
             ident="key-1", suite=self.SUITE, material=recipient_key

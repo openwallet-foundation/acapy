@@ -1,16 +1,13 @@
 """Wallet base class."""
 
 from abc import ABC, abstractmethod
-from collections import namedtuple
 from typing import Sequence
 
 from ..ledger.base import BaseLedger
 from ..ledger.endpoint_type import EndpointType
 
 from .did_posture import DIDPosture
-
-KeyInfo = namedtuple("KeyInfo", "verkey metadata")
-DIDInfo = namedtuple("DIDInfo", "did verkey metadata")
+from .did_info import DIDInfo, KeyInfo
 
 
 class BaseWallet(ABC):

@@ -5,7 +5,8 @@ from typing import Sequence
 
 from ..core.in_memory import InMemoryProfile
 
-from .base import BaseWallet, KeyInfo, DIDInfo
+from .base import BaseWallet
+from .did_info import KeyInfo, DIDInfo
 from .crypto import (
     create_keypair,
     random_seed,

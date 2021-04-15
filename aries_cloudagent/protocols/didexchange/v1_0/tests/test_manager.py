@@ -21,7 +21,7 @@ from .....multitenant.manager import MultitenantManager
 from .....storage.error import StorageNotFoundError
 from .....transport.inbound.receipt import MessageReceipt
 from .....multitenant.manager import MultitenantManager
-from .....wallet.base import DIDInfo
+from .....wallet.did_info import DIDInfo
 from .....wallet.in_memory import InMemoryWallet
 from .....wallet.util import naked_to_did_key
 from .....connections.base_manager import (
