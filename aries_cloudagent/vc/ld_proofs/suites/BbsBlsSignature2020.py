@@ -5,7 +5,6 @@ from typing import List, Union
 
 
 from ....wallet.util import b64_to_bytes, bytes_to_b64
-from ..constants import SECURITY_CONTEXT_V3_URL
 from ..crypto import KeyPair
 from ..error import LinkedDataProofException
 from ..validation_result import ProofResult
@@ -158,10 +157,7 @@ class BbsBlsSignature2020(BbsBlsSignature2020Base):
     ):
         """Canonize proof dictionary. Removes value that are not part of signature."""
         # Use default security context url if document has no context
-        proof = {
-            **proof,
-            "@context": document.get("@context") or SECURITY_CONTEXT_V3_URL,
-        }
+        proof = {**proof, "@context": document.get("@context") or self._default_proof}
 
         proof.pop("proofValue", None)
 

@@ -73,3 +73,14 @@ class BbsBlsSignature2020Base(LinkedDataProof, metaclass=ABCMeta):
         self._assert_verification_method(verification_method)
 
         return verification_method
+
+    # The default proof to use if no proof is specified (should not happen)
+    _default_proof = (
+        [
+            {
+                "sec": "https://w3id.org/security#",
+                "proof": {"@id": "sec:proof", "@type": "@id", "@container": "@graph"},
+            },
+            "https://w3id.org/security/bbs/v1",
+        ],
+    )

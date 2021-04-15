@@ -21,7 +21,6 @@ from ..error import LinkedDataProofException
 from ..validation_result import ProofResult
 from ..document_loader import DocumentLoaderMethod
 from ..purposes import ProofPurpose
-from ..constants import SECURITY_CONTEXT_V3_URL
 from .BbsBlsSignature2020Base import BbsBlsSignature2020Base
 from .BbsBlsSignature2020 import BbsBlsSignature2020
 from .LinkedDataProof import DeriveProofResult
@@ -301,10 +300,7 @@ class BbsBlsSignatureProof2020(BbsBlsSignature2020Base):
         self, *, proof: dict, document: dict, document_loader: DocumentLoaderMethod
     ):
         """Canonize proof dictionary. Removes proofValue."""
-        proof = {
-            **proof,
-            "@context": document.get("@context") or SECURITY_CONTEXT_V3_URL,
-        }
+        proof = {**proof, "@context": document.get("@context") or self._default_proof}
 
         proof.pop("proofValue", None)
         proof.pop("nonce", None)
