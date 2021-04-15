@@ -7,10 +7,17 @@ from ursa_bbs_signatures import (
     BlsKeyPair,
     sign as bbs_sign,
     verify as bbs_verify,
+    BbsException as NativeBbsException,
 )
 from ursa_bbs_signatures._ffi.FfiException import FfiException
 
+from ..core.error import BaseError
+
 from ..wallet.util import random_seed
+
+
+class BbsException(BaseError):
+    """Base BBS exception."""
 
 
 def sign_messages_bls12381g2(messages: List[bytes], secret: bytes):
@@ -24,11 +31,16 @@ def sign_messages_bls12381g2(messages: List[bytes], secret: bytes):
         bytes: The signature
 
     """
-    key_pair = BlsKeyPair.from_secret_key(secret)
 
     messages = [message.decode("utf-8") for message in messages]
-
-    sign_request = SignRequest(key_pair=key_pair, messages=messages)
+    try:
+        key_pair = BlsKeyPair.from_secret_key(secret)
+        sign_request = SignRequest(key_pair=key_pair, messages=messages)
+    except (
+        FfiException,
+        NativeBbsException,
+    ) as error:  # would be nice to be able to distinct between false and error
+        raise BbsException("Unable to sign messages") from error
 
     return bbs_sign(sign_request)
 
@@ -56,8 +68,11 @@ def verify_signed_messages_bls12381g2(
 
     try:
         return bbs_verify(verify_request)
-    except FfiException:  # would be nice to be able to distinct between false and error
-        return False
+    except (
+        FfiException,
+        NativeBbsException,
+    ) as error:  # would be nice to be able to distinct between false and error
+        raise BbsException("Unable to verify BBS+ signature") from error
 
 
 def create_bls12381g2_keypair(seed: bytes = None) -> Tuple[bytes, bytes]:
@@ -74,5 +89,8 @@ def create_bls12381g2_keypair(seed: bytes = None) -> Tuple[bytes, bytes]:
     if not seed:
         seed = random_seed()
 
-    key_pair = BlsKeyPair.generate_g2(seed)
-    return key_pair.public_key, key_pair.secret_key
+    try:
+        key_pair = BlsKeyPair.generate_g2(seed)
+        return key_pair.public_key, key_pair.secret_key
+    except (Exception) as error:
+        raise BbsException("Unable to create keypair") from error

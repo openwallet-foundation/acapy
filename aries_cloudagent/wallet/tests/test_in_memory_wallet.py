@@ -112,6 +112,20 @@ class TestInMemoryWallet:
             await wallet.get_signing_key(self.missing_verkey)
 
     @pytest.mark.asyncio
+    async def test_signing_key_metadata_bls(self, wallet: InMemoryWallet):
+        info = await wallet.create_signing_key(
+            KeyType.BLS12381G2, self.test_seed, self.test_metadata
+        )
+        assert info.metadata == self.test_metadata
+        info2 = await wallet.get_signing_key(self.test_bls12381g2_verkey)
+        assert info2.metadata == self.test_metadata
+        await wallet.replace_signing_key_metadata(
+            self.test_bls12381g2_verkey, self.test_update_metadata
+        )
+        info3 = await wallet.get_signing_key(self.test_bls12381g2_verkey)
+        assert info3.metadata == self.test_update_metadata
+
+    @pytest.mark.asyncio
     async def test_create_local_sov_random(self, wallet: InMemoryWallet):
         info = await wallet.create_local_did(DIDMethod.SOV, KeyType.ED25519, None, None)
         assert info and info.did and info.verkey
@@ -196,15 +210,13 @@ class TestInMemoryWallet:
         info = await wallet.create_local_did(
             DIDMethod.SOV, KeyType.ED25519, self.test_seed, self.test_sov_did
         )
-        key_info = await wallet.create_local_did(
-            DIDMethod.KEY, KeyType.ED25519, self.test_seed
-        )
+        key_info = await wallet.create_local_did(DIDMethod.KEY, KeyType.ED25519)
 
         with pytest.raises(WalletError):
             await wallet.rotate_did_keypair_apply(self.test_sov_did)
 
         with pytest.raises(WalletError) as context:
-            await wallet.rotate_did_keypair_apply(self.test_key_ed25519_did)
+            await wallet.rotate_did_keypair_start(key_info.did)
         assert "Did method key does not support key rotation" in str(context.value)
 
         new_verkey = await wallet.rotate_did_keypair_start(self.test_sov_did)
@@ -229,7 +241,7 @@ class TestInMemoryWallet:
 
         with pytest.raises(WalletError) as context:
             await wallet.create_local_did(
-                DIDMethod.KEY, KeyType.ED25519, None, self.test_sov_did
+                DIDMethod.KEY, KeyType.ED25519, None, "did:sov:random"
             )
         assert "Not allowed to set did for did method key" in str(context.value)
 
@@ -299,7 +311,7 @@ class TestInMemoryWallet:
             None,
             self.test_metadata,
         )
-        assert info.did == self.test_seed
+        assert info.did == self.test_key_bls12381g2_did
         assert info.verkey == self.test_bls12381g2_verkey
         assert info.metadata == self.test_metadata
         info2 = await wallet.get_local_did(self.test_key_bls12381g2_did)
@@ -478,20 +490,22 @@ class TestInMemoryWallet:
         )
         assert verify
 
-        bad_sig = b"x" + signature[1:]
-        verify = await wallet.verify_message(
-            message_bin, bad_sig, info.verkey, KeyType.BLS12381G2
-        )
-        assert not verify
         bad_msg = b"x" + message_bin[1:]
         verify = await wallet.verify_message(
             bad_msg, signature, info.verkey, KeyType.BLS12381G2
         )
         assert not verify
-        verify = await wallet.verify_message(
-            message_bin, signature, self.test_target_verkey, KeyType.BLS12381G2
-        )
-        assert not verify
+
+        with pytest.raises(WalletError):
+            bad_sig = b"x" + signature[1:]
+            verify = await wallet.verify_message(
+                message_bin, bad_sig, info.verkey, KeyType.BLS12381G2
+            )
+
+        with pytest.raises(WalletError):
+            await wallet.verify_message(
+                message_bin, signature, self.test_target_verkey, KeyType.BLS12381G2
+            )
 
         with pytest.raises(WalletError):
             await wallet.sign_message(message_bin, self.missing_verkey)

@@ -5,10 +5,8 @@ from ..bbs import (
     sign_messages_bls12381g2,
     verify_signed_messages_bls12381g2,
     create_bls12381g2_keypair,
+    BbsException,
 )
-
-from ursa_bbs_signatures._ffi.FfiException import FfiException
-from ursa_bbs_signatures import BbsException
 
 PUBLIC_KEY_BYTES = b"\x8c\xa2\xbe \xad\x9c\xf9\x98\x04e\x17\xec\x00\xf9J\xd7\xed\xdb\xa4\x0el\x9fG\x94\x9b+d\xac\xf5\x0f{\xf3\xa1\xc7\xd9\xa7*YZ\xa78\x86\x8b\xcc\xb8\x9d\x86\xcb\x07\x8b\xfak9\xd8\xb8\\\x93\x86\xc8\xf7\xb1O\x88\x17\xa4\xc9x5\xdd\x04e\xee'\xff\x05\xf8&EU\xfa\x8f\x83\xa3#\xca\x9b\xdf\xa8\xc2\xda\x0fz\x8f\x05@o"
 SECRET_KEY_BYTES = b"TmL\x10\xd4k[\x8b\xc3\xb7\x91\xd5\x90\xaf4\xbe\xdc\x89f\xb4\r\xbeV\xbdq>\xbd=\xee\x97\x86\x01"
@@ -30,6 +28,11 @@ class TestBBS(TestCase):
         assert pk
         assert sk
 
+    def test_create_keypair_x_invalid_seed(self):
+        with self.assertRaises(BbsException) as context:
+            create_bls12381g2_keypair(10)
+        assert "Unable to create keypair" in str(context.exception)
+
     def test_sign(self):
         signed = sign_messages_bls12381g2(SIGN_MESSAGES, SECRET_KEY_BYTES)
 
@@ -38,6 +41,11 @@ class TestBBS(TestCase):
         assert verify_signed_messages_bls12381g2(
             SIGN_MESSAGES, signed, PUBLIC_KEY_BYTES
         )
+
+    def test_sign_x_invalid_secret_key_bytes(self):
+        with self.assertRaises(BbsException) as context:
+            sign_messages_bls12381g2(SIGN_MESSAGES, "hello")
+        assert "Unable to sign messages" in str(context.exception)
 
     def test_verify(self):
         assert verify_signed_messages_bls12381g2(
@@ -51,12 +59,16 @@ class TestBBS(TestCase):
             )
 
     def test_verify_x_invalid_messages(self):
+        with self.assertRaises(BbsException):
+            verify_signed_messages_bls12381g2(
+                SIGN_MESSAGES, SIGNED_BYTES, PUBLIC_KEY_BYTES + b"10"
+            )
         assert not verify_signed_messages_bls12381g2(
             [SIGN_MESSAGES[0]], SIGNED_BYTES, PUBLIC_KEY_BYTES
         )
 
     def test_verify_x_invalid_signed_bytes(self):
-        with self.assertRaises(FfiException):
-            verify_signed_messages_bls12381g2(
+        with self.assertRaises(BbsException):
+            assert not verify_signed_messages_bls12381g2(
                 SIGN_MESSAGES, SIGNED_BYTES + b"10", PUBLIC_KEY_BYTES
             )

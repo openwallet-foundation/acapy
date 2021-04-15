@@ -435,6 +435,9 @@ class IndySdkWallet(BaseWallet):
                 f" for did method {method.method_name}"
             )
 
+        if method == DIDMethod.KEY and did:
+            raise WalletError("Not allowed to set did for did method key")
+
         # All ed25519 keys are handled by indy
         if key_type == KeyType.ED25519:
             return await self.__create_indy_local_did(

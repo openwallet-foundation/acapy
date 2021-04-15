@@ -220,11 +220,14 @@ def verify_signed_message(
             message=messages[0], signature=signature, verkey=verkey
         )
     elif key_type == KeyType.BLS12381G2:
-        from .bbs import verify_signed_messages_bls12381g2
+        from .bbs import verify_signed_messages_bls12381g2, BbsException
 
-        return verify_signed_messages_bls12381g2(
-            messages=messages, signature=signature, public_key=verkey
-        )
+        try:
+            return verify_signed_messages_bls12381g2(
+                messages=messages, signature=signature, public_key=verkey
+            )
+        except BbsException as e:
+            raise WalletError("Unable to verify message") from e
     else:
         raise WalletError(f"Unsupported key type: {key_type.key_type}")
 
