@@ -33,6 +33,20 @@ class LDProofVCDetailOptions(BaseModel):
         self.challenge = challenge
         self.credential_status = credential_status
 
+    def __eq__(self, o: object) -> bool:
+        """Check equalness."""
+        if isinstance(o, LDProofVCDetailOptions):
+            return (
+                self.proof_type == o.proof_type
+                and self.proof_purpose == o.proof_purpose
+                and self.created == o.created
+                and self.domain == o.domain
+                and self.challenge == o.challenge
+                and self.credential_status == o.credential_status
+            )
+
+        return False
+
 
 class CredentialStatusOptionsSchema(Schema):
     """Linked data proof credential status options schema."""

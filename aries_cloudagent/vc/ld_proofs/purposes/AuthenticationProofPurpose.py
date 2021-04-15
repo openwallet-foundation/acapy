@@ -74,3 +74,14 @@ class AuthenticationProofPurpose(ControllerProofPurpose):
             proof["domain"] = self.domain
 
         return proof
+
+    def __eq__(self, o: object) -> bool:
+        """Check if object is same as ProofPurpose."""
+        if isinstance(o, AuthenticationProofPurpose):
+            return (
+                super().__eq__(o)
+                and self.challenge == o.challenge
+                and self.domain == o.domain
+            )
+
+        return False

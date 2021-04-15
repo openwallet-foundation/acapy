@@ -300,9 +300,6 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
                 await self.handler._check_uniqueness("dummy-cx-id")
             assert "detail record already exists" in str(context.exception)
 
-    async def test_get_format_data(self):
-        pass
-
     async def test_create_proposal(self):
         cred_ex_record = async_mock.MagicMock()
         proposal_data = {"schema_id": SCHEMA_ID}

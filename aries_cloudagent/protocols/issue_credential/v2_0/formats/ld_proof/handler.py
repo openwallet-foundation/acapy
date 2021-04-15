@@ -190,9 +190,7 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
         proof_type = detail.options.proof_type
 
         # Assert we can issue the credential based on issuer + proof_type
-        await self._assert_can_issue_with_id_and_proof_type(
-            issuer_id, detail.options.proof_type
-        )
+        await self._assert_can_issue_with_id_and_proof_type(issuer_id, proof_type)
 
         # Create base proof object with options from detail
         proof = LDProof(
@@ -245,7 +243,7 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
         if did.startswith("did:key:"):
             return DIDKey.from_did(did).key_id
         elif did.startswith("did:sov:"):
-            # key-1 is what uniresolver uses for key id
+            # key-1 is what the resolver uses for key id
             return did + "#key-1"
         else:
             raise V20CredFormatError(
@@ -253,7 +251,7 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
             )
 
     def _get_proof_purpose(
-        self, *, proof_purpose: str, challenge: str = None, domain: str = None
+        self, *, proof_purpose: str = None, challenge: str = None, domain: str = None
     ) -> ProofPurpose:
         """Get the proof purpose for a credential detail.
 
@@ -286,7 +284,7 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
             return AuthenticationProofPurpose(challenge=challenge, domain=domain)
         else:
             raise V20CredFormatError(
-                f"Unsupported proof purse: {proof_purpose}. "
+                f"Unsupported proof purpose: {proof_purpose}. "
                 f"Supported  proof types are: {SUPPORTED_ISSUANCE_PROOF_PURPOSES}"
             )
 
@@ -320,7 +318,7 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
         """Create linked data proof credential offer."""
         if not cred_ex_record.cred_proposal:
             raise V20CredFormatError(
-                "Cannot create linked data proof offer without proposal or input data"
+                "Cannot create linked data proof offer without proposal data"
             )
 
         # Parse proposal. Data is stored in proposal if we received a proposal
@@ -376,6 +374,11 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
         self, cred_ex_record: V20CredExRecord, retries: int = 5
     ) -> CredFormatAttachment:
         """Issue linked data proof credential."""
+        if not cred_ex_record.cred_request:
+            raise V20CredFormatError(
+                "Cannot issue credential without credential request"
+            )
+
         detail_dict = V20CredRequest.deserialize(
             cred_ex_record.cred_request
         ).attachment(self.format)
@@ -442,10 +445,24 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
         # TODO: if created wasn't present in the detail options, should we verify
         # it is ~now (e.g. some time in the past + future)?
         # Check if created property matches
-        if detail.options.created and vc.proof.created != detail.options.created:
+        if vc.proof.created != detail.options.created:
             raise V20CredFormatError(
                 "Received credential proof.created does not"
                 " match options.created from credential request"
+            )
+
+        # Check challenge
+        if vc.proof.challenge != detail.options.challenge:
+            raise V20CredFormatError(
+                "Received credential proof.challenge does not"
+                " match options.challenge from credential request"
+            )
+
+        # Check domain
+        if vc.proof.domain != detail.options.domain:
+            raise V20CredFormatError(
+                "Received credential proof.domain does not"
+                " match options.domain from credential request"
             )
 
         # Check if proof type matches

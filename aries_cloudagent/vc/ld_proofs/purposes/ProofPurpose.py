@@ -53,3 +53,14 @@ class ProofPurpose:
     def match(self, proof: dict) -> bool:
         """Check whether the passed proof matches with the term of this proof purpose."""
         return proof.get("proofPurpose") == self.term
+
+    def __eq__(self, o: object) -> bool:
+        """Check if object is same as ProofPurpose."""
+        if isinstance(o, ProofPurpose):
+            return (
+                self.date == o.date
+                and self.term == o.term
+                and self.max_timestamp_delta == o.max_timestamp_delta
+            )
+
+        return False

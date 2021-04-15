@@ -235,6 +235,23 @@ class VerifiableCredential(BaseModel):
         """Setter for proof."""
         self._proof = proof
 
+    def __eq__(self, o: object) -> bool:
+        """Check equalness."""
+        if isinstance(o, VerifiableCredential):
+            return (
+                self.context == o.context
+                and self.id == o.id
+                and self.type == o.type
+                and self.issuer == o.issuer
+                and self.issuance_date == o.issuance_date
+                and self.expiration_date == o.expiration_date
+                and self.credential_subject == o.credential_subject
+                and self.proof == o.proof
+                and self.extra == o.extra
+            )
+
+        return False
+
 
 class CredentialSchema(BaseModelSchema):
     """Linked data credential schema.
