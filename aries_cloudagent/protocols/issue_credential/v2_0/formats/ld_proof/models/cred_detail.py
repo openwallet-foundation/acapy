@@ -27,12 +27,7 @@ class LDProofVCDetail(BaseModel):
         options: Optional[Union[dict, LDProofVCDetailOptions]],
     ) -> None:
         """Initialize the LDProofVCDetail instance."""
-        if isinstance(credential, dict):
-            credential = VerifiableCredential.deserialize(credential)
         self.credential = credential
-
-        if isinstance(options, dict):
-            options = LDProofVCDetailOptions.deserialize(options)
         self.options = options
 
     def __eq__(self, other: object) -> bool:

@@ -113,6 +113,13 @@ class TestWalletRoutes(AsyncTestCase):
             )
             assert result is json_response.return_value
 
+    async def test_create_did_unsupported_key_type(self):
+        self.request.json = async_mock.CoroutineMock(
+            return_value={"method": "sov", "options": {"key_type": "bls12381g2"}}
+        )
+        with self.assertRaises(test_module.web.HTTPForbidden):
+            await test_module.wallet_create_did(self.request)
+
     async def test_create_did_x(self):
         self.wallet.create_local_did.side_effect = test_module.WalletError()
         with self.assertRaises(test_module.web.HTTPBadRequest):

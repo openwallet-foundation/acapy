@@ -58,8 +58,6 @@ class VerifiableCredential(BaseModel):
         self._issuance_date = issuance_date
         self._expiration_date = expiration_date
 
-        if isinstance(proof, dict):
-            proof = LDProof.deserialize(proof)
         self._proof = proof
 
         self.extra = kwargs

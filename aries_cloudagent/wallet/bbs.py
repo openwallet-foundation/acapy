@@ -8,6 +8,7 @@ from ursa_bbs_signatures import (
     sign as bbs_sign,
     verify as bbs_verify,
 )
+from ursa_bbs_signatures._ffi.FfiException import FfiException
 
 from ..wallet.util import random_seed
 
@@ -53,7 +54,10 @@ def verify_signed_messages_bls12381g2(
         key_pair=key_pair, signature=signature, messages=messages
     )
 
-    return bbs_verify(verify_request)
+    try:
+        return bbs_verify(verify_request)
+    except FfiException:  # would be nice to be able to distinct between false and error
+        return False
 
 
 def create_bls12381g2_keypair(seed: bytes = None) -> Tuple[bytes, bytes]:

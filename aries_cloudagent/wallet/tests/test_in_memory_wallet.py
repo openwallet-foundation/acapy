@@ -196,9 +196,16 @@ class TestInMemoryWallet:
         info = await wallet.create_local_did(
             DIDMethod.SOV, KeyType.ED25519, self.test_seed, self.test_sov_did
         )
+        key_info = await wallet.create_local_did(
+            DIDMethod.KEY, KeyType.ED25519, self.test_seed
+        )
 
         with pytest.raises(WalletError):
             await wallet.rotate_did_keypair_apply(self.test_sov_did)
+
+        with pytest.raises(WalletError) as context:
+            await wallet.rotate_did_keypair_apply(self.test_key_ed25519_did)
+        assert "Did method key does not support key rotation" in str(context.value)
 
         new_verkey = await wallet.rotate_did_keypair_start(self.test_sov_did)
         assert info.verkey != new_verkey
@@ -220,6 +227,12 @@ class TestInMemoryWallet:
                 DIDMethod.SOV, KeyType.ED25519, None, self.test_sov_did
             )
 
+        with pytest.raises(WalletError) as context:
+            await wallet.create_local_did(
+                DIDMethod.KEY, KeyType.ED25519, None, self.test_sov_did
+            )
+        assert "Not allowed to set did for did method key" in str(context.value)
+
     @pytest.mark.asyncio
     async def test_local_verkey(self, wallet: InMemoryWallet):
         info = await wallet.create_local_did(
@@ -235,6 +248,13 @@ class TestInMemoryWallet:
         info3 = await wallet.get_local_did_for_verkey(self.test_ed25519_verkey)
         assert info3.did == self.test_sov_did
         assert info3.verkey == self.test_ed25519_verkey
+
+        await wallet.create_local_did(DIDMethod.KEY, KeyType.BLS12381G2, self.test_seed)
+        bls_info_get = await wallet.get_local_did_for_verkey(
+            self.test_bls12381g2_verkey
+        )
+        assert bls_info_get.did == self.test_key_bls12381g2_did
+        assert bls_info_get.verkey == self.test_bls12381g2_verkey
 
         with pytest.raises(WalletNotFoundError):
             _ = await wallet.get_local_did(self.missing_did)
@@ -269,6 +289,26 @@ class TestInMemoryWallet:
         await wallet.set_did_endpoint(self.test_sov_did, "http://1.2.3.4:8021", None)
         info4 = await wallet.get_local_did(self.test_sov_did)
         assert info4.metadata["endpoint"] == "http://1.2.3.4:8021"
+
+    @pytest.mark.asyncio
+    async def test_local_metadata_bbs(self, wallet: InMemoryWallet):
+        info = await wallet.create_local_did(
+            DIDMethod.KEY,
+            KeyType.BLS12381G2,
+            self.test_seed,
+            None,
+            self.test_metadata,
+        )
+        assert info.did == self.test_seed
+        assert info.verkey == self.test_bls12381g2_verkey
+        assert info.metadata == self.test_metadata
+        info2 = await wallet.get_local_did(self.test_key_bls12381g2_did)
+        assert info2.metadata == self.test_metadata
+        await wallet.replace_local_did_metadata(
+            self.test_key_bls12381g2_did, self.test_update_metadata
+        )
+        info3 = await wallet.get_local_did(self.test_key_bls12381g2_did)
+        assert info3.metadata == self.test_update_metadata
 
     @pytest.mark.asyncio
     async def test_create_public_did(self, wallet: InMemoryWallet):
@@ -307,6 +347,28 @@ class TestInMemoryWallet:
         assert posted and posted[0].did == info_public.did
 
     @pytest.mark.asyncio
+    async def test_create_public_did_x_not_sov(self, wallet: InMemoryWallet):
+        with pytest.raises(WalletError) as context:
+            await wallet.create_public_did(
+                DIDMethod.KEY,
+                KeyType.ED25519,
+            )
+        assert "Creating public did is only allowed for did:sov dids" in str(
+            context.value
+        )
+
+    @pytest.mark.asyncio
+    async def test_create_public_did_x_unsupported_key_type_method(
+        self, wallet: InMemoryWallet
+    ):
+        with pytest.raises(WalletError) as context:
+            await wallet.create_public_did(
+                DIDMethod.SOV,
+                KeyType.BLS12381G2,
+            )
+        assert "Invalid key type" in str(context.value)
+
+    @pytest.mark.asyncio
     async def test_set_public_did(self, wallet: InMemoryWallet):
         info = await wallet.create_local_did(
             DIDMethod.SOV,
@@ -338,6 +400,18 @@ class TestInMemoryWallet:
         info_final = await wallet.set_public_did(info_new.did)
         assert info_final.did == info_new.did
         assert info_final.metadata.get("public")
+
+    @pytest.mark.asyncio
+    async def test_set_public_did_x_not_sov(self, wallet: InMemoryWallet):
+        info = await wallet.create_local_did(
+            DIDMethod.KEY,
+            KeyType.ED25519,
+        )
+        with pytest.raises(WalletError) as context:
+            await wallet.set_public_did(info.did)
+        assert "Setting public did is only allowed for did:sov dids" in str(
+            context.value
+        )
 
     @pytest.mark.asyncio
     async def test_sign_verify(self, wallet: InMemoryWallet):
@@ -391,6 +465,64 @@ class TestInMemoryWallet:
         assert "Message not provided" in str(excinfo.value)
 
     @pytest.mark.asyncio
+    @pytest.mark.ursa_bbs_signatures
+    async def test_sign_verify_bbs(self, wallet: InMemoryWallet):
+        info = await wallet.create_local_did(
+            DIDMethod.KEY, KeyType.BLS12381G2, self.test_seed
+        )
+        message_bin = self.test_message.encode("ascii")
+        signature = await wallet.sign_message(message_bin, info.verkey)
+        assert signature
+        verify = await wallet.verify_message(
+            message_bin, signature, info.verkey, KeyType.BLS12381G2
+        )
+        assert verify
+
+        bad_sig = b"x" + signature[1:]
+        verify = await wallet.verify_message(
+            message_bin, bad_sig, info.verkey, KeyType.BLS12381G2
+        )
+        assert not verify
+        bad_msg = b"x" + message_bin[1:]
+        verify = await wallet.verify_message(
+            bad_msg, signature, info.verkey, KeyType.BLS12381G2
+        )
+        assert not verify
+        verify = await wallet.verify_message(
+            message_bin, signature, self.test_target_verkey, KeyType.BLS12381G2
+        )
+        assert not verify
+
+        with pytest.raises(WalletError):
+            await wallet.sign_message(message_bin, self.missing_verkey)
+
+        with pytest.raises(WalletError) as excinfo:
+            await wallet.sign_message(None, self.missing_verkey)
+        assert "Message not provided" in str(excinfo.value)
+
+        with pytest.raises(WalletError) as excinfo:
+            await wallet.sign_message(message_bin, None)
+        assert "Verkey not provided" in str(excinfo.value)
+
+        with pytest.raises(WalletError) as excinfo:
+            await wallet.verify_message(
+                message_bin, signature, None, KeyType.BLS12381G2
+            )
+        assert "Verkey not provided" in str(excinfo.value)
+
+        with pytest.raises(WalletError) as excinfo:
+            await wallet.verify_message(
+                message_bin, None, info.verkey, KeyType.BLS12381G2
+            )
+        assert "Signature not provided" in str(excinfo.value)
+
+        with pytest.raises(WalletError) as excinfo:
+            await wallet.verify_message(
+                None, message_bin, info.verkey, KeyType.BLS12381G2
+            )
+        assert "Message not provided" in str(excinfo.value)
+
+    @pytest.mark.asyncio
     async def test_pack_unpack(self, wallet: InMemoryWallet):
         await wallet.create_local_did(
             DIDMethod.SOV, KeyType.ED25519, self.test_seed, self.test_sov_did
@@ -437,3 +569,19 @@ class TestInMemoryWallet:
         msg_decode, ts_decode = sig.decode()
         assert msg_decode == msg
         assert ts_decode == timestamp
+
+    @pytest.mark.asyncio
+    async def test_set_did_endpoint_x_not_sov(self, wallet: InMemoryWallet):
+        info = await wallet.create_local_did(
+            DIDMethod.KEY,
+            KeyType.ED25519,
+        )
+        with pytest.raises(WalletError) as context:
+            await wallet.set_did_endpoint(
+                info.did,
+                "https://google.com",
+                {},
+            )
+        assert "Setting did endpoint is only allowed for did:sov dids" in str(
+            context.value
+        )

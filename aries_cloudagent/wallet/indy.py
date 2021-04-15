@@ -620,9 +620,7 @@ class IndySdkWallet(BaseWallet):
         """
         did_info = await self.get_local_did(did)
         if did_info.method != DIDMethod.SOV:
-            raise WalletError(
-                f"Did method {did_info.method.method_name} has no support for endpoints."
-            )
+            raise WalletError("Setting did endpoint is only allowed for did:sov dids")
 
         metadata = {**did_info.metadata}
         if not endpoint_type:
