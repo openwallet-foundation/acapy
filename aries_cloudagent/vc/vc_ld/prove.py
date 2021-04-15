@@ -125,6 +125,13 @@ async def derive_credential(
 
     """
 
+    # Validate credential structure
+    errors = VerifiableCredentialSchema().validate(credential)
+    if len(errors) > 0:
+        raise LinkedDataProofException(
+            f"Unable to derive from credential with invalid structure: {errors}"
+        )
+
     return await derive(
         document=credential,
         reveal_document=reveal_document,
