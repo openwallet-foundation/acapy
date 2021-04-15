@@ -2,7 +2,7 @@
 
 import pytest
 
-from pydid import DID, DIDDocument
+from pydid import DIDDocument
 
 from ..base import BaseDIDResolver, DIDMethodNotSupported, ResolverType
 
@@ -20,7 +20,7 @@ class ExampleDIDResolver(BaseDIDResolver):
     def supported_methods(self):
         return ["test"]
 
-    async def _resolve(self, profile, py_did) -> DIDDocument:
+    async def _resolve(self, profile, did) -> DIDDocument:
         return DIDDocument("did:example:123")
 
 
@@ -52,5 +52,5 @@ def test_supports(native_resolver):
 @pytest.mark.asyncio
 async def test_resolve_x(native_resolver):
     with pytest.raises(DIDMethodNotSupported) as x_did:
-        await native_resolver.resolve(None, DID("did:nosuchmethod:xxx"))
+        await native_resolver.resolve(None, "did:nosuchmethod:xxx")
     assert "does not support DID method" in str(x_did.value)

@@ -73,7 +73,7 @@ class MockResolver(BaseDIDResolver):
     def supported_methods(self):
         return self._supported_methods
 
-    async def _resolve(self, profile, py_did):
+    async def _resolve(self, profile, did):
         if isinstance(self.resolved, Exception):
             raise self.resolved
         return self.resolved.serialize()

@@ -73,5 +73,5 @@ class BaseDIDResolver(ABC):
         return result
 
     @abstractmethod
-    async def _resolve(self, profile: Profile, py_did: DID) -> dict:
+    async def _resolve(self, profile: Profile, did: str) -> dict:
         """Resolve a DID using this resolver."""
