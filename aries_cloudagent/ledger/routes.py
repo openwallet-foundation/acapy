@@ -7,11 +7,17 @@ from marshmallow import fields, validate
 
 from ..admin.request_context import AdminRequestContext
 from ..messaging.models.openapi import OpenAPISchema
-from ..messaging.valid import ENDPOINT_TYPE, INDY_DID, INDY_RAW_PUBLIC_KEY, INT_EPOCH
+from ..messaging.valid import (
+    ENDPOINT,
+    ENDPOINT_TYPE,
+    INDY_DID,
+    INDY_RAW_PUBLIC_KEY,
+    INT_EPOCH,
+)
 from ..storage.error import StorageError
 from ..wallet.error import WalletError, WalletNotFoundError
 
-from .base import BaseLedger
+from .base import BaseLedger, Role as LedgerRole
 from .endpoint_type import EndpointType
 from .error import BadLedgerRequestError, LedgerError, LedgerTransactionError
 from .indy import Role
@@ -111,12 +117,51 @@ class QueryStringEndpointSchema(OpenAPISchema):
     )
 
 
+class RegisterLedgerNymResponseSchema(OpenAPISchema):
+    """Response schema for ledger nym registration."""
+
+    success = fields.Bool(
+        description="Success of nym registration operation",
+        example=True,
+    )
+
+
+class GetNymRoleResponseSchema(OpenAPISchema):
+    """Response schema to get nym role operation."""
+
+    role = fields.Str(
+        description="Ledger role",
+        validate=validate.OneOf([r.name for r in LedgerRole]),
+        example=LedgerRole.ENDORSER.name,
+    )
+
+
+class GetDIDVerkeyResponseSchema(OpenAPISchema):
+    """Response schema to get DID verkey."""
+
+    verkey = fields.Str(
+        description="Full verification key",
+        allow_none=True,
+        **INDY_RAW_PUBLIC_KEY,
+    )
+
+
+class GetDIDEndpointResponseSchema(OpenAPISchema):
+    """Response schema to get DID endpoint."""
+
+    endpoint = fields.Str(
+        description="Full verification key",
+        allow_none=True,
+        **ENDPOINT,
+    )
+
+
 @docs(
     tags=["ledger"],
     summary="Send a NYM registration to the ledger.",
 )
 @querystring_schema(RegisterLedgerNymQueryStringSchema())
-@response_schema(LedgerModulesResultSchema(), 200, description="")
+@response_schema(RegisterLedgerNymResponseSchema(), 200, description="")
 async def register_ledger_nym(request: web.BaseRequest):
     """
     Request handler for registering a NYM with the ledger.
@@ -172,7 +217,7 @@ async def register_ledger_nym(request: web.BaseRequest):
     summary="Get the role from the NYM registration of a public DID.",
 )
 @querystring_schema(QueryStringDIDSchema)
-@response_schema(LedgerModulesResultSchema(), 200, description="")
+@response_schema(GetNymRoleResponseSchema(), 200, description="")
 async def get_nym_role(request: web.BaseRequest):
     """
     Request handler for getting the role from the NYM registration of a public DID.
@@ -236,7 +281,7 @@ async def rotate_public_did_keypair(request: web.BaseRequest):
     summary="Get the verkey for a DID from the ledger.",
 )
 @querystring_schema(QueryStringDIDSchema())
-@response_schema(LedgerModulesResultSchema(), 200, description="")
+@response_schema(GetDIDVerkeyResponseSchema(), 200, description="")
 async def get_did_verkey(request: web.BaseRequest):
     """
     Request handler for getting a verkey for a DID from the ledger.
@@ -273,7 +318,7 @@ async def get_did_verkey(request: web.BaseRequest):
     summary="Get the endpoint for a DID from the ledger.",
 )
 @querystring_schema(QueryStringEndpointSchema())
-@response_schema(LedgerModulesResultSchema(), 200, description="")
+@response_schema(GetDIDEndpointResponseSchema(), 200, description="")
 async def get_did_endpoint(request: web.BaseRequest):
     """
     Request handler for getting a verkey for a DID from the ledger.

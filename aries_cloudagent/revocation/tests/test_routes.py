@@ -550,7 +550,7 @@ class TestRevocationRoutes(AsyncTestCase):
             mock_tails_path.return_value = f"/tmp/tails/{REV_REG_ID}"
 
             result = await test_module.upload_tails_file(self.request)
-            mock_json_response.assert_called_once_with()
+            mock_json_response.assert_called_once_with({})
             assert result is mock_json_response.return_value
 
     async def test_upload_tails_file_no_tails_server(self):

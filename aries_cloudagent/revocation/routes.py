@@ -627,7 +627,7 @@ async def upload_tails_file(request: web.BaseRequest):
     if not upload_success:
         raise web.HTTPInternalServerError(reason=reason)
 
-    return web.json_response()
+    return web.json_response({})
 
 
 @docs(

@@ -142,13 +142,21 @@ class TestHolderRoutes(AsyncTestCase):
         self.context.injector.bind_instance(
             IndyHolder,
             async_mock.MagicMock(
-                get_mime_type=async_mock.CoroutineMock(return_value=None)
+                get_mime_type=async_mock.CoroutineMock(
+                    side_effect=[None, {"a": "application/jpeg"}]
+                )
             ),
         )
 
         with async_mock.patch.object(test_module.web, "json_response") as mock_response:
             await test_module.credentials_attr_mime_types_get(self.request)
-            mock_response.assert_called_once_with(None)
+            mock_response.assert_called_once_with({"results": None})
+
+        with async_mock.patch.object(test_module.web, "json_response") as mock_response:
+            await test_module.credentials_attr_mime_types_get(self.request)
+            mock_response.assert_called_once_with(
+                {"results": {"a": "application/jpeg"}}
+            )
 
     async def test_credentials_remove(self):
         self.request.match_info = {"credential_id": "dummy"}

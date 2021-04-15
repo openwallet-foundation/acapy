@@ -135,7 +135,6 @@ class UpdateWalletRequestSchema(OpenAPISchema):
         default="default",
         validate=validate.OneOf(["default", "both", "base"]),
     )
-
     wallet_webhook_urls = fields.List(
         fields.Str(
             description="Optional webhook URL to receive webhook messages",
@@ -144,13 +143,11 @@ class UpdateWalletRequestSchema(OpenAPISchema):
         required=False,
         description="List of Webhook URLs associated with this subwallet",
     )
-
     label = fields.Str(
         description="Label for this wallet. This label is publicized\
             (self-attested) to other agents as part of forming a connection.",
         example="Alice",
     )
-
     image_url = fields.Str(
         description="Image url for this wallet. This image url is publicized\
             (self-attested) to other agents as part of forming a connection.",

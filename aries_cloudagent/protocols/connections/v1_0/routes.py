@@ -427,7 +427,7 @@ async def connections_metadata(request: web.BaseRequest):
     except BaseModelError as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-    return web.json_response(result)
+    return web.json_response({"results": result})
 
 
 @docs(tags=["connection"], summary="Set connection metadata")
@@ -451,7 +451,7 @@ async def connections_metadata_set(request: web.BaseRequest):
     except BaseModelError as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-    return web.json_response(result)
+    return web.json_response({"results": result})
 
 
 @docs(

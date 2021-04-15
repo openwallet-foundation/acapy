@@ -257,3 +257,8 @@ class TestJSONLDRoutes(AsyncTestCase):
 
         await test_module.register(mock_app)
         assert mock_app.add_routes.call_count == 2
+
+    async def test_post_process_routes(self):
+        mock_app = async_mock.MagicMock(_state={"swagger_dict": {}})
+        test_module.post_process_routes(mock_app)
+        assert "tags" in mock_app._state["swagger_dict"]
