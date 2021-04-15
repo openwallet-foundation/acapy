@@ -2238,7 +2238,11 @@ class TestConnectionManager(AsyncTestCase):
         self.context.injector.bind_instance(DIDResolver, self.resolver)
 
         local_did = await self.session.wallet.create_local_did(
-            seed=self.test_seed, did=did_doc.id, metadata=None
+            method=DIDMethod.SOV,
+            key_type=KeyType.ED25519,
+            seed=self.test_seed,
+            did=did_doc.id,
+            metadata=None,
         )
 
         conn_invite = ConnectionInvitation(
@@ -2301,7 +2305,11 @@ class TestConnectionManager(AsyncTestCase):
         self.context.injector.bind_instance(DIDResolver, self.resolver)
 
         local_did = await self.session.wallet.create_local_did(
-            seed=self.test_seed, did=did_doc.id, metadata=None
+            method=DIDMethod.SOV,
+            key_type=KeyType.ED25519,
+            seed=self.test_seed,
+            did=did_doc.id,
+            metadata=None,
         )
 
         conn_invite = ConnectionInvitation(
@@ -2343,7 +2351,11 @@ class TestConnectionManager(AsyncTestCase):
         self.context.injector.bind_instance(DIDResolver, self.resolver)
 
         local_did = await self.session.wallet.create_local_did(
-            seed=self.test_seed, did=did_doc.id, metadata=None
+            method=DIDMethod.SOV,
+            key_type=KeyType.ED25519,
+            seed=self.test_seed,
+            did=did_doc.id,
+            metadata=None,
         )
 
         conn_invite = ConnectionInvitation(
@@ -2384,7 +2396,11 @@ class TestConnectionManager(AsyncTestCase):
         self.context.injector.bind_instance(DIDResolver, self.resolver)
 
         local_did = await self.session.wallet.create_local_did(
-            seed=self.test_seed, did=did_doc.id, metadata=None
+            method=DIDMethod.SOV,
+            key_type=KeyType.ED25519,
+            seed=self.test_seed,
+            did=did_doc.id,
+            metadata=None,
         )
 
         conn_invite = ConnectionInvitation(
