@@ -17,7 +17,7 @@ from ..messaging.agent_message import AgentMessage
 from ..messaging.error import MessageParseError
 from ..messaging.models.base import BaseModelError
 from ..messaging.request_context import RequestContext
-from ..messaging.responder import BaseResponder
+from ..messaging.responder import BaseResponder, Message
 from ..messaging.util import datetime_now
 from ..protocols.connections.v1_0.manager import ConnectionManager
 from ..protocols.problem_report.v1_0.message import ProblemReport
@@ -267,7 +267,7 @@ class DispatcherResponder(BaseResponder):
         self._webhook = send_webhook
 
     async def create_outbound(
-        self, message: Union[AgentMessage, str, bytes], **kwargs
+        self, message: Union[Message, AgentMessage, str, bytes], **kwargs
     ) -> OutboundMessage:
         """
         Create an OutboundMessage from a message body.
