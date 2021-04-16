@@ -17,7 +17,8 @@ from ..ledger.base import BaseLedger
 from ..ledger.endpoint_type import EndpointType
 from ..ledger.error import LedgerConfigError
 
-from .base import BaseWallet, KeyInfo, DIDInfo
+from .base import BaseWallet
+from .did_info import DIDInfo, KeyInfo
 from .crypto import validate_seed
 from .error import WalletError, WalletDuplicateError, WalletNotFoundError
 from .util import bytes_to_b64
