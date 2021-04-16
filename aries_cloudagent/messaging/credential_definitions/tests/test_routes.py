@@ -78,7 +78,7 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
             )
             assert result == mock_response.return_value
             mock_response.assert_called_once_with(
-                {"credential_definition_id": CRED_DEF_ID}
+                {"sent": {"credential_definition_id": CRED_DEF_ID}}
             )
 
     async def test_send_credential_definition_revoc(self):
@@ -122,7 +122,7 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
                 self.request
             )
             mock_response.assert_called_once_with(
-                {"credential_definition_id": CRED_DEF_ID}
+                {"sent": {"credential_definition_id": CRED_DEF_ID}}
             )
 
     async def test_send_credential_definition_revoc_no_tails_server_x(self):
@@ -293,7 +293,7 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
                 )
             )
             assert result == mock_response.return_value
-            mock_response.assert_called_once_with({"...": "..."})
+            mock_response.assert_called_once_with({"txn": {"...": "..."}})
 
     async def test_send_credential_definition_create_transaction_for_endorser_storage_x(
         self,

@@ -4,7 +4,8 @@ import logging
 
 from ..core.error import ProfileNotFoundError
 from ..core.profile import Profile, ProfileManager
-from ..wallet.base import BaseWallet, DIDInfo
+from ..wallet.base import BaseWallet
+from ..wallet.did_info import DIDInfo
 from ..wallet.crypto import seed_to_did
 
 from .base import ConfigError

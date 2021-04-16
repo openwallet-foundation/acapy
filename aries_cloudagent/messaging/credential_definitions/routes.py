@@ -1,5 +1,7 @@
 """Credential definition admin routes."""
 
+import json
+
 from asyncio import ensure_future, shield
 
 from aiohttp import web
@@ -10,13 +12,19 @@ from aiohttp_apispec import (
     request_schema,
     response_schema,
 )
-import json
 
 from marshmallow import fields
 
 from ...admin.request_context import AdminRequestContext
 from ...indy.issuer import IndyIssuer
 from ...ledger.base import BaseLedger
+from ...ledger.error import LedgerError
+from ...protocols.endorse_transaction.v1_0.manager import TransactionManager
+from ...protocols.endorse_transaction.v1_0.models.transaction_record import (
+    TransactionRecordSchema,
+)
+from ...revocation.error import RevocationError, RevocationNotSupportedError
+from ...revocation.indy import IndyRevocation
 from ...storage.base import BaseStorage
 from ...storage.error import StorageError
 from ...tails.base import BaseTailsServer
@@ -24,10 +32,6 @@ from ...tails.base import BaseTailsServer
 from ..models.openapi import OpenAPISchema
 from ..valid import INDY_CRED_DEF_ID, INDY_REV_REG_SIZE, INDY_SCHEMA_ID, INDY_VERSION
 
-from ...revocation.error import RevocationError, RevocationNotSupportedError
-from ...revocation.indy import IndyRevocation
-
-from ...ledger.error import LedgerError
 
 from .util import CredDefQueryStringSchema, CRED_DEF_TAGS, CRED_DEF_SENT_RECORD_TYPE
 
@@ -60,11 +64,26 @@ class CredentialDefinitionSendRequestSchema(OpenAPISchema):
     )
 
 
-class CredentialDefinitionSendResultsSchema(OpenAPISchema):
-    """Results schema for schema send request."""
+class CredentialDefinitionSendResultSchema(OpenAPISchema):
+    """Result schema content for schema send request with auto-endorse."""
 
     credential_definition_id = fields.Str(
         description="Credential definition identifier", **INDY_CRED_DEF_ID
+    )
+
+
+class TxnOrCredentialDefinitionSendResultSchema(OpenAPISchema):
+    """Result schema for credential definition send request."""
+
+    sent = fields.Nested(
+        CredentialDefinitionSendResultSchema(),
+        required=False,
+        definition="Content sent",
+    )
+    txn = fields.Nested(
+        TransactionRecordSchema(),
+        required=False,
+        description="Credential definition transaction to endorse",
     )
 
 
@@ -96,14 +115,14 @@ class CredentialDefinitionSchema(OpenAPISchema):
     )
 
 
-class CredentialDefinitionGetResultsSchema(OpenAPISchema):
-    """Results schema for schema get request."""
+class CredentialDefinitionGetResultSchema(OpenAPISchema):
+    """Result schema for schema get request."""
 
     credential_definition = fields.Nested(CredentialDefinitionSchema)
 
 
-class CredentialDefinitionsCreatedResultsSchema(OpenAPISchema):
-    """Results schema for cred-defs-created request."""
+class CredentialDefinitionsCreatedResultSchema(OpenAPISchema):
+    """Result schema for cred-defs-created request."""
 
     credential_definition_ids = fields.List(
         fields.Str(description="Credential definition identifiers", **INDY_CRED_DEF_ID)
@@ -144,7 +163,7 @@ class ConnIdMatchInfoSchema(OpenAPISchema):
 @request_schema(CredentialDefinitionSendRequestSchema())
 @querystring_schema(CreateTransactioForEndorserOptionSchema())
 @querystring_schema(ConnIdMatchInfoSchema())
-@response_schema(CredentialDefinitionSendResultsSchema(), 200, description="")
+@response_schema(TxnOrCredentialDefinitionSendResultSchema(), 200, description="")
 async def credential_definitions_send_credential_definition(request: web.BaseRequest):
     """
     Request handler for sending a credential definition to the ledger.
@@ -289,7 +308,7 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
         except StorageError as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-        return web.json_response(transaction.serialize())
+        return web.json_response({"txn": transaction.serialize()})
 
 
 @docs(
@@ -297,7 +316,7 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
     summary="Search for matching credential definitions that agent originated",
 )
 @querystring_schema(CredDefQueryStringSchema())
-@response_schema(CredentialDefinitionsCreatedResultsSchema(), 200, description="")
+@response_schema(CredentialDefinitionsCreatedResultSchema(), 200, description="")
 async def credential_definitions_created(request: web.BaseRequest):
     """
     Request handler for retrieving credential definitions that current agent created.
@@ -330,7 +349,7 @@ async def credential_definitions_created(request: web.BaseRequest):
     summary="Gets a credential definition from the ledger",
 )
 @match_info_schema(CredDefIdMatchInfoSchema())
-@response_schema(CredentialDefinitionGetResultsSchema(), 200, description="")
+@response_schema(CredentialDefinitionGetResultSchema(), 200, description="")
 async def credential_definitions_get_credential_definition(request: web.BaseRequest):
     """
     Request handler for getting a credential definition from the ledger.

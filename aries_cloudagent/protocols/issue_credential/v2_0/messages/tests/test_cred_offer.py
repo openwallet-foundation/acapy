@@ -77,6 +77,20 @@ class TestV20CredOffer(AsyncTestCase):
             CRED_20_OFFER
         )
 
+    async def test_attachment_no_target_format(self):
+        """Test attachment behaviour for only unknown formats."""
+
+        x_cred_offer = V20CredOffer(
+            comment="Test",
+            formats=[V20CredFormat(attach_id="not_indy", format_="not_indy")],
+            offers_attach=[
+                AttachDecorator.data_base64(
+                    ident="not_indy", mapping=TestV20CredOffer.CRED_OFFER.serialize()
+                )
+            ],
+        )
+        assert x_cred_offer.attachment() is None
+
     async def test_serde(self):
         """Test de/serialization."""
         obj = TestV20CredOffer.CRED_OFFER.serialize()
@@ -94,13 +108,29 @@ class TestV20CredOffer(AsyncTestCase):
 
         obj["offers~attach"].append(  # more attachments than formats
             {
-                "@id": "def",
+                "@id": "not_indy",
                 "mime-type": "application/json",
                 "data": {"base64": "eyJub3QiOiAiaW5keSJ9"},
             }
         )
         with self.assertRaises(BaseModelError):
             V20CredOffer.deserialize(obj)
+
+        cred_offer.formats.append(  # unknown format: no validation
+            V20CredFormat(
+                attach_id="not_indy",
+                format_="not_indy",
+            )
+        )
+        obj = cred_offer.serialize()
+        obj["offers~attach"].append(
+            {
+                "@id": "not_indy",
+                "mime-type": "application/json",
+                "data": {"base64": "eyJub3QiOiAiaW5keSJ9"},
+            }
+        )
+        V20CredOffer.deserialize(obj)
 
 
 class TestCredentialOfferSchema(AsyncTestCase):

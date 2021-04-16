@@ -38,7 +38,7 @@ class KeylistQuery(AgentMessage):
             filter: Filter for query
             paginate: Pagination rules
         """
-        super(KeylistQuery, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.filter = filter
         self.paginate = paginate
 
@@ -52,7 +52,9 @@ class KeylistQuerySchema(AgentMessageSchema):
         model_class = KeylistQuery
 
     filter = fields.Dict(
-        required=False, description="Query dictionary object", example={"filter": {}}
+        required=False,
+        description="Query dictionary object",
+        example={"filter": {}},
     )
     paginate = fields.Nested(
         KeylistQueryPaginateSchema(), required=False, description="Pagination info"

@@ -221,8 +221,9 @@ class DemoAgent:
         }
         schema_response = await self.admin_POST("/schemas", schema_body)
         log_json(json.dumps(schema_response), label="Schema:")
-        schema_id = schema_response["schema_id"]
+        schema_id = schema_response["sent"]["schema_id"]
         log_msg("Schema ID:", schema_id)
+        await asyncio.sleep(2.0)
 
         # Create a cred def for the schema
         cred_def_tag = (
@@ -241,7 +242,7 @@ class DemoAgent:
         credential_definition_response = await self.admin_POST(
             "/credential-definitions", credential_definition_body
         )
-        credential_definition_id = credential_definition_response[
+        credential_definition_id = credential_definition_response["sent"][
             "credential_definition_id"
         ]
         log_msg("Cred def ID:", credential_definition_id)
@@ -493,6 +494,7 @@ class DemoAgent:
             stderr=subprocess.PIPE,
             env=env,
             encoding="utf-8",
+            close_fds=True,
         )
         loop.run_in_executor(
             None,
@@ -526,9 +528,8 @@ class DemoAgent:
 
         # start agent sub-process
         loop = asyncio.get_event_loop()
-        self.proc = await loop.run_in_executor(
-            None, self._process, agent_args, my_env, loop
-        )
+        future = loop.run_in_executor(None, self._process, agent_args, my_env, loop)
+        self.proc = await asyncio.wait_for(future, 20, loop=loop)
         if wait:
             await asyncio.sleep(1.0)
             await self.detect_process()
@@ -546,18 +547,16 @@ class DemoAgent:
 
     async def terminate(self):
         # close session to admin api
-        self.log("Shutting down admin api session")
         await self.client_session.close()
         # shut down web hooks first
-        self.log("Shutting down web hooks site")
         if self.webhook_site:
             await self.webhook_site.stop()
             await asyncio.sleep(0.5)
         # now shut down the agent
-        self.log("Shutting down agent")
         loop = asyncio.get_event_loop()
         if self.proc:
-            await loop.run_in_executor(None, self._terminate)
+            future = loop.run_in_executor(None, self._terminate)
+            result = await asyncio.wait_for(future, 10, loop=loop)
 
     async def listen_webhooks(self, webhook_port):
         self.webhook_port = webhook_port
