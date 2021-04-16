@@ -130,6 +130,20 @@ class TestV20PresRequest(TestCase):
             assert pres_req.attachment(V20PresFormat.Format.INDY) == INDY_PROOF_REQ[i]
             assert pres_req._type == DIDCommPrefix.qualify_current(PRES_20_REQUEST)
 
+    def test_attachment_no_target_format(self):
+        """Test attachment behaviour for only unknown formats."""
+
+        x_pres_req = V20PresRequest(
+            comment="Test",
+            formats=[V20PresFormat(attach_id="not_indy", format_="not_indy")],
+            request_presentations_attach=[
+                AttachDecorator.data_base64(
+                    ident="not_indy", mapping=PRES_REQ[0].serialize()
+                )
+            ],
+        )
+        assert x_pres_req.attachment() is None
+
     def test_serde(self):
         """Test de/serialization."""
         for pres_req_msg in PRES_REQ:
@@ -156,3 +170,19 @@ class TestV20PresRequest(TestCase):
             )  # more attachments than formats
             with self.assertRaises(BaseModelError):
                 V20PresRequest.deserialize(pres_req_dict)
+
+            pres_req_msg.formats.append(  # unknown format: no validation
+                V20PresFormat(
+                    attach_id="not_indy",
+                    format_="not_indy",
+                )
+            )
+            obj = pres_req_msg.serialize()
+            obj["request_presentations~attach"].append(
+                {
+                    "@id": "not_indy",
+                    "mime-type": "application/json",
+                    "data": {"base64": "eyJub3QiOiAiaW5keSJ9"},
+                }
+            )
+            V20PresRequest.deserialize(obj)
