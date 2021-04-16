@@ -1146,6 +1146,41 @@ class TestV20CredManager(AsyncTestCase):
                 in str(context.exception)
             )
 
+    async def test_receive_cred_x_no_formats(self):
+        connection_id = "test_conn_id"
+
+        cred_request = V20CredRequest(
+            formats=[V20CredFormat(attach_id="0", format_="random")],
+            requests_attach=[AttachDecorator.data_base64(INDY_CRED_REQ, ident="0")],
+        )
+
+        stored_cx_rec = V20CredExRecord(
+            cred_ex_id="dummy-cxid",
+            connection_id=connection_id,
+            initiator=V20CredExRecord.INITIATOR_EXTERNAL,
+            cred_request=cred_request.serialize(),
+            role=V20CredExRecord.ROLE_ISSUER,
+        )
+
+        cred_issue = V20CredIssue(
+            formats=[V20CredFormat(attach_id="0", format_="random")],
+            credentials_attach=[AttachDecorator.data_base64(LD_PROOF_VC, ident="0")],
+        )
+
+        with async_mock.patch.object(
+            V20CredExRecord,
+            "retrieve_by_conn_and_thread",
+            async_mock.CoroutineMock(),
+        ) as mock_retrieve:
+            mock_retrieve.return_value = stored_cx_rec
+
+            with self.assertRaises(V20CredManagerError) as context:
+                await self.manager.receive_credential(
+                    cred_issue,
+                    connection_id,
+                )
+            assert "No supported credential formats received." in str(context.exception)
+
     async def test_store_credential(self):
         connection_id = "test_conn_id"
         thread_id = "thread-id"

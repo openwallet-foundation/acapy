@@ -137,7 +137,7 @@ class V20CredOfferSchema(AgentMessageSchema):
 
         for fmt in formats:
             atch = get_attach_by_id(fmt.attach_id)
+            cred_format = V20CredFormat.Format.get(fmt.format)
 
-            V20CredFormat.Format.get(fmt.format).validate_fields(
-                CRED_20_OFFER, atch.content
-            )
+            if cred_format:
+                cred_format.validate_fields(CRED_20_OFFER, atch.content)
