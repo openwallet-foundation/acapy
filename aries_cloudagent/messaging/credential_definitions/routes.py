@@ -35,8 +35,6 @@ from ..valid import INDY_CRED_DEF_ID, INDY_REV_REG_SIZE, INDY_SCHEMA_ID, INDY_VE
 
 from .util import CredDefQueryStringSchema, CRED_DEF_TAGS, CRED_DEF_SENT_RECORD_TYPE
 
-from ...protocols.endorse_transaction.v1_0.manager import TransactionManager
-
 from ..valid import UUIDFour
 from ...connections.models.conn_record import ConnRecord
 from ...storage.error import StorageNotFoundError
@@ -295,7 +293,7 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
             raise web.HTTPBadRequest(reason=e.message) from e
 
     if not create_transaction_for_endorser:
-        return web.json_response({"credential_definition_id": cred_def_id})
+        return web.json_response({"sent": {"credential_definition_id": cred_def_id}})
 
     else:
         session = await context.session()
