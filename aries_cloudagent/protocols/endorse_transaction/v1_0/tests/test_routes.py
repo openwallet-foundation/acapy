@@ -6,9 +6,10 @@ from .....admin.request_context import AdminRequestContext
 from .....connections.models.conn_record import ConnRecord
 from .....core.in_memory import InMemoryProfile
 from .....ledger.base import BaseLedger
-from .....wallet.base import BaseWallet, DIDInfo
 from .....wallet.did_method import DIDMethod
 from .....wallet.key_type import KeyType
+from .....wallet.base import BaseWallet
+from .....wallet.did_info import DIDInfo
 
 from .. import routes as test_module
 from ..models.transaction_record import TransactionRecord

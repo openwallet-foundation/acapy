@@ -1,10 +1,10 @@
-from asynctest import TestCase as AsyncTestCase
-from asynctest import mock as async_mock
+from asynctest import mock as async_mock, TestCase as AsyncTestCase
 
 from .....admin.request_context import AdminRequestContext
-from .....wallet.base import BaseWallet, DIDInfo
 from .....wallet.key_type import KeyType
 from .....wallet.did_method import DIDMethod
+from .....wallet.base import BaseWallet
+from .....wallet.did_info import DIDInfo
 
 from .. import routes as test_module
 

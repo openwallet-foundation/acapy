@@ -5,7 +5,8 @@ from typing import List, Sequence, Tuple, Union
 
 from ..core.in_memory import InMemoryProfile
 
-from .base import BaseWallet, KeyInfo, DIDInfo
+from .base import BaseWallet
+from .did_info import KeyInfo, DIDInfo
 from .crypto import (
     create_keypair,
     validate_seed,

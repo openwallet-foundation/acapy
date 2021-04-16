@@ -3,11 +3,12 @@ from aiohttp.web import HTTPForbidden
 
 from ...admin.request_context import AdminRequestContext
 from ...ledger.base import BaseLedger
-from ...wallet.base import BaseWallet, DIDInfo
 from ...multitenant.manager import MultitenantManager
 from ...wallet.key_type import KeyType
 from ...wallet.did_method import DIDMethod
 from .. import routes as test_module
+from ..base import BaseWallet
+from ..did_info import DIDInfo
 from ..did_posture import DIDPosture
 
 

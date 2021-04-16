@@ -8,7 +8,7 @@ from ...config.base import InjectionError
 from ...messaging.responder import BaseResponder
 from ...wallet.models.wallet_record import WalletRecord
 from ...wallet.in_memory import InMemoryWallet
-from ...wallet.base import DIDInfo
+from ...wallet.did_info import DIDInfo
 from ...storage.error import StorageNotFoundError
 from ...storage.in_memory import InMemoryStorage
 from ...protocols.routing.v1_0.manager import RoutingManager

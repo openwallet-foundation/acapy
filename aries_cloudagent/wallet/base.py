@@ -1,29 +1,16 @@
 """Wallet base class."""
 
 from abc import ABC, abstractmethod
-from typing import List, NamedTuple, Sequence, Tuple, Union
+from typing import List, Sequence, Tuple, Union
 
-from .key_type import KeyType
-from .did_method import DIDMethod
 from ..ledger.base import BaseLedger
 from ..ledger.endpoint_type import EndpointType
 from .error import WalletError
 
 from .did_posture import DIDPosture
-
-KeyInfo = NamedTuple(
-    "KeyInfo", [("verkey", str), ("metadata", dict), ("key_type", KeyType)]
-)
-DIDInfo = NamedTuple(
-    "DIDInfo",
-    [
-        ("did", str),
-        ("verkey", str),
-        ("metadata", dict),
-        ("method", DIDMethod),
-        ("key_type", KeyType),
-    ],
-)
+from .did_info import DIDInfo, KeyInfo
+from .key_type import KeyType
+from .did_method import DIDMethod
 
 
 class BaseWallet(ABC):

@@ -5,7 +5,7 @@ from typing import Mapping, Sequence, Type, Union
 from enum import Enum
 from uuid import uuid4
 
-from marshmallow import EXCLUDE, fields, validate
+from marshmallow import EXCLUDE, fields
 
 from .....utils.classloader import DeferLoad
 from .....messaging.decorators.attach_decorator import AttachDecorator
@@ -140,6 +140,5 @@ class V20CredFormatSchema(BaseModelSchema):
         allow_none=False,
         description="Attachment format specifier",
         data_key="format",
-        validate=validate.Regexp("^(hlindy/.*@v2.0)|(aries/.*@v1.0)$"),
         example="aries/ld-proof-vc-detail@v1.0",
     )

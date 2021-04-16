@@ -24,9 +24,9 @@ from ..resolver.did_resolver import DIDResolver
 from ..storage.base import BaseStorage
 from ..storage.error import StorageNotFoundError
 from ..storage.record import StorageRecord
-from ..wallet.base import BaseWallet, DIDInfo
+from ..wallet.base import BaseWallet
 from ..did.did_key import DIDKey
-
+from ..wallet.did_info import DIDInfo
 from .models.conn_record import ConnRecord
 from .models.connection_target import ConnectionTarget
 from .models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service

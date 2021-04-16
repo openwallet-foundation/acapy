@@ -57,7 +57,8 @@ from .....protocols.present_proof.v2_0.messages.pres_request import V20PresReque
 from .....storage.error import StorageNotFoundError
 from .....multitenant.manager import MultitenantManager
 from .....transport.inbound.receipt import MessageReceipt
-from .....wallet.base import DIDInfo, KeyInfo
+from .....wallet.base import BaseWallet
+from .....wallet.did_info import DIDInfo, KeyInfo
 from .....wallet.in_memory import InMemoryWallet
 from .....wallet.key_type import KeyType
 from .....wallet.did_method import DIDMethod

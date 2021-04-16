@@ -13,10 +13,12 @@ from ....connections.util import mediation_record_if_id
 from ....core.error import BaseError
 from ....core.profile import ProfileSession
 from ....messaging.responder import BaseResponder
+from ....protocols.coordinate_mediation.v1_0.manager import MediationManager
 from ....protocols.routing.v1_0.manager import RoutingManager
 from ....storage.error import StorageError, StorageNotFoundError
 from ....transport.inbound.receipt import MessageReceipt
-from ....wallet.base import BaseWallet, DIDInfo
+from ....wallet.base import BaseWallet
+from ....wallet.did_info import DIDInfo
 from ....wallet.crypto import create_keypair, seed_to_did
 from ....wallet.key_type import KeyType
 from ....wallet.did_method import DIDMethod

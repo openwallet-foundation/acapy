@@ -18,7 +18,7 @@ from ..ledger.endpoint_type import EndpointType
 from ..ledger.error import LedgerConfigError
 
 from ..did.did_key import DIDKey
-from .base import BaseWallet, KeyInfo, DIDInfo
+from .base import BaseWallet
 from .crypto import (
     create_keypair,
     sign_message,
@@ -30,6 +30,7 @@ from .did_method import DIDMethod
 from .key_pair import KeyPairStorageManager
 from ..storage.indy import IndySdkStorage
 from ..storage.error import StorageDuplicateError, StorageNotFoundError
+from .did_info import DIDInfo, KeyInfo
 from .error import WalletError, WalletDuplicateError, WalletNotFoundError
 from .util import b58_to_bytes, bytes_to_b58, bytes_to_b64
 

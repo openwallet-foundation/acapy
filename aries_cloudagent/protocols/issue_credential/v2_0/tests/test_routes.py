@@ -5,9 +5,10 @@ from ..messages.cred_format import V20CredFormat
 from ..formats.indy.handler import IndyCredFormatHandler
 from ..formats.ld_proof.handler import LDProofCredFormatHandler
 from .....admin.request_context import AdminRequestContext
-from .....wallet.base import BaseWallet, DIDInfo
 from .....wallet.key_type import KeyType
 from .....wallet.did_method import DIDMethod
+from .....wallet.base import BaseWallet
+from .....wallet.did_info import DIDInfo
 
 from .. import routes as test_module
 
@@ -1154,9 +1155,7 @@ class TestV20CredRoutes(AsyncTestCase):
 
     async def test_credential_exchange_send_free_request_no_filter(self):
         self.request.json = async_mock.CoroutineMock(
-            return_value={
-                "comment": "comment"
-            }
+            return_value={"comment": "comment"}
         )
 
         with self.assertRaises(test_module.web.HTTPBadRequest) as context:

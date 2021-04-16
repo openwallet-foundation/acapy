@@ -1,9 +1,6 @@
 from unittest.mock import call
-from asynctest import TestCase as AsyncTestCase
-from asynctest import mock as async_mock
+from asynctest import mock as async_mock, TestCase as AsyncTestCase
 
-from aries_cloudagent.resolver.did_resolver import DIDResolver
-from aries_cloudagent.resolver.did_resolver_registry import DIDResolverRegistry
 from .....cache.base import BaseCache
 from .....cache.in_memory import InMemoryCache
 from .....config.base import InjectionError
@@ -17,9 +14,12 @@ from pydid import DIDDocumentBuilder, VerificationSuite, DIDDocument, options
 from .....core.in_memory import InMemoryProfile
 from .....messaging.responder import BaseResponder, MockResponder
 from .....protocols.routing.v1_0.manager import RoutingManager
+from .....resolver.did_resolver import DIDResolver
+from .....resolver.did_resolver_registry import DIDResolverRegistry
 from .....storage.error import StorageNotFoundError
 from .....transport.inbound.receipt import MessageReceipt
-from .....wallet.base import DIDInfo, KeyInfo
+from .....wallet.base import DIDInfo
+from .....wallet.did_info import KeyInfo
 from .....wallet.error import WalletNotFoundError
 from .....wallet.in_memory import InMemoryWallet
 from .....wallet.key_type import KeyType

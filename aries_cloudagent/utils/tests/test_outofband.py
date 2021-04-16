@@ -1,10 +1,9 @@
-from asynctest import mock, TestCase
+from asynctest import TestCase
 
-from ...messaging.agent_message import AgentMessage
 from ...protocols.out_of_band.v1_0.messages.invitation import InvitationMessage
-from ...wallet.base import DIDInfo
 from ...wallet.key_type import KeyType
 from ...wallet.did_method import DIDMethod
+from ...wallet.did_info import DIDInfo
 
 from .. import outofband as test_module
 

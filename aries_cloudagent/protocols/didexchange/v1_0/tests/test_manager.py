@@ -20,7 +20,7 @@ from .....multitenant.manager import MultitenantManager
 from .....storage.error import StorageNotFoundError
 from .....transport.inbound.receipt import MessageReceipt
 from .....multitenant.manager import MultitenantManager
-from .....wallet.base import DIDInfo
+from .....wallet.did_info import DIDInfo
 from .....wallet.in_memory import InMemoryWallet
 from .....wallet.did_method import DIDMethod
 from .....wallet.key_type import KeyType

@@ -10,7 +10,7 @@ from asynctest import mock as async_mock, TestCase as AsyncTestCase
 from ...cache.in_memory import InMemoryCache
 from ...indy.issuer import IndyIssuer, IndyIssuerError
 from ...storage.record import StorageRecord
-from ...wallet.base import DIDInfo
+from ...wallet.did_info import DIDInfo
 from ...wallet.did_posture import DIDPosture
 from ...wallet.error import WalletNotFoundError
 from ...wallet.key_type import KeyType

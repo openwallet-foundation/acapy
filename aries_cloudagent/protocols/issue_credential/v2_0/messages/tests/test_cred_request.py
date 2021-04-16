@@ -77,6 +77,21 @@ class TestV20CredRequest(AsyncTestCase):
             CRED_20_REQUEST
         )
 
+    async def test_attachment_no_target_format(self):
+        """Test attachment behaviour for only unknown formats."""
+
+        x_cred_req = V20CredRequest(
+            comment="Test",
+            formats=[V20CredFormat(attach_id="not_indy", format_="not_indy")],
+            requests_attach=[
+                AttachDecorator.data_base64(
+                    ident="not_indy",
+                    mapping=TestV20CredRequest.indy_cred_req,
+                )
+            ],
+        )
+        assert x_cred_req.attachment() is None
+
     async def test_serde(self):
         """Test de/serialization."""
         obj = TestV20CredRequest.CRED_REQUEST.serialize()
@@ -101,6 +116,22 @@ class TestV20CredRequest(AsyncTestCase):
         )
         with self.assertRaises(BaseModelError):
             V20CredRequest.deserialize(obj)
+
+        cred_request.formats.append(  # unknown format: no validation
+            V20CredFormat(
+                attach_id="not_indy",
+                format_="not_indy",
+            )
+        )
+        obj = cred_request.serialize()
+        obj["requests~attach"].append(
+            {
+                "@id": "not_indy",
+                "mime-type": "application/json",
+                "data": {"base64": "eyJub3QiOiAiaW5keSJ9"},
+            }
+        )
+        V20CredRequest.deserialize(obj)
 
 
 class TestV20CredRequestSchema(AsyncTestCase):

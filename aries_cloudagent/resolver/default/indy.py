@@ -39,7 +39,6 @@ class IndyDIDResolver(BaseDIDResolver):
 
     async def _resolve(self, profile: Profile, did: str) -> dict:
         """Resolve an indy DID."""
-        did_obj = DID(did)
         ledger = profile.inject(BaseLedger, required=False)
         if not ledger or not isinstance(ledger, IndySdkLedger):
             raise NoIndyLedger("No Indy ledger instance is configured.")
@@ -51,7 +50,7 @@ class IndyDIDResolver(BaseDIDResolver):
         except LedgerError as err:
             raise DIDNotFound(f"DID {did} could not be resolved") from err
 
-        builder = DIDDocumentBuilder(did_obj)
+        builder = DIDDocumentBuilder(DID(did))
 
         vmethod = builder.verification_methods.add(
             ident="key-1", suite=self.SUITE, material=recipient_key

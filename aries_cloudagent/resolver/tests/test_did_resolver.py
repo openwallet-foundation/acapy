@@ -1,8 +1,8 @@
 """Test did resolver registry."""
 
 import unittest
-
 import pytest
+
 from asynctest import mock as async_mock
 
 from ...resolver.base import (
@@ -98,15 +98,14 @@ def test_create_resolver(resolver):
 
 @pytest.mark.parametrize("did, method", zip(TEST_DIDS, TEST_DID_METHODS))
 def test_match_did_to_resolver(resolver, did, method):
-    did = DID(did)
-    base_resolver, *_ = resolver._match_did_to_resolver(did)
+    base_resolver, *_ = resolver._match_did_to_resolver(DID(did))
     assert base_resolver.supports(method)
 
 
 def test_match_did_to_resolver_x_not_supported(resolver):
-    did = DID("did:cowsay:EiDahaOGH-liLLdDtTxEAdc8i-cfCz-WUcQdRJheMVNn3A")
+    py_did = DID("did:cowsay:EiDahaOGH-liLLdDtTxEAdc8i-cfCz-WUcQdRJheMVNn3A")
     with pytest.raises(DIDMethodNotSupported):
-        resolver._match_did_to_resolver(did)
+        resolver._match_did_to_resolver(py_did)
 
 
 def test_match_did_to_resolver_native_priority():
@@ -153,24 +152,23 @@ async def test_resolve(resolver, profile, did):
 @pytest.mark.asyncio
 @pytest.mark.parametrize("did", TEST_DIDS)
 async def test_resolve_did(resolver, profile, did):
-    did = DID(did)
-    did_doc = await resolver.resolve(profile, did)
+    did_doc = await resolver.resolve(profile, DID(did))
     assert isinstance(did_doc, DIDDocument)
 
 
 @pytest.mark.asyncio
 async def test_resolve_did_x_not_supported(resolver, profile):
-    did = DID("did:cowsay:EiDahaOGH-liLLdDtTxEAdc8i-cfCz-WUcQdRJheMVNn3A")
+    py_did = DID("did:cowsay:EiDahaOGH-liLLdDtTxEAdc8i-cfCz-WUcQdRJheMVNn3A")
     with pytest.raises(DIDMethodNotSupported):
-        await resolver.resolve(profile, did)
+        await resolver.resolve(profile, py_did)
 
 
 @pytest.mark.asyncio
 async def test_resolve_did_x_not_found(profile):
-    did = DID("did:cowsay:EiDahaOGH-liLLdDtTxEAdc8i-cfCz-WUcQdRJheMVNn3A")
+    py_did = DID("did:cowsay:EiDahaOGH-liLLdDtTxEAdc8i-cfCz-WUcQdRJheMVNn3A")
     cowsay_resolver_not_found = MockResolver("cowsay", resolved=DIDNotFound())
     registry = DIDResolverRegistry()
     registry.register(cowsay_resolver_not_found)
     resolver = DIDResolver(registry)
     with pytest.raises(DIDNotFound):
-        await resolver.resolve(profile, did)
+        await resolver.resolve(profile, py_did)
