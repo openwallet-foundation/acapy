@@ -6,7 +6,7 @@ in response to the message being handled.
 """
 
 from abc import ABC, abstractmethod
-from typing import Sequence, Union
+from typing import Optional, Sequence, Union
 from typing_extensions import Protocol, runtime_checkable
 
 from ..core.error import BaseError
@@ -26,7 +26,7 @@ class Message(Protocol):
         """Serialize the message to json."""
 
     @property
-    def _thread_id(self) -> str:
+    def _thread_id(self) -> Optional[str]:
         """Get the message's thread id."""
 
 
