@@ -9,15 +9,11 @@ import logging
 from itertools import chain
 from typing import Union
 
-from pydid import DID, DIDUrl, DIDDocument, Service, VerificationMethod, DIDError
+from pydid import (DID, DIDDocument, DIDError, DIDUrl, Service, VerificationMethod)
 
 from ..core.profile import Profile
-from ..resolver.base import (
-    BaseDIDResolver,
-    DIDMethodNotSupported,
-    DIDNotFound,
-    ResolverError,
-)
+from ..resolver.base import (BaseDIDResolver, DIDMethodNotSupported,
+                             DIDNotFound, ResolverError)
 from .did_resolver_registry import DIDResolverRegistry
 
 LOGGER = logging.getLogger(__name__)

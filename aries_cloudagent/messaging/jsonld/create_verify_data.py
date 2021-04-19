@@ -11,11 +11,8 @@ import hashlib
 
 from pyld import jsonld
 
-from .error import (
-    DroppedAttributeError,
-    MissingVerificationMethodError,
-    SignatureTypeError,
-)
+from .error import (DroppedAttributeError, MissingVerificationMethodError,
+                    SignatureTypeError)
 
 
 def _canonize(data):

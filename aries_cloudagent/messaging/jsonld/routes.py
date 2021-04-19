@@ -2,18 +2,16 @@
 
 from aiohttp import web
 from aiohttp_apispec import docs, request_schema, response_schema
-
-from marshmallow import fields, Schema
+from marshmallow import Schema, fields
 
 from ...admin.request_context import AdminRequestContext
-
-from ..models.openapi import OpenAPISchema
 from ...config.base import InjectionError
-from ...wallet.error import WalletError
-from ...resolver.did_resolver import DIDResolver
 from ...resolver.base import ResolverError
-from .error import MissingVerificationMethodError, BaseJSONLDMessagingError
+from ...resolver.did_resolver import DIDResolver
+from ...wallet.error import WalletError
+from ..models.openapi import OpenAPISchema
 from .credential import sign_credential, verify_credential
+from .error import BaseJSONLDMessagingError, MissingVerificationMethodError
 
 
 class SignRequestSchema(OpenAPISchema):

@@ -2,15 +2,9 @@
 
 import json
 
-from ...wallet.util import (
-    b64_to_bytes,
-    b64_to_str,
-    bytes_to_b64,
-    str_to_b64,
-    naked_to_did_key,
-)
 from ...wallet.base import BaseWallet
-
+from ...wallet.util import (b64_to_bytes, b64_to_str, bytes_to_b64,
+                            naked_to_did_key, str_to_b64)
 from .create_verify_data import create_verify_data
 from .error import BadJWSHeaderError
 

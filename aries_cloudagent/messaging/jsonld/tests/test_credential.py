@@ -1,31 +1,24 @@
 """Test json-ld credential."""
 
-import json
-from asynctest import mock as async_mock, TestCase as AsyncTestCase
-import pytest
 import asyncio
-from .. import credential as test_module
+import json
 from itertools import cycle
+
+import pytest
+from asynctest import TestCase as AsyncTestCase
+from asynctest import mock as async_mock
+
 from ....admin.request_context import AdminRequestContext
-from ..credential import (
-    verify_credential,
-    sign_credential,
-    did_key,
-)
-from ..error import SignatureTypeError, BadJWSHeaderError
-from ..create_verify_data import DroppedAttributeError
 from ....core.in_memory import InMemoryProfile
-from ....wallet.in_memory import InMemoryWallet
 from ....wallet.base import BaseWallet
-from . import (
-    TEST_SEED,
-    TEST_VERKEY,
-    TEST_VERIFY_OBJS,
-    TEST_SIGN_OBJS,
-    TEST_SIGN_ERROR_OBJS,
-    TEST_VALIDATE_ERROR_OBJ2,
-    TEST_VERIFY_ERROR,
-)
+from ....wallet.in_memory import InMemoryWallet
+from .. import credential as test_module
+from ..create_verify_data import DroppedAttributeError
+from ..credential import did_key, sign_credential, verify_credential
+from ..error import BadJWSHeaderError, SignatureTypeError
+from . import (TEST_SEED, TEST_SIGN_ERROR_OBJS, TEST_SIGN_OBJS,
+               TEST_VALIDATE_ERROR_OBJ2, TEST_VERIFY_ERROR, TEST_VERIFY_OBJS,
+               TEST_VERKEY)
 
 
 class TestCredential(AsyncTestCase):

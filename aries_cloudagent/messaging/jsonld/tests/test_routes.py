@@ -1,32 +1,24 @@
-import pytest
-from aiohttp import web
-from asynctest import mock as async_mock, TestCase as AsyncTestCase
-from ....messaging.models.base import BaseModelError
-from ....wallet.error import WalletError
-from ....config.base import InjectionError
-from ..error import DroppedAttributeError, MissingVerificationMethodError
 import json
 from copy import deepcopy
 
-from asynctest import mock as async_mock, TestCase as AsyncTestCase
+import pytest
+from aiohttp import web
+from asynctest import TestCase as AsyncTestCase
+from asynctest import mock as async_mock
+from pydid import DIDDocument
 from pyld import jsonld
 
 from ....admin.request_context import AdminRequestContext
-from ....wallet.base import BaseWallet
-
-from .. import routes as test_module
-
+from ....config.base import InjectionError
+from ....messaging.models.base import BaseModelError
+from ....resolver.base import DIDMethodNotSupported, DIDNotFound, ResolverError
 from ....resolver.did_resolver import DIDResolver
-from ....resolver.base import (
-    DIDNotFound,
-    DIDMethodNotSupported,
-    ResolverError,
-)
-from ..error import BadJWSHeaderError
 from ....resolver.tests import DOC
-from pydid import (
-    DIDDocument,
-)
+from ....wallet.base import BaseWallet
+from ....wallet.error import WalletError
+from .. import routes as test_module
+from ..error import (BadJWSHeaderError, DroppedAttributeError,
+                     MissingVerificationMethodError)
 
 did_doc = DIDDocument.deserialize(DOC)
 
