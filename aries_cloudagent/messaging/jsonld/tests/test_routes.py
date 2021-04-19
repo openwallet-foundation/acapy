@@ -17,8 +17,11 @@ from ....resolver.tests import DOC
 from ....wallet.base import BaseWallet
 from ....wallet.error import WalletError
 from .. import routes as test_module
-from ..error import (BadJWSHeaderError, DroppedAttributeError,
-                     MissingVerificationMethodError)
+from ..error import (
+    BadJWSHeaderError,
+    DroppedAttributeError,
+    MissingVerificationMethodError,
+)
 
 did_doc = DIDDocument.deserialize(DOC)
 
