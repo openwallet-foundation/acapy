@@ -37,7 +37,7 @@ class TestForwardInvitationHandler(AsyncTestCase):
             ),
             message="Hello World",
         )
-        self.context.update_settings({"accept_invites": False})
+        self.context.update_settings({"debug.auto_accept_invites": False})
 
     async def test_handle(self):
         handler = test_module.ForwardInvitationHandler()
@@ -55,7 +55,7 @@ class TestForwardInvitationHandler(AsyncTestCase):
 
     async def test_handle_auto_accept(self):
         handler = test_module.ForwardInvitationHandler()
-        self.context.update_settings({"accept_invites": True})
+        self.context.update_settings({"debug.auto_accept_invites": True})
 
         mock_conn_rec = async_mock.MagicMock(connection_id="dummy")
         mock_conn_req = async_mock.MagicMock(label="test")

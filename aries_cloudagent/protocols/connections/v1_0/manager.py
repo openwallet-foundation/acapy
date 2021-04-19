@@ -29,7 +29,7 @@ from ...coordinate_mediation.v1_0.models.mediation_record import MediationRecord
 from .messages.connection_invitation import ConnectionInvitation
 from .messages.connection_request import ConnectionRequest
 from .messages.connection_response import ConnectionResponse
-from .messages.problem_report import ProblemReportReason
+from .messages.problem_report_reason import ProblemReportReason
 from .models.connection_detail import ConnectionDetail
 
 
@@ -538,7 +538,7 @@ class ConnectionManager(BaseConnectionManager):
         if request.connection.did != conn_did_doc.did:
             raise ConnectionManagerError(
                 "Connection DID does not match DIDDoc id",
-                error_code=ProblemReportReason.REQUEST_NOT_ACCEPTED,
+                error_code=ProblemReportReason.REQUEST_NOT_ACCEPTED.value,
             )
         await self.store_did_document(conn_did_doc)
 
@@ -749,7 +749,6 @@ class ConnectionManager(BaseConnectionManager):
                 at the request or response stage
 
         """
-
         connection = None
         if response._thread:
             # identify the request by the thread ID
@@ -772,7 +771,7 @@ class ConnectionManager(BaseConnectionManager):
         if not connection:
             raise ConnectionManagerError(
                 "No corresponding connection request found",
-                error_code=ProblemReportReason.RESPONSE_NOT_ACCEPTED,
+                error_code=ProblemReportReason.RESPONSE_NOT_ACCEPTED.value,
             )
 
         if ConnRecord.State.get(connection.state) not in (
@@ -1085,7 +1084,9 @@ class ConnectionManager(BaseConnectionManager):
                         connection = await ConnRecord.retrieve_by_id(
                             self._session, connection_id
                         )
+
                     targets = await self.fetch_connection_targets(connection)
+
                     await entry.set_result([row.serialize() for row in targets], 3600)
         else:
             targets = await self.fetch_connection_targets(connection)

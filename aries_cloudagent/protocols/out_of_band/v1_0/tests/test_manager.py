@@ -1432,7 +1432,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             sender_did="test_did",
         )
         problem_report = ProblemReport(
-            problem_code=ProblemReportReason.EXISTING_CONNECTION_DOES_NOT_EXISTS.value,
+            problem_code=ProblemReportReason.NO_EXISTING_CONNECTION.value,
             explain="test",
         )
         problem_report.assign_thread_id(thid="test_123", pthid="test_123")
@@ -1473,7 +1473,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             sender_did="test_did",
         )
         problem_report = ProblemReport(
-            problem_code=ProblemReportReason.EXISTING_CONNECTION_DOES_NOT_EXISTS.value,
+            problem_code=ProblemReportReason.NO_EXISTING_CONNECTION.value,
             explain="test",
         )
         problem_report.assign_thread_id(thid="test_123", pthid="test_123")

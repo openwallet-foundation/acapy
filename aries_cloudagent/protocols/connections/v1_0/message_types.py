@@ -12,7 +12,6 @@ ARIES_PROTOCOL = "connections/1.0"
 CONNECTION_INVITATION = f"{ARIES_PROTOCOL}/invitation"
 CONNECTION_REQUEST = f"{ARIES_PROTOCOL}/request"
 CONNECTION_RESPONSE = f"{ARIES_PROTOCOL}/response"
-PROBLEM_REPORT = f"{ARIES_PROTOCOL}/problem_report"
 
 PROTOCOL_PACKAGE = "aries_cloudagent.protocols.connections.v1_0"
 
@@ -27,6 +26,5 @@ MESSAGE_TYPES = DIDCommPrefix.qualify_all(
         CONNECTION_RESPONSE: (
             f"{PROTOCOL_PACKAGE}.messages.connection_response.ConnectionResponse"
         ),
-        PROBLEM_REPORT: f"{PROTOCOL_PACKAGE}.messages.problem_report.ProblemReport",
     }
 )

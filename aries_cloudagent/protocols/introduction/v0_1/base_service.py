@@ -3,7 +3,7 @@
 from abc import ABC, abstractmethod
 
 from ....core.error import BaseError
-from ....messaging.request_context import RequestContext
+from ....core.profile import ProfileSession
 
 from .messages.invitation import Invitation
 
@@ -15,17 +15,16 @@ class IntroductionError(BaseError):
 class BaseIntroductionService(ABC):
     """Service handler for allowing connections to exchange invitations."""
 
-    def __init__(self, context: RequestContext):
+    def __init__(self):
         """Init admin service."""
-        self._context = context
 
     @classmethod
     def service_handler(cls):
         """Quick accessor for conductor to use."""
 
-        async def get_instance(context: RequestContext):
+        async def get_instance():
             """Return registered server."""
-            return cls(context)
+            return cls()
 
         return get_instance
 
@@ -35,6 +34,7 @@ class BaseIntroductionService(ABC):
         init_connection_id: str,
         target_connection_id: str,
         outbound_handler,
+        session: ProfileSession,
         message: str = None,
     ):
         """
@@ -44,12 +44,17 @@ class BaseIntroductionService(ABC):
             init_connection_id: The connection initiating the request
             target_connection_id: The connection which is asked for an invitation
             outbound_handler: The outbound handler coroutine for sending a message
+            session: Profile session to use for connection, introduction records
             message: The message to use when requesting the invitation
         """
 
     @abstractmethod
     async def return_invitation(
-        self, target_connection_id: str, invitation: Invitation, outbound_handler
+        self,
+        target_connection_id: str,
+        invitation: Invitation,
+        session: ProfileSession,
+        outbound_handler,
     ):
         """
         Handle the forwarding of an invitation to the responder.
@@ -57,5 +62,6 @@ class BaseIntroductionService(ABC):
         Args:
             target_connection_id: The ID of the connection sending the Invitation
             invitation: The received Invitation message
+            session: Profile session to use for introduction records
             outbound_handler: The outbound handler coroutine for sending a message
         """

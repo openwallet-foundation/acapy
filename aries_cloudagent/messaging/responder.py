@@ -70,6 +70,7 @@ class BaseResponder(ABC):
     async def send(self, message: Union[AgentMessage, str, bytes], **kwargs):
         """Convert a message to an OutboundMessage and send it."""
         outbound = await self.create_outbound(message, **kwargs)
+        from time import time
         await self.send_outbound(outbound)
 
     async def send_reply(

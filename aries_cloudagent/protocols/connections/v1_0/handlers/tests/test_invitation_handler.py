@@ -5,9 +5,11 @@ from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
 from ......transport.inbound.receipt import MessageReceipt
 
+from .....problem_report.v1_0.message import ProblemReport
+
 from ...handlers.connection_invitation_handler import ConnectionInvitationHandler
 from ...messages.connection_invitation import ConnectionInvitation
-from ...messages.problem_report import ProblemReport, ProblemReportReason
+from ...messages.problem_report_reason import ProblemReportReason
 
 
 @pytest.fixture()
@@ -29,6 +31,9 @@ class TestInvitationHandler:
         result, target = messages[0]
         assert (
             isinstance(result, ProblemReport)
-            and result.problem_code == ProblemReportReason.INVITATION_NOT_ACCEPTED
+            and (
+                ProblemReportReason.INVITATION_NOT_ACCEPTED.value
+                in result.problem_items[0]
+            )
         )
         assert not target
