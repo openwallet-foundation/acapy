@@ -1,0 +1,58 @@
+version: "3.5"
+
+services:
+  aca-py:
+    image: bcgovimages/aries-cloudagent:py36-1.15-0_0.6.0rc0
+    ports:
+      - 8100:8100
+      - 8000:8000
+    env_file:
+      - docker-environment.dev
+    networks:
+      - acapy_network
+    extra_hosts:
+      - "localhost.acapy.com:172.17.0.1"
+    depends_on:
+      - wallet-db
+    entrypoint: /bin/bash
+    command: [
+      "-c",
+      "sleep 14;
+      aca-py provision \
+      --endpoint http://10.0.2.2:8000/ \
+      --genesis-url https://raw.githubusercontent.com/sovrin-foundation/sovrin/stable/sovrin/pool_transactions_sandbox_genesis \
+      --log-level debug \
+      --wallet-type indy --wallet-name l0c4l --wallet-key insecure \
+      --wallet-storage-type postgres_storage \
+      --wallet-storage-config '{\"url\":\"localhost.acapy.com:5432\",\"max_connections\":5}' \
+      --wallet-storage-creds '{\"account\":\"acapy\",\"password\":\"acapy\",\"admin_account\":\"acapy\",\"admin_password\":\"acapy\"}' \
+      && aca-py start \
+      --admin 0.0.0.0 8100 --admin-api-key testkey \
+      --auto-accept-invites --auto-accept-requests --auto-respond-messages --auto-respond-credential-proposal --auto-respond-credential-offer --auto-respond-credential-request --auto-respond-presentation-proposal --auto-respond-presentation-request --auto-store-credential --auto-verify-presentation \
+      --endpoint http://10.0.2.2:8000/ \
+      --genesis-url https://raw.githubusercontent.com/sovrin-foundation/sovrin/stable/sovrin/pool_transactions_sandbox_genesis \
+      --inbound-transport http 0.0.0.0 8000 --outbound-transport http --label didaas \
+      --log-level debug \
+      --auto-ping-connection --preserve-exchange-records \
+      --multitenant --multitenant-admin --jwt-secret test \
+      --webhook-url http://controller-l0c4l:3000/wh",
+    ]
+
+  wallet-db:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: acapy
+      POSTGRES_PASSWORD: acapy
+      POSTGRES_DB: acapy
+    networks:
+      - acapy_network
+    ports:
+      - 5432:5432
+    volumes:
+      - agent-wallet-db:/var/lib/pgsql/data
+
+networks:
+  acapy_network:
+
+volumes:
+  agent-wallet-db:
