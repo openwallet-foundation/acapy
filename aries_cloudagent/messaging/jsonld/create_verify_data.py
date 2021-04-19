@@ -99,9 +99,9 @@ def create_verify_data(data, signature_options):
                 "Provide definitions in context to correct."
             )
 
-    cannonized_signature_options = _canonize_signature_options(signature_options)
-    hash_of_cannonized_signature_options = _sha256(cannonized_signature_options)
-    cannonized_document = _canonize_document(framed)
-    hash_of_cannonized_document = _sha256(cannonized_document)
+    canonized_signature_options = _canonize_signature_options(signature_options)
+    hash_of_canonized_signature_options = _sha256(canonized_signature_options)
+    canonized_document = _canonize_document(framed)
+    hash_of_canonized_document = _sha256(canonized_document)
 
-    return (framed, hash_of_cannonized_signature_options + hash_of_cannonized_document)
+    return (framed, hash_of_canonized_signature_options + hash_of_canonized_document)
