@@ -19,13 +19,13 @@ from .credential import sign_credential, verify_credential
 class SignRequestSchema(OpenAPISchema):
     """Request schema for signing a jsonld doc."""
 
-    verkey = fields.Str(required=True, description="verkey to use for signing")
+    verkey = fields.Str(required=True, description="Verkey to use for signing")
     doc = fields.Nested(
         Schema.from_dict(
             {
                 "credential": fields.Dict(
                     required=True,
-                    description="credential to sign",
+                    description="Credential to sign",
                 ),
                 "options": fields.Nested(
                     Schema.from_dict(
@@ -82,14 +82,14 @@ class VerifyRequestSchema(OpenAPISchema):
     """Request schema for signing a jsonld doc."""
 
     verkey = fields.Str(
-        required=False, description="verkey to use for doc verification"
+        required=False, description="Verkey to use for doc verification"
     )
     doc = fields.Nested(
         Schema.from_dict(
             {
                 "credential": fields.Dict(
                     required=True,
-                    description="credential to verify",
+                    description="Credential to verify",
                 ),
                 "options": fields.Nested(
                     Schema.from_dict(
@@ -170,7 +170,7 @@ def post_process_routes(app: web.Application):
     app._state["swagger_dict"]["tags"].append(
         {
             "name": "jsonld",
-            "description": "sign and verify json-ld data.",
+            "description": "Sign and verify json-ld data",
             "externalDocs": {
                 "description": "Specification",
                 "url": "https://tools.ietf.org/html/rfc7515",
