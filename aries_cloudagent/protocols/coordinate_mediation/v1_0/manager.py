@@ -1,6 +1,7 @@
 """Manager for Mediation coordination."""
 import json
 import logging
+
 from typing import Optional, Sequence, Tuple
 
 from ....core.error import BaseError
@@ -8,11 +9,14 @@ from ....core.profile import Profile, ProfileSession
 from ....storage.base import BaseStorage
 from ....storage.error import StorageNotFoundError
 from ....storage.record import StorageRecord
-from ....wallet.base import BaseWallet, DIDInfo
+from ....wallet.base import BaseWallet
+from ....wallet.did_info import DIDInfo
+
 from ...routing.v1_0.manager import RoutingManager
 from ...routing.v1_0.models.route_record import RouteRecord
 from ...routing.v1_0.models.route_update import RouteUpdate
 from ...routing.v1_0.models.route_updated import RouteUpdated
+
 from .messages.inner.keylist_key import KeylistKey
 from .messages.inner.keylist_query_paginate import KeylistQueryPaginate
 from .messages.inner.keylist_update_rule import KeylistUpdateRule

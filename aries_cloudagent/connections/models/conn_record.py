@@ -418,7 +418,7 @@ class ConnRecord(BaseRecord):
             session (ProfileSession): session used for storage
             key (str): key identifying metadata
             default (Any): default value to get; type should be a JSON
-            compatible value.
+                compatible value.
 
         Returns:
             Any: metadata stored by key

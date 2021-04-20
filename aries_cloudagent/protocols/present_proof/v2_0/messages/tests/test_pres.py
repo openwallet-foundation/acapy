@@ -1681,7 +1681,7 @@ PRES = V20Pres(
 )
 
 
-class TestPresentation(TestCase):
+class TestV20Pres(TestCase):
     """Presentation tests."""
 
     def test_init_type(self):
@@ -1690,6 +1690,18 @@ class TestPresentation(TestCase):
         assert len(PRES.formats) == len(PRES.presentations_attach)
         assert PRES.attachment(V20PresFormat.Format.INDY) == INDY_PROOF
         assert PRES._type == DIDCommPrefix.qualify_current(PRES_20)
+
+    def test_attachment_no_target_format(self):
+        """Test attachment behaviour for only unknown formats."""
+
+        x_pres = V20Pres(
+            comment="Test",
+            formats=[V20PresFormat(attach_id="not_indy", format_="not_indy")],
+            presentations_attach=[
+                AttachDecorator.data_base64(ident="not_indy", mapping=PRES.serialize())
+            ],
+        )
+        assert x_pres.attachment() is None
 
     def test_serde(self):
         """Test deserialization."""
@@ -1714,3 +1726,19 @@ class TestPresentation(TestCase):
         )  # more attachments than formats
         with self.assertRaises(BaseModelError):
             V20Pres.deserialize(pres_dict)
+
+        pres_obj.formats.append(  # unknown format: no validation
+            V20PresFormat(
+                attach_id="not_indy",
+                format_="not_indy",
+            )
+        )
+        pres_dict = pres_obj.serialize()
+        pres_dict["presentations~attach"].append(
+            {
+                "@id": "not_indy",
+                "mime-type": "application/json",
+                "data": {"base64": "eyJub3QiOiAiaW5keSJ9"},
+            }
+        )
+        V20Pres.deserialize(pres_dict)

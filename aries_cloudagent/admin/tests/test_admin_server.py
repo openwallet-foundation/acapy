@@ -132,7 +132,7 @@ class TestAdminServer(AsyncTestCase):
             conductor_stop=async_mock.CoroutineMock(),
             task_queue=TaskQueue(max_active=4) if task_queue else None,
             conductor_stats=(
-                None if task_queue else async_mock.CoroutineMock(return_value=[1, 2])
+                None if task_queue else async_mock.CoroutineMock(return_value={"a": 1})
             ),
         )
 
@@ -361,10 +361,10 @@ class TestAdminServer(AsyncTestCase):
             f"http://127.0.0.1:{self.port}/status/config",
             headers={"x-api-key": "test-api-key"},
         ) as response:
-            result = json.loads(await response.text())
-            assert "admin.admin_insecure_mode" in result
+            config = json.loads(await response.text())["config"]
+            assert "admin.admin_insecure_mode" in config
             assert all(
-                k not in result
+                k not in config
                 for k in [
                     "admin.admin_api_key",
                     "multitenant.jwt_secret",
@@ -374,7 +374,7 @@ class TestAdminServer(AsyncTestCase):
                     "wallet.storage.creds",
                 ]
             )
-            assert result["admin.webhook_urls"] == [
+            assert config["admin.webhook_urls"] == [
                 "localhost:8123/abc",
                 "localhost:8123/def",
             ]

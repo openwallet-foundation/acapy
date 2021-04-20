@@ -21,6 +21,7 @@ from ....ledger.error import LedgerError
 from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....messaging.models.base import BaseModelError, OpenAPISchema
 from ....messaging.valid import (
+    ENDPOINT,
     INDY_CRED_DEF_ID,
     INDY_DID,
     INDY_SCHEMA_ID,
@@ -40,7 +41,6 @@ from ...problem_report.v1_0.message import ProblemReport
 from .manager import V20CredManager, V20CredManagerError
 from .message_types import ATTACHMENT_FORMAT, CRED_20_PROPOSAL, SPEC_URI
 from .messages.cred_format import V20CredFormat
-from .messages.cred_offer import V20CredOfferSchema
 from .messages.cred_proposal import V20CredProposal
 from .messages.inner.cred_preview import V20CredPreview, V20CredPreviewSchema
 from .models.cred_ex_record import V20CredExRecord, V20CredExRecordSchema
@@ -258,6 +258,19 @@ class V20CredOfferRequestSchema(V20IssueCredSchemaCore):
         required=False,
     )
     credential_preview = fields.Nested(V20CredPreviewSchema, required=True)
+
+
+class V20CreateFreeOfferResultSchema(OpenAPISchema):
+    """Result schema for creating free offer."""
+
+    response = fields.Nested(
+        V20CredExRecord(),
+        description="Credential exchange record",
+    )
+    oob_url = fields.Str(
+        description="Out-of-band URL",
+        **ENDPOINT,
+    )
 
 
 class V20CredIssueRequestSchema(OpenAPISchema):
@@ -713,7 +726,7 @@ async def _create_free_offer(
     summary="Create a credential offer, independent of any proposal",
 )
 @request_schema(V20CredOfferRequestSchema())
-@response_schema(V20CredOfferSchema(), 200, description="")
+@response_schema(V20CreateFreeOfferResultSchema(), 200, description="")
 async def credential_exchange_create_free_offer(request: web.BaseRequest):
     """
     Request handler for creating free credential offer.

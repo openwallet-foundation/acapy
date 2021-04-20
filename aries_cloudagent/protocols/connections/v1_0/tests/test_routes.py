@@ -200,7 +200,7 @@ class TestConnectionRoutes(AsyncTestCase):
 
             await test_module.connections_metadata(self.request)
             mock_metadata_get_all.assert_called_once()
-            mock_response.assert_called_once_with({"hello": "world"})
+            mock_response.assert_called_once_with({"results": {"hello": "world"}})
 
     async def test_connections_metadata_get_single(self):
         self.request.match_info = {"conn_id": "dummy"}
@@ -221,7 +221,7 @@ class TestConnectionRoutes(AsyncTestCase):
 
             await test_module.connections_metadata(self.request)
             mock_metadata_get.assert_called_once()
-            mock_response.assert_called_once_with({"test": "value"})
+            mock_response.assert_called_once_with({"results": {"test": "value"}})
 
     async def test_connections_metadata_x(self):
         self.request.match_info = {"conn_id": "dummy"}
@@ -265,7 +265,7 @@ class TestConnectionRoutes(AsyncTestCase):
 
             await test_module.connections_metadata_set(self.request)
             mock_metadata_set.assert_called_once()
-            mock_response.assert_called_once_with({"hello": "world"})
+            mock_response.assert_called_once_with({"results": {"hello": "world"}})
 
     async def test_connections_metadata_set_x(self):
         self.request.match_info = {"conn_id": "dummy"}
