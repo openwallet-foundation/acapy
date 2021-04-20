@@ -12,7 +12,6 @@ from .....connections.models.connection_target import ConnectionTarget
 from .....connections.models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
 from .....core.in_memory import InMemoryProfile
 from .....indy.holder import IndyHolder
-from .....ledger.base import BaseLedger
 from .....messaging.decorators.attach_decorator import AttachDecorator
 from .....messaging.responder import BaseResponder, MockResponder
 from .....messaging.util import str_to_datetime, str_to_epoch
@@ -248,13 +247,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         self.session.context.injector.bind_instance(
             MultitenantManager, self.multitenant_mgr
         )
-
-        self.ledger = async_mock.create_autospec(BaseLedger)
-        self.ledger.__aenter__ = async_mock.CoroutineMock(return_value=self.ledger)
-        self.ledger.get_endpoint_for_did = async_mock.CoroutineMock(
-            return_value=TestConfig.test_endpoint
-        )
-        self.session.context.injector.bind_instance(BaseLedger, self.ledger)
 
         self.manager = OutOfBandManager(self.session)
         assert self.manager.session
@@ -988,8 +980,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         self.session.context.update_settings({"public_invites": True})
         await self.test_conn_rec.save(self.session)
         with async_mock.patch.object(
-            self.ledger, "get_key_for_did", async_mock.CoroutineMock()
-        ) as mock_ledger_get_key_for_did, async_mock.patch.object(
             DIDXManager, "receive_invitation", autospec=True
         ) as didx_mgr_receive_invitation, async_mock.patch(
             "aries_cloudagent.protocols.out_of_band.v1_0.manager.InvitationMessage",
@@ -999,7 +989,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             "fetch_connection_targets",
             autospec=True,
         ) as oob_mgr_fetch_conn:
-            mock_ledger_get_key_for_did.return_value = TestConfig.test_verkey
             oob_mgr_fetch_conn.return_value = ConnectionTarget(
                 did=TestConfig.test_did,
                 endpoint=TestConfig.test_endpoint,
@@ -1024,8 +1013,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         self.session.context.update_settings({"public_invites": True})
         await self.test_conn_rec.save(self.session)
         with async_mock.patch.object(
-            self.ledger, "get_key_for_did", async_mock.CoroutineMock()
-        ) as mock_ledger_get_key_for_did, async_mock.patch.object(
             DIDXManager, "receive_invitation", autospec=True
         ) as didx_mgr_receive_invitation, async_mock.patch(
             "aries_cloudagent.protocols.out_of_band.v1_0.manager.InvitationMessage",
@@ -1035,7 +1022,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             "fetch_connection_targets",
             autospec=True,
         ) as oob_mgr_fetch_conn:
-            mock_ledger_get_key_for_did.return_value = TestConfig.test_verkey
             oob_mgr_fetch_conn.side_effect = StorageNotFoundError()
             oob_invi = InvitationMessage()
             with self.assertRaises(OutOfBandManagerError) as context:
@@ -1058,8 +1044,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         self.test_conn_rec.state = ConnRecord.State.COMPLETED.rfc160
         await self.test_conn_rec.save(self.session)
         with async_mock.patch.object(
-            self.ledger, "get_key_for_did", async_mock.CoroutineMock()
-        ) as mock_ledger_get_key_for_did, async_mock.patch.object(
             DIDXManager, "receive_invitation", autospec=True
         ) as didx_mgr_receive_invitation, async_mock.patch(
             "aries_cloudagent.protocols.out_of_band.v1_0.manager.InvitationMessage",
@@ -1077,7 +1061,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             "retrieve_by_tag_filter",
             autospec=True,
         ) as retrieve_invi_rec:
-            mock_ledger_get_key_for_did.return_value = TestConfig.test_verkey
             oob_mgr_find_existing_conn.return_value = self.test_conn_rec
             oob_mgr_fetch_conn.return_value = ConnectionTarget(
                 did=TestConfig.test_did,
@@ -1113,8 +1096,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         self.test_conn_rec.state = ConnRecord.State.REQUEST.rfc160
         await self.test_conn_rec.save(self.session)
         with async_mock.patch.object(
-            self.ledger, "get_key_for_did", async_mock.CoroutineMock()
-        ) as mock_ledger_get_key_for_did, async_mock.patch.object(
             DIDXManager, "receive_invitation", autospec=True
         ) as didx_mgr_receive_invitation, async_mock.patch(
             "aries_cloudagent.protocols.out_of_band.v1_0.manager.InvitationMessage",
@@ -1132,7 +1113,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             "find_existing_connection",
             autospec=True,
         ) as oob_mgr_find_existing_conn:
-            mock_ledger_get_key_for_did.return_value = TestConfig.test_verkey
             oob_mgr_find_existing_conn.return_value = None
             oob_mgr_fetch_conn.return_value = ConnectionTarget(
                 did=TestConfig.test_did,
@@ -1156,8 +1136,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         reuse_msg.assign_thread_id(thid="test_123", pthid="test_123")
 
         with async_mock.patch.object(
-            self.ledger, "get_key_for_did", async_mock.CoroutineMock()
-        ) as mock_ledger_get_key_for_did, async_mock.patch.object(
             DIDXManager, "receive_invitation", autospec=True
         ) as didx_mgr_receive_invitation, async_mock.patch(
             "aries_cloudagent.protocols.out_of_band.v1_0.manager.InvitationMessage",
@@ -1175,7 +1153,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             "find_existing_connection",
             autospec=True,
         ) as oob_mgr_find_existing_conn:
-            mock_ledger_get_key_for_did.return_value = TestConfig.test_verkey
             oob_mgr_find_existing_conn.side_effect = StorageNotFoundError()
             with self.assertRaises(OutOfBandManagerError) as context:
                 await self.manager.receive_reuse_message(reuse_msg, receipt)
@@ -1197,13 +1174,10 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         self.test_conn_rec.state = ConnRecord.State.COMPLETED.rfc160
         await self.test_conn_rec.save(self.session)
         with async_mock.patch.object(
-            self.ledger, "get_key_for_did", async_mock.CoroutineMock()
-        ) as mock_ledger_get_key_for_did, async_mock.patch.object(
             OutOfBandManager,
             "fetch_connection_targets",
             autospec=True,
         ) as oob_mgr_fetch_conn:
-            mock_ledger_get_key_for_did.return_value = TestConfig.test_verkey
             oob_mgr_fetch_conn.return_value = ConnectionTarget(
                 did=TestConfig.test_did,
                 endpoint=TestConfig.test_endpoint,
@@ -1229,8 +1203,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             self.session, "reuse_msg_state", "initial"
         )
         with async_mock.patch.object(
-            self.ledger, "get_key_for_did", async_mock.CoroutineMock()
-        ) as mock_ledger_get_key_for_did, async_mock.patch.object(
             DIDXManager, "receive_invitation", autospec=True
         ) as didx_mgr_receive_invitation, async_mock.patch(
             "aries_cloudagent.protocols.out_of_band.v1_0.manager.InvitationMessage",
@@ -1240,7 +1212,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             "fetch_connection_targets",
             autospec=True,
         ) as oob_mgr_fetch_conn:
-            mock_ledger_get_key_for_did.return_value = TestConfig.test_verkey
 
             await self.manager.receive_reuse_accepted_message(
                 reuse_msg_accepted, receipt, self.test_conn_rec
@@ -1267,8 +1238,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             self.session, "reuse_msg_state", "initial"
         )
         with async_mock.patch.object(
-            self.ledger, "get_key_for_did", async_mock.CoroutineMock()
-        ) as mock_ledger_get_key_for_did, async_mock.patch.object(
             DIDXManager, "receive_invitation", autospec=True
         ) as didx_mgr_receive_invitation, async_mock.patch(
             "aries_cloudagent.protocols.out_of_band.v1_0.manager.InvitationMessage",
@@ -1278,7 +1247,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             "fetch_connection_targets",
             autospec=True,
         ) as oob_mgr_fetch_conn:
-            mock_ledger_get_key_for_did.return_value = TestConfig.test_verkey
 
             await self.manager.receive_reuse_accepted_message(
                 reuse_msg_accepted, receipt, self.test_conn_rec
@@ -1304,8 +1272,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             connection_id="12345678-0123-4567-1234-567812345678",
         )
         with async_mock.patch.object(
-            self.ledger, "get_key_for_did", async_mock.CoroutineMock()
-        ) as mock_ledger_get_key_for_did, async_mock.patch.object(
             DIDXManager, "receive_invitation", autospec=True
         ) as didx_mgr_receive_invitation, async_mock.patch(
             "aries_cloudagent.protocols.out_of_band.v1_0.manager.InvitationMessage",
@@ -1315,7 +1281,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             "fetch_connection_targets",
             autospec=True,
         ) as oob_mgr_fetch_conn:
-            mock_ledger_get_key_for_did.return_value = TestConfig.test_verkey
             with self.assertRaises(OutOfBandManagerError) as context:
                 await self.manager.receive_reuse_accepted_message(
                     reuse_msg_accepted, receipt, test_invalid_conn
@@ -1340,13 +1305,10 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         )
 
         with async_mock.patch.object(
-            self.ledger, "get_key_for_did", async_mock.CoroutineMock()
-        ) as mock_ledger_get_key_for_did, async_mock.patch.object(
             self.test_conn_rec,
             "metadata_set",
             async_mock.CoroutineMock(side_effect=StorageNotFoundError),
         ):
-            mock_ledger_get_key_for_did.return_value = TestConfig.test_verkey
             with self.assertRaises(OutOfBandManagerError) as context:
                 await self.manager.receive_reuse_accepted_message(
                     reuse_msg_accepted, receipt, self.test_conn_rec
@@ -1373,8 +1335,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             self.session, "reuse_msg_state", "initial"
         )
         with async_mock.patch.object(
-            self.ledger, "get_key_for_did", async_mock.CoroutineMock()
-        ) as mock_ledger_get_key_for_did, async_mock.patch.object(
             DIDXManager, "receive_invitation", autospec=True
         ) as didx_mgr_receive_invitation, async_mock.patch(
             "aries_cloudagent.protocols.out_of_band.v1_0.manager.InvitationMessage",
@@ -1384,7 +1344,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             "fetch_connection_targets",
             autospec=True,
         ) as oob_mgr_fetch_conn:
-            mock_ledger_get_key_for_did.return_value = TestConfig.test_verkey
 
             await self.manager.receive_problem_report(
                 problem_report, receipt, self.test_conn_rec
@@ -1414,8 +1373,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             self.session, "reuse_msg_state", "initial"
         )
         with async_mock.patch.object(
-            self.ledger, "get_key_for_did", async_mock.CoroutineMock()
-        ) as mock_ledger_get_key_for_did, async_mock.patch.object(
             DIDXManager, "receive_invitation", autospec=True
         ) as didx_mgr_receive_invitation, async_mock.patch(
             "aries_cloudagent.protocols.out_of_band.v1_0.manager.InvitationMessage",
@@ -1425,7 +1382,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             "fetch_connection_targets",
             autospec=True,
         ) as oob_mgr_fetch_conn:
-            mock_ledger_get_key_for_did.return_value = TestConfig.test_verkey
 
             await self.manager.receive_problem_report(
                 problem_report, receipt, self.test_conn_rec
@@ -1454,8 +1410,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             connection_id="12345678-0123-4567-1234-567812345678",
         )
         with async_mock.patch.object(
-            self.ledger, "get_key_for_did", async_mock.CoroutineMock()
-        ) as mock_ledger_get_key_for_did, async_mock.patch.object(
             DIDXManager, "receive_invitation", autospec=True
         ) as didx_mgr_receive_invitation, async_mock.patch(
             "aries_cloudagent.protocols.out_of_band.v1_0.manager.InvitationMessage",
@@ -1465,7 +1419,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             "fetch_connection_targets",
             autospec=True,
         ) as oob_mgr_fetch_conn:
-            mock_ledger_get_key_for_did.return_value = TestConfig.test_verkey
 
             with self.assertRaises(OutOfBandManagerError) as context:
                 await self.manager.receive_problem_report(
@@ -1492,8 +1445,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         )
 
         with async_mock.patch.object(
-            self.ledger, "get_key_for_did", async_mock.CoroutineMock()
-        ) as mock_ledger_get_key_for_did, async_mock.patch.object(
             DIDXManager, "receive_invitation", autospec=True
         ) as didx_mgr_receive_invitation, async_mock.patch(
             "aries_cloudagent.protocols.out_of_band.v1_0.manager.InvitationMessage",
@@ -1527,7 +1478,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             "receive_problem_report",
             autospec=True,
         ) as oob_mgr_receive_problem_report:
-            mock_ledger_get_key_for_did.return_value = TestConfig.test_verkey
             oob_mgr_find_existing_conn.return_value = test_exist_conn
             oob_mgr_check_reuse_state.return_value = None
             oob_mgr_create_reuse_msg.return_value = None
@@ -1602,8 +1552,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         )
 
         with async_mock.patch.object(
-            self.ledger, "get_key_for_did", async_mock.CoroutineMock()
-        ) as mock_ledger_get_key_for_did, async_mock.patch.object(
             DIDXManager, "receive_invitation", autospec=True
         ) as didx_mgr_receive_invitation, async_mock.patch(
             "aries_cloudagent.protocols.out_of_band.v1_0.manager.InvitationMessage",
@@ -1637,7 +1585,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             "receive_problem_report",
             autospec=True,
         ) as oob_mgr_receive_problem_report:
-            mock_ledger_get_key_for_did.return_value = TestConfig.test_verkey
             oob_mgr_find_existing_conn.return_value = test_exist_conn
             oob_mgr_check_reuse_state.return_value = None
             oob_mgr_create_reuse_msg.return_value = None
@@ -1699,8 +1646,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         )
 
         with async_mock.patch.object(
-            self.ledger, "get_key_for_did", async_mock.CoroutineMock()
-        ) as mock_ledger_get_key_for_did, async_mock.patch.object(
             DIDXManager, "receive_invitation", autospec=True
         ) as didx_mgr_receive_invitation, async_mock.patch(
             "aries_cloudagent.protocols.out_of_band.v1_0.manager.InvitationMessage",
@@ -1718,7 +1663,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             "check_reuse_msg_state",
             autospec=True,
         ) as oob_mgr_check_reuse_state:
-            mock_ledger_get_key_for_did.return_value = TestConfig.test_verkey
             oob_mgr_find_existing_conn.return_value = test_exist_conn
             didx_mgr_receive_invitation.return_value = self.test_conn_rec
             mock_oob_invi = async_mock.MagicMock(
@@ -1765,8 +1709,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         )
 
         with async_mock.patch.object(
-            self.ledger, "get_key_for_did", async_mock.CoroutineMock()
-        ) as mock_ledger_get_key_for_did, async_mock.patch.object(
             DIDXManager, "receive_invitation", autospec=True
         ) as didx_mgr_receive_invitation, async_mock.patch(
             "aries_cloudagent.protocols.out_of_band.v1_0.manager.InvitationMessage",
@@ -1784,7 +1726,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             "check_reuse_msg_state",
             autospec=True,
         ) as oob_mgr_check_reuse_state:
-            mock_ledger_get_key_for_did.return_value = TestConfig.test_verkey
             oob_mgr_find_existing_conn.return_value = test_exist_conn
             oob_mgr_check_reuse_state.side_effect = asyncio.TimeoutError
             mock_oob_invi = async_mock.MagicMock(
@@ -1827,8 +1768,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         )
 
         with async_mock.patch.object(
-            self.ledger, "get_key_for_did", async_mock.CoroutineMock()
-        ) as mock_ledger_get_key_for_did, async_mock.patch.object(
             DIDXManager, "receive_invitation", autospec=True
         ) as didx_mgr_receive_invitation, async_mock.patch(
             "aries_cloudagent.protocols.out_of_band.v1_0.manager.InvitationMessage",
@@ -1842,7 +1781,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             "find_existing_connection",
             autospec=True,
         ) as oob_mgr_find_existing_conn:
-            mock_ledger_get_key_for_did.return_value = TestConfig.test_verkey
             oob_mgr_find_existing_conn.return_value = test_exist_conn
             mock_oob_invi = async_mock.MagicMock(
                 handshake_protocols=[],
@@ -1878,8 +1816,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         exchange_rec = V10PresentationExchange()
 
         with async_mock.patch.object(
-            self.ledger, "get_key_for_did", async_mock.CoroutineMock()
-        ) as mock_ledger_get_key_for_did, async_mock.patch.object(
             DIDXManager, "receive_invitation", autospec=True
         ) as didx_mgr_receive_invitation, async_mock.patch.object(
             PresentationManager, "receive_request", autospec=True
@@ -1915,7 +1851,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             "receive_problem_report",
             autospec=True,
         ) as oob_mgr_receive_problem_report:
-            mock_ledger_get_key_for_did.return_value = TestConfig.test_verkey
             oob_mgr_find_existing_conn.return_value = test_exist_conn
             pres_mgr_receive_request.return_value = exchange_rec
 
@@ -1963,8 +1898,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         exchange_rec.presentation_proposal_dict = {}
 
         with async_mock.patch.object(
-            self.ledger, "get_key_for_did", async_mock.CoroutineMock()
-        ) as mock_ledger_get_key_for_did, async_mock.patch.object(
             DIDXManager,
             "receive_invitation",
             autospec=True,
@@ -2008,7 +1941,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             "create_presentation",
             autospec=True,
         ) as pres_mgr_create_presentation:
-            mock_ledger_get_key_for_did.return_value = TestConfig.test_verkey
             oob_mgr_find_existing_conn.return_value = test_exist_conn
             pres_mgr_receive_request.return_value = exchange_rec
             pres_mgr_create_presentation.return_value = (
@@ -2083,8 +2015,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         exchange_rec.presentation_proposal_dict = {}
 
         with async_mock.patch.object(
-            self.ledger, "get_key_for_did", async_mock.CoroutineMock()
-        ) as mock_ledger_get_key_for_did, async_mock.patch.object(
             DIDXManager,
             "receive_invitation",
             autospec=True,
@@ -2132,7 +2062,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             "deserialize",
             autospec=True,
         ) as present_proposal_deserialize:
-            mock_ledger_get_key_for_did.return_value = TestConfig.test_verkey
             oob_mgr_find_existing_conn.return_value = test_exist_conn
             pres_mgr_receive_request.return_value = exchange_rec
             pres_mgr_create_presentation.return_value = (
@@ -2187,8 +2116,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         px2_rec = test_module.V20PresExRecord()
 
         with async_mock.patch.object(
-            self.ledger, "get_key_for_did", async_mock.CoroutineMock()
-        ) as mock_ledger_get_key_for_did, async_mock.patch.object(
             DIDXManager, "receive_invitation", autospec=True
         ) as didx_mgr_receive_invitation, async_mock.patch.object(
             V20PresManager, "receive_pres_request", autospec=True
@@ -2224,7 +2151,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             "receive_problem_report",
             autospec=True,
         ) as oob_mgr_receive_problem_report:
-            mock_ledger_get_key_for_did.return_value = TestConfig.test_verkey
             oob_mgr_find_existing_conn.return_value = test_exist_conn
             pres_mgr_receive_pres_req.return_value = px2_rec
 
@@ -2272,8 +2198,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         )
 
         with async_mock.patch.object(
-            self.ledger, "get_key_for_did", async_mock.CoroutineMock()
-        ) as mock_ledger_get_key_for_did, async_mock.patch.object(
             DIDXManager,
             "receive_invitation",
             autospec=True,
@@ -2317,7 +2241,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             "create_pres",
             autospec=True,
         ) as pres_mgr_create_pres:
-            mock_ledger_get_key_for_did.return_value = TestConfig.test_verkey
             oob_mgr_find_existing_conn.return_value = test_exist_conn
             pres_mgr_receive_pres_req.return_value = px2_rec
             pres_mgr_create_pres.return_value = (
@@ -2403,8 +2326,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         )
 
         with async_mock.patch.object(
-            self.ledger, "get_key_for_did", async_mock.CoroutineMock()
-        ) as mock_ledger_get_key_for_did, async_mock.patch.object(
             DIDXManager,
             "receive_invitation",
             autospec=True,
@@ -2448,7 +2369,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             "create_pres",
             autospec=True,
         ) as pres_mgr_create_pres:
-            mock_ledger_get_key_for_did.return_value = TestConfig.test_verkey
             oob_mgr_find_existing_conn.return_value = test_exist_conn
             pres_mgr_receive_pres_req.return_value = px2_rec
             pres_mgr_create_pres.return_value = (
@@ -2528,8 +2448,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         exchange_rec.presentation_proposal_dict = {}
 
         with async_mock.patch.object(
-            self.ledger, "get_key_for_did", async_mock.CoroutineMock()
-        ) as mock_ledger_get_key_for_did, async_mock.patch.object(
             DIDXManager,
             "receive_invitation",
             autospec=True,
@@ -2573,7 +2491,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             "create_presentation",
             autospec=True,
         ) as pres_mgr_create_presentation:
-            mock_ledger_get_key_for_did.return_value = TestConfig.test_verkey
             oob_mgr_find_existing_conn.return_value = test_exist_conn
             pres_mgr_create_presentation.return_value = (
                 exchange_rec,
