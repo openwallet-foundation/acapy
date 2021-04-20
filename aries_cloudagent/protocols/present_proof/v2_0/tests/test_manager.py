@@ -974,7 +974,9 @@ class TestV20PresManager(AsyncTestCase):
             retrieve_ex.return_value = px_rec_dummy
             with self.assertRaises(V20PresManagerError) as context:
                 await self.manager.receive_pres(pres_x, connection_record)
-            assert "not in proposal value(s)" in str(context.exception)
+            assert "does not satisfy proof request restrictions" in str(
+                context.exception
+            )
 
         indy_proof_req["requested_attributes"]["shenanigans"] = indy_proof_req[
             "requested_attributes"
@@ -1137,7 +1139,9 @@ class TestV20PresManager(AsyncTestCase):
             retrieve_ex.return_value = px_rec_dummy
             with self.assertRaises(V20PresManagerError) as context:
                 await self.manager.receive_pres(pres_x, connection_record)
-            assert "not in proposal value(s)" in str(context.exception)
+            assert "does not satisfy proof request restrictions " in str(
+                context.exception
+            )
 
         indy_proof_req["requested_attributes"]["shenanigans"] = indy_proof_req[
             "requested_attributes"
@@ -1468,7 +1472,9 @@ class TestV20PresManager(AsyncTestCase):
             retrieve_ex.return_value = px_rec_dummy
             with self.assertRaises(V20PresManagerError) as context:
                 await self.manager.receive_pres(pres_x, connection_record)
-            assert "differs from proposal request" in str(context.exception)
+            assert "does not satisfy proof request restrictions " in str(
+                context.exception
+            )
 
     async def test_verify_pres(self):
         indy_proof = {
