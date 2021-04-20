@@ -2,7 +2,8 @@ from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
 from .....admin.request_context import AdminRequestContext
-from .....wallet.base import BaseWallet, DIDInfo
+from .....wallet.base import BaseWallet
+from .....wallet.did_info import DIDInfo
 
 from .. import routes as test_module
 

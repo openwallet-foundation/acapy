@@ -44,7 +44,7 @@ from ..transport.outbound.queue.loader import get_outbound_queue
 from ..transport.wire_format import BaseWireFormat
 from ..utils.stats import Collector
 from ..utils.task_queue import CompletedTask, TaskQueue
-from ..wallet.base import DIDInfo
+from ..wallet.did_info import DIDInfo
 from .dispatcher import Dispatcher
 
 LOGGER = logging.getLogger(__name__)
@@ -105,6 +105,9 @@ class Conductor:
             self.root_profile, self.inbound_message_router, self.handle_not_returned
         )
         await self.inbound_transport_manager.setup()
+        context.injector.bind_instance(
+            InboundTransportManager, self.inbound_transport_manager
+        )
 
         # Register all outbound transports
         self.outbound_transport_manager = OutboundTransportManager(

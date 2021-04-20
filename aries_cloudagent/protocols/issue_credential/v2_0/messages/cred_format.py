@@ -5,7 +5,7 @@ from enum import Enum
 from typing import Sequence, Union
 from uuid import uuid4
 
-from marshmallow import EXCLUDE, fields, validate
+from marshmallow import EXCLUDE, fields
 
 from .....messaging.decorators.attach_decorator import AttachDecorator
 from .....messaging.models.base import BaseModel, BaseModelSchema
@@ -114,6 +114,5 @@ class V20CredFormatSchema(BaseModelSchema):
         allow_none=False,
         description="Attachment format specifier",
         data_key="format",
-        validate=validate.Regexp("^(hlindy/.*@v2.0)|(dif/.*@v1.0)$"),
         example="dif/credential-manifest@v1.0",
     )

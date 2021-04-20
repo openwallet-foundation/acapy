@@ -26,7 +26,8 @@ from ..messaging.valid import (
 )
 from ..multitenant.manager import MultitenantManager
 
-from .base import DIDInfo, BaseWallet
+from .base import BaseWallet
+from .did_info import DIDInfo
 from .did_posture import DIDPosture
 from .error import WalletError, WalletNotFoundError
 

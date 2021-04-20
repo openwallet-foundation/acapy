@@ -24,7 +24,7 @@ from ..messaging.schemas.util import SCHEMA_SENT_RECORD_TYPE
 from ..storage.base import StorageRecord
 from ..storage.indy import IndySdkStorage
 from ..utils import sentinel
-from ..wallet.base import DIDInfo
+from ..wallet.did_info import DIDInfo
 from ..wallet.error import WalletNotFoundError
 from ..wallet.indy import IndySdkWallet
 from ..wallet.util import full_verkey
