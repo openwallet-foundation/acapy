@@ -334,29 +334,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             assert invite.invitation["label"] == "test123"
             mock_get_default_mediator.assert_not_called()
 
-    async def test_create_invitation_ledger_x(self):
-        self.session.context.update_settings({"public_invites": True})
-
-        self.ledger.__aenter__ = async_mock.CoroutineMock(return_value=self.ledger)
-        self.session.context.injector.bind_instance(BaseLedger, self.ledger)
-
-        with async_mock.patch.object(
-            InMemoryWallet, "get_public_did", autospec=True
-        ) as mock_wallet_get_public_did, async_mock.patch.object(
-            self.ledger, "get_endpoint_for_did", async_mock.CoroutineMock()
-        ) as mock_ledger_get_endpoint_for_did:
-            mock_ledger_get_endpoint_for_did.side_effect = test_module.LedgerError()
-            mock_wallet_get_public_did.return_value = DIDInfo(
-                TestConfig.test_did, TestConfig.test_verkey, None
-            )
-            with self.assertRaises(OutOfBandManagerError) as context:
-                await self.manager.create_invitation(
-                    my_endpoint=TestConfig.test_endpoint,
-                    public=True,
-                    hs_protos=[HSProto.RFC23],
-                )
-            assert "Error getting endpoint" in str(context.exception)
-
     async def test_create_invitation_multitenant_local(self):
         self.session.context.update_settings(
             {

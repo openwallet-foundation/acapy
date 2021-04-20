@@ -18,8 +18,6 @@ from ....core.profile import ProfileSession
 from ....indy.holder import IndyHolder
 from ....messaging.responder import BaseResponder
 from ....messaging.decorators.attach_decorator import AttachDecorator
-from ....ledger.base import BaseLedger
-from ....ledger.error import LedgerError
 from ....multitenant.manager import MultitenantManager
 from ....storage.error import StorageNotFoundError
 from ....transport.inbound.receipt import MessageReceipt
@@ -230,16 +228,9 @@ class OutOfBandManager(BaseConnectionManager):
             keylist_updates = await mediation_mgr.add_key(
                 public_did.verkey, keylist_updates
             )
-            ledger = self._session.inject(BaseLedger)
-            try:
-                async with ledger:
-                    base_url = await ledger.get_endpoint_for_did(public_did.did)
-                    invi_url = invi_msg.to_url(base_url)
-            except LedgerError as ledger_x:
-                raise OutOfBandManagerError(
-                    "Error getting endpoint for public DID "
-                    f"{public_did.did}: {ledger_x}"
-                )
+
+            endpoint, *_ = await self.resolve_invitation(public_did.did)
+            invi_url = invi_msg.to_url(endpoint)
 
             conn_rec = ConnRecord(  # create connection record
                 invitation_key=public_did.verkey,
@@ -403,7 +394,7 @@ class OutOfBandManager(BaseConnectionManager):
 
             service_did = invi_msg.service_dids[0]
 
-            endpoint, recipient_keys, routingKeys = await self.resolve_invitation(
+            endpoint, recipient_keys, routing_keys = await self.resolve_invitation(
                 service_did
             )
             public_did = service_did.split(":")[-1]
@@ -412,7 +403,7 @@ class OutOfBandManager(BaseConnectionManager):
                     "id": "#inline",
                     "type": "did-communication",
                     "recipientKeys": [naked_to_did_key(key) for key in recipient_keys],
-                    "routingKeys": [naked_to_did_key(key) for key in routingKeys],
+                    "routingKeys": [naked_to_did_key(key) for key in routing_keys],
                     "serviceEndpoint": endpoint,
                 }
             )
