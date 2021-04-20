@@ -378,8 +378,6 @@ class OutOfBandManager(BaseConnectionManager):
             ConnRecord, serialized
 
         """
-        ledger: BaseLedger = self._session.inject(BaseLedger)
-
         if mediation_id:
             try:
                 await mediation_record_if_id(self._session, mediation_id)
@@ -402,18 +400,19 @@ class OutOfBandManager(BaseConnectionManager):
             # If it's in the did format, we need to convert to a full service block
             # An existing connection can only be reused based on a public DID
             # in an out-of-band message (RFC 0434).
+
             service_did = invi_msg.service_dids[0]
-            async with ledger:
-                verkey = await ledger.get_key_for_did(service_did)
-                did_key = naked_to_did_key(verkey)
-                endpoint = await ledger.get_endpoint_for_did(service_did)
+
+            endpoint, recipient_keys, routingKeys = await self.resolve_invitation(
+                service_did
+            )
             public_did = service_did.split(":")[-1]
             service = ServiceMessage.deserialize(
                 {
                     "id": "#inline",
                     "type": "did-communication",
-                    "recipientKeys": [did_key],
-                    "routingKeys": [],
+                    "recipientKeys": [naked_to_did_key(key) for key in recipient_keys],
+                    "routingKeys": [naked_to_did_key(key) for key in routingKeys],
                     "serviceEndpoint": endpoint,
                 }
             )

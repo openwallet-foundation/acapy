@@ -258,6 +258,12 @@ class TestOOBManager(AsyncTestCase, TestConfig):
 
         self.manager = OutOfBandManager(self.session)
         assert self.manager.session
+        self.manager.resolve_invitation = async_mock.CoroutineMock()
+        self.manager.resolve_invitation.return_value = (
+            TestConfig.test_endpoint,
+            [TestConfig.test_verkey],
+            [],
+        )
 
         self.test_conn_rec = ConnRecord(
             my_did=TestConfig.test_did,
@@ -857,13 +863,10 @@ class TestOOBManager(AsyncTestCase, TestConfig):
     async def test_receive_invitation_service_did(self):
         self.session.context.update_settings({"public_invites": True})
         with async_mock.patch.object(
-            self.ledger, "get_key_for_did", async_mock.CoroutineMock()
-        ) as mock_ledger_get_key_for_did, async_mock.patch.object(
             test_module, "DIDXManager", autospec=True
         ) as didx_mgr_cls, async_mock.patch.object(
             test_module, "InvitationMessage", autospec=True
         ) as invi_msg_cls:
-            mock_ledger_get_key_for_did.return_value = TestConfig.test_verkey
             didx_mgr_cls.return_value = async_mock.MagicMock(
                 receive_invitation=async_mock.CoroutineMock()
             )
@@ -883,14 +886,11 @@ class TestOOBManager(AsyncTestCase, TestConfig):
     async def test_receive_invitation_attachment_x(self):
         self.session.context.update_settings({"public_invites": True})
         with async_mock.patch.object(
-            self.ledger, "get_key_for_did", async_mock.CoroutineMock()
-        ) as mock_ledger_get_key_for_did, async_mock.patch.object(
             DIDXManager, "receive_invitation", autospec=True
         ) as didx_mgr_receive_invitation, async_mock.patch(
             "aries_cloudagent.protocols.out_of_band.v1_0.manager.InvitationMessage",
             autospec=True,
         ) as inv_message_cls:
-            mock_ledger_get_key_for_did.return_value = TestConfig.test_verkey
 
             mock_oob_invi = async_mock.MagicMock(
                 service_blocks=[],
@@ -909,15 +909,11 @@ class TestOOBManager(AsyncTestCase, TestConfig):
     async def test_receive_invitation_req_pres_v1_0_attachment_x(self):
         self.session.context.update_settings({"public_invites": True})
         with async_mock.patch.object(
-            self.ledger, "get_key_for_did", async_mock.CoroutineMock()
-        ) as mock_ledger_get_key_for_did, async_mock.patch.object(
             DIDXManager, "receive_invitation", autospec=True
         ) as didx_mgr_receive_invitation, async_mock.patch(
             "aries_cloudagent.protocols.out_of_band.v1_0.manager.InvitationMessage",
             autospec=True,
         ) as inv_message_cls:
-            mock_ledger_get_key_for_did.return_value = TestConfig.test_verkey
-
             mock_oob_invi = async_mock.MagicMock(
                 handshake_protocols=[
                     pfx.qualify(HSProto.RFC23.name) for pfx in DIDCommPrefix
@@ -950,14 +946,11 @@ class TestOOBManager(AsyncTestCase, TestConfig):
     async def test_receive_invitation_invalid_request_type_x(self):
         self.session.context.update_settings({"public_invites": True})
         with async_mock.patch.object(
-            self.ledger, "get_key_for_did", async_mock.CoroutineMock()
-        ) as mock_ledger_get_key_for_did, async_mock.patch.object(
             DIDXManager, "receive_invitation", autospec=True
         ) as didx_mgr_receive_invitation, async_mock.patch(
             "aries_cloudagent.protocols.out_of_band.v1_0.manager.InvitationMessage",
             autospec=True,
         ) as inv_message_cls:
-            mock_ledger_get_key_for_did.return_value = TestConfig.test_verkey
 
             mock_oob_invi = async_mock.MagicMock(
                 service_blocks=[],
