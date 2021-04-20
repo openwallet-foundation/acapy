@@ -29,7 +29,7 @@ from ...coordinate_mediation.v1_0.models.mediation_record import MediationRecord
 from .messages.connection_invitation import ConnectionInvitation
 from .messages.connection_request import ConnectionRequest
 from .messages.connection_response import ConnectionResponse
-from .messages.problem_report_reason import ProblemReportReason
+from .messages.problem_report import ProblemReportReason
 from .models.connection_detail import ConnectionDetail
 
 

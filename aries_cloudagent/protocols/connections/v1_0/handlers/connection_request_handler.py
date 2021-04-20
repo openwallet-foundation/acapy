@@ -5,10 +5,10 @@ from .....messaging.base_handler import (
     BaseResponder,
     RequestContext,
 )
-from .....protocols.problem_report.v1_0.message import ProblemReport
 
 from ..manager import ConnectionManager, ConnectionManagerError
 from ..messages.connection_request import ConnectionRequest
+from ..messages.problem_report import ProblemReport
 
 
 class ConnectionRequestHandler(BaseHandler):
@@ -22,6 +22,7 @@ class ConnectionRequestHandler(BaseHandler):
             context: Request context
             responder: Responder callback
         """
+
         self._logger.debug(f"ConnectionRequestHandler called with context {context}")
         assert isinstance(context.message, ConnectionRequest)
 
@@ -56,9 +57,6 @@ class ConnectionRequestHandler(BaseHandler):
                             "Error parsing DIDDoc for problem report"
                         )
                 await responder.send_reply(
-                    ProblemReport(
-                        explain_ltxt=e.message,
-                        problem_items=[{e.error_code: e.message}],
-                    ),
+                    ProblemReport(problem_code=e.error_code, explain=str(e)),
                     target_list=targets,
                 )

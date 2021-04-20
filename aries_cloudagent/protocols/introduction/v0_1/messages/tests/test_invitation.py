@@ -5,9 +5,7 @@ from asynctest import TestCase as AsyncTestCase
 from ......wallet.util import naked_to_did_key
 
 from .....connections.v1_0.message_types import CONNECTION_INVITATION
-from .....connections.v1_0.messages.connection_invitation import (
-    ConnectionInvitation
-)
+from .....connections.v1_0.messages.connection_invitation import ConnectionInvitation
 
 from ..invitation import Invitation as IntroInvitation
 from ...message_types import INVITATION as INTRO_INVITATION, PROTOCOL_PACKAGE

@@ -6,10 +6,8 @@ from .....messaging.base_handler import (
     RequestContext,
 )
 
-from ....problem_report.v1_0.message import ProblemReport
-
 from ..messages.connection_invitation import ConnectionInvitation
-from ..messages.problem_report_reason import ProblemReportReason
+from ..messages.problem_report import ProblemReport, ProblemReportReason
 
 
 class ConnectionInvitationHandler(BaseHandler):
@@ -23,16 +21,13 @@ class ConnectionInvitationHandler(BaseHandler):
             context: Request context
             responder: Responder callback
         """
+
         self._logger.debug(f"ConnectionInvitationHandler called with context {context}")
         assert isinstance(context.message, ConnectionInvitation)
 
-        explain_ltxt = "Connection invitations cannot be submitted via agent messaging"
         report = ProblemReport(
-            explain_ltxt=explain_ltxt,
-            problem_items=[
-                {ProblemReportReason.INVITATION_NOT_ACCEPTED.value: explain_ltxt}
-            ],
+            problem_code=ProblemReportReason.INVITATION_NOT_ACCEPTED,
+            explain="Connection invitations cannot be submitted via agent messaging",
         )
-
         # client likely needs to be using direct responses to receive the problem report
         await responder.send_reply(report)

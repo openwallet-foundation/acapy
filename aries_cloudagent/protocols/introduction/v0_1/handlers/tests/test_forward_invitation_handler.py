@@ -37,7 +37,6 @@ class TestForwardInvitationHandler(AsyncTestCase):
             ),
             message="Hello World",
         )
-        self.context.update_settings({"debug.auto_accept_invites": False})
 
     async def test_handle(self):
         handler = test_module.ForwardInvitationHandler()

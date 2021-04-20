@@ -170,12 +170,8 @@ class TestDIDXRequestHandler(AsyncTestCase):
         messages = responder.messages
         assert len(messages) == 1
         result, target = messages[0]
-        assert (
-            isinstance(result, ProblemReport)
-            and (
-                ProblemReportReason.REQUEST_NOT_ACCEPTED.value
-                in result.problem_items[0]
-            )
+        assert isinstance(result, ProblemReport) and (
+            ProblemReportReason.REQUEST_NOT_ACCEPTED.value in result.problem_items[0]
         )
         assert target == {"target_list": None}
 
@@ -201,12 +197,8 @@ class TestDIDXRequestHandler(AsyncTestCase):
         messages = responder.messages
         assert len(messages) == 1
         result, target = messages[0]
-        assert (
-            isinstance(result, ProblemReport)
-            and (
-                ProblemReportReason.REQUEST_NOT_ACCEPTED.value
-                in result.problem_items[0]
-            )
+        assert isinstance(result, ProblemReport) and (
+            ProblemReportReason.REQUEST_NOT_ACCEPTED.value in result.problem_items[0]
         )
         assert target == {"target_list": [mock_conn_target]}
 
@@ -236,11 +228,7 @@ class TestDIDXRequestHandler(AsyncTestCase):
         messages = responder.messages
         assert len(messages) == 1
         result, target = messages[0]
-        assert (
-            isinstance(result, ProblemReport)
-            and (
-                ProblemReportReason.REQUEST_NOT_ACCEPTED.value
-                in result.problem_items[0]
-            )
+        assert isinstance(result, ProblemReport) and (
+            ProblemReportReason.REQUEST_NOT_ACCEPTED.value in result.problem_items[0]
         )
         assert target == {"target_list": None}

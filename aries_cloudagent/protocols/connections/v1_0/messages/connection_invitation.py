@@ -43,7 +43,7 @@ class ConnectionInvitation(AgentMessage):
         Initialize connection invitation object.
 
         Args:
-            label: Optional label for connection
+            label: Optional label for connection invitation
             did: DID for this connection invitation
             recipient_keys: List of recipient keys
             endpoint: Endpoint which this agent can be reached at
@@ -101,7 +101,9 @@ class ConnectionInvitationSchema(AgentMessageSchema):
         unknown = EXCLUDE
 
     label = fields.Str(
-        required=False, description="Optional label for connection", example="Bob"
+        required=False,
+        description="Optional label for connection invitation",
+        example="Bob",
     )
     did = fields.Str(
         required=False, description="DID for connection invitation", **INDY_DID

@@ -360,6 +360,7 @@ class TestConnectionRoutes(AsyncTestCase):
                     key: json.loads(value) if key != "alias" else value
                     for key, value in self.request.query.items()
                 },
+                my_label=None,
                 recipient_keys=body["recipient_keys"],
                 routing_keys=body["routing_keys"],
                 my_endpoint=body["service_endpoint"],

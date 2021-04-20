@@ -28,11 +28,7 @@ class TestDIDXInvitationHandler:
         messages = responder.messages
         assert len(messages) == 1
         result, target = messages[0]
-        assert (
-            isinstance(result, ProblemReport)
-            and (
-                ProblemReportReason.INVITATION_NOT_ACCEPTED.value
-                in result.problem_items[0]
-            )
+        assert isinstance(result, ProblemReport) and (
+            ProblemReportReason.INVITATION_NOT_ACCEPTED.value in result.problem_items[0]
         )
         assert not target
