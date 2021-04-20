@@ -105,6 +105,9 @@ class Conductor:
             self.root_profile, self.inbound_message_router, self.handle_not_returned
         )
         await self.inbound_transport_manager.setup()
+        context.injector.bind_instance(
+            InboundTransportManager, self.inbound_transport_manager
+        )
 
         # Register all outbound transports
         self.outbound_transport_manager = OutboundTransportManager(
