@@ -13,7 +13,11 @@ from ...resolver.did_resolver import DIDResolver
 from ...wallet.error import WalletError
 from ..models.openapi import OpenAPISchema
 from .credential import sign_credential, verify_credential
-from .error import BaseJSONLDMessagingError, MissingVerificationMethodError
+from .error import (
+    BaseJSONLDMessagingError,
+    InvalidVerificationMethod,
+    MissingVerificationMethodError,
+)
 
 
 class SignRequestSchema(OpenAPISchema):
@@ -82,6 +86,8 @@ class DocSchema(OpenAPISchema):
     """Verifiable doc schema."""
 
     class Meta:
+        """Keep unknown values."""
+
         unknown = INCLUDE
 
     proof = fields.Nested(
@@ -139,13 +145,15 @@ async def verify(request: web.BaseRequest):
                     profile, doc["proof"]["verificationMethod"]
                 )
 
-                if not isinstance(ver_meth_expanded, VerificationMethod):
-                    raise web.HTTPBadRequest(reason="verificationMethod ID invalid")
-
                 if ver_meth_expanded is None:
                     raise MissingVerificationMethodError(
                         f"Verification method "
                         f"{doc['proof']['verificationMethod']} not found."
+                    )
+
+                if not isinstance(ver_meth_expanded, VerificationMethod):
+                    raise InvalidVerificationMethod(
+                        "verificationMethod does not identify a valid verification method"
                     )
 
                 verkey = ver_meth_expanded.material
