@@ -756,8 +756,8 @@ class AdminServer(BaseAdminServer):
                                     "Exception in websocket receiving task:"
                                 )
                             if (
-                                self.admin_api_key 
-                                and msg_api_key 
+                                self.admin_api_key
+                                and msg_api_key
                                 and compare_digest(self.admin_api_key, msg_api_key)
                             ):
                                 # authenticated via websocket message
