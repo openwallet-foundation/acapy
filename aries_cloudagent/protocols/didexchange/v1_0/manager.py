@@ -28,7 +28,7 @@ from ...out_of_band.v1_0.messages.invitation import (
 from .messages.complete import DIDXComplete
 from .messages.request import DIDXRequest
 from .messages.response import DIDXResponse
-from .messages.problem_report import ProblemReportReason
+from .messages.problem_report_reason import ProblemReportReason
 
 
 class DIDXManagerError(BaseError):
@@ -422,7 +422,7 @@ class DIDXManager(BaseConnectionManager):
                     f"Connection DID {request.did} does not match "
                     f"DID Doc id {conn_did_doc.did}"
                 ),
-                error_code=ProblemReportReason.REQUEST_NOT_ACCEPTED,
+                error_code=ProblemReportReason.REQUEST_NOT_ACCEPTED.value,
             )
         await self.store_did_document(conn_did_doc)
 
@@ -672,7 +672,7 @@ class DIDXManager(BaseConnectionManager):
         if not conn_rec:
             raise DIDXManagerError(
                 "No corresponding connection request found",
-                error_code=ProblemReportReason.RESPONSE_NOT_ACCEPTED,
+                error_code=ProblemReportReason.RESPONSE_NOT_ACCEPTED.value,
             )
 
         if ConnRecord.State.get(conn_rec.state) is not ConnRecord.State.REQUEST:
@@ -752,7 +752,7 @@ class DIDXManager(BaseConnectionManager):
         except StorageNotFoundError:
             raise DIDXManagerError(
                 "No corresponding connection request found",
-                error_code=ProblemReportReason.COMPLETE_NOT_ACCEPTED,
+                error_code=ProblemReportReason.COMPLETE_NOT_ACCEPTED.value,
             )
 
         conn_rec.state = ConnRecord.State.COMPLETED.rfc23

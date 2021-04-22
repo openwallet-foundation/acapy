@@ -25,7 +25,7 @@ class DIDKey:
         return cls(public_key, key_type)
 
     @classmethod
-    def from_public_key_b58(cls, public_key: str, key_type: str) -> "DIDKey":
+    def from_public_key_b58(cls, public_key: str, key_type: KeyType) -> "DIDKey":
         """Initialize new DIDKey instance from base58 encoded public key and key type."""
         public_key_bytes = b58_to_bytes(public_key)
         return cls.from_public_key(public_key_bytes, key_type)

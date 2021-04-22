@@ -14,8 +14,6 @@ from ....core.profile import ProfileSession
 from ....indy.holder import IndyHolder
 from ....messaging.responder import BaseResponder
 from ....messaging.decorators.attach_decorator import AttachDecorator
-from ....ledger.base import BaseLedger
-from ....ledger.error import LedgerError
 from ....multitenant.manager import MultitenantManager
 from ....storage.error import StorageNotFoundError
 from ....transport.inbound.receipt import MessageReceipt
@@ -229,16 +227,9 @@ class OutOfBandManager(BaseConnectionManager):
             keylist_updates = await mediation_mgr.add_key(
                 public_did.verkey, keylist_updates
             )
-            ledger = self._session.inject(BaseLedger)
-            try:
-                async with ledger:
-                    base_url = await ledger.get_endpoint_for_did(public_did.did)
-                    invi_url = invi_msg.to_url(base_url)
-            except LedgerError as ledger_x:
-                raise OutOfBandManagerError(
-                    "Error getting endpoint for public DID "
-                    f"{public_did.did}: {ledger_x}"
-                )
+
+            endpoint, *_ = await self.resolve_invitation(public_did.did)
+            invi_url = invi_msg.to_url(endpoint)
 
             conn_rec = ConnRecord(  # create connection record
                 invitation_key=public_did.verkey,
@@ -383,8 +374,6 @@ class OutOfBandManager(BaseConnectionManager):
             ConnRecord, serialized
 
         """
-        ledger: BaseLedger = self._session.inject(BaseLedger)
-
         if mediation_id:
             try:
                 await mediation_record_if_id(self._session, mediation_id)
@@ -407,18 +396,28 @@ class OutOfBandManager(BaseConnectionManager):
             # If it's in the did format, we need to convert to a full service block
             # An existing connection can only be reused based on a public DID
             # in an out-of-band message (RFC 0434).
+
             service_did = invi_msg.service_dids[0]
-            async with ledger:
-                verkey = await ledger.get_key_for_did(service_did)
-                did_key = DIDKey.from_public_key_b58(verkey, KeyType.ED25519).did
-                endpoint = await ledger.get_endpoint_for_did(service_did)
+
+            # TODO: resolve_invitation should resolve key_info objects
+            # or something else that includes the key type. We now assume
+            # ED25519 keys
+            endpoint, recipient_keys, routing_keys = await self.resolve_invitation(
+                service_did
+            )
             public_did = service_did.split(":")[-1]
             service = ServiceMessage.deserialize(
                 {
                     "id": "#inline",
                     "type": "did-communication",
-                    "recipientKeys": [did_key],
-                    "routingKeys": [],
+                    "recipientKeys": [
+                        DIDKey.from_public_key_b58(key, KeyType.ED25519).did
+                        for key in recipient_keys
+                    ],
+                    "routingKeys": [
+                        DIDKey.from_public_key_b58(key, KeyType.ED25519).did
+                        for key in routing_keys
+                    ],
                     "serviceEndpoint": endpoint,
                 }
             )

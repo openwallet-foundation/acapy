@@ -7,7 +7,7 @@ from ......transport.inbound.receipt import MessageReceipt
 
 from ...manager import DIDXManagerError
 from ...messages.complete import DIDXComplete
-from ...messages.problem_report import ProblemReportReason
+from ...messages.problem_report_reason import ProblemReportReason
 
 from .. import complete_handler as test_module
 
@@ -40,7 +40,7 @@ class TestDIDXCompleteHandler:
     async def test_x(self, mock_conn_mgr, request_context):
         mock_conn_mgr.return_value.accept_complete = async_mock.CoroutineMock(
             side_effect=DIDXManagerError(
-                error_code=ProblemReportReason.COMPLETE_NOT_ACCEPTED
+                error_code=ProblemReportReason.COMPLETE_NOT_ACCEPTED.value
             )
         )
         mock_conn_mgr.return_value._logger = async_mock.MagicMock(

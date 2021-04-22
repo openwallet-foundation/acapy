@@ -12,15 +12,17 @@ from ......connections.models.diddoc import (
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
-from ......protocols.trustping.v1_0.messages.ping import Ping
 from ......transport.inbound.receipt import MessageReceipt
 from ......wallet.key_type import KeyType
 from ......wallet.did_method import DIDMethod
 
+from .....problem_report.v1_0.message import ProblemReport
+from .....trustping.v1_0.messages.ping import Ping
+
 from ...handlers import response_handler as test_module
 from ...manager import DIDXManagerError
 from ...messages.response import DIDXResponse
-from ...messages.problem_report import ProblemReport, ProblemReportReason
+from ...messages.problem_report_reason import ProblemReportReason
 
 TEST_DID = "55GkHamhTU1ZbTbV2ab9DE"
 TEST_VERKEY = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
@@ -112,7 +114,7 @@ class TestDIDXResponseHandler(AsyncTestCase):
     async def test_problem_report(self, mock_didx_mgr):
         mock_didx_mgr.return_value.accept_response = async_mock.CoroutineMock(
             side_effect=DIDXManagerError(
-                error_code=ProblemReportReason.RESPONSE_NOT_ACCEPTED
+                error_code=ProblemReportReason.RESPONSE_NOT_ACCEPTED.value
             )
         )
         self.ctx.message = DIDXResponse()
@@ -122,9 +124,8 @@ class TestDIDXResponseHandler(AsyncTestCase):
         messages = responder.messages
         assert len(messages) == 1
         result, target = messages[0]
-        assert (
-            isinstance(result, ProblemReport)
-            and result.problem_code == ProblemReportReason.RESPONSE_NOT_ACCEPTED
+        assert isinstance(result, ProblemReport) and (
+            ProblemReportReason.RESPONSE_NOT_ACCEPTED.value in result.problem_items[0]
         )
         assert target == {"target_list": None}
 
@@ -138,7 +139,7 @@ class TestDIDXResponseHandler(AsyncTestCase):
     ):
         mock_didx_mgr.return_value.accept_response = async_mock.CoroutineMock(
             side_effect=DIDXManagerError(
-                error_code=ProblemReportReason.RESPONSE_NOT_ACCEPTED
+                error_code=ProblemReportReason.RESPONSE_NOT_ACCEPTED.value
             )
         )
         mock_didx_mgr.return_value.diddoc_connection_targets = async_mock.MagicMock(
@@ -154,9 +155,8 @@ class TestDIDXResponseHandler(AsyncTestCase):
         messages = responder.messages
         assert len(messages) == 1
         result, target = messages[0]
-        assert (
-            isinstance(result, ProblemReport)
-            and result.problem_code == ProblemReportReason.RESPONSE_NOT_ACCEPTED
+        assert isinstance(result, ProblemReport) and (
+            ProblemReportReason.RESPONSE_NOT_ACCEPTED.value in result.problem_items[0]
         )
         assert target == {"target_list": [mock_conn_target]}
 
@@ -170,7 +170,7 @@ class TestDIDXResponseHandler(AsyncTestCase):
     ):
         mock_didx_mgr.return_value.accept_response = async_mock.CoroutineMock(
             side_effect=DIDXManagerError(
-                error_code=ProblemReportReason.RESPONSE_NOT_ACCEPTED
+                error_code=ProblemReportReason.RESPONSE_NOT_ACCEPTED.value
             )
         )
         mock_didx_mgr.return_value.diddoc_connection_targets = async_mock.MagicMock(
@@ -186,8 +186,7 @@ class TestDIDXResponseHandler(AsyncTestCase):
         messages = responder.messages
         assert len(messages) == 1
         result, target = messages[0]
-        assert (
-            isinstance(result, ProblemReport)
-            and result.problem_code == ProblemReportReason.RESPONSE_NOT_ACCEPTED
+        assert isinstance(result, ProblemReport) and (
+            ProblemReportReason.RESPONSE_NOT_ACCEPTED.value in result.problem_items[0]
         )
         assert target == {"target_list": None}

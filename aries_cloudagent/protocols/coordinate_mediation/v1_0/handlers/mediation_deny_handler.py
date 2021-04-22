@@ -35,5 +35,5 @@ class MediationDenyHandler(BaseHandler):
         except StorageNotFoundError as err:
             raise HandlerException(
                 "Received mediation grant from connection from which mediation "
-                "has not been requested."
+                "has not been requested"
             ) from err

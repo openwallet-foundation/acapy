@@ -12,7 +12,6 @@ ARIES_PROTOCOL = "didexchange/1.0"
 DIDX_REQUEST = f"{ARIES_PROTOCOL}/request"
 DIDX_RESPONSE = f"{ARIES_PROTOCOL}/response"
 DIDX_COMPLETE = f"{ARIES_PROTOCOL}/complete"
-PROBLEM_REPORT = f"{ARIES_PROTOCOL}/problem_report"
 
 PROTOCOL_PACKAGE = "aries_cloudagent.protocols.didexchange.v1_0"
 
@@ -21,6 +20,5 @@ MESSAGE_TYPES = DIDCommPrefix.qualify_all(
         DIDX_REQUEST: f"{PROTOCOL_PACKAGE}.messages.request.DIDXRequest",
         DIDX_RESPONSE: f"{PROTOCOL_PACKAGE}.messages.response.DIDXResponse",
         DIDX_COMPLETE: f"{PROTOCOL_PACKAGE}.messages.complete.DIDXComplete",
-        PROBLEM_REPORT: f"{PROTOCOL_PACKAGE}.messages.problem_report.ProblemReport",
     }
 )

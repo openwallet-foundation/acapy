@@ -1,15 +1,9 @@
+from unittest import mock, TestCase
+
 from asynctest import TestCase as AsyncTestCase
 
-from unittest import mock
-
-from ......did.did_key import DIDKey
-from ......wallet.key_type import KeyType
-from .....out_of_band.v1_0.messages.invitation import (
-    HSProto,
-    InvitationMessage as OOBInvitationMessage,
-)
-from .....out_of_band.v1_0.messages.service import Service as OOBService
-from .....didcomm_prefix import DIDCommPrefix
+from .....connections.v1_0.message_types import CONNECTION_INVITATION
+from .....connections.v1_0.messages.connection_invitation import ConnectionInvitation
 
 from ..invitation import Invitation as IntroInvitation
 from ...message_types import INVITATION as INTRO_INVITATION, PROTOCOL_PACKAGE
@@ -25,35 +19,19 @@ class TestInvitation(AsyncTestCase):
         self.key = "8HH5gYEeNc3z7PYXmd54d4x6qAfCNrqQqEB3nS7Zfu7K"
         self.test_message = "test message"
 
-        self.oob_invi_msg = OOBInvitationMessage(
+        self.conn_invi_msg = ConnectionInvitation(
             label=self.label,
-            handshake_protocols=[DIDCommPrefix.qualify_current(HSProto.RFC23.name)],
-            services=[
-                OOBService(
-                    _id="#inline",
-                    _type="did-communication",
-                    did=self.test_did,
-                    recipient_keys=[
-                        DIDKey.from_public_key_b58(self.key, KeyType.ED25519).did
-                    ],
-                    service_endpoint=self.endpoint_url,
-                )
-            ],
+            did=self.test_did,
         )
         self.intro_invitation = IntroInvitation(
-            invitation=self.oob_invi_msg, message=self.test_message
+            invitation=self.conn_invi_msg,
+            message=self.test_message,
         )
 
     def test_init(self):
         """Test initialization."""
-        assert self.intro_invitation.invitation == self.oob_invi_msg
+        assert self.intro_invitation.invitation == self.conn_invi_msg
         assert self.intro_invitation.message == self.test_message
-
-    def test_type(self):
-        """Test type."""
-        assert self.intro_invitation._type == DIDCommPrefix.qualify_current(
-            INTRO_INVITATION
-        )
 
     @mock.patch(f"{PROTOCOL_PACKAGE}.messages.invitation.InvitationSchema.load")
     def test_deserialize(self, mock_invitation_schema_load):
@@ -79,7 +57,7 @@ class TestInvitation(AsyncTestCase):
 
     async def test_make_model(self):
         intro_invi = IntroInvitation(
-            invitation=self.oob_invi_msg,
+            invitation=self.conn_invi_msg,
             message=self.test_message,
         )
 

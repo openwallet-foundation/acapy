@@ -49,22 +49,20 @@ class TestIntroductionService(AsyncTestCase):
         )
 
     async def test_service_start_introduction_no_init_conn_rec(self):
-        service = await demo_service.DemoIntroductionService.service_handler()(
-            self.context
-        )
+        service = await demo_service.DemoIntroductionService.service_handler()()
+        session = await self.profile.session()
 
         with self.assertRaises(base_service.IntroductionError):
             await service.start_introduction(
                 init_connection_id="init-id",
                 target_connection_id=None,
                 message="Hello",
+                session=session,
                 outbound_handler=None,
             )
 
     async def test_service_start_introduction_init_conn_rec_not_completed(self):
-        service = await demo_service.DemoIntroductionService.service_handler()(
-            self.context
-        )
+        service = await demo_service.DemoIntroductionService.service_handler()()
         session = await self.profile.session()
 
         conn_rec_init = ConnRecord(
@@ -79,13 +77,12 @@ class TestIntroductionService(AsyncTestCase):
                 init_connection_id=conn_rec_init._id,
                 target_connection_id=None,
                 message="Hello",
+                session=session,
                 outbound_handler=None,
             )
 
     async def test_service_start_introduction_no_target_conn_rec(self):
-        service = await demo_service.DemoIntroductionService.service_handler()(
-            self.context
-        )
+        service = await demo_service.DemoIntroductionService.service_handler()()
         session = await self.profile.session()
 
         conn_rec_init = ConnRecord(
@@ -100,13 +97,12 @@ class TestIntroductionService(AsyncTestCase):
                 init_connection_id=conn_rec_init._id,
                 target_connection_id="target-id",
                 message="Hello",
+                session=session,
                 outbound_handler=None,
             )
 
     async def test_service_start_introduction_target_conn_rec_not_completed(self):
-        service = await demo_service.DemoIntroductionService.service_handler()(
-            self.context
-        )
+        service = await demo_service.DemoIntroductionService.service_handler()()
         session = await self.profile.session()
 
         conn_rec_init = ConnRecord(
@@ -128,13 +124,12 @@ class TestIntroductionService(AsyncTestCase):
                 init_connection_id=conn_rec_init._id,
                 target_connection_id=conn_rec_target._id,
                 message="Hello",
+                session=session,
                 outbound_handler=None,
             )
 
     async def test_service_start_and_return_introduction(self):
-        service = await demo_service.DemoIntroductionService.service_handler()(
-            self.context
-        )
+        service = await demo_service.DemoIntroductionService.service_handler()()
         start_responder = MockResponder()
         session = await self.profile.session()
 
@@ -156,6 +151,7 @@ class TestIntroductionService(AsyncTestCase):
             init_connection_id=conn_rec_init._id,
             target_connection_id=conn_rec_target._id,
             message="Hello Start",
+            session=session,
             outbound_handler=start_responder.send,
         )
         messages = start_responder.messages
@@ -175,6 +171,7 @@ class TestIntroductionService(AsyncTestCase):
         await service.return_invitation(
             target_connection_id=conn_rec_target._id,
             invitation=invite,
+            session=session,
             outbound_handler=return_responder.send,
         )
         messages = return_responder.messages
@@ -190,9 +187,7 @@ class TestIntroductionService(AsyncTestCase):
             message="Hello World",
         )
 
-        service = await demo_service.DemoIntroductionService.service_handler()(
-            self.context
-        )
+        service = await demo_service.DemoIntroductionService.service_handler()()
         session = await self.profile.session()
 
         conn_rec_target = ConnRecord(
@@ -205,5 +200,6 @@ class TestIntroductionService(AsyncTestCase):
         await service.return_invitation(
             target_connection_id=conn_rec_target._id,
             invitation=invite,
+            session=session,
             outbound_handler=None,
         )

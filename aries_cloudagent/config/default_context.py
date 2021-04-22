@@ -92,7 +92,7 @@ class DefaultContextBuilder(ContextBuilder):
         # Allow action menu to be provided by driver
         context.injector.bind_instance(BaseMenuService, DriverMenuService(context))
         context.injector.bind_instance(
-            BaseIntroductionService, DemoIntroductionService(context)
+            BaseIntroductionService, DemoIntroductionService()
         )
 
     async def load_plugins(self, context: InjectionContext):
@@ -111,7 +111,7 @@ class DefaultContextBuilder(ContextBuilder):
             "aries_cloudagent.messaging.credential_definitions"
         )
         plugin_registry.register_plugin("aries_cloudagent.messaging.schemas")
-        # plugin_registry.register_plugin("aries_cloudagent.messaging.jsonld")
+        plugin_registry.register_plugin("aries_cloudagent.messaging.jsonld")
         plugin_registry.register_plugin("aries_cloudagent.revocation")
         plugin_registry.register_plugin("aries_cloudagent.resolver")
         plugin_registry.register_plugin("aries_cloudagent.wallet")
