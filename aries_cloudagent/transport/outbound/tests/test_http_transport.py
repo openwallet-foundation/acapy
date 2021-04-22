@@ -1,6 +1,7 @@
 import asyncio
 import pytest
 
+from hmac import compare_digest
 from aiohttp.test_utils import AioHTTPTestCase, unittest_run_loop
 from aiohttp import web
 from asynctest import mock as async_mock
@@ -66,7 +67,7 @@ class TestHttpTransport(AioHTTPTestCase):
             send_message(transport, "{}", endpoint=server_addr, api_key=api_key), 5.0
         )
         assert self.message_results == [{}]
-        assert self.headers.get("x-api-key") == api_key
+        assert api_key and compare_digest(self.headers.get("x-api-key"), api_key)
 
     @unittest_run_loop
     async def test_handle_message_packed_compat_mime_type(self):
