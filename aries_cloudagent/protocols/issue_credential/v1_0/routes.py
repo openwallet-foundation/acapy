@@ -38,7 +38,7 @@ from ...problem_report.v1_0.message import ProblemReport
 
 from .manager import CredentialManager, CredentialManagerError
 from .message_types import SPEC_URI
-from .messages.credential_proposal import CredentialProposal
+from .messages.credential_proposal import CredentialProposal, CredentialProposalSchema
 from .messages.inner.credential_preview import (
     CredentialPreview,
     CredentialPreviewSchema,
@@ -138,11 +138,6 @@ class V10CredentialCreateSchema(AdminAPIMessageTracingSchema):
     comment = fields.Str(
         description="Human-readable comment", required=False, allow_none=True
     )
-    trace = fields.Bool(
-        description="Whether to trace event (default false)",
-        required=False,
-        example=False,
-    )
     credential_proposal = fields.Nested(CredentialPreviewSchema, required=True)
 
 
@@ -184,11 +179,6 @@ class V10CredentialProposalRequestSchemaBase(AdminAPIMessageTracingSchema):
     comment = fields.Str(
         description="Human-readable comment", required=False, allow_none=True
     )
-    trace = fields.Bool(
-        description="Whether to trace event (default false)",
-        required=False,
-        example=False,
-    )
 
 
 class V10CredentialProposalRequestOptSchema(V10CredentialProposalRequestSchemaBase):
@@ -203,8 +193,18 @@ class V10CredentialProposalRequestMandSchema(V10CredentialProposalRequestSchemaB
     credential_proposal = fields.Nested(CredentialPreviewSchema, required=True)
 
 
-class V10CredentialOfferRequestSchema(AdminAPIMessageTracingSchema):
-    """Request schema for sending credential offer admin message."""
+class V10CredentialBoundOfferRequestSchema(OpenAPISchema):
+    """Request schema for sending bound credential offer admin message."""
+
+    counter_proposal = fields.Nested(
+        CredentialProposalSchema,
+        required=False,
+        description="Optional counter-proposal",
+    )
+
+
+class V10CredentialFreeOfferRequestSchema(AdminAPIMessageTracingSchema):
+    """Request schema for sending free credential offer admin message."""
 
     connection_id = fields.UUID(
         description="Connection identifier",
@@ -235,11 +235,6 @@ class V10CredentialOfferRequestSchema(AdminAPIMessageTracingSchema):
         description="Human-readable comment", required=False, allow_none=True
     )
     credential_preview = fields.Nested(CredentialPreviewSchema, required=True)
-    trace = fields.Bool(
-        description="Whether to trace event (default false)",
-        required=False,
-        example=False,
-    )
 
 
 class V10CreateFreeOfferResultSchema(OpenAPISchema):
@@ -646,10 +641,11 @@ async def _create_free_offer(
 
     credential_manager = CredentialManager(profile)
 
-    (
+    (cred_ex_record, credential_offer_message,) = await credential_manager.create_offer(
         cred_ex_record,
-        credential_offer_message,
-    ) = await credential_manager.create_offer(cred_ex_record, comment=comment)
+        counter_proposal=None,
+        comment=comment,
+    )
 
     return (cred_ex_record, credential_offer_message)
 
@@ -658,7 +654,7 @@ async def _create_free_offer(
     tags=["issue-credential v1.0"],
     summary="Create a credential offer, independent of any proposal",
 )
-@request_schema(V10CredentialOfferRequestSchema())
+@request_schema(V10CredentialFreeOfferRequestSchema())
 @response_schema(V10CreateFreeOfferResultSchema(), 200, description="")
 async def credential_exchange_create_free_offer(request: web.BaseRequest):
     """
@@ -761,7 +757,7 @@ async def credential_exchange_create_free_offer(request: web.BaseRequest):
     tags=["issue-credential v1.0"],
     summary="Send holder a credential offer, independent of any proposal",
 )
-@request_schema(V10CredentialOfferRequestSchema())
+@request_schema(V10CredentialFreeOfferRequestSchema())
 @response_schema(V10CredentialExchangeSchema(), 200, description="")
 async def credential_exchange_send_free_offer(request: web.BaseRequest):
     """
@@ -850,6 +846,7 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
     summary="Send holder a credential offer in reference to a proposal with preview",
 )
 @match_info_schema(CredExIdMatchInfoSchema())
+@request_schema(V10CredentialBoundOfferRequestSchema())
 @response_schema(V10CredentialExchangeSchema(), 200, description="")
 async def credential_exchange_send_bound_offer(request: web.BaseRequest):
     """
@@ -869,6 +866,9 @@ async def credential_exchange_send_bound_offer(request: web.BaseRequest):
 
     context: AdminRequestContext = request["context"]
     outbound_handler = request["outbound_message_router"]
+
+    body = await request.json()
+    proposal_spec = body.get("counter_proposal")
 
     credential_exchange_id = request.match_info["cred_ex_id"]
     cred_ex_record = None
@@ -900,7 +900,13 @@ async def credential_exchange_send_bound_offer(request: web.BaseRequest):
         (
             cred_ex_record,
             credential_offer_message,
-        ) = await credential_manager.create_offer(cred_ex_record, comment=None)
+        ) = await credential_manager.create_offer(
+            cred_ex_record,
+            counter_proposal=(
+                CredentialProposal.deserialize(proposal_spec) if proposal_spec else None
+            ),
+            comment=None,
+        )
 
         result = cred_ex_record.serialize()
 

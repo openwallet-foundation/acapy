@@ -55,7 +55,9 @@ class CredentialProposalHandler(BaseHandler):
                 cred_ex_record,
                 credential_offer_message,
             ) = await credential_manager.create_offer(
-                cred_ex_record, comment=context.message.comment
+                cred_ex_record,
+                counter_proposal=None,
+                comment=context.message.comment,
             )
 
             await responder.send_reply(credential_offer_message)

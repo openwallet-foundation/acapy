@@ -359,7 +359,9 @@ class TestCredentialManager(AsyncTestCase):
             await self.session.storage.add_record(cred_def_record)
 
             (ret_exchange, ret_offer) = await self.manager.create_offer(
-                cred_ex_record=exchange, comment=comment
+                cred_ex_record=exchange,
+                counter_proposal=None,
+                comment=comment,
             )
             assert ret_exchange is exchange
             save_ex.assert_called_once()
@@ -375,7 +377,9 @@ class TestCredentialManager(AsyncTestCase):
             assert exchange.credential_offer == cred_offer
 
             (ret_exchange, ret_offer) = await self.manager.create_offer(
-                cred_ex_record=exchange, comment=comment
+                cred_ex_record=exchange,
+                counter_proposal=None,
+                comment=comment,
             )  # once more to cover case where offer is available in cache
 
     async def test_create_free_offer_attr_mismatch(self):
@@ -432,7 +436,9 @@ class TestCredentialManager(AsyncTestCase):
 
             with self.assertRaises(CredentialManagerError):
                 await self.manager.create_offer(
-                    cred_ex_record=exchange, comment=comment
+                    cred_ex_record=exchange,
+                    counter_proposal=None,
+                    comment=comment,
                 )
 
     async def test_create_bound_offer(self):
@@ -486,7 +492,9 @@ class TestCredentialManager(AsyncTestCase):
             await self.session.storage.add_record(cred_def_record)
 
             (ret_exchange, ret_offer) = await self.manager.create_offer(
-                cred_ex_record=exchange, comment=comment
+                cred_ex_record=exchange,
+                counter_proposal=None,
+                comment=comment,
             )
             assert ret_exchange is exchange
             save_ex.assert_called_once()
@@ -540,7 +548,9 @@ class TestCredentialManager(AsyncTestCase):
 
             with self.assertRaises(CredentialManagerError):
                 await self.manager.create_offer(
-                    cred_ex_record=exchange, comment=comment
+                    cred_ex_record=exchange,
+                    counter_proposal=None,
+                    comment=comment,
                 )
 
     async def test_receive_offer_proposed(self):

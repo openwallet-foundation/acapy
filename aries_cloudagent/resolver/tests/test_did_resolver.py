@@ -1,20 +1,22 @@
 """Test did resolver registry."""
 
-import unittest
 import pytest
+import unittest
 
 from asynctest import mock as async_mock
+from pydid import DID, DIDDocument, DIDError, VerificationMethod
 
-from ...resolver.base import (
+from ..base import (
     BaseDIDResolver,
     DIDMethodNotSupported,
     DIDNotFound,
+    ResolverError,
     ResolverType,
 )
-from pydid import DID, DIDDocument, VerificationMethod
-from . import DOC
 from ..did_resolver import DIDResolver
 from ..did_resolver_registry import DIDResolverRegistry
+
+from . import DOC
 
 TEST_DID0 = "did:sov:Kkyqu7CJFuQSvBp468uaDe"
 TEST_DID1 = "did:btcr:8kyt-fzzq-qpqq-ljsc-5l"
@@ -141,6 +143,13 @@ async def test_dereference(resolver, profile):
     expected: dict = DOC["verificationMethod"][0]
     actual: VerificationMethod = await resolver.dereference(profile, url)
     assert expected == actual.serialize()
+
+
+@pytest.mark.asyncio
+async def test_dereference_x(resolver, profile):
+    url = "non-did"
+    with pytest.raises(ResolverError):
+        await resolver.dereference(profile, url)
 
 
 @pytest.mark.asyncio

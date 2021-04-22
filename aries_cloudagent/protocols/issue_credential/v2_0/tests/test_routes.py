@@ -50,6 +50,16 @@ class TestV20CredRoutes(AsyncTestCase):
         with self.assertRaises(test_module.ValidationError):
             schema.validate_fields({"veres-one": {"no": "support"}})
 
+    async def test_validate_bound_offer_request_schema(self):
+        schema = test_module.V20CredBoundOfferRequestSchema()
+        schema.validate_fields({})
+        schema.validate_fields(
+            {"filter_": {"issuer_did": TEST_DID}, "counter_preview": {}}
+        )
+        with self.assertRaises(test_module.ValidationError):
+            schema.validate_fields({"filter_": {"issuer_did": TEST_DID}})
+            schema.validate_fields({"counter_preview": {}})
+
     async def test_credential_exchange_list(self):
         self.request.query = {
             "thread_id": "dummy",
@@ -844,7 +854,7 @@ class TestV20CredRoutes(AsyncTestCase):
                 await test_module.credential_exchange_send_free_offer(self.request)
 
     async def test_credential_exchange_send_bound_offer(self):
-        self.request.json = async_mock.CoroutineMock()
+        self.request.json = async_mock.CoroutineMock(return_value={})
         self.request.match_info = {"cred_ex_id": "dummy"}
 
         with async_mock.patch.object(
@@ -876,7 +886,7 @@ class TestV20CredRoutes(AsyncTestCase):
             mock_response.assert_called_once_with(mock_cx_rec.serialize.return_value)
 
     async def test_credential_exchange_send_bound_offer_bad_cred_ex_id(self):
-        self.request.json = async_mock.CoroutineMock()
+        self.request.json = async_mock.CoroutineMock(return_value={})
         self.request.match_info = {"cred_ex_id": "dummy"}
 
         with async_mock.patch.object(
@@ -891,7 +901,7 @@ class TestV20CredRoutes(AsyncTestCase):
                 await test_module.credential_exchange_send_bound_offer(self.request)
 
     async def test_credential_exchange_send_bound_offer_no_conn_record(self):
-        self.request.json = async_mock.CoroutineMock()
+        self.request.json = async_mock.CoroutineMock(return_value={})
         self.request.match_info = {"cred_ex_id": "dummy"}
 
         with async_mock.patch.object(
@@ -923,7 +933,7 @@ class TestV20CredRoutes(AsyncTestCase):
                 await test_module.credential_exchange_send_bound_offer(self.request)
 
     async def test_credential_exchange_send_bound_offer_bad_state(self):
-        self.request.json = async_mock.CoroutineMock()
+        self.request.json = async_mock.CoroutineMock(return_value={})
         self.request.match_info = {"cred_ex_id": "dummy"}
 
         with async_mock.patch.object(
@@ -940,7 +950,7 @@ class TestV20CredRoutes(AsyncTestCase):
                 await test_module.credential_exchange_send_bound_offer(self.request)
 
     async def test_credential_exchange_send_bound_offer_not_ready(self):
-        self.request.json = async_mock.CoroutineMock()
+        self.request.json = async_mock.CoroutineMock(return_value={})
         self.request.match_info = {"cred_ex_id": "dummy"}
 
         with async_mock.patch.object(
