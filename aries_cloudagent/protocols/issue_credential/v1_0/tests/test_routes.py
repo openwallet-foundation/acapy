@@ -728,7 +728,7 @@ class TestCredentialRoutes(AsyncTestCase):
                 await test_module.credential_exchange_send_free_offer(self.request)
 
     async def test_credential_exchange_send_bound_offer(self):
-        self.request.json = async_mock.CoroutineMock()
+        self.request.json = async_mock.CoroutineMock(return_value={})
         self.request.match_info = {"cred_ex_id": "dummy"}
 
         with async_mock.patch.object(
@@ -764,7 +764,7 @@ class TestCredentialRoutes(AsyncTestCase):
             )
 
     async def test_credential_exchange_send_bound_offer_bad_cred_ex_id(self):
-        self.request.json = async_mock.CoroutineMock()
+        self.request.json = async_mock.CoroutineMock(return_value={})
         self.request.match_info = {"cred_ex_id": "dummy"}
 
         with async_mock.patch.object(
@@ -779,7 +779,7 @@ class TestCredentialRoutes(AsyncTestCase):
                 await test_module.credential_exchange_send_bound_offer(self.request)
 
     async def test_credential_exchange_send_bound_offer_no_conn_record(self):
-        self.request.json = async_mock.CoroutineMock()
+        self.request.json = async_mock.CoroutineMock(return_value={})
         self.request.match_info = {"cred_ex_id": "dummy"}
 
         with async_mock.patch.object(
@@ -813,7 +813,7 @@ class TestCredentialRoutes(AsyncTestCase):
                 await test_module.credential_exchange_send_bound_offer(self.request)
 
     async def test_credential_exchange_send_bound_offer_bad_state(self):
-        self.request.json = async_mock.CoroutineMock()
+        self.request.json = async_mock.CoroutineMock(return_value={})
         self.request.match_info = {"cred_ex_id": "dummy"}
 
         with async_mock.patch.object(
@@ -828,7 +828,7 @@ class TestCredentialRoutes(AsyncTestCase):
                 await test_module.credential_exchange_send_bound_offer(self.request)
 
     async def test_credential_exchange_send_bound_offer_not_ready(self):
-        self.request.json = async_mock.CoroutineMock()
+        self.request.json = async_mock.CoroutineMock(return_value={})
         self.request.match_info = {"cred_ex_id": "dummy"}
 
         with async_mock.patch.object(

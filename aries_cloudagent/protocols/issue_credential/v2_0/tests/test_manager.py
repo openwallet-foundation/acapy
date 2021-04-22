@@ -468,6 +468,7 @@ class TestV20CredManager(AsyncTestCase):
 
             (ret_cx_rec, ret_offer) = await self.manager.create_offer(
                 cred_ex_record=cx_rec,
+                counter_proposal=None,
                 replacement_id="0",
                 comment=comment,
             )
@@ -489,6 +490,7 @@ class TestV20CredManager(AsyncTestCase):
 
             await self.manager.create_offer(
                 cred_ex_record=cx_rec,
+                counter_proposal=None,
                 replacement_id="0",
                 comment=comment,
             )  # once more to cover case where offer is available in cache
@@ -554,6 +556,7 @@ class TestV20CredManager(AsyncTestCase):
             with self.assertRaises(V20CredManagerError):
                 await self.manager.create_offer(
                     cred_ex_record=cx_rec,
+                    counter_proposal=None,
                     replacement_id="0",
                     comment=comment,
                 )
@@ -619,7 +622,9 @@ class TestV20CredManager(AsyncTestCase):
             await self.session.storage.add_record(cred_def_record)
 
             (ret_cx_rec, ret_offer) = await self.manager.create_offer(
-                cred_ex_record=cx_rec, comment=comment
+                cred_ex_record=cx_rec,
+                counter_proposal=None,
+                comment=comment,
             )
             assert ret_cx_rec == cx_rec
             mock_save.assert_called_once()
@@ -682,7 +687,11 @@ class TestV20CredManager(AsyncTestCase):
             self.context.injector.bind_instance(IndyIssuer, issuer)
 
             with self.assertRaises(V20CredManagerError) as context:
-                await self.manager.create_offer(cred_ex_record=cx_rec, comment=comment)
+                await self.manager.create_offer(
+                    cred_ex_record=cx_rec,
+                    counter_proposal=None,
+                    comment=comment,
+                )
             assert "Issuer has no operable cred def" in str(context.exception)
 
     async def test_receive_offer_proposed(self):
