@@ -10,6 +10,7 @@ from typing import Callable, Coroutine, Sequence, Set
 import aiohttp_cors
 import jwt
 
+from hmac import compare_digest
 from aiohttp import web
 from aiohttp_apispec import (
     docs,
@@ -298,7 +299,9 @@ class AdminServer(BaseAdminServer):
             @web.middleware
             async def check_token(request: web.Request, handler):
                 header_admin_api_key = request.headers.get("x-api-key")
-                valid_key = self.admin_api_key == header_admin_api_key
+                valid_key = header_admin_api_key and compare_digest(
+                    self.admin_api_key, header_admin_api_key
+                )
 
                 if valid_key or is_unprotected_path(request.path):
                     return await handler(request)
@@ -707,7 +710,9 @@ class AdminServer(BaseAdminServer):
         else:
             header_admin_api_key = request.headers.get("x-api-key")
             # authenticated via http header?
-            queue.authenticated = header_admin_api_key == self.admin_api_key
+            queue.authenticated = header_admin_api_key and compare_digest(
+                header_admin_api_key, self.admin_api_key
+            )
 
         try:
             self.websocket_queues[socket_id] = queue
@@ -750,7 +755,11 @@ class AdminServer(BaseAdminServer):
                                 LOGGER.exception(
                                     "Exception in websocket receiving task:"
                                 )
-                            if self.admin_api_key and self.admin_api_key == msg_api_key:
+                            if (
+                                self.admin_api_key
+                                and msg_api_key
+                                and compare_digest(self.admin_api_key, msg_api_key)
+                            ):
                                 # authenticated via websocket message
                                 queue.authenticated = True
 
