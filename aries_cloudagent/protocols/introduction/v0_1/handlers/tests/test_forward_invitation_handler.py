@@ -37,7 +37,6 @@ class TestForwardInvitationHandler(AsyncTestCase):
             ),
             message="Hello World",
         )
-        self.context.update_settings({"accept_invites": False})
 
     async def test_handle(self):
         handler = test_module.ForwardInvitationHandler()
@@ -53,32 +52,22 @@ class TestForwardInvitationHandler(AsyncTestCase):
             await handler.handle(self.context, responder)
             assert not (responder.messages)
 
-    async def test_handle_auto_accept(self):
+    async def test_handle_x(self):
         handler = test_module.ForwardInvitationHandler()
-        self.context.update_settings({"accept_invites": True})
-
-        mock_conn_rec = async_mock.MagicMock(connection_id="dummy")
-        mock_conn_req = async_mock.MagicMock(label="test")
 
         responder = MockResponder()
         with async_mock.patch.object(
             test_module, "ConnectionManager", autospec=True
         ) as mock_mgr:
             mock_mgr.return_value.receive_invitation = async_mock.CoroutineMock(
-                return_value=mock_conn_rec
-            )
-            mock_mgr.return_value.create_request = async_mock.CoroutineMock(
-                return_value=mock_conn_req
+                side_effect=test_module.ConnectionManagerError("oops")
             )
 
             await handler.handle(self.context, responder)
-            assert mock_mgr.return_value.create_request.called_once_with(mock_conn_rec)
-
             messages = responder.messages
             assert len(messages) == 1
-            (result, target) = messages[0]
-            assert result == mock_conn_req
-            assert target["connection_id"] == "dummy"
+            (result, _) = messages[0]
+            assert type(result) == test_module.ProblemReport
 
     async def test_handle_not_ready(self):
         handler = test_module.ForwardInvitationHandler()

@@ -35,6 +35,6 @@ class MediationRequestHandler(BaseHandler):
         except MediationAlreadyExists:
             await responder.send_reply(
                 ProblemReport(
-                    explain_ltxt="Mediation request already exists from this connection."
+                    explain_ltxt="Mediation request already exists from this connection"
                 )
             )

@@ -4,6 +4,7 @@ import json
 import logging
 
 from ....connections.models.conn_record import ConnRecord
+from ....core.profile import ProfileSession
 from ....storage.base import (
     BaseStorage,
     StorageRecord,
@@ -28,6 +29,7 @@ class DemoIntroductionService(BaseIntroductionService):
         init_connection_id: str,
         target_connection_id: str,
         message: str,
+        session: ProfileSession,
         outbound_handler,
     ):
         """
@@ -37,10 +39,9 @@ class DemoIntroductionService(BaseIntroductionService):
             init_connection_id: The connection initiating the request
             target_connection_id: The connection which is asked for an invitation
             outbound_handler: The outbound handler coroutine for sending a message
+            session: Profile session to use for connection, introduction records
             message: The message to use when requesting the invitation
         """
-
-        session = await self._context.session()
         try:
             init_connection = await ConnRecord.retrieve_by_id(
                 session, init_connection_id
@@ -95,21 +96,24 @@ class DemoIntroductionService(BaseIntroductionService):
         await outbound_handler(msg, connection_id=target_connection_id)
 
     async def return_invitation(
-        self, target_connection_id: str, invitation: IntroInvitation, outbound_handler
+        self,
+        target_connection_id: str,
+        invitation: IntroInvitation,
+        session: ProfileSession,
+        outbound_handler,
     ):
         """
         Handle the forwarding of an invitation to the responder.
 
         Args:
             target_connection_id: The ID of the connection sending the Invitation
-            invitation: The received Invitation message
+            invitation: The received (Introduction) Invitation message
+            session: Profile session to use for introduction records
             outbound_handler: The outbound handler coroutine for sending a message
         """
-
         thread_id = invitation._thread_id
 
         tag_filter = {"target_connection_id": target_connection_id}
-        session = await self._context.session()
         storage = session.inject(BaseStorage)
         records = await storage.find_all_records(
             DemoIntroductionService.RECORD_TYPE,
@@ -132,7 +136,7 @@ class DemoIntroductionService(BaseIntroductionService):
                 init_connection_id = row.tags["init_connection_id"]
                 await outbound_handler(msg, connection_id=init_connection_id)
                 found = True
-                LOGGER.info("Forwarded invitation to %s", init_connection_id)
+                LOGGER.info("Forwarded fwd-invitation to %s", init_connection_id)
                 break
 
         if not found:

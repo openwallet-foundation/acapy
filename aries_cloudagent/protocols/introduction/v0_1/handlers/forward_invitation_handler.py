@@ -6,7 +6,9 @@ from .....messaging.base_handler import (
     HandlerException,
     RequestContext,
 )
-from .....protocols.connections.v1_0.manager import ConnectionManager
+
+from ....connections.v1_0.manager import ConnectionManager, ConnectionManagerError
+from ....problem_report.v1_0.message import ProblemReport
 
 from ..messages.forward_invitation import ForwardInvitation
 
@@ -27,9 +29,9 @@ class ForwardInvitationHandler(BaseHandler):
         # Store invitation
         session = await context.session()
         connection_mgr = ConnectionManager(session)
-        connection = await connection_mgr.receive_invitation(context.message.invitation)
 
-        # Auto-accept
-        if context.settings.get("accept_invites"):
-            request = await connection_mgr.create_request(connection)
-            await responder.send(request, connection_id=connection.connection_id)
+        try:
+            await connection_mgr.receive_invitation(context.message.invitation)
+        except ConnectionManagerError as e:
+            self._logger.exception("Error receiving forward connection invitation")
+            await responder.send_reply(ProblemReport(explain_ltxt=e.message))

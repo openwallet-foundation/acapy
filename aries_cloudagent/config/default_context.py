@@ -92,7 +92,7 @@ class DefaultContextBuilder(ContextBuilder):
         # Allow action menu to be provided by driver
         context.injector.bind_instance(BaseMenuService, DriverMenuService(context))
         context.injector.bind_instance(
-            BaseIntroductionService, DemoIntroductionService(context)
+            BaseIntroductionService, DemoIntroductionService()
         )
 
     async def load_plugins(self, context: InjectionContext):

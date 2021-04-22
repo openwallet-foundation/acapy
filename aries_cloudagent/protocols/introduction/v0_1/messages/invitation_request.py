@@ -52,5 +52,5 @@ class InvitationRequestSchema(AgentMessageSchema):
         required=False,
         allow_none=True,
         description="Comments on the introduction",
-        example="Hello Bob, it's Alice",
+        example="Hello Charlie, it's Alice; allow me to present Bob",
     )
