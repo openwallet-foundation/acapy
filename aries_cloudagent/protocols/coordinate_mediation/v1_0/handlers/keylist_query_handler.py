@@ -38,6 +38,6 @@ class KeylistQueryHandler(BaseHandler):
         except (StorageNotFoundError, MediationNotGrantedError):
             await responder.send_reply(
                 ProblemReport(
-                    explain_ltxt="Mediation has not been granted for this connection."
+                    explain_ltxt="Mediation has not been granted for this connection"
                 )
             )

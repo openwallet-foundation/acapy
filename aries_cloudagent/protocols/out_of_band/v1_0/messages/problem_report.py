@@ -16,7 +16,7 @@ HANDLER_CLASS = (
 class ProblemReportReason(str, Enum):
     """Supported reason codes."""
 
-    EXISTING_CONNECTION_DOES_NOT_EXISTS = "existing_connection_does_not_exists"
+    NO_EXISTING_CONNECTION = "no_existing_connection"
     EXISTING_CONNECTION_NOT_ACTIVE = "existing_connection_not_active"
 
 
@@ -55,7 +55,7 @@ class ProblemReportSchema(AgentMessageSchema):
     explain = fields.Str(
         required=False,
         description="Localized error explanation",
-        example=ProblemReportReason.EXISTING_CONNECTION_DOES_NOT_EXISTS.value,
+        example=ProblemReportReason.NO_EXISTING_CONNECTION.value,
     )
     problem_code = fields.Str(
         data_key="problem-code",
@@ -65,7 +65,7 @@ class ProblemReportSchema(AgentMessageSchema):
             choices=[prr.value for prr in ProblemReportReason],
             error="Value {input} must be one of {choices}.",
         ),
-        example=ProblemReportReason.EXISTING_CONNECTION_DOES_NOT_EXISTS.value,
+        example=ProblemReportReason.NO_EXISTING_CONNECTION.value,
     )
 
     @pre_dump

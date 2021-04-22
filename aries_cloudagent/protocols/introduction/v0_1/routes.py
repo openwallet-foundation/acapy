@@ -72,7 +72,11 @@ async def introduction_start(request: web.BaseRequest):
 
     try:
         await service.start_introduction(
-            init_connection_id, target_connection_id, message, outbound_handler
+            init_connection_id,
+            target_connection_id,
+            message,
+            await context.session(),
+            outbound_handler,
         )
     except (IntroductionError, StorageError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
