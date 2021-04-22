@@ -1,5 +1,6 @@
 import json
 from copy import deepcopy
+from pydid.doc.service import Service
 
 import pytest
 from aiohttp import web
@@ -197,6 +198,15 @@ async def test_verify_bad_ver_meth_deref_req_error(
     mock_resolver, mock_verify_request, mock_response
 ):
     mock_resolver.dereference.return_value = None
+    await test_module.verify(mock_verify_request)
+    assert "error" in mock_response.call_args[0][0]
+
+
+@pytest.mark.asyncio
+async def test_verify_bad_ver_meth_not_ver_meth(
+    mock_resolver, mock_verify_request, mock_response
+):
+    mock_resolver.dereference.return_value = async_mock.MagicMock(spec=Service)
     await test_module.verify(mock_verify_request)
     assert "error" in mock_response.call_args[0][0]
 
