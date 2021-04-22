@@ -221,7 +221,7 @@ async def debug_middleware(request: web.BaseRequest, handler: Coroutine):
 
 
 def const_compare(string1, string2):
-    """Compares two strings in constant time, prevents timing attacks"""
+    """Compare two strings in constant time. This prevents timing attacks."""
     if string1 is None or string2 is None:
         return False
     return compare_digest(string1.encode(), string2.encode())
