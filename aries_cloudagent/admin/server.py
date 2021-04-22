@@ -300,7 +300,7 @@ class AdminServer(BaseAdminServer):
             async def check_token(request: web.Request, handler):
                 header_admin_api_key = request.headers.get("x-api-key")
                 valid_key = header_admin_api_key and compare_digest(
-                    self.admin_api_key, header_admin_api_key
+                    self.admin_api_key.encode(), header_admin_api_key.encode()
                 )
 
                 if valid_key or is_unprotected_path(request.path):
@@ -711,7 +711,7 @@ class AdminServer(BaseAdminServer):
             header_admin_api_key = request.headers.get("x-api-key")
             # authenticated via http header?
             queue.authenticated = header_admin_api_key and compare_digest(
-                header_admin_api_key, self.admin_api_key
+                header_admin_api_key.encode(), self.admin_api_key.encode()
             )
 
         try:
@@ -758,7 +758,7 @@ class AdminServer(BaseAdminServer):
                             if (
                                 self.admin_api_key
                                 and msg_api_key
-                                and compare_digest(self.admin_api_key, msg_api_key)
+                                and compare_digest(self.admin_api_key.encode(), msg_api_key.encode())
                             ):
                                 # authenticated via websocket message
                                 queue.authenticated = True
