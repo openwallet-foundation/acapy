@@ -54,10 +54,7 @@ class TestV20CredRoutes(AsyncTestCase):
         schema = test_module.V20CredBoundOfferRequestSchema()
         schema.validate_fields({})
         schema.validate_fields(
-            {
-                "filter_": {"issuer_did": TEST_DID},
-                "counter_preview": {}
-            }
+            {"filter_": {"issuer_did": TEST_DID}, "counter_preview": {}}
         )
         with self.assertRaises(test_module.ValidationError):
             schema.validate_fields({"filter_": {"issuer_did": TEST_DID}})

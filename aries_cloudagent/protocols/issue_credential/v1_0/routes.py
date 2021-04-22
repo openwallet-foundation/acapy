@@ -903,9 +903,7 @@ async def credential_exchange_send_bound_offer(request: web.BaseRequest):
         ) = await credential_manager.create_offer(
             cred_ex_record,
             counter_proposal=(
-                CredentialProposal.deserialize(proposal_spec)
-                if proposal_spec
-                else None
+                CredentialProposal.deserialize(proposal_spec) if proposal_spec else None
             ),
             comment=None,
         )
