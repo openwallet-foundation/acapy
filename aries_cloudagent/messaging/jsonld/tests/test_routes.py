@@ -327,7 +327,6 @@ class TestJSONLDRoutes(AsyncTestCase):
             result = await test_module.verify(self.request)
             assert "error" in json.loads(result)
 
-        # print("\n>> START X-ATTR-CRED-SUBJECT")
         with async_mock.patch.object(
             jsonld, "compact", async_mock.MagicMock()
         ) as mock_compact, async_mock.patch.object(

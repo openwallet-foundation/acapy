@@ -50,6 +50,19 @@ class TestV20CredRoutes(AsyncTestCase):
         with self.assertRaises(test_module.ValidationError):
             schema.validate_fields({"veres-one": {"no": "support"}})
 
+    async def test_validate_bound_offer_request_schema(self):
+        schema = test_module.V20CredBoundOfferRequestSchema()
+        schema.validate_fields({})
+        schema.validate_fields(
+            {
+                "filter_": {"issuer_did": TEST_DID},
+                "counter_preview": {}
+            }
+        )
+        with self.assertRaises(test_module.ValidationError):
+            schema.validate_fields({"filter_": {"issuer_did": TEST_DID}})
+            schema.validate_fields({"counter_preview": {}})
+
     async def test_credential_exchange_list(self):
         self.request.query = {
             "thread_id": "dummy",

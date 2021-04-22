@@ -252,6 +252,16 @@ class V20CredBoundOfferRequestSchema(OpenAPISchema):
         description="Optional content for counter-proposal",
     )
 
+    @validates_schema
+    def validate_fields(self, data, **kwargs):
+        """Validate schema fields: need both filter and counter_preview or neither."""
+
+        if ("filter_" in data) ^ ("counter_preview" in data):
+            raise ValidationError(
+                f"V20CredBoundOfferRequestSchema\n{data}\nrequires "
+                "both filter and counter_preview or neither"
+            )
+
 
 class V20CredOfferRequestSchema(V20IssueCredSchemaCore):
     """Request schema for sending credential offer admin message."""
@@ -334,6 +344,7 @@ def _formats_filters(filt_spec: Mapping) -> Mapping:
         if filt_spec
         else {}
     )
+
 
 @docs(
     tags=["issue-credential v2.0"],
@@ -982,14 +993,10 @@ async def credential_exchange_send_bound_offer(request: web.BaseRequest):
             cred_ex_record,
             counter_proposal=V20CredProposal(
                 comment=None,
-                credential_preview=(
-                    V20CredPreview.deserialize(preview_spec)
-                    if preview_spec
-                    else None
-                ),
+                credential_preview=(V20CredPreview.deserialize(preview_spec)),
                 **_formats_filters(filt_spec),
             )
-            if preview
+            if preview_spec
             else None,
             comment=None,
         )
