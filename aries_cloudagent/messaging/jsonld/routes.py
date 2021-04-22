@@ -3,6 +3,8 @@
 from aiohttp import web
 from aiohttp_apispec import docs, request_schema, response_schema
 from marshmallow import Schema, fields
+from marshmallow.utils import INCLUDE
+from pydid.doc.verification_method import VerificationMethod
 
 from ...admin.request_context import AdminRequestContext
 from ...config.base import InjectionError
@@ -11,7 +13,11 @@ from ...resolver.did_resolver import DIDResolver
 from ...wallet.error import WalletError
 from ..models.openapi import OpenAPISchema
 from .credential import sign_credential, verify_credential
-from .error import BaseJSONLDMessagingError, MissingVerificationMethodError
+from .error import (
+    BaseJSONLDMessagingError,
+    InvalidVerificationMethod,
+    MissingVerificationMethodError,
+)
 
 
 class SignRequestSchema(OpenAPISchema):
@@ -76,32 +82,34 @@ async def sign(request: web.BaseRequest):
     return web.json_response(response)
 
 
+class DocSchema(OpenAPISchema):
+    """Verifiable doc schema."""
+
+    class Meta:
+        """Keep unknown values."""
+
+        unknown = INCLUDE
+
+    proof = fields.Nested(
+        Schema.from_dict(
+            {
+                "creator": fields.Str(required=False),
+                "verificationMethod": fields.Str(required=False),
+                "proofPurpose": fields.Str(required=False),
+            }
+        )
+    )
+
+
 class VerifyRequestSchema(OpenAPISchema):
     """Request schema for signing a jsonld doc."""
 
     verkey = fields.Str(
         required=False, description="Verkey to use for doc verification"
     )
-    doc = fields.Nested(
-        Schema.from_dict(
-            {
-                "credential": fields.Dict(
-                    required=True,
-                    description="Credential to verify",
-                ),
-                "options": fields.Nested(
-                    Schema.from_dict(
-                        {
-                            "creator": fields.Str(required=False),
-                            "verificationMethod": fields.Str(required=False),
-                            "proofPurpose": fields.Str(required=False),
-                        }
-                    ),
-                    required=True,
-                ),
-            }
-        ),
+    doc = fields.Dict(
         required=True,
+        description="Credential to verify",
     )
 
 
@@ -136,19 +144,28 @@ async def verify(request: web.BaseRequest):
                 ver_meth_expanded = await resolver.dereference(
                     profile, doc["proof"]["verificationMethod"]
                 )
+
                 if ver_meth_expanded is None:
                     raise MissingVerificationMethodError(
                         f"Verification method "
                         f"{doc['proof']['verificationMethod']} not found."
                     )
+
+                if not isinstance(ver_meth_expanded, VerificationMethod):
+                    raise InvalidVerificationMethod(
+                        "verificationMethod does not identify a valid verification method"
+                    )
+
                 verkey = ver_meth_expanded.material
+
             valid = await verify_credential(session, doc, verkey)
+
         response["valid"] = valid
     except (
         BaseJSONLDMessagingError,
         ResolverError,
-    ) as e:
-        response["error"] = str(e)
+    ) as error:
+        response["error"] = str(error)
     except (WalletError, InjectionError):
         raise web.HTTPForbidden(reason="No wallet available")
     return web.json_response(response)
