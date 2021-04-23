@@ -158,8 +158,8 @@ def add_pack_recipients(
             enc_cek = nacl.bindings.crypto_box(cek, nonce, target_pk, sk)
             wrapper.add_recipient(
                 JweRecipient(
-                    enc_cek,
-                    OrderedDict(
+                    encrypted_key=enc_cek,
+                    header=OrderedDict(
                         [
                             ("kid", bytes_to_b58(target_vk)),
                             ("sender", b64url(enc_sender)),
@@ -173,7 +173,9 @@ def add_pack_recipients(
             nonce = None
             enc_cek = nacl.bindings.crypto_box_seal(cek, target_pk)
             wrapper.add_recipient(
-                JweRecipient(enc_cek, {"kid": bytes_to_b58(target_vk)})
+                JweRecipient(
+                    encrypted_key=enc_cek, header={"kid": bytes_to_b58(target_vk)}
+                )
             )
 
 

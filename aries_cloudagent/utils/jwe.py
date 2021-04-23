@@ -1,3 +1,5 @@
+"""JSON Web Encryption utilities."""
+
 import json
 
 from collections import OrderedDict
@@ -62,16 +64,21 @@ class JweRecipientSchema(Schema):
 
 
 class JweRecipient:
-    def __init__(self, encrypted_key: bytes, header: dict = None) -> "JweRecipient":
+    """A single message recipient."""
+
+    def __init__(self, *, encrypted_key: bytes, header: dict = None) -> "JweRecipient":
+        """Initialize the JWE recipient."""
         self.encrypted_key = encrypted_key
         self.header = header or {}
 
     @classmethod
-    def deserialize(cls, entry: dict) -> "JweRecipient":
+    def deserialize(cls, entry: Mapping[str, Any]) -> "JweRecipient":
+        """Deserialize a JWE recipient from a mapping."""
         vals = JweRecipientSchema().load(entry)
         return cls(vals["encrypted_key"], vals.get("header"))
 
     def serialize(self) -> dict:
+        """Serialize the JWE recipient to a mapping."""
         ret = OrderedDict([("encrypted_key", b64url(self.encrypted_key))])
         if self.header:
             ret["header"] = self.header
@@ -92,6 +99,7 @@ class JweEnvelope:
         tag: bytes = None,
         aad: bytes = None,
     ):
+        """Initialize a new JWE envelope instance."""
         self.protected = protected
         self.protected_b64 = protected_b64
         self.unprotected = unprotected or OrderedDict()
@@ -135,7 +143,12 @@ class JweEnvelope:
             if IDENT_ENC_KEY not in protected:
                 raise ValidationError("Invalid JWE: no recipients")
             header = protected.pop(IDENT_HEADER) if IDENT_HEADER in protected else None
-            recips = [JweRecipient(from_b64url(protected.pop(IDENT_ENC_KEY)), header)]
+            recips = [
+                JweRecipient(
+                    encrypted_key=from_b64url(protected.pop(IDENT_ENC_KEY)),
+                    header=header,
+                )
+            ]
 
         inst = cls(
             protected=protected,
@@ -205,8 +218,9 @@ class JweEnvelope:
 
     @property
     def protected_bytes(self) -> bytes:
-        """Access the protected data encoded as bytes, for use as the
-        additional authenticated data for encryption.
+        """Access the protected data encoded as bytes.
+
+        This value is used in the additional authenticated data when encrypting.
         """
         return (
             self.protected_b64.encode("utf-8")
@@ -224,8 +238,8 @@ class JweEnvelope:
     def recipients(self) -> Iterable[JweRecipient]:
         """Accessor for an iterator over the JWE recipients.
 
-        The headers for each recipient include protected and
-        unprotected headers from the outer envelope.
+        The headers for each recipient include protected and unprotected headers from the
+        outer envelope.
         """
         header = self.protected.copy()
         header.update(self.unprotected)
@@ -233,6 +247,6 @@ class JweEnvelope:
             if recip.header:
                 recip_h = header.copy()
                 recip_h.update(recip.header)
-                yield JweRecipient(recip.encrypted_key, recip_h)
+                yield JweRecipient(encrypted_key=recip.encrypted_key, header=recip_h)
             else:
-                yield JweRecipient(recip.encrypted_key, header)
+                yield JweRecipient(encrypted_key=recip.encrypted_key, header=header)

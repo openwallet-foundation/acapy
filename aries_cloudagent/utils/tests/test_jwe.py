@@ -88,7 +88,7 @@ class TestJwe(TestCase):
             tag=TAG,
             aad=AAD,
         )
-        env.add_recipient(JweRecipient(ENC_KEY_1, {"def": "DEF"}))
+        env.add_recipient(JweRecipient(encrypted_key=ENC_KEY_1, header={"def": "DEF"}))
         env.set_protected(PARAMS)
         message = env.to_json()
         loaded = JweEnvelope.from_json(message)
@@ -117,8 +117,8 @@ class TestJwe(TestCase):
             tag=TAG,
             aad=AAD,
         )
-        env.add_recipient(JweRecipient(ENC_KEY_1, {"def": "DEF"}))
-        env.add_recipient(JweRecipient(ENC_KEY_2, {"ghi": "GHI"}))
+        env.add_recipient(JweRecipient(encrypted_key=ENC_KEY_1, header={"def": "DEF"}))
+        env.add_recipient(JweRecipient(encrypted_key=ENC_KEY_2, header={"ghi": "GHI"}))
         env.set_protected(PARAMS)
         message = env.to_json()
         loaded = JweEnvelope.from_json(message)

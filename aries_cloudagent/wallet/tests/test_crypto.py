@@ -107,23 +107,33 @@ class TestUtil(TestCase):
 
     def test_extract_pack_recipients_x(self):
         with pytest.raises(ValueError) as excinfo:
-            test_module.extract_pack_recipients([JweRecipient(b"")])
+            test_module.extract_pack_recipients([JweRecipient(encrypted_key=b"")])
         assert "Blank recipient key" in str(excinfo.value)
 
         with pytest.raises(ValueError) as excinfo:
             test_module.extract_pack_recipients(
-                [JweRecipient(b"0000", {"kid": "4mZ5TYv4oN"})] * 2
+                [JweRecipient(encrypted_key=b"0000", header={"kid": "4mZ5TYv4oN"})] * 2
             )
         assert "Duplicate recipient key" in str(excinfo.value)
 
         with pytest.raises(ValueError) as excinfo:
             test_module.extract_pack_recipients(
-                [JweRecipient(b"0000", {"kid": "4mZ5TYv4oN", "sender": "4mZ5TYv4oN"})]
+                [
+                    JweRecipient(
+                        encrypted_key=b"0000",
+                        header={"kid": "4mZ5TYv4oN", "sender": "4mZ5TYv4oN"},
+                    )
+                ]
             )
         assert "Missing iv" in str(excinfo.value)
 
         with pytest.raises(ValueError) as excinfo:
             test_module.extract_pack_recipients(
-                [JweRecipient(b"0000", {"kid": "4mZ5TYv4oN", "iv": "00000000"})]
+                [
+                    JweRecipient(
+                        encrypted_key=b"0000",
+                        header={"kid": "4mZ5TYv4oN", "iv": "00000000"},
+                    )
+                ]
             )
         assert "Unexpected iv" in str(excinfo.value)
