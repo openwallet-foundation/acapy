@@ -44,7 +44,7 @@ class TestProblemReportHandler:
     async def test_called(self, mock_oob_mgr, request_context, connection_record):
         mock_oob_mgr.return_value.receive_problem_report = async_mock.CoroutineMock()
         request_context.message = ProblemReport(
-            problem_code=ProblemReportReason.EXISTING_CONNECTION_DOES_NOT_EXISTS
+            problem_code=ProblemReportReason.NO_EXISTING_CONNECTION.value
         )
         handler_inst = handler.OOBProblemReportMessageHandler()
         responder = MockResponder()
@@ -63,7 +63,7 @@ class TestProblemReportHandler:
             OutOfBandManagerError("error")
         )
         request_context.message = ProblemReport(
-            problem_code=ProblemReportReason.EXISTING_CONNECTION_NOT_ACTIVE
+            problem_code=ProblemReportReason.EXISTING_CONNECTION_NOT_ACTIVE.value
         )
         handler_inst = handler.OOBProblemReportMessageHandler()
         responder = MockResponder()

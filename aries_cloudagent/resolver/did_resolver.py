@@ -9,10 +9,16 @@ import logging
 from itertools import chain
 from typing import Union
 
-from pydid import DID, DIDUrl, DIDDocument, Service, VerificationMethod
+from pydid import DID, DIDDocument, DIDError, DIDUrl, Service, VerificationMethod
 
 from ..core.profile import Profile
-from ..resolver.base import BaseDIDResolver, DIDMethodNotSupported, DIDNotFound
+
+from .base import (
+    BaseDIDResolver,
+    DIDMethodNotSupported,
+    DIDNotFound,
+    ResolverError,
+)
 from .did_resolver_registry import DIDResolverRegistry
 
 LOGGER = logging.getLogger(__name__)
@@ -64,6 +70,11 @@ class DIDResolver:
     ) -> Union[Service, VerificationMethod]:
         """Dereference a DID URL to its corresponding DID Doc object."""
         # TODO Use cached DID Docs when possible
-        did_url = DIDUrl.parse(did_url)
-        doc = await self.resolve(profile, did_url.did)
-        return doc.dereference(did_url)
+        try:
+            did_url = DIDUrl.parse(did_url)
+            doc = await self.resolve(profile, did_url.did)
+            return doc.dereference(did_url)
+        except DIDError as err:
+            raise ResolverError(
+                "Failed to parse DID URL from {}".format(did_url)
+            ) from err

@@ -29,7 +29,7 @@ class TestInvitationRequestHandler(AsyncTestCase):
             responder="test-agent",
             message="Hello World",
         )
-        self.context.update_settings({"accept_requests": False})
+        self.context.update_settings({"auto_accept_intro_invitation_requests": False})
 
     async def test_handle(self):
         handler = test_module.InvitationRequestHandler()
@@ -44,7 +44,7 @@ class TestInvitationRequestHandler(AsyncTestCase):
 
     async def test_handle_auto_accept(self):
         handler = test_module.InvitationRequestHandler()
-        self.context.update_settings({"accept_requests": True})
+        self.context.update_settings({"auto_accept_intro_invitation_requests": True})
 
         conn_invitation = ConnectionInvitation(
             label=TEST_LABEL,

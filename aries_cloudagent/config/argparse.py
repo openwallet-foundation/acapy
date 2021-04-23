@@ -307,7 +307,6 @@ class DebugGroup(ArgumentGroup):
             env_var="ACAPY_TEST_SUITE_ENDPOINT",
             help="URL endpoint for sending messages to the test suite agent.",
         )
-
         parser.add_argument(
             "--auto-accept-invites",
             action="store_true",
@@ -736,6 +735,12 @@ class ProtocolGroup(ArgumentGroup):
             ),
         )
         parser.add_argument(
+            "--auto-accept-intro-invitation-requests",
+            action="store_true",
+            env_var="ACAPY_AUTO_ACCEPT_INTRO_INVITATION_REQUESTS",
+            help="Automatically accept introduction invitations. Default: false.",
+        )
+        parser.add_argument(
             "--invite-base-url",
             type=str,
             metavar="<base-url>",
@@ -840,6 +845,8 @@ class ProtocolGroup(ArgumentGroup):
         settings = {}
         if args.auto_ping_connection:
             settings["auto_ping_connection"] = True
+        if args.auto_accept_intro_invitation_requests:
+            settings["auto_accept_intro_invitation_requests"] = True
         if args.invite_base_url:
             settings["invite_base_url"] = args.invite_base_url
         if args.monitor_ping:
