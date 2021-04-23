@@ -2,7 +2,7 @@
 
 import json
 
-from typing import Sequence
+from typing import Sequence, Tuple
 
 import indy.anoncreds
 import indy.did
@@ -435,7 +435,7 @@ class IndySdkWallet(BaseWallet):
 
         return result
 
-    async def unpack_message(self, enc_message: bytes) -> (str, str, str):
+    async def unpack_message(self, enc_message: bytes) -> Tuple[str, str, str]:
         """
         Unpack a message.
 
