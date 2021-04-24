@@ -11,6 +11,7 @@ Feature: RFC 0586 Aries sign (endorse) transactions functions
       And "Bob" has a DID with role "AUTHOR"
       And "Acme" connection has job role "TRANSACTION_ENDORSER"
       And "Bob" connection has job role "TRANSACTION_AUTHOR"
+      And "Bob" connection sets endorser info
       And "Bob" authors a schema transaction with <Schema_name>
       And "Bob" requests endorsement for the transaction
       And "Acme" endorses the transaction
@@ -36,6 +37,7 @@ Feature: RFC 0586 Aries sign (endorse) transactions functions
       And "Bob" has a DID with role "AUTHOR"
       And "Acme" connection has job role "TRANSACTION_ENDORSER"
       And "Bob" connection has job role "TRANSACTION_AUTHOR"
+      And "Bob" connection sets endorser info
       And "Bob" authors a schema transaction with <Schema_name>
       And "Bob" requests endorsement for the transaction
       And "Acme" endorses the transaction
