@@ -75,7 +75,7 @@ class JweRecipient:
     def deserialize(cls, entry: Mapping[str, Any]) -> "JweRecipient":
         """Deserialize a JWE recipient from a mapping."""
         vals = JweRecipientSchema().load(entry)
-        return cls(vals["encrypted_key"], vals.get("header"))
+        return cls(**vals)
 
     def serialize(self) -> dict:
         """Serialize the JWE recipient to a mapping."""
