@@ -867,7 +867,7 @@ async def credential_exchange_send_bound_offer(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     outbound_handler = request["outbound_message_router"]
 
-    body = await request.json()
+    body = await request.json() if request.body_exists else {}
     proposal_spec = body.get("counter_proposal")
 
     credential_exchange_id = request.match_info["cred_ex_id"]
