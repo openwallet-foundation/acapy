@@ -212,13 +212,6 @@ async def transaction_create_request(request: web.BaseRequest):
             transaction_record = await TransactionRecord.retrieve_by_id(
                 session, transaction_id
             )
-    except StorageNotFoundError as err:
-        raise web.HTTPNotFound(reason=err.roll_up) from err
-    except BaseModelError as err:
-        raise web.HTTPBadRequest(reason=err.roll_up) from err
-
-    try:
-        async with context.session() as session:
             connection_record = await ConnRecord.retrieve_by_id(
                 session, transaction_record.connection_id
             )
@@ -231,18 +224,24 @@ async def transaction_create_request(request: web.BaseRequest):
     jobs = await connection_record.metadata_get(session, "transaction_jobs")
     if not jobs:
         raise web.HTTPForbidden(
-            reason="The transaction related jobs are not set up in "
-            "connection metadata for this connection record"
+            reason=(
+                "The transaction related jobs are not set up in "
+                "connection metadata for this connection record"
+            )
         )
     if "transaction_my_job" not in jobs.keys():
         raise web.HTTPForbidden(
-            reason='The "transaction_my_job" is not set in "transaction_jobs"'
-            " in connection metadata for this connection record"
+            reason=(
+                'The "transaction_my_job" is not set in "transaction_jobs" '
+                "connection metadata for this connection record"
+            )
         )
     if "transaction_their_job" not in jobs.keys():
         raise web.HTTPForbidden(
-            reason='Ask the other agent to set up "transaction_my_job" '
-            ' in "transaction_jobs" in connection metadata for their connection record'
+            reason=(
+                'Ask the other agent to set up "transaction_my_job" in '
+                '"transaction_jobs" in connection metadata for their connection record'
+            )
         )
     if jobs["transaction_my_job"] != TransactionJob.TRANSACTION_AUTHOR.name:
         raise web.HTTPForbidden(reason="Only a TRANSACTION_AUTHOR can create a request")
@@ -319,8 +318,10 @@ async def endorse_transaction_response(request: web.BaseRequest):
     jobs = await connection_record.metadata_get(session, "transaction_jobs")
     if not jobs:
         raise web.HTTPForbidden(
-            reason="The transaction related jobs are not set up in "
-            "connection metadata for this connection record"
+            reason=(
+                "The transaction related jobs are not set up in "
+                "connection metadata for this connection record"
+            )
         )
     if jobs["transaction_my_job"] != TransactionJob.TRANSACTION_ENDORSER.name:
         raise web.HTTPForbidden(
@@ -418,8 +419,10 @@ async def refuse_transaction_response(request: web.BaseRequest):
     jobs = await connection_record.metadata_get(session, "transaction_jobs")
     if not jobs:
         raise web.HTTPForbidden(
-            reason="The transaction related jobs are not set up in "
-            "connection metadata for this connection record"
+            reason=(
+                "The transaction related jobs are not set up in "
+                "connection metadata for this connection record"
+            )
         )
     if jobs["transaction_my_job"] != TransactionJob.TRANSACTION_ENDORSER.name:
         raise web.HTTPForbidden(
@@ -485,8 +488,10 @@ async def cancel_transaction(request: web.BaseRequest):
     jobs = await connection_record.metadata_get(session, "transaction_jobs")
     if not jobs:
         raise web.HTTPForbidden(
-            reason="The transaction related jobs are not set up in "
-            "connection metadata for this connection record"
+            reason=(
+                "The transaction related jobs are not set up in "
+                "connection metadata for this connection record"
+            )
         )
     if jobs["transaction_my_job"] != TransactionJob.TRANSACTION_AUTHOR.name:
         raise web.HTTPForbidden(
@@ -550,8 +555,10 @@ async def transaction_resend(request: web.BaseRequest):
     jobs = await connection_record.metadata_get(session, "transaction_jobs")
     if not jobs:
         raise web.HTTPForbidden(
-            reason="The transaction related jobs are not set up in "
-            "connection metadata for this connection record"
+            reason=(
+                "The transaction related jobs are not set up in "
+                "connection metadata for this connection record"
+            )
         )
     if jobs["transaction_my_job"] != TransactionJob.TRANSACTION_AUTHOR.name:
         raise web.HTTPForbidden(
@@ -652,27 +659,35 @@ async def set_endorser_info(request: web.BaseRequest):
     jobs = await record.metadata_get(session, "transaction_jobs")
     if not jobs:
         raise web.HTTPForbidden(
-            reason="The transaction related jobs are not set up in "
-            "connection metadata for this connection record"
+            reason=(
+                "The transaction related jobs are not set up in "
+                "connection metadata for this connection record"
+            )
         )
     if "transaction_my_job" not in jobs.keys():
         raise web.HTTPForbidden(
-            reason='The "transaction_my_job" is not set in "transaction_jobs"'
-            " in connection metadata for this connection record"
+            reason=(
+                'The "transaction_my_job" is not set in "transaction_jobs"'
+                " in connection metadata for this connection record"
+            )
         )
     if "transaction_their_job" not in jobs.keys():
         raise web.HTTPForbidden(
-            reason='Ask the other agent to set up "transaction_my_job" '
-            ' in "transaction_jobs" in connection metadata for their connection record'
+            reason=(
+                'Ask the other agent to set up "transaction_my_job" in '
+                '"transaction_jobs" in connection metadata for their connection record'
+            )
         )
     if jobs["transaction_my_job"] != TransactionJob.TRANSACTION_AUTHOR.name:
         raise web.HTTPForbidden(
-            reason="Only a TRANSACTION_AUTHOR can add endorser_info "
-            "to metadata of it's connection record"
+            reason=(
+                "Only a TRANSACTION_AUTHOR can add endorser_info "
+                "to metadata of its connection record"
+            )
         )
     if jobs["transaction_their_job"] != TransactionJob.TRANSACTION_ENDORSER.name:
         raise web.HTTPForbidden(
-            reason="The Other agent should have a job of " "TRANSACTION_ENDORSER"
+            reason="The Other agent should have job TRANSACTION_ENDORSER"
         )
     value = await record.metadata_get(session, "endorser_info")
     if value:
@@ -725,8 +740,10 @@ async def transaction_write(request: web.BaseRequest):
     jobs = await connection_record.metadata_get(session, "transaction_jobs")
     if not jobs:
         raise web.HTTPForbidden(
-            reason="The transaction related jobs are not set up in "
-            "connection metadata for this connection record"
+            reason=(
+                "The transaction related jobs are not set up in "
+                "connection metadata for this connection record"
+            )
         )
     if jobs["transaction_my_job"] != TransactionJob.TRANSACTION_AUTHOR.name:
         raise web.HTTPForbidden(
