@@ -1248,6 +1248,43 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
                 }
             )
 
+    async def test_set_endorser_info_no_prior_value(self):
+        self.request.match_info = {"conn_id": "dummy"}
+        self.request.query = {"endorser_did": "did", "endorser_name": "name"}
+        with async_mock.patch.object(
+            ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
+        ) as mock_conn_rec_retrieve, async_mock.patch.object(
+            test_module.web, "json_response"
+        ) as mock_response:
+            mock_conn_rec_retrieve.return_value = async_mock.MagicMock(
+                metadata_get=async_mock.CoroutineMock(
+                    side_effect=[
+                        {
+                            "transaction_my_job": (
+                                test_module.TransactionJob.TRANSACTION_AUTHOR.name
+                            ),
+                            "transaction_their_job": (
+                                test_module.TransactionJob.TRANSACTION_ENDORSER.name
+                            ),
+                        },
+                        None,
+                        {
+                            "endorser_did": "did",
+                            "endorser_name": "name",
+                        },
+                    ]
+                ),
+                metadata_set=async_mock.CoroutineMock(),
+            )
+            await test_module.set_endorser_info(self.request)
+
+            mock_response.assert_called_once_with(
+                {
+                    "endorser_did": "did",
+                    "endorser_name": "name",
+                }
+            )
+
     async def test_set_endorser_info_not_found_x(self):
         self.request.match_info = {"conn_id": "dummy"}
         self.request.query = {"endorser_did": "did", "endorser_name": "name"}
