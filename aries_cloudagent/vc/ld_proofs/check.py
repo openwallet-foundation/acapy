@@ -40,8 +40,8 @@ def diff_dict_keys(full: dict, with_missing: dict, prefix: str = None) -> Sequen
     # Loop trough all key/value pairs of the full document
     for key, value in full.items():
 
-        # @context is base json-ld type
-        if key == "@context":
+        # skip json-ld keywords
+        if jsonld._is_keyword(key):
             continue
 
         _prefix = f"{prefix}.{key}" if prefix else key

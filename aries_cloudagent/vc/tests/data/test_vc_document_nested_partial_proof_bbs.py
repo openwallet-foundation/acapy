@@ -1,4 +1,4 @@
-BBS_PROOF_NESTED_VC_MATTR = {
+TEST_VC_DOCUMENT_NESTED_PARTIAL_PROOF_BBS = {
     "@context": [
         "https://www.w3.org/2018/credentials/v1",
         "https://www.w3.org/2018/credentials/examples/v1",
@@ -8,12 +8,10 @@ BBS_PROOF_NESTED_VC_MATTR = {
     "type": ["UniversityDegreeCredential", "VerifiableCredential"],
     "credentialSubject": {
         "id": "did:example:489398593",
-        "college": "Contoso University",
         "degree": {
             "id": "urn:bnid:_:c14n0",
             "type": "BachelorDegree",
             "name": "Bachelor of Science and Arts",
-            "degreeType": "Underwater Basket Weaving",
         },
     },
     "issuanceDate": "2020-03-10T04:24:12.164Z",
@@ -21,9 +19,9 @@ BBS_PROOF_NESTED_VC_MATTR = {
     "proof": {
         "type": "BbsBlsSignatureProof2020",
         "created": "2021-04-26T17:55:05Z",
-        "nonce": "Vy7Mup3vFgTcs0NxggmHYMfIf7+ykk/M1a0+wRNjcGukpe/C2Rl7WvN1DVxCg8gvhng=",
+        "nonce": "58pQbOsBR7l+FwAGs1bDWiCyQXJFkmSNBHC0BDzX4BU6khM6VbJZBqb5RGONkGFJBNQ=",
         "proofPurpose": "assertionMethod",
-        "proofValue": "AA4//7SYcnewiCvH+CG/CwNY4rXdpfZ/9j79GASJFWa6C9jwBzQenfeXtuMBvHCDvmpTqI5Dtf/7O938CV0qEtUTquPrT6stNxnCfJSPYmM78d48LJidPoLhdRjT+QNfj5sM647odR5b9JOMmW43yMUAxkb+A9bGNdixG5OqK3xLSuRHDkTIi1Lu6/x4xgOeR5KALAAAAHSYATbHEjd2sdxY9n7lzdWkta25moSE1UNZBO+B+nSysYlQYO9H9jX0zRrzUaKDnSAAAAACX8oBf2PCWC3U6jtaoRqO2pAmc4nXO2tqsnVm6zNBUmEQlWf32/Cl3VvyB2q9XBGagPDLiyxuDcSkoQRJX4D/M4IRx8LVMhIYPT4O4mDejKuFqFQN1PiVN4W+eR0I8KZ0Jq8QP97CM8/6YFg+fyuxdQAAAAJJotlRjal+sxbNpyVHU70FDv1icZyEFJwGm7HnFFh/iAqjP69KB37eou5Xt1TkM6fgK65gu0e4jTTALpk5tie3",
+        "proofValue": "AA4f74GNgyGujm0aHzKd2xuUpetxhpFaXhW6twInMfmFNZYW2/RlShvRGE6Ios/dgr5e+qyGGOGkBWSdSOaFGsseo6Ne/0429iKAZpWo/abD6r8kIszn8L5UL43NxCia/UtQB5HjqBPYelAsepN3aNryZNUc0h7UcyjTqgp9wGfPADW4KJIBXv4SvwqwRZgcDzdKxwAAAHSStf9LAUTsKXnlWL7hE0x86/4wzpDFRWCE/WgkCz/mqQlt+vlWDwm9k7PlwiPoLhYAAAACBLS2axWssG0oNnqk02If5qm6ToalAP/TGB/cORH00KNrKMvhMMwI54odGP5qy4qJmQp+cYcj4bffIfaXbRGNqJdHYKbeHk5ZV/A91vnI3mxQfhtKp1YmNC2DpUfw/hSTAubh5Iv2UMFWc1Gl+hYuDAAAAARiA7M07jBRe+QGbPgLg1nFgiD26GDBD+wYm93qM+HfwBKYqEbeXVveTsx589OTilT5HP2b6cOfSwCJyU8xU/uKPNYhNGqkGZgPXjIVfvRWFblSX822hnMBOYzdCroarsdUCom4NMlFvAQeZAQ6CtZUkXSKAizYCdx5yeHjjkveAg==",
         "verificationMethod": "did:example:489398593#test",
     },
 }

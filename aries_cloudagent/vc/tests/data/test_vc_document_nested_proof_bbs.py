@@ -1,4 +1,4 @@
-BBS_PROOF_NESTED_VC_MATTR = {
+TEST_VC_DOCUMENT_NESTED_PROOF_BBS = {
     "@context": [
         "https://www.w3.org/2018/credentials/v1",
         "https://www.w3.org/2018/credentials/examples/v1",

@@ -604,8 +604,8 @@ class EndpointType(OneOf):
 class CredentialType(Validator):
     """Credential Type."""
 
-    FIRST_TYPE = "VerifiableCredential"
-    EXAMPLE = [FIRST_TYPE, "AlumniCredential"]
+    CREDENTIAL_TYPE = "VerifiableCredential"
+    EXAMPLE = [CREDENTIAL_TYPE, "AlumniCredential"]
 
     def __init__(self) -> None:
         """Initializer."""
@@ -614,11 +614,8 @@ class CredentialType(Validator):
     def __call__(self, value):
         """Validate input value."""
         length = len(value)
-
-        if length < 1 or value[0] != CredentialType.FIRST_TYPE:
-            raise ValidationError(
-                f"First type {value[0]} must be {CredentialType.FIRST_TYPE}"
-            )
+        if length < 1 or CredentialType.CREDENTIAL_TYPE not in value:
+            raise ValidationError(f"type must include {CredentialType.CREDENTIAL_TYPE}")
 
         return value
 

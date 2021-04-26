@@ -6,6 +6,7 @@ BBS_NESTED_VC_MATTR = {
     ],
     "id": "https://example.gov/credentials/3732",
     "type": ["VerifiableCredential", "UniversityDegreeCredential"],
+    "issuer": "did:example:489398593",
     "issuanceDate": "2020-03-10T04:24:12.164Z",
     "credentialSubject": {
         "id": "did:example:489398593",

@@ -14,12 +14,14 @@ BBS_PARTIAL_PROOF_NESTED_VC_MATTR = {
             "name": "Bachelor of Science and Arts",
         },
     },
+    "issuanceDate": "2020-03-10T04:24:12.164Z",
+    "issuer": "did:example:489398593",
     "proof": {
         "type": "BbsBlsSignatureProof2020",
-        "created": "2020-12-14T03:11:30Z",
-        "nonce": "am6ZmHvRRrhDNdiEzfpZm7kBLwlh5B4ULmwczzH9iwtLnMu7QhH9WaWmtEwJ0LrwdpI=",
+        "created": "2021-04-26T17:55:05Z",
+        "nonce": "58pQbOsBR7l+FwAGs1bDWiCyQXJFkmSNBHC0BDzX4BU6khM6VbJZBqb5RGONkGFJBNQ=",
         "proofPurpose": "assertionMethod",
-        "proofValue": "AA0N76Kuc+1HYPajNPxCemRdLGV0q5nUIB0DdOm1nsrbql6JsyM5TzTSBIcG7u6plxPLI7VCrxYQ16u2CjlafhlXXLBvm+ERVPN2i2aPgq+h9Ykb3sVGYEwI34nLDeeMAyo9gbLJoKnFBggaBe0h5uyJLQVefuegsdhAe6/tishSBp8/um9odS+3vMVh9EwNvfVpbAAAAHSHEWi10j8BRaTgvn3KX5R6xS9AdzbHlHt5z3ZcBRnJi9jB1l2BJHR/KypsNT7EJjcAAAACanX0ZNVF4p/SlCS9SY8bGWL4SyEMWfpvacZ/bR8pZG9PVMDZUEPsN1QpjQnekkIWks3ep42r8veuoDwlzQljMLnxGFQ78hwVpzWnAwpur2kR41Gbhq/r2XXwYY3U/tN2VBHHXMOj11YJARAbT4VUmAAAAAUBFdHA3fGTapyNQUZbvwTlWYSTX1ABL1hSTvd5O+a1QHJymaIoOVevNWQCVq+TIlGvcBiJmF0TVFV1DjDgFMFhVRLmw6zEYEMQZkaOv8eRlDbAVZGPtJpZr8GLN6wlfE1GhPwi8iLzYR01Y8sV6dqLtJvSHf8gnqieBJUTT4M9rkgOn/5zM6q4Su6bDUfgMWqlH75tPzxVwMG9Gbw4J+Vt",
+        "proofValue": "AA4f74GNgyGujm0aHzKd2xuUpetxhpFaXhW6twInMfmFNZYW2/RlShvRGE6Ios/dgr5e+qyGGOGkBWSdSOaFGsseo6Ne/0429iKAZpWo/abD6r8kIszn8L5UL43NxCia/UtQB5HjqBPYelAsepN3aNryZNUc0h7UcyjTqgp9wGfPADW4KJIBXv4SvwqwRZgcDzdKxwAAAHSStf9LAUTsKXnlWL7hE0x86/4wzpDFRWCE/WgkCz/mqQlt+vlWDwm9k7PlwiPoLhYAAAACBLS2axWssG0oNnqk02If5qm6ToalAP/TGB/cORH00KNrKMvhMMwI54odGP5qy4qJmQp+cYcj4bffIfaXbRGNqJdHYKbeHk5ZV/A91vnI3mxQfhtKp1YmNC2DpUfw/hSTAubh5Iv2UMFWc1Gl+hYuDAAAAARiA7M07jBRe+QGbPgLg1nFgiD26GDBD+wYm93qM+HfwBKYqEbeXVveTsx589OTilT5HP2b6cOfSwCJyU8xU/uKPNYhNGqkGZgPXjIVfvRWFblSX822hnMBOYzdCroarsdUCom4NMlFvAQeZAQ6CtZUkXSKAizYCdx5yeHjjkveAg==",
         "verificationMethod": "did:example:489398593#test",
     },
 }

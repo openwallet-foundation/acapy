@@ -110,7 +110,7 @@ class BbsBlsSignatureProof2020(BbsBlsSignature2020Base):
         reveal_document_result = jsonld.frame(
             compact_input_proof_document,
             reveal_document,
-            {"document_loader": document_loader},
+            {"documentLoader": document_loader},
         )
 
         # Canonicalize the resulting reveal document

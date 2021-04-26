@@ -7,6 +7,7 @@ from .credentials_v1 import CREDENTIALS_V1
 from .citizenship_v1 import CITIZENSHIP_V1
 from .examples_v1 import EXAMPLES_V1
 from .odrl import ODRL
+from .schema_org import SCHEMA_ORG
 
 
 __all__ = [
@@ -19,4 +20,5 @@ __all__ = [
     CITIZENSHIP_V1,
     EXAMPLES_V1,
     ODRL,
+    SCHEMA_ORG,
 ]

@@ -8,6 +8,7 @@ from .contexts import (
     BBS_V1,
     CITIZENSHIP_V1,
     ODRL,
+    SCHEMA_ORG,
 )
 from ..ld_proofs.constants import (
     SECURITY_CONTEXT_V2_URL,
@@ -42,6 +43,7 @@ DOCUMENTS = {
     "https://www.w3.org/2018/credentials/examples/v1": EXAMPLES_V1,
     "https://w3id.org/citizenship/v1": CITIZENSHIP_V1,
     "https://www.w3.org/ns/odrl.jsonld": ODRL,
+    "http://schema.org/": SCHEMA_ORG,
 }
 
 
@@ -64,5 +66,6 @@ def custom_document_loader(url: str, options: dict):
             "document": DOCUMENTS[without_fragment],
             "documentUrl": url,
         }
+    print("Could not find")
 
     raise Exception(f"No custom context support for {url}")
