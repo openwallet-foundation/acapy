@@ -53,6 +53,7 @@ class V20CredProposalHandler(BaseHandler):
         if cred_ex_record.auto_offer:
             (cred_ex_record, cred_offer_message) = await cred_manager.create_offer(
                 cred_ex_record,
+                counter_proposal=None,
                 comment=context.message.comment,
             )
 

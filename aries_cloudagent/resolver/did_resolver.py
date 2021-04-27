@@ -12,7 +12,8 @@ from typing import Union
 from pydid import DID, DIDDocument, DIDError, DIDUrl, Service, VerificationMethod
 
 from ..core.profile import Profile
-from ..resolver.base import (
+
+from .base import (
     BaseDIDResolver,
     DIDMethodNotSupported,
     DIDNotFound,
@@ -73,7 +74,7 @@ class DIDResolver:
             did_url = DIDUrl.parse(did_url)
             doc = await self.resolve(profile, did_url.did)
             return doc.dereference(did_url)
-        except (DIDError) as err:
+        except DIDError as err:
             raise ResolverError(
-                reason="Failed to parse DID URL from {}".format(did_url)
+                "Failed to parse DID URL from {}".format(did_url)
             ) from err

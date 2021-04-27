@@ -78,6 +78,7 @@ class V20CredManager:
         )
         (cred_ex_record, cred_offer) = await self.create_offer(
             cred_ex_record=cred_ex_record,
+            counter_proposal=None,
             comment="create automated v2.0 credential exchange record",
         )
         return (cred_ex_record, cred_offer)
@@ -192,6 +193,7 @@ class V20CredManager:
     async def create_offer(
         self,
         cred_ex_record: V20CredExRecord,
+        counter_proposal: V20CredProposal = None,
         replacement_id: str = None,
         comment: str = None,
     ) -> Tuple[V20CredExRecord, V20CredOffer]:
@@ -208,8 +210,10 @@ class V20CredManager:
 
         """
 
-        cred_proposal_message = V20CredProposal.deserialize(
-            cred_ex_record.cred_proposal
+        cred_proposal_message = (
+            counter_proposal
+            if counter_proposal
+            else V20CredProposal.deserialize(cred_ex_record.cred_proposal)
         )
         cred_proposal_message.assign_trace_decorator(
             self._profile.settings, cred_ex_record.trace
@@ -245,6 +249,9 @@ class V20CredManager:
 
         cred_ex_record.thread_id = cred_offer_message._thread_id
         cred_ex_record.state = V20CredExRecord.STATE_OFFER_SENT
+        cred_ex_record.cred_proposal = (  # any counter replaces original
+            cred_proposal_message.serialize()
+        )
         cred_ex_record.cred_offer = cred_offer_message.serialize()
 
         async with self._profile.session() as session:

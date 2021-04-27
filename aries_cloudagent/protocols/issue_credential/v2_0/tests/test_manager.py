@@ -479,6 +479,8 @@ class TestV20CredManager(AsyncTestCase):
 
             (ret_cx_rec, ret_offer) = await self.manager.create_offer(
                 cred_ex_record=cx_rec,
+                counter_proposal=None,
+                replacement_id="0",
                 comment=comment,
             )
             assert ret_cx_rec == cx_rec
@@ -496,6 +498,95 @@ class TestV20CredManager(AsyncTestCase):
                 )
                 == INDY_OFFER
             )
+
+            await self.manager.create_offer(
+                cred_ex_record=cx_rec,
+                counter_proposal=None,
+                replacement_id="0",
+                comment=comment,
+            )  # once more to cover case where offer is available in cache
+
+    async def test_create_bound_offer(self):
+        TEST_DID = "LjgpST2rjsoxYegQDRm7EL"
+        schema_id_parts = SCHEMA_ID.split(":")
+        comment = "comment"
+
+        cred_preview = V20CredPreview(
+            attributes=(
+                V20CredAttrSpec(name="legalName", value="value"),
+                V20CredAttrSpec(name="jurisdictionId", value="value"),
+                V20CredAttrSpec(name="incorporationDate", value="value"),
+            )
+        )
+        cred_proposal = V20CredProposal(
+            credential_preview=cred_preview,
+            formats=[
+                V20CredFormat(
+                    attach_id="0",
+                    format_=ATTACHMENT_FORMAT[CRED_20_PROPOSAL][
+                        V20CredFormat.Format.INDY.api
+                    ],
+                )
+            ],
+            filters_attach=[AttachDecorator.data_base64({}, ident="0")],
+        )
+        cx_rec = V20CredExRecord(
+            cred_ex_id="dummy-cxid",
+            role=V20CredExRecord.ROLE_ISSUER,
+            cred_proposal=cred_proposal.serialize(),
+        )
+
+        with async_mock.patch.object(
+            V20CredExRecord, "save", autospec=True
+        ) as mock_save, async_mock.patch.object(
+            V20CredExRecord, "get_cached_key", autospec=True
+        ) as get_cached_key, async_mock.patch.object(
+            V20CredExRecord, "set_cached_key", autospec=True
+        ) as set_cached_key:
+            get_cached_key.return_value = None
+
+            issuer = async_mock.MagicMock(IndyIssuer, autospec=True)
+            issuer.create_credential_offer = async_mock.CoroutineMock(
+                return_value=json.dumps(INDY_OFFER)
+            )
+            self.context.injector.bind_instance(IndyIssuer, issuer)
+
+            cred_def_record = StorageRecord(
+                CRED_DEF_SENT_RECORD_TYPE,
+                CRED_DEF_ID,
+                {
+                    "schema_id": SCHEMA_ID,
+                    "schema_issuer_did": schema_id_parts[0],
+                    "schema_name": schema_id_parts[-2],
+                    "schema_version": schema_id_parts[-1],
+                    "issuer_did": TEST_DID,
+                    "cred_def_id": CRED_DEF_ID,
+                    "epoch": str(int(time())),
+                },
+            )
+            await self.session.storage.add_record(cred_def_record)
+
+            (ret_cx_rec, ret_offer) = await self.manager.create_offer(
+                cred_ex_record=cx_rec,
+                counter_proposal=None,
+                comment=comment,
+            )
+            assert ret_cx_rec == cx_rec
+            mock_save.assert_called_once()
+
+            issuer.create_credential_offer.assert_called_once_with(CRED_DEF_ID)
+
+            assert cx_rec.thread_id == ret_offer._thread_id
+            assert cx_rec.role == V20CredExRecord.ROLE_ISSUER
+            assert cx_rec.state == V20CredExRecord.STATE_OFFER_SENT
+            assert (
+                V20CredOffer.deserialize(cx_rec.cred_offer).attachment(
+                    V20CredFormat.Format.INDY
+                )
+                == INDY_OFFER
+            )
+
+            # additionally check that manager passed credential preview through
             assert ret_offer.credential_preview.attributes == cred_preview.attributes
 
     async def test_create_offer_x_no_formats(self):
@@ -515,6 +606,7 @@ class TestV20CredManager(AsyncTestCase):
         with self.assertRaises(V20CredManagerError) as context:
             await self.manager.create_offer(
                 cred_ex_record=cx_rec,
+                counter_proposal=None,
                 comment=comment,
             )
         assert "No supported formats" in str(context.exception)
