@@ -47,7 +47,7 @@ class IssuerRevRegRecord(BaseRecord):
 
     RECORD_ID_NAME = "record_id"
     RECORD_TYPE = "issuer_rev_reg"
-    WEBHOOK_TOPIC = "revocation_registry"
+    RECORD_TOPIC = "revocation_registry"
     LOG_STATE_FLAG = "debug.revocation"
     TAG_NAMES = {
         "cred_def_id",

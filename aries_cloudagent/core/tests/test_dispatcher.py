@@ -6,6 +6,7 @@ from marshmallow import EXCLUDE
 
 from ...config.injection_context import InjectionContext
 from ...connections.models.conn_record import ConnRecord
+from ...core.event_bus import EventBus
 from ...core.in_memory import InMemoryProfile
 from ...core.profile import Profile
 from ...core.protocol_registry import ProtocolRegistry
@@ -29,6 +30,7 @@ def make_profile() -> Profile:
     profile = InMemoryProfile.test_profile()
     profile.context.injector.bind_instance(ProtocolRegistry, ProtocolRegistry())
     profile.context.injector.bind_instance(Collector, Collector())
+    profile.context.injector.bind_instance(EventBus, EventBus())
     return profile
 
 
@@ -348,24 +350,6 @@ class TestDispatcher(AsyncTestCase):
         )
         dispatcher.log_task(mock_task)
 
-    async def test_create_outbound_send_webhook(self):
-        profile = make_profile()
-        context = RequestContext(profile)
-        context.message_receipt = async_mock.MagicMock(in_time=datetime_now())
-        context.update_settings({"timing.enabled": True})
-        message = StubAgentMessage()
-        responder = test_module.DispatcherResponder(
-            context, message, None, async_mock.CoroutineMock()
-        )
-        result = await responder.create_outbound(message)
-        assert json.loads(result.payload)["@type"] == DIDCommPrefix.qualify_current(
-            StubAgentMessage.Meta.message_type
-        )
-        await responder.send_webhook("topic", "payload")
-
-        context.default_endpoint = "http://agent.ca"
-        assert context.default_endpoint == "http://agent.ca"
-
     async def test_create_send_outbound(self):
         message = StubAgentMessage()
         responder = MockResponder()
@@ -377,9 +361,7 @@ class TestDispatcher(AsyncTestCase):
         profile = make_profile()
         context = RequestContext(profile)
         message = b"abc123xyz7890000"
-        responder = test_module.DispatcherResponder(
-            context, message, None, async_mock.CoroutineMock()
-        )
+        responder = test_module.DispatcherResponder(context, message, None)
         with async_mock.patch.object(
             responder, "send_outbound", async_mock.CoroutineMock()
         ) as mock_send_outbound:

@@ -29,7 +29,9 @@ class MenuRequestHandler(BaseHandler):
         service: BaseMenuService = context.inject(BaseMenuService, required=False)
         if service:
             menu = await service.get_active_menu(
-                context.connection_record, context.message._thread_id
+                context.profile,
+                context.connection_record,
+                context.message._thread_id,
             )
             if menu:
                 await responder.send_reply(menu)

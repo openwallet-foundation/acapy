@@ -6,6 +6,7 @@ from .provider import CachedProvider, ClassProvider
 
 from ..cache.base import BaseCache
 from ..cache.in_memory import InMemoryCache
+from ..core.event_bus import EventBus
 from ..core.plugin_registry import PluginRegistry
 from ..core.profile import ProfileManager, ProfileManagerProvider
 from ..core.protocol_registry import ProtocolRegistry
@@ -41,6 +42,9 @@ class DefaultContextBuilder(ContextBuilder):
 
         # Global protocol registry
         context.injector.bind_instance(ProtocolRegistry, ProtocolRegistry())
+
+        # Global event bus
+        context.injector.bind_instance(EventBus, EventBus())
 
         # Global did resolver registry
         did_resolver_registry = DIDResolverRegistry()

@@ -22,7 +22,7 @@ class V20CredExRecordLDProof(BaseRecord):
     RECORD_ID_NAME = "cred_ex_ld_proof_id"
     RECORD_TYPE = "ld_proof_cred_ex_v20"
     TAG_NAMES = {"~cred_ex_id"} if UNENCRYPTED_TAGS else {"cred_ex_id"}
-    WEBHOOK_TOPIC = "issue_credential_v2_0_ld_proof"
+    RECORD_TOPIC = "issue_credential_v2_0_ld_proof"
 
     def __init__(
         self,

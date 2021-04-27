@@ -455,7 +455,7 @@ class InMemoryWallet(BaseWallet):
         keys_bin = [b58_to_bytes(key) for key in to_verkeys]
         secret = self._get_private_key(from_verkey) if from_verkey else None
         result = await asyncio.get_event_loop().run_in_executor(
-            None, lambda: encode_pack_message(message, keys_bin, secret)
+            None, encode_pack_message, message, keys_bin, secret
         )
         return result
 
