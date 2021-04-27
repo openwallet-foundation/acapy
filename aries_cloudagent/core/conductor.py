@@ -146,10 +146,6 @@ class Conductor:
                     self.dispatcher.task_queue,
                     self.get_stats,
                 )
-                webhook_urls = context.settings.get("admin.webhook_urls")
-                if webhook_urls:
-                    for url in webhook_urls:
-                        self.admin_server.add_webhook_target(url)
                 context.injector.bind_instance(BaseAdminServer, self.admin_server)
             except Exception:
                 LOGGER.exception("Unable to register admin server")
@@ -206,7 +202,6 @@ class Conductor:
             responder = AdminResponder(
                 self.root_profile,
                 self.admin_server.outbound_message_router,
-                self.admin_server.send_webhook,
             )
             context.injector.bind_instance(BaseResponder, responder)
 
@@ -398,7 +393,6 @@ class Conductor:
                 profile,
                 message,
                 self.outbound_message_router,
-                self.admin_server and self.admin_server.send_webhook,
                 lambda completed: self.dispatch_complete(message, completed),
             )
         except (LedgerConfigError, LedgerTransactionError) as e:

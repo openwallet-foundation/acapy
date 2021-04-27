@@ -22,7 +22,7 @@ class V20CredExRecordDIF(BaseRecord):
     RECORD_ID_NAME = "cred_ex_dif_id"
     RECORD_TYPE = "dif_cred_ex_v20"
     TAG_NAMES = {"~cred_ex_id"} if UNENCRYPTED_TAGS else {"cred_ex_id"}
-    WEBHOOK_TOPIC = "issue_credential_v2_0_dif"
+    RECORD_TOPIC = "issue_credential_v2_0_dif"
 
     def __init__(
         self,

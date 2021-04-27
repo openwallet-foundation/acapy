@@ -1,10 +1,11 @@
-import pytest
 from unittest import mock
 
-from ......messaging.base_handler import HandlerException
+import pytest
+
+from ......core.event_bus import EventBus, MockEventBus, Event
+from ......messaging.decorators.localization_decorator import LocalizationDecorator
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
-
 from ...handlers.basicmessage_handler import BasicMessageHandler
 from ...messages.basicmessage import BasicMessage
 
@@ -17,6 +18,8 @@ def request_context() -> RequestContext:
 class TestBasicMessageHandler:
     @pytest.mark.asyncio
     async def test_basic_message(self, request_context):
+        mock_event_bus = MockEventBus()
+        request_context.profile.context.injector.bind_instance(EventBus, mock_event_bus)
         request_context.connection_record = mock.MagicMock()
         test_message_content = "http://aries.ca/hello"
         request_context.message = BasicMessage(content=test_message_content)
@@ -26,16 +29,19 @@ class TestBasicMessageHandler:
         await handler.handle(request_context, responder)
         messages = responder.messages
         assert len(messages) == 0
-        hooks = responder.webhooks
-        assert len(hooks) == 1
-        assert hooks[0] == (
-            "basicmessages",
-            {
-                "connection_id": request_context.connection_record.connection_id,
-                "message_id": request_context.message._id,
-                "content": test_message_content,
-                "state": "received",
-            },
+        assert len(mock_event_bus.events) == 1
+        assert mock_event_bus.events[0] == (
+            request_context.profile,
+            Event(
+                "acapy::basicmessage::received",
+                {
+                    "connection_id": request_context.connection_record.connection_id,
+                    "message_id": request_context.message._id,
+                    "content": test_message_content,
+                    "state": "received",
+                    "sent_time": request_context.message.sent_time,
+                },
+            ),
         )
 
     @pytest.mark.asyncio
@@ -63,7 +69,8 @@ class TestBasicMessageHandler:
         request_context.default_label = "agent"
         test_message_content = "Reply with: g'day"
         request_context.message = BasicMessage(
-            content=test_message_content, localization="en-CA"
+            content=test_message_content,
+            localization=LocalizationDecorator(locale="en-CA"),
         )
         request_context.connection_ready = True
         handler = BasicMessageHandler()

@@ -1,16 +1,13 @@
 """Admin server classes."""
 
 import asyncio
+from hmac import compare_digest
 import logging
 import re
+from typing import Callable, Coroutine
 import uuid
+import warnings
 
-from typing import Callable, Coroutine, Sequence, Set
-
-import aiohttp_cors
-import jwt
-
-from hmac import compare_digest
 from aiohttp import web
 from aiohttp_apispec import (
     docs,
@@ -18,29 +15,42 @@ from aiohttp_apispec import (
     setup_aiohttp_apispec,
     validation_middleware,
 )
-
+import aiohttp_cors
+import jwt
 from marshmallow import fields
 
 from ..config.injection_context import InjectionContext
-from ..core.profile import Profile
+from ..core.event_bus import Event, EventBus
 from ..core.plugin_registry import PluginRegistry
+from ..core.profile import Profile
 from ..ledger.error import LedgerConfigError, LedgerTransactionError
 from ..messaging.models.openapi import OpenAPISchema
 from ..messaging.responder import BaseResponder
-from ..transport.queue.basic import BasicMessageQueue
+from ..multitenant.manager import MultitenantManager, MultitenantManagerError
+from ..storage.error import StorageNotFoundError
 from ..transport.outbound.message import OutboundMessage
+from ..transport.queue.basic import BasicMessageQueue
 from ..utils.stats import Collector
 from ..utils.task_queue import TaskQueue
 from ..version import __version__
-from ..multitenant.manager import MultitenantManager, MultitenantManagerError
-
-from ..storage.error import StorageNotFoundError
 from .base_server import BaseAdminServer
 from .error import AdminSetupError
 from .request_context import AdminRequestContext
 
-
 LOGGER = logging.getLogger(__name__)
+
+EVENT_PATTERN_WEBHOOK = re.compile("^acapy::webhook::(.*)$")
+EVENT_PATTERN_RECORD = re.compile("^acapy::record::(.*)::(.*)$")
+
+EVENT_WEBHOOK_MAPPING = {
+    "acapy::basicmessage::received": "basicmessages",
+    "acapy::problem_report": "problem_report",
+    "acapy::ping::received": "ping",
+    "acapy::ping::response_received": "ping",
+    "acapy::actionmenu::received": "actionmenu",
+    "acapy::actionmenu::get-active-menu": "get-active-menu",
+    "acapy::actionmenu::perform-menu-action": "perform-menu-action",
+}
 
 
 class AdminModulesSchema(OpenAPISchema):
@@ -93,7 +103,6 @@ class AdminResponder(BaseResponder):
         self,
         profile: Profile,
         send: Coroutine,
-        webhook: Coroutine,
         **kwargs,
     ):
         """
@@ -106,7 +115,6 @@ class AdminResponder(BaseResponder):
         super().__init__(**kwargs)
         self._profile = profile
         self._send = send
-        self._webhook = webhook
 
     async def send_outbound(self, message: OutboundMessage):
         """
@@ -119,52 +127,22 @@ class AdminResponder(BaseResponder):
 
     async def send_webhook(self, topic: str, payload: dict):
         """
-        Dispatch a webhook.
+        Dispatch a webhook. DEPRECATED: use the event bus instead.
 
         Args:
             topic: the webhook topic identifier
             payload: the webhook payload value
         """
-        await self._webhook(self._profile, topic, payload)
+        warnings.warn(
+            "responder.send_webhook is deprecated; please use the event bus instead.",
+            DeprecationWarning,
+        )
+        await self._profile.notify("acapy::webhook::" + topic, payload)
 
     @property
     def send_fn(self) -> Coroutine:
         """Accessor for async function to send outbound message."""
         return self._send
-
-    @property
-    def webhook_fn(self) -> Coroutine:
-        """Accessor for the async function to dispatch a webhook."""
-        return self._webhook
-
-
-class WebhookTarget:
-    """Class for managing webhook target information."""
-
-    def __init__(
-        self,
-        endpoint: str,
-        topic_filter: Sequence[str] = None,
-        max_attempts: int = None,
-    ):
-        """Initialize the webhook target."""
-        self.endpoint = endpoint
-        self.max_attempts = max_attempts
-        self._topic_filter = None
-        self.topic_filter = topic_filter  # call setter
-
-    @property
-    def topic_filter(self) -> Set[str]:
-        """Accessor for the target's topic filter."""
-        return self._topic_filter
-
-    @topic_filter.setter
-    def topic_filter(self, val: Sequence[str]):
-        """Setter for the target's topic filter."""
-        filt = set(val) if val else None
-        if filt and "*" in filt:
-            filt = None
-        self._topic_filter = filt
 
 
 @web.middleware
@@ -270,7 +248,6 @@ class AdminServer(BaseAdminServer):
         self.root_profile = root_profile
         self.task_queue = task_queue
         self.webhook_router = webhook_router
-        self.webhook_targets = {}
         self.websocket_queues = {}
         self.site = None
         self.multitenant_manager = context.inject(MultitenantManager, required=False)
@@ -371,7 +348,6 @@ class AdminServer(BaseAdminServer):
             responder = AdminResponder(
                 profile,
                 self.outbound_message_router,
-                self.send_webhook,
             )
             profile.context.injector.bind_instance(BaseResponder, responder)
 
@@ -471,6 +447,19 @@ class AdminServer(BaseAdminServer):
         plugin_registry = self.context.inject(PluginRegistry, required=False)
         if plugin_registry:
             plugin_registry.post_process_routes(self.app)
+
+        event_bus = self.context.inject(EventBus, required=False)
+        if event_bus:
+            event_bus.subscribe(EVENT_PATTERN_WEBHOOK, self.__on_webhook_event)
+            event_bus.subscribe(EVENT_PATTERN_RECORD, self.__on_record_event)
+
+            for event_topic, webhook_topic in EVENT_WEBHOOK_MAPPING.items():
+                event_bus.subscribe(
+                    re.compile(re.escape(event_topic)),
+                    lambda profile, event, webhook_topic=webhook_topic: self.send_webhook(
+                        profile, webhook_topic, event.payload
+                    ),
+                )
 
         # order tags alphabetically, parameters deterministically and pythonically
         swagger_dict = self.app._state["swagger_dict"]
@@ -799,21 +788,17 @@ class AdminServer(BaseAdminServer):
 
         return ws
 
-    def add_webhook_target(
-        self,
-        target_url: str,
-        topic_filter: Sequence[str] = None,
-        max_attempts: int = None,
-    ):
-        """Add a webhook target."""
-        self.webhook_targets[target_url] = WebhookTarget(
-            target_url, topic_filter, max_attempts
-        )
+    async def __on_webhook_event(self, profile: Profile, event: Event):
+        match = EVENT_PATTERN_WEBHOOK.search(event.topic)
+        webhook_topic = match.group(1) if match else None
+        if webhook_topic:
+            await self.send_webhook(profile, webhook_topic, event.payload)
 
-    def remove_webhook_target(self, target_url: str):
-        """Remove a webhook target."""
-        if target_url in self.webhook_targets:
-            del self.webhook_targets[target_url]
+    async def __on_record_event(self, profile: Profile, event: Event):
+        match = EVENT_PATTERN_RECORD.search(event.topic)
+        webhook_topic = match.group(1) if match else None
+        if webhook_topic:
+            await self.send_webhook(profile, webhook_topic, event.payload)
 
     async def send_webhook(self, profile: Profile, topic: str, payload: dict):
         """Add a webhook to the queue, to send to all registered targets."""
@@ -825,8 +810,6 @@ class AdminServer(BaseAdminServer):
             metadata = {"x-wallet-id": wallet_id}
 
         if self.webhook_router:
-            # for idx, target in self.webhook_targets.items():
-            #     if not target.topic_filter or topic in target.topic_filter:
             for endpoint in webhook_urls:
                 self.webhook_router(
                     topic,
