@@ -4,6 +4,7 @@ import json
 
 from unittest import mock, TestCase
 
+from ...utils.jwe import JweRecipient
 from ..util import str_to_b64
 from .. import crypto as test_module
 
@@ -79,7 +80,7 @@ class TestUtil(TestCase):
                     }
                 )
             )
-        assert "Invalid packed message recipients" == str(excinfo.value)
+        assert "Invalid packed message" == str(excinfo.value)
 
         recips = str_to_b64(
             json.dumps(
@@ -106,26 +107,22 @@ class TestUtil(TestCase):
 
     def test_extract_pack_recipients_x(self):
         with pytest.raises(ValueError) as excinfo:
-            test_module.extract_pack_recipients([{"bad": "recipient"}])
-        assert "Invalid recipient header" in str(excinfo.value)
-
-        with pytest.raises(ValueError) as excinfo:
-            test_module.extract_pack_recipients([{"header": {}, "encrypted_key": b""}])
+            test_module.extract_pack_recipients([JweRecipient(encrypted_key=b"")])
         assert "Blank recipient key" in str(excinfo.value)
 
         with pytest.raises(ValueError) as excinfo:
             test_module.extract_pack_recipients(
-                [{"header": {"kid": "4mZ5TYv4oN"}, "encrypted_key": b""}] * 2
+                [JweRecipient(encrypted_key=b"0000", header={"kid": "4mZ5TYv4oN"})] * 2
             )
         assert "Duplicate recipient key" in str(excinfo.value)
 
         with pytest.raises(ValueError) as excinfo:
             test_module.extract_pack_recipients(
                 [
-                    {
-                        "header": {"kid": "4mZ5TYv4oN", "sender": "4mZ5TYv4oN"},
-                        "encrypted_key": b"",
-                    }
+                    JweRecipient(
+                        encrypted_key=b"0000",
+                        header={"kid": "4mZ5TYv4oN", "sender": "4mZ5TYv4oN"},
+                    )
                 ]
             )
         assert "Missing iv" in str(excinfo.value)
@@ -133,10 +130,10 @@ class TestUtil(TestCase):
         with pytest.raises(ValueError) as excinfo:
             test_module.extract_pack_recipients(
                 [
-                    {
-                        "header": {"kid": "4mZ5TYv4oN", "iv": "00000000"},
-                        "encrypted_key": b"",
-                    }
+                    JweRecipient(
+                        encrypted_key=b"0000",
+                        header={"kid": "4mZ5TYv4oN", "iv": "00000000"},
+                    )
                 ]
             )
         assert "Unexpected iv" in str(excinfo.value)

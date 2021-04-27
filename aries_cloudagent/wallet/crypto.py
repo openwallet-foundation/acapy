@@ -1,51 +1,18 @@
 """Cryptography functions used by BasicWallet."""
 
-import json
-
 from collections import OrderedDict
-from typing import Callable, Optional, Sequence, Tuple
+from typing import Callable, Optional, Sequence, Tuple, Union
 
 import nacl.bindings
 import nacl.exceptions
 import nacl.utils
 
-from marshmallow import fields, Schema, ValidationError
+from marshmallow import ValidationError
+
+from ..utils.jwe import JweRecipient, b64url, JweEnvelope, from_b64url
 
 from .error import WalletError
-from .util import bytes_to_b58, bytes_to_b64, b64_to_bytes, b58_to_bytes
-
-
-class PackMessageSchema(Schema):
-    """Packed message schema."""
-
-    protected = fields.Str(required=True)
-    iv = fields.Str(required=True)
-    tag = fields.Str(required=True)
-    ciphertext = fields.Str(required=True)
-
-
-class PackRecipientHeaderSchema(Schema):
-    """Packed recipient header schema."""
-
-    kid = fields.Str(required=True)
-    sender = fields.Str(required=False, allow_none=True)
-    iv = fields.Str(required=False, allow_none=True)
-
-
-class PackRecipientSchema(Schema):
-    """Packed recipient schema."""
-
-    encrypted_key = fields.Str(required=True)
-    header = fields.Nested(PackRecipientHeaderSchema(), required=True)
-
-
-class PackRecipientsSchema(Schema):
-    """Packed recipients schema."""
-
-    enc = fields.Constant("xchacha20poly1305_ietf", required=True)
-    typ = fields.Constant("JWM/1.0", required=True)
-    alg = fields.Str(required=True)
-    recipients = fields.List(fields.Nested(PackRecipientSchema()), required=True)
+from .util import bytes_to_b58, b64_to_bytes, b58_to_bytes
 
 
 def create_keypair(seed: bytes = None) -> Tuple[bytes, bytes]:
@@ -99,7 +66,7 @@ def sign_pk_from_sk(secret: bytes) -> bytes:
     return secret[seed_len:]
 
 
-def validate_seed(seed: (str, bytes)) -> bytes:
+def validate_seed(seed: Union[str, bytes]) -> bytes:
     """
     Convert a seed parameter to standard format and check length.
 
@@ -160,13 +127,18 @@ def verify_signed_message(signed: bytes, verkey: bytes) -> bool:
     return True
 
 
-def prepare_pack_recipient_keys(
-    to_verkeys: Sequence[bytes], from_secret: bytes = None
-) -> Tuple[str, bytes]:
+def add_pack_recipients(
+    wrapper: JweEnvelope,
+    cek: bytes,
+    to_verkeys: Sequence[bytes],
+    from_secret: bytes = None,
+):
     """
     Assemble the recipients block of a packed message.
 
     Args:
+        wrapper: The envelope to add recipients to
+        cek: The content encryption key
         to_verkeys: Verkeys of recipients
         from_secret: Secret to use for signing keys
 
@@ -174,116 +146,37 @@ def prepare_pack_recipient_keys(
         A tuple of (json result, key)
 
     """
-    cek = nacl.bindings.crypto_secretstream_xchacha20poly1305_keygen()
-    recips = []
-
     for target_vk in to_verkeys:
         target_pk = nacl.bindings.crypto_sign_ed25519_pk_to_curve25519(target_vk)
         if from_secret:
             sender_pk = sign_pk_from_sk(from_secret)
-            sender_vk = bytes_to_b58(sender_pk).encode("ascii")
+            sender_vk = bytes_to_b58(sender_pk).encode("utf-8")
             enc_sender = nacl.bindings.crypto_box_seal(sender_vk, target_pk)
             sk = nacl.bindings.crypto_sign_ed25519_sk_to_curve25519(from_secret)
 
             nonce = nacl.utils.random(nacl.bindings.crypto_box_NONCEBYTES)
             enc_cek = nacl.bindings.crypto_box(cek, nonce, target_pk, sk)
+            wrapper.add_recipient(
+                JweRecipient(
+                    encrypted_key=enc_cek,
+                    header=OrderedDict(
+                        [
+                            ("kid", bytes_to_b58(target_vk)),
+                            ("sender", b64url(enc_sender)),
+                            ("iv", b64url(nonce)),
+                        ]
+                    ),
+                )
+            )
         else:
             enc_sender = None
             nonce = None
             enc_cek = nacl.bindings.crypto_box_seal(cek, target_pk)
-
-        recips.append(
-            OrderedDict(
-                [
-                    ("encrypted_key", bytes_to_b64(enc_cek, urlsafe=True)),
-                    (
-                        "header",
-                        OrderedDict(
-                            [
-                                ("kid", bytes_to_b58(target_vk)),
-                                (
-                                    "sender",
-                                    bytes_to_b64(enc_sender, urlsafe=True)
-                                    if enc_sender
-                                    else None,
-                                ),
-                                (
-                                    "iv",
-                                    bytes_to_b64(nonce, urlsafe=True)
-                                    if nonce
-                                    else None,
-                                ),
-                            ]
-                        ),
-                    ),
-                ]
+            wrapper.add_recipient(
+                JweRecipient(
+                    encrypted_key=enc_cek, header={"kid": bytes_to_b58(target_vk)}
+                )
             )
-        )
-
-    data = OrderedDict(
-        [
-            ("enc", "xchacha20poly1305_ietf"),
-            ("typ", "JWM/1.0"),
-            ("alg", "Authcrypt" if from_secret else "Anoncrypt"),
-            ("recipients", recips),
-        ]
-    )
-    return json.dumps(data), cek
-
-
-# def locate_pack_recipient_key(
-#     recipients: Sequence[dict], find_key: Callable
-# ) -> Tuple[bytes, str, str]:
-#     """
-#     Locate pack recipient key.
-
-#     Decode the encryption key and sender verification key from a
-#     corresponding recipient block, if any is defined.
-
-#     Args:
-#         recipients: Recipients to locate
-#         find_key: Function used to find private key
-
-#     Returns:
-#         A tuple of (cek, sender_vk, recip_vk_b58)
-
-#     Raises:
-#         ValueError: If no corresponding recipient key found
-
-#     """
-#     not_found = []
-#     for recip in recipients:
-#         if not recip or "header" not in recip or "encrypted_key" not in recip:
-#             raise ValueError("Invalid recipient header")
-
-#         recip_vk_b58 = recip["header"].get("kid")
-#         secret = find_key(recip_vk_b58)
-#         if secret is None:
-#             not_found.append(recip_vk_b58)
-#             continue
-#         recip_vk = b58_to_bytes(recip_vk_b58)
-#         pk = nacl.bindings.crypto_sign_ed25519_pk_to_curve25519(recip_vk)
-#         sk = nacl.bindings.crypto_sign_ed25519_sk_to_curve25519(secret)
-
-#         encrypted_key = b64_to_bytes(recip["encrypted_key"], urlsafe=True)
-
-#         nonce_b64 = recip["header"].get("iv")
-#         nonce = b64_to_bytes(nonce_b64, urlsafe=True) if nonce_b64 else None
-#         sender_b64 = recip["header"].get("sender")
-#         enc_sender = b64_to_bytes(sender_b64, urlsafe=True) if sender_b64 else None
-
-#         if nonce and enc_sender:
-#             sender_vk_bin = nacl.bindings.crypto_box_seal_open(enc_sender, pk, sk)
-#             sender_vk = sender_vk_bin.decode("ascii")
-#             sender_pk = nacl.bindings.crypto_sign_ed25519_pk_to_curve25519(
-#                 b58_to_bytes(sender_vk_bin)
-#             )
-#             cek = nacl.bindings.crypto_box_open(encrypted_key, nonce, sender_pk, sk)
-#         else:
-#             sender_vk = None
-#             cek = nacl.bindings.crypto_box_seal_open(encrypted_key, pk, sk)
-#         return cek, sender_vk, recip_vk_b58
-#     raise ValueError("No corresponding recipient key found in {}".format(not_found))
 
 
 def encrypt_plaintext(
@@ -302,7 +195,7 @@ def encrypt_plaintext(
 
     """
     nonce = nacl.utils.random(nacl.bindings.crypto_aead_chacha20poly1305_ietf_NPUBBYTES)
-    message_bin = message.encode("ascii")
+    message_bin = message.encode("utf-8")
     output = nacl.bindings.crypto_aead_chacha20poly1305_ietf_encrypt(
         message_bin, add_data, nonce, key
     )
@@ -331,7 +224,7 @@ def decrypt_plaintext(
     output = nacl.bindings.crypto_aead_chacha20poly1305_ietf_decrypt(
         ciphertext, recips_bin, nonce, key
     )
-    return output.decode("ascii")
+    return output.decode("utf-8")
 
 
 def encode_pack_message(
@@ -349,20 +242,22 @@ def encode_pack_message(
         The encoded message
 
     """
-    recips_json, cek = prepare_pack_recipient_keys(to_verkeys, from_secret)
-    recips_b64 = bytes_to_b64(recips_json.encode("ascii"), urlsafe=True)
-
-    ciphertext, nonce, tag = encrypt_plaintext(message, recips_b64.encode("ascii"), cek)
-
-    data = OrderedDict(
-        [
-            ("protected", recips_b64),
-            ("iv", bytes_to_b64(nonce, urlsafe=True)),
-            ("ciphertext", bytes_to_b64(ciphertext, urlsafe=True)),
-            ("tag", bytes_to_b64(tag, urlsafe=True)),
-        ]
+    wrapper = JweEnvelope()
+    cek = nacl.bindings.crypto_secretstream_xchacha20poly1305_keygen()
+    add_pack_recipients(wrapper, cek, to_verkeys, from_secret)
+    wrapper.set_protected(
+        OrderedDict(
+            [
+                ("enc", "xchacha20poly1305_ietf"),
+                ("typ", "JWM/1.0"),
+                ("alg", "Authcrypt" if from_secret else "Anoncrypt"),
+            ]
+        ),
+        auto_flatten=False,
     )
-    return json.dumps(data).encode("ascii")
+    ciphertext, nonce, tag = encrypt_plaintext(message, wrapper.protected_bytes, cek)
+    wrapper.set_payload(ciphertext, nonce, tag)
+    return wrapper.to_json().encode("utf-8")
 
 
 def decode_pack_message(
@@ -419,26 +314,20 @@ def decode_pack_message_outer(enc_message: bytes) -> Tuple[dict, dict, bool]:
 
     """
     try:
-        wrapper = PackMessageSchema().loads(enc_message)
+        wrapper = JweEnvelope.from_json(enc_message)
     except ValidationError:
         raise ValueError("Invalid packed message")
 
-    recips_json = b64_to_bytes(wrapper["protected"], urlsafe=True).decode("ascii")
-    try:
-        recips_outer = PackRecipientsSchema().loads(recips_json)
-    except ValidationError:
-        raise ValueError("Invalid packed message recipients")
-
-    alg = recips_outer["alg"]
+    alg = wrapper.protected.get("alg")
     is_authcrypt = alg == "Authcrypt"
     if not is_authcrypt and alg != "Anoncrypt":
         raise ValueError("Unsupported pack algorithm: {}".format(alg))
 
-    recips = extract_pack_recipients(recips_outer["recipients"])
+    recips = extract_pack_recipients(wrapper.recipients())
     return wrapper, recips, is_authcrypt
 
 
-def decode_pack_message_payload(wrapper: dict, payload_key: bytes) -> str:
+def decode_pack_message_payload(wrapper: JweEnvelope, payload_key: bytes) -> str:
     """
     Decode the payload of a packed message once the CEK is known.
 
@@ -447,17 +336,14 @@ def decode_pack_message_payload(wrapper: dict, payload_key: bytes) -> str:
         payload_key: The decrypted payload key
 
     """
-    ciphertext = b64_to_bytes(wrapper["ciphertext"], urlsafe=True)
-    nonce = b64_to_bytes(wrapper["iv"], urlsafe=True)
-    tag = b64_to_bytes(wrapper["tag"], urlsafe=True)
-
-    payload_bin = ciphertext + tag
-    protected_bin = wrapper["protected"].encode("ascii")
-    message = decrypt_plaintext(payload_bin, protected_bin, nonce, payload_key)
+    payload_bin = wrapper.ciphertext + wrapper.tag
+    message = decrypt_plaintext(
+        payload_bin, wrapper.protected_bytes, wrapper.iv, payload_key
+    )
     return message
 
 
-def extract_pack_recipients(recipients: Sequence[dict]) -> dict:
+def extract_pack_recipients(recipients: Sequence[JweRecipient]) -> dict:
     """
     Extract the pack message recipients into a dict indexed by verkey.
 
@@ -470,31 +356,26 @@ def extract_pack_recipients(recipients: Sequence[dict]) -> dict:
     """
     result = {}
     for recip in recipients:
-        if not recip or "header" not in recip or "encrypted_key" not in recip:
-            raise ValueError("Invalid recipient header")
-
-        recip_vk_b58 = recip["header"].get("kid")
+        recip_vk_b58 = recip.header.get("kid")
         if not recip_vk_b58:
             raise ValueError("Blank recipient key")
         if recip_vk_b58 in result:
             raise ValueError("Duplicate recipient key")
 
-        sender_b64 = recip["header"].get("sender")
-        enc_sender = b64_to_bytes(sender_b64, urlsafe=True) if sender_b64 else None
+        sender_b64 = recip.header.get("sender")
+        enc_sender = from_b64url(sender_b64) if sender_b64 else None
 
-        nonce_b64 = recip["header"].get("iv")
+        nonce_b64 = recip.header.get("iv")
         if sender_b64 and not nonce_b64:
             raise ValueError("Missing iv")
         elif not sender_b64 and nonce_b64:
             raise ValueError("Unexpected iv")
-        nonce = b64_to_bytes(nonce_b64, urlsafe=True) if nonce_b64 else None
-
-        encrypted_key = b64_to_bytes(recip["encrypted_key"], urlsafe=True)
+        nonce = from_b64url(nonce_b64) if nonce_b64 else None
 
         result[recip_vk_b58] = {
             "sender": enc_sender,
             "nonce": nonce,
-            "key": encrypted_key,
+            "key": recip.encrypted_key,
         }
     return result
 
@@ -513,7 +394,7 @@ def extract_payload_key(sender_cek: dict, recip_secret: bytes) -> Tuple[bytes, s
         sender_vk_bin = nacl.bindings.crypto_box_seal_open(
             sender_cek["sender"], recip_pk, recip_sk
         )
-        sender_vk = sender_vk_bin.decode("ascii")
+        sender_vk = sender_vk_bin.decode("utf-8")
         sender_pk = nacl.bindings.crypto_sign_ed25519_pk_to_curve25519(
             b58_to_bytes(sender_vk_bin)
         )
