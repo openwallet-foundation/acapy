@@ -160,11 +160,6 @@ class TestVCRecord(AsyncTestCase):
         record_b.contexts.clear()
         assert record_a != record_b
 
-    def test_deserialize(self):
-        VCRecord.deserialize_jsonld_cred(sample_json_cred_1)
-        VCRecord.deserialize_jsonld_cred(sample_json_cred_2)
-        VCRecord.deserialize_jsonld_cred(sample_json_cred_3)
-
     async def test_serde(self):
         obj = test_record().serialize()
         record = VCRecord.deserialize(obj)
