@@ -286,11 +286,12 @@ class V20CredBoundOfferRequestSchema(OpenAPISchema):
     @validates_schema
     def validate_fields(self, data, **kwargs):
         """Validate schema fields: need both filter and counter_preview or neither."""
-
-        if ("filter_" in data) ^ ("counter_preview" in data):
+        if ("filter_" in data and "indy" in data["filter_"]) ^ (
+            "counter_preview" in data
+        ):
             raise ValidationError(
                 f"V20CredBoundOfferRequestSchema\n{data}\nrequires "
-                "both filter and counter_preview or neither"
+                "both indy filter and counter_preview or neither"
             )
 
 

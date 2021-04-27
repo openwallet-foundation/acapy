@@ -507,8 +507,6 @@ class TestV20CredManager(AsyncTestCase):
             )  # once more to cover case where offer is available in cache
 
     async def test_create_bound_offer(self):
-        TEST_DID = "LjgpST2rjsoxYegQDRm7EL"
-        schema_id_parts = SCHEMA_ID.split(":")
         comment = "comment"
 
         cred_preview = V20CredPreview(
@@ -528,7 +526,9 @@ class TestV20CredManager(AsyncTestCase):
                     ],
                 )
             ],
-            filters_attach=[AttachDecorator.data_base64({}, ident="0")],
+            filters_attach=[
+                AttachDecorator.data_base64({"cred_def_id": CRED_DEF_ID}, ident="0")
+            ],
         )
         cx_rec = V20CredExRecord(
             cred_ex_id="dummy-cxid",
@@ -539,32 +539,21 @@ class TestV20CredManager(AsyncTestCase):
         with async_mock.patch.object(
             V20CredExRecord, "save", autospec=True
         ) as mock_save, async_mock.patch.object(
-            V20CredExRecord, "get_cached_key", autospec=True
-        ) as get_cached_key, async_mock.patch.object(
-            V20CredExRecord, "set_cached_key", autospec=True
-        ) as set_cached_key:
-            get_cached_key.return_value = None
-
-            issuer = async_mock.MagicMock(IndyIssuer, autospec=True)
-            issuer.create_credential_offer = async_mock.CoroutineMock(
-                return_value=json.dumps(INDY_OFFER)
+            V20CredFormat.Format, "handler"
+        ) as mock_handler:
+            mock_handler.return_value.create_offer = async_mock.CoroutineMock(
+                return_value=(
+                    V20CredFormat(
+                        attach_id=V20CredFormat.Format.INDY.api,
+                        format_=ATTACHMENT_FORMAT[CRED_20_OFFER][
+                            V20CredFormat.Format.INDY.api
+                        ],
+                    ),
+                    AttachDecorator.data_base64(
+                        INDY_OFFER, ident=V20CredFormat.Format.INDY.api
+                    ),
+                )
             )
-            self.context.injector.bind_instance(IndyIssuer, issuer)
-
-            cred_def_record = StorageRecord(
-                CRED_DEF_SENT_RECORD_TYPE,
-                CRED_DEF_ID,
-                {
-                    "schema_id": SCHEMA_ID,
-                    "schema_issuer_did": schema_id_parts[0],
-                    "schema_name": schema_id_parts[-2],
-                    "schema_version": schema_id_parts[-1],
-                    "issuer_did": TEST_DID,
-                    "cred_def_id": CRED_DEF_ID,
-                    "epoch": str(int(time())),
-                },
-            )
-            await self.session.storage.add_record(cred_def_record)
 
             (ret_cx_rec, ret_offer) = await self.manager.create_offer(
                 cred_ex_record=cx_rec,
@@ -574,7 +563,7 @@ class TestV20CredManager(AsyncTestCase):
             assert ret_cx_rec == cx_rec
             mock_save.assert_called_once()
 
-            issuer.create_credential_offer.assert_called_once_with(CRED_DEF_ID)
+            mock_handler.return_value.create_offer.assert_called_once_with(cx_rec)
 
             assert cx_rec.thread_id == ret_offer._thread_id
             assert cx_rec.role == V20CredExRecord.ROLE_ISSUER
