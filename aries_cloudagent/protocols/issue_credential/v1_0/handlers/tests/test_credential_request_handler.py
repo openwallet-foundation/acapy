@@ -1,7 +1,4 @@
-from asynctest import (
-    mock as async_mock,
-    TestCase as AsyncTestCase,
-)
+from asynctest import mock as async_mock, TestCase as AsyncTestCase
 
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
@@ -11,7 +8,7 @@ from ...messages.credential_request import CredentialRequest
 from ...messages.inner.credential_preview import CredAttrSpec, CredentialPreview
 from ...models.credential_exchange import V10CredentialExchange
 
-from .. import credential_request_handler as handler
+from .. import credential_request_handler as test_module
 
 CD_ID = "LjgpST2rjsoxYegQDRm7EL:3:CL:18:tag"
 
@@ -23,7 +20,7 @@ class TestCredentialRequestHandler(AsyncTestCase):
         request_context.connection_record = async_mock.MagicMock()
 
         with async_mock.patch.object(
-            handler, "CredentialManager", autospec=True
+            test_module, "CredentialManager", autospec=True
         ) as mock_cred_mgr:
             mock_cred_mgr.return_value.receive_request = async_mock.CoroutineMock(
                 return_value=async_mock.MagicMock()
@@ -31,9 +28,9 @@ class TestCredentialRequestHandler(AsyncTestCase):
             mock_cred_mgr.return_value.receive_request.return_value.auto_issue = False
             request_context.message = CredentialRequest()
             request_context.connection_ready = True
-            handler_inst = handler.CredentialRequestHandler()
+            handler = test_module.CredentialRequestHandler()
             responder = MockResponder()
-            await handler_inst.handle(request_context, responder)
+            await handler.handle(request_context, responder)
 
         mock_cred_mgr.assert_called_once_with(request_context.profile)
         mock_cred_mgr.return_value.receive_request.assert_called_once_with(
@@ -57,7 +54,7 @@ class TestCredentialRequestHandler(AsyncTestCase):
         )
 
         with async_mock.patch.object(
-            handler, "CredentialManager", autospec=True
+            test_module, "CredentialManager", autospec=True
         ) as mock_cred_mgr:
             mock_cred_mgr.return_value.receive_request = async_mock.CoroutineMock(
                 return_value=cred_ex_rec
@@ -68,9 +65,9 @@ class TestCredentialRequestHandler(AsyncTestCase):
             )
             request_context.message = CredentialRequest()
             request_context.connection_ready = True
-            handler_inst = handler.CredentialRequestHandler()
+            handler = test_module.CredentialRequestHandler()
             responder = MockResponder()
-            await handler_inst.handle(request_context, responder)
+            await handler.handle(request_context, responder)
             mock_cred_mgr.return_value.issue_credential.assert_called_once_with(
                 cred_ex_record=cred_ex_rec, comment=None
             )
@@ -95,7 +92,7 @@ class TestCredentialRequestHandler(AsyncTestCase):
         )
 
         with async_mock.patch.object(
-            handler, "CredentialManager", autospec=True
+            test_module, "CredentialManager", autospec=True
         ) as mock_cred_mgr:
             mock_cred_mgr.return_value.receive_request = async_mock.CoroutineMock(
                 return_value=cred_ex_rec
@@ -107,9 +104,9 @@ class TestCredentialRequestHandler(AsyncTestCase):
 
             request_context.message = CredentialRequest()
             request_context.connection_ready = True
-            handler_inst = handler.CredentialRequestHandler()
+            handler = test_module.CredentialRequestHandler()
             responder = MockResponder()
-            await handler_inst.handle(request_context, responder)
+            await handler.handle(request_context, responder)
             mock_cred_mgr.return_value.issue_credential.assert_not_called()
 
         mock_cred_mgr.assert_called_once_with(request_context.profile)
@@ -124,14 +121,14 @@ class TestCredentialRequestHandler(AsyncTestCase):
         request_context.connection_record = async_mock.MagicMock()
 
         with async_mock.patch.object(
-            handler, "CredentialManager", autospec=True
+            test_module, "CredentialManager", autospec=True
         ) as mock_cred_mgr:
             mock_cred_mgr.return_value.receive_request = async_mock.CoroutineMock()
             request_context.message = CredentialRequest()
             request_context.connection_ready = False
-            handler_inst = handler.CredentialRequestHandler()
+            handler = test_module.CredentialRequestHandler()
             responder = MockResponder()
-            with self.assertRaises(handler.HandlerException):
-                await handler_inst.handle(request_context, responder)
+            with self.assertRaises(test_module.HandlerException):
+                await handler.handle(request_context, responder)
 
         assert not responder.messages

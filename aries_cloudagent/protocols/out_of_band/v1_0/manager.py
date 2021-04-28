@@ -967,7 +967,7 @@ class OutOfBandManager(BaseConnectionManager):
         """
         Receive and process a ProblemReport message from the inviter to invitee.
 
-        Process a `ProblemReport` message by updating  the ConnRecord metadata
+        Process a `ProblemReport` message by updating the ConnRecord metadata
         state to `not_accepted`.
 
         Args:

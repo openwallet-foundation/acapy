@@ -10,7 +10,7 @@ from ..manager import OutOfBandManager, OutOfBandManagerError
 from ..messages.problem_report import ProblemReport
 
 
-class OOBProblemReportMessageHandler(BaseHandler):
+class ProblemReportHandler(BaseHandler):
     """
     Handler class for OOB Problem Report Message.
 
