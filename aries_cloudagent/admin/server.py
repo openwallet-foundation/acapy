@@ -40,7 +40,7 @@ from .request_context import AdminRequestContext
 LOGGER = logging.getLogger(__name__)
 
 EVENT_PATTERN_WEBHOOK = re.compile("^acapy::webhook::(.*)$")
-EVENT_PATTERN_RECORD = re.compile("^acapy::record::(.*)::(.*)$")
+EVENT_PATTERN_RECORD = re.compile("^acapy::record::(.*)$")
 
 EVENT_WEBHOOK_MAPPING = {
     "acapy::basicmessage::received": "basicmessages",
@@ -800,7 +800,7 @@ class AdminServer(BaseAdminServer):
         if webhook_topic:
             await self.send_webhook(profile, webhook_topic, event.payload)
 
-    async def send_webhook(self, profile: Profile, topic: str, payload: dict):
+    async def send_webhook(self, profile: Profile, topic: str, payload: dict = None):
         """Add a webhook to the queue, to send to all registered targets."""
         wallet_id = profile.settings.get("wallet.id")
         webhook_urls = profile.settings.get("admin.webhook_urls")
