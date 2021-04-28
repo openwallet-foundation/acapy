@@ -256,7 +256,7 @@ class VerifiableCredential(BaseModel):
 class CredentialSchema(BaseModelSchema):
     """Linked data credential schema.
 
-    Does not include proof. Based on https://www.w3.org/TR/vc-data-model
+    Based on https://www.w3.org/TR/vc-data-model
 
     """
 
