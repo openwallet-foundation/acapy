@@ -1,7 +1,9 @@
+from aries_cloudagent.core.event_bus import Event
 import json
 
 from aiohttp import ClientSession, DummyCookieJar, TCPConnector, web
 from aiohttp.test_utils import unused_port
+import pytest
 
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
@@ -434,3 +436,25 @@ class TestAdminServer(AsyncTestCase):
         ) as response:
             assert response.status == 503
         await server.stop()
+
+
+@pytest.fixture
+async def server():
+    test_class = TestAdminServer()
+    await test_class.setUp()
+    yield test_class.get_admin_server()
+    await test_class.tearDown()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "event_topic, webhook_topic",
+    [("acapy::record::topic", "topic"), ("acapy::record::topic::state", "topic")],
+)
+async def test_on_record_event(server, event_topic, webhook_topic):
+    profile = InMemoryProfile.test_profile()
+    with async_mock.patch.object(
+        server, "send_webhook", async_mock.CoroutineMock()
+    ) as mock_send_webhook:
+        await server._on_record_event(profile, Event(event_topic, None))
+        mock_send_webhook.assert_called_once_with(profile, webhook_topic, None)
