@@ -371,7 +371,7 @@ class BaseRecord(BaseModel):
             await storage.delete_record(self.storage_record)
         # FIXME - update state and send webhook?
 
-    async def emit_event(self, session: ProfileSession, payload: Any):
+    async def emit_event(self, session: ProfileSession, payload: Any = None):
         """Emit an event.
 
         Args:
@@ -379,12 +379,18 @@ class BaseRecord(BaseModel):
             payload: The event payload
         """
 
-        if not self.RECORD_TOPIC or not self.state or not payload:
+        if not self.RECORD_TOPIC:
             return
 
-        await session.profile.notify(
-            f"acapy::record::{self.RECORD_TOPIC}::{self.state}", payload
-        )
+        if self.state:
+            topic = f"acapy::record::{self.RECORD_TOPIC}::{self.state}"
+        else:
+            topic = f"acapy::record::{self.RECORD_TOPIC}"
+
+        if not payload:
+            payload = self.serialize()
+
+        await session.profile.notify(topic, payload)
 
     @classmethod
     def log_state(
