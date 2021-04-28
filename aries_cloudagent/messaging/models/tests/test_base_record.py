@@ -260,11 +260,29 @@ class TestBaseRecord(AsyncTestCase):
         session.profile.context.injector.bind_instance(EventBus, mock_event_bus)
         record = BaseRecordImpl()
         payload = {"test": "payload"}
-        await record.emit_event(session, None)  # cover short circuit
-        await record.emit_event(session, payload)  # cover short circuit
-        record.RECORD_TOPIC = "topic"
-        await record.emit_event(session, payload)  # cover short circuit
+
+        # Records must have topic to emit events
+        record.RECORD_TOPIC = None
+        await record.emit_event(session, payload)
         assert mock_event_bus.events == []
+
+        record.RECORD_TOPIC = "topic"
+
+        # Stateless record with no payload emits event with serialized record
+        await record.emit_event(session)
+        assert mock_event_bus.events == [
+            (session.profile, Event("acapy::record::topic", {}))
+        ]
+        mock_event_bus.events.clear()
+
+        # Stateless record with payload emits event
+        await record.emit_event(session, payload)
+        assert mock_event_bus.events == [
+            (session.profile, Event("acapy::record::topic", payload))
+        ]
+        mock_event_bus.events.clear()
+
+        # Statefull record with payload emits event
         record.state = "test_state"
         await record.emit_event(session, payload)
         assert mock_event_bus.events == [
