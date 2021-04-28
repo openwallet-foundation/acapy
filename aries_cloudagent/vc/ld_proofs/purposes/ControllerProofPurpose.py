@@ -66,7 +66,9 @@ class ControllerProofPurpose(ProofPurpose):
             )
 
             # Retrieve al verification methods on controller associated with term
-            verification_methods = JsonLdProcessor.get_values(controller, self.term)
+            verification_methods = JsonLdProcessor.get_values(
+                result.controller, self.term
+            )
 
             # Check if any of the verification methods matches with the verification id
             result.valid = any(

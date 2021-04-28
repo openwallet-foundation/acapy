@@ -1,12 +1,11 @@
-TEST_VC_DOCUMENT_SIGNED_ED25519 = {
+TEST_VC_DOCUMENT_DID_KEY_ED25519 = {
     "@context": [
         "https://www.w3.org/2018/credentials/v1",
         "https://w3id.org/citizenship/v1",
-        "https://w3id.org/security/bbs/v1",
     ],
     "id": "https://issuer.oidp.uscis.gov/credentials/83627465",
     "type": ["VerifiableCredential", "PermanentResidentCard"],
-    "issuer": "did:example:489398593",
+    "issuer": "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
     "identifier": "83627465",
     "name": "Permanent Resident Card",
     "description": "Government of Example Permanent Resident Card.",
@@ -25,12 +24,5 @@ TEST_VC_DOCUMENT_SIGNED_ED25519 = {
         "commuterClassification": "C1",
         "birthCountry": "Bahamas",
         "birthDate": "1958-07-17",
-    },
-    "proof": {
-        "type": "Ed25519Signature2018",
-        "verificationMethod": "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
-        "created": "2021-04-28T12:03:29.416454",
-        "proofPurpose": "assertionMethod",
-        "jws": "eyJhbGciOiAiRWREU0EiLCAiYjY0IjogZmFsc2UsICJjcml0IjogWyJiNjQiXX0..aDRs9vtLnExFXczXEakMpOfAqFri05jvOJ1wvw1zi1PScvnMjG-OoRymPTI2c355JKLw1Iy4mjssg8OIYob-Cg",
     },
 }

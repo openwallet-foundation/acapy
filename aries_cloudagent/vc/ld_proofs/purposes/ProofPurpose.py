@@ -31,13 +31,13 @@ class ProofPurpose:
         """Validate whether created date of proof is out of max_timestamp_delta range."""
         try:
             if self.max_timestamp_delta is not None:
-                expected = self.date.time()
+                expected = self.date.timestamp()
 
-                created = str_to_datetime(proof.get("created"))
+                created = str_to_datetime(proof.get("created")).timestamp()
 
                 if not (
-                    created >= (expected - self.max_timestamp_delta)
-                    and created <= (expected + self.max_timestamp_delta)
+                    created >= (expected - self.max_timestamp_delta.total_seconds())
+                    and created <= (expected + self.max_timestamp_delta.total_seconds())
                 ):
                     raise Exception("The proof's created timestamp is out of range.")
 

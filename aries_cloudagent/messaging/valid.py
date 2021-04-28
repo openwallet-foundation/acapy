@@ -636,7 +636,7 @@ class CredentialContext(Validator):
 
         if length < 1 or value[0] != CredentialContext.FIRST_CONTEXT:
             raise ValidationError(
-                f"First context {value[0]} must be {CredentialContext.FIRST_CONTEXT}"
+                f"First context must be {CredentialContext.FIRST_CONTEXT}"
             )
 
         return value

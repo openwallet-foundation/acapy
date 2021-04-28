@@ -1,12 +1,11 @@
-TEST_VC_DOCUMENT_SIGNED_ED25519 = {
+TEST_VC_DOCUMENT_SIGNED_DID_KEY_ED25519 = {
     "@context": [
         "https://www.w3.org/2018/credentials/v1",
         "https://w3id.org/citizenship/v1",
-        "https://w3id.org/security/bbs/v1",
     ],
     "id": "https://issuer.oidp.uscis.gov/credentials/83627465",
     "type": ["VerifiableCredential", "PermanentResidentCard"],
-    "issuer": "did:example:489398593",
+    "issuer": "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
     "identifier": "83627465",
     "name": "Permanent Resident Card",
     "description": "Government of Example Permanent Resident Card.",
@@ -29,8 +28,8 @@ TEST_VC_DOCUMENT_SIGNED_ED25519 = {
     "proof": {
         "type": "Ed25519Signature2018",
         "verificationMethod": "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
-        "created": "2021-04-28T12:03:29.416454",
+        "created": "2021-04-28T12:06:32.976797",
         "proofPurpose": "assertionMethod",
-        "jws": "eyJhbGciOiAiRWREU0EiLCAiYjY0IjogZmFsc2UsICJjcml0IjogWyJiNjQiXX0..aDRs9vtLnExFXczXEakMpOfAqFri05jvOJ1wvw1zi1PScvnMjG-OoRymPTI2c355JKLw1Iy4mjssg8OIYob-Cg",
+        "jws": "eyJhbGciOiAiRWREU0EiLCAiYjY0IjogZmFsc2UsICJjcml0IjogWyJiNjQiXX0..dAGbl12XcwU7ACt6XOx8WsHLPyipxq9sSfKEp9Pjt0dDv95315f8oDAkE5SU6Vgou6VjM2tKdB_BNzG06ZO3Dw",
     },
 }
