@@ -529,4 +529,7 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
             vc_holder = session.inject(VCHolder)
 
             await vc_holder.store_credential(vc_record)
-            await detail_record.save(session, reason="store credential v2.0")
+            # Store detail record, emit event
+            await detail_record.save(
+                session, reason="store credential v2.0", event=True
+            )

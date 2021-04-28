@@ -442,7 +442,10 @@ class IndyCredFormatHandler(V20CredFormatHandler):
             detail_record.cred_rev_id = cred.get("cred_rev_id", None)
 
             async with self.profile.session() as session:
-                await detail_record.save(session, reason="store credential v2.0")
+                # Store detail record, emit event
+                await detail_record.save(
+                    session, reason="store credential v2.0", event=True
+                )
         except IndyHolderError as e:
             LOGGER.error(f"Error storing credential: {e.error_code} - {e.message}")
             raise e
