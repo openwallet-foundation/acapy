@@ -19,6 +19,7 @@ from ....tests.data import (
     TEST_VC_DOCUMENT_NESTED_PROOF_BBS,
     TEST_VC_DOCUMENT_NESTED_SIGNED_BBS,
     TEST_VC_DOCUMENT_PARTIAL_PROOF_BBS,
+    TEST_VC_DOCUMENT_NESTED_REVEAL,
 )
 from ...crypto.WalletKeyPair import WalletKeyPair
 from ...purposes.AssertionProofPurpose import AssertionProofPurpose
@@ -124,7 +125,7 @@ class TestBbsBlsSignatureProof2020(TestCase):
     async def test_derive_vc_nested(self):
         derived = await derive_credential(
             credential=TEST_VC_DOCUMENT_NESTED_SIGNED_BBS,
-            reveal_document=TEST_VC_DOCUMENT_REVEAL,
+            reveal_document=TEST_VC_DOCUMENT_NESTED_REVEAL,
             document_loader=custom_document_loader,
             suite=BbsBlsSignatureProof2020(key_pair=self.key_pair),
         )

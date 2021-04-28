@@ -41,6 +41,7 @@ from .test_vc_document_did_key_ed25519 import TEST_VC_DOCUMENT_DID_KEY_ED25519
 from .test_vc_document_signed_did_key_ed25519 import (
     TEST_VC_DOCUMENT_SIGNED_DID_KEY_ED25519,
 )
+from .test_vc_document_nested_reveal import TEST_VC_DOCUMENT_NESTED_REVEAL
 
 __all__ = [
     BBS_NESTED_VC_FULL_REVEAL_DOCUMENT_MATTR,
@@ -75,4 +76,5 @@ __all__ = [
     TEST_VC_DOCUMENT,
     TEST_VC_DOCUMENT_SIGNED_DID_KEY_ED25519,
     TEST_VC_DOCUMENT_DID_KEY_ED25519,
+    TEST_VC_DOCUMENT_NESTED_REVEAL,
 ]
