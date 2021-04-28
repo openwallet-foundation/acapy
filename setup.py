@@ -37,6 +37,7 @@ if __name__ == "__main__":
         tests_require=parse_requirements("requirements.dev.txt"),
         extras_require={
             "indy": parse_requirements("requirements.indy.txt"),
+            "bbs": parse_requirements("requirements.bbs.txt"),
             "uvloop": {"uvloop": "^=0.14.0"},
         },
         python_requires=">=3.6.3",
