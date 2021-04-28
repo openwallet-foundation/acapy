@@ -70,6 +70,7 @@ class BaseRecord(BaseModel):
     RECORD_ID_NAME = "id"
     RECORD_TYPE = None
     RECORD_TOPIC: Optional[str] = None
+    EVENT_NAMESPACE: str = "acapy::record"
     LOG_STATE_FLAG = None
     TAG_NAMES = {"state"}
 
@@ -383,9 +384,9 @@ class BaseRecord(BaseModel):
             return
 
         if self.state:
-            topic = f"acapy::record::{self.RECORD_TOPIC}::{self.state}"
+            topic = f"{self.EVENT_NAMESPACE}::{self.RECORD_TOPIC}::{self.state}"
         else:
-            topic = f"acapy::record::{self.RECORD_TOPIC}"
+            topic = f"{self.EVENT_NAMESPACE}::{self.RECORD_TOPIC}"
 
         if not payload:
             payload = self.serialize()
