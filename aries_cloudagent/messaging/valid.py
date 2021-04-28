@@ -560,7 +560,7 @@ class Uri(Regexp):
     """Validate value against URI on any scheme."""
 
     EXAMPLE = "https://www.w3.org/2018/credentials/v1"
-    PATTERN = r"^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?"
+    PATTERN = r"\w+:(\/?\/?)[^\s]+"
 
     def __init__(self):
         """Initializer."""

@@ -102,3 +102,22 @@ class TestCredentialIssuancePurpose(TestCase):
             assert "issuer must match the verification method controller" in str(
                 result.error
             )
+
+    async def test_validate_x_super_invalid(self):
+        proof_purpose = CredentialIssuancePurpose()
+
+        with async_mock.patch.object(
+            AssertionProofPurpose, "validate"
+        ) as validate_mock:
+            validate_mock.return_value = async_mock.MagicMock(valid=False)
+
+            result = proof_purpose.validate(
+                proof=async_mock.MagicMock(),
+                document=async_mock.MagicMock(),
+                suite=async_mock.MagicMock(),
+                verification_method=async_mock.MagicMock(),
+                document_loader=async_mock.MagicMock(),
+            )
+
+            assert not result.valid
+            assert result == validate_mock.return_value

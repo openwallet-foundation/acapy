@@ -97,7 +97,7 @@ class VerifiableCredential(BaseModel):
 
         First item must be VerifiableCredential
         """
-        assert type[0] == VERIFIABLE_CREDENTIAL_TYPE
+        assert VERIFIABLE_CREDENTIAL_TYPE in type
 
         self._type = type
 
@@ -111,7 +111,7 @@ class VerifiableCredential(BaseModel):
         return self._id
 
     @id.setter
-    def id(self, id: Union[str]):
+    def id(self, id: Union[str, None]):
         """Setter for id."""
         if id:
             uri_validator = Uri()
@@ -151,7 +151,7 @@ class VerifiableCredential(BaseModel):
         """Setter for issuer."""
         uri_validator = Uri()
 
-        issuer_id = issuer if isinstance(issuer, str) else issuer.get("issuer_id")
+        issuer_id = issuer if isinstance(issuer, str) else issuer.get("id")
 
         if not issuer_id:
             raise ValidationError("Issuer id is required")

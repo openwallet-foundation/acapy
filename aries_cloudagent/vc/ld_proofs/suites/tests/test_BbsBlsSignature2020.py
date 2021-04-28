@@ -1,4 +1,4 @@
-from asynctest import TestCase
+from asynctest import TestCase, mock as async_mock
 
 
 from .....did.did_key import DIDKey
@@ -13,6 +13,7 @@ from ....tests.data import (
     TEST_VC_DOCUMENT,
     TEST_VC_DOCUMENT_SIGNED_BBS,
 )
+from ...error import LinkedDataProofException
 from ...crypto.WalletKeyPair import WalletKeyPair
 from ...purposes.AssertionProofPurpose import AssertionProofPurpose
 
@@ -127,3 +128,18 @@ class TestBbsBlsSignature2020(TestCase):
 
         assert result
         assert result.verified
+
+    async def test_verify_signature_x_invalid_proof_value(self):
+        suite = BbsBlsSignature2020(
+            key_pair=self.sign_key_pair,
+            verification_method=self.verification_method,
+        )
+
+        with self.assertRaises(LinkedDataProofException):
+            await suite.verify_signature(
+                verify_data=async_mock.MagicMock(),
+                verification_method=async_mock.MagicMock(),
+                document=async_mock.MagicMock(),
+                proof={"proofValue": {"not": "a string"}},
+                document_loader=async_mock.MagicMock(),
+            )

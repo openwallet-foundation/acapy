@@ -49,6 +49,30 @@ class TestControllerProofPurpose(TestCase):
 
         assert result.valid
 
+    async def test_validate_controller_invalid_type(self):
+        proof_purpose = ControllerProofPurpose(term="assertionMethod")
+
+        document = TEST_VC_DOCUMENT_SIGNED_DID_KEY_ED25519.copy()
+        proof = document.pop("proof")
+        suite = async_mock.MagicMock()
+        verification_method = {
+            "id": TEST_VC_DOCUMENT_SIGNED_DID_KEY_ED25519["proof"][
+                "verificationMethod"
+            ],
+            "controller": 10,
+        }
+
+        result = proof_purpose.validate(
+            proof=proof,
+            document=document,
+            suite=suite,
+            verification_method=verification_method,
+            document_loader=custom_document_loader,
+        )
+
+        assert not result.valid
+        assert '"controller" must be a string or dict' in str(result.error)
+
     async def test_validate_x_not_authorized(self):
         proof_purpose = ControllerProofPurpose(term="assertionMethod")
 

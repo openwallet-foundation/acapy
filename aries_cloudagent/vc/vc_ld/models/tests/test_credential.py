@@ -1,9 +1,14 @@
+from datetime import datetime
 from unittest import TestCase
 
 from marshmallow.utils import INCLUDE
 
 from ...models.credential import VerifiableCredential
 from ...models.linked_data_proof import LDProof
+from ....ld_proofs.constants import (
+    CREDENTIALS_CONTEXT_V1_URL,
+    VERIFIABLE_CREDENTIAL_TYPE,
+)
 
 CREDENTIAL = {
     "@context": [
@@ -80,3 +85,93 @@ class TestVerifiableCredential(TestCase):
 
         credential_dict = credential.serialize()
         assert credential_dict == VERIFIABLE_CREDENTIAL
+
+    def test_properties(self):
+        credential = VerifiableCredential()
+
+        credential.context = [CREDENTIALS_CONTEXT_V1_URL]
+        assert credential.context == [CREDENTIALS_CONTEXT_V1_URL]
+
+        credential.add_context("https://some.context")
+        credential.add_context({"some": "context"})
+        assert credential.context == [
+            CREDENTIALS_CONTEXT_V1_URL,
+            "https://some.context",
+            {"some": "context"},
+        ]
+
+        assert credential.context_urls == [
+            CREDENTIALS_CONTEXT_V1_URL,
+            "https://some.context",
+        ]
+
+        with self.assertRaises(Exception):
+            credential.context = ["IsNotVCContext"]
+
+        credential.type = [VERIFIABLE_CREDENTIAL_TYPE]
+        assert credential.type == [VERIFIABLE_CREDENTIAL_TYPE]
+
+        credential.add_type("Sometype")
+        assert credential.type == [VERIFIABLE_CREDENTIAL_TYPE, "Sometype"]
+
+        with self.assertRaises(Exception):
+            credential.type = ["DoesNotIncludeCredentialType"]
+
+        credential.id = "http://someid.com"
+        assert credential.id == "http://someid.com"
+
+        credential.id = None
+        assert not credential.id
+
+        with self.assertRaises(Exception):
+            credential.id = "not-an-uri"
+
+        assert not credential.issuer_id
+        credential.issuer_id = "http://some_id.com"
+        assert credential.issuer_id == "http://some_id.com"
+
+        assert credential.issuer == "http://some_id.com"
+        credential.issuer = {"id": "http://some_id.com"}
+        assert credential.issuer == {"id": "http://some_id.com"}
+        assert credential.issuer_id == "http://some_id.com"
+        credential.issuer_id = "http://some-other-id"
+        assert credential.issuer == {"id": "http://some-other-id"}
+
+        with self.assertRaises(Exception):
+            credential.issuer = {"id": "not-an-uri"}
+
+        with self.assertRaises(Exception):
+            credential.issuer = "not-an-uri"
+
+        with self.assertRaises(Exception):
+            credential.issuer_id = "not-an-uri"
+
+        with self.assertRaises(Exception):
+            credential.issuer = {"not-id": "not-id"}
+
+        date = datetime.now()
+        credential.issuance_date = date
+        assert credential.issuance_date == date.isoformat()
+        credential.issuance_date = date.isoformat()
+        assert credential.issuance_date == date.isoformat()
+
+        date = datetime.now()
+        credential.expiration_date = date
+        assert credential.expiration_date == date.isoformat()
+        credential.expiration_date = date.isoformat()
+        assert credential.expiration_date == date.isoformat()
+
+        assert not credential.credential_subject
+        assert not credential.credential_subject_ids
+        credential.credential_subject = {"some": "props"}
+        assert credential.credential_subject == {"some": "props"}
+        assert credential.credential_subject_ids == []
+        credential.credential_subject = [{"some": "props"}]
+        assert credential.credential_subject == [{"some": "props"}]
+        assert credential.credential_subject_ids == []
+
+        credential.credential_subject = {"id": "some:uri"}
+        assert credential.credential_subject_ids == ["some:uri"]
+
+        assert credential == credential
+        assert credential != 10

@@ -1,25 +1,4 @@
-from aries_cloudagent.wallet.error import WalletNotFoundError
-from aries_cloudagent.vc.ld_proofs.suites.Ed25519Signature2018 import (
-    Ed25519Signature2018,
-)
-from aries_cloudagent.did.did_key import DIDKey
-from aries_cloudagent.vc.ld_proofs.purposes.AuthenticationProofPurpose import (
-    AuthenticationProofPurpose,
-)
-from aries_cloudagent.storage.vc_holder.vc_record import VCRecord
-from aries_cloudagent.vc.ld_proofs.validation_result import DocumentVerificationResult
-from aries_cloudagent.vc.ld_proofs.purposes import CredentialIssuancePurpose
-from aries_cloudagent.protocols.issue_credential.v2_0.formats.ld_proof.models.cred_detail import (
-    LDProofVCDetail,
-)
-from aries_cloudagent.wallet.key_type import KeyType
-from aries_cloudagent.wallet.did_method import DIDMethod
-from aries_cloudagent.wallet.base import BaseWallet
-from aries_cloudagent.vc.ld_proofs.document_loader import DocumentLoader
-import asyncio
 from copy import deepcopy
-from time import time
-import json
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 from marshmallow import ValidationError
@@ -27,31 +6,37 @@ from marshmallow import ValidationError
 from .. import handler as test_module
 
 from .......core.in_memory import InMemoryProfile
-from .......ledger.base import BaseLedger
-from .......indy.issuer import IndyIssuer
-from .......cache.in_memory import InMemoryCache
 from .......storage.vc_holder.base import VCHolder
 from .......wallet.base import DIDInfo
-from .......cache.base import BaseCache
-from .......storage.record import StorageRecord
-from .......storage.error import StorageNotFoundError
-from .......messaging.credential_definitions.util import CRED_DEF_SENT_RECORD_TYPE
 from .......messaging.decorators.attach_decorator import AttachDecorator
-from .......indy.holder import IndyHolder
-from ....models.detail.indy import V20CredExRecordIndy
+from .......did.did_key import DIDKey
+from .......storage.vc_holder.vc_record import VCRecord
+from ..models.cred_detail import (
+    LDProofVCDetail,
+)
+from .......wallet.key_type import KeyType
+from .......wallet.error import WalletNotFoundError
+from .......wallet.did_method import DIDMethod
+from .......wallet.base import BaseWallet
+from .......vc.ld_proofs import (
+    DocumentLoader,
+    DocumentVerificationResult,
+    CredentialIssuancePurpose,
+    AuthenticationProofPurpose,
+    Ed25519Signature2018,
+    BbsBlsSignature2020,
+)
+from .......vc.ld_proofs.constants import SECURITY_CONTEXT_BBS_URL
+from .......vc.tests.document_loader import custom_document_loader
 from ....models.detail.ld_proof import V20CredExRecordLDProof
+from ....models.cred_ex_record import V20CredExRecord
 from ....messages.cred_proposal import V20CredProposal
 from ....messages.cred_format import V20CredFormat
 from ....messages.cred_issue import V20CredIssue
-from ....messages.inner.cred_preview import V20CredPreview, V20CredAttrSpec
 from ....messages.cred_offer import V20CredOffer
 from ....messages.cred_request import (
     V20CredRequest,
 )
-from .......vc.ld_proofs import BbsBlsSignature2020
-from .......vc.tests.document_loader import custom_document_loader
-from .......vc.ld_proofs.constants import SECURITY_CONTEXT_BBS_URL
-from ....models.cred_ex_record import V20CredExRecord
 from ....message_types import (
     ATTACHMENT_FORMAT,
     CRED_20_PROPOSAL,

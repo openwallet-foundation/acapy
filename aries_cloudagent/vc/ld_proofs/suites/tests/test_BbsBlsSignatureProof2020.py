@@ -1,11 +1,4 @@
-from aries_cloudagent.vc.vc_ld.prove import derive_credential
-from aries_cloudagent.vc.tests.data.test_ld_document_bad_partial_proof_bbs import (
-    TEST_LD_DOCUMENT_BAD_PARTIAL_PROOF_BBS,
-)
-from aries_cloudagent.vc.ld_proofs.suites.BbsBlsSignatureProof2020 import (
-    BbsBlsSignatureProof2020,
-)
-from asynctest import TestCase
+from asynctest import TestCase, mock as async_mock
 
 
 from .....did.did_key import DIDKey
@@ -14,10 +7,7 @@ from .....wallet.in_memory import InMemoryWallet
 from .....core.in_memory import InMemoryProfile
 from ....tests.document_loader import custom_document_loader
 from ....tests.data import (
-    TEST_LD_DOCUMENT,
     TEST_LD_DOCUMENT_SIGNED_BBS,
-    TEST_LD_DOCUMENT_BAD_SIGNED_BBS,
-    TEST_VC_DOCUMENT,
     TEST_LD_DOCUMENT_PROOF_BBS,
     TEST_LD_DOCUMENT_BAD_PARTIAL_PROOF_BBS,
     TEST_LD_DOCUMENT_PARTIAL_PROOF_BBS,
@@ -25,7 +15,6 @@ from ....tests.data import (
     TEST_LD_DOCUMENT_REVEAL,
     TEST_VC_DOCUMENT_SIGNED_BBS,
     TEST_VC_DOCUMENT_REVEAL,
-    TEST_VC_DOCUMENT_NESTED,
     TEST_VC_DOCUMENT_NESTED_PARTIAL_PROOF_BBS,
     TEST_VC_DOCUMENT_NESTED_PROOF_BBS,
     TEST_VC_DOCUMENT_NESTED_SIGNED_BBS,
@@ -34,11 +23,10 @@ from ....tests.data import (
 from ...crypto.WalletKeyPair import WalletKeyPair
 from ...purposes.AssertionProofPurpose import AssertionProofPurpose
 
-from ...ld_proofs import sign, verify, derive
-from ....vc_ld.prove import derive_credential
-from ....vc_ld.verify import verify_credential
-from ....vc_ld.issue import issue
-from ..BbsBlsSignature2020 import BbsBlsSignature2020
+from ...error import LinkedDataProofException
+from ...ld_proofs import verify, derive
+from ....vc_ld import derive_credential, verify_credential
+from ..BbsBlsSignatureProof2020 import BbsBlsSignatureProof2020
 
 
 class TestBbsBlsSignatureProof2020(TestCase):
@@ -202,3 +190,16 @@ class TestBbsBlsSignatureProof2020(TestCase):
         )
 
         assert result.verified
+
+    async def test_derive_proof_x_invalid_proof_type(self):
+        suite = BbsBlsSignatureProof2020(
+            key_pair=self.key_pair,
+        )
+
+        with self.assertRaises(LinkedDataProofException):
+            await suite.derive_proof(
+                reveal_document=async_mock.MagicMock(),
+                document=async_mock.MagicMock(),
+                proof={"type": "incorrect type"},
+                document_loader=async_mock.MagicMock(),
+            )
