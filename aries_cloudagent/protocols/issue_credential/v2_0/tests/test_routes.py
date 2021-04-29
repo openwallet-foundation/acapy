@@ -1484,41 +1484,79 @@ class TestV20CredRoutes(AsyncTestCase):
                 await test_module.credential_exchange_remove(self.request)
 
     async def test_credential_exchange_problem_report(self):
-        self.request.json = async_mock.CoroutineMock()
+        self.request.json = async_mock.CoroutineMock(
+            return_value={
+                "explain_ltxt": "Did I say no problem? I meant 'No! Problem.'"
+            }
+        )
         self.request.match_info = {"cred_ex_id": "dummy"}
+        magic_report = async_mock.MagicMock()
 
         with async_mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ) as mock_conn_rec, async_mock.patch.object(
+            test_module, "V20CredManager", autospec=True
+        ) as mock_cred_mgr_cls, async_mock.patch.object(
             test_module, "V20CredExRecord", autospec=True
-        ) as mock_cx_rec, async_mock.patch.object(
-            test_module, "ProblemReport", autospec=True
-        ) as mock_prob_report, async_mock.patch.object(
+        ) as mock_cred_ex, async_mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
-
-            mock_cx_rec.retrieve_by_id = async_mock.CoroutineMock()
+            mock_cred_mgr_cls.return_value = async_mock.MagicMock(
+                create_problem_report=async_mock.CoroutineMock(
+                    return_value=magic_report
+                )
+            )
+            mock_cred_ex.retrieve_by_id = async_mock.CoroutineMock(
+                return_value=async_mock.MagicMock(connection_id="dummy-conn-id")
+            )
 
             await test_module.credential_exchange_problem_report(self.request)
 
-            mock_response.assert_called_once_with({})
             self.request["outbound_message_router"].assert_awaited_once_with(
-                mock_prob_report.return_value,
-                connection_id=mock_cx_rec.retrieve_by_id.return_value.connection_id,
+                magic_report,
+                connection_id=mock_cred_ex.retrieve_by_id.return_value.connection_id,
             )
+            mock_response.assert_called_once_with({})
 
-    async def test_credential_exchange_problem_report_bad_cred_id(self):
-        self.request.json = async_mock.CoroutineMock()
+    async def test_credential_exchange_problem_report_bad_cred_ex_id(self):
+        self.request.json = async_mock.CoroutineMock(
+            return_value={
+                "explain_ltxt": "Did I say no problem? I meant 'No! Problem.'"
+            }
+        )
         self.request.match_info = {"cred_ex_id": "dummy"}
 
         with async_mock.patch.object(
+            test_module, "V20CredManager", autospec=True
+        ) as mock_cred_mgr_cls, async_mock.patch.object(
             test_module, "V20CredExRecord", autospec=True
-        ) as mock_cx_rec:
-            mock_cx_rec.retrieve_by_id = async_mock.CoroutineMock(
+        ) as mock_cred_ex:
+            mock_cred_ex.retrieve_by_id = async_mock.CoroutineMock(
                 side_effect=test_module.StorageNotFoundError()
             )
 
             with self.assertRaises(test_module.web.HTTPNotFound):
+                await test_module.credential_exchange_problem_report(self.request)
+
+    async def test_credential_exchange_problem_report_x(self):
+        self.request.json = async_mock.CoroutineMock(
+            return_value={
+                "explain_ltxt": "Did I say no problem? I meant 'No! Problem.'"
+            }
+        )
+        self.request.match_info = {"cred_ex_id": "dummy"}
+
+        with async_mock.patch.object(
+            test_module, "V20CredManager", autospec=True
+        ) as mock_cred_mgr_cls, async_mock.patch.object(
+            test_module, "V20CredExRecord", autospec=True
+        ) as mock_cred_ex:
+            mock_cred_mgr_cls.return_value = async_mock.MagicMock(
+                create_problem_report=async_mock.CoroutineMock(
+                    side_effect=test_module.StorageError("Disk full")
+                )
+            )
+            mock_cred_ex.retrieve_by_id = async_mock.CoroutineMock()
+
+            with self.assertRaises(test_module.web.HTTPBadRequest):
                 await test_module.credential_exchange_problem_report(self.request)
 
     async def test_register(self):

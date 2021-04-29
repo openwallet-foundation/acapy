@@ -27,6 +27,7 @@ from .message_types import ATTACHMENT_FORMAT, PRES_20_REQUEST, PRES_20
 from .messages.pres import V20Pres
 from .messages.pres_ack import V20PresAck
 from .messages.pres_format import V20PresFormat
+from .messages.pres_problem_report import V20PresProblemReport
 from .messages.pres_proposal import V20PresProposal
 from .messages.pres_request import V20PresRequest
 
@@ -766,5 +767,52 @@ class V20PresManager:
             pres_ex_record.state = V20PresExRecord.STATE_DONE
 
             await pres_ex_record.save(session, reason="receive v2.0 presentation ack")
+
+        return pres_ex_record
+
+    async def create_problem_report(
+        self,
+        pres_ex_record: V20PresExRecord,
+        explain_ltxt: str,
+    ):
+        """
+        Update pres ex record; create and return problem report.
+
+        Returns:
+            problem report
+
+        """
+        pres_ex_record.state = None
+        async with self._profile.session() as session:
+            await pres_ex_record.save(session, reason="created problem report")
+
+        report = V20PresProblemReport(explain_ltxt=explain_ltxt)
+        report.assign_thread_id(pres_ex_record.thread_id)
+
+        return report
+
+    async def receive_problem_report(
+        self, message: V20PresProblemReport, connection_id: str
+    ):
+        """
+        Receive problem report.
+
+        Returns:
+            presentation exchange record, retrieved and updated
+
+        """
+        # FIXME use transaction, fetch for_update
+        async with self._profile.session() as session:
+            pres_ex_record = await (
+                V20PresExRecord.retrieve_by_tag_filter(
+                    session,
+                    {"thread_id": message._thread_id},
+                    {"connection_id": connection_id},
+                )
+            )
+
+            pres_ex_record.state = None
+            pres_ex_record.error_msg = message.explain_ltxt
+            await pres_ex_record.save(session, reason="received problem report")
 
         return pres_ex_record

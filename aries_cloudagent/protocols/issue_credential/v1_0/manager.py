@@ -25,7 +25,7 @@ from ....storage.error import StorageNotFoundError
 from .messages.credential_ack import CredentialAck
 from .messages.credential_issue import CredentialIssue
 from .messages.credential_offer import CredentialOffer
-from .messages.credential_problem_report import IssueCredentialV10ProblemReport
+from .messages.credential_problem_report import CredentialProblemReport
 from .messages.credential_proposal import CredentialProposal
 from .messages.credential_request import CredentialRequest
 from .messages.inner.credential_preview import CredentialPreview
@@ -832,13 +832,13 @@ class CredentialManager:
         async with self._profile.session() as session:
             await cred_ex_record.save(session, reason="created problem report")
 
-        report = IssueCredentialV10ProblemReport(explain_ltxt=explain_ltxt)
+        report = CredentialProblemReport(explain_ltxt=explain_ltxt)
         report.assign_thread_id(cred_ex_record.thread_id)
 
         return report
 
     async def receive_problem_report(
-        self, message: IssueCredentialV10ProblemReport, cred_ex_id: str
+        self, message: CredentialProblemReport, connection_id: str
     ):
         """
         Receive problem report.
@@ -850,7 +850,11 @@ class CredentialManager:
         # FIXME use transaction, fetch for_update
         async with self._profile.session() as session:
             cred_ex_record = await (
-                V10CredentialExchange.retrieve_by_id(session, cred_ex_id)
+                V10CredentialExchange.retrieve_by_connection_and_thread(
+                    session,
+                    connection_id,
+                    message._thread_id,
+                )
             )
 
             cred_ex_record.state = None

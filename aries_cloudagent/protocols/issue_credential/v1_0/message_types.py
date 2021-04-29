@@ -4,7 +4,7 @@ from ...didcomm_prefix import DIDCommPrefix
 
 SPEC_URI = (
     "https://github.com/hyperledger/aries-rfcs/tree/"
-    "6509b84abaf5760a8ba1744c8078d513f28456db/features/0036-issue-credential"
+    "bb42a6c35e0d5543718fb36dd099551ab192f7b0/features/0036-issue-credential"
 )
 
 # Message types
@@ -33,8 +33,7 @@ MESSAGE_TYPES = DIDCommPrefix.qualify_all(
         ),
         CREDENTIAL_ACK: f"{PROTOCOL_PACKAGE}.messages.credential_ack.CredentialAck",
         CREDENTIAL_PROBLEM_REPORT: (
-            f"{PROTOCOL_PACKAGE}.messages.problem_report."
-            "IssueCredentialV10ProblemReport"
+            f"{PROTOCOL_PACKAGE}.messages.problem_report.CredentialProblemReport"
         ),
     }
 )

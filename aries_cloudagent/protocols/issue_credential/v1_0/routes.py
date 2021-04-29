@@ -1153,6 +1153,48 @@ async def credential_exchange_store(request: web.BaseRequest):
 
 @docs(
     tags=["issue-credential v1.0"],
+    summary="Send a problem report for credential exchange",
+)
+@match_info_schema(CredExIdMatchInfoSchema())
+@request_schema(V10CredentialProblemReportRequestSchema())
+@response_schema(IssueCredentialModuleResponseSchema(), 200, description="")
+async def credential_exchange_problem_report(request: web.BaseRequest):
+    """
+    Request handler for sending problem report.
+
+    Args:
+        request: aiohttp request object
+
+    """
+    context: AdminRequestContext = request["context"]
+    outbound_handler = request["outbound_message_router"]
+
+    credential_exchange_id = request.match_info["cred_ex_id"]
+    body = await request.json()
+
+    credential_manager = CredentialManager(context.profile)
+
+    try:
+        async with context.session() as session:
+            cred_ex_record = await V10CredentialExchange.retrieve_by_id(
+                session, credential_exchange_id
+            )
+        report = await credential_manager.create_problem_report(
+            cred_ex_record,
+            body["explain_ltxt"],
+        )
+    except StorageNotFoundError as err:
+        await internal_error(err, web.HTTPNotFound, None, outbound_handler)
+    except StorageError as err:
+        await internal_error(err, web.HTTPBadRequest, cred_ex_record, outbound_handler)
+
+    await outbound_handler(report, connection_id=cred_ex_record.connection_id)
+
+    return web.json_response({})
+
+
+@docs(
+    tags=["issue-credential v1.0"],
     summary="Remove an existing credential exchange record",
 )
 @match_info_schema(CredExIdMatchInfoSchema())
@@ -1180,49 +1222,6 @@ async def credential_exchange_remove(request: web.BaseRequest):
         await internal_error(err, web.HTTPNotFound, cred_ex_record, outbound_handler)
     except StorageError as err:
         await internal_error(err, web.HTTPBadRequest, cred_ex_record, outbound_handler)
-
-    return web.json_response({})
-
-
-@docs(
-    tags=["issue-credential v1.0"],
-    summary="Send a problem report for credential exchange",
-)
-@match_info_schema(CredExIdMatchInfoSchema())
-@request_schema(V10CredentialProblemReportRequestSchema())
-@response_schema(IssueCredentialModuleResponseSchema(), 200, description="")
-async def credential_exchange_problem_report(request: web.BaseRequest):
-    """
-    Request handler for sending problem report.
-
-    Args:
-        request: aiohttp request object
-
-    """
-    context: AdminRequestContext = request["context"]
-    outbound_handler = request["outbound_message_router"]
-
-    credential_exchange_id = request.match_info["cred_ex_id"]
-    body = await request.json()
-
-    credential_manager = CredentialManager(context.profile)
-
-    cred_ex_record = None
-    try:
-        async with context.session() as session:
-            cred_ex_record = await V10CredentialExchange.retrieve_by_id(
-                session, credential_exchange_id
-            )
-        report = await credential_manager.create_problem_report(
-            cred_ex_record,
-            body["explain_ltxt"],
-        )
-    except StorageNotFoundError as err:
-        await internal_error(err, web.HTTPNotFound, cred_ex_record, outbound_handler)
-    except StorageError as err:
-        await internal_error(err, web.HTTPBadRequest, cred_ex_record, outbound_handler)
-
-    await outbound_handler(report, connection_id=cred_ex_record.connection_id)
 
     return web.json_response({})
 

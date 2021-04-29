@@ -1,14 +1,14 @@
-"""Credential problem report message handler."""
+"""Presentation problem report message handler."""
 
 from .....messaging.base_handler import BaseHandler, BaseResponder
 from .....messaging.request_context import RequestContext
 from .....storage.error import StorageError, StorageNotFoundError
 
-from ..manager import CredentialManager
-from ..messages.credential_problem_report import CredentialProblemReport
+from ..manager import V20PresManager
+from ..messages.pres_problem_report import V20PresProblemReport
 
 
-class CredentialProblemReportHandler(BaseHandler):
+class V20PresProblemReportHandler(BaseHandler):
     """Message handler class for problem reports."""
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
@@ -20,19 +20,19 @@ class CredentialProblemReportHandler(BaseHandler):
             responder: responder callback
         """
         self._logger.debug(
-            "Issue-credential v1.0 problem report handler called with context %s",
+            "Present-proof v2.0 problem report handler called with context %s",
             context,
         )
-        assert isinstance(context.message, CredentialProblemReport)
+        assert isinstance(context.message, V20PresProblemReport)
 
-        credential_manager = CredentialManager(context.profile)
+        pres_manager = V20PresManager(context.profile)
         try:
-            await credential_manager.receive_problem_report(
+            await pres_manager.receive_problem_report(
                 context.message,
                 context.connection_record.connection_id,
             )
         except (StorageError, StorageNotFoundError):
             self._logger.exception(
-                "Error processing issue-credential v1.0 problem report message: %s",
+                "Error processing present-proof v2.0 problem report message: %s",
                 context.message.explain_ltxt,
             )

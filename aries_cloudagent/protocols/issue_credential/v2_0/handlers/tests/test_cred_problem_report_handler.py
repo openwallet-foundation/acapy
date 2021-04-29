@@ -4,27 +4,27 @@ from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
 from ......transport.inbound.receipt import MessageReceipt
 
-from ...messages.credential_problem_report import CredentialProblemReport
+from ...messages.cred_problem_report import V20CredProblemReport
 
-from .. import credential_problem_report_handler as test_module
+from .. import cred_problem_report_handler as test_module
 
 
-class TestCredentialProblemReportHandler(AsyncTestCase):
+class TestCredProblemReportHandler(AsyncTestCase):
     async def test_called(self):
         request_context = RequestContext.test_context()
         request_context.message_receipt = MessageReceipt()
         request_context.connection_record = async_mock.MagicMock()
 
         with async_mock.patch.object(
-            test_module, "CredentialManager", autospec=True
+            test_module, "V20CredManager", autospec=True
         ) as mock_cred_mgr:
             mock_cred_mgr.return_value.receive_problem_report = (
                 async_mock.CoroutineMock()
             )
-            request_context.message = CredentialProblemReport(
+            request_context.message = V20CredProblemReport(
                 explain_ltxt="Change of plans"
             )
-            handler = test_module.CredentialProblemReportHandler()
+            handler = test_module.CredProblemReportHandler()
             responder = MockResponder()
             await handler.handle(request_context, responder)
 
@@ -40,17 +40,17 @@ class TestCredentialProblemReportHandler(AsyncTestCase):
         request_context.connection_record = async_mock.MagicMock()
 
         with async_mock.patch.object(
-            test_module, "CredentialManager", autospec=True
+            test_module, "V20CredManager", autospec=True
         ) as mock_cred_mgr:
             mock_cred_mgr.return_value.receive_problem_report = (
                 async_mock.CoroutineMock(
                     side_effect=test_module.StorageError("Disk full")
                 )
             )
-            request_context.message = CredentialProblemReport(
+            request_context.message = V20CredProblemReport(
                 explain_ltxt="Change of plans"
             )
-            handler = test_module.CredentialProblemReportHandler()
+            handler = test_module.CredProblemReportHandler()
             responder = MockResponder()
             await handler.handle(request_context, responder)
 

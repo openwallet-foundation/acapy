@@ -12,14 +12,14 @@ HANDLER_CLASS = (
 )
 
 
-class IssueCredentialV10ProblemReport(ProblemReport):
+class CredentialProblemReport(ProblemReport):
     """Class representing a problem report message."""
 
     class Meta:
         """Problem report metadata."""
 
         handler_class = HANDLER_CLASS
-        schema_class = "IssueCredentialV10ProblemReportSchema"
+        schema_class = "CredentialProblemReportSchema"
         message_type = CREDENTIAL_PROBLEM_REPORT
 
     def __init__(self, **kwargs):
@@ -27,11 +27,11 @@ class IssueCredentialV10ProblemReport(ProblemReport):
         super().__init__(**kwargs)
 
 
-class IssueCredentialV10ProblemReportSchema(ProblemReportSchema):
+class CredentialProblemReportSchema(ProblemReportSchema):
     """Problem report schema."""
 
     class Meta:
         """Schema metadata."""
 
-        model_class = IssueCredentialV10ProblemReport
+        model_class = CredentialProblemReport
         unknown = EXCLUDE

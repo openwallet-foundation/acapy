@@ -20,7 +20,7 @@ from ..manager import CredentialManager, CredentialManagerError
 from ..messages.credential_ack import CredentialAck
 from ..messages.credential_issue import CredentialIssue
 from ..messages.credential_offer import CredentialOffer
-from ..messages.credential_problem_report import IssueCredentialV10ProblemReport
+from ..messages.credential_problem_report import CredentialProblemReport
 from ..messages.credential_proposal import CredentialProposal
 from ..messages.credential_request import CredentialRequest
 from ..messages.inner.credential_preview import CredentialPreview, CredAttrSpec
@@ -1523,8 +1523,9 @@ class TestCredentialManager(AsyncTestCase):
         ) as delete_ex, async_mock.patch.object(
             V10CredentialExchange,
             "retrieve_by_connection_and_thread",
-            async_mock.CoroutineMock(return_value=stored_exchange),
+            async_mock.CoroutineMock(),
         ) as retrieve_ex:
+            retrieve_ex.return_value = stored_exchange
             ret_exchange = await self.manager.receive_credential_ack(ack, connection_id)
 
             retrieve_ex.assert_called_once_with(
@@ -1536,9 +1537,10 @@ class TestCredentialManager(AsyncTestCase):
             delete_ex.assert_called_once()
 
     async def test_create_problem_report(self):
-        cred_ex_id = "dummy-cxid"
+        connection_id = "connection-id"
         stored_exchange = V10CredentialExchange(
-            credential_exchange_id=cred_ex_id,
+            credential_exchange_id="dummy-cxid",
+            connection_id=connection_id,
             initiator=V10CredentialExchange.INITIATOR_SELF,
             role=V10CredentialExchange.ROLE_ISSUER,
             state=V10CredentialExchange.STATE_REQUEST_RECEIVED,
@@ -1557,51 +1559,53 @@ class TestCredentialManager(AsyncTestCase):
         assert report._thread_id == stored_exchange.thread_id
 
     async def test_receive_problem_report(self):
-        cred_ex_id = "dummy-cxid"
+        connection_id = "connection-id"
         stored_exchange = V10CredentialExchange(
-            credential_exchange_id=cred_ex_id,
+            credential_exchange_id="dummy-cxid",
+            connection_id=connection_id,
             initiator=V10CredentialExchange.INITIATOR_SELF,
             role=V10CredentialExchange.ROLE_ISSUER,
-            state=V10CredentialExchange.STATE_REQUEST_RECEIVED,
         )
-        problem = IssueCredentialV10ProblemReport(explain_ltxt="Change of plans")
+        problem = CredentialProblemReport(explain_ltxt="Change of plans")
 
         with async_mock.patch.object(
             V10CredentialExchange, "save", autospec=True
         ) as save_ex, async_mock.patch.object(
             V10CredentialExchange,
-            "retrieve_by_id",
+            "retrieve_by_connection_and_thread",
             async_mock.CoroutineMock(),
         ) as retrieve_ex:
             retrieve_ex.return_value = stored_exchange
 
             ret_exchange = await self.manager.receive_problem_report(
-                problem, cred_ex_id
+                problem, connection_id
             )
-            retrieve_ex.assert_called_once_with(self.session, cred_ex_id)
+            retrieve_ex.assert_called_once_with(
+                self.session, connection_id, problem._thread_id
+            )
             save_ex.assert_called_once()
 
             assert ret_exchange.state is None
 
     async def test_receive_problem_report_x(self):
-        cred_ex_id = "dummy-cxid"
+        connection_id = "connection-id"
         stored_exchange = V10CredentialExchange(
-            credential_exchange_id=cred_ex_id,
+            credential_exchange_id="dummy-cxid",
             initiator=V10CredentialExchange.INITIATOR_SELF,
             role=V10CredentialExchange.ROLE_ISSUER,
             state=V10CredentialExchange.STATE_REQUEST_RECEIVED,
         )
-        problem = IssueCredentialV10ProblemReport(explain_ltxt="Change of plans")
+        problem = CredentialProblemReport(explain_ltxt="Change of plans")
 
         with async_mock.patch.object(
             V10CredentialExchange,
-            "retrieve_by_id",
+            "retrieve_by_connection_and_thread",
             async_mock.CoroutineMock(),
         ) as retrieve_ex:
             retrieve_ex.side_effect = test_module.StorageNotFoundError("No such record")
 
             with self.assertRaises(test_module.StorageNotFoundError):
-                await self.manager.receive_problem_report(problem, cred_ex_id)
+                await self.manager.receive_problem_report(problem, connection_id)
 
     async def test_retrieve_records(self):
         self.cache = InMemoryCache()
