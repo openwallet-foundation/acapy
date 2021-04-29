@@ -1,12 +1,8 @@
-from ecdsa import ECDH, NIST256p, SigningKey
-
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.kdf.concatkdf import ConcatKDFHash
-from cryptography.hazmat.backends import default_backend
-
+from ecdsa import ECDH, NIST256p
 from binascii import unhexlify
+import hashlib
 
-# Generate a shared secret from your private key and a received public key (keys are in Byte format)
+# Generate a shared secret from your private key and a received public key (keys are in hex represented Byte format)
 def DeriveECDHSecret(privateKey, publicKey):
 
     derive = ECDH(curve=NIST256p)
@@ -14,12 +10,10 @@ def DeriveECDHSecret(privateKey, publicKey):
     derive.load_received_public_key_bytes(unhexlify(publicKey))
 
     secret = derive.generate_sharedsecret_bytes()
-
-    # secret = derive.generate_sharedsecret()
-
     return secret
 
-# Generate a shared secret from your private key and a received public key (keys are in Key object format)
+# Generate a shared secret from your private key and a received public key (keys are in Keys object format)
+# Use a ecdsa.Keys object
 def DeriveECDHSecretFromKey(privateKey, publicKey):
 
     derive = ECDH(curve=NIST256p)
@@ -27,28 +21,22 @@ def DeriveECDHSecretFromKey(privateKey, publicKey):
     derive.load_received_public_key(publicKey)
 
     secret = derive.generate_sharedsecret_bytes()
-
-    # secret - derive.generate_sharedsecret()
-
     return secret
 
-# Generate a shared encryption key from a ECDH generated shared secret
-def ConcatKDF(sharedSecret, otherinfo= b"alg_id + apu_info + apv_info + pub_info"):
+# Generate a shared encryption key from a shared secret and header parameters
+def ConcatKDF(sharedSecret, alg, apu, apv, keydatalen):
 
-    ckdf = ConcatKDFHash(
-        algorithm = hashes.SHA256(),
-        length = 32,
-        otherinfo = otherinfo,
-        backend = default_backend()
-    )
-    sharedKey = ckdf.derive(sharedSecret)
+    # ECDH-1PU requires each of the header parameters to be front padded with their string length
+    AlgID = len(alg).to_bytes(4, "big") + bytes(alg, 'utf-8')
+    PartyUInfo = len(apu).to_bytes(4, "big") + bytes(apu, 'utf-8')
+    PartyVInfo = len(apv).to_bytes(4, "big") + bytes(apv, 'utf-8')
+    SuppPubInfo = (keydatalen*8).to_bytes(4, "big")
 
-    ckdf = ConcatKDFHash(
-        algorithm = hashes.SHA256(),
-        length = 32,
-        otherinfo = otherinfo,
-        backend = default_backend()
-    )
-    ckdf.verify(sharedSecret, sharedKey)
+    otherinfo = AlgID + PartyUInfo + PartyVInfo + SuppPubInfo
+
+    # The concatKDF input is: Round1 + ze + zs + otherinfo
+    sharedSecret = sharedSecret + otherinfo
+    # Use sha256 for concatKDF
+    sharedKey = hashlib.sha256(sharedSecret).digest()
 
     return sharedKey

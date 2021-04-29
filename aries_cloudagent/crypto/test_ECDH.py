@@ -1,7 +1,7 @@
 from deriveECDH import *
 from ecdsa import ECDH, NIST256p, SigningKey
 
-# Test the DeriveECDHSecret() function
+# Generate the same shared secret from imported generated keys
 def Test_DeriveECDHSecret():
 
     # Import keys for two participating users
@@ -13,13 +13,13 @@ def Test_DeriveECDHSecret():
 
     # Each user derives the same shared secret, independantly, using the other's public key which is exchanged
     aliceSecret = DeriveECDHSecret(aliceSecretKey, bobPublicKey)
-    print("Alice secret: ", aliceSecret)
+    print("Alice secret: ", aliceSecret.hex())
     bobSecret = DeriveECDHSecret(bobSecretKey, alicePublicKey)
-    print("Bob secret: ", bobSecret)
+    print("Bob secret: ", bobSecret.hex())
 
     assert aliceSecret == bobSecret, "Both parties should generate the same secret"
 
-# Test the DeriveECDHSecretFromKey() function
+# Generate the same shared secret from random keys
 def Test_DeriveECDHSecretRandom():
 
     # Generate random keys for the two participating users
@@ -35,9 +35,9 @@ def Test_DeriveECDHSecretRandom():
 
     # Each user derives the same shared secret, independantly, using the other's public key which is exchanged
     aliceSecret = DeriveECDHSecretFromKey(aliceSecretKey, bobPublicKey)
-    print("Alice secret: ", aliceSecret)
+    print("Alice secret: ", aliceSecret.hex())
     bobSecret = DeriveECDHSecretFromKey(bobSecretKey, alicePublicKey)
-    print("Bob secret: ", bobSecret)
+    print("Bob secret: ", bobSecret.hex())
 
     assert aliceSecret == bobSecret, "Both parties should generate the same secret"
 
@@ -51,18 +51,22 @@ def Test_GenerateKey():
     bobPublicKey = "04e35cde5e3761d075fc87b3b0983a179e1b8e09da242e79965d657cba48f792dfc9b446a098ab0194888cd9d53a21c873c00264275dba925c2db6c458c87ca3d6"
 
     aliceSecret = DeriveECDHSecret(aliceSecretKey, bobPublicKey)
-    print("Alice secret: ", aliceSecret)
+    print("Alice secret: ", aliceSecret.hex())
     bobSecret = DeriveECDHSecret(bobSecretKey, alicePublicKey)
-    print("Bob secret: ", bobSecret)
+    print("Bob secret: ", bobSecret.hex())
+
+    # Header parameters used in ConcatKDF
+    alg = "A256GCM"
+    apu = "Alice"
+    apv = "Bob"
+    keydatalen = 32 # 32 bytes or 256 bit output key length
 
     # After each side generates the shared secret, it is used to independantly derive a shared encryption key
-    otherinfo = b"alg_id + apu_info + apv_info + pub_info"
+    aliceKey = ConcatKDF(aliceSecret, alg, apu, apv, keydatalen)
+    print("Alice key: ", aliceKey.hex())
 
-    aliceKey = ConcatKDF(aliceSecret, otherinfo)
-    print("Alice key: ", aliceKey)
-
-    bobKey = ConcatKDF(bobSecret, otherinfo)
-    print("Bob key: ", bobKey)
+    bobKey = ConcatKDF(bobSecret, alg, apu, apv, keydatalen)
+    print("Bob key: ", bobKey.hex())
 
     assert aliceKey == bobKey, "Both parties should generate the same key from the same secret"
 
@@ -80,18 +84,22 @@ def Test_GenerateKeyRandom():
     bobPublicKey = bob.get_public_key()
 
     aliceSecret = DeriveECDHSecretFromKey(aliceSecretKey, bobPublicKey)
-    print("Alice secret: ", aliceSecret)
+    print("Alice secret: ", aliceSecret.hex())
     bobSecret = DeriveECDHSecretFromKey(bobSecretKey, alicePublicKey)
-    print("Bob secret: ", bobSecret)
+    print("Bob secret: ", bobSecret.hex())
+
+    # Header parameters used in ConcatKDF
+    alg = "A256GCM"
+    apu = "Alice"
+    apv = "Bob"
+    keydatalen = 32 # 32 bytes or 256 bit output key length
 
     # After each side generates the shared secret, it is used to independantly derive a shared encryption key
-    otherinfo = b"alg_id + apu_info + apv_info + pub_info"
+    aliceKey = ConcatKDF(aliceSecret, alg, apu, apv, keydatalen)
+    print("Alice key: ", aliceKey.hex())
 
-    aliceKey = ConcatKDF(aliceSecret, otherinfo)
-    print("Alice key: ", aliceKey)
-
-    bobKey = ConcatKDF(bobSecret, otherinfo)
-    print("Bob key: ", bobKey)
+    bobKey = ConcatKDF(bobSecret, alg, apu, apv, keydatalen)
+    print("Bob key: ", bobKey.hex())
 
     assert aliceKey == bobKey, "Both parties should generate the same key from the same secret"
 

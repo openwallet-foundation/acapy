@@ -1,45 +1,33 @@
-from ecdsa import ECDH, NIST256p, SigningKey
+from ecdsa import ECDH, NIST256p
 from deriveECDH import *
 
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.kdf.concatkdf import ConcatKDFHash
-from cryptography.hazmat.backends import default_backend
+# ECDH-1PU generates a shared encryption key from two concatenated ECDH shared secrets
+# One set of secrets from sender/receiver (zs), the second set from ephemeral sender/receiver (ze)
+def derive1PU(ze, zs, alg, apu, apv, keydatalen):
 
-# ECDH-1PU generates a shared encryption key from two intermediate keys concatenated together
-# The two keys are generated from ECDH-ES, one pair from sender/receiver (zs), the second pair from ephemeral sender/receiver (ze)
-def derive1PU(ze, zs):
-
-    prefix = bytearray(b"0001")
-
+    # ECDH-1PU requires a "round number 1" to be prefixed onto the shared secret z
+    prefix = (1).to_bytes(4, "big")
     z = prefix + ze + zs
-    otherinfo = b"alg_id + apu_info + apv_info + pub_info"
 
-    key = ConcatKDF(z, otherinfo)
-    
+    key = ConcatKDF(z, alg, apu, apv, keydatalen)
     return key
 
-# The sender generates two intermediate keys (ze, zs) from two shared secrets (se, ss)
-def deriveSender1PU(senderEphemeralPriv, senderPriv, recvPub):
+# The sender generates two shared secrets (ze, zs)
+def deriveSender1PU(senderEphemeralPriv, senderPriv, recvPub, alg, apu, apv, keydatalen):
     
-    se = DeriveECDHSecret(senderEphemeralPriv, recvPub)
-    ze = ConcatKDF(se)
+    ze = DeriveECDHSecret(senderEphemeralPriv, recvPub)
+    zs = DeriveECDHSecret(senderPriv, recvPub)
 
-    ss = DeriveECDHSecret(senderPriv, recvPub)
-    zs = ConcatKDF(ss)
-
-    key = derive1PU(ze, zs)
-
+    key = derive1PU(ze, zs, alg, apu, apv, keydatalen)
     return key
 
-# The receiver generates two intermediate keys (ze, zs) from two shared secrets (se, ss)
-def deriveReceiver1PU(senderEphemeralPub, senderPub, recvPriv):
-    se = DeriveECDHSecret(recvPriv, senderEphemeralPub)
-    ze = ConcatKDF(se)
+# The receiver generates two shared secrets (ze, zs)
+def deriveReceiver1PU(senderEphemeralPub, senderPub, recvPriv , alg, apu, apv, keydatalen):
 
-    ss = DeriveECDHSecret(recvPriv, senderPub)
-    zs = ConcatKDF(ss)
+    ze = DeriveECDHSecret(recvPriv, senderEphemeralPub)
+    zs = DeriveECDHSecret(recvPriv, senderPub)
 
-    key = derive1PU(ze, zs)
+    key = derive1PU(ze, zs, alg, apu, apv, keydatalen)
 
     return key
 
