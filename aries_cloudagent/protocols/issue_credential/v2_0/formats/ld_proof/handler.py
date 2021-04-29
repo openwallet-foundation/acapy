@@ -445,7 +445,7 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
         # TODO: if created wasn't present in the detail options, should we verify
         # it is ~now (e.g. some time in the past + future)?
         # Check if created property matches
-        if vc.proof.created != detail.options.created:
+        if detail.options.created and vc.proof.created != detail.options.created:
             raise V20CredFormatError(
                 "Received credential proof.created does not"
                 " match options.created from credential request"
