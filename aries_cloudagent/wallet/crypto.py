@@ -1,7 +1,7 @@
 """Cryptography functions used by BasicWallet."""
 
 from collections import OrderedDict
-from typing import Callable, Optional, Sequence, Tuple, Union
+from typing import Callable, Optional, Sequence, Tuple, Union, List
 
 import nacl.bindings
 import nacl.exceptions
@@ -10,14 +10,40 @@ import nacl.utils
 from marshmallow import ValidationError
 
 from ..utils.jwe import JweRecipient, b64url, JweEnvelope, from_b64url
-
 from .error import WalletError
-from .util import bytes_to_b58, b64_to_bytes, b58_to_bytes
+from .util import bytes_to_b58, b64_to_bytes, b58_to_bytes, random_seed
+from .key_type import KeyType
 
 
-def create_keypair(seed: bytes = None) -> Tuple[bytes, bytes]:
+def create_keypair(key_type: KeyType, seed: bytes = None) -> Tuple[bytes, bytes]:
     """
-    Create a public and private signing keypair from a seed value.
+    Create a public and private keypair from a seed value.
+
+    Args:
+        key_type: The type of key to generate
+        seed: Seed for keypair
+
+    Raises:
+        WalletError: If the key type is not supported
+
+    Returns:
+        A tuple of (public key, secret key)
+
+    """
+    if key_type == KeyType.ED25519:
+        return create_ed25519_keypair(seed)
+    elif key_type == KeyType.BLS12381G2:
+        # This ensures python won't crash if bbs is not installed and not used
+        from .bbs import create_bls12381g2_keypair
+
+        return create_bls12381g2_keypair(seed)
+    else:
+        raise WalletError(f"Unsupported key type: {key_type.key_type}")
+
+
+def create_ed25519_keypair(seed: bytes = None) -> Tuple[bytes, bytes]:
+    """
+    Create a public and private ed25519 keypair from a seed value.
 
     Args:
         seed: Seed for keypair
@@ -32,17 +58,6 @@ def create_keypair(seed: bytes = None) -> Tuple[bytes, bytes]:
     return pk, sk
 
 
-def random_seed() -> bytes:
-    """
-    Generate a random seed value.
-
-    Returns:
-        A new random seed
-
-    """
-    return nacl.utils.random(nacl.bindings.crypto_box_SEEDBYTES)
-
-
 def seed_to_did(seed: str) -> str:
     """
     Derive a DID from a seed value.
@@ -55,7 +70,7 @@ def seed_to_did(seed: str) -> str:
 
     """
     seed = validate_seed(seed)
-    verkey, _ = create_keypair(seed)
+    verkey, _ = create_ed25519_keypair(seed)
     did = bytes_to_b58(verkey[:16])
     return did
 
@@ -91,16 +106,49 @@ def validate_seed(seed: Union[str, bytes]) -> bytes:
     return seed
 
 
-def sign_message(message: bytes, secret: bytes) -> bytes:
+def sign_message(
+    message: Union[List[bytes], bytes], secret: bytes, key_type: KeyType
+) -> bytes:
     """
-    Sign a message using a private signing key.
+    Sign message(s) using a private signing key.
 
     Args:
-        message: The message to sign
+        message: The message(s) to sign
         secret: The private signing key
+        key_type: The key type to derive the signature algorithm from
 
     Returns:
-        The signature
+        bytes: The signature
+
+    """
+    # Make messages list if not already for easier checking going forward
+    messages = message if isinstance(message, list) else [message]
+
+    if key_type == KeyType.ED25519:
+        if len(messages) > 1:
+            raise WalletError("ed25519 can only sign a single message")
+
+        return sign_message_ed25519(
+            message=messages[0],
+            secret=secret,
+        )
+    elif key_type == KeyType.BLS12381G2:
+        from .bbs import sign_messages_bls12381g2
+
+        return sign_messages_bls12381g2(messages=messages, secret=secret)
+    else:
+        raise WalletError(f"Unsupported key type: {key_type.key_type}")
+
+
+def sign_message_ed25519(message: bytes, secret: bytes) -> bytes:
+    """Sign message using a ed25519 private signing key.
+
+    Args:
+        messages (bytes): The message to sign
+        secret (bytes): The private signing key
+
+    Returns:
+        bytes: The signature
 
     """
     result = nacl.bindings.crypto_sign(message, secret)
@@ -108,12 +156,57 @@ def sign_message(message: bytes, secret: bytes) -> bytes:
     return sig
 
 
-def verify_signed_message(signed: bytes, verkey: bytes) -> bool:
+def verify_signed_message(
+    message: Union[List[bytes], bytes],
+    signature: bytes,
+    verkey: bytes,
+    key_type: KeyType,
+) -> bool:
     """
     Verify a signed message according to a public verification key.
 
     Args:
-        signed: The signed message
+        message: The message(s) to verify
+        signature: The signature to verify
+        verkey: The verkey to use in verification
+        key_type: The key type to derive the signature verification algorithm from
+
+    Returns:
+        True if verified, else False
+
+    """
+    # Make messages list if not already for easier checking going forward
+    messages = message if isinstance(message, list) else [message]
+
+    if key_type == KeyType.ED25519:
+        if len(messages) > 1:
+            raise WalletError("ed25519 can only verify a single message")
+
+        return verify_signed_message_ed25519(
+            message=messages[0], signature=signature, verkey=verkey
+        )
+    elif key_type == KeyType.BLS12381G2:
+        from .bbs import verify_signed_messages_bls12381g2, BbsException
+
+        try:
+            return verify_signed_messages_bls12381g2(
+                messages=messages, signature=signature, public_key=verkey
+            )
+        except BbsException as e:
+            raise WalletError("Unable to verify message") from e
+    else:
+        raise WalletError(f"Unsupported key type: {key_type.key_type}")
+
+
+def verify_signed_message_ed25519(
+    message: bytes, signature: bytes, verkey: bytes
+) -> bool:
+    """
+    Verify an ed25519 signed message according to a public verification key.
+
+    Args:
+        message: The message to verify
+        signature: The signature to verify
         verkey: The verkey to use in verification
 
     Returns:
@@ -121,7 +214,7 @@ def verify_signed_message(signed: bytes, verkey: bytes) -> bool:
 
     """
     try:
-        nacl.bindings.crypto_sign_open(signed, verkey)
+        nacl.bindings.crypto_sign_open(signature + message, verkey)
     except nacl.exceptions.BadSignatureError:
         return False
     return True
@@ -177,6 +270,11 @@ def add_pack_recipients(
                     encrypted_key=enc_cek, header={"kid": bytes_to_b58(target_vk)}
                 )
             )
+
+
+def ed25519_pk_to_curve25519(public_key: bytes) -> bytes:
+    """Covert a public Ed25519 key to a public Curve25519 key as bytes."""
+    return nacl.bindings.crypto_sign_ed25519_pk_to_curve25519(public_key)
 
 
 def encrypt_plaintext(

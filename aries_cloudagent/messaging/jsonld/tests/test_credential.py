@@ -12,6 +12,7 @@ from ....admin.request_context import AdminRequestContext
 from ....core.in_memory import InMemoryProfile
 from ....wallet.base import BaseWallet
 from ....wallet.in_memory import InMemoryWallet
+from ....wallet.key_type import KeyType
 from .. import credential as test_module
 from ..create_verify_data import DroppedAttributeError
 from ..credential import did_key, sign_credential, verify_credential
@@ -63,7 +64,7 @@ def event_loop():
 async def wallet():
     profile = InMemoryProfile.test_profile()
     wallet = InMemoryWallet(profile)
-    await wallet.create_signing_key(TEST_SEED)
+    await wallet.create_signing_key(KeyType.ED25519, TEST_SEED)
     yield wallet
 
 

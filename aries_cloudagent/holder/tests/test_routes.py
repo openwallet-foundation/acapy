@@ -25,6 +25,7 @@ VC_RECORD = VCRecord(
     ],
     issuer_id="https://example.edu/issuers/565049",
     subject_ids=["did:example:ebfeb1f712ebc6f1c276e12ec21"],
+    proof_types=["Ed25519Signature2018"],
     schema_ids=["https://example.org/examples/degree.json"],
     cred_value={"...": "..."},
     given_id="http://example.edu/credentials/3732",

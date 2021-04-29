@@ -1,6 +1,20 @@
 """KeyInfo, DIDInfo."""
 
-from collections import namedtuple
+from typing import NamedTuple
 
-KeyInfo = namedtuple("KeyInfo", "verkey metadata")
-DIDInfo = namedtuple("DIDInfo", "did verkey metadata")
+from .did_method import DIDMethod
+from .key_type import KeyType
+
+KeyInfo = NamedTuple(
+    "KeyInfo", [("verkey", str), ("metadata", dict), ("key_type", KeyType)]
+)
+DIDInfo = NamedTuple(
+    "DIDInfo",
+    [
+        ("did", str),
+        ("verkey", str),
+        ("metadata", dict),
+        ("method", DIDMethod),
+        ("key_type", KeyType),
+    ],
+)

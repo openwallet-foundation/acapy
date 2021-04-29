@@ -1,10 +1,8 @@
-from datetime import datetime, timezone
-from unittest import mock, TestCase
+from unittest import TestCase
 
 from ..util import (
     abbr_verkey,
     b58_to_bytes,
-    b64_to_bytes,
     b64_to_str,
     bytes_to_b58,
     bytes_to_b64,
@@ -13,8 +11,6 @@ from ..util import (
     str_to_b64,
     set_urlsafe_b64,
     unpad,
-    naked_to_did_key,
-    did_key_to_naked,
 )
 
 
@@ -81,15 +77,3 @@ class TestUtil(TestCase):
         abbr_did = abbr_verkey(full_vk, did)
         abbr_qdid = abbr_verkey(full_vk, f"did:sov:{did}")
         assert abbr_did == abbr_qdid == abbr == abbr_vk
-
-    def test_naked_to_did_key(self):
-        assert (
-            naked_to_did_key("8HH5gYEeNc3z7PYXmd54d4x6qAfCNrqQqEB3nS7Zfu7K")
-            == "did:key:z6MkmjY8GnV5i9YTDtPETC2uUAW6ejw3nk5mXF5yci5ab7th"
-        )
-
-    def test_did_key_to_naked(self):
-        assert (
-            did_key_to_naked("did:key:z6MkmjY8GnV5i9YTDtPETC2uUAW6ejw3nk5mXF5yci5ab7th")
-            == "8HH5gYEeNc3z7PYXmd54d4x6qAfCNrqQqEB3nS7Zfu7K"
-        )

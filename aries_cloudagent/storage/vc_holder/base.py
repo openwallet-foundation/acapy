@@ -56,9 +56,10 @@ class VCHolder(ABC):
         self,
         contexts: Sequence[str] = None,
         types: Sequence[str] = None,
-        schema_ids: str = None,
+        schema_ids: Sequence[str] = None,
         issuer_id: str = None,
-        subject_ids: str = None,
+        subject_ids: Sequence[str] = None,
+        proof_types: Sequence[str] = None,
         given_id: str = None,
         tag_query: Mapping = None,
     ) -> "VCRecordSearch":
@@ -71,6 +72,7 @@ class VCHolder(ABC):
             schema_ids: An inclusive list of credential schema identifiers
             issuer_id: The ID of the credential issuer
             subject_ids: The IDs of any credential subjects all of which to match
+            proof_types: The signature suite types used for the proof objects.
             given_id: The given id of the credential
             tag_query: A tag filter clause
 

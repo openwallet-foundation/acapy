@@ -31,6 +31,7 @@ from ..protocols.connections.v1_0.manager import (
 from ..protocols.connections.v1_0.messages.connection_invitation import (
     ConnectionInvitation,
 )
+from ..vc.ld_proofs.document_loader import DocumentLoader
 from ..protocols.coordinate_mediation.v1_0.manager import MediationManager
 from ..protocols.out_of_band.v1_0.manager import OutOfBandManager
 from ..protocols.out_of_band.v1_0.messages.invitation import HSProto, InvitationMessage
@@ -127,6 +128,11 @@ class Conductor:
         if context.settings.get("multitenant.enabled"):
             multitenant_mgr = MultitenantManager(self.root_profile)
             context.injector.bind_instance(MultitenantManager, multitenant_mgr)
+
+        # Bind default PyLD document loader
+        context.injector.bind_instance(
+            DocumentLoader, DocumentLoader(self.root_profile)
+        )
 
         self.outbound_queue = get_outbound_queue(context.settings)
 
