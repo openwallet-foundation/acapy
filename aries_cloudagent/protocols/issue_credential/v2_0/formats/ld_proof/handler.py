@@ -53,13 +53,15 @@ SUPPORTED_ISSUANCE_PROOF_PURPOSES = {
     CredentialIssuancePurpose.term,
     AuthenticationProofPurpose.term,
 }
+SUPPORTED_ISSUANCE_SUITES = {Ed25519Signature2018}
+SIGNATURE_SUITE_KEY_TYPE_MAPPING = {Ed25519Signature2018: KeyType.ED25519}
 
-SUPPORTED_ISSUANCE_SUITES = {Ed25519Signature2018, BbsBlsSignature2020}
 
-SIGNATURE_SUITE_KEY_TYPE_MAPPING = {
-    Ed25519Signature2018: KeyType.ED25519,
-    BbsBlsSignature2020: KeyType.BLS12381G2,
-}
+# We only want to add bbs suites to supported if the module is installed
+if BbsBlsSignature2020.BBS_SUPPORTED:
+    SUPPORTED_ISSUANCE_SUITES.add(BbsBlsSignature2020)
+    SIGNATURE_SUITE_KEY_TYPE_MAPPING[BbsBlsSignature2020] = KeyType.BLS12381G2
+
 
 PROOF_TYPE_SIGNATURE_SUITE_MAPPING = {
     suite.signature_type: suite

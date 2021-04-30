@@ -1,5 +1,5 @@
 from unittest import TestCase
-
+import pytest
 
 from ..bbs import (
     sign_messages_bls12381g2,
@@ -15,6 +15,7 @@ SIGN_MESSAGES = [b"messag1", b"message2"]
 SEED = "seed000000000001"
 
 
+@pytest.mark.ursa_bbs_signatures
 class TestBBS(TestCase):
     def test_create_keypair_seed(self):
         (pk, sk) = create_bls12381g2_keypair(SEED)

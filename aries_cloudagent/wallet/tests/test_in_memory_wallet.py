@@ -49,6 +49,7 @@ class TestInMemoryWallet:
         assert info and info.verkey
 
     @pytest.mark.asyncio
+    @pytest.mark.ursa_bbs_signatures
     async def test_create_signing_key_bls12381g2_random(self, wallet: InMemoryWallet):
         assert str(wallet)
         info = await wallet.create_signing_key(KeyType.BLS12381G2)
@@ -66,6 +67,7 @@ class TestInMemoryWallet:
             await wallet.create_signing_key(KeyType.ED25519, "invalid-seed", None)
 
     @pytest.mark.asyncio
+    @pytest.mark.ursa_bbs_signatures
     async def test_create_signing_key_bls12381g2_seeded(self, wallet: InMemoryWallet):
         info = await wallet.create_signing_key(KeyType.BLS12381G2, self.test_seed)
         assert info.verkey == self.test_bls12381g2_verkey
@@ -112,6 +114,7 @@ class TestInMemoryWallet:
             await wallet.get_signing_key(self.missing_verkey)
 
     @pytest.mark.asyncio
+    @pytest.mark.ursa_bbs_signatures
     async def test_signing_key_metadata_bls(self, wallet: InMemoryWallet):
         info = await wallet.create_signing_key(
             KeyType.BLS12381G2, self.test_seed, self.test_metadata
@@ -131,10 +134,13 @@ class TestInMemoryWallet:
         assert info and info.did and info.verkey
 
     @pytest.mark.asyncio
-    async def test_create_local_key_random(self, wallet: InMemoryWallet):
+    async def test_create_local_key_random_ed25519(self, wallet: InMemoryWallet):
         info = await wallet.create_local_did(DIDMethod.KEY, KeyType.ED25519, None, None)
         assert info and info.did and info.verkey
 
+    @pytest.mark.asyncio
+    @pytest.mark.ursa_bbs_signatures
+    async def test_create_local_key_random_bls12381g2(self, wallet: InMemoryWallet):
         info = await wallet.create_local_did(
             DIDMethod.KEY, KeyType.BLS12381G2, None, None
         )
@@ -166,13 +172,8 @@ class TestInMemoryWallet:
             )
 
     @pytest.mark.asyncio
-    async def test_create_local_key_seeded(self, wallet: InMemoryWallet):
-        info = await wallet.create_local_did(
-            DIDMethod.KEY, KeyType.ED25519, self.test_seed, None
-        )
-        assert info.did == self.test_key_ed25519_did
-        assert info.verkey == self.test_ed25519_verkey
-
+    @pytest.mark.ursa_bbs_signatures
+    async def test_create_local_key_seeded_bls12381g2(self, wallet: InMemoryWallet):
         info = await wallet.create_local_did(
             DIDMethod.KEY, KeyType.BLS12381G2, self.test_seed, None
         )
@@ -181,22 +182,30 @@ class TestInMemoryWallet:
 
         # should not raise WalletDuplicateError - same verkey
         await wallet.create_local_did(
-            DIDMethod.KEY, KeyType.ED25519, self.test_seed, None
-        )
-
-        # should not raise WalletDuplicateError - same verkey
-        await wallet.create_local_did(
             DIDMethod.KEY, KeyType.BLS12381G2, self.test_seed, None
         )
 
         with pytest.raises(WalletError):
             _ = await wallet.create_local_did(
-                DIDMethod.KEY, KeyType.ED25519, "invalid-seed", None
+                DIDMethod.KEY, KeyType.BLS12381G2, "invalid-seed", None
             )
+
+    @pytest.mark.asyncio
+    async def test_create_local_key_seeded_ed25519(self, wallet: InMemoryWallet):
+        info = await wallet.create_local_did(
+            DIDMethod.KEY, KeyType.ED25519, self.test_seed, None
+        )
+        assert info.did == self.test_key_ed25519_did
+        assert info.verkey == self.test_ed25519_verkey
+
+        # should not raise WalletDuplicateError - same verkey
+        await wallet.create_local_did(
+            DIDMethod.KEY, KeyType.ED25519, self.test_seed, None
+        )
 
         with pytest.raises(WalletError):
             _ = await wallet.create_local_did(
-                DIDMethod.KEY, KeyType.BLS12381G2, "invalid-seed", None
+                DIDMethod.KEY, KeyType.ED25519, "invalid-seed", None
             )
 
     @pytest.mark.asyncio
@@ -261,6 +270,9 @@ class TestInMemoryWallet:
         assert info3.did == self.test_sov_did
         assert info3.verkey == self.test_ed25519_verkey
 
+    @pytest.mark.asyncio
+    @pytest.mark.ursa_bbs_signatures
+    async def test_local_verkey_bls12381g2(self, wallet: InMemoryWallet):
         await wallet.create_local_did(DIDMethod.KEY, KeyType.BLS12381G2, self.test_seed)
         bls_info_get = await wallet.get_local_did_for_verkey(
             self.test_bls12381g2_verkey
@@ -303,6 +315,7 @@ class TestInMemoryWallet:
         assert info4.metadata["endpoint"] == "http://1.2.3.4:8021"
 
     @pytest.mark.asyncio
+    @pytest.mark.ursa_bbs_signatures
     async def test_local_metadata_bbs(self, wallet: InMemoryWallet):
         info = await wallet.create_local_did(
             DIDMethod.KEY,
