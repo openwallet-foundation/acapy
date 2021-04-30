@@ -1,5 +1,5 @@
 from ecdsa import ECDH, NIST256p
-from deriveECDH import *
+from .deriveECDH import *
 
 # ECDH-1PU generates a shared encryption key from two concatenated ECDH shared secrets
 # One set of secrets from sender/receiver (zs), the second set from ephemeral sender/receiver (ze)
