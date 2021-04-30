@@ -1,6 +1,5 @@
 """Admin server classes."""
 
-from aries_cloudagent.transport.outbound.status import OutboundSendStatus
 import asyncio
 from hmac import compare_digest
 import logging
@@ -30,6 +29,7 @@ from ..messaging.responder import BaseResponder
 from ..multitenant.manager import MultitenantManager, MultitenantManagerError
 from ..storage.error import StorageNotFoundError
 from ..transport.outbound.message import OutboundMessage
+from ..transport.outbound.status import OutboundSendStatus
 from ..transport.queue.basic import BasicMessageQueue
 from ..utils.stats import Collector
 from ..utils.task_queue import TaskQueue

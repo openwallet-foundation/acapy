@@ -6,13 +6,12 @@ in response to the message being handled.
 """
 
 from abc import ABC, abstractmethod
-from aries_cloudagent.transport.outbound.status import OutboundSendStatus
 from typing import Sequence, Union
 
-from ..core.error import BaseError
 from ..connections.models.connection_target import ConnectionTarget
+from ..core.error import BaseError
 from ..transport.outbound.message import OutboundMessage
-
+from ..transport.outbound.status import OutboundSendStatus
 from .agent_message import AgentMessage
 
 

@@ -5,7 +5,6 @@ The dispatcher is responsible for coordinating data flow between handlers, provi
 lifecycle hook callbacks storing state for message threads, etc.
 """
 
-from aries_cloudagent.transport.outbound.status import OutboundSendStatus
 import asyncio
 import logging
 import os
@@ -25,10 +24,10 @@ from ..protocols.connections.v1_0.manager import ConnectionManager
 from ..protocols.problem_report.v1_0.message import ProblemReport
 from ..transport.inbound.message import InboundMessage
 from ..transport.outbound.message import OutboundMessage
+from ..transport.outbound.status import OutboundSendStatus
 from ..utils.stats import Collector
 from ..utils.task_queue import CompletedTask, PendingTask, TaskQueue
-from ..utils.tracing import trace_event, get_timer
-
+from ..utils.tracing import get_timer, trace_event
 from .error import ProtocolMinorVersionNotSupported
 from .protocol_registry import ProtocolRegistry
 
