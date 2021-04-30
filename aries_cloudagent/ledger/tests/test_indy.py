@@ -6,7 +6,6 @@ import pytest
 from os import path
 
 from asynctest import mock as async_mock, TestCase as AsyncTestCase
-from asynctest import mock as async_mock
 
 from ...cache.in_memory import InMemoryCache
 from ...indy.issuer import IndyIssuer, IndyIssuerError
@@ -14,6 +13,8 @@ from ...storage.record import StorageRecord
 from ...wallet.did_info import DIDInfo
 from ...wallet.did_posture import DIDPosture
 from ...wallet.error import WalletNotFoundError
+from ...wallet.key_type import KeyType
+from ...wallet.did_method import DIDMethod
 
 from ..endpoint_type import EndpointType
 from ..indy import (
@@ -89,7 +90,11 @@ class TestIndySdkLedgerPoolProvider(AsyncTestCase):
 class TestIndySdkLedger(AsyncTestCase):
     test_did = "55GkHamhTU1ZbTbV2ab9DE"
     test_did_info = DIDInfo(
-        test_did, "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx", None
+        did=test_did,
+        verkey="3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx",
+        metadata=None,
+        method=DIDMethod.SOV,
+        key_type=KeyType.ED25519,
     )
     test_verkey = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
 
@@ -1147,7 +1152,11 @@ class TestIndySdkLedger(AsyncTestCase):
 
             mock_wallet.get_public_did = async_mock.CoroutineMock()
             mock_wallet.get_public_did.return_value = DIDInfo(
-                TestIndySdkLedger.test_did, TestIndySdkLedger.test_verkey, None
+                did=TestIndySdkLedger.test_did,
+                verkey=TestIndySdkLedger.test_verkey,
+                metadata=None,
+                method=DIDMethod.SOV,
+                key_type=KeyType.ED25519,
             )
             mock_did = mock_wallet.get_public_did.return_value
 
@@ -1225,7 +1234,11 @@ class TestIndySdkLedger(AsyncTestCase):
         async with ledger:
             mock_wallet.get_public_did = async_mock.CoroutineMock()
             mock_wallet.get_public_did.return_value = DIDInfo(
-                TestIndySdkLedger.test_did, TestIndySdkLedger.test_verkey, None
+                TestIndySdkLedger.test_did,
+                TestIndySdkLedger.test_verkey,
+                None,
+                DIDMethod.SOV,
+                KeyType.ED25519,
             )
 
             (
@@ -1307,7 +1320,11 @@ class TestIndySdkLedger(AsyncTestCase):
             async with ledger:
                 mock_wallet.get_public_did = async_mock.CoroutineMock()
                 mock_wallet.get_public_did.return_value = DIDInfo(
-                    TestIndySdkLedger.test_did, TestIndySdkLedger.test_verkey, None
+                    did=TestIndySdkLedger.test_did,
+                    verkey=TestIndySdkLedger.test_verkey,
+                    metadata=None,
+                    method=DIDMethod.SOV,
+                    key_type=KeyType.ED25519,
                 )
                 mock_did = mock_wallet.get_public_did.return_value
 
@@ -1715,7 +1732,11 @@ class TestIndySdkLedger(AsyncTestCase):
 
             mock_wallet.get_public_did = async_mock.CoroutineMock()
             mock_wallet.get_public_did.return_value = DIDInfo(
-                TestIndySdkLedger.test_did, TestIndySdkLedger.test_verkey, None
+                did=TestIndySdkLedger.test_did,
+                verkey=TestIndySdkLedger.test_verkey,
+                metadata=None,
+                method=DIDMethod.SOV,
+                key_type=KeyType.ED25519,
             )
             mock_did = mock_wallet.get_public_did.return_value
 
@@ -1787,7 +1808,11 @@ class TestIndySdkLedger(AsyncTestCase):
         async with ledger:
             mock_wallet.get_public_did = async_mock.CoroutineMock()
             mock_wallet.get_public_did.return_value = DIDInfo(
-                TestIndySdkLedger.test_did, TestIndySdkLedger.test_verkey, None
+                did=TestIndySdkLedger.test_did,
+                verkey=TestIndySdkLedger.test_verkey,
+                metadata=None,
+                method=DIDMethod.SOV,
+                key_type=KeyType.ED25519,
             )
 
             with self.assertRaises(LedgerError):

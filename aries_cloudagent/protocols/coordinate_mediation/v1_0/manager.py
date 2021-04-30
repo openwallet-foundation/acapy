@@ -9,6 +9,8 @@ from ....core.profile import Profile, ProfileSession
 from ....storage.base import BaseStorage
 from ....storage.error import StorageNotFoundError
 from ....storage.record import StorageRecord
+from ....wallet.key_type import KeyType
+from ....wallet.did_method import DIDMethod
 from ....wallet.base import BaseWallet
 from ....wallet.did_info import DIDInfo
 
@@ -80,6 +82,7 @@ class MediationManager:
 
         """
         storage = session.inject(BaseStorage)
+        wallet = session.inject(BaseWallet)
         try:
             record = await storage.get_record(
                 record_type=self.ROUTING_DID_RECORD_TYPE,
@@ -87,7 +90,9 @@ class MediationManager:
             )
             info = json.loads(record.value)
             info.update(record.tags)
-            return DIDInfo(**info)
+            did_info = await wallet.get_local_did(record.tags["did"])
+
+            return did_info
         except StorageNotFoundError:
             return None
 
@@ -103,7 +108,11 @@ class MediationManager:
         """
         wallet = session.inject(BaseWallet)
         storage = session.inject(BaseStorage)
-        info = await wallet.create_local_did(metadata={"type": "routing_did"})
+        info = await wallet.create_local_did(
+            method=DIDMethod.SOV,
+            key_type=KeyType.ED25519,
+            metadata={"type": "routing_did"},
+        )
         record = StorageRecord(
             type=self.ROUTING_DID_RECORD_TYPE,
             value=json.dumps({"verkey": info.verkey, "metadata": info.metadata}),

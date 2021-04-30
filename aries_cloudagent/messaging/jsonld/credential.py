@@ -2,14 +2,10 @@
 
 import json
 
+from ...wallet.util import b64_to_bytes, b64_to_str, bytes_to_b64, str_to_b64
+from ...wallet.key_type import KeyType
+from ...did.did_key import DIDKey
 from ...wallet.base import BaseWallet
-from ...wallet.util import (
-    b64_to_bytes,
-    b64_to_str,
-    bytes_to_b64,
-    naked_to_did_key,
-    str_to_b64,
-)
 from .create_verify_data import create_verify_data
 from .error import BadJWSHeaderError
 
@@ -17,7 +13,10 @@ from .error import BadJWSHeaderError
 def did_key(verkey: str) -> str:
     """Qualify verkey into DID key if need be."""
 
-    return verkey if verkey.startswith("did:key:") else naked_to_did_key(verkey)
+    if verkey.startswith("did:key:"):
+        return verkey
+
+    return DIDKey.from_public_key_b58(verkey, KeyType.ED25519).did
 
 
 def b64encode(str):
@@ -72,8 +71,11 @@ async def jws_verify(session, verify_data, signature, public_key):
     decoded_signature = b64_to_bytes(encoded_signature, urlsafe=True)
 
     jws_to_verify = create_jws(encoded_header, verify_data)
+
     wallet = session.inject(BaseWallet, required=True)
-    verified = await wallet.verify_message(jws_to_verify, decoded_signature, public_key)
+    verified = await wallet.verify_message(
+        jws_to_verify, decoded_signature, public_key, KeyType.ED25519
+    )
 
     return verified
 

@@ -1,21 +1,24 @@
 """Issue-credential protocol message attachment format."""
 
 from collections import namedtuple
+from typing import Mapping, Sequence, Type, Union
 from enum import Enum
-from typing import Sequence, Union
 from uuid import uuid4
 
 from marshmallow import EXCLUDE, fields
 
+from .....utils.classloader import DeferLoad
 from .....messaging.decorators.attach_decorator import AttachDecorator
 from .....messaging.models.base import BaseModel, BaseModelSchema
 from .....messaging.valid import UUIDFour
-
-from ..models.detail.dif import V20CredExRecordDIF
 from ..models.detail.indy import V20CredExRecordIndy
+from ..models.detail.ld_proof import V20CredExRecordLDProof
+from typing import TYPE_CHECKING
 
-# aries prefix, cred ex detail record class
-FormatSpec = namedtuple("FormatSpec", "aries detail")
+if TYPE_CHECKING:
+    from ..formats.handler import V20CredFormatHandler
+
+FormatSpec = namedtuple("FormatSpec", "aries detail handler")
 
 
 class V20CredFormat(BaseModel):
@@ -29,8 +32,22 @@ class V20CredFormat(BaseModel):
     class Format(Enum):
         """Attachment format."""
 
-        INDY = FormatSpec("hlindy/", V20CredExRecordIndy)
-        DIF = FormatSpec("dif/", V20CredExRecordDIF)
+        INDY = FormatSpec(
+            "hlindy/",
+            V20CredExRecordIndy,
+            DeferLoad(
+                "aries_cloudagent.protocols.issue_credential.v2_0"
+                ".formats.indy.handler.IndyCredFormatHandler"
+            ),
+        )
+        LD_PROOF = FormatSpec(
+            "aries/",
+            V20CredExRecordLDProof,
+            DeferLoad(
+                "aries_cloudagent.protocols.issue_credential.v2_0"
+                ".formats.ld_proof.handler.LDProofCredFormatHandler"
+            ),
+        )
 
         @classmethod
         def get(cls, label: Union[str, "V20CredFormat.Format"]):
@@ -55,9 +72,18 @@ class V20CredFormat(BaseModel):
             return self.value.aries
 
         @property
-        def detail(self) -> str:
+        def detail(self) -> Union[V20CredExRecordIndy, V20CredExRecordLDProof]:
             """Accessor for credential exchange detail class."""
             return self.value.detail
+
+        @property
+        def handler(self) -> Type["V20CredFormatHandler"]:
+            """Accessor for credential exchange format handler."""
+            return self.value.handler.resolved
+
+        def validate_fields(self, message_type: str, attachment_data: Mapping):
+            """Raise ValidationError for invalid attachment formats."""
+            self.handler.validate_fields(message_type, attachment_data)
 
         def get_attachment_data(
             self,
@@ -114,5 +140,5 @@ class V20CredFormatSchema(BaseModelSchema):
         allow_none=False,
         description="Attachment format specifier",
         data_key="format",
-        example="dif/credential-manifest@v1.0",
+        example="aries/ld-proof-vc-detail@v1.0",
     )

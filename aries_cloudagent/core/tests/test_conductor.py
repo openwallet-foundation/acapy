@@ -20,6 +20,7 @@ from ...core.protocol_registry import ProtocolRegistry
 from ...protocols.coordinate_mediation.v1_0.models.mediation_record import (
     MediationRecord,
 )
+from ...resolver.did_resolver import DIDResolver, DIDResolverRegistry
 from ...multitenant.manager import MultitenantManager
 from ...transport.inbound.message import InboundMessage
 from ...transport.inbound.receipt import MessageReceipt
@@ -30,6 +31,8 @@ from ...transport.wire_format import BaseWireFormat
 from ...transport.pack_format import PackWireFormat
 from ...utils.stats import Collector
 from ...wallet.base import BaseWallet
+from ...wallet.key_type import KeyType
+from ...wallet.did_method import DIDMethod
 
 from .. import conductor as test_module
 
@@ -80,6 +83,7 @@ class StubContextBuilder(ContextBuilder):
         context.injector.bind_instance(ProfileManager, InMemoryProfileManager())
         context.injector.bind_instance(ProtocolRegistry, ProtocolRegistry())
         context.injector.bind_instance(BaseWireFormat, self.wire_format)
+        context.injector.bind_instance(DIDResolver, DIDResolver(DIDResolverRegistry()))
         return context
 
 
@@ -108,7 +112,10 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             session = await conductor.root_profile.session()
 
             wallet = session.inject(BaseWallet)
-            await wallet.create_public_did()
+            await wallet.create_public_did(
+                DIDMethod.SOV,
+                KeyType.ED25519,
+            )
 
             mock_inbound_mgr.return_value.setup.assert_awaited_once()
             mock_outbound_mgr.return_value.setup.assert_awaited_once()
@@ -499,7 +506,10 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
 
         session = await conductor.root_profile.session()
         wallet = session.inject(BaseWallet)
-        await wallet.create_public_did()
+        await wallet.create_public_did(
+            DIDMethod.SOV,
+            KeyType.ED25519,
+        )
 
         with async_mock.patch.object(
             admin, "start", autospec=True
@@ -529,7 +539,10 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
 
         session = await conductor.root_profile.session()
         wallet = session.inject(BaseWallet)
-        await wallet.create_public_did()
+        await wallet.create_public_did(
+            DIDMethod.SOV,
+            KeyType.ED25519,
+        )
 
         with async_mock.patch.object(
             admin, "start", autospec=True
@@ -577,7 +590,10 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
 
             session = await conductor.root_profile.session()
             wallet = session.inject(BaseWallet)
-            await wallet.create_public_did()
+            await wallet.create_public_did(
+                DIDMethod.SOV,
+                KeyType.ED25519,
+            )
 
             mock_mgr.return_value.create_static_connection = async_mock.CoroutineMock()
             await conductor.start()
@@ -695,7 +711,10 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
 
             session = await conductor.root_profile.session()
             wallet = session.inject(BaseWallet)
-            await wallet.create_public_did()
+            await wallet.create_public_did(
+                DIDMethod.SOV,
+                KeyType.ED25519,
+            )
 
             await conductor.start()
             await conductor.stop()

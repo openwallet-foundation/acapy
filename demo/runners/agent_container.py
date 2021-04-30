@@ -130,21 +130,26 @@ class AriesAgent(DemoAgent):
                 f"/issue-credential-2.0/records/{cred_ex_id}/send-request"
             )
         elif state == "done":
-            if "cred_id_stored" in message:
-                cred_id = message["cred_id_stored"]
-                self.log(f"Stored credential {cred_id} in wallet")
-                log_status(f"#18.1 Stored credential {cred_id} in wallet")
-                cred = await self.admin_GET(f"/credential/{cred_id}")
-                log_json(cred, label="Credential details:")
-                self.log("credential_id", cred_id)
-                self.log("cred_def_id", cred["cred_def_id"])
-                self.log("schema_id", cred["schema_id"])
-                # track last successfully received credential
-                self.last_credential_received = cred
+            pass
+            # Logic moved to detail record specific handler
 
     async def handle_issue_credential_v2_0_indy(self, message):
         rev_reg_id = message.get("rev_reg_id")
         cred_rev_id = message.get("cred_rev_id")
+        cred_id_stored = message.get("cred_id_stored")
+        print("\n\n\n", message, "\n\n\n")
+        if cred_id_stored:
+            cred_id = message["cred_id_stored"]
+            self.log(f"Stored credential {cred_id} in wallet")
+            log_status(f"#18.1 Stored credential {cred_id} in wallet")
+            cred = await self.admin_GET(f"/credential/{cred_id}")
+            log_json(cred, label="Credential details:")
+            self.log("credential_id", cred_id)
+            self.log("cred_def_id", cred["cred_def_id"])
+            self.log("schema_id", cred["schema_id"])
+            # track last successfully received credential
+            self.last_credential_received = cred
+
         if rev_reg_id and cred_rev_id:
             self.log(f"Revocation registry ID: {rev_reg_id}")
             self.log(f"Credential revocation ID: {cred_rev_id}")

@@ -11,8 +11,7 @@ msgpack~=1.0
 prompt_toolkit~=2.0.9
 pynacl~=1.4.0
 requests~=2.25.0
-pyld~=2.0.1
-py_multicodec==0.2.1
+pyld~=2.0.3
 pyyaml~=5.4.0
 ConfigArgParse~=1.2.3
 pyjwt~=1.7.1

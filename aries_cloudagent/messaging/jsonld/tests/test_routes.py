@@ -10,8 +10,9 @@ from pydid import DIDDocument
 from pyld import jsonld
 
 from ....admin.request_context import AdminRequestContext
+from ....wallet.key_type import KeyType
+from ....wallet.did_method import DIDMethod
 from ....config.base import InjectionError
-from ....messaging.models.base import BaseModelError
 from ....resolver.base import DIDMethodNotSupported, DIDNotFound, ResolverError
 from ....resolver.did_resolver import DIDResolver
 from ....resolver.tests import DOC
@@ -228,7 +229,9 @@ def test_post_process_routes():
 class TestJSONLDRoutes(AsyncTestCase):
     async def setUp(self):
         self.context = AdminRequestContext.test_context()
-        self.did_info = await (await self.context.session()).wallet.create_local_did()
+        self.did_info = await (await self.context.session()).wallet.create_local_did(
+            DIDMethod.SOV, KeyType.ED25519
+        )
         self.request_dict = {
             "context": self.context,
             "outbound_message_router": async_mock.CoroutineMock(),

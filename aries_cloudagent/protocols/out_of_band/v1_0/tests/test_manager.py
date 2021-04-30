@@ -14,9 +14,8 @@ from .....core.in_memory import InMemoryProfile
 from .....indy.holder import IndyHolder
 from .....messaging.decorators.attach_decorator import AttachDecorator
 from .....messaging.responder import BaseResponder, MockResponder
-from .....messaging.util import str_to_datetime, str_to_epoch
+from .....messaging.util import str_to_epoch
 from .....multitenant.manager import MultitenantManager
-from .....protocols.connections.v1_0.manager import ConnectionManager
 from .....protocols.coordinate_mediation.v1_0.models.mediation_record import (
     MediationRecord,
 )
@@ -41,7 +40,6 @@ from .....protocols.present_proof.v1_0.messages.presentation_proposal import (
 )
 from .....protocols.present_proof.v1_0.messages.presentation_request import (
     PresentationRequest,
-    PresentationRequestSchema,
 )
 from .....protocols.present_proof.v1_0.models.presentation_exchange import (
     V10PresentationExchange,
@@ -55,13 +53,15 @@ from .....protocols.present_proof.v2_0.message_types import (
 from .....protocols.present_proof.v2_0.messages.pres import V20Pres
 from .....protocols.present_proof.v2_0.messages.pres_format import V20PresFormat
 from .....protocols.present_proof.v2_0.messages.pres_request import V20PresRequest
-from .....storage.error import StorageError, StorageNotFoundError
+from .....storage.error import StorageNotFoundError
 from .....multitenant.manager import MultitenantManager
 from .....transport.inbound.receipt import MessageReceipt
 from .....wallet.base import BaseWallet
 from .....wallet.did_info import DIDInfo, KeyInfo
 from .....wallet.in_memory import InMemoryWallet
-from .....wallet.util import did_key_to_naked, naked_to_did_key
+from .....wallet.key_type import KeyType
+from .....wallet.did_method import DIDMethod
+from .....did.did_key import DIDKey
 
 from ....didcomm_prefix import DIDCommPrefix
 from ....issue_credential.v1_0.models.credential_exchange import V10CredentialExchange
@@ -70,10 +70,9 @@ from .. import manager as test_module
 from ..manager import (
     OutOfBandManager,
     OutOfBandManagerError,
-    OutOfBandManagerNotImplementedError,
 )
 from ..message_types import INVITATION
-from ..messages.invitation import HSProto, InvitationMessage, InvitationMessageSchema
+from ..messages.invitation import HSProto, InvitationMessage
 from ..messages.reuse import HandshakeReuse
 from ..messages.reuse_accept import HandshakeReuseAccept
 from ..messages.problem_report import ProblemReport, ProblemReportReason
@@ -278,7 +277,11 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             InMemoryWallet, "get_public_did", autospec=True
         ) as mock_wallet_get_public_did:
             mock_wallet_get_public_did.return_value = DIDInfo(
-                TestConfig.test_did, TestConfig.test_verkey, None
+                TestConfig.test_did,
+                TestConfig.test_verkey,
+                None,
+                method=DIDMethod.SOV,
+                key_type=KeyType.ED25519,
             )
             invi_rec = await self.manager.create_invitation(
                 my_endpoint=TestConfig.test_endpoint,
@@ -342,7 +345,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             self.multitenant_mgr, "get_default_mediator"
         ) as mock_get_default_mediator:
             mock_wallet_create_signing_key.return_value = KeyInfo(
-                TestConfig.test_verkey, None
+                TestConfig.test_verkey, None, KeyType.ED25519
             )
             mock_get_default_mediator.return_value = MediationRecord()
             await self.manager.create_invitation(
@@ -370,7 +373,11 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             InMemoryWallet, "get_public_did", autospec=True
         ) as mock_wallet_get_public_did:
             mock_wallet_get_public_did.return_value = DIDInfo(
-                self.test_did, self.test_verkey, None
+                self.test_did,
+                self.test_verkey,
+                None,
+                method=DIDMethod.SOV,
+                key_type=KeyType.ED25519,
             )
             await self.manager.create_invitation(
                 hs_protos=[HSProto.RFC23],
@@ -402,7 +409,11 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             async_mock.CoroutineMock(),
         ) as mock_retrieve_cxid:
             mock_wallet_get_public_did.return_value = DIDInfo(
-                TestConfig.test_did, TestConfig.test_verkey, None
+                TestConfig.test_did,
+                TestConfig.test_verkey,
+                None,
+                method=DIDMethod.SOV,
+                key_type=KeyType.ED25519,
             )
             mock_retrieve_cxid.return_value = async_mock.MagicMock(
                 credential_offer_dict={"cred": "offer"}
@@ -427,7 +438,11 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             async_mock.CoroutineMock(),
         ) as mock_retrieve_cxid:
             mock_wallet_get_public_did.return_value = DIDInfo(
-                TestConfig.test_did, TestConfig.test_verkey, None
+                TestConfig.test_did,
+                TestConfig.test_verkey,
+                None,
+                method=DIDMethod.SOV,
+                key_type=KeyType.ED25519,
             )
             mock_retrieve_cxid.return_value = async_mock.MagicMock(
                 credential_offer_dict={"cred": "offer"}
@@ -458,7 +473,11 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             async_mock.CoroutineMock(),
         ) as mock_retrieve_cxid_v2:
             mock_wallet_get_public_did.return_value = DIDInfo(
-                TestConfig.test_did, TestConfig.test_verkey, None
+                TestConfig.test_did,
+                TestConfig.test_verkey,
+                None,
+                method=DIDMethod.SOV,
+                key_type=KeyType.ED25519,
             )
             mock_v20_cred_offer_deser.return_value = async_mock.MagicMock(
                 offer=async_mock.MagicMock(return_value={"cred": "offer"})
@@ -484,7 +503,11 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             async_mock.CoroutineMock(),
         ) as mock_retrieve_pxid:
             mock_wallet_get_public_did.return_value = DIDInfo(
-                TestConfig.test_did, TestConfig.test_verkey, None
+                TestConfig.test_did,
+                TestConfig.test_verkey,
+                None,
+                method=DIDMethod.SOV,
+                key_type=KeyType.ED25519,
             )
             mock_retrieve_pxid.return_value = async_mock.MagicMock(
                 presentation_request_dict={"pres": "req"}
@@ -514,7 +537,11 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             async_mock.CoroutineMock(),
         ) as mock_retrieve_pxid_2:
             mock_wallet_get_public_did.return_value = DIDInfo(
-                TestConfig.test_did, TestConfig.test_verkey, None
+                TestConfig.test_did,
+                TestConfig.test_verkey,
+                None,
+                method=DIDMethod.SOV,
+                key_type=KeyType.ED25519,
             )
             mock_retrieve_pxid_1.side_effect = StorageNotFoundError()
             mock_retrieve_pxid_2.return_value = async_mock.MagicMock(
@@ -584,7 +611,11 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             InMemoryWallet, "get_public_did", autospec=True
         ) as mock_wallet_get_public_did:
             mock_wallet_get_public_did.return_value = DIDInfo(
-                TestConfig.test_did, TestConfig.test_verkey, None
+                TestConfig.test_did,
+                TestConfig.test_verkey,
+                None,
+                method=DIDMethod.SOV,
+                key_type=KeyType.ED25519,
             )
             with self.assertRaises(OutOfBandManagerError) as context:
                 await self.manager.create_invitation(
@@ -636,8 +667,11 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             assert service["id"] == "#inline"
             assert service["type"] == "did-communication"
             assert len(service["recipientKeys"]) == 1
-            assert service["routingKeys"][0] == naked_to_did_key(
-                self.test_mediator_routing_keys[0]
+            assert (
+                service["routingKeys"][0]
+                == DIDKey.from_public_key_b58(
+                    self.test_mediator_routing_keys[0], KeyType.ED25519
+                ).did
             )
             assert service["serviceEndpoint"] == self.test_mediator_endpoint
 
@@ -647,7 +681,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             metadata={"hello": "world"},
         )
         service = invi_rec.invitation["services"][0]
-        invitation_key = did_key_to_naked(service["recipientKeys"][0])
+        invitation_key = DIDKey.from_did(service["recipientKeys"][0]).public_key_b58
         record = await ConnRecord.retrieve_by_invitation_key(
             self.session, invitation_key
         )
@@ -659,7 +693,11 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             InMemoryWallet, "get_public_did", autospec=True
         ) as mock_wallet_get_public_did:
             mock_wallet_get_public_did.return_value = DIDInfo(
-                TestConfig.test_did, TestConfig.test_verkey, None
+                TestConfig.test_did,
+                TestConfig.test_verkey,
+                None,
+                method=DIDMethod.SOV,
+                key_type=KeyType.ED25519,
             )
             with self.assertRaises(OutOfBandManagerError) as context:
                 await self.manager.create_invitation(
@@ -782,9 +820,10 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 service_blocks=[
                     async_mock.MagicMock(
                         recipient_keys=[
-                            naked_to_did_key(
-                                "9WCgWKUaAJj3VWxxtzvvMQN3AoFxoBtBDo9ntwJnVVCC"
-                            )
+                            DIDKey.from_public_key_b58(
+                                "9WCgWKUaAJj3VWxxtzvvMQN3AoFxoBtBDo9ntwJnVVCC",
+                                KeyType.ED25519,
+                            ).did
                         ],
                         routing_keys=[],
                         service_endpoint="http://localhost",
