@@ -1,19 +1,26 @@
-from ecdsa import ECDH, NIST256p
-from .deriveECDH import *
+"""Functions for performing Key Agreement using ECDH-1PU."""
 
-# ECDH-1PU generates a shared encryption key from two concatenated ECDH shared secrets
-# One set of secrets from sender/receiver (zs), the second set from ephemeral sender/receiver (ze)
+from .deriveECDH import DeriveECDHSecret, ConcatKDF
+
+
 def derive1PU(ze, zs, alg, apu, apv, keydatalen):
+    """
+    ECDH-1PU generates a shared encryption key from two concatenated ECDH shared secrets
+    One set of secrets from sender/receiver (zs)
+    Second set from ephemeral sender/receiver (ze)
+    """
 
     z = ze + zs
     key = ConcatKDF(z, alg, apu, apv, keydatalen)
     return key
 
 
-# The sender generates two shared secrets (ze, zs)
 def deriveSender1PU(
     senderEphemeralPriv, senderPriv, recvPub, alg, apu, apv, keydatalen
 ):
+    """
+    The sender generates two shared secrets (ze, zs)
+    """
 
     ze = DeriveECDHSecret(senderEphemeralPriv, recvPub)
     zs = DeriveECDHSecret(senderPriv, recvPub)
@@ -22,10 +29,12 @@ def deriveSender1PU(
     return key
 
 
-# The receiver generates two shared secrets (ze, zs)
 def deriveReceiver1PU(
     senderEphemeralPub, senderPub, recvPriv, alg, apu, apv, keydatalen
 ):
+    """
+    The receiver generates two shared secrets (ze, zs)
+    """
 
     ze = DeriveECDHSecret(recvPriv, senderEphemeralPub)
     zs = DeriveECDHSecret(recvPriv, senderPub)
