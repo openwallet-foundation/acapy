@@ -13,6 +13,12 @@ from ..utils.jwe import JweRecipient, b64url, JweEnvelope, from_b64url
 from .error import WalletError
 from .util import bytes_to_b58, b64_to_bytes, b58_to_bytes, random_seed
 from .key_type import KeyType
+from .bbs import (
+    create_bls12381g2_keypair,
+    verify_signed_messages_bls12381g2,
+    BbsException,
+    sign_messages_bls12381g2,
+)
 
 
 def create_keypair(key_type: KeyType, seed: bytes = None) -> Tuple[bytes, bytes]:
@@ -34,7 +40,6 @@ def create_keypair(key_type: KeyType, seed: bytes = None) -> Tuple[bytes, bytes]
         return create_ed25519_keypair(seed)
     elif key_type == KeyType.BLS12381G2:
         # This ensures python won't crash if bbs is not installed and not used
-        from .bbs import create_bls12381g2_keypair
 
         return create_bls12381g2_keypair(seed)
     else:
@@ -133,8 +138,6 @@ def sign_message(
             secret=secret,
         )
     elif key_type == KeyType.BLS12381G2:
-        from .bbs import sign_messages_bls12381g2
-
         return sign_messages_bls12381g2(messages=messages, secret=secret)
     else:
         raise WalletError(f"Unsupported key type: {key_type.key_type}")
@@ -186,8 +189,6 @@ def verify_signed_message(
             message=messages[0], signature=signature, verkey=verkey
         )
     elif key_type == KeyType.BLS12381G2:
-        from .bbs import verify_signed_messages_bls12381g2, BbsException
-
         try:
             return verify_signed_messages_bls12381g2(
                 messages=messages, signature=signature, public_key=verkey

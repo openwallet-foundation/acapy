@@ -3,25 +3,27 @@
 from os import urandom
 from pyld import jsonld
 from typing import List
+from .BbsBlsSignature2020Base import BbsBlsSignature2020Base
 
-from ursa_bbs_signatures import (
-    create_proof as bls_create_proof,
-    verify_proof as bls_verify_proof,
-    CreateProofRequest,
-    VerifyProofRequest,
-    get_total_message_count,
-    ProofMessage,
-    BlsKeyPair,
-    ProofMessageType,
-)
+if BbsBlsSignature2020Base.BBS_SUPPORTED:
+    from ursa_bbs_signatures import (
+        create_proof as bls_create_proof,
+        verify_proof as bls_verify_proof,
+        CreateProofRequest,
+        VerifyProofRequest,
+        get_total_message_count,
+        ProofMessage,
+        BlsKeyPair,
+        ProofMessageType,
+    )
 
+from ....utils.dependencies import assert_ursa_bbs_signatures_installed
 from ....wallet.util import b64_to_bytes, bytes_to_b64
 from ..crypto import KeyPair
 from ..error import LinkedDataProofException
 from ..validation_result import ProofResult
 from ..document_loader import DocumentLoaderMethod
 from ..purposes import ProofPurpose
-from .BbsBlsSignature2020Base import BbsBlsSignature2020Base
 from .BbsBlsSignature2020 import BbsBlsSignature2020
 from .LinkedDataProof import DeriveProofResult
 
@@ -61,6 +63,7 @@ class BbsBlsSignatureProof2020(BbsBlsSignature2020Base):
         nonce: bytes = None,
     ):
         """Derive proof for document, return dict with derived document and proof."""
+        assert_ursa_bbs_signatures_installed()
 
         # Validate that the input proof document has a proof compatible with this suite
         if proof.get("type") not in self.supported_derive_proof_types:
@@ -222,6 +225,7 @@ class BbsBlsSignatureProof2020(BbsBlsSignature2020Base):
         document_loader: DocumentLoaderMethod,
     ) -> ProofResult:
         """Verify proof against document and proof purpose."""
+        assert_ursa_bbs_signatures_installed()
         try:
             proof["type"] = self.mapped_derived_proof_type
 

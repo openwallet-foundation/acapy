@@ -1,5 +1,5 @@
 from asynctest import TestCase, mock as async_mock
-
+import pytest
 
 from .....did.did_key import DIDKey
 from .....wallet.key_pair import KeyType
@@ -30,6 +30,7 @@ from ....vc_ld import derive_credential, verify_credential
 from ..BbsBlsSignatureProof2020 import BbsBlsSignatureProof2020
 
 
+@pytest.mark.ursa_bbs_signatures
 class TestBbsBlsSignatureProof2020(TestCase):
     test_seed = "testseed000000000000000000000001"
 
