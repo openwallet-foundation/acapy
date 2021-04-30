@@ -25,6 +25,7 @@ VC_RECORD = VCRecord(
     ],
     issuer_id="https://example.edu/issuers/565049",
     subject_ids=["did:example:ebfeb1f712ebc6f1c276e12ec21"],
+    proof_types=["Ed25519Signature2018"],
     schema_ids=["https://example.org/examples/degree.json"],
     cred_value={"...": "..."},
     given_id="http://example.edu/credentials/3732",
@@ -141,13 +142,21 @@ class TestHolderRoutes(AsyncTestCase):
         self.context.injector.bind_instance(
             IndyHolder,
             async_mock.MagicMock(
-                get_mime_type=async_mock.CoroutineMock(return_value=None)
+                get_mime_type=async_mock.CoroutineMock(
+                    side_effect=[None, {"a": "application/jpeg"}]
+                )
             ),
         )
 
         with async_mock.patch.object(test_module.web, "json_response") as mock_response:
             await test_module.credentials_attr_mime_types_get(self.request)
-            mock_response.assert_called_once_with(None)
+            mock_response.assert_called_once_with({"results": None})
+
+        with async_mock.patch.object(test_module.web, "json_response") as mock_response:
+            await test_module.credentials_attr_mime_types_get(self.request)
+            mock_response.assert_called_once_with(
+                {"results": {"a": "application/jpeg"}}
+            )
 
     async def test_credentials_remove(self):
         self.request.match_info = {"credential_id": "dummy"}

@@ -4,10 +4,6 @@ import logging
 
 from typing import Coroutine, Sequence, Tuple
 
-from aries_cloudagent.protocols.coordinate_mediation.v1_0.manager import (
-    MediationManager,
-)
-
 from ....cache.base import BaseCache
 from ....config.base import InjectionError
 from ....connections.base_manager import BaseConnectionManager
@@ -17,14 +13,18 @@ from ....connections.util import mediation_record_if_id
 from ....core.error import BaseError
 from ....core.profile import ProfileSession
 from ....messaging.responder import BaseResponder
-from ....protocols.routing.v1_0.manager import RoutingManager
 from ....storage.error import StorageError, StorageNotFoundError
 from ....transport.inbound.receipt import MessageReceipt
-from ....wallet.base import BaseWallet, DIDInfo
+from ....wallet.base import BaseWallet
+from ....wallet.did_info import DIDInfo
 from ....wallet.crypto import create_keypair, seed_to_did
+from ....wallet.key_type import KeyType
+from ....wallet.did_method import DIDMethod
 from ....wallet.error import WalletNotFoundError
 from ....wallet.util import bytes_to_b58
 from ....multitenant.manager import MultitenantManager
+from ...routing.v1_0.manager import RoutingManager
+from ...coordinate_mediation.v1_0.manager import MediationManager
 
 from ...coordinate_mediation.v1_0.models.mediation_record import MediationRecord
 
@@ -181,7 +181,9 @@ class ConnectionManager(BaseConnectionManager):
             invitation_key = recipient_keys[0]  # TODO first key appropriate?
         else:
             # Create and store new invitation key
-            invitation_signing_key = await wallet.create_signing_key()
+            invitation_signing_key = await wallet.create_signing_key(
+                key_type=KeyType.ED25519
+            )
             invitation_key = invitation_signing_key.verkey
             recipient_keys = [invitation_key]
             mediation_mgr = MediationManager(self._session.profile)
@@ -378,7 +380,7 @@ class ConnectionManager(BaseConnectionManager):
             my_info = await wallet.get_local_did(connection.my_did)
         else:
             # Create new DID for connection
-            my_info = await wallet.create_local_did()
+            my_info = await wallet.create_local_did(DIDMethod.SOV, KeyType.ED25519)
             connection.my_did = my_info.did
             mediation_mgr = MediationManager(self._session.profile)
             keylist_updates = await mediation_mgr.add_key(
@@ -497,7 +499,7 @@ class ConnectionManager(BaseConnectionManager):
 
             if connection.is_multiuse_invitation:
                 wallet = self._session.inject(BaseWallet)
-                my_info = await wallet.create_local_did()
+                my_info = await wallet.create_local_did(DIDMethod.SOV, KeyType.ED25519)
                 keylist_updates = await mediation_mgr.add_key(
                     my_info.verkey, keylist_updates
                 )
@@ -540,7 +542,7 @@ class ConnectionManager(BaseConnectionManager):
         if request.connection.did != conn_did_doc.did:
             raise ConnectionManagerError(
                 "Connection DID does not match DIDDoc id",
-                error_code=ProblemReportReason.REQUEST_NOT_ACCEPTED,
+                error_code=ProblemReportReason.REQUEST_NOT_ACCEPTED.value,
             )
         await self.store_did_document(conn_did_doc)
 
@@ -554,7 +556,7 @@ class ConnectionManager(BaseConnectionManager):
         elif not self._session.settings.get("public_invites"):
             raise ConnectionManagerError("Public invitations are not enabled")
         else:  # request from public did
-            my_info = await wallet.create_local_did()
+            my_info = await wallet.create_local_did(DIDMethod.SOV, KeyType.ED25519)
             # send update-keylist message with new recipient keys
             keylist_updates = await mediation_mgr.add_key(
                 my_info.verkey, keylist_updates
@@ -657,7 +659,7 @@ class ConnectionManager(BaseConnectionManager):
         if connection.my_did:
             my_info = await wallet.get_local_did(connection.my_did)
         else:
-            my_info = await wallet.create_local_did()
+            my_info = await wallet.create_local_did(DIDMethod.SOV, KeyType.ED25519)
             connection.my_did = my_info.did
             mediation_mgr = MediationManager(self._session.profile)
             keylist_updates = await mediation_mgr.add_key(
@@ -751,7 +753,6 @@ class ConnectionManager(BaseConnectionManager):
                 at the request or response stage
 
         """
-
         connection = None
         if response._thread:
             # identify the request by the thread ID
@@ -774,7 +775,7 @@ class ConnectionManager(BaseConnectionManager):
         if not connection:
             raise ConnectionManagerError(
                 "No corresponding connection request found",
-                error_code=ProblemReportReason.RESPONSE_NOT_ACCEPTED,
+                error_code=ProblemReportReason.RESPONSE_NOT_ACCEPTED.value,
             )
 
         if ConnRecord.State.get(connection.state) not in (
@@ -873,7 +874,9 @@ class ConnectionManager(BaseConnectionManager):
         base_mediation_record = None
 
         # seed and DID optional
-        my_info = await wallet.create_local_did(my_seed, my_did)
+        my_info = await wallet.create_local_did(
+            DIDMethod.SOV, KeyType.ED25519, my_seed, my_did
+        )
 
         # must provide their DID and verkey if the seed is not known
         if (not their_did or not their_verkey) and not their_seed:
@@ -883,9 +886,11 @@ class ConnectionManager(BaseConnectionManager):
         if not their_did:
             their_did = seed_to_did(their_seed)
         if not their_verkey:
-            their_verkey_bin, _ = create_keypair(their_seed.encode())
+            their_verkey_bin, _ = create_keypair(KeyType.ED25519, their_seed.encode())
             their_verkey = bytes_to_b58(their_verkey_bin)
-        their_info = DIDInfo(their_did, their_verkey, {})
+        their_info = DIDInfo(
+            their_did, their_verkey, {}, method=DIDMethod.SOV, key_type=KeyType.ED25519
+        )
 
         # Create connection record
         connection = ConnRecord(
@@ -1087,7 +1092,9 @@ class ConnectionManager(BaseConnectionManager):
                         connection = await ConnRecord.retrieve_by_id(
                             self._session, connection_id
                         )
+
                     targets = await self.fetch_connection_targets(connection)
+
                     await entry.set_result([row.serialize() for row in targets], 3600)
         else:
             targets = await self.fetch_connection_targets(connection)
@@ -1112,7 +1119,7 @@ class ConnectionManager(BaseConnectionManager):
             my_info = await wallet.get_local_did(connection.my_did)
         else:
             # Create new DID for connection
-            my_info = await wallet.create_local_did()
+            my_info = await wallet.create_local_did(DIDMethod.SOV, KeyType.ED25519)
             connection.my_did = my_info.did
 
         try:

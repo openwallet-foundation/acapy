@@ -41,6 +41,12 @@ class HolderModuleResponseSchema(OpenAPISchema):
 class AttributeMimeTypesResultSchema(OpenAPISchema):
     """Result schema for credential attribute MIME type."""
 
+    results = fields.Dict(
+        keys=fields.Str(description="Attribute name"),
+        values=fields.Str(description="MIME type"),
+        allow_none=True,
+    )
+
 
 class CredBriefSchema(OpenAPISchema):
     """Result schema with credential brief for credential query."""
@@ -122,6 +128,11 @@ class W3CCredentialsListRequestSchema(OpenAPISchema):
         fields.Str(description="Subject identifier"),
         description="Subject identifiers, all of which to match",
         required=False,
+    )
+    proof_types = fields.List(
+        fields.Str(
+            description="Signature suite used for proof", example="Ed25519Signature2018"
+        )
     )
     given_id = fields.Str(required=False, description="Given credential id to match")
     tag_query = fields.Dict(
@@ -263,7 +274,7 @@ async def credentials_attr_mime_types_get(request: web.BaseRequest):
     credential_id = request.match_info["credential_id"]
 
     holder = session.inject(IndyHolder)
-    return web.json_response(await holder.get_mime_type(credential_id))
+    return web.json_response({"results": await holder.get_mime_type(credential_id)})
 
 
 @docs(tags=["credentials"], summary="Remove credential from wallet by id")
@@ -423,6 +434,7 @@ async def w3c_creds_list(request: web.BaseRequest):
     schema_ids = body.get("schema_ids")
     issuer_id = body.get("issuer_id")
     subject_ids = body.get("subject_ids")
+    proof_types = body.get("proof_types")
     given_id = body.get("given_id")
     tag_query = body.get("tag_query")
     max_results = body.get("max_results")
@@ -435,6 +447,7 @@ async def w3c_creds_list(request: web.BaseRequest):
             schema_ids=schema_ids,
             issuer_id=issuer_id,
             subject_ids=subject_ids,
+            proof_types=proof_types,
             given_id=given_id,
             tag_query=tag_query,
         )

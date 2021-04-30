@@ -2,9 +2,10 @@
 
 from .....messaging.base_handler import BaseHandler, BaseResponder, RequestContext
 
+from ....problem_report.v1_0.message import ProblemReport
+
 from ..manager import DIDXManager, DIDXManagerError
 from ..messages.request import DIDXRequest
-from ..messages.problem_report import ProblemReport
 
 
 class DIDXRequestHandler(BaseHandler):
@@ -56,6 +57,9 @@ class DIDXRequestHandler(BaseHandler):
                             "Error parsing DIDDoc for problem report"
                         )
                 await responder.send_reply(
-                    ProblemReport(problem_code=e.error_code, explain=str(e)),
+                    ProblemReport(
+                        explain_ltxt=e.message,
+                        problem_items=[{e.error_code: e.message}],
+                    ),
                     target_list=targets,
                 )

@@ -8,11 +8,12 @@ WORKDIR /home/indy/src
 
 RUN mkdir -p test-reports && chown -R indy:indy test-reports && chmod -R ug+rw test-reports
 
-ADD requirements.txt requirements.dev.txt ./
+ADD requirements.txt requirements.dev.txt requirements.bbs.txt ./
 
 RUN pip3 install --no-cache-dir \
 	-r requirements.txt \
-	-r requirements.dev.txt
+	-r requirements.dev.txt \
+	-r requirements.bbs.txt
 
 ADD --chown=indy:root . .
 

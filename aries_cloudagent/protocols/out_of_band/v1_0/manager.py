@@ -6,10 +6,6 @@ import logging
 
 from typing import Mapping, Sequence, Optional
 
-from aries_cloudagent.protocols.coordinate_mediation.v1_0.manager import (
-    MediationManager,
-)
-
 from ....connections.base_manager import BaseConnectionManager
 from ....connections.models.conn_record import ConnRecord
 from ....connections.util import mediation_record_if_id
@@ -18,14 +14,15 @@ from ....core.profile import ProfileSession
 from ....indy.holder import IndyHolder
 from ....messaging.responder import BaseResponder
 from ....messaging.decorators.attach_decorator import AttachDecorator
-from ....ledger.base import BaseLedger
-from ....ledger.error import LedgerError
 from ....multitenant.manager import MultitenantManager
 from ....storage.error import StorageNotFoundError
 from ....transport.inbound.receipt import MessageReceipt
 from ....wallet.base import BaseWallet
-from ....wallet.util import naked_to_did_key, b64_to_bytes, did_key_to_naked
+from ....wallet.util import b64_to_bytes
+from ....wallet.key_type import KeyType
+from ....did.did_key import DIDKey
 
+from ...coordinate_mediation.v1_0.manager import MediationManager
 from ...connections.v1_0.manager import ConnectionManager
 from ...connections.v1_0.messages.connection_invitation import ConnectionInvitation
 from ...didcomm_prefix import DIDCommPrefix
@@ -230,16 +227,9 @@ class OutOfBandManager(BaseConnectionManager):
             keylist_updates = await mediation_mgr.add_key(
                 public_did.verkey, keylist_updates
             )
-            ledger = self._session.inject(BaseLedger)
-            try:
-                async with ledger:
-                    base_url = await ledger.get_endpoint_for_did(public_did.did)
-                    invi_url = invi_msg.to_url(base_url)
-            except LedgerError as ledger_x:
-                raise OutOfBandManagerError(
-                    "Error getting endpoint for public DID "
-                    f"{public_did.did}: {ledger_x}"
-                )
+
+            endpoint, *_ = await self.resolve_invitation(public_did.did)
+            invi_url = invi_msg.to_url(endpoint)
 
             conn_rec = ConnRecord(  # create connection record
                 invitation_key=public_did.verkey,
@@ -269,7 +259,7 @@ class OutOfBandManager(BaseConnectionManager):
                 my_endpoint = self._session.settings.get("default_endpoint")
 
             # Create and store new invitation key
-            connection_key = await wallet.create_signing_key()
+            connection_key = await wallet.create_signing_key(KeyType.ED25519)
             keylist_updates = await mediation_mgr.add_key(
                 connection_key.verkey, keylist_updates
             )
@@ -317,7 +307,9 @@ class OutOfBandManager(BaseConnectionManager):
                         keylist_updates, connection_id=mediation_record.connection_id
                     )
             routing_keys = [
-                key if len(key.split(":")) == 3 else naked_to_did_key(key)
+                key
+                if len(key.split(":")) == 3
+                else DIDKey.from_public_key_b58(key, KeyType.ED25519).did
                 for key in routing_keys
             ]
             # Create connection invitation message
@@ -332,7 +324,11 @@ class OutOfBandManager(BaseConnectionManager):
                     ServiceMessage(
                         _id="#inline",
                         _type="did-communication",
-                        recipient_keys=[naked_to_did_key(connection_key.verkey)],
+                        recipient_keys=[
+                            DIDKey.from_public_key_b58(
+                                connection_key.verkey, KeyType.ED25519
+                            ).did
+                        ],
                         service_endpoint=my_endpoint,
                         routing_keys=routing_keys,
                     )
@@ -378,8 +374,6 @@ class OutOfBandManager(BaseConnectionManager):
             ConnRecord, serialized
 
         """
-        ledger: BaseLedger = self._session.inject(BaseLedger)
-
         if mediation_id:
             try:
                 await mediation_record_if_id(self._session, mediation_id)
@@ -402,18 +396,28 @@ class OutOfBandManager(BaseConnectionManager):
             # If it's in the did format, we need to convert to a full service block
             # An existing connection can only be reused based on a public DID
             # in an out-of-band message (RFC 0434).
+
             service_did = invi_msg.service_dids[0]
-            async with ledger:
-                verkey = await ledger.get_key_for_did(service_did)
-                did_key = naked_to_did_key(verkey)
-                endpoint = await ledger.get_endpoint_for_did(service_did)
+
+            # TODO: resolve_invitation should resolve key_info objects
+            # or something else that includes the key type. We now assume
+            # ED25519 keys
+            endpoint, recipient_keys, routing_keys = await self.resolve_invitation(
+                service_did
+            )
             public_did = service_did.split(":")[-1]
             service = ServiceMessage.deserialize(
                 {
                     "id": "#inline",
                     "type": "did-communication",
-                    "recipientKeys": [did_key],
-                    "routingKeys": [],
+                    "recipientKeys": [
+                        DIDKey.from_public_key_b58(key, KeyType.ED25519).did
+                        for key in recipient_keys
+                    ],
+                    "routingKeys": [
+                        DIDKey.from_public_key_b58(key, KeyType.ED25519).did
+                        for key in routing_keys
+                    ],
                     "serviceEndpoint": endpoint,
                 }
             )
@@ -520,10 +524,12 @@ class OutOfBandManager(BaseConnectionManager):
                     )
                 elif proto is HSProto.RFC160:
                     service.recipient_keys = [
-                        did_key_to_naked(key) for key in service.recipient_keys or []
+                        DIDKey.from_did(key).public_key_b58
+                        for key in service.recipient_keys or []
                     ]
                     service.routing_keys = [
-                        did_key_to_naked(key) for key in service.routing_keys
+                        DIDKey.from_did(key).public_key_b58
+                        for key in service.routing_keys
                     ] or []
                     connection_invitation = ConnectionInvitation.deserialize(
                         {

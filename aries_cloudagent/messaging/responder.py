@@ -42,6 +42,7 @@ class BaseResponder(ABC):
         reply_session_id: str = None,
         reply_thread_id: str = None,
         reply_to_verkey: str = None,
+        reply_from_verkey: str = None,
         target: ConnectionTarget = None,
         target_list: Sequence[ConnectionTarget] = None,
         to_session_only: bool = False,
@@ -62,6 +63,7 @@ class BaseResponder(ABC):
             reply_session_id=reply_session_id,
             reply_thread_id=reply_thread_id,
             reply_to_verkey=reply_to_verkey,
+            reply_from_verkey=reply_from_verkey,
             target=target,
             target_list=target_list,
             to_session_only=to_session_only,
@@ -114,7 +116,7 @@ class BaseResponder(ABC):
     @abstractmethod
     async def send_webhook(self, topic: str, payload: dict):
         """
-        Dispatch a webhook.
+        Dispatch a webhook. DEPRECATED: use the event bus instead.
 
         Args:
             topic: the webhook topic identifier
@@ -128,7 +130,6 @@ class MockResponder(BaseResponder):
     def __init__(self):
         """Initialize the mock responder."""
         self.messages = []
-        self.webhooks = []
 
     async def send(self, message: Union[AgentMessage, str, bytes], **kwargs):
         """Convert a message to an OutboundMessage and send it."""
@@ -144,4 +145,6 @@ class MockResponder(BaseResponder):
 
     async def send_webhook(self, topic: str, payload: dict):
         """Send an outbound message."""
-        self.webhooks.append((topic, payload))
+        raise Exception(
+            "responder.send_webhook is deprecated; please use the event bus instead."
+        )

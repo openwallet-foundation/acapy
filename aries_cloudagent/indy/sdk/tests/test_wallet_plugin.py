@@ -1,10 +1,10 @@
 import pytest
 
-from asynctest import TestCase as AsyncTestCase
-from asynctest import mock as async_mock
+from asynctest import mock as async_mock, TestCase as AsyncTestCase
 
 from ....ledger.base import BaseLedger
-from ....wallet.base import BaseWallet, DIDInfo
+from ....wallet.base import BaseWallet
+from ....wallet.did_info import DIDInfo
 
 from .. import wallet_plugin as test_module
 

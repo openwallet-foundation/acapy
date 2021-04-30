@@ -1,40 +1,38 @@
 """Test did resolver registry."""
 
+import pytest
 import unittest
 
-import pytest
 from asynctest import mock as async_mock
+from pydid import DID, DIDDocument, DIDError, VerificationMethod
 
-from ...resolver.base import (
+from ..base import (
     BaseDIDResolver,
     DIDMethodNotSupported,
     DIDNotFound,
+    ResolverError,
     ResolverType,
 )
-from pydid import DID, DIDDocument, VerificationMethod
-from . import DOC
 from ..did_resolver import DIDResolver
 from ..did_resolver_registry import DIDResolverRegistry
+
+from . import DOC
 
 TEST_DID0 = "did:sov:Kkyqu7CJFuQSvBp468uaDe"
 TEST_DID1 = "did:btcr:8kyt-fzzq-qpqq-ljsc-5l"
 TEST_DID2 = "did:ethr:mainnet:0xb9c5714089478a327f09197987f16f9e5d936e8a"
 TEST_DID3 = "did:ion:EiDahaOGH-liLLdDtTxEAdc8i-cfCz-WUcQdRJheMVNn3A"
 TEST_DID4 = "did:github:ghdid"
+TEST_DID_5 = "did:key:zUC71nmwvy83x1UzNKbZbS7N9QZx8rqpQx3Ee3jGfKiEkZngTKzsRoqobX6wZdZF5F93pSGYYco3gpK9tc53ruWUo2tkBB9bxPCFBUjq2th8FbtT4xih6y6Q1K9EL4Th86NiCGT"
 
-TEST_DIDS = [
-    TEST_DID0,
-    TEST_DID1,
-    TEST_DID2,
-    TEST_DID3,
-    TEST_DID4,
-]
+TEST_DIDS = [TEST_DID0, TEST_DID1, TEST_DID2, TEST_DID3, TEST_DID4, TEST_DID_5]
 
 TEST_DID_METHOD0 = "sov"
 TEST_DID_METHOD1 = "btcr"
 TEST_DID_METHOD2 = "ethr"
 TEST_DID_METHOD3 = "ion"
 TEST_DID_METHOD4 = "github"
+TEST_DID_METHOD5 = "key"
 
 TEST_DID_METHODS = [
     TEST_DID_METHOD0,
@@ -42,6 +40,7 @@ TEST_DID_METHODS = [
     TEST_DID_METHOD2,
     TEST_DID_METHOD3,
     TEST_DID_METHOD4,
+    TEST_DID_METHOD5,
     "example",
 ]
 
@@ -50,6 +49,7 @@ TEST_METHOD_SPECIFIC_ID1 = "8kyt-fzzq-qpqq-ljsc-5l"
 TEST_METHOD_SPECIFIC_ID2 = "mainnet:0xb9c5714089478a327f09197987f16f9e5d936e8a"
 TEST_METHOD_SPECIFIC_ID3 = "EiDahaOGH-liLLdDtTxEAdc8i-cfCz-WUcQdRJheMVNn3A"
 TEST_METHOD_SPECIFIC_ID4 = "ghdid"
+TEST_METHOD_SPECIFIC_ID5 = "zUC71nmwvy83x1UzNKbZbS7N9QZx8rqpQx3Ee3jGfKiEkZngTKzsRoqobX6wZdZF5F93pSGYYco3gpK9tc53ruWUo2tkBB9bxPCFBUjq2th8FbtT4xih6y6Q1K9EL4Th86NiCGT"
 
 TEST_METHOD_SPECIFIC_IDS = [
     TEST_METHOD_SPECIFIC_ID0,
@@ -57,6 +57,7 @@ TEST_METHOD_SPECIFIC_IDS = [
     TEST_METHOD_SPECIFIC_ID2,
     TEST_METHOD_SPECIFIC_ID3,
     TEST_METHOD_SPECIFIC_ID4,
+    TEST_METHOD_SPECIFIC_ID5,
 ]
 
 
@@ -99,15 +100,14 @@ def test_create_resolver(resolver):
 
 @pytest.mark.parametrize("did, method", zip(TEST_DIDS, TEST_DID_METHODS))
 def test_match_did_to_resolver(resolver, did, method):
-    did = DID(did)
-    base_resolver, *_ = resolver._match_did_to_resolver(did)
+    base_resolver, *_ = resolver._match_did_to_resolver(DID(did))
     assert base_resolver.supports(method)
 
 
 def test_match_did_to_resolver_x_not_supported(resolver):
-    did = DID("did:cowsay:EiDahaOGH-liLLdDtTxEAdc8i-cfCz-WUcQdRJheMVNn3A")
+    py_did = DID("did:cowsay:EiDahaOGH-liLLdDtTxEAdc8i-cfCz-WUcQdRJheMVNn3A")
     with pytest.raises(DIDMethodNotSupported):
-        resolver._match_did_to_resolver(did)
+        resolver._match_did_to_resolver(py_did)
 
 
 def test_match_did_to_resolver_native_priority():
@@ -145,6 +145,13 @@ async def test_dereference(resolver, profile):
 
 
 @pytest.mark.asyncio
+async def test_dereference_x(resolver, profile):
+    url = "non-did"
+    with pytest.raises(ResolverError):
+        await resolver.dereference(profile, url)
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize("did", TEST_DIDS)
 async def test_resolve(resolver, profile, did):
     did_doc = await resolver.resolve(profile, did)
@@ -154,24 +161,23 @@ async def test_resolve(resolver, profile, did):
 @pytest.mark.asyncio
 @pytest.mark.parametrize("did", TEST_DIDS)
 async def test_resolve_did(resolver, profile, did):
-    did = DID(did)
-    did_doc = await resolver.resolve(profile, did)
+    did_doc = await resolver.resolve(profile, DID(did))
     assert isinstance(did_doc, DIDDocument)
 
 
 @pytest.mark.asyncio
 async def test_resolve_did_x_not_supported(resolver, profile):
-    did = DID("did:cowsay:EiDahaOGH-liLLdDtTxEAdc8i-cfCz-WUcQdRJheMVNn3A")
+    py_did = DID("did:cowsay:EiDahaOGH-liLLdDtTxEAdc8i-cfCz-WUcQdRJheMVNn3A")
     with pytest.raises(DIDMethodNotSupported):
-        await resolver.resolve(profile, did)
+        await resolver.resolve(profile, py_did)
 
 
 @pytest.mark.asyncio
 async def test_resolve_did_x_not_found(profile):
-    did = DID("did:cowsay:EiDahaOGH-liLLdDtTxEAdc8i-cfCz-WUcQdRJheMVNn3A")
+    py_did = DID("did:cowsay:EiDahaOGH-liLLdDtTxEAdc8i-cfCz-WUcQdRJheMVNn3A")
     cowsay_resolver_not_found = MockResolver("cowsay", resolved=DIDNotFound())
     registry = DIDResolverRegistry()
     registry.register(cowsay_resolver_not_found)
     resolver = DIDResolver(registry)
     with pytest.raises(DIDNotFound):
-        await resolver.resolve(profile, did)
+        await resolver.resolve(profile, py_did)

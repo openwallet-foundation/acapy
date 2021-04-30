@@ -3,7 +3,19 @@
 import base58
 import base64
 
-from multicodec import add_prefix, remove_prefix
+import nacl.utils
+import nacl.bindings
+
+
+def random_seed() -> bytes:
+    """
+    Generate a random seed value.
+
+    Returns:
+        A new random seed
+
+    """
+    return nacl.utils.random(nacl.bindings.crypto_box_SEEDBYTES)
 
 
 def pad(val: str) -> str:
@@ -29,12 +41,12 @@ def b64_to_str(val: str, urlsafe=False, encoding=None) -> str:
     return b64_to_bytes(val, urlsafe).decode(encoding or "utf-8")
 
 
-def bytes_to_b64(val: bytes, urlsafe=False, pad=True) -> str:
+def bytes_to_b64(val: bytes, urlsafe=False, pad=True, encoding: str = "ascii") -> str:
     """Convert a byte string to base 64."""
     b64 = (
-        base64.urlsafe_b64encode(val).decode("ascii")
+        base64.urlsafe_b64encode(val).decode(encoding)
         if urlsafe
-        else base64.b64encode(val).decode("ascii")
+        else base64.b64encode(val).decode(encoding)
     )
     return b64 if pad else unpad(b64)
 
@@ -74,19 +86,3 @@ def abbr_verkey(full_verkey: str, did: str = None) -> str:
     """Given a full verkey and DID, return the abbreviated verkey."""
     did_len = len(b58_to_bytes(did.split(":")[-1])) if did else 16
     return f"~{bytes_to_b58(b58_to_bytes(full_verkey)[did_len:])}"
-
-
-def naked_to_did_key(key: str) -> str:
-    """Convert a naked ed25519 verkey to W3C did:key format."""
-    key_bytes = b58_to_bytes(key)
-    prefixed_key_bytes = add_prefix("ed25519-pub", key_bytes)
-    did_key = f"did:key:z{bytes_to_b58(prefixed_key_bytes)}"
-    return did_key
-
-
-def did_key_to_naked(did_key: str) -> str:
-    """Convert a W3C did:key to naked ed25519 verkey format."""
-    stripped_key = did_key.split("did:key:z").pop()
-    stripped_key_bytes = b58_to_bytes(stripped_key)
-    naked_key_bytes = remove_prefix(stripped_key_bytes)
-    return bytes_to_b58(naked_key_bytes)
