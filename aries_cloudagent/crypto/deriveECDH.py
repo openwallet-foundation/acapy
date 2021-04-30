@@ -35,10 +35,14 @@ def ConcatKDF(sharedSecret, alg, apu, apv, keydatalen):
     sharedSecret = prefix + sharedSecret
 
     # ECDH-1PU requires each of the header parameters
-    # to be front padded with their string length
-    AlgID = len(alg).to_bytes(4, "big") + bytes(alg, "utf-8")
-    PartyUInfo = len(apu).to_bytes(4, "big") + bytes(apu, "utf-8")
-    PartyVInfo = len(apv).to_bytes(4, "big") + bytes(apv, "utf-8")
+    # to be front padded with their length
+    alg = bytes(alg, "utf-8")
+    apu = bytes(apu, "utf-8")
+    apv = bytes(apv, "utf-8")
+
+    AlgID = len(alg).to_bytes(4, "big") + alg
+    PartyUInfo = len(apu).to_bytes(4, "big") + apu
+    PartyVInfo = len(apv).to_bytes(4, "big") + apv
     SuppPubInfo = (keydatalen * 8).to_bytes(4, "big")
 
     otherinfo = AlgID + PartyUInfo + PartyVInfo + SuppPubInfo
