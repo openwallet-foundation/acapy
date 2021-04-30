@@ -70,6 +70,7 @@ class DefaultContextBuilder(ContextBuilder):
         # profile provider it could mean other wallets won't have access to the provider
         if is_indy_sdk_module_installed():
             from ..ledger.indy import IndySdkLedgerPool, IndySdkLedgerPoolProvider
+
             context.injector.bind_provider(
                 IndySdkLedgerPool,
                 CachedProvider(IndySdkLedgerPoolProvider(), ("ledger.pool_name",)),
