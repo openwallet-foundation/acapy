@@ -788,7 +788,7 @@ class DIFPresExchHandler:
                 suite=suite,
             )
             if len(filtered) != 0:
-                result[descriptor._id] = filtered
+                result[descriptor.id] = filtered
 
         if len(descriptor_list) != 0:
             # Applies min, max or count attributes of submission_requirement
@@ -916,7 +916,7 @@ class DIFPresExchHandler:
             applicable_creds_list.append(credential.cred_value)
         # submission_property
         submission_property = PresentationSubmission(
-            _id=str(uuid4()), definition_id=pd._id, descriptor_maps=descriptor_maps
+            id=str(uuid4()), definition_id=pd.id, descriptor_maps=descriptor_maps
         )
         vp = await create_presentation(credentials=applicable_creds_list)
         vp["presentation_submission"] = submission_property.serialize()
@@ -971,11 +971,11 @@ class DIFPresExchHandler:
                     not in dict_of_descriptors
                 ):
                     descriptor_map = InputDescriptorMapping(
-                        _id=desc_id,
+                        id=desc_id,
                         fmt="ldp_vp",
                         path=f"$.verifiableCredential[{dict_of_creds[credential.given_id]}]",
                     )
                     descriptors.append(descriptor_map)
 
-        descriptors = sorted(descriptors, key=lambda i: i._id)
+        descriptors = sorted(descriptors, key=lambda i: i.id)
         return (result, descriptors)
