@@ -6,13 +6,14 @@ in response to the message being handled.
 """
 
 from abc import ABC, abstractmethod
+import json
 from typing import Sequence, Union
 
 from ..core.error import BaseError
 from ..connections.models.connection_target import ConnectionTarget
 from ..transport.outbound.message import OutboundMessage
 
-from .agent_message import AgentMessage
+from .base_message import BaseMessage
 
 
 class ResponderError(BaseError):
@@ -36,7 +37,7 @@ class BaseResponder(ABC):
 
     async def create_outbound(
         self,
-        message: Union[AgentMessage, str, bytes],
+        message: Union[BaseMessage, str, bytes],
         *,
         connection_id: str = None,
         reply_session_id: str = None,
@@ -48,11 +49,14 @@ class BaseResponder(ABC):
         to_session_only: bool = False,
     ) -> OutboundMessage:
         """Create an OutboundMessage from a message payload."""
-        if isinstance(message, AgentMessage):
-            payload = message.to_json()
+        if isinstance(message, BaseMessage):
+            # TODO DIDComm version selection
+            serialized = message.serialize()
+            # TODO serialized format selection?
+            payload = json.dumps(serialized)
             enc_payload = None
             if not reply_thread_id:
-                reply_thread_id = message._thread_id
+                reply_thread_id = message.thread_id
         else:
             payload = None
             enc_payload = message
@@ -69,14 +73,14 @@ class BaseResponder(ABC):
             to_session_only=to_session_only,
         )
 
-    async def send(self, message: Union[AgentMessage, str, bytes], **kwargs):
+    async def send(self, message: Union[BaseMessage, str, bytes], **kwargs):
         """Convert a message to an OutboundMessage and send it."""
         outbound = await self.create_outbound(message, **kwargs)
         await self.send_outbound(outbound)
 
     async def send_reply(
         self,
-        message: Union[AgentMessage, str, bytes],
+        message: Union[BaseMessage, str, bytes],
         *,
         connection_id: str = None,
         target: ConnectionTarget = None,
@@ -86,7 +90,7 @@ class BaseResponder(ABC):
         Send a reply to an incoming message.
 
         Args:
-            message: the `AgentMessage`, or pre-packed str or bytes to reply with
+            message: the `BaseMessage`, or pre-packed str or bytes to reply with
             connection_id: optionally override the target connection ID
             target: optionally specify a `ConnectionTarget` to send to
 
@@ -131,11 +135,11 @@ class MockResponder(BaseResponder):
         """Initialize the mock responder."""
         self.messages = []
 
-    async def send(self, message: Union[AgentMessage, str, bytes], **kwargs):
+    async def send(self, message: Union[BaseMessage, str, bytes], **kwargs):
         """Convert a message to an OutboundMessage and send it."""
         self.messages.append((message, kwargs))
 
-    async def send_reply(self, message: Union[AgentMessage, str, bytes], **kwargs):
+    async def send_reply(self, message: Union[BaseMessage, str, bytes], **kwargs):
         """Send a reply to an incoming message."""
         self.messages.append((message, kwargs))
 

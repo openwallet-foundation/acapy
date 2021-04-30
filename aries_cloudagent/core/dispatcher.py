@@ -15,6 +15,7 @@ from aiohttp.web import HTTPException
 
 from ..core.profile import Profile
 from ..messaging.agent_message import AgentMessage
+from ..messaging.base_message import BaseMessage
 from ..messaging.error import MessageParseError
 from ..messaging.models.base import BaseModelError
 from ..messaging.request_context import RequestContext
@@ -189,7 +190,7 @@ class Dispatcher:
             perf_counter=r_time,
         )
 
-    async def make_message(self, parsed_msg: dict) -> AgentMessage:
+    async def make_message(self, parsed_msg: dict) -> BaseMessage:
         """
         Deserialize a message dict into the appropriate message instance.
 
@@ -260,7 +261,7 @@ class DispatcherResponder(BaseResponder):
         self._send = send_outbound
 
     async def create_outbound(
-        self, message: Union[AgentMessage, str, bytes], **kwargs
+        self, message: Union[AgentMessage, BaseMessage, str, bytes], **kwargs
     ) -> OutboundMessage:
         """
         Create an OutboundMessage from a message body.
