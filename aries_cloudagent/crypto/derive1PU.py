@@ -26,7 +26,7 @@ def deriveSender1PU(
 def deriveReceiver1PU(
     senderEphemeralPub, senderPub, recvPriv, alg, apu, apv, keydatalen
 ):
-    """Generate two shared secrets (ze, zs)"""
+    """Generate two shared secrets (ze, zs)."""
 
     ze = DeriveECDHSecret(recvPriv, senderEphemeralPub)
     zs = DeriveECDHSecret(recvPriv, senderPub)
