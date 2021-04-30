@@ -1,5 +1,5 @@
 # from deriveECDH import *
-from ..derive1PU import *
+from ..deriveECDH import *
 from ecdsa import ECDH, NIST256p, SigningKey
 
 # Generate the same shared secret from imported generated keys
