@@ -5,6 +5,7 @@ The dispatcher is responsible for coordinating data flow between handlers, provi
 lifecycle hook callbacks storing state for message threads, etc.
 """
 
+from aries_cloudagent.transport.outbound.status import OutboundSendStatus
 import asyncio
 import logging
 import os
@@ -282,14 +283,14 @@ class DispatcherResponder(BaseResponder):
                 }
         return await super().create_outbound(message, **kwargs)
 
-    async def send_outbound(self, message: OutboundMessage):
+    async def send_outbound(self, message: OutboundMessage) -> OutboundSendStatus:
         """
         Send outbound message.
 
         Args:
             message: The `OutboundMessage` to be sent
         """
-        await self._send(self._context.profile, message, self._inbound_message)
+        return await self._send(self._context.profile, message, self._inbound_message)
 
     async def send_webhook(self, topic: str, payload: dict):
         """

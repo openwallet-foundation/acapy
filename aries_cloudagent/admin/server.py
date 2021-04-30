@@ -1,5 +1,6 @@
 """Admin server classes."""
 
+from aries_cloudagent.transport.outbound.status import OutboundSendStatus
 import asyncio
 from hmac import compare_digest
 import logging
@@ -116,14 +117,14 @@ class AdminResponder(BaseResponder):
         self._profile = profile
         self._send = send
 
-    async def send_outbound(self, message: OutboundMessage):
+    async def send_outbound(self, message: OutboundMessage) -> OutboundSendStatus:
         """
         Send outbound message.
 
         Args:
             message: The `OutboundMessage` to be sent
         """
-        await self._send(self._profile, message)
+        return await self._send(self._profile, message)
 
     async def send_webhook(self, topic: str, payload: dict):
         """

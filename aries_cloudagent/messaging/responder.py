@@ -6,6 +6,7 @@ in response to the message being handled.
 """
 
 from abc import ABC, abstractmethod
+from aries_cloudagent.transport.outbound.status import OutboundSendStatus
 from typing import Sequence, Union
 
 from ..core.error import BaseError
@@ -69,10 +70,12 @@ class BaseResponder(ABC):
             to_session_only=to_session_only,
         )
 
-    async def send(self, message: Union[AgentMessage, str, bytes], **kwargs):
+    async def send(
+        self, message: Union[AgentMessage, str, bytes], **kwargs
+    ) -> OutboundSendStatus:
         """Convert a message to an OutboundMessage and send it."""
         outbound = await self.create_outbound(message, **kwargs)
-        await self.send_outbound(outbound)
+        return await self.send_outbound(outbound)
 
     async def send_reply(
         self,
@@ -81,7 +84,7 @@ class BaseResponder(ABC):
         connection_id: str = None,
         target: ConnectionTarget = None,
         target_list: Sequence[ConnectionTarget] = None,
-    ):
+    ) -> OutboundSendStatus:
         """
         Send a reply to an incoming message.
 
@@ -102,10 +105,10 @@ class BaseResponder(ABC):
             target=target,
             target_list=target_list,
         )
-        await self.send_outbound(outbound)
+        return await self.send_outbound(outbound)
 
     @abstractmethod
-    async def send_outbound(self, message: OutboundMessage):
+    async def send_outbound(self, message: OutboundMessage) -> OutboundSendStatus:
         """
         Send an outbound message.
 
