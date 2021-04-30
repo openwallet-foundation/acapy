@@ -25,7 +25,10 @@ from ....storage.error import StorageNotFoundError
 from .messages.credential_ack import CredentialAck
 from .messages.credential_issue import CredentialIssue
 from .messages.credential_offer import CredentialOffer
-from .messages.credential_problem_report import CredentialProblemReport
+from .messages.credential_problem_report import (
+    CredentialProblemReport,
+    ProblemReportReason,
+)
 from .messages.credential_proposal import CredentialProposal
 from .messages.credential_request import CredentialRequest
 from .messages.inner.credential_preview import CredentialPreview
@@ -819,7 +822,7 @@ class CredentialManager:
     async def create_problem_report(
         self,
         cred_ex_record: V10CredentialExchange,
-        explain_ltxt: str,
+        description: str,
     ):
         """
         Update cred ex record; create and return problem report.
@@ -832,7 +835,12 @@ class CredentialManager:
         async with self._profile.session() as session:
             await cred_ex_record.save(session, reason="created problem report")
 
-        report = CredentialProblemReport(explain_ltxt=explain_ltxt)
+        report = CredentialProblemReport(
+            description={
+                "en": description,
+                "code": ProblemReportReason.ISSUANCE_ABANDONED.value,
+            }
+        )
         report.assign_thread_id(cred_ex_record.thread_id)
 
         return report
@@ -858,7 +866,10 @@ class CredentialManager:
             )
 
             cred_ex_record.state = None
-            cred_ex_record.error_msg = message.explain_ltxt
+            cred_ex_record.error_msg = (
+                f"{message.description['code']}: "
+                f"{message.description.get('en', message.description['code'])}"
+            )
             await cred_ex_record.save(session, reason="received problem report")
 
         return cred_ex_record

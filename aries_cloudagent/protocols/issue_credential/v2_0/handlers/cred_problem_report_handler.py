@@ -33,6 +33,5 @@ class CredProblemReportHandler(BaseHandler):
             )
         except (StorageError, StorageNotFoundError):
             self._logger.exception(
-                "Error processing issue-credential v2.0 problem report message: %s",
-                context.message.explain_ltxt,
+                "Error processing issue-credential v2.0 problem report message"
             )

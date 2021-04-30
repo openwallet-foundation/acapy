@@ -43,7 +43,7 @@ class TestKeylistQueryHandler(AsyncTestCase):
         assert len(responder.messages) == 1
         result, _target = responder.messages[0]
         assert isinstance(result, ProblemReport)
-        assert "not been granted" in result.explain_ltxt
+        assert "not been granted" in result.description["en"]
 
     async def test_handler_record_not_granted(self):
         handler, responder = KeylistQueryHandler(), MockResponder()
@@ -54,7 +54,7 @@ class TestKeylistQueryHandler(AsyncTestCase):
         assert len(responder.messages) == 1
         result, _target = responder.messages[0]
         assert isinstance(result, ProblemReport)
-        assert "not been granted" in result.explain_ltxt
+        assert "not been granted" in result.description["en"]
 
     async def test_handler(self):
         handler, responder = KeylistQueryHandler(), MockResponder()

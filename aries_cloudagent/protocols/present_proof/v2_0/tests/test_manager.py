@@ -1656,7 +1656,7 @@ class TestV20PresManager(AsyncTestCase):
                 "The front fell off",
             )
 
-        assert stored_exchange.state is None
+        assert stored_exchange.state == V20PresExRecord.STATE_ABANDONED
         assert report._thread_id == stored_exchange.thread_id
 
     async def test_receive_problem_report(self):
@@ -1694,7 +1694,7 @@ class TestV20PresManager(AsyncTestCase):
             )
             save_ex.assert_called_once()
 
-            assert ret_exchange.state is None
+        assert stored_exchange.state == V20PresExRecord.STATE_ABANDONED
 
     async def test_receive_problem_report_x(self):
         connection_id = "connection-id"

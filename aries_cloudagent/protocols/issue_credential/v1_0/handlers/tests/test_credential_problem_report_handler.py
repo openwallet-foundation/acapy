@@ -4,7 +4,10 @@ from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
 from ......transport.inbound.receipt import MessageReceipt
 
-from ...messages.credential_problem_report import CredentialProblemReport
+from ...messages.credential_problem_report import (
+    CredentialProblemReport,
+    ProblemReportReason,
+)
 
 from .. import credential_problem_report_handler as test_module
 
@@ -22,7 +25,10 @@ class TestCredentialProblemReportHandler(AsyncTestCase):
                 async_mock.CoroutineMock()
             )
             request_context.message = CredentialProblemReport(
-                explain_ltxt="Change of plans"
+                description={
+                    "en": "Change of plans",
+                    "code": ProblemReportReason.ISSUANCE_ABANDONED.value,
+                }
             )
             handler = test_module.CredentialProblemReportHandler()
             responder = MockResponder()
@@ -48,7 +54,10 @@ class TestCredentialProblemReportHandler(AsyncTestCase):
                 )
             )
             request_context.message = CredentialProblemReport(
-                explain_ltxt="Change of plans"
+                description={
+                    "en": "Change of plans",
+                    "code": ProblemReportReason.ISSUANCE_ABANDONED.value,
+                }
             )
             handler = test_module.CredentialProblemReportHandler()
             responder = MockResponder()

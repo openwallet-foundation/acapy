@@ -1379,9 +1379,7 @@ class TestCredentialRoutes(AsyncTestCase):
 
     async def test_credential_exchange_problem_report(self):
         self.request.json = async_mock.CoroutineMock(
-            return_value={
-                "explain_ltxt": "Did I say no problem? I meant 'No! Problem.'"
-            }
+            return_value={"description": "Did I say no problem? I meant 'no: problem.'"}
         )
         self.request.match_info = {"cred_ex_id": "dummy"}
         magic_report = async_mock.MagicMock()
@@ -1412,9 +1410,7 @@ class TestCredentialRoutes(AsyncTestCase):
 
     async def test_credential_exchange_problem_report_bad_cred_ex_id(self):
         self.request.json = async_mock.CoroutineMock(
-            return_value={
-                "explain_ltxt": "Did I say no problem? I meant 'No! Problem.'"
-            }
+            return_value={"description": "Did I say no problem? I meant 'no: problem.'"}
         )
         self.request.match_info = {"cred_ex_id": "dummy"}
 
@@ -1430,9 +1426,7 @@ class TestCredentialRoutes(AsyncTestCase):
 
     async def test_credential_exchange_problem_report_x(self):
         self.request.json = async_mock.CoroutineMock(
-            return_value={
-                "explain_ltxt": "Did I say no problem? I meant 'No! Problem.'"
-            }
+            return_value={"description": "Did I say no problem? I meant 'no: problem.'"}
         )
         self.request.match_info = {"cred_ex_id": "dummy"}
 

@@ -1,10 +1,14 @@
+import pytest
+
 from unittest import mock, TestCase
+
+from ......messaging.models.base import BaseModelError
 
 from .....didcomm_prefix import DIDCommPrefix
 
 from ...message_types import CRED_20_PROBLEM_REPORT, PROTOCOL_PACKAGE
 
-from ..cred_problem_report import V20CredProblemReport
+from ..cred_problem_report import V20CredProblemReport, ProblemReportReason
 
 
 class TestCredProblemReport(TestCase):
@@ -13,7 +17,12 @@ class TestCredProblemReport(TestCase):
     def test_init_type(self):
         """Test initializer."""
 
-        prob = V20CredProblemReport()
+        prob = V20CredProblemReport(
+            description={
+                "en": "oh no",
+                "code": ProblemReportReason.ISSUANCE_ABANDONED.value,
+            }
+        )
         assert prob._type == DIDCommPrefix.qualify_current(CRED_20_PROBLEM_REPORT)
 
     @mock.patch(
@@ -23,7 +32,12 @@ class TestCredProblemReport(TestCase):
     def test_deserialize(self, mock_load):
         """Test deserialization."""
 
-        obj = V20CredProblemReport()
+        obj = V20CredProblemReport(
+            description={
+                "en": "oh no",
+                "code": ProblemReportReason.ISSUANCE_ABANDONED.value,
+            }
+        )
 
         prob = V20CredProblemReport.deserialize(obj)
         mock_load.assert_called_once_with(obj)
@@ -37,7 +51,12 @@ class TestCredProblemReport(TestCase):
     def test_serialize(self, mock_dump):
         """Test serialization."""
 
-        obj = V20CredProblemReport()
+        obj = V20CredProblemReport(
+            description={
+                "en": "oh no",
+                "code": ProblemReportReason.ISSUANCE_ABANDONED.value,
+            }
+        )
 
         ser = obj.serialize()
         mock_dump.assert_called_once_with(obj)
@@ -47,7 +66,17 @@ class TestCredProblemReport(TestCase):
     def test_make_model(self):
         """Test making model."""
 
-        prob = V20CredProblemReport()
+        prob = V20CredProblemReport(
+            description={
+                "en": "oh no",
+                "code": ProblemReportReason.ISSUANCE_ABANDONED.value,
+            }
+        )
         data = prob.serialize()
         model_instance = V20CredProblemReport.deserialize(data)
         assert isinstance(model_instance, V20CredProblemReport)
+
+        prob = V20CredProblemReport()
+        data = prob.serialize()
+        with pytest.raises(BaseModelError):
+            V20CredProblemReport.deserialize(data)

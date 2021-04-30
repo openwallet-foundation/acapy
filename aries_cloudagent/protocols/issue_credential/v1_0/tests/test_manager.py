@@ -1566,7 +1566,12 @@ class TestCredentialManager(AsyncTestCase):
             initiator=V10CredentialExchange.INITIATOR_SELF,
             role=V10CredentialExchange.ROLE_ISSUER,
         )
-        problem = CredentialProblemReport(explain_ltxt="Change of plans")
+        problem = CredentialProblemReport(
+            description={
+                "code": test_module.ProblemReportReason.ISSUANCE_ABANDONED.value,
+                "en": "Insufficient privilege",
+            }
+        )
 
         with async_mock.patch.object(
             V10CredentialExchange, "save", autospec=True
@@ -1595,7 +1600,12 @@ class TestCredentialManager(AsyncTestCase):
             role=V10CredentialExchange.ROLE_ISSUER,
             state=V10CredentialExchange.STATE_REQUEST_RECEIVED,
         )
-        problem = CredentialProblemReport(explain_ltxt="Change of plans")
+        problem = CredentialProblemReport(
+            description={
+                "code": test_module.ProblemReportReason.ISSUANCE_ABANDONED.value,
+                "en": "Insufficient privilege",
+            }
+        )
 
         with async_mock.patch.object(
             V10CredentialExchange,

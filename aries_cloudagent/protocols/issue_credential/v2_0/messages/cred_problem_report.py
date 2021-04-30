@@ -1,6 +1,11 @@
 """A problem report message."""
 
-from marshmallow import EXCLUDE
+from enum import Enum
+from typing import Mapping, Sequence
+
+from marshmallow import EXCLUDE, validates_schema, ValidationError
+
+from .....messaging.util import time_now
 
 from ....problem_report.v1_0.message import ProblemReport, ProblemReportSchema
 
@@ -9,6 +14,12 @@ from ..message_types import CRED_20_PROBLEM_REPORT, PROTOCOL_PACKAGE
 HANDLER_CLASS = (
     f"{PROTOCOL_PACKAGE}.handlers.problem_report_handler.ProblemReportHandler"
 )
+
+
+class ProblemReportReason(str, Enum):
+    """Supported reason codes."""
+
+    ISSUANCE_ABANDONED = "issuance-abandoned"
 
 
 class V20CredProblemReport(ProblemReport):
@@ -21,9 +32,9 @@ class V20CredProblemReport(ProblemReport):
         schema_class = "V20CredProblemReportSchema"
         message_type = CRED_20_PROBLEM_REPORT
 
-    def __init__(self, **kwargs):
+    def __init__(self, *args, **kwargs):
         """Initialize problem report object."""
-        super().__init__(**kwargs)
+        super().__init__(*args, **kwargs)
 
 
 class V20CredProblemReportSchema(ProblemReportSchema):
@@ -34,3 +45,24 @@ class V20CredProblemReportSchema(ProblemReportSchema):
 
         model_class = V20CredProblemReport
         unknown = EXCLUDE
+
+    @validates_schema
+    def validate_fields(self, data, **kwargs):
+        """
+        Validate schema fields.
+
+        Args:
+            data: The data to validate
+
+        Raises:
+            ValidationError: if data has neither indy nor ld_proof
+
+        """
+        if (
+            data.get("description", {}).get("code", "")
+            != ProblemReportReason.ISSUANCE_ABANDONED.value
+        ):
+            raise ValidationError(
+                "Value for description.code must be "
+                f"{ProblemReportReason.ISSUANCE_ABANDONED.value}"
+            )

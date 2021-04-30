@@ -260,7 +260,7 @@ class V10CredentialIssueRequestSchema(OpenAPISchema):
 class V10CredentialProblemReportRequestSchema(OpenAPISchema):
     """Request schema for sending problem report."""
 
-    explain_ltxt = fields.Str(required=True)
+    description = fields.Str(required=True)
 
 
 class CredIdMatchInfoSchema(OpenAPISchema):
@@ -1181,7 +1181,7 @@ async def credential_exchange_problem_report(request: web.BaseRequest):
             )
         report = await credential_manager.create_problem_report(
             cred_ex_record,
-            body["explain_ltxt"],
+            body["description"],
         )
     except StorageNotFoundError as err:
         await internal_error(err, web.HTTPNotFound, None, outbound_handler)

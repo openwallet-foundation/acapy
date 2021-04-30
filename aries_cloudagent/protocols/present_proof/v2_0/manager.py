@@ -782,7 +782,7 @@ class V20PresManager:
             problem report
 
         """
-        pres_ex_record.state = None
+        pres_ex_record.state = V20PresExRecord.STATE_ABANDONED
         async with self._profile.session() as session:
             await pres_ex_record.save(session, reason="created problem report")
 
@@ -811,7 +811,7 @@ class V20PresManager:
                 )
             )
 
-            pres_ex_record.state = None
+            pres_ex_record.state = V20PresExRecord.STATE_ABANDONED
             pres_ex_record.error_msg = message.explain_ltxt
             await pres_ex_record.save(session, reason="received problem report")
 

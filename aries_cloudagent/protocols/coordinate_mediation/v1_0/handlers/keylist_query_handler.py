@@ -7,9 +7,12 @@ from .....messaging.base_handler import (
     RequestContext,
 )
 from .....storage.error import StorageNotFoundError
+
 from ....problem_report.v1_0.message import ProblemReport
+
 from ..manager import MediationManager, MediationNotGrantedError
 from ..messages.keylist_query import KeylistQuery
+from ..messages.problem_report import ProblemReportReason
 from ..models.mediation_record import MediationRecord
 
 
@@ -38,6 +41,9 @@ class KeylistQueryHandler(BaseHandler):
         except (StorageNotFoundError, MediationNotGrantedError):
             await responder.send_reply(
                 ProblemReport(
-                    explain_ltxt="Mediation has not been granted for this connection"
+                    description={
+                        "en": "Mediation has not been granted for this connection",
+                        "code": ProblemReportReason.MEDIATION_NOT_GRANTED.value,
+                    }
                 )
             )

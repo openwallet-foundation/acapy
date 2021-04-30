@@ -1,6 +1,11 @@
 """A problem report message."""
 
+from enum import Enum
+from typing import Mapping, Sequence
+
 from marshmallow import EXCLUDE
+
+from .....messaging.util import time_now
 
 from ....problem_report.v1_0.message import ProblemReport, ProblemReportSchema
 
@@ -10,6 +15,12 @@ HANDLER_CLASS = (
     f"{PROTOCOL_PACKAGE}.handlers.pres_problem_report_handler."
     "V20PresProblemReportHandler"
 )
+
+
+class ProblemReportReason(str, Enum):
+    """Supported reason codes."""
+
+    ABANDONED = "abandoned"
 
 
 class V20PresProblemReport(ProblemReport):
@@ -22,9 +33,9 @@ class V20PresProblemReport(ProblemReport):
         schema_class = "V20PresProblemReportSchema"
         message_type = PRES_20_PROBLEM_REPORT
 
-    def __init__(self, **kwargs):
+    def __init__(self, *args, **kwargs):
         """Initialize problem report object."""
-        super().__init__(**kwargs)
+        super().__init__(*args, **kwargs)
 
 
 class V20PresProblemReportSchema(ProblemReportSchema):
