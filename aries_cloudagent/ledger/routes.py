@@ -20,7 +20,6 @@ from ..wallet.error import WalletError, WalletNotFoundError
 from .base import BaseLedger, Role as LedgerRole
 from .endpoint_type import EndpointType
 from .error import BadLedgerRequestError, LedgerError, LedgerTransactionError
-from .indy import Role
 
 
 class LedgerModulesResultSchema(OpenAPISchema):
@@ -93,7 +92,7 @@ class RegisterLedgerNymQueryStringSchema(OpenAPISchema):
         description="Role",
         required=False,
         validate=validate.OneOf(
-            [r.name for r in Role if isinstance(r.value[0], int)] + ["reset"]
+            [r.name for r in LedgerRole if isinstance(r.value[0], int)] + ["reset"]
         ),
     )
 

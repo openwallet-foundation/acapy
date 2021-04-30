@@ -151,6 +151,9 @@ def stub_ursa_bbs_signatures() -> Stub:
     modules = {}
     package_name = "ursa_bbs_signatures"
     modules[package_name] = mock.MagicMock()
+    # Temporary until ursa_bbs_signatures is updated to export the FfiException
+    # from the main package
+    modules[package_name + "._ffi.FfiException"] = mock.MagicMock()
     return Stub(mock.patch.dict(sys.modules, modules))
 
 

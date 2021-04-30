@@ -1,19 +1,24 @@
 """BBS+ crypto."""
 
 from typing import List, Tuple
-from ursa_bbs_signatures import (
-    SignRequest,
-    VerifyRequest,
-    BlsKeyPair,
-    sign as bbs_sign,
-    verify as bbs_verify,
-    BbsException as NativeBbsException,
+
+from ..utils.dependencies import (
+    assert_ursa_bbs_signatures_installed,
+    is_ursa_bbs_signatures_module_installed,
 )
-from ursa_bbs_signatures._ffi.FfiException import FfiException
-
 from ..core.error import BaseError
-
 from ..wallet.util import random_seed
+
+if is_ursa_bbs_signatures_module_installed():
+    from ursa_bbs_signatures import (
+        SignRequest,
+        VerifyRequest,
+        BlsKeyPair,
+        sign as bbs_sign,
+        verify as bbs_verify,
+        BbsException as NativeBbsException,
+    )
+    from ursa_bbs_signatures._ffi.FfiException import FfiException
 
 
 class BbsException(BaseError):
@@ -31,6 +36,7 @@ def sign_messages_bls12381g2(messages: List[bytes], secret: bytes):
         bytes: The signature
 
     """
+    assert_ursa_bbs_signatures_installed()
 
     messages = [message.decode("utf-8") for message in messages]
     try:
@@ -59,6 +65,8 @@ def verify_signed_messages_bls12381g2(
         True if verified, else False
 
     """
+    assert_ursa_bbs_signatures_installed()
+
     key_pair = BlsKeyPair(public_key=public_key)
     messages = [message.decode("utf-8") for message in messages]
 
@@ -86,6 +94,8 @@ def create_bls12381g2_keypair(seed: bytes = None) -> Tuple[bytes, bytes]:
         A tuple of (public key, secret key)
 
     """
+    assert_ursa_bbs_signatures_installed()
+
     if not seed:
         seed = random_seed()
 
