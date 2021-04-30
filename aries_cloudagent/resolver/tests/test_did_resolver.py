@@ -154,14 +154,14 @@ async def test_dereference_x(resolver, profile):
 @pytest.mark.asyncio
 @pytest.mark.parametrize("did", TEST_DIDS)
 async def test_resolve(resolver, profile, did):
-    did_doc = await resolver.resolve(profile, did)
+    did_doc, resolver_metadata = await resolver.resolve(profile, did)
     assert isinstance(did_doc, DIDDocument)
 
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("did", TEST_DIDS)
 async def test_resolve_did(resolver, profile, did):
-    did_doc = await resolver.resolve(profile, DID(did))
+    did_doc, resolver_metadata = await resolver.resolve(profile, DID(did))
     assert isinstance(did_doc, DIDDocument)
 
 

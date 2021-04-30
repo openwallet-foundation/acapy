@@ -103,7 +103,7 @@ async def resolve_did(request: web.BaseRequest):
     try:
         session = await context.session()
         resolver = session.inject(DIDResolver)
-        document = await resolver.resolve(context.profile, did)
+        document, resolver_metadata = await resolver.resolve(context.profile, did)
         result = document.serialize()
     except DIDNotFound as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err

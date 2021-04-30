@@ -31,7 +31,9 @@ class DIDResolver:
         """Initialize a `didresolver` instance."""
         self.did_resolver_registry = registry
 
-    async def resolve(self, profile: Profile, did: Union[str, DID]) -> DIDDocument:
+    async def resolve(
+        self, profile: Profile, did: Union[str, DID]
+    ) -> tuple(DIDDocument, dict):
         """Retrieve did doc from public registry."""
         # TODO Cache results
         py_did = DID(did) if isinstance(did, str) else did
@@ -72,7 +74,7 @@ class DIDResolver:
         # TODO Use cached DID Docs when possible
         try:
             did_url = DIDUrl.parse(did_url)
-            doc = await self.resolve(profile, did_url.did)
+            doc, resolver_metadata = await self.resolve(profile, did_url.did)
             return doc.dereference(did_url)
         except DIDError as err:
             raise ResolverError(

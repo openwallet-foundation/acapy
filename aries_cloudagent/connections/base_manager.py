@@ -223,7 +223,7 @@ class BaseConnectionManager:
 
         resolver = self._session.inject(DIDResolver)
         try:
-            doc: ResolvedDocument = await resolver.resolve(self._session.profile, did)
+            doc, resolver_metadata = await resolver.resolve(self._session.profile, did)
         except ResolverError as error:
             raise BaseConnectionManagerError(
                 "Failed to resolve public DID in invitation"
