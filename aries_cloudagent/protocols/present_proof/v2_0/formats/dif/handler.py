@@ -33,6 +33,7 @@ from ....dif.pres_exch_handler import DIFPresExchHandler
 from ....dif.pres_exch import (
     ClaimFormat,
     PresentationDefinition,
+    InputDescriptors,
 )
 from ......vc.ld_proofs import (
     Ed25519Signature2018,
@@ -147,7 +148,7 @@ class DIFPresExchangeHandler(V20PresFormatHandler):
         else:
             raise V20PresFormatError(
                 f"Unable to get retrieve verification method for did {did}"
-    )
+            )
 
     async def _did_info_for_did(self, did: str) -> DIDInfo:
         """Get the did info for specified did.
@@ -205,7 +206,7 @@ class DIFPresExchangeHandler(V20PresFormatHandler):
 
         # Validate, throw if not valid
         Schema(unknown=RAISE).load(attachment_data)
-    
+
     async def create_exchange_for_proposal(
         self,
         pres_ex_record: V20PresExRecord,
@@ -249,7 +250,7 @@ class DIFPresExchangeHandler(V20PresFormatHandler):
         """
         dif_proof_request = V20PresProposal.deserialize(
             pres_ex_record.pres_proposal
-        ).attachment(format)
+        ).attachment(self.format)
 
         return self.get_format_data(PRES_20_REQUEST, dif_proof_request)
 
@@ -262,19 +263,27 @@ class DIFPresExchangeHandler(V20PresFormatHandler):
         async with self.profile.session() as session:
             wallet = session.inject(BaseWallet)
             issuer_id = await wallet.get_public_did()
-            proof_request = V20PresRequest.deserialize(
-                pres_ex_record.pres_request
-            ).attachment(format)
-            challenge = proof_request.get("challenge") or None
-            domain = proof_request.get("domain") or None
-            pres_definition = PresentationDefinition.deserialize(proof_request.get("presentation_definition"))
+            if "input_descriptors" in request_data:
+                challenge = str(uuid4())
+                input_descriptors = InputDescriptors.deserialize(
+                    request_data.get("input_descriptors")
+                )
+            else:
+                proof_request = V20PresRequest.deserialize(
+                    pres_ex_record.pres_request
+                ).attachment(self.format)
+                challenge = proof_request.get("challenge") or str(uuid4())
+                domain = proof_request.get("domain") or None
+                pres_definition = PresentationDefinition.deserialize(
+                    proof_request.get("presentation_definition")
+                )
+                input_descriptors = pres_definition.input_descriptors
 
-            try:    
+            try:
                 holder = self.profile.session.inject(VCHolder)
                 types = []
                 contexts = []
                 schema_ids = []
-                input_descriptors = pres_definition.input_descriptors
                 for input_descriptor in input_descriptors:
                     for schema in input_descriptor.schemas:
                         uri = schema.uri
@@ -285,11 +294,11 @@ class DIFPresExchangeHandler(V20PresFormatHandler):
                                 types.append(uri.split("#")[1])
                             else:
                                 schema_ids.append(uri)
-                if len(types)==0:
+                if len(types) == 0:
                     types = None
-                if len(contexts)==0:
+                if len(contexts) == 0:
                     contexts = None
-                if len(schema_ids)==0:
+                if len(schema_ids) == 0:
                     schema_ids = None
                 search = holder.search_credentials(
                     contexts=contexts,
@@ -303,7 +312,11 @@ class DIFPresExchangeHandler(V20PresFormatHandler):
             except StorageNotFoundError as err:
                 raise V20PresFormatError(err)
 
-            derive_suite = self._get_derive_suite(proof_type="BbsBlsSignatureProof2020", wallet=wallet, issuer_id=issuer_id)
+            derive_suite = self._get_derive_suite(
+                proof_type="BbsBlsSignatureProof2020",
+                wallet=wallet,
+                issuer_id=issuer_id,
+            )
             # Selecting suite from claim_format
             claim_format = pres_definition.fmt
             # will also support jwt_vp
@@ -312,21 +325,27 @@ class DIFPresExchangeHandler(V20PresFormatHandler):
                 if claim_format.ldp_vp:
                     for proof_type in claim_format.ldp_vp:
                         if proof_type == "BbsBlsSignature2020":
-                            issue_suite = self._get_issue_suite(proof_type="BbsBlsSignature2020", wallet=wallet, issuer_id=issuer_id)
+                            issue_suite = self._get_issue_suite(
+                                proof_type="BbsBlsSignature2020",
+                                wallet=wallet,
+                                issuer_id=issuer_id,
+                            )
                             break
                         elif proof_type == "Ed25519Signature2018":
-                            issue_suite = self._get_issue_suite(proof_type="Ed25519Signature2018", wallet=wallet, issuer_id=issuer_id)
+                            issue_suite = self._get_issue_suite(
+                                proof_type="Ed25519Signature2018",
+                                wallet=wallet,
+                                issuer_id=issuer_id,
+                            )
                             break
             if not issue_suite:
                 # default is Ed25519Signature2018
-                issue_suite = self._get_issue_suite(proof_type="Ed25519Signature2018", wallet=wallet, issuer_id=issuer_id)
+                issue_suite = self._get_issue_suite(
+                    proof_type="Ed25519Signature2018",
+                    wallet=wallet,
+                    issuer_id=issuer_id,
+                )
             dif_handler = DIFPresExchHandler(self.profile)
-
-            proof_purpose=None
-            if not challenge:
-                challenge = str(uuid4().hex)
-            else:
-                proof_purpose = AuthenticationProofPurpose(challenge=challenge, domain=domain)
 
             pres = dif_handler.create_vp(
                 challenge=challenge,
@@ -336,7 +355,6 @@ class DIFPresExchangeHandler(V20PresFormatHandler):
                 credentials=records,
                 issue_suite=issue_suite,
                 derive_suite=derive_suite,
-                proof_purpose=proof_purpose,
             )
             return self.get_format_data(PRES_20, pres)
 
@@ -344,7 +362,6 @@ class DIFPresExchangeHandler(V20PresFormatHandler):
         self, message: V20Pres, pres_ex_record: V20PresExRecord
     ) -> None:
         """Receive a presentation, from message in context on manager creation"""
-
 
     async def verify_pres(self, pres_ex_record: V20PresExRecord) -> V20PresExRecord:
         """
@@ -358,7 +375,7 @@ class DIFPresExchangeHandler(V20PresFormatHandler):
             presentation exchange record, updated
 
         """
-        dif_proof = V20Pres.deserialize(pres_ex_record.pres).attachment(format)
+        dif_proof = V20Pres.deserialize(pres_ex_record.pres).attachment(self.format)
         pres_ex_record.verified = await verify_presentation(
             presentation=dif_proof,
             suites=self._get_all_suites(),

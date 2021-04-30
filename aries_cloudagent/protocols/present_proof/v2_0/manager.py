@@ -80,7 +80,7 @@ class V20PresManager:
         )
         for format in pres_proposal_message.formats:
             await V20PresFormat.Format.get(format.format).handler(
-                self.profile
+                self._profile
             ).create_exchange_for_proposal(pres_ex_record, pres_proposal_message)
         pres_ex_record.pres_proposal = pres_proposal_message.serialize()
         pres_ex_record.state = V20PresExRecord.STATE_PROPOSAL_SENT
@@ -112,7 +112,7 @@ class V20PresManager:
 
         for format in message.formats:
             await V20PresFormat.Format.get(format.format).handler(
-                self.profile
+                self._profile
             ).receive_pres_proposal(pres_ex_record, message)
         pres_ex_record.pres_proposal = message.serialize()
         pres_ex_record.state = V20PresExRecord.STATE_PROPOSAL_RECEIVED
@@ -149,7 +149,7 @@ class V20PresManager:
 
         for format in pres_request_message.formats:
             await V20PresFormat.Format.get(format.format).handler(
-                self.profile
+                self._profile
             ).create_exchange_for_request(pres_ex_record, pres_request_message)
         pres_ex_record.pres_request = pres_request_message.serialize()
         pres_ex_record.state = V20PresExRecord.STATE_REQUEST_SENT
@@ -191,7 +191,7 @@ class V20PresManager:
 
             if pres_exch_format:
                 request_formats.append(
-                    await pres_exch_format.handler(self.profile).create_bound_request(
+                    await pres_exch_format.handler(self._profile).create_bound_request(
                         pres_ex_record,
                         request_data,
                     )
@@ -290,7 +290,7 @@ class V20PresManager:
 
             if pres_exch_format:
                 pres_formats.append(
-                    await pres_exch_format.handler(self.profile).create_pres(
+                    await pres_exch_format.handler(self._profile).create_pres(
                         pres_ex_record,
                         request_data,
                     )
@@ -354,7 +354,7 @@ class V20PresManager:
             pres_format = V20PresFormat.Format.get(format.format)
 
             if pres_format:
-                await pres_format.handler(self.profile).receive_pres(
+                await pres_format.handler(self._profile).receive_pres(
                     message,
                     pres_ex_record,
                 )
@@ -385,7 +385,7 @@ class V20PresManager:
 
             if pres_exch_format:
                 pres_ex_record = await pres_exch_format.handler(
-                    self.profile
+                    self._profile
                 ).verify_pres(
                     pres_ex_record,
                 )

@@ -889,7 +889,6 @@ class DIFPresExchHandler:
         pd: PresentationDefinition,
         derive_suite: LinkedDataProof,
         issue_suite: LinkedDataProof,
-        proof_purpose: ProofPurpose = None,
         challenge: str = None,
         domain: str = None,
     ) -> dict:
@@ -902,6 +901,7 @@ class DIFPresExchHandler:
         Return:
             VerifiablePresentation
         """
+        include_proof = False
         document_loader = self.profile.context.inject(DocumentLoader)
         req = await self.make_requirement(
             srs=pd.submission_requirements, descriptors=pd.input_descriptors
@@ -920,14 +920,22 @@ class DIFPresExchHandler:
         )
         vp = await create_presentation(credentials=applicable_creds_list)
         vp["presentation_submission"] = submission_property.serialize()
-        signed_vp = await sign_presentation(
-            presentation=vp,
-            suite=issue_suite,
-            document_loader=document_loader,
-            challenge=challenge,
-            proof_purpose=proof_purpose,
-        )
-        return signed_vp
+        if self.check_sign_pres(applicable_creds):
+            signed_vp = await sign_presentation(
+                presentation=vp,
+                suite=issue_suite,
+                document_loader=document_loader,
+                challenge=challenge,
+            )
+            return signed_vp
+        else:
+            return vp
+
+    def check_sign_pres(self, creds: Sequence[VCRecord]) -> bool:
+        for cred in creds:
+            if len(cred.subject_ids) > 0:
+                return True
+        return False
 
     async def merge(
         self,
