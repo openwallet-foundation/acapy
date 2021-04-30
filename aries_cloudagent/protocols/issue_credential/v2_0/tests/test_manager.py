@@ -2381,9 +2381,7 @@ class TestV20CredManager(AsyncTestCase):
             thread_id="dummy-thid",
         )
 
-        with async_mock.patch.object(
-            V20CredExRecord, "save", autospec=True
-        ) as save_ex:
+        with async_mock.patch.object(V20CredExRecord, "save", autospec=True) as save_ex:
             report = await self.manager.create_problem_report(
                 stored_exchange,
                 "The front fell off",

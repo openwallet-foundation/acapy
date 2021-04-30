@@ -1317,7 +1317,7 @@ async def credential_exchange_problem_report(request: web.BaseRequest):
             body["explain_ltxt"],
         )
     except StorageNotFoundError as err:
-        await internal_error(err, web.HTTPNotFound, cred_ex_record, outbound_handler)
+        await internal_error(err, web.HTTPNotFound, None, outbound_handler)
     except StorageError as err:
         await internal_error(err, web.HTTPBadRequest, cred_ex_record, outbound_handler)
 
