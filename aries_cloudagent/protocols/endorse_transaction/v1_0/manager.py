@@ -48,16 +48,12 @@ class TransactionManager:
         """
         return self._session
 
-    async def create_record(
-        self,
-        messages_attach: str,
-        expires_time: str,
-    ):
+    async def create_record(self, messages_attach: str, connection_id: str):
         """
         Create a new Transaction Record.
 
         Args:
-            expires_time: The time till which the endorser should endorse the transaction
+            connection_id: The connection_id of the ConnRecord between author and endorser
             transaction_message: The actual data in the transaction payload
 
         Returns:
@@ -73,9 +69,6 @@ class TransactionManager:
 
         transaction = TransactionRecord()
 
-        timing = {"expires_time": expires_time}
-        transaction.timing = timing
-
         formats = {
             "attach_id": messages_attach_dict["@id"],
             "format": TransactionRecord.FORMAT_VERSION,
@@ -86,6 +79,7 @@ class TransactionManager:
         transaction.messages_attach.clear()
         transaction.messages_attach.append(messages_attach_dict)
         transaction.state = TransactionRecord.STATE_TRANSACTION_CREATED
+        transaction.connection_id = connection_id
 
         profile_session = await self.session
         async with profile_session.profile.session() as session:
@@ -98,16 +92,16 @@ class TransactionManager:
     async def create_request(
         self,
         transaction: TransactionRecord,
-        connection_id: str,
         signature: str = None,
         signed_request: dict = None,
+        expires_time: str = None,
     ):
         """
         Create a new Transaction Request.
 
         Args:
             transaction: The transaction from which the request is created.
-            connection_id: The connection_id to which the request is send.
+            expires_time: The time till which the endorser should endorse the transaction.
 
         Returns:
             The transaction Record and transaction request
@@ -132,7 +126,9 @@ class TransactionManager:
         transaction.signature_request.append(signature_request)
 
         transaction.state = TransactionRecord.STATE_REQUEST_SENT
-        transaction.connection_id = connection_id
+
+        timing = {"expires_time": expires_time}
+        transaction.timing = timing
 
         profile_session = await self.session
         async with profile_session.profile.session() as session:

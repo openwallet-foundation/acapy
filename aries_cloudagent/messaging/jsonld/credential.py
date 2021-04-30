@@ -2,14 +2,10 @@
 
 import json
 
-from ...wallet.util import (
-    b64_to_bytes,
-    b64_to_str,
-    bytes_to_b64,
-    str_to_b64,
-    naked_to_did_key,
-)
-
+from ...wallet.util import b64_to_bytes, b64_to_str, bytes_to_b64, str_to_b64
+from ...wallet.key_type import KeyType
+from ...did.did_key import DIDKey
+from ...wallet.base import BaseWallet
 from .create_verify_data import create_verify_data
 from .error import BadJWSHeaderError
 
@@ -17,7 +13,10 @@ from .error import BadJWSHeaderError
 def did_key(verkey: str) -> str:
     """Qualify verkey into DID key if need be."""
 
-    return verkey if verkey.startswith("did:key:") else naked_to_did_key(verkey)
+    if verkey.startswith("did:key:"):
+        return verkey
+
+    return DIDKey.from_public_key_b58(verkey, KeyType.ED25519).did
 
 
 def b64encode(str):
@@ -35,7 +34,7 @@ def create_jws(encoded_header, verify_data):
     return (encoded_header + ".").encode("utf-8") + verify_data
 
 
-async def jws_sign(verify_data, verkey, wallet):
+async def jws_sign(session, verify_data, verkey):
     """Sign JWS."""
 
     header = {"alg": "EdDSA", "b64": False, "crit": ["b64"]}
@@ -44,6 +43,7 @@ async def jws_sign(verify_data, verkey, wallet):
 
     jws_to_sign = create_jws(encoded_header, verify_data)
 
+    wallet = session.inject(BaseWallet, required=True)
     signature = await wallet.sign_message(jws_to_sign, verkey)
 
     encoded_signature = bytes_to_b64(signature, urlsafe=True, pad=False)
@@ -60,7 +60,7 @@ def verify_jws_header(header):
         )
 
 
-async def jws_verify(verify_data, signature, public_key, wallet):
+async def jws_verify(session, verify_data, signature, public_key):
     """Detatched jws verify handling."""
 
     encoded_header, _, encoded_signature = signature.partition("..")
@@ -72,25 +72,27 @@ async def jws_verify(verify_data, signature, public_key, wallet):
 
     jws_to_verify = create_jws(encoded_header, verify_data)
 
-    verified = await wallet.verify_message(jws_to_verify, decoded_signature, public_key)
+    wallet = session.inject(BaseWallet, required=True)
+    verified = await wallet.verify_message(
+        jws_to_verify, decoded_signature, public_key, KeyType.ED25519
+    )
 
     return verified
 
 
-async def sign_credential(credential, signature_options, verkey, wallet):
+async def sign_credential(session, credential, signature_options, verkey):
     """Sign Credential."""
 
     framed, verify_data_hex_string = create_verify_data(credential, signature_options)
     verify_data_bytes = bytes.fromhex(verify_data_hex_string)
-    jws = await jws_sign(verify_data_bytes, verkey, wallet)
-    document_with_proof = {**credential, "proof": {**signature_options, "jws": jws}}
-    return document_with_proof
+    jws = await jws_sign(session, verify_data_bytes, verkey)
+    return {**credential, "proof": {**signature_options, "jws": jws}}
 
 
-async def verify_credential(doc, verkey, wallet):
+async def verify_credential(session, doc, verkey):
     """Verify credential."""
 
     framed, verify_data_hex_string = create_verify_data(doc, doc["proof"])
     verify_data_bytes = bytes.fromhex(verify_data_hex_string)
-    valid = await jws_verify(verify_data_bytes, framed["proof"]["jws"], verkey, wallet)
+    valid = await jws_verify(session, verify_data_bytes, framed["proof"]["jws"], verkey)
     return valid

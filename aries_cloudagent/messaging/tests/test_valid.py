@@ -9,6 +9,8 @@ from ..valid import (
     BASE64,
     BASE64URL,
     BASE64URL_NO_PAD,
+    CREDENTIAL_CONTEXT,
+    CREDENTIAL_TYPE,
     DID_KEY,
     DID_POSTURE,
     ENDPOINT,
@@ -494,3 +496,28 @@ class TestValid(TestCase):
         ENDPOINT_TYPE["validate"]("Endpoint")
         ENDPOINT_TYPE["validate"]("Profile")
         ENDPOINT_TYPE["validate"]("LinkedDomains")
+
+    def test_credential_type(self):
+        with self.assertRaises(ValidationError):
+            CREDENTIAL_TYPE["validate"]([])
+
+        with self.assertRaises(ValidationError):
+            CREDENTIAL_TYPE["validate"](["WrongType", "AnotherWrongType"])
+
+        CREDENTIAL_TYPE["validate"](["VerifiableCredential", "AnotherType"])
+        CREDENTIAL_TYPE["validate"](["SomeType", "AnotherType", "VerifiableCredential"])
+        CREDENTIAL_TYPE["validate"](["VerifiableCredential"])
+
+    def test_credential_context(self):
+        with self.assertRaises(ValidationError):
+            CREDENTIAL_CONTEXT["validate"]([])
+
+        with self.assertRaises(ValidationError):
+            CREDENTIAL_CONTEXT["validate"](
+                [{}, "https://www.w3.org/2018/credentials/v1"]
+            )
+
+        CREDENTIAL_CONTEXT["validate"](["https://www.w3.org/2018/credentials/v1"])
+        CREDENTIAL_CONTEXT["validate"](
+            ["https://www.w3.org/2018/credentials/v1", "https://some-other-context.com"]
+        )

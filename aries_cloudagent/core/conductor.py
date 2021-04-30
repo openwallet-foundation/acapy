@@ -31,6 +31,7 @@ from ..protocols.connections.v1_0.manager import (
 from ..protocols.connections.v1_0.messages.connection_invitation import (
     ConnectionInvitation,
 )
+from ..vc.ld_proofs.document_loader import DocumentLoader
 from ..protocols.coordinate_mediation.v1_0.manager import MediationManager
 from ..protocols.out_of_band.v1_0.manager import OutOfBandManager
 from ..protocols.out_of_band.v1_0.messages.invitation import HSProto, InvitationMessage
@@ -44,7 +45,7 @@ from ..transport.outbound.queue.loader import get_outbound_queue
 from ..transport.wire_format import BaseWireFormat
 from ..utils.stats import Collector
 from ..utils.task_queue import CompletedTask, TaskQueue
-from ..wallet.base import DIDInfo
+from ..wallet.did_info import DIDInfo
 from .dispatcher import Dispatcher
 
 LOGGER = logging.getLogger(__name__)
@@ -105,6 +106,9 @@ class Conductor:
             self.root_profile, self.inbound_message_router, self.handle_not_returned
         )
         await self.inbound_transport_manager.setup()
+        context.injector.bind_instance(
+            InboundTransportManager, self.inbound_transport_manager
+        )
 
         # Register all outbound transports
         self.outbound_transport_manager = OutboundTransportManager(
@@ -125,6 +129,11 @@ class Conductor:
             multitenant_mgr = MultitenantManager(self.root_profile)
             context.injector.bind_instance(MultitenantManager, multitenant_mgr)
 
+        # Bind default PyLD document loader
+        context.injector.bind_instance(
+            DocumentLoader, DocumentLoader(self.root_profile)
+        )
+
         self.outbound_queue = get_outbound_queue(context.settings)
 
         # Admin API
@@ -143,10 +152,6 @@ class Conductor:
                     self.dispatcher.task_queue,
                     self.get_stats,
                 )
-                webhook_urls = context.settings.get("admin.webhook_urls")
-                if webhook_urls:
-                    for url in webhook_urls:
-                        self.admin_server.add_webhook_target(url)
                 context.injector.bind_instance(BaseAdminServer, self.admin_server)
             except Exception:
                 LOGGER.exception("Unable to register admin server")
@@ -203,7 +208,6 @@ class Conductor:
             responder = AdminResponder(
                 self.root_profile,
                 self.admin_server.outbound_message_router,
-                self.admin_server.send_webhook,
             )
             context.injector.bind_instance(BaseResponder, responder)
 
@@ -395,7 +399,6 @@ class Conductor:
                 profile,
                 message,
                 self.outbound_message_router,
-                self.admin_server and self.admin_server.send_webhook,
                 lambda completed: self.dispatch_complete(message, completed),
             )
         except (LedgerConfigError, LedgerTransactionError) as e:

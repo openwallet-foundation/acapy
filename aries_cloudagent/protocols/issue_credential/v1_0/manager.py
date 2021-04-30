@@ -105,6 +105,7 @@ class CredentialManager:
         )
         (credential_exchange, credential_offer) = await self.create_offer(
             cred_ex_record=credential_exchange,
+            counter_proposal=None,
             comment="create automated credential exchange",
         )
         return (credential_exchange, credential_offer)
@@ -211,7 +212,10 @@ class CredentialManager:
         return cred_ex_record
 
     async def create_offer(
-        self, cred_ex_record: V10CredentialExchange, comment: str = None
+        self,
+        cred_ex_record: V10CredentialExchange,
+        counter_proposal: CredentialProposal = None,
+        comment: str = None,
     ) -> Tuple[V10CredentialExchange, CredentialOffer]:
         """
         Create a credential offer, update credential exchange record.
@@ -230,8 +234,10 @@ class CredentialManager:
             offer_json = await issuer.create_credential_offer(cred_def_id)
             return json.loads(offer_json)
 
-        credential_proposal_message = CredentialProposal.deserialize(
-            cred_ex_record.credential_proposal_dict
+        credential_proposal_message = (
+            counter_proposal
+            if counter_proposal
+            else CredentialProposal.deserialize(cred_ex_record.credential_proposal_dict)
         )
         credential_proposal_message.assign_trace_decorator(
             self._profile.settings, cred_ex_record.trace
@@ -243,7 +249,8 @@ class CredentialManager:
                 if getattr(credential_proposal_message, t)
             }
         )
-        cred_preview = credential_proposal_message.credential_proposal
+
+        credential_preview = credential_proposal_message.credential_proposal
 
         # vet attributes
         ledger = self._profile.inject(BaseLedger)
@@ -251,7 +258,7 @@ class CredentialManager:
             schema_id = await ledger.credential_definition_id2schema_id(cred_def_id)
             schema = await ledger.get_schema(schema_id)
         schema_attrs = {attr for attr in schema["attrNames"]}
-        preview_attrs = {attr for attr in cred_preview.attr_dict()}
+        preview_attrs = {attr for attr in credential_preview.attr_dict()}
         if preview_attrs != schema_attrs:
             raise CredentialManagerError(
                 f"Preview attributes {preview_attrs} "
@@ -273,7 +280,7 @@ class CredentialManager:
 
         credential_offer_message = CredentialOffer(
             comment=comment,
-            credential_preview=cred_preview,
+            credential_preview=credential_preview,
             offers_attach=[CredentialOffer.wrap_indy_offer(credential_offer)],
         )
 
@@ -286,6 +293,9 @@ class CredentialManager:
         cred_ex_record.schema_id = credential_offer["schema_id"]
         cred_ex_record.credential_definition_id = credential_offer["cred_def_id"]
         cred_ex_record.state = V10CredentialExchange.STATE_OFFER_SENT
+        cred_ex_record.credential_proposal_dict = (  # any counter replaces original
+            credential_proposal_message.serialize()
+        )
         cred_ex_record.credential_offer = credential_offer
 
         cred_ex_record.credential_offer_dict = credential_offer_message.serialize()

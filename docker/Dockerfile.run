@@ -4,7 +4,7 @@ ENV ENABLE_PTVSD 0
 
 ADD requirements*.txt ./
 
-RUN pip3 install --no-cache-dir -r requirements.txt -r requirements.dev.txt
+RUN pip3 install --no-cache-dir -r requirements.txt -r requirements.dev.txt -r requirements.bbs.txt
 
 ADD aries_cloudagent ./aries_cloudagent
 ADD bin ./bin

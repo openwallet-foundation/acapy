@@ -8,6 +8,8 @@ from ......connections.models.diddoc import (
     PublicKeyType,
     Service,
 )
+from ......wallet.did_method import DIDMethod
+from ......wallet.key_type import KeyType
 from ......core.in_memory import InMemoryProfile
 from ......messaging.decorators.attach_decorator import AttachDecorator
 
@@ -56,7 +58,10 @@ class TestConfig:
 class TestDIDXRequest(AsyncTestCase, TestConfig):
     async def setUp(self):
         self.wallet = InMemoryProfile.test_session().wallet
-        self.did_info = await self.wallet.create_local_did()
+        self.did_info = await self.wallet.create_local_did(
+            method=DIDMethod.SOV,
+            key_type=KeyType.ED25519,
+        )
 
         did_doc_attach = AttachDecorator.data_base64(self.make_did_doc().serialize())
         await did_doc_attach.data.sign(self.did_info.verkey, self.wallet)
@@ -110,7 +115,10 @@ class TestDIDXRequestSchema(AsyncTestCase, TestConfig):
 
     async def setUp(self):
         self.wallet = InMemoryProfile.test_session().wallet
-        self.did_info = await self.wallet.create_local_did()
+        self.did_info = await self.wallet.create_local_did(
+            method=DIDMethod.SOV,
+            key_type=KeyType.ED25519,
+        )
 
         did_doc_attach = AttachDecorator.data_base64(self.make_did_doc().serialize())
         await did_doc_attach.data.sign(self.did_info.verkey, self.wallet)

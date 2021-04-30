@@ -8,7 +8,7 @@ from ...config.base import InjectionError
 from ...messaging.responder import BaseResponder
 from ...wallet.models.wallet_record import WalletRecord
 from ...wallet.in_memory import InMemoryWallet
-from ...wallet.base import DIDInfo
+from ...wallet.did_info import DIDInfo
 from ...storage.error import StorageNotFoundError
 from ...storage.in_memory import InMemoryStorage
 from ...protocols.routing.v1_0.manager import RoutingManager
@@ -17,6 +17,8 @@ from ...protocols.coordinate_mediation.v1_0.manager import (
     MediationRecord,
     MediationManager,
 )
+from ...wallet.key_type import KeyType
+from ...wallet.did_method import DIDMethod
 from ..manager import MultitenantManager, MultitenantManagerError
 from ..error import WalletKeyMissingError
 
@@ -371,7 +373,13 @@ class TestMultitenantManager(AsyncTestCase):
             assert wallet_record.wallet_key == "test_key"
 
     async def test_create_wallet_adds_wallet_route(self):
-        did_info = DIDInfo("public-did", "test_verkey", {"meta": "data"})
+        did_info = DIDInfo(
+            did="public-did",
+            verkey="test_verkey",
+            metadata={"meta": "data"},
+            method=DIDMethod.SOV,
+            key_type=KeyType.ED25519,
+        )
 
         with async_mock.patch.object(
             WalletRecord, "save"

@@ -2,10 +2,9 @@
 
 from typing import Sequence
 
-from marshmallow import EXCLUDE, fields, RAISE, validates_schema, ValidationError
+from marshmallow import EXCLUDE, fields, validates_schema, ValidationError
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
-from .....messaging.credential_definitions.util import CredDefQueryStringSchema
 from .....messaging.decorators.attach_decorator import (
     AttachDecorator,
     AttachDecoratorSchema,
@@ -65,14 +64,20 @@ class V20CredProposal(AgentMessage):
             fmt: format of attachment in list to decode and return
 
         """
-        return (
-            (
-                fmt or V20CredFormat.Format.get(self.formats[0].format)
-            ).get_attachment_data(
-                self.formats,
-                self.filters_attach,
+        target_format = (
+            fmt
+            if fmt
+            else next(
+                filter(
+                    lambda ff: ff,
+                    [V20CredFormat.Format.get(f.format) for f in self.formats],
+                ),
+                None,
             )
-            if self.formats
+        )
+        return (
+            target_format.get_attachment_data(self.formats, self.filters_attach)
+            if target_format
             else None
         )
 
@@ -129,5 +134,7 @@ class V20CredProposalSchema(AgentMessageSchema):
 
         for fmt in formats:
             atch = get_attach_by_id(fmt.attach_id)
-            if V20CredFormat.Format.get(fmt.format) is V20CredFormat.Format.INDY:
-                CredDefQueryStringSchema(unknown=RAISE).load(atch.content)
+            cred_format = V20CredFormat.Format.get(fmt.format)
+
+            if cred_format:
+                cred_format.validate_fields(CRED_20_PROPOSAL, atch.content)

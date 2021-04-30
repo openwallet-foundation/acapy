@@ -130,6 +130,11 @@ class PluginRegistry:
                 LOGGER.error(f"Module doesn't exist: {module_name}")
                 return None
 
+            # Any plugin with a setup method is considered valid.
+            if hasattr(mod, "setup"):
+                self._plugins[module_name] = mod
+                return mod
+
             # Make an exception for non-protocol modules
             # that contain admin routes and for old-style protocol
             # modules without version support
@@ -149,8 +154,8 @@ class PluginRegistry:
             # definition.py must include versions attribute
             if not hasattr(definition, "versions"):
                 LOGGER.error(
-                    "Protocol definition does not "
-                    + f"include versions attribute: {module_name}"
+                    "Protocol definition does not include "
+                    f"versions attribute: {module_name}"
                 )
                 return None
 

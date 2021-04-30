@@ -102,6 +102,11 @@ class CreateInvitationRequestSchema(OpenAPISchema):
         required=False,
         description="List of routing keys",
     )
+    my_label = fields.Str(
+        description="Optional label for connection invitation",
+        required=False,
+        example="Bob",
+    )
     metadata = fields.Dict(
         description="Optional metadata to attach to the connection created with "
         "the invitation",
@@ -427,7 +432,7 @@ async def connections_metadata(request: web.BaseRequest):
     except BaseModelError as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-    return web.json_response(result)
+    return web.json_response({"results": result})
 
 
 @docs(tags=["connection"], summary="Set connection metadata")
@@ -451,7 +456,7 @@ async def connections_metadata_set(request: web.BaseRequest):
     except BaseModelError as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-    return web.json_response(result)
+    return web.json_response({"results": result})
 
 
 @docs(
@@ -478,6 +483,7 @@ async def connections_create_invitation(request: web.BaseRequest):
     public = json.loads(request.query.get("public", "false"))
     multi_use = json.loads(request.query.get("multi_use", "false"))
     body = await request.json() if request.body_exists else {}
+    my_label = body.get("my_label")
     recipient_keys = body.get("recipient_keys")
     service_endpoint = body.get("service_endpoint")
     routing_keys = body.get("routing_keys")
@@ -494,6 +500,7 @@ async def connections_create_invitation(request: web.BaseRequest):
     connection_mgr = ConnectionManager(session)
     try:
         (connection, invitation) = await connection_mgr.create_invitation(
+            my_label=my_label,
             auto_accept=auto_accept,
             public=public,
             multi_use=multi_use,

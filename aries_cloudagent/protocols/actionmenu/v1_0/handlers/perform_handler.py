@@ -29,6 +29,7 @@ class PerformHandler(BaseHandler):
         service: BaseMenuService = context.inject(BaseMenuService, required=False)
         if service:
             reply = await service.perform_menu_action(
+                context.profile,
                 context.message.name,
                 context.message.params or {},
                 context.connection_record,

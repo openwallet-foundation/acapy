@@ -27,7 +27,10 @@ class InvitationHandler(BaseHandler):
         )
         if service:
             await service.return_invitation(
-                context.connection_record.connection_id, context.message, responder.send
+                context.connection_record.connection_id,
+                context.message,
+                await context.session(),
+                responder.send,
             )
         else:
             raise HandlerException(
