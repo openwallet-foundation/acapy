@@ -6,10 +6,7 @@ import hashlib
 
 
 def DeriveECDHSecret(privateKey, publicKey):
-    """
-    Generate a shared secret from your private key and a received public key
-    Keys are in hex represented Byte format
-    """
+    """Generate a shared secret from keys in byte format."""
 
     derive = ECDH(curve=NIST256p)
     derive.load_private_key_bytes(unhexlify(privateKey))
@@ -20,10 +17,7 @@ def DeriveECDHSecret(privateKey, publicKey):
 
 
 def DeriveECDHSecretFromKey(privateKey, publicKey):
-    """
-    Generate a shared secret from your private key and a received public key
-    Keys are in ecdsa.Keys object format
-    """
+    """Generate a shared secret from keys in ecdsa.Keys format."""
 
     derive = ECDH(curve=NIST256p)
     derive.load_private_key(privateKey)
@@ -34,9 +28,7 @@ def DeriveECDHSecretFromKey(privateKey, publicKey):
 
 
 def ConcatKDF(sharedSecret, alg, apu, apv, keydatalen):
-    """
-    Generate a shared encryption key from a shared secret and header parameters
-    """
+    """Generate a shared encryption key from a shared secret."""
 
     # ECDH-1PU requires a "round number 1" to be prefixed onto the shared secret z
     prefix = (1).to_bytes(4, "big")
