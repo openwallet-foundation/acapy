@@ -7,7 +7,7 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-            - v5-pip-dependencies-{{ .Branch }}-{{ checksum "requirements.txt" }}-{{ checksum "requirements.dev.txt" }}
+            - v5-pip-dependencies-{{ .Branch }}-{{ checksum "requirements.txt" }}-{{ checksum "requirements.dev.txt" }}-{{ checksum "requirements.bbs.txt" }}
             - v5-pip-dependencies-{{ .Branch }}-
       - run:
           name: Install Python Dependencies
@@ -15,12 +15,13 @@ jobs:
             pip install \
               --user \
               -r requirements.txt \
-              -r requirements.dev.txt
+              -r requirements.dev.txt \
+              -r requirements.bbs.txt
 
       - save_cache:
           paths:
             - /home/indy/.local/lib/python3.6/site-packages
-          key: v5-pip-dependencies-{{ .Branch }}-{{ checksum "requirements.txt" }}-{{ checksum "requirements.dev.txt" }}
+          key: v5-pip-dependencies-{{ .Branch }}-{{ checksum "requirements.txt" }}-{{ checksum "requirements.dev.txt" }}-{{ checksum "requirements.bbs.txt" }}
 
       - run:
           name: Run Agent Tests

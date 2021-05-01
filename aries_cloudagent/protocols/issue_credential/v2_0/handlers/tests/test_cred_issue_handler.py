@@ -41,12 +41,18 @@ class TestCredentialIssueHandler(AsyncTestCase):
         request_context.settings["debug.auto_store_credential"] = True
         request_context.connection_record = async_mock.MagicMock()
 
+        cred_ex_id = "cred-ex-id"
+        cred_ex_record = async_mock.MagicMock(auto_remove=True, cred_ex_id=cred_ex_id)
+
         with async_mock.patch.object(
             test_module, "V20CredManager", autospec=True
         ) as mock_cred_mgr:
             mock_cred_mgr.return_value.receive_credential = async_mock.CoroutineMock()
             mock_cred_mgr.return_value.store_credential = async_mock.CoroutineMock(
-                return_value=(None, "cred_ack_message")
+                return_value=(cred_ex_record, "cred_ack_message")
+            )
+            mock_cred_mgr.return_value.delete_cred_ex_record = (
+                async_mock.CoroutineMock()
             )
             request_context.message = V20CredIssue()
             request_context.connection_ready = True
@@ -57,6 +63,9 @@ class TestCredentialIssueHandler(AsyncTestCase):
         mock_cred_mgr.assert_called_once_with(request_context.profile)
         mock_cred_mgr.return_value.receive_credential.assert_called_once_with(
             request_context.message, request_context.connection_record.connection_id
+        )
+        mock_cred_mgr.return_value.delete_cred_ex_record.assert_called_once_with(
+            cred_ex_id
         )
         messages = responder.messages
         assert len(messages) == 1

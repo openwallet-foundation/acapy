@@ -3,10 +3,12 @@
 import json
 
 from datetime import datetime
+import re
 
 from base58 import alphabet
-from marshmallow.validate import OneOf, Range, Regexp
+from marshmallow.validate import OneOf, Range, Regexp, Validator
 from marshmallow.exceptions import ValidationError
+from marshmallow.fields import Field
 
 from .util import epoch_to_str
 
@@ -15,6 +17,52 @@ from ..revocation.models.revocation_registry import RevocationRegistry
 from ..wallet.did_posture import DIDPosture as DIDPostureEnum
 
 B58 = alphabet if isinstance(alphabet, str) else alphabet.decode("ascii")
+
+
+class StrOrDictField(Field):
+    """URI or Dict field for Marshmallow."""
+
+    def _serialize(self, value, attr, obj, **kwargs):
+        return value
+
+    def _deserialize(self, value, attr, data, **kwargs):
+        if isinstance(value, (str, dict)):
+            return value
+        else:
+            raise ValidationError("Field should be str or dict")
+
+
+class DictOrDictListField(Field):
+    """Dict or Dict List field for Marshmallow."""
+
+    def _serialize(self, value, attr, obj, **kwargs):
+        return value
+
+    def _deserialize(self, value, attr, data, **kwargs):
+        # dict
+        if isinstance(value, dict):
+            return value
+        # list of dicts
+        elif isinstance(value, list) and all(isinstance(item, dict) for item in value):
+            return value
+        else:
+            raise ValidationError("Field should be dict or list of dicts")
+
+
+class UriOrDictField(StrOrDictField):
+    """URI or Dict field for Marshmallow."""
+
+    def __init__(self, *args, **kwargs):
+        """Initialize new UriOrDictField instance."""
+        super().__init__(*args, **kwargs)
+
+        # Insert validation into self.validators so that multiple errors can be stored.
+        self.validators.insert(0, self._uri_validator)
+
+    def _uri_validator(self, value):
+        # Check if URI when
+        if isinstance(value, str):
+            return Uri()(value)
 
 
 class IntEpoch(Range):
@@ -338,6 +386,24 @@ class IndyISO8601DateTime(Regexp):
         )
 
 
+class RFC3339DateTime(Regexp):
+    """Validate value against RFC3339 datetime format."""
+
+    EXAMPLE = "2010-01-01T19:73:24Z"
+    PATTERN = (
+        r"^([0-9]{4})-([0-9]{2})-([0-9]{2})([Tt]([0-9]{2}):([0-9]{2}):"
+        r"([0-9]{2})(\.[0-9]+)?)?(([Zz]|([+-])([0-9]{2}):([0-9]{2})))?$"
+    )
+
+    def __init__(self):
+        """Initializer."""
+
+        super().__init__(
+            RFC3339DateTime.PATTERN,
+            error="Value {input} is not a date in valid format",
+        )
+
+
 class IndyWQL(Regexp):  # using Regexp brings in nice visual validator cue
     """Validate value as potential WQL query."""
 
@@ -490,6 +556,17 @@ class UUIDFour(Regexp):
         )
 
 
+class Uri(Regexp):
+    """Validate value against URI on any scheme."""
+
+    EXAMPLE = "https://www.w3.org/2018/credentials/v1"
+    PATTERN = r"\w+:(\/?\/?)[^\s]+"
+
+    def __init__(self):
+        """Initializer."""
+        super().__init__(Uri.PATTERN, error="Value {input} is not URI")
+
+
 class Endpoint(Regexp):  # using Regexp brings in nice visual validator cue
     """Validate value against endpoint URL on any scheme."""
 
@@ -524,6 +601,92 @@ class EndpointType(OneOf):
         )
 
 
+class CredentialType(Validator):
+    """Credential Type."""
+
+    CREDENTIAL_TYPE = "VerifiableCredential"
+    EXAMPLE = [CREDENTIAL_TYPE, "AlumniCredential"]
+
+    def __init__(self) -> None:
+        """Initializer."""
+        super().__init__()
+
+    def __call__(self, value):
+        """Validate input value."""
+        length = len(value)
+        if length < 1 or CredentialType.CREDENTIAL_TYPE not in value:
+            raise ValidationError(f"type must include {CredentialType.CREDENTIAL_TYPE}")
+
+        return value
+
+
+class CredentialContext(Validator):
+    """Credential Context."""
+
+    FIRST_CONTEXT = "https://www.w3.org/2018/credentials/v1"
+    EXAMPLE = [FIRST_CONTEXT, "https://www.w3.org/2018/credentials/examples/v1"]
+
+    def __init__(self) -> None:
+        """Initializer."""
+        super().__init__()
+
+    def __call__(self, value):
+        """Validate input value."""
+        length = len(value)
+
+        if length < 1 or value[0] != CredentialContext.FIRST_CONTEXT:
+            raise ValidationError(
+                f"First context must be {CredentialContext.FIRST_CONTEXT}"
+            )
+
+        return value
+
+
+class CredentialSubject(Validator):
+    """Credential subject."""
+
+    EXAMPLE = {
+        "id": "did:example:ebfeb1f712ebc6f1c276e12ec21",
+        "alumniOf": {"id": "did:example:c276e12ec21ebfeb1f712ebc6f1"},
+    }
+
+    def __init__(self) -> None:
+        """Initializer."""
+        super().__init__()
+
+    def __call__(self, value):
+        """Validate input value."""
+        subjects = value if isinstance(value, list) else [value]
+
+        for subject in subjects:
+            if "id" in subject:
+                uri_validator = Uri()
+                try:
+                    uri_validator(value["id"])
+                except ValidationError:
+                    raise ValidationError(
+                        f"credential subject id {value[0]} must be URI"
+                    )
+
+        return value
+
+
+class IndyOrKeyDID(Regexp):
+    """Indy or Key DID class."""
+
+    PATTERN = re.compile("|".join([DIDKey.PATTERN, IndyDID.PATTERN]))
+    EXAMPLE = IndyDID.EXAMPLE
+
+    def __init__(
+        self,
+    ):
+        """Initializer."""
+        super().__init__(
+            IndyOrKeyDID.PATTERN,
+            error="Value {input} is not in did:key or indy did format",
+        )
+
+
 # Instances for marshmallow schema specification
 INT_EPOCH = {"validate": IntEpoch(), "example": IntEpoch.EXAMPLE}
 WHOLE_NUM = {"validate": WholeNumber(), "example": WholeNumber.EXAMPLE}
@@ -553,6 +716,7 @@ INDY_ISO8601_DATETIME = {
     "validate": IndyISO8601DateTime(),
     "example": IndyISO8601DateTime.EXAMPLE,
 }
+RFC3339_DATETIME = {"validate": RFC3339DateTime(), "example": RFC3339DateTime.EXAMPLE}
 INDY_WQL = {"validate": IndyWQL(), "example": IndyWQL.EXAMPLE}
 INDY_EXTRA_WQL = {"validate": IndyExtraWQL(), "example": IndyExtraWQL.EXAMPLE}
 BASE64 = {"validate": Base64(), "example": Base64.EXAMPLE}
@@ -566,3 +730,17 @@ BASE58_SHA256_HASH = {
 UUID4 = {"validate": UUIDFour(), "example": UUIDFour.EXAMPLE}
 ENDPOINT = {"validate": Endpoint(), "example": Endpoint.EXAMPLE}
 ENDPOINT_TYPE = {"validate": EndpointType(), "example": EndpointType.EXAMPLE}
+CREDENTIAL_TYPE = {"validate": CredentialType(), "example": CredentialType.EXAMPLE}
+CREDENTIAL_CONTEXT = {
+    "validate": CredentialContext(),
+    "example": CredentialContext.EXAMPLE,
+}
+URI = {"validate": Uri(), "example": Uri.EXAMPLE}
+CREDENTIAL_SUBJECT = {
+    "validate": CredentialSubject(),
+    "example": CredentialSubject.EXAMPLE,
+}
+INDY_OR_KEY_DID = {
+    "validate": IndyOrKeyDID(),
+    "example": IndyOrKeyDID.EXAMPLE,
+}

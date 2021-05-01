@@ -30,11 +30,12 @@ class TestV20FormatFormat(TestCase):
         assert V20CredFormat.Format.get("no such format") is None
         assert V20CredFormat.Format.get("hlindy/...") is V20CredFormat.Format.INDY
         assert (
-            V20CredFormat.Format.get("dif/...").detail.__name__ == "V20CredExRecordDIF"
+            V20CredFormat.Format.get("aries/...").detail.__name__
+            == "V20CredExRecordLDProof"
         )
         assert (
-            V20CredFormat.Format.get(V20CredFormat.Format.DIF.api)
-            is V20CredFormat.Format.DIF
+            V20CredFormat.Format.get(V20CredFormat.Format.LD_PROOF.api)
+            is V20CredFormat.Format.LD_PROOF
         )
 
     def test_get_attachment_data(self):
@@ -63,7 +64,7 @@ class TestV20FormatFormat(TestCase):
         )
 
         assert (
-            V20CredFormat.Format.DIF.get_attachment_data(
+            V20CredFormat.Format.LD_PROOF.get_attachment_data(
                 formats=[
                     V20CredFormat(attach_id="indy", format_=V20CredFormat.Format.INDY)
                 ],

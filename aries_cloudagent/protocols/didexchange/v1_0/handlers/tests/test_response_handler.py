@@ -13,6 +13,8 @@ from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
 from ......transport.inbound.receipt import MessageReceipt
+from ......wallet.key_type import KeyType
+from ......wallet.did_method import DIDMethod
 
 from .....problem_report.v1_0.message import ProblemReport
 from .....trustping.v1_0.messages.ping import Ping
@@ -62,7 +64,10 @@ class TestDIDXResponseHandler(AsyncTestCase):
         self.ctx.message_receipt = MessageReceipt()
 
         wallet = (await self.ctx.session()).wallet
-        self.did_info = await wallet.create_local_did()
+        self.did_info = await wallet.create_local_did(
+            method=DIDMethod.SOV,
+            key_type=KeyType.ED25519,
+        )
 
         self.did_doc_attach = AttachDecorator.data_base64(self.did_doc().serialize())
         await self.did_doc_attach.data.sign(self.did_info.verkey, wallet)

@@ -28,7 +28,7 @@ class TestMediationRequestHandler(AsyncTestCase):
         self.context.connection_record = ConnRecord(connection_id=TEST_CONN_ID)
 
     async def test_handler_no_active_connection(self):
-        """ test mediation handler """
+        """test mediation handler"""
         handler, responder = MediationRequestHandler(), MockResponder()
         self.context.connection_ready = False
         with pytest.raises(HandlerException) as exc:

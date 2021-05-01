@@ -25,8 +25,8 @@ from ..storage.base import BaseStorage
 from ..storage.error import StorageNotFoundError
 from ..storage.record import StorageRecord
 from ..wallet.base import BaseWallet
+from ..did.did_key import DIDKey
 from ..wallet.did_info import DIDInfo
-from ..wallet.util import did_key_to_naked
 from .models.conn_record import ConnRecord
 from .models.connection_target import ConnectionTarget
 from .models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
@@ -315,11 +315,11 @@ class BaseConnectionManager:
                 else:
                     endpoint = invitation.service_blocks[0].service_endpoint
                     recipient_keys = [
-                        did_key_to_naked(k)
+                        DIDKey.from_did(k).public_key_b58
                         for k in invitation.service_blocks[0].recipient_keys
                     ]
                     routing_keys = [
-                        did_key_to_naked(k)
+                        DIDKey.from_did(k).public_key_b58
                         for k in invitation.service_blocks[0].routing_keys
                     ]
 

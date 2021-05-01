@@ -177,7 +177,6 @@ class InboundSession:
                 responder = AdminResponder(
                     profile,
                     base_responder.send_fn,
-                    base_responder.webhook_fn,
                 )
                 profile.context.injector.bind_instance(BaseResponder, responder)
 

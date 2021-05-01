@@ -141,7 +141,7 @@ class ConnRecord(BaseRecord):
             return self is ConnRecord.State.get(other)
 
     RECORD_ID_NAME = "connection_id"
-    WEBHOOK_TOPIC = "connections"
+    RECORD_TOPIC = "connections"
     LOG_STATE_FLAG = "debug.connections"
     TAG_NAMES = {"my_did", "their_did", "request_id", "invitation_key"}
 
