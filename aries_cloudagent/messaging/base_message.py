@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractclassmethod, abstractmethod, abstractproperty
 from enum import Enum, auto
-from typing import Type, TYPE_CHECKING
+from typing import Optional, Type, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .base_handler import BaseHandler
@@ -24,15 +24,15 @@ class BaseMessage(ABC):
     """
 
     @abstractproperty
-    def type(self) -> str:
+    def _type(self) -> str:
         """Return message type."""
 
     @abstractproperty
-    def id(self) -> str:  # pylint: disable=invalid-name
+    def _id(self) -> str:
         """Return message id."""
 
     @abstractproperty
-    def thread_id(self) -> str:  # pylint: disable=invalid-name
+    def _thread_id(self) -> Optional[str]:
         """Return message thread id."""
 
     @abstractmethod
@@ -44,5 +44,5 @@ class BaseMessage(ABC):
         """Return message object deserialized from value in format specified."""
 
     @abstractproperty
-    def Handler(self) -> Type["BaseHandler"]:  # pylint: disable=invalid-name
+    def Handler(self) -> Type["BaseHandler"]:
         """Return reference to handler class."""

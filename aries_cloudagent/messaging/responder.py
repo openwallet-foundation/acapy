@@ -56,7 +56,7 @@ class BaseResponder(ABC):
             payload = json.dumps(serialized)
             enc_payload = None
             if not reply_thread_id:
-                reply_thread_id = message.thread_id
+                reply_thread_id = message._thread_id
         else:
             payload = None
             enc_payload = message
