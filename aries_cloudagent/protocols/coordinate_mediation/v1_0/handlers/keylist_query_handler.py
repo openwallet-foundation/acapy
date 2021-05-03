@@ -9,6 +9,7 @@ from ....problem_report.v1_0.message import CMProblemReport, ProblemReportReason
 
 from ..manager import MediationManager, MediationNotGrantedError
 from ..messages.keylist_query import KeylistQuery
+from ..messages.problem_report import ProblemReportReason
 from ..models.mediation_record import MediationRecord
 
 
@@ -40,6 +41,5 @@ class KeylistQueryHandler(BaseHandler):
                     "en": "Mediation has not been granted for this connection",
                     "code": ProblemReportReason.MEDIATION_NOT_GRANTED.value,
                 }
-            )
             reply.assign_thread_from(context.message)
             await responder.send_reply(reply)

@@ -9,6 +9,7 @@ from ....problem_report.v1_0.message import CMProblemReport, ProblemReportReason
 
 from ..manager import MediationManager, MediationNotGrantedError
 from ..messages.keylist_update import KeylistUpdate
+from ..messages.problem_report import ProblemReportReason
 from ..models.mediation_record import MediationRecord
 
 

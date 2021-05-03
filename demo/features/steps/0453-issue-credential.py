@@ -32,6 +32,13 @@ def step_impl(context, issuer, schema_name):
         version=schema_info["schema"]["schema_version"],
     )
 
+    # confirm the cred def was actually created
+    async_sleep(2.0)
+    cred_def_saved = agent_container_GET(
+        agent["agent"], "/credential-definitions/" + cred_def_id
+    )
+    assert cred_def_saved
+
     context.schema_name = schema_name
     context.cred_def_id = cred_def_id
 

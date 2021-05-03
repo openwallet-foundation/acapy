@@ -1,11 +1,7 @@
 """Presentation ack message handler."""
 
-from .....messaging.base_handler import (
-    BaseHandler,
-    BaseResponder,
-    HandlerException,
-    RequestContext,
-)
+from .....messaging.base_handler import BaseHandler, BaseResponder, HandlerException
+from .....messaging.request_context import RequestContext
 
 from ..manager import PresentationManager
 from ..messages.presentation_ack import PresentationAck

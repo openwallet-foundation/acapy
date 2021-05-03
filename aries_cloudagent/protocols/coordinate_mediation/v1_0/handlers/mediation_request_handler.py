@@ -8,6 +8,7 @@ from ....problem_report.v1_0.message import CMProblemReport, ProblemReportReason
 
 from ..manager import MediationManager, MediationAlreadyExists
 from ..messages.mediate_request import MediationRequest
+from ..messages.problem_report import ProblemReportReason
 
 
 class MediationRequestHandler(BaseHandler):

@@ -1,7 +1,4 @@
-from asynctest import (
-    mock as async_mock,
-    TestCase as AsyncTestCase,
-)
+from asynctest import mock as async_mock, TestCase as AsyncTestCase
 
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
@@ -11,8 +8,8 @@ from ......transport.inbound.receipt import MessageReceipt
 from .....didcomm_prefix import DIDCommPrefix
 
 from ...messages.presentation_request import PresentationRequest
-from .. import presentation_request_handler as handler
 
+from .. import presentation_request_handler as handler
 
 S_ID = "NcYxiDXkpYi6ov5FcYDi1e:2:vidya:1.0"
 CD_ID = f"NcYxiDXkpYi6ov5FcYDi1e:3:CL:{S_ID}:tag1"

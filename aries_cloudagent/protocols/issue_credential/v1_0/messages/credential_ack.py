@@ -22,7 +22,7 @@ class CredentialAck(Ack):
         message_type = CREDENTIAL_ACK
 
     def __init__(self, **kwargs):
-        """Initialize credential object."""
+        """Initialize credential ack object."""
         super().__init__(**kwargs)
 
 
