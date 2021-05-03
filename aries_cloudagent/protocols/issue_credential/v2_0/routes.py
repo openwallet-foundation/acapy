@@ -268,6 +268,16 @@ class V20CredProposalRequestSchemaBase(V20IssueCredSchemaCore):
     )
 
 
+class V20CredSendRequestSchema(V20IssueCredSchemaCore):
+    """Base class for request schema for sending credential admin message."""
+
+    connection_id = fields.UUID(
+        description="Connection identifier",
+        required=True,
+        example=UUIDFour.EXAMPLE,  # typically but not necessarily a UUID4
+    )
+
+
 class V20CredBoundOfferRequestSchema(OpenAPISchema):
     """Request schema for sending bound credential offer admin message."""
 
@@ -554,7 +564,7 @@ async def credential_exchange_create(request: web.BaseRequest):
     tags=["issue-credential v2.0"],
     summary="Send holder a credential, automating entire flow",
 )
-@request_schema(V20IssueCredSchemaCore())
+@request_schema(V20CredSendRequestSchema())
 @response_schema(V20CredExRecordSchema(), 200, description="")
 async def credential_exchange_send(request: web.BaseRequest):
     """
