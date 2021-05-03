@@ -1,11 +1,8 @@
 """A problem report message."""
 
 from enum import Enum
-from typing import Mapping, Sequence
 
-from marshmallow import EXCLUDE, validates_schema, ValidationError
-
-from .....messaging.util import time_now
+from marshmallow import EXCLUDE, ValidationError, validates_schema
 
 from ....problem_report.v1_0.message import ProblemReport, ProblemReportSchema
 
@@ -53,9 +50,6 @@ class V20CredProblemReportSchema(ProblemReportSchema):
 
         Args:
             data: The data to validate
-
-        Raises:
-            ValidationError: if data has neither indy nor ld_proof
 
         """
         if (

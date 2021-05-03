@@ -27,7 +27,7 @@ from .message_types import ATTACHMENT_FORMAT, PRES_20_REQUEST, PRES_20
 from .messages.pres import V20Pres
 from .messages.pres_ack import V20PresAck
 from .messages.pres_format import V20PresFormat
-from .messages.pres_problem_report import V20PresProblemReport
+from .messages.pres_problem_report import V20PresProblemReport, ProblemReportReason
 from .messages.pres_proposal import V20PresProposal
 from .messages.pres_request import V20PresRequest
 
@@ -773,7 +773,7 @@ class V20PresManager:
     async def create_problem_report(
         self,
         pres_ex_record: V20PresExRecord,
-        explain_ltxt: str,
+        description: str,
     ):
         """
         Update pres ex record; create and return problem report.
@@ -786,7 +786,12 @@ class V20PresManager:
         async with self._profile.session() as session:
             await pres_ex_record.save(session, reason="created problem report")
 
-        report = V20PresProblemReport(explain_ltxt=explain_ltxt)
+        report = V20PresProblemReport(
+            description={
+                "en": description,
+                "code": ProblemReportReason.ABANDONED.value,
+            }
+        )
         report.assign_thread_id(pres_ex_record.thread_id)
 
         return report
@@ -812,7 +817,8 @@ class V20PresManager:
             )
 
             pres_ex_record.state = V20PresExRecord.STATE_ABANDONED
-            pres_ex_record.error_msg = message.explain_ltxt
+            code = message.description.get("code", ProblemReportReason.ABANDONED.value)
+            pres_ex_record.error_msg = f"{code}: {message.description.get('en', code)}"
             await pres_ex_record.save(session, reason="received problem report")
 
         return pres_ex_record

@@ -1517,9 +1517,7 @@ class TestProofRoutes(AsyncTestCase):
 
     async def test_presentation_exchange_problem_report_bad_pres_ex_id(self):
         self.request.json = async_mock.CoroutineMock(
-            return_value={
-                "explain_ltxt": "Did I say no problem? I meant 'No! Problem.'"
-            }
+            return_value={"description": "Did I say no problem? I meant 'no: problem.'"}
         )
         self.request.match_info = {"pres_ex_id": "dummy"}
 
@@ -1546,9 +1544,7 @@ class TestProofRoutes(AsyncTestCase):
 
     async def test_presentation_exchange_problem_report_x(self):
         self.request.json = async_mock.CoroutineMock(
-            return_value={
-                "explain_ltxt": "Did I say no problem? I meant 'No! Problem.'"
-            }
+            return_value={"description": "Did I say no problem? I meant 'no: problem.'"}
         )
         self.request.match_info = {"pres_ex_id": "dummy"}
 

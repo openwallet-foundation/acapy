@@ -1669,7 +1669,12 @@ class TestV20PresManager(AsyncTestCase):
             state=V20PresExRecord.STATE_PROPOSAL_RECEIVED,
             thread_id="dummy-thid",
         )
-        problem = V20PresProblemReport(explain_ltxt="Change of plans")
+        problem = V20PresProblemReport(
+            description={
+                "en": "Change of plans",
+                "code": test_module.ProblemReportReason.ABANDONED.value,
+            }
+        )
 
         with async_mock.patch.object(
             V20PresExRecord, "save", autospec=True
@@ -1706,7 +1711,12 @@ class TestV20PresManager(AsyncTestCase):
             state=V20PresExRecord.STATE_PROPOSAL_RECEIVED,
             thread_id="dummy-thid",
         )
-        problem = V20PresProblemReport(explain_ltxt="Change of plans")
+        problem = V20PresProblemReport(
+            description={
+                "en": "Change of plans",
+                "code": test_module.ProblemReportReason.ABANDONED.value,
+            }
+        )
 
         with async_mock.patch.object(
             V20PresExRecord,

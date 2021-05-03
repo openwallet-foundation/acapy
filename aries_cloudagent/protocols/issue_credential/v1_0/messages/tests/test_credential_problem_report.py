@@ -8,10 +8,7 @@ from .....didcomm_prefix import DIDCommPrefix
 
 from ...message_types import CREDENTIAL_PROBLEM_REPORT, PROTOCOL_PACKAGE
 
-from ..credential_problem_report import (
-    CredentialProblemReport,
-    ProblemReportReason,
-)
+from ..credential_problem_report import CredentialProblemReport, ProblemReportReason
 
 
 class TestCredentialProblemReport(TestCase):

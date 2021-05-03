@@ -335,7 +335,7 @@ class V20CredIssueRequestSchema(OpenAPISchema):
 class V20CredIssueProblemReportRequestSchema(OpenAPISchema):
     """Request schema for sending problem report."""
 
-    explain_ltxt = fields.Str(required=True)
+    description = fields.Str(required=True)
 
 
 class V20CredIdMatchInfoSchema(OpenAPISchema):
@@ -1443,7 +1443,7 @@ async def credential_exchange_problem_report(request: web.BaseRequest):
             cred_ex_record = await V20CredExRecord.retrieve_by_id(session, cred_ex_id)
         report = await cred_manager.create_problem_report(
             cred_ex_record,
-            body["explain_ltxt"],
+            body["description"],
         )
     except StorageNotFoundError as err:
         await internal_error(err, web.HTTPNotFound, None, outbound_handler)

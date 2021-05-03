@@ -4,7 +4,10 @@ from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
 from ......transport.inbound.receipt import MessageReceipt
 
-from ...messages.presentation_problem_report import PresentationProblemReport
+from ...messages.presentation_problem_report import (
+    PresentationProblemReport,
+    ProblemReportReason,
+)
 
 from .. import presentation_problem_report_handler as test_module
 
@@ -22,7 +25,10 @@ class TestPresentationProblemReportHandler(AsyncTestCase):
                 async_mock.CoroutineMock()
             )
             request_context.message = PresentationProblemReport(
-                explain_ltxt="Change of plans"
+                description={
+                    "en": "Change of plans",
+                    "code": ProblemReportReason.ABANDONED.value,
+                }
             )
             handler = test_module.PresentationProblemReportHandler()
             responder = MockResponder()
@@ -48,7 +54,10 @@ class TestPresentationProblemReportHandler(AsyncTestCase):
                 )
             )
             request_context.message = PresentationProblemReport(
-                explain_ltxt="Change of plans"
+                description={
+                    "en": "Change of plans",
+                    "code": ProblemReportReason.ABANDONED.value,
+                }
             )
             handler = test_module.PresentationProblemReportHandler()
             responder = MockResponder()

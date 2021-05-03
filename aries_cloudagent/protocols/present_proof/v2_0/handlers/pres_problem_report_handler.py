@@ -33,6 +33,5 @@ class V20PresProblemReportHandler(BaseHandler):
             )
         except (StorageError, StorageNotFoundError):
             self._logger.exception(
-                "Error processing present-proof v2.0 problem report message: %s",
-                context.message.explain_ltxt,
+                "Error processing present-proof v2.0 problem report message"
             )

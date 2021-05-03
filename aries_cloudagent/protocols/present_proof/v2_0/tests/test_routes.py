@@ -1270,9 +1270,7 @@ class TestPresentProofRoutes(AsyncTestCase):
 
     async def test_present_proof_problem_report(self):
         self.request.json = async_mock.CoroutineMock(
-            return_value={
-                "explain_ltxt": "Did I say no problem? I meant 'No! Problem.'"
-            }
+            return_value={"description": "Did I say no problem? I meant 'No! Problem.'"}
         )
         self.request.match_info = {"pres_ex_id": "dummy"}
         magic_report = async_mock.MagicMock()
@@ -1303,9 +1301,7 @@ class TestPresentProofRoutes(AsyncTestCase):
 
     async def test_present_proof_problem_report_bad_pres_ex_id(self):
         self.request.json = async_mock.CoroutineMock(
-            return_value={
-                "explain_ltxt": "Did I say no problem? I meant 'No! Problem.'"
-            }
+            return_value={"description": "Did I say no problem? I meant 'No! Problem.'"}
         )
         self.request.match_info = {"pres_ex_id": "dummy"}
 
@@ -1321,9 +1317,7 @@ class TestPresentProofRoutes(AsyncTestCase):
 
     async def test_present_proof_problem_report_x(self):
         self.request.json = async_mock.CoroutineMock(
-            return_value={
-                "explain_ltxt": "Did I say no problem? I meant 'No! Problem.'"
-            }
+            return_value={"description": "Did I say no problem? I meant 'No! Problem.'"}
         )
         self.request.match_info = {"pres_ex_id": "dummy"}
 

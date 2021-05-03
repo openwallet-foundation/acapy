@@ -302,7 +302,7 @@ class V20CredentialsFetchQueryStringSchema(OpenAPISchema):
 class V20PresProblemReportRequestSchema(OpenAPISchema):
     """Request schema for sending problem report."""
 
-    explain_ltxt = fields.Str(required=True)
+    description = fields.Str(required=True)
 
 
 class V20PresExIdMatchInfoSchema(OpenAPISchema):
@@ -987,7 +987,7 @@ async def present_proof_problem_report(request: web.BaseRequest):
             pres_ex_record = await V20PresExRecord.retrieve_by_id(session, pres_ex_id)
         report = await pres_manager.create_problem_report(
             pres_ex_record,
-            body["explain_ltxt"],
+            body["description"],
         )
     except StorageNotFoundError as err:
         await internal_error(err, web.HTTPNotFound, None, outbound_handler)

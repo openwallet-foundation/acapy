@@ -52,9 +52,6 @@ class CredentialProblemReportSchema(ProblemReportSchema):
         Args:
             data: The data to validate
 
-        Raises:
-            ValidationError: if data has neither indy nor ld_proof
-
         """
         if (
             data.get("description", {}).get("code", "")

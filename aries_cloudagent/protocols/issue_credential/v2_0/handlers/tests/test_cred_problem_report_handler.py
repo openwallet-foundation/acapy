@@ -4,7 +4,7 @@ from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
 from ......transport.inbound.receipt import MessageReceipt
 
-from ...messages.cred_problem_report import V20CredProblemReport
+from ...messages.cred_problem_report import V20CredProblemReport, ProblemReportReason
 
 from .. import cred_problem_report_handler as test_module
 
@@ -22,7 +22,10 @@ class TestCredProblemReportHandler(AsyncTestCase):
                 async_mock.CoroutineMock()
             )
             request_context.message = V20CredProblemReport(
-                explain_ltxt="Change of plans"
+                description={
+                    "en": "oh no",
+                    "code": ProblemReportReason.ISSUANCE_ABANDONED.value,
+                }
             )
             handler = test_module.CredProblemReportHandler()
             responder = MockResponder()
@@ -48,7 +51,10 @@ class TestCredProblemReportHandler(AsyncTestCase):
                 )
             )
             request_context.message = V20CredProblemReport(
-                explain_ltxt="Change of plans"
+                description={
+                    "en": "oh no",
+                    "code": ProblemReportReason.ISSUANCE_ABANDONED.value,
+                }
             )
             handler = test_module.CredProblemReportHandler()
             responder = MockResponder()

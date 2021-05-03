@@ -1086,7 +1086,12 @@ class TestPresentationManager(AsyncTestCase):
             state=V10PresentationExchange.STATE_PROPOSAL_RECEIVED,
             thread_id="dummy-thid",
         )
-        problem = PresentationProblemReport(explain_ltxt="Change of plans")
+        problem = PresentationProblemReport(
+            description={
+                "code": test_module.ProblemReportReason.ABANDONED.value,
+                "en": "Change of plans",
+            }
+        )
 
         with async_mock.patch.object(
             V10PresentationExchange, "save", autospec=True
@@ -1123,7 +1128,12 @@ class TestPresentationManager(AsyncTestCase):
             state=V10PresentationExchange.STATE_PROPOSAL_RECEIVED,
             thread_id="dummy-thid",
         )
-        problem = PresentationProblemReport(explain_ltxt="Change of plans")
+        problem = PresentationProblemReport(
+            description={
+                "code": test_module.ProblemReportReason.ABANDONED.value,
+                "en": "Change of plans",
+            }
+        )
 
         with async_mock.patch.object(
             V10PresentationExchange,

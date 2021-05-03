@@ -12,7 +12,7 @@ from .messages.cred_ack import V20CredAck
 from .messages.cred_format import V20CredFormat
 from .messages.cred_issue import V20CredIssue
 from .messages.cred_offer import V20CredOffer
-from .messages.cred_problem_report import V20CredProblemReport
+from .messages.cred_problem_report import V20CredProblemReport, ProblemReportReason
 from .messages.cred_proposal import V20CredProposal
 from .messages.cred_request import V20CredRequest
 from .messages.inner.cred_preview import V20CredPreview
@@ -674,7 +674,7 @@ class V20CredManager:
     async def create_problem_report(
         self,
         cred_ex_record: V20CredExRecord,
-        explain_ltxt: str,
+        description: str,
     ):
         """
         Update cred ex record; create and return problem report.
@@ -687,7 +687,12 @@ class V20CredManager:
         async with self._profile.session() as session:
             await cred_ex_record.save(session, reason="created problem report")
 
-        report = V20CredProblemReport(explain_ltxt=explain_ltxt)
+        report = V20CredProblemReport(
+            description={
+                "en": description,
+                "code": ProblemReportReason.ISSUANCE_ABANDONED.value,
+            }
+        )
         report.assign_thread_id(cred_ex_record.thread_id)
 
         return report
@@ -713,7 +718,11 @@ class V20CredManager:
             )
 
             cred_ex_record.state = None
-            cred_ex_record.error_msg = message.explain_ltxt
+            code = message.description.get(
+                "code",
+                ProblemReportReason.ISSUANCE_ABANDONED.value,
+            )
+            cred_ex_record.error_msg = f"{code}: {message.description.get('en', code)}"
             await cred_ex_record.save(session, reason="received problem report")
 
         return cred_ex_record

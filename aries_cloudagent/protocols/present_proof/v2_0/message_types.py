@@ -25,7 +25,7 @@ MESSAGE_TYPES = DIDCommPrefix.qualify_all(
         PRES_20: f"{PROTOCOL_PACKAGE}.messages.pres.V20Pres",
         PRES_20_ACK: f"{PROTOCOL_PACKAGE}.messages.pres_ack.V20PresAck",
         PRES_20_PROBLEM_REPORT: (
-            "f{PROTOCOL_PACKAGE}.messages.pres_ack.V20PresProblemReport"
+            f"{PROTOCOL_PACKAGE}.messages.pres_problem_report.V20PresProblemReport"
         ),
     }
 )

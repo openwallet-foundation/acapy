@@ -1,11 +1,8 @@
 """A problem report message."""
 
 from enum import Enum
-from typing import Mapping, Sequence
 
-from marshmallow import EXCLUDE
-
-from .....messaging.util import time_now
+from marshmallow import EXCLUDE, ValidationError, validates_schema
 
 from ....problem_report.v1_0.message import ProblemReport, ProblemReportSchema
 
@@ -46,3 +43,15 @@ class V20PresProblemReportSchema(ProblemReportSchema):
 
         model_class = V20PresProblemReport
         unknown = EXCLUDE
+
+    @validates_schema
+    def validate_fields(self, data, **kwargs):
+        """
+        Validate schema fields.
+
+        Args:
+            data: The data to validate
+
+        """
+        if not data.get("description", {}).get("code", ""):
+            raise ValidationError("Value for description.code must be present")

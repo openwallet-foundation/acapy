@@ -177,7 +177,7 @@ class CredentialsFetchQueryStringSchema(OpenAPISchema):
 class V10PresentationProblemReportRequestSchema(OpenAPISchema):
     """Request schema for sending problem report."""
 
-    explain_ltxt = fields.Str(required=True)
+    description = fields.Str(required=True)
 
 
 class V10PresExIdMatchInfoSchema(OpenAPISchema):
@@ -858,7 +858,7 @@ async def presentation_exchange_problem_report(request: web.BaseRequest):
             )
         report = await presentation_manager.create_problem_report(
             pres_ex_record,
-            body["explain_ltxt"],
+            body["description"],
         )
     except StorageNotFoundError as err:
         await internal_error(err, web.HTTPNotFound, None, outbound_handler)

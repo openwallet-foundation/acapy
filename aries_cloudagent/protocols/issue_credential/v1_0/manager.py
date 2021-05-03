@@ -866,10 +866,11 @@ class CredentialManager:
             )
 
             cred_ex_record.state = None
-            cred_ex_record.error_msg = (
-                f"{message.description['code']}: "
-                f"{message.description.get('en', message.description['code'])}"
+            code = message.description.get(
+                "code",
+                ProblemReportReason.ISSUANCE_ABANDONED.value,
             )
+            cred_ex_record.error_msg = f"{code}: {message.description.get('en', code)}"
             await cred_ex_record.save(session, reason="received problem report")
 
         return cred_ex_record

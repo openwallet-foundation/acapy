@@ -1424,7 +1424,12 @@ class TestV20CredManager(AsyncTestCase):
             initiator=V20CredExRecord.INITIATOR_SELF,
             role=V20CredExRecord.ROLE_ISSUER,
         )
-        problem = V20CredProblemReport(explain_ltxt="Change of plans")
+        problem = V20CredProblemReport(
+            description={
+                "code": test_module.ProblemReportReason.ISSUANCE_ABANDONED.value,
+                "en": "Insufficient privilege",
+            }
+        )
 
         with async_mock.patch.object(
             V20CredExRecord, "save", autospec=True
@@ -1453,7 +1458,12 @@ class TestV20CredManager(AsyncTestCase):
             role=V20CredExRecord.ROLE_ISSUER,
             state=V20CredExRecord.STATE_REQUEST_RECEIVED,
         )
-        problem = V20CredProblemReport(explain_ltxt="Change of plans")
+        problem = V20CredProblemReport(
+            description={
+                "code": test_module.ProblemReportReason.ISSUANCE_ABANDONED.value,
+                "en": "Insufficient privilege",
+            }
+        )
 
         with async_mock.patch.object(
             V20CredExRecord,
