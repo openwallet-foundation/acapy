@@ -1,4 +1,5 @@
 from pydid import DIDDocument
+from enum import Enum
 from ..core.profile import ProfileSession
 from ..storage.base import (
     BaseStorage,
@@ -6,7 +7,13 @@ from ..storage.base import (
     StorageNotFoundError,
 )
 
-DID_WEB_RECORD_TYPE = "did_web_did_document"
+RECORD_TYPE_DID_DOC = "did_doc"
+
+
+class VerificationMethod(Enum):
+
+    BLS12381G2 = "Bls12381G2Key2020"
+    ED25519 = "Ed25519Signature2018"
 
 
 async def retrieve_did_document(
@@ -16,7 +23,8 @@ async def retrieve_did_document(
     storage = session.inject(BaseStorage)
     try:
         record = await storage.find_record(
-            DID_WEB_RECORD_TYPE
+            RECORD_TYPE_DID_DOC,
+            {"did": "did:web"}
         )
     except StorageNotFoundError:
         record = None
@@ -30,21 +38,21 @@ async def save_did_document(
     storage = session.inject(BaseStorage)
     try:
         record = await storage.find_record(
-            DID_WEB_RECORD_TYPE,
-            {"did_doc": "x"}
+            RECORD_TYPE_DID_DOC,
+            {"did": "did:web"}
         )
     except StorageNotFoundError:
         if did_document:
             record = StorageRecord(
-                type=DID_WEB_RECORD_TYPE,
+                type=RECORD_TYPE_DID_DOC,
                 value=did_document.to_json(),
-                tags={"did_doc": "x"}
+                tags={"did": "did:web"}
             )
             await storage.add_record(record)
     else:
         if did_document:
             await storage.update_record(
-                record, did_document.to_json(), {"did_doc": "x"}
+                record, did_document.to_json(), {"did": "did:web"}
             )
         else:
             await storage.delete_record(record)

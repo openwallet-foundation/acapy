@@ -267,7 +267,10 @@ class DIDXManager(BaseConnectionManager):
                 filter(None, [base_mediation_record, mediation_record])
             ),
         )
-        if conn_rec.their_public_did is not None and conn_rec.their_public_did.startswith("did:"):
+        if (
+            conn_rec.their_public_did is not None and
+            conn_rec.their_public_did.startswith("did:")
+        ):
             qualified_did = conn_rec.their_public_did
         else:
             qualified_did = f"did:sov:{conn_rec.their_public_did}"

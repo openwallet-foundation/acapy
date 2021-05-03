@@ -3,7 +3,6 @@ DID web admin routes and public endpoint.
 
 """
 
-import json
 from aiohttp import web
 from aiohttp_apispec import (
     docs,
@@ -14,7 +13,6 @@ from aiohttp_apispec import (
 )
 
 from marshmallow import fields, validate
-
 from ..admin.request_context import AdminRequestContext
 from ..messaging.models.openapi import OpenAPISchema
 from pydid.common import DID_PATTERN
@@ -44,6 +42,27 @@ class DIDDocSchema(OpenAPISchema):
 
     did_doc = fields.Str(
         description="decentralize identifier(DID) document", required=True
+    )
+
+
+class DIDDocOptionsSchema(OpenAPISchema):
+    """Todo."""
+
+    verification_methods = fields.List(
+        fields.Dict(
+            did=fields.Str(description="did", required=False),
+            verification_relationships=fields.List(
+                fields.Str(description="verification relationships", required=False),
+                description="List of verification relationships"
+            )
+        ),
+        required=False,
+        description="List of verification methods",
+    )
+
+    services = fields.List(
+        fields.Dict(description="service block", required=False),
+        description="List of service blocks", required=False
     )
 
 
@@ -93,12 +112,11 @@ async def did_document(request: web.BaseRequest):
 @response_schema(DIDDocSchema(), 200)
 async def read_did_document(request: web.BaseRequest):
     """Retrieve a did document."""
-    # context: AdminRequestContext = request["context"]
-    # session = await context.session()
+
     context: AdminRequestContext = request["context"]
     session = await context.session()
     did_web = DIDWeb(session)
-    # did_web = session.inject(DIDWeb)
+
     did_document = await did_web.retrieve()
     # except DIDNotFound as err:
     #     raise web.HTTPNotFound(reason=err.roll_up) from err
@@ -117,9 +135,6 @@ async def read_did_document(request: web.BaseRequest):
 @response_schema(DIDDocSchema(), 200, description="")
 async def create_did_document(request: web.BaseRequest):
     """Create a did document."""
-    # context: AdminRequestContext = request["context"]
-    # session = await context.session()
-    # did_web = session.inject(DIDWeb)
     context: AdminRequestContext = request["context"]
     session = await context.session()
     did_web = DIDWeb(session)
@@ -136,7 +151,7 @@ async def create_did_document(request: web.BaseRequest):
 
 @docs(tags=["didweb"], summary="Create DID document")
 @match_info_schema(DIDMatchInfoSchema())
-@request_schema(DIDDocSchema())
+@request_schema(DIDDocOptionsSchema())
 @response_schema(DIDDocSchema(), 200, description="")
 async def create_did_document_from_wallet(request: web.BaseRequest):
     """Create a did document."""
@@ -144,7 +159,8 @@ async def create_did_document_from_wallet(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     session = await context.session()
     did_web = DIDWeb(session)
-    did_document = await did_web.create_from_wallet(did)
+    options = await request.json()
+    did_document = await did_web.create_from_wallet(did, options)
     return web.json_response(did_document)
 
 
@@ -170,7 +186,10 @@ def post_process_routes(app: web.Application):
     app._state["swagger_dict"]["tags"].append(
         {
             "name": "didweb",
-            "description": "did resolver interface.",
-            "externalDocs": {"description": "Specification"},  # , "url": SPEC_URI},
+            "description": "did web interface.",
+            "externalDocs": {
+                "description": "Specification",
+                "url": "https://w3c-ccg.github.io/did-method-web"
+            },
         }
     )
