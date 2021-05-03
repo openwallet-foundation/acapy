@@ -14,6 +14,7 @@ See the [README](README.md) for details about this repository and information ab
   - [Provisioning a Wallet](#provisioning-a-wallet)
   - [Mediation](#mediation)
   - [Multi-tenancy](#multi-tenancy)
+  - [JSON-LD Credentials](#json-ld-credentials)
 - [Developing](#developing)
   - [Prerequisites](#prerequisites)
   - [Running Locally](#running-locally)
@@ -115,6 +116,10 @@ ACA-Py can also run in mediator mode - ACA-Py can be run *as* a mediator (it can
 ### Multi-tenancy
 
 ACA-Py can also be started in multi-tenant mode. This allows the agent to serve multiple tenants, that each have their own wallet. See the [docs on multi-tenancy](Multitenancy.md) for more info.
+
+### JSON-LD Credentials
+
+ACA-Py can issue W3C Verifiable Credentials using Linked Data Proofs. See the [docs on JSON-LD Credentials](JsonLdCredentials.md) for more info.
 
 ## Developing
 
