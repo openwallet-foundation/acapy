@@ -187,6 +187,12 @@ class V20CredFilterSchema(OpenAPISchema):
 class V20IssueCredSchemaCore(AdminAPIMessageTracingSchema):
     """Filter, auto-remove, comment, trace."""
 
+    connection_id = fields.UUID(
+        description="Connection identifier",
+        required=True,
+        example=UUIDFour.EXAMPLE,  # typically but not necessarily a UUID4
+    )
+
     filter_ = fields.Nested(
         V20CredFilterSchema,
         required=True,
