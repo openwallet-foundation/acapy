@@ -7,7 +7,7 @@ from ......connections.models.conn_record import ConnRecord
 from ......messaging.base_handler import HandlerException
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
-from .....problem_report.v1_0.message import ProblemReport
+from .....problem_report.v1_0.message import CMProblemReport, ProblemReportReason
 from .....routing.v1_0.models.route_record import RouteRecord
 from ...messages.keylist import Keylist
 from ...messages.keylist_query import KeylistQuery
@@ -43,7 +43,10 @@ class TestKeylistQueryHandler(AsyncTestCase):
         assert len(responder.messages) == 1
         result, _target = responder.messages[0]
         assert isinstance(result, ProblemReport)
-        assert "not been granted" in result.explain_ltxt
+        assert (
+            result.description["code"]
+            == ProblemReportReason.MEDIATION_NOT_GRANTED.value
+        )
 
     async def test_handler_record_not_granted(self):
         handler, responder = KeylistQueryHandler(), MockResponder()
@@ -54,7 +57,10 @@ class TestKeylistQueryHandler(AsyncTestCase):
         assert len(responder.messages) == 1
         result, _target = responder.messages[0]
         assert isinstance(result, ProblemReport)
-        assert "not been granted" in result.explain_ltxt
+        assert (
+            result.description["code"]
+            == ProblemReportReason.MEDIATION_NOT_GRANTED.value
+        )
 
     async def test_handler(self):
         handler, responder = KeylistQueryHandler(), MockResponder()

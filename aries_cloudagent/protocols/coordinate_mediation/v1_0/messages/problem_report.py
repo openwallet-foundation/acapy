@@ -1,14 +1,8 @@
-"""Represents an OOB connection reuse problem report message."""
+"""Represents a coordinate-mediation problem report message."""
 
 from enum import Enum
 
-from marshmallow import (
-    EXCLUDE,
-    fields,
-    pre_dump,
-    ValidationError,
-    validates_schema,
-)
+from marshmallow import EXCLUDE, fields, ValidationError, validates_schema
 
 from ....problem_report.v1_0.message import ProblemReport, ProblemReportSchema
 
@@ -16,47 +10,40 @@ from ..message_types import PROBLEM_REPORT, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = (
     f"{PROTOCOL_PACKAGE}.handlers"
-    ".problem_report_handler.OOBProblemReportMessageHandler"
+    ".problem_report_handler.CMProblemReportHandler"
 )
 
 
 class ProblemReportReason(str, Enum):
     """Supported reason codes."""
 
-    NO_EXISTING_CONNECTION = "no_existing_connection"
-    EXISTING_CONNECTION_NOT_ACTIVE = "existing_connection_not_active"
+    MEDIATION_NOT_GRANTED = "mediation_not_granted"
+    MEDIATION_REQUEST_REPEAT = "request_already_exists_from_connection"
 
 
-class OOBProblemReport(ProblemReport):
-    """Base class representing an OOB connection reuse problem report message."""
+class CMProblemReport(ProblemReport):
+    """Base class representing a coordinate mediation problem report message."""
 
     class Meta:
-        """OOB connection reuse problem report metadata."""
+        """CMProblemReport metadata."""
 
         handler_class = HANDLER_CLASS
         message_type = PROBLEM_REPORT
-        schema_class = "OOBProblemReportSchema"
+        schema_class = "CMProblemReportSchema"
 
     def __init__(self, *args, **kwargs):
         """Initialize a ProblemReport message instance."""
         super().__init__(*args, **kwargs)
 
 
-class OOBProblemReportSchema(ProblemReportSchema):
+class CMProblemReportSchema(ProblemReportSchema):
     """Schema for ProblemReport base class."""
 
     class Meta:
         """Metadata for problem report schema."""
 
-        model_class = OOBProblemReport
+        model_class = CMProblemReport
         unknown = EXCLUDE
-
-    @pre_dump
-    def check_thread_deco(self, obj, **kwargs):
-        """Thread decorator, and its thid and pthid, are mandatory."""
-        if not obj._decorators.to_dict().get("~thread", {}).keys() >= {"thid", "pthid"}:
-            raise ValidationError("Missing required field(s) in thread decorator")
-        return obj
 
     @validates_schema
     def validate_fields(self, data, **kwargs):
