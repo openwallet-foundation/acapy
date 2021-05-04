@@ -1007,7 +1007,7 @@ class OutOfBandManager(BaseConnectionManager):
             await conn_record.metadata_set(
                 session=self._session, key="reuse_msg_state", value="not_accepted"
             )
-        except BaseError as e:
+        except Exception as e:
             raise OutOfBandManagerError(
                 (
                     (

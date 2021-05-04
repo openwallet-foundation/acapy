@@ -3,7 +3,6 @@
 from .....messaging.base_handler import BaseHandler, HandlerException
 from .....messaging.request_context import RequestContext
 from .....messaging.responder import BaseResponder
-from .....messaging.base_handler import (
 from .....storage.error import StorageNotFoundError
 
 from ..manager import MediationManager

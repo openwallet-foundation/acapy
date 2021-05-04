@@ -40,38 +40,13 @@ async def session(request_context) -> ProfileSession:
 
 class TestCMProblemReportHandler:
     @pytest.mark.asyncio
-    @async_mock.patch.object(test_module, "MediationManager")
-    async def test_called(self, mock_mgr, request_context, connection_record):
-        mock_mgr.return_value.receive_problem_report = async_mock.CoroutineMock()
+    async def test_cover(self, request_context, connection_record):
         request_context.message = CMProblemReport(
             description={
                 "en": "Mediation not granted",
                 "code": ProblemReportReason.MEDIATION_NOT_GRANTED.value,
             }
         )
-        handler = test_module.CMProblemReportMessageHandler()
+        handler = test_module.CMProblemReportHandler()
         responder = MockResponder()
         await handler.handle(context=request_context, responder=responder)
-        mock_mgr.return_value.receive_problem_report.assert_called_once_with(
-            problem_report=request_context.message,
-            receipt=request_context.message_receipt,
-            conn_record=connection_record,
-        )
-
-    @pytest.mark.asyncio
-    @async_mock.patch.object(test_module, "MediationManager")
-    async def test_exception(self, mock_mgr, request_context, connection_record):
-        mock_mgr.return_value.receive_problem_report = async_mock.CoroutineMock()
-        mock_mgr.return_value.receive_problem_report.side_effect = (
-            MediationManagerError("error")
-        )
-        request_context.message = CMProblemReport(
-            description={
-                "en": "Connection not active",
-                "code": ProblemReportReason.EXISTING_CONNECTION_NOT_ACTIVE.value,
-            }
-        )
-        handler = test_module.CMProblemReportMessageHandler()
-        responder = MockResponder()
-        await handler.handle(context=request_context, responder=responder)
-        assert mock_mgr.return_value._logger.exception.called_once_("error")

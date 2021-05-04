@@ -4,11 +4,9 @@ from .....messaging.base_handler import BaseHandler, HandlerException
 from .....messaging.request_context import RequestContext
 from .....messaging.responder import BaseResponder
 
-from ....problem_report.v1_0.message import CMProblemReport, ProblemReportReason
-
 from ..manager import MediationManager, MediationAlreadyExists
 from ..messages.mediate_request import MediationRequest
-from ..messages.problem_report import ProblemReportReason
+from ..messages.problem_report import CMProblemReport, ProblemReportReason
 
 
 class MediationRequestHandler(BaseHandler):

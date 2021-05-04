@@ -2,15 +2,14 @@
 
 from enum import Enum
 
-from marshmallow import EXCLUDE, fields, ValidationError, validates_schema
+from marshmallow import EXCLUDE, ValidationError, validates_schema
 
 from ....problem_report.v1_0.message import ProblemReport, ProblemReportSchema
 
 from ..message_types import PROBLEM_REPORT, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = (
-    f"{PROTOCOL_PACKAGE}.handlers"
-    ".problem_report_handler.CMProblemReportHandler"
+    f"{PROTOCOL_PACKAGE}.handlers" ".problem_report_handler.CMProblemReportHandler"
 )
 
 
@@ -49,10 +48,9 @@ class CMProblemReportSchema(ProblemReportSchema):
     def validate_fields(self, data, **kwargs):
         """Validate schema fields."""
 
-        if (
-            data.get("description", {}).get("code", "")
-            not in [prr.value for prr in ProblemReportReason]
-        ):
+        if data.get("description", {}).get("code", "") not in [
+            prr.value for prr in ProblemReportReason
+        ]:
             raise ValidationError(
                 "Value for description.code must be one of "
                 f"{[prr.reason for prr in ProblemReportReason]}"

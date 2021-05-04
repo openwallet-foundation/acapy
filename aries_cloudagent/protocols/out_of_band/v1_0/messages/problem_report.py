@@ -4,7 +4,6 @@ from enum import Enum
 
 from marshmallow import (
     EXCLUDE,
-    fields,
     pre_dump,
     validates_schema,
     ValidationError,
@@ -64,10 +63,9 @@ class OOBProblemReportSchema(ProblemReportSchema):
     def validate_fields(self, data, **kwargs):
         """Validate schema fields."""
 
-        if (
-            data.get("description", {}).get("code", "")
-            not in [prr.value for prr in ProblemReportReason]
-        ):
+        if data.get("description", {}).get("code", "") not in [
+            prr.value for prr in ProblemReportReason
+        ]:
             raise ValidationError(
                 "Value for description.code must be one of "
                 f"{[prr.value for prr in ProblemReportReason]}"
