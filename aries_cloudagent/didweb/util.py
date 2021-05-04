@@ -13,7 +13,7 @@ RECORD_TYPE_DID_DOC = "did_doc"
 class VerificationMethod(Enum):
 
     BLS12381G2 = "Bls12381G2Key2020"
-    ED25519 = "Ed25519Signature2018"
+    ED25519 = "Ed25519VerificationKey2018"
 
 
 async def retrieve_did_document(
