@@ -14,6 +14,7 @@ PRES_20_PROPOSAL = "present-proof/2.0/propose-presentation"
 PRES_20_REQUEST = "present-proof/2.0/request-presentation"
 PRES_20 = "present-proof/2.0/presentation"
 PRES_20_ACK = "present-proof/2.0/ack"
+PRES_20_PROBLEM_REPORT = "present-proof/2.0/problem-report"
 
 PROTOCOL_PACKAGE = "aries_cloudagent.protocols.present_proof.v2_0"
 
@@ -23,6 +24,9 @@ MESSAGE_TYPES = DIDCommPrefix.qualify_all(
         PRES_20_REQUEST: f"{PROTOCOL_PACKAGE}.messages.pres_request.V20PresRequest",
         PRES_20: f"{PROTOCOL_PACKAGE}.messages.pres.V20Pres",
         PRES_20_ACK: f"{PROTOCOL_PACKAGE}.messages.pres_ack.V20PresAck",
+        PRES_20_PROBLEM_REPORT: (
+            f"{PROTOCOL_PACKAGE}.messages.pres_problem_report.V20PresProblemReport"
+        ),
     }
 )
 

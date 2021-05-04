@@ -33,6 +33,7 @@ from ..message_types import (
 from ..messages.pres import V20Pres
 from ..messages.pres_ack import V20PresAck
 from ..messages.pres_format import V20PresFormat
+from ..messages.pres_problem_report import V20PresProblemReport
 from ..messages.pres_proposal import V20PresProposal
 from ..messages.pres_request import V20PresRequest
 from ..models.pres_exchange import V20PresExRecord
@@ -1637,3 +1638,92 @@ class TestV20PresManager(AsyncTestCase):
             save_ex.assert_called_once()
 
             assert px_rec_out.state == V20PresExRecord.STATE_DONE
+
+    async def test_create_problem_report(self):
+        connection_id = "connection-id"
+        stored_exchange = V20PresExRecord(
+            pres_ex_id="dummy-pxid",
+            connection_id=connection_id,
+            initiator=V20PresExRecord.INITIATOR_SELF,
+            role=V20PresExRecord.ROLE_VERIFIER,
+            state=V20PresExRecord.STATE_PROPOSAL_RECEIVED,
+            thread_id="dummy-thid",
+        )
+
+        with async_mock.patch.object(V20PresExRecord, "save", autospec=True) as save_ex:
+            report = await self.manager.create_problem_report(
+                stored_exchange,
+                "The front fell off",
+            )
+
+        assert stored_exchange.state == V20PresExRecord.STATE_ABANDONED
+        assert report._thread_id == stored_exchange.thread_id
+
+    async def test_receive_problem_report(self):
+        connection_id = "connection-id"
+        stored_exchange = V20PresExRecord(
+            pres_ex_id="dummy-cxid",
+            connection_id=connection_id,
+            initiator=V20PresExRecord.INITIATOR_SELF,
+            role=V20PresExRecord.ROLE_VERIFIER,
+            state=V20PresExRecord.STATE_PROPOSAL_RECEIVED,
+            thread_id="dummy-thid",
+        )
+        problem = V20PresProblemReport(
+            description={
+                "en": "Change of plans",
+                "code": test_module.ProblemReportReason.ABANDONED.value,
+            }
+        )
+
+        with async_mock.patch.object(
+            V20PresExRecord, "save", autospec=True
+        ) as save_ex, async_mock.patch.object(
+            V20PresExRecord,
+            "retrieve_by_tag_filter",
+            async_mock.CoroutineMock(),
+        ) as retrieve_ex, async_mock.patch.object(
+            self.profile,
+            "session",
+            async_mock.MagicMock(return_value=self.profile.session()),
+        ) as session:
+            retrieve_ex.return_value = stored_exchange
+
+            ret_exchange = await self.manager.receive_problem_report(
+                problem, connection_id
+            )
+            retrieve_ex.assert_called_once_with(
+                session.return_value,
+                {"thread_id": problem._thread_id},
+                {"connection_id": connection_id},
+            )
+            save_ex.assert_called_once()
+
+        assert stored_exchange.state == V20PresExRecord.STATE_ABANDONED
+
+    async def test_receive_problem_report_x(self):
+        connection_id = "connection-id"
+        stored_exchange = V20PresExRecord(
+            pres_ex_id="dummy-cxid",
+            connection_id=connection_id,
+            initiator=V20PresExRecord.INITIATOR_SELF,
+            role=V20PresExRecord.ROLE_VERIFIER,
+            state=V20PresExRecord.STATE_PROPOSAL_RECEIVED,
+            thread_id="dummy-thid",
+        )
+        problem = V20PresProblemReport(
+            description={
+                "en": "Change of plans",
+                "code": test_module.ProblemReportReason.ABANDONED.value,
+            }
+        )
+
+        with async_mock.patch.object(
+            V20PresExRecord,
+            "retrieve_by_tag_filter",
+            async_mock.CoroutineMock(),
+        ) as retrieve_ex:
+            retrieve_ex.side_effect = test_module.StorageNotFoundError("No such record")
+
+            with self.assertRaises(test_module.StorageNotFoundError):
+                await self.manager.receive_problem_report(problem, connection_id)

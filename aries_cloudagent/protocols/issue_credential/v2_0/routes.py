@@ -36,7 +36,6 @@ from ....utils.outofband import serialize_outofband
 from ....utils.tracing import trace_event, get_timer, AdminAPIMessageTracingSchema
 
 from ...problem_report.v1_0 import internal_error
-from ...problem_report.v1_0.message import ProblemReport
 
 from .manager import V20CredManager, V20CredManagerError
 from .message_types import ATTACHMENT_FORMAT, CRED_20_PROPOSAL, SPEC_URI
@@ -336,7 +335,7 @@ class V20CredIssueRequestSchema(OpenAPISchema):
 class V20CredIssueProblemReportRequestSchema(OpenAPISchema):
     """Request schema for sending problem report."""
 
-    explain_ltxt = fields.Str(required=True)
+    description = fields.Str(required=True)
 
 
 class V20CredIdMatchInfoSchema(OpenAPISchema):
@@ -1431,34 +1430,27 @@ async def credential_exchange_problem_report(request: web.BaseRequest):
         request: aiohttp request object
 
     """
-    r_time = get_timer()
-
     context: AdminRequestContext = request["context"]
     outbound_handler = request["outbound_message_router"]
 
     cred_ex_id = request.match_info["cred_ex_id"]
     body = await request.json()
 
+    cred_manager = V20CredManager(context.profile)
+
     try:
-        async with await context.session() as session:
-            cred_ex_record = await V20CredExRecord.retrieve_by_id(
-                session,
-                cred_ex_id,
-            )
+        async with context.session() as session:
+            cred_ex_record = await V20CredExRecord.retrieve_by_id(session, cred_ex_id)
+        report = await cred_manager.create_problem_report(
+            cred_ex_record,
+            body["description"],
+        )
     except StorageNotFoundError as err:
-        raise web.HTTPNotFound(reason=err.roll_up) from err
+        await internal_error(err, web.HTTPNotFound, None, outbound_handler)
+    except StorageError as err:
+        await internal_error(err, web.HTTPBadRequest, cred_ex_record, outbound_handler)
 
-    error_result = ProblemReport(explain_ltxt=body["explain_ltxt"])
-    error_result.assign_thread_id(cred_ex_record.thread_id)
-
-    await outbound_handler(error_result, connection_id=cred_ex_record.connection_id)
-
-    trace_event(
-        context.settings,
-        error_result,
-        outcome="credential_exchange_problem_report.END",
-        perf_counter=r_time,
-    )
+    await outbound_handler(report, connection_id=cred_ex_record.connection_id)
 
     return web.json_response({})
 

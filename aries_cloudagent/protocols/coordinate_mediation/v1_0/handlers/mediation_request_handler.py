@@ -6,9 +6,12 @@ from .....messaging.base_handler import (
     HandlerException,
     RequestContext,
 )
+
 from ....problem_report.v1_0.message import ProblemReport
+
 from ..manager import MediationManager, MediationAlreadyExists
 from ..messages.mediate_request import MediationRequest
+from ..messages.problem_report import ProblemReportReason
 
 
 class MediationRequestHandler(BaseHandler):
@@ -35,6 +38,9 @@ class MediationRequestHandler(BaseHandler):
         except MediationAlreadyExists:
             await responder.send_reply(
                 ProblemReport(
-                    explain_ltxt="Mediation request already exists from this connection"
+                    description={
+                        "en": "Mediation request already exists from this connection",
+                        "code": ProblemReportReason.MEDIATION_ALREADY_EXISTS.value,
+                    }
                 )
             )
