@@ -14,7 +14,7 @@ HANDLER_CLASS = (
 )
 
 
-class ProblemReportReason(str, Enum):
+class ProblemReportReason(Enum):
     """Supported reason codes."""
 
     MEDIATION_NOT_GRANTED = "mediation_not_granted"

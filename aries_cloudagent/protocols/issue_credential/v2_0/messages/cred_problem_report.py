@@ -13,7 +13,7 @@ HANDLER_CLASS = (
 )
 
 
-class ProblemReportReason(str, Enum):
+class ProblemReportReason(Enum):
     """Supported reason codes."""
 
     ISSUANCE_ABANDONED = "issuance-abandoned"

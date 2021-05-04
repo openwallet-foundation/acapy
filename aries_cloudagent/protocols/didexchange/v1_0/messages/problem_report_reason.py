@@ -3,7 +3,7 @@
 from enum import Enum
 
 
-class ProblemReportReason(str, Enum):
+class ProblemReportReason(Enum):
     """Supported reason codes."""
 
     INVITATION_NOT_ACCEPTED = "invitation_not_accepted"

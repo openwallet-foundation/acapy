@@ -6,8 +6,8 @@ from marshmallow import (
     EXCLUDE,
     fields,
     pre_dump,
-    ValidationError,
     validates_schema,
+    ValidationError,
 )
 
 from ....problem_report.v1_0.message import ProblemReport, ProblemReportSchema
@@ -20,7 +20,7 @@ HANDLER_CLASS = (
 )
 
 
-class ProblemReportReason(str, Enum):
+class ProblemReportReason(Enum):
     """Supported reason codes."""
 
     NO_EXISTING_CONNECTION = "no_existing_connection"
@@ -54,8 +54,10 @@ class OOBProblemReportSchema(ProblemReportSchema):
     @pre_dump
     def check_thread_deco(self, obj, **kwargs):
         """Thread decorator, and its thid and pthid, are mandatory."""
+
         if not obj._decorators.to_dict().get("~thread", {}).keys() >= {"thid", "pthid"}:
             raise ValidationError("Missing required field(s) in thread decorator")
+
         return obj
 
     @validates_schema
@@ -68,5 +70,5 @@ class OOBProblemReportSchema(ProblemReportSchema):
         ):
             raise ValidationError(
                 "Value for description.code must be one of "
-                f"{[prr.reason for prr in ProblemReportReason]}"
+                f"{[prr.value for prr in ProblemReportReason]}"
             )
