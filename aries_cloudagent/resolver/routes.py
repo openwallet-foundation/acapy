@@ -35,7 +35,7 @@ from marshmallow import fields, validate
 
 from ..admin.request_context import AdminRequestContext
 from ..messaging.models.openapi import OpenAPISchema
-from .base import DIDMethodNotSupported, DIDNotFound, ResolverError
+from .base import DIDMethodNotSupported, DIDNotFound, ResolverError, Resolution
 from pydid.common import DID_PATTERN
 from .did_resolver import DIDResolver
 
@@ -103,8 +103,8 @@ async def resolve_did(request: web.BaseRequest):
     try:
         session = await context.session()
         resolver = session.inject(DIDResolver)
-        document, resolver_metadata = await resolver.resolve(context.profile, did)
-        result = document.serialize()
+        resolution: Resolution = await resolver.resolve(context.profile, did)
+        result = resolution.did_doc.serialize()
     except DIDNotFound as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
     except DIDMethodNotSupported as err:

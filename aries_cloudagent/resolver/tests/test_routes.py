@@ -12,6 +12,7 @@ from ..base import (
     DIDMethodNotSupported,
     DIDNotFound,
     ResolverError,
+    Resolution,
 )
 from ..did_resolver import DIDResolver
 from . import DOC
@@ -31,7 +32,9 @@ def mock_response():
 @pytest.fixture
 def mock_resolver():
     did_resolver = async_mock.MagicMock()
-    did_resolver.resolve = async_mock.CoroutineMock(return_value=did_doc)
+    did_resolver.resolve = async_mock.CoroutineMock(
+        return_value=Resolution(did_doc, {})
+    )
     yield did_resolver
 
 
@@ -57,7 +60,9 @@ def mock_request(mock_resolver):
 @pytest.mark.asyncio
 async def test_resolver(mock_request, mock_response):
     await test_module.resolve_did(mock_request)
-    mock_response.assert_called_once_with(did_doc.serialize())
+    mock_response.assert_called_once_with(
+        did_doc.serialize(),
+    )
     # TODO: test http response codes
 
 

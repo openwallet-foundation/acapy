@@ -7,7 +7,6 @@ For Connection, DIDExchange and OutOfBand Manager.
 import logging
 from typing import List, Sequence, Tuple
 
-from pydid import DIDDocument as ResolvedDocument
 from pydid.doc.didcomm_service import DIDCommService
 from pydid.doc.verification_method import VerificationMethod
 
@@ -19,7 +18,7 @@ from ..protocols.connections.v1_0.messages.connection_invitation import (
 from ..protocols.coordinate_mediation.v1_0.models.mediation_record import (
     MediationRecord,
 )
-from ..resolver.base import ResolverError
+from ..resolver.base import ResolverError, Resolution
 from ..resolver.did_resolver import DIDResolver
 from ..storage.base import BaseStorage
 from ..storage.error import StorageNotFoundError
@@ -223,7 +222,8 @@ class BaseConnectionManager:
 
         resolver = self._session.inject(DIDResolver)
         try:
-            doc, resolver_metadata = await resolver.resolve(self._session.profile, did)
+            resolution: Resolution = await resolver.resolve(self._session.profile, did)
+            doc = resolution.did_doc
         except ResolverError as error:
             raise BaseConnectionManagerError(
                 "Failed to resolve public DID in invitation"

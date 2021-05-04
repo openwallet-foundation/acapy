@@ -9,7 +9,7 @@ import logging
 from itertools import chain
 from typing import Union
 
-from pydid import DID, DIDDocument, DIDError, DIDUrl, Service, VerificationMethod
+from pydid import DID, DIDError, DIDUrl, Service, VerificationMethod
 
 from ..core.profile import Profile
 
@@ -18,6 +18,7 @@ from .base import (
     DIDMethodNotSupported,
     DIDNotFound,
     ResolverError,
+    Resolution,
 )
 from .did_resolver_registry import DIDResolverRegistry
 
@@ -31,16 +32,20 @@ class DIDResolver:
         """Initialize a `didresolver` instance."""
         self.did_resolver_registry = registry
 
-    async def resolve(
-        self, profile: Profile, did: Union[str, DID]
-    ) -> tuple(DIDDocument, dict):
+    async def resolve(self, profile: Profile, did: Union[str, DID]) -> Resolution:
         """Retrieve did doc from public registry."""
         # TODO Cache results
         py_did = DID(did) if isinstance(did, str) else did
         for resolver in self._match_did_to_resolver(py_did):
             try:
                 LOGGER.debug("Resolving DID %s with %s", did, resolver)
-                return await resolver.resolve(profile, py_did)
+                resolution: Resolution = await resolver.resolve(profile, py_did)
+                LOGGER.debug(
+                    "Resolution metadata for did %s: %s",
+                    did,
+                    resolution.resolver_metadata,
+                )
+                return resolution
             except DIDNotFound:
                 LOGGER.debug("DID %s not found by resolver %s", did, resolver)
 
@@ -74,8 +79,8 @@ class DIDResolver:
         # TODO Use cached DID Docs when possible
         try:
             did_url = DIDUrl.parse(did_url)
-            doc, resolver_metadata = await self.resolve(profile, did_url.did)
-            return doc.dereference(did_url)
+            resolution: Resolution = await self.resolve(profile, did_url.did)
+            return resolution.did_doc.dereference(did_url)
         except DIDError as err:
             raise ResolverError(
                 "Failed to parse DID URL from {}".format(did_url)
