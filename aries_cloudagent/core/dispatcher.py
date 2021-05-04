@@ -34,6 +34,10 @@ from .protocol_registry import ProtocolRegistry
 LOGGER = logging.getLogger(__name__)
 
 
+class ProblemReportParseError(MessageParseError):
+    """Error to raise on failure to parse problem-report message."""
+
+
 class Dispatcher:
     """
     Dispatcher class.
@@ -130,14 +134,21 @@ class Dispatcher:
         r_time = get_timer()
 
         error_result = None
+        message = None
         try:
             message = await self.make_message(inbound_message.payload)
+        except ProblemReportParseError:
+            pass  # avoid problem report recursion
         except MessageParseError as e:
             LOGGER.error(f"Message parsing failed: {str(e)}, sending problem report")
-            error_result = ProblemReport(explain_ltxt=str(e))
+            error_result = ProblemReport(
+                description={
+                    "en": str(e),
+                    "code": "message-parse-failure",
+                }
+            )
             if inbound_message.receipt.thread_id:
                 error_result.assign_thread_id(inbound_message.receipt.thread_id)
-            message = None
 
         trace_event(
             self.profile.settings,
@@ -174,13 +185,14 @@ class Dispatcher:
 
         if error_result:
             await responder.send_reply(error_result)
-            return
+        elif context.message:
+            context.injector.bind_instance(BaseResponder, responder)
 
-        handler_cls = context.message.Handler
-        handler = handler_cls().handle
-        if self.collector:
-            handler = self.collector.wrap_coro(handler, [handler.__qualname__])
-        await handler(context, responder)
+            handler_cls = context.message.Handler
+            handler = handler_cls().handle
+            if self.collector:
+                handler = self.collector.wrap_coro(handler, [handler.__qualname__])
+            await handler(context, responder)
 
         trace_event(
             self.profile.settings,
@@ -209,12 +221,14 @@ class Dispatcher:
 
         """
 
-        registry: ProtocolRegistry = self.profile.inject(ProtocolRegistry)
+        if not isinstance(parsed_msg, dict):
+            raise MessageParseError("Expected a JSON object")
         message_type = parsed_msg.get("@type")
 
         if not message_type:
             raise MessageParseError("Message does not contain '@type' parameter")
 
+        registry: ProtocolRegistry = self.profile.inject(ProtocolRegistry)
         try:
             message_cls = registry.resolve_message_class(message_type)
         except ProtocolMinorVersionNotSupported as e:
@@ -226,6 +240,8 @@ class Dispatcher:
         try:
             instance = message_cls.deserialize(parsed_msg)
         except BaseModelError as e:
+            if "/problem-report" in message_type:
+                raise ProblemReportParseError("Error parsing problem report message")
             raise MessageParseError(f"Error deserializing message: {e}") from e
 
         return instance

@@ -1,12 +1,8 @@
 """Presentation request message handler."""
 
 from .....indy.holder import IndyHolder
-from .....messaging.base_handler import (
-    BaseHandler,
-    BaseResponder,
-    HandlerException,
-    RequestContext,
-)
+from .....messaging.base_handler import BaseHandler, BaseResponder, HandlerException
+from .....messaging.request_context import RequestContext
 from .....storage.error import StorageNotFoundError
 from .....utils.tracing import trace_event, get_timer
 

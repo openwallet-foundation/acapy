@@ -48,10 +48,7 @@ class DIDXResponseHandler(BaseHandler):
                             "Error parsing DIDDoc for problem report"
                         )
                 await responder.send_reply(
-                    ProblemReport(
-                        explain_ltxt=e.message,
-                        problem_items=[{e.error_code: e.message}],
-                    ),
+                    ProblemReport(description={"en": e.message, "code": e.error_code}),
                     target_list=targets,
                 )
             return

@@ -29,6 +29,7 @@ class TestDIDXInvitationHandler:
         assert len(messages) == 1
         result, target = messages[0]
         assert isinstance(result, ProblemReport) and (
-            ProblemReportReason.INVITATION_NOT_ACCEPTED.value in result.problem_items[0]
+            result.description["code"]
+            == ProblemReportReason.INVITATION_NOT_ACCEPTED.value
         )
         assert not target

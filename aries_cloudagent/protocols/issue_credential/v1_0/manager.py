@@ -25,6 +25,10 @@ from ....storage.error import StorageNotFoundError
 from .messages.credential_ack import CredentialAck
 from .messages.credential_issue import CredentialIssue
 from .messages.credential_offer import CredentialOffer
+from .messages.credential_problem_report import (
+    CredentialProblemReport,
+    ProblemReportReason,
+)
 from .messages.credential_proposal import CredentialProposal
 from .messages.credential_request import CredentialRequest
 from .messages.inner.credential_preview import CredentialPreview
@@ -812,5 +816,61 @@ class CredentialManager:
         if cred_ex_record.auto_remove:
             async with self._profile.session() as session:
                 await cred_ex_record.delete_record(session)  # all done: delete
+
+        return cred_ex_record
+
+    async def create_problem_report(
+        self,
+        cred_ex_record: V10CredentialExchange,
+        description: str,
+    ):
+        """
+        Update cred ex record; create and return problem report.
+
+        Returns:
+            problem report
+
+        """
+        cred_ex_record.state = None
+        async with self._profile.session() as session:
+            await cred_ex_record.save(session, reason="created problem report")
+
+        report = CredentialProblemReport(
+            description={
+                "en": description,
+                "code": ProblemReportReason.ISSUANCE_ABANDONED.value,
+            }
+        )
+        report.assign_thread_id(cred_ex_record.thread_id)
+
+        return report
+
+    async def receive_problem_report(
+        self, message: CredentialProblemReport, connection_id: str
+    ):
+        """
+        Receive problem report.
+
+        Returns:
+            credential exchange record, retrieved and updated
+
+        """
+        # FIXME use transaction, fetch for_update
+        async with self._profile.session() as session:
+            cred_ex_record = await (
+                V10CredentialExchange.retrieve_by_connection_and_thread(
+                    session,
+                    connection_id,
+                    message._thread_id,
+                )
+            )
+
+            cred_ex_record.state = None
+            code = message.description.get(
+                "code",
+                ProblemReportReason.ISSUANCE_ABANDONED.value,
+            )
+            cred_ex_record.error_msg = f"{code}: {message.description.get('en', code)}"
+            await cred_ex_record.save(session, reason="received problem report")
 
         return cred_ex_record

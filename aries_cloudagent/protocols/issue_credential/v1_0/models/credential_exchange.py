@@ -246,7 +246,7 @@ class V10CredentialExchangeSchema(BaseExchangeSchema):
     error_msg = fields.Str(
         required=False,
         description="Error message",
-        example="credential definition identifier is not set in proposal",
+        example="Credential definition identifier is not set in proposal",
     )
     revoc_reg_id = fields.Str(
         required=False, description="Revocation registry identifier"

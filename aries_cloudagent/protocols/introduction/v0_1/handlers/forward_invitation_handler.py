@@ -34,4 +34,11 @@ class ForwardInvitationHandler(BaseHandler):
             await connection_mgr.receive_invitation(context.message.invitation)
         except ConnectionManagerError as e:
             self._logger.exception("Error receiving forward connection invitation")
-            await responder.send_reply(ProblemReport(explain_ltxt=e.message))
+            await responder.send_reply(
+                ProblemReport(
+                    description={
+                        "en": e.message,
+                        "code": e.error_code or "forward-invitation-error",
+                    }
+                )
+            )

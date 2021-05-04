@@ -14,7 +14,7 @@ async def internal_error(
 ):
     """Send problem report and raise corresponding HTTP error."""
     if record:
-        error_result = ProblemReport(explain_ltxt=err.roll_up)
+        error_result = ProblemReport(description={"en": err.roll_up})
         thid = getattr(record, "thread_id", None)
         if thid:
             error_result.assign_thread_id(thid)
