@@ -1,6 +1,6 @@
 # JSON-LD Credentials in ACA-Py <!-- omit in toc -->
 
-By design Hyperledger Aries is credential format agnostic. This means you can use it for any credential format, as long as an RFC is defined for the specific credential format. ACA-Py supports two types of credentials, Indy and JSON-LD credentials. This document describes how to use the latter by making use of [W3C Verifiable Credentials](https://www.w3.org/TR/vc-data-model/) using [Linked Data Proofs](https://w3c-ccg.github.io/ld-proofs).
+By design Hyperledger Aries is credential format agnostic. This means you can use it for any credential format, as long as an RFC is defined for the specific credential format. ACA-Py currently supports two types of credentials, Indy and JSON-LD credentials. This document describes how to use the latter by making use of [W3C Verifiable Credentials](https://www.w3.org/TR/vc-data-model/) using [Linked Data Proofs](https://w3c-ccg.github.io/ld-proofs).
 
 ## Table of Contents <!-- omit in toc -->
 
@@ -10,7 +10,7 @@ By design Hyperledger Aries is credential format agnostic. This means you can us
   - [JSON-LD Context](#json-ld-context)
     - [Writing JSON-LD Contexts](#writing-json-ld-contexts)
   - [Signature Suite](#signature-suite)
-  - [DID Method](#did-method)
+  - [Did Method](#did-method)
     - [`did:sov`](#didsov)
     - [`did:key`](#didkey)
 - [Issuing Credentials](#issuing-credentials)
@@ -19,7 +19,7 @@ By design Hyperledger Aries is credential format agnostic. This means you can us
 
 ## General Concept
 
-For the rest of this guide some basic knowledge regarding W3C Verifiable Credentials, JSON-LD and Linked Data Proofs is assumed. If you're not familiar with some of these concepts, the following resources can help you get started:
+The rest of this guide assumes some basic understanding of W3C Verifiable Credentials, JSON-LD and Linked Data Proofs. If you're not familiar with some of these concepts, the following resources can help you get started:
 
 - [Verifiable Credentials Data Model](https://www.w3.org/TR/vc-data-model/)
 - [JSON-LD Articles and Presentations](https://json-ld.org/learn.html)
@@ -36,11 +36,11 @@ Some other resources that can help you get started with BBS+ credentials:
 
 ## Preparing to Issue a Credential
 
-In contrary to Indy credentials, JSON-LD credentials do not need a schema or credential definition to issue credentials. Everything required to issue the credential is embedded into the credential itself using Linked Data Contexts.
+Contrary to Indy credentials, JSON-LD credentials do not need a schema or credential definition to issue credentials. Everything required to issue the credential is embedded into the credential itself using Linked Data Contexts.
 
 ### JSON-LD Context
 
-It is required that every property key in the document can be mapped to an IRI. This means the property key must either be an IRI by default, of have the shorthand property mapped in the `@context` of the document. If you have properties that are not IRIs the Issue Credential API will throw the following error:
+It is required that every property key in the document can be mapped to an IRI. This means the property key must either be an IRI by default, or have the shorthand property mapped in the `@context` of the document. If you have properties that are not mapped to IRIs, the Issue Credential API will throw the following error:
 
 > "\<x> attributes dropped. Provide definitions in context to correct. [\<missing-properties>]"
 
@@ -65,7 +65,7 @@ Writing JSON-LD contexts can be a daunting task and is out of scope of this guid
 
 Verifiable credentials are not around that long, so there aren't that many vocabularies ready to use. If you can't use one of the existing vocabularies it is still beneficial to lean on already defined lower level contexts. http://schema.org has a large registry of definitions that can be used to build new contexts. The example vocabularies linked above all make use of types from http://schema.org
 
-For the remainder of this guide we will be using the example `UniversityDegreeCredential` type and `https://www.w3.org/2018/credentials/examples/v1` context from the Verifiable Credential Data Model. You should not use this for production use cases.
+For the remainder of this guide, we will be using the example `UniversityDegreeCredential` type and `https://www.w3.org/2018/credentials/examples/v1` context from the Verifiable Credential Data Model. You should not use this for production use cases.
 
 ### Signature Suite
 
@@ -76,11 +76,11 @@ Before issuing a credential you must determine a signature suite to use. ACA-Py 
 
 Generally you should always use `BbsBlsSignature2020` as it allows the holder to derive a new credential during the proving, meaning it doesn't have to disclose all fields and doesn't have to reveal the signature.
 
-### DID Method
+### Did Method
 
-Besides the JSON-LD context, we need a DID to use for issuing the credential. ACA-Py currently supports two did methods for issuing credentials:
+Besides the JSON-LD context, we need a did to use for issuing the credential. ACA-Py currently supports two did methods for issuing credentials:
 
-- `did:sov` - can only be used for `Ed25519Signature2018` signature suite.
+- `did:sov` - Can only be used for `Ed25519Signature2018` signature suite.
 - `did:key` - Can be used for both `Ed25519Signature2018` and `BbsBlsSignature2020` signature suites.
 
 #### `did:sov`
@@ -89,7 +89,7 @@ When using `did:sov` you need to make sure to use a public did so other agents c
 
 #### `did:key`
 
-A `did:key` did is not anchored in a ledger, but embeds the key directly in the identifier part of the did. See the [did:key Method Specification](https://w3c-ccg.github.io/did-method-key/) for more information.
+A `did:key` did is not anchored to a ledger, but embeds the key directly in the identifier part of the did. See the [did:key Method Specification](https://w3c-ccg.github.io/did-method-key/) for more information.
 
 You can create a `did:key` using the `/wallet/did/create` endpoint with the following body. Use `ed25519` for `Ed25519Signature2018`, `bls12381g2` for `BbsBlsSignature2020`.
 
@@ -112,7 +112,7 @@ The format used for exchanging JSON-LD credentials is defined in [RFC 0593: JSON
 
 All endpoints in API use the `aries/ld-proof-vc-detail@v1.0`. We'll use the `/issue-credential-2.0/send` as an example, but it works the same for the other endpoints. In contrary to issuing indy credentials, JSON-LD credentials do not require a credential preview. All properties should be directly embedded in the credentials.
 
-The detail should be included under the `filter.ld_proof` property. To issue a credential call the `/issue-credential-2.0/send` endpoint, with the example body below and the `connection_id` and `issuer` keys replaced. The value of `issuer` should be the did that you created in the [DID Method](#did-method) paragraph above.
+The detail should be included under the `filter.ld_proof` property. To issue a credential call the `/issue-credential-2.0/send` endpoint, with the example body below and the `connection_id` and `issuer` keys replaced. The value of `issuer` should be the did that you created in the [Did Method](#did-method) paragraph above.
 
 If you don't have `auto-respond-credential-offer` and `auto-store-credential` enabled in the ACA-Py config, you will need to call `/issue-credential-2.0/records/{cred_ex_id}/send-request` and `/issue-credential-2.0/records/{cred_ex_id}/store` to finalize the credential issuance.
 
