@@ -34,9 +34,10 @@ class SignRequestSchema(OpenAPISchema):
                 "options": fields.Nested(
                     Schema.from_dict(
                         {
+                            "type": fields.Str(required=True),
+                            "verificationMethod": fields.Str(required=True),
+                            "proofPurpose": fields.Str(required=True),
                             "creator": fields.Str(required=False),
-                            "verificationMethod": fields.Str(required=False),
-                            "proofPurpose": fields.Str(required=False),
                         }
                     ),
                     required=True,
@@ -93,9 +94,10 @@ class DocSchema(OpenAPISchema):
     proof = fields.Nested(
         Schema.from_dict(
             {
+                "type": fields.Str(required=True),
+                "verificationMethod": fields.Str(required=True),
+                "proofPurpose": fields.Str(required=True),
                 "creator": fields.Str(required=False),
-                "verificationMethod": fields.Str(required=False),
-                "proofPurpose": fields.Str(required=False),
             }
         )
     )
