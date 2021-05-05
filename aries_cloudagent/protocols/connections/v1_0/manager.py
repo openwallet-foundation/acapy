@@ -290,9 +290,15 @@ class ConnectionManager(BaseConnectionManager):
         """
         if not invitation.did:
             if not invitation.recipient_keys:
-                raise ConnectionManagerError("Invitation must contain recipient key(s)")
+                raise ConnectionManagerError(
+                    "Invitation must contain recipient key(s)",
+                    error_code="missing-recipient-keys",
+                )
             if not invitation.endpoint:
-                raise ConnectionManagerError("Invitation must contain an endpoint")
+                raise ConnectionManagerError(
+                    "Invitation must contain an endpoint",
+                    error_code="missing-endpoint",
+                )
         accept = (
             ConnRecord.ACCEPT_AUTO
             if (

@@ -1,14 +1,12 @@
-from asynctest import (
-    mock as async_mock,
-    TestCase as AsyncTestCase,
-)
+from asynctest import mock as async_mock, TestCase as AsyncTestCase
 
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
 from ......transport.inbound.receipt import MessageReceipt
 
 from ...messages.credential_offer import CredentialOffer
-from .. import credential_offer_handler as handler
+
+from .. import credential_offer_handler as test_module
 
 
 class TestCredentialOfferHandler(AsyncTestCase):
@@ -19,14 +17,14 @@ class TestCredentialOfferHandler(AsyncTestCase):
         request_context.connection_record = async_mock.MagicMock()
 
         with async_mock.patch.object(
-            handler, "CredentialManager", autospec=True
+            test_module, "CredentialManager", autospec=True
         ) as mock_cred_mgr:
             mock_cred_mgr.return_value.receive_offer = async_mock.CoroutineMock()
             request_context.message = CredentialOffer()
             request_context.connection_ready = True
-            handler_inst = handler.CredentialOfferHandler()
+            handler = test_module.CredentialOfferHandler()
             responder = MockResponder()
-            await handler_inst.handle(request_context, responder)
+            await handler.handle(request_context, responder)
 
         mock_cred_mgr.assert_called_once_with(request_context.profile)
         mock_cred_mgr.return_value.receive_offer.assert_called_once_with(
@@ -42,7 +40,7 @@ class TestCredentialOfferHandler(AsyncTestCase):
         request_context.connection_record.my_did = "dummy"
 
         with async_mock.patch.object(
-            handler, "CredentialManager", autospec=True
+            test_module, "CredentialManager", autospec=True
         ) as mock_cred_mgr:
             mock_cred_mgr.return_value.receive_offer = async_mock.CoroutineMock()
             mock_cred_mgr.return_value.create_request = async_mock.CoroutineMock(
@@ -50,9 +48,9 @@ class TestCredentialOfferHandler(AsyncTestCase):
             )
             request_context.message = CredentialOffer()
             request_context.connection_ready = True
-            handler_inst = handler.CredentialOfferHandler()
+            handler = test_module.CredentialOfferHandler()
             responder = MockResponder()
-            await handler_inst.handle(request_context, responder)
+            await handler.handle(request_context, responder)
 
         mock_cred_mgr.assert_called_once_with(request_context.profile)
         mock_cred_mgr.return_value.receive_offer.assert_called_once_with(
@@ -70,14 +68,14 @@ class TestCredentialOfferHandler(AsyncTestCase):
         request_context.connection_record = async_mock.MagicMock()
 
         with async_mock.patch.object(
-            handler, "CredentialManager", autospec=True
+            test_module, "CredentialManager", autospec=True
         ) as mock_cred_mgr:
             mock_cred_mgr.return_value.receive_offer = async_mock.CoroutineMock()
             request_context.message = CredentialOffer()
             request_context.connection_ready = False
-            handler_inst = handler.CredentialOfferHandler()
+            handler = test_module.CredentialOfferHandler()
             responder = MockResponder()
-            with self.assertRaises(handler.HandlerException):
-                await handler_inst.handle(request_context, responder)
+            with self.assertRaises(test_module.HandlerException):
+                await handler.handle(request_context, responder)
 
         assert not responder.messages

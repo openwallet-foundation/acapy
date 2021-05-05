@@ -27,15 +27,15 @@ class InvitationHandler(BaseHandler):
         self._logger.debug(f"InvitationHandler called with context {context}")
         assert isinstance(context.message, InvitationMessage)
 
-        explain_ltxt = (
-            "Out-of-band invitations for DID exchange "
-            "cannot be submitted via agent messaging"
-        )
         report = ProblemReport(
-            explain_ltxt=explain_ltxt,
-            problem_items=[
-                {ProblemReportReason.INVITATION_NOT_ACCEPTED.value: explain_ltxt}
-            ],
+            description={
+                "code": ProblemReportReason.INVITATION_NOT_ACCEPTED.value,
+                "en": (
+                    "Out-of-band invitations for DID exchange "
+                    "cannot be submitted via agent messaging"
+                ),
+            }
         )
+
         # client likely needs to be using direct responses to receive the problem report
         await responder.send_reply(report)

@@ -2,9 +2,10 @@
 
 from typing import Mapping, Sequence
 
-from marshmallow import EXCLUDE, fields, validate
+from marshmallow import EXCLUDE, fields, validate, validates_schema, ValidationError
 
 from ....messaging.agent_message import AgentMessage, AgentMessageSchema
+from ....messaging.valid import RFC3339_DATETIME
 
 from .message_types import PROBLEM_REPORT, PROTOCOL_PACKAGE
 
@@ -24,16 +25,13 @@ class ProblemReport(AgentMessage):
     def __init__(
         self,
         *,
-        msg_catalog: str = None,
-        locale: str = None,
-        explain_ltxt: str = None,
-        explain_l10n: Mapping[str, str] = None,
+        description: Mapping[str, str] = None,
         problem_items: Sequence[Mapping[str, str]] = None,
         who_retries: str = None,
-        fix_hint_ltxt: Mapping[str, str] = None,
+        fix_hint: Mapping[str, str] = None,
         impact: str = None,
         where: str = None,
-        time_noticed: str = None,
+        noticed_time: str = None,
         tracking_uri: str = None,
         escalation_uri: str = None,
         **kwargs,
@@ -42,30 +40,24 @@ class ProblemReport(AgentMessage):
         Initialize a ProblemReport message instance.
 
         Args:
-            msg_catalog: Reference to a message catalog
-            locale: Locale identifier
-            explain_ltxt: Localized message
-            explain_l10n: Dictionary of localizations
+            description: Human-readable, localized string(s) explaining the problem
             problem_items: List of problem items
             who_retries: you | me | both | none
-            fix_hint_ltxt: Dictionary of localized hints
+            fix_hint: Dictionary of localized hints
             impact: message | thread | connection
             where: you | me | other (cloud | edge | wire | agency ..)
-            time_noticed: Datetime when the problem was noticed
+            noticed_time: Datetime when the problem was noticed
             tracking_uri: URI for tracking the problem
             escalation_uri: URI for escalating the problem
         """
         super().__init__(**kwargs)
-        self.msg_catalog = msg_catalog
-        self.locale = locale
-        self.explain_ltxt = explain_ltxt
-        self.explain_l10n = explain_l10n
-        self.problem_items = problem_items
+        self.description = description if description else None
+        self.problem_items = problem_items if problem_items else None
         self.who_retries = who_retries
-        self.fix_hint_ltxt = fix_hint_ltxt
+        self.fix_hint = dict(fix_hint) if fix_hint else None
         self.impact = impact
         self.where = where
-        self.time_noticed = time_noticed
+        self.noticed_time = noticed_time
         self.tracking_uri = tracking_uri
         self.escalation_uri = escalation_uri
 
@@ -79,26 +71,11 @@ class ProblemReportSchema(AgentMessageSchema):
         model_class = ProblemReport
         unknown = EXCLUDE
 
-    msg_catalog = fields.Str(
-        data_key="@msg_catalog",
+    description = fields.Dict(
+        keys=fields.Str(description="Locale or 'code'", example="en-US"),
+        values=fields.Str(description="Problem description or error code"),
         required=False,
-        description="Reference to a message catalog",
-        example="https://didcomm.org/error-codes",
-    )
-    locale = fields.Str(
-        data_key="@locale", required=False, description="Locale", example="en-US"
-    )
-    explain_ltxt = fields.Str(
-        data_key="explain-ltxt",
-        required=False,
-        description="Localized message",
-        example="Item not found",
-    )
-    explain_l10n = fields.Dict(
-        keys=fields.Str(description="Locale"),
-        values=fields.Str(description="Localized message"),
-        required=False,
-        description="Dictionary of localizations",
+        description="Human-readable localized problem descriptions",
     )
     problem_items = fields.List(
         fields.Dict(
@@ -117,12 +94,11 @@ class ProblemReportSchema(AgentMessageSchema):
         example="you",
         validate=validate.OneOf(["you", "me", "both", "none"]),
     )
-    fix_hint_ltxt = fields.Dict(
+    fix_hint = fields.Dict(
         keys=fields.Str(description="Locale", example="en-US"),
         values=fields.Str(
             description="Localized message", example="Synchronize time to NTP"
         ),
-        data_key="fix-hint-ltxt",
         required=False,
         description="Human-readable localized suggestions how to fix problem",
     )
@@ -142,21 +118,30 @@ class ProblemReportSchema(AgentMessageSchema):
         data_key="time-noticed",
         required=False,
         description="Problem detection time, precision at least day up to millisecond",
-        example="1970-01-01 00:00:00.000Z",
-        validate=validate.Regexp(
-            r"^\d{4}-\d\d-\d\d"
-            r"(?:(?: \d\d:\d\d(?:\:\d\d(?:\.\d{1,6})?)(?:[+=]\d\d:?\d\d|Z)?)?)$"
-        ),
+        **RFC3339_DATETIME,
     )
     tracking_uri = fields.Str(
-        data_key="tracking-uri",
         required=False,
         description="URI allowing recipient to track error status",
         example="http://myservice.com/status",
     )
     escalation_uri = fields.Str(
-        data_key="escalation-uri",
         required=False,
         description="URI to supply additional help",
         example="mailto://help.desk@myservice.com",
     )
+
+    @validates_schema
+    def validate_fields(self, data, **kwargs):
+        """
+        Validate schema fields.
+
+        Args:
+            data: The data to validate
+
+        Raises:
+            ValidationError: if data has neither indy nor ld_proof
+
+        """
+        if not data.get("description", {}).get("code"):
+            raise ValidationError("Field description.code must have a value")

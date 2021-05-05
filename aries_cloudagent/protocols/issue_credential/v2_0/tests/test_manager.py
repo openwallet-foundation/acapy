@@ -27,6 +27,7 @@ from ..messages.cred_ack import V20CredAck
 from ..messages.cred_issue import V20CredIssue
 from ..messages.cred_format import V20CredFormat
 from ..messages.cred_offer import V20CredOffer
+from ..messages.cred_problem_report import V20CredProblemReport
 from ..messages.cred_proposal import V20CredProposal
 from ..messages.cred_request import V20CredRequest
 from ..messages.inner.cred_preview import V20CredPreview, V20CredAttrSpec
@@ -1394,6 +1395,85 @@ class TestV20CredManager(AsyncTestCase):
                 ),
             ]
             await self.manager.delete_cred_ex_record("dummy")
+
+    async def test_create_problem_report(self):
+        connection_id = "connection-id"
+        stored_exchange = V20CredExRecord(
+            cred_ex_id="dummy-cxid",
+            conn_id=connection_id,
+            initiator=V20CredExRecord.INITIATOR_SELF,
+            role=V20CredExRecord.ROLE_ISSUER,
+            state=V20CredExRecord.STATE_REQUEST_RECEIVED,
+            thread_id="dummy-thid",
+        )
+
+        with async_mock.patch.object(V20CredExRecord, "save", autospec=True) as save_ex:
+            report = await self.manager.create_problem_report(
+                stored_exchange,
+                "The front fell off",
+            )
+
+        assert stored_exchange.state is None
+        assert report._thread_id == stored_exchange.thread_id
+
+    async def test_receive_problem_report(self):
+        connection_id = "connection-id"
+        stored_exchange = V20CredExRecord(
+            cred_ex_id="dummy-cxid",
+            connection_id=connection_id,
+            initiator=V20CredExRecord.INITIATOR_SELF,
+            role=V20CredExRecord.ROLE_ISSUER,
+        )
+        problem = V20CredProblemReport(
+            description={
+                "code": test_module.ProblemReportReason.ISSUANCE_ABANDONED.value,
+                "en": "Insufficient privilege",
+            }
+        )
+
+        with async_mock.patch.object(
+            V20CredExRecord, "save", autospec=True
+        ) as save_ex, async_mock.patch.object(
+            V20CredExRecord,
+            "retrieve_by_conn_and_thread",
+            async_mock.CoroutineMock(),
+        ) as retrieve_ex:
+            retrieve_ex.return_value = stored_exchange
+
+            ret_exchange = await self.manager.receive_problem_report(
+                problem, connection_id
+            )
+            retrieve_ex.assert_called_once_with(
+                self.session, connection_id, problem._thread_id
+            )
+            save_ex.assert_called_once()
+
+            assert ret_exchange.state is None
+
+    async def test_receive_problem_report_x(self):
+        connection_id = "connection-id"
+        stored_exchange = V20CredExRecord(
+            cred_ex_id="dummy-cxid",
+            initiator=V20CredExRecord.INITIATOR_SELF,
+            role=V20CredExRecord.ROLE_ISSUER,
+            state=V20CredExRecord.STATE_REQUEST_RECEIVED,
+        )
+        problem = V20CredProblemReport(
+            description={
+                "code": test_module.ProblemReportReason.ISSUANCE_ABANDONED.value,
+                "en": "Insufficient privilege",
+            }
+        )
+
+        with async_mock.patch.object(
+            V20CredExRecord,
+            "retrieve_by_conn_and_thread",
+            async_mock.CoroutineMock(),
+        ) as retrieve_ex:
+            retrieve_ex.side_effect = test_module.StorageNotFoundError("No such record")
+
+            with self.assertRaises(test_module.StorageNotFoundError):
+                await self.manager.receive_problem_report(problem, connection_id)
 
     async def test_retrieve_records(self):
         self.cache = InMemoryCache()

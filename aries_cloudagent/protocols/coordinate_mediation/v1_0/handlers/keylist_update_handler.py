@@ -1,15 +1,13 @@
 """Handler for keylist-update messages."""
 
-from .....messaging.base_handler import (
-    BaseHandler,
-    BaseResponder,
-    HandlerException,
-    RequestContext,
-)
+from .....messaging.base_handler import BaseHandler, HandlerException
+from .....messaging.request_context import RequestContext
+from .....messaging.responder import BaseResponder
 from .....storage.error import StorageNotFoundError
-from ....problem_report.v1_0.message import ProblemReport
+
 from ..manager import MediationManager, MediationNotGrantedError
 from ..messages.keylist_update import KeylistUpdate
+from ..messages.problem_report import CMProblemReport, ProblemReportReason
 from ..models.mediation_record import MediationRecord
 
 
@@ -35,8 +33,11 @@ class KeylistUpdateHandler(BaseHandler):
             response = await mgr.update_keylist(record, updates=context.message.updates)
             await responder.send_reply(response)
         except (StorageNotFoundError, MediationNotGrantedError):
-            await responder.send_reply(
-                ProblemReport(
-                    explain_ltxt="Mediation has not been granted for this connection"
-                )
+            reply = CMProblemReport(
+                description={
+                    "en": "Mediation has not been granted for this connection",
+                    "code": ProblemReportReason.MEDIATION_NOT_GRANTED.value,
+                }
             )
+            reply.assign_thread_from(context.message)
+            await responder.send_reply(reply)
