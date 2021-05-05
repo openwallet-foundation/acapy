@@ -1,16 +1,25 @@
 """Aries#0036 v1.0 credential exchange information with non-secrets storage."""
 
-from os import environ
 from typing import Any, Mapping, Union
 
 from marshmallow import fields, validate
 
 from .....core.profile import ProfileSession
+from .....indy.sdk.artifacts.cred import IndyCredential, IndyCredentialSchema
+from .....indy.sdk.artifacts.cred_abstract import (
+    IndyCredAbstract,
+    IndyCredAbstractSchema,
+)
+from .....indy.sdk.artifacts.cred_precis import IndyCredInfo, IndyCredInfoSchema
+from .....indy.sdk.artifacts.cred_request import IndyCredRequest, IndyCredRequestSchema
 from .....messaging.models import to_serial
 from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
 from .....messaging.valid import INDY_CRED_DEF_ID, INDY_SCHEMA_ID, UUIDFour
 
-unencrypted_tags = environ.get("EXCH_UNENCRYPTED_TAGS", "False").upper() == "TRUE"
+from ..messages.credential_proposal import CredentialProposal, CredentialProposalSchema
+from ..messages.credential_offer import CredentialOffer, CredentialOfferSchema
+
+from . import UNENCRYPTED_TAGS
 
 
 class V10CredentialExchange(BaseExchangeRecord):
@@ -24,7 +33,7 @@ class V10CredentialExchange(BaseExchangeRecord):
     RECORD_TYPE = "credential_exchange_v10"
     RECORD_ID_NAME = "credential_exchange_id"
     RECORD_TOPIC = "issue_credential"
-    TAG_NAMES = {"~thread_id"} if unencrypted_tags else {"thread_id"}
+    TAG_NAMES = {"~thread_id"} if UNENCRYPTED_TAGS else {"thread_id"}
 
     INITIATOR_SELF = "self"
     INITIATOR_EXTERNAL = "external"
@@ -55,7 +64,7 @@ class V10CredentialExchange(BaseExchangeRecord):
         schema_id: str = None,
         credential_proposal_dict: Union[
             Mapping, CredentialProposal
-        ] = None, # aries message
+        ] = None,  # aries message
         credential_offer_dict: Union[Mapping, CredentialOffer] = None,  # aries message
         credential_offer: Union[Mapping, IndyCredAbstract] = None,  # indy artifact
         credential_request: [Mapping, IndyCredRequest] = None,  # indy artifact
@@ -164,15 +173,27 @@ class V10CredentialExchange(BaseExchangeRecord):
             trace=self.trace,
         )
         copy.credential_proposal_dict = CredentialProposal.deserialize(
-            self.credential_proposal_dict
+            self.credential_proposal_dict,
+            none2none=True,
         )
         copy.credential_offer_dict = CredentialOffer.deserialize(
-            self.credential_offer_dict
+            self.credential_offer_dict,
+            none2none=True,
         )
-        copy.credential_offer = IndyCredAbstract.deserialize(self.credential_offer)
-        copy.credential_request = IndyCredRequest.deserialize(self.credential_request)
-        copy.raw_credential = IndyCredential.deserialize(self.raw_credential)
-        copy.credential = IndyCredInfo.deserialize(self.credential)
+        copy.credential_offer = IndyCredAbstract.deserialize(
+            self.credential_offer,
+            none2none=True,
+        )
+        copy.credential_request = IndyCredRequest.deserialize(
+            self.credential_request,
+            none2none=True,
+        )
+        copy.raw_credential = IndyCredential.deserialize(
+            self.raw_credential,
+            none2none=True,
+        )
+        copy.credential = IndyCredInfo.deserialize(self.credential, none2none=True)
+
         return super(self.__class__, copy).serialize(as_string)
 
     @classmethod
@@ -260,7 +281,7 @@ class V10CredentialExchangeSchema(BaseExchangeSchema):
         required=False,
         description="(Indy) credential offer",
     )
-    credential_request = fields.Dict(
+    credential_request = fields.Nested(
         IndyCredRequestSchema(),
         required=False,
         description="(Indy) credential request",

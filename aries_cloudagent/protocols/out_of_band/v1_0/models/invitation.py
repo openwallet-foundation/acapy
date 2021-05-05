@@ -79,14 +79,11 @@ class InvitationRecord(BaseExchangeRecord):
             invitation_id=self.invitation_id,
             state=self.state,
             invi_msg_id=self.invi_msg_id,
-            invitation=None,
             invitation_url=self.invitation_url,
             public_did=None,
             trace=self.trace,
         )
-        copy.invitation = InvitationMessage.deserialize(
-            self.invitation
-        )
+        copy.invitation = InvitationMessage.deserialize(self.invitation, none2none=True)
         return super(self.__class__, copy).serialize(as_string)
 
     def __eq__(self, other: Any) -> bool:

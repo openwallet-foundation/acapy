@@ -111,17 +111,22 @@ class BaseModel(ABC):
         return self._get_schema_class()
 
     @classmethod
-    def deserialize(cls, obj, unknown: str = None):
+    def deserialize(cls, obj, unknown: str = None, none2none: str = False):
         """
         Convert from JSON representation to a model instance.
 
         Args:
             obj: The dict to load into a model instance
+            unknown: Behaviour for unknown attributes
+            none2none: Deserialize None to None
 
         Returns:
             A model instance for this data
 
         """
+        if obj is None and none2none:
+            return None
+
         schema = cls._get_schema_class()(unknown=unknown or EXCLUDE)
         try:
             return schema.loads(obj) if isinstance(obj, str) else schema.load(obj)
