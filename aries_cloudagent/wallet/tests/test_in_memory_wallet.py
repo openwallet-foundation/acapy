@@ -226,7 +226,7 @@ class TestInMemoryWallet:
 
         with pytest.raises(WalletError) as context:
             await wallet.rotate_did_keypair_start(key_info.did)
-        assert "Did method key does not support key rotation" in str(context.value)
+        assert "DID method 'key' does not support key rotation" in str(context.value)
 
         new_verkey = await wallet.rotate_did_keypair_start(self.test_sov_did)
         assert info.verkey != new_verkey
@@ -252,7 +252,7 @@ class TestInMemoryWallet:
             await wallet.create_local_did(
                 DIDMethod.KEY, KeyType.ED25519, None, "did:sov:random"
             )
-        assert "Not allowed to set did for did method key" in str(context.value)
+        assert "Not allowed to set DID for DID method 'key'" in str(context.value)
 
     @pytest.mark.asyncio
     async def test_local_verkey(self, wallet: InMemoryWallet):
