@@ -1,35 +1,37 @@
-import json
 from copy import deepcopy
-from pydid.doc.service import Service
+import json
 
-import pytest
 from aiohttp import web
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
-from pydid import DIDDocument
+from pydid import DIDDocument, Service
 from pyld import jsonld
+import pytest
 
+from .. import routes as test_module
 from ....admin.request_context import AdminRequestContext
-from ....wallet.key_type import KeyType
-from ....wallet.did_method import DIDMethod
 from ....config.base import InjectionError
 from ....resolver.base import DIDMethodNotSupported, DIDNotFound, ResolverError
 from ....resolver.did_resolver import DIDResolver
 from ....resolver.tests import DOC
 from ....wallet.base import BaseWallet
+from ....wallet.did_method import DIDMethod
 from ....wallet.error import WalletError
-from .. import routes as test_module
+from ....wallet.key_type import KeyType
 from ..error import (
     BadJWSHeaderError,
     DroppedAttributeError,
     MissingVerificationMethodError,
 )
 
-did_doc = DIDDocument.deserialize(DOC)
+
+@pytest.fixture
+def did_doc():
+    yield DIDDocument.deserialize(DOC)
 
 
 @pytest.fixture
-def mock_resolver():
+def mock_resolver(did_doc):
     did_resolver = async_mock.MagicMock()
     did_resolver.resolve = async_mock.CoroutineMock(return_value=did_doc)
     url = "did:example:1234abcd#4"
