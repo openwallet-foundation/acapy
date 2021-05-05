@@ -14,12 +14,11 @@ from ....messaging.valid import (
 )
 from ....utils.tracing import AdminAPIMessageTracingSchema
 
-from ..indy.requested_creds import (
+from .predicate import Predicate
+from .requested_creds import (
     IndyRequestedCredsRequestedAttrSchema,
     IndyRequestedCredsRequestedPredSchema,
 )
-
-from .predicate import Predicate
 
 
 class IndyEQProof(BaseModel):

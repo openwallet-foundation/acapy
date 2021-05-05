@@ -1,7 +1,10 @@
 """Utilities to deal with indy."""
 
+from typing import Mapping, Union
+
 from marshmallow import fields, validate, validates_schema, ValidationError
 
+from ....messaging.models.base import BaseModel
 from ....messaging.models.openapi import OpenAPISchema
 from ....messaging.valid import (
     INDY_CRED_DEF_ID,
@@ -9,54 +12,45 @@ from ....messaging.valid import (
     INDY_PREDICATE,
     INDY_SCHEMA_ID,
     INDY_VERSION,
-    INT_EPOCH,
+    NUM_STR_NATURAL,
 )
+
+from .non_rev_interval import IndyNonRevocationInterval, IndyNonRevocationIntervalSchema
 
 
 class IndyProofReqPredSpecRestrictionsSchema(OpenAPISchema):
     """Schema for restrictions in attr or pred specifier indy proof request."""
 
-    schema_id = fields.String(
+    schema_id = fields.Str(
         description="Schema identifier", required=False, **INDY_SCHEMA_ID
     )
-    schema_issuer_did = fields.String(
+    schema_issuer_did = fields.Str(
         description="Schema issuer (origin) DID", required=False, **INDY_DID
     )
-    schema_name = fields.String(
+    schema_name = fields.Str(
         example="transcript", description="Schema name", required=False
     )
-    schema_version = fields.String(
+    schema_version = fields.Str(
         description="Schema version", required=False, **INDY_VERSION
     )
-    issuer_did = fields.String(
+    issuer_did = fields.Str(
         description="Credential issuer DID", required=False, **INDY_DID
     )
-    cred_def_id = fields.String(
+    cred_def_id = fields.Str(
         description="Credential definition identifier",
         required=False,
         **INDY_CRED_DEF_ID,
     )
 
 
-class IndyProofReqNonRevokedSchema(OpenAPISchema):
-    """Non-revocation times specification in indy proof request."""
-
-    to = fields.Int(
-        description="Timestamp of interest for non-revocation proof",
-        required=True,
-        strict=True,
-        **INT_EPOCH,
-    )
-
-
 class IndyProofReqAttrSpecSchema(OpenAPISchema):
     """Schema for attribute specification in indy proof request."""
 
-    name = fields.String(
+    name = fields.Str(
         example="favouriteDrink", description="Attribute name", required=False
     )
     names = fields.List(
-        fields.String(example="age"),
+        fields.Str(example="age"),
         description="Attribute name group",
         required=False,
     )
@@ -85,7 +79,7 @@ class IndyProofReqAttrSpecSchema(OpenAPISchema):
         required=False,
     )
     non_revoked = fields.Nested(
-        IndyProofReqNonRevokedSchema(),
+        IndyNonRevocationIntervalSchema(),
         required=False,
         allow_none=True,  # accommodate libvcx
     )
@@ -119,8 +113,8 @@ class IndyProofReqAttrSpecSchema(OpenAPISchema):
 class IndyProofReqPredSpecSchema(OpenAPISchema):
     """Schema for predicate specification in indy proof request."""
 
-    name = fields.String(example="index", description="Attribute name", required=True)
-    p_type = fields.String(
+    name = fields.Str(example="index", description="Attribute name", required=True)
+    p_type = fields.Str(
         description="Predicate type ('<', '<=', '>=', or '>')",
         required=True,
         **INDY_PREDICATE,
@@ -132,23 +126,69 @@ class IndyProofReqPredSpecSchema(OpenAPISchema):
         required=False,
     )
     non_revoked = fields.Nested(
-        IndyProofReqNonRevokedSchema(),
+        IndyNonRevocationIntervalSchema(),
         required=False,
         allow_none=True,  # accommodate libvcx
     )
 
 
+class IndyProofRequest(BaseModel):
+    """Indy proof request."""
+
+    class Meta:
+        """Indy proof request metadata."""
+
+        schema_class = "IndyProofRequestSchema"
+
+    def __init__(
+        self,
+        nonce: str = None,
+        name: str = None,
+        version: str = None,
+        requested_attributes: Mapping = None,
+        requested_predicates: Mapping = None,
+        non_revoked: Union[IndyNonRevocationInterval, Mapping] = None,
+        **kwargs,
+    ):
+        """
+        Initialize indy cred abstract object.
+
+        Args:
+            schema_id: schema identifier
+            cred_def_id: credential definition identifier
+            nonce: nonce
+            key_correctness_proof: key correctness proof
+
+        """
+        super().__init__(**kwargs)
+        self.nonce = nonce
+        self.name = name
+        self.version = version
+        self.requested_attributes = requested_attributes
+        self.requested_predicates = requested_predicates
+        self.non_revoked = IndyNonRevocationInterval.deserialize(non_revoked)
+
+
 class IndyProofRequestSchema(OpenAPISchema):
     """Schema for indy proof request."""
 
-    nonce = fields.String(description="Nonce", required=False, example="1234567890")
-    name = fields.String(
+    class Meta:
+        """Indy proof request schema metadata."""
+
+        model_class = IndyProofRequest
+
+    nonce = fields.Str(
+        description="Nonce",
+        required=False,
+        **NUM_STR_NATURAL,
+    )
+    name = fields.Str(
         description="Proof request name",
         required=False,
         example="Proof request",
         default="Proof request",
     )
-    version = fields.String(
+    version = fields.Str(
         description="Proof request version",
         required=False,
         default="1.0",
@@ -156,18 +196,16 @@ class IndyProofRequestSchema(OpenAPISchema):
     )
     requested_attributes = fields.Dict(
         description="Requested attribute specifications of proof request",
-        required=True,
-        keys=fields.Str(example="0_attr_uuid"),  # marshmallow/apispec v3.0 ignores
+        keys=fields.Str(decription="Attribute referent", example="0_legalname_uuid"),
         values=fields.Nested(IndyProofReqAttrSpecSchema()),
     )
     requested_predicates = fields.Dict(
         description="Requested predicate specifications of proof request",
-        required=True,
-        keys=fields.Str(example="0_age_GE_uuid"),  # marshmallow/apispec v3.0 ignores
+        keys=fields.Str(description="Predicate referent", example="0_age_GE_uuid"),
         values=fields.Nested(IndyProofReqPredSpecSchema()),
     )
     non_revoked = fields.Nested(
-        IndyProofReqNonRevokedSchema(),
+        IndyNonRevocationIntervalSchema(),
         required=False,
         allow_none=True,  # accommodate libvcx
     )
