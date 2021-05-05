@@ -257,18 +257,8 @@ class V20CredRequestFreeSchema(AdminAPIMessageTracingSchema):
     )
 
 
-class V20CredProposalRequestSchemaBase(V20IssueCredSchemaCore):
-    """Base class for request schema for sending credential proposal admin message."""
-
-    connection_id = fields.UUID(
-        description="Connection identifier",
-        required=True,
-        example=UUIDFour.EXAMPLE,  # typically but not necessarily a UUID4
-    )
-
-
 class V20CredSendRequestSchema(V20IssueCredSchemaCore):
-    """Base class for request schema for sending credential admin message."""
+    """Request schema for sending credential admin message."""
 
     connection_id = fields.UUID(
         description="Connection identifier",
@@ -486,7 +476,7 @@ async def credential_exchange_retrieve(request: web.BaseRequest):
 
 @docs(
     tags=["issue-credential v2.0"],
-    summary="Send holder a credential, automating entire flow",
+    summary="Create credential from attribute values",
 )
 @request_schema(V20IssueCredSchemaCore())
 @response_schema(V20CredExRecordSchema(), 200, description="")
