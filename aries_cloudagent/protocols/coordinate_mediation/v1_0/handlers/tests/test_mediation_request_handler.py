@@ -6,10 +6,12 @@ from ......connections.models.conn_record import ConnRecord
 from ......messaging.base_handler import HandlerException
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
-from ......protocols.problem_report.v1_0.message import ProblemReport
+
 from ...messages.mediate_grant import MediationGrant
 from ...messages.mediate_request import MediationRequest
+from ...messages.problem_report import CMProblemReport
 from ...models.mediation_record import MediationRecord
+
 from ..mediation_request_handler import MediationRequestHandler
 
 TEST_CONN_ID = "conn-id"
@@ -42,7 +44,7 @@ class TestMediationRequestHandler(AsyncTestCase):
         messages = responder.messages
         assert len(messages) == 1
         result, _target = messages[0]
-        assert isinstance(result, ProblemReport)
+        assert isinstance(result, CMProblemReport)
 
     async def test_handler(self):
         handler, responder = MediationRequestHandler(), MockResponder()

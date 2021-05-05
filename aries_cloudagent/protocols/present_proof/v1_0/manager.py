@@ -19,6 +19,10 @@ from ..indy.xform import indy_proof_req2non_revoc_intervals
 
 from .models.presentation_exchange import V10PresentationExchange
 from .messages.presentation_ack import PresentationAck
+from .messages.presentation_problem_report import (
+    PresentationProblemReport,
+    ProblemReportReason,
+)
 from .messages.presentation_proposal import PresentationProposal
 from .messages.presentation_request import PresentationRequest
 from .messages.presentation import Presentation
@@ -663,3 +667,56 @@ class PresentationManager:
             )
 
         return presentation_exchange_record
+
+    async def create_problem_report(
+        self,
+        pres_ex_record: V10PresentationExchange,
+        description: str,
+    ):
+        """
+        Update pres ex record; create and return problem report.
+
+        Returns:
+            problem report
+
+        """
+        pres_ex_record.state = None
+        async with self._profile.session() as session:
+            await pres_ex_record.save(session, reason="created problem report")
+
+        report = PresentationProblemReport(
+            description={
+                "en": description,
+                "code": ProblemReportReason.ABANDONED.value,
+            }
+        )
+        report.assign_thread_id(pres_ex_record.thread_id)
+
+        return report
+
+    async def receive_problem_report(
+        self, message: PresentationProblemReport, connection_id: str
+    ):
+        """
+        Receive problem report.
+
+        Returns:
+            presentation exchange record, retrieved and updated
+
+        """
+        # FIXME use transaction, fetch for_update
+        async with self._profile.session() as session:
+            pres_ex_record = await (
+                V10PresentationExchange.retrieve_by_tag_filter(
+                    session,
+                    {"thread_id": message._thread_id},
+                    {"connection_id": connection_id},
+                )
+            )
+
+            pres_ex_record.state = None
+            code = message.description.get("code", ProblemReportReason.ABANDONED.value)
+            pres_ex_record.error_msg = f"{code}: {message.description.get('en', code)}"
+            await pres_ex_record.save(session, reason="received problem report")
+
+        return pres_ex_record
