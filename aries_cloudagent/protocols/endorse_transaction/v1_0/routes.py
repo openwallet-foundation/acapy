@@ -671,23 +671,12 @@ async def set_endorser_info(request: web.BaseRequest):
                 " in connection metadata for this connection record"
             )
         )
-    if "transaction_their_job" not in jobs.keys():
-        raise web.HTTPForbidden(
-            reason=(
-                'Ask the other agent to set up "transaction_my_job" in '
-                '"transaction_jobs" in connection metadata for their connection record'
-            )
-        )
     if jobs["transaction_my_job"] != TransactionJob.TRANSACTION_AUTHOR.name:
         raise web.HTTPForbidden(
             reason=(
                 "Only a TRANSACTION_AUTHOR can add endorser_info "
                 "to metadata of its connection record"
             )
-        )
-    if jobs["transaction_their_job"] != TransactionJob.TRANSACTION_ENDORSER.name:
-        raise web.HTTPForbidden(
-            reason="The Other agent should have job TRANSACTION_ENDORSER"
         )
     value = await record.metadata_get(session, "endorser_info")
     if value:
