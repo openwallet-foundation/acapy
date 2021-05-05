@@ -1,18 +1,20 @@
 from unittest.mock import call
-from asynctest import mock as async_mock, TestCase as AsyncTestCase
+
+from asynctest import TestCase as AsyncTestCase, mock as async_mock
+from pydid import DIDDocument, DIDDocumentBuilder
+from pydid.verification_method import Ed25519VerificationKey2018, JsonWebKey2020
 
 from .....cache.base import BaseCache
 from .....cache.in_memory import InMemoryCache
 from .....config.base import InjectionError
+from .....connections.base_manager import BaseConnectionManagerError
 from .....connections.models.conn_record import ConnRecord
 from .....connections.models.connection_target import ConnectionTarget
-from .....connections.base_manager import (
-    BaseConnectionManagerError,
-)
 from .....connections.models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
-from pydid import DIDDocumentBuilder, VerificationSuite, DIDDocument, options
 from .....core.in_memory import InMemoryProfile
+from .....did.did_key import DIDKey
 from .....messaging.responder import BaseResponder, MockResponder
+from .....multitenant.manager import MultitenantManager
 from .....protocols.routing.v1_0.manager import RoutingManager
 from .....resolver.did_resolver import DIDResolver
 from .....resolver.did_resolver_registry import DIDResolverRegistry
@@ -20,19 +22,17 @@ from .....storage.error import StorageNotFoundError
 from .....transport.inbound.receipt import MessageReceipt
 from .....wallet.base import DIDInfo
 from .....wallet.did_info import KeyInfo
+from .....wallet.did_method import DIDMethod
 from .....wallet.error import WalletNotFoundError
 from .....wallet.in_memory import InMemoryWallet
 from .....wallet.key_type import KeyType
-from .....wallet.did_method import DIDMethod
-from .....did.did_key import DIDKey
-from ....coordinate_mediation.v1_0.models.mediation_record import MediationRecord
 from ....coordinate_mediation.v1_0.manager import MediationManager
-from ....coordinate_mediation.v1_0.messages.keylist_update import KeylistUpdate
-from ....coordinate_mediation.v1_0.messages.mediate_request import MediationRequest
 from ....coordinate_mediation.v1_0.messages.inner.keylist_update_rule import (
     KeylistUpdateRule,
 )
-from .....multitenant.manager import MultitenantManager
+from ....coordinate_mediation.v1_0.messages.keylist_update import KeylistUpdate
+from ....coordinate_mediation.v1_0.messages.mediate_request import MediationRequest
+from ....coordinate_mediation.v1_0.models.mediation_record import MediationRecord
 from ..manager import ConnectionManager, ConnectionManagerError
 from ..messages.connection_invitation import ConnectionInvitation
 from ..messages.connection_request import ConnectionRequest
@@ -2148,14 +2148,12 @@ class TestConnectionManager(AsyncTestCase):
 
     async def test_fetch_connection_targets_conn_invitation_did_resolver(self):
         builder = DIDDocumentBuilder("did:sov:" + self.test_target_did)
-        vmethod = builder.verification_methods.add(
-            ident="1",
-            suite=VerificationSuite("Ed25519VerificationKey2018", "publicKeyBase58"),
-            material=self.test_target_verkey,
+        vmethod = builder.verification_method.add(
+            Ed25519VerificationKey2018, public_key_base58=self.test_target_verkey
         )
-        builder.services.add_didcomm(
+        builder.service.add_didcomm(
             ident="did-communication",
-            endpoint=self.test_endpoint,
+            service_endpoint=self.test_endpoint,
             recipient_keys=[vmethod],
         )
         did_doc = builder.build()
@@ -2202,32 +2200,29 @@ class TestConnectionManager(AsyncTestCase):
 
     async def test_fetch_connection_targets_conn_invitation_btcr_resolver(self):
         builder = DIDDocumentBuilder("did:btcr:x705-jznz-q3nl-srs")
-        vmethod = builder.verification_methods.add(
-            ident="1",
-            suite=VerificationSuite("Ed25519VerificationKey2018", "publicKeyBase58"),
-            material="02e0e01a8c302976e1556e95c54146e8464adac8626a5d29474718a7281133ff49",
+        vmethod = builder.verification_method.add(
+            Ed25519VerificationKey2018, public_key_base58=self.test_target_verkey
         )
-        with builder.services.defaults() as services:
-            services.add_didcomm(
-                type_="IndyAgent",
-                recipient_keys=[vmethod],
-                routing_keys=[vmethod],
-                endpoint=self.test_endpoint,
-                # priority=1, # TODO: add back in after pydid update
-            )
+        builder.service.add_didcomm(
+            type_="IndyAgent",
+            recipient_keys=[vmethod],
+            routing_keys=[vmethod],
+            service_endpoint=self.test_endpoint,
+            priority=1,
+        )
 
-            services.add_didcomm(
-                recipient_keys=[vmethod],
-                routing_keys=[vmethod],
-                endpoint=self.test_endpoint,
-                # priority=0, # TODO: add back in after pydid update
-            )
-            services.add_didcomm(
-                recipient_keys=[vmethod],
-                routing_keys=[vmethod],
-                endpoint="{}/priority2".format(self.test_endpoint),
-                # priority=2, # TODO: add back in after pydid update
-            )
+        builder.service.add_didcomm(
+            recipient_keys=[vmethod],
+            routing_keys=[vmethod],
+            service_endpoint=self.test_endpoint,
+            priority=0,
+        )
+        builder.service.add_didcomm(
+            recipient_keys=[vmethod],
+            routing_keys=[vmethod],
+            service_endpoint="{}/priority2".format(self.test_endpoint),
+            priority=2,
+        )
         did_doc = builder.build()
 
         self.resolver = async_mock.MagicMock()
@@ -2293,10 +2288,7 @@ class TestConnectionManager(AsyncTestCase):
                 },
             ],
         }
-        # TODO: move options
-        did_doc = DIDDocument.deserialize(
-            did_doc_json, options={options.vm_allow_missing_controller}
-        )
+        did_doc = DIDDocument.deserialize(did_doc_json)
         self.resolver = async_mock.MagicMock()
         self.resolver.get_endpoint_for_did = async_mock.CoroutineMock(
             return_value=self.test_endpoint
@@ -2332,16 +2324,10 @@ class TestConnectionManager(AsyncTestCase):
 
     async def test_fetch_connection_targets_conn_invitation_no_didcomm_services(self):
         builder = DIDDocumentBuilder("did:btcr:x705-jznz-q3nl-srs")
-        vmethod = builder.verification_methods.add(
-            ident="1",
-            suite=VerificationSuite("Ed25519VerificationKey2018", "publicKeyBase58"),
-            material="02e0e01a8c302976e1556e95c54146e8464adac8626a5d29474718a7281133ff49",
+        builder.verification_method.add(
+            Ed25519VerificationKey2018, public_key_base58=self.test_target_verkey
         )
-        with builder.services.defaults() as services:
-            services.add(
-                type_="LinkedData",
-                endpoint=self.test_endpoint,
-            )
+        builder.service.add(type_="LinkedData", service_endpoint=self.test_endpoint)
         did_doc = builder.build()
         self.resolver = async_mock.MagicMock()
         self.resolver.get_endpoint_for_did = async_mock.CoroutineMock(
@@ -2350,7 +2336,7 @@ class TestConnectionManager(AsyncTestCase):
         self.resolver.resolve = async_mock.CoroutineMock(return_value=did_doc)
         self.context.injector.bind_instance(DIDResolver, self.resolver)
 
-        local_did = await self.session.wallet.create_local_did(
+        await self.session.wallet.create_local_did(
             method=DIDMethod.SOV,
             key_type=KeyType.ED25519,
             seed=self.test_seed,
@@ -2378,15 +2364,16 @@ class TestConnectionManager(AsyncTestCase):
 
     async def test_fetch_connection_targets_conn_invitation_unsupported_key_type(self):
         builder = DIDDocumentBuilder("did:btcr:x705-jznz-q3nl-srs")
-        vmethod = builder.verification_methods.add(
+        vmethod = builder.verification_method.add(
+            JsonWebKey2020,
             ident="1",
-            suite=VerificationSuite("JsonWebKey2020", "publicKeyJwk"),
-            material={"jwk": "stuff"},
+            public_key_jwk={"jwk": "stuff"},
         )
-        with builder.services.defaults() as services:
-            services.add_didcomm(
-                type_="IndyAgent", endpoint=self.test_endpoint, recipient_keys=[vmethod]
-            )
+        builder.service.add_didcomm(
+            type_="IndyAgent",
+            service_endpoint=self.test_endpoint,
+            recipient_keys=[vmethod],
+        )
         did_doc = builder.build()
         self.resolver = async_mock.MagicMock()
         self.resolver.get_endpoint_for_did = async_mock.CoroutineMock(
@@ -2448,14 +2435,14 @@ class TestConnectionManager(AsyncTestCase):
 
     async def test_fetch_connection_targets_oob_invitation_svc_did_resolver(self):
         builder = DIDDocumentBuilder("did:sov:" + self.test_target_did)
-        vmethod = builder.verification_methods.add(
+        vmethod = builder.verification_method.add(
+            Ed25519VerificationKey2018,
             ident="1",
-            suite=VerificationSuite("Ed25519VerificationKey2018", "publicKeyBase58"),
-            material=self.test_target_verkey,
+            public_key_base58=self.test_target_verkey,
         )
-        builder.services.add_didcomm(
+        builder.service.add_didcomm(
             ident="did-communication",
-            endpoint=self.test_endpoint,
+            service_endpoint=self.test_endpoint,
             recipient_keys=[vmethod],
         )
         did_doc = builder.build()
