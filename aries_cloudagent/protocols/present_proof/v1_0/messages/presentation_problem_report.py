@@ -14,7 +14,7 @@ HANDLER_CLASS = (
 )
 
 
-class ProblemReportReason(str, Enum):
+class ProblemReportReason(Enum):
     """Supported reason codes."""
 
     ABANDONED = "abandoned"

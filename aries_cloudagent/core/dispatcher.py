@@ -24,10 +24,10 @@ from ..protocols.connections.v1_0.manager import ConnectionManager
 from ..protocols.problem_report.v1_0.message import ProblemReport
 from ..transport.inbound.message import InboundMessage
 from ..transport.outbound.message import OutboundMessage
+from ..transport.outbound.status import OutboundSendStatus
 from ..utils.stats import Collector
 from ..utils.task_queue import CompletedTask, PendingTask, TaskQueue
-from ..utils.tracing import trace_event, get_timer
-
+from ..utils.tracing import get_timer, trace_event
 from .error import ProtocolMinorVersionNotSupported
 from .protocol_registry import ProtocolRegistry
 
@@ -298,14 +298,14 @@ class DispatcherResponder(BaseResponder):
                 }
         return await super().create_outbound(message, **kwargs)
 
-    async def send_outbound(self, message: OutboundMessage):
+    async def send_outbound(self, message: OutboundMessage) -> OutboundSendStatus:
         """
         Send outbound message.
 
         Args:
             message: The `OutboundMessage` to be sent
         """
-        await self._send(self._context.profile, message, self._inbound_message)
+        return await self._send(self._context.profile, message, self._inbound_message)
 
     async def send_webhook(self, topic: str, payload: dict):
         """

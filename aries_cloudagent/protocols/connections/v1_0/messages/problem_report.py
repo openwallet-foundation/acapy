@@ -10,7 +10,7 @@ from ..message_types import PROBLEM_REPORT
 HANDLER_CLASS = "aries_cloudagent.messaging.problem_report.handler.ProblemReportHandler"
 
 
-class ProblemReportReason(str, Enum):
+class ProblemReportReason(Enum):
     """Supported reason codes."""
 
     INVITATION_NOT_ACCEPTED = "invitation_not_accepted"
