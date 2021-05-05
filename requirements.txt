@@ -16,4 +16,4 @@ pyld~=2.0.3
 pyyaml~=5.4.0
 ConfigArgParse~=1.2.3
 pyjwt~=1.7.1
-pydid~=0.2.3
+pydid==0.3.0rc3
