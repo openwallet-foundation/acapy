@@ -20,7 +20,7 @@ from .error import (
 
 
 class SignatureOptionsSchema(Schema):
-    """Schema for LD signature options"""
+    """Schema for LD signature options."""
 
     verificationMethod = fields.Str(required=True)
     proofPurpose = fields.Str(required=True)
@@ -28,7 +28,7 @@ class SignatureOptionsSchema(Schema):
 
 
 class DocSchema(OpenAPISchema):
-    """Schema for LD doc to sign"""
+    """Schema for LD doc to sign."""
 
     credential = fields.Dict(
         required=True,
