@@ -35,8 +35,8 @@ class SignRequestSchema(OpenAPISchema):
                     Schema.from_dict(
                         {
                             "creator": fields.Str(required=False),
-                            "verificationMethod": fields.Str(required=False),
-                            "proofPurpose": fields.Str(required=False),
+                            "verificationMethod": fields.Str(required=True),
+                            "proofPurpose": fields.Str(required=True),
                             "type": fields.Str(required=False),
                         }
                     ),
@@ -95,8 +95,8 @@ class DocSchema(OpenAPISchema):
         Schema.from_dict(
             {
                 "creator": fields.Str(required=False),
-                "verificationMethod": fields.Str(required=False),
-                "proofPurpose": fields.Str(required=False),
+                "verificationMethod": fields.Str(required=True),
+                "proofPurpose": fields.Str(required=True),
                 "type": fields.Str(required=False),
             }
         )
