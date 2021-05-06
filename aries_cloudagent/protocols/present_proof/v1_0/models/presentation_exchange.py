@@ -4,11 +4,8 @@ from typing import Any, Mapping, Union
 
 from marshmallow import fields, validate
 
-from .....indy.sdk.artifacts.proof import IndyProof, IndyProofSchema
-from .....indy.sdk.artifacts.proof_request import (
-    IndyProofRequest,
-    IndyProofRequestSchema,
-)
+from .....indy.sdk.models.proof import IndyProof, IndyProofSchema
+from .....indy.sdk.models.proof_request import IndyProofRequest, IndyProofRequestSchema
 from .....messaging.models import to_serial
 from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
 from .....messaging.valid import UUIDFour
@@ -128,15 +125,19 @@ class V10PresentationExchange(BaseExchangeRecord):
         """
         copy = V10PresentationExchange(
             presentation_exchange_id=self.presentation_exchange_id,
-            connection_id=self.connection_id,
-            thread_id=self.thread_id,
-            initiator=self.initiator,
-            role=self.role,
-            state=self.state,
-            verified=self.verified,
-            auto_present=self.auto_present,
-            error_msg=self.error_msg,
-            trace=self.trace,
+            **{
+                k: v
+                for k, v in vars(self).items()
+                if k
+                not in [
+                    "_id",
+                    "_last_state",
+                    "presentation_proposal_dict",
+                    "presentation_request",
+                    "presentation_request_dict",
+                    "presentation",
+                ]
+            }
         )
         copy.presentation_proposal_dict = PresentationProposal.deserialize(
             self.presentation_proposal_dict,

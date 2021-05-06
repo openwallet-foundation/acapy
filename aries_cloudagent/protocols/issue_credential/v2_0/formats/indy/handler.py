@@ -10,9 +10,9 @@ import asyncio
 from ......cache.base import BaseCache
 from ......indy.issuer import IndyIssuer, IndyIssuerRevocationRegistryFullError
 from ......indy.holder import IndyHolder, IndyHolderError
-from ......indy.sdk.artifacts.cred import IndyCredentialSchema
-from ......indy.sdk.artifacts.cred_request import IndyCredRequestSchema
-from ......indy.sdk.artifacts.cred_abstract import IndyCredAbstractSchema
+from ......indy.sdk.models.cred import IndyCredentialSchema
+from ......indy.sdk.models.cred_request import IndyCredRequestSchema
+from ......indy.sdk.models.cred_abstract import IndyCredAbstractSchema
 from ......ledger.base import BaseLedger
 from ......messaging.credential_definitions.util import (
     CRED_DEF_SENT_RECORD_TYPE,

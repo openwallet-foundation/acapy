@@ -11,8 +11,9 @@ from .....connections.models.conn_record import ConnRecord
 from .....connections.models.connection_target import ConnectionTarget
 from .....connections.models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
 from .....core.in_memory import InMemoryProfile
+from .....did.did_key import DIDKey
 from .....indy.holder import IndyHolder
-from .....indy.sdk.artifacts.pres_preview import (
+from .....indy.sdk.models.pres_preview import (
     IndyPresAttrSpec,
     IndyPresPredSpec,
     IndyPresPreview,
@@ -54,14 +55,12 @@ from .....protocols.present_proof.v2_0.messages.pres import V20Pres
 from .....protocols.present_proof.v2_0.messages.pres_format import V20PresFormat
 from .....protocols.present_proof.v2_0.messages.pres_request import V20PresRequest
 from .....storage.error import StorageNotFoundError
-from .....multitenant.manager import MultitenantManager
 from .....transport.inbound.receipt import MessageReceipt
 from .....wallet.base import BaseWallet
 from .....wallet.did_info import DIDInfo, KeyInfo
 from .....wallet.in_memory import InMemoryWallet
 from .....wallet.key_type import KeyType
 from .....wallet.did_method import DIDMethod
-from .....did.did_key import DIDKey
 
 from ....didcomm_prefix import DIDCommPrefix
 from ....issue_credential.v1_0.models.credential_exchange import V10CredentialExchange

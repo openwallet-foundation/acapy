@@ -5,13 +5,10 @@ from typing import Any, Mapping, Union
 from marshmallow import fields, validate
 
 from .....core.profile import ProfileSession
-from .....indy.sdk.artifacts.cred import IndyCredential, IndyCredentialSchema
-from .....indy.sdk.artifacts.cred_abstract import (
-    IndyCredAbstract,
-    IndyCredAbstractSchema,
-)
-from .....indy.sdk.artifacts.cred_precis import IndyCredInfo, IndyCredInfoSchema
-from .....indy.sdk.artifacts.cred_request import IndyCredRequest, IndyCredRequestSchema
+from .....indy.sdk.models.cred import IndyCredential, IndyCredentialSchema
+from .....indy.sdk.models.cred_abstract import IndyCredAbstract, IndyCredAbstractSchema
+from .....indy.sdk.models.cred_precis import IndyCredInfo, IndyCredInfoSchema
+from .....indy.sdk.models.cred_request import IndyCredRequest, IndyCredRequestSchema
 from .....messaging.models import to_serial
 from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
 from .....messaging.valid import INDY_CRED_DEF_ID, INDY_SCHEMA_ID, UUIDFour
@@ -154,23 +151,21 @@ class V10CredentialExchange(BaseExchangeRecord):
         """
         copy = V10CredentialExchange(
             credential_exchange_id=self.credential_exchange_id,
-            connection_id=self.connection_id,
-            thread_id=self.thread_id,
-            parent_thread_id=self.parent_thread_id,
-            initiator=self.initiator,
-            role=self.role,
-            state=self.state,
-            credential_definition_id=self.credential_definition_id,
-            schema_id=self.schema_id,
-            credential_request_metadata=self.credential_request_metadata,
-            credential_id=self.credential_id,
-            revoc_reg_id=self.revoc_reg_id,
-            revocation_id=self.revocation_id,
-            auto_offer=self.auto_offer,
-            auto_issue=self.auto_issue,
-            auto_remove=self.auto_remove,
-            error_msg=self.error_msg,
-            trace=self.trace,
+            **{
+                k: v
+                for k, v in vars(self).items()
+                if k
+                not in [
+                    "_id",
+                    "_last_state",
+                    "credential_proposal_dict",
+                    "credential_offer_dict",
+                    "credential_offer",
+                    "credential_request",
+                    "raw_credential",
+                    "credential",
+                ]
+            },
         )
         copy.credential_proposal_dict = CredentialProposal.deserialize(
             self.credential_proposal_dict,

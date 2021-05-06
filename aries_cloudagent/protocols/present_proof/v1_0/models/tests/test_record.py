@@ -1,6 +1,6 @@
 from unittest import TestCase as UnitTestCase
 
-from ......indy.sdk.artifacts.pres_preview import (
+from ......indy.sdk.models.pres_preview import (
     IndyPresAttrSpec,
     IndyPresPredSpec,
     IndyPresPreview,

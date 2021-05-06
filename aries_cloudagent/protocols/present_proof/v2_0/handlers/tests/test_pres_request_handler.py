@@ -1,6 +1,6 @@
 from asynctest import mock as async_mock, TestCase as AsyncTestCase
 
-from ......indy.sdk.artifacts.pres_preview import IndyPresAttrSpec, IndyPresPreview
+from ......indy.sdk.models.pres_preview import IndyPresAttrSpec, IndyPresPreview
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder

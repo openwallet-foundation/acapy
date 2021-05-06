@@ -12,7 +12,7 @@ from ....connections.util import mediation_record_if_id
 from ....core.error import BaseError
 from ....core.profile import ProfileSession
 from ....indy.holder import IndyHolder
-from ....indy.sdk.artifacts.xform import indy_proof_req_preview2indy_requested_creds
+from ....indy.sdk.models.xform import indy_proof_req_preview2indy_requested_creds
 from ....messaging.responder import BaseResponder
 from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....multitenant.manager import MultitenantManager

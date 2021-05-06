@@ -4,7 +4,7 @@ from typing import Sequence
 
 from marshmallow import EXCLUDE, fields, RAISE, validates_schema, ValidationError
 
-from .....indy.sdk.artifacts.proof import IndyProofSchema
+from .....indy.sdk.models.proof import IndyProofSchema
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 from .....messaging.decorators.attach_decorator import (
     AttachDecorator,

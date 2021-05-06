@@ -135,17 +135,19 @@ class V20CredExRecord(BaseExchangeRecord):
         """
         copy = V20CredExRecord(
             cred_ex_id=self.cred_ex_id,
-            connection_id=self.connection_id,
-            thread_id=self.thread_id,
-            parent_thread_id=self.parent_thread_id,
-            initiator=self.initiator,
-            role=self.role,
-            state=self.state,
-            auto_offer=self.auto_offer,
-            auto_issue=self.auto_issue,
-            auto_remove=self.auto_remove,
-            error_msg=self.error_msg,
-            trace=self.trace,
+            **{
+                k: v
+                for k, v in vars(self).items()
+                if k
+                not in [
+                    "_id",
+                    "_last_state",
+                    "cred_proposal",
+                    "cred_offer",
+                    "cred_request",
+                    "cred_issue",
+                ]
+            },
         )
         copy.cred_proposal = V20CredProposal.deserialize(
             self.cred_proposal,
@@ -302,6 +304,7 @@ class V20CredExRecordSchema(BaseExchangeSchema):
                 "cred_issue": fields.Dict(required=False),
             }
         ),
+        required=False,
         description=(
             "Attachment content by format for proposal, offer, request, and issue"
         ),

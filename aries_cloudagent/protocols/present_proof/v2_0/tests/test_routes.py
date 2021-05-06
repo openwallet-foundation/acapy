@@ -8,7 +8,7 @@ from marshmallow import ValidationError
 from .....admin.request_context import AdminRequestContext
 from .....core.in_memory import InMemoryProfile
 from .....indy.holder import IndyHolder
-from .....indy.sdk.artifacts.proof_request import IndyProofReqAttrSpecSchema
+from .....indy.sdk.models.proof_request import IndyProofReqAttrSpecSchema
 from .....indy.verifier import IndyVerifier
 from .....ledger.base import BaseLedger
 from .....storage.error import StorageNotFoundError

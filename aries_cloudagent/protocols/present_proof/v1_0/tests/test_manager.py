@@ -7,20 +7,20 @@ from asynctest import mock as async_mock
 
 from .....core.in_memory import InMemoryProfile
 from .....indy.holder import IndyHolder
-from .....indy.sdk.holder import IndySdkHolder
 from .....indy.issuer import IndyIssuer
-from .....ledger.base import BaseLedger
-from .....messaging.request_context import RequestContext
-from .....messaging.responder import BaseResponder, MockResponder
-from .....storage.error import StorageNotFoundError
-from .....indy.sdk.artifacts.xform import indy_proof_req_preview2indy_requested_creds
-from .....indy.sdk.artifacts.pres_preview import (
+from .....indy.sdk.holder import IndySdkHolder
+from .....indy.sdk.models.xform import indy_proof_req_preview2indy_requested_creds
+from .....indy.sdk.models.pres_preview import (
     IndyPresAttrSpec,
     IndyPresPreview,
     IndyPresPredSpec,
 )
 from .....indy.sdk.verifier import IndySdkVerifier
 from .....indy.verifier import IndyVerifier
+from .....ledger.base import BaseLedger
+from .....messaging.request_context import RequestContext
+from .....messaging.responder import BaseResponder, MockResponder
+from .....storage.error import StorageNotFoundError
 
 from ....didcomm_prefix import DIDCommPrefix
 

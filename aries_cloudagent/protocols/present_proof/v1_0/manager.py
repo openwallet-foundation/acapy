@@ -8,7 +8,7 @@ from ....connections.models.conn_record import ConnRecord
 from ....core.error import BaseError
 from ....core.profile import Profile
 from ....indy.holder import IndyHolder, IndyHolderError
-from ....indy.sdk.artifacts.xform import indy_proof_req2non_revoc_intervals
+from ....indy.sdk.models.xform import indy_proof_req2non_revoc_intervals
 from ....indy.verifier import IndyVerifier
 from ....ledger.base import BaseLedger
 from ....messaging.decorators.attach_decorator import AttachDecorator

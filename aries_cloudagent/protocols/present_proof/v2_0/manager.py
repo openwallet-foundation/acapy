@@ -10,8 +10,8 @@ from ....connections.models.conn_record import ConnRecord
 from ....core.error import BaseError
 from ....core.profile import Profile
 from ....indy.holder import IndyHolder, IndyHolderError
-from ....indy.sdk.artifacts.predicate import Predicate
-from ....indy.sdk.artifacts.xform import indy_proof_req2non_revoc_intervals
+from ....indy.sdk.models.predicate import Predicate
+from ....indy.sdk.models.xform import indy_proof_req2non_revoc_intervals
 from ....indy.util import generate_pr_nonce
 from ....indy.verifier import IndyVerifier
 from ....ledger.base import BaseLedger
