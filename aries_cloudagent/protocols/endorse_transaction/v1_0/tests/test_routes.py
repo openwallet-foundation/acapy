@@ -1427,25 +1427,6 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
             with self.assertRaises(test_module.web.HTTPForbidden):
                 await test_module.set_endorser_info(self.request)
 
-    async def test_set_endorser_info_no_transaction_their_job_x(self):
-        self.request.match_info = {"conn_id": "dummy"}
-        self.request.query = {"endorser_did": "did", "endorser_name": "name"}
-
-        with async_mock.patch.object(
-            ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
-        ) as mock_conn_rec_retrieve:
-            mock_conn_rec_retrieve.return_value = async_mock.MagicMock(
-                metadata_get=async_mock.CoroutineMock(
-                    return_value={
-                        "transaction_my_job": (
-                            test_module.TransactionJob.TRANSACTION_AUTHOR.name
-                        ),
-                    }
-                )
-            )
-            with self.assertRaises(test_module.web.HTTPForbidden):
-                await test_module.set_endorser_info(self.request)
-
     async def test_set_endorser_info_my_wrong_job_x(self):
         self.request.match_info = {"conn_id": "dummy"}
         self.request.query = {"endorser_did": "did", "endorser_name": "name"}
@@ -1459,26 +1440,6 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
                             test_module.TransactionJob.TRANSACTION_ENDORSER.name
                         ),
                         "transaction_my_job": "a suffusion of yellow",
-                    }
-                )
-            )
-
-            with self.assertRaises(test_module.web.HTTPForbidden):
-                await test_module.set_endorser_info(self.request)
-
-    async def test_set_endorser_info_their_wrong_job_x(self):
-        self.request.match_info = {"conn_id": "dummy"}
-        self.request.query = {"endorser_did": "did", "endorser_name": "name"}
-        with async_mock.patch.object(
-            ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
-        ) as mock_conn_rec_retrieve:
-            mock_conn_rec_retrieve.return_value = async_mock.MagicMock(
-                metadata_get=async_mock.CoroutineMock(
-                    return_value={
-                        "transaction_my_job": (
-                            test_module.TransactionJob.TRANSACTION_AUTHOR.name
-                        ),
-                        "transaction_their_job": "a suffusion of yellow",
                     }
                 )
             )
