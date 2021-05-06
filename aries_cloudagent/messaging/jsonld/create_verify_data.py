@@ -57,10 +57,6 @@ def create_verify_data(data, signature_options):
     if type_ != "Ed25519Signature2018":
         raise SignatureTypeError(f"invalid signature type {type_}.")
 
-    signature_options["verificationMethod"] = signature_options.get(
-        "creator", signature_options.get("verificationMethod")
-    )
-
     if not signature_options.get("verificationMethod"):
         raise MissingVerificationMethodError(
             "signature_options.verificationMethod is required"
