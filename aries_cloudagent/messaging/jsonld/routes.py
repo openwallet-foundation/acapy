@@ -44,10 +44,7 @@ class DocSchema(OpenAPISchema):
 class SignRequestSchema(OpenAPISchema):
     """Request schema for signing a jsonld doc."""
 
-    verkey = fields.Str(
-        required=True,
-        description="Verkey to use for signing"
-    )
+    verkey = fields.Str(required=True, description="Verkey to use for signing")
     doc = fields.Nested(
         DocSchema,
         required=True,
@@ -95,9 +92,7 @@ class VerifyRequestSchema(OpenAPISchema):
     verkey = fields.Str(
         required=False, description="Verkey to use for doc verification"
     )
-    doc = fields.Dict(
-        required=True, description="Signed document"
-    )
+    doc = fields.Dict(required=True, description="Signed document")
 
 
 class VerifyResponseSchema(OpenAPISchema):
