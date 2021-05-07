@@ -98,7 +98,7 @@ class BaseDIDResolver(ABC):
             )
         previous_time = datetime.utcnow()
         did_document = await self._resolve(profile, str(py_did))
-        resolver_metadata = self._retrieve_resolver_metadata(
+        resolver_metadata = await self._retrieve_resolver_metadata(
             py_did.method, previous_time
         )
         result = DIDDocument.deserialize(
@@ -117,16 +117,15 @@ class BaseDIDResolver(ABC):
     async def _resolve(self, profile: Profile, did: str) -> dict:
         """Resolve a DID using this resolver."""
 
-    def _retrieve_resolver_metadata(self, method, previous_time):
+    async def _retrieve_resolver_metadata(self, method, previous_time):
 
         time_now = datetime.utcnow()
-        time_now.strftime("%Y-%m-%dT%H:%M:%SZ")
         duration = int((time_now - previous_time).total_seconds() * 1000)
         resolver_metadata = {
             "type": self.type,
             "driverId": f"did:{method}",
             "driver": self.driver,
-            "retrieved": time_now,
+            "retrieved": time_now.strftime("%Y-%m-%dT%H:%M:%SZ"),
             "duration": duration,
         }
 

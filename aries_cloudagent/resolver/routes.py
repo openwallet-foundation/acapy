@@ -30,7 +30,7 @@ Resolve did document admin routes.
 """
 
 from aiohttp import web
-from aiohttp_apispec import docs, match_info_schema, response_schema
+from aiohttp_apispec import docs, match_info_schema, response_schema, querystring_schema
 from marshmallow import fields, validate
 
 from ..admin.request_context import AdminRequestContext
@@ -92,8 +92,17 @@ class DIDMatchInfoSchema(OpenAPISchema):
     )
 
 
+class VerboseSchema(OpenAPISchema):
+    """Request schema for signing a jsonld doc."""
+
+    verbose = fields.Boolean(
+        required=False, description="Verbose to show the resolver metadata"
+    )
+
+
 @docs(tags=["resolver"], summary="Retrieve doc for requested did")
 @match_info_schema(DIDMatchInfoSchema())
+@querystring_schema(VerboseSchema)
 @response_schema(DIDDocSchema(), 200)
 async def resolve_did(request: web.BaseRequest):
     """Retrieve a did document."""
@@ -105,6 +114,9 @@ async def resolve_did(request: web.BaseRequest):
         resolver = session.inject(DIDResolver)
         resolution: Resolution = await resolver.resolve(context.profile, did)
         result = resolution.did_doc.serialize()
+        if request.rel_url.query and bool(request.rel_url.query["verbose"]):
+            result = {"doc": result, "resolver_metadata": resolution.resolver_metadata}
+
     except DIDNotFound as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
     except DIDMethodNotSupported as err:

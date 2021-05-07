@@ -61,7 +61,7 @@ def mock_request(mock_resolver):
 async def test_resolver(mock_request, mock_response):
     await test_module.resolve_did(mock_request)
     mock_response.assert_called_once_with(
-        did_doc.serialize(),
+        {"doc": did_doc.serialize(), "resolver_metadata": {}}
     )
     # TODO: test http response codes
 
