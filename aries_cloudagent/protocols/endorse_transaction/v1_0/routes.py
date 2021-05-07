@@ -1,3 +1,4 @@
+
 """Endorse Transaction handling admin routes."""
 
 from aiohttp import web
@@ -118,13 +119,10 @@ class EndorserInfoSchema(OpenAPISchema):
 async def transactions_list(request: web.BaseRequest):
     """
     Request handler for searching transaction records.
-
     Args:
         request: aiohttp request object
-
     Returns:
         The transaction list response
-
     """
 
     context: AdminRequestContext = request["context"]
@@ -150,13 +148,10 @@ async def transactions_list(request: web.BaseRequest):
 async def transactions_retrieve(request: web.BaseRequest):
     """
     Request handler for fetching a single transaction record.
-
     Args:
         request: aiohttp request object
-
     Returns:
         The transaction record response
-
     """
 
     context: AdminRequestContext = request["context"]
@@ -186,13 +181,10 @@ async def transactions_retrieve(request: web.BaseRequest):
 async def transaction_create_request(request: web.BaseRequest):
     """
     Request handler for creating a new transaction record and request.
-
     Args:
         request: aiohttp request object
-
     Returns:
         The transaction record
-
     """
 
     context: AdminRequestContext = request["context"]
@@ -268,13 +260,10 @@ async def transaction_create_request(request: web.BaseRequest):
 async def endorse_transaction_response(request: web.BaseRequest):
     """
     Request handler for creating an endorsed transaction response.
-
     Args:
         request: aiohttp request object
-
     Returns:
         The updated transaction record details
-
     """
 
     context: AdminRequestContext = request["context"]
@@ -372,13 +361,10 @@ async def endorse_transaction_response(request: web.BaseRequest):
 async def refuse_transaction_response(request: web.BaseRequest):
     """
     Request handler for creating a refused transaction response.
-
     Args:
         request: aiohttp request object
-
     Returns:
         The updated transaction record details
-
     """
 
     context: AdminRequestContext = request["context"]
@@ -453,13 +439,10 @@ async def refuse_transaction_response(request: web.BaseRequest):
 async def cancel_transaction(request: web.BaseRequest):
     """
     Request handler for cancelling a Transaction request.
-
     Args:
         request: aiohttp request object
-
     Returns:
         The updated transaction record details
-
     """
 
     context: AdminRequestContext = request["context"]
@@ -520,13 +503,10 @@ async def cancel_transaction(request: web.BaseRequest):
 async def transaction_resend(request: web.BaseRequest):
     """
     Request handler for resending a transaction request.
-
     Args:
         request: aiohttp request object
-
     Returns:
         The updated transaction record details
-
     """
 
     context: AdminRequestContext = request["context"]
@@ -588,13 +568,10 @@ async def transaction_resend(request: web.BaseRequest):
 async def set_endorser_role(request: web.BaseRequest):
     """
     Request handler for assigning transaction jobs.
-
     Args:
         request: aiohttp request object
-
     Returns:
         The assigned transaction jobs
-
     """
 
     context: AdminRequestContext = request["context"]
@@ -630,13 +607,10 @@ async def set_endorser_role(request: web.BaseRequest):
 async def set_endorser_info(request: web.BaseRequest):
     """
     Request handler for assigning endorser information.
-
     Args:
         request: aiohttp request object
-
     Returns:
         The assigned endorser information
-
     """
 
     context: AdminRequestContext = request["context"]
@@ -695,13 +669,10 @@ async def set_endorser_info(request: web.BaseRequest):
 async def transaction_write(request: web.BaseRequest):
     """
     Request handler for writing an endorsed transaction to the ledger.
-
     Args:
         request: aiohttp request object
-
     Returns:
         The returned ledger response
-
     """
 
     context: AdminRequestContext = request["context"]
@@ -725,14 +696,12 @@ async def transaction_write(request: web.BaseRequest):
 
     """
     ledger_transaction = transaction.messages_attach[0]["data"]["json"]
-
     ledger = context.inject(BaseLedger, required=False)
     if not ledger:
         reason = "No ledger available"
         if not context.settings.get_value("wallet.type"):
             reason += ": missing wallet-type?"
         raise web.HTTPForbidden(reason=reason)
-
     async with ledger:
         try:
             ledger_response_json = await shield(
@@ -740,9 +709,7 @@ async def transaction_write(request: web.BaseRequest):
             )
         except (IndyIssuerError, LedgerError) as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err
-
     ledger_response = json.loads(ledger_response_json)
-
     # write the wallet non-secrets record
     # TODO refactor this code (duplicated from ledger.indy.py)
     if ledger_response["result"]["txn"]["type"] == "101":
@@ -762,7 +729,6 @@ async def transaction_write(request: web.BaseRequest):
         async with ledger:
             storage = ledger.get_indy_storage()
             await storage.add_record(record)
-
     elif ledger_response["result"]["txn"]["type"] == "102":
         # cred def transaction
         async with ledger:
@@ -771,7 +737,6 @@ async def transaction_write(request: web.BaseRequest):
                 schema_response = await shield(ledger.get_schema(schema_seq_no))
             except (IndyIssuerError, LedgerError) as err:
                 raise web.HTTPBadRequest(reason=err.roll_up) from err
-
         schema_id = schema_response["id"]
         schema_id_parts = schema_id.split(":")
         public_did = ledger_response["result"]["txn"]["metadata"]["from"]
@@ -792,7 +757,6 @@ async def transaction_write(request: web.BaseRequest):
         async with ledger:
             storage = ledger.get_indy_storage()
             await storage.add_record(record)
-
     else:
         # TODO unknown ledger transaction type, just ignore for now ...
         pass
