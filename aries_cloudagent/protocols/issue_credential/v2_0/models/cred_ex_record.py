@@ -65,10 +65,10 @@ class V20CredExRecord(BaseExchangeRecord):
         auto_issue: bool = False,
         auto_remove: bool = True,
         error_msg: str = None,
-        trace: bool = False,
-        cred_id_stored: str = None,  # for backward compatibility to restore from storage
-        conn_id: str = None,  # for backward compatibility to restore from storage
-        by_format: Mapping = None,  # formalism for base_record.from_storage()
+        trace: bool = False,  # backward compat: BaseRecord.from_storage()
+        cred_id_stored: str = None,  # backward compat: BaseRecord.from_storage()
+        conn_id: str = None,  # backward compat: BaseRecord.from_storage()
+        by_format: Mapping = None,  # backward compat: BaseRecord.from_storage()
         **kwargs,
     ):
         """Initialize a new V20CredExRecord."""
@@ -88,7 +88,6 @@ class V20CredExRecord(BaseExchangeRecord):
         self.auto_issue = auto_issue
         self.auto_remove = auto_remove
         self.error_msg = error_msg
-        self.trace = trace
 
     @property
     def cred_ex_id(self) -> str:

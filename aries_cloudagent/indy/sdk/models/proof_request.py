@@ -1,10 +1,17 @@
 """Utilities to deal with indy."""
 
-from typing import Mapping, Union
+from typing import Mapping
 
-from marshmallow import fields, validate, validates_schema, ValidationError
+from marshmallow import (
+    EXCLUDE,
+    fields,
+    Schema,
+    validate,
+    validates_schema,
+    ValidationError,
+)
 
-from ....messaging.models.base import BaseModel
+from ....messaging.models.base import BaseModel, BaseModelSchema
 from ....messaging.models.openapi import OpenAPISchema
 from ....messaging.valid import (
     INDY_CRED_DEF_ID,
@@ -12,10 +19,9 @@ from ....messaging.valid import (
     INDY_PREDICATE,
     INDY_SCHEMA_ID,
     INDY_VERSION,
+    INT_EPOCH,
     NUM_STR_NATURAL,
 )
-
-from .non_rev_interval import IndyNonRevocationInterval, IndyNonRevocationIntervalSchema
 
 
 class IndyProofReqPredSpecRestrictionsSchema(OpenAPISchema):
@@ -79,9 +85,24 @@ class IndyProofReqAttrSpecSchema(OpenAPISchema):
         required=False,
     )
     non_revoked = fields.Nested(
-        IndyNonRevocationIntervalSchema(),
-        required=False,
+        Schema.from_dict(
+            {
+                "from": fields.Int(
+                    required=False,
+                    description="Earliest time of interest in non-revocation interval",
+                    strict=True,
+                    **INT_EPOCH,
+                ),
+                "to": fields.Int(
+                    required=False,
+                    description="Latest time of interest in non-revocation interval",
+                    strict=True,
+                    **INT_EPOCH,
+                ),
+            }
+        ),
         allow_none=True,  # accommodate libvcx
+        required=False,
     )
 
     @validates_schema
@@ -126,9 +147,24 @@ class IndyProofReqPredSpecSchema(OpenAPISchema):
         required=False,
     )
     non_revoked = fields.Nested(
-        IndyNonRevocationIntervalSchema(),
-        required=False,
+        Schema.from_dict(
+            {
+                "from": fields.Int(
+                    required=False,
+                    description="Earliest time of interest in non-revocation interval",
+                    strict=True,
+                    **INT_EPOCH,
+                ),
+                "to": fields.Int(
+                    required=False,
+                    description="Latest time of interest in non-revocation interval",
+                    strict=True,
+                    **INT_EPOCH,
+                ),
+            }
+        ),
         allow_none=True,  # accommodate libvcx
+        required=False,
     )
 
 
@@ -147,7 +183,7 @@ class IndyProofRequest(BaseModel):
         version: str = None,
         requested_attributes: Mapping = None,
         requested_predicates: Mapping = None,
-        non_revoked: Union[IndyNonRevocationInterval, Mapping] = None,
+        non_revoked: Mapping = None,
         **kwargs,
     ):
         """
@@ -166,16 +202,17 @@ class IndyProofRequest(BaseModel):
         self.version = version
         self.requested_attributes = requested_attributes
         self.requested_predicates = requested_predicates
-        self.non_revoked = IndyNonRevocationInterval.deserialize(non_revoked)
+        self.non_revoked = non_revoked
 
 
-class IndyProofRequestSchema(OpenAPISchema):
+class IndyProofRequestSchema(BaseModelSchema):
     """Schema for indy proof request."""
 
     class Meta:
         """Indy proof request schema metadata."""
 
         model_class = IndyProofRequest
+        unknown = EXCLUDE
 
     nonce = fields.Str(
         description="Nonce",
@@ -205,7 +242,22 @@ class IndyProofRequestSchema(OpenAPISchema):
         values=fields.Nested(IndyProofReqPredSpecSchema()),
     )
     non_revoked = fields.Nested(
-        IndyNonRevocationIntervalSchema(),
-        required=False,
+        Schema.from_dict(
+            {
+                "from": fields.Int(
+                    required=False,
+                    description="Earliest time of interest in non-revocation interval",
+                    strict=True,
+                    **INT_EPOCH,
+                ),
+                "to": fields.Int(
+                    required=False,
+                    description="Latest time of interest in non-revocation interval",
+                    strict=True,
+                    **INT_EPOCH,
+                ),
+            }
+        ),
         allow_none=True,  # accommodate libvcx
+        required=False,
     )

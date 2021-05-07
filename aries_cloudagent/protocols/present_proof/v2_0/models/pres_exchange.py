@@ -59,8 +59,8 @@ class V20PresExRecord(BaseExchangeRecord):
         verified: str = None,
         auto_present: bool = False,
         error_msg: str = None,
-        trace: bool = False,
-        by_format: Mapping = None,  # formalism for base_record.from_storage()
+        trace: bool = False,  # backward compat: BaseRecord.FromStorage()
+        by_format: Mapping = None,  # backward compat: BaseRecord.FromStorage()
         **kwargs
     ):
         """Initialize a new PresExRecord."""
@@ -76,7 +76,6 @@ class V20PresExRecord(BaseExchangeRecord):
         self.verified = verified
         self.auto_present = auto_present
         self.error_msg = error_msg
-        self.trace = trace
 
     @property
     def pres_ex_id(self) -> str:

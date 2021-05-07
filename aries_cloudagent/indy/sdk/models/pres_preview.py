@@ -4,7 +4,7 @@ from enum import Enum
 from time import time
 from typing import Mapping, Sequence
 
-from marshmallow import fields
+from marshmallow import EXCLUDE, fields
 
 from ....ledger.indy import IndySdkLedger
 from ....messaging.models.base import BaseModel, BaseModelSchema
@@ -76,6 +76,7 @@ class IndyPresPredSpecSchema(BaseModelSchema):
         """Predicate specifiation schema metadata."""
 
         model_class = IndyPresPredSpec
+        unknown = EXCLUDE
 
     name = fields.Str(description="Attribute name", required=True, example="high_score")
     cred_def_id = fields.Str(
@@ -213,6 +214,7 @@ class IndyPresAttrSpecSchema(BaseModelSchema):
         """Attribute specifiation schema metadata."""
 
         model_class = IndyPresAttrSpec
+        unknown = EXCLUDE
 
     name = fields.Str(
         description="Attribute name", required=True, example="favourite_drink"
@@ -434,6 +436,7 @@ class IndyPresPreviewSchema(BaseModelSchema):
         """Presentation preview schema metadata."""
 
         model_class = IndyPresPreview
+        unknown = EXCLUDE
 
     _type = fields.Str(
         description="Message type identifier",

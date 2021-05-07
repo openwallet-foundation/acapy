@@ -2,7 +2,7 @@
 
 from time import time
 
-from marshmallow import fields
+from marshmallow import EXCLUDE, fields
 
 from ....messaging.models.base import BaseModel, BaseModelSchema
 from ....messaging.valid import INT_EPOCH
@@ -53,6 +53,7 @@ class IndyNonRevocationIntervalSchema(BaseModelSchema):
         """IndyNonRevocationIntervalSchema metadata."""
 
         model_class = IndyNonRevocationInterval
+        unknown = EXCLUDE
 
     fro = fields.Int(
         required=False,

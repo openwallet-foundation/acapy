@@ -1,6 +1,6 @@
 """Revocation artifacts."""
 
-from typing import Mapping
+from typing import Sequence
 
 from marshmallow import EXCLUDE, fields, validate
 
@@ -35,6 +35,7 @@ class IndyRevRegDefValuePublicKeysAccumKeySchema(BaseModelSchema):
         """Schema metadata."""
 
         model_class = IndyRevRegDefValuePublicKeysAccumKey
+        unknown = EXCLUDE
 
     z = fields.Str(
         description="Value for z", example="1 120F522F81E6B7 1 09F7A59005C4939854"
@@ -62,6 +63,7 @@ class IndyRevRegDefValuePublicKeysSchema(BaseModelSchema):
         """Schema metadata."""
 
         model_class = IndyRevRegDefValuePublicKeys
+        unknown = EXCLUDE
 
     accum_key = fields.Nested(
         IndyRevRegDefValuePublicKeysAccumKeySchema(), data_key="accumKey"
@@ -99,9 +101,10 @@ class IndyRevRegDefValueSchema(BaseModelSchema):
         """Schema metadata."""
 
         model_class = IndyRevRegDefValue
+        unknown = EXCLUDE
 
     issuance_type = fields.Str(
-        validate=validate.OneOf("ISSUANCE_ON_DEMAND", "ISSUANCE_BY_DEFAULT"),
+        validate=validate.OneOf(["ISSUANCE_ON_DEMAND", "ISSUANCE_BY_DEFAULT"]),
         data_key="issuanceType",
         description="Issuance type",
     )
@@ -161,6 +164,7 @@ class IndyRevRegDefSchema(BaseModelSchema):
         """Schema metadata."""
 
         model_class = IndyRevRegDef
+        unknown = EXCLUDE
 
     ver = fields.Str(
         description="Version of revocation registry definition",
@@ -196,10 +200,16 @@ class IndyRevRegEntryValue(BaseModel):
 
         schema_class = "IndyRevRegEntryValueSchema"
 
-    def __init__(self, accum: str = None):
+    def __init__(
+        self,
+        prev_accum: str = None,
+        accum: str = None,
+        revoked: Sequence[int] = None,
+    ):
         """Initialize."""
-
+        self.prev_accum = prev_accum
         self.accum = accum
+        self.revoked = revoked
 
 
 class IndyRevRegEntryValueSchema(BaseModelSchema):
@@ -209,10 +219,22 @@ class IndyRevRegEntryValueSchema(BaseModelSchema):
         """Schema metadata."""
 
         model_class = "IndyRevRegEntryValue"
+        unknown = EXCLUDE
 
+    prev_accum = fields.Str(
+        description="Previous accumulator value",
+        data_key="prevAccum",
+        required=False,
+        example="21 137AC810975E4 6 76F0384B6F23",
+    )
     accum = fields.Str(
         description="Accumulator value",
         example="21 11792B036AED0AAA12A4 4 298B2571FFC63A737",
+    )
+    revoked = fields.List(
+        fields.Int(strict=True),
+        required=False,
+        description="Revoked credential revocation identifiers",
     )
 
 
@@ -238,6 +260,7 @@ class IndyRevRegEntrySchema(BaseModelSchema):
         """Schema metadata."""
 
         model_class = IndyRevRegEntry
+        unknown = EXCLUDE
 
     ver = fields.Str(
         description="Version of revocation registry entry",

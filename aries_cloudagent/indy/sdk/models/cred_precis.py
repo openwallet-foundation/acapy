@@ -23,7 +23,6 @@ class IndyCredInfo(BaseModel):
     class Meta:
         """IndyCredInfo metadata."""
 
-        unknown = EXCLUDE
         schema_class = "IndyCredInfoSchema"
 
     def __init__(
@@ -48,9 +47,10 @@ class IndyCredInfoSchema(BaseModelSchema):
     """Schema for indy cred-info."""
 
     class Meta:
-        """IndyCredInfoSchema metadata."""
+        """Schema metadata."""
 
-        model_class = "IndyCredInfo"
+        model_class = IndyCredInfo
+        unknown = EXCLUDE
 
     referent = fields.Str(
         description="Wallet referent",
@@ -58,8 +58,8 @@ class IndyCredInfoSchema(BaseModelSchema):
     )
     attrs = fields.Dict(
         description="Attribute names and value",
-        keys=fields.Str(example="age"),  # marshmallow/apispec v3.0 ignores
-        values=fields.Str(example="24"),
+        keys=fields.Str(example="userid"),  # marshmallow/apispec v3.0 ignores
+        values=fields.Str(example="alice"),
     )
     schema_id = fields.Str(
         description="Schema identifier",

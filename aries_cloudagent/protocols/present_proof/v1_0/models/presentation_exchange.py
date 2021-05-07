@@ -70,7 +70,7 @@ class V10PresentationExchange(BaseExchangeRecord):
         verified: str = None,
         auto_present: bool = False,
         error_msg: str = None,
-        trace: bool = False,
+        trace: bool = False,  # backward compat: BaseRecord.from_storage()
         **kwargs
     ):
         """Initialize a new PresentationExchange."""
@@ -87,7 +87,6 @@ class V10PresentationExchange(BaseExchangeRecord):
         self.verified = verified
         self.auto_present = auto_present
         self.error_msg = error_msg
-        self.trace = trace
 
     @property
     def presentation_exchange_id(self) -> str:
