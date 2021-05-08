@@ -1,10 +1,9 @@
 """Handler for keylist-update-response message."""
-from .....messaging.base_handler import (
-    BaseHandler,
-    BaseResponder,
-    HandlerException,
-    RequestContext,
-)
+
+from .....messaging.base_handler import BaseHandler, HandlerException
+from .....messaging.request_context import RequestContext
+from .....messaging.responder import BaseResponder
+
 from ..messages.keylist_update_response import KeylistUpdateResponse
 from ..manager import MediationManager
 

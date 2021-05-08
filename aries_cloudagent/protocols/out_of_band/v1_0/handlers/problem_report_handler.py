@@ -1,13 +1,11 @@
 """OOB Problem Report Message Handler."""
 
-from .....messaging.base_handler import (
-    BaseHandler,
-    BaseResponder,
-    RequestContext,
-)
+from .....messaging.base_handler import BaseHandler
+from .....messaging.request_context import RequestContext
+from .....messaging.responder import BaseResponder
 
 from ..manager import OutOfBandManager, OutOfBandManagerError
-from ..messages.problem_report import ProblemReport
+from ..messages.problem_report import OOBProblemReport
 
 
 class OOBProblemReportMessageHandler(BaseHandler):
@@ -28,7 +26,7 @@ class OOBProblemReportMessageHandler(BaseHandler):
         self._logger.debug(
             f"OOBProblemReportMessageHandler called with context {context}"
         )
-        assert isinstance(context.message, ProblemReport)
+        assert isinstance(context.message, OOBProblemReport)
 
         session = await context.session()
         mgr = OutOfBandManager(session)
@@ -39,4 +37,4 @@ class OOBProblemReportMessageHandler(BaseHandler):
                 conn_record=context.connection_record,
             )
         except OutOfBandManagerError:
-            self._logger.exception("Error processing Problem Report message")
+            self._logger.exception("Error processing OOB Problem Report message")

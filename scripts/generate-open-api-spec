@@ -28,9 +28,13 @@ ACA_PY_CMD_OPTIONS=" \
   --admin 0.0.0.0 ${ACA_PY_ADMIN_PORT} \
   --admin-insecure-mode \
   --log-level info \
+  --auto-provision \
   --wallet-type indy \
   --wallet-name gen-openapi \
   --wallet-key gen-openapi-key \
+  --multitenant \
+  --multitenant-admin \
+  --jwt-secret test \
   --no-ledger"
 
 OPEN_API_JSON_CONFIG="openAPIJSON.config"

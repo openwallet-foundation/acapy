@@ -7,11 +7,13 @@ from ......connections.models.conn_record import ConnRecord
 from ......messaging.base_handler import HandlerException
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
-from .....problem_report.v1_0.message import ProblemReport
+
 from ...messages.inner.keylist_update_rule import KeylistUpdateRule
 from ...messages.keylist_update import KeylistUpdate
 from ...messages.keylist_update_response import KeylistUpdateResponse
+from ...messages.problem_report import CMProblemReport
 from ...models.mediation_record import MediationRecord
+
 from ..keylist_update_handler import KeylistUpdateHandler
 
 TEST_CONN_ID = "conn-id"
@@ -47,7 +49,7 @@ class TestKeylistUpdateHandler(AsyncTestCase):
         await handler.handle(self.context, responder)
         assert len(responder.messages) == 1
         result, _target = responder.messages[0]
-        assert isinstance(result, ProblemReport)
+        assert isinstance(result, CMProblemReport)
 
     async def test_handler_mediation_not_granted(self):
         handler, responder = KeylistUpdateHandler(), MockResponder()
@@ -55,7 +57,7 @@ class TestKeylistUpdateHandler(AsyncTestCase):
         await handler.handle(self.context, responder)
         assert len(responder.messages) == 1
         result, _target = responder.messages[0]
-        assert isinstance(result, ProblemReport)
+        assert isinstance(result, CMProblemReport)
 
     async def test_handler(self):
         handler, responder = KeylistUpdateHandler(), MockResponder()

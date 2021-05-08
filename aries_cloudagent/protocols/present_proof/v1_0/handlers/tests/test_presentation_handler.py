@@ -1,14 +1,13 @@
 import pytest
-from asynctest import (
-    mock as async_mock,
-    TestCase as AsyncTestCase,
-)
+
+from asynctest import mock as async_mock, TestCase as AsyncTestCase
 
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
 from ......transport.inbound.receipt import MessageReceipt
 
 from ...messages.presentation import Presentation
+
 from .. import presentation_handler as handler
 
 
