@@ -51,9 +51,20 @@ class ForwardHandler(BaseHandler):
         self._logger.info(
             f"Forwarding message to connection: {recipient.connection_id}"
         )
-        await responder.send(
+
+        send_status = await responder.send(
             packed,
             connection_id=recipient.connection_id,
             target_list=connection_targets,
             reply_to_verkey=connection_verkey,
+        )
+
+        # emit event that a forward message is received (may trigger webhook event)
+        await context.profile.notify(
+            "acapy::forward::received",
+            {
+                "connection_id": recipient.connection_id,
+                "status": send_status.value,
+                "recipient_key": context.message.to,
+            },
         )
