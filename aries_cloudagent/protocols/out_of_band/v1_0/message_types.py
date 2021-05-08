@@ -22,6 +22,6 @@ MESSAGE_TYPES = DIDCommPrefix.qualify_all(
         MESSAGE_REUSE_ACCEPT: (
             f"{PROTOCOL_PACKAGE}.messages" ".reuse_accept.HandshakeReuseAccept"
         ),
-        PROBLEM_REPORT: f"{PROTOCOL_PACKAGE}.messages.problem_report.ProblemReport",
+        PROBLEM_REPORT: f"{PROTOCOL_PACKAGE}.messages.problem_report.OOBProblemReport",
     }
 )

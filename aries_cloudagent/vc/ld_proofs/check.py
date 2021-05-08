@@ -76,11 +76,6 @@ def diff_dict_keys(full: dict, with_missing: dict, prefix: str = None) -> Sequen
     return missing
 
 
-# FIXME: It seems like there is a bug in pyld with scoped contexts
-# that gives incorrect and inconsistent output. This is caused by other
-# pyld operations in ACA-Py. Therefore it is not possible to check for dropped properties
-# at the moment.
-# See: https://github.com/digitalbazaar/pyld/issues/123
 def get_properties_without_context(
     document: dict, document_loader: DocumentLoaderMethod
 ) -> Sequence[str]:

@@ -389,9 +389,9 @@ class IndyISO8601DateTime(Regexp):
 class RFC3339DateTime(Regexp):
     """Validate value against RFC3339 datetime format."""
 
-    EXAMPLE = "2010-01-01T19:73:24Z"
+    EXAMPLE = "2010-01-01T19:23:24Z"
     PATTERN = (
-        r"^([0-9]{4})-([0-9]{2})-([0-9]{2})([Tt]([0-9]{2}):([0-9]{2}):"
+        r"^([0-9]{4})-([0-9]{2})-([0-9]{2})([Tt ]([0-9]{2}):([0-9]{2}):"
         r"([0-9]{2})(\.[0-9]+)?)?(([Zz]|([+-])([0-9]{2}):([0-9]{2})))?$"
     )
 

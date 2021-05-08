@@ -3,6 +3,7 @@ from unittest import mock, TestCase
 from .....didcomm_prefix import DIDCommPrefix
 
 from ...message_types import CREDENTIAL_ACK, PROTOCOL_PACKAGE
+
 from ..credential_ack import CredentialAck
 
 
@@ -43,14 +44,10 @@ class TestCredentialAck(TestCase):
 
         assert credential_ack_dict is mock_credential_ack_schema_dump.return_value
 
-
-class TestCredentialAckSchema(TestCase):
-    """Test credential ack schema"""
-
-    credential_ack = CredentialAck()
-
     def test_make_model(self):
         """Test making model."""
-        data = self.credential_ack.serialize()
+
+        credential_ack = CredentialAck()
+        data = credential_ack.serialize()
         model_instance = CredentialAck.deserialize(data)
         assert isinstance(model_instance, CredentialAck)

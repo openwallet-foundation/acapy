@@ -1,16 +1,11 @@
 """Presentation proposal message handler."""
 
-from .....messaging.base_handler import (
-    BaseHandler,
-    BaseResponder,
-    HandlerException,
-    RequestContext,
-)
+from .....messaging.base_handler import BaseHandler, BaseResponder, HandlerException
+from .....messaging.request_context import RequestContext
+from .....utils.tracing import trace_event, get_timer
 
 from ..manager import PresentationManager
 from ..messages.presentation_proposal import PresentationProposal
-
-from .....utils.tracing import trace_event, get_timer
 
 
 class PresentationProposalHandler(BaseHandler):

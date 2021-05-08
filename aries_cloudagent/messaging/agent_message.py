@@ -35,13 +35,14 @@ from .models.base import (
     resolve_meta_property,
 )
 from .valid import UUIDFour
+from .base_message import BaseMessage, DIDCommVersion
 
 
 class AgentMessageError(BaseModelError):
     """Base exception for agent message issues."""
 
 
-class AgentMessage(BaseModel):
+class AgentMessage(BaseModel, BaseMessage):
     """Agent message base class."""
 
     class Meta:
@@ -382,6 +383,23 @@ class AgentMessage(BaseModel):
         if not self._trace:
             self.add_trace_decorator(target=TRACE_MESSAGE_TARGET, full_thread=True)
         self._trace.append_trace_report(val)
+
+    def serialize(self, msg_format: DIDCommVersion = DIDCommVersion.v1, **kwargs):
+        """Return serialized message in format specified."""
+        if msg_format is DIDCommVersion.v2:
+            raise NotImplementedError("DIDComm v2 is not yet supported")
+
+        return super().serialize(**kwargs)
+
+    @classmethod
+    def deserialize(
+        cls, value: dict, msg_format: DIDCommVersion = DIDCommVersion.v1, **kwargs
+    ):
+        """Return message object deserialized from value in format specified."""
+        if msg_format is DIDCommVersion.v2:
+            raise NotImplementedError("DIDComm v2 is not yet supported")
+
+        return super().deserialize(value, **kwargs)
 
 
 class AgentMessageSchema(BaseModelSchema):

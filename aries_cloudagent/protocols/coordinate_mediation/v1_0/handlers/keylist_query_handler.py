@@ -1,15 +1,13 @@
 """Handler for keylist-query message."""
 
-from .....messaging.base_handler import (
-    BaseHandler,
-    BaseResponder,
-    HandlerException,
-    RequestContext,
-)
+from .....messaging.base_handler import BaseHandler, HandlerException
+from .....messaging.request_context import RequestContext
+from .....messaging.responder import BaseResponder
 from .....storage.error import StorageNotFoundError
-from ....problem_report.v1_0.message import ProblemReport
+
 from ..manager import MediationManager, MediationNotGrantedError
 from ..messages.keylist_query import KeylistQuery
+from ..messages.problem_report import CMProblemReport, ProblemReportReason
 from ..models.mediation_record import MediationRecord
 
 
@@ -36,8 +34,11 @@ class KeylistQueryHandler(BaseHandler):
             keylist_response = await mgr.create_keylist_query_response(keylist)
             await responder.send_reply(keylist_response)
         except (StorageNotFoundError, MediationNotGrantedError):
-            await responder.send_reply(
-                ProblemReport(
-                    explain_ltxt="Mediation has not been granted for this connection"
-                )
+            reply = CMProblemReport(
+                description={
+                    "en": "Mediation has not been granted for this connection",
+                    "code": ProblemReportReason.MEDIATION_NOT_GRANTED.value,
+                }
             )
+            reply.assign_thread_from(context.message)
+            await responder.send_reply(reply)
