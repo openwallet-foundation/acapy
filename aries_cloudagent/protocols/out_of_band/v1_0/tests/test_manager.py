@@ -13,6 +13,11 @@ from .....connections.models.diddoc import DIDDoc, PublicKey, PublicKeyType, Ser
 from .....core.in_memory import InMemoryProfile
 from .....did.did_key import DIDKey
 from .....indy.holder import IndyHolder
+from .....indy.sdk.models.pres_preview import (
+    IndyPresAttrSpec,
+    IndyPresPredSpec,
+    IndyPresPreview,
+)
 from .....messaging.decorators.attach_decorator import AttachDecorator
 from .....messaging.responder import BaseResponder, MockResponder
 from .....messaging.util import str_to_epoch
@@ -24,11 +29,6 @@ from .....protocols.coordinate_mediation.v1_0.manager import MediationManager
 from .....protocols.didexchange.v1_0.manager import DIDXManager
 from .....protocols.issue_credential.v1_0.message_types import (
     CREDENTIAL_OFFER,
-)
-from .....protocols.present_proof.indy.pres_preview import (
-    IndyPresAttrSpec,
-    IndyPresPredSpec,
-    IndyPresPreview,
 )
 from .....protocols.present_proof.v1_0.manager import PresentationManager
 from .....protocols.present_proof.v1_0.message_types import (

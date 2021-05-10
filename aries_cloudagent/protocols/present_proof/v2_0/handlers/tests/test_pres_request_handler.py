@@ -6,9 +6,6 @@ from ......messaging.responder import MockResponder
 from ......storage.error import StorageNotFoundError
 from ......transport.inbound.receipt import MessageReceipt
 
-from .....didcomm_prefix import DIDCommPrefix
-from ....indy.pres_preview import IndyPresAttrSpec, IndyPresPreview
-
 from ...messages.pres_format import V20PresFormat
 from ...messages.pres_proposal import V20PresProposal
 from ...messages.pres_request import V20PresRequest

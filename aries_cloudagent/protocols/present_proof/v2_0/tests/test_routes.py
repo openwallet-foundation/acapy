@@ -6,12 +6,11 @@ from time import time
 
 from .....admin.request_context import AdminRequestContext
 from .....indy.holder import IndyHolder
+from .....indy.sdk.models.proof_request import IndyProofReqAttrSpecSchema
 from .....indy.verifier import IndyVerifier
 from .....ledger.base import BaseLedger
 from .....storage.error import StorageNotFoundError
 from .....storage.vc_holder.base import VCHolder
-
-from ...indy.proof_request import IndyProofReqAttrSpecSchema
 
 from .. import routes as test_module
 from ..messages.pres_format import V20PresFormat

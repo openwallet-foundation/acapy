@@ -20,7 +20,7 @@ class ProblemReportReason(Enum):
     RESPONSE_PROCESSING_ERROR = "response_processing_error"
 
 
-class ProblemReport(AgentMessage):
+class ConnectionProblemReport(AgentMessage):
     """Base class representing a connection problem report message."""
 
     class Meta:
@@ -28,7 +28,7 @@ class ProblemReport(AgentMessage):
 
         handler_class = HANDLER_CLASS
         message_type = PROBLEM_REPORT
-        schema_class = "ProblemReportSchema"
+        schema_class = "ConnectionProblemReportSchema"
 
     def __init__(self, *, problem_code: str = None, explain: str = None, **kwargs):
         """
@@ -43,13 +43,13 @@ class ProblemReport(AgentMessage):
         self.problem_code = problem_code
 
 
-class ProblemReportSchema(AgentMessageSchema):
-    """Schema for ProblemReport base class."""
+class ConnectionProblemReportSchema(AgentMessageSchema):
+    """Schema for ConnectionProblemReport base class."""
 
     class Meta:
-        """Metadata for problem report schema."""
+        """Metadata for connection problem report schema."""
 
-        model_class = ProblemReport
+        model_class = ConnectionProblemReport
         unknown = EXCLUDE
 
     explain = fields.Str(

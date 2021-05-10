@@ -17,6 +17,9 @@ from marshmallow import fields, validate, validates_schema, ValidationError
 from ....admin.request_context import AdminRequestContext
 from ....connections.models.conn_record import ConnRecord
 from ....indy.holder import IndyHolder, IndyHolderError
+from ....indy.sdk.models.cred_precis import IndyCredPrecisSchema
+from ....indy.sdk.models.proof import IndyPresSpecSchema
+from ....indy.sdk.models.proof_request import IndyProofRequestSchema
 from ....indy.util import generate_pr_nonce
 from ....ledger.error import LedgerError
 from ....messaging.decorators.attach_decorator import AttachDecorator
@@ -40,9 +43,6 @@ from ..dif.pres_exch import InputDescriptors
 from ..dif.pres_proposal_schema import DIFPresProposalSchema
 from ..dif.pres_request_schema import DIFPresRequestSchema
 from ..dif.pres_spec_schema import DIFPresSpecSpecSchema
-from ..indy.cred_precis import IndyCredPrecisSchema
-from ..indy.proof import IndyPresSpecSchema
-from ..indy.proof_request import IndyProofRequestSchema
 
 from .formats.handler import V20PresFormatError
 from .manager import V20PresManager

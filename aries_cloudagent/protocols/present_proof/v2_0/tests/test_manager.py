@@ -8,13 +8,12 @@ from asynctest import mock as async_mock
 
 from .....core.in_memory import InMemoryProfile
 from .....indy.holder import IndyHolder, IndyHolderError
+from .....indy.sdk.models.xform import indy_proof_req_preview2indy_requested_creds
 from .....indy.verifier import IndyVerifier
 from .....ledger.base import BaseLedger
 from .....messaging.decorators.attach_decorator import AttachDecorator
 from .....messaging.responder import BaseResponder, MockResponder
 from .....storage.error import StorageNotFoundError
-
-from ...indy.xform import indy_proof_req_preview2indy_requested_creds
 
 from .. import manager as test_module
 from ..formats.handler import V20PresFormatError
@@ -895,6 +894,7 @@ class TestV20PresManager(AsyncTestCase):
 
         # cover by_format property
         by_format = px_rec_dummy.by_format
+
         assert by_format.get("pres_proposal").get("indy") == INDY_PROOF_REQ_NAME
         assert by_format.get("pres_request").get("indy") == INDY_PROOF_REQ_NAME
 

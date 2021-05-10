@@ -8,17 +8,16 @@ from marshmallow import RAISE
 from typing import Mapping, Tuple
 
 from ......indy.holder import IndyHolder, IndyHolderError
+from ......indy.sdk.models.predicate import Predicate
+from ......indy.sdk.models.proof import IndyProofSchema
+from ......indy.sdk.models.proof_request import IndyProofRequestSchema
+from ......indy.sdk.models.xform import indy_proof_req2non_revoc_intervals
 from ......indy.util import generate_pr_nonce
 from ......indy.verifier import IndyVerifier
 from ......ledger.base import BaseLedger
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......messaging.util import canon
 from ......revocation.models.revocation_registry import RevocationRegistry
-
-from ....indy.predicate import Predicate
-from ....indy.proof import IndyProofSchema
-from ....indy.proof_request import IndyProofRequestSchema
-from ....indy.xform import indy_proof_req2non_revoc_intervals
 
 from ...message_types import (
     PRES_20_REQUEST,
