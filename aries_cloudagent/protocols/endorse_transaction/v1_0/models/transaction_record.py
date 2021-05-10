@@ -2,14 +2,12 @@
 
 from marshmallow import fields
 
+from .....core.profile import ProfileSession
 from .....messaging.models.base_record import (
     BaseExchangeRecord,
     BaseExchangeSchema,
 )
-
 from .....messaging.valid import UUIDFour
-
-from .....core.profile import ProfileSession
 
 
 class TransactionRecord(BaseExchangeRecord):

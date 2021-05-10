@@ -3,13 +3,13 @@ from asynctest import (
     TestCase as AsyncTestCase,
 )
 
+from ......connections.models.conn_record import ConnRecord
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
 from ......transport.inbound.receipt import MessageReceipt
 
 from ...handlers import transaction_acknowledgement_handler as test_module
 from ...messages.transaction_acknowledgement import TransactionAcknowledgement
-from ......connections.models.conn_record import ConnRecord
 
 
 class TestTransactionAcknowledgementHandler(AsyncTestCase):

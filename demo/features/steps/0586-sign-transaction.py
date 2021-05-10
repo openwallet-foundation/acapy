@@ -1,6 +1,4 @@
-from behave import given, when, then
 import json
-from time import sleep
 import time
 
 from bdd_support.agent_backchannel_client import (
@@ -11,7 +9,9 @@ from bdd_support.agent_backchannel_client import (
     async_sleep,
     read_json_data,
 )
+from behave import given, when, then
 from runners.agent_container import AgentContainer
+from time import sleep
 
 
 # This step is defined in another feature file

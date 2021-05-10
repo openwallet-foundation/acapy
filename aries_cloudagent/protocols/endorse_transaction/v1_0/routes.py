@@ -16,9 +16,9 @@ from ....connections.models.conn_record import ConnRecord
 from ....indy.issuer import IndyIssuerError
 from ....ledger.base import BaseLedger
 from ....ledger.error import LedgerError
+from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
 from ....messaging.valid import UUIDFour
-from ....messaging.models.base import BaseModelError
 from ....storage.error import StorageError, StorageNotFoundError
 from ....wallet.base import BaseWallet
 

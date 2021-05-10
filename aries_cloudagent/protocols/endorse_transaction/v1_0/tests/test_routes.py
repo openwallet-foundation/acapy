@@ -6,13 +6,13 @@ from .....admin.request_context import AdminRequestContext
 from .....connections.models.conn_record import ConnRecord
 from .....core.in_memory import InMemoryProfile
 from .....ledger.base import BaseLedger
-from .....wallet.did_method import DIDMethod
-from .....wallet.key_type import KeyType
 from .....wallet.base import BaseWallet
 from .....wallet.did_info import DIDInfo
+from .....wallet.did_method import DIDMethod
+from .....wallet.key_type import KeyType
 
-from .. import routes as test_module
 from ..models.transaction_record import TransactionRecord
+from .. import routes as test_module
 
 
 TEST_DID = "LjgpST2rjsoxYegQDRm7EL"

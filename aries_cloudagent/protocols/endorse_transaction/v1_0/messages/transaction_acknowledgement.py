@@ -2,8 +2,8 @@
 
 from marshmallow import EXCLUDE, fields
 
-from .....messaging.valid import UUIDFour
 from .....messaging.ack.message import Ack, AckSchema
+from .....messaging.valid import UUIDFour
 
 from ..message_types import TRANSACTION_ACKNOWLEDGEMENT, PROTOCOL_PACKAGE
 
