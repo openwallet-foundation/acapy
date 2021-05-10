@@ -39,11 +39,7 @@ class DIDCommPrefix(Enum):
     def qualify_all(cls, messages: dict) -> dict:
         """Apply all known prefixes to a dictionary of message types."""
 
-        result = {}
-        for pfx in cls:
-            for k, v in messages.items():
-                result[qualify(k, pfx.value)] = v
-        return result
+        return {qualify(k, pfx.value): v for pfx in cls for k, v in messages.items()}
 
     @staticmethod
     def qualify_current(slug: str = None) -> str:

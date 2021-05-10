@@ -1569,8 +1569,10 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             sender_did="test_did",
         )
         problem_report = ProblemReport(
-            problem_code=ProblemReportReason.EXISTING_CONNECTION_NOT_ACTIVE.value,
-            explain="test",
+            description={
+                "en": "test",
+                "code": ProblemReportReason.EXISTING_CONNECTION_NOT_ACTIVE.value,
+            }
         )
         problem_report.assign_thread_id(thid="test_123", pthid="test_123")
         self.test_conn_rec.invitation_msg_id = "test_123"
@@ -1607,8 +1609,10 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             sender_did="test_did",
         )
         problem_report = ProblemReport(
-            problem_code=ProblemReportReason.NO_EXISTING_CONNECTION.value,
-            explain="test",
+            description={
+                "en": "test",
+                "code": ProblemReportReason.NO_EXISTING_CONNECTION.value,
+            }
         )
         problem_report.assign_thread_id(thid="test_123", pthid="test_123")
         self.test_conn_rec.invitation_msg_id = "test_123"
@@ -1645,8 +1649,10 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             sender_did="test_did",
         )
         problem_report = ProblemReport(
-            problem_code=ProblemReportReason.NO_EXISTING_CONNECTION.value,
-            explain="test",
+            description={
+                "en": "test",
+                "code": ProblemReportReason.NO_EXISTING_CONNECTION.value,
+            }
         )
         problem_report.assign_thread_id(thid="test_123", pthid="test_123")
         test_invalid_conn = ConnRecord(

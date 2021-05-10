@@ -1,10 +1,8 @@
 """Handshake Reuse Accepted Message Handler under RFC 0434."""
 
-from .....messaging.base_handler import (
-    BaseHandler,
-    BaseResponder,
-    RequestContext,
-)
+from .....messaging.base_handler import BaseHandler
+from .....messaging.request_context import RequestContext
+from .....messaging.responder import BaseResponder
 
 from ..manager import OutOfBandManager, OutOfBandManagerError
 from ..messages.reuse_accept import HandshakeReuseAccept

@@ -1,14 +1,12 @@
 """Handler for mediate-request message."""
 
-from .....messaging.base_handler import (
-    BaseHandler,
-    BaseResponder,
-    HandlerException,
-    RequestContext,
-)
-from ....problem_report.v1_0.message import ProblemReport
+from .....messaging.base_handler import BaseHandler, HandlerException
+from .....messaging.request_context import RequestContext
+from .....messaging.responder import BaseResponder
+
 from ..manager import MediationManager, MediationAlreadyExists
 from ..messages.mediate_request import MediationRequest
+from ..messages.problem_report import CMProblemReport, ProblemReportReason
 
 
 class MediationRequestHandler(BaseHandler):
@@ -33,8 +31,11 @@ class MediationRequestHandler(BaseHandler):
                 record, grant = await mgr.grant_request(record.mediation_id)
                 await responder.send_reply(grant)
         except MediationAlreadyExists:
-            await responder.send_reply(
-                ProblemReport(
-                    explain_ltxt="Mediation request already exists from this connection"
-                )
+            reply = CMProblemReport(
+                description={
+                    "en": "Mediation request already exists from this connection",
+                    "code": ProblemReportReason.MEDIATION_REQUEST_REPEAT.value,
+                }
             )
+            reply.assign_thread_from(context.message)
+            await responder.send_reply(reply)

@@ -35,7 +35,6 @@ from ....utils.tracing import trace_event, get_timer, AdminAPIMessageTracingSche
 from ....wallet.error import WalletNotFoundError
 
 from ...problem_report.v1_0 import internal_error
-from ...problem_report.v1_0.message import ProblemReport
 
 from ..dif.pres_exch import InputDescriptors
 from ..dif.pres_proposal_schema import DIFPresProposalSchema
@@ -285,7 +284,7 @@ class V20CredentialsFetchQueryStringSchema(OpenAPISchema):
 class V20PresProblemReportRequestSchema(OpenAPISchema):
     """Request schema for sending problem report."""
 
-    explain_ltxt = fields.Str(required=True)
+    description = fields.Str(required=True)
 
 
 class V20PresExIdMatchInfoSchema(OpenAPISchema):
@@ -1035,31 +1034,27 @@ async def present_proof_problem_report(request: web.BaseRequest):
         request: aiohttp request object
 
     """
-    r_time = get_timer()
-
     context: AdminRequestContext = request["context"]
     outbound_handler = request["outbound_message_router"]
 
     pres_ex_id = request.match_info["pres_ex_id"]
     body = await request.json()
 
+    pres_manager = V20PresManager(context.profile)
+
     try:
         async with await context.session() as session:
             pres_ex_record = await V20PresExRecord.retrieve_by_id(session, pres_ex_id)
+        report = await pres_manager.create_problem_report(
+            pres_ex_record,
+            body["description"],
+        )
     except StorageNotFoundError as err:
-        raise web.HTTPNotFound(reason=err.roll_up) from err
+        await internal_error(err, web.HTTPNotFound, None, outbound_handler)
+    except StorageError as err:
+        await internal_error(err, web.HTTPBadRequest, pres_ex_record, outbound_handler)
 
-    error_result = ProblemReport(explain_ltxt=body["explain_ltxt"])
-    error_result.assign_thread_id(pres_ex_record.thread_id)
-
-    await outbound_handler(error_result, connection_id=pres_ex_record.connection_id)
-
-    trace_event(
-        context.settings,
-        error_result,
-        outcome="presentation_exchange_problem_report.END",
-        perf_counter=r_time,
-    )
+    await outbound_handler(report, connection_id=pres_ex_record.connection_id)
 
     return web.json_response({})
 

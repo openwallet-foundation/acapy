@@ -22,7 +22,7 @@ class TestPingHandler:
         request_context.profile.context.injector.bind_instance(EventBus, mock_event_bus)
 
         request_context.message_receipt = MessageReceipt()
-        request_context.message = ProblemReport()
+        request_context.message = ProblemReport(description={"code": "error-code"})
         request_context.connection_ready = True
         handler = ProblemReportHandler()
         responder = MockResponder()

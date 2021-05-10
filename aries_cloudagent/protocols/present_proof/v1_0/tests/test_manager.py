@@ -25,6 +25,7 @@ from .. import manager as test_module
 from ..manager import PresentationManager, PresentationManagerError
 from ..messages.presentation import Presentation
 from ..messages.presentation_ack import PresentationAck
+from ..messages.presentation_problem_report import PresentationProblemReport
 from ..messages.presentation_proposal import PresentationProposal
 from ..messages.presentation_request import PresentationRequest
 from ..models.presentation_exchange import V10PresentationExchange
@@ -1052,3 +1053,94 @@ class TestPresentationManager(AsyncTestCase):
             assert exchange_out.state == (
                 V10PresentationExchange.STATE_PRESENTATION_ACKED
             )
+
+    async def test_create_problem_report(self):
+        connection_id = "connection-id"
+        stored_exchange = V10PresentationExchange(
+            presentation_exchange_id="dummy-pxid",
+            connection_id=connection_id,
+            initiator=V10PresentationExchange.INITIATOR_SELF,
+            role=V10PresentationExchange.ROLE_VERIFIER,
+            state=V10PresentationExchange.STATE_PROPOSAL_RECEIVED,
+            thread_id="dummy-thid",
+        )
+
+        with async_mock.patch.object(
+            V10PresentationExchange, "save", autospec=True
+        ) as save_ex:
+            report = await self.manager.create_problem_report(
+                stored_exchange,
+                "The front fell off",
+            )
+
+        assert stored_exchange.state is None
+        assert report._thread_id == stored_exchange.thread_id
+
+    async def test_receive_problem_report(self):
+        connection_id = "connection-id"
+        stored_exchange = V10PresentationExchange(
+            presentation_exchange_id="dummy-pxid",
+            connection_id=connection_id,
+            initiator=V10PresentationExchange.INITIATOR_SELF,
+            role=V10PresentationExchange.ROLE_VERIFIER,
+            state=V10PresentationExchange.STATE_PROPOSAL_RECEIVED,
+            thread_id="dummy-thid",
+        )
+        problem = PresentationProblemReport(
+            description={
+                "code": test_module.ProblemReportReason.ABANDONED.value,
+                "en": "Change of plans",
+            }
+        )
+
+        with async_mock.patch.object(
+            V10PresentationExchange, "save", autospec=True
+        ) as save_ex, async_mock.patch.object(
+            V10PresentationExchange,
+            "retrieve_by_tag_filter",
+            async_mock.CoroutineMock(),
+        ) as retrieve_ex, async_mock.patch.object(
+            self.profile,
+            "session",
+            async_mock.MagicMock(return_value=self.profile.session()),
+        ) as session:
+            retrieve_ex.return_value = stored_exchange
+
+            ret_exchange = await self.manager.receive_problem_report(
+                problem, connection_id
+            )
+            retrieve_ex.assert_called_once_with(
+                session.return_value,
+                {"thread_id": problem._thread_id},
+                {"connection_id": connection_id},
+            )
+            save_ex.assert_called_once()
+
+            assert ret_exchange.state is None
+
+    async def test_receive_problem_report_x(self):
+        connection_id = "connection-id"
+        stored_exchange = V10PresentationExchange(
+            presentation_exchange_id="dummy-pxid",
+            connection_id=connection_id,
+            initiator=V10PresentationExchange.INITIATOR_SELF,
+            role=V10PresentationExchange.ROLE_VERIFIER,
+            state=V10PresentationExchange.STATE_PROPOSAL_RECEIVED,
+            thread_id="dummy-thid",
+        )
+        problem = PresentationProblemReport(
+            description={
+                "code": test_module.ProblemReportReason.ABANDONED.value,
+                "en": "Change of plans",
+            }
+        )
+
+        with async_mock.patch.object(
+            V10PresentationExchange,
+            "retrieve_by_tag_filter",
+            async_mock.CoroutineMock(),
+        ) as retrieve_ex:
+            retrieve_ex.side_effect = test_module.StorageNotFoundError("No such record")
+
+            with self.assertRaises(test_module.StorageNotFoundError):
+                await self.manager.receive_problem_report(problem, connection_id)

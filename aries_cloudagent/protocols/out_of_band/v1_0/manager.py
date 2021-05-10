@@ -41,7 +41,7 @@ from ...present_proof.v2_0.messages.pres_request import V20PresRequest
 from ...present_proof.v2_0.models.pres_exchange import V20PresExRecord
 
 from .messages.invitation import HSProto, InvitationMessage
-from .messages.problem_report import ProblemReport
+from .messages.problem_report import OOBProblemReport
 from .messages.reuse import HandshakeReuse
 from .messages.reuse_accept import HandshakeReuseAccept
 from .messages.service import Service as ServiceMessage
@@ -994,18 +994,18 @@ class OutOfBandManager(BaseConnectionManager):
 
     async def receive_problem_report(
         self,
-        problem_report: ProblemReport,
+        problem_report: OOBProblemReport,
         receipt: MessageReceipt,
         conn_record: ConnRecord,
     ) -> None:
         """
         Receive and process a ProblemReport message from the inviter to invitee.
 
-        Process a `ProblemReport` message by updating  the ConnRecord metadata
+        Process a `ProblemReport` message by updating the ConnRecord metadata
         state to `not_accepted`.
 
         Args:
-            problem_report: The `ProblemReport` to process
+            problem_report: The `OOBProblemReport` to process
             receipt: The message receipt
 
         Returns:
