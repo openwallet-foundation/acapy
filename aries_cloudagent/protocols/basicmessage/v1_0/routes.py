@@ -25,7 +25,7 @@ class SendMessageSchema(OpenAPISchema):
     content = fields.Str(description="Message content", example="Hello")
 
 
-class ConnIdMatchInfoSchema(OpenAPISchema):
+class BasicConnIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking connection id."""
 
     conn_id = fields.Str(
@@ -34,7 +34,7 @@ class ConnIdMatchInfoSchema(OpenAPISchema):
 
 
 @docs(tags=["basicmessage"], summary="Send a basic message to a connection")
-@match_info_schema(ConnIdMatchInfoSchema())
+@match_info_schema(BasicConnIdMatchInfoSchema())
 @request_schema(SendMessageSchema())
 @response_schema(BasicMessageModuleResponseSchema(), 200, description="")
 async def connections_send_message(request: web.BaseRequest):

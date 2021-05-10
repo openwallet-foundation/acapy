@@ -133,7 +133,7 @@ class TestV20CredOffer(AsyncTestCase):
         V20CredOffer.deserialize(obj)
 
 
-class TestCredentialOfferSchema(AsyncTestCase):
+class TestV20CredOfferSchema(AsyncTestCase):
     """Test credential cred offer schema"""
 
     async def test_make_model(self):
