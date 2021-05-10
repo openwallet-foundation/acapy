@@ -8,6 +8,7 @@ import pytest
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
+from ....vc.tests.document_loader import custom_document_loader
 from ....admin.request_context import AdminRequestContext
 from ....core.in_memory import InMemoryProfile
 from ....wallet.base import BaseWallet
