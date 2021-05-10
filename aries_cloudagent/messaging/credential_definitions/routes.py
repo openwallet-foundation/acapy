@@ -111,7 +111,7 @@ class CredDefIdMatchInfoSchema(OpenAPISchema):
     )
 
 
-class CreateTransactionForEndorserOptionSchema(OpenAPISchema):
+class CreateCredDefTxnForEndorserOptionSchema(OpenAPISchema):
     """Class for user to input whether to create a transaction for endorser or not."""
 
     create_transaction_for_endorser = fields.Boolean(
@@ -120,7 +120,7 @@ class CreateTransactionForEndorserOptionSchema(OpenAPISchema):
     )
 
 
-class ConnIdMatchInfoSchema(OpenAPISchema):
+class CredDefConnIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking connection id."""
 
     conn_id = fields.Str(
@@ -133,8 +133,8 @@ class ConnIdMatchInfoSchema(OpenAPISchema):
     summary="Sends a credential definition to the ledger",
 )
 @request_schema(CredentialDefinitionSendRequestSchema())
-@querystring_schema(CreateTransactionForEndorserOptionSchema())
-@querystring_schema(ConnIdMatchInfoSchema())
+@querystring_schema(CreateCredDefTxnForEndorserOptionSchema())
+@querystring_schema(CredDefConnIdMatchInfoSchema())
 @response_schema(TxnOrCredentialDefinitionSendResultSchema(), 200, description="")
 async def credential_definitions_send_credential_definition(request: web.BaseRequest):
     """

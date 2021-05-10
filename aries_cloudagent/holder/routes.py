@@ -128,7 +128,7 @@ class VCRecordListSchema(OpenAPISchema):
     results = fields.List(fields.Nested(VCRecordSchema()))
 
 
-class CredIdMatchInfoSchema(OpenAPISchema):
+class HolderCredIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking credential id."""
 
     credential_id = fields.Str(
@@ -159,7 +159,7 @@ class CredRevokedResultSchema(OpenAPISchema):
 
 
 @docs(tags=["credentials"], summary="Fetch credential from wallet by id")
-@match_info_schema(CredIdMatchInfoSchema())
+@match_info_schema(HolderCredIdMatchInfoSchema())
 @response_schema(IndyCredInfoSchema(), 200, description="")
 async def credentials_get(request: web.BaseRequest):
     """
@@ -187,7 +187,7 @@ async def credentials_get(request: web.BaseRequest):
 
 
 @docs(tags=["credentials"], summary="Query credential revocation status by id")
-@match_info_schema(CredIdMatchInfoSchema())
+@match_info_schema(HolderCredIdMatchInfoSchema())
 @querystring_schema(CredRevokedQueryStringSchema())
 @response_schema(CredRevokedResultSchema(), 200, description="")
 async def credentials_revoked(request: web.BaseRequest):
@@ -232,7 +232,7 @@ async def credentials_revoked(request: web.BaseRequest):
 
 
 @docs(tags=["credentials"], summary="Get attribute MIME types from wallet")
-@match_info_schema(CredIdMatchInfoSchema())
+@match_info_schema(HolderCredIdMatchInfoSchema())
 @response_schema(AttributeMimeTypesResultSchema(), 200, description="")
 async def credentials_attr_mime_types_get(request: web.BaseRequest):
     """
@@ -254,7 +254,7 @@ async def credentials_attr_mime_types_get(request: web.BaseRequest):
 
 
 @docs(tags=["credentials"], summary="Remove credential from wallet by id")
-@match_info_schema(CredIdMatchInfoSchema())
+@match_info_schema(HolderCredIdMatchInfoSchema())
 @response_schema(HolderModuleResponseSchema(), description="")
 async def credentials_remove(request: web.BaseRequest):
     """
@@ -323,7 +323,7 @@ async def credentials_list(request: web.BaseRequest):
     tags=["credentials"],
     summary="Fetch W3C credential from wallet by id",
 )
-@match_info_schema(CredIdMatchInfoSchema())
+@match_info_schema(HolderCredIdMatchInfoSchema())
 @response_schema(VCRecordSchema(), 200, description="")
 async def w3c_cred_get(request: web.BaseRequest):
     """
@@ -355,7 +355,7 @@ async def w3c_cred_get(request: web.BaseRequest):
     tags=["credentials"],
     summary="Remove W3C credential from wallet by id",
 )
-@match_info_schema(CredIdMatchInfoSchema())
+@match_info_schema(HolderCredIdMatchInfoSchema())
 @response_schema(HolderModuleResponseSchema(), 200, description="")
 async def w3c_cred_remove(request: web.BaseRequest):
     """

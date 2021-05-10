@@ -74,7 +74,7 @@ class SendMenuSchema(OpenAPISchema):
     )
 
 
-class ConnIdMatchInfoSchema(OpenAPISchema):
+class MenuConnIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking connection id."""
 
     conn_id = fields.Str(
@@ -91,7 +91,7 @@ class ActionMenuFetchResultSchema(OpenAPISchema):
 @docs(
     tags=["action-menu"], summary="Close the active menu associated with a connection"
 )
-@match_info_schema(ConnIdMatchInfoSchema())
+@match_info_schema(MenuConnIdMatchInfoSchema())
 @response_schema(ActionMenuModulesResultSchema(), 200, description="")
 async def actionmenu_close(request: web.BaseRequest):
     """
@@ -119,7 +119,7 @@ async def actionmenu_close(request: web.BaseRequest):
 
 
 @docs(tags=["action-menu"], summary="Fetch the active menu")
-@match_info_schema(ConnIdMatchInfoSchema())
+@match_info_schema(MenuConnIdMatchInfoSchema())
 @response_schema(ActionMenuFetchResultSchema(), 200, description="")
 async def actionmenu_fetch(request: web.BaseRequest):
     """
@@ -138,7 +138,7 @@ async def actionmenu_fetch(request: web.BaseRequest):
 
 
 @docs(tags=["action-menu"], summary="Perform an action associated with the active menu")
-@match_info_schema(ConnIdMatchInfoSchema())
+@match_info_schema(MenuConnIdMatchInfoSchema())
 @request_schema(PerformRequestSchema())
 @response_schema(ActionMenuModulesResultSchema(), 200, description="")
 async def actionmenu_perform(request: web.BaseRequest):
@@ -169,7 +169,7 @@ async def actionmenu_perform(request: web.BaseRequest):
 
 
 @docs(tags=["action-menu"], summary="Request the active menu")
-@match_info_schema(ConnIdMatchInfoSchema())
+@match_info_schema(MenuConnIdMatchInfoSchema())
 @response_schema(ActionMenuModulesResultSchema(), 200, description="")
 async def actionmenu_request(request: web.BaseRequest):
     """
@@ -199,7 +199,7 @@ async def actionmenu_request(request: web.BaseRequest):
 
 
 @docs(tags=["action-menu"], summary="Send an action menu to a connection")
-@match_info_schema(ConnIdMatchInfoSchema())
+@match_info_schema(MenuConnIdMatchInfoSchema())
 @request_schema(SendMenuSchema())
 @response_schema(ActionMenuModulesResultSchema(), 200, description="")
 async def actionmenu_send(request: web.BaseRequest):

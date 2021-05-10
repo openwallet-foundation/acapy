@@ -113,7 +113,7 @@ class SchemaIdMatchInfoSchema(OpenAPISchema):
     )
 
 
-class CreateTransactionForEndorserOptionSchema(OpenAPISchema):
+class CreateSchemaTxnForEndorserOptionSchema(OpenAPISchema):
     """Class for user to input whether to create a transaction for endorser or not."""
 
     create_transaction_for_endorser = fields.Boolean(
@@ -122,7 +122,7 @@ class CreateTransactionForEndorserOptionSchema(OpenAPISchema):
     )
 
 
-class ConnIdMatchInfoSchema(OpenAPISchema):
+class SchemaConnIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking connection id."""
 
     conn_id = fields.Str(
@@ -132,8 +132,8 @@ class ConnIdMatchInfoSchema(OpenAPISchema):
 
 @docs(tags=["schema"], summary="Sends a schema to the ledger")
 @request_schema(SchemaSendRequestSchema())
-@querystring_schema(CreateTransactionForEndorserOptionSchema())
-@querystring_schema(ConnIdMatchInfoSchema())
+@querystring_schema(CreateSchemaTxnForEndorserOptionSchema())
+@querystring_schema(SchemaConnIdMatchInfoSchema())
 @response_schema(TxnOrSchemaSendResultSchema(), 200, description="")
 async def schemas_send_schema(request: web.BaseRequest):
     """
