@@ -911,11 +911,11 @@ async def present_proof_send_presentation(request: web.BaseRequest):
             dif_spec = body.get(V20PresFormat.Format.DIF.api)
             request_data = {}
             if "presentation_definition" in dif_spec:
-                request_data = {
-                    "presentation_definition": dif_spec.get("presentation_definition")
-                }
+                request_data["presentation_definition"] = dif_spec.get(
+                    "presentation_definition"
+                )
             if "issuer_id" in dif_spec:
-                request_data = {"issuer_id": dif_spec.get("issuer_id")}
+                request_data["issuer_id"] = dif_spec.get("issuer_id")
             pres_ex_record, pres_message = await pres_manager.create_pres(
                 pres_ex_record,
                 request_data=request_data,

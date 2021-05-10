@@ -62,8 +62,11 @@ class DIFPresExchHandler:
 
     ISSUE_SIGNATURE_SUITE_KEY_TYPE_MAPPING = {
         Ed25519Signature2018: KeyType.ED25519,
-        BbsBlsSignature2020: KeyType.BLS12381G2,
     }
+
+    if BbsBlsSignature2020.BBS_SUPPORTED:
+        ISSUE_SIGNATURE_SUITE_KEY_TYPE_MAPPING[BbsBlsSignature2020] = KeyType.BLS12381G2
+
     DERIVE_SIGNATURE_SUITE_KEY_TYPE_MAPPING = {
         BbsBlsSignatureProof2020: KeyType.BLS12381G2,
     }

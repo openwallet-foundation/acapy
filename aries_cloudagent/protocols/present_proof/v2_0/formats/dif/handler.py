@@ -14,6 +14,7 @@ from ....dif.pres_exch import PresentationDefinition
 from ....dif.pres_exch_handler import DIFPresExchHandler
 from ....dif.pres_proposal_schema import DIFPresProposalSchema
 from ....dif.pres_request_schema import DIFPresRequestSchema
+from ....dif.pres_spec_schema import DIFPresSpecSpecSchema
 from ....dif.pres_schema import DIFPresSpecSchema
 from ......vc.ld_proofs import (
     DocumentLoader,
@@ -49,9 +50,11 @@ class DIFPresFormatHandler(V20PresFormatHandler):
 
     ISSUE_SIGNATURE_SUITE_KEY_TYPE_MAPPING = {
         Ed25519Signature2018: KeyType.ED25519,
-        BbsBlsSignature2020: KeyType.BLS12381G2,
         BbsBlsSignatureProof2020: KeyType.BLS12381G2,
     }
+
+    if BbsBlsSignature2020.BBS_SUPPORTED:
+        ISSUE_SIGNATURE_SUITE_KEY_TYPE_MAPPING[BbsBlsSignature2020] = KeyType.BLS12381G2
 
     async def _get_all_suites(self, wallet: BaseWallet):
         """Get all supported suites for verifying presentation."""
@@ -154,13 +157,12 @@ class DIFPresFormatHandler(V20PresFormatHandler):
         pres_definition = None
 
         if request_data != {}:
-            pres_spec_payload = DIFPresRequestSchema().load(request_data)
+            pres_spec_payload = DIFPresSpecSpecSchema().load(request_data)
             # Overriding with prover provided pres_spec
             challenge = str(uuid4())
             domain = None
             pres_definition = pres_spec_payload.get("presentation_definition")
             issuer_id = pres_spec_payload.get("issuer_id")
-
         if not pres_definition:
             challenge = proof_request.get("challenge") or str(uuid4())
             domain = proof_request.get("domain") or None

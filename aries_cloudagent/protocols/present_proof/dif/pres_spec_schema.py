@@ -9,7 +9,7 @@ from .pres_exch import PresentationDefinitionSchema
 class DIFPresSpecSpecSchema(OpenAPISchema):
     """Schema for DIF Presentation Spec schema."""
 
-    issuer_id = fields.String(
+    issuer_id = fields.Str(
         description=(
             (
                 "Issuer identifier to sign the presentation,"
