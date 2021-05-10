@@ -1,34 +1,22 @@
 """Classes to manage presentations."""
 
-import json
 import logging
-import time
 
 from typing import Tuple
 
 from ....connections.models.conn_record import ConnRecord
 from ....core.error import BaseError
 from ....core.profile import Profile
-from ....indy.holder import IndyHolder, IndyHolderError
-from ....indy.util import generate_pr_nonce
-from ....indy.verifier import IndyVerifier
-from ....ledger.base import BaseLedger
-from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....messaging.responder import BaseResponder
-from ....messaging.util import canon
-from ....revocation.models.revocation_registry import RevocationRegistry
 from ....storage.error import StorageNotFoundError
 
-from ..indy.predicate import Predicate
-from ..indy.xform import indy_proof_req2non_revoc_intervals
-
-from .models.pres_exchange import V20PresExRecord
-from .message_types import ATTACHMENT_FORMAT, PRES_20_REQUEST, PRES_20
 from .messages.pres import V20Pres
 from .messages.pres_ack import V20PresAck
 from .messages.pres_format import V20PresFormat
 from .messages.pres_proposal import V20PresProposal
 from .messages.pres_request import V20PresRequest
+from .models.pres_exchange import V20PresExRecord
+
 
 LOGGER = logging.getLogger(__name__)
 
@@ -153,12 +141,10 @@ class V20PresManager:
             ).create_exchange_for_request(pres_ex_record, pres_request_message)
         pres_ex_record.pres_request = pres_request_message.serialize()
         pres_ex_record.state = V20PresExRecord.STATE_REQUEST_SENT
-
         async with self._profile.session() as session:
             await pres_ex_record.save(
                 session, reason="create (free) v2.0 presentation request"
             )
-
         return pres_ex_record
 
     async def create_bound_request(
@@ -173,10 +159,6 @@ class V20PresManager:
         Args:
             pres_ex_record: Presentation exchange record for which
                 to create presentation request
-            fmt2filter: Mapping between format and filter
-            name: name to use in presentation request (None for default)
-            version: version to use in presentation request (None for default)
-            nonce: nonce to use in presentation request (None to generate)
             comment: Optional human-readable comment pertaining to request creation
 
         Returns:
@@ -243,7 +225,7 @@ class V20PresManager:
     async def create_pres(
         self,
         pres_ex_record: V20PresExRecord,
-        request_data: dict,
+        request_data: dict = {},
         *,
         comment: str = None,
     ) -> Tuple[V20PresExRecord, V20Pres]:
@@ -299,7 +281,6 @@ class V20PresManager:
             raise V20PresManagerError(
                 "Unable to create presentation. No supported formats"
             )
-
         pres_message = V20Pres(
             comment=comment,
             formats=[format for (format, _) in pres_formats],
@@ -319,7 +300,6 @@ class V20PresManager:
         ).serialize()
         async with self._profile.session() as session:
             await pres_ex_record.save(session, reason="create v2.0 presentation")
-
         return pres_ex_record, pres_message
 
     async def receive_pres(self, message: V20Pres, conn_record: ConnRecord):
@@ -349,7 +329,7 @@ class V20PresManager:
                 )
 
         input_formats = message.formats
-        pres_formats = []
+
         for format in input_formats:
             pres_format = V20PresFormat.Format.get(format.format)
 

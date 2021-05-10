@@ -1,18 +1,18 @@
+"""present-proof-v2 format handler - supports DIF and INDY."""
 from abc import ABC, abstractclassmethod, abstractmethod
 import logging
 
-from typing import Mapping, Tuple, Union
+from typing import Tuple
 
 from .....core.error import BaseError
 from .....core.profile import Profile
 from .....messaging.decorators.attach_decorator import AttachDecorator
 
+from ..message_types import ATTACHMENT_FORMAT
 from ..messages.pres import V20Pres
-from ..messages.pres_ack import V20PresAck
 from ..messages.pres_format import V20PresFormat
 from ..messages.pres_proposal import V20PresProposal
 from ..messages.pres_request import V20PresRequest
-from ..message_types import ATTACHMENT_FORMAT
 from ..models.pres_exchange import V20PresExRecord
 
 LOGGER = logging.getLogger(__name__)
@@ -32,7 +32,7 @@ class V20PresFormatHandler(ABC):
     def __init__(self, profile: Profile):
         """Initialize PresExchange Handler."""
         super().__init__()
-        self.profile = profile
+        self._profile = profile
 
     @property
     def profile(self) -> Profile:
@@ -58,7 +58,7 @@ class V20PresFormatHandler(ABC):
         return ATTACHMENT_FORMAT[message_type][self.format.api]
 
     def get_format_data(self, message_type: str, data: dict) -> PresFormatAttachment:
-        """Get presentation format and attachment objects for use in presentation ex messages."""
+        """Get presentation format and attach objects for use in pres_ex messages."""
         if self.format.api == "dif":
             attach = AttachDecorator.data_json(data, ident=self.format.api)
         elif self.format.api == "indy":
@@ -75,7 +75,7 @@ class V20PresFormatHandler(ABC):
     @abstractclassmethod
     def validate_fields(cls, message_type: str, attachment_data: dict) -> None:
         """Validate attachment data for specific message type and format."""
-        
+
     @abstractmethod
     async def create_bound_request(
         self,
@@ -96,7 +96,7 @@ class V20PresFormatHandler(ABC):
     async def receive_pres(
         self, message: V20Pres, pres_ex_record: V20PresExRecord
     ) -> None:
-        """Receive a presentation, from message in context on manager creation"""
+        """Receive a presentation, from message in context on manager creation."""
 
     @abstractmethod
     async def verify_pres(self, pres_ex_record: V20PresExRecord) -> V20PresExRecord:

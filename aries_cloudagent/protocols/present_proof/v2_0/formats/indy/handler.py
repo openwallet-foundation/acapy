@@ -1,46 +1,36 @@
 """V2.0 present-proof indy presentation-exchange format handler."""
 
-import logging
-
-from marshmallow import RAISE
 import json
-from typing import Mapping, Tuple
-import asyncio
+import logging
 import time
 
-from ......cache.base import BaseCache
-from ......indy.issuer import IndyIssuer, IndyIssuerRevocationRegistryFullError
+from marshmallow import RAISE
+from typing import Mapping, Tuple
+
 from ......indy.holder import IndyHolder, IndyHolderError
 from ......indy.util import generate_pr_nonce
 from ......indy.verifier import IndyVerifier
-
-from ....indy.proof_request import IndyProofRequestSchema
-from ....indy.proof import IndyProofSchema
-from ....indy.predicate import Predicate
-from ....indy.xform import indy_proof_req2non_revoc_intervals
 from ......ledger.base import BaseLedger
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......messaging.util import canon
-from ......revocation.models.issuer_rev_reg_record import IssuerRevRegRecord
 from ......revocation.models.revocation_registry import RevocationRegistry
-from ......revocation.indy import IndyRevocation
-from ......storage.base import BaseStorage
-from ......storage.error import StorageNotFoundError
+
+from ....indy.predicate import Predicate
+from ....indy.proof import IndyProofSchema
+from ....indy.proof_request import IndyProofRequestSchema
+from ....indy.xform import indy_proof_req2non_revoc_intervals
 
 from ...message_types import (
-    ATTACHMENT_FORMAT,
     PRES_20_REQUEST,
     PRES_20,
     PRES_20_PROPOSAL,
-    PRES_20_ACK,
 )
-
-from ...messages.pres_ack import V20PresAck
+from ...messages.pres import V20Pres
 from ...messages.pres_format import V20PresFormat
 from ...messages.pres_proposal import V20PresProposal
 from ...messages.pres_request import V20PresRequest
-from ...messages.pres import V20Pres
 from ...models.pres_exchange import V20PresExRecord
+
 from ..handler import V20PresFormatHandler, V20PresFormatError
 
 LOGGER = logging.getLogger(__name__)
@@ -114,19 +104,20 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
         Args:
             pres_ex_record: Presentation exchange record for which
                 to create presentation request
-            request_data: Dict 
+            request_data: Dict
 
         Returns:
             A tuple (updated presentation exchange record, presentation request message)
 
         """
-        name = request_data.get("name") or "proof-request"
-        version = request_data.get("version") or "1.0"
-        nonce = request_data.get("nonce") or await generate_pr_nonce()
         indy_proof_request = V20PresProposal.deserialize(
             pres_ex_record.pres_proposal
-        ).attachment(format)
-
+        ).attachment(self.format)
+        indy_proof_request["name"] = request_data.get("name") or "proof-request"
+        indy_proof_request["version"] = request_data.get("version") or "1.0"
+        indy_proof_request["nonce"] = (
+            request_data.get("nonce") or await generate_pr_nonce()
+        )
         return self.get_format_data(PRES_20_REQUEST, indy_proof_request)
 
     async def create_pres(
@@ -135,16 +126,15 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
         request_data: dict = None,
     ) -> Tuple[V20PresFormat, AttachDecorator]:
         """Create a presentation."""
-        requested_credentials= request_data.get("requested_credentials")
+        requested_credentials = request_data.get("requested_credentials") or {}
         # Get all credentials for this presentation
         holder = self._profile.inject(IndyHolder)
         credentials = {}
-
         # extract credential ids and non_revoked
         requested_referents = {}
         proof_request = V20PresRequest.deserialize(
             pres_ex_record.pres_request
-        ).attachment(format)
+        ).attachment(self.format)
         non_revoc_intervals = indy_proof_req2non_revoc_intervals(proof_request)
         attr_creds = requested_credentials.get("requested_attributes", {})
         req_attrs = proof_request.get("requested_attributes", {})
@@ -293,7 +283,6 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
             revocation_states,
         )
         indy_proof = json.loads(indy_proof_json)
-
         return self.get_format_data(PRES_20, indy_proof)
 
     async def receive_pres(
@@ -305,7 +294,7 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
             """Check for bait and switch in presented values vs. proposal request."""
             proof_req = V20PresRequest.deserialize(
                 pres_ex_record.pres_request
-            ).attachment(format)
+            ).attachment(self.format)
 
             # revealed attrs
             for reft, attr_spec in proof["requested_proof"]["revealed_attrs"].items():
@@ -333,7 +322,8 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
 
                 if not any(r.items() <= criteria.items() for r in req_restrictions):
                     raise V20PresFormatError(
-                        f"Presentation {name}={proof_value} not in proposal value(s)"
+                        f"Presented attribute {reft} does not satisfy proof request "
+                        f"restrictions {req_restrictions}"
                     )
 
             # revealed attr groups
@@ -367,8 +357,8 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
 
                 if not any(r.items() <= criteria.items() for r in req_restrictions):
                     raise V20PresFormatError(
-                        f"Presentation attr group {proof_values} "
-                        "not in proposal value(s)"
+                        f"Presented attr group {reft} does not satisfy proof request "
+                        f"restrictions {req_restrictions}"
                     )
 
             # predicate bounds
@@ -416,10 +406,11 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
 
                 if not any(r.items() <= criteria.items() for r in req_restrictions):
                     raise V20PresFormatError(
-                        f"Presentation predicate {reft} differs from proposal request"
+                        f"Presented predicate {reft} does not satisfy proof request "
+                        f"restrictions {req_restrictions}"
                     )
 
-        proof = message.attachment(format)
+        proof = message.attachment(self.format)
         _check_proof_vs_proposal()
 
     async def verify_pres(self, pres_ex_record: V20PresExRecord) -> V20PresExRecord:
@@ -435,8 +426,8 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
 
         """
         pres_request_msg = V20PresRequest.deserialize(pres_ex_record.pres_request)
-        indy_proof_request = pres_request_msg.attachment(format)
-        indy_proof = V20Pres.deserialize(pres_ex_record.pres).attachment(format)
+        indy_proof_request = pres_request_msg.attachment(self.format)
+        indy_proof = V20Pres.deserialize(pres_ex_record.pres).attachment(self.format)
 
         schema_ids = []
         cred_def_ids = []

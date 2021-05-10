@@ -2,16 +2,14 @@
 
 from collections import namedtuple
 from enum import Enum
-from typing import Mapping, Sequence, Type, Union
+from marshmallow import EXCLUDE, fields
+from typing import Mapping, Sequence, Type, Union, TYPE_CHECKING
 from uuid import uuid4
 
-from marshmallow import EXCLUDE, fields
-
-from .....utils.classloader import DeferLoad
 from .....messaging.decorators.attach_decorator import AttachDecorator
 from .....messaging.models.base import BaseModel, BaseModelSchema
 from .....messaging.valid import UUIDFour
-from typing import TYPE_CHECKING
+from .....utils.classloader import DeferLoad
 
 if TYPE_CHECKING:
     from ..formats.handler import V20PresFormatHandler
@@ -42,7 +40,7 @@ class V20PresFormat(BaseModel):
             "dif/",
             DeferLoad(
                 "aries_cloudagent.protocols.present_proof.v2_0"
-                ".formats.dif.handler.DIFPresExchangeHandler"
+                ".formats.dif.handler.DIFPresFormatHandler"
             ),
         )
 

@@ -37,16 +37,15 @@ from ....wallet.error import WalletNotFoundError
 from ...problem_report.v1_0 import internal_error
 from ...problem_report.v1_0.message import ProblemReport
 
+from ..dif.pres_exch import InputDescriptors
+from ..dif.pres_proposal_schema import DIFPresProposalSchema
+from ..dif.pres_request_schema import DIFPresRequestSchema
+from ..dif.pres_spec_schema import DIFPresSpecSpecSchema
 from ..indy.cred_precis import IndyCredPrecisSchema
 from ..indy.proof import IndyPresSpecSchema
 from ..indy.proof_request import IndyProofRequestSchema
-from ..dif.pres_exch import (
-    InputDescriptorsSchema,
-)
-from ..dif.pres_request_schema import DIFPresRequestSchema
-from ..dif.pres_proposal_schema import DIFPresProposalSchema
-from ..dif.pres_schema import DIFPresSpecSchema
 
+from .formats.handler import V20PresFormatError
 from .manager import V20PresManager
 from .message_types import (
     ATTACHMENT_FORMAT,
@@ -58,7 +57,6 @@ from .messages.pres_format import V20PresFormat
 from .messages.pres_proposal import V20PresProposal
 from .messages.pres_request import V20PresRequest
 from .models.pres_exchange import V20PresExRecord, V20PresExRecordSchema
-from .formats.handler import V20PresFormatError
 
 
 class V20PresentProofModuleResponseSchema(OpenAPISchema):
@@ -232,9 +230,12 @@ class V20PresSpecByFormatRequestSchema(AdminAPIMessageTracingSchema):
         description="Presentation specification for indy",
     )
     dif = fields.Nested(
-        DIFPresSpecSchema,
+        DIFPresSpecSpecSchema,
         required=False,
-        description="Presentation specification for DIF",
+        description=(
+            "Optional Presentation specification for DIF, "
+            "overrides the PresentionExchange record's PresRequest"
+        ),
     )
 
     @validates_schema
@@ -305,7 +306,14 @@ async def _add_nonce(indy_proof_request: Mapping) -> Mapping:
 
 def _formats_attach(by_format: Mapping, msg_type: str, spec: str) -> Mapping:
     """Break out formats and proposals/requests/presentations for v2.0 messages."""
-
+    attach = []
+    for (fmt_api, item_by_fmt) in by_format.items():
+        if fmt_api == V20PresFormat.Format.INDY.api:
+            attach.append(
+                AttachDecorator.data_base64(mapping=item_by_fmt, ident=fmt_api)
+            )
+        elif fmt_api == V20PresFormat.Format.DIF.api:
+            attach.append(AttachDecorator.data_json(mapping=item_by_fmt, ident=fmt_api))
     return {
         "formats": [
             V20PresFormat(
@@ -314,10 +322,7 @@ def _formats_attach(by_format: Mapping, msg_type: str, spec: str) -> Mapping:
             )
             for fmt_api in by_format
         ],
-        f"{spec}_attach": [
-            AttachDecorator.data_base64(mapping=item_by_fmt, ident=fmt_api)
-            for (fmt_api, item_by_fmt) in by_format.items()
-        ],
+        f"{spec}_attach": attach,
     }
 
 
@@ -438,67 +443,68 @@ async def present_proof_credentials_list(request: web.BaseRequest):
     start = int(start) if isinstance(start, str) else 0
     count = int(count) if isinstance(count, str) else 10
 
-    holder = context.profile.inject(IndyHolder)
-    indy_credentials = {}
+    indy_holder = context.profile.inject(IndyHolder)
+    indy_credentials = []
     # INDY
     try:
         indy_pres_request = pres_ex_record.by_format["pres_request"].get(
             V20PresFormat.Format.INDY.api
         )
-        indy_credentials = (
-            await holder.get_credentials_for_presentation_request_by_referent(
-                indy_pres_request,
-                pres_referents,
-                start,
-                count,
-                extra_query,
+        if indy_pres_request:
+            indy_credentials = (
+                await indy_holder.get_credentials_for_presentation_request_by_referent(
+                    indy_pres_request,
+                    pres_referents,
+                    start,
+                    count,
+                    extra_query,
+                )
             )
-        )
     except IndyHolderError as err:
         return await internal_error(
             err, web.HTTPBadRequest, pres_ex_record, outbound_handler
         )
 
-    holder = context.profile.inject(VCHolder)
-    dif_credentials = {}
+    dif_holder = context.profile.inject(VCHolder)
+    dif_credentials = []
     # DIF
     try:
         dif_pres_request = pres_ex_record.by_format["pres_request"].get(
             V20PresFormat.Format.DIF.api
         )
-        input_descriptors = dif_pres_request.get("presentation_definitions").get(
-            "input_descriptors"
-        )
-        types = []
-        contexts = []
-        schema_ids = []
-        for input_descriptor in input_descriptors:
-            for schema in input_descriptor.schemas:
-                uri = schema.uri
-                required = schema.required or True
-                if required:
-                    if "#" in uri:
-                        contexts.append(uri.split("#")[0])
-                        types.append(uri.split("#")[1])
-                    else:
-                        schema_ids.append(uri)
-        if len(types) == 0:
-            types = None
-        if len(contexts) == 0:
-            contexts = None
-        if len(schema_ids) == 0:
-            schema_ids = None
-        search = holder.search_credentials(
-            contexts=contexts,
-            types=types,
-            schema_ids=schema_ids,
-        )
-        records = await search.fetch(count)
+        if dif_pres_request:
+            input_descriptors_list = dif_pres_request.get(
+                "presentation_definition"
+            ).get("input_descriptors")
+            input_descriptors = []
+            for input_desc_dict in input_descriptors_list:
+                input_descriptors.append(InputDescriptors.deserialize(input_desc_dict))
+            types = []
+            schema_ids = []
+            for input_descriptor in input_descriptors:
+                for schema in input_descriptor.schemas:
+                    uri = schema.uri
+                    required = schema.required or True
+                    if required:
+                        if "#" in uri:
+                            types.append(uri.split("#")[1])
+                        else:
+                            schema_ids.append(uri)
+            if len(types) == 0:
+                types = None
+            if len(schema_ids) == 0:
+                schema_ids = None
+            search = dif_holder.search_credentials(
+                types=types,
+                schema_ids=schema_ids,
+            )
+            dif_credentials = await search.fetch(count)
     except StorageNotFoundError as err:
         return await internal_error(
             err, web.HTTPBadRequest, pres_ex_record, outbound_handler
         )
-    credentials = {**indy_credentials, **dif_credentials}
+
+    credentials = indy_credentials + dif_credentials
     pres_ex_record.log_state(
         "Retrieved presentation credentials",
         {
@@ -842,8 +848,7 @@ async def present_proof_send_presentation(request: web.BaseRequest):
     outbound_handler = request["outbound_message_router"]
     pres_ex_id = request.match_info["pres_ex_id"]
     body = await request.json()
-    fmt = V20PresFormat.Format.get([f for f in body][0])  # "indy" xor "dif"
-
+    fmt = V20PresFormat.Format.get([f for f in body][0]).api  # "indy" xor "dif"
     pres_ex_record = None
     async with context.session() as session:
         try:
@@ -872,7 +877,8 @@ async def present_proof_send_presentation(request: web.BaseRequest):
         raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
 
     pres_manager = V20PresManager(context.profile)
-    if fmt is V20PresFormat.Format.INDY.api:
+
+    if fmt == V20PresFormat.Format.INDY.api:
         try:
             indy_spec = body.get(V20PresFormat.Format.INDY.api)
             request_data = {
@@ -901,11 +907,16 @@ async def present_proof_send_presentation(request: web.BaseRequest):
                 pres_ex_record or conn_record,
                 outbound_handler,
             )
-    elif fmt is V20PresFormat.Format.DIF.api:
+    elif fmt == V20PresFormat.Format.DIF.api:
         try:
             dif_spec = body.get(V20PresFormat.Format.DIF.api)
-            if "input_descriptors" in dif_spec:
-                request_data = {"input_descriptors": dif_spec.get("input_descriptors")}
+            request_data = {}
+            if "presentation_definition" in dif_spec:
+                request_data = {
+                    "presentation_definition": dif_spec.get("presentation_definition")
+                }
+            if "issuer_id" in dif_spec:
+                request_data = {"issuer_id": dif_spec.get("issuer_id")}
             pres_ex_record, pres_message = await pres_manager.create_pres(
                 pres_ex_record,
                 request_data=request_data,

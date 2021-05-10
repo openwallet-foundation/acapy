@@ -1,21 +1,21 @@
 from copy import deepcopy
-from time import time
-
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 from marshmallow import ValidationError
+from time import time
 
 from .....admin.request_context import AdminRequestContext
-from .....core.in_memory import InMemoryProfile
 from .....indy.holder import IndyHolder
 from .....indy.verifier import IndyVerifier
 from .....ledger.base import BaseLedger
 from .....storage.error import StorageNotFoundError
+from .....storage.vc_holder.base import VCHolder
 
 from ...indy.proof_request import IndyProofReqAttrSpecSchema
 
 from .. import routes as test_module
 from ..messages.pres_format import V20PresFormat
+from ..models.pres_exchange import V20PresExRecord
 
 ISSUER_DID = "NcYxiDXkpYi6ov5FcYDi1e"
 S_ID = f"{ISSUER_DID}:2:vidya:1.0"
@@ -51,6 +51,70 @@ INDY_PROOF_REQ = {
             "non_revoked": {"from": NOW, "to": NOW},
         }
     },
+}
+
+DIF_PROOF_REQ = {
+    "challenge": "3fa85f64-5717-4562-b3fc-2c963f66afa7",
+    "domain": "4jt78h47fh47",
+    "presentation_definition": {
+        "id": "32f54163-7166-48f1-93d8-ff217bdb0654",
+        "submission_requirements": [
+            {
+                "name": "Citizenship Information",
+                "rule": "pick",
+                "min": 1,
+                "from": "A",
+            }
+        ],
+        "input_descriptors": [
+            {
+                "id": "citizenship_input_1",
+                "name": "EU Driver's License",
+                "group": ["A"],
+                "schema": [
+                    {"uri": "https://www.w3.org/2018/credentials#VerifiableCredential"},
+                    {"uri": "https://www.w3.org/2018/credentials"},
+                ],
+                "constraints": {
+                    "limit_disclosure": "required",
+                    "fields": [
+                        {
+                            "path": ["$.credentialSubject.givenName"],
+                            "purpose": "The claim must be from one of the specified issuers",
+                            "filter": {
+                                "type": "string",
+                                "enum": ["JOHN", "CAI"],
+                            },
+                        }
+                    ],
+                },
+            }
+        ],
+    },
+}
+
+
+DIF_PRES_PROPOSAL = {
+    "input_descriptors": [
+        {
+            "id": "citizenship_input_1",
+            "name": "EU Driver's License",
+            "group": ["A"],
+            "schema": [
+                {"uri": "https://www.w3.org/2018/credentials#VerifiableCredential"}
+            ],
+            "constraints": {
+                "limit_disclosure": "required",
+                "fields": [
+                    {
+                        "path": ["$.credentialSubject.givenName"],
+                        "purpose": "The claim must be from one of the specified issuers",
+                        "filter": {"type": "string", "enum": ["JOHN", "CAI"]},
+                    }
+                ],
+            },
+        }
+    ]
 }
 
 
@@ -314,6 +378,136 @@ class TestPresentProofRoutes(AsyncTestCase):
 
             await test_module.present_proof_credentials_list(self.request)
             mock_response.assert_called_once_with(returned_credentials)
+
+    async def test_present_proof_credentials_list_dif(self):
+        self.request.match_info = {
+            "pres_ex_id": "123-456-789",
+        }
+        self.request.query = {"extra_query": {}}
+
+        returned_credentials = [{"name": "Credential1"}, {"name": "Credential2"}]
+        self.profile.context.injector.bind_instance(
+            IndyHolder,
+            async_mock.MagicMock(
+                get_credentials_for_presentation_request_by_referent=(
+                    async_mock.CoroutineMock()
+                )
+            ),
+        )
+        self.profile.context.injector.bind_instance(
+            VCHolder,
+            async_mock.MagicMock(
+                search_credentials=async_mock.MagicMock(
+                    return_value=async_mock.MagicMock(
+                        fetch=async_mock.CoroutineMock(
+                            return_value=returned_credentials
+                        )
+                    )
+                )
+            ),
+        )
+        record = V20PresExRecord(
+            state="request-received",
+            role="prover",
+            pres_proposal=None,
+            pres_request={
+                "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/present-proof/2.0/request-presentation",
+                "@id": "6ae00c6c-87fa-495a-b546-5f5953817c92",
+                "comment": "string",
+                "formats": [
+                    {
+                        "attach_id": "dif",
+                        "format": "dif/presentation-exchange/definitions@v1.0",
+                    }
+                ],
+                "request_presentations~attach": [
+                    {
+                        "@id": "dif",
+                        "mime-type": "application/json",
+                        "data": {"json": DIF_PROOF_REQ},
+                    }
+                ],
+                "will_confirm": True,
+            },
+            pres=None,
+            verified=None,
+            auto_present=False,
+            error_msg=None,
+        )
+
+        with async_mock.patch.object(
+            test_module, "V20PresExRecord", autospec=True
+        ) as mock_pres_ex_rec_cls, async_mock.patch.object(
+            test_module.web, "json_response", async_mock.MagicMock()
+        ) as mock_response:
+            mock_pres_ex_rec_cls.retrieve_by_id.return_value = record
+
+            await test_module.present_proof_credentials_list(self.request)
+            mock_response.assert_called_once_with(returned_credentials)
+
+    async def test_present_proof_credentials_list_dif_error(self):
+        self.request.match_info = {
+            "pres_ex_id": "123-456-789",
+        }
+        self.request.query = {"extra_query": {}}
+
+        self.profile.context.injector.bind_instance(
+            IndyHolder,
+            async_mock.MagicMock(
+                get_credentials_for_presentation_request_by_referent=(
+                    async_mock.CoroutineMock()
+                )
+            ),
+        )
+        self.profile.context.injector.bind_instance(
+            VCHolder,
+            async_mock.MagicMock(
+                search_credentials=async_mock.MagicMock(
+                    return_value=async_mock.MagicMock(
+                        fetch=async_mock.CoroutineMock(
+                            side_effect=test_module.StorageNotFoundError()
+                        )
+                    )
+                )
+            ),
+        )
+        record = V20PresExRecord(
+            state="request-received",
+            role="prover",
+            pres_proposal=None,
+            pres_request={
+                "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/present-proof/2.0/request-presentation",
+                "@id": "6ae00c6c-87fa-495a-b546-5f5953817c92",
+                "comment": "string",
+                "formats": [
+                    {
+                        "attach_id": "dif",
+                        "format": "dif/presentation-exchange/definitions@v1.0",
+                    }
+                ],
+                "request_presentations~attach": [
+                    {
+                        "@id": "dif",
+                        "mime-type": "application/json",
+                        "data": {"json": DIF_PROOF_REQ},
+                    }
+                ],
+                "will_confirm": True,
+            },
+            pres=None,
+            verified=None,
+            auto_present=False,
+            error_msg=None,
+        )
+
+        with async_mock.patch.object(
+            test_module, "V20PresExRecord", autospec=True
+        ) as mock_pres_ex_rec_cls, async_mock.patch.object(
+            test_module.web, "json_response", async_mock.MagicMock()
+        ) as mock_response:
+            with self.assertRaises(test_module.web.HTTPBadRequest):
+                mock_pres_ex_rec_cls.retrieve_by_id.return_value = record
+                await test_module.present_proof_credentials_list(self.request)
 
     async def test_present_proof_retrieve(self):
         self.request.match_info = {"pres_ex_id": "dummy"}
@@ -905,6 +1099,112 @@ class TestPresentProofRoutes(AsyncTestCase):
                 mock_px_rec_inst.serialize.return_value
             )
 
+    async def test_present_proof_send_presentation_dif(self):
+        proof_req = deepcopy(DIF_PROOF_REQ)
+        proof_req["issuer_id"] = "test123"
+        self.request.json = async_mock.CoroutineMock(
+            return_value={
+                "dif": proof_req,
+            }
+        )
+        self.request.match_info = {
+            "pres_ex_id": "dummy",
+        }
+        self.profile.context.injector.bind_instance(
+            IndyVerifier,
+            async_mock.MagicMock(
+                verify_presentation=async_mock.CoroutineMock(),
+            ),
+        )
+
+        with async_mock.patch.object(
+            test_module, "ConnRecord", autospec=True
+        ) as mock_conn_rec_cls, async_mock.patch.object(
+            test_module, "V20PresManager", autospec=True
+        ) as mock_pres_mgr_cls, async_mock.patch.object(
+            test_module, "V20PresExRecord", autospec=True
+        ) as mock_px_rec_cls, async_mock.patch.object(
+            test_module.web, "json_response"
+        ) as mock_response:
+            mock_px_rec_inst = async_mock.MagicMock(
+                connection_id="dummy",
+                state=test_module.V20PresExRecord.STATE_REQUEST_RECEIVED,
+                serialize=async_mock.MagicMock(
+                    return_value={"thread_id": "sample-thread-id"}
+                ),
+            )
+            mock_px_rec_cls.retrieve_by_id = async_mock.CoroutineMock(
+                return_value=mock_px_rec_inst
+            )
+
+            mock_conn_rec_inst = async_mock.MagicMock(is_ready=True)
+            mock_conn_rec_cls.retrieve_by_id = async_mock.CoroutineMock(
+                return_value=mock_conn_rec_inst
+            )
+
+            mock_pres_mgr_inst = async_mock.MagicMock(
+                create_pres=async_mock.CoroutineMock(
+                    return_value=(mock_px_rec_inst, async_mock.MagicMock())
+                )
+            )
+            mock_pres_mgr_cls.return_value = mock_pres_mgr_inst
+
+            await test_module.present_proof_send_presentation(self.request)
+            mock_response.assert_called_once_with(
+                mock_px_rec_inst.serialize.return_value
+            )
+
+    async def test_present_proof_send_presentation_dif_error(self):
+        self.request.json = async_mock.CoroutineMock(
+            return_value={"dif": DIF_PROOF_REQ}
+        )
+        self.request.match_info = {
+            "pres_ex_id": "dummy",
+        }
+        self.profile.context.injector.bind_instance(
+            IndyVerifier,
+            async_mock.MagicMock(
+                verify_presentation=async_mock.CoroutineMock(),
+            ),
+        )
+
+        with async_mock.patch.object(
+            test_module, "ConnRecord", autospec=True
+        ) as mock_conn_rec_cls, async_mock.patch.object(
+            test_module, "V20PresManager", autospec=True
+        ) as mock_pres_mgr_cls, async_mock.patch.object(
+            test_module, "V20PresExRecord", autospec=True
+        ) as mock_px_rec_cls, async_mock.patch.object(
+            test_module.web, "json_response"
+        ) as mock_response:
+            mock_px_rec_inst = async_mock.MagicMock(
+                connection_id="dummy",
+                state=test_module.V20PresExRecord.STATE_REQUEST_RECEIVED,
+                serialize=async_mock.MagicMock(
+                    return_value={"thread_id": "sample-thread-id"}
+                ),
+            )
+            mock_px_rec_cls.retrieve_by_id = async_mock.CoroutineMock(
+                return_value=mock_px_rec_inst
+            )
+
+            mock_conn_rec_inst = async_mock.MagicMock(is_ready=True)
+            mock_conn_rec_cls.retrieve_by_id = async_mock.CoroutineMock(
+                return_value=mock_conn_rec_inst
+            )
+
+            mock_pres_mgr_inst = async_mock.MagicMock(
+                create_pres=async_mock.CoroutineMock(
+                    side_effect=test_module.LedgerError()
+                )
+            )
+            mock_pres_mgr_cls.return_value = mock_pres_mgr_inst
+            with self.assertRaises(test_module.web.HTTPBadRequest):
+                await test_module.present_proof_send_presentation(self.request)
+                mock_response.assert_called_once_with(
+                    mock_px_rec_inst.serialize.return_value
+                )
+
     async def test_present_proof_send_presentation_px_rec_not_found(self):
         self.request.json = async_mock.CoroutineMock(
             return_value={
@@ -1367,3 +1667,16 @@ class TestPresentProofRoutes(AsyncTestCase):
         mock_app = async_mock.MagicMock(_state={"swagger_dict": {}})
         test_module.post_process_routes(mock_app)
         assert "tags" in mock_app._state["swagger_dict"]
+
+    def test_format_attach_dif(self):
+        req_dict = {"dif": DIF_PROOF_REQ}
+        pres_req_dict = test_module._formats_attach(
+            by_format=req_dict,
+            msg_type="present-proof/2.0/request-presentation",
+            spec="request_presentations",
+        )
+        assert pres_req_dict.get("formats")[0].attach_id == "dif"
+        assert (
+            pres_req_dict.get("request_presentations_attach")[0].data.json_
+            == DIF_PROOF_REQ
+        )

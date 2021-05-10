@@ -1,13 +1,15 @@
-"""DIF Proof Request Schema"""
-from marshmallow import fields, validate, validates_schema, ValidationError
+"""DIF Proof Schema."""
+from marshmallow import fields
+
 from ....messaging.models.openapi import OpenAPISchema
 from ....messaging.valid import UUID4
 from ....vc.vc_ld.models import LinkedDataProofSchema
 
-from .pres_exch import PresentationSubmissionSchema, StrOrDictField
+from .pres_exch import StrOrDictField, PresentationSubmissionSchema
+
 
 class DIFPresSpecSchema(OpenAPISchema):
-    """Schema for DIF presentation."""
+    """Schema for DIF Proof."""
 
     id = fields.Str(
         description="ID",
@@ -18,10 +20,12 @@ class DIFPresSpecSchema(OpenAPISchema):
     contexts = fields.List(
         StrOrDictField(),
         data_key="@context",
+        required=True,
     )
     types = fields.List(
-        fields.Str(description="Types", required=False),
+        fields.Str(description="Types"),
         data_key="type",
+        required=True,
     )
     credentials = fields.List(
         fields.Dict(description="Credentials", required=False),
@@ -29,7 +33,7 @@ class DIFPresSpecSchema(OpenAPISchema):
     )
     proof = fields.Nested(
         LinkedDataProofSchema(),
-        required=True,
+        required=False,
         description="The proof of the credential",
         example={
             "type": "Ed25519Signature2018",

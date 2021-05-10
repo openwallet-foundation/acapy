@@ -5,13 +5,12 @@ from typing import Mapping
 
 from marshmallow import EXCLUDE, INCLUDE
 
-from ......vc.vc_ld import (
-    issue,
-    verify_credential,
-    VerifiableCredentialSchema,
-    LDProof,
-    VerifiableCredential,
-)
+# from pyld import jsonld
+# from pyld.jsonld import JsonLdProcessor
+
+from ......did.did_key import DIDKey
+from ......storage.vc_holder.base import VCHolder
+from ......storage.vc_holder.vc_record import VCRecord
 from ......vc.ld_proofs import (
     Ed25519Signature2018,
     BbsBlsSignature2020,
@@ -23,12 +22,16 @@ from ......vc.ld_proofs import (
     AuthenticationProofPurpose,
 )
 from ......vc.ld_proofs.constants import SECURITY_CONTEXT_BBS_URL
-from ......wallet.key_type import KeyType
-from ......wallet.error import WalletNotFoundError
+from ......vc.vc_ld import (
+    issue,
+    verify_credential,
+    VerifiableCredentialSchema,
+    LDProof,
+    VerifiableCredential,
+)
 from ......wallet.base import BaseWallet, DIDInfo
-from ......did.did_key import DIDKey
-from ......storage.vc_holder.base import VCHolder
-from ......storage.vc_holder.vc_record import VCRecord
+from ......wallet.error import WalletNotFoundError
+from ......wallet.key_type import KeyType
 
 from ...message_types import (
     CRED_20_ISSUE,
@@ -42,10 +45,12 @@ from ...messages.cred_proposal import V20CredProposal
 from ...messages.cred_issue import V20CredIssue
 from ...messages.cred_request import V20CredRequest
 from ...models.cred_ex_record import V20CredExRecord
+from ...models.detail.ld_proof import V20CredExRecordLDProof
+
 from ..handler import CredFormatAttachment, V20CredFormatError, V20CredFormatHandler
+
 from .models.cred_detail import LDProofVCDetailSchema
 from .models.cred_detail import LDProofVCDetail
-from ...models.detail.ld_proof import V20CredExRecordLDProof
 
 LOGGER = logging.getLogger(__name__)
 
@@ -507,6 +512,16 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
         if not result.verified:
             raise V20CredFormatError(f"Received invalid credential: {result}")
 
+        # Saving expanded type as a cred_tag
+        # expanded = jsonld.expand(cred_dict)
+        # types = JsonLdProcessor.get_values(
+        #     expanded[0],
+        #     "@type",
+        # )
+        # cred_tags = {
+        #     "expanded_type_values": types
+        # }
+
         # create VC record for storage
         vc_record = VCRecord(
             contexts=credential.context_urls,
@@ -519,6 +534,7 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
             given_id=credential.id,
             record_id=cred_id,
             cred_tags=None,  # Tags should be derived from credential values
+            # cred_tags=cred_tags,
         )
 
         # Create detail record with cred_id_stored

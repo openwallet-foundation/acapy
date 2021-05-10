@@ -8,11 +8,12 @@ from marshmallow import (
     post_dump,
     ValidationError,
 )
-from typing import Sequence, Union
+from typing import Sequence, Union, Mapping
 
 from ....messaging.models.base import BaseModelSchema, BaseModel
 from ....messaging.valid import (
     UUID4,
+    StrOrDictField,
 )
 from ....vc.vc_ld.models import LinkedDataProofSchema
 
@@ -28,20 +29,20 @@ class ClaimFormat(BaseModel):
     def __init__(
         self,
         *,
-        jwt_format_data: Sequence[str] = None,
-        jwt_vc_format_data: Sequence[str] = None,
-        jwt_vp_format_data: Sequence[str] = None,
-        ldp_format_data: Sequence[str] = None,
-        ldp_vc_format_data: Sequence[str] = None,
-        ldp_vp_format_data: Sequence[str] = None,
+        jwt: Mapping = None,
+        jwt_vc: Mapping = None,
+        jwt_vp: Mapping = None,
+        ldp: Mapping = None,
+        ldp_vc: Mapping = None,
+        ldp_vp: Mapping = None,
     ):
         """Initialize format."""
-        self.jwt_format_data = jwt_format_data
-        self.jwt_vc_format_data = jwt_vc_format_data
-        self.jwt_vp_format_data = jwt_vp_format_data
-        self.ldp_format_data = ldp_format_data
-        self.ldp_vc_format_data = ldp_vc_format_data
-        self.ldp_vp_format_data = ldp_vp_format_data
+        self.jwt = jwt
+        self.jwt_vc = jwt_vc
+        self.jwt_vp = jwt_vp
+        self.ldp = ldp
+        self.ldp_vc = ldp_vc
+        self.ldp_vp = ldp_vp
 
 
 class ClaimFormatSchema(BaseModelSchema):
@@ -53,71 +54,30 @@ class ClaimFormatSchema(BaseModelSchema):
         model_class = ClaimFormat
         unknown = EXCLUDE
 
-    jwt_format_data = fields.List(
-        fields.Str(required=False),
+    jwt = fields.Dict(
         required=False,
         data_key="jwt",
     )
-    jwt_vc_format_data = fields.List(
-        fields.Str(required=False),
+    jwt_vc = fields.Dict(
         required=False,
         data_key="jwt_vc",
     )
-    jwt_vp_format_data = fields.List(
-        fields.Str(required=False),
+    jwt_vp = fields.Dict(
         required=False,
         data_key="jwt_vp",
     )
-    ldp_format_data = fields.List(
-        fields.Str(required=False),
+    ldp = fields.Dict(
         required=False,
         data_key="ldp",
     )
-    ldp_vc_format_data = fields.List(
-        fields.Str(required=False),
+    ldp_vc = fields.Dict(
         required=False,
         data_key="ldp_vc",
     )
-    ldp_vp_format_data = fields.List(
-        fields.Str(required=False),
+    ldp_vp = fields.Dict(
         required=False,
         data_key="ldp_vp",
     )
-
-    @pre_load
-    def extract_format_info(self, data, **kwargs):
-        """Support deserialization from format dict in pd (DIF spec)."""
-        if "jwt" in data:
-            data["jwt"] = data["jwt"].pop("alg")
-        if "jwt_vc" in data:
-            data["jwt_vc"] = data["jwt_vc"].pop("alg")
-        if "jwt_vp" in data:
-            data["jwt_vp"] = data["jwt_vp"].pop("alg")
-        if "ldp" in data:
-            data["ldp"] = data["ldp"].pop("proof_type")
-        if "ldp_vc" in data:
-            data["ldp_vc"] = data["ldp_vc"].pop("proof_type")
-        if "ldp_vp" in data:
-            data["ldp_vp"] = data["ldp_vp"].pop("proof_type")
-        return data
-
-    @post_dump
-    def serialize_reformat(self, data, **kwargs):
-        """Support serialization to format dict (DIF spec)."""
-        new_data = {}
-        if "jwt" in data:
-            new_data["jwt"] = {"alg": data.get("jwt")}
-        if "jwt_vc" in data:
-            new_data["jwt_vc"] = {"alg": data.get("jwt_vc")}
-        if "jwt_vp" in data:
-            new_data["jwt_vp"] = {"alg": data.get("jwt_vp")}
-        if "ldp" in data:
-            new_data["ldp"] = {"proof_type": data.get("ldp")}
-        if "ldp_vc" in data:
-            new_data["ldp_vc"] = {"proof_type": data.get("ldp_vc")}
-        if "ldp_vp" in data:
-            new_data["ldp_vp"] = {"proof_type": data.get("ldp_vp")}
-        return new_data
 
 
 class SubmissionRequirements(BaseModel):
@@ -534,7 +494,7 @@ class ConstraintsSchema(BaseModelSchema):
         validate=validate.OneOf(["required", "preferred"]),
         data_key="subject_is_issuer",
     )
-    limit_disclosure = fields.Bool(
+    limit_disclosure = fields.Str(
         description="LimitDisclosure", required=False, data_key="limit_disclosure"
     )
     holders = fields.List(
@@ -575,11 +535,6 @@ class ConstraintsSchema(BaseModelSchema):
             if "revoked" in data.get("statuses"):
                 if "directive" in data.get("statuses").get("revoked"):
                     data["status_revoked"] = data["statuses"]["revoked"]["directive"]
-        if "limit_disclosure" in data:
-            if data.get("limit_disclosure") == "required":
-                data["limit_disclosure"] = True
-            else:
-                data["limit_disclosure"] = False
         return data
 
     @post_dump
@@ -900,91 +855,79 @@ class PresentationSubmissionSchema(BaseModelSchema):
     )
 
 
-# Union of str or dict
-class StrOrDictField(fields.Field):
-    """Custom Marshmallow field - union of str and dict."""
+class VerifiablePresentation(BaseModel):
+    """Single VerifiablePresentation object."""
 
-    def _deserialize(self, value, attr, data, **kwargs):
-        """Return value if type is str or dict else raise ValidationError."""
-        if isinstance(value, str) or isinstance(value, dict):
-            return value
-        else:
-            raise ValidationError("Field should be str or dict")
+    class Meta:
+        """VerifiablePresentation metadata."""
 
+        schema_class = "VerifiablePresentationSchema"
 
-# class VerifiablePresentation(BaseModel):
-#     """Single VerifiablePresentation object."""
-
-#     class Meta:
-#         """VerifiablePresentation metadata."""
-
-#         schema_class = "VerifiablePresentationSchema"
-
-#     def __init__(
-#         self,
-#         *,
-#         id: str = None,
-#         contexts: Sequence[Union[str, dict]] = None,
-#         types: Sequence[str] = None,
-#         credentials: Sequence[dict] = None,
-#         proof: Sequence[dict] = None,
-#         presentation_submission: PresentationSubmission = None,
-#     ):
-#         """Initialize VerifiablePresentation."""
-#         self.id = id
-#         self.contexts = contexts
-#         self.types = types
-#         self.credentials = credentials
-#         self.proof = proof
-#         self.presentation_submission = presentation_submission
+    def __init__(
+        self,
+        *,
+        id: str = None,
+        contexts: Sequence[Union[str, dict]] = None,
+        types: Sequence[str] = None,
+        credentials: Sequence[dict] = None,
+        proof: Sequence[dict] = None,
+        presentation_submission: PresentationSubmission = None,
+    ):
+        """Initialize VerifiablePresentation."""
+        self.id = id
+        self.contexts = contexts
+        self.types = types
+        self.credentials = credentials
+        self.proof = proof
+        self.presentation_submission = presentation_submission
 
 
-# class VerifiablePresentationSchema(BaseModelSchema):
-#     """Single Field Schema."""
+class VerifiablePresentationSchema(BaseModelSchema):
+    """Single Field Schema."""
 
-#     class Meta:
-#         """VerifiablePresentationSchema metadata."""
+    class Meta:
+        """VerifiablePresentationSchema metadata."""
 
-#         model_class = VerifiablePresentation
-#         unknown = INCLUDE
+        model_class = VerifiablePresentation
+        unknown = INCLUDE
 
-#     id = fields.Str(
-#         description="ID",
-#         required=False,
-#         **UUID4,
-#         data_key="id",
-#     )
-#     contexts = fields.List(
-#         StrOrDictField(),
-#         data_key="@context",
-#     )
-#     types = fields.List(
-#         fields.Str(description="Types", required=False),
-#         data_key="type",
-#     )
-#     credentials = fields.List(
-#         fields.Dict(description="Credentials", required=False),
-#         data_key="verifiableCredential",
-#     )
-#     proof = fields.Nested(
-#         LinkedDataProofSchema(),
-#         required=True,
-#         description="The proof of the credential",
-#         example={
-#             "type": "Ed25519Signature2018",
-#             "verificationMethod": (
-#                 "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyG"
-#                 "o38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
-#             ),
-#             "created": "2019-12-11T03:50:55",
-#             "proofPurpose": "assertionMethod",
-#             "jws": (
-#                 "eyJhbGciOiAiRWREU0EiLCAiYjY0IjogZmFsc2UsICJjcml0JiNjQiXX0..lKJU0Df"
-#                 "_keblRKhZAS9Qq6zybm-HqUXNVZ8vgEPNTAjQKBhQDxvXNo7nvtUBb_Eq1Ch6YBKY5qBQ"
-#             ),
-#         },
-#         data_key="proof",
-#     )
-#     presentation_submission = fields.Nested(
-#         PresentationSubmissionSchema, data_key="presentation_submission"
-#     )
+    id = fields.Str(
+        description="ID",
+        required=False,
+        **UUID4,
+        data_key="id",
+    )
+    contexts = fields.List(
+        StrOrDictField(),
+        data_key="@context",
+    )
+    types = fields.List(
+        fields.Str(description="Types", required=False),
+        data_key="type",
+    )
+    credentials = fields.List(
+        fields.Dict(description="Credentials", required=False),
+        data_key="verifiableCredential",
+    )
+    proof = fields.Nested(
+        LinkedDataProofSchema(),
+        required=True,
+        description="The proof of the credential",
+        example={
+            "type": "Ed25519Signature2018",
+            "verificationMethod": (
+                "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyG"
+                "o38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
+            ),
+            "created": "2019-12-11T03:50:55",
+            "proofPurpose": "assertionMethod",
+            "jws": (
+                "eyJhbGciOiAiRWREU0EiLCAiYjY0IjogZmFsc2UsICJjcml0JiNjQiXX0..lKJU0Df"
+                "_keblRKhZAS9Qq6zybm-HqUXNVZ8vgEPNTAjQKBhQDxvXNo7nvtUBb_Eq1Ch6YBKY5qBQ"
+            ),
+        },
+        data_key="proof",
+    )
+    presentation_submission = fields.Nested(
+        PresentationSubmissionSchema, data_key="presentation_submission"
+    )

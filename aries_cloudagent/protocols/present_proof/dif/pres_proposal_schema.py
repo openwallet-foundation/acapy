@@ -1,30 +1,19 @@
-"""DIF Proof Request Schema"""
-from marshmallow import fields, validate, validates_schema, ValidationError
+"""DIF Proof Proposal Schema."""
+from marshmallow import fields
+
 from ....messaging.models.openapi import OpenAPISchema
-from ....messaging.valid import UUID4
-from .pres_exch import ConstraintsSchema, SchemaInputDescriptorSchema
+
+from .pres_exch import InputDescriptorsSchema
 
 
 class DIFPresProposalSchema(OpenAPISchema):
-    """Schema for DIF pres proposal."""
+    """Schema for DIF Proposal."""
 
-    id = fields.Str(description="ID", required=False, data_key="id")
-    groups = fields.List(
-        fields.Str(
-            description="Group",
-            required=False,
+    input_descriptors = fields.List(
+        fields.Nested(
+            InputDescriptorsSchema(),
+            required=True,
         ),
+        data_key="input_descriptors",
         required=False,
-        data_key="group",
-    )
-    name = fields.Str(description="Name", required=False, data_key="name")
-    purpose = fields.Str(description="Purpose", required=False, data_key="purpose")
-    metadata = fields.Dict(
-        description="Metadata dictionary", required=False, data_key="metadata"
-    )
-    constraint = fields.Nested(
-        ConstraintsSchema, required=False, data_key="constraints"
-    )
-    schemas = fields.List(
-        fields.Nested(SchemaInputDescriptorSchema), required=False, data_key="schema"
     )

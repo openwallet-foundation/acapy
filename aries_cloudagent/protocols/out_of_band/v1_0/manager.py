@@ -11,16 +11,16 @@ from ....connections.models.conn_record import ConnRecord
 from ....connections.util import mediation_record_if_id
 from ....core.error import BaseError
 from ....core.profile import ProfileSession
+from ....did.did_key import DIDKey
 from ....indy.holder import IndyHolder
-from ....messaging.responder import BaseResponder
 from ....messaging.decorators.attach_decorator import AttachDecorator
+from ....messaging.responder import BaseResponder
 from ....multitenant.manager import MultitenantManager
 from ....storage.error import StorageNotFoundError
 from ....transport.inbound.receipt import MessageReceipt
 from ....wallet.base import BaseWallet
 from ....wallet.util import b64_to_bytes
 from ....wallet.key_type import KeyType
-from ....did.did_key import DIDKey
 
 from ...coordinate_mediation.v1_0.manager import MediationManager
 from ...connections.v1_0.manager import ConnectionManager
@@ -706,40 +706,58 @@ class OutOfBandManager(BaseConnectionManager):
 
         pres_ex_record = await pres_mgr.receive_pres_request(pres_ex_record)
         if pres_ex_record.auto_present:
-            indy_proof_request = V20PresRequest.deserialize(
-                pres_request_msg
-            ).attachment(
-                V20PresFormat.Format.INDY
-            )  # assumption will change for DIF
-            try:
-                req_creds = await indy_proof_req_preview2indy_requested_creds(
-                    indy_proof_req=indy_proof_request,
-                    preview=None,
-                    holder=self._session.inject(IndyHolder),
-                )
-            except ValueError as err:
-                self._logger.warning(f"{err}")
-                raise OutOfBandManagerError(
-                    f"Cannot auto-respond to presentation request attachment: {err}"
-                )
+            proof_request = V20PresRequest.deserialize(pres_request_msg)
+            input_formats = proof_request.formats
+            for format in input_formats:
+                pres_exch_format = V20PresFormat.Format.get(format.format)
+                if pres_exch_format is V20PresFormat.Format.INDY:
+                    try:
+                        indy_proof_request = proof_request.attachment(
+                            V20PresFormat.Format.INDY
+                        )
+                        req_creds = await indy_proof_req_preview2indy_requested_creds(
+                            indy_proof_request,
+                            preview=None,
+                            holder=self._session.inject(IndyHolder),
+                        )
+                    except ValueError as err:
+                        self._logger.warning(f"{err}")
+                        raise OutOfBandManagerError(
+                            (
+                                "Cannot auto-respond to presentation request attachment:"
+                                f" {err}"
+                            )
+                        )
 
-            (pres_ex_record, pres_msg) = await pres_mgr.create_pres(
-                pres_ex_record=pres_ex_record,
-                requested_credentials=req_creds,
-                comment=(
-                    "auto-presented for proof request nonce={}".format(
-                        indy_proof_request["nonce"]
+                    request_data = {"requested_credentials": req_creds}
+                    (pres_ex_record, pres_msg) = await pres_mgr.create_pres(
+                        pres_ex_record=pres_ex_record,
+                        request_data=request_data,
+                        comment=(
+                            "auto-presented for proof request nonce "
+                            f"{indy_proof_request['nonce']}"
+                        ),
                     )
-                ),
-            )
-            responder = self._session.inject(BaseResponder, required=False)
-            if responder:
-                await responder.send(
-                    message=pres_msg,
-                    target_list=await self.fetch_connection_targets(
-                        connection=conn_rec
-                    ),
-                )
+                elif pres_exch_format is V20PresFormat.Format.DIF:
+                    dif_proof_request = proof_request.attachment(
+                        V20PresFormat.Format.DIF
+                    )
+                    (pres_ex_record, pres_msg) = await pres_mgr.create_pres(
+                        pres_ex_record=pres_ex_record,
+                        request_data={},
+                        comment=(
+                            "auto-presented for proof request challenge "
+                            f"{dif_proof_request['challenge']}"
+                        ),
+                    )
+                responder = self._session.inject(BaseResponder, required=False)
+                if responder:
+                    await responder.send(
+                        message=pres_msg,
+                        target_list=await self.fetch_connection_targets(
+                            connection=conn_rec
+                        ),
+                    )
         else:
             raise OutOfBandManagerError(
                 (

@@ -54,7 +54,8 @@ class V20PresRequestHandler(BaseHandler):
                     {"connection_id": context.connection_record.connection_id},
                 )  # holder initiated via proposal
             pres_ex_record.pres_request = context.message.serialize()
-        except StorageNotFoundError:  # verifier sent this request free of any proposal
+        except StorageNotFoundError:
+            # verifier sent this request free of any proposal
             pres_ex_record = V20PresExRecord(
                 connection_id=context.connection_record.connection_id,
                 thread_id=context.message._thread_id,
@@ -78,32 +79,49 @@ class V20PresRequestHandler(BaseHandler):
 
         # If auto_present is enabled, respond immediately with presentation
         if pres_ex_record.auto_present:
-            indy_proof_request = context.message.attachment(V20PresFormat.Format.INDY)
+            proof_request = context.message
+            input_formats = proof_request.formats
+            for format in input_formats:
+                pres_exch_format = V20PresFormat.Format.get(format.format)
+                if pres_exch_format is V20PresFormat.Format.INDY:
+                    try:
+                        indy_proof_request = proof_request.attachment(
+                            V20PresFormat.Format.INDY
+                        )
+                        req_creds = await indy_proof_req_preview2indy_requested_creds(
+                            indy_proof_request,
+                            preview=None,
+                            holder=context.inject(IndyHolder),
+                        )
+                    except ValueError as err:
+                        self._logger.warning(f"{err}")
+                        return
 
-            try:
-                req_creds = await indy_proof_req_preview2indy_requested_creds(
-                    indy_proof_request,
-                    preview=None,
-                    holder=context.inject(IndyHolder),
+                    request_data = {"requested_credentials": req_creds}
+                    (pres_ex_record, pres_message) = await pres_manager.create_pres(
+                        pres_ex_record=pres_ex_record,
+                        request_data=request_data,
+                        comment=(
+                            "auto-presented for proof request nonce "
+                            f"{indy_proof_request['nonce']}"
+                        ),
+                    )
+                elif pres_exch_format is V20PresFormat.Format.DIF:
+                    dif_proof_request = proof_request.attachment(
+                        V20PresFormat.Format.DIF
+                    )
+                    (pres_ex_record, pres_message) = await pres_manager.create_pres(
+                        pres_ex_record=pres_ex_record,
+                        request_data={},
+                        comment=(
+                            "auto-presented for proof request challenge "
+                            f"{dif_proof_request['challenge']}"
+                        ),
+                    )
+                await responder.send_reply(pres_message)
+                trace_event(
+                    context.settings,
+                    pres_message,
+                    outcome="V20PresRequestHandler.handle.PRESENT",
+                    perf_counter=r_time,
                 )
-            except ValueError as err:
-                self._logger.warning(f"{err}")
-                return
-
-            (pres_ex_record, pres_message) = await pres_manager.create_pres(
-                pres_ex_record=pres_ex_record,
-                requested_credentials=req_creds,
-                comment=(
-                    "auto-presented for proof request nonce "
-                    f"{indy_proof_request['nonce']}"
-                ),
-            )
-
-            await responder.send_reply(pres_message)
-
-            trace_event(
-                context.settings,
-                pres_message,
-                outcome="V20PresRequestHandler.handle.PRESENT",
-                perf_counter=r_time,
-            )
