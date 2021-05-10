@@ -54,6 +54,19 @@ When a webhook is dispatched, the record `topic` is appended as a path component
  * `content`: the contents of the agent message
  * `state`: `received`
 
+#### Forward Message Received  (`/forward`)
+
+Enable using `--monitor-forward`.
+
+ * `connection_id`: the identifier of the connection associated with the recipient key
+ * `recipient_key`: the recipient key of the forward message (`to` field of the forward message)
+ * `status`: The delivery status of the received forward message. Possible values:
+   * `sent_to_session`: Message is sent directly to the connection over an active transport session
+   * `sent_to_external_queue`: Message is sent to external queue. No information is known on the delivery of the message
+   * `queued_for_delivery`: Message is queued for delivery using outbound transport (recipient connection has an endpoint)
+   * `waiting_for_pickup`: The connection has no reachable endpoint. Need to wait for the recipient to connect with return routing for delivery
+   * `undeliverable`: The connection has no reachable endpoint, and the internal queue for messages is not enabled (`--enable-undelivered-queue`). 
+
 #### Credential Exchange Record Updated (`/issue_credential`)
 
 * `credential_exchange_id`: the unique identifier of the credential exchange

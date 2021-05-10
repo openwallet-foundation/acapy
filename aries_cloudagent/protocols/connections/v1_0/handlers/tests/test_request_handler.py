@@ -13,7 +13,7 @@ from ......storage.error import StorageNotFoundError
 from ...handlers import connection_request_handler as handler
 from ...manager import ConnectionManagerError
 from ...messages.connection_request import ConnectionRequest
-from ...messages.problem_report import ProblemReport, ProblemReportReason
+from ...messages.problem_report import ConnectionProblemReport, ProblemReportReason
 from ...models.connection_detail import ConnectionDetail
 
 
@@ -147,7 +147,7 @@ class TestRequestHandler:
         assert len(messages) == 1
         result, target = messages[0]
         assert (
-            isinstance(result, ProblemReport)
+            isinstance(result, ConnectionProblemReport)
             and result.problem_code == ProblemReportReason.REQUEST_NOT_ACCEPTED
         )
         assert target == {"target_list": None}
@@ -177,7 +177,7 @@ class TestRequestHandler:
         assert len(messages) == 1
         result, target = messages[0]
         assert (
-            isinstance(result, ProblemReport)
+            isinstance(result, ConnectionProblemReport)
             and result.problem_code == ProblemReportReason.REQUEST_NOT_ACCEPTED
         )
         assert target == {"target_list": [mock_conn_target]}
@@ -207,7 +207,7 @@ class TestRequestHandler:
         assert len(messages) == 1
         result, target = messages[0]
         assert (
-            isinstance(result, ProblemReport)
+            isinstance(result, ConnectionProblemReport)
             and result.problem_code == ProblemReportReason.REQUEST_NOT_ACCEPTED
         )
         assert target == {"target_list": None}

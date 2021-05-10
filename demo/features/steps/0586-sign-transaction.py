@@ -102,7 +102,7 @@ def step_impl(context, agent_name, schema_name):
     assert created_txn["txn"]["state"] == "transaction_created"
     if not "txn_ids" in context:
         context.txn_ids = {}
-    context.txn_ids["AUTHOR"] = created_txn["txn"]["_id"]
+    context.txn_ids["AUTHOR"] = created_txn["txn"]["transaction_id"]
 
 
 @when('"{agent_name}" requests endorsement for the transaction')
@@ -137,7 +137,7 @@ def step_impl(context, agent_name):
         i = i - 1
     requested_txn = txns["results"][0]
     assert requested_txn["state"] == "request_received"
-    txn_id = requested_txn["_id"]
+    txn_id = requested_txn["transaction_id"]
 
     endorsed_txn = agent_container_POST(
         agent["agent"], "/transactions/" + txn_id + "/endorse"
@@ -154,7 +154,7 @@ def step_impl(context, agent_name):
     txns = agent_container_GET(agent["agent"], "/transactions")
     requested_txn = txns["results"][0]
     assert requested_txn["state"] == "transaction_endorsed"
-    txn_id = requested_txn["_id"]
+    txn_id = requested_txn["transaction_id"]
 
     written_txn = agent_container_POST(
         agent["agent"], "/transactions/" + txn_id + "/write"

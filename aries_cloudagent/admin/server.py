@@ -454,6 +454,10 @@ class AdminServer(BaseAdminServer):
             event_bus.subscribe(EVENT_PATTERN_WEBHOOK, self._on_webhook_event)
             event_bus.subscribe(EVENT_PATTERN_RECORD, self._on_record_event)
 
+            # Only include forward webhook events if the option is enabled
+            if self.context.settings.get_bool("monitor_forward", False):
+                EVENT_WEBHOOK_MAPPING["acapy::forward::received"] = "forward"
+
             for event_topic, webhook_topic in EVENT_WEBHOOK_MAPPING.items():
                 event_bus.subscribe(
                     re.compile(re.escape(event_topic)),

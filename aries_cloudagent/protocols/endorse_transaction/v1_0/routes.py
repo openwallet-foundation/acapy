@@ -79,7 +79,7 @@ class TransactionJobsSchema(OpenAPISchema):
     )
 
 
-class ConnIdMatchInfoSchema(OpenAPISchema):
+class TransactionConnIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking connection id."""
 
     conn_id = fields.Str(
@@ -569,7 +569,7 @@ async def transaction_resend(request: web.BaseRequest):
     summary="Set transaction jobs",
 )
 @querystring_schema(AssignTransactionJobsSchema())
-@match_info_schema(ConnIdMatchInfoSchema())
+@match_info_schema(TransactionConnIdMatchInfoSchema())
 @response_schema(TransactionJobsSchema(), 200)
 async def set_endorser_role(request: web.BaseRequest):
     """
@@ -609,7 +609,7 @@ async def set_endorser_role(request: web.BaseRequest):
     summary="Set Endorser Info",
 )
 @querystring_schema(EndorserInfoSchema())
-@match_info_schema(ConnIdMatchInfoSchema())
+@match_info_schema(TransactionConnIdMatchInfoSchema())
 @response_schema(EndorserInfoSchema(), 200)
 async def set_endorser_info(request: web.BaseRequest):
     """

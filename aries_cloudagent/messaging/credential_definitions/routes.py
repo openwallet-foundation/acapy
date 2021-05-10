@@ -17,6 +17,7 @@ from marshmallow import fields
 
 from ...admin.request_context import AdminRequestContext
 from ...indy.issuer import IndyIssuer
+from ...indy.sdk.models.cred_def import CredentialDefinitionSchema
 from ...ledger.base import BaseLedger
 from ...ledger.error import LedgerError
 from ...protocols.endorse_transaction.v1_0.manager import TransactionManager
@@ -30,7 +31,7 @@ from ...storage.error import StorageError
 from ...tails.base import BaseTailsServer
 
 from ..models.openapi import OpenAPISchema
-from ..valid import INDY_CRED_DEF_ID, INDY_REV_REG_SIZE, INDY_SCHEMA_ID, INDY_VERSION
+from ..valid import INDY_CRED_DEF_ID, INDY_REV_REG_SIZE, INDY_SCHEMA_ID
 
 
 from .util import CredDefQueryStringSchema, CRED_DEF_TAGS, CRED_DEF_SENT_RECORD_TYPE
@@ -86,34 +87,6 @@ class TxnOrCredentialDefinitionSendResultSchema(OpenAPISchema):
     )
 
 
-class CredentialDefinitionSchema(OpenAPISchema):
-    """Credential definition schema."""
-
-    ver = fields.Str(description="Node protocol version", **INDY_VERSION)
-    ident = fields.Str(
-        description="Credential definition identifier",
-        data_key="id",
-        **INDY_CRED_DEF_ID,
-    )
-    schemaId = fields.Str(
-        description="Schema identifier within credential definition identifier",
-        example=":".join(INDY_CRED_DEF_ID["example"].split(":")[3:-1]),  # long or short
-    )
-    typ = fields.Constant(
-        constant="CL",
-        description="Signature type: CL for Camenisch-Lysyanskaya",
-        data_key="type",
-        example="CL",
-    )
-    tag = fields.Str(
-        description="Tag within credential definition identifier",
-        example=INDY_CRED_DEF_ID["example"].split(":")[-1],
-    )
-    value = fields.Dict(
-        description="Credential definition primary and revocation values"
-    )
-
-
 class CredentialDefinitionGetResultSchema(OpenAPISchema):
     """Result schema for schema get request."""
 
@@ -138,7 +111,7 @@ class CredDefIdMatchInfoSchema(OpenAPISchema):
     )
 
 
-class CreateTransactionForEndorserOptionSchema(OpenAPISchema):
+class CreateCredDefTxnForEndorserOptionSchema(OpenAPISchema):
     """Class for user to input whether to create a transaction for endorser or not."""
 
     create_transaction_for_endorser = fields.Boolean(
@@ -147,7 +120,7 @@ class CreateTransactionForEndorserOptionSchema(OpenAPISchema):
     )
 
 
-class ConnIdMatchInfoSchema(OpenAPISchema):
+class CredDefConnIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking connection id."""
 
     conn_id = fields.Str(
@@ -160,8 +133,8 @@ class ConnIdMatchInfoSchema(OpenAPISchema):
     summary="Sends a credential definition to the ledger",
 )
 @request_schema(CredentialDefinitionSendRequestSchema())
-@querystring_schema(CreateTransactionForEndorserOptionSchema())
-@querystring_schema(ConnIdMatchInfoSchema())
+@querystring_schema(CreateCredDefTxnForEndorserOptionSchema())
+@querystring_schema(CredDefConnIdMatchInfoSchema())
 @response_schema(TxnOrCredentialDefinitionSendResultSchema(), 200, description="")
 async def credential_definitions_send_credential_definition(request: web.BaseRequest):
     """
