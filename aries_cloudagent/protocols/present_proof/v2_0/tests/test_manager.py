@@ -16,6 +16,7 @@ from .....storage.error import StorageNotFoundError
 
 from ...indy.xform import indy_proof_req_preview2indy_requested_creds
 
+from .. import manager as test_module
 from ..formats.handler import V20PresFormatError
 from ..formats.indy import handler as test_indy_handler
 from ..manager import V20PresManager, V20PresManagerError
