@@ -255,7 +255,7 @@ class AcceptRequestQueryStringSchema(OpenAPISchema):
     my_endpoint = fields.Str(description="My URL endpoint", required=False, **ENDPOINT)
 
 
-class ConnIdMatchInfoSchema(OpenAPISchema):
+class ConnectionsConnIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking connection id."""
 
     conn_id = fields.Str(
@@ -353,7 +353,7 @@ async def connections_list(request: web.BaseRequest):
 
 
 @docs(tags=["connection"], summary="Fetch a single connection record")
-@match_info_schema(ConnIdMatchInfoSchema())
+@match_info_schema(ConnectionsConnIdMatchInfoSchema())
 @response_schema(ConnRecordSchema(), 200, description="")
 async def connections_retrieve(request: web.BaseRequest):
     """
@@ -382,7 +382,7 @@ async def connections_retrieve(request: web.BaseRequest):
 
 
 @docs(tags=["connection"], summary="Fetch connection remote endpoint")
-@match_info_schema(ConnIdMatchInfoSchema())
+@match_info_schema(ConnectionsConnIdMatchInfoSchema())
 @response_schema(EndpointsResultSchema(), 200, description="")
 async def connections_endpoints(request: web.BaseRequest):
     """
@@ -411,7 +411,7 @@ async def connections_endpoints(request: web.BaseRequest):
 
 
 @docs(tags=["connection"], summary="Fetch connection metadata")
-@match_info_schema(ConnIdMatchInfoSchema())
+@match_info_schema(ConnectionsConnIdMatchInfoSchema())
 @querystring_schema(ConnectionMetadataQuerySchema())
 @response_schema(ConnectionMetadataSchema(), 200, description="")
 async def connections_metadata(request: web.BaseRequest):
@@ -436,7 +436,7 @@ async def connections_metadata(request: web.BaseRequest):
 
 
 @docs(tags=["connection"], summary="Set connection metadata")
-@match_info_schema(ConnIdMatchInfoSchema())
+@match_info_schema(ConnectionsConnIdMatchInfoSchema())
 @request_schema(ConnectionMetadataSetRequestSchema())
 @response_schema(ConnectionMetadataSchema(), 200, description="")
 async def connections_metadata_set(request: web.BaseRequest):
@@ -572,7 +572,7 @@ async def connections_receive_invitation(request: web.BaseRequest):
     tags=["connection"],
     summary="Accept a stored connection invitation",
 )
-@match_info_schema(ConnIdMatchInfoSchema())
+@match_info_schema(ConnectionsConnIdMatchInfoSchema())
 @querystring_schema(AcceptInvitationQueryStringSchema())
 @response_schema(ConnRecordSchema(), 200, description="")
 async def connections_accept_invitation(request: web.BaseRequest):
@@ -622,7 +622,7 @@ async def connections_accept_invitation(request: web.BaseRequest):
     tags=["connection"],
     summary="Accept a stored connection request",
 )
-@match_info_schema(ConnIdMatchInfoSchema())
+@match_info_schema(ConnectionsConnIdMatchInfoSchema())
 @querystring_schema(AcceptRequestQueryStringSchema())
 @response_schema(ConnRecordSchema(), 200, description="")
 async def connections_accept_request(request: web.BaseRequest):
@@ -689,7 +689,7 @@ async def connections_establish_inbound(request: web.BaseRequest):
 
 
 @docs(tags=["connection"], summary="Remove an existing connection record")
-@match_info_schema(ConnIdMatchInfoSchema())
+@match_info_schema(ConnectionsConnIdMatchInfoSchema())
 @response_schema(ConnectionModuleResponseSchema, 200, description="")
 async def connections_remove(request: web.BaseRequest):
     """

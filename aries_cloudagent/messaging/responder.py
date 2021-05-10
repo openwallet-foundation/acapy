@@ -138,17 +138,24 @@ class MockResponder(BaseResponder):
         """Initialize the mock responder."""
         self.messages = []
 
-    async def send(self, message: Union[BaseMessage, str, bytes], **kwargs):
+    async def send(
+        self, message: Union[BaseMessage, str, bytes], **kwargs
+    ) -> OutboundSendStatus:
         """Convert a message to an OutboundMessage and send it."""
         self.messages.append((message, kwargs))
+        return OutboundSendStatus.QUEUED_FOR_DELIVERY
 
-    async def send_reply(self, message: Union[BaseMessage, str, bytes], **kwargs):
+    async def send_reply(
+        self, message: Union[BaseMessage, str, bytes], **kwargs
+    ) -> OutboundSendStatus:
         """Send a reply to an incoming message."""
         self.messages.append((message, kwargs))
+        return OutboundSendStatus.QUEUED_FOR_DELIVERY
 
-    async def send_outbound(self, message: OutboundMessage):
+    async def send_outbound(self, message: OutboundMessage) -> OutboundSendStatus:
         """Send an outbound message."""
         self.messages.append((message, None))
+        return OutboundSendStatus.QUEUED_FOR_DELIVERY
 
     async def send_webhook(self, topic: str, payload: dict):
         """Send an outbound message."""

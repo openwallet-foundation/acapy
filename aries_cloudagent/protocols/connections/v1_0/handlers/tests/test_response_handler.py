@@ -18,7 +18,7 @@ from ......transport.inbound.receipt import MessageReceipt
 from ...handlers import connection_response_handler as handler
 from ...manager import ConnectionManagerError
 from ...messages.connection_response import ConnectionResponse
-from ...messages.problem_report import ProblemReport, ProblemReportReason
+from ...messages.problem_report import ConnectionProblemReport, ProblemReportReason
 from ...models.connection_detail import ConnectionDetail
 
 
@@ -111,7 +111,7 @@ class TestResponseHandler:
         assert len(messages) == 1
         result, target = messages[0]
         assert (
-            isinstance(result, ProblemReport)
+            isinstance(result, ConnectionProblemReport)
             and result.problem_code == ProblemReportReason.RESPONSE_NOT_ACCEPTED
         )
         assert target == {"target_list": None}
@@ -139,7 +139,7 @@ class TestResponseHandler:
         assert len(messages) == 1
         result, target = messages[0]
         assert (
-            isinstance(result, ProblemReport)
+            isinstance(result, ConnectionProblemReport)
             and result.problem_code == ProblemReportReason.REQUEST_NOT_ACCEPTED
         )
         assert target == {"target_list": [mock_conn_target]}
@@ -167,7 +167,7 @@ class TestResponseHandler:
         assert len(messages) == 1
         result, target = messages[0]
         assert (
-            isinstance(result, ProblemReport)
+            isinstance(result, ConnectionProblemReport)
             and result.problem_code == ProblemReportReason.REQUEST_NOT_ACCEPTED
         )
         assert target == {"target_list": None}
