@@ -16,7 +16,7 @@ from .....core.in_memory import InMemoryProfile
 from .....messaging.responder import BaseResponder, MockResponder
 from .....protocols.routing.v1_0.manager import RoutingManager
 from .....resolver.did_resolver import DIDResolver
-from .....resolver.base import Resolution
+from .....resolver.base import ResolutionResult
 from .....resolver.did_resolver_registry import DIDResolverRegistry
 from .....storage.error import StorageNotFoundError
 from .....transport.inbound.receipt import MessageReceipt
@@ -2165,7 +2165,7 @@ class TestConnectionManager(AsyncTestCase):
         self.resolver.get_endpoint_for_did = async_mock.CoroutineMock(
             return_value=self.test_endpoint
         )
-        self.resolver.resolve = async_mock.CoroutineMock(return_value=Resolution(did_doc, {}))
+        self.resolver.resolve = async_mock.CoroutineMock(return_value=ResolutionResult(did_doc, {}))
         self.context.injector.bind_instance(DIDResolver, self.resolver)
 
         local_did = await self.session.wallet.create_local_did(
@@ -2236,7 +2236,7 @@ class TestConnectionManager(AsyncTestCase):
         self.resolver.get_endpoint_for_did = async_mock.CoroutineMock(
             return_value=self.test_endpoint
         )
-        self.resolver.resolve = async_mock.CoroutineMock(return_value=Resolution(did_doc, {}))
+        self.resolver.resolve = async_mock.CoroutineMock(return_value=ResolutionResult(did_doc, {}))
         self.context.injector.bind_instance(DIDResolver, self.resolver)
 
         local_did = await self.session.wallet.create_local_did(
@@ -2303,7 +2303,7 @@ class TestConnectionManager(AsyncTestCase):
         self.resolver.get_endpoint_for_did = async_mock.CoroutineMock(
             return_value=self.test_endpoint
         )
-        self.resolver.resolve = async_mock.CoroutineMock(return_value=Resolution(did_doc, {}))
+        self.resolver.resolve = async_mock.CoroutineMock(return_value=ResolutionResult(did_doc, {}))
         self.context.injector.bind_instance(DIDResolver, self.resolver)
 
         local_did = await self.session.wallet.create_local_did(
@@ -2349,7 +2349,7 @@ class TestConnectionManager(AsyncTestCase):
         self.resolver.get_endpoint_for_did = async_mock.CoroutineMock(
             return_value=self.test_endpoint
         )
-        self.resolver.resolve = async_mock.CoroutineMock(return_value=Resolution(did_doc, {}))
+        self.resolver.resolve = async_mock.CoroutineMock(return_value=ResolutionResult(did_doc, {}))
         self.context.injector.bind_instance(DIDResolver, self.resolver)
 
         local_did = await self.session.wallet.create_local_did(
@@ -2394,7 +2394,7 @@ class TestConnectionManager(AsyncTestCase):
         self.resolver.get_endpoint_for_did = async_mock.CoroutineMock(
             return_value=self.test_endpoint
         )
-        self.resolver.resolve = async_mock.CoroutineMock(return_value=Resolution(did_doc, {}))
+        self.resolver.resolve = async_mock.CoroutineMock(return_value=ResolutionResult(did_doc, {}))
         self.context.injector.bind_instance(DIDResolver, self.resolver)
 
         local_did = await self.session.wallet.create_local_did(
@@ -2463,7 +2463,7 @@ class TestConnectionManager(AsyncTestCase):
         did_doc = builder.build()
 
         self.resolver = async_mock.MagicMock()
-        self.resolver.resolve = async_mock.CoroutineMock(return_value=Resolution(did_doc, {}))
+        self.resolver.resolve = async_mock.CoroutineMock(return_value=ResolutionResult(did_doc, {}))
         self.context.injector.bind_instance(DIDResolver, self.resolver)
 
         local_did = await self.session.wallet.create_local_did(

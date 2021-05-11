@@ -35,7 +35,7 @@ from marshmallow import fields, validate
 
 from ..admin.request_context import AdminRequestContext
 from ..messaging.models.openapi import OpenAPISchema
-from .base import DIDMethodNotSupported, DIDNotFound, ResolverError, Resolution
+from .base import DIDMethodNotSupported, DIDNotFound, ResolverError, ResolutionResult
 from pydid.common import DID_PATTERN
 from .did_resolver import DIDResolver
 
@@ -112,7 +112,7 @@ async def resolve_did(request: web.BaseRequest):
     try:
         session = await context.session()
         resolver = session.inject(DIDResolver)
-        resolution: Resolution = await resolver.resolve(context.profile, did)
+        resolution: ResolutionResult = await resolver.resolve(context.profile, did)
         result = resolution.did_doc.serialize()
         if request.rel_url.query and bool(request.rel_url.query["verbose"]):
             result = {"doc": result, "resolver_metadata": resolution.resolver_metadata}

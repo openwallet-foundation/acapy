@@ -18,7 +18,7 @@ from .base import (
     DIDMethodNotSupported,
     DIDNotFound,
     ResolverError,
-    Resolution,
+    ResolutionResult,
 )
 from .did_resolver_registry import DIDResolverRegistry
 
@@ -32,14 +32,14 @@ class DIDResolver:
         """Initialize a `didresolver` instance."""
         self.did_resolver_registry = registry
 
-    async def resolve(self, profile: Profile, did: Union[str, DID]) -> Resolution:
+    async def resolve(self, profile: Profile, did: Union[str, DID]) -> ResolutionResult:
         """Retrieve did doc from public registry."""
         # TODO Cache results
         py_did = DID(did) if isinstance(did, str) else did
         for resolver in self._match_did_to_resolver(py_did):
             try:
                 LOGGER.debug("Resolving DID %s with %s", did, resolver)
-                resolution: Resolution = await resolver.resolve(profile, py_did)
+                resolution: ResolutionResult = await resolver.resolve(profile, py_did)
                 LOGGER.debug(
                     "Resolution metadata for did %s: %s",
                     did,
@@ -79,7 +79,7 @@ class DIDResolver:
         # TODO Use cached DID Docs when possible
         try:
             did_url = DIDUrl.parse(did_url)
-            resolution: Resolution = await self.resolve(profile, did_url.did)
+            resolution: ResolutionResult = await self.resolve(profile, did_url.did)
             return resolution.did_doc.dereference(did_url)
         except DIDError as err:
             raise ResolverError(

@@ -38,13 +38,7 @@ class ResolverType(Enum):
     NON_NATIVE = "non-native"
 
 
-class ResolverDriver(Enum):
-    """Resolver Type declarations."""
-
-    HTTP_DRIVER = "HttpDriver"
-
-
-class Resolution:
+class ResolutionResult:
     """Resolution Class to pack the DID Doc and the resolution information."""
 
     def __init__(self, did_doc: DIDDocument, resolver_metadata: dict):
@@ -61,14 +55,13 @@ class Resolution:
 class BaseDIDResolver(ABC):
     """Base Class for DID Resolvers."""
 
-    def __init__(self, type_: ResolverType = None, driver: ResolverDriver = None):
+    def __init__(self, type_: ResolverType = None):
         """Initialize BaseDIDResolver.
 
         Args:
             type_ (Type): Type of resolver, native or non-native
         """
         self.type = type_ or ResolverType.NON_NATIVE
-        self.driver = driver or ResolverDriver.HTTP_DRIVER
 
     @abstractmethod
     async def setup(self, context: InjectionContext):
@@ -88,7 +81,7 @@ class BaseDIDResolver(ABC):
         """Return if this resolver supports the given method."""
         return method in self.supported_methods
 
-    async def resolve(self, profile: Profile, did: Union[str, DID]) -> Resolution:
+    async def resolve(self, profile: Profile, did: Union[str, DID]) -> ResolutionResult:
         """Resolve a DID using this resolver."""
         py_did = DID(did) if isinstance(did, str) else did
 
@@ -96,10 +89,10 @@ class BaseDIDResolver(ABC):
             raise DIDMethodNotSupported(
                 f"{self.__class__.__name__} does not support DID method {py_did.method}"
             )
-        previous_time = datetime.utcnow()
+        resolution_start_time = datetime.utcnow()
         did_document = await self._resolve(profile, str(py_did))
         resolver_metadata = await self._retrieve_resolver_metadata(
-            py_did.method, previous_time
+            py_did.method, resolution_start_time
         )
         result = DIDDocument.deserialize(
             did_document,
@@ -111,20 +104,24 @@ class BaseDIDResolver(ABC):
                 vm_allow_type_list,
             },
         )
-        return Resolution(result, resolver_metadata)
+        return ResolutionResult(result, resolver_metadata)
 
     @abstractmethod
     async def _resolve(self, profile: Profile, did: str) -> dict:
         """Resolve a DID using this resolver."""
 
-    async def _retrieve_resolver_metadata(self, method, previous_time):
+    async def _retrieve_resolver_metadata(self, method, resolution_start_time):
 
         time_now = datetime.utcnow()
-        duration = int((time_now - previous_time).total_seconds() * 1000)
+        duration = int((time_now - resolution_start_time).total_seconds() * 1000)
+        internal_class = self.__class__
+        module = internal_class.__module__
+        class_name = internal_class.__qualname__
+
         resolver_metadata = {
             "type": self.type,
             "driverId": f"did:{method}",
-            "driver": self.driver,
+            "resolver": module + "." + class_name,
             "retrieved": time_now.strftime("%Y-%m-%dT%H:%M:%SZ"),
             "duration": duration,
         }

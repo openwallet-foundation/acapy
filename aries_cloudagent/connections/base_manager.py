@@ -18,7 +18,7 @@ from ..protocols.connections.v1_0.messages.connection_invitation import (
 from ..protocols.coordinate_mediation.v1_0.models.mediation_record import (
     MediationRecord,
 )
-from ..resolver.base import ResolverError, Resolution
+from ..resolver.base import ResolverError, ResolutionResult
 from ..resolver.did_resolver import DIDResolver
 from ..storage.base import BaseStorage
 from ..storage.error import StorageNotFoundError
@@ -222,7 +222,9 @@ class BaseConnectionManager:
 
         resolver = self._session.inject(DIDResolver)
         try:
-            resolution: Resolution = await resolver.resolve(self._session.profile, did)
+            resolution: ResolutionResult = await resolver.resolve(
+                self._session.profile, did
+            )
             doc = resolution.did_doc
         except ResolverError as error:
             raise BaseConnectionManagerError(

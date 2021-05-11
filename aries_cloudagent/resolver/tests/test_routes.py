@@ -12,7 +12,7 @@ from ..base import (
     DIDMethodNotSupported,
     DIDNotFound,
     ResolverError,
-    Resolution,
+    ResolutionResult,
 )
 from ..did_resolver import DIDResolver
 from . import DOC
@@ -33,7 +33,7 @@ def mock_response():
 def mock_resolver():
     did_resolver = async_mock.MagicMock()
     did_resolver.resolve = async_mock.CoroutineMock(
-        return_value=Resolution(did_doc, {})
+        return_value=ResolutionResult(did_doc, {})
     )
     yield did_resolver
 
