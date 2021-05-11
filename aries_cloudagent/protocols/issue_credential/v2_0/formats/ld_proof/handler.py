@@ -5,8 +5,8 @@ from typing import Mapping
 
 from marshmallow import EXCLUDE, INCLUDE
 
-# from pyld import jsonld
-# from pyld.jsonld import JsonLdProcessor
+from pyld import jsonld
+from pyld.jsonld import JsonLdProcessor
 
 from ......did.did_key import DIDKey
 from ......storage.vc_holder.base import VCHolder
@@ -513,14 +513,12 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
             raise V20CredFormatError(f"Received invalid credential: {result}")
 
         # Saving expanded type as a cred_tag
-        # expanded = jsonld.expand(cred_dict)
-        # types = JsonLdProcessor.get_values(
-        #     expanded[0],
-        #     "@type",
-        # )
-        # cred_tags = {
-        #     "expanded_type_values": types
-        # }
+        expanded = jsonld.expand(cred_dict)
+        types = JsonLdProcessor.get_values(
+            expanded[0],
+            "@type",
+        )
+        cred_tags = {"expanded_type": types}
 
         # create VC record for storage
         vc_record = VCRecord(
@@ -533,8 +531,8 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
             cred_value=credential.serialize(),
             given_id=credential.id,
             record_id=cred_id,
-            cred_tags=None,  # Tags should be derived from credential values
-            # cred_tags=cred_tags,
+            # cred_tags=None,  # Tags should be derived from credential values
+            cred_tags=cred_tags,
         )
 
         # Create detail record with cred_id_stored

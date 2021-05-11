@@ -174,7 +174,8 @@ class DIFPresFormatHandler(V20PresFormatHandler):
         input_descriptors = pres_definition.input_descriptors
         try:
             holder = self._profile.inject(VCHolder)
-            types = []
+            tag_query = None
+            expanded_types = []
             schema_ids = []
             for input_descriptor in input_descriptors:
                 for schema in input_descriptor.schemas:
@@ -183,15 +184,15 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                     if required:
                         # JSONLD Expanded URLs
                         if "#" in uri:
-                            types.append(uri.split("#")[1])
+                            expanded_types.append(uri)
                         else:
                             schema_ids.append(uri)
-            if len(types) == 0:
-                types = None
             if len(schema_ids) == 0:
                 schema_ids = None
+            if len(expanded_types) > 0:
+                tag_query = {"expanded_type": expanded_types}
             search = holder.search_credentials(
-                types=types,
+                tag_query=tag_query,
                 schema_ids=schema_ids,
             )
             # Defaults to page_size but would like to include all

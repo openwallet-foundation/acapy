@@ -478,23 +478,25 @@ async def present_proof_credentials_list(request: web.BaseRequest):
             input_descriptors = []
             for input_desc_dict in input_descriptors_list:
                 input_descriptors.append(InputDescriptors.deserialize(input_desc_dict))
-            types = []
+            tag_query = None
+            expanded_types = []
             schema_ids = []
             for input_descriptor in input_descriptors:
                 for schema in input_descriptor.schemas:
                     uri = schema.uri
                     required = schema.required or True
                     if required:
+                        # JSONLD Expanded URLs
                         if "#" in uri:
-                            types.append(uri.split("#")[1])
+                            expanded_types.append(uri)
                         else:
                             schema_ids.append(uri)
-            if len(types) == 0:
-                types = None
             if len(schema_ids) == 0:
                 schema_ids = None
+            if len(expanded_types) > 0:
+                tag_query = {"expanded_type": expanded_types}
             search = dif_holder.search_credentials(
-                types=types,
+                tag_query=tag_query,
                 schema_ids=schema_ids,
             )
             dif_credentials = await search.fetch(count)

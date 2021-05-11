@@ -446,14 +446,12 @@ class DIFPresExchHandler:
             proof_types = [proof.get("type") for proof in proofs]
 
         # Saving expanded type as a cred_tag
-        # expanded = jsonld.expand(cred_dict)
-        # types = JsonLdProcessor.get_values(
-        #     expanded[0],
-        #     "@type",
-        # )
-        # cred_tags = {
-        #     "expanded_type_values": types
-        # }
+        expanded = jsonld.expand(cred_dict)
+        types = JsonLdProcessor.get_values(
+            expanded[0],
+            "@type",
+        )
+        cred_tags = {"expanded_type": types}
         return VCRecord(
             contexts=contexts,
             types=types,
@@ -463,7 +461,7 @@ class DIFPresExchHandler:
             given_id=given_id,
             cred_value=cred_dict,
             schema_ids=schema_ids,
-            # cred_tags=cred_tags
+            cred_tags=cred_tags,
         )
 
     def reveal_doc(self, credential_dict: dict, constraints: Constraints):
@@ -906,11 +904,7 @@ class DIFPresExchHandler:
         for cred_schema_id in credential.schema_ids:
             if cred_schema_id == schema_id:
                 return True
-        expanded = jsonld.expand(credential.cred_value)
-        types = JsonLdProcessor.get_values(
-            expanded[0],
-            "@type",
-        )
+        types = credential.cred_tags.get("expanded_type") or []
         for cred_type in types:
             if cred_type == schema_id:
                 return True
