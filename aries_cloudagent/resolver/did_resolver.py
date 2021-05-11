@@ -49,7 +49,7 @@ class DIDResolver:
         valid_resolvers = [
             resolver
             for resolver in self.did_resolver_registry.resolvers
-            if await resolver.supports(profile, py_did.method)
+            if await resolver.supports(profile, str(py_did))
         ]
         native_resolvers = filter(lambda resolver: resolver.native, valid_resolvers)
         non_native_resolvers = filter(
