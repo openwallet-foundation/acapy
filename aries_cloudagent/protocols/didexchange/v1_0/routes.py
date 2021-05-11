@@ -53,6 +53,10 @@ class DIDXCreateRequestImplicitQueryStringSchema(OpenAPISchema):
         description="Identifier for active mediation record to be used",
         **UUID4,
     )
+    use_public_did = fields.Boolean(
+        required=False,
+        description="Use public DID for this connection",
+    )
 
 
 class DIDXReceiveRequestImplicitQueryStringSchema(OpenAPISchema):
@@ -179,6 +183,7 @@ async def didx_create_request_implicit(request: web.BaseRequest):
     my_label = request.query.get("my_label") or None
     my_endpoint = request.query.get("my_endpoint") or None
     mediation_id = request.query.get("mediation_id") or None
+    use_public_did = request.query.get("use_public_did") or False
 
     didx_mgr = DIDXManager(session)
     try:
@@ -187,6 +192,7 @@ async def didx_create_request_implicit(request: web.BaseRequest):
             my_label=my_label,
             my_endpoint=my_endpoint,
             mediation_id=mediation_id,
+            use_public_did=use_public_did,
         )
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
