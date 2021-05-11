@@ -6,7 +6,6 @@ import logging
 import indy.anoncreds
 from indy.error import IndyError
 
-from ...indy.models.xform import indy_proof_req2non_revoc_intervals
 from ...ledger.indy import IndySdkLedger
 
 from ..verifier import IndyVerifier
