@@ -27,6 +27,8 @@ MESSAGE_TYPES = DIDCommPrefix.qualify_all(
         CONNECTION_RESPONSE: (
             f"{PROTOCOL_PACKAGE}.messages.connection_response.ConnectionResponse"
         ),
-        PROBLEM_REPORT: f"{PROTOCOL_PACKAGE}.messages.problem_report.ProblemReport",
+        PROBLEM_REPORT: (
+            f"{PROTOCOL_PACKAGE}.messages.problem_report.ConnectionProblemReport"
+        ),
     }
 )

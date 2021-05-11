@@ -50,14 +50,6 @@ class RevocationModuleResponseSchema(OpenAPISchema):
     """Response schema for Revocation Module."""
 
 
-class CredExIdMatchInfoSchema(OpenAPISchema):
-    """Path parameters and validators for request taking credential exchange id."""
-
-    cred_ex_id = fields.Str(
-        description="Credential exchange identifier", required=True, **UUID4
-    )
-
-
 class RevRegCreateRequestSchema(OpenAPISchema):
     """Request schema for revocation registry creation request."""
 
@@ -75,7 +67,7 @@ class RevRegCreateRequestSchema(OpenAPISchema):
 class RevRegResultSchema(OpenAPISchema):
     """Result schema for revocation registry creation request."""
 
-    result = IssuerRevRegRecordSchema()
+    result = fields.Nested(IssuerRevRegRecordSchema())
 
 
 class CredRevRecordQueryStringSchema(OpenAPISchema):
@@ -162,7 +154,7 @@ class ClearPendingRevocationsRequestSchema(OpenAPISchema):
 class CredRevRecordResultSchema(OpenAPISchema):
     """Result schema for credential revocation record request."""
 
-    result = IssuerCredRevRecordSchema()
+    result = fields.Nested(IssuerCredRevRecordSchema())
 
 
 class RevRegIssuedResultSchema(OpenAPISchema):
@@ -243,7 +235,7 @@ class RevRegIdMatchInfoSchema(OpenAPISchema):
     )
 
 
-class CredDefIdMatchInfoSchema(OpenAPISchema):
+class RevocationCredDefIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking cred def id."""
 
     cred_def_id = fields.Str(
@@ -534,7 +526,7 @@ async def get_cred_rev_record(request: web.BaseRequest):
     tags=["revocation"],
     summary="Get current active revocation registry by credential definition id",
 )
-@match_info_schema(CredDefIdMatchInfoSchema())
+@match_info_schema(RevocationCredDefIdMatchInfoSchema())
 @response_schema(RevRegResultSchema(), 200, description="")
 async def get_active_rev_reg(request: web.BaseRequest):
     """

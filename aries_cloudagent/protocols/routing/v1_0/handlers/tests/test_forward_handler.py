@@ -33,7 +33,9 @@ class TestForwardHandler(AsyncTestCase):
             test_module, "RoutingManager", autospec=True
         ) as mock_mgr, async_mock.patch.object(
             test_module, "ConnectionManager", autospec=True
-        ) as mock_connection_mgr:
+        ) as mock_connection_mgr, async_mock.patch.object(
+            self.context.profile, "notify", autospec=True
+        ) as mock_notify:
             mock_mgr.return_value.get_recipient = async_mock.CoroutineMock(
                 return_value=RouteRecord(connection_id="dummy")
             )
@@ -48,6 +50,15 @@ class TestForwardHandler(AsyncTestCase):
             )
 
             await handler.handle(self.context, responder)
+
+            mock_notify.assert_called_once_with(
+                "acapy::forward::received",
+                {
+                    "connection_id": "dummy",
+                    "status": "queued_for_delivery",
+                    "recipient_key": "sample-did",
+                },
+            )
 
             messages = responder.messages
             assert len(messages) == 1

@@ -756,6 +756,12 @@ class ProtocolGroup(ArgumentGroup):
             help="Send a webhook when a ping is sent or received.",
         )
         parser.add_argument(
+            "--monitor-forward",
+            action="store_true",
+            env_var="ACAPY_MONITOR_FORWARD",
+            help="Send a webhook when a forward is received.",
+        )
+        parser.add_argument(
             "--public-invites",
             action="store_true",
             env_var="ACAPY_PUBLIC_INVITES",
@@ -851,6 +857,8 @@ class ProtocolGroup(ArgumentGroup):
             settings["invite_base_url"] = args.invite_base_url
         if args.monitor_ping:
             settings["debug.monitor_ping"] = args.monitor_ping
+        if args.monitor_forward:
+            settings["monitor_forward"] = args.monitor_forward
         if args.public_invites:
             settings["public_invites"] = True
         if args.timing:
