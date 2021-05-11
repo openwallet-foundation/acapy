@@ -251,6 +251,32 @@ class TestConnRecord(AsyncTestCase):
         retrieved = await record.retrieve_request(self.session)
         assert isinstance(retrieved, ConnectionRequest)
 
+    async def test_attach_request_abstain_on_alien_deco(self):
+        record = ConnRecord(
+            my_did=self.test_did,
+            state=ConnRecord.State.INVITATION.rfc23,
+        )
+        connection_id = await record.save(self.session)
+
+        req = ConnectionRequest(
+            connection=ConnectionDetail(
+                did=self.test_did, did_doc=DIDDoc(self.test_did)
+            ),
+            label="abc123",
+        )
+        ser = req.serialize()
+        ser["~alien"] = [{"nickname": "profile-image", "data": {"links": ["face.png"]}}]
+        alien_req = ConnectionRequest.deserialize(ser)
+        await record.attach_request(self.session, alien_req)
+        alien_ser = alien_req.serialize()
+        assert "~alien" in alien_ser
+
+        ser["~alien"] = None
+        alien_req = ConnectionRequest.deserialize(ser)
+        await record.attach_request(self.session, alien_req)
+        alien_ser = alien_req.serialize()
+        assert "~alien" not in alien_ser
+
     async def test_ser_rfc23_state_present(self):
         record = ConnRecord(
             state=ConnRecord.State.INVITATION,
