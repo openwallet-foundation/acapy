@@ -40,10 +40,11 @@ def profile(ledger):
     yield profile
 
 
-def test_supported_methods(resolver: IndyDIDResolver):
+@pytest.mark.asyncio
+async def test_supported_methods(profile, resolver: IndyDIDResolver):
     """Test the supported_methods."""
     assert resolver.supported_methods == ["sov"]
-    assert resolver.supports("sov")
+    assert await resolver.supports(profile, "sov")
 
 
 @pytest.mark.asyncio

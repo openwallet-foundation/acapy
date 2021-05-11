@@ -98,10 +98,11 @@ def test_create_resolver(resolver):
     assert len(resolver.did_resolver_registry.resolvers) == len(TEST_DID_METHODS)
 
 
+@pytest.mark.asyncio
 @pytest.mark.parametrize("did, method", zip(TEST_DIDS, TEST_DID_METHODS))
-def test_match_did_to_resolver(resolver, did, method):
+async def test_match_did_to_resolver(profile, resolver, did, method):
     base_resolver, *_ = resolver._match_did_to_resolver(DID(did))
-    assert base_resolver.supports(method)
+    assert await base_resolver.supports(profile, method)
 
 
 def test_match_did_to_resolver_x_not_supported(resolver):
