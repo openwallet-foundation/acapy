@@ -102,7 +102,7 @@ def test_create_resolver(resolver):
 @pytest.mark.parametrize("did, method", zip(TEST_DIDS, TEST_DID_METHODS))
 async def test_match_did_to_resolver(profile, resolver, did, method):
     base_resolver, *_ = await resolver._match_did_to_resolver(profile, DID(did))
-    assert await base_resolver.supports(profile, method)
+    assert await base_resolver.supports(profile, did)
 
 
 @pytest.mark.asyncio
@@ -184,7 +184,7 @@ async def test_resolve_did_x_not_supported(resolver, profile):
 @pytest.mark.asyncio
 async def test_resolve_did_x_not_found(profile):
     py_did = DID("did:cowsay:EiDahaOGH-liLLdDtTxEAdc8i-cfCz-WUcQdRJheMVNn3A")
-    cowsay_resolver_not_found = MockResolver("cowsay", resolved=DIDNotFound())
+    cowsay_resolver_not_found = MockResolver(["cowsay"], resolved=DIDNotFound())
     registry = DIDResolverRegistry()
     registry.register(cowsay_resolver_not_found)
     resolver = DIDResolver(registry)

@@ -109,7 +109,7 @@ class BaseDIDResolver(ABC):
 
         if not await self.supports(profile, str(py_did)):
             raise DIDMethodNotSupported(
-                f"{self.__class__.__name__} does not support DID method {str(py_did)}"
+                f"{self.__class__.__name__} does not support DID method {py_did.method}"
             )
 
         did_document = await self._resolve(profile, str(py_did))

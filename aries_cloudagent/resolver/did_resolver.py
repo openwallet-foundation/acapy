@@ -32,7 +32,7 @@ class DIDResolver:
         for resolver in await self._match_did_to_resolver(profile, py_did):
             try:
                 LOGGER.debug("Resolving DID %s with %s", did, resolver)
-                return await resolver.resolve(profile, py_did)
+                return await resolver.resolve(profile, str(py_did))
             except DIDNotFound:
                 LOGGER.debug("DID %s not found by resolver %s", did, resolver)
 
@@ -57,7 +57,7 @@ class DIDResolver:
         )
         resolvers = list(chain(native_resolvers, non_native_resolvers))
         if not resolvers:
-            raise DIDMethodNotSupported(f"DID method '{str(py_did)}' not supported")
+            raise DIDMethodNotSupported(f"DID method '{py_did.method}' not supported")
         return resolvers
 
     async def dereference(
