@@ -107,9 +107,9 @@ class BaseDIDResolver(ABC):
         """Resolve a DID using this resolver."""
         py_did = DID(did) if isinstance(did, str) else did
 
-        if not await self.supports(profile, py_did.method):
+        if not await self.supports(profile, str(py_did)):
             raise DIDMethodNotSupported(
-                f"{self.__class__.__name__} does not support DID method {py_did.method}"
+                f"{self.__class__.__name__} does not support DID method {str(py_did)}"
             )
 
         did_document = await self._resolve(profile, str(py_did))

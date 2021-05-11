@@ -44,17 +44,17 @@ def profile(ledger):
 async def test_supported_methods(profile, resolver: IndyDIDResolver):
     """Test the supported_methods."""
     assert resolver.supported_methods == ["sov"]
-    assert await resolver.supports(profile, "sov")
+    assert await resolver.supports(profile, "did:sov:U292ZXJlaWdudHksIGxveWFsdHksIGFuZCBzb2xpdHVkZS4=")
 
 
 @pytest.mark.asyncio
-async def test_resolve(resolver: IndyDIDResolver, profile: Profile):
+async def test_resolve(profile: Profile, resolver: IndyDIDResolver):
     """Test resolve method."""
     assert await resolver.resolve(profile, TEST_DID0)
 
 
 @pytest.mark.asyncio
-async def test_resolve_x_no_ledger(resolver: IndyDIDResolver, profile: Profile):
+async def test_resolve_x_no_ledger(profile: Profile, resolver: IndyDIDResolver):
     """Test resolve method with no ledger."""
     profile.context.injector.clear_binding(BaseLedger)
     with pytest.raises(ResolverError):

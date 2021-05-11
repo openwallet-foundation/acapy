@@ -29,7 +29,7 @@ def profile():
 async def test_supported_methods(profile, resolver: KeyDIDResolver):
     """Test the supported_methods."""
     assert resolver.supported_methods == ["key"]
-    assert await resolver.supports(profile, "key")
+    assert await resolver.supports(profile, "did:key:UG9saXRlbmVzcyBpcyB0aGUgZmlyc3QgdGhpbmcgcGVvcGxlIGxvc2Ugb25jZSB0aGV5IGdldCB0aGUgcG93ZXIu")
 
 
 @pytest.mark.asyncio

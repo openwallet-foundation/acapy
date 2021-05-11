@@ -57,7 +57,7 @@ class DIDResolver:
         )
         resolvers = list(chain(native_resolvers, non_native_resolvers))
         if not resolvers:
-            raise DIDMethodNotSupported(f"DID method '{py_did.method}' not supported")
+            raise DIDMethodNotSupported(f"DID method '{str(py_did)}' not supported")
         return resolvers
 
     async def dereference(
