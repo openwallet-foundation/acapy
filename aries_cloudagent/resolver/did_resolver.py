@@ -7,18 +7,12 @@ retrieving did's from different sources provided by the method type.
 
 import logging
 from itertools import chain
-from typing import Union
+from typing import Sequence, Union
 
 from pydid import DID, DIDDocument, DIDError, DIDUrl, Service, VerificationMethod
 
 from ..core.profile import Profile
-
-from .base import (
-    BaseDIDResolver,
-    DIDMethodNotSupported,
-    DIDNotFound,
-    ResolverError,
-)
+from .base import BaseDIDResolver, DIDMethodNotSupported, DIDNotFound, ResolverError
 from .did_resolver_registry import DIDResolverRegistry
 
 LOGGER = logging.getLogger(__name__)
@@ -35,7 +29,7 @@ class DIDResolver:
         """Retrieve did doc from public registry."""
         # TODO Cache results
         py_did = DID(did) if isinstance(did, str) else did
-        for resolver in self._match_did_to_resolver(py_did):
+        for resolver in await self._match_did_to_resolver(profile, py_did):
             try:
                 LOGGER.debug("Resolving DID %s with %s", did, resolver)
                 return await resolver.resolve(profile, py_did)
@@ -44,18 +38,19 @@ class DIDResolver:
 
         raise DIDNotFound(f"DID {did} could not be resolved")
 
-    def _match_did_to_resolver(self, py_did: DID) -> BaseDIDResolver:
+    async def _match_did_to_resolver(
+        self, profile: Profile, py_did: DID
+    ) -> Sequence[BaseDIDResolver]:
         """Generate supported DID Resolvers.
 
         Native resolvers are yielded first, in registered order followed by
         non-native resolvers in registered order.
         """
-        valid_resolvers = list(
-            filter(
-                lambda resolver: resolver.supports(py_did.method),
-                self.did_resolver_registry.resolvers,
-            )
-        )
+        valid_resolvers = [
+            resolver
+            for resolver in self.did_resolver_registry.resolvers
+            if await resolver.supports(profile, py_did.method)
+        ]
         native_resolvers = filter(lambda resolver: resolver.native, valid_resolvers)
         non_native_resolvers = filter(
             lambda resolver: not resolver.native, valid_resolvers
