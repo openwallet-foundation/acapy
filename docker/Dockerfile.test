@@ -12,7 +12,7 @@ WORKDIR /usr/src/app
 
 ADD requirements.txt requirements.dev.txt ./
 
-RUN pip3 install -vvv --no-cache-dir \
+RUN pip3 install --no-cache-dir \
 	-r requirements.txt \
 	-r requirements.dev.txt
 
