@@ -2,10 +2,11 @@
 
 import json
 
-from ...wallet.util import b64_to_bytes, b64_to_str, bytes_to_b64, str_to_b64
-from ...wallet.key_type import KeyType
 from ...did.did_key import DIDKey
+from ...vc.ld_proofs import DocumentLoader
 from ...wallet.base import BaseWallet
+from ...wallet.key_type import KeyType
+from ...wallet.util import b64_to_bytes, b64_to_str, bytes_to_b64, str_to_b64
 
 from .create_verify_data import create_verify_data
 from .error import BadJWSHeaderError
@@ -84,7 +85,12 @@ async def jws_verify(session, verify_data, signature, public_key):
 async def sign_credential(session, credential, signature_options, verkey):
     """Sign Credential."""
 
-    framed, verify_data_hex_string = create_verify_data(credential, signature_options)
+    document_loader = session.profile.inject(DocumentLoader, required=False)
+    framed, verify_data_hex_string = create_verify_data(
+        credential,
+        signature_options,
+        document_loader,
+    )
     verify_data_bytes = bytes.fromhex(verify_data_hex_string)
     jws = await jws_sign(session, verify_data_bytes, verkey)
     return {**credential, "proof": {**signature_options, "jws": jws}}
@@ -93,7 +99,12 @@ async def sign_credential(session, credential, signature_options, verkey):
 async def verify_credential(session, doc, verkey):
     """Verify credential."""
 
-    framed, verify_data_hex_string = create_verify_data(doc, doc["proof"])
+    document_loader = session.profile.inject(DocumentLoader, required=False)
+    framed, verify_data_hex_string = create_verify_data(
+        doc,
+        doc["proof"],
+        document_loader,
+    )
     verify_data_bytes = bytes.fromhex(verify_data_hex_string)
     valid = await jws_verify(session, verify_data_bytes, framed["proof"]["jws"], verkey)
     return valid
