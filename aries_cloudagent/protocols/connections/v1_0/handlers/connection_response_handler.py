@@ -9,7 +9,7 @@ from .....protocols.trustping.v1_0.messages.ping import Ping
 
 from ..manager import ConnectionManager, ConnectionManagerError
 from ..messages.connection_response import ConnectionResponse
-from ..messages.problem_report import ProblemReport
+from ..messages.problem_report import ConnectionProblemReport
 
 
 class ConnectionResponseHandler(BaseHandler):
@@ -47,7 +47,7 @@ class ConnectionResponseHandler(BaseHandler):
                             "Error parsing DIDDoc for problem report"
                         )
                 await responder.send_reply(
-                    ProblemReport(problem_code=e.error_code, explain=str(e)),
+                    ConnectionProblemReport(problem_code=e.error_code, explain=str(e)),
                     target_list=targets,
                 )
             return
