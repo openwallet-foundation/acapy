@@ -37,11 +37,13 @@ class SignRequestSchema(OpenAPISchema):
                             "creator": fields.Str(required=False),
                             "verificationMethod": fields.Str(required=False),
                             "proofPurpose": fields.Str(required=False),
-                        }
+                        },
+                        name="SignRequestDocOptionsSchema",
                     ),
                     required=True,
                 ),
-            }
+            },
+            name="SignRequestDocSchema",
         ),
         required=True,
     )
@@ -96,7 +98,8 @@ class DocSchema(OpenAPISchema):
                 "creator": fields.Str(required=False),
                 "verificationMethod": fields.Str(required=False),
                 "proofPurpose": fields.Str(required=False),
-            }
+            },
+            name="DocProofSchema",
         )
     )
 
