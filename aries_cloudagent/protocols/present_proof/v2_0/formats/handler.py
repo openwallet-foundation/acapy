@@ -11,8 +11,6 @@ from .....messaging.decorators.attach_decorator import AttachDecorator
 from ..message_types import ATTACHMENT_FORMAT
 from ..messages.pres import V20Pres
 from ..messages.pres_format import V20PresFormat
-from ..messages.pres_proposal import V20PresProposal
-from ..messages.pres_request import V20PresRequest
 from ..models.pres_exchange import V20PresExRecord
 
 LOGGER = logging.getLogger(__name__)
@@ -101,27 +99,3 @@ class V20PresFormatHandler(ABC):
     @abstractmethod
     async def verify_pres(self, pres_ex_record: V20PresExRecord) -> V20PresExRecord:
         """Verify a presentation."""
-
-    @abstractmethod
-    async def create_exchange_for_proposal(
-        self,
-        pres_ex_record: V20PresExRecord,
-        pres_proposal_message: V20PresProposal,
-    ) -> None:
-        """Create a presentation exchange record for input presentation proposal."""
-
-    @abstractmethod
-    async def receive_pres_proposal(
-        self,
-        pres_ex_record: V20PresExRecord,
-        message: V20PresProposal,
-    ) -> None:
-        """Receive a presentation proposal from message in context on manager creation."""
-
-    @abstractmethod
-    async def create_exchange_for_request(
-        self,
-        pres_ex_record: V20PresExRecord,
-        pres_request_message: V20PresRequest,
-    ) -> None:
-        """Create a presentation exchange record for input presentation request."""

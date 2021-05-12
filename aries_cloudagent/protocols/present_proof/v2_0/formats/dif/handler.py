@@ -100,27 +100,6 @@ class DIFPresFormatHandler(V20PresFormatHandler):
         # Validate, throw if not valid
         Schema(unknown=RAISE).load(attachment_data)
 
-    async def create_exchange_for_proposal(
-        self,
-        pres_ex_record: V20PresExRecord,
-        pres_proposal_message: V20PresProposal,
-    ) -> None:
-        """Create a presentation exchange record for input presentation proposal."""
-
-    async def receive_pres_proposal(
-        self,
-        pres_ex_record: V20PresExRecord,
-        message: V20PresProposal,
-    ) -> None:
-        """Receive a presentation proposal from message in context on manager creation."""
-
-    async def create_exchange_for_request(
-        self,
-        pres_ex_record: V20PresExRecord,
-        pres_request_message: V20PresRequest,
-    ) -> None:
-        """Create a presentation exchange record for input presentation request."""
-
     async def create_bound_request(
         self,
         pres_ex_record: V20PresExRecord,
