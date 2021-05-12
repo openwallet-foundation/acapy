@@ -2,21 +2,24 @@
 
 import asyncio
 import json
+import pytest
+
 from itertools import cycle
 
-import pytest
-from asynctest import TestCase as AsyncTestCase
-from asynctest import mock as async_mock
+from asynctest import mock as async_mock, TestCase as AsyncTestCase
 
 from ....admin.request_context import AdminRequestContext
 from ....core.in_memory import InMemoryProfile
+from ....vc.ld_proofs import DocumentLoader
 from ....wallet.base import BaseWallet
 from ....wallet.in_memory import InMemoryWallet
 from ....wallet.key_type import KeyType
+
 from .. import credential as test_module
 from ..create_verify_data import DroppedAttributeError
 from ..credential import did_key, sign_credential, verify_credential
 from ..error import BadJWSHeaderError, SignatureTypeError
+
 from . import (
     TEST_SEED,
     TEST_SIGN_ERROR_OBJS,
@@ -26,6 +29,7 @@ from . import (
     TEST_VERIFY_OBJS,
     TEST_VERKEY,
 )
+from .document_loader import custom_document_loader
 
 
 class TestCredential(AsyncTestCase):
@@ -53,96 +57,74 @@ class TestCredential(AsyncTestCase):
             )
 
 
-@pytest.fixture(scope="module")
-def event_loop():
-    loop = asyncio.get_event_loop()
-    yield loop
-    loop.close()
+class TestOps(AsyncTestCase):
+    async def setUp(self):
+        self.wallet = InMemoryWallet(InMemoryProfile.test_profile())
+        await self.wallet.create_signing_key(KeyType.ED25519, TEST_SEED)
 
-
-@pytest.fixture(scope="module")
-async def wallet():
-    profile = InMemoryProfile.test_profile()
-    wallet = InMemoryWallet(profile)
-    await wallet.create_signing_key(KeyType.ED25519, TEST_SEED)
-    yield wallet
-
-
-@pytest.fixture(scope="module")
-async def mock_session(wallet):
-    session_inject = {BaseWallet: wallet}
-    context = AdminRequestContext.test_context(session_inject)
-    session = await context.session()
-    yield session
-
-
-@pytest.mark.parametrize("input", TEST_VERIFY_OBJS)
-@pytest.mark.asyncio
-async def test_verify_credential(input, mock_session):
-    result = await verify_credential(
-        mock_session, input.get("doc"), input.get("verkey")
-    )
-    assert result
-
-
-@pytest.mark.parametrize("input", TEST_SIGN_OBJS)
-@pytest.mark.asyncio
-async def test_sign_credential(input, mock_session):
-    result = await sign_credential(
-        mock_session, input.get("doc"), input.get("options"), TEST_VERKEY
-    )
-    assert "proof" in result.keys()
-    assert "jws" in result.get("proof", {}).keys()
-
-
-@pytest.mark.parametrize("input", TEST_SIGN_ERROR_OBJS)
-@pytest.mark.asyncio
-async def test_sign_dropped_attribute_exception(input, mock_session):
-    with pytest.raises(DroppedAttributeError, match="attribute2drop"):
-        await sign_credential(
-            mock_session, input.get("doc"), input.get("options"), TEST_VERKEY
+        self.session = InMemoryProfile.test_session(bind={BaseWallet: self.wallet})
+        self.profile = self.session.profile
+        self.context = self.profile.context
+        setattr(
+            self.profile,
+            "session",
+            async_mock.MagicMock(return_value=self.session),
         )
 
+        self.context.injector.bind_instance(DocumentLoader, custom_document_loader)
 
-@pytest.mark.asyncio
-async def test_validate_dropped_attribute_exception(mock_session):
-    with pytest.raises(DroppedAttributeError, match="attribute2drop"):
-        input = TEST_VALIDATE_ERROR_OBJ2
-        await verify_credential(mock_session, input["doc"], TEST_VERIFY_ERROR["verkey"])
+    async def test_verify_credential(self):
+        for input_ in TEST_VERIFY_OBJS:
+            assert await verify_credential(
+                self.session,
+                input_.get("doc"),
+                input_.get("verkey"),
+            )
 
+    async def test_sign_credential(self):
+        for input_ in TEST_SIGN_OBJS:
+            result = await sign_credential(
+                self.session,
+                input_.get("doc"),
+                input_.get("options"),
+                TEST_VERKEY,
+            )
+            assert "proof" in result.keys()
+            assert "jws" in result.get("proof", {}).keys()
 
-@pytest.mark.parametrize("input", TEST_SIGN_OBJS)
-@pytest.mark.asyncio
-async def test_signature_option_type(input, mock_session):
-    with pytest.raises(SignatureTypeError):
-        input["options"]["type"] = "Ed25519Signature2038"
-        await sign_credential(
-            mock_session, input.get("doc"), input.get("options"), TEST_VERKEY
-        )
+    async def test_sign_dropped_attribute_exception(self):
+        for input_ in TEST_SIGN_ERROR_OBJS:
+            with self.assertRaises(DroppedAttributeError) as context:
+                await sign_credential(
+                    self.session,
+                    input_.get("doc"),
+                    input_.get("options"),
+                    TEST_VERKEY,
+                )
+            assert "attribute2drop" in str(context.exception)
 
+    async def test_signature_option_type(self):
+        for input_ in TEST_SIGN_OBJS:
+            with self.assertRaises(SignatureTypeError):
+                input_["options"]["type"] = "Ed25519Signature2038"
+                await sign_credential(
+                    self.session,
+                    input_.get("doc"),
+                    input_.get("options"),
+                    TEST_VERKEY,
+                )
 
-@pytest.mark.parametrize("input", TEST_VERIFY_OBJS)
-@pytest.mark.asyncio
-async def test_verify_optiion_type(input, mock_session):
-    with pytest.raises(SignatureTypeError):
-        input["doc"]["proof"]["type"] = "Ed25519Signature2038"
-        await verify_credential(mock_session, input.get("doc"), input.get("verkey"))
+    async def test_invalid_jws_header(self):
+        with self.assertRaises(BadJWSHeaderError):
+            await verify_credential(
+                self.session,
+                TEST_VERIFY_ERROR.get("doc"),
+                TEST_VERIFY_ERROR.get("verkey"),
+            )
 
-
-@pytest.mark.asyncio
-async def test_Invalid_JWS_header(mock_session):
-    with pytest.raises(BadJWSHeaderError):
-        await verify_credential(
-            mock_session, TEST_VERIFY_ERROR.get("doc"), TEST_VERIFY_ERROR.get("verkey")
-        )
-
-
-@pytest.mark.parametrize(
-    "verkey",
-    (
-        "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx",
-        "did:key:z3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx",
-    ),
-)
-def test_did_key(verkey):
-    assert did_key(verkey).startswith("did:key:z")
+    async def test_did_key(self):
+        for verkey in (
+            "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx",
+            "did:key:z3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx",
+        ):
+            assert did_key(verkey).startswith("did:key:z")

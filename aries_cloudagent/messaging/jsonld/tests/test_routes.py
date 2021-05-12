@@ -1,8 +1,10 @@
 import json
+import pytest
+
 from copy import deepcopy
+
 from pydid.doc.service import Service
 
-import pytest
 from aiohttp import web
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
@@ -18,6 +20,7 @@ from ....resolver.did_resolver import DIDResolver
 from ....resolver.tests import DOC
 from ....wallet.base import BaseWallet
 from ....wallet.error import WalletError
+
 from .. import routes as test_module
 from ..error import (
     BadJWSHeaderError,

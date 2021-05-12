@@ -14,10 +14,6 @@ from .......storage.vc_holder.vc_record import VCRecord
 from ..models.cred_detail import (
     LDProofVCDetail,
 )
-from .......wallet.key_type import KeyType
-from .......wallet.error import WalletNotFoundError
-from .......wallet.did_method import DIDMethod
-from .......wallet.base import BaseWallet
 from .......vc.ld_proofs import (
     DocumentLoader,
     DocumentVerificationResult,
@@ -28,6 +24,11 @@ from .......vc.ld_proofs import (
 )
 from .......vc.ld_proofs.constants import SECURITY_CONTEXT_BBS_URL
 from .......vc.tests.document_loader import custom_document_loader
+from .......wallet.key_type import KeyType
+from .......wallet.error import WalletNotFoundError
+from .......wallet.did_method import DIDMethod
+from .......wallet.base import BaseWallet
+
 from ....models.detail.ld_proof import V20CredExRecordLDProof
 from ....models.cred_ex_record import V20CredExRecord
 from ....messages.cred_proposal import V20CredProposal
@@ -44,8 +45,10 @@ from ....message_types import (
     CRED_20_REQUEST,
     CRED_20_ISSUE,
 )
-from ..handler import LDProofCredFormatHandler
+
 from ...handler import LOGGER, V20CredFormatError
+
+from ..handler import LDProofCredFormatHandler
 
 TEST_DID_SOV = "did:sov:LjgpST2rjsoxYegQDRm7EL"
 TEST_DID_KEY = "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"

@@ -1,14 +1,17 @@
 """JSON-LD document loader methods."""
 
-from pydid.did_url import DIDUrl
-from pyld.documentloader import requests
-from typing import Callable
 import asyncio
 import concurrent.futures
 
-from ...resolver.did_resolver import DIDResolver
+from typing import Callable
+
+from pydid.did_url import DIDUrl
+from pyld.documentloader import requests
+
 from ...cache.base import BaseCache
 from ...core.profile import Profile
+from ...resolver.did_resolver import DIDResolver
+
 from .error import LinkedDataProofException
 
 
