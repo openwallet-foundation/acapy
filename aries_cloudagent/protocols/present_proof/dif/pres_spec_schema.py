@@ -17,10 +17,8 @@ class DIFPresSpecSpecSchema(OpenAPISchema):
             )
         ),
         required=False,
-        data_key="issuer_id",
     )
     presentation_definition = fields.Nested(
         PresentationDefinitionSchema(),
         required=False,
-        data_key="presentation_definition",
     )

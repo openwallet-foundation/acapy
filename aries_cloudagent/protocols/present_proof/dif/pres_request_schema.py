@@ -14,16 +14,13 @@ class DIFPresRequestSchema(OpenAPISchema):
         description="Challenge protect against replay attack",
         required=False,
         **UUID4,
-        data_key="challenge",
     )
     domain = fields.String(
         description="Domain protect against replay attack",
         required=False,
-        data_key="domain",
         example="4jt78h47fh47",
     )
     presentation_definition = fields.Nested(
         PresentationDefinitionSchema(),
         required=True,
-        data_key="presentation_definition",
     )

@@ -14,6 +14,5 @@ class DIFPresProposalSchema(OpenAPISchema):
             InputDescriptorsSchema(),
             required=True,
         ),
-        data_key="input_descriptors",
         required=False,
     )

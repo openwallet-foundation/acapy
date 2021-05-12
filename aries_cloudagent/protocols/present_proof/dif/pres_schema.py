@@ -18,7 +18,6 @@ class DIFPresSpecSchema(OpenAPISchema):
         description="ID",
         required=False,
         **UUID4,
-        data_key="id",
     )
     contexts = fields.List(
         StrOrDictField(),
@@ -51,8 +50,5 @@ class DIFPresSpecSchema(OpenAPISchema):
                 "_keblRKhZAS9Qq6zybm-HqUXNVZ8vgEPNTAjQKBhQDxvXNo7nvtUBb_Eq1Ch6YBKY5qBQ"
             ),
         },
-        data_key="proof",
     )
-    presentation_submission = fields.Nested(
-        PresentationSubmissionSchema(), data_key="presentation_submission"
-    )
+    presentation_submission = fields.Nested(PresentationSubmissionSchema())
