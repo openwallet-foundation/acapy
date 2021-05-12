@@ -424,15 +424,15 @@ class IndySdkHolder(IndyHolder):
                         [spec["name"]] if "name" in spec else spec.get("names", [])
                     )
                     restricted_attr = m.group(1)
-                    if m and m.group(1) not in named_attrs:  # wrong attr: hopeless
+                    if m and restricted_attr not in named_attrs:  # wrong attr: hopeless
                         LOGGER.error(
                             f"Presentation request {presentation_request['nonce']} "
                             f"requested attribute {reft} names {named_attrs} "
-                            f"but restricts {m.group(1)} value"
+                            f"but restricts {restricted_attr} value"
                         )
                         raise IndyHolderError(
                             f"Requested attribute {reft} names {named_attrs} "
-                            f"but restricts {m.group(1)} value"
+                            f"but restricts {restricted_attr} value"
                         )
 
         with IndyErrorHandler("Error when constructing proof", IndyHolderError):
