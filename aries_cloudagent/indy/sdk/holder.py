@@ -421,9 +421,7 @@ class IndySdkHolder(IndyHolder):
                         continue
 
                     named_attrs = (
-                        [spec["name"]]
-                        if "name" in spec
-                        else spec.get("names", [])
+                        [spec["name"]] if "name" in spec else spec.get("names", [])
                     )
                     restricted_attr = m.group(1)
                     if m and m.group(1) not in named_attrs:  # wrong attr: hopeless

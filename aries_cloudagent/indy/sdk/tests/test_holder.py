@@ -470,10 +470,8 @@ class TestIndySdkHolder(AsyncTestCase):
                 "20_legalname_uuid": {
                     "name": "legalName",
                     "restrictions": [
-                        {
-                            "cred_def_id": "WgWxqztrNooG92RXvxSTWv:3:CL:20:tag"
-                        }
-                    ]
+                        {"cred_def_id": "WgWxqztrNooG92RXvxSTWv:3:CL:20:tag"}
+                    ],
                 }
             },
             "requested_predicates": {
@@ -482,12 +480,10 @@ class TestIndySdkHolder(AsyncTestCase):
                     "p_type": ">=",
                     "p_value": 1,
                     "restrictions": [
-                        {
-                            "cred_def_id": "WgWxqztrNooG92RXvxSTWv:3:CL:21:tag"
-                        }
-                    ]
+                        {"cred_def_id": "WgWxqztrNooG92RXvxSTWv:3:CL:21:tag"}
+                    ],
                 }
-            }
+            },
         }
 
         presentation_json = await self.holder.create_presentation(
@@ -521,9 +517,9 @@ class TestIndySdkHolder(AsyncTestCase):
                         "restrictions": [
                             {
                                 "cred_def_id": "WgWxqztrNooG92RXvxSTWv:3:CL:20:tag",
-                                "attr::wrong::value": "Waffle Asteroid"
+                                "attr::wrong::value": "Waffle Asteroid",
                             }
-                        ]
+                        ],
                     }
                 },
                 "requested_predicates": {
@@ -532,12 +528,10 @@ class TestIndySdkHolder(AsyncTestCase):
                         "p_type": ">=",
                         "p_value": 1,
                         "restrictions": [
-                            {
-                                "cred_def_id": "WgWxqztrNooG92RXvxSTWv:3:CL:21:tag"
-                            }
-                        ]
+                            {"cred_def_id": "WgWxqztrNooG92RXvxSTWv:3:CL:21:tag"}
+                        ],
                     }
-                }
+                },
             },
             {
                 "nonce": "1554990836",
@@ -549,9 +543,9 @@ class TestIndySdkHolder(AsyncTestCase):
                         "restrictions": [
                             {
                                 "cred_def_id": "WgWxqztrNooG92RXvxSTWv:3:CL:20:tag",
-                                "attr::wrong::value": "Waffle Asteroid"
+                                "attr::wrong::value": "Waffle Asteroid",
                             }
-                        ]
+                        ],
                     }
                 },
                 "requested_predicates": {
@@ -560,13 +554,11 @@ class TestIndySdkHolder(AsyncTestCase):
                         "p_type": ">=",
                         "p_value": 1,
                         "restrictions": [
-                            {
-                                "cred_def_id": "WgWxqztrNooG92RXvxSTWv:3:CL:21:tag"
-                            }
-                        ]
+                            {"cred_def_id": "WgWxqztrNooG92RXvxSTWv:3:CL:21:tag"}
+                        ],
                     }
-                }
-            }
+                },
+            },
         ]
 
         for proof_req in PROOF_REQS:
