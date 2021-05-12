@@ -209,11 +209,11 @@ class DIFPresFormatHandler(V20PresFormatHandler):
         if claim_format:
             if claim_format.ldp_vp:
                 for proof_req in claim_format.ldp_vp.get("proof_type"):
-                    if proof_req == "BbsBlsSignature2020":
-                        proof_type = "BbsBlsSignature2020"
+                    if proof_req == BbsBlsSignature2020.signature_type:
+                        proof_type = BbsBlsSignature2020.signature_type
                         break
-                    elif proof_req == "Ed25519Signature2018":
-                        proof_type = "Ed25519Signature2018"
+                    elif proof_req == Ed25519Signature2018.signature_type:
+                        proof_type = Ed25519Signature2018.signature_type
                         break
 
         dif_handler = DIFPresExchHandler(
@@ -248,15 +248,10 @@ class DIFPresFormatHandler(V20PresFormatHandler):
         async with self._profile.session() as session:
             wallet = session.inject(BaseWallet)
             dif_proof = V20Pres.deserialize(pres_ex_record.pres).attachment(self.format)
-            # challenge
-            challenge = None
-            req_pres_attach = pres_ex_record.pres_request.get(
-                "request_presentations~attach"
-            )
-            for pres_req in req_pres_attach:
-                if pres_req.get("@id") == "dif":
-                    challenge = pres_req.get("data").get("json").get("challenge")
-                    break
+            req_pres_attach = V20PresRequest.deserialize(
+                pres_ex_record.pres_request
+            ).attachment(self.format)
+            challenge = req_pres_attach.get("challenge")
             if not challenge:
                 raise V20PresFormatError(
                     "No challenge is set for the presentation request"
