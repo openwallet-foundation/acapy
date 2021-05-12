@@ -1,13 +1,14 @@
-from asynctest import TestCase
+import pytest
 
 from datetime import datetime
 
-import pytest
+from asynctest import TestCase
 
 from ....wallet.key_type import KeyType
 from ....did.did_key import DIDKey
 from ....wallet.in_memory import InMemoryWallet
 from ....core.in_memory import InMemoryProfile
+
 from ...ld_proofs import (
     sign,
     Ed25519Signature2018,
@@ -19,6 +20,7 @@ from ...ld_proofs import (
     derive,
 )
 from ...tests.document_loader import custom_document_loader
+
 from .test_doc import (
     DOC_DERIVED_BBS,
     DOC_SIGNED_BBS,

@@ -1,13 +1,12 @@
 import json
+import pytest
 
 from aiohttp import ClientSession, DummyCookieJar, TCPConnector, web
 from aiohttp.test_utils import unused_port
-import pytest
 
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
-from .. import server as test_module
 from ...config.default_context import DefaultContextBuilder
 from ...config.injection_context import InjectionContext
 from ...core.event_bus import Event
@@ -16,6 +15,8 @@ from ...core.protocol_registry import ProtocolRegistry
 from ...transport.outbound.message import OutboundMessage
 from ...utils.stats import Collector
 from ...utils.task_queue import TaskQueue
+
+from .. import server as test_module
 from ..server import AdminServer, AdminSetupError
 
 
