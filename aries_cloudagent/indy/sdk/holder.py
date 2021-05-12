@@ -2,6 +2,7 @@
 
 import json
 import logging
+import re
 
 from collections import OrderedDict
 from typing import Sequence, Tuple, Union
@@ -411,6 +412,28 @@ class IndySdkHolder(IndyHolder):
             rev_states: Indy format revocation states JSON
 
         """
+
+        for reft, spec in presentation_request.get("requested_attributes", {}).items():
+            for r in spec.get("restrictions", []):
+                for k in r:
+                    m = re.match("^attr::(.*)::value$", k)
+                    if not m:
+                        continue
+
+                    named_attrs = (
+                        [spec["name"]] if "name" in spec else spec.get("names", [])
+                    )
+                    restricted_attr = m.group(1)
+                    if m and restricted_attr not in named_attrs:  # wrong attr: hopeless
+                        LOGGER.error(
+                            f"Presentation request {presentation_request['nonce']} "
+                            f"requested attribute {reft} names {named_attrs} "
+                            f"but restricts {restricted_attr} value"
+                        )
+                        raise IndyHolderError(
+                            f"Requested attribute {reft} names {named_attrs} "
+                            f"but restricts {restricted_attr} value"
+                        )
 
         with IndyErrorHandler("Error when constructing proof", IndyHolderError):
             presentation_json = await indy.anoncreds.prover_create_proof(
