@@ -28,6 +28,7 @@ Resolve did document admin routes.
     }
 }
 """
+from distutils import util
 
 from aiohttp import web
 from aiohttp_apispec import docs, match_info_schema, response_schema, querystring_schema
@@ -115,7 +116,8 @@ async def resolve_did(request: web.BaseRequest):
         resolution: ResolutionResult = await resolver.resolve(context.profile, did)
         doc = resolution.did_doc.serialize()
         result = {"did_doc": doc}
-        if request.rel_url.query and bool(request.rel_url.query["verbose"]):
+        query = request.rel_url.query
+        if query and util.strtobool(query["verbose"]):
             result["resolver_metadata"] = resolution.resolver_metadata
 
     except DIDNotFound as err:
