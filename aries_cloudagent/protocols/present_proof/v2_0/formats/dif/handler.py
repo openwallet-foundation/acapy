@@ -54,7 +54,9 @@ class DIFPresFormatHandler(V20PresFormatHandler):
 
     if BbsBlsSignature2020.BBS_SUPPORTED:
         ISSUE_SIGNATURE_SUITE_KEY_TYPE_MAPPING[BbsBlsSignature2020] = KeyType.BLS12381G2
-        ISSUE_SIGNATURE_SUITE_KEY_TYPE_MAPPING[BbsBlsSignatureProof2020] = KeyType.BLS12381G2
+        ISSUE_SIGNATURE_SUITE_KEY_TYPE_MAPPING[
+            BbsBlsSignatureProof2020
+        ] = KeyType.BLS12381G2
 
     async def _get_all_suites(self, wallet: BaseWallet):
         """Get all supported suites for verifying presentation."""
