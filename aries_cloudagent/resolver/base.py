@@ -119,7 +119,7 @@ class BaseDIDResolver(ABC):
         class_name = internal_class.__qualname__
 
         resolver_metadata = {
-            "type": self.type,
+            "type": self.type.value,
             "driverId": f"did:{method}",
             "resolver": module + "." + class_name,
             "retrieved": time_now.strftime("%Y-%m-%dT%H:%M:%SZ"),
