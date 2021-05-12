@@ -2,8 +2,8 @@
 
 from marshmallow import fields
 
-from ....messaging.models.openapi import OpenAPISchema
-from ....messaging.valid import INDY_SCHEMA_ID, INDY_VERSION, NATURAL_NUM
+from ...messaging.models.openapi import OpenAPISchema
+from ...messaging.valid import INDY_SCHEMA_ID, INDY_VERSION, NATURAL_NUM
 
 
 class SchemaSchema(OpenAPISchema):

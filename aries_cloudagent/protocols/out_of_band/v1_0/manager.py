@@ -13,7 +13,7 @@ from ....core.error import BaseError
 from ....core.profile import ProfileSession
 from ....did.did_key import DIDKey
 from ....indy.holder import IndyHolder
-from ....indy.sdk.models.xform import indy_proof_req_preview2indy_requested_creds
+from ....indy.models.xform import indy_proof_req_preview2indy_requested_creds
 from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....messaging.responder import BaseResponder
 from ....multitenant.manager import MultitenantManager

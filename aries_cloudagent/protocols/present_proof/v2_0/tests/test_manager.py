@@ -8,12 +8,14 @@ from asynctest import mock as async_mock
 
 from .....core.in_memory import InMemoryProfile
 from .....indy.holder import IndyHolder, IndyHolderError
-from .....indy.sdk.models.xform import indy_proof_req_preview2indy_requested_creds
+from .....indy.models.xform import indy_proof_req_preview2indy_requested_creds
 from .....indy.verifier import IndyVerifier
 from .....ledger.base import BaseLedger
 from .....messaging.decorators.attach_decorator import AttachDecorator
 from .....messaging.responder import BaseResponder, MockResponder
 from .....storage.error import StorageNotFoundError
+
+from ...indy import pres_exch_handler as test_indy_util_module
 
 from .. import manager as test_module
 from ..formats.handler import V20PresFormatError
@@ -389,7 +391,7 @@ class TestV20PresManager(AsyncTestCase):
         ) as save_ex, async_mock.patch.object(
             test_indy_handler, "AttachDecorator", autospec=True
         ) as mock_attach_decorator, async_mock.patch.object(
-            test_indy_handler, "RevocationRegistry", autospec=True
+            test_indy_util_module, "RevocationRegistry", autospec=True
         ) as mock_rr:
             mock_rr.from_definition = async_mock.MagicMock(return_value=more_magic_rr)
 
@@ -439,7 +441,7 @@ class TestV20PresManager(AsyncTestCase):
         ) as save_ex, async_mock.patch.object(
             test_indy_handler, "AttachDecorator", autospec=True
         ) as mock_attach_decorator, async_mock.patch.object(
-            test_indy_handler, "RevocationRegistry", autospec=True
+            test_indy_util_module, "RevocationRegistry", autospec=True
         ) as mock_rr:
             mock_rr.from_definition = async_mock.MagicMock(return_value=more_magic_rr)
 
@@ -487,7 +489,7 @@ class TestV20PresManager(AsyncTestCase):
         ) as save_ex, async_mock.patch.object(
             test_indy_handler, "AttachDecorator", autospec=True
         ) as mock_attach_decorator, async_mock.patch.object(
-            test_indy_handler, "RevocationRegistry", autospec=True
+            test_indy_util_module, "RevocationRegistry", autospec=True
         ) as mock_rr:
             mock_rr.from_definition = async_mock.MagicMock(return_value=more_magic_rr)
 
@@ -569,7 +571,7 @@ class TestV20PresManager(AsyncTestCase):
         ) as save_ex, async_mock.patch.object(
             test_indy_handler, "AttachDecorator", autospec=True
         ) as mock_attach_decorator, async_mock.patch.object(
-            test_indy_handler.LOGGER, "info", async_mock.MagicMock()
+            test_indy_util_module.LOGGER, "info", async_mock.MagicMock()
         ) as mock_log_info:
             mock_attach_decorator.data_base64 = async_mock.MagicMock(
                 return_value=mock_attach_decorator
@@ -650,7 +652,7 @@ class TestV20PresManager(AsyncTestCase):
         ) as save_ex, async_mock.patch.object(
             test_indy_handler, "AttachDecorator", autospec=True
         ) as mock_attach_decorator, async_mock.patch.object(
-            test_indy_handler, "RevocationRegistry", autospec=True
+            test_indy_util_module, "RevocationRegistry", autospec=True
         ) as mock_rr:
             mock_rr.from_definition = async_mock.MagicMock(return_value=more_magic_rr)
 
@@ -743,7 +745,7 @@ class TestV20PresManager(AsyncTestCase):
         ) as save_ex, async_mock.patch.object(
             test_indy_handler, "AttachDecorator", autospec=True
         ) as mock_attach_decorator, async_mock.patch.object(
-            test_indy_handler, "RevocationRegistry", autospec=True
+            test_indy_util_module, "RevocationRegistry", autospec=True
         ) as mock_rr:
             mock_rr.from_definition = async_mock.MagicMock(return_value=more_magic_rr)
 

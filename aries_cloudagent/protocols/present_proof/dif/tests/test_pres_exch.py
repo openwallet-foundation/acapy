@@ -8,7 +8,7 @@ from .....messaging.models.base import BaseModelError
 from ..pres_exch import (
     ClaimFormat,
     SubmissionRequirements,
-    Holder,
+    DIFHolder,
     Filter,
     Constraints,
     VerifiablePresentation,
@@ -155,7 +155,7 @@ class TestPresExchSchemas(TestCase):
             }
         """
         expected_result = json.loads(test_json)
-        actual_result = (Holder.deserialize(test_json)).serialize()
+        actual_result = (DIFHolder.deserialize(test_json)).serialize()
         assert expected_result == actual_result
 
     def test_filter(self):

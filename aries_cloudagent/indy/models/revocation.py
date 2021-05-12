@@ -4,8 +4,8 @@ from typing import Sequence
 
 from marshmallow import EXCLUDE, fields, validate
 
-from ....messaging.models.base import BaseModel, BaseModelSchema
-from ....messaging.valid import (
+from ...messaging.models.base import BaseModel, BaseModelSchema
+from ...messaging.valid import (
     BASE58_SHA256_HASH,
     INDY_CRED_DEF_ID,
     INDY_REV_REG_ID,

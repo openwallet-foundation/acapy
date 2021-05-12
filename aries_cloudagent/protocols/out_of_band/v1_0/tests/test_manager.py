@@ -13,7 +13,7 @@ from .....connections.models.diddoc import DIDDoc, PublicKey, PublicKeyType, Ser
 from .....core.in_memory import InMemoryProfile
 from .....did.did_key import DIDKey
 from .....indy.holder import IndyHolder
-from .....indy.sdk.models.pres_preview import (
+from .....indy.models.pres_preview import (
     IndyPresAttrSpec,
     IndyPresPredSpec,
     IndyPresPreview,

@@ -37,7 +37,7 @@ from ....vc.ld_proofs import (
 from .pres_exch import (
     PresentationDefinition,
     InputDescriptors,
-    Field,
+    DIFField,
     Filter,
     Constraints,
     SubmissionRequirements,
@@ -523,7 +523,7 @@ class DIFPresExchHandler:
         new_credential.update(unflatten(unflatten_dict))
         return new_credential
 
-    async def filter_by_field(self, field: Field, credential: VCRecord) -> bool:
+    async def filter_by_field(self, field: DIFField, credential: VCRecord) -> bool:
         """
         Apply filter on VCRecord.
 

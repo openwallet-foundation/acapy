@@ -1,12 +1,14 @@
 """Data for DIFPresExchHandler."""
 import json
+from pyld import jsonld
+from pyld.jsonld import JsonLdProcessor
 
 from .....storage.vc_holder.vc_record import VCRecord
 
 from ..pres_exch import PresentationDefinition
 
 
-def create_vc_record(cred_dict: dict):
+def create_vcrecord(cred_dict: dict):
     given_id = cred_dict.get("id")
     contexts = [ctx for ctx in cred_dict.get("@context") if type(ctx) is str]
 
@@ -38,6 +40,13 @@ def create_vc_record(cred_dict: dict):
     if proofs:
         proof_types = [proof.get("type") for proof in proofs]
 
+    # Saving expanded type as a cred_tag
+    expanded = jsonld.expand(cred_dict)
+    types = JsonLdProcessor.get_values(
+        expanded[0],
+        "@type",
+    )
+    cred_tags = {"expanded_type": types}
     return VCRecord(
         contexts=contexts,
         types=types,
@@ -47,11 +56,12 @@ def create_vc_record(cred_dict: dict):
         given_id=given_id,
         cred_value=cred_dict,
         schema_ids=schema_ids,
+        cred_tags=cred_tags,
     )
 
 
 bbs_bls_number_filter_creds = [
-    create_vc_record(
+    create_vcrecord(
         {
             "@context": [
                 "https://www.w3.org/2018/credentials/v1",
@@ -90,7 +100,7 @@ bbs_bls_number_filter_creds = [
             },
         }
     ),
-    create_vc_record(
+    create_vcrecord(
         {
             "@context": [
                 "https://www.w3.org/2018/credentials/v1",
@@ -129,7 +139,7 @@ bbs_bls_number_filter_creds = [
             },
         }
     ),
-    create_vc_record(
+    create_vcrecord(
         {
             "@context": [
                 "https://www.w3.org/2018/credentials/v1",
@@ -171,7 +181,7 @@ bbs_bls_number_filter_creds = [
 ]
 
 edd_jsonld_creds = [
-    create_vc_record(
+    create_vcrecord(
         {
             "@context": [
                 "https://www.w3.org/2018/credentials/v1",
@@ -208,7 +218,7 @@ edd_jsonld_creds = [
             },
         }
     ),
-    create_vc_record(
+    create_vcrecord(
         {
             "@context": [
                 "https://www.w3.org/2018/credentials/v1",
@@ -245,7 +255,7 @@ edd_jsonld_creds = [
             },
         }
     ),
-    create_vc_record(
+    create_vcrecord(
         {
             "@context": [
                 "https://www.w3.org/2018/credentials/v1",
@@ -1029,7 +1039,7 @@ pres_exch_datetime_maximum_met = """
 def get_test_data():
     vc_record_list = []
     for cred in cred_list:
-        vc_record_list.append(create_vc_record(cred))
+        vc_record_list.append(create_vcrecord(cred))
     pd_json_list = [
         (pres_exch_multiple_srs_not_met, 0),
         (pres_exch_multiple_srs_met, 4),

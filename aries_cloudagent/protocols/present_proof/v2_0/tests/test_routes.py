@@ -6,7 +6,7 @@ from time import time
 
 from .....admin.request_context import AdminRequestContext
 from .....indy.holder import IndyHolder
-from .....indy.sdk.models.proof_request import IndyProofReqAttrSpecSchema
+from .....indy.models.proof_request import IndyProofReqAttrSpecSchema
 from .....indy.verifier import IndyVerifier
 from .....ledger.base import BaseLedger
 from .....storage.error import StorageNotFoundError

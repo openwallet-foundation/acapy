@@ -1,7 +1,7 @@
 """Presentation request message handler."""
 
 from .....indy.holder import IndyHolder
-from .....indy.sdk.models.xform import indy_proof_req_preview2indy_requested_creds
+from .....indy.models.xform import indy_proof_req_preview2indy_requested_creds
 from .....messaging.base_handler import BaseHandler, HandlerException
 from .....messaging.request_context import RequestContext
 from .....messaging.responder import BaseResponder

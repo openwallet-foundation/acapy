@@ -14,6 +14,7 @@ from ....messaging.models.base import BaseModelSchema, BaseModel
 from ....messaging.valid import (
     UUID4,
     StrOrDictField,
+    StrOrNumberField,
 )
 from ....vc.vc_ld.models import LinkedDataProofSchema
 
@@ -210,13 +211,13 @@ class SchemaInputDescriptorSchema(BaseModelSchema):
     required = fields.Bool(description="Required", required=False, data_key="required")
 
 
-class Holder(BaseModel):
+class DIFHolder(BaseModel):
     """Single Holder object for Constraints."""
 
     class Meta:
         """Holder metadata."""
 
-        schema_class = "HolderSchema"
+        schema_class = "DIFHolderSchema"
 
     def __init__(
         self,
@@ -229,13 +230,13 @@ class Holder(BaseModel):
         self.directive = directive
 
 
-class HolderSchema(BaseModelSchema):
+class DIFHolderSchema(BaseModelSchema):
     """Single Holder Schema."""
 
     class Meta:
-        """HolderSchema metadata."""
+        """DIFHolderSchema metadata."""
 
-        model_class = Holder
+        model_class = DIFHolder
         unknown = EXCLUDE
 
     field_ids = fields.List(
@@ -253,18 +254,6 @@ class HolderSchema(BaseModelSchema):
         validate=validate.OneOf(["required", "preferred"]),
         data_key="directive",
     )
-
-
-# Union of str or int or float
-class StrOrNumberField(fields.Field):
-    """Custom Marshmallow field - union of str, int and float."""
-
-    def _deserialize(self, value, attr, data, **kwargs):
-        """Return value if type is str, float or int else raise ValidationError."""
-        if isinstance(value, str) or isinstance(value, float) or isinstance(value, int):
-            return value
-        else:
-            raise ValidationError("Field should be str or int or float")
 
 
 class Filter(BaseModel):
@@ -399,13 +388,13 @@ class FilterSchema(BaseModelSchema):
         return data
 
 
-class Field(BaseModel):
+class DIFField(BaseModel):
     """Single Field object for the Constraint."""
 
     class Meta:
         """Field metadata."""
 
-        schema_class = "FieldSchema"
+        schema_class = "DIFFieldSchema"
 
     def __init__(
         self,
@@ -422,13 +411,13 @@ class Field(BaseModel):
         self._filter = _filter
 
 
-class FieldSchema(BaseModelSchema):
+class DIFFieldSchema(BaseModelSchema):
     """Single Field Schema."""
 
     class Meta:
-        """FieldSchema metadata."""
+        """DIFFieldSchema metadata."""
 
-        model_class = Field
+        model_class = DIFField
         unknown = EXCLUDE
 
     paths = fields.List(
@@ -463,8 +452,8 @@ class Constraints(BaseModel):
         *,
         subject_issuer: str = None,
         limit_disclosure: bool = None,
-        holders: Sequence[Holder] = None,
-        _fields: Sequence[Field] = None,
+        holders: Sequence[DIFHolder] = None,
+        _fields: Sequence[DIFField] = None,
         status_active: str = None,
         status_suspended: str = None,
         status_revoked: str = None,
@@ -498,12 +487,12 @@ class ConstraintsSchema(BaseModelSchema):
         description="LimitDisclosure", required=False, data_key="limit_disclosure"
     )
     holders = fields.List(
-        fields.Nested(HolderSchema),
+        fields.Nested(DIFHolderSchema),
         required=False,
         data_key="is_holder",
     )
     _fields = fields.List(
-        fields.Nested(FieldSchema),
+        fields.Nested(DIFFieldSchema),
         required=False,
         data_key="fields",
     )
@@ -883,7 +872,7 @@ class VerifiablePresentation(BaseModel):
 
 
 class VerifiablePresentationSchema(BaseModelSchema):
-    """Single Field Schema."""
+    """Single Verifiable Presentation Schema."""
 
     class Meta:
         """VerifiablePresentationSchema metadata."""

@@ -16,7 +16,7 @@ from marshmallow import fields, validate
 from ...core.profile import Profile, ProfileSession
 from ...indy.util import indy_client_dir
 from ...indy.issuer import IndyIssuer, IndyIssuerError
-from ...indy.sdk.models.revocation import (
+from ...indy.models.revocation import (
     IndyRevRegDef,
     IndyRevRegDefSchema,
     IndyRevRegEntry,

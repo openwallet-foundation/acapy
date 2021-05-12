@@ -2,22 +2,19 @@
 
 import json
 import logging
-import time
 
 from marshmallow import RAISE
 from typing import Mapping, Tuple
 
-from ......indy.holder import IndyHolder, IndyHolderError
-from ......indy.sdk.models.predicate import Predicate
-from ......indy.sdk.models.proof import IndyProofSchema
-from ......indy.sdk.models.proof_request import IndyProofRequestSchema
-from ......indy.sdk.models.xform import indy_proof_req2non_revoc_intervals
+from ......indy.models.predicate import Predicate
+from ......indy.models.proof import IndyProofSchema
+from ......indy.models.proof_request import IndyProofRequestSchema
 from ......indy.util import generate_pr_nonce
 from ......indy.verifier import IndyVerifier
-from ......ledger.base import BaseLedger
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......messaging.util import canon
-from ......revocation.models.revocation_registry import RevocationRegistry
+
+from ....indy.pres_exch_handler import IndyPresExchHandler
 
 from ...message_types import (
     PRES_20_REQUEST,
@@ -126,162 +123,11 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
     ) -> Tuple[V20PresFormat, AttachDecorator]:
         """Create a presentation."""
         requested_credentials = request_data.get("requested_credentials") or {}
-        # Get all credentials for this presentation
-        holder = self._profile.inject(IndyHolder)
-        credentials = {}
-        # extract credential ids and non_revoked
-        requested_referents = {}
-        proof_request = V20PresRequest.deserialize(
-            pres_ex_record.pres_request
-        ).attachment(self.format)
-        non_revoc_intervals = indy_proof_req2non_revoc_intervals(proof_request)
-        attr_creds = requested_credentials.get("requested_attributes", {})
-        req_attrs = proof_request.get("requested_attributes", {})
-        for reft in attr_creds:
-            requested_referents[reft] = {"cred_id": attr_creds[reft]["cred_id"]}
-            if reft in req_attrs and reft in non_revoc_intervals:
-                requested_referents[reft]["non_revoked"] = non_revoc_intervals[reft]
-
-        pred_creds = requested_credentials.get("requested_predicates", {})
-        req_preds = proof_request.get("requested_predicates", {})
-        for reft in pred_creds:
-            requested_referents[reft] = {"cred_id": pred_creds[reft]["cred_id"]}
-            if reft in req_preds and reft in non_revoc_intervals:
-                requested_referents[reft]["non_revoked"] = non_revoc_intervals[reft]
-
-        # extract mapping of presentation referents to credential ids
-        for reft in requested_referents:
-            credential_id = requested_referents[reft]["cred_id"]
-            if credential_id not in credentials:
-                credentials[credential_id] = json.loads(
-                    await holder.get_credential(credential_id)
-                )
-
-        # remove any timestamps that cannot correspond to non-revoc intervals
-        for r in ("requested_attributes", "requested_predicates"):
-            for reft, req_item in requested_credentials.get(r, {}).items():
-                if not credentials[req_item["cred_id"]].get(
-                    "rev_reg_id"
-                ) and req_item.pop("timestamp", None):
-                    LOGGER.info(
-                        f"Removed superfluous timestamp from requested_credentials {r} "
-                        f"{reft} for non-revocable credential {req_item['cred_id']}"
-                    )
-
-        # Get all schemas, credential definitions, and revocation registries in use
-        ledger = self._profile.inject(BaseLedger)
-        schemas = {}
-        cred_defs = {}
-        revocation_registries = {}
-
-        async with ledger:
-            for credential in credentials.values():
-                schema_id = credential["schema_id"]
-                if schema_id not in schemas:
-                    schemas[schema_id] = await ledger.get_schema(schema_id)
-
-                cred_def_id = credential["cred_def_id"]
-                if cred_def_id not in cred_defs:
-                    cred_defs[cred_def_id] = await ledger.get_credential_definition(
-                        cred_def_id
-                    )
-
-                if credential.get("rev_reg_id"):
-                    revocation_registry_id = credential["rev_reg_id"]
-                    if revocation_registry_id not in revocation_registries:
-                        revocation_registries[
-                            revocation_registry_id
-                        ] = RevocationRegistry.from_definition(
-                            await ledger.get_revoc_reg_def(revocation_registry_id), True
-                        )
-
-        # Get delta with non-revocation interval defined in "non_revoked"
-        # of the presentation request or attributes
-        epoch_now = int(time.time())
-
-        revoc_reg_deltas = {}
-        async with ledger:
-            for precis in requested_referents.values():  # cred_id, non-revoc interval
-                credential_id = precis["cred_id"]
-                if not credentials[credential_id].get("rev_reg_id"):
-                    continue
-                if "timestamp" in precis:
-                    continue
-                rev_reg_id = credentials[credential_id]["rev_reg_id"]
-                reft_non_revoc_interval = precis.get("non_revoked")
-                if reft_non_revoc_interval:
-                    key = (
-                        f"{rev_reg_id}_"
-                        f"{reft_non_revoc_interval.get('from', 0)}_"
-                        f"{reft_non_revoc_interval.get('to', epoch_now)}"
-                    )
-                    if key not in revoc_reg_deltas:
-                        (delta, delta_timestamp) = await ledger.get_revoc_reg_delta(
-                            rev_reg_id,
-                            reft_non_revoc_interval.get("from", 0),
-                            reft_non_revoc_interval.get("to", epoch_now),
-                        )
-                        revoc_reg_deltas[key] = (
-                            rev_reg_id,
-                            credential_id,
-                            delta,
-                            delta_timestamp,
-                        )
-                    for stamp_me in requested_referents.values():
-                        # often one cred satisfies many requested attrs/preds
-                        if stamp_me["cred_id"] == credential_id:
-                            stamp_me["timestamp"] = revoc_reg_deltas[key][3]
-
-        # Get revocation states to prove non-revoked
-        revocation_states = {}
-        for (
-            rev_reg_id,
-            credential_id,
-            delta,
-            delta_timestamp,
-        ) in revoc_reg_deltas.values():
-            if rev_reg_id not in revocation_states:
-                revocation_states[rev_reg_id] = {}
-
-            rev_reg = revocation_registries[rev_reg_id]
-            tails_local_path = await rev_reg.get_or_fetch_local_tails_path()
-
-            try:
-                revocation_states[rev_reg_id][delta_timestamp] = json.loads(
-                    await holder.create_revocation_state(
-                        credentials[credential_id]["cred_rev_id"],
-                        rev_reg.reg_def,
-                        delta,
-                        delta_timestamp,
-                        tails_local_path,
-                    )
-                )
-            except IndyHolderError as e:
-                LOGGER.error(
-                    f"Failed to create revocation state: {e.error_code}, {e.message}"
-                )
-                raise e
-
-        for (referent, precis) in requested_referents.items():
-            if "timestamp" not in precis:
-                continue
-            if referent in requested_credentials["requested_attributes"]:
-                requested_credentials["requested_attributes"][referent][
-                    "timestamp"
-                ] = precis["timestamp"]
-            if referent in requested_credentials["requested_predicates"]:
-                requested_credentials["requested_predicates"][referent][
-                    "timestamp"
-                ] = precis["timestamp"]
-
-        indy_proof_json = await holder.create_presentation(
-            proof_request,
-            requested_credentials,
-            schemas,
-            cred_defs,
-            revocation_states,
+        indy_handler = IndyPresExchHandler(self._profile)
+        indy_proof = await indy_handler.return_presentation(
+            pres_ex_record=pres_ex_record,
+            requested_credentials=requested_credentials,
         )
-        indy_proof = json.loads(indy_proof_json)
         return self.get_format_data(PRES_20, indy_proof)
 
     async def receive_pres(
@@ -427,57 +273,13 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
         pres_request_msg = V20PresRequest.deserialize(pres_ex_record.pres_request)
         indy_proof_request = pres_request_msg.attachment(self.format)
         indy_proof = V20Pres.deserialize(pres_ex_record.pres).attachment(self.format)
-
-        schema_ids = []
-        cred_def_ids = []
-
-        schemas = {}
-        cred_defs = {}
-        rev_reg_defs = {}
-        rev_reg_entries = {}
-
-        identifiers = indy_proof["identifiers"]
-        ledger = self._profile.inject(BaseLedger)
-        async with ledger:
-            for identifier in identifiers:
-                schema_ids.append(identifier["schema_id"])
-                cred_def_ids.append(identifier["cred_def_id"])
-
-                # Build schemas for anoncreds
-                if identifier["schema_id"] not in schemas:
-                    schemas[identifier["schema_id"]] = await ledger.get_schema(
-                        identifier["schema_id"]
-                    )
-
-                if identifier["cred_def_id"] not in cred_defs:
-                    cred_defs[
-                        identifier["cred_def_id"]
-                    ] = await ledger.get_credential_definition(
-                        identifier["cred_def_id"]
-                    )
-
-                if identifier.get("rev_reg_id"):
-                    if identifier["rev_reg_id"] not in rev_reg_defs:
-                        rev_reg_defs[
-                            identifier["rev_reg_id"]
-                        ] = await ledger.get_revoc_reg_def(identifier["rev_reg_id"])
-
-                    if identifier.get("timestamp"):
-                        rev_reg_entries.setdefault(identifier["rev_reg_id"], {})
-
-                        if (
-                            identifier["timestamp"]
-                            not in rev_reg_entries[identifier["rev_reg_id"]]
-                        ):
-                            (
-                                found_rev_reg_entry,
-                                _found_timestamp,
-                            ) = await ledger.get_revoc_reg_entry(
-                                identifier["rev_reg_id"], identifier["timestamp"]
-                            )
-                            rev_reg_entries[identifier["rev_reg_id"]][
-                                identifier["timestamp"]
-                            ] = found_rev_reg_entry
+        indy_handler = IndyPresExchHandler(self._profile)
+        (
+            schemas,
+            cred_defs,
+            rev_reg_defs,
+            rev_reg_entries,
+        ) = await indy_handler.process_pres_identifiers(indy_proof["identifiers"])
 
         verifier = self._profile.inject(IndyVerifier)
         pres_ex_record.verified = json.dumps(  # tag: needs string value

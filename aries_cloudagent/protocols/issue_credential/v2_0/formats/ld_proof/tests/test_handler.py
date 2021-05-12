@@ -870,7 +870,7 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
                 document_loader=custom_document_loader,
                 purpose=mock_get_proof_purpose.return_value,
             )
-
+            cred_tags = {"expanded_type": ["https://www.w3.org/2018/credentials#VerifiableCredential"]}
             self.holder.store_credential.assert_called_once_with(
                 VCRecord(
                     contexts=LD_PROOF_VC["@context"],
@@ -882,7 +882,7 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
                     cred_value=LD_PROOF_VC,
                     given_id=None,
                     record_id=cred_id,
-                    cred_tags=None,  # Tags should be derived from credential values
+                    cred_tags=cred_tags,
                 )
             )
 

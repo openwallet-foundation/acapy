@@ -2,10 +2,13 @@
 from marshmallow import fields
 
 from ....messaging.models.openapi import OpenAPISchema
-from ....messaging.valid import UUID4
+from ....messaging.valid import (
+    UUID4,
+    StrOrDictField,
+)
 from ....vc.vc_ld.models import LinkedDataProofSchema
 
-from .pres_exch import StrOrDictField, PresentationSubmissionSchema
+from .pres_exch import PresentationSubmissionSchema
 
 
 class DIFPresSpecSchema(OpenAPISchema):
