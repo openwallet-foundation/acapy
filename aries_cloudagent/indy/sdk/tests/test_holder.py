@@ -7,7 +7,7 @@ import indy.anoncreds
 
 from indy.error import IndyError, ErrorCode
 
-from ...holder import IndyHolder
+from ...holder import IndyHolder, IndyHolderError
 
 from .. import holder as test_module
 
@@ -462,9 +462,32 @@ class TestIndySdkHolder(AsyncTestCase):
     @async_mock.patch("indy.anoncreds.prover_create_proof")
     async def test_create_presentation(self, mock_create_proof):
         mock_create_proof.return_value = "{}"
+        PROOF_REQ = {
+            "nonce": "1554990836",
+            "name": "proof_req",
+            "version": "0.0",
+            "requested_attributes": {
+                "20_legalname_uuid": {
+                    "name": "legalName",
+                    "restrictions": [
+                        {"cred_def_id": "WgWxqztrNooG92RXvxSTWv:3:CL:20:tag"}
+                    ],
+                }
+            },
+            "requested_predicates": {
+                "21_jurisdictionid_GE_uuid": {
+                    "name": "jurisdictionId",
+                    "p_type": ">=",
+                    "p_value": 1,
+                    "restrictions": [
+                        {"cred_def_id": "WgWxqztrNooG92RXvxSTWv:3:CL:21:tag"}
+                    ],
+                }
+            },
+        }
 
         presentation_json = await self.holder.create_presentation(
-            "presentation_request",
+            PROOF_REQ,
             "requested_credentials",
             "schemas",
             "credential_definitions",
@@ -472,7 +495,7 @@ class TestIndySdkHolder(AsyncTestCase):
 
         mock_create_proof.assert_called_once_with(
             self.wallet.handle,
-            json.dumps("presentation_request"),
+            json.dumps(PROOF_REQ),
             json.dumps("requested_credentials"),
             self.wallet.master_secret_id,
             json.dumps("schemas"),
@@ -481,6 +504,71 @@ class TestIndySdkHolder(AsyncTestCase):
         )
 
         assert json.loads(presentation_json) == {}
+
+    async def test_create_presentation_restr_attr_mismatch_x(self):
+        PROOF_REQS = [
+            {
+                "nonce": "1554990836",
+                "name": "proof_req",
+                "version": "0.0",
+                "requested_attributes": {
+                    "20_legalname_uuid": {
+                        "name": "legalName",
+                        "restrictions": [
+                            {
+                                "cred_def_id": "WgWxqztrNooG92RXvxSTWv:3:CL:20:tag",
+                                "attr::wrong::value": "Waffle Asteroid",
+                            }
+                        ],
+                    }
+                },
+                "requested_predicates": {
+                    "21_jurisdictionid_GE_uuid": {
+                        "name": "jurisdictionId",
+                        "p_type": ">=",
+                        "p_value": 1,
+                        "restrictions": [
+                            {"cred_def_id": "WgWxqztrNooG92RXvxSTWv:3:CL:21:tag"}
+                        ],
+                    }
+                },
+            },
+            {
+                "nonce": "1554990836",
+                "name": "proof_req",
+                "version": "0.0",
+                "requested_attributes": {
+                    "20_legalname_uuid": {
+                        "names": ["legalName", "businessLang"],
+                        "restrictions": [
+                            {
+                                "cred_def_id": "WgWxqztrNooG92RXvxSTWv:3:CL:20:tag",
+                                "attr::wrong::value": "Waffle Asteroid",
+                            }
+                        ],
+                    }
+                },
+                "requested_predicates": {
+                    "21_jurisdictionid_GE_uuid": {
+                        "name": "jurisdictionId",
+                        "p_type": ">=",
+                        "p_value": 1,
+                        "restrictions": [
+                            {"cred_def_id": "WgWxqztrNooG92RXvxSTWv:3:CL:21:tag"}
+                        ],
+                    }
+                },
+            },
+        ]
+
+        for proof_req in PROOF_REQS:
+            with self.assertRaises(IndyHolderError):
+                await self.holder.create_presentation(
+                    proof_req,
+                    "requested_credentials",
+                    "schemas",
+                    "credential_definitions",
+                )
 
     async def test_create_revocation_state(self):
         rr_state = {
