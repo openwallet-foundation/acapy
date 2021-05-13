@@ -9,10 +9,6 @@ from typing import Optional, List, Sequence, Tuple, Union
 
 from aries_askar import (
     crypto_box,
-    crypto_box_open,
-    crypto_box_random_nonce,
-    crypto_box_seal,
-    crypto_box_seal_open,
     AskarError,
     AskarErrorCode,
     Key,
@@ -28,6 +24,8 @@ from ..did.did_key import DIDKey
 from ..ledger.base import BaseLedger
 from ..ledger.endpoint_type import EndpointType
 from ..ledger.error import LedgerConfigError
+from ..storage.askar import AskarStorage
+from ..storage.base import StorageRecord, StorageDuplicateError, StorageNotFoundError
 from ..utils.jwe import b64url, JweEnvelope, JweRecipient
 
 from .base import BaseWallet, KeyInfo, DIDInfo
@@ -43,6 +41,8 @@ from .key_type import KeyType
 from .util import b58_to_bytes, bytes_to_b58
 
 CATEGORY_DID = "did"
+CATEGORY_CONFIG = "config"
+RECORD_NAME_PUBLIC_DID = "default_public_did"
 
 LOGGER = logging.getLogger(__name__)
 
@@ -377,6 +377,86 @@ class AskarWallet(BaseWallet):
         except AskarError as err:
             raise WalletError("Error updating DID metadata") from err
 
+    async def get_public_did(self) -> DIDInfo:
+        """
+        Retrieve the public DID.
+
+        Returns:
+            The currently public `DIDInfo`, if any
+
+        """
+        public_did = None
+        public_info = None
+        storage = AskarStorage(self._session)
+        try:
+            public = await storage.get_record(CATEGORY_CONFIG, RECORD_NAME_PUBLIC_DID)
+        except StorageNotFoundError:
+            # populate public DID record
+            # this should only happen once, for an upgraded wallet
+            # the 'public' metadata flag is no longer used
+            dids = await self.get_local_dids()
+            for info in dids:
+                if info.metadata.get("public"):
+                    public_did = info.did
+                    public_info = info
+                    break
+            try:
+                # even if public is not set, store a record
+                # to avoid repeated queries
+                await storage.add_record(
+                    StorageRecord(
+                        type=CATEGORY_CONFIG,
+                        id=RECORD_NAME_PUBLIC_DID,
+                        value=json.dumps({"did": public_did}),
+                    )
+                )
+            except StorageDuplicateError:
+                # another process stored the record first
+                pass
+        else:
+            public_did = json.loads(public.value)["did"]
+            if public_did:
+                try:
+                    public_info = await self.get_local_did(public_did)
+                except WalletNotFoundError:
+                    pass
+
+        return public_info
+
+    async def set_public_did(self, did: Union[str, DIDInfo]) -> DIDInfo:
+        """
+        Assign the public DID.
+
+        Returns:
+            The updated `DIDInfo`
+
+        """
+
+        if isinstance(did, str):
+            # will raise an exception if not found
+            info = await self.get_local_did(did)
+        else:
+            info = did
+
+        if info.method != DIDMethod.SOV:
+            raise WalletError("Setting public DID is only allowed for did:sov DIDs")
+
+        public = await self.get_public_did()
+        if not public or public.did != info.did:
+            storage = AskarStorage(self._session)
+            await storage.update_record(
+                StorageRecord(
+                    type=CATEGORY_CONFIG,
+                    id=RECORD_NAME_PUBLIC_DID,
+                    value="{}",
+                ),
+                value=json.dumps({"did": info.did}),
+                tags=None,
+            )
+            public = info
+
+        return public
+
     async def set_did_endpoint(
         self,
         did: str,
@@ -670,9 +750,9 @@ def pack_message(
             KeyAlg.ED25519, b58_to_bytes(target_vk)
         ).convert_key(KeyAlg.X25519)
         if sender_vk:
-            enc_sender = crypto_box_seal(target_xk, sender_vk)
-            nonce = crypto_box_random_nonce()
-            enc_cek = crypto_box(target_xk, sender_xk, cek_b, nonce)
+            enc_sender = crypto_box.crypto_box_seal(target_xk, sender_vk)
+            nonce = crypto_box.random_nonce()
+            enc_cek = crypto_box.crypto_box(target_xk, sender_xk, cek_b, nonce)
             wrapper.add_recipient(
                 JweRecipient(
                     encrypted_key=enc_cek,
@@ -688,7 +768,7 @@ def pack_message(
         else:
             enc_sender = None
             nonce = None
-            enc_cek = crypto_box_seal(target_xk, cek_b)
+            enc_cek = crypto_box.crypto_box_seal(target_xk, cek_b)
             wrapper.add_recipient(
                 JweRecipient(encrypted_key=enc_cek, header={"kid": target_vk})
             )
@@ -702,10 +782,8 @@ def pack_message(
         ),
         auto_flatten=False,
     )
-    nonce = cek.aead_random_nonce()
-    ciphertext = cek.aead_encrypt(message, nonce, wrapper.protected_bytes)
-    tag = ciphertext[-16:]
-    ciphertext = ciphertext[:-16]
+    enc = cek.aead_encrypt(message, aad=wrapper.protected_bytes)
+    ciphertext, tag, nonce = enc.parts
     wrapper.set_payload(ciphertext, nonce, tag)
     return wrapper.to_json().encode("utf-8")
 
@@ -740,8 +818,12 @@ async def unpack_message(session: Session, enc_message: bytes) -> Tuple[str, str
         raise WalletError("Sender public key not provided for Authcrypt message")
 
     cek = Key.from_secret_bytes(KeyAlg.C20P, payload_key)
-    ciphertext = wrapper.ciphertext + wrapper.tag
-    message = cek.aead_decrypt(ciphertext, wrapper.iv, wrapper.protected_bytes)
+    message = cek.aead_decrypt(
+        wrapper.ciphertext,
+        nonce=wrapper.iv,
+        tag=wrapper.tag,
+        aad=wrapper.protected_bytes,
+    )
     return message, recip_vk, sender_vk
 
 
@@ -754,12 +836,16 @@ def extract_payload_key(sender_cek: dict, recip_secret: Key) -> Tuple[bytes, str
     recip_x = recip_secret.convert_key(KeyAlg.X25519)
 
     if sender_cek["nonce"] and sender_cek["sender"]:
-        sender_vk = crypto_box_seal_open(recip_x, sender_cek["sender"]).decode("utf-8")
+        sender_vk = crypto_box.crypto_box_seal_open(
+            recip_x, sender_cek["sender"]
+        ).decode("utf-8")
         sender_x = Key.from_public_bytes(
             KeyAlg.ED25519, b58_to_bytes(sender_vk)
         ).convert_key(KeyAlg.X25519)
-        cek = crypto_box_open(recip_x, sender_x, sender_cek["key"], sender_cek["nonce"])
+        cek = crypto_box.crypto_box_open(
+            recip_x, sender_x, sender_cek["key"], sender_cek["nonce"]
+        )
     else:
         sender_vk = None
-        cek = crypto_box_seal_open(recip_x, sender_cek["key"])
+        cek = crypto_box.crypto_box_seal_open(recip_x, sender_cek["key"])
     return cek, sender_vk

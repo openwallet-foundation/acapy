@@ -9,7 +9,7 @@ import time
 from typing import Any, Mapping
 from weakref import ref
 
-from aries_askar import generate_raw_key, AskarError, Session, Store
+from aries_askar import AskarError, Session, Store
 
 from ..cache.base import BaseCache
 from ..config.injection_context import InjectionContext
@@ -239,4 +239,4 @@ class AskarProfileManager(ProfileManager):
     @classmethod
     async def generate_store_key(self, seed: str = None) -> str:
         """Generate a raw store key."""
-        return generate_raw_key(validate_seed(seed))
+        return Store.generate_raw_key(validate_seed(seed))

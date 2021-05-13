@@ -9,7 +9,7 @@ from typing import Mapping
 from ..ledger.base import BaseLedger
 from ..messaging.util import canon, encode
 
-from .sdk.models.xform import indy_proof_req2non_revoc_intervals
+from .models.xform import indy_proof_req2non_revoc_intervals
 
 LOGGER = logging.getLogger(__name__)
 
