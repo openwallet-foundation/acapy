@@ -83,6 +83,7 @@ class CredentialManager:
         connection_id: str,
         credential_proposal: CredentialProposal,
         auto_remove: bool = None,
+        comment: str = None,
     ) -> Tuple[V10CredentialExchange, CredentialOffer]:
         """
         Set up a new credential exchange for an automated send.
@@ -110,7 +111,7 @@ class CredentialManager:
         (credential_exchange, credential_offer) = await self.create_offer(
             cred_ex_record=credential_exchange,
             counter_proposal=None,
-            comment="create automated credential exchange",
+            comment=comment,
         )
         return (credential_exchange, credential_offer)
 
