@@ -254,7 +254,6 @@ class TestConfig:
         ident="request-0",
     ).serialize()
 
-
     indy_cred_req = {
         "schema_id": f"{test_did}:2:bc-reg:1.0",
         "cred_def_id": f"{test_did}:3:CL:12:tag1",
@@ -775,9 +774,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 ],
                 service_dids=[TestConfig.test_target_did],
                 service_blocks=[],
-                requests_attach=[
-                    AttachDecorator.deserialize(dif_req_attach_v2)
-                ],
+                requests_attach=[AttachDecorator.deserialize(dif_req_attach_v2)],
             )
 
             inv_message_cls.deserialize.return_value = mock_oob_invi
@@ -944,9 +941,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 ],
                 service_dids=[TestConfig.test_target_did],
                 service_blocks=[],
-                requests_attach=[
-                    AttachDecorator.deserialize(dif_req_attach_v2)
-                ],
+                requests_attach=[AttachDecorator.deserialize(dif_req_attach_v2)],
             )
 
             inv_message_cls.deserialize.return_value = mock_oob_invi

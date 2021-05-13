@@ -89,8 +89,7 @@ class TestPresExchHandler:
     async def test_load_cred_json_b(self, setup_tuple, profile):
         cred_list, pd_list = setup_tuple
         dif_pres_exch_handler = DIFPresExchHandler(
-            profile,
-            pres_signing_did="did:sov:WgWxqztrNooG92RXvxSTWv"
+            profile, pres_signing_did="did:sov:WgWxqztrNooG92RXvxSTWv"
         )
         # assert len(cred_list) == 6
         for tmp_pd in pd_list:
@@ -1733,8 +1732,7 @@ class TestPresExchHandler:
     @pytest.mark.ursa_bbs_signatures
     async def test_sign_pres_no_cred_subject_id(self, profile, setup_tuple):
         dif_pres_exch_handler = DIFPresExchHandler(
-            profile,
-            pres_signing_did="did:sov:WgWxqztrNooG92RXvxSTWv"
+            profile, pres_signing_did="did:sov:WgWxqztrNooG92RXvxSTWv"
         )
         cred_list, pd_list = setup_tuple
         tmp_pd = pd_list[3]
@@ -1742,20 +1740,19 @@ class TestPresExchHandler:
         for cred in deepcopy(cred_list):
             cred.subject_ids = []
             tmp_creds.append(cred)
-        
+
         tmp_vp = await dif_pres_exch_handler.create_vp(
             credentials=tmp_creds,
             pd=tmp_pd[0],
             challenge="1f44d55f-f161-4938-a659-f8026467f126",
         )
-        assert len(tmp_vp.get("verifiableCredential"))==6
+        assert len(tmp_vp.get("verifiableCredential")) == 6
 
     @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
     async def test_sign_pres_no_cred_subject_id_error(self, profile, setup_tuple):
         dif_pres_exch_handler = DIFPresExchHandler(
-            profile,
-            pres_signing_did="did:sov:WgWxqztrNooG92RXvxSTWv"
+            profile, pres_signing_did="did:sov:WgWxqztrNooG92RXvxSTWv"
         )
         cred_list, pd_list = setup_tuple
         tmp_pd = pd_list[3]
