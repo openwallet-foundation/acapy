@@ -291,7 +291,9 @@ class BaseConnectionManager:
         ):
             if connection.invitation_msg_id or connection.invitation_key:
                 invitation = await connection.retrieve_invitation(self._session)
-                if isinstance(invitation, ConnectionInvitation):  # conn protocol invitation
+                if isinstance(
+                    invitation, ConnectionInvitation
+                ):  # conn protocol invitation
                     if invitation.did:
                         did = invitation.did
                         (
