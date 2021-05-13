@@ -113,12 +113,18 @@ async def resolve_did(request: web.BaseRequest):
     try:
         session = await context.session()
         resolver = session.inject(DIDResolver)
-        resolution: ResolutionResult = await resolver.resolve(context.profile, did)
-        doc = resolution.did_doc.serialize()
-        result = {"did_doc": doc}
+        retrieve_metadata = False
         query = request.rel_url.query
         if query and util.strtobool(query["verbose"]):
-            result["resolver_metadata"] = resolution.resolver_metadata
+            retrieve_metadata = True
+        resolution: ResolutionResult = await resolver.resolve(
+            context.profile, did, retrieve_metadata
+        )
+        doc = resolution.did_doc.serialize()
+        result = {"did_doc": doc}
+
+        if resolution.metadata:
+            result["resolver_metadata"] = resolution.metadata._asdict()
 
     except DIDNotFound as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err

@@ -32,19 +32,25 @@ class DIDResolver:
         """Initialize a `didresolver` instance."""
         self.did_resolver_registry = registry
 
-    async def resolve(self, profile: Profile, did: Union[str, DID]) -> ResolutionResult:
+    async def resolve(
+        self, profile: Profile, did: Union[str, DID], retrieve_metadata: bool = False
+    ) -> ResolutionResult:
         """Retrieve did doc from public registry."""
         # TODO Cache results
         py_did = DID(did) if isinstance(did, str) else did
         for resolver in self._match_did_to_resolver(py_did):
             try:
                 LOGGER.debug("Resolving DID %s with %s", did, resolver)
-                resolution: ResolutionResult = await resolver.resolve(profile, py_did)
-                LOGGER.debug(
-                    "Resolution metadata for did %s: %s",
-                    did,
-                    resolution.resolver_metadata,
+                resolution: ResolutionResult = await resolver.resolve(
+                    profile,
+                    py_did,
                 )
+                if resolution.metadata:
+                    LOGGER.debug(
+                        "Resolution metadata for did %s: %s",
+                        did,
+                        resolution.metadata._asdict(),
+                    )
                 return resolution
             except DIDNotFound:
                 LOGGER.debug("DID %s not found by resolver %s", did, resolver)

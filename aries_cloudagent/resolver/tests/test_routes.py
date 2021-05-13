@@ -59,13 +59,11 @@ def mock_request(mock_resolver):
 
 @pytest.mark.asyncio
 async def test_resolver(mock_request, mock_response):
-    params = {"verbose": "True"}
+    params = {"verbose": "False"}
     mock_request.rel_url.query.__getitem__.side_effect = params.__getitem__
 
     await test_module.resolve_did(mock_request)
-    mock_response.assert_called_once_with(
-        {"did_doc": did_doc.serialize(), "resolver_metadata": {}}
-    )
+    mock_response.assert_called_once_with({"did_doc": did_doc.serialize()})
     # TODO: test http response codes
 
 
@@ -82,6 +80,9 @@ async def test_resolver_not_found_error(
     mock_resolver, mock_request, side_effect, error
 ):
     mock_resolver.resolve = async_mock.CoroutineMock(side_effect=side_effect())
+    params = {"verbose": "True"}
+    mock_request.rel_url.query.__getitem__.side_effect = params.__getitem__
+
     with pytest.raises(error):
         await test_module.resolve_did(mock_request)
 
