@@ -277,6 +277,7 @@ class PresentationManager:
         non_revoc_intervals = indy_proof_req2non_revoc_intervals(presentation_request)
         attr_creds = requested_credentials.get("requested_attributes", {})
         req_attrs = presentation_request.get("requested_attributes", {})
+
         for reft in attr_creds:
             requested_referents[reft] = {"cred_id": attr_creds[reft]["cred_id"]}
             if reft in req_attrs and reft in non_revoc_intervals:
