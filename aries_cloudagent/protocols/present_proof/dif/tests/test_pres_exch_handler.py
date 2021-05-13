@@ -13,6 +13,9 @@ from .....wallet.base import BaseWallet
 from .....wallet.crypto import KeyType
 from .....wallet.did_method import DIDMethod
 from .....wallet.error import WalletNotFoundError
+from .....vc.ld_proofs import (
+    BbsBlsSignatureProof2020,
+)
 from .....vc.ld_proofs.document_loader import DocumentLoader
 from .....vc.ld_proofs.error import LinkedDataProofException
 from .....vc.tests.document_loader import custom_document_loader
@@ -87,8 +90,7 @@ class TestPresExchHandler:
         cred_list, pd_list = setup_tuple
         dif_pres_exch_handler = DIFPresExchHandler(
             profile,
-            pres_signing_did="did:sov:WgWxqztrNooG92RXvxSTWv",
-            proof_type="Ed25519Signature2018",
+            pres_signing_did="did:sov:WgWxqztrNooG92RXvxSTWv"
         )
         # assert len(cred_list) == 6
         for tmp_pd in pd_list:
@@ -1726,6 +1728,48 @@ class TestPresExchHandler:
         )
         with pytest.raises(DIFPresExchError):
             dif_pres_exch_handler._get_verification_method("did:test:test")
+
+    @pytest.mark.asyncio
+    @pytest.mark.ursa_bbs_signatures
+    async def test_sign_pres_no_cred_subject_id(self, profile, setup_tuple):
+        dif_pres_exch_handler = DIFPresExchHandler(
+            profile,
+            pres_signing_did="did:sov:WgWxqztrNooG92RXvxSTWv"
+        )
+        cred_list, pd_list = setup_tuple
+        tmp_pd = pd_list[3]
+        tmp_creds = []
+        for cred in deepcopy(cred_list):
+            cred.subject_ids = []
+            tmp_creds.append(cred)
+        
+        tmp_vp = await dif_pres_exch_handler.create_vp(
+            credentials=tmp_creds,
+            pd=tmp_pd[0],
+            challenge="1f44d55f-f161-4938-a659-f8026467f126",
+        )
+        assert len(tmp_vp.get("verifiableCredential"))==6
+
+    @pytest.mark.asyncio
+    @pytest.mark.ursa_bbs_signatures
+    async def test_sign_pres_no_cred_subject_id_error(self, profile, setup_tuple):
+        dif_pres_exch_handler = DIFPresExchHandler(
+            profile,
+            pres_signing_did="did:sov:WgWxqztrNooG92RXvxSTWv"
+        )
+        cred_list, pd_list = setup_tuple
+        tmp_pd = pd_list[3]
+        tmp_creds = []
+        for cred in deepcopy(cred_list):
+            cred.subject_ids = []
+            cred.proof_types = [BbsBlsSignatureProof2020.signature_type]
+            tmp_creds.append(cred)
+        with pytest.raises(DIFPresExchError):
+            tmp_vp = await dif_pres_exch_handler.create_vp(
+                credentials=tmp_creds,
+                pd=tmp_pd[0],
+                challenge="1f44d55f-f161-4938-a659-f8026467f126",
+            )
 
     def test_get_sign_key_credential_subject_id(self, profile):
         dif_pres_exch_handler = DIFPresExchHandler(profile)

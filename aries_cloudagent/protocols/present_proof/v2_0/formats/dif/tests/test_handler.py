@@ -77,8 +77,10 @@ DIF_PRES_REQUEST_A = {
 }
 
 DIF_PRES_REQUEST_B = {
-    "challenge": "3fa85f64-5717-4562-b3fc-2c963f66afa7",
-    "domain": "4jt78h47fh47",
+    "options": {
+        "challenge": "3fa85f64-5717-4562-b3fc-2c963f66afa7",
+        "domain": "4jt78h47fh47",
+    },
     "presentation_definition": {
         "id": "32f54163-7166-48f1-93d8-ff217bdb0654",
         "submission_requirements": [
@@ -496,7 +498,7 @@ class TestDIFFormatHandler(AsyncTestCase):
     async def test_create_pres_pd_claim_format_bls12381g2(self):
         test_pd = deepcopy(DIF_PRES_REQUEST_B)
         test_pd["presentation_definition"]["format"] = {
-            "ldp_vp": {"proof_type": ["BbsBlsSignature2020", "Ed25519Signature2018"]}
+            "ldp_vc": {"proof_type": ["BbsBlsSignatureProof2020"]}
         }
         dif_pres_request = V20PresRequest(
             formats=[
@@ -588,7 +590,50 @@ class TestDIFFormatHandler(AsyncTestCase):
 
     async def test_verify_pres_no_challenge(self):
         test_pd = deepcopy(DIF_PRES_REQUEST_B)
-        del test_pd["challenge"]
+        del test_pd["options"]["challenge"]
+        dif_pres_request = V20PresRequest(
+            formats=[
+                V20PresFormat(
+                    attach_id="dif",
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.DIF.api
+                    ],
+                )
+            ],
+            request_presentations_attach=[
+                AttachDecorator.data_json(test_pd, ident="dif")
+            ],
+        )
+        dif_pres = V20Pres(
+            formats=[
+                V20PresFormat(
+                    attach_id="dif",
+                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.DIF.api],
+                )
+            ],
+            presentations_attach=[AttachDecorator.data_json(DIF_PRES, ident="dif")],
+        )
+        record = V20PresExRecord(
+            pres_ex_id="pxid",
+            thread_id="thid",
+            connection_id="conn_id",
+            initiator="init",
+            role="role",
+            state="state",
+            pres_proposal={"pres": "prop"},
+            pres_request=dif_pres_request.serialize(),
+            pres=dif_pres.serialize(),
+            verified="false",
+            auto_present=True,
+            error_msg="error",
+        )
+
+        with self.assertRaises(V20PresFormatError):
+            await self.handler.verify_pres(record)
+
+    async def test_verify_pres_invalid_challenge(self):
+        test_pd = deepcopy(DIF_PRES_REQUEST_B)
+        del test_pd["options"]
         dif_pres_request = V20PresRequest(
             formats=[
                 V20PresFormat(

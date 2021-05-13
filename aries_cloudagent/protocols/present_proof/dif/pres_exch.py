@@ -13,6 +13,7 @@ from typing import Sequence, Union, Mapping
 from ....messaging.models.base import BaseModelSchema, BaseModel
 from ....messaging.valid import (
     UUID4,
+    NUM_STR_WHOLE,
     StrOrDictField,
     StrOrNumberField,
 )
@@ -886,3 +887,50 @@ class VerifiablePresentationSchema(BaseModelSchema):
         },
     )
     presentation_submission = fields.Nested(PresentationSubmissionSchema)
+
+
+class DIFOptions(BaseModel):
+    """Single DIFOptions object."""
+
+    class Meta:
+        """DIFOptions metadata."""
+
+        schema_class = "DIFOptionsSchema"
+
+    def __init__(
+        self,
+        *,
+        challenge: str = None,
+        domain: str = None,
+        nonce: str = None,
+    ):
+        """Initialize DIFOptions."""
+        self.challenge = challenge
+        self.domain = domain
+        self.nonce = nonce
+
+
+class DIFOptionsSchema(BaseModelSchema):
+    """Schema for options required for the Prover to fulfill the Verifier's request."""
+
+    class Meta:
+        """DIFOptionsSchema metadata."""
+
+        model_class = DIFOptions
+        unknown = EXCLUDE
+
+    challenge = fields.String(
+        description="Challenge protect against replay attack",
+        required=False,
+        **UUID4,
+    )
+    domain = fields.String(
+        description="Domain protect against replay attack",
+        required=False,
+        example="4jt78h47fh47",
+    )
+    nonce = fields.Str(
+        required=False,
+        description="Nonce for BBS+ Proofs",
+        **NUM_STR_WHOLE,
+    )

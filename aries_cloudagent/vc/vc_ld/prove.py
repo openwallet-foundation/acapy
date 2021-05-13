@@ -108,6 +108,7 @@ async def derive_credential(
     reveal_document: dict,
     suite: LinkedDataProof,
     document_loader: DocumentLoaderMethod,
+    nonce: str = None,
 ) -> dict:
     """Derive new credential from the existing credential and the reveal document.
 
@@ -137,4 +138,5 @@ async def derive_credential(
         reveal_document=reveal_document,
         suite=suite,
         document_loader=document_loader,
+        nonce=nonce,
     )

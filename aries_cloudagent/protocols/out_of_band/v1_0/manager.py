@@ -742,13 +742,23 @@ class OutOfBandManager(BaseConnectionManager):
                     dif_proof_request = proof_request.attachment(
                         V20PresFormat.Format.DIF
                     )
+                    comment = "auto-presented for proof request"
+                    if "options" in dif_proof_request:
+                        if dif_proof_request.get("options").get("challenge"):
+                            comment = (
+                                "auto-presented for proof request challenge:"
+                                f"{dif_proof_request.get('options').get('challenge')}"
+                            )
+                        elif dif_proof_request.get("options").get("nonce"):
+                            comment = (
+                                "auto-presented for proof request nonce "
+                                f"{dif_proof_request.get('options').get('nonce')}"
+                            )
+
                     (pres_ex_record, pres_msg) = await pres_mgr.create_pres(
                         pres_ex_record=pres_ex_record,
                         request_data={},
-                        comment=(
-                            "auto-presented for proof request challenge "
-                            f"{dif_proof_request['challenge']}"
-                        ),
+                        comment=comment,
                     )
                 responder = self._session.inject(BaseResponder, required=False)
                 if responder:

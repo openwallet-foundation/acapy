@@ -1,4 +1,5 @@
 from asynctest import mock as async_mock, TestCase as AsyncTestCase
+from copy import deepcopy
 
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......messaging.request_context import RequestContext
@@ -57,8 +58,10 @@ INDY_PROOF_REQ_PRED = {
     },
 }
 DIF_PROOF_REQ = {
-    "challenge": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-    "domain": "4jt78h47fh47",
+    "options": {
+        "challenge": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+        "domain": "4jt78h47fh47",
+    },
     "presentation_definition": {
         "id": "32f54163-7166-48f1-93d8-ff217bdb0653",
         "submission_requirements": [
@@ -125,6 +128,51 @@ DIF_PROOF_REQ = {
             },
         ],
     },
+}
+
+DIF_PROP_REQ = {
+    "input_descriptors": [
+        {
+            "id": "citizenship_input_1",
+            "name": "EU Driver's License",
+            "group": ["A"],
+            "schema": [
+                {"uri": "https://www.w3.org/2018/credentials#VerifiableCredential"}
+            ],
+            "constraints": {
+                "fields": [
+                    {
+                        "path": ["$.issuer.id", "$.issuer", "$.vc.issuer.id"],
+                        "purpose": "The claim must be from one of the specified issuers",
+                        "filter": {
+                            "type": "string",
+                            "enum": ["did:sov:4cLztgZYocjqTdAZM93t27"],
+                        },
+                    }
+                ]
+            },
+        },
+        {
+            "id": "citizenship_input_2",
+            "name": "US Passport",
+            "group": ["B"],
+            "schema": [
+                {"uri": "https://www.w3.org/2018/credentials#VerifiableCredential"}
+            ],
+            "constraints": {
+                "fields": [
+                    {
+                        "path": ["$.issuanceDate", "$.vc.issuanceDate"],
+                        "filter": {
+                            "type": "string",
+                            "format": "date",
+                            "maximum": "2009-5-16",
+                        },
+                    }
+                ]
+            },
+        },
+    ]
 }
 
 
@@ -294,7 +342,72 @@ class TestPresRequestHandler(AsyncTestCase):
                     format_=V20PresFormat.Format.DIF.aries,
                 )
             ],
-            proposals_attach=[AttachDecorator.data_json(DIF_PROOF_REQ, ident="indy")],
+            proposals_attach=[AttachDecorator.data_json(DIF_PROP_REQ, ident="indy")],
+        )
+
+        px_rec_instance = test_module.V20PresExRecord(
+            pres_proposal=pres_proposal.serialize(),
+            auto_present=True,
+        )
+        with async_mock.patch.object(
+            test_module, "V20PresManager", autospec=True
+        ) as mock_pres_mgr, async_mock.patch.object(
+            test_module, "V20PresExRecord", autospec=True
+        ) as mock_pres_ex_rec_cls:
+
+            mock_pres_ex_rec_cls.return_value = px_rec_instance
+            mock_pres_ex_rec_cls.retrieve_by_tag_filter = async_mock.CoroutineMock(
+                return_value=px_rec_instance
+            )
+            mock_pres_mgr.return_value.receive_pres_request = async_mock.CoroutineMock(
+                return_value=px_rec_instance
+            )
+
+            mock_pres_mgr.return_value.create_pres = async_mock.CoroutineMock(
+                return_value=(px_rec_instance, "pres message")
+            )
+            request_context.connection_ready = True
+            handler_inst = test_module.V20PresRequestHandler()
+            responder = MockResponder()
+            await handler_inst.handle(request_context, responder)
+            mock_pres_mgr.return_value.create_pres.assert_called_once()
+
+        mock_pres_mgr.return_value.receive_pres_request.assert_called_once_with(
+            px_rec_instance
+        )
+        messages = responder.messages
+        assert len(messages) == 1
+        (result, target) = messages[0]
+        assert result == "pres message"
+        assert target == {}
+
+    async def test_called_auto_present_dif_with_nonce(self):
+        request_context = RequestContext.test_context()
+        request_context.connection_record = async_mock.MagicMock()
+        request_context.connection_record.connection_id = "dummy"
+        request_context.message = V20PresRequest(
+            formats=[
+                V20PresFormat(
+                    attach_id="dif",
+                    format_=V20PresFormat.Format.DIF.aries,
+                )
+            ]
+        )
+        dif_proof_req = deepcopy(DIF_PROOF_REQ)
+        del dif_proof_req["options"]["challenge"]
+        dif_proof_req["options"]["nonce"] = "test12345"
+        request_context.message.attachment = async_mock.MagicMock(
+            return_value=dif_proof_req
+        )
+        request_context.message_receipt = MessageReceipt()
+        pres_proposal = V20PresProposal(
+            formats=[
+                V20PresFormat(
+                    attach_id="dif",
+                    format_=V20PresFormat.Format.DIF.aries,
+                )
+            ],
+            proposals_attach=[AttachDecorator.data_json(DIF_PROP_REQ, ident="indy")],
         )
 
         px_rec_instance = test_module.V20PresExRecord(

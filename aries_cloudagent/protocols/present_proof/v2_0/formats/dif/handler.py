@@ -137,20 +137,25 @@ class DIFPresFormatHandler(V20PresFormatHandler):
         ).attachment(self.format)
         pres_definition = None
 
+        challenge = None
+        domain = None
+        nonce = None
         if request_data != {}:
             pres_spec_payload = DIFPresSpecSpecSchema().load(request_data)
             # Overriding with prover provided pres_spec
-            challenge = str(uuid4())
-            domain = None
             pres_definition = pres_spec_payload.get("presentation_definition")
             issuer_id = pres_spec_payload.get("issuer_id")
         if not pres_definition:
-            challenge = proof_request.get("challenge") or str(uuid4())
-            domain = proof_request.get("domain") or None
+            if "options" in proof_request:
+                challenge = proof_request.get("options").get("challenge")
+                domain = proof_request.get("options").get("domain")
+                nonce = proof_request.get("options").get("nonce")
             pres_definition = PresentationDefinition.deserialize(
                 proof_request.get("presentation_definition")
             )
             issuer_id = None
+        if not challenge:
+            challenge = str(uuid4())
 
         input_descriptors = pres_definition.input_descriptors
         try:
@@ -188,11 +193,13 @@ class DIFPresFormatHandler(V20PresFormatHandler):
         if claim_format:
             if claim_format.ldp_vp:
                 for proof_req in claim_format.ldp_vp.get("proof_type"):
-                    if proof_req == BbsBlsSignature2020.signature_type:
-                        proof_type = BbsBlsSignature2020.signature_type
-                        break
-                    elif proof_req == Ed25519Signature2018.signature_type:
+                    if proof_req == Ed25519Signature2018.signature_type:
                         proof_type = Ed25519Signature2018.signature_type
+                        break
+            if claim_format.ldp_vc:
+                for proof_req in claim_format.ldp_vc.get("proof_type"):
+                    if proof_req == BbsBlsSignatureProof2020.signature_type:
+                        proof_type = BbsBlsSignatureProof2020.signature_type
                         break
 
         dif_handler = DIFPresExchHandler(
@@ -202,6 +209,7 @@ class DIFPresFormatHandler(V20PresFormatHandler):
         pres = await dif_handler.create_vp(
             challenge=challenge,
             domain=domain,
+            nonce=nonce,
             pd=pres_definition,
             credentials=records,
         )
@@ -227,10 +235,15 @@ class DIFPresFormatHandler(V20PresFormatHandler):
         async with self._profile.session() as session:
             wallet = session.inject(BaseWallet)
             dif_proof = V20Pres.deserialize(pres_ex_record.pres).attachment(self.format)
-            req_pres_attach = V20PresRequest.deserialize(
+            pres_request = V20PresRequest.deserialize(
                 pres_ex_record.pres_request
             ).attachment(self.format)
-            challenge = req_pres_attach.get("challenge")
+            if "options" in pres_request:
+                challenge = pres_request.get("options").get("challenge")
+            else:
+                raise V20PresFormatError(
+                    "No options [challenge] set for the presentation request"
+                )
             if not challenge:
                 raise V20PresFormatError(
                     "No challenge is set for the presentation request"

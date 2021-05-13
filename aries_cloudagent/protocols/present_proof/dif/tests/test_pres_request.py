@@ -8,8 +8,10 @@ class TestPresRequestSchema(TestCase):
 
     def test_limit_disclosure(self):
         test_pd_a = {
-            "challenge": "3fa85f64-5717-4562-b3fc-2c963f66afa7",
-            "domain": "4jt78h47fh47",
+            "options": {
+                "challenge": "3fa85f64-5717-4562-b3fc-2c963f66afa7",
+                "domain": "4jt78h47fh47",
+            },
             "presentation_definition": {
                 "id": "32f54163-7166-48f1-93d8-ff217bdb0654",
                 "submission_requirements": [
@@ -48,8 +50,10 @@ class TestPresRequestSchema(TestCase):
             },
         }
         test_pd_b = {
-            "challenge": "3fa85f64-5717-4562-b3fc-2c963f66afa7",
-            "domain": "4jt78h47fh47",
+            "options": {
+                "challenge": "3fa85f64-5717-4562-b3fc-2c963f66afa7",
+                "domain": "4jt78h47fh47",
+            },
             "presentation_definition": {
                 "id": "32f54163-7166-48f1-93d8-ff217bdb0654",
                 "submission_requirements": [
