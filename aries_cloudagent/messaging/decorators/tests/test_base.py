@@ -11,6 +11,7 @@ from marshmallow import EXCLUDE, fields
 
 from ....messaging.models.base import BaseModel, BaseModelSchema
 
+from .. import base as test_module
 from ..base import BaseDecoratorSet, DECORATOR_PREFIX
 
 
@@ -67,8 +68,10 @@ class TestBaseDecoratorSet(TestCase):
         deco_set.remove_model("c")
         assert "c" not in deco_set.models
 
-        with pytest.raises(ValueError):
-            deco_set["a"] = None
+        deco_set["a"] = None  #
+        deco_set.load_decorator("a", None)
+        assert "a" not in deco_set
+
         deco_set["a"] = {"score": 23}
         deco_set["a"] = SampleDecorator(23)
         deco_set.load_decorator("a", None)

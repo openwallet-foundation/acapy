@@ -49,16 +49,13 @@ def _created_at():
     return stamp.strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
-def create_verify_data(data, signature_options):
-    """Encapsulate the process of constructing the string used during sign and verify."""
+def create_verify_data(data, signature_options, document_loader=None):
+    """Encapsulate process of constructing string used during sign and verify."""
 
-    type_ = signature_options.get("type", "Ed25519Signature2018")
-    if type_ and type_ != "Ed25519Signature2018":
+    signature_options["type"] = signature_options.get("type", "Ed25519Signature2018")
+    type_ = signature_options.get("type")
+    if type_ != "Ed25519Signature2018":
         raise SignatureTypeError(f"invalid signature type {type_}.")
-
-    signature_options["verificationMethod"] = signature_options.get(
-        "creator", signature_options.get("verificationMethod")
-    )
 
     if not signature_options.get("verificationMethod"):
         raise MissingVerificationMethodError(
@@ -66,9 +63,19 @@ def create_verify_data(data, signature_options):
         )
 
     signature_options["created"] = signature_options.get("created", _created_at())
-    [expanded] = jsonld.expand(data)
+    [expanded] = jsonld.expand(
+        data,
+        options={
+            **{opt: document_loader for opt in ["documentLoader"] if document_loader}
+        },
+    )
     framed = jsonld.compact(
-        expanded, "https://w3id.org/security/v2", {"skipExpansion": True}
+        expanded,
+        "https://w3id.org/security/v2",
+        options={
+            "skipExpansion": True,
+            **{opt: document_loader for opt in ["documentLoader"] if document_loader},
+        },
     )
 
     # Detect any dropped attributes during the expand/contract step.

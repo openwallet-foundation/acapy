@@ -2,14 +2,12 @@
 
 from marshmallow import fields
 
+from .....core.profile import ProfileSession
 from .....messaging.models.base_record import (
     BaseExchangeRecord,
     BaseExchangeSchema,
 )
-
 from .....messaging.valid import UUIDFour
-
-from .....core.profile import ProfileSession
 
 
 class TransactionRecord(BaseExchangeRecord):
@@ -51,7 +49,7 @@ class TransactionRecord(BaseExchangeRecord):
     STATE_TRANSACTION_RESENT = "transaction_resent"
     STATE_TRANSACTION_RESENT_RECEIEVED = "transaction_resent_received"
     STATE_TRANSACTION_CANCELLED = "transaction_cancelled"
-    STATE_TRANSACTION_COMPLETED = "transaction_completed"
+    STATE_TRANSACTION_ACKED = "transaction_acked"
 
     def __init__(
         self,
