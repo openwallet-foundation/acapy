@@ -44,19 +44,30 @@ class ResolutionMetadata(NamedTuple):
     retrieved_time: str
     duration: int
 
+    def serialize(self) -> dict:
+        """Return serialized resolution metadata."""
+        return {**self._asdict(), "resolver_type": self.resolver_type.value}
+
 
 class ResolutionResult:
     """Resolution Class to pack the DID Doc and the resolution information."""
 
-    def __init__(self, did_doc: DIDDocument, metadata: ResolutionMetadata = None):
+    def __init__(self, did_document: DIDDocument, metadata: ResolutionMetadata = None):
         """Initialize Resolution.
 
         Args:
             did_doc: DID Document resolved
             resolver_metadata: Resolving details
         """
-        self.did_doc = did_doc
+        self.did_document = did_document
         self.metadata = metadata
+
+    def serialize(self) -> dict:
+        """Return serialized resolution result."""
+        return {
+            "did_document": self.did_document,
+            "metadata": self.metadata.serialize(),
+        }
 
 
 class BaseDIDResolver(ABC):
