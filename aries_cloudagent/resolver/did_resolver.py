@@ -7,9 +7,10 @@ retrieving did's from different sources provided by the method type.
 
 import logging
 from itertools import chain
-from typing import Union
+from datetime import datetime
+from typing import Sequence, Tuple, Union
 
-from pydid import DID, DIDError, DIDUrl, Service, VerificationMethod
+from pydid import DID, DIDError, DIDUrl, Service, VerificationMethod, DIDDocument
 
 from ..core.profile import Profile
 
@@ -19,6 +20,7 @@ from .base import (
     DIDNotFound,
     ResolverError,
     ResolutionResult,
+    ResolutionMetadata,
 )
 from .did_resolver_registry import DIDResolverRegistry
 
@@ -29,35 +31,50 @@ class DIDResolver:
     """did resolver singleton."""
 
     def __init__(self, registry: DIDResolverRegistry):
-        """Initialize a `didresolver` instance."""
+        """Create DID Resolver."""
         self.did_resolver_registry = registry
 
-    async def resolve(
-        self, profile: Profile, did: Union[str, DID], retrieve_metadata: bool = False
-    ) -> ResolutionResult:
-        """Retrieve did doc from public registry."""
+    async def _resolve(
+        self, profile: Profile, did: Union[str, DID]
+    ) -> Tuple[BaseDIDResolver, DIDDocument]:
+        """Retrieve doc and return with resolver."""
         # TODO Cache results
         py_did = DID(did) if isinstance(did, str) else did
         for resolver in self._match_did_to_resolver(py_did):
             try:
                 LOGGER.debug("Resolving DID %s with %s", did, resolver)
-                resolution: ResolutionResult = await resolver.resolve(
+                document = await resolver.resolve(
                     profile,
                     py_did,
                 )
-                if resolution.metadata:
-                    LOGGER.debug(
-                        "Resolution metadata for did %s: %s",
-                        did,
-                        resolution.metadata._asdict(),
-                    )
-                return resolution
+                return resolver, document
             except DIDNotFound:
                 LOGGER.debug("DID %s not found by resolver %s", did, resolver)
 
         raise DIDNotFound(f"DID {did} could not be resolved")
 
-    def _match_did_to_resolver(self, py_did: DID) -> BaseDIDResolver:
+    async def resolve(self, profile: Profile, did: Union[str, DID]) -> DIDDocument:
+        """Resolve a DID."""
+        _, doc = await self._resolve(profile, did)
+        return doc
+
+    async def resolve_with_metadata(
+        self, profile: Profile, did: Union[str, DID]
+    ) -> ResolutionResult:
+        """Resolve a DID and return the ResolutionResult."""
+        resolution_start_time = datetime.utcnow()
+
+        resolver, doc = await self._resolve(profile, did)
+
+        time_now = datetime.utcnow()
+        duration = int((time_now - resolution_start_time).total_seconds() * 1000)
+        retrieved_time = time_now.strftime("%Y-%m-%dT%H:%M:%SZ")
+        resolver_metadata = ResolutionMetadata(
+            resolver.type, type(resolver).__qualname__, retrieved_time, duration
+        )
+        return ResolutionResult(doc, resolver_metadata)
+
+    def _match_did_to_resolver(self, py_did: DID) -> Sequence[BaseDIDResolver]:
         """Generate supported DID Resolvers.
 
         Native resolvers are yielded first, in registered order followed by
@@ -85,8 +102,8 @@ class DIDResolver:
         # TODO Use cached DID Docs when possible
         try:
             did_url = DIDUrl.parse(did_url)
-            resolution: ResolutionResult = await self.resolve(profile, did_url.did)
-            return resolution.did_doc.dereference(did_url)
+            document = await self.resolve(profile, did_url.did)
+            return document.dereference(did_url)
         except DIDError as err:
             raise ResolverError(
                 "Failed to parse DID URL from {}".format(did_url)

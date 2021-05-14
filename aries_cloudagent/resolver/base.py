@@ -2,8 +2,7 @@
 
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Sequence, Union
-from datetime import datetime
+from typing import NamedTuple, Sequence, Union
 
 from pydid import DID, DIDDocument
 from pydid.options import (
@@ -13,14 +12,9 @@ from pydid.options import (
     vm_allow_missing_controller,
     vm_allow_type_list,
 )
-from collections import namedtuple
 from ..config.injection_context import InjectionContext
 from ..core.error import BaseError
 from ..core.profile import Profile
-
-ResolverMetadata = namedtuple(
-    "resolver_metadata", ["type", "driverId", "resolver", "retrieved", "duration"]
-)
 
 
 class ResolverError(BaseError):
@@ -42,10 +36,19 @@ class ResolverType(Enum):
     NON_NATIVE = "non-native"
 
 
+class ResolutionMetadata(NamedTuple):
+    """Resolution Metadata."""
+
+    resolver_type: ResolverType
+    resolver: str
+    retrieved_time: str
+    duration: int
+
+
 class ResolutionResult:
     """Resolution Class to pack the DID Doc and the resolution information."""
 
-    def __init__(self, did_doc: DIDDocument, metadata: ResolverMetadata = None):
+    def __init__(self, did_doc: DIDDocument, metadata: ResolutionMetadata = None):
         """Initialize Resolution.
 
         Args:
@@ -85,37 +88,18 @@ class BaseDIDResolver(ABC):
         """Return if this resolver supports the given method."""
         return method in self.supported_methods
 
-    async def resolve(
-        self, profile: Profile, did: Union[str, DID], retrieve_metadata: bool = False
-    ) -> ResolutionResult:
+    async def resolve(self, profile: Profile, did: Union[str, DID]) -> DIDDocument:
         """Resolve a DID using this resolver."""
-
-        async def resolve_with_metadata(py_did):
-            resolution_start_time = datetime.utcnow()
-
-            did_document = await self._resolve(profile, str(py_did))
-
-            resolver_metadata = await self._retrieve_resolver_metadata(
-                py_did.method, resolution_start_time
-            )
-
-            return did_document, resolver_metadata
-
         py_did = DID(did) if isinstance(did, str) else did
 
         if not self.supports(py_did.method):
             raise DIDMethodNotSupported(
                 f"{self.__class__.__name__} does not support DID method {py_did.method}"
             )
-        if retrieve_metadata:
-            did_document, resolver_metadata = await resolve_with_metadata(py_did)
 
-        else:
-            did_document = await self._resolve(profile, str(py_did))
-            resolver_metadata = None
-
-        result = DIDDocument.deserialize(
-            did_document,
+        doc_dict = await self._resolve(profile, str(py_did))
+        return DIDDocument.deserialize(
+            doc_dict,
             options={
                 doc_insert_missing_ids,
                 doc_allow_public_key,
@@ -124,25 +108,7 @@ class BaseDIDResolver(ABC):
                 vm_allow_type_list,
             },
         )
-        return ResolutionResult(result, resolver_metadata)
 
     @abstractmethod
     async def _resolve(self, profile: Profile, did: str) -> dict:
         """Resolve a DID using this resolver."""
-
-    async def _retrieve_resolver_metadata(self, method, resolution_start_time):
-
-        time_now = datetime.utcnow()
-        duration = int((time_now - resolution_start_time).total_seconds() * 1000)
-        retrieved_time = time_now.strftime("%Y-%m-%dT%H:%M:%SZ")
-
-        internal_class = self.__class__
-        module = internal_class.__module__
-        class_name = internal_class.__qualname__
-        resolver = module + "." + class_name
-
-        resolver_metadata = ResolverMetadata(
-            self.type.value, f"did:{method}", resolver, retrieved_time, duration
-        )
-
-        return resolver_metadata
