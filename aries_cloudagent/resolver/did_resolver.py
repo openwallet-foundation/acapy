@@ -59,10 +59,8 @@ class DIDResolver:
             lambda resolver: not resolver.native, valid_resolvers
         )
         resolvers = list(chain(native_resolvers, non_native_resolvers))
-        if not await self.supports(profile, did):
-            raise DIDMethodNotSupported(
-                f"{self.__class__.__name__} does not support DID method for: {did}"
-            )
+        if not resolvers:
+            raise DIDMethodNotSupported(f'No resolver supprting DID "{did}" loaded')
         return resolvers
 
     async def dereference(
@@ -71,9 +69,9 @@ class DIDResolver:
         """Dereference a DID URL to its corresponding DID Doc object."""
         # TODO Use cached DID Docs when possible
         try:
-            did_url = DIDUrl.parse(did_url)
-            doc = await self.resolve(profile, did_url.did)
-            return doc.dereference(did_url)
+            parsed = DIDUrl.parse(did_url)
+            doc = await self.resolve(profile, parsed.did)
+            return doc.dereference(parsed)
         except DIDError as err:
             raise ResolverError(
                 "Failed to parse DID URL from {}".format(did_url)

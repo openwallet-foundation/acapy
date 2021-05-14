@@ -101,15 +101,16 @@ def test_create_resolver(resolver):
 @pytest.mark.asyncio
 @pytest.mark.parametrize("did, method", zip(TEST_DIDS, TEST_DID_METHODS))
 async def test_match_did_to_resolver(profile, resolver, did, method):
-    base_resolver, *_ = await resolver._match_did_to_resolver(profile, DID(did))
+    base_resolver, *_ = await resolver._match_did_to_resolver(profile, did)
     assert await base_resolver.supports(profile, did)
 
 
 @pytest.mark.asyncio
 async def test_match_did_to_resolver_x_not_supported(resolver):
-    py_did = DID("did:cowsay:EiDahaOGH-liLLdDtTxEAdc8i-cfCz-WUcQdRJheMVNn3A")
     with pytest.raises(DIDMethodNotSupported):
-        await resolver._match_did_to_resolver(profile, py_did)
+        await resolver._match_did_to_resolver(
+            profile, "did:cowsay:EiDahaOGH-liLLdDtTxEAdc8i-cfCz-WUcQdRJheMVNn3A"
+        )
 
 
 @pytest.mark.asyncio
@@ -121,7 +122,7 @@ async def test_match_did_to_resolver_native_priority(profile):
     registry.register(native)
     resolver = DIDResolver(registry)
     assert [native, non_native] == await resolver._match_did_to_resolver(
-        profile, DID(TEST_DID0)
+        profile, TEST_DID0
     )
 
 
@@ -142,7 +143,7 @@ async def test_match_did_to_resolver_registration_order(profile):
         native2,
         native4,
         non_native3,
-    ] == await resolver._match_did_to_resolver(profile, DID(TEST_DID0))
+    ] == await resolver._match_did_to_resolver(profile, TEST_DID0)
 
 
 @pytest.mark.asyncio
