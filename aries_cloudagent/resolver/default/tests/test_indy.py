@@ -45,7 +45,7 @@ async def test_supported_methods(profile, resolver: IndyDIDResolver):
     """Test the supported_methods."""
     assert resolver.supported_methods == ["sov"]
     assert await resolver.supports(
-        profile, "did:sov:U292ZXJlaWdudHksIGxveWFsdHksIGFuZCBzb2xpdHVkZS4="
+        profile, "did:sov:9KrtwYfHJpNRzErBeA7U6n1CAGxghgs4Xf5kYxbtGQ7541eM"
     )
 
 
