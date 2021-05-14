@@ -105,11 +105,13 @@ class BaseDIDResolver(ABC):
 
     async def resolve(self, profile: Profile, did: Union[str, DID]) -> DIDDocument:
         """Resolve a DID using this resolver."""
-        py_did = DID(did) if isinstance(did, str) else did
-        did = str(py_did)
+        if isinstance(did, DID):
+            did = str(did)
+        else:
+            DID.validate(did)
         if not await self.supports(profile, did):
             raise DIDMethodNotSupported(
-                f"{self.__class__.__name__} does not support DID method {py_did.method}"
+                f"{self.__class__.__name__} does not support DID method for: {did}"
             )
 
         did_document = await self._resolve(profile, did)

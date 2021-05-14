@@ -28,9 +28,11 @@ class DIDResolver:
     async def resolve(self, profile: Profile, did: Union[str, DID]) -> DIDDocument:
         """Retrieve did doc from public registry."""
         # TODO Cache results
-        py_did = DID(did) if isinstance(did, str) else did
-        did = str(py_did)
-        for resolver in await self._match_did_to_resolver(profile, py_did):
+        if isinstance(did, DID):
+            did = str(did)
+        else:
+            DID.validate(did)
+        for resolver in await self._match_did_to_resolver(profile, did):
             try:
                 LOGGER.debug("Resolving DID %s with %s", did, resolver)
                 return await resolver.resolve(profile, did)
@@ -40,14 +42,13 @@ class DIDResolver:
         raise DIDNotFound(f"DID {did} could not be resolved")
 
     async def _match_did_to_resolver(
-        self, profile: Profile, py_did: DID
+        self, profile: Profile, did: str
     ) -> Sequence[BaseDIDResolver]:
         """Generate supported DID Resolvers.
 
         Native resolvers are yielded first, in registered order followed by
         non-native resolvers in registered order.
         """
-        did = str(py_did)
         valid_resolvers = [
             resolver
             for resolver in self.did_resolver_registry.resolvers
@@ -58,8 +59,10 @@ class DIDResolver:
             lambda resolver: not resolver.native, valid_resolvers
         )
         resolvers = list(chain(native_resolvers, non_native_resolvers))
-        if not resolvers:
-            raise DIDMethodNotSupported(f"DID method '{py_did.method}' not supported")
+        if not await self.supports(profile, did):
+            raise DIDMethodNotSupported(
+                f"{self.__class__.__name__} does not support DID method for: {did}"
+            )
         return resolvers
 
     async def dereference(
