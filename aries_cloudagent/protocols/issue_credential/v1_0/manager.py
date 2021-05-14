@@ -20,7 +20,7 @@ from ....revocation.indy import IndyRevocation
 from ....revocation.models.revocation_registry import RevocationRegistry
 from ....revocation.models.issuer_rev_reg_record import IssuerRevRegRecord
 from ....storage.base import BaseStorage
-from ....storage.error import StorageNotFoundError
+from ....storage.error import StorageError, StorageNotFoundError
 
 from .messages.credential_ack import CredentialAck
 from .messages.credential_issue import CredentialIssue
@@ -712,7 +712,7 @@ class CredentialManager:
             credential_id: optional credential identifier to override default on storage
 
         Returns:
-            Tuple: (Updated credential exchange record, credential ack message)
+            Updated credential exchange record
 
         """
         if cred_ex_record.state != (V10CredentialExchange.STATE_CREDENTIAL_RECEIVED):
@@ -767,7 +767,6 @@ class CredentialManager:
         credential_json = await holder.get_credential(credential_id)
         credential = json.loads(credential_json)
 
-        cred_ex_record.state = V10CredentialExchange.STATE_ACKED
         cred_ex_record.credential_id = credential_id
         cred_ex_record.credential = credential
         cred_ex_record.revoc_reg_id = credential.get("rev_reg_id", None)
@@ -777,6 +776,18 @@ class CredentialManager:
             # FIXME - re-fetch record to check state, apply transactional update
             await cred_ex_record.save(session, reason="store credential")
 
+        return cred_ex_record
+
+    async def create_credential_ack(
+        self,
+        cred_ex_record: V10CredentialExchange,
+    ):
+        """
+        Create and return ack message for input credential exchange record.
+
+        Delete credential exchange record if set to auto-remove.
+        """
+
         credential_ack_message = CredentialAck()
         credential_ack_message.assign_thread_id(
             cred_ex_record.thread_id, cred_ex_record.parent_thread_id
@@ -785,11 +796,19 @@ class CredentialManager:
             self._profile.settings, cred_ex_record.trace
         )
 
-        if cred_ex_record.auto_remove:
+        cred_ex_record.state = V10CredentialExchange.STATE_ACKED
+        try:
             async with self._profile.session() as session:
-                await cred_ex_record.delete_record(session)  # all done: delete
+                # FIXME - re-fetch record to check state, apply transactional update
+                await cred_ex_record.save(session, reason="ack credential")
 
-        return (cred_ex_record, credential_ack_message)
+            if cred_ex_record.auto_remove:
+                async with self._profile.session() as session:
+                    await cred_ex_record.delete_record(session)  # all done: delete
+        except StorageError as err:
+            LOGGER.exception(err)  # holder still owes an ack: carry on
+
+        return credential_ack_message
 
     async def receive_credential_ack(
         self, message: CredentialAck, connection_id: str
