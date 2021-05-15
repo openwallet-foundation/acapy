@@ -9,6 +9,7 @@ from ..base import (
     BaseDIDResolver,
     DIDMethodNotSupported,
     DIDNotFound,
+    ResolutionMetadata,
     ResolverError,
     ResolverType,
 )
@@ -155,6 +156,14 @@ async def test_dereference_x(resolver, profile):
 async def test_resolve(resolver, profile, did):
     doc = await resolver.resolve(profile, did)
     assert isinstance(doc, DIDDocument)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("did", TEST_DIDS)
+async def test_resolve_with_metadata(resolver, profile, did):
+    result = await resolver.resolve_with_metadata(profile, did)
+    assert isinstance(result.did_document, DIDDocument)
+    assert isinstance(result.metadata, ResolutionMetadata)
 
 
 @pytest.mark.asyncio
