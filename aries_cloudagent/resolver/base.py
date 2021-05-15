@@ -52,7 +52,7 @@ class ResolutionMetadata(NamedTuple):
 class ResolutionResult:
     """Resolution Class to pack the DID Doc and the resolution information."""
 
-    def __init__(self, did_document: DIDDocument, metadata: ResolutionMetadata = None):
+    def __init__(self, did_document: DIDDocument, metadata: ResolutionMetadata):
         """Initialize Resolution.
 
         Args:
@@ -65,7 +65,7 @@ class ResolutionResult:
     def serialize(self) -> dict:
         """Return serialized resolution result."""
         return {
-            "did_document": self.did_document,
+            "did_document": self.did_document.serialize(),
             "metadata": self.metadata.serialize(),
         }
 
