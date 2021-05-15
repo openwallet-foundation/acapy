@@ -12,12 +12,14 @@ from ..base import (
     DIDMethodNotSupported,
     DIDNotFound,
     ResolverError,
-    ResolutionResult,
 )
 from ..did_resolver import DIDResolver
 from . import DOC
 
-did_doc = DIDDocument.deserialize(DOC)
+
+@pytest.fixture
+def did_doc():
+    yield DIDDocument.deserialize(DOC)
 
 
 @pytest.fixture
@@ -30,11 +32,9 @@ def mock_response():
 
 
 @pytest.fixture
-def mock_resolver():
+def mock_resolver(did_doc):
     did_resolver = async_mock.MagicMock()
-    did_resolver.resolve = async_mock.CoroutineMock(
-        return_value=ResolutionResult(did_doc, {})
-    )
+    did_resolver.resolve = async_mock.CoroutineMock(return_value=did_doc)
     yield did_resolver
 
 
@@ -58,7 +58,7 @@ def mock_request(mock_resolver):
 
 
 @pytest.mark.asyncio
-async def test_resolver(mock_request, mock_response):
+async def test_resolver(mock_request, mock_response, did_doc):
     params = {"verbose": "False"}
     mock_request.rel_url.query.__getitem__.side_effect = params.__getitem__
 

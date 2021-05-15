@@ -34,7 +34,7 @@ did_doc = DIDDocument.deserialize(DOC)
 @pytest.fixture
 def mock_resolver():
     did_resolver = async_mock.MagicMock()
-    did_resolver.resolve = async_mock.CoroutineMock(return_value=(did_doc, {}))
+    did_resolver.resolve = async_mock.CoroutineMock(return_value=did_doc)
     url = "did:example:1234abcd#4"
     did_resolver.dereference = async_mock.CoroutineMock(
         return_value=did_doc.dereference(url)
