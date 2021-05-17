@@ -1087,10 +1087,10 @@ class TestCredentialRoutes(AsyncTestCase):
             test_module, "CredentialManager", autospec=True
         ) as mock_credential_manager, async_mock.patch.object(
             test_module, "V10CredentialExchange", autospec=True
-        ) as mock_cred_ex:
+        ) as mock_cred_ex_cls:
 
-            mock_cred_ex_rec.state = mock_cred_ex.STATE_REQUEST_RECEIVED
-            mock_cred_ex.retrieve_by_id = async_mock.CoroutineMock(
+            mock_cred_ex_rec.state = mock_cred_ex_cls.STATE_REQUEST_RECEIVED
+            mock_cred_ex_cls.retrieve_by_id = async_mock.CoroutineMock(
                 return_value=mock_cred_ex_rec
             )
 
@@ -1157,9 +1157,9 @@ class TestCredentialRoutes(AsyncTestCase):
             test_module, "CredentialManager", autospec=True
         ) as mock_credential_manager, async_mock.patch.object(
             test_module, "V10CredentialExchange", autospec=True
-        ) as mock_cred_ex:
-            mock_cred_ex_rec.state = mock_cred_ex.STATE_REQUEST_RECEIVED
-            mock_cred_ex.retrieve_by_id = async_mock.CoroutineMock(
+        ) as mock_cred_ex_cls:
+            mock_cred_ex_cls.state = mock_cred_ex_cls.STATE_REQUEST_RECEIVED
+            mock_cred_ex_cls.retrieve_by_id = async_mock.CoroutineMock(
                 return_value=mock_cred_ex_rec
             )
 
@@ -1189,8 +1189,8 @@ class TestCredentialRoutes(AsyncTestCase):
             test_module, "CredentialManager", autospec=True
         ) as mock_credential_manager, async_mock.patch.object(
             test_module, "V10CredentialExchange", autospec=True
-        ) as mock_cred_ex:
-            mock_cred_ex.retrieve_by_id = async_mock.CoroutineMock(
+        ) as mock_cred_ex_cls:
+            mock_cred_ex_cls.retrieve_by_id = async_mock.CoroutineMock(
                 return_value=mock_cred_ex_rec
             )
             mock_credential_manager.return_value = async_mock.MagicMock(

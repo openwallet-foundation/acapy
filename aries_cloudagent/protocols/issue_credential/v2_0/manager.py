@@ -6,7 +6,7 @@ from typing import Mapping, Tuple, cast
 
 from ....core.error import BaseError
 from ....core.profile import Profile
-from ....storage.error import StorageNotFoundError
+from ....storage.error import StorageError, StorageNotFoundError
 
 from .messages.cred_ack import V20CredAck
 from .messages.cred_format import V20CredFormat
@@ -588,7 +588,7 @@ class V20CredManager:
             cred_id: optional credential identifier to override default on storage
 
         Returns:
-            Tuple: (Updated credential exchange record, credential ack message)
+            Updated credential exchange record
 
         """
         if cred_ex_record.state != (V20CredExRecord.STATE_CREDENTIAL_RECEIVED):
@@ -606,14 +606,20 @@ class V20CredManager:
                 await cred_format.handler(self.profile).store_credential(
                     cred_ex_record, cred_id
                 )
-                # TODO: if we are storing multiple credentials we can't reuse the same id
+                # TODO: if storing multiple credentials we can't reuse the same id
                 cred_id = None
 
-        cred_ex_record.state = V20CredExRecord.STATE_DONE
+        return cred_ex_record
 
-        async with self._profile.session() as session:
-            # FIXME - re-fetch record to check state, apply transactional update
-            await cred_ex_record.save(session, reason="store credential v2.0")
+    async def create_cred_ack(
+        self,
+        cred_ex_record: V20CredExRecord,
+    ):
+        """
+        Create and return ack message for input cred ex record.
+
+        Delete cred ex record if set to auto-remove.
+        """
 
         cred_ack_message = V20CredAck()
         cred_ack_message.assign_thread_id(
@@ -623,7 +629,19 @@ class V20CredManager:
             self._profile.settings, cred_ex_record.trace
         )
 
-        return (cred_ex_record, cred_ack_message)
+        cred_ex_record.state = V20CredExRecord.STATE_DONE
+        try:
+            async with self._profile.session() as session:
+                # FIXME - re-fetch record to check state, apply transactional update
+                await cred_ex_record.save(session, reason="store credential v2.0")
+
+                if cred_ex_record.auto_remove:
+                    await cred_ex_record.delete_record(session)  # all done: delete
+
+        except StorageError as err:
+            LOGGER.exception(err)  # holder still owes an ack: carry on
+
+        return cred_ack_message
 
     async def receive_credential_ack(
         self, cred_ack_message: V20CredAck, connection_id: str

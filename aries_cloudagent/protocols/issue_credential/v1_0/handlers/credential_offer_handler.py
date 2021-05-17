@@ -60,11 +60,7 @@ class CredentialOfferHandler(BaseHandler):
                     holder_did=context.connection_record.my_did,
                 )
                 await responder.send_reply(credential_request_message)
-            except (
-                CredentialManagerError,
-                IndyHolderError,
-                LedgerError,
-            ) as err:
+            except (CredentialManagerError, IndyHolderError, LedgerError) as err:
                 self._logger.exception(err)
                 if cred_ex_record:
                     await cred_ex_record.save_error_state(

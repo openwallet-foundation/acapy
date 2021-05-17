@@ -802,9 +802,9 @@ class CredentialManager:
                 # FIXME - re-fetch record to check state, apply transactional update
                 await cred_ex_record.save(session, reason="ack credential")
 
-            if cred_ex_record.auto_remove:
-                async with self._profile.session() as session:
+                if cred_ex_record.auto_remove:
                     await cred_ex_record.delete_record(session)  # all done: delete
+
         except StorageError as err:
             LOGGER.exception(err)  # holder still owes an ack: carry on
 

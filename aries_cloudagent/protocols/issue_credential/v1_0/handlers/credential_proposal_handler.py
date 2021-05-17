@@ -61,11 +61,7 @@ class CredentialProposalHandler(BaseHandler):
                     comment=context.message.comment,
                 )
                 await responder.send_reply(credential_offer_message)
-            except (
-                CredentialManagerError,
-                IndyIssuerError,
-                LedgerError,
-            ) as err:
+            except (CredentialManagerError, IndyIssuerError, LedgerError) as err:
                 self._logger.exception(err)
                 if cred_ex_record:
                     await cred_ex_record.save_error_state(

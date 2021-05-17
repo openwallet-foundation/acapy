@@ -891,7 +891,6 @@ async def credential_exchange_send_bound_offer(request: web.BaseRequest):
             except StorageNotFoundError as err:
                 raise web.HTTPNotFound(reason=err.roll_up) from err
 
-            connection_id = cred_ex_record.connection_id
             if cred_ex_record.state != (
                 V10CredentialExchange.STATE_PROPOSAL_RECEIVED
             ):  # check state here: manager call creates free offers too
@@ -901,6 +900,7 @@ async def credential_exchange_send_bound_offer(request: web.BaseRequest):
                     f"(must be {V10CredentialExchange.STATE_PROPOSAL_RECEIVED})"
                 )
 
+            connection_id = cred_ex_record.connection_id
             connection_record = await ConnRecord.retrieve_by_id(session, connection_id)
             if not connection_record.is_ready:
                 raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
@@ -979,13 +979,18 @@ async def credential_exchange_send_request(request: web.BaseRequest):
                 cred_ex_record = await V10CredentialExchange.retrieve_by_id(
                     session, credential_exchange_id
                 )
+                connection_id = cred_ex_record.connection_id
             except StorageNotFoundError as err:
                 raise web.HTTPNotFound(reason=err.roll_up) from err
-            connection_id = cred_ex_record.connection_id
 
-            connection_record = await ConnRecord.retrieve_by_id(session, connection_id)
+            connection_record = await ConnRecord.retrieve_by_id(
+                session,
+                connection_id,
+            )
             if not connection_record.is_ready:
-                raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
+                raise web.HTTPForbidden(
+                    reason=f"Connection {connection_id} not ready"
+                )
 
         credential_manager = CredentialManager(context.profile)
         (
