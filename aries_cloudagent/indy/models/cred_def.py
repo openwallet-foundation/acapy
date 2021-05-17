@@ -18,7 +18,8 @@ class CredDefValuePrimarySchema(OpenAPISchema):
                 "number": fields.Str(**NUM_STR_WHOLE),
                 "remainder": fields.Str(**NUM_STR_WHOLE),
             }
-        )
+        ),
+        name="CredDefValuePrimaryRSchema",
     )
     rctxt = fields.Str(**NUM_STR_WHOLE)
     z = fields.Str(**NUM_STR_WHOLE)
