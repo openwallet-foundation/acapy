@@ -301,7 +301,8 @@ class V20CredExRecordSchema(BaseExchangeSchema):
                 "cred_offer": fields.Dict(required=False),
                 "cred_request": fields.Dict(required=False),
                 "cred_issue": fields.Dict(required=False),
-            }
+            },
+            name="V20CredExRecordByFormatSchema",
         ),
         required=False,
         description=(
