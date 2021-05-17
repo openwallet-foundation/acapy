@@ -419,6 +419,7 @@ async def credential_exchange_create(request: web.BaseRequest):
             None,
             credential_proposal=credential_proposal,
             auto_remove=auto_remove,
+            comment=comment,
         )
     except (StorageError, BaseModelError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
@@ -502,6 +503,7 @@ async def credential_exchange_send(request: web.BaseRequest):
             connection_id,
             credential_proposal=credential_proposal,
             auto_remove=auto_remove,
+            comment=comment,
         )
         result = cred_ex_record.serialize()
 
