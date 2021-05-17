@@ -176,7 +176,9 @@ class OutOfBandManager(BaseConnectionManager):
                     )
                     message_attachments.append(
                         InvitationMessage.wrap_message(
-                            V20CredOffer.deserialize(cred_ex_rec.cred_offer).offer()
+                            V20CredOffer.deserialize(
+                                cred_ex_rec.cred_offer
+                            ).attachment()
                         )
                     )
             elif a_type == "present-proof":
@@ -195,12 +197,13 @@ class OutOfBandManager(BaseConnectionManager):
                         self._session,
                         a_id,
                     )
+                    pres_req_dict = (
+                        pres_ex_rec.pres_request
+                        if isinstance(pres_ex_rec.pres_request, dict)
+                        else pres_ex_rec.pres_request.serialize()
+                    )
                     message_attachments.append(
-                        InvitationMessage.wrap_message(
-                            V20PresRequest.deserialize(
-                                pres_ex_rec.pres_request
-                            ).attachment()
-                        )
+                        InvitationMessage.wrap_message(pres_req_dict)
                     )
             else:
                 raise OutOfBandManagerError(f"Unknown attachment type: {a_type}")
@@ -771,7 +774,7 @@ class OutOfBandManager(BaseConnectionManager):
         else:
             raise OutOfBandManagerError(
                 (
-                    "Configuration sets auto_present false: cannot "
+                    "Configuration set auto_present false: cannot "
                     "respond automatically to presentation requests"
                 )
             )

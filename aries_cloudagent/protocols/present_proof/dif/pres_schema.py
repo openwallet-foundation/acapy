@@ -37,18 +37,5 @@ class DIFPresSpecSchema(OpenAPISchema):
         LinkedDataProofSchema(),
         required=False,
         description="The proof of the credential",
-        example={
-            "type": "Ed25519Signature2018",
-            "verificationMethod": (
-                "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyG"
-                "o38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
-            ),
-            "created": "2019-12-11T03:50:55",
-            "proofPurpose": "assertionMethod",
-            "jws": (
-                "eyJhbGciOiAiRWREU0EiLCAiYjY0IjogZmFsc2UsICJjcml0JiNjQiXX0..lKJU0Df"
-                "_keblRKhZAS9Qq6zybm-HqUXNVZ8vgEPNTAjQKBhQDxvXNo7nvtUBb_Eq1Ch6YBKY5qBQ"
-            ),
-        },
     )
     presentation_submission = fields.Nested(PresentationSubmissionSchema())

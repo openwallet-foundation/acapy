@@ -13,7 +13,6 @@ from typing import Sequence, Union, Mapping
 from ....messaging.models.base import BaseModelSchema, BaseModel
 from ....messaging.valid import (
     UUID4,
-    NUM_STR_WHOLE,
     StrOrDictField,
     StrOrNumberField,
 )
@@ -872,19 +871,6 @@ class VerifiablePresentationSchema(BaseModelSchema):
         LinkedDataProofSchema(),
         required=True,
         description="The proof of the credential",
-        example={
-            "type": "Ed25519Signature2018",
-            "verificationMethod": (
-                "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyG"
-                "o38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
-            ),
-            "created": "2019-12-11T03:50:55",
-            "proofPurpose": "assertionMethod",
-            "jws": (
-                "eyJhbGciOiAiRWREU0EiLCAiYjY0IjogZmFsc2UsICJjcml0JiNjQiXX0..lKJU0Df"
-                "_keblRKhZAS9Qq6zybm-HqUXNVZ8vgEPNTAjQKBhQDxvXNo7nvtUBb_Eq1Ch6YBKY5qBQ"
-            ),
-        },
     )
     presentation_submission = fields.Nested(PresentationSubmissionSchema)
 
@@ -902,12 +888,10 @@ class DIFOptions(BaseModel):
         *,
         challenge: str = None,
         domain: str = None,
-        nonce: str = None,
     ):
         """Initialize DIFOptions."""
         self.challenge = challenge
         self.domain = domain
-        self.nonce = nonce
 
 
 class DIFOptionsSchema(BaseModelSchema):
@@ -928,9 +912,4 @@ class DIFOptionsSchema(BaseModelSchema):
         description="Domain protect against replay attack",
         required=False,
         example="4jt78h47fh47",
-    )
-    nonce = fields.Str(
-        required=False,
-        description="Nonce for BBS+ Proofs",
-        **NUM_STR_WHOLE,
     )

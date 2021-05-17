@@ -535,7 +535,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 key_type=KeyType.ED25519,
             )
             mock_v20_cred_offer_deser.return_value = async_mock.MagicMock(
-                offer=async_mock.MagicMock(return_value={"cred": "offer"})
+                attachment=async_mock.MagicMock(return_value={"cred": "attachment"})
             )
             mock_retrieve_cxid_v1.side_effect = test_module.StorageNotFoundError()
             invi_rec = await self.manager.create_invitation(
@@ -2602,7 +2602,10 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 await self.manager.receive_invitation(
                     mock_oob_invi, use_existing_connection=True
                 )
-            assert "Configuration sets auto_present false" in str(context.exception)
+            assert (
+                "Configuration set auto_present false: cannot respond automatically to presentation requests"
+                == str(context.exception)
+            )
 
     async def test_req_v2_attach_presentation_existing_conn_auto_present_pres_msg(self):
         self.session.context.update_settings({"public_invites": True})

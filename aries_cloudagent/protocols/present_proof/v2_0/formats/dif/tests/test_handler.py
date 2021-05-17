@@ -498,7 +498,7 @@ class TestDIFFormatHandler(AsyncTestCase):
     async def test_create_pres_pd_claim_format_bls12381g2(self):
         test_pd = deepcopy(DIF_PRES_REQUEST_B)
         test_pd["presentation_definition"]["format"] = {
-            "ldp_vc": {"proof_type": ["BbsBlsSignatureProof2020"]}
+            "ldp_vp": {"proof_type": ["BbsBlsSignature2020"]}
         }
         dif_pres_request = V20PresRequest(
             formats=[

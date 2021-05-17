@@ -46,7 +46,11 @@ def create_vcrecord(cred_dict: dict):
         expanded[0],
         "@type",
     )
-    cred_tags = {"expanded_type": types}
+    cred_tags = {
+        f"type:xpnd:{expanded_type}": "1"
+        for expanded_type in types
+        if expanded_type is not None
+    }
     return VCRecord(
         contexts=contexts,
         types=types,

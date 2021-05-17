@@ -139,7 +139,6 @@ class DIFPresFormatHandler(V20PresFormatHandler):
 
         challenge = None
         domain = None
-        nonce = None
         if request_data != {}:
             pres_spec_payload = DIFPresSpecSpecSchema().load(request_data)
             # Overriding with prover provided pres_spec
@@ -149,7 +148,6 @@ class DIFPresFormatHandler(V20PresFormatHandler):
             if "options" in proof_request:
                 challenge = proof_request.get("options").get("challenge")
                 domain = proof_request.get("options").get("domain")
-                nonce = proof_request.get("options").get("nonce")
             pres_definition = PresentationDefinition.deserialize(
                 proof_request.get("presentation_definition")
             )
@@ -176,7 +174,9 @@ class DIFPresFormatHandler(V20PresFormatHandler):
             if len(schema_ids) == 0:
                 schema_ids = None
             if len(expanded_types) > 0:
-                tag_query = {"expanded_type": expanded_types}
+                tag_query = {}
+                for expanded_type in expanded_types:
+                    tag_query[f"type:xpnd:{expanded_type}"] = "1"
             search = holder.search_credentials(
                 tag_query=tag_query,
                 schema_ids=schema_ids,
@@ -196,10 +196,8 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                     if proof_req == Ed25519Signature2018.signature_type:
                         proof_type = Ed25519Signature2018.signature_type
                         break
-            if claim_format.ldp_vc:
-                for proof_req in claim_format.ldp_vc.get("proof_type"):
-                    if proof_req == BbsBlsSignatureProof2020.signature_type:
-                        proof_type = BbsBlsSignatureProof2020.signature_type
+                    elif proof_req == BbsBlsSignature2020.signature_type:
+                        proof_type = BbsBlsSignature2020.signature_type
                         break
 
         dif_handler = DIFPresExchHandler(
@@ -209,7 +207,6 @@ class DIFPresFormatHandler(V20PresFormatHandler):
         pres = await dif_handler.create_vp(
             challenge=challenge,
             domain=domain,
-            nonce=nonce,
             pd=pres_definition,
             credentials=records,
         )

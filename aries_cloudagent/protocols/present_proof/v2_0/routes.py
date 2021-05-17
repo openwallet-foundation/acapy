@@ -494,7 +494,9 @@ async def present_proof_credentials_list(request: web.BaseRequest):
             if len(schema_ids) == 0:
                 schema_ids = None
             if len(expanded_types) > 0:
-                tag_query = {"expanded_type": expanded_types}
+                tag_query = {}
+                for expanded_type in expanded_types:
+                    tag_query[f"type:xpnd:{expanded_type}"] = "1"
             search = dif_holder.search_credentials(
                 tag_query=tag_query,
                 schema_ids=schema_ids,

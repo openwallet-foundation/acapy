@@ -83,7 +83,7 @@ class DIFPresExchHandler:
         self,
         profile: Profile,
         pres_signing_did: str = None,
-        proof_type: str = "Ed25519Signature2018",
+        proof_type: str = None,
     ):
         """Initialize PresExchange Handler."""
         super().__init__()
@@ -195,18 +195,18 @@ class DIFPresExchHandler:
                         )
         return issuer_id
 
-    def decide_signing_vp_from_creds(
-        self, applicable_creds: Sequence[VCRecord]
-    ) -> bool:
-        """Get the did as string for specified did_info."""
-        for cred in applicable_creds:
-            cred_proofs = cred.proof_types
-            for proof_type in cred_proofs:
-                if proof_type == BbsBlsSignatureProof2020.signature_type:
-                    return False
-        # Don't sign VP as enclosed credentials with proof type
-        # BbsBlsSignatureProof2020 as it will contain the proofs
-        return True
+    # def decide_signing_vp_from_creds(
+    #     self, applicable_creds: Sequence[VCRecord]
+    # ) -> bool:
+    #     """Get the did as string for specified did_info."""
+    #     for cred in applicable_creds:
+    #         cred_proofs = cred.proof_types
+    #         for proof_type in cred_proofs:
+    #             if proof_type == BbsBlsSignatureProof2020.signature_type:
+    #                 return False
+    #     # Don't sign VP as enclosed credentials with proof type
+    #     # BbsBlsSignatureProof2020 as it will contain the proofs
+    #     return True
 
     async def to_requirement(
         self, sr: SubmissionRequirements, descriptors: Sequence[InputDescriptors]
@@ -349,7 +349,6 @@ class DIFPresExchHandler:
         self,
         constraints: Constraints,
         credentials: Sequence[VCRecord],
-        nonce: str = None,
     ) -> Sequence[VCRecord]:
         """
         Return list of applicable VCRecords after applying filtering.
@@ -403,7 +402,6 @@ class DIFPresExchHandler:
                             reveal_document=new_credential_dict,
                             suite=derive_suite,
                             document_loader=document_loader,
-                            nonce=nonce,
                         )
                         credential = self.create_vcrecord(signed_new_credential_dict)
             result.append(credential)
@@ -448,7 +446,11 @@ class DIFPresExchHandler:
             expanded[0],
             "@type",
         )
-        cred_tags = {"expanded_type": types}
+        cred_tags = {
+            f"type:xpnd:{expanded_type}": "1"
+            for expanded_type in types
+            if expanded_type is not None
+        }
         return VCRecord(
             contexts=contexts,
             types=types,
@@ -901,14 +903,14 @@ class DIFPresExchHandler:
         for cred_schema_id in credential.schema_ids:
             if cred_schema_id == schema_id:
                 return True
-        types = credential.cred_tags.get("expanded_type") or []
-        for cred_type in types:
-            if cred_type == schema_id:
+        expanded_schema_id = "type:xpnd:" + schema_id
+        for cred_tag in credential.cred_tags.keys():
+            if cred_tag == expanded_schema_id:
                 return True
         return False
 
     async def apply_requirements(
-        self, req: Requirement, credentials: Sequence[VCRecord], nonce: str = None
+        self, req: Requirement, credentials: Sequence[VCRecord]
     ) -> dict:
         """
         Apply Requirement.
@@ -935,7 +937,6 @@ class DIFPresExchHandler:
             filtered = await self.filter_constraints(
                 constraints=descriptor.constraint,
                 credentials=filtered_by_schema,
-                nonce=nonce,
             )
             if len(filtered) != 0:
                 result[descriptor.id] = filtered
@@ -951,7 +952,7 @@ class DIFPresExchHandler:
         # recursion logic for nested requirements
         for requirement in req.nested_req:
             # recursive call
-            result = await self.apply_requirements(requirement, credentials, nonce)
+            result = await self.apply_requirements(requirement, credentials)
             if result == {}:
                 continue
             # given_id_descriptors maps applicable credentials
@@ -1040,7 +1041,6 @@ class DIFPresExchHandler:
         pd: PresentationDefinition,
         challenge: str = None,
         domain: str = None,
-        nonce: str = None,
     ) -> dict:
         """
         Create VerifiablePresentation.
@@ -1055,9 +1055,7 @@ class DIFPresExchHandler:
         req = await self.make_requirement(
             srs=pd.submission_requirements, descriptors=pd.input_descriptors
         )
-        result = await self.apply_requirements(
-            req=req, credentials=credentials, nonce=nonce
-        )
+        result = await self.apply_requirements(req=req, credentials=credentials)
         applicable_creds, descriptor_maps = await self.merge(result)
         # convert list of verifiable credentials to list to dict
         applicable_creds_list = []
@@ -1070,14 +1068,28 @@ class DIFPresExchHandler:
         vp = await create_presentation(credentials=applicable_creds_list)
         vp["presentation_submission"] = submission_property.serialize()
         if self.check_sign_pres(applicable_creds):
-            if self.decide_signing_vp_from_creds(applicable_creds):
+            async with self.profile.session() as session:
+                wallet = session.inject(BaseWallet)
+                issue_suite = await self._get_issue_suite(
+                    wallet=wallet,
+                    issuer_id=self.get_sign_key_credential_subject_id(
+                        applicable_creds=applicable_creds
+                    ),
+                )
+                signed_vp = await sign_presentation(
+                    presentation=vp,
+                    suite=issue_suite,
+                    challenge=challenge,
+                    document_loader=document_loader,
+                )
+                return signed_vp
+        else:
+            if self.pres_signing_did:
                 async with self.profile.session() as session:
                     wallet = session.inject(BaseWallet)
                     issue_suite = await self._get_issue_suite(
                         wallet=wallet,
-                        issuer_id=self.get_sign_key_credential_subject_id(
-                            applicable_creds=applicable_creds
-                        ),
+                        issuer_id=self.pres_signing_did,
                     )
                     signed_vp = await sign_presentation(
                         presentation=vp,
@@ -1086,29 +1098,6 @@ class DIFPresExchHandler:
                         document_loader=document_loader,
                     )
                     return signed_vp
-            else:
-                return vp
-        else:
-            if self.pres_signing_did:
-                if self.decide_signing_vp_from_creds(applicable_creds):
-                    async with self.profile.session() as session:
-                        wallet = session.inject(BaseWallet)
-                        issue_suite = await self._get_issue_suite(
-                            wallet=wallet,
-                            issuer_id=self.pres_signing_did,
-                        )
-                        signed_vp = await sign_presentation(
-                            presentation=vp,
-                            suite=issue_suite,
-                            challenge=challenge,
-                            document_loader=document_loader,
-                        )
-                        return signed_vp
-                else:
-                    raise DIFPresExchError(
-                        "Applicable creds cannot contain credentialSubject.id and"
-                        " have BbsBlsSignatureProof2020 proof."
-                    )
             else:
                 return vp
 

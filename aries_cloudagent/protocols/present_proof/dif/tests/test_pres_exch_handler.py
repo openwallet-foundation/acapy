@@ -1748,26 +1748,6 @@ class TestPresExchHandler:
         )
         assert len(tmp_vp.get("verifiableCredential")) == 6
 
-    @pytest.mark.asyncio
-    @pytest.mark.ursa_bbs_signatures
-    async def test_sign_pres_no_cred_subject_id_error(self, profile, setup_tuple):
-        dif_pres_exch_handler = DIFPresExchHandler(
-            profile, pres_signing_did="did:sov:WgWxqztrNooG92RXvxSTWv"
-        )
-        cred_list, pd_list = setup_tuple
-        tmp_pd = pd_list[3]
-        tmp_creds = []
-        for cred in deepcopy(cred_list):
-            cred.subject_ids = []
-            cred.proof_types = [BbsBlsSignatureProof2020.signature_type]
-            tmp_creds.append(cred)
-        with pytest.raises(DIFPresExchError):
-            tmp_vp = await dif_pres_exch_handler.create_vp(
-                credentials=tmp_creds,
-                pd=tmp_pd[0],
-                challenge="1f44d55f-f161-4938-a659-f8026467f126",
-            )
-
     def test_get_sign_key_credential_subject_id(self, profile):
         dif_pres_exch_handler = DIFPresExchHandler(profile)
         VC_RECORDS_A = [

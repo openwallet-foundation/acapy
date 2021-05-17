@@ -874,9 +874,7 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
                 purpose=mock_get_proof_purpose.return_value,
             )
             cred_tags = {
-                "expanded_type": [
-                    "https://www.w3.org/2018/credentials#VerifiableCredential"
-                ]
+                "type:xpnd:https://www.w3.org/2018/credentials#VerifiableCredential": "1"
             }
             self.holder.store_credential.assert_called_once_with(
                 VCRecord(
