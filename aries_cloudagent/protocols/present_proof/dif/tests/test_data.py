@@ -47,7 +47,7 @@ def create_vcrecord(cred_dict: dict):
         "@type",
     )
     cred_tags = {
-        f"type:xpnd:{expanded_type}": "1"
+        f"xpnd:type:{expanded_type}": "1"
         for expanded_type in types
         if expanded_type is not None
     }

@@ -447,7 +447,7 @@ class DIFPresExchHandler:
             "@type",
         )
         cred_tags = {
-            f"type:xpnd:{expanded_type}": "1"
+            f"xpnd:type:{expanded_type}": "1"
             for expanded_type in types
             if expanded_type is not None
         }
@@ -903,7 +903,7 @@ class DIFPresExchHandler:
         for cred_schema_id in credential.schema_ids:
             if cred_schema_id == schema_id:
                 return True
-        expanded_schema_id = "type:xpnd:" + schema_id
+        expanded_schema_id = "xpnd:type:" + schema_id
         for cred_tag in credential.cred_tags.keys():
             if cred_tag == expanded_schema_id:
                 return True
