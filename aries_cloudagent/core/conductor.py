@@ -563,10 +563,11 @@ class Conductor:
         """Handle a message that failed delivery via outbound transports."""
         queued_for_inbound = self.inbound_transport_manager.return_undelivered(outbound)
 
-        if queued_for_inbound:
-            return OutboundSendStatus.WAITING_FOR_PICKUP
-        else:
-            return OutboundSendStatus.UNDELIVERABLE
+        return (
+            OutboundSendStatus.WAITING_FOR_PICKUP
+            if queued_for_inbound
+            else OutboundSendStatus.UNDELIVERABLE
+        )
 
     def webhook_router(
         self,
