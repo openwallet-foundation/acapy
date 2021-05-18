@@ -53,9 +53,6 @@ class DIDXCreateRequestImplicitQueryStringSchema(OpenAPISchema):
         description="Identifier for active mediation record to be used",
         **UUID4,
     )
-    send_request = fields.Bool(
-        description="Whether to send request for implicit invitations", default=False
-    )
 
 
 class DIDXReceiveRequestImplicitQueryStringSchema(OpenAPISchema):
@@ -160,13 +157,13 @@ async def didx_accept_invitation(request: web.BaseRequest):
 
 @docs(
     tags=["did-exchange"],
-    summary="Create request against public DID's implicit invitation",
+    summary="Create and send a request against public DID's implicit invitation",
 )
 @querystring_schema(DIDXCreateRequestImplicitQueryStringSchema())
 @response_schema(ConnRecordSchema(), 200, description="")
 async def didx_create_request_implicit(request: web.BaseRequest):
     """
-    Request handler for creating a request to an implicit invitation.
+    Request handler for creating and sending a request to an implicit invitation.
 
     Args:
         request: aiohttp request object
@@ -182,7 +179,6 @@ async def didx_create_request_implicit(request: web.BaseRequest):
     my_label = request.query.get("my_label") or None
     my_endpoint = request.query.get("my_endpoint") or None
     mediation_id = request.query.get("mediation_id") or None
-    send_request = request.query.get("send_request")
 
     didx_mgr = DIDXManager(session)
     try:
@@ -191,7 +187,6 @@ async def didx_create_request_implicit(request: web.BaseRequest):
             my_label=my_label,
             my_endpoint=my_endpoint,
             mediation_id=mediation_id,
-            send_request=send_request,
         )
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
