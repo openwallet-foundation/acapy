@@ -1,14 +1,16 @@
 """Presentation request message handler."""
 
-from .....indy.holder import IndyHolder
+from .....indy.holder import IndyHolder, IndyHolderError
 from .....indy.sdk.models.xform import indy_proof_req_preview2indy_requested_creds
+from .....ledger.error import LedgerError
 from .....messaging.base_handler import BaseHandler, HandlerException
 from .....messaging.request_context import RequestContext
 from .....messaging.responder import BaseResponder
-from .....storage.error import StorageNotFoundError
+from .....storage.error import StorageError, StorageNotFoundError
 from .....utils.tracing import trace_event, get_timer
+from .....wallet.error import WalletNotFoundError
 
-from ..manager import PresentationManager
+from ..manager import PresentationManager, PresentationManagerError
 from ..messages.presentation_proposal import PresentationProposal
 from ..messages.presentation_request import PresentationRequest
 from ..models.presentation_exchange import V10PresentationExchange
@@ -70,7 +72,7 @@ class PresentationRequestHandler(BaseHandler):
         presentation_exchange_record.presentation_request = indy_proof_request
         presentation_exchange_record = await presentation_manager.receive_request(
             presentation_exchange_record
-        )
+        )  # mgr only saves record: on exception, saving state null is hopeless
 
         r_time = trace_event(
             context.settings,
@@ -98,18 +100,33 @@ class PresentationRequestHandler(BaseHandler):
                 self._logger.warning(f"{err}")
                 return
 
-            (
-                presentation_exchange_record,
-                presentation_message,
-            ) = await presentation_manager.create_presentation(
-                presentation_exchange_record=presentation_exchange_record,
-                requested_credentials=req_creds,
-                comment="auto-presented for proof request nonce={}".format(
-                    indy_proof_request["nonce"]
-                ),
-            )
-
-            await responder.send_reply(presentation_message)
+            presentation_message = None
+            try:
+                (
+                    presentation_exchange_record,
+                    presentation_message,
+                ) = await presentation_manager.create_presentation(
+                    presentation_exchange_record=presentation_exchange_record,
+                    requested_credentials=req_creds,
+                    comment="auto-presented for proof request nonce={}".format(
+                        indy_proof_request["nonce"]
+                    ),
+                )
+                await responder.send_reply(presentation_message)
+            except (
+                IndyHolderError,
+                LedgerError,
+                PresentationManagerError,
+                WalletNotFoundError,
+            ) as err:
+                self._logger.exception(err)
+                if presentation_exchange_record:
+                    await presentation_exchange_record.save_error_state(
+                        context.session(),
+                        reason=err.message,
+                    )
+            except StorageError as err:
+                self._logger.exception(err)  # may be logging to wire, not dead disk
 
             trace_event(
                 context.settings,
