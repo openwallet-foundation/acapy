@@ -226,43 +226,14 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             mock_create_did_doc.return_value = async_mock.MagicMock(
                 serialize=async_mock.MagicMock(return_value={})
             )
-            didx_req = await self.manager.create_request_implicit(
+            conn_rec = await self.manager.create_request_implicit(
                 their_public_did=TestConfig.test_target_did,
                 my_label=None,
                 my_endpoint=None,
                 mediation_id=mediation_record._id,
             )
 
-            assert didx_req._id
-
-    async def test_create_send_request_implicit(self):
-        mediation_record = MediationRecord(
-            role=MediationRecord.ROLE_CLIENT,
-            state=MediationRecord.STATE_GRANTED,
-            connection_id=self.test_mediator_conn_id,
-            routing_keys=self.test_mediator_routing_keys,
-            endpoint=self.test_mediator_endpoint,
-        )
-        await mediation_record.save(self.session)
-
-        with async_mock.patch.object(
-            self.manager, "create_did_document", async_mock.CoroutineMock()
-        ) as mock_create_did_doc, async_mock.patch.object(
-            self.multitenant_mgr, "get_default_mediator"
-        ) as mock_get_default_mediator:
-            mock_get_default_mediator.return_value = mediation_record
-            mock_create_did_doc.return_value = async_mock.MagicMock(
-                serialize=async_mock.MagicMock(return_value={})
-            )
-            didx_req = await self.manager.create_request_implicit(
-                their_public_did=TestConfig.test_target_did,
-                my_label=None,
-                my_endpoint=None,
-                mediation_id=mediation_record._id,
-                send_request=True,
-            )
-
-            assert didx_req._id
+            assert conn_rec
 
     async def test_create_request(self):
         mock_conn_rec = async_mock.MagicMock(
