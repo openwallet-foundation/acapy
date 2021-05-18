@@ -19,7 +19,6 @@ from .....messaging.decorators.attach_decorator import AttachDecorator
 from .....multitenant.manager import MultitenantManager
 from .....storage.error import StorageNotFoundError
 from .....transport.inbound.receipt import MessageReceipt
-from .....multitenant.manager import MultitenantManager
 from .....wallet.did_info import DIDInfo
 from .....wallet.in_memory import InMemoryWallet
 from .....wallet.did_method import DIDMethod
@@ -227,14 +226,14 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             mock_create_did_doc.return_value = async_mock.MagicMock(
                 serialize=async_mock.MagicMock(return_value={})
             )
-            didx_req = await self.manager.create_request_implicit(
+            conn_rec = await self.manager.create_request_implicit(
                 their_public_did=TestConfig.test_target_did,
                 my_label=None,
                 my_endpoint=None,
                 mediation_id=mediation_record._id,
             )
 
-            assert didx_req._id
+            assert conn_rec
 
     async def test_create_request(self):
         mock_conn_rec = async_mock.MagicMock(

@@ -1,13 +1,14 @@
 """Credential issue message handler."""
 
+from .....indy.holder import IndyHolderError
 from .....messaging.base_handler import BaseHandler, HandlerException
 from .....messaging.request_context import RequestContext
 from .....messaging.responder import BaseResponder
-
-from ..manager import CredentialManager
-from ..messages.credential_issue import CredentialIssue
-
+from .....storage.error import StorageError
 from .....utils.tracing import trace_event, get_timer
+
+from ..manager import CredentialManager, CredentialManagerError
+from ..messages.credential_issue import CredentialIssue
 
 
 class CredentialIssueHandler(BaseHandler):
@@ -36,7 +37,7 @@ class CredentialIssueHandler(BaseHandler):
         credential_manager = CredentialManager(context.profile)
         cred_ex_record = await credential_manager.receive_credential(
             context.message, context.connection_record.connection_id
-        )
+        )  # mgr only finds, saves record: on exception, saving state null is hopeless
 
         r_time = trace_event(
             context.settings,
@@ -47,13 +48,17 @@ class CredentialIssueHandler(BaseHandler):
 
         # Automatically move to next state if flag is set
         if context.settings.get("debug.auto_store_credential"):
-            (
-                cred_ex_record,
-                credential_ack_message,
-            ) = await credential_manager.store_credential(cred_ex_record)
+            try:
+                cred_ex_record = await credential_manager.store_credential(
+                    cred_ex_record
+                )
+            except (CredentialManagerError, IndyHolderError, StorageError) as err:
+                # protocol finished OK: do not set cred ex record state null
+                self._logger.exception(err)
 
-            # Ack issuer that holder stored credential
-            await responder.send_reply(credential_ack_message)
+            credential_ack_message = await credential_manager.send_credential_ack(
+                cred_ex_record
+            )
 
             trace_event(
                 context.settings,

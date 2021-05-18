@@ -157,13 +157,13 @@ async def didx_accept_invitation(request: web.BaseRequest):
 
 @docs(
     tags=["did-exchange"],
-    summary="Create request against public DID's implicit invitation",
+    summary="Create and send a request against public DID's implicit invitation",
 )
 @querystring_schema(DIDXCreateRequestImplicitQueryStringSchema())
-@response_schema(DIDXRequestSchema(), 200, description="")
+@response_schema(ConnRecordSchema(), 200, description="")
 async def didx_create_request_implicit(request: web.BaseRequest):
     """
-    Request handler for creating a request to an implicit invitation.
+    Request handler for creating and sending a request to an implicit invitation.
 
     Args:
         request: aiohttp request object

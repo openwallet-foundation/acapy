@@ -1,7 +1,4 @@
-from asynctest import (
-    mock as async_mock,
-    TestCase as AsyncTestCase,
-)
+from asynctest import mock as async_mock, TestCase as AsyncTestCase
 
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
@@ -64,6 +61,40 @@ class TestV20CredOfferHandler(AsyncTestCase):
         (result, target) = messages[0]
         assert result == "cred_request_message"
         assert target == {}
+
+    async def test_called_auto_request_x(self):
+        request_context = RequestContext.test_context()
+        request_context.message_receipt = MessageReceipt()
+        request_context.settings["debug.auto_respond_credential_offer"] = True
+        request_context.connection_record = async_mock.MagicMock()
+        request_context.connection_record.my_did = "dummy"
+
+        with async_mock.patch.object(
+            test_module, "V20CredManager", autospec=True
+        ) as mock_cred_mgr:
+            mock_cred_mgr.return_value.receive_offer = async_mock.CoroutineMock(
+                return_value=async_mock.MagicMock(
+                    save_error_state=async_mock.CoroutineMock()
+                )
+            )
+            mock_cred_mgr.return_value.create_request = async_mock.CoroutineMock(
+                side_effect=[
+                    test_module.IndyHolderError(),
+                    test_module.StorageError(),
+                ]
+            )
+
+            request_context.message = V20CredOffer()
+            request_context.connection_ready = True
+            handler = test_module.V20CredOfferHandler()
+            responder = MockResponder()
+
+            with async_mock.patch.object(
+                responder, "send_reply", async_mock.CoroutineMock()
+            ) as mock_send_reply:
+                await handler.handle(request_context, responder)  # holder error
+                await handler.handle(request_context, responder)  # storage error
+                mock_send_reply.assert_not_called()
 
     async def test_called_not_ready(self):
         request_context = RequestContext.test_context()

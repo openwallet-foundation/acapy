@@ -1184,9 +1184,6 @@ class TestProofRoutes(AsyncTestCase):
             # Since we are mocking import
             importlib.reload(test_module)
 
-            mock_presentation_exchange.state = (
-                test_module.V10PresentationExchange.STATE_REQUEST_RECEIVED
-            )
             mock_presentation_exchange.retrieve_by_id = async_mock.CoroutineMock(
                 return_value=async_mock.MagicMock(
                     state=mock_presentation_exchange.STATE_REQUEST_RECEIVED,
@@ -1194,7 +1191,8 @@ class TestProofRoutes(AsyncTestCase):
                     serialize=async_mock.MagicMock(
                         return_value={"thread_id": "sample-thread-id"}
                     ),
-                )
+                    save_error_state=async_mock.CoroutineMock(),
+                ),
             )
             mock_connection_record.is_ready = True
             mock_connection_record.retrieve_by_id = async_mock.CoroutineMock(
@@ -1438,6 +1436,7 @@ class TestProofRoutes(AsyncTestCase):
                     serialize=async_mock.MagicMock(
                         return_value={"thread_id": "sample-thread-id"}
                     ),
+                    save_error_state=async_mock.CoroutineMock(),
                 )
             )
 

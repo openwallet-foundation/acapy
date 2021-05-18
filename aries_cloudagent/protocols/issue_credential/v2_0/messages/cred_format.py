@@ -1,8 +1,8 @@
 """Issue-credential protocol message attachment format."""
 
 from collections import namedtuple
-from typing import Mapping, Sequence, Type, Union
 from enum import Enum
+from typing import Mapping, Sequence, Type, TYPE_CHECKING, Union
 from uuid import uuid4
 
 from marshmallow import EXCLUDE, fields
@@ -11,9 +11,9 @@ from .....utils.classloader import DeferLoad
 from .....messaging.decorators.attach_decorator import AttachDecorator
 from .....messaging.models.base import BaseModel, BaseModelSchema
 from .....messaging.valid import UUIDFour
+
 from ..models.detail.indy import V20CredExRecordIndy
 from ..models.detail.ld_proof import V20CredExRecordLDProof
-from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from ..formats.handler import V20CredFormatHandler

@@ -18,9 +18,14 @@ from .error import (
 )
 
 
-def _canonize(data):
+def _canonize(data, document_loader=None):
     return jsonld.normalize(
-        data, {"algorithm": "URDNA2015", "format": "application/n-quads"}
+        data,
+        {
+            "algorithm": "URDNA2015",
+            "format": "application/n-quads",
+            **{opt: document_loader for opt in ["documentLoader"] if document_loader},
+        },
     )
 
 
@@ -28,18 +33,18 @@ def _sha256(data):
     return hashlib.sha256(data.encode("utf-8")).hexdigest()
 
 
-def _canonize_signature_options(signatureOptions):
+def _canonize_signature_options(signatureOptions, document_loader=None):
     _signatureOptions = {**signatureOptions, "@context": "https://w3id.org/security/v2"}
     _signatureOptions.pop("jws", None)
     _signatureOptions.pop("signatureValue", None)
     _signatureOptions.pop("proofValue", None)
-    return _canonize(_signatureOptions)
+    return _canonize(_signatureOptions, document_loader)
 
 
-def _canonize_document(doc):
+def _canonize_document(doc, document_loader=None):
     _doc = {**doc}
     _doc.pop("proof", None)
-    return _canonize(_doc)
+    return _canonize(_doc, document_loader)
 
 
 def _created_at():
@@ -82,7 +87,17 @@ def create_verify_data(data, signature_options, document_loader=None):
     if len(data) > len(framed):
         # > check indicates dropped attrs < is a different error
         # attempt to collect error report data
-        for_diff = jsonld.compact(expanded, data.get("@context"))
+        for_diff = jsonld.compact(
+            expanded,
+            data.get("@context"),
+            options={
+                **{
+                    opt: document_loader
+                    for opt in ["documentLoader"]
+                    if document_loader
+                }
+            },
+        )
         dropped = set(data.keys()) - set(for_diff.keys())
         raise DroppedAttributeError(
             f"{dropped} attributes dropped. "
@@ -98,7 +113,17 @@ def create_verify_data(data, signature_options, document_loader=None):
         data_attribute = data.get(mapping[0], {})
         frame_attribute = framed.get(mapping[1], {})
         if len(data_attribute) > len(frame_attribute):
-            for_diff = jsonld.compact(expanded, data_context)
+            for_diff = jsonld.compact(
+                expanded,
+                data_context,
+                options={
+                    **{
+                        opt: document_loader
+                        for opt in ["documentLoader"]
+                        if document_loader
+                    }
+                },
+            )
             for_diff_attribute = for_diff.get(mapping[1], {})
             dropped = set(data_attribute.keys()) - set(for_diff_attribute.keys())
             raise DroppedAttributeError(
@@ -106,9 +131,11 @@ def create_verify_data(data, signature_options, document_loader=None):
                 "Provide definitions in context to correct."
             )
 
-    canonized_signature_options = _canonize_signature_options(signature_options)
+    canonized_signature_options = _canonize_signature_options(
+        signature_options, document_loader
+    )
     hash_of_canonized_signature_options = _sha256(canonized_signature_options)
-    canonized_document = _canonize_document(framed)
+    canonized_document = _canonize_document(framed, document_loader)
     hash_of_canonized_document = _sha256(canonized_document)
 
     return (framed, hash_of_canonized_signature_options + hash_of_canonized_document)
