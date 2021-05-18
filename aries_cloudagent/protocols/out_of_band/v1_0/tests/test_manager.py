@@ -2738,7 +2738,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
     async def test_req_v2_attach_pres_catch_value_error(self):
         self.session.context.update_settings({"public_invites": True})
         self.session.context.update_settings(
-            {"debug.auto_respond_presentation_request": True}
+            {"debug.auto_respond_presentation_request": False}
         )
         test_exist_conn = ConnRecord(
             my_did=TestConfig.test_did,
@@ -2757,7 +2757,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         )
 
         px2_rec = test_module.V20PresExRecord(
-            auto_present=True,
+            auto_present=False,
             pres_request=TestConfig.PRES_REQ_V2.serialize(),
         )
 
@@ -2850,7 +2850,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 await self.manager.receive_invitation(
                     mock_oob_invi, use_existing_connection=True
                 )
-            assert "Cannot auto-respond" in str(context.exception)
+            assert "cannot respond automatically" in str(context.exception)
 
     async def test_req_attach_presentation_cred_offer(self):
         self.session.context.update_settings({"public_invites": True})

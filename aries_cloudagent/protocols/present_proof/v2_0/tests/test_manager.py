@@ -7,7 +7,7 @@ from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
 from .....core.in_memory import InMemoryProfile
-from .....indy.holder import IndyHolder, IndyHolderError
+from .....indy.holder import IndyHolder
 from .....indy.models.xform import indy_proof_req_preview2indy_requested_creds
 from .....indy.verifier import IndyVerifier
 from .....ledger.base import BaseLedger
@@ -402,7 +402,7 @@ class TestV20PresManager(AsyncTestCase):
             req_creds = await indy_proof_req_preview2indy_requested_creds(
                 INDY_PROOF_REQ_NAME, preview=None, holder=self.holder
             )
-            request_data = {"requested_credentials": req_creds}
+            request_data = {"indy": req_creds}
             assert not req_creds["self_attested_attributes"]
             assert len(req_creds["requested_attributes"]) == 2
             assert len(req_creds["requested_predicates"]) == 1
@@ -452,7 +452,7 @@ class TestV20PresManager(AsyncTestCase):
             req_creds = await indy_proof_req_preview2indy_requested_creds(
                 indy_proof_req_vcx, preview=None, holder=self.holder
             )
-            request_data = {"requested_credentials": req_creds}
+            request_data = {"indy": req_creds}
             assert not req_creds["self_attested_attributes"]
             assert len(req_creds["requested_attributes"]) == 2
             assert len(req_creds["requested_predicates"]) == 1
@@ -500,7 +500,7 @@ class TestV20PresManager(AsyncTestCase):
             req_creds = await indy_proof_req_preview2indy_requested_creds(
                 INDY_PROOF_REQ_SELFIE, preview=None, holder=self.holder
             )
-            request_data = {"requested_credentials": req_creds}
+            request_data = {"indy": req_creds}
 
             assert len(req_creds["self_attested_attributes"]) == 3
             assert not req_creds["requested_attributes"]
@@ -580,7 +580,13 @@ class TestV20PresManager(AsyncTestCase):
             req_creds = await indy_proof_req_preview2indy_requested_creds(
                 INDY_PROOF_REQ_NAME, preview=None, holder=self.holder
             )
-            request_data = {"requested_credentials": req_creds}
+            request_data = {
+                "indy": {
+                    "self_attested_attributes": req_creds["self_attested_attributes"],
+                    "requested_attributes": req_creds["requested_attributes"],
+                    "requested_predicates": req_creds["requested_predicates"],
+                }
+            }
 
             (px_rec_out, pres_msg) = await self.manager.create_pres(
                 px_rec_in, request_data
@@ -591,6 +597,13 @@ class TestV20PresManager(AsyncTestCase):
             # exercise superfluous timestamp removal
             for pred_reft_spec in req_creds["requested_predicates"].values():
                 pred_reft_spec["timestamp"] = 1234567890
+            request_data = {
+                "indy": {
+                    "self_attested_attributes": req_creds["self_attested_attributes"],
+                    "requested_attributes": req_creds["requested_attributes"],
+                    "requested_predicates": req_creds["requested_predicates"],
+                }
+            }
             await self.manager.create_pres(px_rec_in, request_data)
             mock_log_info.assert_called_once()
 
@@ -638,7 +651,9 @@ class TestV20PresManager(AsyncTestCase):
         )
         self.holder.create_presentation = async_mock.CoroutineMock(return_value="{}")
         self.holder.create_revocation_state = async_mock.CoroutineMock(
-            side_effect=IndyHolderError("Problem", {"message": "Nope"})
+            side_effect=test_indy_util_module.IndyHolderError(
+                "Problem", {"message": "Nope"}
+            )
         )
         self.profile.context.injector.bind_instance(IndyHolder, self.holder)
 
@@ -653,19 +668,16 @@ class TestV20PresManager(AsyncTestCase):
             test_indy_handler, "AttachDecorator", autospec=True
         ) as mock_attach_decorator, async_mock.patch.object(
             test_indy_util_module, "RevocationRegistry", autospec=True
-        ) as mock_rr:
+        ) as mock_rr, async_mock.patch.object(
+            test_indy_util_module.LOGGER, "error", async_mock.MagicMock()
+        ) as mock_log_error:
             mock_rr.from_definition = async_mock.MagicMock(return_value=more_magic_rr)
 
             mock_attach_decorator.data_base64 = async_mock.MagicMock(
                 return_value=mock_attach_decorator
             )
-
-            req_creds = await indy_proof_req_preview2indy_requested_creds(
-                INDY_PROOF_REQ_NAME, preview=None, holder=self.holder
-            )
-            request_data = {"requested_credentials": req_creds}
-
-            with self.assertRaises(IndyHolderError):
+            request_data = {}
+            with self.assertRaises(test_indy_util_module.IndyHolderError):
                 await self.manager.create_pres(px_rec_in, request_data)
 
     async def test_create_pres_multi_matching_proposal_creds_names(self):
@@ -759,7 +771,7 @@ class TestV20PresManager(AsyncTestCase):
             assert not req_creds["self_attested_attributes"]
             assert len(req_creds["requested_attributes"]) == 1
             assert len(req_creds["requested_predicates"]) == 1
-            request_data = {"requested_credentials": req_creds}
+            request_data = {"indy": req_creds}
             (px_rec_out, pres_msg) = await self.manager.create_pres(
                 px_rec_in, request_data
             )
@@ -802,6 +814,42 @@ class TestV20PresManager(AsyncTestCase):
             )
         )
         self.holder.get_credentials_for_presentation_request_by_referent = get_creds
+        await indy_proof_req_preview2indy_requested_creds(
+            INDY_PROOF_REQ_NAMES, preview=None, holder=self.holder
+        )
+
+    async def test_no_matching_creds_indy_handler(self):
+        pres_request = V20PresRequest(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy",
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.INDY.api
+                    ],
+                )
+            ],
+            request_presentations_attach=[
+                AttachDecorator.data_base64(INDY_PROOF_REQ_NAMES, ident="indy")
+            ],
+        )
+        px_rec_in = V20PresExRecord(pres_request=pres_request.serialize())
+        get_creds = async_mock.CoroutineMock(return_value=())
+        self.holder.get_credentials_for_presentation_request_by_referent = get_creds
+
+        with async_mock.patch.object(
+            V20PresExRecord, "save", autospec=True
+        ) as save_ex, async_mock.patch.object(
+            test_indy_handler, "AttachDecorator", autospec=True
+        ) as mock_attach_decorator:
+            mock_attach_decorator.data_base64 = async_mock.MagicMock(
+                return_value=mock_attach_decorator
+            )
+            request_data = {}
+            with self.assertRaises(test_indy_handler.V20PresFormatError) as context:
+                (px_rec_out, pres_msg) = await self.manager.create_pres(
+                    px_rec_in, request_data
+                )
+            assert "No matching Indy" in str(context.exception)
 
     async def test_receive_pres(self):
         connection_record = async_mock.MagicMock(connection_id=CONN_ID)

@@ -7,6 +7,8 @@ from ......messaging.responder import MockResponder
 from ......storage.error import StorageNotFoundError
 from ......transport.inbound.receipt import MessageReceipt
 
+from ...formats.indy import handler as test_indy_handler
+
 from ...messages.pres_format import V20PresFormat
 from ...messages.pres_proposal import V20PresProposal
 from ...messages.pres_request import V20PresRequest
@@ -283,7 +285,7 @@ class TestPresRequestHandler(AsyncTestCase):
         ) as mock_pres_mgr, async_mock.patch.object(
             test_module, "V20PresExRecord", autospec=True
         ) as mock_pres_ex_rec_cls, async_mock.patch.object(
-            test_module, "IndyHolder", autospec=True
+            test_indy_handler, "IndyHolder", autospec=True
         ) as mock_holder:
 
             mock_holder.get_credentials_for_presentation_request_by_referent = (
@@ -381,71 +383,6 @@ class TestPresRequestHandler(AsyncTestCase):
         assert result == "pres message"
         assert target == {}
 
-    async def test_called_auto_present_dif_with_nonce(self):
-        request_context = RequestContext.test_context()
-        request_context.connection_record = async_mock.MagicMock()
-        request_context.connection_record.connection_id = "dummy"
-        request_context.message = V20PresRequest(
-            formats=[
-                V20PresFormat(
-                    attach_id="dif",
-                    format_=V20PresFormat.Format.DIF.aries,
-                )
-            ]
-        )
-        dif_proof_req = deepcopy(DIF_PROOF_REQ)
-        del dif_proof_req["options"]["challenge"]
-        dif_proof_req["options"]["nonce"] = "test12345"
-        request_context.message.attachment = async_mock.MagicMock(
-            return_value=dif_proof_req
-        )
-        request_context.message_receipt = MessageReceipt()
-        pres_proposal = V20PresProposal(
-            formats=[
-                V20PresFormat(
-                    attach_id="dif",
-                    format_=V20PresFormat.Format.DIF.aries,
-                )
-            ],
-            proposals_attach=[AttachDecorator.data_json(DIF_PROP_REQ, ident="indy")],
-        )
-
-        px_rec_instance = test_module.V20PresExRecord(
-            pres_proposal=pres_proposal.serialize(),
-            auto_present=True,
-        )
-        with async_mock.patch.object(
-            test_module, "V20PresManager", autospec=True
-        ) as mock_pres_mgr, async_mock.patch.object(
-            test_module, "V20PresExRecord", autospec=True
-        ) as mock_pres_ex_rec_cls:
-
-            mock_pres_ex_rec_cls.return_value = px_rec_instance
-            mock_pres_ex_rec_cls.retrieve_by_tag_filter = async_mock.CoroutineMock(
-                return_value=px_rec_instance
-            )
-            mock_pres_mgr.return_value.receive_pres_request = async_mock.CoroutineMock(
-                return_value=px_rec_instance
-            )
-
-            mock_pres_mgr.return_value.create_pres = async_mock.CoroutineMock(
-                return_value=(px_rec_instance, "pres message")
-            )
-            request_context.connection_ready = True
-            handler_inst = test_module.V20PresRequestHandler()
-            responder = MockResponder()
-            await handler_inst.handle(request_context, responder)
-            mock_pres_mgr.return_value.create_pres.assert_called_once()
-
-        mock_pres_mgr.return_value.receive_pres_request.assert_called_once_with(
-            px_rec_instance
-        )
-        messages = responder.messages
-        assert len(messages) == 1
-        (result, target) = messages[0]
-        assert result == "pres message"
-        assert target == {}
-
     async def test_called_auto_present_no_preview(self):
         request_context = RequestContext.test_context()
         request_context.connection_record = async_mock.MagicMock()
@@ -469,7 +406,7 @@ class TestPresRequestHandler(AsyncTestCase):
         ) as mock_pres_mgr, async_mock.patch.object(
             test_module, "V20PresExRecord", autospec=True
         ) as mock_pres_ex_rec_cls, async_mock.patch.object(
-            test_module, "IndyHolder", autospec=True
+            test_indy_handler, "IndyHolder", autospec=True
         ) as mock_holder:
 
             mock_holder.get_credentials_for_presentation_request_by_referent = (
@@ -531,7 +468,7 @@ class TestPresRequestHandler(AsyncTestCase):
         ) as mock_pres_mgr, async_mock.patch.object(
             test_module, "V20PresExRecord", autospec=True
         ) as mock_pres_ex_rec_cls, async_mock.patch.object(
-            test_module, "IndyHolder", autospec=True
+            test_indy_handler, "IndyHolder", autospec=True
         ) as mock_holder:
 
             mock_holder.get_credentials_for_presentation_request_by_referent = (
@@ -548,18 +485,18 @@ class TestPresRequestHandler(AsyncTestCase):
             )
 
             mock_pres_mgr.return_value.create_pres = async_mock.CoroutineMock(
-                return_value=(px_rec_instance, "pres message")
+                side_effect=test_indy_handler.V20PresFormatError
             )
             request_context.connection_ready = True
             handler_inst = test_module.V20PresRequestHandler()
             responder = MockResponder()
-            await handler_inst.handle(request_context, responder)
-            mock_pres_mgr.return_value.create_pres.assert_not_called()
+            with self.assertRaises(test_indy_handler.V20PresFormatError):
+                await handler_inst.handle(request_context, responder)
+                mock_pres_mgr.return_value.create_pres.assert_called_once()
 
         mock_pres_mgr.return_value.receive_pres_request.assert_called_once_with(
             px_rec_instance
         )
-        assert not responder.messages
 
     async def test_called_auto_present_pred_single_match(self):
         request_context = RequestContext.test_context()
@@ -584,7 +521,7 @@ class TestPresRequestHandler(AsyncTestCase):
         ) as mock_pres_mgr, async_mock.patch.object(
             test_module, "V20PresExRecord", autospec=True
         ) as mock_pres_ex_rec_cls, async_mock.patch.object(
-            test_module, "IndyHolder", autospec=True
+            test_indy_handler, "IndyHolder", autospec=True
         ) as mock_holder:
 
             mock_holder.get_credentials_for_presentation_request_by_referent = (
@@ -643,7 +580,7 @@ class TestPresRequestHandler(AsyncTestCase):
         ) as mock_pres_mgr, async_mock.patch.object(
             test_module, "V20PresExRecord", autospec=True
         ) as mock_pres_ex_rec_cls, async_mock.patch.object(
-            test_module, "IndyHolder", autospec=True
+            test_indy_handler, "IndyHolder", autospec=True
         ) as mock_holder:
 
             mock_holder.get_credentials_for_presentation_request_by_referent = (
@@ -719,7 +656,7 @@ class TestPresRequestHandler(AsyncTestCase):
         ) as mock_pres_mgr, async_mock.patch.object(
             test_module, "V20PresExRecord", autospec=True
         ) as mock_pres_ex_rec_cls, async_mock.patch.object(
-            test_module, "IndyHolder", autospec=True
+            test_indy_handler, "IndyHolder", autospec=True
         ) as mock_holder:
 
             mock_holder.get_credentials_for_presentation_request_by_referent = (

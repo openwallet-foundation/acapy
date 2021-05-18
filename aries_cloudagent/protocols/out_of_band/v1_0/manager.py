@@ -36,8 +36,6 @@ from ...present_proof.v1_0.message_types import PRESENTATION_REQUEST
 from ...present_proof.v1_0.models.presentation_exchange import V10PresentationExchange
 from ...present_proof.v2_0.manager import V20PresManager
 from ...present_proof.v2_0.message_types import PRES_20_REQUEST
-from ...present_proof.v2_0.messages.pres_format import V20PresFormat
-from ...present_proof.v2_0.messages.pres_request import V20PresRequest
 from ...present_proof.v2_0.models.pres_exchange import V20PresExRecord
 
 from .messages.invitation import HSProto, InvitationMessage
@@ -709,68 +707,21 @@ class OutOfBandManager(BaseConnectionManager):
 
         pres_ex_record = await pres_mgr.receive_pres_request(pres_ex_record)
         if pres_ex_record.auto_present:
-            proof_request = V20PresRequest.deserialize(pres_request_msg)
-            input_formats = proof_request.formats
-            for format in input_formats:
-                pres_exch_format = V20PresFormat.Format.get(format.format)
-                if pres_exch_format is V20PresFormat.Format.INDY:
-                    try:
-                        indy_proof_request = proof_request.attachment(
-                            V20PresFormat.Format.INDY
-                        )
-                        req_creds = await indy_proof_req_preview2indy_requested_creds(
-                            indy_proof_request,
-                            preview=None,
-                            holder=self._session.inject(IndyHolder),
-                        )
-                    except ValueError as err:
-                        self._logger.warning(f"{err}")
-                        raise OutOfBandManagerError(
-                            (
-                                "Cannot auto-respond to presentation request attachment:"
-                                f" {err}"
-                            )
-                        )
-
-                    request_data = {"requested_credentials": req_creds}
-                    (pres_ex_record, pres_msg) = await pres_mgr.create_pres(
-                        pres_ex_record=pres_ex_record,
-                        request_data=request_data,
-                        comment=(
-                            "auto-presented for proof request nonce "
-                            f"{indy_proof_request['nonce']}"
-                        ),
-                    )
-                elif pres_exch_format is V20PresFormat.Format.DIF:
-                    dif_proof_request = proof_request.attachment(
-                        V20PresFormat.Format.DIF
-                    )
-                    comment = "auto-presented for proof request"
-                    if "options" in dif_proof_request:
-                        if dif_proof_request.get("options").get("challenge"):
-                            comment = (
-                                "auto-presented for proof request challenge:"
-                                f"{dif_proof_request.get('options').get('challenge')}"
-                            )
-                        elif dif_proof_request.get("options").get("nonce"):
-                            comment = (
-                                "auto-presented for proof request nonce "
-                                f"{dif_proof_request.get('options').get('nonce')}"
-                            )
-
-                    (pres_ex_record, pres_msg) = await pres_mgr.create_pres(
-                        pres_ex_record=pres_ex_record,
-                        request_data={},
-                        comment=comment,
-                    )
-                responder = self._session.inject(BaseResponder, required=False)
-                if responder:
-                    await responder.send(
-                        message=pres_msg,
-                        target_list=await self.fetch_connection_targets(
-                            connection=conn_rec
-                        ),
-                    )
+            (pres_ex_record, pres_msg) = await pres_mgr.create_pres(
+                pres_ex_record=pres_ex_record,
+                comment=(
+                    f"auto-presented for proof requests"
+                    f", pres_ex_record: {pres_ex_record.pres_ex_id}"
+                ),
+            )
+            responder = self._session.inject(BaseResponder, required=False)
+            if responder:
+                await responder.send(
+                    message=pres_msg,
+                    target_list=await self.fetch_connection_targets(
+                        connection=conn_rec
+                    ),
+                )
         else:
             raise OutOfBandManagerError(
                 (

@@ -6,9 +6,11 @@ import logging
 from marshmallow import RAISE
 from typing import Mapping, Tuple
 
+from ......indy.holder import IndyHolder
 from ......indy.models.predicate import Predicate
 from ......indy.models.proof import IndyProofSchema
 from ......indy.models.proof_request import IndyProofRequestSchema
+from ......indy.models.xform import indy_proof_req_preview2indy_requested_creds
 from ......indy.util import generate_pr_nonce
 from ......indy.verifier import IndyVerifier
 from ......messaging.decorators.attach_decorator import AttachDecorator
@@ -124,10 +126,34 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
     async def create_pres(
         self,
         pres_ex_record: V20PresExRecord,
-        request_data: dict = None,
+        request_data: dict = {},
     ) -> Tuple[V20PresFormat, AttachDecorator]:
         """Create a presentation."""
-        requested_credentials = request_data.get("requested_credentials") or {}
+        requested_credentials = {}
+        if request_data == {}:
+            try:
+                proof_request = V20PresRequest.deserialize(pres_ex_record.pres_request)
+                indy_proof_request = proof_request.attachment(
+                    IndyPresExchangeHandler.format
+                )
+                requested_credentials = (
+                    await indy_proof_req_preview2indy_requested_creds(
+                        indy_proof_request,
+                        preview=None,
+                        holder=self._profile.inject(IndyHolder),
+                    )
+                )
+            except ValueError as err:
+                LOGGER.warning(f"{err}")
+                raise V20PresFormatError(f"No matching Indy credentials found: {err}")
+        else:
+            if IndyPresExchangeHandler.format.api in request_data:
+                indy_spec = request_data.get(IndyPresExchangeHandler.format.api)
+                requested_credentials = {
+                    "self_attested_attributes": indy_spec["self_attested_attributes"],
+                    "requested_attributes": indy_spec["requested_attributes"],
+                    "requested_predicates": indy_spec["requested_predicates"],
+                }
         indy_handler = IndyPresExchHandler(self._profile)
         indy_proof = await indy_handler.return_presentation(
             pres_ex_record=pres_ex_record,

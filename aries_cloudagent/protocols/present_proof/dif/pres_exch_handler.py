@@ -15,7 +15,7 @@ from dateutil.parser import parse as dateutil_parser
 from jsonpath_ng import parse
 from pyld import jsonld
 from pyld.jsonld import JsonLdProcessor
-from typing import Sequence, Optional
+from typing import Sequence, Optional, Tuple
 from unflatten import unflatten
 from uuid import uuid4
 
@@ -178,10 +178,10 @@ class DIFPresExchHandler:
             # All other methods we can just query
             return await wallet.get_local_did(did)
 
-    def get_sign_key_credential_subject_id(
+    def get_derive_key_credential_subject_id(
         self, applicable_creds: Sequence[VCRecord]
     ) -> Optional[str]:
-        """Get the did as string for specified did_info."""
+        """Get the issuer_id for derive suite from enclosed credentials subject_ids."""
         issuer_id = None
         for cred in applicable_creds:
             if len(cred.subject_ids) > 0:
@@ -195,10 +195,39 @@ class DIFPresExchHandler:
                         )
         return issuer_id
 
+    async def get_sign_key_credential_subject_id(
+        self, applicable_creds: Sequence[VCRecord]
+    ) -> Tuple[Optional[str], Sequence[dict]]:
+        """Get the issuer_id and filtered_creds from enclosed credentials subject_ids."""
+        issuer_id = None
+        filtered_creds_list = []
+        if self.proof_type == BbsBlsSignature2020.signature_type:
+            reqd_key_type = KeyType.BLS12381G2
+        else:
+            reqd_key_type = KeyType.ED25519
+        for cred in applicable_creds:
+            if len(cred.subject_ids) > 0:
+                if not issuer_id:
+                    for cred_subject_id in cred.subject_ids:
+                        did_info = await self._did_info_for_did(cred_subject_id)
+                        if did_info.key_type == reqd_key_type:
+                            issuer_id = cred_subject_id
+                            filtered_creds_list.append(cred.cred_value)
+                            break
+                else:
+                    if issuer_id in cred.subject_ids:
+                        filtered_creds_list.append(cred.cred_value)
+                    else:
+                        raise DIFPresExchError(
+                            "Applicable credentials have different credentialSubject.id, "
+                            "multiple proofs are not supported currently"
+                        )
+        return (issuer_id, filtered_creds_list)
+
     # def decide_signing_vp_from_creds(
     #     self, applicable_creds: Sequence[VCRecord]
     # ) -> bool:
-    #     """Get the did as string for specified did_info."""
+    #     """Whether to sign VP."""
     #     for cred in applicable_creds:
     #         cred_proofs = cred.proof_types
     #         for proof_type in cred_proofs:
@@ -384,7 +413,7 @@ class DIFPresExchHandler:
                 new_credential_dict = self.reveal_doc(
                     credential_dict=credential_dict, constraints=constraints
                 )
-                derive_key = self.get_sign_key_credential_subject_id([credential])
+                derive_key = self.get_derive_key_credential_subject_id([credential])
                 if not derive_key:
                     raise DIFPresExchError(
                         "Applicable credential to derive"
@@ -1057,7 +1086,6 @@ class DIFPresExchHandler:
         )
         result = await self.apply_requirements(req=req, credentials=credentials)
         applicable_creds, descriptor_maps = await self.merge(result)
-        # convert list of verifiable credentials to list to dict
         applicable_creds_list = []
         for credential in applicable_creds:
             applicable_creds_list.append(credential.cred_value)
@@ -1065,16 +1093,25 @@ class DIFPresExchHandler:
         submission_property = PresentationSubmission(
             id=str(uuid4()), definition_id=pd.id, descriptor_maps=descriptor_maps
         )
-        vp = await create_presentation(credentials=applicable_creds_list)
-        vp["presentation_submission"] = submission_property.serialize()
         if self.check_sign_pres(applicable_creds):
+            (
+                issuer_id,
+                filtered_creds_list,
+            ) = await self.get_sign_key_credential_subject_id(
+                applicable_creds=applicable_creds
+            )
+            if not issuer_id and len(filtered_creds_list) == 0:
+                vp = await create_presentation(credentials=applicable_creds_list)
+                vp["presentation_submission"] = submission_property.serialize()
+                return vp
+            else:
+                vp = await create_presentation(credentials=filtered_creds_list)
+                vp["presentation_submission"] = submission_property.serialize()
             async with self.profile.session() as session:
                 wallet = session.inject(BaseWallet)
                 issue_suite = await self._get_issue_suite(
                     wallet=wallet,
-                    issuer_id=self.get_sign_key_credential_subject_id(
-                        applicable_creds=applicable_creds
-                    ),
+                    issuer_id=issuer_id,
                 )
                 signed_vp = await sign_presentation(
                     presentation=vp,
@@ -1084,6 +1121,8 @@ class DIFPresExchHandler:
                 )
                 return signed_vp
         else:
+            vp = await create_presentation(credentials=applicable_creds_list)
+            vp["presentation_submission"] = submission_property.serialize()
             if self.pres_signing_did:
                 async with self.profile.session() as session:
                     wallet = session.inject(BaseWallet)

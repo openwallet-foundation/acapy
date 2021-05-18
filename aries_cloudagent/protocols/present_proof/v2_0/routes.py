@@ -854,6 +854,7 @@ async def present_proof_send_presentation(request: web.BaseRequest):
     pres_ex_id = request.match_info["pres_ex_id"]
     body = await request.json()
     fmt = V20PresFormat.Format.get([f for f in body][0]).api  # "indy" xor "dif"
+    comment = body.get("comment")
     pres_ex_record = None
     async with context.session() as session:
         try:
@@ -882,64 +883,28 @@ async def present_proof_send_presentation(request: web.BaseRequest):
         raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
 
     pres_manager = V20PresManager(context.profile)
-
-    if fmt == V20PresFormat.Format.INDY.api:
-        try:
-            indy_spec = body.get(V20PresFormat.Format.INDY.api)
-            request_data = {
-                "requested_credentials": {
-                    "self_attested_attributes": indy_spec["self_attested_attributes"],
-                    "requested_attributes": indy_spec["requested_attributes"],
-                    "requested_predicates": indy_spec["requested_predicates"],
-                }
-            }
-            pres_ex_record, pres_message = await pres_manager.create_pres(
-                pres_ex_record,
-                request_data=request_data,
-                comment=body.get("comment"),
-            )
-            result = pres_ex_record.serialize()
-        except (
-            BaseModelError,
-            IndyHolderError,
-            LedgerError,
-            StorageError,
-            WalletNotFoundError,
-        ) as err:
-            return await internal_error(
-                err,
-                web.HTTPBadRequest,
-                pres_ex_record or conn_record,
-                outbound_handler,
-            )
-    elif fmt == V20PresFormat.Format.DIF.api:
-        try:
-            dif_spec = body.get(V20PresFormat.Format.DIF.api)
-            request_data = {}
-            if "presentation_definition" in dif_spec:
-                request_data["presentation_definition"] = dif_spec.get(
-                    "presentation_definition"
-                )
-            if "issuer_id" in dif_spec:
-                request_data["issuer_id"] = dif_spec.get("issuer_id")
-            pres_ex_record, pres_message = await pres_manager.create_pres(
-                pres_ex_record,
-                request_data=request_data,
-                comment=body.get("comment"),
-            )
-            result = pres_ex_record.serialize()
-        except (
-            BaseModelError,
-            LedgerError,
-            V20PresFormatError,
-            WalletNotFoundError,
-        ) as err:
-            return await internal_error(
-                err,
-                web.HTTPBadRequest,
-                pres_ex_record or conn_record,
-                outbound_handler,
-            )
+    try:
+        request_data = {fmt: body.get(fmt)}
+        pres_ex_record, pres_message = await pres_manager.create_pres(
+            pres_ex_record,
+            request_data=request_data,
+            comment=comment,
+        )
+        result = pres_ex_record.serialize()
+    except (
+        BaseModelError,
+        IndyHolderError,
+        LedgerError,
+        StorageError,
+        V20PresFormatError,
+        WalletNotFoundError,
+    ) as err:
+        return await internal_error(
+            err,
+            web.HTTPBadRequest,
+            pres_ex_record or conn_record,
+            outbound_handler,
+        )
     trace_msg = body.get("trace")
     pres_message.assign_trace_decorator(
         context.settings,

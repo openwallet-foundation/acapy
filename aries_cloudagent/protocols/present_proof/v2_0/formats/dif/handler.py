@@ -167,8 +167,9 @@ class DIFPresFormatHandler(V20PresFormatHandler):
 
         challenge = None
         domain = None
-        if request_data != {}:
-            pres_spec_payload = DIFPresSpecSchema().load(request_data)
+        if request_data != {} and DIFPresFormatHandler.format.api in request_data:
+            dif_spec = request_data.get(DIFPresFormatHandler.format.api)
+            pres_spec_payload = DIFPresSpecSchema().load(dif_spec)
             # Overriding with prover provided pres_spec
             pres_definition = pres_spec_payload.get("presentation_definition")
             issuer_id = pres_spec_payload.get("issuer_id")

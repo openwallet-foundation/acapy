@@ -1,7 +1,5 @@
 """Presentation request message handler."""
 
-from .....indy.holder import IndyHolder
-from .....indy.models.xform import indy_proof_req_preview2indy_requested_creds
 from .....messaging.base_handler import BaseHandler, HandlerException
 from .....messaging.request_context import RequestContext
 from .....messaging.responder import BaseResponder
@@ -9,7 +7,6 @@ from .....storage.error import StorageNotFoundError
 from .....utils.tracing import trace_event, get_timer
 
 from ..manager import V20PresManager
-from ..messages.pres_format import V20PresFormat
 from ..messages.pres_request import V20PresRequest
 from ..models.pres_exchange import V20PresExRecord
 
@@ -75,58 +72,17 @@ class V20PresRequestHandler(BaseHandler):
 
         # If auto_present is enabled, respond immediately with presentation
         if pres_ex_record.auto_present:
-            proof_request = context.message
-            input_formats = proof_request.formats
-            for format in input_formats:
-                pres_exch_format = V20PresFormat.Format.get(format.format)
-                if pres_exch_format is V20PresFormat.Format.INDY:
-                    try:
-                        indy_proof_request = proof_request.attachment(
-                            V20PresFormat.Format.INDY
-                        )
-                        req_creds = await indy_proof_req_preview2indy_requested_creds(
-                            indy_proof_request,
-                            preview=None,
-                            holder=context.inject(IndyHolder),
-                        )
-                    except ValueError as err:
-                        self._logger.warning(f"{err}")
-                        return
-
-                    request_data = {"requested_credentials": req_creds}
-                    (pres_ex_record, pres_message) = await pres_manager.create_pres(
-                        pres_ex_record=pres_ex_record,
-                        request_data=request_data,
-                        comment=(
-                            "auto-presented for proof request nonce "
-                            f"{indy_proof_request['nonce']}"
-                        ),
-                    )
-                elif pres_exch_format is V20PresFormat.Format.DIF:
-                    dif_proof_request = proof_request.attachment(
-                        V20PresFormat.Format.DIF
-                    )
-                    comment = "auto-presented for proof request"
-                    if "options" in dif_proof_request:
-                        if dif_proof_request.get("options").get("challenge"):
-                            comment = (
-                                "auto-presented for proof request challenge:"
-                                f"{dif_proof_request.get('options').get('challenge')}"
-                            )
-                        elif dif_proof_request.get("options").get("nonce"):
-                            comment = (
-                                "auto-presented for proof request nonce "
-                                f"{dif_proof_request.get('options').get('nonce')}"
-                            )
-                    (pres_ex_record, pres_message) = await pres_manager.create_pres(
-                        pres_ex_record=pres_ex_record,
-                        request_data={},
-                        comment=comment,
-                    )
-                await responder.send_reply(pres_message)
-                trace_event(
-                    context.settings,
-                    pres_message,
-                    outcome="V20PresRequestHandler.handle.PRESENT",
-                    perf_counter=r_time,
-                )
+            (pres_ex_record, pres_message) = await pres_manager.create_pres(
+                pres_ex_record=pres_ex_record,
+                comment=(
+                    f"auto-presented for proof requests"
+                    f", pres_ex_record: {pres_ex_record.pres_ex_id}"
+                ),
+            )
+            await responder.send_reply(pres_message)
+            trace_event(
+                context.settings,
+                pres_message,
+                outcome="V20PresRequestHandler.handle.PRESENT",
+                perf_counter=r_time,
+            )

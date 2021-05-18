@@ -9,7 +9,7 @@ from .....did.did_key import DIDKey
 from .....resolver.did_resolver_registry import DIDResolverRegistry
 from .....resolver.did_resolver import DIDResolver
 from .....storage.vc_holder.vc_record import VCRecord
-from .....wallet.base import BaseWallet
+from .....wallet.base import BaseWallet, DIDInfo
 from .....wallet.crypto import KeyType
 from .....wallet.did_method import DIDMethod
 from .....wallet.error import WalletNotFoundError
@@ -24,6 +24,7 @@ from .....vc.tests.data import (
     BBS_NESTED_VC_REVEAL_DOCUMENT_MATTR,
 )
 
+from .. import pres_exch_handler as test_module
 from ..pres_exch import (
     PresentationDefinition,
     Requirement,
@@ -1748,7 +1749,7 @@ class TestPresExchHandler:
         )
         assert len(tmp_vp.get("verifiableCredential")) == 6
 
-    def test_get_sign_key_credential_subject_id(self, profile):
+    def test_get_derive_key_credential_subject_id(self, profile):
         dif_pres_exch_handler = DIFPresExchHandler(profile)
         VC_RECORDS_A = [
             VCRecord(
@@ -1787,7 +1788,7 @@ class TestPresExchHandler:
             ),
         ]
         with pytest.raises(DIFPresExchError):
-            dif_pres_exch_handler.get_sign_key_credential_subject_id(VC_RECORDS_A)
+            dif_pres_exch_handler.get_derive_key_credential_subject_id(VC_RECORDS_A)
 
         VC_RECORDS_B = [
             VCRecord(
@@ -1828,7 +1829,7 @@ class TestPresExchHandler:
                 cred_tags={"some": "tag"},
             ),
         ]
-        dif_pres_exch_handler.get_sign_key_credential_subject_id(VC_RECORDS_B)
+        dif_pres_exch_handler.get_derive_key_credential_subject_id(VC_RECORDS_B)
 
     @pytest.mark.asyncio
     async def test_filter_constraint_no_derive_key(self, profile):
@@ -1882,3 +1883,293 @@ class TestPresExchHandler:
         test_did_key = "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
         with pytest.raises(WalletNotFoundError):
             await dif_pres_exch_handler._did_info_for_did(test_did_key)
+
+    @pytest.mark.asyncio
+    async def test_get_sign_key_credential_subject_id(self, profile):
+        dif_pres_exch_handler = DIFPresExchHandler(profile)
+
+        VC_RECORDS = [
+            VCRecord(
+                contexts=[
+                    "https://www.w3.org/2018/credentials/v1",
+                    "https://www.w3.org/2018/credentials/v1/examples",
+                ],
+                types=[
+                    "VerifiableCredential",
+                    "AlumniCredential",
+                ],
+                issuer_id="https://example.edu/issuers/565049",
+                subject_ids=["did:sov:LjgpST2rjsoxYegQDRm7EL"],
+                proof_types=["Ed25519Signature2018"],
+                schema_ids=["https://example.org/examples/degree.json"],
+                cred_value={"...": "..."},
+                given_id="http://example.edu/credentials/3732",
+                cred_tags={"some": "tag"},
+            ),
+            VCRecord(
+                contexts=[
+                    "https://www.w3.org/2018/credentials/v1",
+                    "https://www.w3.org/2018/credentials/v1/examples",
+                ],
+                types=[
+                    "VerifiableCredential",
+                    "AlumniCredential",
+                ],
+                issuer_id="https://example.edu/issuers/565049",
+                subject_ids=[
+                    "did:example:ebfeb1f712ebc6f1c276e12ec31",
+                    "did:sov:LjgpST2rjsoxYegQDRm7EL",
+                ],
+                proof_types=["Ed25519Signature2018"],
+                schema_ids=["https://example.org/examples/degree.json"],
+                cred_value={"...": "..."},
+                given_id="http://example.edu/credentials/3732",
+                cred_tags={"some": "tag"},
+            ),
+        ]
+        with async_mock.patch.object(
+            DIFPresExchHandler,
+            "_did_info_for_did",
+            async_mock.CoroutineMock(),
+        ) as mock_did_info:
+            did_info = DIDInfo(
+                did="did:sov:LjgpST2rjsoxYegQDRm7EL",
+                verkey="verkey",
+                metadata={},
+                method=DIDMethod.SOV,
+                key_type=KeyType.ED25519,
+            )
+            mock_did_info.return_value = did_info
+            (
+                issuer_id,
+                filtered_creds,
+            ) = await dif_pres_exch_handler.get_sign_key_credential_subject_id(
+                VC_RECORDS
+            )
+            assert issuer_id == "did:sov:LjgpST2rjsoxYegQDRm7EL"
+            assert len(filtered_creds) == 2
+
+    @pytest.mark.asyncio
+    async def test_get_sign_key_credential_subject_id_error(self, profile):
+        dif_pres_exch_handler = DIFPresExchHandler(profile)
+
+        VC_RECORDS = [
+            VCRecord(
+                contexts=[
+                    "https://www.w3.org/2018/credentials/v1",
+                    "https://www.w3.org/2018/credentials/v1/examples",
+                ],
+                types=[
+                    "VerifiableCredential",
+                    "AlumniCredential",
+                ],
+                issuer_id="https://example.edu/issuers/565049",
+                subject_ids=["did:sov:LjgpST2rjsoxYegQDRm7EL"],
+                proof_types=["Ed25519Signature2018"],
+                schema_ids=["https://example.org/examples/degree.json"],
+                cred_value={"...": "..."},
+                given_id="http://example.edu/credentials/3732",
+                cred_tags={"some": "tag"},
+            ),
+            VCRecord(
+                contexts=[
+                    "https://www.w3.org/2018/credentials/v1",
+                    "https://www.w3.org/2018/credentials/v1/examples",
+                ],
+                types=[
+                    "VerifiableCredential",
+                    "AlumniCredential",
+                ],
+                issuer_id="https://example.edu/issuers/565049",
+                subject_ids=[
+                    "did:example:ebfeb1f712ebc6f1c276e12ec31",
+                    "did:example:ebfeb1f712ebc6f1c276e12ec21",
+                ],
+                proof_types=["Ed25519Signature2018"],
+                schema_ids=["https://example.org/examples/degree.json"],
+                cred_value={"...": "..."},
+                given_id="http://example.edu/credentials/3732",
+                cred_tags={"some": "tag"},
+            ),
+        ]
+        with async_mock.patch.object(
+            DIFPresExchHandler,
+            "_did_info_for_did",
+            async_mock.CoroutineMock(),
+        ) as mock_did_info:
+            did_info = DIDInfo(
+                did="did:sov:LjgpST2rjsoxYegQDRm7EL",
+                verkey="verkey",
+                metadata={},
+                method=DIDMethod.SOV,
+                key_type=KeyType.ED25519,
+            )
+            mock_did_info.return_value = did_info
+            with pytest.raises(DIFPresExchError):
+                (
+                    issuer_id,
+                    filtered_creds,
+                ) = await dif_pres_exch_handler.get_sign_key_credential_subject_id(
+                    VC_RECORDS
+                )
+
+    @pytest.mark.asyncio
+    async def test_get_sign_key_credential_subject_id_bbsbls(self, profile):
+        dif_pres_exch_handler = DIFPresExchHandler(
+            profile, proof_type="BbsBlsSignature2020"
+        )
+
+        VC_RECORDS = [
+            VCRecord(
+                contexts=[
+                    "https://www.w3.org/2018/credentials/v1",
+                    "https://www.w3.org/2018/credentials/v1/examples",
+                ],
+                types=[
+                    "VerifiableCredential",
+                    "AlumniCredential",
+                ],
+                issuer_id="https://example.edu/issuers/565049",
+                subject_ids=[
+                    "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
+                ],
+                proof_types=["BbsBlsSignature2020"],
+                schema_ids=["https://example.org/examples/degree.json"],
+                cred_value={"...": "..."},
+                given_id="http://example.edu/credentials/3732",
+                cred_tags={"some": "tag"},
+            ),
+            VCRecord(
+                contexts=[
+                    "https://www.w3.org/2018/credentials/v1",
+                    "https://www.w3.org/2018/credentials/v1/examples",
+                ],
+                types=[
+                    "VerifiableCredential",
+                    "AlumniCredential",
+                ],
+                issuer_id="https://example.edu/issuers/565049",
+                subject_ids=[
+                    "did:sov:LjgpST2rjsoxYegQDRm7EL",
+                    "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
+                ],
+                proof_types=["BbsBlsSignature2020"],
+                schema_ids=["https://example.org/examples/degree.json"],
+                cred_value={"...": "..."},
+                given_id="http://example.edu/credentials/3732",
+                cred_tags={"some": "tag"},
+            ),
+        ]
+        with async_mock.patch.object(
+            DIFPresExchHandler,
+            "_did_info_for_did",
+            async_mock.CoroutineMock(),
+        ) as mock_did_info:
+            did_info = DIDInfo(
+                did="did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
+                verkey="verkey",
+                metadata={},
+                method=DIDMethod.KEY,
+                key_type=KeyType.BLS12381G2,
+            )
+            mock_did_info.return_value = did_info
+            (
+                issuer_id,
+                filtered_creds,
+            ) = await dif_pres_exch_handler.get_sign_key_credential_subject_id(
+                VC_RECORDS
+            )
+            assert (
+                issuer_id == "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
+            )
+            assert len(filtered_creds) == 2
+
+    @pytest.mark.asyncio
+    async def test_create_vp_no_issuer(self, profile, setup_tuple):
+        dif_pres_exch_handler = DIFPresExchHandler(profile)
+        cred_list, pd_list = setup_tuple
+        VC_RECORDS = [
+            VCRecord(
+                contexts=[
+                    "https://www.w3.org/2018/credentials/v1",
+                    "https://www.w3.org/2018/credentials/v1/examples",
+                ],
+                types=[
+                    "VerifiableCredential",
+                    "AlumniCredential",
+                ],
+                issuer_id="https://example.edu/issuers/565049",
+                subject_ids=[
+                    "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
+                ],
+                proof_types=["BbsBlsSignature2020"],
+                schema_ids=["https://example.org/examples/degree.json"],
+                cred_value={"...": "..."},
+                given_id="http://example.edu/credentials/3732",
+                cred_tags={"some": "tag"},
+            ),
+            VCRecord(
+                contexts=[
+                    "https://www.w3.org/2018/credentials/v1",
+                    "https://www.w3.org/2018/credentials/v1/examples",
+                ],
+                types=[
+                    "VerifiableCredential",
+                    "AlumniCredential",
+                ],
+                issuer_id="https://example.edu/issuers/565049",
+                subject_ids=[
+                    "did:sov:LjgpST2rjsoxYegQDRm7EL",
+                    "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
+                ],
+                proof_types=["BbsBlsSignature2020"],
+                schema_ids=["https://example.org/examples/degree.json"],
+                cred_value={"...": "..."},
+                given_id="http://example.edu/credentials/3732",
+                cred_tags={"some": "tag"},
+            ),
+        ]
+        with async_mock.patch.object(
+            DIFPresExchHandler,
+            "_did_info_for_did",
+            async_mock.CoroutineMock(),
+        ) as mock_did_info, async_mock.patch.object(
+            DIFPresExchHandler,
+            "make_requirement",
+            async_mock.CoroutineMock(),
+        ) as mock_make_req, async_mock.patch.object(
+            DIFPresExchHandler,
+            "apply_requirements",
+            async_mock.CoroutineMock(),
+        ) as mock_apply_req, async_mock.patch.object(
+            DIFPresExchHandler,
+            "merge",
+            async_mock.CoroutineMock(),
+        ) as mock_merge, async_mock.patch.object(
+            DIFPresExchHandler,
+            "check_sign_pres",
+            async_mock.CoroutineMock(),
+        ) as mock_check_sign_pres, async_mock.patch.object(
+            test_module,
+            "create_presentation",
+            async_mock.CoroutineMock(),
+        ) as mock_create_vp:
+            mock_make_req.return_value = async_mock.MagicMock()
+            mock_apply_req.return_value = async_mock.MagicMock()
+            mock_merge.return_value = (VC_RECORDS, {})
+            mock_check_sign_pres.return_value = True
+            mock_create_vp.return_value = {"test": "1"}
+            did_info = DIDInfo(
+                did="did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
+                verkey="verkey",
+                metadata={},
+                method=DIDMethod.KEY,
+                key_type=KeyType.BLS12381G2,
+            )
+            mock_did_info.return_value = did_info
+            vp = await dif_pres_exch_handler.create_vp(VC_RECORDS, pd=pd_list[0][0])
+            assert vp["test"] == "1"
+            assert (
+                vp["presentation_submission"]["definition_id"]
+                == "32f54163-7166-48f1-93d8-ff217bdb0653"
+            )
