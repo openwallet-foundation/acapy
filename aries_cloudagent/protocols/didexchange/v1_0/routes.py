@@ -163,7 +163,7 @@ async def didx_accept_invitation(request: web.BaseRequest):
     summary="Create request against public DID's implicit invitation",
 )
 @querystring_schema(DIDXCreateRequestImplicitQueryStringSchema())
-@response_schema(DIDXRequestSchema(), 200, description="")
+@response_schema(ConnRecordSchema(), 200, description="")
 async def didx_create_request_implicit(request: web.BaseRequest):
     """
     Request handler for creating a request to an implicit invitation.

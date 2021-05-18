@@ -226,14 +226,14 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             mock_create_did_doc.return_value = async_mock.MagicMock(
                 serialize=async_mock.MagicMock(return_value={})
             )
-            didx_req = await self.manager.create_request_implicit(
+            conn_rec = await self.manager.create_request_implicit(
                 their_public_did=TestConfig.test_target_did,
                 my_label=None,
                 my_endpoint=None,
                 mediation_id=mediation_record._id,
             )
 
-            assert didx_req._id
+            assert conn_rec
 
     async def test_create_send_request_implicit(self):
         mediation_record = MediationRecord(
@@ -254,7 +254,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             mock_create_did_doc.return_value = async_mock.MagicMock(
                 serialize=async_mock.MagicMock(return_value={})
             )
-            didx_req = await self.manager.create_request_implicit(
+            conn_rec = await self.manager.create_request_implicit(
                 their_public_did=TestConfig.test_target_did,
                 my_label=None,
                 my_endpoint=None,
@@ -262,7 +262,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 send_request=True,
             )
 
-            assert didx_req._id
+            assert conn_rec
 
     async def test_create_request(self):
         mock_conn_rec = async_mock.MagicMock(

@@ -163,7 +163,7 @@ class DIDXManager(BaseConnectionManager):
         my_endpoint: str = None,
         mediation_id: str = None,
         send_request: bool = False,
-    ) -> DIDXRequest:
+    ) -> ConnRecord:
         """
         Create a request against a public DID only (no explicit invitation).
 
@@ -203,7 +203,7 @@ class DIDXManager(BaseConnectionManager):
             if responder:
                 await responder.send(request, connection_id=conn_rec.connection_id)
 
-        return request
+        return conn_rec
 
     async def create_request(
         self,
