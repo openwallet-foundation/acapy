@@ -238,6 +238,11 @@ class ReceiveInvitationQueryStringSchema(OpenAPISchema):
         required=False,
         example="Barry",
     )
+    tags = fields.Str(
+        description="Tags",
+        required=False,
+        example="tag1,tag2",
+    )
 
     auto_accept = fields.Boolean(
         description="Auto-accept connection (defaults to configuration)",
@@ -584,8 +589,17 @@ async def connections_receive_invitation(request: web.BaseRequest):
         auto_accept = json.loads(request.query.get("auto_accept", "null"))
         alias = request.query.get("alias")
         mediation_id = request.query.get("mediation_id")
+        tags = request.query.get("tags")
+        metadata = None
+        if tags:
+            metadata = {"tags": tags.split(",")}
+
         connection = await connection_mgr.receive_invitation(
-            invitation, auto_accept=auto_accept, alias=alias, mediation_id=mediation_id
+            invitation,
+            auto_accept=auto_accept,
+            alias=alias,
+            mediation_id=mediation_id,
+            metadata=metadata,
         )
         result = connection.serialize()
     except (ConnectionManagerError, StorageError, BaseModelError) as err:
