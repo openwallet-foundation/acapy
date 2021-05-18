@@ -2595,6 +2595,45 @@ class TestConnectionManager(AsyncTestCase):
         assert target.routing_keys == []
         assert target.sender_key == local_did.verkey
 
+    async def test_fetch_connection_targets_conn_no_invi_with_their_did(self):
+        local_did = await self.session.wallet.create_local_did(
+            method=DIDMethod.SOV,
+            key_type=KeyType.ED25519,
+            seed=self.test_seed,
+            did=self.test_did,
+            metadata=None,
+        )
+
+        self.manager.resolve_invitation = async_mock.CoroutineMock()
+        self.manager.resolve_invitation.return_value = (
+            self.test_endpoint,
+            [self.test_verkey],
+            [],
+        )
+
+        did_doc = self.make_did_doc(did=self.test_did, verkey=self.test_verkey)
+        await self.manager.store_did_document(did_doc)
+
+        mock_conn = async_mock.MagicMock(
+            my_did=self.test_did,
+            their_did=self.test_did,
+            their_label="label",
+            their_role=ConnRecord.Role.RESPONDER.rfc23,
+            state=ConnRecord.State.REQUEST.rfc23,
+            invitation_key=None,
+            invitation_msg_id=None,
+        )
+
+        targets = await self.manager.fetch_connection_targets(mock_conn)
+        assert len(targets) == 1
+        target = targets[0]
+        assert target.did == mock_conn.their_did
+        assert target.endpoint == self.test_endpoint
+        assert target.label is None
+        assert target.recipient_keys == [self.test_verkey]
+        assert target.routing_keys == []
+        assert target.sender_key == local_did.verkey
+
     async def test_diddoc_connection_targets_diddoc_underspecified(self):
         with self.assertRaises(BaseConnectionManagerError):
             self.manager.diddoc_connection_targets(None, self.test_verkey)

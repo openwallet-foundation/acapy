@@ -99,7 +99,8 @@ class IndyProofReqAttrSpecSchema(OpenAPISchema):
                     strict=True,
                     **INT_EPOCH,
                 ),
-            }
+            },
+            name="IndyProofReqAttrSpecNonRevokedSchema",
         ),
         allow_none=True,  # accommodate libvcx
         required=False,
@@ -161,7 +162,8 @@ class IndyProofReqPredSpecSchema(OpenAPISchema):
                     strict=True,
                     **INT_EPOCH,
                 ),
-            }
+            },
+            name="IndyProofReqPredSpecNonRevokedSchema",
         ),
         allow_none=True,  # accommodate libvcx
         required=False,
@@ -256,7 +258,8 @@ class IndyProofRequestSchema(BaseModelSchema):
                     strict=True,
                     **INT_EPOCH,
                 ),
-            }
+            },
+            name="IndyProofRequestNonRevokedSchema",
         ),
         allow_none=True,  # accommodate libvcx
         required=False,
