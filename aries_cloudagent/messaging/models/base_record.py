@@ -439,11 +439,11 @@ class BaseRecord(BaseModel):
         log_override: bool = False,
     ):
         """
-        Save record state null if need be; log and swallow any storage error.
+        Save record error state if need be; log and swallow any storage error.
 
         Args:
             session: The profile session to use
-            state: The state to save if need be
+            state: The state to save if need be (typically None but by protocol)
             reason: A reason to add to the log
             log_params: Additional parameters to log
             override: Override configured logging regimen, print to stderr instead
