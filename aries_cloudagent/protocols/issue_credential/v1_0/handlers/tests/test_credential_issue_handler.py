@@ -44,7 +44,7 @@ class TestCredentialIssueHandler(AsyncTestCase):
             mock_cred_mgr.return_value = async_mock.MagicMock(
                 receive_credential=async_mock.CoroutineMock(),
                 store_credential=async_mock.CoroutineMock(),
-                create_credential_ack=async_mock.CoroutineMock(
+                send_credential_ack=async_mock.CoroutineMock(
                     return_value="credential_ack_message"
                 ),
             )
@@ -58,11 +58,7 @@ class TestCredentialIssueHandler(AsyncTestCase):
         mock_cred_mgr.return_value.receive_credential.assert_called_once_with(
             request_context.message, request_context.connection_record.connection_id
         )
-        messages = responder.messages
-        assert len(messages) == 1
-        (result, target) = messages[0]
-        assert result == "credential_ack_message"
-        assert target == {}
+        assert mock_cred_mgr.return_value.send_credential_ack.call_count == 1
 
     async def test_called_auto_store_x(self):
         request_context = RequestContext.test_context()
@@ -85,7 +81,7 @@ class TestCredentialIssueHandler(AsyncTestCase):
                         test_module.StorageError(),
                     ]
                 ),
-                create_credential_ack=async_mock.CoroutineMock(),
+                send_credential_ack=async_mock.CoroutineMock(),
             )
 
             request_context.message = CredentialIssue()
@@ -93,12 +89,9 @@ class TestCredentialIssueHandler(AsyncTestCase):
             handler = test_module.CredentialIssueHandler()
             responder = MockResponder()
 
-            with async_mock.patch.object(
-                responder, "send_reply", async_mock.CoroutineMock()
-            ) as mock_send_reply:
-                await handler.handle(request_context, responder)  # holder error
-                await handler.handle(request_context, responder)  # storage error
-                assert mock_send_reply.call_count == 2
+            await handler.handle(request_context, responder)  # holder error
+            await handler.handle(request_context, responder)  # storage error
+            assert mock_cred_mgr.return_value.send_credential_ack.call_count == 2
 
     async def test_called_not_ready(self):
         request_context = RequestContext.test_context()

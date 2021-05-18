@@ -988,9 +988,7 @@ async def credential_exchange_send_request(request: web.BaseRequest):
                 connection_id,
             )
             if not connection_record.is_ready:
-                raise web.HTTPForbidden(
-                    reason=f"Connection {connection_id} not ready"
-                )
+                raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
 
         credential_manager = CredentialManager(context.profile)
         (
@@ -1179,10 +1177,9 @@ async def credential_exchange_store(request: web.BaseRequest):
             outbound_handler,
         )
 
-    credential_ack_message = await credential_manager.create_credential_ack(
+    credential_ack_message = await credential_manager.send_credential_ack(
         cred_ex_record
     )
-    await outbound_handler(credential_ack_message, connection_id=connection_id)
 
     trace_event(
         context.settings,

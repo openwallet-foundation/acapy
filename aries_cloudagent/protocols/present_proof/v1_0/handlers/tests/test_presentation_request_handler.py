@@ -280,13 +280,11 @@ class TestPresentationRequestHandler(AsyncTestCase):
                 return_value=mock_px_rec
             )
 
-            mock_pres_mgr.return_value.create_presentation = (
-                async_mock.CoroutineMock(
-                    side_effect=[
-                        test_module.IndyHolderError(),
-                        test_module.StorageError(),
-                    ]
-                )
+            mock_pres_mgr.return_value.create_presentation = async_mock.CoroutineMock(
+                side_effect=[
+                    test_module.IndyHolderError(),
+                    test_module.StorageError(),
+                ]
             )
 
             request_context.connection_ready = True

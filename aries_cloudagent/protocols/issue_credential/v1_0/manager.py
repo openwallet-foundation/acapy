@@ -16,6 +16,7 @@ from ....messaging.credential_definitions.util import (
     CRED_DEF_TAGS,
     CRED_DEF_SENT_RECORD_TYPE,
 )
+from ....messaging.responder import BaseResponder
 from ....revocation.indy import IndyRevocation
 from ....revocation.models.revocation_registry import RevocationRegistry
 from ....revocation.models.issuer_rev_reg_record import IssuerRevRegRecord
@@ -778,16 +779,19 @@ class CredentialManager:
 
         return cred_ex_record
 
-    async def create_credential_ack(
+    async def send_credential_ack(
         self,
         cred_ex_record: V10CredentialExchange,
     ):
         """
-        Create and return ack message for input credential exchange record.
+        Create, send, and return ack message for input credential exchange record.
 
         Delete credential exchange record if set to auto-remove.
-        """
 
+        Returns:
+            credential ack message for tracing.
+
+        """
         credential_ack_message = CredentialAck()
         credential_ack_message.assign_thread_id(
             cred_ex_record.thread_id, cred_ex_record.parent_thread_id
@@ -807,6 +811,18 @@ class CredentialManager:
 
         except StorageError as err:
             LOGGER.exception(err)  # holder still owes an ack: carry on
+
+        responder = self._profile.inject(BaseResponder, required=False)
+        if responder:
+            await responder.send_reply(
+                credential_ack_message,
+                connection_id=cred_ex_record.connection_id,
+            )
+        else:
+            LOGGER.warning(
+                "Configuration has no BaseResponder: cannot ack credential on %s",
+                cred_ex_record.thread_id,
+            )
 
         return credential_ack_message
 

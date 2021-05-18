@@ -1394,8 +1394,7 @@ async def credential_exchange_store(request: web.BaseRequest):
             outbound_handler,
         )
 
-    cred_ack_message = await cred_manager.create_cred_ack(cred_ex_record)
-    await outbound_handler(cred_ack_message, connection_id=connection_id)
+    cred_ack_message = await cred_manager.send_cred_ack(cred_ex_record)
 
     trace_event(
         context.settings,

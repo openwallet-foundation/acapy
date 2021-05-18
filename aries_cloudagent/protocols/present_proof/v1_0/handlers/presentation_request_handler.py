@@ -8,6 +8,7 @@ from .....messaging.request_context import RequestContext
 from .....messaging.responder import BaseResponder
 from .....storage.error import StorageError, StorageNotFoundError
 from .....utils.tracing import trace_event, get_timer
+from .....wallet.error import WalletNotFoundError
 
 from ..manager import PresentationManager, PresentationManagerError
 from ..messages.presentation_proposal import PresentationProposal
@@ -112,7 +113,12 @@ class PresentationRequestHandler(BaseHandler):
                     ),
                 )
                 await responder.send_reply(presentation_message)
-            except (IndyHolderError, PresentationManagerError, LedgerError) as err:
+            except (
+                IndyHolderError,
+                LedgerError,
+                PresentationManagerError,
+                WalletNotFoundError,
+            ) as err:
                 self._logger.exception(err)
                 if presentation_exchange_record:
                     await presentation_exchange_record.save_error_state(

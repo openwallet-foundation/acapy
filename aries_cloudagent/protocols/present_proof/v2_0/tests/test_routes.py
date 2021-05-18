@@ -825,6 +825,7 @@ class TestPresentProofRoutes(AsyncTestCase):
                 serialize=async_mock.MagicMock(
                     return_value={"thread_id": "sample-thread-id"}
                 ),
+                save_error_state=async_mock.CoroutineMock(),
             )
             mock_px_rec_cls.retrieve_by_id = async_mock.CoroutineMock(
                 return_value=mock_px_rec_inst
@@ -1088,6 +1089,7 @@ class TestPresentProofRoutes(AsyncTestCase):
                 serialize=async_mock.MagicMock(
                     return_value={"thread_id": "sample-thread-id"}
                 ),
+                save_error_state=async_mock.CoroutineMock(),
             )
             mock_px_rec_cls.retrieve_by_id = async_mock.CoroutineMock(
                 return_value=mock_px_rec_inst
@@ -1248,6 +1250,7 @@ class TestPresentProofRoutes(AsyncTestCase):
                 serialize=async_mock.MagicMock(
                     return_value={"thread_id": "sample-thread-id"}
                 ),
+                save_error_state=async_mock.CoroutineMock(),
             )
             mock_px_rec_cls.retrieve_by_id = async_mock.CoroutineMock(
                 return_value=mock_px_rec_inst

@@ -12,6 +12,7 @@ from .....cache.in_memory import InMemoryCache
 from .....indy.holder import IndyHolder
 from .....indy.issuer import IndyIssuer
 from .....messaging.credential_definitions.util import CRED_DEF_SENT_RECORD_TYPE
+from .....messaging.responder import BaseResponder, MockResponder
 from .....ledger.base import BaseLedger
 from .....storage.base import StorageRecord
 from .....storage.error import StorageNotFoundError
@@ -1501,7 +1502,7 @@ class TestCredentialManager(AsyncTestCase):
                 cred_ex_record=stored_exchange, credential_id=cred_id
             )
 
-    async def test_create_credential_ack(self):
+    async def test_send_credential_ack(self):
         connection_id = "connection-id"
         stored_exchange = V10CredentialExchange(
             credential_exchange_id="dummy-cxid",
@@ -1520,11 +1521,19 @@ class TestCredentialManager(AsyncTestCase):
             V10CredentialExchange, "delete_record", autospec=True
         ) as mock_delete_ex, async_mock.patch.object(
             test_module.LOGGER, "exception", async_mock.MagicMock()
-        ) as mock_log_exception:
+        ) as mock_log_exception, async_mock.patch.object(
+            test_module.LOGGER, "warning", async_mock.MagicMock()
+        ) as mock_log_warning:
             mock_delete_ex.side_effect = test_module.StorageError()
-            ack = await self.manager.create_credential_ack(stored_exchange)
+            ack = await self.manager.send_credential_ack(stored_exchange)
             assert ack._thread
             mock_log_exception.assert_called_once()  # cover exception log-and-continue
+            mock_log_warning.assert_called_once()  # no BaseResponder
+
+            mock_responder = MockResponder()  # cover with responder
+            self.context.injector.bind_instance(BaseResponder, mock_responder)
+            ack = await self.manager.send_credential_ack(stored_exchange)
+            assert ack._thread
 
     async def test_receive_credential_ack(self):
         connection_id = "connection-id"

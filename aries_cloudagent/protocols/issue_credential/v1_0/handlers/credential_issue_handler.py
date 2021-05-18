@@ -56,10 +56,9 @@ class CredentialIssueHandler(BaseHandler):
                 # protocol finished OK: do not set cred ex record state null
                 self._logger.exception(err)
 
-            credential_ack_message = await credential_manager.create_credential_ack(
+            credential_ack_message = await credential_manager.send_credential_ack(
                 cred_ex_record
             )
-            await responder.send_reply(credential_ack_message)
 
             trace_event(
                 context.settings,

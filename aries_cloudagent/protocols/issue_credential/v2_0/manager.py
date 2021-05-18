@@ -6,6 +6,7 @@ from typing import Mapping, Tuple, cast
 
 from ....core.error import BaseError
 from ....core.profile import Profile
+from ....messaging.responder import BaseResponder
 from ....storage.error import StorageError, StorageNotFoundError
 
 from .messages.cred_ack import V20CredAck
@@ -611,16 +612,19 @@ class V20CredManager:
 
         return cred_ex_record
 
-    async def create_cred_ack(
+    async def send_cred_ack(
         self,
         cred_ex_record: V20CredExRecord,
     ):
         """
-        Create and return ack message for input cred ex record.
+        Create, send, and return ack message for input cred ex record.
 
         Delete cred ex record if set to auto-remove.
-        """
 
+        Returns:
+            cred ack message for tracing
+
+        """
         cred_ack_message = V20CredAck()
         cred_ack_message.assign_thread_id(
             cred_ex_record.thread_id, cred_ex_record.parent_thread_id
@@ -640,6 +644,18 @@ class V20CredManager:
 
         except StorageError as err:
             LOGGER.exception(err)  # holder still owes an ack: carry on
+
+        responder = self._profile.inject(BaseResponder, required=False)
+        if responder:
+            await responder.send_reply(
+                cred_ack_message,
+                connection_id=cred_ex_record.connection_id,
+            )
+        else:
+            LOGGER.warning(
+                "Configuration has no BaseResponder: cannot ack credential on %s",
+                cred_ex_record.thread_id,
+            )
 
         return cred_ack_message
 
