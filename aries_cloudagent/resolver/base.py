@@ -1,8 +1,10 @@
 """Base Class for DID Resolvers."""
 
+import re
+import warnings
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Sequence, Union
+from typing import Pattern, Sequence, Union
 
 from pydid import DID, DIDDocument
 from pydid.options import (
@@ -58,24 +60,61 @@ class BaseDIDResolver(ABC):
         return self.type == ResolverType.NATIVE
 
     @property
-    @abstractmethod
     def supported_methods(self) -> Sequence[str]:
-        """Return list of DID methods supported by this resolver."""
+        """Return supported methods.
 
-    def supports(self, method: str) -> bool:
-        """Return if this resolver supports the given method."""
-        return method in self.supported_methods
+        DEPRECATED: Use supported_did_regex instead.
+        """
+        return []
+
+    @property
+    def supported_did_regex(self) -> Pattern:
+        """Supported DID regex for matching this resolver to DIDs it can resolve.
+
+        Override this property with a class var or similar to use regex
+        matching on DIDs to determine if this resolver supports a given DID.
+        """
+        raise NotImplementedError(
+            "supported_did_regex must be overriden by subclasses of BaseResolver "
+            "to use default supports method"
+        )
+
+    async def supports(self, profile: Profile, did: str) -> bool:
+        """Return if this resolver supports the given DID.
+
+        Override this method to determine if this resolver supports a DID based
+        on information other than just a regular expression; i.e. check a value
+        in storage, query a resolver connection record, etc.
+        """
+        try:
+            supported_did_regex = self.supported_did_regex
+        except NotImplementedError as error:
+            if not self.supported_methods:
+                raise error
+            warnings.warn(
+                "BaseResolver.supported_methods is deprecated; "
+                "use supported_did_regex instead",
+                DeprecationWarning,
+            )
+
+            supported_did_regex = re.compile(
+                "^did:(?:{}):.*$".format("|".join(self.supported_methods))
+            )
+
+        return bool(supported_did_regex.match(did))
 
     async def resolve(self, profile: Profile, did: Union[str, DID]) -> DIDDocument:
         """Resolve a DID using this resolver."""
-        py_did = DID(did) if isinstance(did, str) else did
-
-        if not self.supports(py_did.method):
+        if isinstance(did, DID):
+            did = str(did)
+        else:
+            DID.validate(did)
+        if not await self.supports(profile, did):
             raise DIDMethodNotSupported(
-                f"{self.__class__.__name__} does not support DID method {py_did.method}"
+                f"{self.__class__.__name__} does not support DID method for: {did}"
             )
 
-        did_document = await self._resolve(profile, str(py_did))
+        did_document = await self._resolve(profile, did)
         result = DIDDocument.deserialize(
             did_document,
             options={
