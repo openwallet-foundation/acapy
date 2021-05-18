@@ -174,6 +174,13 @@ class ConnectionsListQueryStringSchema(OpenAPISchema):
         required=False,
         example="Barry",
     )
+
+    tags = fields.Str(
+        description="Tags",
+        required=False,
+        example="tag1,tag2",
+    )
+
     invitation_key = fields.Str(
         description="invitation key", required=False, **INDY_RAW_PUBLIC_KEY
     )
@@ -204,6 +211,13 @@ class CreateInvitationQueryStringSchema(OpenAPISchema):
         required=False,
         example="Barry",
     )
+
+    tags = fields.Str(
+        description="Tags",
+        required=False,
+        example="tag1,tag2",
+    )
+
     auto_accept = fields.Boolean(
         description="Auto-accept connection (defaults to configuration)",
         required=False,
@@ -224,6 +238,7 @@ class ReceiveInvitationQueryStringSchema(OpenAPISchema):
         required=False,
         example="Barry",
     )
+
     auto_accept = fields.Boolean(
         description="Auto-accept connection (defaults to configuration)",
         required=False,
@@ -330,6 +345,10 @@ async def connections_list(request: web.BaseRequest):
     post_filter = {}
     if request.query.get("alias"):
         post_filter["alias"] = request.query["alias"]
+
+    if request.query.get("tags"):
+        post_filter["tags"] = request.query["tags"].split(",")
+
     if request.query.get("state"):
         post_filter["state"] = [
             v for v in ConnRecord.State.get(request.query["state"]).value
@@ -341,9 +360,11 @@ async def connections_list(request: web.BaseRequest):
 
     session = await context.session()
     try:
+
         records = await ConnRecord.query(
             session, tag_filter, post_filter_positive=post_filter, alt=True
         )
+
         results = [record.serialize() for record in records]
         results.sort(key=connection_sort_key)
     except (StorageError, BaseModelError) as err:
@@ -480,6 +501,7 @@ async def connections_create_invitation(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     auto_accept = json.loads(request.query.get("auto_accept", "null"))
     alias = request.query.get("alias")
+    tags = request.query.get("tags")
     public = json.loads(request.query.get("public", "false"))
     multi_use = json.loads(request.query.get("multi_use", "false"))
     body = await request.json() if request.body_exists else {}
@@ -489,6 +511,10 @@ async def connections_create_invitation(request: web.BaseRequest):
     routing_keys = body.get("routing_keys")
     metadata = body.get("metadata")
     mediation_id = body.get("mediation_id")
+    if tags:
+        if not metadata:
+            metadata = {}
+        metadata["tags"] = tags.split(",")
 
     if public and not context.settings.get("public_invites"):
         raise web.HTTPForbidden(

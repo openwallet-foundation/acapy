@@ -214,6 +214,7 @@ class ConnectionManager(BaseConnectionManager):
             accept=accept,
             invitation_mode=invitation_mode,
             alias=alias,
+            metadata=metadata,
         )
 
         await connection.save(self._session, reason="Created new invitation")
@@ -273,6 +274,7 @@ class ConnectionManager(BaseConnectionManager):
         their_public_did: str = None,
         auto_accept: bool = None,
         alias: str = None,
+        metadata: dict = None,
         mediation_id: str = None,
         mediation_record: MediationRecord = None,
     ) -> ConnRecord:
@@ -318,6 +320,7 @@ class ConnectionManager(BaseConnectionManager):
             state=ConnRecord.State.INVITATION.rfc160,
             accept=accept,
             alias=alias,
+            metadata=metadata,
             their_public_did=their_public_did,
         )
 
@@ -855,6 +858,7 @@ class ConnectionManager(BaseConnectionManager):
         their_endpoint: str = None,
         their_label: str = None,
         alias: str = None,
+        metadata: str = None,
     ) -> Tuple[DIDInfo, DIDInfo, ConnRecord]:
         """
         Register a new static connection (for use by the test suite).
@@ -906,6 +910,7 @@ class ConnectionManager(BaseConnectionManager):
             their_label=their_label,
             state=ConnRecord.State.COMPLETED.rfc160,
             alias=alias,
+            metadata=metadata,
         )
         await connection.save(self._session, reason="Created new static connection")
 

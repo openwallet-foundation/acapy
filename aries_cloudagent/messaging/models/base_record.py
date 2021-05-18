@@ -45,26 +45,41 @@ def match_post_filter(
         alt: set to match any (positive=True) value or miss all (positive=False)
             values in post_filter
     """
+
+    def filter_keys(record, k, filter_tags):
+        if k == "tags":
+            metadata = record.get("metadata")
+            if not metadata:
+                return False
+            tags = metadata.get(k, [])
+            intersect = list(set(filter_tags) & set(tags))
+            return tags and len(intersect) == len(filter_tags)
+
+        return record.get(k) and record.get(k) in filter_tags
+
     if not post_filter:
         return True
 
     if alt:
         return (
             positive
-            and all(
-                record.get(k) and record.get(k) in alts
-                for k, alts in post_filter.items()
-            )
+            and all(filter_keys(record, k, alts) for k, alts in post_filter.items())
         ) or (
             (not positive)
-            and all(
-                record.get(k) and record.get(k) not in alts
-                for k, alts in post_filter.items()
-            )
+            and all(not filter_keys(record, k, alts) for k, alts in post_filter.items())
         )
 
     for k, v in post_filter.items():
-        if record.get(k) != v:
+        if record.get(k) == v:
+            continue
+        elif k == "tags":
+            record_tags = record.get("metadata").get(k)
+            filter_tags = v
+            intersect = list(set(filter_tags) & set(record_tags))
+            if len(intersect) != len(filter_tags):
+                return not positive
+
+        else:
             return not positive
 
     return positive
@@ -500,6 +515,7 @@ class BaseRecord(BaseModel):
                     ret[k] = cls.prefix_tag_filter(v)
                 else:
                     ret[tag_map.get(k, k)] = v
+
         return ret
 
     def __eq__(self, other: Any) -> bool:

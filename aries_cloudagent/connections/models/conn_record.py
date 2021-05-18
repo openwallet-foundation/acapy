@@ -180,6 +180,7 @@ class ConnRecord(BaseRecord):
         accept: str = None,
         invitation_mode: str = None,
         alias: str = None,
+        metadata: dict = None,
         their_public_did: str = None,
         rfc23_state: str = None,  # from state: formalism for base_record.from_storage()
         initiator: str = None,  # for backward compatibility with old ConnectionRecord
@@ -210,6 +211,7 @@ class ConnRecord(BaseRecord):
         self.accept = accept or self.ACCEPT_MANUAL
         self.invitation_mode = invitation_mode or self.INVITATION_MODE_ONCE
         self.alias = alias
+        self.metadata = metadata
         self.their_public_did = their_public_did
 
     @property
@@ -235,6 +237,7 @@ class ConnRecord(BaseRecord):
                 "invitation_mode",
                 "invitation_msg_id",
                 "alias",
+                "metadata",
                 "error_msg",
                 "their_label",
                 "state",
@@ -598,6 +601,13 @@ class ConnRecordSchema(BaseRecordSchema):
         description="Optional alias to apply to connection for later use",
         example="Bob, providing quotes",
     )
+
+    metadata = fields.Dict(
+        description="Optional metadata to tag connections",
+        required=False,
+        example={"tags": ["tag1", "tag2"]},
+    )
+
     their_public_did = fields.Str(
         required=False,
         description="Other agent's public DID for connection",
