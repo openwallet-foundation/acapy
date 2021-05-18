@@ -246,7 +246,8 @@ class V20PresExRecordSchema(BaseExchangeSchema):
                 "pres_proposal": fields.Dict(required=False),
                 "pres_request": fields.Dict(required=False),
                 "pres": fields.Dict(required=False),
-            }
+            },
+            name="V20PresExRecordByFormatSchema",
         ),
         required=False,
         description=(
