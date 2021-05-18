@@ -6,7 +6,7 @@ from ....messaging.models.openapi import OpenAPISchema
 from .pres_exch import PresentationDefinitionSchema, DIFOptionsSchema
 
 
-class DIFPresRequestSchema(OpenAPISchema):
+class DIFProofRequestSchema(OpenAPISchema):
     """Schema for DIF Proof request."""
 
     options = fields.Nested(
@@ -16,4 +16,22 @@ class DIFPresRequestSchema(OpenAPISchema):
     presentation_definition = fields.Nested(
         PresentationDefinitionSchema(),
         required=True,
+    )
+
+
+class DIFPresSpecSchema(OpenAPISchema):
+    """Schema for DIF Presentation Spec schema."""
+
+    issuer_id = fields.Str(
+        description=(
+            (
+                "Issuer identifier to sign the presentation,"
+                " if different from current public DID"
+            )
+        ),
+        required=False,
+    )
+    presentation_definition = fields.Nested(
+        PresentationDefinitionSchema(),
+        required=False,
     )

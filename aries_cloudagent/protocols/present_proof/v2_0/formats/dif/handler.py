@@ -9,13 +9,6 @@ from uuid import uuid4
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......storage.error import StorageNotFoundError
 from ......storage.vc_holder.base import VCHolder
-
-from ....dif.pres_exch import PresentationDefinition
-from ....dif.pres_exch_handler import DIFPresExchHandler
-from ....dif.pres_proposal_schema import DIFPresProposalSchema
-from ....dif.pres_request_schema import DIFPresRequestSchema
-from ....dif.pres_spec_schema import DIFPresSpecSpecSchema
-from ....dif.pres_schema import DIFPresSpecSchema
 from ......vc.ld_proofs import (
     DocumentLoader,
     Ed25519Signature2018,
@@ -27,7 +20,17 @@ from ......vc.vc_ld.verify import verify_presentation
 from ......wallet.base import BaseWallet
 from ......wallet.key_type import KeyType
 
+from ....dif.pres_exch import PresentationDefinition
+from ....dif.pres_exch_handler import DIFPresExchHandler
+from ....dif.pres_proposal_schema import DIFProofProposalSchema
+from ....dif.pres_request_schema import (
+    DIFProofRequestSchema,
+    DIFPresSpecSchema,
+)
+from ....dif.pres_schema import DIFProofSchema
+
 from ...message_types import (
+    ATTACHMENT_FORMAT,
     PRES_20_REQUEST,
     PRES_20,
     PRES_20_PROPOSAL,
@@ -89,9 +92,9 @@ class DIFPresFormatHandler(V20PresFormatHandler):
 
         """
         mapping = {
-            PRES_20_REQUEST: DIFPresRequestSchema,
-            PRES_20_PROPOSAL: DIFPresProposalSchema,
-            PRES_20: DIFPresSpecSchema,
+            PRES_20_REQUEST: DIFProofRequestSchema,
+            PRES_20_PROPOSAL: DIFProofProposalSchema,
+            PRES_20: DIFProofSchema,
         }
 
         # Get schema class
@@ -99,6 +102,31 @@ class DIFPresFormatHandler(V20PresFormatHandler):
 
         # Validate, throw if not valid
         Schema(unknown=RAISE).load(attachment_data)
+
+    def get_format_identifier(self, message_type: str) -> str:
+        """Get attachment format identifier for format and message combination.
+
+        Args:
+            message_type (str): Message type for which to return the format identifier
+
+        Returns:
+            str: Issue credential attachment format identifier
+
+        """
+        return ATTACHMENT_FORMAT[message_type][DIFPresFormatHandler.format.api]
+
+    def get_format_data(
+        self, message_type: str, data: dict
+    ) -> Tuple[V20PresFormat, AttachDecorator]:
+        """Get presentation format and attach objects for use in pres_ex messages."""
+
+        return (
+            V20PresFormat(
+                attach_id=DIFPresFormatHandler.format.api,
+                format_=self.get_format_identifier(message_type),
+            ),
+            AttachDecorator.data_json(data, ident=DIFPresFormatHandler.format.api),
+        )
 
     async def create_bound_request(
         self,
@@ -122,7 +150,7 @@ class DIFPresFormatHandler(V20PresFormatHandler):
         """
         dif_proof_request = V20PresProposal.deserialize(
             pres_ex_record.pres_proposal
-        ).attachment(self.format)
+        ).attachment(DIFPresFormatHandler.format)
 
         return self.get_format_data(PRES_20_REQUEST, dif_proof_request)
 
@@ -134,13 +162,13 @@ class DIFPresFormatHandler(V20PresFormatHandler):
         """Create a presentation."""
         proof_request = V20PresRequest.deserialize(
             pres_ex_record.pres_request
-        ).attachment(self.format)
+        ).attachment(DIFPresFormatHandler.format)
         pres_definition = None
 
         challenge = None
         domain = None
         if request_data != {}:
-            pres_spec_payload = DIFPresSpecSpecSchema().load(request_data)
+            pres_spec_payload = DIFPresSpecSchema().load(request_data)
             # Overriding with prover provided pres_spec
             pres_definition = pres_spec_payload.get("presentation_definition")
             issuer_id = pres_spec_payload.get("issuer_id")
@@ -231,10 +259,12 @@ class DIFPresFormatHandler(V20PresFormatHandler):
         """
         async with self._profile.session() as session:
             wallet = session.inject(BaseWallet)
-            dif_proof = V20Pres.deserialize(pres_ex_record.pres).attachment(self.format)
+            dif_proof = V20Pres.deserialize(pres_ex_record.pres).attachment(
+                DIFPresFormatHandler.format
+            )
             pres_request = V20PresRequest.deserialize(
                 pres_ex_record.pres_request
-            ).attachment(self.format)
+            ).attachment(DIFPresFormatHandler.format)
             if "options" in pres_request:
                 challenge = pres_request.get("options").get("challenge")
             else:

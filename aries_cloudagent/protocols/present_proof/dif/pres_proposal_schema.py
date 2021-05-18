@@ -6,7 +6,7 @@ from ....messaging.models.openapi import OpenAPISchema
 from .pres_exch import InputDescriptorsSchema
 
 
-class DIFPresProposalSchema(OpenAPISchema):
+class DIFProofProposalSchema(OpenAPISchema):
     """Schema for DIF Proposal."""
 
     input_descriptors = fields.List(

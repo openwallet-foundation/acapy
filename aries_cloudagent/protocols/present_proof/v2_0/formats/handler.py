@@ -8,7 +8,6 @@ from .....core.error import BaseError
 from .....core.profile import Profile
 from .....messaging.decorators.attach_decorator import AttachDecorator
 
-from ..message_types import ATTACHMENT_FORMAT
 from ..messages.pres import V20Pres
 from ..messages.pres_format import V20PresFormat
 from ..models.pres_exchange import V20PresExRecord
@@ -43,6 +42,7 @@ class V20PresFormatHandler(ABC):
         """
         return self._profile
 
+    @abstractmethod
     def get_format_identifier(self, message_type: str) -> str:
         """Get attachment format identifier for format and message combination.
 
@@ -53,22 +53,10 @@ class V20PresFormatHandler(ABC):
             str: Issue credential attachment format identifier
 
         """
-        return ATTACHMENT_FORMAT[message_type][self.format.api]
 
+    @abstractmethod
     def get_format_data(self, message_type: str, data: dict) -> PresFormatAttachment:
         """Get presentation format and attach objects for use in pres_ex messages."""
-        if self.format.api == "dif":
-            attach = AttachDecorator.data_json(data, ident=self.format.api)
-        elif self.format.api == "indy":
-            attach = AttachDecorator.data_base64(data, ident=self.format.api)
-
-        return (
-            V20PresFormat(
-                attach_id=self.format.api,
-                format_=self.get_format_identifier(message_type),
-            ),
-            attach,
-        )
 
     @abstractclassmethod
     def validate_fields(cls, message_type: str, attachment_data: dict) -> None:

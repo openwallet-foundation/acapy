@@ -17,6 +17,7 @@ from ......messaging.util import canon
 from ....indy.pres_exch_handler import IndyPresExchHandler
 
 from ...message_types import (
+    ATTACHMENT_FORMAT,
     PRES_20_REQUEST,
     PRES_20,
     PRES_20_PROPOSAL,
@@ -68,6 +69,31 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
         # Validate, throw if not valid
         Schema(unknown=RAISE).load(attachment_data)
 
+    def get_format_identifier(self, message_type: str) -> str:
+        """Get attachment format identifier for format and message combination.
+
+        Args:
+            message_type (str): Message type for which to return the format identifier
+
+        Returns:
+            str: Issue credential attachment format identifier
+
+        """
+        return ATTACHMENT_FORMAT[message_type][IndyPresExchangeHandler.format.api]
+
+    def get_format_data(
+        self, message_type: str, data: dict
+    ) -> Tuple[V20PresFormat, AttachDecorator]:
+        """Get presentation format and attach objects for use in pres_ex messages."""
+
+        return (
+            V20PresFormat(
+                attach_id=IndyPresExchangeHandler.format.api,
+                format_=self.get_format_identifier(message_type),
+            ),
+            AttachDecorator.data_base64(data, ident=IndyPresExchangeHandler.format.api),
+        )
+
     async def create_bound_request(
         self,
         pres_ex_record: V20PresExRecord,
@@ -87,7 +113,7 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
         """
         indy_proof_request = V20PresProposal.deserialize(
             pres_ex_record.pres_proposal
-        ).attachment(self.format)
+        ).attachment(IndyPresExchangeHandler.format)
         indy_proof_request["name"] = request_data.get("name") or "proof-request"
         indy_proof_request["version"] = request_data.get("version") or "1.0"
         indy_proof_request["nonce"] = (
@@ -118,7 +144,7 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
             """Check for bait and switch in presented values vs. proposal request."""
             proof_req = V20PresRequest.deserialize(
                 pres_ex_record.pres_request
-            ).attachment(self.format)
+            ).attachment(IndyPresExchangeHandler.format)
 
             # revealed attrs
             for reft, attr_spec in proof["requested_proof"]["revealed_attrs"].items():
@@ -234,7 +260,7 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
                         f"restrictions {req_restrictions}"
                     )
 
-        proof = message.attachment(self.format)
+        proof = message.attachment(IndyPresExchangeHandler.format)
         _check_proof_vs_proposal()
 
     async def verify_pres(self, pres_ex_record: V20PresExRecord) -> V20PresExRecord:
@@ -250,8 +276,10 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
 
         """
         pres_request_msg = V20PresRequest.deserialize(pres_ex_record.pres_request)
-        indy_proof_request = pres_request_msg.attachment(self.format)
-        indy_proof = V20Pres.deserialize(pres_ex_record.pres).attachment(self.format)
+        indy_proof_request = pres_request_msg.attachment(IndyPresExchangeHandler.format)
+        indy_proof = V20Pres.deserialize(pres_ex_record.pres).attachment(
+            IndyPresExchangeHandler.format
+        )
         indy_handler = IndyPresExchHandler(self._profile)
         (
             schemas,

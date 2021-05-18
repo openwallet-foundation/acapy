@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from ..pres_request_schema import DIFPresRequestSchema
+from ..pres_request_schema import DIFProofRequestSchema
 
 
 class TestPresRequestSchema(TestCase):
@@ -92,14 +92,14 @@ class TestPresRequestSchema(TestCase):
             },
         }
 
-        pres_request_a = DIFPresRequestSchema().load(test_pd_a)
+        pres_request_a = DIFProofRequestSchema().load(test_pd_a)
         test_limit_disclosure_a = (
             pres_request_a.get("presentation_definition")
             .input_descriptors[0]
             .constraint.limit_disclosure
         )
         assert test_limit_disclosure_a == "required"
-        pres_request_b = DIFPresRequestSchema().load(test_pd_b)
+        pres_request_b = DIFProofRequestSchema().load(test_pd_b)
         test_limit_disclosure_b = (
             pres_request_b.get("presentation_definition")
             .input_descriptors[0]

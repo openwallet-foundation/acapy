@@ -11,7 +11,7 @@ from ....vc.vc_ld.models import LinkedDataProofSchema
 from .pres_exch import PresentationSubmissionSchema
 
 
-class DIFPresSpecSchema(OpenAPISchema):
+class DIFProofSchema(OpenAPISchema):
     """Schema for DIF Proof."""
 
     id = fields.Str(

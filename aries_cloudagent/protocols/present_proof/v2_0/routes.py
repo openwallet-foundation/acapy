@@ -40,9 +40,11 @@ from ....wallet.error import WalletNotFoundError
 from ...problem_report.v1_0 import internal_error
 
 from ..dif.pres_exch import InputDescriptors
-from ..dif.pres_proposal_schema import DIFPresProposalSchema
-from ..dif.pres_request_schema import DIFPresRequestSchema
-from ..dif.pres_spec_schema import DIFPresSpecSpecSchema
+from ..dif.pres_proposal_schema import DIFProofProposalSchema
+from ..dif.pres_request_schema import (
+    DIFProofRequestSchema,
+    DIFPresSpecSchema,
+)
 
 from .formats.handler import V20PresFormatError
 from .manager import V20PresManager
@@ -117,7 +119,7 @@ class V20PresProposalByFormatSchema(OpenAPISchema):
         description="Presentation proposal for indy",
     )
     dif = fields.Nested(
-        DIFPresProposalSchema,
+        DIFProofProposalSchema,
         required=False,
         description="Presentation proposal for DIF",
     )
@@ -177,7 +179,7 @@ class V20PresRequestByFormatSchema(OpenAPISchema):
         description="Presentation request for indy",
     )
     dif = fields.Nested(
-        DIFPresRequestSchema,
+        DIFProofRequestSchema,
         required=False,
         description="Presentation request for DIF",
     )
@@ -229,7 +231,7 @@ class V20PresSpecByFormatRequestSchema(AdminAPIMessageTracingSchema):
         description="Presentation specification for indy",
     )
     dif = fields.Nested(
-        DIFPresSpecSpecSchema,
+        DIFPresSpecSchema,
         required=False,
         description=(
             "Optional Presentation specification for DIF, "
