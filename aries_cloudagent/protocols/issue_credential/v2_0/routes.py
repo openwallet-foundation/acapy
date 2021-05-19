@@ -1375,6 +1375,11 @@ async def credential_exchange_store(request: web.BaseRequest):
         cred_manager = V20CredManager(context.profile)
         cred_ex_record = await cred_manager.store_credential(cred_ex_record, cred_id)
 
+        (
+            cred_ex_record,
+            cred_ack_message,
+        ) = await cred_manager.send_cred_ack(cred_ex_record)
+
         # We first need to retrieve the the cred_ex_record with detail record
         # as the record may be auto removed
         result = await _get_result_with_details(context.profile, cred_ex_record)
@@ -1393,8 +1398,6 @@ async def credential_exchange_store(request: web.BaseRequest):
             cred_ex_record,
             outbound_handler,
         )
-
-    cred_ack_message = await cred_manager.send_cred_ack(cred_ex_record)
 
     trace_event(
         context.settings,

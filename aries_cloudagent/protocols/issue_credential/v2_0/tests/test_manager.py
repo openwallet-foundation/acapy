@@ -1352,17 +1352,18 @@ class TestV20CredManager(AsyncTestCase):
             test_module.LOGGER, "warning", async_mock.MagicMock()
         ) as mock_log_warning:
             mock_delete_ex.side_effect = test_module.StorageError()
-            ack = await self.manager.send_cred_ack(stored_exchange)
+            (_, ack) = await self.manager.send_cred_ack(stored_exchange)
             assert ack._thread
             mock_log_exception.assert_called_once()  # cover exception log-and-continue
             mock_log_warning.assert_called_once()  # no BaseResponder
 
             mock_responder = MockResponder()  # cover with responder
             self.context.injector.bind_instance(BaseResponder, mock_responder)
-            ack = await self.manager.send_cred_ack(stored_exchange)
+            (cx_rec, ack) = await self.manager.send_cred_ack(stored_exchange)
             assert ack._thread
+            assert cx_rec.state == V20CredExRecord.STATE_DONE
 
-    async def test_receive_credential_ack(self):
+    async def test_receive_cred_ack(self):
         connection_id = "conn-id"
         stored_cx_rec = V20CredExRecord(
             cred_ex_id="dummy-cxid",
