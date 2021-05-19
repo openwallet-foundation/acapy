@@ -7,12 +7,11 @@ For Connection, DIDExchange and OutOfBand Manager.
 import logging
 from typing import List, Sequence, Tuple
 
-from pydid import DIDDocument as ResolvedDocument
-from pydid.doc.didcomm_service import DIDCommService
-from pydid.doc.verification_method import VerificationMethod
+from pydid import DIDCommService, DIDDocument as ResolvedDocument, VerificationMethod
 
 from ..core.error import BaseError
 from ..core.profile import ProfileSession
+from ..did.did_key import DIDKey
 from ..protocols.connections.v1_0.messages.connection_invitation import (
     ConnectionInvitation,
 )
@@ -25,7 +24,6 @@ from ..storage.base import BaseStorage
 from ..storage.error import StorageNotFoundError
 from ..storage.record import StorageRecord
 from ..wallet.base import BaseWallet
-from ..did.did_key import DIDKey
 from ..wallet.did_info import DIDInfo
 from .models.conn_record import ConnRecord
 from .models.connection_target import ConnectionTarget
