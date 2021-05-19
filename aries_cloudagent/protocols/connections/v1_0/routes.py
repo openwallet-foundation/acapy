@@ -176,7 +176,7 @@ class ConnectionsListQueryStringSchema(OpenAPISchema):
     )
 
     tags = fields.Str(
-        description="Tags",
+        description="Tags separated by commas",
         required=False,
         example="tag1,tag2",
     )
@@ -213,7 +213,7 @@ class CreateInvitationQueryStringSchema(OpenAPISchema):
     )
 
     tags = fields.Str(
-        description="Tags",
+        description="Tags separated by commas",
         required=False,
         example="tag1,tag2",
     )
@@ -239,7 +239,7 @@ class ReceiveInvitationQueryStringSchema(OpenAPISchema):
         example="Barry",
     )
     tags = fields.Str(
-        description="Tags",
+        description="Tags separated by commas",
         required=False,
         example="tag1,tag2",
     )
