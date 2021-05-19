@@ -1175,7 +1175,11 @@ async def credential_exchange_store(request: web.BaseRequest):
             credential_id,
         )
 
-        result = cred_ex_record.serialize()
+        (
+            cred_ex_record,
+            credential_ack_message,
+        ) = await credential_manager.send_credential_ack(cred_ex_record)
+        result = cred_ex_record.serialize()  # pick up state done
 
     except (
         BaseModelError,
@@ -1191,10 +1195,6 @@ async def credential_exchange_store(request: web.BaseRequest):
             outbound_handler,
             code=ProblemReportReason.ISSUANCE_ABANDONED.value,
         )
-
-    credential_ack_message = await credential_manager.send_credential_ack(
-        cred_ex_record
-    )
 
     trace_event(
         context.settings,

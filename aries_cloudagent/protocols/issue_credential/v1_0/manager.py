@@ -788,7 +788,7 @@ class CredentialManager:
         Delete credential exchange record if set to auto-remove.
 
         Returns:
-            credential ack message for tracing.
+            Tuple: cred ex record, credential ack message for tracing.
 
         """
         credential_ack_message = CredentialAck()
@@ -823,7 +823,7 @@ class CredentialManager:
                 cred_ex_record.thread_id,
             )
 
-        return credential_ack_message
+        return cred_ex_record, credential_ack_message
 
     async def receive_credential_ack(
         self, message: CredentialAck, connection_id: str
