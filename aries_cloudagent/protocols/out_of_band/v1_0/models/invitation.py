@@ -4,7 +4,7 @@ from typing import Any, Mapping, Union
 
 from marshmallow import fields
 
-from .....messaging.models import to_serial
+from .....messaging.models import to_serde
 from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
 from .....messaging.valid import UUIDFour
 
@@ -45,7 +45,7 @@ class InvitationRecord(BaseExchangeRecord):
         self._id = invitation_id
         self.state = state
         self.invi_msg_id = invi_msg_id
-        self.invitation = to_serial(invitation)
+        self._invitation = to_serde(invitation)
         self.invitation_url = invitation_url
         self.trace = trace
 
@@ -53,6 +53,10 @@ class InvitationRecord(BaseExchangeRecord):
     def invitation_id(self) -> str:
         """Accessor for the ID associated with this exchange."""
         return self._id
+
+    @property
+    def invitation(self) -> InvitationMessage:
+        return self._invitation.de
 
     @property
     def record_value(self) -> dict:

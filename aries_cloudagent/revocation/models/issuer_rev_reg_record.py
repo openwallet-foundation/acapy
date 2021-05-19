@@ -22,7 +22,7 @@ from ...indy.sdk.models.revocation import (
     IndyRevRegEntry,
     IndyRevRegEntrySchema,
 )
-from ...messaging.models import to_serial
+from ...messaging.models import to_serde
 from ...messaging.models.base_record import BaseRecord, BaseRecordSchema
 from ...messaging.valid import (
     BASE58_SHA256_HASH,
@@ -102,8 +102,8 @@ class IssuerRevRegRecord(BaseRecord):
         self.max_cred_num = max_cred_num or DEFAULT_REGISTRY_SIZE
         self.revoc_def_type = revoc_def_type or self.REVOC_DEF_TYPE_CL
         self.revoc_reg_id = revoc_reg_id
-        self.revoc_reg_def = to_serial(revoc_reg_def)
-        self.revoc_reg_entry = to_serial(revoc_reg_entry)
+        self._revoc_reg_def = to_serde(revoc_reg_def)
+        self._revoc_reg_entry = to_serde(revoc_reg_entry)
         self.tag = tag
         self.tails_hash = tails_hash
         self.tails_local_path = tails_local_path
@@ -117,6 +117,14 @@ class IssuerRevRegRecord(BaseRecord):
         """Accessor for the record ID."""
         return self._id
 
+    @property
+    def revoc_reg_def(self) -> IndyRevRegDef:
+        return self._revoc_reg_def.de
+
+    @property
+    def revoc_reg_entry(self) -> IndyRevRegEntry:
+        return self._revoc_reg_entry.de
+        
     @property
     def record_value(self) -> Mapping:
         """Accessor for JSON value properties of this revocation registry record."""
@@ -135,6 +143,7 @@ class IssuerRevRegRecord(BaseRecord):
             )
         }
 
+    '''
     def serialize(self, as_string=False) -> Mapping:
         """
         Create a JSON-compatible representation of the model instance.
@@ -161,6 +170,7 @@ class IssuerRevRegRecord(BaseRecord):
         )
 
         return super(self.__class__, copy).serialize(as_string)
+    '''
 
     def _check_url(self, url) -> None:
         parsed = urlparse(url)
