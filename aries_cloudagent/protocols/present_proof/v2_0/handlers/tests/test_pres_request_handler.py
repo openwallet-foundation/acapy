@@ -561,8 +561,8 @@ class TestPresRequestHandler(AsyncTestCase):
             pres_proposal=pres_proposal.serialize(),
             auto_present=True,
             save_error_state=async_mock.CoroutineMock(),
-        )    
-    
+        )
+
         with async_mock.patch.object(
             test_module, "V20PresManager", autospec=True
         ) as mock_pres_mgr, async_mock.patch.object(
@@ -621,9 +621,9 @@ class TestPresRequestHandler(AsyncTestCase):
         mock_px_rec = async_mock.MagicMock(
             pres_proposal=pres_proposal.serialize(),
             auto_present=True,
-        )    
+        )
         handler = test_module.V20PresRequestHandler()
-    
+
         with async_mock.patch.object(
             test_module, "V20PresManager", autospec=True
         ) as mock_pres_mgr, async_mock.patch.object(
