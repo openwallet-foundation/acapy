@@ -46,16 +46,21 @@ def match_post_filter(
             values in post_filter
     """
 
-    def filter_keys(record, k, filter_tags):
-        if k == "tags":
-            metadata = record.get("metadata")
-            if not metadata:
-                return False
-            tags = metadata.get(k, [])
-            intersect = list(set(filter_tags) & set(tags))
-            return tags and len(intersect) == len(filter_tags)
+    def filter_tags(record, k, filter_tags):
 
-        return record.get(k) and record.get(k) in filter_tags
+        metadata = record.get("metadata")
+        if not metadata:
+            return False
+        tags = metadata.get(k, [])
+        intersect = list(set(filter_tags) & set(tags))
+        return tags and len(intersect) == len(filter_tags)
+
+    def filter_keys(record, k, alts):
+        if k == "tags":
+
+            return filter_tags(record, k, alts)
+
+        return record.get(k) and record.get(k) in alts
 
     if not post_filter:
         return True
@@ -73,10 +78,7 @@ def match_post_filter(
         if record.get(k) == v:
             continue
         elif k == "tags":
-            record_tags = record.get("metadata").get(k)
-            filter_tags = v
-            intersect = list(set(filter_tags) & set(record_tags))
-            if len(intersect) != len(filter_tags):
+            if not filter_tags(record, k, v):
                 return not positive
 
         else:
