@@ -1,10 +1,10 @@
 """Interfaces and base classes for DID Resolution."""
 
-from aries_cloudagent.ledger.base import BaseLedger
 import logging
 
 from ..config.injection_context import InjectionContext
 from ..config.provider import ClassProvider
+from ..ledger.base import BaseLedger
 from .did_resolver_registry import DIDResolverRegistry
 
 LOGGER = logging.getLogger(__name__)
