@@ -288,15 +288,18 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 hs_protos=[HSProto.RFC23],
             )
 
-            assert invi_rec.invitation["@type"] == DIDCommPrefix.qualify_current(
+            assert invi_rec._invitation.ser["@type"] == DIDCommPrefix.qualify_current(
                 INVITATION
             )
-            assert not invi_rec.invitation.get("requests~attach")
+            assert not invi_rec._invitation.ser.get("requests~attach")
             assert (
                 DIDCommPrefix.qualify_current(HSProto.RFC23.name)
-                in invi_rec.invitation["handshake_protocols"]
+                in invi_rec.invitation.handshake_protocols
             )
-            assert invi_rec.invitation["services"] == [f"did:sov:{TestConfig.test_did}"]
+            assert (
+                invi_rec._invitation.ser["services"]
+                == [f"did:sov:{TestConfig.test_did}"]
+            )
 
     async def test_create_invitation_mediation_overwrites_routing_and_endpoint(self):
         mock_conn_rec = async_mock.MagicMock()
@@ -322,10 +325,10 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 mediation_id=mediation_record.mediation_id,
             )
             assert isinstance(invite, InvitationRecord)
-            assert invite.invitation["@type"] == DIDCommPrefix.qualify_current(
+            assert invite._invitation.ser["@type"] == DIDCommPrefix.qualify_current(
                 INVITATION
             )
-            assert invite.invitation["label"] == "test123"
+            assert invite.invitation.label == "test123"
             mock_get_default_mediator.assert_not_called()
 
     async def test_create_invitation_multitenant_local(self):
@@ -455,7 +458,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             )
 
             assert isinstance(invi_rec, InvitationRecord)
-            assert not invi_rec.invitation["handshake_protocols"]
+            assert not invi_rec._invitation.ser["handshake_protocols"]
 
     async def test_create_invitation_attachment_v2_0_cred_offer(self):
         with async_mock.patch.object(
@@ -490,7 +493,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 attachments=[{"type": "credential-offer", "id": "dummy-id"}],
             )
 
-            assert invi_rec.invitation["requests~attach"]
+            assert invi_rec._invitation.ser["requests~attach"]
 
     async def test_create_invitation_attachment_present_proof_v1_0(self):
         self.session.context.update_settings({"public_invites": True})
@@ -519,7 +522,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 attachments=[{"type": "present-proof", "id": "dummy-id"}],
             )
 
-            assert invi_rec.invitation["requests~attach"]
+            assert invi_rec._invitation.ser["requests~attach"]
             mock_retrieve_pxid.assert_called_once_with(self.manager.session, "dummy-id")
 
     async def test_create_invitation_attachment_present_proof_v2_0(self):
@@ -554,7 +557,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 attachments=[{"type": "present-proof", "id": "dummy-id"}],
             )
 
-            assert invi_rec.invitation["requests~attach"]
+            assert invi_rec._invitation.ser["requests~attach"]
             mock_retrieve_pxid_1.assert_called_once_with(
                 self.manager.session, "dummy-id"
             )
@@ -653,16 +656,16 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 multi_use=False,
             )
 
-            assert invi_rec.invitation["@type"] == DIDCommPrefix.qualify_current(
+            assert invi_rec._invitation.ser["@type"] == DIDCommPrefix.qualify_current(
                 INVITATION
             )
-            assert not invi_rec.invitation.get("requests~attach")
-            assert invi_rec.invitation["label"] == "That guy"
+            assert not invi_rec._invitation.ser.get("requests~attach")
+            assert invi_rec.invitation.label == "That guy"
             assert (
                 DIDCommPrefix.qualify_current(HSProto.RFC23.name)
-                in invi_rec.invitation["handshake_protocols"]
+                in invi_rec.invitation.handshake_protocols
             )
-            service = invi_rec.invitation["services"][0]
+            service = invi_rec._invitation.ser["services"][0]
             assert service["id"] == "#inline"
             assert service["type"] == "did-communication"
             assert len(service["recipientKeys"]) == 1
@@ -679,7 +682,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             hs_protos=[test_module.HSProto.RFC23],
             metadata={"hello": "world"},
         )
-        service = invi_rec.invitation["services"][0]
+        service = invi_rec._invitation.ser["services"][0]
         invitation_key = DIDKey.from_did(service["recipientKeys"][0]).public_key_b58
         record = await ConnRecord.retrieve_by_invitation_key(
             self.session, invitation_key
@@ -725,7 +728,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 my_label="test123",
                 hs_protos=[HSProto.RFC23],
             )
-            invi_msg = InvitationMessage.deserialize(invite.invitation)
+            invi_msg = invite.invitation
             invitee_record = await self.manager.receive_invitation(
                 invi_msg=invi_msg,
                 mediation_id=mediation_record._id,
@@ -750,7 +753,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 my_label="test123",
                 hs_protos=[HSProto.RFC23],
             )
-            invi_msg = InvitationMessage.deserialize(invite.invitation)
+            invi_msg = invite.invitation
             invitee_record = await self.manager.receive_invitation(
                 invi_msg,
                 mediation_id="test-mediation-id",
@@ -844,7 +847,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         )
 
         result = await self.manager.receive_invitation(
-            invi_msg=InvitationMessage.deserialize(oob_invi_rec.invitation),
+            invi_msg=oob_invi_rec.invitation,
             use_existing_connection=True,
             auto_accept=True,
         )
@@ -888,7 +891,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             invi_msg_cls.deserialize.return_value = mock_oob_invi
 
             invi_rec = await self.manager.receive_invitation(mock_oob_invi)
-            assert invi_rec.invitation["services"]
+            assert invi_rec._invitation.ser["services"]
 
     async def test_receive_invitation_attachment_x(self):
         self.session.context.update_settings({"public_invites": True})
@@ -1939,7 +1942,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         exchange_rec = V10PresentationExchange()
         exchange_rec.auto_present = True
         exchange_rec.presentation_request = TestConfig.INDY_PROOF_REQ
-        exchange_rec.presentation_proposal_dict = {}
 
         with async_mock.patch.object(
             DIDXManager,
@@ -2056,7 +2058,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         exchange_rec = V10PresentationExchange()
         exchange_rec.auto_present = True
         exchange_rec.presentation_request = TestConfig.INDY_PROOF_REQ
-        exchange_rec.presentation_proposal_dict = {}
 
         with async_mock.patch.object(
             DIDXManager,
@@ -2489,7 +2490,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         exchange_rec = V10PresentationExchange()
         exchange_rec.auto_present = True
         exchange_rec.presentation_request = TestConfig.INDY_PROOF_REQ
-        exchange_rec.presentation_proposal_dict = {}
 
         with async_mock.patch.object(
             DIDXManager,

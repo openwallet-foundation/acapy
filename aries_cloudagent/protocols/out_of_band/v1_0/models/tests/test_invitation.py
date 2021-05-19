@@ -20,7 +20,6 @@ class TestInvitationRecord(AsyncTestCase):
         assert invi_rec.invitation_id is None  # not saved
         assert isinstance(invi_rec, InvitationRecord)
         assert invi_rec.record_value == {
-            "invitation": None,
             "invitation_url": None,
             "state": None,
             "trace": False,
