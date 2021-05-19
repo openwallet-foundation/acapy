@@ -5,14 +5,22 @@ responsible for keeping track of all resolvers. more importantly
 retrieving did's from different sources provided by the method type.
 """
 
-import logging
+from datetime import datetime
 from itertools import chain
-from typing import Sequence, Union
+import logging
+from typing import Sequence, Tuple, Union
 
 from pydid import DID, DIDDocument, DIDError, DIDUrl, Service, VerificationMethod
 
 from ..core.profile import Profile
-from .base import BaseDIDResolver, DIDMethodNotSupported, DIDNotFound, ResolverError
+from .base import (
+    BaseDIDResolver,
+    DIDMethodNotSupported,
+    DIDNotFound,
+    ResolutionMetadata,
+    ResolutionResult,
+    ResolverError,
+)
 from .did_resolver_registry import DIDResolverRegistry
 
 LOGGER = logging.getLogger(__name__)
@@ -22,11 +30,13 @@ class DIDResolver:
     """did resolver singleton."""
 
     def __init__(self, registry: DIDResolverRegistry):
-        """Initialize a `didresolver` instance."""
+        """Create DID Resolver."""
         self.did_resolver_registry = registry
 
-    async def resolve(self, profile: Profile, did: Union[str, DID]) -> DIDDocument:
-        """Retrieve did doc from public registry."""
+    async def _resolve(
+        self, profile: Profile, did: Union[str, DID]
+    ) -> Tuple[BaseDIDResolver, DIDDocument]:
+        """Retrieve doc and return with resolver."""
         # TODO Cache results
         if isinstance(did, DID):
             did = str(did)
@@ -35,11 +45,36 @@ class DIDResolver:
         for resolver in await self._match_did_to_resolver(profile, did):
             try:
                 LOGGER.debug("Resolving DID %s with %s", did, resolver)
-                return await resolver.resolve(profile, did)
+                document = await resolver.resolve(
+                    profile,
+                    did,
+                )
+                return resolver, document
             except DIDNotFound:
                 LOGGER.debug("DID %s not found by resolver %s", did, resolver)
 
         raise DIDNotFound(f"DID {did} could not be resolved")
+
+    async def resolve(self, profile: Profile, did: Union[str, DID]) -> DIDDocument:
+        """Resolve a DID."""
+        _, doc = await self._resolve(profile, did)
+        return doc
+
+    async def resolve_with_metadata(
+        self, profile: Profile, did: Union[str, DID]
+    ) -> ResolutionResult:
+        """Resolve a DID and return the ResolutionResult."""
+        resolution_start_time = datetime.utcnow()
+
+        resolver, doc = await self._resolve(profile, did)
+
+        time_now = datetime.utcnow()
+        duration = int((time_now - resolution_start_time).total_seconds() * 1000)
+        retrieved_time = time_now.strftime("%Y-%m-%dT%H:%M:%SZ")
+        resolver_metadata = ResolutionMetadata(
+            resolver.type, type(resolver).__qualname__, retrieved_time, duration
+        )
+        return ResolutionResult(doc, resolver_metadata)
 
     async def _match_did_to_resolver(
         self, profile: Profile, did: str
