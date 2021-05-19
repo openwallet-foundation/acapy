@@ -1,4 +1,4 @@
-"""Aries#0036 v1.0 credential exchange information with non-secrets storage."""
+"""Aries#0453 v2.0 credential exchange information with non-secrets storage."""
 
 from typing import Any, Mapping, Union
 
@@ -301,7 +301,8 @@ class V20CredExRecordSchema(BaseExchangeSchema):
                 "cred_offer": fields.Dict(required=False),
                 "cred_request": fields.Dict(required=False),
                 "cred_issue": fields.Dict(required=False),
-            }
+            },
+            name="V20CredExRecordByFormatSchema",
         ),
         required=False,
         description=(

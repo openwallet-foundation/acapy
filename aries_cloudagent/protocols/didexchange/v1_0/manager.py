@@ -162,9 +162,9 @@ class DIDXManager(BaseConnectionManager):
         my_label: str = None,
         my_endpoint: str = None,
         mediation_id: str = None,
-    ) -> DIDXRequest:
+    ) -> ConnRecord:
         """
-        Create a request against a public DID only (no explicit invitation).
+        Create and send a request against a public DID only (no explicit invitation).
 
         Args:
             their_public_did: public DID to which to request a connection
@@ -173,7 +173,7 @@ class DIDXManager(BaseConnectionManager):
             mediation_id: record id for mediation with routing_keys, service endpoint
 
         Returns:
-            DID exchange request
+            The new `ConnRecord` instance
 
         """
 
@@ -184,17 +184,24 @@ class DIDXManager(BaseConnectionManager):
             their_role=ConnRecord.Role.RESPONDER.rfc23,
             invitation_key=None,
             invitation_msg_id=None,
-            state=ConnRecord.State.REQUEST.rfc23,
             accept=None,
             alias=my_label,
             their_public_did=their_public_did,
         )
-        return await self.create_request(  # saves and updates conn_rec
+        request = await self.create_request(  # saves and updates conn_rec
             conn_rec=conn_rec,
             my_label=my_label,
             my_endpoint=my_endpoint,
             mediation_id=mediation_id,
         )
+        conn_rec.request_id = request._id
+        conn_rec.state = ConnRecord.State.REQUEST.rfc23
+        await conn_rec.save(self._session, reason="Created connection request")
+        responder = self._session.inject(BaseResponder, required=False)
+        if responder:
+            await responder.send(request, connection_id=conn_rec.connection_id)
+
+        return conn_rec
 
     async def create_request(
         self,

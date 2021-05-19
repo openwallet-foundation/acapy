@@ -11,6 +11,7 @@ from .....cache.base import BaseCache
 from .....cache.in_memory import InMemoryCache
 from .....indy.issuer import IndyIssuer
 from .....messaging.decorators.attach_decorator import AttachDecorator
+from .....messaging.responder import BaseResponder, MockResponder
 from .....ledger.base import BaseLedger
 from .....storage.error import StorageNotFoundError
 
@@ -1300,7 +1301,7 @@ class TestV20CredManager(AsyncTestCase):
 
             mock_handler.return_value.store_credential = async_mock.CoroutineMock()
 
-            ret_cx_rec, ret_cred_ack = await self.manager.store_credential(
+            ret_cx_rec = await self.manager.store_credential(
                 stored_cx_rec, cred_id=cred_id
             )
 
@@ -1312,8 +1313,7 @@ class TestV20CredManager(AsyncTestCase):
                 V20CredIssue.deserialize(ret_cx_rec.cred_issue).attachment()
                 == INDY_CRED
             )
-            assert ret_cx_rec.state == V20CredExRecord.STATE_DONE
-            assert ret_cred_ack._thread_id == thread_id
+            assert ret_cx_rec.state == V20CredExRecord.STATE_CREDENTIAL_RECEIVED
 
     async def test_store_credential_bad_state(self):
         thread_id = "thread-id"
@@ -1329,7 +1329,40 @@ class TestV20CredManager(AsyncTestCase):
             await self.manager.store_credential(stored_cx_rec, cred_id=cred_id)
         assert " state " in str(context.exception)
 
-    async def test_credential_ack(self):
+    async def test_send_cred_ack(self):
+        connection_id = "connection-id"
+        stored_exchange = V20CredExRecord(
+            cred_ex_id="dummy-cxid",
+            connection_id=connection_id,
+            initiator=V20CredExRecord.INITIATOR_SELF,
+            thread_id="thid",
+            parent_thread_id="pthid",
+            role=V20CredExRecord.ROLE_ISSUER,
+            trace=False,
+            auto_remove=True,
+        )
+
+        with async_mock.patch.object(
+            V20CredExRecord, "save", autospec=True
+        ) as mock_save_ex, async_mock.patch.object(
+            V20CredExRecord, "delete_record", autospec=True
+        ) as mock_delete_ex, async_mock.patch.object(
+            test_module.LOGGER, "exception", async_mock.MagicMock()
+        ) as mock_log_exception, async_mock.patch.object(
+            test_module.LOGGER, "warning", async_mock.MagicMock()
+        ) as mock_log_warning:
+            mock_delete_ex.side_effect = test_module.StorageError()
+            ack = await self.manager.send_cred_ack(stored_exchange)
+            assert ack._thread
+            mock_log_exception.assert_called_once()  # cover exception log-and-continue
+            mock_log_warning.assert_called_once()  # no BaseResponder
+
+            mock_responder = MockResponder()  # cover with responder
+            self.context.injector.bind_instance(BaseResponder, mock_responder)
+            ack = await self.manager.send_cred_ack(stored_exchange)
+            assert ack._thread
+
+    async def test_receive_credential_ack(self):
         connection_id = "conn-id"
         stored_cx_rec = V20CredExRecord(
             cred_ex_id="dummy-cxid",

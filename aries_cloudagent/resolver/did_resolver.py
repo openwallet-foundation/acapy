@@ -5,22 +5,21 @@ responsible for keeping track of all resolvers. more importantly
 retrieving did's from different sources provided by the method type.
 """
 
-import logging
-from itertools import chain
 from datetime import datetime
+from itertools import chain
+import logging
 from typing import Sequence, Tuple, Union
 
-from pydid import DID, DIDError, DIDUrl, Service, VerificationMethod, DIDDocument
+from pydid import DID, DIDDocument, DIDError, DIDUrl, Service, VerificationMethod
 
 from ..core.profile import Profile
-
 from .base import (
     BaseDIDResolver,
     DIDMethodNotSupported,
     DIDNotFound,
-    ResolverError,
-    ResolutionResult,
     ResolutionMetadata,
+    ResolutionResult,
+    ResolverError,
 )
 from .did_resolver_registry import DIDResolverRegistry
 
@@ -39,13 +38,16 @@ class DIDResolver:
     ) -> Tuple[BaseDIDResolver, DIDDocument]:
         """Retrieve doc and return with resolver."""
         # TODO Cache results
-        py_did = DID(did) if isinstance(did, str) else did
-        for resolver in self._match_did_to_resolver(py_did):
+        if isinstance(did, DID):
+            did = str(did)
+        else:
+            DID.validate(did)
+        for resolver in await self._match_did_to_resolver(profile, did):
             try:
                 LOGGER.debug("Resolving DID %s with %s", did, resolver)
                 document = await resolver.resolve(
                     profile,
-                    py_did,
+                    did,
                 )
                 return resolver, document
             except DIDNotFound:
@@ -74,25 +76,26 @@ class DIDResolver:
         )
         return ResolutionResult(doc, resolver_metadata)
 
-    def _match_did_to_resolver(self, py_did: DID) -> Sequence[BaseDIDResolver]:
+    async def _match_did_to_resolver(
+        self, profile: Profile, did: str
+    ) -> Sequence[BaseDIDResolver]:
         """Generate supported DID Resolvers.
 
         Native resolvers are yielded first, in registered order followed by
         non-native resolvers in registered order.
         """
-        valid_resolvers = list(
-            filter(
-                lambda resolver: resolver.supports(py_did.method),
-                self.did_resolver_registry.resolvers,
-            )
-        )
+        valid_resolvers = [
+            resolver
+            for resolver in self.did_resolver_registry.resolvers
+            if await resolver.supports(profile, did)
+        ]
         native_resolvers = filter(lambda resolver: resolver.native, valid_resolvers)
         non_native_resolvers = filter(
             lambda resolver: not resolver.native, valid_resolvers
         )
         resolvers = list(chain(native_resolvers, non_native_resolvers))
         if not resolvers:
-            raise DIDMethodNotSupported(f"DID method '{py_did.method}' not supported")
+            raise DIDMethodNotSupported(f'No resolver supprting DID "{did}" loaded')
         return resolvers
 
     async def dereference(
@@ -101,9 +104,9 @@ class DIDResolver:
         """Dereference a DID URL to its corresponding DID Doc object."""
         # TODO Use cached DID Docs when possible
         try:
-            did_url = DIDUrl.parse(did_url)
-            document = await self.resolve(profile, did_url.did)
-            return document.dereference(did_url)
+            parsed = DIDUrl.parse(did_url)
+            doc = await self.resolve(profile, parsed.did)
+            return doc.dereference(parsed)
         except DIDError as err:
             raise ResolverError(
                 "Failed to parse DID URL from {}".format(did_url)
