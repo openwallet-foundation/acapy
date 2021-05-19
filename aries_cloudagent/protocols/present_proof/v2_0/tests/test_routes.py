@@ -1021,6 +1021,7 @@ class TestPresentProofRoutes(AsyncTestCase):
                 serialize=async_mock.MagicMock(
                     return_value={"thread_id": "sample-thread-id"}
                 ),
+                save_error_state=async_mock.CoroutineMock(),
             )
             mock_px_rec_cls.retrieve_by_id = async_mock.CoroutineMock(
                 return_value=mock_px_rec_inst
@@ -1162,6 +1163,34 @@ class TestPresentProofRoutes(AsyncTestCase):
         self.request.match_info = {
             "pres_ex_id": "dummy",
         }
+        px_rec_instance = V20PresExRecord(
+            state="request-received",
+            role="prover",
+            pres_proposal=None,
+            pres_request={
+                "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/present-proof/2.0/request-presentation",
+                "@id": "6ae00c6c-87fa-495a-b546-5f5953817c92",
+                "comment": "string",
+                "formats": [
+                    {
+                        "attach_id": "dif",
+                        "format": "dif/presentation-exchange/definitions@v1.0",
+                    }
+                ],
+                "request_presentations~attach": [
+                    {
+                        "@id": "dif",
+                        "mime-type": "application/json",
+                        "data": {"json": DIF_PROOF_REQ},
+                    }
+                ],
+                "will_confirm": True,
+            },
+            pres=None,
+            verified=None,
+            auto_present=False,
+            error_msg=None,
+        )
         self.profile.context.injector.bind_instance(
             IndyVerifier,
             async_mock.MagicMock(
@@ -1178,15 +1207,8 @@ class TestPresentProofRoutes(AsyncTestCase):
         ) as mock_px_rec_cls, async_mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
-            mock_px_rec_inst = async_mock.MagicMock(
-                connection_id="dummy",
-                state=test_module.V20PresExRecord.STATE_REQUEST_RECEIVED,
-                serialize=async_mock.MagicMock(
-                    return_value={"thread_id": "sample-thread-id"}
-                ),
-            )
             mock_px_rec_cls.retrieve_by_id = async_mock.CoroutineMock(
-                return_value=mock_px_rec_inst
+                return_value=px_rec_instance
             )
 
             mock_conn_rec_inst = async_mock.MagicMock(is_ready=True)
@@ -1202,9 +1224,7 @@ class TestPresentProofRoutes(AsyncTestCase):
             mock_pres_mgr_cls.return_value = mock_pres_mgr_inst
             with self.assertRaises(test_module.web.HTTPBadRequest):
                 await test_module.present_proof_send_presentation(self.request)
-                mock_response.assert_called_once_with(
-                    mock_px_rec_inst.serialize.return_value
-                )
+                mock_response.assert_called_once_with(px_rec_instance.serialize())
 
     async def test_present_proof_send_presentation_px_rec_not_found(self):
         self.request.json = async_mock.CoroutineMock(
@@ -1231,6 +1251,53 @@ class TestPresentProofRoutes(AsyncTestCase):
             with self.assertRaises(test_module.web.HTTPNotFound) as context:
                 await test_module.present_proof_send_presentation(self.request)
             assert "no such record" in str(context.exception)
+
+    async def test_present_proof_send_presentation_create_pres_storage_error(self):
+        self.request.json = async_mock.CoroutineMock(
+            return_value={
+                "indy": {
+                    "comment": "dummy",
+                    "self_attested_attributes": {},
+                    "requested_attributes": {},
+                    "requested_predicates": {},
+                }
+            }
+        )
+        self.request.match_info = {
+            "pres_ex_id": "dummy",
+        }
+        with async_mock.patch.object(
+            test_module, "ConnRecord", autospec=True
+        ) as mock_conn_rec_cls, async_mock.patch.object(
+            test_module, "V20PresManager", autospec=True
+        ) as mock_pres_mgr_cls, async_mock.patch.object(
+            test_module, "V20PresExRecord", autospec=True
+        ) as mock_px_rec_cls:
+            mock_px_rec_inst = async_mock.MagicMock(
+                connection_id="dummy",
+                state=test_module.V20PresExRecord.STATE_REQUEST_RECEIVED,
+                serialize=async_mock.MagicMock(
+                    return_value={"thread_id": "sample-thread-id"}
+                ),
+            )
+            mock_px_rec_cls.retrieve_by_id = async_mock.CoroutineMock(
+                return_value=mock_px_rec_inst
+            )
+
+            mock_conn_rec_inst = async_mock.MagicMock(is_ready=True)
+            mock_conn_rec_cls.retrieve_by_id = async_mock.CoroutineMock(
+                return_value=mock_conn_rec_inst
+            )
+
+            mock_pres_mgr_inst = async_mock.MagicMock(
+                create_pres=async_mock.CoroutineMock(
+                    side_effect=test_module.StorageError()
+                )
+            )
+            mock_pres_mgr_cls.return_value = mock_pres_mgr_inst
+
+            with self.assertRaises(test_module.web.HTTPBadRequest):
+                await test_module.present_proof_send_presentation(self.request)
 
     async def test_present_proof_send_presentation_not_found(self):
         self.request.json = async_mock.CoroutineMock(
@@ -1390,6 +1457,7 @@ class TestPresentProofRoutes(AsyncTestCase):
                 serialize=async_mock.MagicMock(
                     return_value={"thread_id": "sample-thread-id"}
                 ),
+                save_error_state=async_mock.CoroutineMock(),
             )
             mock_px_rec_cls.retrieve_by_id = async_mock.CoroutineMock(
                 return_value=mock_px_rec_inst
@@ -1486,6 +1554,43 @@ class TestPresentProofRoutes(AsyncTestCase):
             with self.assertRaises(test_module.web.HTTPBadRequest):
                 await test_module.present_proof_verify_presentation(self.request)
 
+    async def test_present_proof_verify_presentation_storage_verify_pres_storage_error(
+        self,
+    ):
+        self.request.match_info = {"pres_ex_id": "dummy"}
+
+        with async_mock.patch.object(
+            test_module, "ConnRecord", autospec=True
+        ) as mock_conn_rec_cls, async_mock.patch.object(
+            test_module, "V20PresManager", autospec=True
+        ) as mock_pres_mgr_cls, async_mock.patch.object(
+            test_module, "V20PresExRecord", autospec=True
+        ) as mock_px_rec_cls:
+            mock_px_rec_inst = async_mock.MagicMock(
+                connection_id="dummy",
+                state=test_module.V20PresExRecord.STATE_PRESENTATION_RECEIVED,
+                serialize=async_mock.MagicMock(
+                    return_value={"thread_id": "sample-thread-id"}
+                ),
+            )
+            mock_px_rec_cls.retrieve_by_id = async_mock.CoroutineMock(
+                return_value=mock_px_rec_inst
+            )
+            mock_conn_rec_inst = async_mock.MagicMock(is_ready=True)
+            mock_conn_rec_cls.retrieve_by_id = async_mock.CoroutineMock(
+                return_value=mock_conn_rec_inst
+            )
+
+            mock_pres_mgr_inst = async_mock.MagicMock(
+                verify_pres=async_mock.CoroutineMock(
+                    side_effect=test_module.StorageError()
+                )
+            )
+            mock_pres_mgr_cls.return_value = mock_pres_mgr_inst
+
+            with self.assertRaises(test_module.web.HTTPBadRequest):
+                await test_module.present_proof_verify_presentation(self.request)
+
     async def test_present_proof_verify_presentation_not_ready(self):
         self.request.match_info = {"pres_ex_id": "dummy"}
 
@@ -1550,6 +1655,7 @@ class TestPresentProofRoutes(AsyncTestCase):
                 serialize=async_mock.MagicMock(
                     return_value={"thread_id": "sample-thread-id"}
                 ),
+                save_error_state=async_mock.CoroutineMock(),
             )
             mock_px_rec_cls.retrieve_by_id = async_mock.CoroutineMock(
                 return_value=mock_px_rec_inst

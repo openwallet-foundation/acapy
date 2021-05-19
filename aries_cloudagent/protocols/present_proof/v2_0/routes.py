@@ -807,11 +807,17 @@ async def present_proof_send_bound_request(request: web.BaseRequest):
             pres_request_message,
         ) = await pres_manager.create_bound_request(pres_ex_record)
         result = pres_ex_record.serialize()
-    except (BaseModelError, StorageError) as err:
+    except (BaseModelError, LedgerError, StorageError) as err:
+        async with context.session() as session:
+            await pres_ex_record.save_error_state(
+                session,
+                state=V20PresExRecord.STATE_ABANDONED,
+                reason=err.message,
+            )
         return await internal_error(
             err,
             web.HTTPBadRequest,
-            pres_ex_record or conn_record,
+            pres_ex_record,
             outbound_handler,
         )
 
@@ -895,14 +901,26 @@ async def present_proof_send_presentation(request: web.BaseRequest):
         BaseModelError,
         IndyHolderError,
         LedgerError,
-        StorageError,
         V20PresFormatError,
         WalletNotFoundError,
     ) as err:
+        async with context.session() as session:
+            await pres_ex_record.save_error_state(
+                session,
+                state=V20PresExRecord.STATE_ABANDONED,
+                reason=err.message,
+            )
         return await internal_error(
             err,
             web.HTTPBadRequest,
-            pres_ex_record or conn_record,
+            pres_ex_record,
+            outbound_handler,
+        )
+    except StorageError as err:
+        return await internal_error(
+            err,
+            web.HTTPBadRequest,
+            pres_ex_record,
             outbound_handler,
         )
     trace_msg = body.get("trace")
@@ -975,7 +993,17 @@ async def present_proof_verify_presentation(request: web.BaseRequest):
     try:
         pres_ex_record = await pres_manager.verify_pres(pres_ex_record)
         result = pres_ex_record.serialize()
-    except (LedgerError, BaseModelError) as err:
+    except (BaseModelError, LedgerError) as err:
+        async with context.session() as session:
+            await pres_ex_record.save_error_state(
+                session,
+                state=V20PresExRecord.STATE_ABANDONED,
+                reason=err.message,
+            )
+        return await internal_error(
+            err, web.HTTPBadRequest, pres_ex_record, outbound_handler
+        )
+    except StorageError as err:
         return await internal_error(
             err, web.HTTPBadRequest, pres_ex_record, outbound_handler
         )

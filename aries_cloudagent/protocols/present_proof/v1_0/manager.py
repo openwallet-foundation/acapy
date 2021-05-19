@@ -349,6 +349,14 @@ class PresentationManager:
                     name=name,
                     value=value,
                 ):
+                    presentation_exchange_record.state = None
+                    async with self._profile.session() as session:
+                        await presentation_exchange_record.save(
+                            session,
+                            reason=(
+                                f"Presentation {name}={value} mismatches proposal value"
+                            ),
+                        )
                     raise PresentationManagerError(
                         f"Presentation {name}={value} mismatches proposal value"
                     )

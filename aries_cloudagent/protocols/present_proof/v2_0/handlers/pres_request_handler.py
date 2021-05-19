@@ -1,12 +1,16 @@
 """Presentation request message handler."""
 
+from .....indy.holder import IndyHolderError
+from .....ledger.error import LedgerError
 from .....messaging.base_handler import BaseHandler, HandlerException
 from .....messaging.request_context import RequestContext
 from .....messaging.responder import BaseResponder
-from .....storage.error import StorageNotFoundError
+from .....storage.error import StorageError, StorageNotFoundError
 from .....utils.tracing import trace_event, get_timer
+from .....wallet.error import WalletNotFoundError
 
-from ..manager import V20PresManager
+from ..formats.handler import V20PresFormatError
+from ..manager import V20PresManager, V20PresManagerError
 from ..messages.pres_request import V20PresRequest
 from ..models.pres_exchange import V20PresExRecord
 
@@ -61,7 +65,9 @@ class V20PresRequestHandler(BaseHandler):
                 trace=(context.message._trace is not None),
             )
 
-        pres_ex_record = await pres_manager.receive_pres_request(pres_ex_record)
+        pres_ex_record = await pres_manager.receive_pres_request(
+            pres_ex_record
+        )  # mgr only saves record: on exception, saving state err is hopeless
 
         r_time = trace_event(
             context.settings,
@@ -72,14 +78,32 @@ class V20PresRequestHandler(BaseHandler):
 
         # If auto_present is enabled, respond immediately with presentation
         if pres_ex_record.auto_present:
-            (pres_ex_record, pres_message) = await pres_manager.create_pres(
-                pres_ex_record=pres_ex_record,
-                comment=(
-                    f"auto-presented for proof requests"
-                    f", pres_ex_record: {pres_ex_record.pres_ex_id}"
-                ),
-            )
-            await responder.send_reply(pres_message)
+            pres_message = None
+            try:
+                (pres_ex_record, pres_message) = await pres_manager.create_pres(
+                    pres_ex_record=pres_ex_record,
+                    comment=(
+                        f"auto-presented for proof requests"
+                        f", pres_ex_record: {pres_ex_record.pres_ex_id}"
+                    ),
+                )
+                await responder.send_reply(pres_message)
+            except (
+                IndyHolderError,
+                LedgerError,
+                V20PresManagerError,
+                WalletNotFoundError,
+                V20PresFormatError,
+            ) as err:
+                self._logger.exception(err)
+                if pres_ex_record:
+                    await pres_ex_record.save_error_state(
+                        context.session(),
+                        state=V20PresExRecord.STATE_ABANDONED,
+                        reason=err.message,
+                    )
+            except StorageError as err:
+                self._logger.exception(err)  # may be logging to wire, not dead disk
             trace_event(
                 context.settings,
                 pres_message,
