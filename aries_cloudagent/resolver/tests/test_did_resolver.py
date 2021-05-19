@@ -1,15 +1,15 @@
 """Test did resolver registry."""
 
 import pytest
-import unittest
 
 from asynctest import mock as async_mock
-from pydid import DID, DIDDocument, DIDError, VerificationMethod
+from pydid import DID, DIDDocument, VerificationMethod
 
 from ..base import (
     BaseDIDResolver,
     DIDMethodNotSupported,
     DIDNotFound,
+    ResolutionMetadata,
     ResolverError,
     ResolverType,
 )
@@ -164,15 +164,23 @@ async def test_dereference_x(resolver, profile):
 @pytest.mark.asyncio
 @pytest.mark.parametrize("did", TEST_DIDS)
 async def test_resolve(resolver, profile, did):
-    did_doc = await resolver.resolve(profile, did)
-    assert isinstance(did_doc, DIDDocument)
+    doc = await resolver.resolve(profile, did)
+    assert isinstance(doc, DIDDocument)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("did", TEST_DIDS)
+async def test_resolve_with_metadata(resolver, profile, did):
+    result = await resolver.resolve_with_metadata(profile, did)
+    assert isinstance(result.did_document, DIDDocument)
+    assert isinstance(result.metadata, ResolutionMetadata)
 
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("did", TEST_DIDS)
 async def test_resolve_did(resolver, profile, did):
-    did_doc = await resolver.resolve(profile, DID(did))
-    assert isinstance(did_doc, DIDDocument)
+    doc = await resolver.resolve(profile, DID(did))
+    assert isinstance(doc, DIDDocument)
 
 
 @pytest.mark.asyncio

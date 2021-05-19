@@ -1,10 +1,10 @@
 """Base Class for DID Resolvers."""
 
-import re
-import warnings
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Pattern, Sequence, Union
+import re
+from typing import NamedTuple, Pattern, Sequence, Union
+import warnings
 
 from pydid import DID, DIDDocument
 from pydid.options import (
@@ -37,6 +37,40 @@ class ResolverType(Enum):
 
     NATIVE = "native"
     NON_NATIVE = "non-native"
+
+
+class ResolutionMetadata(NamedTuple):
+    """Resolution Metadata."""
+
+    resolver_type: ResolverType
+    resolver: str
+    retrieved_time: str
+    duration: int
+
+    def serialize(self) -> dict:
+        """Return serialized resolution metadata."""
+        return {**self._asdict(), "resolver_type": self.resolver_type.value}
+
+
+class ResolutionResult:
+    """Resolution Class to pack the DID Doc and the resolution information."""
+
+    def __init__(self, did_document: DIDDocument, metadata: ResolutionMetadata):
+        """Initialize Resolution.
+
+        Args:
+            did_doc: DID Document resolved
+            resolver_metadata: Resolving details
+        """
+        self.did_document = did_document
+        self.metadata = metadata
+
+    def serialize(self) -> dict:
+        """Return serialized resolution result."""
+        return {
+            "did_document": self.did_document.serialize(),
+            "metadata": self.metadata.serialize(),
+        }
 
 
 class BaseDIDResolver(ABC):
@@ -114,9 +148,9 @@ class BaseDIDResolver(ABC):
                 f"{self.__class__.__name__} does not support DID method for: {did}"
             )
 
-        did_document = await self._resolve(profile, did)
-        result = DIDDocument.deserialize(
-            did_document,
+        doc_dict = await self._resolve(profile, did)
+        return DIDDocument.deserialize(
+            doc_dict,
             options={
                 doc_insert_missing_ids,
                 doc_allow_public_key,
@@ -125,7 +159,6 @@ class BaseDIDResolver(ABC):
                 vm_allow_type_list,
             },
         )
-        return result
 
     @abstractmethod
     async def _resolve(self, profile: Profile, did: str) -> dict:
