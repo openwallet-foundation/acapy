@@ -1461,6 +1461,10 @@ class TestV20CredRoutes(AsyncTestCase):
             mock_cx_rec = async_mock.MagicMock()
 
             mock_cred_mgr.return_value.store_credential.return_value = mock_cx_rec
+            mock_cred_mgr.return_value.send_cred_ack.return_value = (
+                mock_cx_rec,
+                async_mock.MagicMock(),
+            )
 
             await test_module.credential_exchange_store(self.request)
 
@@ -1505,6 +1509,10 @@ class TestV20CredRoutes(AsyncTestCase):
             mock_ld_proof_get_detail_record.return_value = None  # ld_proof
 
             mock_cred_mgr.return_value.store_credential.return_value = mock_cx_rec
+            mock_cred_mgr.return_value.send_cred_ack.return_value = (
+                mock_cx_rec,
+                async_mock.MagicMock(),
+            )
 
             await test_module.credential_exchange_store(self.request)
 
@@ -1555,6 +1563,10 @@ class TestV20CredRoutes(AsyncTestCase):
             )
 
             mock_cred_mgr.return_value.store_credential.return_value = mock_cx_rec
+            mock_cred_mgr.return_value.send_cred_ack.return_value = (
+                mock_cx_rec,
+                async_mock.MagicMock(),
+            )
 
             with self.assertRaises(test_module.web.HTTPBadRequest):
                 await test_module.credential_exchange_store(self.request)
@@ -1580,8 +1592,6 @@ class TestV20CredRoutes(AsyncTestCase):
             # Emulate connection not ready
             mock_conn_rec.retrieve_by_id = async_mock.CoroutineMock()
             mock_conn_rec.retrieve_by_id.return_value.is_ready = False
-
-            mock_cred_mgr.return_value.store_credential.return_value = mock_cx_rec
 
             with self.assertRaises(test_module.web.HTTPForbidden):
                 await test_module.credential_exchange_store(self.request)

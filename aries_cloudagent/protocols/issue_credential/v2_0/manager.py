@@ -622,7 +622,7 @@ class V20CredManager:
         Delete cred ex record if set to auto-remove.
 
         Returns:
-            cred ack message for tracing
+            Tuple: cred ex record, cred ack message for tracing
 
         """
         cred_ack_message = V20CredAck()
@@ -657,7 +657,7 @@ class V20CredManager:
                 cred_ex_record.thread_id,
             )
 
-        return cred_ack_message
+        return cred_ex_record, cred_ack_message
 
     async def receive_credential_ack(
         self, cred_ack_message: V20CredAck, connection_id: str
