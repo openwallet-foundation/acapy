@@ -60,7 +60,7 @@ class V10PresentationExchange(BaseExchangeRecord):
         state: str = None,
         presentation_proposal_dict: Union[
             PresentationProposal, Mapping
-        ] = None,  # aries message
+        ] = None,  # aries message: ..._dict for historic compat on all aries msgs
         presentation_request: Union[IndyProofRequest, Mapping] = None,  # indy proof req
         presentation_request_dict: Union[
             PresentationRequest, Mapping
@@ -129,7 +129,7 @@ class V10PresentationExchange(BaseExchangeRecord):
         """Accessor; get deserialized view."""
         return (
             None
-            if self._presentation_request.de is None
+            if self._presentation_request is None
             else self._presentation_request.de
         )
 

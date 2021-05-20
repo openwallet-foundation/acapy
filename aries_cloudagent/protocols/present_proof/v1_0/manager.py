@@ -271,7 +271,7 @@ class PresentationManager:
 
         # extract credential ids and non_revoked
         requested_referents = {}
-        presentation_request = presentation_exchange_record.presentation_request
+        presentation_request = presentation_exchange_record._presentation_request.ser
         non_revoc_intervals = indy_proof_req2non_revoc_intervals(presentation_request)
         attr_creds = requested_credentials.get("requested_attributes", {})
         req_attrs = presentation_request.get("requested_attributes", {})
@@ -414,7 +414,7 @@ class PresentationManager:
                 ] = precis["timestamp"]
 
         indy_proof_json = await holder.create_presentation(
-            presentation_exchange_record.presentation_request,
+            presentation_exchange_record._presentation_request.ser,
             requested_credentials,
             schemas,
             credential_definitions,
@@ -488,7 +488,7 @@ class PresentationManager:
             )
             presentation_preview = exchange_pres_proposal.presentation_proposal
 
-            proof_req = presentation_exchange_record.presentation_request
+            proof_req = presentation_exchange_record._presentation_request.ser
             for (reft, attr_spec) in presentation["requested_proof"][
                 "revealed_attrs"
             ].items():
@@ -539,8 +539,8 @@ class PresentationManager:
             presentation record, updated
 
         """
-        indy_proof_request = presentation_exchange_record.presentation_request
-        indy_proof = presentation_exchange_record.presentation
+        indy_proof_request = presentation_exchange_record._presentation_request.ser
+        indy_proof = presentation_exchange_record._presentation.ser
 
         schema_ids = []
         credential_definition_ids = []
