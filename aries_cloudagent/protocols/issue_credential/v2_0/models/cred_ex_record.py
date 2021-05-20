@@ -95,10 +95,8 @@ class V20CredExRecord(BaseExchangeRecord):
 
     @property
     def cred_preview(self) -> Mapping:
-        """Credential preview from credential proposal."""
-        return (
-            self.cred_proposal and self.cred_proposal.get("credential_preview") or None
-        )
+        """Credential preview (deserialized view) from credential proposal."""
+        return self.cred_proposal and self.cred_proposal.credential_preview or None
 
     @property
     def cred_proposal(self) -> V20CredProposal:

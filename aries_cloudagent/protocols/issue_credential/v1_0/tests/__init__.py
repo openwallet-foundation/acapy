@@ -161,4 +161,3 @@ INDY_CRED_INFO = {
     "rev_reg_id": REV_REG_ID,
     "cred_rev_id": "1",
 }
-

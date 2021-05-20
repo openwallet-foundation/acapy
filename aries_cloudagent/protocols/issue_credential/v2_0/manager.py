@@ -213,9 +213,7 @@ class V20CredManager:
         """
 
         cred_proposal_message = (
-            counter_proposal
-            if counter_proposal
-            else cred_ex_record.cred_proposal
+            counter_proposal if counter_proposal else cred_ex_record.cred_proposal
         )
         cred_proposal_message.assign_trace_decorator(
             self._profile.settings, cred_ex_record.trace
