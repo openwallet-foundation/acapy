@@ -29,7 +29,7 @@ class TestConnectionRoutes(AsyncTestCase):
         self.request.query = {
             "invitation_id": "dummy",  # exercise tag filter assignment
             "their_role": ConnRecord.Role.REQUESTER.rfc160,
-            "tags":  "tag1"
+            "tags": "tag1",
         }
 
         STATE_COMPLETED = ConnRecord.State.COMPLETED
@@ -78,7 +78,6 @@ class TestConnectionRoutes(AsyncTestCase):
                             "state": ConnRecord.State.ABANDONED.rfc23,
                             "created_at": "1234567890",
                             "metadata": {"tags": ["tag1"]},
-
                         }
                     )
                 ),
@@ -330,7 +329,6 @@ class TestConnectionRoutes(AsyncTestCase):
             "recipient_keys": ["test"],
             "routing_keys": ["test"],
             "service_endpoint": "http://example.com",
-            "metadata": {"hello": "world"},
             "mediation_id": "some-id",
         }
         self.request.json = async_mock.CoroutineMock(return_value=body)
@@ -339,6 +337,7 @@ class TestConnectionRoutes(AsyncTestCase):
             "alias": "alias",
             "public": "true",
             "multi_use": "true",
+            "tags": "tag1",
         }
 
         with async_mock.patch.object(
@@ -346,7 +345,6 @@ class TestConnectionRoutes(AsyncTestCase):
         ) as mock_conn_mgr, async_mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
-
             mock_conn_mgr.return_value.create_invitation = async_mock.CoroutineMock(
                 return_value=(
                     async_mock.MagicMock(  # connection record
@@ -360,17 +358,20 @@ class TestConnectionRoutes(AsyncTestCase):
             )
 
             await test_module.connections_create_invitation(self.request)
+
             mock_conn_mgr.return_value.create_invitation.assert_called_once_with(
                 **{
-                    key: json.loads(value) if key != "alias" else value
-                    for key, value in self.request.query.items()
-                },
-                my_label=None,
-                recipient_keys=body["recipient_keys"],
-                routing_keys=body["routing_keys"],
-                my_endpoint=body["service_endpoint"],
-                metadata=body["metadata"],
-                mediation_id="some-id"
+                    "my_label": None,
+                    "auto_accept": True,
+                    "public": True,
+                    "multi_use": True,
+                    "alias": "alias",
+                    "recipient_keys": ["test"],
+                    "my_endpoint": "http://example.com",
+                    "routing_keys": ["test"],
+                    "metadata": {"tags": ["tag1"]},
+                    "mediation_id": "some-id",
+                }
             )
             mock_response.assert_called_once_with(
                 {
@@ -441,10 +442,7 @@ class TestConnectionRoutes(AsyncTestCase):
 
     async def test_connections_receive_invitation(self):
         self.request.json = async_mock.CoroutineMock()
-        self.request.query = {
-            "auto_accept": "true",
-            "alias": "alias",
-        }
+        self.request.query = {"auto_accept": "true", "alias": "alias", "tags": "tag1"}
 
         mock_conn_rec = async_mock.MagicMock()
         mock_conn_rec.serialize = async_mock.MagicMock()
@@ -529,7 +527,6 @@ class TestConnectionRoutes(AsyncTestCase):
         ) as mock_conn_mgr, async_mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
-
             mock_conn_rec_retrieve_by_id.return_value = mock_conn_rec
             mock_conn_mgr.return_value.create_request = async_mock.CoroutineMock()
 

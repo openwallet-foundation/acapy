@@ -15,7 +15,7 @@ from ....storage.base import (
 
 from ...util import time_now
 
-from ..base_record import BaseRecord, BaseRecordSchema, LOGGER
+from ..base_record import BaseRecord, BaseRecordSchema, LOGGER, match_post_filter
 
 
 class BaseRecordImpl(BaseRecord):
@@ -328,3 +328,11 @@ class TestBaseRecord(AsyncTestCase):
         assert UnencTestImpl.prefix_tag_filter(tags) == {
             "$or": [{"~a": "x"}, {"c": "z"}]
         }
+
+    async def test_match_post_filter_tags_purposes(self):
+        assert match_post_filter(
+            record={"metadata": {"tags": [1, 2]}}, post_filter={"tags": [1, 2]}
+        )
+        assert not match_post_filter(
+            record={"alias": "test"}, post_filter={"tags": [1, 2]}
+        )
