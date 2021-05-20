@@ -60,7 +60,7 @@ class V10CredentialExchange(BaseExchangeRecord):
         schema_id: str = None,
         credential_proposal_dict: Union[
             Mapping, CredentialProposal
-        ] = None,  # aries message
+        ] = None,  # aries message: ..._dict for historic compat on all aries msgs
         credential_offer_dict: Union[Mapping, CredentialOffer] = None,  # aries message
         credential_offer: Union[Mapping, IndyCredAbstract] = None,  # indy artifact
         credential_request: [Mapping, IndyCredRequest] = None,  # indy artifact

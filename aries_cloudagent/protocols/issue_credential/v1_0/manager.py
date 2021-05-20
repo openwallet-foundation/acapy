@@ -388,7 +388,7 @@ class CredentialManager:
             )
 
         credential_definition_id = cred_ex_record.credential_definition_id
-        credential_offer = cred_ex_record.credential_offer
+        cred_offer_ser = cred_ex_record._credential_offer.ser
 
         async def _create():
             ledger = self._profile.inject(BaseLedger)
@@ -399,7 +399,9 @@ class CredentialManager:
 
             holder = self._profile.inject(IndyHolder)
             request_json, metadata_json = await holder.create_credential_request(
-                credential_offer, credential_definition, holder_did
+                cred_offer_ser,
+                credential_definition,
+                holder_did,
             )
             return {
                 "request": json.loads(request_json),
@@ -412,9 +414,7 @@ class CredentialManager:
                 cred_ex_record.credential_exchange_id,
             )
         else:
-            if not credential_offer.nonce:
-                raise CredentialManagerError("Missing nonce in credential offer")
-            nonce = credential_offer.nonce
+            nonce = cred_offer_ser["nonce"]
             cache_key = (
                 f"credential_request::{credential_definition_id}::{holder_did}::{nonce}"
             )
@@ -437,7 +437,9 @@ class CredentialManager:
 
         credential_request_message = CredentialRequest(
             requests_attach=[
-                CredentialRequest.wrap_indy_cred_req(cred_ex_record.credential_request)
+                CredentialRequest.wrap_indy_cred_req(
+                    cred_ex_record._credential_request.ser
+                )
             ]
         )
         credential_request_message._thread = {"thid": cred_ex_record.thread_id}
@@ -514,8 +516,8 @@ class CredentialManager:
                 cred_ex_record.credential_exchange_id,
             )
         else:
-            credential_offer = cred_ex_record.credential_offer
-            credential_request = cred_ex_record.credential_request
+            cred_offer_ser = cred_ex_record._credential_offer.ser
+            cred_req_ser = cred_ex_record._credential_request.ser
 
             ledger = self._profile.inject(BaseLedger)
             async with ledger:
@@ -600,8 +602,8 @@ class CredentialManager:
                     cred_ex_record.revocation_id,
                 ) = await issuer.create_credential(
                     schema,
-                    credential_offer,
-                    credential_request,
+                    cred_offer_ser,
+                    cred_req_ser,
                     credential_values,
                     cred_ex_record.credential_exchange_id,
                     cred_ex_record.revoc_reg_id,
@@ -662,7 +664,7 @@ class CredentialManager:
         credential_message = CredentialIssue(
             comment=comment,
             credentials_attach=[
-                CredentialIssue.wrap_indy_credential(cred_ex_record.credential)
+                CredentialIssue.wrap_indy_credential(cred_ex_record._credential.ser)
             ],
         )
         credential_message._thread = {"thid": cred_ex_record.thread_id}
@@ -725,16 +727,16 @@ class CredentialManager:
                 f"(must be {V10CredentialExchange.STATE_CREDENTIAL_RECEIVED})"
             )
 
-        raw_credential = cred_ex_record.raw_credential
+        raw_cred_serde = cred_ex_record._raw_credential
         revoc_reg_def = None
         ledger = self._profile.inject(BaseLedger)
         async with ledger:
             credential_definition = await ledger.get_credential_definition(
-                raw_credential.cred_def_id
+                raw_cred_serde.de.cred_def_id
             )
-            if raw_credential.rev_reg_id:
+            if raw_cred_serde.de.rev_reg_id:
                 revoc_reg_def = await ledger.get_revoc_reg_def(
-                    raw_credential.rev_reg_id
+                    raw_cred_serde.de.rev_reg_id
                 )
 
         holder = self._profile.inject(IndyHolder)
@@ -754,7 +756,7 @@ class CredentialManager:
         try:
             credential_id = await holder.store_credential(
                 credential_definition,
-                raw_credential,
+                raw_cred_serde.ser,
                 cred_ex_record.credential_request_metadata,
                 mime_types,
                 credential_id=credential_id,
