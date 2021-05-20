@@ -261,6 +261,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             their_role=None,
             state=ConnRecord.State.COMPLETED,
             their_public_did=self.their_public_did,
+            metadata={"tags": ["tag1", "tag2"]},
         )
 
         self.test_mediator_routing_keys = [
@@ -1120,6 +1121,66 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 )
                 == 1
             )
+
+    async def test_query_connections_filtered_by_tags(self):
+
+        # Save connection record with tags: tag1, tag2
+        self.test_conn_rec.invitation_msg_id = "test_123"
+        await self.test_conn_rec.save(self.session)
+
+        # Query without tags
+        records = await ConnRecord.query(
+            session=self.session,
+            tag_filter={},
+            post_filter_positive={"invitation_msg_id": "test_123"},
+            alt=True,
+        )
+        assert len(records) == 1
+
+        # Query with tag1
+        records_filtered_by_tag = await ConnRecord.query(
+            session=self.session,
+            tag_filter={},
+            post_filter_positive={"invitation_msg_id": "test_123", "tags": ["tag1"]},
+            alt=True,
+        )
+        assert len(records_filtered_by_tag) == 1
+
+        # Query with tag3
+        records_filtered_by_tags = await ConnRecord.query(
+            session=self.session,
+            tag_filter={},
+            post_filter_positive={
+                "invitation_msg_id": "test_123",
+                "tags": ["tag3"],
+            },
+            alt=True,
+        )
+        assert len(records_filtered_by_tags) == 0
+
+        # Query with tag1, tag2
+        records_filtered_by_tags = await ConnRecord.query(
+            session=self.session,
+            tag_filter={},
+            post_filter_positive={
+                "invitation_msg_id": "test_123",
+                "tags": ["tag1", "tag2"],
+            },
+            alt=True,
+        )
+        assert len(records_filtered_by_tags) == 1
+
+        # Query with tag1, tag3
+        records_filtered_by_tags = await ConnRecord.query(
+            session=self.session,
+            tag_filter={},
+            post_filter_positive={
+                "invitation_msg_id": "test_123",
+                "tags": ["tag1", "tag3"],
+            },
+            alt=True,
+        )
+        assert len(records_filtered_by_tags) == 0
 
     async def test_receive_reuse_message_existing_not_found(self):
         self.session.context.update_settings({"public_invites": True})

@@ -29,6 +29,7 @@ class TestConnectionRoutes(AsyncTestCase):
         self.request.query = {
             "invitation_id": "dummy",  # exercise tag filter assignment
             "their_role": ConnRecord.Role.REQUESTER.rfc160,
+            "tags":  "tag1"
         }
 
         STATE_COMPLETED = ConnRecord.State.COMPLETED
@@ -58,6 +59,7 @@ class TestConnectionRoutes(AsyncTestCase):
                         return_value={
                             "state": ConnRecord.State.COMPLETED.rfc23,
                             "created_at": "1234567890",
+                            "metadata": {"tags": ["tag1"]},
                         }
                     )
                 ),
@@ -66,6 +68,7 @@ class TestConnectionRoutes(AsyncTestCase):
                         return_value={
                             "state": ConnRecord.State.INVITATION.rfc23,
                             "created_at": "1234567890",
+                            "metadata": {"tags": ["tag1"]},
                         }
                     )
                 ),
@@ -74,6 +77,8 @@ class TestConnectionRoutes(AsyncTestCase):
                         return_value={
                             "state": ConnRecord.State.ABANDONED.rfc23,
                             "created_at": "1234567890",
+                            "metadata": {"tags": ["tag1"]},
+
                         }
                     )
                 ),
@@ -89,7 +94,7 @@ class TestConnectionRoutes(AsyncTestCase):
                         "results": [
                             {
                                 k: c.serialize.return_value[k]
-                                for k in ["state", "created_at"]
+                                for k in ["state", "created_at", "metadata"]
                             }
                             for c in conns
                         ]
