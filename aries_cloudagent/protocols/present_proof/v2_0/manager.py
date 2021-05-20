@@ -158,9 +158,18 @@ class V20PresManager:
                 )
             ],
             request_presentations_attach=[
-                AttachDecorator.data_base64(
-                    mapping=indy_proof_request,
-                    ident="indy",
+                (
+                    AttachDecorator.data_base64(
+                        mapping=indy_proof_request,
+                        ident="indy",
+                        flag_aip2=True,
+                    )
+                    if self._profile.settings.get("emit_new_didcomm_mime_type")
+                    and self._profile.get("emit_new_didcomm_prefix")
+                    else AttachDecorator.data_base64(
+                        mapping=indy_proof_request,
+                        ident="indy",
+                    )
                 )
             ],
         )
@@ -441,7 +450,14 @@ class V20PresManager:
                 )
             ],
             presentations_attach=[
-                AttachDecorator.data_base64(mapping=indy_proof, ident="indy")
+                (
+                    AttachDecorator.data_base64(
+                        mapping=indy_proof, ident="indy", flag_aip2=True
+                    )
+                    if self._profile.settings.get("emit_new_didcomm_mime_type")
+                    and self._profile.get("emit_new_didcomm_prefix")
+                    else AttachDecorator.data_base64(mapping=indy_proof, ident="indy")
+                )
             ],
         )
 
@@ -460,9 +476,18 @@ class V20PresManager:
                 ),
             ],
             presentations_attach=[
-                AttachDecorator.data_base64(
-                    mapping=indy_proof,
-                    ident="indy",
+                (
+                    AttachDecorator.data_base64(
+                        mapping=indy_proof,
+                        ident="indy",
+                        flag_aip2=True,
+                    )
+                    if self._profile.settings.get("emit_new_didcomm_mime_type")
+                    and self._profile.get("emit_new_didcomm_prefix")
+                    else AttachDecorator.data_base64(
+                        mapping=indy_proof,
+                        ident="indy",
+                    )
                 )
             ],
         ).serialize()

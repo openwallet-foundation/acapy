@@ -320,7 +320,9 @@ async def _add_nonce(indy_proof_request: Mapping) -> Mapping:
     return indy_proof_request
 
 
-def _formats_attach(by_format: Mapping, msg_type: str, spec: str) -> Mapping:
+def _formats_attach(
+    by_format: Mapping, msg_type: str, spec: str, flag_aip2: bool = False
+) -> Mapping:
     """Break out formats and proposals/requests/presentations for v2.0 messages."""
 
     return {
@@ -332,7 +334,13 @@ def _formats_attach(by_format: Mapping, msg_type: str, spec: str) -> Mapping:
             for fmt_api in by_format
         ],
         f"{spec}_attach": [
-            AttachDecorator.data_base64(mapping=item_by_fmt, ident=fmt_api)
+            (
+                AttachDecorator.data_base64(
+                    mapping=item_by_fmt, ident=fmt_api, flag_aip2=flag_aip2
+                )
+                if flag_aip2
+                else AttachDecorator.data_base64(mapping=item_by_fmt, ident=fmt_api)
+            )
             for (fmt_api, item_by_fmt) in by_format.items()
         ],
     }
@@ -511,13 +519,18 @@ async def present_proof_send_proposal(request: web.BaseRequest):
     connection_id = body.get("connection_id")
 
     pres_proposal = body.get("presentation_proposal")
+    flag_aip2 = context.profile.settings.get(
+        "emit_new_didcomm_mime_type"
+    ) and context.profile.get("emit_new_didcomm_prefix")
     conn_record = None
     async with context.session() as session:
         try:
             conn_record = await ConnRecord.retrieve_by_id(session, connection_id)
             pres_proposal_message = V20PresProposal(
                 comment=comment,
-                **_formats_attach(pres_proposal, PRES_20_PROPOSAL, "proposals"),
+                **_formats_attach(
+                    pres_proposal, PRES_20_PROPOSAL, "proposals", flag_aip2=flag_aip2
+                ),
             )
         except (BaseModelError, StorageError) as err:
             return await internal_error(
@@ -594,13 +607,21 @@ async def present_proof_create_request(request: web.BaseRequest):
 
     comment = body.get("comment")
     pres_request_spec = body.get("presentation_request")
+    flag_aip2 = context.profile.settings.get(
+        "emit_new_didcomm_mime_type"
+    ) and context.profile.get("emit_new_didcomm_prefix")
     if pres_request_spec and V20PresFormat.Format.INDY.api in pres_request_spec:
         await _add_nonce(pres_request_spec[V20PresFormat.Format.INDY.api])
 
     pres_request_message = V20PresRequest(
         comment=comment,
         will_confirm=True,
-        **_formats_attach(pres_request_spec, PRES_20_REQUEST, "request_presentations"),
+        **_formats_attach(
+            pres_request_spec,
+            PRES_20_REQUEST,
+            "request_presentations",
+            flag_aip2=flag_aip2,
+        ),
     )
     trace_msg = body.get("trace")
     pres_request_message.assign_trace_decorator(
@@ -669,12 +690,20 @@ async def present_proof_send_free_request(request: web.BaseRequest):
 
     comment = body.get("comment")
     pres_request_spec = body.get("presentation_request")
+    flag_aip2 = context.profile.settings.get(
+        "emit_new_didcomm_mime_type"
+    ) and context.profile.get("emit_new_didcomm_prefix")
     if pres_request_spec and V20PresFormat.Format.INDY.api in pres_request_spec:
         await _add_nonce(pres_request_spec[V20PresFormat.Format.INDY.api])
     pres_request_message = V20PresRequest(
         comment=comment,
         will_confirm=True,
-        **_formats_attach(pres_request_spec, PRES_20_REQUEST, "request_presentations"),
+        **_formats_attach(
+            pres_request_spec,
+            PRES_20_REQUEST,
+            "request_presentations",
+            flag_aip2=flag_aip2,
+        ),
     )
     trace_msg = body.get("trace")
     pres_request_message.assign_trace_decorator(

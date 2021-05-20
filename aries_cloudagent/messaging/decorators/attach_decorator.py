@@ -571,6 +571,7 @@ class AttachDecorator(BaseModel):
         cls,
         mapping: Mapping,
         *,
+        flag_aip2: bool = False,
         ident: str = None,
         description: str = None,
         filename: str = None,
@@ -590,8 +591,13 @@ class AttachDecorator(BaseModel):
             filename: optional attachment filename
             lastmod_time: optional attachment last modification time
             byte_count: optional attachment byte count
+            flag_aip2: whether attach base64url encoded data
 
         """
+        if flag_aip2:
+            b64_attach = bytes_to_b64(json.dumps(mapping).encode(), urlsafe=True)
+        else:
+            b64_attach = bytes_to_b64(json.dumps(mapping).encode())
         return AttachDecorator(
             ident=ident or str(uuid.uuid4()),
             description=description,
@@ -599,9 +605,7 @@ class AttachDecorator(BaseModel):
             mime_type="application/json",
             lastmod_time=lastmod_time,
             byte_count=byte_count,
-            data=AttachDecoratorData(
-                base64_=bytes_to_b64(json.dumps(mapping).encode())
-            ),
+            data=AttachDecoratorData(base64_=b64_attach),
         )
 
     @classmethod

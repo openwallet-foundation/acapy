@@ -102,7 +102,6 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         """Create indy credential proposal."""
         if proposal_data is None:
             proposal_data = {}
-
         return self.get_format_data(CRED_20_PROPOSAL, proposal_data)
 
     async def receive_proposal(

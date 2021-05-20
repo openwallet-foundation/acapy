@@ -146,9 +146,18 @@ class PresentationManager:
         presentation_request_message = PresentationRequest(
             comment=comment,
             request_presentations_attach=[
-                AttachDecorator.data_base64(
-                    mapping=indy_proof_request,
-                    ident=ATTACH_DECO_IDS[PRESENTATION_REQUEST],
+                (
+                    AttachDecorator.data_base64(
+                        mapping=indy_proof_request,
+                        ident=ATTACH_DECO_IDS[PRESENTATION_REQUEST],
+                        flag_aip2=True,
+                    )
+                    if self._profile.settings.get("emit_new_didcomm_mime_type")
+                    and self._profile.get("emit_new_didcomm_prefix")
+                    else AttachDecorator.data_base64(
+                        mapping=indy_proof_request,
+                        ident=ATTACH_DECO_IDS[PRESENTATION_REQUEST],
+                    )
                 )
             ],
         )
@@ -427,8 +436,17 @@ class PresentationManager:
         presentation_message = Presentation(
             comment=comment,
             presentations_attach=[
-                AttachDecorator.data_base64(
-                    mapping=indy_proof, ident=ATTACH_DECO_IDS[PRESENTATION]
+                (
+                    AttachDecorator.data_base64(
+                        mapping=indy_proof,
+                        ident=ATTACH_DECO_IDS[PRESENTATION],
+                        flag_aip2=True,
+                    )
+                    if self._profile.settings.get("emit_new_didcomm_mime_type")
+                    and self._profile.get("emit_new_didcomm_prefix")
+                    else AttachDecorator.data_base64(
+                        mapping=indy_proof, ident=ATTACH_DECO_IDS[PRESENTATION]
+                    )
                 )
             ],
         )

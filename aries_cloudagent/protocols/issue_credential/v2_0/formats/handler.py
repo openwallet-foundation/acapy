@@ -104,12 +104,21 @@ class V20CredFormatHandler(ABC):
             CredFormatAttachment: Credential format and attachment data objects
 
         """
+        flag_aip2 = self.profile.settings.get(
+            "emit_new_didcomm_mime_type"
+        ) and self.profile.settings.get("emit_new_didcomm_prefix")
         return (
             V20CredFormat(
                 attach_id=self.format.api,
                 format_=self.get_format_identifier(message_type),
             ),
-            AttachDecorator.data_base64(data, ident=self.format.api),
+            (
+                AttachDecorator.data_base64(
+                    data, ident=self.format.api, flag_aip2=flag_aip2
+                )
+                if flag_aip2
+                else AttachDecorator.data_base64(data, ident=self.format.api)
+            ),
         )
 
     @abstractclassmethod

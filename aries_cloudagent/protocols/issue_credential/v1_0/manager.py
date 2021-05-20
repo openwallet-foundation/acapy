@@ -287,7 +287,14 @@ class CredentialManager:
         credential_offer_message = CredentialOffer(
             comment=comment,
             credential_preview=credential_preview,
-            offers_attach=[CredentialOffer.wrap_indy_offer(credential_offer)],
+            offers_attach=[
+                (
+                    CredentialOffer.wrap_indy_offer(credential_offer, flag_aip2=True)
+                    if self._profile.settings.get("emit_new_didcomm_mime_type")
+                    and self._profile.get("emit_new_didcomm_prefix")
+                    else CredentialOffer.wrap_indy_offer(credential_offer)
+                )
+            ],
         )
 
         credential_offer_message._thread = {"thid": cred_ex_record.thread_id}
@@ -437,7 +444,16 @@ class CredentialManager:
 
         credential_request_message = CredentialRequest(
             requests_attach=[
-                CredentialRequest.wrap_indy_cred_req(cred_ex_record.credential_request)
+                (
+                    CredentialRequest.wrap_indy_cred_req(
+                        cred_ex_record.credential_request, flag_aip2=True
+                    )
+                    if self._profile.settings.get("emit_new_didcomm_mime_type")
+                    and self._profile.get("emit_new_didcomm_prefix")
+                    else CredentialRequest.wrap_indy_cred_req(
+                        cred_ex_record.credential_request
+                    )
+                )
             ]
         )
         credential_request_message._thread = {"thid": cred_ex_record.thread_id}
@@ -660,7 +676,14 @@ class CredentialManager:
         credential_message = CredentialIssue(
             comment=comment,
             credentials_attach=[
-                CredentialIssue.wrap_indy_credential(cred_ex_record.credential)
+                (
+                    CredentialIssue.wrap_indy_credential(
+                        cred_ex_record.credential, flag_aip2=True
+                    )
+                    if self._profile.settings.get("emit_new_didcomm_mime_type")
+                    and self._profile.get("emit_new_didcomm_prefix")
+                    else CredentialIssue.wrap_indy_credential(cred_ex_record.credential)
+                )
             ],
         )
         credential_message._thread = {"thid": cred_ex_record.thread_id}

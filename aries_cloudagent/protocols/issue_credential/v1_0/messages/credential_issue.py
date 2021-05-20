@@ -59,10 +59,14 @@ class CredentialIssue(AgentMessage):
         return self.credentials_attach[index].content
 
     @classmethod
-    def wrap_indy_credential(cls, indy_cred: dict) -> AttachDecorator:
+    def wrap_indy_credential(
+        cls, indy_cred: dict, flag_aip2: bool = False
+    ) -> AttachDecorator:
         """Convert an indy credential offer to an attachment decorator."""
         return AttachDecorator.data_base64(
-            mapping=indy_cred, ident=ATTACH_DECO_IDS[CREDENTIAL_ISSUE]
+            mapping=indy_cred,
+            ident=ATTACH_DECO_IDS[CREDENTIAL_ISSUE],
+            flag_aip2=flag_aip2,
         )
 
 
