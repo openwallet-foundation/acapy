@@ -54,7 +54,7 @@ async def test_supported_methods(profile, resolver: IndyDIDResolver):
 @pytest.mark.asyncio
 async def test_supported_did_regex(profile, resolver: IndyDIDResolver):
     """Test the supported_did_regex."""
-    assert resolver.supported_did_regex == re.compile(IndyDID.PATTERN)
+    assert resolver.supported_did_regex == IndyDID.PATTERN
     assert await resolver.supports(profile, TEST_DID0)
 
 

@@ -3,8 +3,6 @@
 Resolution is performed using the IndyLedger class.
 """
 
-import re
-
 from typing import Sequence, Pattern
 
 from pydid import DID, DIDDocumentBuilder, VerificationSuite
@@ -49,7 +47,7 @@ class IndyDIDResolver(BaseDIDResolver):
     @property
     def supported_did_regex(self) -> Pattern:
         """Return supported_did_regex of Indy DID Resolver."""
-        return re.compile(IndyDID.PATTERN)
+        return IndyDID.PATTERN
 
     async def _resolve(self, profile: Profile, did: str) -> dict:
         """Resolve an indy DID."""

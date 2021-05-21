@@ -5,8 +5,6 @@ import logging
 from ..config.injection_context import InjectionContext
 from ..config.provider import ClassProvider
 
-# from ..ledger.base import BaseLedger
-
 from .did_resolver_registry import DIDResolverRegistry
 
 LOGGER = logging.getLogger(__name__)
@@ -25,7 +23,6 @@ async def setup(context: InjectionContext):
     await key_resolver.setup(context)
     registry.register(key_resolver)
 
-    # ledger = context.inject(BaseLedger, required=False)
     if not context.settings.get("ledger.disabled"):
         indy_resolver = ClassProvider(
             "aries_cloudagent.resolver.default.indy.IndyDIDResolver"

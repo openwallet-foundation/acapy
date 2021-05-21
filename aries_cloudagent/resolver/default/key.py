@@ -1,8 +1,7 @@
-"""Indy DID Resolver.
+"""Key DID Resolver.
 
 Resolution is performed using the IndyLedger class.
 """
-import re
 
 from typing import Sequence, Pattern
 
@@ -36,7 +35,7 @@ class KeyDIDResolver(BaseDIDResolver):
     @property
     def supported_did_regex(self) -> Pattern:
         """Return supported_did_regex of Key DID Resolver."""
-        return re.compile(DIDKeyType.PATTERN)
+        return DIDKeyType.PATTERN
 
     async def _resolve(self, profile: Profile, did: str) -> dict:
         """Resolve a Key DID."""
