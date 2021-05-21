@@ -222,7 +222,8 @@ class IssuerRevRegRecord(BaseRecord):
         self._check_url(tails_file_uri)
 
         self.tails_public_uri = tails_file_uri
-        self.revoc_reg_def.value.tails_location = tails_file_uri
+        self._revoc_reg_def.de.value.tails_location = tails_file_uri  # update ...
+        self.revoc_reg_def = self._revoc_reg_def.de  # ... and pick up change via setter
         async with profile.session() as session:
             await self.save(session, reason="Set tails file public URI")
 

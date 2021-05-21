@@ -587,9 +587,7 @@ async def credential_exchange_send_proposal(request: web.BaseRequest):
             **{t: body.get(t) for t in CRED_DEF_TAGS if body.get(t)},
         )
 
-        credential_proposal = CredentialProposal.deserialize(
-            cred_ex_record.credential_proposal_dict
-        )
+        credential_proposal = cred_ex_record.credential_proposal_dict
         result = cred_ex_record.serialize()
 
     except (BaseModelError, StorageError) as err:

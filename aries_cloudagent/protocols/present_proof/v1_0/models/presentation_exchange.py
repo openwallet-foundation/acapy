@@ -151,16 +151,12 @@ class V10PresentationExchange(BaseExchangeRecord):
     @property
     def record_value(self) -> Mapping:
         """Accessor for the JSON record value generated for this credential exchange."""
-        return {
+        retval = {
             **{
                 prop: getattr(self, prop)
                 for prop in (
                     "connection_id",
                     "initiator",
-                    "presentation_proposal_dict",
-                    "presentation_request",
-                    "presentation_request_dict",
-                    "presentation",
                     "role",
                     "state",
                     "auto_present",
@@ -180,6 +176,8 @@ class V10PresentationExchange(BaseExchangeRecord):
                 if getattr(self, prop) is not None
             },
         }
+        print(f'\n\n >> >> PP1-MODEL-PXREC record_value: {retval}')
+        return retval
 
     def __eq__(self, other: Any) -> bool:
         """Comparison between records."""

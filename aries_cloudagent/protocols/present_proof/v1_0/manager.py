@@ -192,6 +192,7 @@ class PresentationManager:
             presentation_request_dict=presentation_request_message,
             trace=(presentation_request_message._trace is not None),
         )
+        print(f':: :: \n\nPP1-MGR cre-ex4req: {presentation_exchange_record}')
         async with self._profile.session() as session:
             await presentation_exchange_record.save(
                 session, reason="create (free) presentation request"
