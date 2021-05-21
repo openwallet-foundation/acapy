@@ -1,9 +1,12 @@
 """Test KeyDIDResolver."""
 
 import pytest
+import re
 
 from ....core.in_memory import InMemoryProfile
 from ....core.profile import Profile
+from ....messaging.valid import DIDKey
+
 from ...base import DIDNotFound
 from ..key import KeyDIDResolver
 
@@ -31,7 +34,17 @@ async def test_supported_methods(profile, resolver: KeyDIDResolver):
     assert resolver.supported_methods == ["key"]
     assert await resolver.supports(
         profile,
-        "did:key:UG9saXRlbmVzcyBpcyB0aGUgZmlyc3QgdGhpbmcgcGVvcGxlIGxvc2Ugb25jZSB0aGV5IGdldCB0aGUgcG93ZXIu",
+        TEST_DID0,
+    )
+
+
+@pytest.mark.asyncio
+async def test_supported_did_regex(profile, resolver: KeyDIDResolver):
+    """Test the supported_did_regex."""
+    assert resolver.supported_did_regex == re.compile(DIDKey.PATTERN)
+    assert await resolver.supports(
+        profile,
+        TEST_DID0,
     )
 
 
