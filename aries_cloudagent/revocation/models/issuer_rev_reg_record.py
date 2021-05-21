@@ -271,7 +271,7 @@ class IssuerRevRegRecord(BaseRecord):
 
         ledger = profile.inject(BaseLedger)
         async with ledger:
-            await ledger.send_revoc_reg_def(self.revoc_reg_def, self.issuer_did)
+            await ledger.send_revoc_reg_def(self._revoc_reg_def.ser, self.issuer_did)
 
         self.state = IssuerRevRegRecord.STATE_POSTED
         async with profile.session() as session:
@@ -305,7 +305,7 @@ class IssuerRevRegRecord(BaseRecord):
             await ledger.send_revoc_reg_entry(
                 self.revoc_reg_id,
                 self.revoc_def_type,
-                self.revoc_reg_entry,
+                self._revoc_reg_entry.ser,
                 self.issuer_did,
             )
         if self.state == IssuerRevRegRecord.STATE_POSTED:
