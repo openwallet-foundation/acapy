@@ -51,8 +51,8 @@ class TestInvitationRecordSchema(AsyncTestCase):
         model_instance = InvitationRecord(
             invitation_id="0",
             state=InvitationRecord.STATE_AWAIT_RESPONSE,
-            invitation=invi,
         )
+        model_instance.invitation = invi  # exercise setter
         assert data.items() <= model_instance.serialize().items()
         model_instance = InvitationRecord(
             invitation_id="0",

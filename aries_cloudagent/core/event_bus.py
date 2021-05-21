@@ -59,21 +59,17 @@ class EventBus:
         # TODO trigger each processor but don't await?
         # TODO log errors but otherwise ignore?
 
-        print(f'.. event: {event}')
         LOGGER.debug("Notifying subscribers: %s", event)
         matched = [
             processor
             for pattern, processor in self.topic_patterns_to_subscribers.items()
             if pattern.match(event.topic)
         ]
-        print(f'.. matched: {matched}')
 
         for processor in chain(*matched):
-            print(f'  processor {processor} vs. {event}')
             try:
                 await processor(profile, event)
             except Exception:
-                print('  XX XX')
                 LOGGER.exception("Error occurred while processing event")
 
     def subscribe(self, pattern: Pattern, processor: Callable):
