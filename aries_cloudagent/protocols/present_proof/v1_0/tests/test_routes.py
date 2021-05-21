@@ -936,12 +936,17 @@ class TestProofRoutes(AsyncTestCase):
 
             mock_mgr = async_mock.MagicMock(
                 create_bound_request=async_mock.CoroutineMock(
-                    side_effect=test_module.StorageError()
+                    side_effect=[
+                        test_module.StorageError(),
+                        test_module.LedgerError(),
+                    ]
                 )
             )
             mock_presentation_manager.return_value = mock_mgr
 
-            with self.assertRaises(test_module.web.HTTPBadRequest):
+            with self.assertRaises(test_module.web.HTTPBadRequest):  # ledger error
+                await test_module.presentation_exchange_send_bound_request(self.request)
+            with self.assertRaises(test_module.web.HTTPBadRequest):  # storage error
                 await test_module.presentation_exchange_send_bound_request(self.request)
 
     async def test_presentation_exchange_send_presentation(self):
@@ -1446,12 +1451,19 @@ class TestProofRoutes(AsyncTestCase):
             )
             mock_mgr = async_mock.MagicMock(
                 verify_presentation=async_mock.CoroutineMock(
-                    side_effect=test_module.LedgerError()
+                    side_effect=[
+                        test_module.LedgerError(),
+                        test_module.StorageError(),
+                    ]
                 ),
             )
             mock_presentation_manager.return_value = mock_mgr
 
-            with self.assertRaises(test_module.web.HTTPBadRequest):
+            with self.assertRaises(test_module.web.HTTPBadRequest):  # ledger error
+                await test_module.presentation_exchange_verify_presentation(
+                    self.request
+                )
+            with self.assertRaises(test_module.web.HTTPBadRequest):  # storage error
                 await test_module.presentation_exchange_verify_presentation(
                     self.request
                 )

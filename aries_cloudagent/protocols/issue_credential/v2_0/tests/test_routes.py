@@ -1230,6 +1230,35 @@ class TestV20CredRoutes(AsyncTestCase):
             with self.assertRaises(test_module.web.HTTPForbidden):
                 await test_module.credential_exchange_send_free_request(self.request)
 
+    async def test_credential_exchange_send_free_request_x(self):
+        self.request.json = async_mock.CoroutineMock(
+            return_value={
+                "filter": {"ld_proof": {"credential": {}, "options": {}}},
+            }
+        )
+
+        with async_mock.patch.object(
+            test_module, "ConnRecord", autospec=True
+        ) as mock_conn_rec, async_mock.patch.object(
+            test_module, "V20CredManager", autospec=True
+        ) as mock_cred_mgr, async_mock.patch.object(
+            test_module.web, "json_response"
+        ) as mock_response:
+
+            mock_cred_mgr.return_value.create_request = async_mock.CoroutineMock(
+                side_effect=[
+                    test_module.LedgerError(),
+                    test_module.StorageError(),
+                ]
+            )
+
+            mock_cx_rec = async_mock.MagicMock()
+
+            with self.assertRaises(test_module.web.HTTPBadRequest):  # ledger error
+                await test_module.credential_exchange_send_free_request(self.request)
+            with self.assertRaises(test_module.web.HTTPBadRequest):  # storage error
+                await test_module.credential_exchange_send_free_request(self.request)
+
     async def test_credential_exchange_issue(self):
         self.request.json = async_mock.CoroutineMock()
         self.request.match_info = {"cred_ex_id": "dummy"}
