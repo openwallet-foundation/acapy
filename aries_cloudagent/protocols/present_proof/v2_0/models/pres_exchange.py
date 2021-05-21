@@ -113,7 +113,7 @@ class V20PresExRecord(BaseExchangeRecord):
     @pres_proposal.setter
     def pres_proposal(self, value):
         """Setter; store de/serialized views."""
-        self._pres = V20PresProposal.serde(pres)
+        self._pres_proposal = V20PresProposal.serde(value)
 
     @property
     def pres_request(self) -> V20PresRequest:
@@ -123,7 +123,7 @@ class V20PresExRecord(BaseExchangeRecord):
     @pres_request.setter
     def pres_request(self, value):
         """Setter; store de/serialized views."""
-        self._pres_request = V20PresRequest.serde(pres)
+        self._pres_request = V20PresRequest.serde(value)
 
     @property
     def pres(self) -> V20Pres:
@@ -133,27 +133,7 @@ class V20PresExRecord(BaseExchangeRecord):
     @pres.setter
     def pres(self, value):
         """Setter; store de/serialized views."""
-        self._pres = V20Pres.serde(pres)
-
-    @property
-    def record_value(self) -> dict:
-        """Accessor for JSON record value generated for this pres ex record."""
-        return {
-            prop: getattr(self, prop)
-            for prop in (
-                "connection_id",
-                "initiator",
-                "role",
-                "state",
-                "pres_proposal",
-                "pres_request",
-                "pres",
-                "verified",
-                "auto_present",
-                "error_msg",
-                "trace",
-            )
-        }
+        self._pres = V20Pres.serde(value)
 
     @property
     def record_value(self) -> Mapping:

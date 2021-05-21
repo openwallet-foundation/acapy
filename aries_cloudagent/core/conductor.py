@@ -275,9 +275,7 @@ class Conductor:
                         ),
                     )
                     base_url = context.settings.get("invite_base_url")
-                    invite_url = InvitationMessage.deserialize(
-                        invi_rec.invitation
-                    ).to_url(base_url)
+                    invite_url = invi_rec.invitation.to_url(base_url)
                     print("Invitation URL:")
                     print(invite_url, flush=True)
                     del mgr

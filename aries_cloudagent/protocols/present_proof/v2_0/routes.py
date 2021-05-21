@@ -897,7 +897,6 @@ async def present_proof_send_presentation(request: web.BaseRequest):
         BaseModelError,
         IndyHolderError,
         LedgerError,
-        StorageError,
         WalletNotFoundError,
     ) as err:
         async with context.session() as session:

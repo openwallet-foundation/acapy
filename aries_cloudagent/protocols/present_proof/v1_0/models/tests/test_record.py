@@ -8,11 +8,10 @@ from ......indy.sdk.models.pres_preview import (
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
 
-from ...message_types import ATTACHMENT_FORMAT, PRES_20_PROPOSAL
-from ...messages.pres_format import V20PresFormat
-from ...messages.pres_proposal import V20PresProposal
+from ...message_types import PRESENTATION_PROPOSAL
+from ...messages.presentation_proposal import PresentationProposal
 
-from ..pres_exchange import V20PresExRecord
+from ..presentation_exchange import V10PresentationExchange
 
 S_ID = "NcYxiDXkpYi6ov5FcYDi1e:2:vidya:1.0"
 CD_ID = f"NcYxiDXkpYi6ov5FcYDi1e:3:CL:{S_ID}:tag1"
@@ -56,6 +55,22 @@ INDY_PROOF_REQ = {
         }
     },
 }
+PRES_PREVIEW = IndyPresPreview(
+    attributes=[
+        IndyPresAttrSpec(name="player", cred_def_id=CD_ID, value="Richie Knucklez"),
+        IndyPresAttrSpec(
+            name="screenCapture",
+            cred_def_id=CD_ID,
+            mime_type="image/png",
+            value="aW1hZ2luZSBhIHNjcmVlbiBjYXB0dXJl",
+        ),
+    ],
+    predicates=[
+        IndyPresPredSpec(
+            name="highScore", cred_def_id=CD_ID, predicate=">=", threshold=1000000
+        )
+    ],
+)
 
 
 class BasexRecordImpl(BaseExchangeRecord):
@@ -72,44 +87,32 @@ class BasexRecordImplSchema(BaseExchangeSchema):
 
 class TestRecord(UnitTestCase):
     def test_record(self):
-        pres_proposal = V20PresProposal(
-            comment="Hello World",
-            formats=[
-                V20PresFormat(
-                    attach_id="indy",
-                    format_=ATTACHMENT_FORMAT[PRES_20_PROPOSAL][
-                        V20PresFormat.Format.INDY.api
-                    ],
-                )
-            ],
-            proposals_attach=[
-                AttachDecorator.data_base64(INDY_PROOF_REQ, ident="indy")
-            ],
+        presentation_proposal = PresentationProposal(
+            comment="Hello World", presentation_proposal=PRES_PREVIEW
         )
-        record = V20PresExRecord(
-            pres_ex_id="pxid",
-            thread_id="thid",
+        record = V10PresentationExchange(
+            presentation_exchange_id="pxid",
             connection_id="conn_id",
-            initiator="init",
-            role="role",
-            state="state",
-            verified="false",
+            thread_id="thid",
             auto_present=True,
-            error_msg="error",
         )
-        record.pres_proposal = pres_proposal  # cover setter
+        record.presentation_proposal_dict = presentation_proposal  # cover setter
+        record.presentation_request_dict = None  # cover setter
 
-        assert record.pres_ex_id == "pxid"
+        assert record.presentation_exchange_id == "pxid"
 
         assert record.record_value == {
             "connection_id": "conn_id",
-            "initiator": "init",
-            "role": "role",
-            "state": "state",
-            "pres_proposal": pres_proposal.serialize(),
-            "verified": "false",
+            "initiator": None,
+            "presentation_proposal_dict": presentation_proposal.serialize(),
+            "presentation_request": None,
+            "presentation": None,
+            "presentation_request_dict": None,
+            "role": None,
+            "state": None,
             "auto_present": True,
-            "error_msg": "error",
+            "error_msg": None,
+            "verified": None,
             "trace": False,
         }
 

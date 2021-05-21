@@ -2,7 +2,9 @@
 
 import pytest
 import re
+
 from asynctest import mock as async_mock
+
 from ..event_bus import EventBus, Event
 
 # pylint: disable=redefined-outer-name
@@ -96,6 +98,7 @@ async def test_sub_notify_error_logged_and_exec_continues(
     def _raise_exception(context, event):
         raise Exception()
 
+    print(f"\n\n:: :: START; caplog {caplog}")
     processor = TestProcessor()
     bad_processor = _raise_exception
     event_bus.subscribe(re.compile(".*"), bad_processor)

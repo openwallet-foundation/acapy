@@ -296,10 +296,9 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 DIDCommPrefix.qualify_current(HSProto.RFC23.name)
                 in invi_rec.invitation.handshake_protocols
             )
-            assert (
-                invi_rec._invitation.ser["services"]
-                == [f"did:sov:{TestConfig.test_did}"]
-            )
+            assert invi_rec._invitation.ser["services"] == [
+                f"did:sov:{TestConfig.test_did}"
+            ]
 
     async def test_create_invitation_mediation_overwrites_routing_and_endpoint(self):
         mock_conn_rec = async_mock.MagicMock()
