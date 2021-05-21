@@ -1,7 +1,6 @@
 """Test KeyDIDResolver."""
 
 import pytest
-import re
 
 from ....core.in_memory import InMemoryProfile
 from ....core.profile import Profile

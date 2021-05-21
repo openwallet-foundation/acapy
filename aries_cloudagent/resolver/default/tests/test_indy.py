@@ -1,7 +1,6 @@
 """Test IndyDIDResolver."""
 
 import pytest
-import re
 
 from asynctest import mock as async_mock
 
