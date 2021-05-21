@@ -1155,11 +1155,18 @@ async def credential_exchange_send_free_request(request: web.BaseRequest):
         BaseModelError,
         IndyHolderError,
         LedgerError,
-        StorageError,
         V20CredManagerError,
     ) as err:
         async with context.session() as session:
             await cred_ex_record.save_error_state(session, reason=err.message)
+        await internal_error(
+            err,
+            web.HTTPBadRequest,
+            cred_ex_record,
+            outbound_handler,
+            code=ProblemReportReason.ISSUANCE_ABANDONED.value,
+        )
+    except StorageError as err:
         await internal_error(
             err,
             web.HTTPBadRequest,

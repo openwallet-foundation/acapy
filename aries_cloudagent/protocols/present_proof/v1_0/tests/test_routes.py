@@ -946,7 +946,6 @@ class TestProofRoutes(AsyncTestCase):
 
             with self.assertRaises(test_module.web.HTTPBadRequest):  # ledger error
                 await test_module.presentation_exchange_send_bound_request(self.request)
-
             with self.assertRaises(test_module.web.HTTPBadRequest):  # storage error
                 await test_module.presentation_exchange_send_bound_request(self.request)
 
