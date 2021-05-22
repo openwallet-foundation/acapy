@@ -27,6 +27,7 @@ class TransactionAcknowledgement(Ack):
         self,
         *,
         thread_id: str = None,
+        ledger_response: dict = None,
         **kwargs,
     ):
         """
@@ -37,6 +38,7 @@ class TransactionAcknowledgement(Ack):
         """
         super().__init__(**kwargs)
         self.thread_id = thread_id
+        self.ledger_response = ledger_response
 
 
 class TransactionAcknowledgementSchema(AckSchema):
@@ -49,3 +51,4 @@ class TransactionAcknowledgementSchema(AckSchema):
         unknown = EXCLUDE
 
     thread_id = fields.Str(required=True, example=UUIDFour.EXAMPLE)
+    ledger_response = fields.Dict(required=False)
