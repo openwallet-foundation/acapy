@@ -1,9 +1,11 @@
 """Base classes for Models and Schemas."""
+
 import logging
 import json
 
 from abc import ABC
-from typing import Union
+from collections import namedtuple
+from typing import Mapping, Union
 
 from marshmallow import Schema, post_dump, pre_load, post_load, ValidationError, EXCLUDE
 
@@ -11,6 +13,8 @@ from ...core.error import BaseError
 from ...utils.classloader import ClassLoader
 
 LOGGER = logging.getLogger(__name__)
+
+SerDe = namedtuple("SerDe", "ser de")
 
 
 def resolve_class(the_cls, relative_cls: type = None):
@@ -162,6 +166,18 @@ class BaseModel(ABC):
             raise BaseModelError(
                 f"{self.__class__.__name__} schema validation failed"
             ) from err
+
+    @classmethod
+    def serde(cls, obj: Union["BaseModel", Mapping]) -> SerDe:
+        """Return serialized, deserialized representations of input object."""
+
+        return (
+            SerDe(obj.serialize(), obj)
+            if isinstance(obj, BaseModel)
+            else None
+            if obj is None
+            else SerDe(obj, cls.deserialize(obj))
+        )
 
     def validate(self, unknown: str = None):
         """Validate a constructed model."""

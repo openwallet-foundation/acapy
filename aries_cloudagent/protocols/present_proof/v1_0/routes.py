@@ -318,7 +318,7 @@ async def presentation_exchange_credentials_list(request: web.BaseRequest):
     holder = context.profile.inject(IndyHolder)
     try:
         credentials = await holder.get_credentials_for_presentation_request_by_referent(
-            pres_ex_record.presentation_request,
+            pres_ex_record._presentation_request.ser,
             presentation_referents,
             start,
             count,
@@ -564,7 +564,7 @@ async def presentation_exchange_send_free_request(request: web.BaseRequest):
     presentation_manager = PresentationManager(context.profile)
     pres_ex_record = None
     try:
-        (pres_ex_record) = await presentation_manager.create_exchange_for_request(
+        pres_ex_record = await presentation_manager.create_exchange_for_request(
             connection_id=connection_id,
             presentation_request_message=presentation_request_message,
         )

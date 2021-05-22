@@ -52,7 +52,7 @@ class CredentialRequestHandler(BaseHandler):
         if cred_ex_record.auto_issue:
             if (
                 cred_ex_record.credential_proposal_dict
-                and "credential_proposal" in cred_ex_record.credential_proposal_dict
+                and cred_ex_record.credential_proposal_dict.credential_proposal
             ):
                 credential_issue_message = None
                 try:

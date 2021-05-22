@@ -11,7 +11,6 @@ from .....utils.tracing import trace_event, get_timer
 from .....wallet.error import WalletNotFoundError
 
 from ..manager import PresentationManager, PresentationManagerError
-from ..messages.presentation_proposal import PresentationProposal
 from ..messages.presentation_request import PresentationRequest
 from ..models.presentation_exchange import V10PresentationExchange
 
@@ -85,7 +84,7 @@ class PresentationRequestHandler(BaseHandler):
         if presentation_exchange_record.auto_present:
             presentation_preview = None
             if presentation_exchange_record.presentation_proposal_dict:
-                exchange_pres_proposal = PresentationProposal.deserialize(
+                exchange_pres_proposal = (
                     presentation_exchange_record.presentation_proposal_dict
                 )
                 presentation_preview = exchange_pres_proposal.presentation_proposal

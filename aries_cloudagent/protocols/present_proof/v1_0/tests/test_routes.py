@@ -937,8 +937,8 @@ class TestProofRoutes(AsyncTestCase):
             mock_mgr = async_mock.MagicMock(
                 create_bound_request=async_mock.CoroutineMock(
                     side_effect=[
-                        test_module.StorageError(),
                         test_module.LedgerError(),
+                        test_module.StorageError(),
                     ]
                 )
             )
