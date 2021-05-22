@@ -20,7 +20,6 @@ class TestInvitationRecord(AsyncTestCase):
         assert invi_rec.invitation_id is None  # not saved
         assert isinstance(invi_rec, InvitationRecord)
         assert invi_rec.record_value == {
-            "invitation": None,
             "invitation_url": None,
             "state": None,
             "trace": False,
@@ -52,8 +51,8 @@ class TestInvitationRecordSchema(AsyncTestCase):
         model_instance = InvitationRecord(
             invitation_id="0",
             state=InvitationRecord.STATE_AWAIT_RESPONSE,
-            invitation=invi,
         )
+        model_instance.invitation = invi  # exercise setter
         assert data.items() <= model_instance.serialize().items()
         model_instance = InvitationRecord(
             invitation_id="0",

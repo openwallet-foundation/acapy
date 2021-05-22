@@ -72,6 +72,40 @@ class TestV20PresProposalHandler(AsyncTestCase):
         assert result == "presentation_request_message"
         assert target == {}
 
+    async def test_called_auto_request_x(self):
+        request_context = RequestContext.test_context()
+        request_context.message = async_mock.MagicMock()
+        request_context.message.comment = "hello world"
+        request_context.message_receipt = MessageReceipt()
+        request_context.settings["debug.auto_respond_presentation_proposal"] = True
+
+        with async_mock.patch.object(
+            test_module, "V20PresManager", autospec=True
+        ) as mock_pres_mgr:
+            mock_pres_mgr.return_value.receive_pres_proposal = async_mock.CoroutineMock(
+                return_value=async_mock.MagicMock(
+                    save_error_state=async_mock.CoroutineMock()
+                )
+            )
+            mock_pres_mgr.return_value.create_bound_request = async_mock.CoroutineMock(
+                side_effect=[
+                    test_module.LedgerError(),
+                    test_module.StorageError(),
+                ]
+            )
+
+            request_context.message = V20PresProposal()
+            request_context.connection_ready = True
+            handler = test_module.V20PresProposalHandler()
+            responder = MockResponder()
+
+            with async_mock.patch.object(
+                responder, "send_reply", async_mock.CoroutineMock()
+            ) as mock_send_reply:
+                await handler.handle(request_context, responder)  # ledger error
+                await handler.handle(request_context, responder)  # storage error
+                mock_send_reply.assert_not_called()
+
     async def test_called_not_ready(self):
         request_context = RequestContext.test_context()
         request_context.message_receipt = MessageReceipt()

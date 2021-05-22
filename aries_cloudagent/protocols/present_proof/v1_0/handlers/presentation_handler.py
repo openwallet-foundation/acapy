@@ -1,8 +1,10 @@
 """Presentation message handler."""
 
+from .....ledger.error import LedgerError
 from .....messaging.base_handler import BaseHandler
 from .....messaging.request_context import RequestContext
 from .....messaging.responder import BaseResponder
+from .....storage.error import StorageError
 from .....utils.tracing import trace_event, get_timer
 
 from ..manager import PresentationManager
@@ -34,7 +36,7 @@ class PresentationHandler(BaseHandler):
 
         presentation_exchange_record = await presentation_manager.receive_presentation(
             context.message, context.connection_record
-        )
+        )  # mgr saves record state null if need be and possible
 
         r_time = trace_event(
             context.settings,
@@ -44,7 +46,20 @@ class PresentationHandler(BaseHandler):
         )
 
         if context.settings.get("debug.auto_verify_presentation"):
-            await presentation_manager.verify_presentation(presentation_exchange_record)
+            try:
+                await presentation_manager.verify_presentation(
+                    presentation_exchange_record
+                )
+            except LedgerError as err:
+                self._logger.exception(err)
+                if presentation_exchange_record:
+                    async with context.session() as session:
+                        await presentation_exchange_record.save_error_state(
+                            session,
+                            reason=err.message,
+                        )
+            except StorageError as err:
+                self._logger.exception(err)  # may be logging to wire, not dead disk
 
             trace_event(
                 context.settings,

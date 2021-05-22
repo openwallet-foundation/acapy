@@ -1,16 +1,17 @@
 import asyncio
 import json
 
-from asynctest import TestCase as AsyncTestCase
-from asynctest import mock as async_mock
 from copy import deepcopy
 from time import time
 
-from .....core.in_memory import InMemoryProfile
+from asynctest import mock as async_mock, TestCase as AsyncTestCase
+
 from .....cache.base import BaseCache
 from .....cache.in_memory import InMemoryCache
+from .....core.in_memory import InMemoryProfile
 from .....indy.issuer import IndyIssuer
 from .....messaging.decorators.attach_decorator import AttachDecorator
+from .....messaging.responder import BaseResponder, MockResponder
 from .....ledger.base import BaseLedger
 from .....storage.error import StorageNotFoundError
 
@@ -33,181 +34,51 @@ from ..messages.cred_request import V20CredRequest
 from ..messages.inner.cred_preview import V20CredPreview, V20CredAttrSpec
 from ..models.cred_ex_record import V20CredExRecord
 
+from . import (
+    CRED_DEF,
+    CRED_DEF_ID,
+    INDY_CRED,
+    INDY_CRED_REQ,
+    INDY_OFFER,
+    LD_PROOF_VC,
+    LD_PROOF_VC_DETAIL,
+    REV_REG_DEF,
+    SCHEMA,
+    SCHEMA_ID,
+    TEST_DID,
+)
 
-TEST_DID = "LjgpST2rjsoxYegQDRm7EL"
-SCHEMA_NAME = "bc-reg"
-SCHEMA_TXN = 12
-SCHEMA_ID = f"{TEST_DID}:2:{SCHEMA_NAME}:1.0"
-SCHEMA = {
-    "ver": "1.0",
-    "id": SCHEMA_ID,
-    "name": SCHEMA_NAME,
-    "version": "1.0",
-    "attrNames": ["legalName", "jurisdictionId", "incorporationDate"],
-    "seqNo": SCHEMA_TXN,
-}
-CRED_DEF_ID = f"{TEST_DID}:3:CL:12:tag1"
-CRED_DEF = {
-    "ver": "1.0",
-    "id": CRED_DEF_ID,
-    "schemaId": SCHEMA_TXN,
-    "type": "CL",
-    "tag": "tag1",
-    "value": {
-        "primary": {
-            "n": "...",
-            "s": "...",
-            "r": {
-                "master_secret": "...",
-                "legalName": "...",
-                "busId": "...",
-                "jurisdictionId": "...",
-                "incorporationDate": "...",
-                "pic": "...",
-            },
-            "rctxt": "...",
-            "z": "...",
-        },
-        "revocation": {
-            "g": "1 ...",
-            "g_dash": "1 ...",
-            "h": "1 ...",
-            "h0": "1 ...",
-            "h1": "1 ...",
-            "h2": "1 ...",
-            "htilde": "1 ...",
-            "h_cap": "1 ...",
-            "u": "1 ...",
-            "pk": "1 ...",
-            "y": "1 ...",
-        },
-    },
-}
-REV_REG_DEF_TYPE = "CL_ACCUM"
-REV_REG_ID = f"{TEST_DID}:4:{CRED_DEF_ID}:{REV_REG_DEF_TYPE}:tag1"
-TAILS_DIR = "/tmp/indy/revocation/tails_files"
-TAILS_HASH = "8UW1Sz5cqoUnK9hqQk7nvtKK65t7Chu3ui866J23sFyJ"
-TAILS_LOCAL = f"{TAILS_DIR}/{TAILS_HASH}"
-REV_REG_DEF = {
-    "ver": "1.0",
-    "id": REV_REG_ID,
-    "revocDefType": "CL_ACCUM",
-    "tag": "tag1",
-    "credDefId": CRED_DEF_ID,
-    "value": {
-        "issuanceType": "ISSUANCE_ON_DEMAND",
-        "maxCredNum": 5,
-        "publicKeys": {"accumKey": {"z": "1 ..."}},
-        "tailsHash": TAILS_HASH,
-        "tailsLocation": TAILS_LOCAL,
-    },
-}
-INDY_OFFER = {
-    "schema_id": SCHEMA_ID,
-    "cred_def_id": CRED_DEF_ID,
-    "key_correctness_proof": {
-        "c": "123467890",
-        "xz_cap": "12345678901234567890",
-        "xr_cap": [
-            [
-                "remainder",
-                "1234567890",
-            ],
-            [
-                "number",
-                "12345678901234",
-            ],
-            [
-                "master_secret",
-                "12345678901234",
-            ],
-        ],
-    },
-    "nonce": "1234567890",
-}
-INDY_CRED_REQ = {
-    "prover_did": TEST_DID,
-    "cred_def_id": CRED_DEF_ID,
-    "blinded_ms": {
-        "u": "12345",
-        "ur": "1 123467890ABCDEF",
-        "hidden_attributes": ["master_secret"],
-        "committed_attributes": {},
-    },
-    "blinded_ms_correctness_proof": {
-        "c": "77777",
-        "v_dash_cap": "12345678901234567890",
-        "m_caps": {"master_secret": "271283714"},
-        "r_caps": {},
-    },
-    "nonce": "9876543210",
-}
-INDY_CRED = {
-    "schema_id": SCHEMA_ID,
-    "cred_def_id": CRED_DEF_ID,
-    "rev_reg_id": REV_REG_ID,
-    "values": {
-        "legalName": {
-            "raw": "The Original House of Pies",
-            "encoded": "108156129846915621348916581250742315326283968964",
-        },
-        "busId": {"raw": "11155555", "encoded": "11155555"},
-        "jurisdictionId": {"raw": "1", "encoded": "1"},
-        "incorporationDate": {
-            "raw": "2021-01-01",
-            "encoded": "121381685682968329568231",
-        },
-        "pic": {"raw": "cG90YXRv", "encoded": "125362825623562385689562"},
-    },
-    "signature": {
-        "p_credential": {
-            "m_2": "13683295623862356",
-            "a": "1925723185621385238953",
-            "e": "253516862326",
-            "v": "26890295622385628356813632",
-        },
-        "r_credential": {
-            "sigma": "1 00F81D",
-            "c": "158698926BD09866E",
-            "vr_prime_prime": "105682396DDF1A",
-            "witness_signature": {"sigma_i": "1 ...", "u_i": "1 ...", "g_i": "1 ..."},
-            "g_i": "1 ...",
-            "i": 1,
-            "m2": "862186285926592362384FA97FF3A4AB",
-        },
-    },
-    "signature_correctness_proof": {
-        "se": "10582965928638296868123",
-        "c": "2816389562839651",
-    },
-    "rev_reg": {"accum": "21 ..."},
-    "witness": {"omega": "21 ..."},
-}
-
-LD_PROOF_VC_DETAIL = {
-    "credential": {
-        "@context": ["https://www.w3.org/2018/credentials/v1"],
-        "type": ["VerifiableCredential"],
-        "credentialSubject": {"test": "key"},
-        "issuanceDate": "2021-04-12",
-        "issuer": f"did:sov:{TEST_DID}",
-    },
-    "options": {"proofType": "Ed25519Signature2018"},
-}
-LD_PROOF_VC = {
-    "@context": ["https://www.w3.org/2018/credentials/v1"],
-    "type": ["VerifiableCredential"],
-    "credentialSubject": {"test": "key"},
-    "issuanceDate": "2021-04-12",
-    "issuer": f"did:sov:{TEST_DID}",
-    "proof": {
-        "proofPurpose": "assertionMethod",
-        "created": "2019-12-11T03:50:55",
-        "type": "Ed25519Signature2018",
-        "verificationMethod": "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
-        "jws": "eyJhbGciOiAiRWREU0EiLCAiYjY0IjogZmFsc2UsICJjcml0IjogWyJiNjQiXX0..Q6amIrxGiSbM7Ce6DxlfwLCjVcYyclas8fMxaecspXFUcFW9DAAxKzgHx93FWktnlZjM_biitkMgZdStgvivAQ",
-    },
-}
+CRED_REQ = V20CredRequest(
+    comment="Test",
+    formats=[
+        V20CredFormat(
+            attach_id="indy",
+            format_=ATTACHMENT_FORMAT[CRED_20_REQUEST][V20CredFormat.Format.INDY.api],
+        )
+    ],
+    requests_attach=[
+        AttachDecorator.data_base64(
+            ident="indy",
+            mapping=INDY_CRED_REQ,
+        )
+    ],
+)
+CRED_ISSUE = V20CredIssue(
+    replacement_id="0",
+    comment="Test",
+    formats=[
+        V20CredFormat(
+            attach_id="indy",
+            format_=ATTACHMENT_FORMAT[CRED_20_ISSUE][V20CredFormat.Format.INDY.api],
+        )
+    ],
+    credentials_attach=[
+        AttachDecorator.data_base64(
+            mapping=INDY_CRED,
+            ident="indy",
+        )
+    ],
+)
 
 
 class TestV20CredManager(AsyncTestCase):
@@ -275,7 +146,7 @@ class TestV20CredManager(AsyncTestCase):
             assert arg_cred_ex_rec.auto_issue
             assert arg_cred_ex_rec.connection_id == connection_id
             assert arg_cred_ex_rec.role == V20CredExRecord.ROLE_ISSUER
-            assert arg_cred_ex_rec.cred_proposal == cred_proposal.serialize()
+            assert arg_cred_ex_rec.cred_proposal == cred_proposal
 
     async def test_create_proposal(self):
         connection_id = "test_conn_id"
@@ -318,7 +189,7 @@ class TestV20CredManager(AsyncTestCase):
                 cx_rec, None
             )
 
-        cred_proposal = V20CredProposal.deserialize(cx_rec.cred_proposal)
+        cred_proposal = cx_rec.cred_proposal
         assert not cred_proposal.attachment(
             V20CredFormat.Format.INDY
         ).keys()  # leave underspecified until offer receipt
@@ -326,7 +197,7 @@ class TestV20CredManager(AsyncTestCase):
         assert cx_rec.thread_id == cred_proposal._thread_id
         assert cx_rec.role == V20CredExRecord.ROLE_HOLDER
         assert cx_rec.state == V20CredExRecord.STATE_PROPOSAL_SENT
-        assert cx_rec.cred_preview == cred_preview.serialize()
+        assert cx_rec.cred_preview == cred_preview
 
     async def test_create_proposal_no_preview(self):
         connection_id = "test_conn_id"
@@ -363,7 +234,7 @@ class TestV20CredManager(AsyncTestCase):
                 cx_rec, LD_PROOF_VC_DETAIL
             )
 
-        cred_proposal = V20CredProposal.deserialize(cx_rec.cred_proposal)
+        cred_proposal = cx_rec.cred_proposal
         assert (
             cred_proposal.attachment(V20CredFormat.Format.LD_PROOF)
             == LD_PROOF_VC_DETAIL
@@ -413,7 +284,7 @@ class TestV20CredManager(AsyncTestCase):
                 cx_rec, cred_proposal
             )
 
-            ret_cred_proposal = V20CredProposal.deserialize(cx_rec.cred_proposal)
+            ret_cred_proposal = cx_rec.cred_proposal
 
             assert ret_cred_proposal.attachment(V20CredFormat.Format.INDY) == {
                 "cred_def_id": CRED_DEF_ID
@@ -455,7 +326,7 @@ class TestV20CredManager(AsyncTestCase):
         cx_rec = V20CredExRecord(
             cred_ex_id="dummy-cxid",
             role=V20CredExRecord.ROLE_ISSUER,
-            cred_proposal=cred_proposal.serialize(),
+            cred_proposal=cred_proposal,
         )
 
         with async_mock.patch.object(
@@ -493,12 +364,7 @@ class TestV20CredManager(AsyncTestCase):
             assert cx_rec.thread_id == ret_offer._thread_id
             assert cx_rec.role == V20CredExRecord.ROLE_ISSUER
             assert cx_rec.state == V20CredExRecord.STATE_OFFER_SENT
-            assert (
-                V20CredOffer.deserialize(cx_rec.cred_offer).attachment(
-                    V20CredFormat.Format.INDY
-                )
-                == INDY_OFFER
-            )
+            assert cx_rec.cred_offer.attachment(V20CredFormat.Format.INDY) == INDY_OFFER
 
             await self.manager.create_offer(
                 cred_ex_record=cx_rec,
@@ -534,7 +400,7 @@ class TestV20CredManager(AsyncTestCase):
         cx_rec = V20CredExRecord(
             cred_ex_id="dummy-cxid",
             role=V20CredExRecord.ROLE_ISSUER,
-            cred_proposal=cred_proposal.serialize(),
+            cred_proposal=cred_proposal,
         )
 
         with async_mock.patch.object(
@@ -569,12 +435,7 @@ class TestV20CredManager(AsyncTestCase):
             assert cx_rec.thread_id == ret_offer._thread_id
             assert cx_rec.role == V20CredExRecord.ROLE_ISSUER
             assert cx_rec.state == V20CredExRecord.STATE_OFFER_SENT
-            assert (
-                V20CredOffer.deserialize(cx_rec.cred_offer).attachment(
-                    V20CredFormat.Format.INDY
-                )
-                == INDY_OFFER
-            )
+            assert cx_rec.cred_offer.attachment(V20CredFormat.Format.INDY) == INDY_OFFER
 
             # additionally check that manager passed credential preview through
             assert ret_offer.credential_preview.attributes == cred_preview.attributes
@@ -590,7 +451,7 @@ class TestV20CredManager(AsyncTestCase):
         cx_rec = V20CredExRecord(
             cred_ex_id="dummy-cxid",
             role=V20CredExRecord.ROLE_ISSUER,
-            cred_proposal=cred_proposal.serialize(),
+            cred_proposal=cred_proposal,
         )
 
         with self.assertRaises(V20CredManagerError) as context:
@@ -641,7 +502,7 @@ class TestV20CredManager(AsyncTestCase):
         stored_cx_rec = V20CredExRecord(
             cred_ex_id="dummy-cxid",
             connection_id=connection_id,
-            cred_proposal=cred_proposal.serialize(),
+            cred_proposal=cred_proposal,
             initiator=V20CredExRecord.INITIATOR_EXTERNAL,
             role=V20CredExRecord.ROLE_HOLDER,
             thread_id=thread_id,
@@ -668,16 +529,9 @@ class TestV20CredManager(AsyncTestCase):
             assert cx_rec.thread_id == cred_offer._thread_id
             assert cx_rec.role == V20CredExRecord.ROLE_HOLDER
             assert cx_rec.state == V20CredExRecord.STATE_OFFER_RECEIVED
+            assert cx_rec.cred_offer.attachment(V20CredFormat.Format.INDY) == INDY_OFFER
             assert (
-                V20CredOffer.deserialize(cx_rec.cred_offer).attachment(
-                    V20CredFormat.Format.INDY
-                )
-                == INDY_OFFER
-            )
-            assert (
-                V20CredProposal.deserialize(
-                    cx_rec.cred_proposal
-                ).credential_preview.attributes
+                cx_rec.cred_proposal.credential_preview.attributes
                 == cred_preview.attributes
             )
 
@@ -729,12 +583,7 @@ class TestV20CredManager(AsyncTestCase):
             assert cx_rec.thread_id == cred_offer._thread_id
             assert cx_rec.role == V20CredExRecord.ROLE_HOLDER
             assert cx_rec.state == V20CredExRecord.STATE_OFFER_RECEIVED
-            assert (
-                V20CredOffer.deserialize(cx_rec.cred_offer).attachment(
-                    V20CredFormat.Format.INDY
-                )
-                == INDY_OFFER
-            )
+            assert cx_rec.cred_offer.attachment(V20CredFormat.Format.INDY) == INDY_OFFER
             assert not cx_rec.cred_proposal
 
     async def test_create_bound_request(self):
@@ -758,7 +607,7 @@ class TestV20CredManager(AsyncTestCase):
         stored_cx_rec = V20CredExRecord(
             cred_ex_id="dummy-cxid",
             connection_id=connection_id,
-            cred_offer=cred_offer.serialize(),
+            cred_offer=cred_offer,
             initiator=V20CredExRecord.INITIATOR_SELF,
             role=V20CredExRecord.ROLE_HOLDER,
             state=V20CredExRecord.STATE_OFFER_RECEIVED,
@@ -812,7 +661,7 @@ class TestV20CredManager(AsyncTestCase):
         cx_rec = V20CredExRecord(
             cred_ex_id="dummy-cxid",
             role=V20CredExRecord.ROLE_ISSUER,
-            cred_proposal=cred_proposal.serialize(),
+            cred_proposal=cred_proposal,
         )
 
         with self.assertRaises(V20CredManagerError) as context:
@@ -846,7 +695,7 @@ class TestV20CredManager(AsyncTestCase):
             initiator=V20CredExRecord.INITIATOR_SELF,
             role=V20CredExRecord.ROLE_HOLDER,
             thread_id=thread_id,
-            cred_proposal=cred_proposal.serialize(),
+            cred_proposal=cred_proposal,
         )
 
         self.cache = InMemoryCache()
@@ -886,7 +735,7 @@ class TestV20CredManager(AsyncTestCase):
             assert ret_cx_rec.state == V20CredExRecord.STATE_REQUEST_SENT
 
     async def test_create_request_existing_cred_req(self):
-        stored_cx_rec = V20CredExRecord(cred_request=async_mock.MagicMock())
+        stored_cx_rec = V20CredExRecord(cred_request=CRED_REQ)
 
         with self.assertRaises(V20CredManagerError) as context:
             await self.manager.create_request(stored_cx_rec, "did")
@@ -946,10 +795,7 @@ class TestV20CredManager(AsyncTestCase):
             mock_save.assert_called_once()
 
             assert cx_rec.state == V20CredExRecord.STATE_REQUEST_RECEIVED
-            assert (
-                V20CredRequest.deserialize(cx_rec.cred_request).attachment()
-                == INDY_CRED_REQ
-            )
+            assert cx_rec.cred_request.attachment() == INDY_CRED_REQ
 
     async def test_issue_credential(self):
         connection_id = "test_conn_id"
@@ -1012,9 +858,9 @@ class TestV20CredManager(AsyncTestCase):
         stored_cx_rec = V20CredExRecord(
             cred_ex_id="dummy-cxid",
             connection_id=connection_id,
-            cred_proposal=cred_proposal.serialize(),
-            cred_offer=cred_offer.serialize(),
-            cred_request=cred_request.serialize(),
+            cred_proposal=cred_proposal,
+            cred_offer=cred_offer,
+            cred_request=cred_request,
             initiator=V20CredExRecord.INITIATOR_SELF,
             role=V20CredExRecord.ROLE_ISSUER,
             state=V20CredExRecord.STATE_REQUEST_RECEIVED,
@@ -1056,10 +902,7 @@ class TestV20CredManager(AsyncTestCase):
                 ret_cx_rec
             )
 
-            assert (
-                V20CredIssue.deserialize(ret_cx_rec.cred_issue).attachment()
-                == INDY_CRED
-            )
+            assert ret_cx_rec.cred_issue.attachment() == INDY_CRED
             assert ret_cred_issue.attachment() == INDY_CRED
             assert ret_cx_rec.state == V20CredExRecord.STATE_ISSUED
             assert ret_cred_issue._thread_id == thread_id
@@ -1076,7 +919,7 @@ class TestV20CredManager(AsyncTestCase):
             cred_ex_id="dummy-cxid",
             role=V20CredExRecord.ROLE_ISSUER,
             state=V20CredExRecord.STATE_REQUEST_RECEIVED,
-            cred_request=cred_request.serialize(),
+            cred_request=cred_request,
         )
 
         with self.assertRaises(V20CredManagerError) as context:
@@ -1089,7 +932,7 @@ class TestV20CredManager(AsyncTestCase):
     async def test_issue_credential_existing_cred(self):
         stored_cx_rec = V20CredExRecord(
             state=V20CredExRecord.STATE_REQUEST_RECEIVED,
-            cred_issue=async_mock.MagicMock(),
+            cred_issue=CRED_ISSUE,
         )
 
         with self.assertRaises(V20CredManagerError) as context:
@@ -1124,7 +967,7 @@ class TestV20CredManager(AsyncTestCase):
             cred_ex_id="dummy-cxid",
             connection_id=connection_id,
             initiator=V20CredExRecord.INITIATOR_EXTERNAL,
-            cred_request=cred_request.serialize(),
+            cred_request=cred_request,
             role=V20CredExRecord.ROLE_ISSUER,
         )
 
@@ -1164,10 +1007,7 @@ class TestV20CredManager(AsyncTestCase):
             mock_handler.return_value.receive_credential.assert_called_once_with(
                 ret_cx_rec, cred_issue
             )
-            assert (
-                V20CredIssue.deserialize(ret_cx_rec.cred_issue).attachment()
-                == INDY_CRED
-            )
+            assert ret_cx_rec.cred_issue.attachment() == INDY_CRED
             assert ret_cx_rec.state == V20CredExRecord.STATE_CREDENTIAL_RECEIVED
 
     async def test_receive_cred_x_extra_formats(self):
@@ -1189,7 +1029,7 @@ class TestV20CredManager(AsyncTestCase):
             cred_ex_id="dummy-cxid",
             connection_id=connection_id,
             initiator=V20CredExRecord.INITIATOR_EXTERNAL,
-            cred_request=cred_request.serialize(),
+            cred_request=cred_request,
             role=V20CredExRecord.ROLE_ISSUER,
         )
 
@@ -1240,7 +1080,7 @@ class TestV20CredManager(AsyncTestCase):
             cred_ex_id="dummy-cxid",
             connection_id=connection_id,
             initiator=V20CredExRecord.INITIATOR_EXTERNAL,
-            cred_request=cred_request.serialize(),
+            cred_request=cred_request,
             role=V20CredExRecord.ROLE_ISSUER,
         )
 
@@ -1282,7 +1122,7 @@ class TestV20CredManager(AsyncTestCase):
         stored_cx_rec = V20CredExRecord(
             cred_ex_id="dummy-cxid",
             connection_id=connection_id,
-            cred_issue=cred_issue.serialize(),
+            cred_issue=cred_issue,
             initiator=V20CredExRecord.INITIATOR_EXTERNAL,
             role=V20CredExRecord.ROLE_ISSUER,
             state=V20CredExRecord.STATE_CREDENTIAL_RECEIVED,
@@ -1300,7 +1140,7 @@ class TestV20CredManager(AsyncTestCase):
 
             mock_handler.return_value.store_credential = async_mock.CoroutineMock()
 
-            ret_cx_rec, ret_cred_ack = await self.manager.store_credential(
+            ret_cx_rec = await self.manager.store_credential(
                 stored_cx_rec, cred_id=cred_id
             )
 
@@ -1308,12 +1148,8 @@ class TestV20CredManager(AsyncTestCase):
                 ret_cx_rec, cred_id
             )
 
-            assert (
-                V20CredIssue.deserialize(ret_cx_rec.cred_issue).attachment()
-                == INDY_CRED
-            )
-            assert ret_cx_rec.state == V20CredExRecord.STATE_DONE
-            assert ret_cred_ack._thread_id == thread_id
+            assert ret_cx_rec.cred_issue.attachment() == INDY_CRED
+            assert ret_cx_rec.state == V20CredExRecord.STATE_CREDENTIAL_RECEIVED
 
     async def test_store_credential_bad_state(self):
         thread_id = "thread-id"
@@ -1329,7 +1165,41 @@ class TestV20CredManager(AsyncTestCase):
             await self.manager.store_credential(stored_cx_rec, cred_id=cred_id)
         assert " state " in str(context.exception)
 
-    async def test_credential_ack(self):
+    async def test_send_cred_ack(self):
+        connection_id = "connection-id"
+        stored_exchange = V20CredExRecord(
+            cred_ex_id="dummy-cxid",
+            connection_id=connection_id,
+            initiator=V20CredExRecord.INITIATOR_SELF,
+            thread_id="thid",
+            parent_thread_id="pthid",
+            role=V20CredExRecord.ROLE_ISSUER,
+            trace=False,
+            auto_remove=True,
+        )
+
+        with async_mock.patch.object(
+            V20CredExRecord, "save", autospec=True
+        ) as mock_save_ex, async_mock.patch.object(
+            V20CredExRecord, "delete_record", autospec=True
+        ) as mock_delete_ex, async_mock.patch.object(
+            test_module.LOGGER, "exception", async_mock.MagicMock()
+        ) as mock_log_exception, async_mock.patch.object(
+            test_module.LOGGER, "warning", async_mock.MagicMock()
+        ) as mock_log_warning:
+            mock_delete_ex.side_effect = test_module.StorageError()
+            (_, ack) = await self.manager.send_cred_ack(stored_exchange)
+            assert ack._thread
+            mock_log_exception.assert_called_once()  # cover exception log-and-continue
+            mock_log_warning.assert_called_once()  # no BaseResponder
+
+            mock_responder = MockResponder()  # cover with responder
+            self.context.injector.bind_instance(BaseResponder, mock_responder)
+            (cx_rec, ack) = await self.manager.send_cred_ack(stored_exchange)
+            assert ack._thread
+            assert cx_rec.state == V20CredExRecord.STATE_DONE
+
+    async def test_receive_cred_ack(self):
         connection_id = "conn-id"
         stored_cx_rec = V20CredExRecord(
             cred_ex_id="dummy-cxid",

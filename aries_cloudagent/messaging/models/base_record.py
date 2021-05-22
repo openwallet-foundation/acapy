@@ -1,6 +1,7 @@
 """Classes for BaseStorage-based record management."""
 
 import json
+import logging
 import sys
 import uuid
 
@@ -12,12 +13,20 @@ from marshmallow import fields
 from ...cache.base import BaseCache
 from ...config.settings import BaseSettings
 from ...core.profile import ProfileSession
-from ...storage.base import BaseStorage, StorageDuplicateError, StorageNotFoundError
+from ...storage.base import (
+    BaseStorage,
+    StorageDuplicateError,
+    StorageError,
+    StorageNotFoundError,
+)
 from ...storage.record import StorageRecord
 
-from .base import BaseModel, BaseModelSchema
 from ..util import datetime_to_str, time_now
 from ..valid import INDY_ISO8601_DATETIME
+
+from .base import BaseModel, BaseModelSchema
+
+LOGGER = logging.getLogger(__name__)
 
 
 def match_post_filter(
@@ -26,7 +35,8 @@ def match_post_filter(
     positive: bool = True,
     alt: bool = False,
 ) -> bool:
-    """Determine if a record value matches the post-filter.
+    """
+    Determine if a record value matches the post-filter.
 
     Args:
         record: record to check
@@ -97,7 +107,8 @@ class BaseRecord(BaseModel):
 
     @classmethod
     def from_storage(cls, record_id: str, record: Mapping[str, Any]):
-        """Initialize a record from its stored representation.
+        """
+        Initialize a record from its stored representation.
 
         Args:
             record_id: The unique record identifier
@@ -113,11 +124,13 @@ class BaseRecord(BaseModel):
     @classmethod
     def get_tag_map(cls) -> Mapping[str, str]:
         """Accessor for the set of defined tags."""
+
         return {tag.lstrip("~"): tag for tag in cls.TAG_NAMES or ()}
 
     @property
     def storage_record(self) -> StorageRecord:
         """Accessor for a `StorageRecord` representing this record."""
+
         return StorageRecord(
             self.RECORD_TYPE, json.dumps(self.value), self.tags, self._id
         )
@@ -125,11 +138,13 @@ class BaseRecord(BaseModel):
     @property
     def record_value(self) -> dict:
         """Accessor to define custom properties for the JSON record value."""
+
         return {}
 
     @property
     def value(self) -> dict:
         """Accessor for the JSON record value generated for this record."""
+
         ret = self.strip_tag_prefix(self.tags)
         ret.update({"created_at": self.created_at, "updated_at": self.updated_at})
         ret.update(self.record_value)
@@ -138,6 +153,7 @@ class BaseRecord(BaseModel):
     @property
     def record_tags(self) -> dict:
         """Accessor to define implementation-specific tags."""
+
         return {
             tag: getattr(self, prop)
             for (prop, tag) in self.get_tag_map().items()
@@ -147,12 +163,14 @@ class BaseRecord(BaseModel):
     @property
     def tags(self) -> dict:
         """Accessor for the record tags generated for this record."""
+
         tags = self.record_tags
         return tags
 
     @classmethod
     async def get_cached_key(cls, session: ProfileSession, cache_key: str):
-        """Shortcut method to fetch a cached key value.
+        """
+        Shortcut method to fetch a cached key value.
 
         Args:
             session: The profile session to use
@@ -168,7 +186,8 @@ class BaseRecord(BaseModel):
     async def set_cached_key(
         cls, session: ProfileSession, cache_key: str, value: Any, ttl=None
     ):
-        """Shortcut method to set a cached key value.
+        """
+        Shortcut method to set a cached key value.
 
         Args:
             session: The profile session to use
@@ -176,6 +195,7 @@ class BaseRecord(BaseModel):
             value: The value to cache
             ttl: The cache ttl
         """
+
         if not cache_key:
             return
         cache = session.inject(BaseCache, required=False)
@@ -184,12 +204,14 @@ class BaseRecord(BaseModel):
 
     @classmethod
     async def clear_cached_key(cls, session: ProfileSession, cache_key: str):
-        """Shortcut method to clear a cached key value, if any.
+        """
+        Shortcut method to clear a cached key value, if any.
 
         Args:
             session: The profile session to use
             cache_key: The unique cache identifier
         """
+
         if not cache_key:
             return
         cache = session.inject(BaseCache, required=False)
@@ -200,12 +222,14 @@ class BaseRecord(BaseModel):
     async def retrieve_by_id(
         cls, session: ProfileSession, record_id: str
     ) -> "BaseRecord":
-        """Retrieve a stored record by ID.
+        """
+        Retrieve a stored record by ID.
 
         Args:
             session: The profile session to use
             record_id: The ID of the record to find
         """
+
         storage = session.inject(BaseStorage)
         result = await storage.get_record(
             cls.RECORD_TYPE, record_id, {"retrieveTags": False}
@@ -217,7 +241,8 @@ class BaseRecord(BaseModel):
     async def retrieve_by_tag_filter(
         cls, session: ProfileSession, tag_filter: dict, post_filter: dict = None
     ) -> "BaseRecord":
-        """Retrieve a record by tag filter.
+        """
+        Retrieve a record by tag filter.
 
         Args:
             session: The profile session to use
@@ -225,6 +250,7 @@ class BaseRecord(BaseModel):
             post_filter: Additional value filters to apply matching positively,
                 with sequence values specifying alternatives to match (hit any)
         """
+
         storage = session.inject(BaseStorage)
         rows = await storage.find_all_records(
             cls.RECORD_TYPE,
@@ -262,7 +288,8 @@ class BaseRecord(BaseModel):
         post_filter_negative: dict = None,
         alt: bool = False,
     ) -> Sequence["BaseRecord"]:
-        """Query stored records.
+        """
+        Query stored records.
 
         Args:
             session: The profile session to use
@@ -272,6 +299,7 @@ class BaseRecord(BaseModel):
             alt: set to match any (positive=True) value or miss all (positive=False)
                 values in post_filter
         """
+
         storage = session.inject(BaseStorage)
         rows = await storage.find_all_records(
             cls.RECORD_TYPE,
@@ -304,14 +332,17 @@ class BaseRecord(BaseModel):
         log_override: bool = False,
         event: bool = None,
     ) -> str:
-        """Persist the record to storage.
+        """
+        Persist the record to storage.
 
         Args:
             session: The profile session to use
             reason: A reason to add to the log
             log_params: Additional parameters to log
+            override: Override configured logging regimen, print to stderr instead
             event: Flag to override whether the event is sent
         """
+
         new_record = None
         log_reason = reason or ("Updated record" if self._id else "Created record")
         try:
@@ -348,7 +379,8 @@ class BaseRecord(BaseModel):
         last_state: Optional[str],
         event: bool = None,
     ):
-        """Perform post-save actions.
+        """
+        Perform post-save actions.
 
         Args:
             session: The profile session to use
@@ -356,24 +388,28 @@ class BaseRecord(BaseModel):
             last_state: The previous state value
             event: Flag to override whether the event is sent
         """
+
         if event is None:
             event = new_record or (last_state != self.state)
         if event:
             await self.emit_event(session, self.serialize())
 
     async def delete_record(self, session: ProfileSession):
-        """Remove the stored record.
+        """
+        Remove the stored record.
 
         Args:
             session: The profile session to use
         """
+
         if self._id:
             storage = session.inject(BaseStorage)
             await storage.delete_record(self.storage_record)
         # FIXME - update state and send webhook?
 
     async def emit_event(self, session: ProfileSession, payload: Any = None):
-        """Emit an event.
+        """
+        Emit an event.
 
         Args:
             session: The profile session to use
@@ -393,6 +429,40 @@ class BaseRecord(BaseModel):
 
         await session.profile.notify(topic, payload)
 
+    async def save_error_state(
+        self,
+        session: ProfileSession,
+        state: str = None,
+        *,
+        reason: str = None,
+        log_params: Mapping[str, Any] = None,
+        log_override: bool = False,
+    ):
+        """
+        Save record error state if need be; log and swallow any storage error.
+
+        Args:
+            session: The profile session to use
+            state: The state to save if need be (typically None but by protocol)
+            reason: A reason to add to the log
+            log_params: Additional parameters to log
+            override: Override configured logging regimen, print to stderr instead
+        """
+
+        self.state = state
+        if self._last_state is state:  # already done
+            return
+
+        try:
+            await self.save(
+                session,
+                reason=reason,
+                log_params=log_params,
+                log_override=log_override,
+            )
+        except StorageError as err:
+            LOGGER.exception(err)
+
     @classmethod
     def log_state(
         cls,
@@ -402,6 +472,7 @@ class BaseRecord(BaseModel):
         override: bool = False,
     ):
         """Print a message with increased visibility (for testing)."""
+
         if override or (
             cls.LOG_STATE_FLAG and settings and settings.get(cls.LOG_STATE_FLAG)
         ):
@@ -414,6 +485,7 @@ class BaseRecord(BaseModel):
     @classmethod
     def strip_tag_prefix(cls, tags: dict):
         """Strip tilde from unencrypted tag names."""
+
         return (
             {(k[1:] if "~" in k else k): v for (k, v) in tags.items()} if tags else {}
         )
@@ -421,6 +493,7 @@ class BaseRecord(BaseModel):
     @classmethod
     def prefix_tag_filter(cls, tag_filter: dict):
         """Prefix unencrypted tags used in the tag filter."""
+
         ret = None
         if tag_filter:
             tag_map = cls.get_tag_map()
@@ -436,6 +509,7 @@ class BaseRecord(BaseModel):
 
     def __eq__(self, other: Any) -> bool:
         """Comparison between records."""
+
         if type(other) is type(self):
             return self.value == other.value and self.tags == other.tags
         return False
@@ -453,11 +527,13 @@ class BaseExchangeRecord(BaseRecord):
         **kwargs,
     ):
         """Initialize a new BaseExchangeRecord."""
+
         super().__init__(id, state, **kwargs)
         self.trace = trace
 
     def __eq__(self, other: Any) -> bool:
         """Comparison between records."""
+
         if type(other) is type(self):
             return (
                 self.value == other.value

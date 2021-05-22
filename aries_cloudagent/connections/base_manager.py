@@ -7,12 +7,11 @@ For Connection, DIDExchange and OutOfBand Manager.
 import logging
 from typing import List, Sequence, Tuple
 
-from pydid import DIDDocument as ResolvedDocument
-from pydid.doc.didcomm_service import DIDCommService
-from pydid.doc.verification_method import VerificationMethod
+from pydid import DIDCommService, DIDDocument as ResolvedDocument, VerificationMethod
 
 from ..core.error import BaseError
 from ..core.profile import ProfileSession
+from ..did.did_key import DIDKey
 from ..protocols.connections.v1_0.messages.connection_invitation import (
     ConnectionInvitation,
 )
@@ -25,7 +24,6 @@ from ..storage.base import BaseStorage
 from ..storage.error import StorageNotFoundError
 from ..storage.record import StorageRecord
 from ..wallet.base import BaseWallet
-from ..did.did_key import DIDKey
 from ..wallet.did_info import DIDInfo
 from .models.conn_record import ConnRecord
 from .models.connection_target import ConnectionTarget
@@ -289,45 +287,56 @@ class BaseConnectionManager:
             in (ConnRecord.State.INVITATION, ConnRecord.State.REQUEST)
             and ConnRecord.Role.get(connection.their_role) is ConnRecord.Role.RESPONDER
         ):
-            invitation = await connection.retrieve_invitation(self._session)
-            if isinstance(invitation, ConnectionInvitation):  # conn protocol invitation
-                if invitation.did:
-                    did = invitation.did
+            if connection.invitation_msg_id or connection.invitation_key:
+                invitation = await connection.retrieve_invitation(self._session)
+                if isinstance(
+                    invitation, ConnectionInvitation
+                ):  # conn protocol invitation
+                    if invitation.did:
+                        did = invitation.did
+                        (
+                            endpoint,
+                            recipient_keys,
+                            routing_keys,
+                        ) = await self.resolve_invitation(did)
+
+                    else:
+                        endpoint = invitation.endpoint
+                        recipient_keys = invitation.recipient_keys
+                        routing_keys = invitation.routing_keys
+                else:  # out-of-band invitation
+                    if invitation.service_dids:
+                        did = invitation.service_dids[0]
+                        (
+                            endpoint,
+                            recipient_keys,
+                            routing_keys,
+                        ) = await self.resolve_invitation(did)
+
+                    else:
+                        endpoint = invitation.service_blocks[0].service_endpoint
+                        recipient_keys = [
+                            DIDKey.from_did(k).public_key_b58
+                            for k in invitation.service_blocks[0].recipient_keys
+                        ]
+                        routing_keys = [
+                            DIDKey.from_did(k).public_key_b58
+                            for k in invitation.service_blocks[0].routing_keys
+                        ]
+            else:
+                if connection.their_did:
+                    invitation = None
+                    did = connection.their_did
                     (
                         endpoint,
                         recipient_keys,
                         routing_keys,
                     ) = await self.resolve_invitation(did)
-
-                else:
-                    endpoint = invitation.endpoint
-                    recipient_keys = invitation.recipient_keys
-                    routing_keys = invitation.routing_keys
-            else:  # out-of-band invitation
-                if invitation.service_dids:
-                    did = invitation.service_dids[0]
-                    (
-                        endpoint,
-                        recipient_keys,
-                        routing_keys,
-                    ) = await self.resolve_invitation(did)
-
-                else:
-                    endpoint = invitation.service_blocks[0].service_endpoint
-                    recipient_keys = [
-                        DIDKey.from_did(k).public_key_b58
-                        for k in invitation.service_blocks[0].recipient_keys
-                    ]
-                    routing_keys = [
-                        DIDKey.from_did(k).public_key_b58
-                        for k in invitation.service_blocks[0].routing_keys
-                    ]
-
             results = [
                 ConnectionTarget(
                     did=connection.their_did,
                     endpoint=endpoint,
-                    label=invitation.label,
+                    label=invitation.label if invitation else None,
                     recipient_keys=recipient_keys,
                     routing_keys=routing_keys,
                     sender_key=my_info.verkey,

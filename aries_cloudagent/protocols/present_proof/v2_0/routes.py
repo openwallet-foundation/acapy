@@ -46,6 +46,7 @@ from .message_types import (
     SPEC_URI,
 )
 from .messages.pres_format import V20PresFormat
+from .messages.pres_problem_report import ProblemReportReason
 from .messages.pres_proposal import V20PresProposal
 from .messages.pres_request import V20PresRequest
 from .models.pres_exchange import V20PresExRecord, V20PresExRecordSchema
@@ -407,7 +408,11 @@ async def present_proof_retrieve(request: web.BaseRequest):
         raise web.HTTPNotFound(reason=err.roll_up) from err
     except (BaseModelError, StorageError) as err:
         return await internal_error(
-            err, web.HTTPBadRequest, pres_ex_record, outbound_handler
+            err,
+            web.HTTPBadRequest,
+            pres_ex_record,
+            outbound_handler,
+            code=ProblemReportReason.ABANDONED.value,
         )
 
     return web.json_response(result)
@@ -470,7 +475,11 @@ async def present_proof_credentials_list(request: web.BaseRequest):
         )
     except IndyHolderError as err:
         return await internal_error(
-            err, web.HTTPBadRequest, pres_ex_record, outbound_handler
+            err,
+            web.HTTPBadRequest,
+            pres_ex_record,
+            outbound_handler,
+            code=ProblemReportReason.ABANDONED.value,
         )
 
     pres_ex_record.log_state(
@@ -521,7 +530,11 @@ async def present_proof_send_proposal(request: web.BaseRequest):
             )
         except (BaseModelError, StorageError) as err:
             return await internal_error(
-                err, web.HTTPBadRequest, conn_record, outbound_handler
+                err,
+                web.HTTPBadRequest,
+                conn_record,
+                outbound_handler,
+                code=ProblemReportReason.ABANDONED.value,
             )
 
     if not conn_record.is_ready:
@@ -551,6 +564,7 @@ async def present_proof_send_proposal(request: web.BaseRequest):
             web.HTTPBadRequest,
             pres_ex_record or conn_record,
             outbound_handler,
+            code=ProblemReportReason.ABANDONED.value,
         )
 
     await outbound_handler(pres_proposal_message, connection_id=connection_id)
@@ -618,7 +632,11 @@ async def present_proof_create_request(request: web.BaseRequest):
         result = pres_ex_record.serialize()
     except (BaseModelError, StorageError) as err:
         return await internal_error(
-            err, web.HTTPBadRequest, pres_ex_record, outbound_handler
+            err,
+            web.HTTPBadRequest,
+            pres_ex_record,
+            outbound_handler,
+            code=ProblemReportReason.ABANDONED.value,
         )
 
     await outbound_handler(pres_request_message, connection_id=None)
@@ -696,6 +714,7 @@ async def present_proof_send_free_request(request: web.BaseRequest):
             web.HTTPBadRequest,
             pres_ex_record or conn_record,
             outbound_handler,
+            code=ProblemReportReason.ABANDONED.value,
         )
 
     await outbound_handler(pres_request_message, connection_id=connection_id)
@@ -742,7 +761,11 @@ async def present_proof_send_bound_request(request: web.BaseRequest):
             pres_ex_record = await V20PresExRecord.retrieve_by_id(session, pres_ex_id)
         except StorageNotFoundError as err:
             return await internal_error(
-                err, web.HTTPNotFound, pres_ex_record, outbound_handler
+                err,
+                web.HTTPNotFound,
+                pres_ex_record,
+                outbound_handler,
+                code=ProblemReportReason.ABANDONED.value,
             )
 
         if pres_ex_record.state != (V20PresExRecord.STATE_PROPOSAL_RECEIVED):
@@ -770,12 +793,19 @@ async def present_proof_send_bound_request(request: web.BaseRequest):
             pres_request_message,
         ) = await pres_manager.create_bound_request(pres_ex_record)
         result = pres_ex_record.serialize()
-    except (BaseModelError, StorageError) as err:
+    except (BaseModelError, LedgerError, StorageError) as err:
+        async with context.session() as session:
+            await pres_ex_record.save_error_state(
+                session,
+                state=V20PresExRecord.STATE_ABANDONED,
+                reason=err.message,
+            )
         return await internal_error(
             err,
             web.HTTPBadRequest,
-            pres_ex_record or conn_record,
+            pres_ex_record,
             outbound_handler,
+            code=ProblemReportReason.ABANDONED.value,
         )
 
     trace_msg = body.get("trace")
@@ -824,7 +854,11 @@ async def present_proof_send_presentation(request: web.BaseRequest):
             pres_ex_record = await V20PresExRecord.retrieve_by_id(session, pres_ex_id)
         except StorageNotFoundError as err:
             return await internal_error(
-                err, web.HTTPNotFound, pres_ex_record, outbound_handler
+                err,
+                web.HTTPNotFound,
+                pres_ex_record,
+                outbound_handler,
+                code=ProblemReportReason.ABANDONED.value,
             )
 
         if pres_ex_record.state != (V20PresExRecord.STATE_REQUEST_RECEIVED):
@@ -863,16 +897,29 @@ async def present_proof_send_presentation(request: web.BaseRequest):
         BaseModelError,
         IndyHolderError,
         LedgerError,
-        StorageError,
         WalletNotFoundError,
     ) as err:
+        async with context.session() as session:
+            await pres_ex_record.save_error_state(
+                session,
+                state=V20PresExRecord.STATE_ABANDONED,
+                reason=err.message,
+            )
         return await internal_error(
             err,
             web.HTTPBadRequest,
-            pres_ex_record or conn_record,
+            pres_ex_record,
             outbound_handler,
+            code=ProblemReportReason.ABANDONED.value,
         )
-
+    except StorageError as err:
+        return await internal_error(
+            err,
+            web.HTTPBadRequest,
+            pres_ex_record,
+            outbound_handler,
+            code=ProblemReportReason.ABANDONED.value,
+        )
     trace_msg = body.get("trace")
     pres_message.assign_trace_decorator(
         context.settings,
@@ -917,7 +964,11 @@ async def present_proof_verify_presentation(request: web.BaseRequest):
             pres_ex_record = await V20PresExRecord.retrieve_by_id(session, pres_ex_id)
         except StorageNotFoundError as err:
             return await internal_error(
-                err, web.HTTPNotFound, pres_ex_record, outbound_handler
+                err,
+                web.HTTPNotFound,
+                pres_ex_record,
+                outbound_handler,
+                code=ProblemReportReason.ABANDONED.value,
             )
 
         if pres_ex_record.state != (V20PresExRecord.STATE_PRESENTATION_RECEIVED):
@@ -943,9 +994,27 @@ async def present_proof_verify_presentation(request: web.BaseRequest):
     try:
         pres_ex_record = await pres_manager.verify_pres(pres_ex_record)
         result = pres_ex_record.serialize()
-    except (LedgerError, BaseModelError) as err:
+    except (BaseModelError, LedgerError) as err:
+        async with context.session() as session:
+            await pres_ex_record.save_error_state(
+                session,
+                state=V20PresExRecord.STATE_ABANDONED,
+                reason=err.message,
+            )
         return await internal_error(
-            err, web.HTTPBadRequest, pres_ex_record, outbound_handler
+            err,
+            web.HTTPBadRequest,
+            pres_ex_record,
+            outbound_handler,
+            code=ProblemReportReason.ABANDONED.value,
+        )
+    except StorageError as err:
+        return await internal_error(
+            err,
+            web.HTTPBadRequest,
+            pres_ex_record,
+            outbound_handler,
+            code=ProblemReportReason.ABANDONED.value,
         )
 
     trace_event(
@@ -989,9 +1058,21 @@ async def present_proof_problem_report(request: web.BaseRequest):
             body["description"],
         )
     except StorageNotFoundError as err:
-        await internal_error(err, web.HTTPNotFound, None, outbound_handler)
+        await internal_error(
+            err,
+            web.HTTPNotFound,
+            None,
+            outbound_handler,
+            code=ProblemReportReason.ABANDONED.value,
+        )
     except StorageError as err:
-        await internal_error(err, web.HTTPBadRequest, pres_ex_record, outbound_handler)
+        await internal_error(
+            err,
+            web.HTTPBadRequest,
+            pres_ex_record,
+            outbound_handler,
+            code=ProblemReportReason.ABANDONED.value,
+        )
 
     await outbound_handler(report, connection_id=pres_ex_record.connection_id)
 
@@ -1023,11 +1104,19 @@ async def present_proof_remove(request: web.BaseRequest):
             await pres_ex_record.delete_record(session)
     except StorageNotFoundError as err:
         return await internal_error(
-            err, web.HTTPNotFound, pres_ex_record, outbound_handler
+            err,
+            web.HTTPNotFound,
+            pres_ex_record,
+            outbound_handler,
+            code=ProblemReportReason.ABANDONED.value,
         )
     except StorageError as err:
         return await internal_error(
-            err, web.HTTPBadRequest, pres_ex_record, outbound_handler
+            err,
+            web.HTTPBadRequest,
+            pres_ex_record,
+            outbound_handler,
+            code=ProblemReportReason.ABANDONED.value,
         )
 
     return web.json_response({})

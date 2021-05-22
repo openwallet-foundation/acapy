@@ -1,6 +1,7 @@
 """A simple event bus."""
 
 import logging
+
 from itertools import chain
 from typing import TYPE_CHECKING, Any, Callable, Dict, Pattern, Sequence
 

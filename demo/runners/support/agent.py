@@ -602,7 +602,8 @@ class DemoAgent:
 
     async def handle_problem_report(self, message):
         self.log(
-            f"Received problem report: {message['explain-ltxt']}\n", source="stderr"
+            f"Received problem report: {message['description']['en']}\n",
+            source="stderr",
         )
 
     async def handle_endorse_transaction(self, message):

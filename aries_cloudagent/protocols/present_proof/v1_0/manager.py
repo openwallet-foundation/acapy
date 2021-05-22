@@ -73,7 +73,7 @@ class PresentationManager:
             initiator=V10PresentationExchange.INITIATOR_SELF,
             role=V10PresentationExchange.ROLE_PROVER,
             state=V10PresentationExchange.STATE_PROPOSAL_SENT,
-            presentation_proposal_dict=presentation_proposal_message.serialize(),
+            presentation_proposal_dict=presentation_proposal_message,
             auto_present=auto_present,
             trace=(presentation_proposal_message._trace is not None),
         )
@@ -100,7 +100,7 @@ class PresentationManager:
             initiator=V10PresentationExchange.INITIATOR_EXTERNAL,
             role=V10PresentationExchange.ROLE_VERIFIER,
             state=V10PresentationExchange.STATE_PROPOSAL_RECEIVED,
-            presentation_proposal_dict=message.serialize(),
+            presentation_proposal_dict=message,
             trace=(message._trace is not None),
         )
         async with self._profile.session() as session:
@@ -134,9 +134,7 @@ class PresentationManager:
 
         """
         indy_proof_request = await (
-            PresentationProposal.deserialize(
-                presentation_exchange_record.presentation_proposal_dict
-            )
+            presentation_exchange_record.presentation_proposal_dict
         ).presentation_proposal.indy_proof_request(
             name=name,
             version=version,
@@ -191,7 +189,7 @@ class PresentationManager:
             role=V10PresentationExchange.ROLE_VERIFIER,
             state=V10PresentationExchange.STATE_REQUEST_SENT,
             presentation_request=presentation_request_message.indy_proof_request(),
-            presentation_request_dict=presentation_request_message.serialize(),
+            presentation_request_dict=presentation_request_message,
             trace=(presentation_request_message._trace is not None),
         )
         async with self._profile.session() as session:
@@ -273,7 +271,7 @@ class PresentationManager:
 
         # extract credential ids and non_revoked
         requested_referents = {}
-        presentation_request = presentation_exchange_record.presentation_request
+        presentation_request = presentation_exchange_record._presentation_request.ser
         non_revoc_intervals = indy_proof_req2non_revoc_intervals(presentation_request)
         attr_creds = requested_credentials.get("requested_attributes", {})
         req_attrs = presentation_request.get("requested_attributes", {})
@@ -416,7 +414,7 @@ class PresentationManager:
                 ] = precis["timestamp"]
 
         indy_proof_json = await holder.create_presentation(
-            presentation_exchange_record.presentation_request,
+            presentation_exchange_record._presentation_request.ser,
             requested_credentials,
             schemas,
             credential_definitions,
@@ -485,12 +483,12 @@ class PresentationManager:
 
         # Check for bait-and-switch in presented attribute values vs. proposal
         if presentation_exchange_record.presentation_proposal_dict:
-            exchange_pres_proposal = PresentationProposal.deserialize(
+            exchange_pres_proposal = (
                 presentation_exchange_record.presentation_proposal_dict
             )
             presentation_preview = exchange_pres_proposal.presentation_proposal
 
-            proof_req = presentation_exchange_record.presentation_request
+            proof_req = presentation_exchange_record._presentation_request.ser
             for (reft, attr_spec) in presentation["requested_proof"][
                 "revealed_attrs"
             ].items():
@@ -503,6 +501,14 @@ class PresentationManager:
                     name=name,
                     value=value,
                 ):
+                    presentation_exchange_record.state = None
+                    async with self._profile.session() as session:
+                        await presentation_exchange_record.save(
+                            session,
+                            reason=(
+                                f"Presentation {name}={value} mismatches proposal value"
+                            ),
+                        )
                     raise PresentationManagerError(
                         f"Presentation {name}={value} mismatches proposal value"
                     )
@@ -533,8 +539,8 @@ class PresentationManager:
             presentation record, updated
 
         """
-        indy_proof_request = presentation_exchange_record.presentation_request
-        indy_proof = presentation_exchange_record.presentation
+        indy_proof_request = presentation_exchange_record._presentation_request.ser
+        indy_proof = presentation_exchange_record._presentation.ser
 
         schema_ids = []
         credential_definition_ids = []

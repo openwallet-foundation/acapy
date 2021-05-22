@@ -8,8 +8,9 @@ lifecycle hook callbacks storing state for message threads, etc.
 import asyncio
 import logging
 import os
-from typing import Callable, Coroutine, Union
 import warnings
+
+from typing import Callable, Coroutine, Union
 
 from aiohttp.web import HTTPException
 
@@ -29,6 +30,7 @@ from ..transport.outbound.status import OutboundSendStatus
 from ..utils.stats import Collector
 from ..utils.task_queue import CompletedTask, PendingTask, TaskQueue
 from ..utils.tracing import get_timer, trace_event
+
 from .error import ProtocolMinorVersionNotSupported
 from .protocol_registry import ProtocolRegistry
 
@@ -221,7 +223,6 @@ class Dispatcher:
             the given type
 
         """
-
         if not isinstance(parsed_msg, dict):
             raise MessageParseError("Expected a JSON object")
         message_type = parsed_msg.get("@type")
@@ -297,6 +298,7 @@ class DispatcherResponder(BaseResponder):
                     "in_time": in_time,
                     "out_time": datetime_now(),
                 }
+
         return await super().create_outbound(message, **kwargs)
 
     async def send_outbound(self, message: OutboundMessage) -> OutboundSendStatus:

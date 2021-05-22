@@ -109,7 +109,7 @@ class TestV20CredExRecord(AsyncTestCase):
                 error_msg=None,
                 trace=False,
             )
-            assert type(cx_rec.cred_proposal) == dict
+            assert type(cx_rec.cred_proposal) == V20CredProposal
             ser = cx_rec.serialize()
             deser = V20CredExRecord.deserialize(ser)
-            assert type(deser.cred_proposal) == dict
+            assert type(deser.cred_proposal) == V20CredProposal
