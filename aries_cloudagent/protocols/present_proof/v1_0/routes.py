@@ -318,7 +318,7 @@ async def presentation_exchange_credentials_list(request: web.BaseRequest):
     holder = context.profile.inject(IndyHolder)
     try:
         credentials = await holder.get_credentials_for_presentation_request_by_referent(
-            pres_ex_record.presentation_request,
+            pres_ex_record._presentation_request.ser,
             presentation_referents,
             start,
             count,
