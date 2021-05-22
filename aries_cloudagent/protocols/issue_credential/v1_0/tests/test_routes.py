@@ -324,7 +324,6 @@ class TestCredentialRoutes(AsyncTestCase):
                 mock_cred_ex_record.serialize.return_value
             )
 
-
     async def test_credential_exchange_send_proposal_no_conn_record(self):
         self.request.json = async_mock.CoroutineMock()
 
