@@ -129,8 +129,8 @@ class V10PresentationExchange(BaseExchangeRecord):
         """Accessor; get deserialized view."""
         return (
             None
-            if self._presentation_request is None
-            else self._presentation_request.de
+            if self._presentation_request_dict is None
+            else self._presentation_request_dict.de
         )
 
     @presentation_request_dict.setter
@@ -176,7 +176,6 @@ class V10PresentationExchange(BaseExchangeRecord):
                 if getattr(self, prop) is not None
             },
         }
-        print(f'\n\n >> >> PP1-MODEL-PXREC record_value: {retval}')
         return retval
 
     def __eq__(self, other: Any) -> bool:

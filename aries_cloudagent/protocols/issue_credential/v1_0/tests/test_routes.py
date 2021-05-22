@@ -308,26 +308,22 @@ class TestCredentialRoutes(AsyncTestCase):
         ) as mock_conn_rec, async_mock.patch.object(
             test_module, "CredentialManager", autospec=True
         ) as mock_credential_manager, async_mock.patch.object(
-            test_module.CredentialProposal, "deserialize", autospec=True
-        ) as mock_proposal_deserialize, async_mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
 
             mock_cred_ex_record = async_mock.MagicMock()
-
             mock_credential_manager.return_value.create_proposal.return_value = (
                 mock_cred_ex_record
             )
-
             await test_module.credential_exchange_send_proposal(self.request)
 
+            self.request["outbound_message_router"].assert_awaited_once_with(
+                mock_cred_ex_record.credential_proposal_dict, connection_id=conn_id
+            )
             mock_response.assert_called_once_with(
                 mock_cred_ex_record.serialize.return_value
             )
 
-            self.request["outbound_message_router"].assert_awaited_once_with(
-                mock_proposal_deserialize.return_value, connection_id=conn_id
-            )
 
     async def test_credential_exchange_send_proposal_no_conn_record(self):
         self.request.json = async_mock.CoroutineMock()
@@ -361,17 +357,9 @@ class TestCredentialRoutes(AsyncTestCase):
         )
 
         with async_mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ) as mock_conn_rec, async_mock.patch.object(
-            test_module, "CredentialManager", autospec=True
-        ) as mock_credential_manager, async_mock.patch.object(
-            test_module.CredentialProposal, "deserialize", autospec=True
-        ) as mock_proposal_deserialize:
-            mock_cred_ex_record = async_mock.MagicMock()
-            mock_credential_manager.return_value.create_proposal.return_value = (
-                mock_cred_ex_record
-            )
-            mock_proposal_deserialize.side_effect = test_module.BaseModelError()
+            test_module.CredentialPreview, "deserialize", autospec=True
+        ) as mock_preview_deser:
+            mock_preview_deser.side_effect = test_module.BaseModelError()
             with self.assertRaises(test_module.web.HTTPBadRequest):
                 await test_module.credential_exchange_send_proposal(self.request)
 
