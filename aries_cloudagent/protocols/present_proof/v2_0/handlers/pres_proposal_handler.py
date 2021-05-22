@@ -1,11 +1,14 @@
 """Presentation proposal message handler."""
 
+from .....ledger.error import LedgerError
 from .....messaging.base_handler import BaseHandler, HandlerException
 from .....messaging.request_context import RequestContext
 from .....messaging.responder import BaseResponder
+from .....storage.error import StorageError
 from .....utils.tracing import trace_event, get_timer
 
 from ..manager import V20PresManager
+from ..models.pres_exchange import V20PresExRecord
 from ..messages.pres_proposal import V20PresProposal
 
 
@@ -38,7 +41,7 @@ class V20PresProposalHandler(BaseHandler):
         pres_manager = V20PresManager(context.profile)
         pres_ex_record = await pres_manager.receive_pres_proposal(
             context.message, context.connection_record
-        )
+        )  # mgr only creates, saves record: on exception, saving state err is hopeless
 
         r_time = trace_event(
             context.settings,
@@ -49,15 +52,27 @@ class V20PresProposalHandler(BaseHandler):
 
         # If auto_respond_presentation_proposal is set, reply with proof req
         if context.settings.get("debug.auto_respond_presentation_proposal"):
-            (
-                pres_ex_record,
-                pres_request_message,
-            ) = await pres_manager.create_bound_request(
-                pres_ex_record=pres_ex_record,
-                comment=context.message.comment,
-            )
-
-            await responder.send_reply(pres_request_message)
+            pres_request_message = None
+            try:
+                (
+                    pres_ex_record,
+                    pres_request_message,
+                ) = await pres_manager.create_bound_request(
+                    pres_ex_record=pres_ex_record,
+                    comment=context.message.comment,
+                )
+                await responder.send_reply(pres_request_message)
+            except LedgerError as err:
+                self._logger.exception(err)
+                if pres_ex_record:
+                    async with context.session() as session:
+                        await pres_ex_record.save_error_state(
+                            session,
+                            state=V20PresExRecord.STATE_ABANDONED,
+                            reason=err.message,
+                        )
+            except StorageError as err:
+                self._logger.exception(err)  # may be logging to wire, not dead disk
 
             trace_event(
                 context.settings,

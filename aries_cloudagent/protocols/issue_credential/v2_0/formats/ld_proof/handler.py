@@ -1,10 +1,14 @@
 """V2.0 issue-credential linked data proof credential format handler."""
 
 import logging
+
 from typing import Mapping
 
 from marshmallow import EXCLUDE, INCLUDE
 
+from ......did.did_key import DIDKey
+from ......storage.vc_holder.base import VCHolder
+from ......storage.vc_holder.vc_record import VCRecord
 from ......vc.vc_ld import (
     issue,
     verify_credential,
@@ -13,22 +17,19 @@ from ......vc.vc_ld import (
     VerifiableCredential,
 )
 from ......vc.ld_proofs import (
-    Ed25519Signature2018,
-    BbsBlsSignature2020,
-    WalletKeyPair,
-    LinkedDataProof,
-    CredentialIssuancePurpose,
-    ProofPurpose,
-    DocumentLoader,
     AuthenticationProofPurpose,
+    BbsBlsSignature2020,
+    CredentialIssuancePurpose,
+    DocumentLoader,
+    Ed25519Signature2018,
+    LinkedDataProof,
+    ProofPurpose,
+    WalletKeyPair,
 )
 from ......vc.ld_proofs.constants import SECURITY_CONTEXT_BBS_URL
 from ......wallet.key_type import KeyType
 from ......wallet.error import WalletNotFoundError
 from ......wallet.base import BaseWallet, DIDInfo
-from ......did.did_key import DIDKey
-from ......storage.vc_holder.base import VCHolder
-from ......storage.vc_holder.vc_record import VCRecord
 
 from ...message_types import (
     CRED_20_ISSUE,
@@ -37,15 +38,17 @@ from ...message_types import (
     CRED_20_REQUEST,
 )
 from ...messages.cred_format import V20CredFormat
+from ...messages.cred_issue import V20CredIssue
 from ...messages.cred_offer import V20CredOffer
 from ...messages.cred_proposal import V20CredProposal
-from ...messages.cred_issue import V20CredIssue
 from ...messages.cred_request import V20CredRequest
 from ...models.cred_ex_record import V20CredExRecord
+from ...models.detail.ld_proof import V20CredExRecordLDProof
+
 from ..handler import CredFormatAttachment, V20CredFormatError, V20CredFormatHandler
+
 from .models.cred_detail import LDProofVCDetailSchema
 from .models.cred_detail import LDProofVCDetail
-from ...models.detail.ld_proof import V20CredExRecordLDProof
 
 LOGGER = logging.getLogger(__name__)
 
@@ -325,9 +328,7 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
 
         # Parse proposal. Data is stored in proposal if we received a proposal
         # but also when we create an offer (manager does some weird stuff)
-        offer_data = V20CredProposal.deserialize(
-            cred_ex_record.cred_proposal
-        ).attachment(self.format)
+        offer_data = cred_ex_record.cred_proposal.attachment(self.format)
         detail = LDProofVCDetail.deserialize(offer_data)
         detail = await self._prepare_detail(detail)
 
@@ -348,15 +349,11 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
     ) -> CredFormatAttachment:
         """Create linked data proof credential request."""
         if cred_ex_record.cred_offer:
-            request_data = V20CredOffer.deserialize(
-                cred_ex_record.cred_offer
-            ).attachment(self.format)
+            request_data = cred_ex_record.cred_offer.attachment(self.format)
         # API data is stored in proposal (when starting from request)
         # It is a bit of a strage flow IMO.
         elif cred_ex_record.cred_proposal:
-            request_data = V20CredProposal.deserialize(
-                cred_ex_record.cred_proposal
-            ).attachment(self.format)
+            request_data = cred_ex_record.cred_proposal.attachment(self.format)
         else:
             raise V20CredFormatError(
                 "Cannot create linked data proof request without offer or input data"
@@ -381,9 +378,7 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
                 "Cannot issue credential without credential request"
             )
 
-        detail_dict = V20CredRequest.deserialize(
-            cred_ex_record.cred_request
-        ).attachment(self.format)
+        detail_dict = cred_ex_record.cred_request.attachment(self.format)
         detail = LDProofVCDetail.deserialize(detail_dict)
         detail = await self._prepare_detail(detail)
 
@@ -411,9 +406,7 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
     ) -> None:
         """Receive linked data proof credential."""
         cred_dict = cred_issue_message.attachment(self.format)
-        detail_dict = V20CredRequest.deserialize(
-            cred_ex_record.cred_request
-        ).attachment(self.format)
+        detail_dict = cred_ex_record.cred_request.attachment(self.format)
 
         vc = VerifiableCredential.deserialize(cred_dict, unknown=INCLUDE)
         detail = LDProofVCDetail.deserialize(detail_dict)
@@ -479,9 +472,7 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
     ) -> None:
         """Store linked data proof credential."""
         # Get attachment data
-        cred_dict: dict = V20CredIssue.deserialize(
-            cred_ex_record.cred_issue
-        ).attachment(self.format)
+        cred_dict: dict = cred_ex_record.cred_issue.attachment(self.format)
 
         # Deserialize objects
         credential = VerifiableCredential.deserialize(cred_dict, unknown=INCLUDE)

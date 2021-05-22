@@ -9,7 +9,6 @@ from .....indy.sdk.models.cred import IndyCredential, IndyCredentialSchema
 from .....indy.sdk.models.cred_abstract import IndyCredAbstract, IndyCredAbstractSchema
 from .....indy.sdk.models.cred_precis import IndyCredInfo, IndyCredInfoSchema
 from .....indy.sdk.models.cred_request import IndyCredRequest, IndyCredRequestSchema
-from .....messaging.models import to_serial
 from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
 from .....messaging.valid import INDY_CRED_DEF_ID, INDY_SCHEMA_ID, UUIDFour
 
@@ -61,7 +60,7 @@ class V10CredentialExchange(BaseExchangeRecord):
         schema_id: str = None,
         credential_proposal_dict: Union[
             Mapping, CredentialProposal
-        ] = None,  # aries message
+        ] = None,  # aries message: ..._dict for historic compat on all aries msgs
         credential_offer_dict: Union[Mapping, CredentialOffer] = None,  # aries message
         credential_offer: Union[Mapping, IndyCredAbstract] = None,  # indy artifact
         credential_request: [Mapping, IndyCredRequest] = None,  # indy artifact
@@ -89,14 +88,16 @@ class V10CredentialExchange(BaseExchangeRecord):
         self.state = state
         self.credential_definition_id = credential_definition_id
         self.schema_id = schema_id
-        self.credential_proposal_dict = to_serial(credential_proposal_dict)
-        self.credential_offer_dict = to_serial(credential_offer_dict)
-        self.credential_offer = to_serial(credential_offer)
-        self.credential_request = to_serial(credential_request)
+        self._credential_proposal_dict = CredentialProposal.serde(
+            credential_proposal_dict
+        )
+        self._credential_offer_dict = CredentialOffer.serde(credential_offer_dict)
+        self._credential_offer = IndyCredAbstract.serde(credential_offer)
+        self._credential_request = IndyCredRequest.serde(credential_request)
         self.credential_request_metadata = credential_request_metadata
         self.credential_id = credential_id
-        self.raw_credential = to_serial(raw_credential)
-        self.credential = to_serial(credential)
+        self._raw_credential = IndyCredential.serde(raw_credential)
+        self._credential = IndyCredInfo.serde(credential)
         self.revoc_reg_id = revoc_reg_id
         self.revocation_id = revocation_id
         self.auto_offer = auto_offer
@@ -110,85 +111,111 @@ class V10CredentialExchange(BaseExchangeRecord):
         return self._id
 
     @property
+    def credential_proposal_dict(self) -> CredentialProposal:
+        """Accessor; get deserialized view."""
+        return (
+            None
+            if self._credential_proposal_dict is None
+            else self._credential_proposal_dict.de
+        )
+
+    @credential_proposal_dict.setter
+    def credential_proposal_dict(self, value):
+        """Setter; store de/serialized views."""
+        self._credential_proposal_dict = CredentialProposal.serde(value)
+
+    @property
+    def credential_offer_dict(self) -> CredentialOffer:
+        """Accessor; get deserialized view."""
+        return (
+            None
+            if self._credential_offer_dict is None
+            else self._credential_offer_dict.de
+        )
+
+    @credential_offer_dict.setter
+    def credential_offer_dict(self, value):
+        """Setter; store de/serialized views."""
+        self._credential_offer_dict = CredentialOffer.serde(value)
+
+    @property
+    def credential_offer(self) -> IndyCredAbstract:
+        """Accessor; get deserialized view."""
+        return None if self._credential_offer is None else self._credential_offer.de
+
+    @credential_offer.setter
+    def credential_offer(self, value):
+        """Setter; store de/serialized views."""
+        self._credential_offer = IndyCredAbstract.serde(value)
+
+    @property
+    def credential_request(self) -> IndyCredRequest:
+        """Accessor; get deserialized view."""
+        return None if self._credential_request is None else self._credential_request.de
+
+    @credential_request.setter
+    def credential_request(self, value):
+        """Setter; store de/serialized views."""
+        self._credential_request = IndyCredRequest.serde(value)
+
+    @property
+    def raw_credential(self) -> IndyCredential:
+        """Accessor; get deserialized view."""
+        return None if self._raw_credential is None else self._raw_credential.de
+
+    @raw_credential.setter
+    def raw_credential(self, value):
+        """Setter; store de/serialized views."""
+        self._raw_credential = IndyCredential.serde(value)
+
+    @property
+    def credential(self) -> IndyCredInfo:
+        """Accessor; get deserialized view."""
+        return None if self._credential is None else self._credential.de
+
+    @credential.setter
+    def credential(self, value):
+        """Setter; store de/serialized views."""
+        self._credential = IndyCredInfo.serde(value)
+
+    @property
     def record_value(self) -> dict:
-        """Accessor for the JSON record value generated for this credential exchange."""
+        """Accessor for the JSON record value generated for this invitation."""
         return {
-            prop: getattr(self, prop)
-            for prop in (
-                "connection_id",
-                "credential_proposal_dict",
-                "credential_offer_dict",
-                "credential_offer",
-                "credential_request",
-                "credential_request_metadata",
-                "error_msg",
-                "auto_offer",
-                "auto_issue",
-                "auto_remove",
-                "raw_credential",
-                "credential",
-                "parent_thread_id",
-                "initiator",
-                "credential_definition_id",
-                "schema_id",
-                "credential_id",
-                "revoc_reg_id",
-                "revocation_id",
-                "role",
-                "state",
-                "trace",
-            )
-        }
-
-    def serialize(self, as_string=False) -> Mapping:
-        """
-        Create a JSON-compatible representation of the model instance.
-
-        Args:
-            as_string: return a string of JSON instead of a mapping
-
-        """
-        copy = V10CredentialExchange(
-            credential_exchange_id=self.credential_exchange_id,
             **{
-                k: v
-                for k, v in vars(self).items()
-                if k
-                not in [
-                    "_id",
-                    "_last_state",
+                prop: getattr(self, prop)
+                for prop in (
+                    "connection_id",
+                    "credential_request_metadata",
+                    "error_msg",
+                    "auto_offer",
+                    "auto_issue",
+                    "auto_remove",
+                    "parent_thread_id",
+                    "initiator",
+                    "credential_definition_id",
+                    "schema_id",
+                    "credential_id",
+                    "revoc_reg_id",
+                    "revocation_id",
+                    "role",
+                    "state",
+                    "trace",
+                )
+            },
+            **{
+                prop: getattr(self, f"_{prop}").ser
+                for prop in (
                     "credential_proposal_dict",
                     "credential_offer_dict",
                     "credential_offer",
                     "credential_request",
                     "raw_credential",
                     "credential",
-                ]
+                )
+                if getattr(self, prop) is not None
             },
-        )
-        copy.credential_proposal_dict = CredentialProposal.deserialize(
-            self.credential_proposal_dict,
-            none2none=True,
-        )
-        copy.credential_offer_dict = CredentialOffer.deserialize(
-            self.credential_offer_dict,
-            none2none=True,
-        )
-        copy.credential_offer = IndyCredAbstract.deserialize(
-            self.credential_offer,
-            none2none=True,
-        )
-        copy.credential_request = IndyCredRequest.deserialize(
-            self.credential_request,
-            none2none=True,
-        )
-        copy.raw_credential = IndyCredential.deserialize(
-            self.raw_credential,
-            none2none=True,
-        )
-        copy.credential = IndyCredInfo.deserialize(self.credential, none2none=True)
-
-        return super(self.__class__, copy).serialize(as_string)
+        }
 
     @classmethod
     async def retrieve_by_connection_and_thread(

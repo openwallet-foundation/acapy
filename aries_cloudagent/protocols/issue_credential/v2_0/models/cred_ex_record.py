@@ -1,11 +1,10 @@
-"""Aries#0036 v1.0 credential exchange information with non-secrets storage."""
+"""Aries#0453 v2.0 credential exchange information with non-secrets storage."""
 
 from typing import Any, Mapping, Union
 
 from marshmallow import fields, Schema, validate
 
 from .....core.profile import ProfileSession
-from .....messaging.models import to_serial
 from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
 from .....messaging.valid import UUIDFour
 
@@ -80,10 +79,10 @@ class V20CredExRecord(BaseExchangeRecord):
         self.initiator = initiator
         self.role = role
         self.state = state
-        self.cred_proposal = to_serial(cred_proposal)
-        self.cred_offer = to_serial(cred_offer)
-        self.cred_request = to_serial(cred_request)
-        self.cred_issue = to_serial(cred_issue)
+        self._cred_proposal = V20CredProposal.serde(cred_proposal)
+        self._cred_offer = V20CredOffer.serde(cred_offer)
+        self._cred_request = V20CredRequest.serde(cred_request)
+        self._cred_issue = V20CredIssue.serde(cred_issue)
         self.auto_offer = auto_offer
         self.auto_issue = auto_issue
         self.auto_remove = auto_remove
@@ -96,70 +95,79 @@ class V20CredExRecord(BaseExchangeRecord):
 
     @property
     def cred_preview(self) -> Mapping:
-        """Credential preview from credential proposal."""
-        return (
-            self.cred_proposal and self.cred_proposal.get("credential_preview") or None
-        )
+        """Credential preview (deserialized view) from credential proposal."""
+        return self.cred_proposal and self.cred_proposal.credential_preview or None
+
+    @property
+    def cred_proposal(self) -> V20CredProposal:
+        """Accessor; get deserialized view."""
+        return None if self._cred_proposal is None else self._cred_proposal.de
+
+    @cred_proposal.setter
+    def cred_proposal(self, value):
+        """Setter; store de/serialized views."""
+        self._cred_proposal = V20CredProposal.serde(value)
+
+    @property
+    def cred_offer(self) -> V20CredOffer:
+        """Accessor; get deserialized view."""
+        return None if self._cred_offer is None else self._cred_offer.de
+
+    @cred_offer.setter
+    def cred_offer(self, value):
+        """Setter; store de/serialized views."""
+        self._cred_offer = V20CredOffer.serde(value)
+
+    @property
+    def cred_request(self) -> V20CredRequest:
+        """Accessor; get deserialized view."""
+        return None if self._cred_request is None else self._cred_request.de
+
+    @cred_request.setter
+    def cred_request(self, value):
+        """Setter; store de/serialized views."""
+        self._cred_request = V20CredRequest.serde(value)
+
+    @property
+    def cred_issue(self) -> V20CredIssue:
+        """Accessor; get deserialized view."""
+        return None if self._cred_issue is None else self._cred_issue.de
+
+    @cred_issue.setter
+    def cred_issue(self, value):
+        """Setter; store de/serialized views."""
+        self._cred_issue = V20CredIssue.serde(value)
 
     @property
     def record_value(self) -> Mapping:
         """Accessor for the JSON record value generated for this credential exchange."""
         return {
-            prop: getattr(self, prop)
-            for prop in (
-                "connection_id",
-                "parent_thread_id",
-                "initiator",
-                "role",
-                "state",
-                "cred_proposal",
-                "cred_offer",
-                "cred_request",
-                "cred_issue",
-                "auto_offer",
-                "auto_issue",
-                "auto_remove",
-                "error_msg",
-                "trace",
-            )
-        }
-
-    def serialize(self, as_string=False) -> Mapping:
-        """
-        Create a JSON-compatible representation of the model instance.
-
-        Args:
-            as_string: return a string of JSON instead of a mapping
-
-        """
-        copy = V20CredExRecord(
-            cred_ex_id=self.cred_ex_id,
             **{
-                k: v
-                for k, v in vars(self).items()
-                if k
-                not in [
-                    "_id",
-                    "_last_state",
+                prop: getattr(self, prop)
+                for prop in (
+                    "connection_id",
+                    "parent_thread_id",
+                    "initiator",
+                    "role",
+                    "state",
+                    "auto_offer",
+                    "auto_issue",
+                    "auto_remove",
+                    "error_msg",
+                    "trace",
+                )
+            },
+            **{
+                prop: getattr(self, f"_{prop}").ser
+                for prop in (
                     "cred_proposal",
                     "cred_offer",
                     "cred_request",
                     "cred_issue",
-                ]
+                )
+                if getattr(self, prop) is not None
             },
-        )
-        copy.cred_proposal = V20CredProposal.deserialize(
-            self.cred_proposal,
-            none2none=True,
-        )
-        copy.cred_offer = V20CredOffer.deserialize(self.cred_offer, none2none=True)
-        copy.cred_request = V20CredRequest.deserialize(
-            self.cred_request,
-            none2none=True,
-        )
-        copy.cred_issue = V20CredIssue.deserialize(self.cred_issue, none2none=True)
-
-        return super(self.__class__, copy).serialize(as_string)
+        }
 
     @classmethod
     async def retrieve_by_conn_and_thread(
@@ -189,9 +197,8 @@ class V20CredExRecord(BaseExchangeRecord):
             "cred_request": V20CredRequest,
             "cred_issue": V20CredIssue,
         }.items():
-            mapping = to_serial(getattr(self, item))
-            if mapping:
-                msg = cls.deserialize(mapping)
+            msg = getattr(self, item)
+            if msg:
                 result.update(
                     {
                         item: {
@@ -301,7 +308,8 @@ class V20CredExRecordSchema(BaseExchangeSchema):
                 "cred_offer": fields.Dict(required=False),
                 "cred_request": fields.Dict(required=False),
                 "cred_issue": fields.Dict(required=False),
-            }
+            },
+            name="V20CredExRecordByFormatSchema",
         ),
         required=False,
         description=(

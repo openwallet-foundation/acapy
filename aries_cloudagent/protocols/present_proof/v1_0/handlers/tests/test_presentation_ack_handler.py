@@ -6,7 +6,7 @@ from ......transport.inbound.receipt import MessageReceipt
 
 from ...messages.presentation_ack import PresentationAck
 
-from .. import presentation_ack_handler as handler
+from .. import presentation_ack_handler as test_module
 
 
 class TestPresentationAckHandler(AsyncTestCase):
@@ -16,7 +16,7 @@ class TestPresentationAckHandler(AsyncTestCase):
         session = request_context.session()
 
         with async_mock.patch.object(
-            handler, "PresentationManager", autospec=True
+            test_module, "PresentationManager", autospec=True
         ) as mock_pres_mgr:
             mock_pres_mgr.return_value.receive_presentation_ack = (
                 async_mock.CoroutineMock()
@@ -24,9 +24,9 @@ class TestPresentationAckHandler(AsyncTestCase):
             request_context.message = PresentationAck()
             request_context.connection_ready = True
             request_context.connection_record = async_mock.MagicMock()
-            handler_inst = handler.PresentationAckHandler()
+            handler = test_module.PresentationAckHandler()
             responder = MockResponder()
-            await handler_inst.handle(request_context, responder)
+            await handler.handle(request_context, responder)
 
         mock_pres_mgr.assert_called_once_with(request_context.profile)
         mock_pres_mgr.return_value.receive_presentation_ack.assert_called_once_with(
@@ -39,16 +39,16 @@ class TestPresentationAckHandler(AsyncTestCase):
         request_context.message_receipt = MessageReceipt()
 
         with async_mock.patch.object(
-            handler, "PresentationManager", autospec=True
+            test_module, "PresentationManager", autospec=True
         ) as mock_pres_mgr:
             mock_pres_mgr.return_value.receive_presentation_ack = (
                 async_mock.CoroutineMock()
             )
             request_context.message = PresentationAck()
             request_context.connection_ready = False
-            handler_inst = handler.PresentationAckHandler()
+            handler = test_module.PresentationAckHandler()
             responder = MockResponder()
-            with self.assertRaises(handler.HandlerException):
-                await handler_inst.handle(request_context, responder)
+            with self.assertRaises(test_module.HandlerException):
+                await handler.handle(request_context, responder)
 
         assert not responder.messages

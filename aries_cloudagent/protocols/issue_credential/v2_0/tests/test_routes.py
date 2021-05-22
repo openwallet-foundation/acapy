@@ -1,9 +1,5 @@
-from asynctest import TestCase as AsyncTestCase
-from asynctest import mock as async_mock
+from asynctest import mock as async_mock, TestCase as AsyncTestCase
 
-from ..messages.cred_format import V20CredFormat
-from ..formats.indy.handler import IndyCredFormatHandler
-from ..formats.ld_proof.handler import LDProofCredFormatHandler
 from .....admin.request_context import AdminRequestContext
 from .....wallet.key_type import KeyType
 from .....wallet.did_method import DIDMethod
@@ -11,8 +7,14 @@ from .....wallet.base import BaseWallet
 from .....wallet.did_info import DIDInfo
 
 from .. import routes as test_module
+from ..formats.indy.handler import IndyCredFormatHandler
+from ..formats.ld_proof.handler import LDProofCredFormatHandler
+from ..messages.cred_format import V20CredFormat
 
-TEST_DID = "LjgpST2rjsoxYegQDRm7EL"
+from . import (
+    LD_PROOF_VC_DETAIL,
+    TEST_DID,
+)
 
 
 class TestV20CredRoutes(AsyncTestCase):
@@ -960,9 +962,11 @@ class TestV20CredRoutes(AsyncTestCase):
         ) as mock_cx_rec:
             mock_cx_rec.connection_id = "conn-123"
             mock_cx_rec.thread_id = "conn-123"
-            mock_cx_rec.retrieve_by_id = async_mock.CoroutineMock()
-            mock_cx_rec.retrieve_by_id.return_value.state = (
-                test_module.V20CredExRecord.STATE_PROPOSAL_RECEIVED
+            mock_cx_rec.retrieve_by_id = async_mock.CoroutineMock(
+                return_value=async_mock.MagicMock(
+                    state=mock_cx_rec.STATE_PROPOSAL_RECEIVED,
+                    save_error_state=async_mock.CoroutineMock(),
+                )
             )
 
             # Emulate storage not found (bad connection id)
@@ -988,9 +992,11 @@ class TestV20CredRoutes(AsyncTestCase):
         ) as mock_cx_rec:
             mock_cx_rec.connection_id = "conn-123"
             mock_cx_rec.thread_id = "conn-123"
-            mock_cx_rec.retrieve_by_id = async_mock.CoroutineMock()
-            mock_cx_rec.retrieve_by_id.return_value.state = (
-                test_module.V20CredExRecord.STATE_DONE
+            mock_cx_rec.retrieve_by_id = async_mock.CoroutineMock(
+                return_value=async_mock.MagicMock(
+                    state=mock_cx_rec.STATE_DONE,
+                    save_error_state=async_mock.CoroutineMock(),
+                )
             )
 
             with self.assertRaises(test_module.web.HTTPBadRequest):
@@ -1086,8 +1092,9 @@ class TestV20CredRoutes(AsyncTestCase):
             mock_cx_rec.connection_id = "conn-123"
             mock_cx_rec.thread_id = "conn-123"
             mock_cx_rec.retrieve_by_id = async_mock.CoroutineMock()
-            mock_cx_rec.retrieve_by_id.return_value.state = (
-                test_module.V20CredExRecord.STATE_OFFER_RECEIVED
+            mock_cx_rec.retrieve_by_id.return_value = async_mock.MagicMock(
+                state=mock_cx_rec.STATE_OFFER_RECEIVED,
+                save_error_state=async_mock.CoroutineMock(),
             )
 
             # Emulate storage not found (bad connection id)
@@ -1138,7 +1145,7 @@ class TestV20CredRoutes(AsyncTestCase):
     async def test_credential_exchange_send_free_request(self):
         self.request.json = async_mock.CoroutineMock(
             return_value={
-                "filter": {"ld_proof": {"credential": {}, "options": {}}},
+                "filter": {"ld_proof": LD_PROOF_VC_DETAIL},
             }
         )
 
@@ -1175,7 +1182,7 @@ class TestV20CredRoutes(AsyncTestCase):
     async def test_credential_exchange_send_free_request_no_conn_record(self):
         self.request.json = async_mock.CoroutineMock(
             return_value={
-                "filter": {"ld_proof": {"..": ".."}},
+                "filter": {"ld_proof": LD_PROOF_VC_DETAIL},
             }
         )
 
@@ -1202,7 +1209,7 @@ class TestV20CredRoutes(AsyncTestCase):
     async def test_credential_exchange_send_free_request_not_ready(self):
         self.request.json = async_mock.CoroutineMock(
             return_value={
-                "filter": {"ld_proof": {"..": ".."}},
+                "filter": {"ld_proof": LD_PROOF_VC_DETAIL},
             }
         )
 
@@ -1223,6 +1230,35 @@ class TestV20CredRoutes(AsyncTestCase):
             )
 
             with self.assertRaises(test_module.web.HTTPForbidden):
+                await test_module.credential_exchange_send_free_request(self.request)
+
+    async def test_credential_exchange_send_free_request_x(self):
+        self.request.json = async_mock.CoroutineMock(
+            return_value={
+                "filter": {"ld_proof": LD_PROOF_VC_DETAIL},
+            }
+        )
+
+        with async_mock.patch.object(
+            test_module, "ConnRecord", autospec=True
+        ) as mock_conn_rec, async_mock.patch.object(
+            test_module, "V20CredManager", autospec=True
+        ) as mock_cred_mgr, async_mock.patch.object(
+            test_module.web, "json_response"
+        ) as mock_response:
+
+            mock_cred_mgr.return_value.create_request = async_mock.CoroutineMock(
+                side_effect=[
+                    test_module.LedgerError(),
+                    test_module.StorageError(),
+                ]
+            )
+
+            mock_cx_rec = async_mock.MagicMock()
+
+            with self.assertRaises(test_module.web.HTTPBadRequest):  # ledger error
+                await test_module.credential_exchange_send_free_request(self.request)
+            with self.assertRaises(test_module.web.HTTPBadRequest):  # storage error
                 await test_module.credential_exchange_send_free_request(self.request)
 
     async def test_credential_exchange_issue(self):
@@ -1289,17 +1325,22 @@ class TestV20CredRoutes(AsyncTestCase):
         self.request.json = async_mock.CoroutineMock()
         self.request.match_info = {"cred_ex_id": "dummy"}
 
+        mock_cx_rec = async_mock.MagicMock(
+            conn_id="dummy",
+            serialize=async_mock.MagicMock(),
+            save_error_state=async_mock.CoroutineMock(),
+        )
         with async_mock.patch.object(
             test_module, "ConnRecord", autospec=True
         ) as mock_conn_rec, async_mock.patch.object(
             test_module, "V20CredManager", autospec=True
         ) as mock_cred_mgr, async_mock.patch.object(
             test_module, "V20CredExRecord", autospec=True
-        ) as mock_cx_rec:
+        ) as mock_cx_rec_cls:
 
-            mock_cx_rec.retrieve_by_id = async_mock.CoroutineMock()
-            mock_cx_rec.retrieve_by_id.return_value.state = (
-                test_module.V20CredExRecord.STATE_REQUEST_RECEIVED
+            mock_cx_rec.state = mock_cx_rec_cls.STATE_REQUEST_RECEIVED
+            mock_cx_rec_cls.retrieve_by_id = async_mock.CoroutineMock(
+                return_value=mock_cx_rec
             )
 
             # Emulate storage not found (bad connection id)
@@ -1350,17 +1391,22 @@ class TestV20CredRoutes(AsyncTestCase):
         self.request.json = async_mock.CoroutineMock()
         self.request.match_info = {"cred_ex_id": "dummy"}
 
+        mock_cx_rec = async_mock.MagicMock(
+            conn_id="dummy",
+            serialize=async_mock.MagicMock(),
+            save_error_state=async_mock.CoroutineMock(),
+        )
         with async_mock.patch.object(
             test_module, "ConnRecord", autospec=True
         ) as mock_conn_rec, async_mock.patch.object(
             test_module, "V20CredManager", autospec=True
         ) as mock_cred_mgr, async_mock.patch.object(
             test_module, "V20CredExRecord", autospec=True
-        ) as mock_cx_rec:
+        ) as mock_cx_rec_cls:
 
-            mock_cx_rec.retrieve_by_id = async_mock.CoroutineMock()
-            mock_cx_rec.retrieve_by_id.return_value.state = (
-                test_module.V20CredExRecord.STATE_REQUEST_RECEIVED
+            mock_cx_rec.state = mock_cx_rec_cls.STATE_REQUEST_RECEIVED
+            mock_cx_rec_cls.retrieve_by_id = async_mock.CoroutineMock(
+                return_value=mock_cx_rec
             )
 
             mock_conn_rec.retrieve_by_id = async_mock.CoroutineMock()
@@ -1381,6 +1427,7 @@ class TestV20CredRoutes(AsyncTestCase):
         mock_cx_rec = async_mock.MagicMock(
             connection_id="dummy",
             serialize=async_mock.MagicMock(side_effect=test_module.BaseModelError()),
+            save_error_state=async_mock.CoroutineMock(),
         )
         with async_mock.patch.object(
             test_module, "ConnRecord", autospec=True
@@ -1392,11 +1439,14 @@ class TestV20CredRoutes(AsyncTestCase):
             mock_cls_cx_rec.retrieve_by_id = async_mock.CoroutineMock(
                 return_value=mock_cx_rec
             )
-            mock_cred_mgr.return_value.issue_credential.return_value = (
-                mock_cx_rec,
-                async_mock.MagicMock(),
+            mock_cred_mgr.return_value = async_mock.MagicMock(
+                issue_credential=async_mock.CoroutineMock(
+                    return_value=(
+                        mock_cx_rec,
+                        async_mock.MagicMock(),
+                    )
+                )
             )
-
             mock_cred_mgr.return_value.get_detail_record = async_mock.CoroutineMock(
                 side_effect=[
                     async_mock.MagicMock(  # indy
@@ -1441,7 +1491,8 @@ class TestV20CredRoutes(AsyncTestCase):
 
             mock_cx_rec = async_mock.MagicMock()
 
-            mock_cred_mgr.return_value.store_credential.return_value = (
+            mock_cred_mgr.return_value.store_credential.return_value = mock_cx_rec
+            mock_cred_mgr.return_value.send_cred_ack.return_value = (
                 mock_cx_rec,
                 async_mock.MagicMock(),
             )
@@ -1488,7 +1539,8 @@ class TestV20CredRoutes(AsyncTestCase):
             )
             mock_ld_proof_get_detail_record.return_value = None  # ld_proof
 
-            mock_cred_mgr.return_value.store_credential.return_value = (
+            mock_cred_mgr.return_value.store_credential.return_value = mock_cx_rec
+            mock_cred_mgr.return_value.send_cred_ack.return_value = (
                 mock_cx_rec,
                 async_mock.MagicMock(),
             )
@@ -1541,7 +1593,8 @@ class TestV20CredRoutes(AsyncTestCase):
                 side_effect=test_module.StorageNotFoundError()
             )
 
-            mock_cred_mgr.return_value.store_credential.return_value = (
+            mock_cred_mgr.return_value.store_credential.return_value = mock_cx_rec
+            mock_cred_mgr.return_value.send_cred_ack.return_value = (
                 mock_cx_rec,
                 async_mock.MagicMock(),
             )
@@ -1570,11 +1623,6 @@ class TestV20CredRoutes(AsyncTestCase):
             # Emulate connection not ready
             mock_conn_rec.retrieve_by_id = async_mock.CoroutineMock()
             mock_conn_rec.retrieve_by_id.return_value.is_ready = False
-
-            mock_cred_mgr.return_value.store_credential.return_value = (
-                mock_cx_rec,
-                async_mock.MagicMock(),
-            )
 
             with self.assertRaises(test_module.web.HTTPForbidden):
                 await test_module.credential_exchange_store(self.request)

@@ -1,8 +1,10 @@
 """Presentation proposal message handler."""
 
+from .....ledger.error import LedgerError
 from .....messaging.base_handler import BaseHandler, HandlerException
 from .....messaging.request_context import RequestContext
 from .....messaging.responder import BaseResponder
+from .....storage.error import StorageError
 from .....utils.tracing import trace_event, get_timer
 
 from ..manager import PresentationManager
@@ -40,7 +42,7 @@ class PresentationProposalHandler(BaseHandler):
         presentation_manager = PresentationManager(context.profile)
         presentation_exchange_record = await presentation_manager.receive_proposal(
             context.message, context.connection_record
-        )
+        )  # mgr only creates, saves record: on exception, saving state null is hopeless
 
         r_time = trace_event(
             context.settings,
@@ -51,15 +53,26 @@ class PresentationProposalHandler(BaseHandler):
 
         # If auto_respond_presentation_proposal is set, reply with proof req
         if context.settings.get("debug.auto_respond_presentation_proposal"):
-            (
-                presentation_exchange_record,
-                presentation_request_message,
-            ) = await presentation_manager.create_bound_request(
-                presentation_exchange_record=presentation_exchange_record,
-                comment=context.message.comment,
-            )
-
-            await responder.send_reply(presentation_request_message)
+            presentation_request_message = None
+            try:
+                (
+                    presentation_exchange_record,
+                    presentation_request_message,
+                ) = await presentation_manager.create_bound_request(
+                    presentation_exchange_record=presentation_exchange_record,
+                    comment=context.message.comment,
+                )
+                await responder.send_reply(presentation_request_message)
+            except LedgerError as err:
+                self._logger.exception(err)
+                if presentation_exchange_record:
+                    async with context.session() as session:
+                        await presentation_exchange_record.save_error_state(
+                            session,
+                            reason=err.message,
+                        )
+            except StorageError as err:
+                self._logger.exception(err)  # may be logging to wire, not dead disk
 
             trace_event(
                 context.settings,

@@ -936,12 +936,17 @@ class TestProofRoutes(AsyncTestCase):
 
             mock_mgr = async_mock.MagicMock(
                 create_bound_request=async_mock.CoroutineMock(
-                    side_effect=test_module.StorageError()
+                    side_effect=[
+                        test_module.LedgerError(),
+                        test_module.StorageError(),
+                    ]
                 )
             )
             mock_presentation_manager.return_value = mock_mgr
 
-            with self.assertRaises(test_module.web.HTTPBadRequest):
+            with self.assertRaises(test_module.web.HTTPBadRequest):  # ledger error
+                await test_module.presentation_exchange_send_bound_request(self.request)
+            with self.assertRaises(test_module.web.HTTPBadRequest):  # storage error
                 await test_module.presentation_exchange_send_bound_request(self.request)
 
     async def test_presentation_exchange_send_presentation(self):
@@ -1184,9 +1189,6 @@ class TestProofRoutes(AsyncTestCase):
             # Since we are mocking import
             importlib.reload(test_module)
 
-            mock_presentation_exchange.state = (
-                test_module.V10PresentationExchange.STATE_REQUEST_RECEIVED
-            )
             mock_presentation_exchange.retrieve_by_id = async_mock.CoroutineMock(
                 return_value=async_mock.MagicMock(
                     state=mock_presentation_exchange.STATE_REQUEST_RECEIVED,
@@ -1194,7 +1196,8 @@ class TestProofRoutes(AsyncTestCase):
                     serialize=async_mock.MagicMock(
                         return_value={"thread_id": "sample-thread-id"}
                     ),
-                )
+                    save_error_state=async_mock.CoroutineMock(),
+                ),
             )
             mock_connection_record.is_ready = True
             mock_connection_record.retrieve_by_id = async_mock.CoroutineMock(
@@ -1438,6 +1441,7 @@ class TestProofRoutes(AsyncTestCase):
                     serialize=async_mock.MagicMock(
                         return_value={"thread_id": "sample-thread-id"}
                     ),
+                    save_error_state=async_mock.CoroutineMock(),
                 )
             )
 
@@ -1447,12 +1451,19 @@ class TestProofRoutes(AsyncTestCase):
             )
             mock_mgr = async_mock.MagicMock(
                 verify_presentation=async_mock.CoroutineMock(
-                    side_effect=test_module.LedgerError()
+                    side_effect=[
+                        test_module.LedgerError(),
+                        test_module.StorageError(),
+                    ]
                 ),
             )
             mock_presentation_manager.return_value = mock_mgr
 
-            with self.assertRaises(test_module.web.HTTPBadRequest):
+            with self.assertRaises(test_module.web.HTTPBadRequest):  # ledger error
+                await test_module.presentation_exchange_verify_presentation(
+                    self.request
+                )
+            with self.assertRaises(test_module.web.HTTPBadRequest):  # storage error
                 await test_module.presentation_exchange_verify_presentation(
                     self.request
                 )

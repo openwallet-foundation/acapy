@@ -76,7 +76,7 @@ class V20PresManager:
             initiator=V20PresExRecord.INITIATOR_SELF,
             role=V20PresExRecord.ROLE_PROVER,
             state=V20PresExRecord.STATE_PROPOSAL_SENT,
-            pres_proposal=pres_proposal_message.serialize(),
+            pres_proposal=pres_proposal_message,
             auto_present=auto_present,
             trace=(pres_proposal_message._trace is not None),
         )
@@ -103,7 +103,7 @@ class V20PresManager:
             initiator=V20PresExRecord.INITIATOR_EXTERNAL,
             role=V20PresExRecord.ROLE_VERIFIER,
             state=V20PresExRecord.STATE_PROPOSAL_RECEIVED,
-            pres_proposal=message.serialize(),
+            pres_proposal=message,
             trace=(message._trace is not None),
         )
         async with self._profile.session() as session:
@@ -136,9 +136,7 @@ class V20PresManager:
             A tuple (updated presentation exchange record, presentation request message)
 
         """
-        indy_proof_request = V20PresProposal.deserialize(
-            pres_ex_record.pres_proposal
-        ).attachment(
+        indy_proof_request = pres_ex_record.pres_proposal.attachment(
             V20PresFormat.Format.INDY
         )  # will change for DIF
 
@@ -171,7 +169,7 @@ class V20PresManager:
 
         pres_ex_record.thread_id = pres_request_message._thread_id
         pres_ex_record.state = V20PresExRecord.STATE_REQUEST_SENT
-        pres_ex_record.pres_request = pres_request_message.serialize()
+        pres_ex_record.pres_request = pres_request_message
         async with self._profile.session() as session:
             await pres_ex_record.save(
                 session, reason="create (bound) v2.0 presentation request"
@@ -200,7 +198,7 @@ class V20PresManager:
             initiator=V20PresExRecord.INITIATOR_SELF,
             role=V20PresExRecord.ROLE_VERIFIER,
             state=V20PresExRecord.STATE_REQUEST_SENT,
-            pres_request=pres_request_message.serialize(),
+            pres_request=pres_request_message,
             trace=(pres_request_message._trace is not None),
         )
         async with self._profile.session() as session:
@@ -280,9 +278,7 @@ class V20PresManager:
 
         # extract credential ids and non_revoked
         requested_referents = {}
-        proof_request = V20PresRequest.deserialize(
-            pres_ex_record.pres_request
-        ).attachment(format_)
+        proof_request = pres_ex_record.pres_request.attachment(format_)
         non_revoc_intervals = indy_proof_req2non_revoc_intervals(proof_request)
         attr_creds = requested_credentials.get("requested_attributes", {})
         req_attrs = proof_request.get("requested_attributes", {})
@@ -465,7 +461,7 @@ class V20PresManager:
                     ident="indy",
                 )
             ],
-        ).serialize()
+        )
         async with self._profile.session() as session:
             await pres_ex_record.save(session, reason="create v2.0 presentation")
 
@@ -482,9 +478,7 @@ class V20PresManager:
 
         def _check_proof_vs_proposal():
             """Check for bait and switch in presented values vs. proposal request."""
-            proof_req = V20PresRequest.deserialize(
-                pres_ex_record.pres_request
-            ).attachment(
+            proof_req = pres_ex_record.pres_request.attachment(
                 V20PresFormat.Format.INDY
             )  # will change for DIF
 
@@ -623,7 +617,7 @@ class V20PresManager:
 
         _check_proof_vs_proposal()
 
-        pres_ex_record.pres = message.serialize()
+        pres_ex_record.pres = message
         pres_ex_record.state = V20PresExRecord.STATE_PRESENTATION_RECEIVED
 
         async with self._profile.session() as session:
@@ -643,9 +637,9 @@ class V20PresManager:
             presentation exchange record, updated
 
         """
-        pres_request_msg = V20PresRequest.deserialize(pres_ex_record.pres_request)
+        pres_request_msg = pres_ex_record.pres_request
         indy_proof_request = pres_request_msg.attachment(V20PresFormat.Format.INDY)
-        indy_proof = V20Pres.deserialize(pres_ex_record.pres).attachment(
+        indy_proof = pres_ex_record.pres.attachment(
             V20PresFormat.Format.INDY
         )  # will change for DIF
 

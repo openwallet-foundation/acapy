@@ -117,7 +117,7 @@ class TestIssuerRevRegRecord(AsyncTestCase):
 
         await rec.set_tails_file_public_uri(self.profile, TAILS_URI)
         assert rec.tails_public_uri == TAILS_URI
-        assert rec.revoc_reg_def["value"]["tailsLocation"] == TAILS_URI
+        assert rec.revoc_reg_def.value.tails_location == TAILS_URI
 
         await rec.send_def(self.profile)
         assert rec.state == IssuerRevRegRecord.STATE_POSTED
@@ -232,24 +232,3 @@ class TestIssuerRevRegRecord(AsyncTestCase):
 
         with self.assertRaises(RevocationError):
             await rec.send_entry(self.profile)
-
-    async def test_serde(self):
-        rr_def = IndyRevRegDef.deserialize(REV_REG_DEF)
-        for arg in [rr_def, rr_def.serialize()]:
-            irr_rec = IssuerRevRegRecord(
-                issuer_did=TEST_DID,
-                revoc_reg_id=REV_REG_ID,
-                revoc_reg_def=arg,
-                revoc_def_type="CL_ACCUM",
-                revoc_reg_entry=REV_REG_ENTRY,
-                cred_def_id=CRED_DEF_ID,
-                state=IssuerRevRegRecord.STATE_FULL,
-                tails_public_uri=TAILS_URI,
-            )
-
-            assert type(irr_rec.revoc_reg_def) == dict
-            assert type(irr_rec.revoc_reg_entry) == dict
-            ser = irr_rec.serialize()
-            deser = IssuerRevRegRecord.deserialize(ser)
-            assert type(deser.revoc_reg_def) == dict
-            assert type(deser.revoc_reg_entry) == dict

@@ -6,7 +6,6 @@ from marshmallow import fields, validate
 
 from .....indy.sdk.models.proof import IndyProof, IndyProofSchema
 from .....indy.sdk.models.proof_request import IndyProofRequest, IndyProofRequestSchema
-from .....messaging.models import to_serial
 from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
 from .....messaging.valid import UUIDFour
 
@@ -61,7 +60,7 @@ class V10PresentationExchange(BaseExchangeRecord):
         state: str = None,
         presentation_proposal_dict: Union[
             PresentationProposal, Mapping
-        ] = None,  # aries message
+        ] = None,  # aries message: ..._dict for historic compat on all aries msgs
         presentation_request: Union[IndyProofRequest, Mapping] = None,  # indy proof req
         presentation_request_dict: Union[
             PresentationRequest, Mapping
@@ -71,7 +70,7 @@ class V10PresentationExchange(BaseExchangeRecord):
         auto_present: bool = False,
         error_msg: str = None,
         trace: bool = False,  # backward compat: BaseRecord.from_storage()
-        **kwargs
+        **kwargs,
     ):
         """Initialize a new PresentationExchange."""
         super().__init__(presentation_exchange_id, state, trace=trace, **kwargs)
@@ -80,10 +79,14 @@ class V10PresentationExchange(BaseExchangeRecord):
         self.initiator = initiator
         self.role = role
         self.state = state
-        self.presentation_proposal_dict = to_serial(presentation_proposal_dict)
-        self.presentation_request = to_serial(presentation_request)
-        self.presentation_request_dict = to_serial(presentation_request_dict)
-        self.presentation = to_serial(presentation)
+        self._presentation_proposal_dict = PresentationProposal.serde(
+            presentation_proposal_dict
+        )
+        self._presentation_request = IndyProofRequest.serde(presentation_request)
+        self._presentation_request_dict = PresentationRequest.serde(
+            presentation_request_dict
+        )
+        self._presentation = IndyProof.serde(presentation)
         self.verified = verified
         self.auto_present = auto_present
         self.error_msg = error_msg
@@ -94,64 +97,86 @@ class V10PresentationExchange(BaseExchangeRecord):
         return self._id
 
     @property
-    def record_value(self) -> dict:
-        """Accessor for JSON record value generated for this presentation exchange."""
-        return {
-            prop: getattr(self, prop)
-            for prop in (
-                "connection_id",
-                "initiator",
-                "presentation_proposal_dict",
-                "presentation_request",
-                "presentation_request_dict",
-                "presentation",
-                "role",
-                "state",
-                "auto_present",
-                "error_msg",
-                "verified",
-                "trace",
-            )
-        }
+    def presentation_proposal_dict(self) -> PresentationProposal:
+        """Accessor; get deserialized view."""
+        return (
+            None
+            if self._presentation_proposal_dict is None
+            else self._presentation_proposal_dict.de
+        )
 
-    def serialize(self, as_string=False) -> Mapping:
-        """
-        Create a JSON-compatible representation of the model instance.
+    @presentation_proposal_dict.setter
+    def presentation_proposal_dict(self, value):
+        """Setter; store de/serialized views."""
+        self._presentation_proposal_dict = PresentationProposal.serde(value)
 
-        Args:
-            as_string: return a string of JSON instead of a mapping
+    @property
+    def presentation_request(self) -> IndyProofRequest:
+        """Accessor; get deserialized view."""
+        return (
+            None
+            if self._presentation_request is None
+            else self._presentation_request.de
+        )
 
-        """
-        copy = V10PresentationExchange(
-            presentation_exchange_id=self.presentation_exchange_id,
+    @presentation_request.setter
+    def presentation_request(self, value):
+        """Setter; store de/serialized views."""
+        self._presentation_request = IndyProofRequest.serde(value)
+
+    @property
+    def presentation_request_dict(self) -> PresentationRequest:
+        """Accessor; get deserialized view."""
+        return (
+            None
+            if self._presentation_request_dict is None
+            else self._presentation_request_dict.de
+        )
+
+    @presentation_request_dict.setter
+    def presentation_request_dict(self, value):
+        """Setter; store de/serialized views."""
+        self._presentation_request_dict = PresentationRequest.serde(value)
+
+    @property
+    def presentation(self) -> IndyProof:
+        """Accessor; get deserialized view."""
+        return None if self._presentation is None else self._presentation.de
+
+    @presentation.setter
+    def presentation(self, value):
+        """Setter; store de/serialized views."""
+        self._presentation = IndyProof.serde(value)
+
+    @property
+    def record_value(self) -> Mapping:
+        """Accessor for the JSON record value generated for this credential exchange."""
+        retval = {
             **{
-                k: v
-                for k, v in vars(self).items()
-                if k
-                not in [
-                    "_id",
-                    "_last_state",
+                prop: getattr(self, prop)
+                for prop in (
+                    "connection_id",
+                    "initiator",
+                    "role",
+                    "state",
+                    "auto_present",
+                    "error_msg",
+                    "verified",
+                    "trace",
+                )
+            },
+            **{
+                prop: getattr(self, f"_{prop}").ser
+                for prop in (
                     "presentation_proposal_dict",
                     "presentation_request",
                     "presentation_request_dict",
                     "presentation",
-                ]
-            }
-        )
-        copy.presentation_proposal_dict = PresentationProposal.deserialize(
-            self.presentation_proposal_dict,
-            none2none=True,
-        )
-        copy.presentation_request = IndyProofRequest.deserialize(
-            self.presentation_request,
-            none2none=True,
-        )
-        copy.presentation_request_dict = PresentationRequest.deserialize(
-            self.presentation_request_dict,
-            none2none=True,
-        )
-        copy.presentation = IndyProof.deserialize(self.presentation, none2none=True)
-        return super(self.__class__, copy).serialize(as_string)
+                )
+                if getattr(self, prop) is not None
+            },
+        }
+        return retval
 
     def __eq__(self, other: Any) -> bool:
         """Comparison between records."""

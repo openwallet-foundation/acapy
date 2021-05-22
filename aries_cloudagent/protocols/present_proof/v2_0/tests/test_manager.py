@@ -3,13 +3,17 @@ import json
 from copy import deepcopy
 from time import time
 
-from asynctest import TestCase as AsyncTestCase
-from asynctest import mock as async_mock
+from asynctest import mock as async_mock, TestCase as AsyncTestCase
 
 from .....core.in_memory import InMemoryProfile
 from .....indy.holder import IndyHolder
 from .....indy.sdk.holder import IndySdkHolder
 from .....indy.issuer import IndyIssuer
+from .....indy.sdk.models.pres_preview import (
+    IndyPresAttrSpec,
+    IndyPresPreview,
+    IndyPresPredSpec,
+)
 from .....ledger.base import BaseLedger
 from .....messaging.decorators.attach_decorator import AttachDecorator
 from .....messaging.request_context import RequestContext
@@ -48,6 +52,22 @@ PROOF_REQ_VERSION = "1.0"
 PROOF_REQ_NONCE = "12345"
 
 NOW = int(time())
+PRES_PREVIEW = IndyPresPreview(
+    attributes=[
+        IndyPresAttrSpec(name="player", cred_def_id=CD_ID, value="Richie Knucklez"),
+        IndyPresAttrSpec(
+            name="screenCapture",
+            cred_def_id=CD_ID,
+            mime_type="image/png",
+            value="aW1hZ2luZSBhIHNjcmVlbiBjYXB0dXJl",
+        ),
+    ],
+    predicates=[
+        IndyPresPredSpec(
+            name="highScore", cred_def_id=CD_ID, predicate=">=", threshold=1000000
+        )
+    ],
+)
 INDY_PROOF_REQ_NAME = {
     "name": PROOF_REQ_NAME,
     "version": PROOF_REQ_VERSION,
@@ -58,7 +78,7 @@ INDY_PROOF_REQ_NAME = {
             "restrictions": [{"cred_def_id": CD_ID}],
             "non_revoked": {"from": NOW, "to": NOW},
         },
-        "1_screencapture_uuid": {
+        "0_screencapture_uuid": {
             "name": "screenCapture",
             "restrictions": [{"cred_def_id": CD_ID}],
             "non_revoked": {"from": NOW, "to": NOW},
@@ -106,6 +126,248 @@ INDY_PROOF_REQ_SELFIE = {
     "requested_predicates": {
         "0_highscore_GE_uuid": {"name": "highScore", "p_type": ">=", "p_value": 1000000}
     },
+}
+INDY_PROOF = {
+    "proof": {
+        "proofs": [
+            {
+                "primary_proof": {
+                    "eq_proof": {
+                        "revealed_attrs": {
+                            "player": "51643998292319337989",
+                            "screencapture": "124831723185628395682368329568235681",
+                        },
+                        "a_prime": "98381845469564775640588",
+                        "e": "2889201651469315129053056279820725958192110265136",
+                        "v": "337782521199137176224",
+                        "m": {
+                            "master_secret": "88675074759262558623",
+                            "date": "3707627155679953691027082306",
+                            "highscore": "251972383037120760793174059437326",
+                        },
+                        "m2": "2892781443118611948331343540849982215419978654911341",
+                    },
+                    "ge_proofs": [
+                        {
+                            "u": {
+                                "0": "99189584890680947709857922351898933228959",
+                                "3": "974568160016086782335901983921278203",
+                                "2": "127290395299",
+                                "1": "7521808223922",
+                            },
+                            "r": {
+                                "3": "247458",
+                                "2": "263046",
+                                "1": "285214",
+                                "DELTA": "4007402",
+                                "0": "12066738",
+                            },
+                            "mj": "1507606",
+                            "alpha": "20251550018805200",
+                            "t": {
+                                "1": "1262519732727",
+                                "3": "82102416",
+                                "0": "100578099981822",
+                                "2": "47291",
+                                "DELTA": "556736142765",
+                            },
+                            "predicate": {
+                                "attr_name": "highscore",
+                                "p_type": "GE",
+                                "value": 1000000,
+                            },
+                        }
+                    ],
+                },
+                "non_revoc_proof": {
+                    "x_list": {
+                        "rho": "128121489ACD4D778ECE",
+                        "r": "1890DEFBB8A254",
+                        "r_prime": "0A0861FFE96C",
+                        "r_prime_prime": "058376CE",
+                        "r_prime_prime_prime": "188DF30745A595",
+                        "o": "0D0F7FA1",
+                        "o_prime": "28165",
+                        "m": "0187A9817897FC",
+                        "m_prime": "91261D96B",
+                        "t": "10FE96",
+                        "t_prime": "10856A",
+                        "m2": "B136089AAF",
+                        "s": "018969A6D",
+                        "c": "09186B6A",
+                    },
+                    "c_list": {
+                        "e": "6 1B161",
+                        "d": "6 19E861869",
+                        "a": "6 541441EE2",
+                        "g": "6 7601B068C",
+                        "w": "21 10DE6 4 AAAA 5 2458 6 16161",
+                        "s": "21 09616 4 1986 5 9797 6 BBBBB",
+                        "u": "21 3213123 4 0616FFE 5 323 6 110861861",
+                    },
+                },
+            }
+        ],
+        "aggregated_proof": {
+            "c_hash": "81147637626525127013830996",
+            "c_list": [
+                [3, 18, 46, 12],
+                [3, 136, 2, 39],
+                [100, 111, 148, 193],
+                [1, 123, 11, 152],
+                [2, 138, 162, 227],
+                [1, 239, 33, 47],
+            ],
+        },
+    },
+    "requested_proof": {
+        "revealed_attrs": {
+            "0_player_uuid": {
+                "sub_proof_index": 0,
+                "raw": "Richie Knucklez",
+                "encoded": "516439982",
+            },
+            "0_screencapture_uuid": {
+                "sub_proof_index": 0,
+                "raw": "aW1hZ2luZSBhIHNjcmVlbiBjYXB0dXJl",
+                "encoded": "4434954949",
+            },
+        },
+        "self_attested_attrs": {},
+        "unrevealed_attrs": {},
+        "predicates": {"0_highscore_GE_uuid": {"sub_proof_index": 0}},
+    },
+    "identifiers": [
+        {
+            "schema_id": S_ID,
+            "cred_def_id": CD_ID,
+            "rev_reg_id": RR_ID,
+            "timestamp": NOW,
+        }
+    ],
+}
+INDY_PROOF_NAMES = {
+    "proof": {
+        "proofs": [
+            {
+                "primary_proof": {
+                    "eq_proof": {
+                        "revealed_attrs": {
+                            "player": "51643998292319337989",
+                            "screencapture": "124831723185628395682368329568235681",
+                        },
+                        "a_prime": "98381845469564775640588",
+                        "e": "2889201651469315129053056279820725958192110265136",
+                        "v": "337782521199137176224",
+                        "m": {
+                            "master_secret": "88675074759262558623",
+                            "date": "3707627155679953691027082306",
+                            "highscore": "251972383037120760793174059437326",
+                        },
+                        "m2": "2892781443118611948331343540849982215419978654911341",
+                    },
+                    "ge_proofs": [
+                        {
+                            "u": {
+                                "0": "99189584890680947709857922351898933228959",
+                                "3": "974568160016086782335901983921278203",
+                                "2": "127290395299",
+                                "1": "7521808223922",
+                            },
+                            "r": {
+                                "3": "247458",
+                                "2": "263046",
+                                "1": "285214",
+                                "DELTA": "4007402",
+                                "0": "12066738",
+                            },
+                            "mj": "1507606",
+                            "alpha": "20251550018805200",
+                            "t": {
+                                "1": "1262519732727",
+                                "3": "82102416",
+                                "0": "100578099981822",
+                                "2": "47291",
+                                "DELTA": "556736142765",
+                            },
+                            "predicate": {
+                                "attr_name": "highscore",
+                                "p_type": "GE",
+                                "value": 1000000,
+                            },
+                        }
+                    ],
+                },
+                "non_revoc_proof": {
+                    "x_list": {
+                        "rho": "128121489ACD4D778ECE",
+                        "r": "1890DEFBB8A254",
+                        "r_prime": "0A0861FFE96C",
+                        "r_prime_prime": "058376CE",
+                        "r_prime_prime_prime": "188DF30745A595",
+                        "o": "0D0F7FA1",
+                        "o_prime": "28165",
+                        "m": "0187A9817897FC",
+                        "m_prime": "91261D96B",
+                        "t": "10FE96",
+                        "t_prime": "10856A",
+                        "m2": "B136089AAF",
+                        "s": "018969A6D",
+                        "c": "09186B6A",
+                    },
+                    "c_list": {
+                        "e": "6 1B161",
+                        "d": "6 19E861869",
+                        "a": "6 541441EE2",
+                        "g": "6 7601B068C",
+                        "w": "21 10DE6 4 AAAA 5 2458 6 16161",
+                        "s": "21 09616 4 1986 5 9797 6 BBBBB",
+                        "u": "21 3213123 4 0616FFE 5 323 6 110861861",
+                    },
+                },
+            }
+        ],
+        "aggregated_proof": {
+            "c_hash": "81147637626525127013830996",
+            "c_list": [
+                [3, 18, 46, 12],
+                [3, 136, 2, 39],
+                [100, 111, 148, 193],
+                [1, 123, 11, 152],
+                [2, 138, 162, 227],
+                [1, 239, 33, 47],
+            ],
+        },
+    },
+    "requested_proof": {
+        "revealed_attrs": {},
+        "revealed_attr_groups": {
+            "0_player_uuid": {
+                "sub_proof_index": 0,
+                "values": {
+                    "player": {
+                        "raw": "Richie Knucklez",
+                        "encoded": "516439982",
+                    },
+                    "screenCapture": {
+                        "raw": "aW1hZ2luZSBhIHNjcmVlbiBjYXB0dXJl",
+                        "encoded": "4434954949",
+                    },
+                },
+            },
+        },
+        "self_attested_attrs": {},
+        "unrevealed_attrs": {},
+        "predicates": {"0_highscore_GE_uuid": {"sub_proof_index": 0}},
+    },
+    "identifiers": [
+        {
+            "schema_id": S_ID,
+            "cred_def_id": CD_ID,
+            "rev_reg_id": RR_ID,
+            "timestamp": NOW,
+        }
+    ],
 }
 
 
@@ -302,15 +564,28 @@ class TestV20PresManager(AsyncTestCase):
         px_rec.save.assert_called_once()
 
     async def test_create_exchange_for_request(self):
-        request = async_mock.MagicMock()
-        request.indy_proof_request = async_mock.MagicMock()
-        request._thread_id = "dummy"
+        pres_req = V20PresRequest(
+            comment="Test",
+            will_confirm=True,
+            formats=[
+                V20PresFormat(
+                    attach_id="indy",
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.INDY.api
+                    ],
+                )
+            ],
+            request_presentations_attach=[
+                AttachDecorator.data_base64(mapping=INDY_PROOF_REQ_NAME, ident="indy")
+            ],
+        )
+        pres_req.assign_thread_id("dummy")
 
         with async_mock.patch.object(V20PresExRecord, "save", autospec=True) as save_ex:
-            px_rec = await self.manager.create_exchange_for_request(CONN_ID, request)
+            px_rec = await self.manager.create_exchange_for_request(CONN_ID, pres_req)
             save_ex.assert_called_once()
 
-            assert px_rec.thread_id == request._thread_id
+            assert px_rec.thread_id == pres_req._thread_id
             assert px_rec.initiator == V20PresExRecord.INITIATOR_SELF
             assert px_rec.role == V20PresExRecord.ROLE_VERIFIER
             assert px_rec.state == V20PresExRecord.STATE_REQUEST_SENT
@@ -757,52 +1032,6 @@ class TestV20PresManager(AsyncTestCase):
 
     async def test_receive_pres(self):
         connection_record = async_mock.MagicMock(connection_id=CONN_ID)
-        indy_proof = {
-            "proof": {
-                "proofs": [
-                    {
-                        "primary_proof": {
-                            "eq_proof": "...",
-                            "ge_proofs": [
-                                {
-                                    "...": "...",
-                                    "predicate": {
-                                        "attr_name": "highscore",
-                                        "p_type": "GE",
-                                        "value": 1000000,
-                                    },
-                                }
-                            ],
-                        }
-                    }
-                ]
-            },
-            "requested_proof": {
-                "revealed_attrs": {
-                    "0_player_uuid": {
-                        "sub_proof_index": 0,
-                        "raw": "Richie Knucklez",
-                        "encoded": "12345678901234567890",
-                    },
-                    "1_screencapture_uuid": {
-                        "sub_proof_index": 0,
-                        "raw": "aW1hZ2luZSBhIHNjcmVlbiBjYXB0dXJl",
-                        "encoded": "98765432109876543210",
-                    },
-                },
-                "self_attested_attrs": {},
-                "unrevealed_attrs": {},
-                "predicates": {"0_highscore_GE_uuid": {"sub_proof_index": 0}},
-            },
-            "identifiers": [
-                {
-                    "schema_id": S_ID,
-                    "cred_def_id": CD_ID,
-                    "rev_reg_id": None,
-                    "timestamp": None,
-                }
-            ],
-        }
         pres_proposal = V20PresProposal(
             formats=[
                 V20PresFormat(
@@ -837,7 +1066,7 @@ class TestV20PresManager(AsyncTestCase):
                 )
             ],
             presentations_attach=[
-                AttachDecorator.data_base64(indy_proof, ident="indy")
+                AttachDecorator.data_base64(INDY_PROOF, ident="indy")
             ],
         )
 
@@ -873,57 +1102,11 @@ class TestV20PresManager(AsyncTestCase):
     async def test_receive_pres_bait_and_switch_attr_name(self):
         connection_record = async_mock.MagicMock(connection_id=CONN_ID)
         indy_proof_req = deepcopy(INDY_PROOF_REQ_NAME)
-        indy_proof_req["requested_attributes"]["1_screencapture_uuid"]["restrictions"][
+        indy_proof_req["requested_attributes"]["0_screencapture_uuid"]["restrictions"][
             0
         ][
             "attr::screenCapture::value"
         ] = "c2NyZWVuIGNhcHR1cmUgc2hvd2luZyBzY29yZSBpbiB0aGUgbWlsbGlvbnM="
-        indy_proof_x = {
-            "proof": {
-                "proofs": [
-                    {
-                        "primary_proof": {
-                            "eq_proof": "...",
-                            "ge_proofs": [
-                                {
-                                    "...": "...",
-                                    "predicate": {
-                                        "attr_name": "highscore",
-                                        "p_type": "GE",
-                                        "value": 1000000,
-                                    },
-                                }
-                            ],
-                        }
-                    }
-                ]
-            },
-            "requested_proof": {
-                "revealed_attrs": {
-                    "0_player_uuid": {
-                        "sub_proof_index": 0,
-                        "raw": "Richie Knucklez",
-                        "encoded": "12345678901234567890",
-                    },
-                    "1_screencapture_uuid": {  # mismatch vs request
-                        "sub_proof_index": 0,
-                        "raw": "bm90IHRoZSBzYW1lIHNjcmVlbiBjYXB0dXJl",
-                        "encoded": "98765432109876543210",
-                    },
-                },
-                "self_attested_attrs": {},
-                "unrevealed_attrs": {},
-                "predicates": {"0_highscore_GE_uuid": {"sub_proof_index": 0}},
-            },
-            "identifiers": [
-                {
-                    "schema_id": S_ID,
-                    "cred_def_id": CD_ID,
-                    "rev_reg_id": None,
-                    "timestamp": None,
-                }
-            ],
-        }
         pres_proposal = V20PresProposal(
             formats=[
                 V20PresFormat(
@@ -934,7 +1117,7 @@ class TestV20PresManager(AsyncTestCase):
                 )
             ],
             proposals_attach=[
-                AttachDecorator.data_base64(indy_proof_req, ident="indy")
+                AttachDecorator.data_base64(INDY_PROOF_REQ_NAME, ident="indy")
             ],
         )
         pres_request = V20PresRequest(
@@ -958,10 +1141,9 @@ class TestV20PresManager(AsyncTestCase):
                 )
             ],
             presentations_attach=[
-                AttachDecorator.data_base64(indy_proof_x, ident="indy")
+                AttachDecorator.data_base64(INDY_PROOF, ident="indy")
             ],
         )
-
         px_rec_dummy = V20PresExRecord(
             pres_proposal=pres_proposal.serialize(),
             pres_request=pres_request.serialize(),
@@ -981,7 +1163,7 @@ class TestV20PresManager(AsyncTestCase):
 
         indy_proof_req["requested_attributes"]["shenanigans"] = indy_proof_req[
             "requested_attributes"
-        ].pop("1_screencapture_uuid")
+        ].pop("0_screencapture_uuid")
         pres_proposal = V20PresProposal(
             formats=[
                 V20PresFormat(
@@ -1014,7 +1196,7 @@ class TestV20PresManager(AsyncTestCase):
                 )
             ],
             presentations_attach=[
-                AttachDecorator.data_base64(indy_proof_x, ident="indy")
+                AttachDecorator.data_base64(INDY_PROOF, ident="indy")
             ],
         )
 
@@ -1039,56 +1221,6 @@ class TestV20PresManager(AsyncTestCase):
         indy_proof_req["requested_attributes"]["0_player_uuid"]["restrictions"][0][
             "attr::screenCapture::value"
         ] = "c2NyZWVuIGNhcHR1cmUgc2hvd2luZyBzY29yZSBpbiB0aGUgbWlsbGlvbnM="
-        indy_proof_x = {
-            "proof": {
-                "proofs": [
-                    {
-                        "primary_proof": {
-                            "eq_proof": "...",
-                            "ge_proofs": [
-                                {
-                                    "...": "...",
-                                    "predicate": {
-                                        "attr_name": "highscore",
-                                        "p_type": "GE",
-                                        "value": 1000000,
-                                    },
-                                }
-                            ],
-                        }
-                    }
-                ]
-            },
-            "requested_proof": {
-                "revealed_attrs": {},
-                "revealed_attr_groups": {
-                    "0_player_uuid": {
-                        "sub_proof_index": 0,
-                        "values": {
-                            "player": {
-                                "raw": "Richie Knucklez",
-                                "encoded": "12345678901234567890",
-                            },
-                            "0_player_uuid": {  # mismatch vs request
-                                "raw": "bm90IHRoZSBzYW1lIHNjcmVlbiBjYXB0dXJl",
-                                "encoded": "98765432109876543210",
-                            },
-                        },
-                    },
-                },
-                "self_attested_attrs": {},
-                "unrevealed_attrs": {},
-                "predicates": {"0_highscore_GE_uuid": {"sub_proof_index": 0}},
-            },
-            "identifiers": [
-                {
-                    "schema_id": S_ID,
-                    "cred_def_id": CD_ID,
-                    "rev_reg_id": None,
-                    "timestamp": None,
-                }
-            ],
-        }
         pres_proposal = V20PresProposal(
             formats=[
                 V20PresFormat(
@@ -1123,7 +1255,7 @@ class TestV20PresManager(AsyncTestCase):
                 )
             ],
             presentations_attach=[
-                AttachDecorator.data_base64(indy_proof_x, ident="indy")
+                AttachDecorator.data_base64(INDY_PROOF_NAMES, ident="indy")
             ],
         )
 
@@ -1179,7 +1311,7 @@ class TestV20PresManager(AsyncTestCase):
                 )
             ],
             presentations_attach=[
-                AttachDecorator.data_base64(indy_proof_x, ident="indy")
+                AttachDecorator.data_base64(INDY_PROOF_NAMES, ident="indy")
             ],
         )
 
@@ -1202,52 +1334,6 @@ class TestV20PresManager(AsyncTestCase):
         connection_record = async_mock.MagicMock(connection_id=CONN_ID)
         indy_proof_req = deepcopy(INDY_PROOF_REQ_NAME)
         indy_proof_req["requested_predicates"] = {}
-        indy_proof_x = {
-            "proof": {
-                "proofs": [
-                    {
-                        "primary_proof": {
-                            "eq_proof": "...",
-                            "ge_proofs": [
-                                {
-                                    "...": "...",
-                                    "predicate": {
-                                        "attr_name": "highscore",
-                                        "p_type": "GE",
-                                        "value": 1000000,
-                                    },
-                                }
-                            ],
-                        }
-                    }
-                ]
-            },
-            "requested_proof": {
-                "revealed_attrs": {
-                    "0_player_uuid": {
-                        "sub_proof_index": 0,
-                        "raw": "Richie Knucklez",
-                        "encoded": "12345678901234567890",
-                    },
-                    "1_screencapture_uuid": {  # mismatch vs request
-                        "sub_proof_index": 0,
-                        "raw": "bm90IHRoZSBzYW1lIHNjcmVlbiBjYXB0dXJl",
-                        "encoded": "98765432109876543210",
-                    },
-                },
-                "self_attested_attrs": {},
-                "unrevealed_attrs": {},
-                "predicates": {"0_highscore_GE_uuid": {"sub_proof_index": 0}},
-            },
-            "identifiers": [
-                {
-                    "schema_id": S_ID,
-                    "cred_def_id": CD_ID,
-                    "rev_reg_id": None,
-                    "timestamp": None,
-                }
-            ],
-        }
         pres_proposal = V20PresProposal(
             formats=[
                 V20PresFormat(
@@ -1258,7 +1344,7 @@ class TestV20PresManager(AsyncTestCase):
                 )
             ],
             proposals_attach=[
-                AttachDecorator.data_base64(indy_proof_req, ident="indy")
+                AttachDecorator.data_base64(INDY_PROOF_REQ_NAME, ident="indy")
             ],
         )
         pres_request = V20PresRequest(
@@ -1282,7 +1368,7 @@ class TestV20PresManager(AsyncTestCase):
                 )
             ],
             presentations_attach=[
-                AttachDecorator.data_base64(indy_proof_x, ident="indy")
+                AttachDecorator.data_base64(INDY_PROOF, ident="indy")
             ],
         )
 
@@ -1340,7 +1426,7 @@ class TestV20PresManager(AsyncTestCase):
                 )
             ],
             presentations_attach=[
-                AttachDecorator.data_base64(indy_proof_x, ident="indy")
+                AttachDecorator.data_base64(INDY_PROOF, ident="indy")
             ],
         )
 
@@ -1398,7 +1484,7 @@ class TestV20PresManager(AsyncTestCase):
                 )
             ],
             presentations_attach=[
-                AttachDecorator.data_base64(indy_proof_x, ident="indy")
+                AttachDecorator.data_base64(INDY_PROOF, ident="indy")
             ],
         )
 
@@ -1456,7 +1542,7 @@ class TestV20PresManager(AsyncTestCase):
                 )
             ],
             presentations_attach=[
-                AttachDecorator.data_base64(indy_proof_x, ident="indy")
+                AttachDecorator.data_base64(INDY_PROOF, ident="indy")
             ],
         )
 
@@ -1478,34 +1564,6 @@ class TestV20PresManager(AsyncTestCase):
             )
 
     async def test_verify_pres(self):
-        indy_proof = {
-            "proof": {"proofs": []},
-            "requested_proof": {
-                "revealed_attrs": {
-                    "0_player_uuid": {
-                        "sub_proof_index": 0,
-                        "raw": "Richie Knucklez",
-                        "encoded": "12345678901234567890",
-                    },
-                    "1_screencapture_uuid": {
-                        "sub_proof_index": 0,
-                        "raw": "cG90YXRv",
-                        "encoded": "98765432109876543210",
-                    },
-                },
-                "self_attested_attrs": {},
-                "unrevealed_attrs": {},
-                "predicates": {"0_highscore_GE_uuid": {"sub_proof_index": 0}},
-            },
-            "identifiers": [
-                {
-                    "schema_id": S_ID,
-                    "cred_def_id": CD_ID,
-                    "rev_reg_id": None,
-                    "timestamp": None,
-                }
-            ],
-        }
         pres_request = V20PresRequest(
             formats=[
                 V20PresFormat(
@@ -1528,71 +1586,7 @@ class TestV20PresManager(AsyncTestCase):
                 )
             ],
             presentations_attach=[
-                AttachDecorator.data_base64(indy_proof, ident="indy")
-            ],
-        )
-        px_rec_in = V20PresExRecord(
-            pres_request=pres_request.serialize(),
-            pres=pres.serialize(),
-        )
-
-        with async_mock.patch.object(V20PresExRecord, "save", autospec=True) as save_ex:
-            px_rec_out = await self.manager.verify_pres(px_rec_in)
-            save_ex.assert_called_once()
-
-            assert px_rec_out.state == (V20PresExRecord.STATE_DONE)
-
-    async def test_verify_pres_with_revocation(self):
-        indy_proof = {
-            "proof": {"proofs": []},
-            "requested_proof": {
-                "revealed_attrs": {
-                    "0_player_uuid": {
-                        "sub_proof_index": 0,
-                        "raw": "Richie Knucklez",
-                        "encoded": "12345678901234567890",
-                    },
-                    "1_screencapture_uuid": {
-                        "sub_proof_index": 0,
-                        "raw": "cG90YXRv",
-                        "encoded": "98765432109876543210",
-                    },
-                },
-                "self_attested_attrs": {},
-                "unrevealed_attrs": {},
-                "predicates": {"0_highscore_GE_uuid": {"sub_proof_index": 0}},
-            },
-            "identifiers": [
-                {
-                    "schema_id": S_ID,
-                    "cred_def_id": CD_ID,
-                    "rev_reg_id": RR_ID,
-                    "timestamp": NOW,
-                }
-            ],
-        }
-        pres_request = V20PresRequest(
-            formats=[
-                V20PresFormat(
-                    attach_id="indy",
-                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
-                        V20PresFormat.Format.INDY.api
-                    ],
-                )
-            ],
-            request_presentations_attach=[
-                AttachDecorator.data_base64(INDY_PROOF_REQ_NAME, ident="indy")
-            ],
-        )
-        pres = V20Pres(
-            formats=[
-                V20PresFormat(
-                    attach_id="indy",
-                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.INDY.api],
-                )
-            ],
-            presentations_attach=[
-                AttachDecorator.data_base64(indy_proof, ident="indy")
+                AttachDecorator.data_base64(INDY_PROOF, ident="indy")
             ],
         )
         px_rec_in = V20PresExRecord(
