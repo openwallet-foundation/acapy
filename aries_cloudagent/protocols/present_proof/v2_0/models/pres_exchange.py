@@ -4,7 +4,6 @@ from typing import Any, Mapping, Union
 
 from marshmallow import fields, Schema, validate
 
-from .....messaging.models import to_serial
 from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
 from .....messaging.valid import UUIDFour
 
@@ -61,7 +60,7 @@ class V20PresExRecord(BaseExchangeRecord):
         error_msg: str = None,
         trace: bool = False,  # backward compat: BaseRecord.FromStorage()
         by_format: Mapping = None,  # backward compat: BaseRecord.FromStorage()
-        **kwargs
+        **kwargs,
     ):
         """Initialize a new PresExRecord."""
         super().__init__(pres_ex_id, state, trace=trace, **kwargs)
@@ -70,9 +69,9 @@ class V20PresExRecord(BaseExchangeRecord):
         self.initiator = initiator
         self.role = role
         self.state = state
-        self.pres_proposal = to_serial(pres_proposal)
-        self.pres_request = to_serial(pres_request)
-        self.pres = to_serial(pres)
+        self._pres_proposal = V20PresProposal.serde(pres_proposal)
+        self._pres_request = V20PresRequest.serde(pres_request)
+        self._pres = V20Pres.serde(pres)
         self.verified = verified
         self.auto_present = auto_present
         self.error_msg = error_msg
@@ -91,9 +90,8 @@ class V20PresExRecord(BaseExchangeRecord):
             "pres_request": V20PresRequest,
             "pres": V20Pres,
         }.items():
-            mapping = to_serial(getattr(self, item))
-            if mapping:
-                msg = cls.deserialize(mapping)
+            msg = getattr(self, item)
+            if msg:
                 result.update(
                     {
                         item: {
@@ -108,59 +106,62 @@ class V20PresExRecord(BaseExchangeRecord):
         return result
 
     @property
-    def record_value(self) -> dict:
-        """Accessor for JSON record value generated for this pres ex record."""
+    def pres_proposal(self) -> V20PresProposal:
+        """Accessor; get deserialized view."""
+        return None if self._pres_proposal is None else self._pres_proposal.de
+
+    @pres_proposal.setter
+    def pres_proposal(self, value):
+        """Setter; store de/serialized views."""
+        self._pres_proposal = V20PresProposal.serde(value)
+
+    @property
+    def pres_request(self) -> V20PresRequest:
+        """Accessor; get deserialized view."""
+        return None if self._pres_request is None else self._pres_request.de
+
+    @pres_request.setter
+    def pres_request(self, value):
+        """Setter; store de/serialized views."""
+        self._pres_request = V20PresRequest.serde(value)
+
+    @property
+    def pres(self) -> V20Pres:
+        """Accessor; get deserialized view."""
+        return None if self._pres is None else self._pres.de
+
+    @pres.setter
+    def pres(self, value):
+        """Setter; store de/serialized views."""
+        self._pres = V20Pres.serde(value)
+
+    @property
+    def record_value(self) -> Mapping:
+        """Accessor for the JSON record value generated for this credential exchange."""
         return {
-            prop: getattr(self, prop)
-            for prop in (
-                "connection_id",
-                "initiator",
-                "role",
-                "state",
-                "pres_proposal",
-                "pres_request",
-                "pres",
-                "verified",
-                "auto_present",
-                "error_msg",
-                "trace",
-            )
-        }
-
-    def serialize(self, as_string=False) -> Mapping:
-        """
-        Create a JSON-compatible representation of the model instance.
-
-        Args:
-            as_string: return a string of JSON instead of a mapping
-
-        """
-        copy = V20PresExRecord(
-            pres_ex_id=self.pres_ex_id,
             **{
-                k: v
-                for k, v in vars(self).items()
-                if k
-                not in [
-                    "_id",
-                    "_last_state",
+                prop: getattr(self, prop)
+                for prop in (
+                    "connection_id",
+                    "initiator",
+                    "role",
+                    "state",
+                    "verified",
+                    "auto_present",
+                    "error_msg",
+                    "trace",
+                )
+            },
+            **{
+                prop: getattr(self, f"_{prop}").ser
+                for prop in (
                     "pres_proposal",
                     "pres_request",
                     "pres",
-                ]
-            }
-        )
-        copy.pres_proposal = V20PresProposal.deserialize(
-            self.pres_proposal,
-            none2none=True,
-        )
-        copy.pres_request = V20PresRequest.deserialize(
-            self.pres_request,
-            none2none=True,
-        )
-        copy.pres = V20Pres.deserialize(self.pres, none2none=True)
-
-        return super(self.__class__, copy).serialize(as_string)
+                )
+                if getattr(self, prop) is not None
+            },
+        }
 
     def __eq__(self, other: Any) -> bool:
         """Comparison between records."""

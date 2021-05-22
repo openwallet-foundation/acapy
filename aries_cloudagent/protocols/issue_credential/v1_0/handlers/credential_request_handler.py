@@ -52,7 +52,7 @@ class CredentialRequestHandler(BaseHandler):
         if cred_ex_record.auto_issue:
             if (
                 cred_ex_record.credential_proposal_dict
-                and "credential_proposal" in cred_ex_record.credential_proposal_dict
+                and cred_ex_record.credential_proposal_dict.credential_proposal
             ):
                 credential_issue_message = None
                 try:
@@ -67,10 +67,11 @@ class CredentialRequestHandler(BaseHandler):
                 except (CredentialManagerError, IndyIssuerError, LedgerError) as err:
                     self._logger.exception(err)
                     if cred_ex_record:
-                        await cred_ex_record.save_error_state(
-                            context.session(),
-                            reason=err.message,
-                        )
+                        async with context.session() as session:
+                            await cred_ex_record.save_error_state(
+                                session,
+                                reason=err.message,
+                            )
                 except StorageError as err:
                     self._logger.exception(err)  # may be logging to wire, not dead disk
 
