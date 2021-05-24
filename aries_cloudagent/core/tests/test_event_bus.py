@@ -2,7 +2,10 @@
 
 import pytest
 import re
+
 from asynctest import mock as async_mock
+
+from .. import event_bus as test_module
 from ..event_bus import EventBus, Event
 
 # pylint: disable=redefined-outer-name
@@ -89,7 +92,9 @@ async def test_sub_notify(event_bus: EventBus, context, event, processor):
 
 @pytest.mark.asyncio
 async def test_sub_notify_error_logged_and_exec_continues(
-    event_bus: EventBus, context, event, caplog
+    event_bus: EventBus,
+    context,
+    event,
 ):
     """Test subscriber errors are logged but do not halt execution."""
 
@@ -100,8 +105,12 @@ async def test_sub_notify_error_logged_and_exec_continues(
     bad_processor = _raise_exception
     event_bus.subscribe(re.compile(".*"), bad_processor)
     event_bus.subscribe(re.compile(".*"), processor)
-    await event_bus.notify(context, event)
-    assert "Error occurred while processing event" in caplog.text
+    with async_mock.patch.object(
+        test_module.LOGGER, "exception", async_mock.MagicMock()
+    ) as mock_log_exc:
+        await event_bus.notify(context, event)
+
+    assert mock_log_exc.called_once_with("Error occurred while processing event")
     assert processor.context == context
     assert processor.event == event
 

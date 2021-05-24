@@ -53,10 +53,11 @@ class PresentationHandler(BaseHandler):
             except LedgerError as err:
                 self._logger.exception(err)
                 if presentation_exchange_record:
-                    await presentation_exchange_record.save_error_state(
-                        context.session(),
-                        reason=err.message,
-                    )
+                    async with context.session() as session:
+                        await presentation_exchange_record.save_error_state(
+                            session,
+                            reason=err.message,
+                        )
             except StorageError as err:
                 self._logger.exception(err)  # may be logging to wire, not dead disk
 
