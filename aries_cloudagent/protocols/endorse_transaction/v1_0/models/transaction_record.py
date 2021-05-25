@@ -65,6 +65,7 @@ class TransactionRecord(BaseExchangeRecord):
         thread_id: str = None,
         connection_id: str = None,
         state: str = None,
+        endorser_write_txn: bool = None,
         **kwargs,
     ):
         """Initialize a new TransactionRecord."""
@@ -79,6 +80,7 @@ class TransactionRecord(BaseExchangeRecord):
         self.messages_attach = messages_attach or []
         self.thread_id = thread_id
         self.connection_id = connection_id
+        self.endorser_write_txn = endorser_write_txn
 
     @property
     def transaction_id(self) -> str:
@@ -100,6 +102,7 @@ class TransactionRecord(BaseExchangeRecord):
                 "thread_id",
                 "connection_id",
                 "state",
+                "endorser_write_txn",
             )
         }
 
@@ -215,4 +218,9 @@ class TransactionRecordSchema(BaseExchangeSchema):
         required=False,
         description="The connection identifier for thie particular transaction record",
         example=UUIDFour.EXAMPLE,
+    )
+    endorser_write_txn = fields.Boolean(
+        description="If True, Endorser will write the transaction after endorsing it",
+        required=False,
+        example=True,
     )
