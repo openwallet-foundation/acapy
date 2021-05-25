@@ -1,6 +1,8 @@
 """Test Base DID Resolver methods."""
 
 import pytest
+import re
+
 from asynctest import mock as async_mock
 from pydid import DIDDocument
 
@@ -19,6 +21,10 @@ class ExampleDIDResolver(BaseDIDResolver):
     @property
     def supported_methods(self):
         return ["test"]
+
+    @property
+    def supported_did_regex(self):
+        return re.compile("^did:example:[a-zA-Z0-9_.-]+$")
 
     async def _resolve(self, profile, did) -> DIDDocument:
         return DIDDocument("did:example:123")
@@ -51,8 +57,8 @@ def test_native_on_non_native(non_native_resolver):
 
 @pytest.mark.asyncio
 async def test_supports(profile, native_resolver):
-    assert await native_resolver.supports(profile, "did:test:basdfasdfas") is True
-    assert await native_resolver.supports(profile, "not supported") is False
+    assert not await native_resolver.supports(profile, "did:test:basdfasdfas")
+    assert await native_resolver.supports(profile, "did:example:WgWxqztrNooG92RXvxSTWv")
 
 
 @pytest.mark.asyncio
