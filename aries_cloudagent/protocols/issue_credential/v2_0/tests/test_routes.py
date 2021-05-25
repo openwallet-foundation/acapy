@@ -271,6 +271,38 @@ class TestV20CredRoutes(AsyncTestCase):
 
             mock_response.assert_called_once_with(mock_cx_rec.serialize.return_value)
 
+    async def test_credential_exchange_create_aip2(self):
+        self.request.json = async_mock.CoroutineMock()
+        self.context.profile.settings.set_value("emit_new_didcomm_mime_type", True)
+        self.context.profile.settings.set_value("emit_new_didcomm_prefix", True)
+        with async_mock.patch.object(
+            test_module, "ConnRecord", autospec=True
+        ) as mock_connection_record, async_mock.patch.object(
+            test_module, "V20CredManager", autospec=True
+        ) as mock_cred_mgr, async_mock.patch.object(
+            test_module.V20CredPreview, "deserialize", autospec=True
+        ) as mock_cred_preview_deser, async_mock.patch.object(
+            test_module.web, "json_response"
+        ) as mock_response:
+            mock_cred_mgr.return_value.create_offer = async_mock.CoroutineMock()
+
+            mock_cred_mgr.return_value.create_offer.return_value = (
+                async_mock.CoroutineMock(),
+                async_mock.CoroutineMock(),
+            )
+
+            mock_cx_rec = async_mock.MagicMock()
+            mock_cred_offer = async_mock.MagicMock()
+
+            mock_cred_mgr.return_value.prepare_send.return_value = (
+                mock_cx_rec,
+                mock_cred_offer,
+            )
+
+            await test_module.credential_exchange_create(self.request)
+
+            mock_response.assert_called_once_with(mock_cx_rec.serialize.return_value)
+
     async def test_credential_exchange_create_x(self):
         self.request.json = async_mock.CoroutineMock()
 
@@ -316,6 +348,38 @@ class TestV20CredRoutes(AsyncTestCase):
     async def test_credential_exchange_send(self):
         self.request.json = async_mock.CoroutineMock()
 
+        with async_mock.patch.object(
+            test_module, "ConnRecord", autospec=True
+        ) as mock_conn_rec, async_mock.patch.object(
+            test_module, "V20CredManager", autospec=True
+        ) as mock_cred_mgr, async_mock.patch.object(
+            test_module.V20CredPreview, "deserialize", autospec=True
+        ) as mock_cred_preview_deser, async_mock.patch.object(
+            test_module.web, "json_response"
+        ) as mock_response:
+            mock_cred_mgr.return_value.create_offer = async_mock.CoroutineMock()
+
+            mock_cred_mgr.return_value.create_offer.return_value = (
+                async_mock.CoroutineMock(),
+                async_mock.CoroutineMock(),
+            )
+
+            mock_cx_rec = async_mock.MagicMock()
+            mock_cred_offer = async_mock.MagicMock()
+
+            mock_cred_mgr.return_value.prepare_send.return_value = (
+                mock_cx_rec,
+                mock_cred_offer,
+            )
+
+            await test_module.credential_exchange_send(self.request)
+
+            mock_response.assert_called_once_with(mock_cx_rec.serialize.return_value)
+
+    async def test_credential_exchange_send_aip2(self):
+        self.request.json = async_mock.CoroutineMock()
+        self.context.profile.settings.set_value("emit_new_didcomm_mime_type", True)
+        self.context.profile.settings.set_value("emit_new_didcomm_prefix", True)
         with async_mock.patch.object(
             test_module, "ConnRecord", autospec=True
         ) as mock_conn_rec, async_mock.patch.object(
@@ -825,6 +889,40 @@ class TestV20CredRoutes(AsyncTestCase):
 
             mock_response.assert_called_once_with(mock_cx_rec.serialize.return_value)
 
+    async def test_credential_exchange_send_free_offer_aip2(self):
+        self.request.json = async_mock.CoroutineMock(
+            return_value={
+                "auto_issue": False,
+                "credential_preview": {
+                    "attributes": [{"name": "hello", "value": "world"}]
+                },
+                "filter": {"indy": {"schema_version": "1.0"}},
+            }
+        )
+        self.context.profile.settings.set_value("emit_new_didcomm_mime_type", True)
+        self.context.profile.settings.set_value("emit_new_didcomm_prefix", True)
+
+        with async_mock.patch.object(
+            test_module, "ConnRecord", autospec=True
+        ) as mock_conn_rec, async_mock.patch.object(
+            test_module, "V20CredManager", autospec=True
+        ) as mock_cred_mgr, async_mock.patch.object(
+            test_module.web, "json_response"
+        ) as mock_response:
+
+            mock_cred_mgr.return_value.create_offer = async_mock.CoroutineMock()
+
+            mock_cx_rec = async_mock.MagicMock()
+
+            mock_cred_mgr.return_value.create_offer.return_value = (
+                mock_cx_rec,
+                async_mock.MagicMock(),
+            )
+
+            await test_module.credential_exchange_send_free_offer(self.request)
+
+            mock_response.assert_called_once_with(mock_cx_rec.serialize.return_value)
+
     async def test_credential_exchange_send_free_offer_no_filter(self):
         self.request.json = async_mock.CoroutineMock(
             return_value={
@@ -904,6 +1002,39 @@ class TestV20CredRoutes(AsyncTestCase):
         self.request.json = async_mock.CoroutineMock(return_value={})
         self.request.match_info = {"cred_ex_id": "dummy"}
 
+        with async_mock.patch.object(
+            test_module, "ConnRecord", autospec=True
+        ) as mock_conn_rec, async_mock.patch.object(
+            test_module, "V20CredManager", autospec=True
+        ) as mock_cred_mgr, async_mock.patch.object(
+            test_module, "V20CredExRecord", autospec=True
+        ) as mock_cls_cx_rec, async_mock.patch.object(
+            test_module.web, "json_response"
+        ) as mock_response:
+
+            mock_cls_cx_rec.retrieve_by_id = async_mock.CoroutineMock()
+            mock_cls_cx_rec.retrieve_by_id.return_value.state = (
+                test_module.V20CredExRecord.STATE_PROPOSAL_RECEIVED
+            )
+
+            mock_cred_mgr.return_value.create_offer = async_mock.CoroutineMock()
+
+            mock_cx_rec = async_mock.MagicMock()
+
+            mock_cred_mgr.return_value.create_offer.return_value = (
+                mock_cx_rec,
+                async_mock.MagicMock(),
+            )
+
+            await test_module.credential_exchange_send_bound_offer(self.request)
+
+            mock_response.assert_called_once_with(mock_cx_rec.serialize.return_value)
+
+    async def test_credential_exchange_send_bound_offer_aip2(self):
+        self.request.json = async_mock.CoroutineMock(return_value={})
+        self.request.match_info = {"cred_ex_id": "dummy"}
+        self.context.profile.settings.set_value("emit_new_didcomm_mime_type", True)
+        self.context.profile.settings.set_value("emit_new_didcomm_prefix", True)
         with async_mock.patch.object(
             test_module, "ConnRecord", autospec=True
         ) as mock_conn_rec, async_mock.patch.object(
@@ -1147,6 +1278,35 @@ class TestV20CredRoutes(AsyncTestCase):
             }
         )
 
+        with async_mock.patch.object(
+            test_module, "ConnRecord", autospec=True
+        ) as mock_conn_rec, async_mock.patch.object(
+            test_module, "V20CredManager", autospec=True
+        ) as mock_cred_mgr, async_mock.patch.object(
+            test_module.web, "json_response"
+        ) as mock_response:
+
+            mock_cred_mgr.return_value.create_request = async_mock.CoroutineMock()
+
+            mock_cx_rec = async_mock.MagicMock()
+
+            mock_cred_mgr.return_value.create_request.return_value = (
+                mock_cx_rec,
+                async_mock.MagicMock(),
+            )
+
+            await test_module.credential_exchange_send_free_request(self.request)
+
+            mock_response.assert_called_once_with(mock_cx_rec.serialize.return_value)
+
+    async def test_credential_exchange_send_free_request_aip2(self):
+        self.request.json = async_mock.CoroutineMock(
+            return_value={
+                "filter": {"ld_proof": {"credential": {}, "options": {}}},
+            }
+        )
+        self.context.profile.settings.set_value("emit_new_didcomm_mime_type", True)
+        self.context.profile.settings.set_value("emit_new_didcomm_prefix", True)
         with async_mock.patch.object(
             test_module, "ConnRecord", autospec=True
         ) as mock_conn_rec, async_mock.patch.object(

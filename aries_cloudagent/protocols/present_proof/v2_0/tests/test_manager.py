@@ -301,6 +301,39 @@ class TestV20PresManager(AsyncTestCase):
         assert ret_px_rec is px_rec
         px_rec.save.assert_called_once()
 
+    async def test_create_bound_request_aip2(self):
+        self.profile.settings["emit_new_didcomm_mime_type"] = True
+        self.profile.settings["emit_new_didcomm_prefix"] = True
+
+        comment = "comment"
+        proposal = V20PresProposal(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy",
+                    format_=ATTACHMENT_FORMAT[PRES_20_PROPOSAL][
+                        V20PresFormat.Format.INDY.api
+                    ],
+                )
+            ],
+            proposals_attach=[
+                AttachDecorator.data_base64(INDY_PROOF_REQ_NAME, ident="indy")
+            ],
+        )
+        px_rec = V20PresExRecord(
+            pres_proposal=proposal.serialize(),
+            role=V20PresExRecord.ROLE_VERIFIER,
+        )
+        px_rec.save = async_mock.CoroutineMock()
+        (ret_px_rec, pres_req_msg) = await self.manager.create_bound_request(
+            pres_ex_record=px_rec,
+            name=PROOF_REQ_NAME,
+            version=PROOF_REQ_VERSION,
+            nonce=PROOF_REQ_NONCE,
+            comment=comment,
+        )
+        assert ret_px_rec is px_rec
+        px_rec.save.assert_called_once()
+
     async def test_create_exchange_for_request(self):
         request = async_mock.MagicMock()
         request.indy_proof_request = async_mock.MagicMock()
@@ -325,6 +358,55 @@ class TestV20PresManager(AsyncTestCase):
             assert px_rec_out.state == V20PresExRecord.STATE_REQUEST_RECEIVED
 
     async def test_create_pres(self):
+        pres_request = V20PresRequest(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy",
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.INDY.api
+                    ],
+                )
+            ],
+            request_presentations_attach=[
+                AttachDecorator.data_base64(INDY_PROOF_REQ_NAME, ident="indy")
+            ],
+        )
+        px_rec_in = V20PresExRecord(pres_request=pres_request.serialize())
+        more_magic_rr = async_mock.MagicMock(
+            get_or_fetch_local_tails_path=async_mock.CoroutineMock(
+                return_value="/tmp/sample/tails/path"
+            )
+        )
+        with async_mock.patch.object(
+            V20PresExRecord, "save", autospec=True
+        ) as save_ex, async_mock.patch.object(
+            test_module, "AttachDecorator", autospec=True
+        ) as mock_attach_decorator, async_mock.patch.object(
+            test_module, "RevocationRegistry", autospec=True
+        ) as mock_rr:
+            mock_rr.from_definition = async_mock.MagicMock(return_value=more_magic_rr)
+
+            mock_attach_decorator.data_base64 = async_mock.MagicMock(
+                return_value=mock_attach_decorator
+            )
+
+            req_creds = await indy_proof_req_preview2indy_requested_creds(
+                INDY_PROOF_REQ_NAME, preview=None, holder=self.holder
+            )
+            assert not req_creds["self_attested_attributes"]
+            assert len(req_creds["requested_attributes"]) == 2
+            assert len(req_creds["requested_predicates"]) == 1
+
+            (px_rec_out, pres_msg) = await self.manager.create_pres(
+                px_rec_in, req_creds
+            )
+            save_ex.assert_called_once()
+            assert px_rec_out.state == V20PresExRecord.STATE_PRESENTATION_SENT
+
+    async def test_create_pres_aip2(self):
+        self.profile.settings["emit_new_didcomm_mime_type"] = True
+        self.profile.settings["emit_new_didcomm_prefix"] = True
+
         pres_request = V20PresRequest(
             formats=[
                 V20PresFormat(

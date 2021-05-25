@@ -260,6 +260,27 @@ class TestPresentationManager(AsyncTestCase):
         assert ret_exchange is exchange
         exchange.save.assert_called_once()
 
+    async def test_create_bound_request_aip2(self):
+        self.profile.settings["emit_new_didcomm_mime_type"] = True
+        self.profile.settings["emit_new_didcomm_prefix"] = True
+
+        comment = "comment"
+        proposal = PresentationProposal(presentation_proposal=PRES_PREVIEW)
+        exchange = V10PresentationExchange(
+            presentation_proposal_dict=proposal.serialize(),
+            role=V10PresentationExchange.ROLE_VERIFIER,
+        )
+        exchange.save = async_mock.CoroutineMock()
+        (ret_exchange, pres_req_msg) = await self.manager.create_bound_request(
+            presentation_exchange_record=exchange,
+            name=PROOF_REQ_NAME,
+            version=PROOF_REQ_VERSION,
+            nonce=PROOF_REQ_NONCE,
+            comment=comment,
+        )
+        assert ret_exchange is exchange
+        exchange.save.assert_called_once()
+
     async def test_create_exchange_for_request(self):
         request = async_mock.MagicMock()
         request.indy_proof_request = async_mock.MagicMock()
@@ -288,6 +309,51 @@ class TestPresentationManager(AsyncTestCase):
             assert exchange_out.state == V10PresentationExchange.STATE_REQUEST_RECEIVED
 
     async def test_create_presentation(self):
+        exchange_in = V10PresentationExchange()
+        indy_proof_req = await PRES_PREVIEW.indy_proof_request(
+            name=PROOF_REQ_NAME,
+            version=PROOF_REQ_VERSION,
+            nonce=PROOF_REQ_NONCE,
+            ledger=self.ledger,
+        )
+
+        exchange_in.presentation_request = indy_proof_req
+
+        more_magic_rr = async_mock.MagicMock(
+            get_or_fetch_local_tails_path=async_mock.CoroutineMock(
+                return_value="/tmp/sample/tails/path"
+            )
+        )
+        with async_mock.patch.object(
+            V10PresentationExchange, "save", autospec=True
+        ) as save_ex, async_mock.patch.object(
+            test_module, "AttachDecorator", autospec=True
+        ) as mock_attach_decorator, async_mock.patch.object(
+            test_module, "RevocationRegistry", autospec=True
+        ) as mock_rr:
+            mock_rr.from_definition = async_mock.MagicMock(return_value=more_magic_rr)
+
+            mock_attach_decorator.data_base64 = async_mock.MagicMock(
+                return_value=mock_attach_decorator
+            )
+
+            req_creds = await indy_proof_req_preview2indy_requested_creds(
+                indy_proof_req, holder=self.holder
+            )
+            assert not req_creds["self_attested_attributes"]
+            assert len(req_creds["requested_attributes"]) == 2
+            assert len(req_creds["requested_predicates"]) == 1
+
+            (exchange_out, pres_msg) = await self.manager.create_presentation(
+                exchange_in, req_creds
+            )
+            save_ex.assert_called_once()
+            assert exchange_out.state == V10PresentationExchange.STATE_PRESENTATION_SENT
+
+    async def test_create_presentation_aip2(self):
+        self.profile.settings["emit_new_didcomm_mime_type"] = True
+        self.profile.settings["emit_new_didcomm_prefix"] = True
+
         exchange_in = V10PresentationExchange()
         indy_proof_req = await PRES_PREVIEW.indy_proof_request(
             name=PROOF_REQ_NAME,

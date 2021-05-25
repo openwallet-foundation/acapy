@@ -261,6 +261,34 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             didx_req = await self.manager.create_request(mock_conn_rec)
             assert didx_req
 
+    async def test_create_request_aip2(self):
+        self.session.profile.settings["emit_new_didcomm_mime_type"] = True
+        self.session.profile.settings["emit_new_didcomm_prefix"] = True
+        mock_conn_rec = async_mock.MagicMock(
+            connection_id="dummy",
+            my_did=self.did_info.did,
+            their_did=TestConfig.test_target_did,
+            their_role=ConnRecord.Role.RESPONDER.rfc23,
+            state=ConnRecord.State.REQUEST.rfc23,
+            retrieve_invitation=async_mock.CoroutineMock(
+                return_value=async_mock.MagicMock(
+                    service_blocks=None,
+                    service_dids=[TestConfig.test_target_did],
+                )
+            ),
+            save=async_mock.CoroutineMock(),
+        )
+
+        with async_mock.patch.object(
+            self.manager, "create_did_document", async_mock.CoroutineMock()
+        ) as mock_create_did_doc:
+            mock_create_did_doc.return_value = async_mock.MagicMock(
+                serialize=async_mock.MagicMock(return_value={})
+            )
+
+            didx_req = await self.manager.create_request(mock_conn_rec)
+            assert didx_req
+
     async def test_create_request_multitenant(self):
         self.context.update_settings(
             {"multitenant.enabled": True, "wallet.id": "test_wallet"}
@@ -1319,6 +1347,37 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 )
 
     async def test_create_response(self):
+        conn_rec = ConnRecord(
+            connection_id="dummy", state=ConnRecord.State.REQUEST.rfc23
+        )
+
+        with async_mock.patch.object(
+            test_module.ConnRecord, "retrieve_request", async_mock.CoroutineMock()
+        ) as mock_retrieve_req, async_mock.patch.object(
+            conn_rec, "save", async_mock.CoroutineMock()
+        ) as mock_save, async_mock.patch.object(
+            test_module, "DIDDoc", autospec=True
+        ) as mock_did_doc, async_mock.patch.object(
+            test_module, "AttachDecorator", autospec=True
+        ) as mock_attach_deco, async_mock.patch.object(
+            test_module, "DIDXResponse", autospec=True
+        ) as mock_response, async_mock.patch.object(
+            self.manager, "create_did_document", async_mock.CoroutineMock()
+        ) as mock_create_did_doc:
+            mock_create_did_doc.return_value = async_mock.MagicMock(
+                serialize=async_mock.MagicMock()
+            )
+            mock_attach_deco.data_base64 = async_mock.MagicMock(
+                return_value=async_mock.MagicMock(
+                    data=async_mock.MagicMock(sign=async_mock.CoroutineMock())
+                )
+            )
+
+            await self.manager.create_response(conn_rec, "http://10.20.30.40:5060/")
+
+    async def test_create_response_aip2(self):
+        self.session.profile.settings["emit_new_didcomm_mime_type"] = True
+        self.session.profile.settings["emit_new_didcomm_prefix"] = True
         conn_rec = ConnRecord(
             connection_id="dummy", state=ConnRecord.State.REQUEST.rfc23
         )

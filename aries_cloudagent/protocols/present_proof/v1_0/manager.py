@@ -150,10 +150,13 @@ class PresentationManager:
                     AttachDecorator.data_base64(
                         mapping=indy_proof_request,
                         ident=ATTACH_DECO_IDS[PRESENTATION_REQUEST],
-                        flag_aip2=True,
+                        aip2_flag=True,
                     )
-                    if self._profile.settings.get("emit_new_didcomm_mime_type")
-                    and self._profile.get("emit_new_didcomm_prefix")
+                    # if self._profile.settings.get_value("aip_version", 1) >= 2
+                    if (
+                        self._profile.settings.get_value("emit_new_didcomm_mime_type")
+                        and self._profile.settings.get_value("emit_new_didcomm_prefix")
+                    )
                     else AttachDecorator.data_base64(
                         mapping=indy_proof_request,
                         ident=ATTACH_DECO_IDS[PRESENTATION_REQUEST],
@@ -440,10 +443,13 @@ class PresentationManager:
                     AttachDecorator.data_base64(
                         mapping=indy_proof,
                         ident=ATTACH_DECO_IDS[PRESENTATION],
-                        flag_aip2=True,
+                        aip2_flag=True,
                     )
-                    if self._profile.settings.get("emit_new_didcomm_mime_type")
-                    and self._profile.get("emit_new_didcomm_prefix")
+                    # if self._profile.settings.get_value("aip_version", 1) >= 2
+                    if (
+                        self._profile.settings.get_value("emit_new_didcomm_mime_type")
+                        and self._profile.settings.get_value("emit_new_didcomm_prefix")
+                    )
                     else AttachDecorator.data_base64(
                         mapping=indy_proof, ident=ATTACH_DECO_IDS[PRESENTATION]
                     )

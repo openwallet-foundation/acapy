@@ -61,13 +61,13 @@ class CredentialRequest(AgentMessage):
 
     @classmethod
     def wrap_indy_cred_req(
-        cls, indy_cred_req: dict, flag_aip2: bool = False
+        cls, indy_cred_req: dict, aip2_flag: bool = False
     ) -> AttachDecorator:
         """Convert an indy credential request to an attachment decorator."""
         return AttachDecorator.data_base64(
             mapping=indy_cred_req,
             ident=ATTACH_DECO_IDS[CREDENTIAL_REQUEST],
-            flag_aip2=flag_aip2,
+            aip2_flag=aip2_flag,
         )
 
 

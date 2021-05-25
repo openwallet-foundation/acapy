@@ -446,9 +446,10 @@ async def presentation_exchange_create_request(request: web.BaseRequest):
 
     comment = body.get("comment")
     indy_proof_request = body.get("proof_request")
-    flag_aip2 = context.profile.settings.get(
+    # aip2_flag = (context.profile.settings.get_value("aip_version", 1) >= 2)
+    aip2_flag = context.profile.settings.get_value(
         "emit_new_didcomm_mime_type"
-    ) and context.profile.get("emit_new_didcomm_prefix")
+    ) and context.profile.settings.get_value("emit_new_didcomm_prefix")
     if not indy_proof_request.get("nonce"):
         indy_proof_request["nonce"] = await generate_pr_nonce()
 
@@ -459,9 +460,9 @@ async def presentation_exchange_create_request(request: web.BaseRequest):
                 AttachDecorator.data_base64(
                     mapping=indy_proof_request,
                     ident=ATTACH_DECO_IDS[PRESENTATION_REQUEST],
-                    flag_aip2=flag_aip2,
+                    aip2_flag=aip2_flag,
                 )
-                if flag_aip2
+                if aip2_flag
                 else AttachDecorator.data_base64(
                     mapping=indy_proof_request,
                     ident=ATTACH_DECO_IDS[PRESENTATION_REQUEST],
@@ -536,9 +537,10 @@ async def presentation_exchange_send_free_request(request: web.BaseRequest):
 
     comment = body.get("comment")
     indy_proof_request = body.get("proof_request")
-    flag_aip2 = context.profile.settings.get(
+    # aip2_flag = (context.profile.settings.get_value("aip_version", 1) >= 2)
+    aip2_flag = context.profile.settings.get_value(
         "emit_new_didcomm_mime_type"
-    ) and context.profile.get("emit_new_didcomm_prefix")
+    ) and context.profile.settings.get_value("emit_new_didcomm_prefix")
     if not indy_proof_request.get("nonce"):
         indy_proof_request["nonce"] = await generate_pr_nonce()
 
@@ -549,9 +551,9 @@ async def presentation_exchange_send_free_request(request: web.BaseRequest):
                 AttachDecorator.data_base64(
                     mapping=indy_proof_request,
                     ident=ATTACH_DECO_IDS[PRESENTATION_REQUEST],
-                    flag_aip2=flag_aip2,
+                    aip2_flag=aip2_flag,
                 )
-                if flag_aip2
+                if aip2_flag
                 else AttachDecorator.data_base64(
                     mapping=indy_proof_request,
                     ident=ATTACH_DECO_IDS[PRESENTATION_REQUEST],

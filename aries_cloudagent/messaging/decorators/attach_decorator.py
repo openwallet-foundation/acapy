@@ -571,7 +571,7 @@ class AttachDecorator(BaseModel):
         cls,
         mapping: Mapping,
         *,
-        flag_aip2: bool = False,
+        aip2_flag: bool = False,
         ident: str = None,
         description: str = None,
         filename: str = None,
@@ -591,10 +591,10 @@ class AttachDecorator(BaseModel):
             filename: optional attachment filename
             lastmod_time: optional attachment last modification time
             byte_count: optional attachment byte count
-            flag_aip2: whether attach base64url encoded data
+            aip2_flag: whether attach base64url encoded data
 
         """
-        if flag_aip2:
+        if aip2_flag:
             b64_attach = bytes_to_b64(json.dumps(mapping).encode(), urlsafe=True)
         else:
             b64_attach = bytes_to_b64(json.dumps(mapping).encode())

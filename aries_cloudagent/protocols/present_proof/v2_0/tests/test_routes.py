@@ -396,6 +396,40 @@ class TestPresentProofRoutes(AsyncTestCase):
                 mock_px_rec_inst.serialize.return_value
             )
 
+    async def test_present_proof_send_proposal_aip2(self):
+        self.profile.settings.set_value("emit_new_didcomm_mime_type", True)
+        self.profile.settings.set_value("emit_new_didcomm_prefix", True)
+        self.request.json = async_mock.CoroutineMock(
+            return_value={
+                "connection_id": "dummy-conn-id",
+                "presentation_proposal": {
+                    V20PresFormat.Format.INDY.api: INDY_PROOF_REQ
+                },
+            }
+        )
+
+        with async_mock.patch.object(
+            test_module, "ConnRecord", autospec=True
+        ) as mock_conn_rec, async_mock.patch.object(
+            test_module, "V20PresManager", autospec=True
+        ) as mock_pres_mgr, async_mock.patch.object(
+            test_module, "V20PresExRecord", autospec=True
+        ) as mock_pres_ex_rec_cls, async_mock.patch.object(
+            test_module.web, "json_response", async_mock.MagicMock()
+        ) as mock_response:
+            mock_conn_rec.retrieve_by_id = async_mock.CoroutineMock(
+                return_value=async_mock.MagicMock(is_ready=True)
+            )
+            mock_px_rec_inst = async_mock.MagicMock()
+            mock_pres_mgr.return_value.create_exchange_for_proposal = (
+                async_mock.CoroutineMock(return_value=mock_px_rec_inst)
+            )
+
+            await test_module.present_proof_send_proposal(self.request)
+            mock_response.assert_called_once_with(
+                mock_px_rec_inst.serialize.return_value
+            )
+
     async def test_present_proof_send_proposal_no_conn_record(self):
         self.request.json = async_mock.CoroutineMock()
 
@@ -474,6 +508,43 @@ class TestPresentProofRoutes(AsyncTestCase):
                 mock_px_rec_inst.serialize.return_value
             )
 
+    async def test_present_proof_create_request_aip2(self):
+        self.profile.settings.set_value("emit_new_didcomm_mime_type", True)
+        self.profile.settings.set_value("emit_new_didcomm_prefix", True)
+        indy_proof_req = deepcopy(INDY_PROOF_REQ)
+        indy_proof_req.pop("nonce")  # exercise _add_nonce()
+
+        self.request.json = async_mock.CoroutineMock(
+            return_value={
+                "comment": "dummy",
+                "presentation_request": {V20PresFormat.Format.INDY.api: indy_proof_req},
+            }
+        )
+
+        with async_mock.patch.object(
+            test_module, "V20PresManager", autospec=True
+        ) as mock_pres_mgr_cls, async_mock.patch.object(
+            test_module, "V20PresRequest", autospec=True
+        ) as mock_pres_request, async_mock.patch.object(
+            test_module.web, "json_response", async_mock.MagicMock()
+        ) as mock_response:
+            mock_px_rec_inst = async_mock.MagicMock(
+                serialize=async_mock.MagicMock(
+                    return_value={"thread_id": "sample-thread-id"}
+                )
+            )
+            mock_pres_mgr_inst = async_mock.MagicMock(
+                create_exchange_for_request=async_mock.CoroutineMock(
+                    return_value=mock_px_rec_inst
+                )
+            )
+            mock_pres_mgr_cls.return_value = mock_pres_mgr_inst
+
+            await test_module.present_proof_create_request(self.request)
+            mock_response.assert_called_once_with(
+                mock_px_rec_inst.serialize.return_value
+            )
+
     async def test_present_proof_create_request_x(self):
         self.request.json = async_mock.CoroutineMock(
             return_value={
@@ -501,6 +572,45 @@ class TestPresentProofRoutes(AsyncTestCase):
                 await test_module.present_proof_create_request(self.request)
 
     async def test_present_proof_send_free_request(self):
+        self.request.json = async_mock.CoroutineMock(
+            return_value={
+                "connection_id": "dummy",
+                "comment": "dummy",
+                "presentation_request": {V20PresFormat.Format.INDY.api: INDY_PROOF_REQ},
+            }
+        )
+
+        with async_mock.patch.object(
+            test_module, "ConnRecord", autospec=True
+        ) as mock_conn_rec_cls, async_mock.patch.object(
+            test_module, "V20PresManager", autospec=True
+        ) as mock_pres_mgr_cls, async_mock.patch.object(
+            test_module, "V20PresRequest", autospec=True
+        ) as mock_pres_request, async_mock.patch.object(
+            test_module, "V20PresExRecord", autospec=True
+        ) as mock_pres_ex_rec_cls, async_mock.patch.object(
+            test_module.web, "json_response", async_mock.MagicMock()
+        ) as mock_response:
+            mock_conn_rec_cls.retrieve_by_id = async_mock.CoroutineMock()
+            mock_px_rec_inst = async_mock.MagicMock(
+                serialize=async_mock.MagicMock({"thread_id": "sample-thread-id"})
+            )
+
+            mock_pres_mgr_inst = async_mock.MagicMock(
+                create_exchange_for_request=async_mock.CoroutineMock(
+                    return_value=mock_px_rec_inst
+                )
+            )
+            mock_pres_mgr_cls.return_value = mock_pres_mgr_inst
+
+            await test_module.present_proof_send_free_request(self.request)
+            mock_response.assert_called_once_with(
+                mock_px_rec_inst.serialize.return_value
+            )
+
+    async def test_present_proof_send_free_request_aip2(self):
+        self.profile.settings.set_value("emit_new_didcomm_mime_type", True)
+        self.profile.settings.set_value("emit_new_didcomm_prefix", True)
         self.request.json = async_mock.CoroutineMock(
             return_value={
                 "connection_id": "dummy",

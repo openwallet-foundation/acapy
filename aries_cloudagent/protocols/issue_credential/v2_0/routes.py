@@ -356,7 +356,7 @@ class V20CredExIdMatchInfoSchema(OpenAPISchema):
     )
 
 
-def _formats_filters(filt_spec: Mapping, flag_aip2: bool = False) -> Mapping:
+def _formats_filters(filt_spec: Mapping, aip2_flag: bool = False) -> Mapping:
     """Break out formats and filters for v2.0 cred proposal messages."""
 
     return (
@@ -371,9 +371,9 @@ def _formats_filters(filt_spec: Mapping, flag_aip2: bool = False) -> Mapping:
             "filters_attach": [
                 (
                     AttachDecorator.data_base64(
-                        filt_by_fmt, ident=fmt_api, flag_aip2=flag_aip2
+                        filt_by_fmt, ident=fmt_api, aip2_flag=aip2_flag
                     )
-                    if flag_aip2
+                    if aip2_flag
                     else AttachDecorator.data_base64(filt_by_fmt, ident=fmt_api)
                 )
                 for (fmt_api, filt_by_fmt) in filt_spec.items()
@@ -516,9 +516,10 @@ async def credential_exchange_create(request: web.BaseRequest):
     if not filt_spec:
         raise web.HTTPBadRequest(reason="Missing filter")
     trace_msg = body.get("trace")
-    flag_aip2 = context.profile.settings.get(
+    # aip2_flag = (context.profile.settings.get_value("aip_version", 1) >= 2)
+    aip2_flag = context.profile.settings.get_value(
         "emit_new_didcomm_mime_type"
-    ) and context.profile.get("emit_new_didcomm_prefix")
+    ) and context.profile.settings.get_value("emit_new_didcomm_prefix")
 
     try:
         # Not all formats use credential preview
@@ -528,7 +529,7 @@ async def credential_exchange_create(request: web.BaseRequest):
         cred_proposal = V20CredProposal(
             comment=comment,
             credential_preview=cred_preview,
-            **_formats_filters(filt_spec, flag_aip2=flag_aip2),
+            **_formats_filters(filt_spec, aip2_flag=aip2_flag),
         )
         cred_proposal.assign_trace_decorator(
             context.settings,
@@ -596,9 +597,10 @@ async def credential_exchange_send(request: web.BaseRequest):
     preview_spec = body.get("credential_preview")
     auto_remove = body.get("auto_remove")
     trace_msg = body.get("trace")
-    flag_aip2 = context.profile.settings.get(
+    # aip2_flag = (context.profile.settings.get_value("aip_version", 1) >= 2)
+    aip2_flag = context.profile.settings.get_value(
         "emit_new_didcomm_mime_type"
-    ) and context.profile.get("emit_new_didcomm_prefix")
+    ) and context.profile.settings.get_value("emit_new_didcomm_prefix")
 
     conn_record = None
     cred_ex_record = None
@@ -617,7 +619,7 @@ async def credential_exchange_send(request: web.BaseRequest):
         cred_proposal = V20CredProposal(
             comment=comment,
             credential_preview=cred_preview,
-            **_formats_filters(filt_spec, flag_aip2=flag_aip2),
+            **_formats_filters(filt_spec, aip2_flag=aip2_flag),
         )
         cred_proposal.assign_trace_decorator(
             context.settings,
@@ -761,13 +763,14 @@ async def _create_free_offer(
     """Create a credential offer and related exchange record."""
 
     cred_preview = V20CredPreview.deserialize(preview_spec) if preview_spec else None
-    flag_aip2 = profile.settings.get("emit_new_didcomm_mime_type") and profile.get(
-        "emit_new_didcomm_prefix"
-    )
+    # aip2_flag = (profile.settings.get_value("aip_version", 1) >= 2)
+    aip2_flag = profile.settings.get_value(
+        "emit_new_didcomm_mime_type"
+    ) and profile.settings.get_value("emit_new_didcomm_prefix")
     cred_proposal = V20CredProposal(
         comment=comment,
         credential_preview=cred_preview,
-        **_formats_filters(filt_spec, flag_aip2=flag_aip2),
+        **_formats_filters(filt_spec, aip2_flag=aip2_flag),
     )
     cred_proposal.assign_trace_decorator(
         profile.settings,
@@ -1012,9 +1015,10 @@ async def credential_exchange_send_bound_offer(request: web.BaseRequest):
     preview_spec = body.get("counter_preview")
 
     cred_ex_id = request.match_info["cred_ex_id"]
-    flag_aip2 = context.profile.settings.get(
+    # aip2_flag = (context.profile.settings.get_value("aip_version", 1) >= 2)
+    aip2_flag = context.profile.settings.get_value(
         "emit_new_didcomm_mime_type"
-    ) and context.profile.get("emit_new_didcomm_prefix")
+    ) and context.profile.settings.get_value("emit_new_didcomm_prefix")
 
     cred_ex_record = None
     conn_record = None
@@ -1048,7 +1052,7 @@ async def credential_exchange_send_bound_offer(request: web.BaseRequest):
             counter_proposal=V20CredProposal(
                 comment=None,
                 credential_preview=(V20CredPreview.deserialize(preview_spec)),
-                **_formats_filters(filt_spec, flag_aip2=flag_aip2),
+                **_formats_filters(filt_spec, aip2_flag=aip2_flag),
             )
             if preview_spec
             else None,
@@ -1120,9 +1124,10 @@ async def credential_exchange_send_free_request(request: web.BaseRequest):
         raise web.HTTPBadRequest(reason="Missing filter")
     auto_remove = body.get("auto_remove")
     trace_msg = body.get("trace")
-    flag_aip2 = context.profile.settings.get(
+    # aip2_flag = (context.profile.settings.get_value("aip_version", 1) >= 2)
+    aip2_flag = context.profile.settings.get_value(
         "emit_new_didcomm_mime_type"
-    ) and context.profile.get("emit_new_didcomm_prefix")
+    ) and context.profile.settings.get_value("emit_new_didcomm_prefix")
 
     conn_record = None
     cred_ex_record = None
@@ -1141,7 +1146,7 @@ async def credential_exchange_send_free_request(request: web.BaseRequest):
 
         cred_proposal = V20CredProposal(
             comment=comment,
-            **_formats_filters(filt_spec, flag_aip2=flag_aip2),
+            **_formats_filters(filt_spec, aip2_flag=aip2_flag),
         )
 
         cred_ex_record = V20CredExRecord(

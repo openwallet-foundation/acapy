@@ -289,9 +289,10 @@ class CredentialManager:
             credential_preview=credential_preview,
             offers_attach=[
                 (
-                    CredentialOffer.wrap_indy_offer(credential_offer, flag_aip2=True)
-                    if self._profile.settings.get("emit_new_didcomm_mime_type")
-                    and self._profile.get("emit_new_didcomm_prefix")
+                    CredentialOffer.wrap_indy_offer(credential_offer, aip2_flag=True)
+                    # if self._profile.settings.get_value("aip_version", 1) >= 2
+                    if self._profile.settings.get_value("emit_new_didcomm_mime_type")
+                    and self._profile.settings.get_value("emit_new_didcomm_prefix")
                     else CredentialOffer.wrap_indy_offer(credential_offer)
                 )
             ],
@@ -446,10 +447,11 @@ class CredentialManager:
             requests_attach=[
                 (
                     CredentialRequest.wrap_indy_cred_req(
-                        cred_ex_record.credential_request, flag_aip2=True
+                        cred_ex_record.credential_request, aip2_flag=True
                     )
-                    if self._profile.settings.get("emit_new_didcomm_mime_type")
-                    and self._profile.get("emit_new_didcomm_prefix")
+                    # if self._profile.settings.get_value("aip_version", 1) >= 2
+                    if self._profile.settings.get_value("emit_new_didcomm_mime_type")
+                    and self._profile.settings.get_value("emit_new_didcomm_prefix")
                     else CredentialRequest.wrap_indy_cred_req(
                         cred_ex_record.credential_request
                     )
@@ -678,10 +680,11 @@ class CredentialManager:
             credentials_attach=[
                 (
                     CredentialIssue.wrap_indy_credential(
-                        cred_ex_record.credential, flag_aip2=True
+                        cred_ex_record.credential, aip2_flag=True
                     )
-                    if self._profile.settings.get("emit_new_didcomm_mime_type")
-                    and self._profile.get("emit_new_didcomm_prefix")
+                    # if self._profile.settings.get_value("aip_version", 1) >= 2
+                    if self._profile.settings.get_value("emit_new_didcomm_mime_type")
+                    and self._profile.settings.get_value("emit_new_didcomm_prefix")
                     else CredentialIssue.wrap_indy_credential(cred_ex_record.credential)
                 )
             ],

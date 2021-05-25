@@ -162,10 +162,13 @@ class V20PresManager:
                     AttachDecorator.data_base64(
                         mapping=indy_proof_request,
                         ident="indy",
-                        flag_aip2=True,
+                        aip2_flag=True,
                     )
-                    if self._profile.settings.get("emit_new_didcomm_mime_type")
-                    and self._profile.get("emit_new_didcomm_prefix")
+                    # if self._profile.settings.get_value("aip_version", 1) >= 2
+                    if (
+                        self._profile.settings.get_value("emit_new_didcomm_mime_type")
+                        and self._profile.settings.get_value("emit_new_didcomm_prefix")
+                    )
                     else AttachDecorator.data_base64(
                         mapping=indy_proof_request,
                         ident="indy",
@@ -452,10 +455,13 @@ class V20PresManager:
             presentations_attach=[
                 (
                     AttachDecorator.data_base64(
-                        mapping=indy_proof, ident="indy", flag_aip2=True
+                        mapping=indy_proof, ident="indy", aip2_flag=True
                     )
-                    if self._profile.settings.get("emit_new_didcomm_mime_type")
-                    and self._profile.get("emit_new_didcomm_prefix")
+                    # if self._profile.settings.get_value("aip_version", 1) >= 2
+                    if (
+                        self._profile.settings.get_value("emit_new_didcomm_mime_type")
+                        and self._profile.settings.get_value("emit_new_didcomm_prefix")
+                    )
                     else AttachDecorator.data_base64(mapping=indy_proof, ident="indy")
                 )
             ],
@@ -480,10 +486,13 @@ class V20PresManager:
                     AttachDecorator.data_base64(
                         mapping=indy_proof,
                         ident="indy",
-                        flag_aip2=True,
+                        aip2_flag=True,
                     )
-                    if self._profile.settings.get("emit_new_didcomm_mime_type")
-                    and self._profile.get("emit_new_didcomm_prefix")
+                    # if self._profile.settings.get_value("aip_version", 1) >= 2
+                    if (
+                        self._profile.settings.get_value("emit_new_didcomm_mime_type")
+                        and self._profile.settings.get_value("emit_new_didcomm_prefix")
+                    )
                     else AttachDecorator.data_base64(
                         mapping=indy_proof,
                         ident="indy",

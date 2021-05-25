@@ -64,13 +64,13 @@ class CredentialOffer(AgentMessage):
 
     @classmethod
     def wrap_indy_offer(
-        cls, indy_offer: dict, flag_aip2: bool = False
+        cls, indy_offer: dict, aip2_flag: bool = False
     ) -> AttachDecorator:
         """Convert an indy credential offer to an attachment decorator."""
         return AttachDecorator.data_base64(
             mapping=indy_offer,
             ident=ATTACH_DECO_IDS[CREDENTIAL_OFFER],
-            flag_aip2=flag_aip2,
+            aip2_flag=aip2_flag,
         )
 
 
