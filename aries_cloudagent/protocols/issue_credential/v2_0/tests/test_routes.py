@@ -1302,13 +1302,14 @@ class TestV20CredRoutes(AsyncTestCase):
             mock_response.assert_called_once_with(mock_cx_rec.serialize.return_value)
 
     async def test_credential_exchange_send_free_request_aip2(self):
-        self.request.json = async_mock.CoroutineMock(
-            return_value={
-                "filter": {"ld_proof": {"credential": {}, "options": {}}},
-            }
-        )
         self.context.profile.settings.set_value("emit_new_didcomm_mime_type", True)
         self.context.profile.settings.set_value("emit_new_didcomm_prefix", True)
+        self.request.json = async_mock.CoroutineMock(
+            return_value={
+                "filter": {"ld_proof": LD_PROOF_VC_DETAIL},
+            }
+        )
+
         with async_mock.patch.object(
             test_module, "ConnRecord", autospec=True
         ) as mock_conn_rec, async_mock.patch.object(

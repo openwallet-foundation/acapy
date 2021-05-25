@@ -357,11 +357,9 @@ class TestCredentialManager(AsyncTestCase):
             self.cache = InMemoryCache()
             self.context.injector.bind_instance(BaseCache, self.cache)
 
-            cred_offer = {"cred_def_id": CRED_DEF_ID, "schema_id": SCHEMA_ID}
-
             issuer = async_mock.MagicMock(IndyIssuer, autospec=True)
             issuer.create_credential_offer = async_mock.CoroutineMock(
-                return_value=json.dumps(cred_offer)
+                return_value=json.dumps(INDY_OFFER)
             )
             self.context.injector.bind_instance(IndyIssuer, issuer)
 
@@ -396,7 +394,7 @@ class TestCredentialManager(AsyncTestCase):
             assert exchange.role == V10CredentialExchange.ROLE_ISSUER
             assert exchange.schema_id == SCHEMA_ID
             assert exchange.state == V10CredentialExchange.STATE_OFFER_SENT
-            assert exchange.credential_offer == cred_offer
+            assert exchange._credential_offer.ser == INDY_OFFER
 
             (ret_exchange, ret_offer) = await self.manager.create_offer(
                 cred_ex_record=exchange,
@@ -724,13 +722,6 @@ class TestCredentialManager(AsyncTestCase):
         self.session.profile.settings["emit_new_didcomm_mime_type"] = True
         self.session.profile.settings["emit_new_didcomm_prefix"] = True
         connection_id = "test_conn_id"
-        nonce = "0"
-        indy_offer = {
-            "schema_id": SCHEMA_ID,
-            "cred_def_id": CRED_DEF_ID,
-            "nonce": nonce,
-        }
-        indy_cred_req = {"schema_id": SCHEMA_ID, "cred_def_id": CRED_DEF_ID}
         thread_id = "thread-id"
         holder_did = "did"
 
@@ -738,7 +729,7 @@ class TestCredentialManager(AsyncTestCase):
             credential_exchange_id="dummy-cxid",
             connection_id=connection_id,
             credential_definition_id=CRED_DEF_ID,
-            credential_offer=indy_offer,
+            credential_offer=INDY_OFFER,
             initiator=V10CredentialExchange.INITIATOR_SELF,
             role=V10CredentialExchange.ROLE_HOLDER,
             state=V10CredentialExchange.STATE_OFFER_RECEIVED,
@@ -760,7 +751,7 @@ class TestCredentialManager(AsyncTestCase):
             cred_req_meta = {}
             holder = async_mock.MagicMock()
             holder.create_credential_request = async_mock.CoroutineMock(
-                return_value=(json.dumps(indy_cred_req), json.dumps(cred_req_meta))
+                return_value=(json.dumps(INDY_CRED_REQ), json.dumps(cred_req_meta))
             )
             self.context.injector.bind_instance(IndyHolder, holder)
 
@@ -769,10 +760,10 @@ class TestCredentialManager(AsyncTestCase):
             )
 
             holder.create_credential_request.assert_called_once_with(
-                indy_offer, cred_def, holder_did
+                INDY_OFFER, cred_def, holder_did
             )
 
-            assert ret_request.indy_cred_req() == indy_cred_req
+            assert ret_request.indy_cred_req() == INDY_CRED_REQ
             assert ret_request._thread_id == thread_id
 
             assert ret_exchange.state == V10CredentialExchange.STATE_REQUEST_SENT
@@ -784,7 +775,7 @@ class TestCredentialManager(AsyncTestCase):
 
             # cover case with existing cred req
             stored_exchange.state = V10CredentialExchange.STATE_OFFER_RECEIVED
-            stored_exchange.credential_request = indy_cred_req
+            stored_exchange.credential_request = INDY_CRED_REQ
             (
                 ret_existing_exchange,
                 ret_existing_request,
@@ -978,16 +969,14 @@ class TestCredentialManager(AsyncTestCase):
         connection_id = "test_conn_id"
         comment = "comment"
         cred_values = {"attr": "value"}
-        indy_offer = {"schema_id": SCHEMA_ID, "cred_def_id": CRED_DEF_ID, "nonce": "0"}
-        indy_cred_req = {"schema_id": SCHEMA_ID, "cred_def_id": CRED_DEF_ID}
         thread_id = "thread-id"
 
         stored_exchange = V10CredentialExchange(
             credential_exchange_id="dummy-cxid",
             connection_id=connection_id,
             credential_definition_id=CRED_DEF_ID,
-            credential_offer=indy_offer,
-            credential_request=indy_cred_req,
+            credential_offer=INDY_OFFER,
+            credential_request=INDY_CRED_REQ,
             credential_proposal_dict=CredentialProposal(
                 credential_proposal=CredentialPreview.deserialize(
                     {"attributes": [{"name": "attr", "value": "value"}]}
@@ -1035,15 +1024,15 @@ class TestCredentialManager(AsyncTestCase):
 
             issuer.create_credential.assert_called_once_with(
                 SCHEMA,
-                indy_offer,
-                indy_cred_req,
+                INDY_OFFER,
+                INDY_CRED_REQ,
                 cred_values,
                 stored_exchange.credential_exchange_id,
                 REV_REG_ID,
                 "dummy-path",
             )
 
-            assert ret_exchange.credential == cred
+            assert ret_exchange._credential.ser == cred
             assert ret_cred_issue.indy_credential() == cred
             assert ret_exchange.state == V10CredentialExchange.STATE_ISSUED
             assert ret_cred_issue._thread_id == thread_id
