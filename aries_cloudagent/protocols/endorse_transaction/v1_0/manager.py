@@ -105,6 +105,7 @@ class TransactionManager:
         signature: str = None,
         signed_request: dict = None,
         expires_time: str = None,
+        endorser_write_txn: bool = None,
     ):
         """
         Create a new Transaction Request.
@@ -139,6 +140,7 @@ class TransactionManager:
 
         timing = {"expires_time": expires_time}
         transaction.timing = timing
+        transaction.endorser_write_txn = endorser_write_txn
 
         profile_session = await self.session
         async with profile_session.profile.session() as session:
@@ -149,6 +151,7 @@ class TransactionManager:
             signature_request=transaction.signature_request[0],
             timing=transaction.timing,
             messages_attach=transaction.messages_attach[0],
+            endorser_write_txn=endorser_write_txn,
         )
 
         return transaction, transaction_request
@@ -181,6 +184,7 @@ class TransactionManager:
         transaction.thread_id = request.transaction_id
         transaction.connection_id = connection_id
         transaction.state = TransactionRecord.STATE_REQUEST_RECEIVED
+        transaction.endorser_write_txn = request.endorser_write_txn
 
         profile_session = await self.session
         async with profile_session.profile.session() as session:
@@ -246,6 +250,19 @@ class TransactionManager:
         async with profile_session.profile.session() as session:
             await transaction.save(session, reason="Created an endorsed response")
 
+        if transaction.endorser_write_txn:
+            ledger_response = await self.complete_transaction(transaction)
+            endorsed_transaction_response = EndorsedTransactionResponse(
+                transaction_id=transaction.thread_id,
+                thread_id=transaction._id,
+                signature_response=signature_response,
+                state=TransactionRecord.STATE_TRANSACTION_ACKED,
+                endorser_did=endorser_did,
+                ledger_response=ledger_response,
+            )
+
+            return transaction, endorsed_transaction_response
+
         endorsed_transaction_response = EndorsedTransactionResponse(
             transaction_id=transaction.thread_id,
             thread_id=transaction._id,
@@ -287,6 +304,9 @@ class TransactionManager:
         async with profile_session.profile.session() as session:
             await transaction.save(session, reason="Received an endorsed response")
 
+        if transaction.endorser_write_txn:
+            await self.store_record_in_wallet(response.ledger_response)
+
         return transaction
 
     async def complete_transaction(self, transaction: TransactionRecord):
@@ -303,12 +323,33 @@ class TransactionManager:
             The updated transaction
 
         """
+        ledger_transaction = transaction.messages_attach[0]["data"]["json"]
+
+        ledger = self._session.inject(BaseLedger)
+        if not ledger:
+            reason = "No ledger available"
+            if not self._session.context.settings.get_value("wallet.type"):
+                reason += ": missing wallet-type?"
+            raise TransactionManagerError(reason)
+
+        async with ledger:
+            try:
+                ledger_response_json = await shield(
+                    ledger.txn_submit(ledger_transaction, sign=False, taa_accept=False)
+                )
+            except (IndyIssuerError, LedgerError) as err:
+                raise TransactionManagerError(err.roll_up) from err
+
+        ledger_response = json.loads(ledger_response_json)
 
         profile_session = await self.session
         transaction.state = TransactionRecord.STATE_TRANSACTION_ACKED
 
         async with profile_session.profile.session() as session:
             await transaction.save(session, reason="Completed transaction")
+
+        if transaction.endorser_write_txn:
+            return ledger_response
 
         connection_id = transaction.connection_id
 
@@ -326,11 +367,15 @@ class TransactionManager:
                 " in connection metadata for this connection record"
             )
         if jobs["transaction_my_job"] == TransactionJob.TRANSACTION_AUTHOR.name:
-            await self.store_record_in_wallet(transaction)
+            await self.store_record_in_wallet(ledger_response)
+            transaction_acknowledgement_message = TransactionAcknowledgement(
+                thread_id=transaction._id
+            )
 
-        transaction_acknowledgement_message = TransactionAcknowledgement(
-            thread_id=transaction._id
-        )
+        elif jobs["transaction_my_job"] == TransactionJob.TRANSACTION_ENDORSER.name:
+            transaction_acknowledgement_message = TransactionAcknowledgement(
+                thread_id=transaction._id, ledger_response=ledger_response
+            )
 
         return transaction, transaction_acknowledgement_message
 
@@ -381,7 +426,7 @@ class TransactionManager:
                 " in connection metadata for this connection record"
             )
         if jobs["transaction_my_job"] == TransactionJob.TRANSACTION_AUTHOR.name:
-            await self.store_record_in_wallet(transaction)
+            await self.store_record_in_wallet(response.ledger_response)
 
         return transaction
 
@@ -626,7 +671,7 @@ class TransactionManager:
             self._session, key="transaction_jobs", value=value
         )
 
-    async def store_record_in_wallet(self, transaction: TransactionRecord):
+    async def store_record_in_wallet(self, ledger_response: dict = None):
         """
         Store record in wallet.
 
@@ -635,24 +680,12 @@ class TransactionManager:
                          would be stored in wallet.
         """
 
-        ledger_transaction = transaction.messages_attach[0]["data"]["json"]
-
         ledger = self._session.inject(BaseLedger)
         if not ledger:
             reason = "No ledger available"
             if not self._session.context.settings.get_value("wallet.type"):
                 reason += ": missing wallet-type?"
             raise TransactionManagerError(reason)
-
-        async with ledger:
-            try:
-                ledger_response_json = await shield(
-                    ledger.txn_submit(ledger_transaction, sign=False, taa_accept=False)
-                )
-            except (IndyIssuerError, LedgerError) as err:
-                raise TransactionManagerError(err.roll_up) from err
-
-        ledger_response = json.loads(ledger_response_json)
 
         # write the wallet non-secrets record
         # TODO refactor this code (duplicated from ledger.indy.py)

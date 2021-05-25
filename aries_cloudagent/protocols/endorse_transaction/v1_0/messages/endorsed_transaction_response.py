@@ -31,6 +31,7 @@ class EndorsedTransactionResponse(AgentMessage):
         signature_response: dict = None,
         state: str = None,
         endorser_did: str = None,
+        ledger_response: dict = None,
         **kwargs,
     ):
         """
@@ -50,6 +51,7 @@ class EndorsedTransactionResponse(AgentMessage):
         self.signature_response = signature_response
         self.state = state
         self.endorser_did = endorser_did
+        self.ledger_response = ledger_response
 
 
 class EndorsedTransactionResponseSchema(AgentMessageSchema):
@@ -94,3 +96,4 @@ class EndorsedTransactionResponseSchema(AgentMessageSchema):
         description="The public did of the endorser",
         example="V4SGRU86Z58d6TV7PBUe6f",
     )
+    ledger_response = fields.Dict(required=False)
