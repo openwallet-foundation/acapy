@@ -11,10 +11,13 @@ async def internal_error(
     http_error_class,
     record: Union[ConnRecord, BaseRecord],
     outbound_handler: Coroutine,
+    code: str = None,
 ):
     """Send problem report and raise corresponding HTTP error."""
     if record:
-        error_result = ProblemReport(description={"en": err.roll_up})
+        error_result = ProblemReport(
+            description={"en": err.roll_up, "code": code or "abandoned"}
+        )
         thid = getattr(record, "thread_id", None)
         if thid:
             error_result.assign_thread_id(thid)

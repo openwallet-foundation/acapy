@@ -214,7 +214,7 @@ class DIDKey(Regexp):
     """Validate value against DID key specification."""
 
     EXAMPLE = "did:key:z6MkpTHR8VNsBxYAAWHut2Geadd9jSwuBV8xRoAnwWsdvktH"
-    PATTERN = rf"^did:key:z[{B58}]+$"
+    PATTERN = re.compile(rf"^did:key:z[{B58}]+$")
 
     def __init__(self):
         """Initializer."""
@@ -242,7 +242,7 @@ class IndyDID(Regexp):
     """Validate value against indy DID."""
 
     EXAMPLE = "WgWxqztrNooG92RXvxSTWv"
-    PATTERN = rf"^(did:sov:)?[{B58}]{{21,22}}$"
+    PATTERN = re.compile(rf"^(did:sov:)?[{B58}]{{21,22}}$")
 
     def __init__(self):
         """Initializer."""
@@ -674,7 +674,7 @@ class CredentialSubject(Validator):
 class IndyOrKeyDID(Regexp):
     """Indy or Key DID class."""
 
-    PATTERN = re.compile("|".join([DIDKey.PATTERN, IndyDID.PATTERN]))
+    PATTERN = "|".join(x.pattern for x in [DIDKey.PATTERN, IndyDID.PATTERN])
     EXAMPLE = IndyDID.EXAMPLE
 
     def __init__(
