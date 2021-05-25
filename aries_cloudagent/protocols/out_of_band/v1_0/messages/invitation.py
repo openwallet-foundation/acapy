@@ -2,7 +2,7 @@
 
 from collections import namedtuple
 from enum import Enum
-from re import sub, compile
+from re import sub
 from typing import Sequence, Text, Union
 from urllib.parse import parse_qs, urljoin, urlparse
 
@@ -97,9 +97,7 @@ class ServiceOrDIDField(fields.Field):
         if isinstance(value, dict):
             return Service.deserialize(value)
         elif isinstance(value, str):
-            # To adjust after #1193 merge
-            # if bool(IndyDID.PATTERN.match(value)):
-            if bool(compile(IndyDID.PATTERN).match(value)):
+            if bool(IndyDID.PATTERN.match(value)):
                 return value
             else:
                 raise ValidationError(
