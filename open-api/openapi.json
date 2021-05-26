@@ -6241,22 +6241,29 @@
             "$ref" : "#/definitions/AttachDecorator"
           }
         },
-        "service_blocks" : {
+        "services" : {
           "type" : "array",
+          "description" : "DIDComm service object or a DID",
           "items" : {
-            "$ref" : "#/definitions/Service"
+            "anyOf": [
+              {
+                "type" : "array",
+                "items" : {
+                  "type" : "string",
+                  "example" : "WgWxqztrNooG92RXvxSTWv",
+                  "description" : "Service DID",
+                  "pattern" : "^(did:sov:)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$"
+                }
+              },
+              {
+                "type" : "array",
+                "items" : {
+                  "$ref" : "#/definitions/Service"
+                }
+              }
+            ]
           }
-        },
-        "service_dids" : {
-          "type" : "array",
-          "items" : {
-            "type" : "string",
-            "example" : "WgWxqztrNooG92RXvxSTWv",
-            "description" : "Service DID",
-            "pattern" : "^(did:sov:)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$"
-          }
-        },
-        "services" : { }
+        }
       }
     },
     "InvitationRecord" : {

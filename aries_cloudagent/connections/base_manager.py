@@ -305,23 +305,23 @@ class BaseConnectionManager:
                         recipient_keys = invitation.recipient_keys
                         routing_keys = invitation.routing_keys
                 else:  # out-of-band invitation
-                    if invitation.service_dids:
-                        did = invitation.service_dids[0]
+                    oob_service_item = invitation.services[0]
+                    if isinstance(oob_service_item, str):
                         (
                             endpoint,
                             recipient_keys,
                             routing_keys,
-                        ) = await self.resolve_invitation(did)
+                        ) = await self.resolve_invitation(oob_service_item)
 
                     else:
-                        endpoint = invitation.service_blocks[0].service_endpoint
+                        endpoint = oob_service_item.service_endpoint
                         recipient_keys = [
                             DIDKey.from_did(k).public_key_b58
-                            for k in invitation.service_blocks[0].recipient_keys
+                            for k in oob_service_item.recipient_keys
                         ]
                         routing_keys = [
                             DIDKey.from_did(k).public_key_b58
-                            for k in invitation.service_blocks[0].routing_keys
+                            for k in oob_service_item.routing_keys
                         ]
             else:
                 if connection.their_did:

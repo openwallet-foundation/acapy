@@ -253,6 +253,28 @@ class IndyDID(Regexp):
         )
 
 
+class DIDValidation(Regexp):
+    """Validate value against any valid DID spec."""
+
+    METHOD = r"([a-zA-Z0-9_]+)"
+    METHOD_ID = r"([a-zA-Z0-9_.%-]+(:[a-zA-Z0-9_.%-]+)*)"
+    PARAMS = r"((;[a-zA-Z0-9_.:%-]+=[a-zA-Z0-9_.:%-]*)*)"
+    PATH = r"(\/[^#?]*)?"
+    QUERY = r"([?][^#]*)?"
+    FRAGMENT = r"(\#.*)?$"
+
+    EXAMPLE = "did:peer:WgWxqztrNooG92RXvxSTWv"
+    PATTERN = re.compile(rf"^did:{METHOD}:{METHOD_ID}{PARAMS}{PATH}{QUERY}{FRAGMENT}$")
+
+    def __init__(self):
+        """Initializer."""
+
+        super().__init__(
+            DIDValidation.PATTERN,
+            error="Value {input} is not a valid DID",
+        )
+
+
 class IndyRawPublicKey(Regexp):
     """Validate value against indy (Ed25519VerificationKey2018) raw public key."""
 

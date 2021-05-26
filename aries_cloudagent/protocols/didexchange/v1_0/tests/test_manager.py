@@ -245,8 +245,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             state=ConnRecord.State.REQUEST.rfc23,
             retrieve_invitation=async_mock.CoroutineMock(
                 return_value=async_mock.MagicMock(
-                    service_blocks=None,
-                    service_dids=[TestConfig.test_target_did],
+                    services=[TestConfig.test_target_did],
                 )
             ),
             save=async_mock.CoroutineMock(),
@@ -327,8 +326,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                     my_did=None,
                     retrieve_invitation=async_mock.CoroutineMock(
                         return_value=async_mock.MagicMock(
-                            service_blocks=None,
-                            service_dids=[TestConfig.test_target_did],
+                            services=[TestConfig.test_target_did],
                         )
                     ),
                     save=async_mock.CoroutineMock(),
@@ -354,7 +352,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             handshake_protocols=[
                 pfx.qualify(HSProto.RFC23.name) for pfx in DIDCommPrefix
             ],
-            service_dids=[TestConfig.test_did],
+            services=[TestConfig.test_did],
         )
         record = ConnRecord(
             invitation_key=TestConfig.test_verkey,
@@ -401,8 +399,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             alias="Bob",
             retrieve_invitation=async_mock.CoroutineMock(
                 return_value=async_mock.MagicMock(
-                    service_blocks=None,
-                    service_dids=[TestConfig.test_target_did],
+                    services=[TestConfig.test_target_did],
                 )
             ),
             save=async_mock.CoroutineMock(),
@@ -1422,7 +1419,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             handshake_protocols=[
                 pfx.qualify(HSProto.RFC23.name) for pfx in DIDCommPrefix
             ],
-            service_dids=[TestConfig.test_did],
+            services=[TestConfig.test_did],
         )
         record = ConnRecord(
             invitation_key=TestConfig.test_verkey,
@@ -1480,7 +1477,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             handshake_protocols=[
                 pfx.qualify(HSProto.RFC23.name) for pfx in DIDCommPrefix
             ],
-            service_dids=[TestConfig.test_did],
+            services=[TestConfig.test_did],
         )
         record = ConnRecord(
             invitation_key=TestConfig.test_verkey,
