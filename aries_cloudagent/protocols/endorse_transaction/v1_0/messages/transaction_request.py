@@ -32,6 +32,7 @@ class TransactionRequest(AgentMessage):
         timing: dict = None,
         transaction_type: str = None,
         messages_attach: dict = None,
+        endorser_write_txn: bool = None,
         **kwargs,
     ):
         """
@@ -50,6 +51,7 @@ class TransactionRequest(AgentMessage):
         self.timing = timing
         self.transaction_type = transaction_type
         self.messages_attach = messages_attach
+        self.endorser_write_txn = endorser_write_txn
 
 
 class TransactionRequestSchema(AgentMessageSchema):
@@ -104,4 +106,9 @@ class TransactionRequestSchema(AgentMessageSchema):
                 }
             },
         },
+    )
+    endorser_write_txn = fields.Boolean(
+        description="If True, Endorser will write the transaction after endorsing it",
+        required=False,
+        example=True,
     )

@@ -3,7 +3,7 @@
 Resolution is performed using the IndyLedger class.
 """
 
-from typing import Sequence
+from typing import Sequence, Pattern
 
 from pydid import DID, DIDDocumentBuilder, VerificationSuite
 
@@ -12,6 +12,8 @@ from ...core.profile import Profile
 from ...ledger.indy import IndySdkLedger, EndpointType
 from ...ledger.base import BaseLedger
 from ...ledger.error import LedgerError
+from ...messaging.valid import IndyDID
+
 from ..base import BaseDIDResolver, DIDNotFound, ResolverError, ResolverType
 
 
@@ -35,8 +37,17 @@ class IndyDIDResolver(BaseDIDResolver):
 
     @property
     def supported_methods(self) -> Sequence[str]:
-        """Return supported methods of Indy DID Resolver."""
+        """
+        Return supported methods of Indy DID Resolver.
+
+        DEPRECATED: Use supported_did_regex instead.
+        """
         return ["sov"]
+
+    @property
+    def supported_did_regex(self) -> Pattern:
+        """Return supported_did_regex of Indy DID Resolver."""
+        return IndyDID.PATTERN
 
     async def _resolve(self, profile: Profile, did: str) -> dict:
         """Resolve an indy DID."""
