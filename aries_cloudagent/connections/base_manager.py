@@ -287,7 +287,11 @@ class BaseConnectionManager:
             in (ConnRecord.State.INVITATION, ConnRecord.State.REQUEST)
             and ConnRecord.Role.get(connection.their_role) is ConnRecord.Role.RESPONDER
         ):
-            if connection.invitation_msg_id or connection.invitation_key:
+            if (
+                connection.invitation_msg_id
+                or connection.invitation_key
+                or not connection.their_did
+            ):
                 invitation = await connection.retrieve_invitation(self._session)
                 if isinstance(
                     invitation, ConnectionInvitation
