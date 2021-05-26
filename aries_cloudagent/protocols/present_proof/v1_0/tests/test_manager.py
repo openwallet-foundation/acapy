@@ -1275,28 +1275,6 @@ class TestPresentationManager(AsyncTestCase):
                 V10PresentationExchange.STATE_PRESENTATION_ACKED
             )
 
-    async def test_create_problem_report(self):
-        connection_id = "connection-id"
-        stored_exchange = V10PresentationExchange(
-            presentation_exchange_id="dummy-pxid",
-            connection_id=connection_id,
-            initiator=V10PresentationExchange.INITIATOR_SELF,
-            role=V10PresentationExchange.ROLE_VERIFIER,
-            state=V10PresentationExchange.STATE_PROPOSAL_RECEIVED,
-            thread_id="dummy-thid",
-        )
-
-        with async_mock.patch.object(
-            V10PresentationExchange, "save", autospec=True
-        ) as save_ex:
-            report = await self.manager.create_problem_report(
-                stored_exchange,
-                "The front fell off",
-            )
-
-        assert stored_exchange.state is None
-        assert report._thread_id == stored_exchange.thread_id
-
     async def test_receive_problem_report(self):
         connection_id = "connection-id"
         stored_exchange = V10PresentationExchange(

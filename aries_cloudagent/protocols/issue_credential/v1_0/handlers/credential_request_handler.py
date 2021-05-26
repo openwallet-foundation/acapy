@@ -3,12 +3,15 @@
 from .....indy.issuer import IndyIssuerError
 from .....ledger.error import LedgerError
 from .....messaging.base_handler import BaseHandler, HandlerException
+from .....messaging.models.base import BaseModelError
 from .....messaging.request_context import RequestContext
 from .....messaging.responder import BaseResponder
 from .....storage.error import StorageError
 from .....utils.tracing import trace_event, get_timer
 
+from .. import problem_report_for_record
 from ..manager import CredentialManager, CredentialManagerError
+from ..messages.credential_problem_report import ProblemReportReason
 from ..messages.credential_request import CredentialRequest
 
 
@@ -64,16 +67,26 @@ class CredentialRequestHandler(BaseHandler):
                         comment=context.message.comment,
                     )
                     await responder.send_reply(credential_issue_message)
-                except (CredentialManagerError, IndyIssuerError, LedgerError) as err:
+                except (
+                    BaseModelError,
+                    CredentialManagerError,
+                    IndyIssuerError,
+                    LedgerError,
+                    StorageError,
+                ) as err:
                     self._logger.exception(err)
                     if cred_ex_record:
                         async with context.session() as session:
                             await cred_ex_record.save_error_state(
                                 session,
-                                reason=err.message,
+                                reason=err.roll_up,  # us: be specific
                             )
-                except StorageError as err:
-                    self._logger.exception(err)  # may be logging to wire, not dead disk
+                        await responder.send_reply(  # them: be vague
+                            problem_report_for_record(
+                                cred_ex_record,
+                                ProblemReportReason.ISSUANCE_ABANDONED.value,
+                            )
+                        )
 
                 trace_event(
                     context.settings,

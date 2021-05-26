@@ -1466,28 +1466,6 @@ class TestCredentialManager(AsyncTestCase):
             assert ret_exchange.state == V10CredentialExchange.STATE_ACKED
             delete_ex.assert_called_once()
 
-    async def test_create_problem_report(self):
-        connection_id = "connection-id"
-        stored_exchange = V10CredentialExchange(
-            credential_exchange_id="dummy-cxid",
-            connection_id=connection_id,
-            initiator=V10CredentialExchange.INITIATOR_SELF,
-            role=V10CredentialExchange.ROLE_ISSUER,
-            state=V10CredentialExchange.STATE_REQUEST_RECEIVED,
-            thread_id="dummy-thid",
-        )
-
-        with async_mock.patch.object(
-            V10CredentialExchange, "save", autospec=True
-        ) as save_ex:
-            report = await self.manager.create_problem_report(
-                stored_exchange,
-                "The front fell off",
-            )
-
-        assert stored_exchange.state is None
-        assert report._thread_id == stored_exchange.thread_id
-
     async def test_receive_problem_report(self):
         connection_id = "connection-id"
         stored_exchange = V10CredentialExchange(

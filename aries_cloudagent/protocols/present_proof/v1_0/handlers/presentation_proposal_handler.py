@@ -2,12 +2,15 @@
 
 from .....ledger.error import LedgerError
 from .....messaging.base_handler import BaseHandler, HandlerException
+from .....messaging.models.base import BaseModelError
 from .....messaging.request_context import RequestContext
 from .....messaging.responder import BaseResponder
 from .....storage.error import StorageError
 from .....utils.tracing import trace_event, get_timer
 
+from .. import problem_report_for_record
 from ..manager import PresentationManager
+from ..messages.presentation_problem_report import ProblemReportReason
 from ..messages.presentation_proposal import PresentationProposal
 
 
@@ -63,16 +66,20 @@ class PresentationProposalHandler(BaseHandler):
                     comment=context.message.comment,
                 )
                 await responder.send_reply(presentation_request_message)
-            except LedgerError as err:
+            except (BaseModelError, LedgerError, StorageError) as err:
                 self._logger.exception(err)
                 if presentation_exchange_record:
                     async with context.session() as session:
                         await presentation_exchange_record.save_error_state(
                             session,
-                            reason=err.message,
+                            reason=err.roll_up,  # us: be specific
                         )
-            except StorageError as err:
-                self._logger.exception(err)  # may be logging to wire, not dead disk
+                    await responder.send_reply(
+                        problem_report_for_record(
+                            presentation_exchange_record,
+                            ProblemReportReason.ABANDONED.value,  # them: be vague
+                        )
+                    )
 
             trace_event(
                 context.settings,
