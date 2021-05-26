@@ -19,7 +19,7 @@ from .....messaging.decorators.attach_decorator import (
     AttachDecorator,
     AttachDecoratorSchema,
 )
-from .....messaging.valid import IndyDID
+from .....messaging.valid import DIDValidation
 from .....wallet.util import bytes_to_b64, b64_to_bytes
 
 from ....didcomm_prefix import DIDCommPrefix
@@ -97,11 +97,11 @@ class ServiceOrDIDField(fields.Field):
         if isinstance(value, dict):
             return Service.deserialize(value)
         elif isinstance(value, str):
-            if bool(IndyDID.PATTERN.match(value)):
+            if bool(DIDValidation.PATTERN.match(value)):
                 return value
             else:
                 raise ValidationError(
-                    "Service item must be an INDY decentralized identifier (DID)"
+                    "Service item must be a valid decentralized identifier (DID)"
                 )
 
 

@@ -6241,7 +6241,7 @@
             "$ref" : "#/definitions/AttachDecorator"
           }
         },
-        "services" : { 
+        "services" : {
           "type" : "array",
           "description" : "DIDComm service object or a DID",
           "items" : {
