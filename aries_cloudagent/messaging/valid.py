@@ -254,7 +254,7 @@ class IndyDID(Regexp):
 
 
 class DIDValidation(Regexp):
-    """Validate value against any DID."""
+    """Validate value against any valid DID spec."""
 
     METHOD = r"([a-zA-Z0-9_]+)"
     METHOD_ID = r"([a-zA-Z0-9_.%-]+(:[a-zA-Z0-9_.%-]+)*)"
