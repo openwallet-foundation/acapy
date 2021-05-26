@@ -348,7 +348,7 @@ class OutOfBandManager(BaseConnectionManager):
         return InvitationRecord(  # for return via admin API, not storage
             state=InvitationRecord.STATE_INITIAL,
             invi_msg_id=invi_msg._id,
-            invitation=invi_msg.serialize(),
+            invitation=invi_msg,
             invitation_url=invi_url,
         )
 
@@ -381,7 +381,7 @@ class OutOfBandManager(BaseConnectionManager):
                 mediation_id = None
 
         # There must be exactly 1 service entry
-        if len(invi_msg.service_blocks) + len(invi_msg.service_dids) != 1:
+        if len(invi_msg.services) != 1:
             raise OutOfBandManagerError("service array must have exactly one element")
 
         if not (invi_msg.requests_attach or invi_msg.handshake_protocols):
@@ -389,15 +389,16 @@ class OutOfBandManager(BaseConnectionManager):
                 "Invitation must specify handshake_protocols, requests_attach, or both"
             )
         # Get the single service item
-        if len(invi_msg.service_blocks) >= 1:
-            service = invi_msg.service_blocks[0]
+        oob_service_item = invi_msg.services[0]
+        if isinstance(oob_service_item, ServiceMessage):
+            service = oob_service_item
             public_did = None
         else:
             # If it's in the did format, we need to convert to a full service block
             # An existing connection can only be reused based on a public DID
             # in an out-of-band message (RFC 0434).
 
-            service_did = invi_msg.service_dids[0]
+            service_did = oob_service_item
 
             # TODO: resolve_invitation should resolve key_info objects
             # or something else that includes the key type. We now assume

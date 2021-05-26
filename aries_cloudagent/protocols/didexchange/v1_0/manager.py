@@ -24,6 +24,7 @@ from ...coordinate_mediation.v1_0.manager import MediationManager
 from ...out_of_band.v1_0.messages.invitation import (
     InvitationMessage as OOBInvitationMessage,
 )
+from ...out_of_band.v1_0.messages.service import Service as OOBService
 
 from .messages.complete import DIDXComplete
 from .messages.request import DIDXRequest
@@ -82,20 +83,18 @@ class DIDXManager(BaseConnectionManager):
             The new `ConnRecord` instance
 
         """
-        if not invitation.service_dids:
-            if invitation.service_blocks:
-                if not all(
-                    s.recipient_keys and s.service_endpoint
-                    for s in invitation.service_blocks
-                ):
-                    raise DIDXManagerError(
-                        "All service blocks in invitation with no service DIDs "
-                        "must contain recipient key(s) and service endpoint(s)"
-                    )
-            else:
-                raise DIDXManagerError(
-                    "Invitation must contain service blocks or service DIDs"
-                )
+        if not invitation.services:
+            raise DIDXManagerError(
+                "Invitation must contain service blocks or service DIDs"
+            )
+        else:
+            for s in invitation.services:
+                if isinstance(s, OOBService):
+                    if not s.recipient_keys or not s.service_endpoint:
+                        raise DIDXManagerError(
+                            "All service blocks in invitation with no service DIDs "
+                            "must contain recipient key(s) and service endpoint(s)"
+                        )
 
         accept = (
             ConnRecord.ACCEPT_AUTO
@@ -109,14 +108,12 @@ class DIDXManager(BaseConnectionManager):
             else ConnRecord.ACCEPT_MANUAL
         )
 
+        service_item = invitation.services[0]
         # Create connection record
         conn_rec = ConnRecord(
             invitation_key=(
-                # invitation.service_blocks[0].recipient_keys[0]
-                DIDKey.from_did(
-                    invitation.service_blocks[0].recipient_keys[0]
-                ).public_key_b58
-                if invitation.service_blocks
+                DIDKey.from_did(service_item.recipient_keys[0]).public_key_b58
+                if isinstance(service_item, OOBService)
                 else None
             ),
             invitation_msg_id=invitation._id,

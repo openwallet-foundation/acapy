@@ -471,7 +471,12 @@ class BaseRecord(BaseModel):
             return
 
         try:
-            await self.save(session, reason, log_params, log_override)
+            await self.save(
+                session,
+                reason=reason,
+                log_params=log_params,
+                log_override=log_override,
+            )
         except StorageError as err:
             LOGGER.exception(err)
 

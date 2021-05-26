@@ -109,11 +109,12 @@ class V20PresRequestHandler(BaseHandler):
             ) as err:
                 self._logger.exception(err)
                 if pres_ex_record:
-                    await pres_ex_record.save_error_state(
-                        context.session(),
-                        state=V20PresExRecord.STATE_ABANDONED,
-                        reason=err.message,
-                    )
+                    async with context.session() as session:
+                        await pres_ex_record.save_error_state(
+                            session,
+                            state=V20PresExRecord.STATE_ABANDONED,
+                            reason=err.message,
+                        )
             except StorageError as err:
                 self._logger.exception(err)  # may be logging to wire, not dead disk
 

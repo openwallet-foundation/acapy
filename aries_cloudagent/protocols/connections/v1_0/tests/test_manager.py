@@ -2434,7 +2434,7 @@ class TestConnectionManager(AsyncTestCase):
             metadata=None,
         )
 
-        mock_oob_invite = async_mock.MagicMock(service_dids=[self.test_did])
+        mock_oob_invite = async_mock.MagicMock(services=[self.test_did])
 
         mock_conn = async_mock.MagicMock(
             my_did=self.test_did,
@@ -2475,7 +2475,7 @@ class TestConnectionManager(AsyncTestCase):
         mock_oob_invite = async_mock.MagicMock(
             label="a label",
             their_did=self.test_target_did,
-            service_dids=["dummy"],
+            services=["dummy"],
         )
         mock_conn = async_mock.MagicMock(
             my_did=self.test_did,
@@ -2517,8 +2517,7 @@ class TestConnectionManager(AsyncTestCase):
         mock_oob_invite = async_mock.MagicMock(
             label="a label",
             their_did=self.test_target_did,
-            service_dids=None,
-            service_blocks=[
+            services=[
                 async_mock.MagicMock(
                     service_endpoint=self.test_endpoint,
                     recipient_keys=[

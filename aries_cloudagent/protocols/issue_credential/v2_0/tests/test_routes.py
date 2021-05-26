@@ -1,9 +1,5 @@
-from asynctest import TestCase as AsyncTestCase
-from asynctest import mock as async_mock
+from asynctest import mock as async_mock, TestCase as AsyncTestCase
 
-from ..messages.cred_format import V20CredFormat
-from ..formats.indy.handler import IndyCredFormatHandler
-from ..formats.ld_proof.handler import LDProofCredFormatHandler
 from .....admin.request_context import AdminRequestContext
 from .....wallet.key_type import KeyType
 from .....wallet.did_method import DIDMethod
@@ -11,8 +7,14 @@ from .....wallet.base import BaseWallet
 from .....wallet.did_info import DIDInfo
 
 from .. import routes as test_module
+from ..formats.indy.handler import IndyCredFormatHandler
+from ..formats.ld_proof.handler import LDProofCredFormatHandler
+from ..messages.cred_format import V20CredFormat
 
-TEST_DID = "LjgpST2rjsoxYegQDRm7EL"
+from . import (
+    LD_PROOF_VC_DETAIL,
+    TEST_DID,
+)
 
 
 class TestV20CredRoutes(AsyncTestCase):
@@ -1143,7 +1145,7 @@ class TestV20CredRoutes(AsyncTestCase):
     async def test_credential_exchange_send_free_request(self):
         self.request.json = async_mock.CoroutineMock(
             return_value={
-                "filter": {"ld_proof": {"credential": {}, "options": {}}},
+                "filter": {"ld_proof": LD_PROOF_VC_DETAIL},
             }
         )
 
@@ -1180,7 +1182,7 @@ class TestV20CredRoutes(AsyncTestCase):
     async def test_credential_exchange_send_free_request_no_conn_record(self):
         self.request.json = async_mock.CoroutineMock(
             return_value={
-                "filter": {"ld_proof": {"..": ".."}},
+                "filter": {"ld_proof": LD_PROOF_VC_DETAIL},
             }
         )
 
@@ -1207,7 +1209,7 @@ class TestV20CredRoutes(AsyncTestCase):
     async def test_credential_exchange_send_free_request_not_ready(self):
         self.request.json = async_mock.CoroutineMock(
             return_value={
-                "filter": {"ld_proof": {"..": ".."}},
+                "filter": {"ld_proof": LD_PROOF_VC_DETAIL},
             }
         )
 
@@ -1228,6 +1230,35 @@ class TestV20CredRoutes(AsyncTestCase):
             )
 
             with self.assertRaises(test_module.web.HTTPForbidden):
+                await test_module.credential_exchange_send_free_request(self.request)
+
+    async def test_credential_exchange_send_free_request_x(self):
+        self.request.json = async_mock.CoroutineMock(
+            return_value={
+                "filter": {"ld_proof": LD_PROOF_VC_DETAIL},
+            }
+        )
+
+        with async_mock.patch.object(
+            test_module, "ConnRecord", autospec=True
+        ) as mock_conn_rec, async_mock.patch.object(
+            test_module, "V20CredManager", autospec=True
+        ) as mock_cred_mgr, async_mock.patch.object(
+            test_module.web, "json_response"
+        ) as mock_response:
+
+            mock_cred_mgr.return_value.create_request = async_mock.CoroutineMock(
+                side_effect=[
+                    test_module.LedgerError(),
+                    test_module.StorageError(),
+                ]
+            )
+
+            mock_cx_rec = async_mock.MagicMock()
+
+            with self.assertRaises(test_module.web.HTTPBadRequest):  # ledger error
+                await test_module.credential_exchange_send_free_request(self.request)
+            with self.assertRaises(test_module.web.HTTPBadRequest):  # storage error
                 await test_module.credential_exchange_send_free_request(self.request)
 
     async def test_credential_exchange_issue(self):

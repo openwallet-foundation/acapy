@@ -395,7 +395,7 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
         cred_ex_record = V20CredExRecord(
             cred_ex_id="dummy-cxid",
             role=V20CredExRecord.ROLE_ISSUER,
-            cred_proposal=self.cred_proposal.serialize(),
+            cred_proposal=self.cred_proposal,
         )
 
         with async_mock.patch.object(
@@ -434,7 +434,7 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
             ],
         )
 
-        cred_ex_record = async_mock.MagicMock(cred_proposal=cred_proposal.serialize())
+        cred_ex_record = V20CredExRecord(cred_proposal=cred_proposal)
 
         with async_mock.patch.object(
             LDProofCredFormatHandler,
@@ -477,7 +477,7 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
         cred_ex_record = V20CredExRecord(
             cred_ex_id="dummy-id",
             state=V20CredExRecord.STATE_OFFER_RECEIVED,
-            cred_offer=cred_offer.serialize(),
+            cred_offer=cred_offer,
         )
 
         (cred_format, attachment) = await self.handler.create_request(cred_ex_record)
@@ -495,7 +495,7 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
         cred_ex_record = V20CredExRecord(
             cred_ex_id="dummy-id",
             state=V20CredExRecord.STATE_OFFER_RECEIVED,
-            cred_proposal=self.cred_proposal.serialize(),
+            cred_proposal=self.cred_proposal,
         )
 
         (cred_format, attachment) = await self.handler.create_request(cred_ex_record)
@@ -543,7 +543,7 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
 
         cred_ex_record = V20CredExRecord(
             cred_ex_id="dummy-cxid",
-            cred_request=cred_request.serialize(),
+            cred_request=cred_request,
         )
 
         with async_mock.patch.object(
@@ -596,7 +596,7 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
 
         cred_ex_record = V20CredExRecord(
             cred_ex_id="dummy-cxid",
-            cred_request=cred_request.serialize(),
+            cred_request=cred_request,
         )
 
         with async_mock.patch.object(
@@ -658,7 +658,8 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
             ],
         )
         cred_ex_record = V20CredExRecord(
-            cred_ex_id="cred-ex-id", cred_request=cred_request.serialize()
+            cred_ex_id="cred-ex-id",
+            cred_request=cred_request,
         )
 
         await self.handler.receive_credential(cred_ex_record, cred_issue)
@@ -692,7 +693,8 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
             requests_attach=[AttachDecorator.data_base64(detail, ident="0")],
         )
         cred_ex_record = V20CredExRecord(
-            cred_ex_id="cred-ex-id", cred_request=cred_request.serialize()
+            cred_ex_id="cred-ex-id",
+            cred_request=cred_request,
         )
 
         with self.assertRaises(V20CredFormatError) as context:
@@ -729,7 +731,8 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
             requests_attach=[AttachDecorator.data_base64(detail, ident="0")],
         )
         cred_ex_record = V20CredExRecord(
-            cred_ex_id="cred-ex-id", cred_request=cred_request.serialize()
+            cred_ex_id="cred-ex-id",
+            cred_request=cred_request,
         )
 
         with self.assertRaises(V20CredFormatError) as context:
@@ -771,7 +774,8 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
             requests_attach=[AttachDecorator.data_base64(detail, ident="0")],
         )
         cred_ex_record = V20CredExRecord(
-            cred_ex_id="cred-ex-id", cred_request=cred_request.serialize()
+            cred_ex_id="cred-ex-id",
+            cred_request=cred_request,
         )
 
         with self.assertRaises(V20CredFormatError) as context:
@@ -818,7 +822,8 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
                 requests_attach=[AttachDecorator.data_base64(detail, ident="0")],
             )
             cred_ex_record = V20CredExRecord(
-                cred_ex_id="cred-ex-id", cred_request=cred_request.serialize()
+                cred_ex_id="cred-ex-id",
+                cred_request=cred_request,
             )
 
             with self.assertRaises(V20CredFormatError) as context:
@@ -842,7 +847,7 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
 
         cred_ex_record = V20CredExRecord(
             cred_ex_id="dummy-cxid",
-            cred_issue=cred_issue.serialize(),
+            cred_issue=cred_issue,
         )
 
         cred_id = "cred_id"
@@ -904,7 +909,7 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
 
         cred_ex_record = V20CredExRecord(
             cred_ex_id="dummy-cxid",
-            cred_issue=cred_issue.serialize(),
+            cred_issue=cred_issue,
         )
 
         cred_id = "cred_id"

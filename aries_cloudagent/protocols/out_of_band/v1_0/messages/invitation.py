@@ -10,7 +10,6 @@ from marshmallow import (
     EXCLUDE,
     fields,
     post_dump,
-    pre_load,
     validates_schema,
     ValidationError,
 )
@@ -20,7 +19,7 @@ from .....messaging.decorators.attach_decorator import (
     AttachDecorator,
     AttachDecoratorSchema,
 )
-from .....messaging.valid import INDY_DID
+from .....messaging.valid import DIDValidation
 from .....wallet.util import bytes_to_b64, b64_to_bytes
 
 from ....didcomm_prefix import DIDCommPrefix
@@ -29,7 +28,7 @@ from ....connections.v1_0.message_types import ARIES_PROTOCOL as CONN_PROTO
 
 from ..message_types import INVITATION
 
-from .service import Service, ServiceSchema
+from .service import Service
 
 HSProtoSpec = namedtuple("HSProtoSpec", "rfc name aka")
 
@@ -86,6 +85,26 @@ class HSProto(Enum):
         return self.value.aka
 
 
+class ServiceOrDIDField(fields.Field):
+    """DIDComm Service object or DID string field for Marshmallow."""
+
+    def _serialize(self, value, attr, obj, **kwargs):
+        if isinstance(value, Service):
+            return value.serialize()
+        return value
+
+    def _deserialize(self, value, attr, data, **kwargs):
+        if isinstance(value, dict):
+            return Service.deserialize(value)
+        elif isinstance(value, str):
+            if bool(DIDValidation.PATTERN.match(value)):
+                return value
+            else:
+                raise ValidationError(
+                    "Service item must be a valid decentralized identifier (DID)"
+                )
+
+
 class InvitationMessage(AgentMessage):
     """Class representing an out of band invitation message."""
 
@@ -103,10 +122,7 @@ class InvitationMessage(AgentMessage):
         label: str = None,
         handshake_protocols: Sequence[Text] = None,
         requests_attach: Sequence[AttachDecorator] = None,
-        # When loading, we sort services in the two lists
         services: Sequence[Union[Service, Text]] = None,
-        service_blocks: Sequence[Service] = None,
-        service_dids: Sequence[Text] = None,
         **kwargs,
     ):
         """
@@ -123,20 +139,7 @@ class InvitationMessage(AgentMessage):
             list(handshake_protocols) if handshake_protocols else []
         )
         self.requests_attach = list(requests_attach) if requests_attach else []
-
-        # In order to accept and validate both string entries and
-        # dict block entries, we include both in schema and manipulate
-        # data in pre_load and post_dump
-        self.service_blocks = list(service_blocks) if service_blocks else []
-        self.service_dids = list(service_dids) if service_dids else []
-
-        # In the case of loading, we need to sort
-        # the entries into relevant lists for schema validation
-        for s in services or []:
-            if type(s) is Service:
-                self.service_blocks.append(s)
-            elif type(s) is str:
-                self.service_dids.append(s)
+        self.services = services
 
     @classmethod
     def wrap_message(cls, message: dict) -> AttachDecorator:
@@ -153,8 +156,14 @@ class InvitationMessage(AgentMessage):
         """
         c_json = self.to_json()
         oob = bytes_to_b64(c_json.encode("ascii"), urlsafe=True)
+        endpoint = None
+        if not base_url:
+            for service_item in self.services:
+                if isinstance(service_item, Service):
+                    endpoint = service_item.service_endpoint
+                    break
         result = urljoin(
-            (base_url if base_url else self.service_blocks[0].service_endpoint),
+            (base_url if base_url else endpoint),
             "?oob={}".format(oob),
         )
         return result
@@ -206,9 +215,29 @@ class InvitationMessageSchema(AgentMessageSchema):
         data_key="requests~attach",
         description="Optional request attachment",
     )
-
-    service_blocks = fields.Nested(ServiceSchema, many=True)
-    service_dids = fields.List(fields.Str(description="Service DID", **INDY_DID))
+    services = fields.List(
+        ServiceOrDIDField(
+            required=True,
+            description=(
+                "Either a DIDComm service object (as per RFC0067) or a DID string."
+            ),
+        ),
+        example=[
+            {
+                "did": "WgWxqztrNooG92RXvxSTWv",
+                "id": "string",
+                "recipientKeys": [
+                    "did:key:z6MkpTHR8VNsBxYAAWHut2Geadd9jSwuBV8xRoAnwWsdvktH"
+                ],
+                "routingKeys": [
+                    "did:key:z6MkpTHR8VNsBxYAAWHut2Geadd9jSwuBV8xRoAnwWsdvktH"
+                ],
+                "serviceEndpoint": "http://192.168.56.101:8020",
+                "type": "string",
+            },
+            "did:sov:WgWxqztrNooG92RXvxSTWv",
+        ],
+    )
 
     @validates_schema
     def validate_fields(self, data, **kwargs):
@@ -237,35 +266,9 @@ class InvitationMessageSchema(AgentMessageSchema):
         #         "Model must include non-empty services array"
         #     )
 
-    @pre_load
-    def pre_load(self, data, **kwargs):
-        """Pre load hook."""
-        data["service_dids"] = []
-        data["service_blocks"] = []
-
-        for service_entry in data["services"]:
-            if type(service_entry) is str:
-                data["service_dids"].append(service_entry)
-            if type(service_entry) is dict:
-                data["service_blocks"].append(service_entry)
-
-        del data["services"]
-
-        return data
-
     @post_dump
     def post_dump(self, data, **kwargs):
         """Post dump hook."""
-        data["services"] = []
-
-        for service_entry in data["service_dids"]:
-            data["services"].append(service_entry)
-        for service_entry in data["service_blocks"]:
-            data["services"].append(service_entry)
-
-        del data["service_dids"]
-        del data["service_blocks"]
-
         if "requests~attach" in data and not data["requests~attach"]:
             del data["requests~attach"]
 
