@@ -575,7 +575,7 @@ class AdminServer(BaseAdminServer):
                 "wallet.key",
                 "wallet.rekey",
                 "wallet.seed",
-                "wallet.storage.creds",
+                "wallet.storage_creds",
             ]
         }
         for index in range(len(config.get("admin.webhook_urls", []))):

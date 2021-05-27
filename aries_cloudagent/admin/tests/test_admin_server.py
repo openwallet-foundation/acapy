@@ -373,7 +373,7 @@ class TestAdminServer(AsyncTestCase):
                     "wallet.key",
                     "wallet.rekey",
                     "wallet.seed",
-                    "wallet.storage.creds",
+                    "wallet.storage_creds",
                 ]
             )
             assert config["admin.webhook_urls"] == [
