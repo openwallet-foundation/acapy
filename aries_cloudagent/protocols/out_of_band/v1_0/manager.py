@@ -29,7 +29,6 @@ from ...connections.v1_0.messages.connection_invitation import ConnectionInvitat
 from ...didcomm_prefix import DIDCommPrefix
 from ...didexchange.v1_0.manager import DIDXManager
 from ...issue_credential.v1_0.models.credential_exchange import V10CredentialExchange
-from ...issue_credential.v2_0.messages.cred_offer import V20CredOffer
 from ...issue_credential.v2_0.models.cred_ex_record import V20CredExRecord
 from ...present_proof.v1_0.manager import PresentationManager
 from ...present_proof.v1_0.message_types import PRESENTATION_REQUEST
@@ -175,9 +174,7 @@ class OutOfBandManager(BaseConnectionManager):
                         a_id,
                     )
                     message_attachments.append(
-                        InvitationMessage.wrap_message(
-                            V20CredOffer.deserialize(cred_ex_rec.cred_offer).offer()
-                        )
+                        InvitationMessage.wrap_message(cred_ex_rec.cred_offer.offer())
                     )
             elif a_type == "present-proof":
                 try:
@@ -197,9 +194,7 @@ class OutOfBandManager(BaseConnectionManager):
                     )
                     message_attachments.append(
                         InvitationMessage.wrap_message(
-                            V20PresRequest.deserialize(
-                                pres_ex_rec.pres_request
-                            ).attachment()
+                            pres_ex_rec.pres_request.attachment()
                         )
                     )
             else:

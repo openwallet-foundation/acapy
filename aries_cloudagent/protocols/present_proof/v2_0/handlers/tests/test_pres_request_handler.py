@@ -281,19 +281,18 @@ class TestPresRequestHandler(AsyncTestCase):
             )
 
             mock_pres_mgr.return_value.create_pres = async_mock.CoroutineMock(
-                side_effect=[
-                    test_module.IndyHolderError(),
-                    test_module.StorageError(),
-                ]
+                side_effect=test_module.IndyHolderError()
             )
 
             request_context.connection_ready = True
             handler = test_module.V20PresRequestHandler()
             responder = MockResponder()
 
-            await handler.handle(request_context, responder)
-            await handler.handle(request_context, responder)
-            mock_px_rec.save_error_state.assert_called_once()
+            with async_mock.patch.object(
+                handler._logger, "exception", async_mock.MagicMock()
+            ) as mock_log_exc:
+                await handler.handle(request_context, responder)
+                mock_log_exc.assert_called_once()
 
     async def test_called_auto_present_no_preview(self):
         request_context = RequestContext.test_context()

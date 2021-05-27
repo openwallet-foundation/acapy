@@ -3,12 +3,15 @@
 from .....indy.issuer import IndyIssuerError
 from .....ledger.error import LedgerError
 from .....messaging.base_handler import BaseHandler, HandlerException
+from .....messaging.models.base import BaseModelError
 from .....messaging.request_context import RequestContext
 from .....messaging.responder import BaseResponder
 from .....storage.error import StorageError
 from .....utils.tracing import trace_event, get_timer
 
+from .. import problem_report_for_record
 from ..manager import V20CredManager, V20CredManagerError
+from ..messages.cred_problem_report import ProblemReportReason
 from ..messages.cred_proposal import V20CredProposal
 
 
@@ -49,7 +52,7 @@ class V20CredProposalHandler(BaseHandler):
         )
 
         # If auto_offer is enabled, respond immediately with offer
-        if cred_ex_record.auto_offer:
+        if cred_ex_record and cred_ex_record.auto_offer:
             cred_offer_message = None
             try:
                 (cred_ex_record, cred_offer_message) = await cred_manager.create_offer(
@@ -58,16 +61,25 @@ class V20CredProposalHandler(BaseHandler):
                     comment=context.message.comment,
                 )
                 await responder.send_reply(cred_offer_message)
-            except (V20CredManagerError, IndyIssuerError, LedgerError) as err:
+            except (
+                BaseModelError,
+                IndyIssuerError,
+                LedgerError,
+                StorageError,
+                V20CredManagerError,
+            ) as err:
                 self._logger.exception(err)
-                if cred_ex_record:
-                    async with context.session() as session:
-                        await cred_ex_record.save_error_state(
-                            session,
-                            reason=err.message,
+                async with context.session() as session:
+                    await cred_ex_record.save_error_state(
+                        session,
+                        reason=err.roll_up,  # us: be specific
+                    )
+                    await responder.send_reply(
+                        problem_report_for_record(
+                            cred_ex_record,
+                            ProblemReportReason.ISSUANCE_ABANDONED.value,  # them: vague
                         )
-            except StorageError as err:
-                self._logger.exception(err)  # may be logging to wire, not dead disk
+                    )
 
             trace_event(
                 context.settings,

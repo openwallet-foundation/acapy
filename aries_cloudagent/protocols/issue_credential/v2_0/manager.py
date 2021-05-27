@@ -700,32 +700,6 @@ class V20CredManager:
             cred_ex_record = await V20CredExRecord.retrieve_by_id(session, cred_ex_id)
             await cred_ex_record.delete_record(session)
 
-    async def create_problem_report(
-        self,
-        cred_ex_record: V20CredExRecord,
-        description: str,
-    ):
-        """
-        Update cred ex record; create and return problem report.
-
-        Returns:
-            problem report
-
-        """
-        cred_ex_record.state = None
-        async with self._profile.session() as session:
-            await cred_ex_record.save(session, reason="created problem report")
-
-        report = V20CredProblemReport(
-            description={
-                "en": description,
-                "code": ProblemReportReason.ISSUANCE_ABANDONED.value,
-            }
-        )
-        report.assign_thread_id(cred_ex_record.thread_id)
-
-        return report
-
     async def receive_problem_report(
         self, message: V20CredProblemReport, connection_id: str
     ):

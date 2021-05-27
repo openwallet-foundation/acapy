@@ -1706,26 +1706,6 @@ class TestV20PresManager(AsyncTestCase):
 
             assert px_rec_out.state == V20PresExRecord.STATE_DONE
 
-    async def test_create_problem_report(self):
-        connection_id = "connection-id"
-        stored_exchange = V20PresExRecord(
-            pres_ex_id="dummy-pxid",
-            connection_id=connection_id,
-            initiator=V20PresExRecord.INITIATOR_SELF,
-            role=V20PresExRecord.ROLE_VERIFIER,
-            state=V20PresExRecord.STATE_PROPOSAL_RECEIVED,
-            thread_id="dummy-thid",
-        )
-
-        with async_mock.patch.object(V20PresExRecord, "save", autospec=True) as save_ex:
-            report = await self.manager.create_problem_report(
-                stored_exchange,
-                "The front fell off",
-            )
-
-        assert stored_exchange.state == V20PresExRecord.STATE_ABANDONED
-        assert report._thread_id == stored_exchange.thread_id
-
     async def test_receive_problem_report(self):
         connection_id = "connection-id"
         stored_exchange = V20PresExRecord(

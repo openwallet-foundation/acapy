@@ -4,15 +4,18 @@ from .....indy.holder import IndyHolder, IndyHolderError
 from .....indy.sdk.models.xform import indy_proof_req_preview2indy_requested_creds
 from .....ledger.error import LedgerError
 from .....messaging.base_handler import BaseHandler, HandlerException
+from .....messaging.models.base import BaseModelError
 from .....messaging.request_context import RequestContext
 from .....messaging.responder import BaseResponder
 from .....storage.error import StorageError, StorageNotFoundError
 from .....utils.tracing import trace_event, get_timer
 from .....wallet.error import WalletNotFoundError
 
-from ..manager import V20PresManager, V20PresManagerError
+from .. import problem_report_for_record
+from ..manager import V20PresManager
 from ..messages.pres_format import V20PresFormat
 from ..messages.pres_request import V20PresRequest
+from ..messages.pres_problem_report import ProblemReportReason
 from ..models.pres_exchange import V20PresExRecord
 
 
@@ -88,7 +91,7 @@ class V20PresRequestHandler(BaseHandler):
                 )
             except ValueError as err:
                 self._logger.warning(f"{err}")
-                return
+                return  # not a protocol error: prover could still build proof manually
 
             pres_message = None
             try:
@@ -102,9 +105,10 @@ class V20PresRequestHandler(BaseHandler):
                 )
                 await responder.send_reply(pres_message)
             except (
+                BaseModelError,
                 IndyHolderError,
                 LedgerError,
-                V20PresManagerError,
+                StorageError,
                 WalletNotFoundError,
             ) as err:
                 self._logger.exception(err)
@@ -112,11 +116,14 @@ class V20PresRequestHandler(BaseHandler):
                     async with context.session() as session:
                         await pres_ex_record.save_error_state(
                             session,
-                            state=V20PresExRecord.STATE_ABANDONED,
-                            reason=err.message,
+                            reason=err.roll_up,  # us: be specific
                         )
-            except StorageError as err:
-                self._logger.exception(err)  # may be logging to wire, not dead disk
+                    await responder.send_reply(
+                        problem_report_for_record(
+                            pres_ex_record,
+                            ProblemReportReason.ABANDONED.value,  # them: be vague
+                        )
+                    )
 
             trace_event(
                 context.settings,

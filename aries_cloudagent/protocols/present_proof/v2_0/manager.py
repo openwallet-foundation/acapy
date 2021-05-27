@@ -768,32 +768,6 @@ class V20PresManager:
 
         return pres_ex_record
 
-    async def create_problem_report(
-        self,
-        pres_ex_record: V20PresExRecord,
-        description: str,
-    ):
-        """
-        Update pres ex record; create and return problem report.
-
-        Returns:
-            problem report
-
-        """
-        pres_ex_record.state = V20PresExRecord.STATE_ABANDONED
-        async with self._profile.session() as session:
-            await pres_ex_record.save(session, reason="created problem report")
-
-        report = V20PresProblemReport(
-            description={
-                "en": description,
-                "code": ProblemReportReason.ABANDONED.value,
-            }
-        )
-        report.assign_thread_id(pres_ex_record.thread_id)
-
-        return report
-
     async def receive_problem_report(
         self, message: V20PresProblemReport, connection_id: str
     ):

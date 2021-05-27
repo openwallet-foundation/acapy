@@ -1,11 +1,15 @@
 """Presentation exchange record."""
 
+import logging
+
 from typing import Any, Mapping, Union
 
 from marshmallow import fields, Schema, validate
 
+from .....core.profile import ProfileSession
 from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
 from .....messaging.valid import UUIDFour
+from .....storage.base import StorageError
 
 from ..messages.pres import V20Pres, V20PresSchema
 from ..messages.pres_format import V20PresFormat
@@ -13,6 +17,8 @@ from ..messages.pres_proposal import V20PresProposal, V20PresProposalSchema
 from ..messages.pres_request import V20PresRequest, V20PresRequestSchema
 
 from . import UNENCRYPTED_TAGS
+
+LOGGER = logging.getLogger(__name__)
 
 
 class V20PresExRecord(BaseExchangeRecord):
@@ -134,6 +140,41 @@ class V20PresExRecord(BaseExchangeRecord):
     def pres(self, value):
         """Setter; store de/serialized views."""
         self._pres = V20Pres.serde(value)
+
+    async def save_error_state(
+        self,
+        session: ProfileSession,
+        *,
+        reason: str = None,
+        log_params: Mapping[str, Any] = None,
+        log_override: bool = False,
+    ):
+        """
+        Save record error state if need be; log and swallow any storage error.
+
+        Args:
+            session: The profile session to use
+            reason: A reason to add to the log
+            log_params: Additional parameters to log
+            override: Override configured logging regimen, print to stderr instead
+        """
+
+        if self._last_state == V20PresExRecord.STATE_ABANDONED:  # already done
+            return
+
+        self.state = V20PresExRecord.STATE_ABANDONED
+        if reason:
+            self.error_msg = reason
+
+        try:
+            await self.save(
+                session,
+                reason=reason,
+                log_params=log_params,
+                log_override=log_override,
+            )
+        except StorageError as err:
+            LOGGER.exception(err)
 
     @property
     def record_value(self) -> Mapping:
