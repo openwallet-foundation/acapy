@@ -15,38 +15,11 @@ from ....messaging.models.base import BaseModel, BaseModelSchema
 from ....messaging.models.openapi import OpenAPISchema
 from ....messaging.valid import (
     INDY_CRED_DEF_ID,
-    INDY_DID,
     INDY_PREDICATE,
-    INDY_SCHEMA_ID,
     INDY_VERSION,
     INT_EPOCH,
     NUM_STR_NATURAL,
 )
-
-
-class IndyProofReqPredSpecRestrictionsSchema(OpenAPISchema):
-    """Schema for restrictions in attr or pred specifier indy proof request."""
-
-    schema_id = fields.Str(
-        description="Schema identifier", required=False, **INDY_SCHEMA_ID
-    )
-    schema_issuer_did = fields.Str(
-        description="Schema issuer (origin) DID", required=False, **INDY_DID
-    )
-    schema_name = fields.Str(
-        example="transcript", description="Schema name", required=False
-    )
-    schema_version = fields.Str(
-        description="Schema version", required=False, **INDY_VERSION
-    )
-    issuer_did = fields.Str(
-        description="Credential issuer DID", required=False, **INDY_DID
-    )
-    cred_def_id = fields.Str(
-        description="Credential definition identifier",
-        required=False,
-        **INDY_CRED_DEF_ID,
-    )
 
 
 class IndyProofReqAttrSpecSchema(OpenAPISchema):
@@ -143,8 +116,27 @@ class IndyProofReqPredSpecSchema(OpenAPISchema):
     )
     p_value = fields.Int(description="Threshold value", required=True, strict=True)
     restrictions = fields.List(
-        fields.Nested(IndyProofReqPredSpecRestrictionsSchema()),
-        description="If present, credential must satisfy one of given restrictions",
+        fields.Dict(
+            keys=fields.Str(
+                validate=validate.Regexp(
+                    "^schema_id|"
+                    "schema_issuer_did|"
+                    "schema_name|"
+                    "schema_version|"
+                    "issuer_did|"
+                    "cred_def_id|"
+                    "attr::.+::value$"  # indy does not support attr::...::marker here
+                ),
+                example="cred_def_id",
+            ),
+            values=fields.Str(example=INDY_CRED_DEF_ID["example"]),
+        ),
+        description=(
+            "If present, credential must satisfy one of given restrictions: specify "
+            "schema_id, schema_issuer_did, schema_name, schema_version, "
+            "issuer_did, cred_def_id, and/or attr::<attribute-name>::value "
+            "where <attribute-name> represents a credential attribute name"
+        ),
         required=False,
     )
     non_revoked = fields.Nested(
