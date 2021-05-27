@@ -33,7 +33,8 @@ MESSAGE_TYPES = DIDCommPrefix.qualify_all(
         ),
         CREDENTIAL_ACK: f"{PROTOCOL_PACKAGE}.messages.credential_ack.CredentialAck",
         CREDENTIAL_PROBLEM_REPORT: (
-            f"{PROTOCOL_PACKAGE}.messages.problem_report.CredentialProblemReport"
+            f"{PROTOCOL_PACKAGE}.messages.credential_problem_report."
+            "CredentialProblemReport"
         ),
     }
 )

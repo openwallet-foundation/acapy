@@ -856,32 +856,6 @@ class CredentialManager:
 
         return cred_ex_record
 
-    async def create_problem_report(
-        self,
-        cred_ex_record: V10CredentialExchange,
-        description: str,
-    ):
-        """
-        Update cred ex record; create and return problem report.
-
-        Returns:
-            problem report
-
-        """
-        cred_ex_record.state = None
-        async with self._profile.session() as session:
-            await cred_ex_record.save(session, reason="created problem report")
-
-        report = CredentialProblemReport(
-            description={
-                "en": description,
-                "code": ProblemReportReason.ISSUANCE_ABANDONED.value,
-            }
-        )
-        report.assign_thread_id(cred_ex_record.thread_id)
-
-        return report
-
     async def receive_problem_report(
         self, message: CredentialProblemReport, connection_id: str
     ):

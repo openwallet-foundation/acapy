@@ -35,8 +35,7 @@ from ....storage.error import StorageError, StorageNotFoundError
 from ....utils.tracing import trace_event, get_timer, AdminAPIMessageTracingSchema
 from ....wallet.error import WalletNotFoundError
 
-from ...problem_report.v1_0 import internal_error
-
+from . import problem_report_for_record, report_problem
 from .manager import PresentationManager
 from .message_types import ATTACH_DECO_IDS, PRESENTATION_REQUEST, SPEC_URI
 from .messages.presentation_problem_report import ProblemReportReason
@@ -256,14 +255,19 @@ async def presentation_exchange_retrieve(request: web.BaseRequest):
             )
         result = pres_ex_record.serialize()
     except StorageNotFoundError as err:
+        # no such pres ex record: not protocol error, user fat-fingered id
         raise web.HTTPNotFound(reason=err.roll_up) from err
     except (BaseModelError, StorageError) as err:
-        return await internal_error(
+        # present but broken or hopeless: protocol error
+        if pres_ex_record:
+            async with context.session() as session:
+                await pres_ex_record.save_error_state(session, reason=err.roll_up)
+        await report_problem(
             err,
+            ProblemReportReason.ABANDONED.value,
             web.HTTPBadRequest,
             pres_ex_record,
             outbound_handler,
-            code=ProblemReportReason.ABANDONED.value,
         )
 
     return web.json_response(result)
@@ -325,12 +329,15 @@ async def presentation_exchange_credentials_list(request: web.BaseRequest):
             extra_query,
         )
     except IndyHolderError as err:
-        return await internal_error(
+        if pres_ex_record:
+            async with context.session() as session:
+                await pres_ex_record.save_error_state(session, reason=err.roll_up)
+        await report_problem(
             err,
+            ProblemReportReason.ABANDONED.value,
             web.HTTPBadRequest,
             pres_ex_record,
             outbound_handler,
-            code=ProblemReportReason.ABANDONED.value,
         )
 
     pres_ex_record.log_state(
@@ -381,13 +388,8 @@ async def presentation_exchange_send_proposal(request: web.BaseRequest):
                 presentation_proposal=IndyPresPreview.deserialize(presentation_preview),
             )
         except (BaseModelError, StorageError) as err:
-            return await internal_error(
-                err,
-                web.HTTPBadRequest,
-                connection_record,
-                outbound_handler,
-                code=ProblemReportReason.ABANDONED.value,
-            )
+            # other party does not care about our false protocol start
+            raise web.HTTPBadRequest(reason=err.roll_up)
 
     if not connection_record.is_ready:
         raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
@@ -411,13 +413,11 @@ async def presentation_exchange_send_proposal(request: web.BaseRequest):
         )
         result = pres_ex_record.serialize()
     except (BaseModelError, StorageError) as err:
-        return await internal_error(
-            err,
-            web.HTTPBadRequest,
-            pres_ex_record or connection_record,
-            outbound_handler,
-            code=ProblemReportReason.ABANDONED.value,
-        )
+        if pres_ex_record:
+            async with context.session() as session:
+                await pres_ex_record.save_error_state(session, reason=err.roll_up)
+        # other party does not care about our false protocol start
+        raise web.HTTPBadRequest(reason=err.roll_up)
 
     await outbound_handler(presentation_proposal_message, connection_id=connection_id)
 
@@ -487,13 +487,11 @@ async def presentation_exchange_create_request(request: web.BaseRequest):
         )
         result = pres_ex_record.serialize()
     except (BaseModelError, StorageError) as err:
-        return await internal_error(
-            err,
-            web.HTTPBadRequest,
-            pres_ex_record,
-            outbound_handler,
-            code=ProblemReportReason.ABANDONED.value,
-        )
+        if pres_ex_record:
+            async with context.session() as session:
+                await pres_ex_record.save_error_state(session, reason=err.roll_up)
+        # other party does not care about our false protocol start
+        raise web.HTTPBadRequest(reason=err.roll_up)
 
     await outbound_handler(presentation_request_message, connection_id=None)
 
@@ -570,13 +568,11 @@ async def presentation_exchange_send_free_request(request: web.BaseRequest):
         )
         result = pres_ex_record.serialize()
     except (BaseModelError, StorageError) as err:
-        return await internal_error(
-            err,
-            web.HTTPBadRequest,
-            pres_ex_record or connection_record,
-            outbound_handler,
-            code=ProblemReportReason.ABANDONED.value,
-        )
+        if pres_ex_record:
+            async with context.session() as session:
+                await pres_ex_record.save_error_state(session, reason=err.roll_up)
+        # other party does not care about our false protocol start
+        raise web.HTTPBadRequest(reason=err.roll_up)
 
     await outbound_handler(presentation_request_message, connection_id=connection_id)
 
@@ -623,13 +619,7 @@ async def presentation_exchange_send_bound_request(request: web.BaseRequest):
                 session, presentation_exchange_id
             )
         except StorageNotFoundError as err:
-            return await internal_error(
-                err,
-                web.HTTPNotFound,
-                pres_ex_record,
-                outbound_handler,
-                code=ProblemReportReason.ABANDONED.value,
-            )
+            raise web.HTTPNotFound(reason=err.roll_up) from err
 
         if pres_ex_record.state != (V10PresentationExchange.STATE_PROPOSAL_RECEIVED):
             raise web.HTTPBadRequest(
@@ -656,23 +646,17 @@ async def presentation_exchange_send_bound_request(request: web.BaseRequest):
             presentation_request_message,
         ) = await presentation_manager.create_bound_request(pres_ex_record)
         result = pres_ex_record.serialize()
-    except (BaseModelError, LedgerError) as err:
-        async with context.session() as session:
-            await pres_ex_record.save_error_state(session, reason=err.message)
-        return await internal_error(
+    except (BaseModelError, LedgerError, StorageError) as err:
+        if pres_ex_record:
+            async with context.session() as session:
+                await pres_ex_record.save_error_state(session, reason=err.roll_up)
+        # other party cares that we cannot continue protocol
+        await report_problem(
             err,
+            ProblemReportReason.ABANDONED.value,
             web.HTTPBadRequest,
             pres_ex_record,
             outbound_handler,
-            code=ProblemReportReason.ABANDONED.value,
-        )
-    except StorageError as err:
-        return await internal_error(
-            err,
-            web.HTTPBadRequest,
-            pres_ex_record,
-            outbound_handler,
-            code=ProblemReportReason.ABANDONED.value,
         )
 
     trace_msg = body.get("trace")
@@ -721,13 +705,7 @@ async def presentation_exchange_send_presentation(request: web.BaseRequest):
                 session, presentation_exchange_id
             )
         except StorageNotFoundError as err:
-            return await internal_error(
-                err,
-                web.HTTPNotFound,
-                pres_ex_record,
-                outbound_handler,
-                code=ProblemReportReason.ABANDONED.value,
-            )
+            raise web.HTTPNotFound(reason=err.roll_up) from err
 
         if pres_ex_record.state != (V10PresentationExchange.STATE_REQUEST_RECEIVED):
             raise web.HTTPBadRequest(
@@ -769,14 +747,16 @@ async def presentation_exchange_send_presentation(request: web.BaseRequest):
         StorageError,
         WalletNotFoundError,
     ) as err:
-        async with context.session() as session:
-            await pres_ex_record.save_error_state(session, reason=err.message)
-        return await internal_error(
+        if pres_ex_record:
+            async with context.session() as session:
+                await pres_ex_record.save_error_state(session, reason=err.roll_up)
+        # other party cares that we cannot continue protocol
+        await report_problem(
             err,
+            ProblemReportReason.ABANDONED.value,
             web.HTTPBadRequest,
             pres_ex_record,
             outbound_handler,
-            code=ProblemReportReason.ABANDONED.value,
         )
 
     trace_msg = body.get("trace")
@@ -824,13 +804,7 @@ async def presentation_exchange_verify_presentation(request: web.BaseRequest):
                 session, presentation_exchange_id
             )
         except StorageNotFoundError as err:
-            return await internal_error(
-                err,
-                web.HTTPNotFound,
-                pres_ex_record,
-                outbound_handler,
-                code=ProblemReportReason.ABANDONED.value,
-            )
+            raise web.HTTPNotFound(reason=err.roll_up) from err
 
         if pres_ex_record.state != (
             V10PresentationExchange.STATE_PRESENTATION_RECEIVED
@@ -857,23 +831,17 @@ async def presentation_exchange_verify_presentation(request: web.BaseRequest):
     try:
         pres_ex_record = await presentation_manager.verify_presentation(pres_ex_record)
         result = pres_ex_record.serialize()
-    except (BaseModelError, LedgerError) as err:
-        async with context.session() as session:
-            await pres_ex_record.save_error_state(session, reason=err.message)
-        return await internal_error(
+    except (BaseModelError, LedgerError, StorageError) as err:
+        if pres_ex_record:
+            async with context.session() as session:
+                await pres_ex_record.save_error_state(session, reason=err.roll_up)
+        # other party cares that we cannot continue protocol
+        await report_problem(
             err,
+            ProblemReportReason.ABANDONED.value,
             web.HTTPBadRequest,
             pres_ex_record,
             outbound_handler,
-            code=ProblemReportReason.ABANDONED.value,
-        )
-    except StorageError as err:
-        return await internal_error(
-            err,
-            web.HTTPBadRequest,
-            pres_ex_record,
-            outbound_handler,
-            code=ProblemReportReason.ABANDONED.value,
         )
 
     trace_event(
@@ -906,34 +874,22 @@ async def presentation_exchange_problem_report(request: web.BaseRequest):
 
     pres_ex_id = request.match_info["pres_ex_id"]
     body = await request.json()
-
-    presentation_manager = PresentationManager(context.profile)
+    description = body["description"]
 
     try:
         async with await context.session() as session:
             pres_ex_record = await V10PresentationExchange.retrieve_by_id(
                 session, pres_ex_id
             )
-        report = await presentation_manager.create_problem_report(
-            pres_ex_record,
-            body["description"],
-        )
-    except StorageNotFoundError as err:
-        await internal_error(
-            err,
-            web.HTTPNotFound,
-            None,
-            outbound_handler,
-            code=ProblemReportReason.ABANDONED.value,
-        )
+            report = problem_report_for_record(pres_ex_record, description)
+            await pres_ex_record.save_error_state(
+                session,
+                reason=f"created problem report: {description}",
+            )
+    except StorageNotFoundError as err:  # other party does not care about meta-problems
+        raise web.HTTPNotFound(reason=err.roll_up) from err
     except StorageError as err:
-        await internal_error(
-            err,
-            web.HTTPBadRequest,
-            pres_ex_record,
-            outbound_handler,
-            code=ProblemReportReason.ABANDONED.value,
-        )
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     await outbound_handler(report, connection_id=pres_ex_record.connection_id)
 
@@ -955,7 +911,6 @@ async def presentation_exchange_remove(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
-    outbound_handler = request["outbound_message_router"]
 
     presentation_exchange_id = request.match_info["pres_ex_id"]
     pres_ex_record = None
@@ -966,21 +921,9 @@ async def presentation_exchange_remove(request: web.BaseRequest):
             )
             await pres_ex_record.delete_record(session)
     except StorageNotFoundError as err:
-        return await internal_error(
-            err,
-            web.HTTPNotFound,
-            pres_ex_record,
-            outbound_handler,
-            code=ProblemReportReason.ABANDONED.value,
-        )
+        raise web.HTTPNotFound(reason=err.roll_up) from err
     except StorageError as err:
-        return await internal_error(
-            err,
-            web.HTTPBadRequest,
-            pres_ex_record,
-            outbound_handler,
-            code=ProblemReportReason.ABANDONED.value,
-        )
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     return web.json_response({})
 

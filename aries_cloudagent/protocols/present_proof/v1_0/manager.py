@@ -674,32 +674,6 @@ class PresentationManager:
 
         return presentation_exchange_record
 
-    async def create_problem_report(
-        self,
-        pres_ex_record: V10PresentationExchange,
-        description: str,
-    ):
-        """
-        Update pres ex record; create and return problem report.
-
-        Returns:
-            problem report
-
-        """
-        pres_ex_record.state = None
-        async with self._profile.session() as session:
-            await pres_ex_record.save(session, reason="created problem report")
-
-        report = PresentationProblemReport(
-            description={
-                "en": description,
-                "code": ProblemReportReason.ABANDONED.value,
-            }
-        )
-        report.assign_thread_id(pres_ex_record.thread_id)
-
-        return report
-
     async def receive_problem_report(
         self, message: PresentationProblemReport, connection_id: str
     ):

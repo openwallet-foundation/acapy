@@ -13,12 +13,7 @@ from marshmallow import fields
 from ...cache.base import BaseCache
 from ...config.settings import BaseSettings
 from ...core.profile import ProfileSession
-from ...storage.base import (
-    BaseStorage,
-    StorageDuplicateError,
-    StorageError,
-    StorageNotFoundError,
-)
+from ...storage.base import BaseStorage, StorageDuplicateError, StorageNotFoundError
 from ...storage.record import StorageRecord
 
 from ..util import datetime_to_str, time_now
@@ -429,40 +424,6 @@ class BaseRecord(BaseModel):
 
         await session.profile.notify(topic, payload)
 
-    async def save_error_state(
-        self,
-        session: ProfileSession,
-        state: str = None,
-        *,
-        reason: str = None,
-        log_params: Mapping[str, Any] = None,
-        log_override: bool = False,
-    ):
-        """
-        Save record error state if need be; log and swallow any storage error.
-
-        Args:
-            session: The profile session to use
-            state: The state to save if need be (typically None but by protocol)
-            reason: A reason to add to the log
-            log_params: Additional parameters to log
-            override: Override configured logging regimen, print to stderr instead
-        """
-
-        self.state = state
-        if self._last_state is state:  # already done
-            return
-
-        try:
-            await self.save(
-                session,
-                reason=reason,
-                log_params=log_params,
-                log_override=log_override,
-            )
-        except StorageError as err:
-            LOGGER.exception(err)
-
     @classmethod
     def log_state(
         cls,
@@ -552,7 +513,9 @@ class BaseRecordSchema(BaseModelSchema):
         model_class = None
 
     state = fields.Str(
-        required=False, description="Current record state", example="active"
+        required=False,
+        description="Current record state",
+        example="active",
     )
     created_at = fields.Str(
         required=False, description="Time of record creation", **INDY_ISO8601_DATETIME
