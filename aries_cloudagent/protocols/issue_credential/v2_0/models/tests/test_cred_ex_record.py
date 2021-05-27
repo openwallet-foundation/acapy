@@ -131,5 +131,5 @@ class TestV20CredExRecord(AsyncTestCase):
             test_module.LOGGER, "exception", async_mock.MagicMock()
         ) as mock_log_exc:
             mock_save.side_effect = test_module.StorageError()
-            await record.save_error_state(session)
+            await record.save_error_state(session, reason="test")
             mock_log_exc.assert_called_once()
