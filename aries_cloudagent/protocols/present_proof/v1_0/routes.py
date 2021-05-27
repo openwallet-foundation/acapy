@@ -874,19 +874,17 @@ async def presentation_exchange_problem_report(request: web.BaseRequest):
 
     pres_ex_id = request.match_info["pres_ex_id"]
     body = await request.json()
+    description = body["description"]
 
     try:
         async with await context.session() as session:
             pres_ex_record = await V10PresentationExchange.retrieve_by_id(
                 session, pres_ex_id
             )
-            report = problem_report_for_record(
-                pres_ex_record,
-                body["description"],
-            )
+            report = problem_report_for_record(pres_ex_record, description)
             await pres_ex_record.save_error_state(
                 session,
-                reason="created problem report",
+                reason=f"created problem report: {description}",
             )
     except StorageNotFoundError as err:  # other party does not care about meta-problems
         raise web.HTTPNotFound(reason=err.roll_up) from err

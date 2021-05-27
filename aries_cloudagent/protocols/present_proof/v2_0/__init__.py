@@ -25,7 +25,7 @@ def problem_report_for_record(
     result = V20PresProblemReport(
         description={
             "en": desc_en,
-            "code": ProblemReportReason.ABANDONED,
+            "code": ProblemReportReason.ABANDONED.value,
         },
     )
     if record:

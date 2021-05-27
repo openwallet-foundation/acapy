@@ -116,7 +116,6 @@ class V20PresRequestHandler(BaseHandler):
                     async with context.session() as session:
                         await pres_ex_record.save_error_state(
                             session,
-                            state=V20PresExRecord.STATE_ABANDONED,
                             reason=err.roll_up,  # us: be specific
                         )
                     await responder.send_reply(

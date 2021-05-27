@@ -22,7 +22,7 @@ def problem_report_for_record(
     result = V20CredProblemReport(
         description={
             "en": desc_en,
-            "code": ProblemReportReason.ISSUANCE_ABANDONED,
+            "code": ProblemReportReason.ISSUANCE_ABANDONED.value,
         },
     )
     if record:

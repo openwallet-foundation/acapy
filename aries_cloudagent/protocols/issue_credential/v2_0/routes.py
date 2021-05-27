@@ -724,9 +724,7 @@ async def credential_exchange_send_proposal(request: web.BaseRequest):
             },
         )
 
-        cred_proposal_message = V20CredProposal.deserialize(
-            cred_ex_record.cred_proposal
-        )
+        cred_proposal_message = cred_ex_record.cred_proposal
         result = cred_ex_record.serialize()
 
     except (BaseModelError, StorageError) as err:
@@ -1053,7 +1051,7 @@ async def credential_exchange_send_bound_offer(request: web.BaseRequest):
             cred_ex_record,
             counter_proposal=V20CredProposal(
                 comment=None,
-                credential_preview=(V20CredPreview.deserialize(preview_spec)),
+                credential_preview=V20CredPreview.deserialize(preview_spec),
                 **_formats_filters(filt_spec),
             )
             if preview_spec
@@ -1503,17 +1501,15 @@ async def credential_exchange_problem_report(request: web.BaseRequest):
 
     cred_ex_id = request.match_info["cred_ex_id"]
     body = await request.json()
+    description = body["description"]
 
     try:
         async with context.session() as session:
             cred_ex_record = await V20CredExRecord.retrieve_by_id(session, cred_ex_id)
-            report = problem_report_for_record(
-                cred_ex_record,
-                body["description"],
-            )
+            report = problem_report_for_record(cred_ex_record, description)
             await cred_ex_record.save_error_state(
                 session,
-                reason="created problem report",
+                reason=f"created problem report: {description}",
             )
     except StorageNotFoundError as err:  # other party does not care about meta-problems
         raise web.HTTPNotFound(reason=err.roll_up) from err

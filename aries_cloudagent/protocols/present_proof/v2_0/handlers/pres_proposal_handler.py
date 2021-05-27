@@ -12,7 +12,6 @@ from .. import problem_report_for_record
 from ..manager import V20PresManager
 from ..messages.pres_problem_report import ProblemReportReason
 from ..messages.pres_proposal import V20PresProposal
-from ..models.pres_exchange import V20PresExRecord
 
 
 class V20PresProposalHandler(BaseHandler):
@@ -71,7 +70,6 @@ class V20PresProposalHandler(BaseHandler):
                     async with context.session() as session:
                         await pres_ex_record.save_error_state(
                             session,
-                            state=V20PresExRecord.STATE_ABANDONED,
                             reason=err.roll_up,  # us: be specific
                         )
                     await responder.send_reply(

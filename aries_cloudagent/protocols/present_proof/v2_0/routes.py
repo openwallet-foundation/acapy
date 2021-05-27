@@ -410,11 +410,7 @@ async def present_proof_retrieve(request: web.BaseRequest):
         # present but broken or hopeless: protocol error
         if pres_ex_record:
             async with context.session() as session:
-                await pres_ex_record.save_error_state(
-                    session,
-                    state=V20PresExRecord.STATE_ABANDONED,
-                    reason=err.roll_up,
-                )
+                await pres_ex_record.save_error_state(session, reason=err.roll_up)
         await report_problem(
             err,
             ProblemReportReason.ABANDONED.value,
@@ -484,11 +480,7 @@ async def present_proof_credentials_list(request: web.BaseRequest):
     except IndyHolderError as err:
         if pres_ex_record:
             async with context.session() as session:
-                await pres_ex_record.save_error_state(
-                    session,
-                    state=V20PresExRecord.STATE_ABANDONED,
-                    reason=err.roll_up,
-                )
+                await pres_ex_record.save_error_state(session, reason=err.roll_up)
         await report_problem(
             err,
             ProblemReportReason.ABANDONED.value,
@@ -571,11 +563,7 @@ async def present_proof_send_proposal(request: web.BaseRequest):
     except (BaseModelError, StorageError) as err:
         if pres_ex_record:
             async with context.session() as session:
-                await pres_ex_record.save_error_state(
-                    session,
-                    state=V20PresExRecord.STATE_ABANDONED,
-                    reason=err.roll_up,
-                )
+                await pres_ex_record.save_error_state(session, reason=err.roll_up)
         # other party does not care about our false protocol start
         raise web.HTTPBadRequest(reason=err.roll_up)
 
@@ -645,11 +633,7 @@ async def present_proof_create_request(request: web.BaseRequest):
     except (BaseModelError, StorageError) as err:
         if pres_ex_record:
             async with context.session() as session:
-                await pres_ex_record.save_error_state(
-                    session,
-                    state=V20PresExRecord.STATE_ABANDONED,
-                    reason=err.roll_up,
-                )
+                await pres_ex_record.save_error_state(session, reason=err.roll_up)
         # other party does not care about our false protocol start
         raise web.HTTPBadRequest(reason=err.roll_up)
 
@@ -725,9 +709,7 @@ async def present_proof_send_free_request(request: web.BaseRequest):
     except (BaseModelError, StorageError) as err:
         if pres_ex_record:
             async with context.session() as session:
-                await pres_ex_record.save_error_state(
-                    session, state=V20PresExRecord.STATE_ABANDONED, reason=err.roll_up
-                )
+                await pres_ex_record.save_error_state(session, reason=err.roll_up)
         # other party does not care about our false protocol start
         raise web.HTTPBadRequest(reason=err.roll_up)
 
@@ -804,11 +786,7 @@ async def present_proof_send_bound_request(request: web.BaseRequest):
     except (BaseModelError, LedgerError, StorageError) as err:
         if pres_ex_record:
             async with context.session() as session:
-                await pres_ex_record.save_error_state(
-                    session,
-                    state=V20PresExRecord.STATE_ABANDONED,
-                    reason=err.roll_up,
-                )
+                await pres_ex_record.save_error_state(session, reason=err.roll_up)
         # other party cares that we cannot continue protocol
         await report_problem(
             err,
@@ -905,11 +883,7 @@ async def present_proof_send_presentation(request: web.BaseRequest):
         WalletNotFoundError,
     ) as err:
         async with context.session() as session:
-            await pres_ex_record.save_error_state(
-                session,
-                state=V20PresExRecord.STATE_ABANDONED,
-                reason=err.roll_up,
-            )
+            await pres_ex_record.save_error_state(session, reason=err.roll_up)
         # other party cares that we cannot continue protocol
         await report_problem(
             err,
@@ -989,11 +963,7 @@ async def present_proof_verify_presentation(request: web.BaseRequest):
     except (BaseModelError, LedgerError, StorageError) as err:
         if pres_ex_record:
             async with context.session() as session:
-                await pres_ex_record.save_error_state(
-                    session,
-                    state=V20PresExRecord.STATE_ABANDONED,
-                    reason=err.roll_up,
-                )
+                await pres_ex_record.save_error_state(session, reason=err.roll_up)
         # other party cares that we cannot continue protocol
         await report_problem(
             err,
@@ -1033,18 +1003,15 @@ async def present_proof_problem_report(request: web.BaseRequest):
 
     pres_ex_id = request.match_info["pres_ex_id"]
     body = await request.json()
+    description = body["description"]
 
     try:
         async with await context.session() as session:
             pres_ex_record = await V20PresExRecord.retrieve_by_id(session, pres_ex_id)
-        report = problem_report_for_record(
-            pres_ex_record,
-            body["description"],
-        )
+        report = problem_report_for_record(pres_ex_record, description)
         await pres_ex_record.save_error_state(
             session,
-            state=V20PresExRecord.STATE_ABANDONED,
-            reason="created problem report",
+            reason=f"created problem report: {description}",
         )
     except StorageNotFoundError as err:  # other party does not care about meta-problems
         raise web.HTTPNotFound(reason=err.roll_up) from err

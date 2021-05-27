@@ -1250,19 +1250,17 @@ async def credential_exchange_problem_report(request: web.BaseRequest):
 
     credential_exchange_id = request.match_info["cred_ex_id"]
     body = await request.json()
+    description = body["description"]
 
     try:
         async with context.session() as session:
             cred_ex_record = await V10CredentialExchange.retrieve_by_id(
                 session, credential_exchange_id
             )
-            report = problem_report_for_record(
-                cred_ex_record,
-                body["description"],
-            )
+            report = problem_report_for_record(cred_ex_record, description)
             await cred_ex_record.save_error_state(
                 session,
-                reason="created problem report",
+                reason=f"created problem report: {description}",
             )
     except StorageNotFoundError as err:  # other party does not care about meta-problems
         raise web.HTTPNotFound(reason=err.roll_up) from err

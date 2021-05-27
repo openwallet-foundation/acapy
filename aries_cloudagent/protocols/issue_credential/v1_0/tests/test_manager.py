@@ -1,10 +1,10 @@
 import asyncio
 import json
 
-from asynctest import TestCase as AsyncTestCase
-from asynctest import mock as async_mock
 from copy import deepcopy
 from time import time
+
+from asynctest import mock as async_mock, TestCase as AsyncTestCase
 
 from .....core.in_memory import InMemoryProfile
 from .....cache.base import BaseCache

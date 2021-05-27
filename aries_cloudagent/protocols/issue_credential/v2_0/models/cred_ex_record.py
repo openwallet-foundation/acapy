@@ -1,5 +1,7 @@
 """Aries#0453 v2.0 credential exchange information with non-secrets storage."""
 
+import logging
+
 from typing import Any, Mapping, Union
 
 from marshmallow import fields, Schema, validate
@@ -7,6 +9,7 @@ from marshmallow import fields, Schema, validate
 from .....core.profile import ProfileSession
 from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
 from .....messaging.valid import UUIDFour
+from .....storage.base import StorageError
 
 from ..messages.cred_format import V20CredFormat
 from ..messages.cred_issue import V20CredIssue, V20CredIssueSchema
@@ -16,6 +19,8 @@ from ..messages.cred_request import V20CredRequest, V20CredRequestSchema
 from ..messages.inner.cred_preview import V20CredPreviewSchema
 
 from . import UNENCRYPTED_TAGS
+
+LOGGER = logging.getLogger(__name__)
 
 
 class V20CredExRecord(BaseExchangeRecord):
@@ -137,6 +142,41 @@ class V20CredExRecord(BaseExchangeRecord):
     def cred_issue(self, value):
         """Setter; store de/serialized views."""
         self._cred_issue = V20CredIssue.serde(value)
+
+    async def save_error_state(
+        self,
+        session: ProfileSession,
+        *,
+        reason: str = None,
+        log_params: Mapping[str, Any] = None,
+        log_override: bool = False,
+    ):
+        """
+        Save record error state if need be; log and swallow any storage error.
+
+        Args:
+            session: The profile session to use
+            reason: A reason to add to the log
+            log_params: Additional parameters to log
+            override: Override configured logging regimen, print to stderr instead
+        """
+
+        if self._last_state is None:  # already done
+            return
+
+        self.state = None
+        if reason:
+            self.error_msg = reason
+
+        try:
+            await self.save(
+                session,
+                reason=reason,
+                log_params=log_params,
+                log_override=log_override,
+            )
+        except StorageError as err:
+            LOGGER.exception(err)
 
     @property
     def record_value(self) -> Mapping:

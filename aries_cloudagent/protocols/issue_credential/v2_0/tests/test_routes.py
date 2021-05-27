@@ -455,8 +455,6 @@ class TestV20CredRoutes(AsyncTestCase):
         ) as mock_conn_rec, async_mock.patch.object(
             test_module, "V20CredManager", autospec=True
         ) as mock_cred_mgr, async_mock.patch.object(
-            test_module.V20CredProposal, "deserialize", autospec=True
-        ) as mock_cred_proposal_deser, async_mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
             mock_cx_rec = async_mock.MagicMock()
@@ -466,9 +464,7 @@ class TestV20CredRoutes(AsyncTestCase):
 
             mock_response.assert_called_once_with(mock_cx_rec.serialize.return_value)
 
-            self.request["outbound_message_router"].assert_awaited_once_with(
-                mock_cred_proposal_deser.return_value, connection_id=connection_id
-            )
+            self.request["outbound_message_router"].assert_awaited_once()
 
     async def test_credential_exchange_send_proposal_no_filter(self):
         connection_id = "connection-id"

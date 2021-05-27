@@ -25,7 +25,7 @@ def problem_report_for_record(
     result = CredentialProblemReport(
         description={
             "en": desc_en,
-            "code": ProblemReportReason.ISSUANCE_ABANDONED,
+            "code": ProblemReportReason.ISSUANCE_ABANDONED.value,
         },
     )
     if record:
