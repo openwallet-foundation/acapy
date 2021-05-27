@@ -14,7 +14,6 @@ from ....revocation.models.revocation_registry import RevocationRegistry
 
 from ..v1_0.models.presentation_exchange import V10PresentationExchange
 from ..v2_0.messages.pres_format import V20PresFormat
-from ..v2_0.messages.pres_request import V20PresRequest
 from ..v2_0.models.pres_exchange import V20PresExRecord
 
 LOGGER = logging.getLogger(__name__)
@@ -48,11 +47,11 @@ class IndyPresExchHandler:
         # extract credential ids and non_revoked
         requested_referents = {}
         if isinstance(pres_ex_record, V20PresExRecord):
-            proof_request = V20PresRequest.deserialize(
-                pres_ex_record.pres_request
-            ).attachment(V20PresFormat.Format.INDY)
+            proof_request = pres_ex_record.pres_request.attachment(
+                V20PresFormat.Format.INDY
+            )
         elif isinstance(pres_ex_record, V10PresentationExchange):
-            proof_request = pres_ex_record.presentation_request
+            proof_request = pres_ex_record._presentation_request.ser
         non_revoc_intervals = indy_proof_req2non_revoc_intervals(proof_request)
         attr_creds = requested_credentials.get("requested_attributes", {})
         req_attrs = proof_request.get("requested_attributes", {})

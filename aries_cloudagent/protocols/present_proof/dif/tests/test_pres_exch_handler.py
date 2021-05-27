@@ -2173,3 +2173,227 @@ class TestPresExchHandler:
                 vp["presentation_submission"]["definition_id"]
                 == "32f54163-7166-48f1-93d8-ff217bdb0653"
             )
+
+    @pytest.mark.asyncio
+    @pytest.mark.ursa_bbs_signatures
+    async def test_no_filter(self, setup_tuple, profile):
+        cred_list, pd_list = setup_tuple
+        dif_pres_exch_handler = DIFPresExchHandler(profile)
+        test_pd_no_filter = """
+            {
+                "id":"32f54163-7166-48f1-93d8-ff217bdb0653",
+                "submission_requirements":[
+                    {
+                        "name": "European Union Citizenship Proofs",
+                        "rule": "all",
+                        "from": "A"
+                    }
+                ],
+                "input_descriptors":[
+                    {
+                        "id":"citizenship_input_1",
+                        "name":"EU Driver's License",
+                        "group":[
+                            "A"
+                        ],
+                        "schema":[
+                            {
+                                "uri":"https://www.w3.org/2018/credentials#VerifiableCredential"
+                            }
+                        ],
+                        "constraints":{
+                            "fields":[
+                                {
+                                    "path":[
+                                        "$.issuanceDate",
+                                        "$.vc.issuanceDate"
+                                    ]
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        """
+        tmp_pd = PresentationDefinition.deserialize(test_pd_no_filter)
+        tmp_vp = await dif_pres_exch_handler.create_vp(
+            credentials=cred_list,
+            pd=tmp_pd,
+            challenge="1f44d55f-f161-4938-a659-f8026467f126",
+        )
+        assert len(tmp_vp.get("verifiableCredential")) == 6
+
+    @pytest.mark.asyncio
+    @pytest.mark.ursa_bbs_signatures
+    async def test_filter_with_only_string_type(self, setup_tuple, profile):
+        cred_list, pd_list = setup_tuple
+        dif_pres_exch_handler = DIFPresExchHandler(profile)
+        test_pd_filter_with_only_string_type = """
+            {
+                "id":"32f54163-7166-48f1-93d8-ff217bdb0653",
+                "submission_requirements":[
+                    {
+                        "name": "European Union Citizenship Proofs",
+                        "rule": "all",
+                        "from": "A"
+                    }
+                ],
+                "input_descriptors":[
+                    {
+                        "id":"citizenship_input_1",
+                        "name":"EU Driver's License",
+                        "group":[
+                            "A"
+                        ],
+                        "schema":[
+                            {
+                                "uri":"https://www.w3.org/2018/credentials#VerifiableCredential"
+                            }
+                        ],
+                        "constraints":{
+                            "fields":[
+                                {
+                                    "path":[
+                                        "$.issuanceDate",
+                                        "$.vc.issuanceDate"
+                                    ],
+                                    "filter":{
+                                        "type":"string"
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        """
+        tmp_pd = PresentationDefinition.deserialize(
+            test_pd_filter_with_only_string_type
+        )
+        tmp_vp = await dif_pres_exch_handler.create_vp(
+            credentials=cred_list,
+            pd=tmp_pd,
+            challenge="1f44d55f-f161-4938-a659-f8026467f126",
+        )
+        assert len(tmp_vp.get("verifiableCredential")) == 6
+
+    @pytest.mark.asyncio
+    @pytest.mark.ursa_bbs_signatures
+    async def test_filter_with_only_num_type(self, profile):
+        dif_pres_exch_handler = DIFPresExchHandler(profile)
+        test_pd_filter_with_only_num_type = """
+            {
+                "id":"32f54163-7166-48f1-93d8-ff217bdb0653",
+                "submission_requirements":[
+                    {
+                        "name": "European Union Citizenship Proofs",
+                        "rule": "pick",
+                        "min": 1,
+                        "from": "A"
+                    }
+                ],
+                "input_descriptors":[
+                    {
+                    "id":"citizenship_input_1",
+                    "name":"EU Driver's License",
+                    "group":[
+                        "A"
+                    ],
+                    "schema":[
+                        {
+                            "uri":"https://www.w3.org/2018/credentials#VerifiableCredential"
+                        }
+                    ],
+                    "constraints":{
+                        "fields":[
+                            {
+                                "path":[
+                                    "$.credentialSubject.test",
+                                    "$.vc.credentialSubject.test",
+                                    "$.test"
+                                ],
+                                "filter":{  
+                                    "type": "number"
+                                }
+                            }
+                        ]
+                    }
+                    }
+                ]
+            }
+        """
+
+        tmp_pd = PresentationDefinition.deserialize(test_pd_filter_with_only_num_type)
+        tmp_vp = await dif_pres_exch_handler.create_vp(
+            credentials=bbs_bls_number_filter_creds,
+            pd=tmp_pd,
+            challenge="1f44d55f-f161-4938-a659-f8026467f126",
+        )
+        assert len(tmp_vp.get("verifiableCredential")) == 3
+
+    @pytest.mark.asyncio
+    @pytest.mark.ursa_bbs_signatures
+    async def test_filter_with_only_string_type_with_format(self, setup_tuple, profile):
+        cred_list, pd_list = setup_tuple
+        dif_pres_exch_handler = DIFPresExchHandler(profile)
+        test_pd_filter_with_only_string_type_with_format = """
+            {
+                "id":"32f54163-7166-48f1-93d8-ff217bdb0653",
+                "submission_requirements":[
+                    {
+                        "name": "European Union Citizenship Proofs",
+                        "rule": "all",
+                        "from": "A"
+                    }
+                ],
+                "input_descriptors":[
+                    {
+                        "id":"citizenship_input_1",
+                        "name":"EU Driver's License",
+                        "group":[
+                            "A"
+                        ],
+                        "schema":[
+                            {
+                                "uri":"https://www.w3.org/2018/credentials#VerifiableCredential"
+                            }
+                        ],
+                        "constraints":{
+                            "fields":[
+                                {
+                                    "path":[
+                                        "$.issuanceDate",
+                                        "$.vc.issuanceDate"
+                                    ],
+                                    "filter":{
+                                        "type":"string",
+                                        "format":"date"
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        """
+        tmp_pd = PresentationDefinition.deserialize(
+            test_pd_filter_with_only_string_type_with_format
+        )
+        tmp_vp = await dif_pres_exch_handler.create_vp(
+            credentials=cred_list,
+            pd=tmp_pd,
+            challenge="1f44d55f-f161-4938-a659-f8026467f126",
+        )
+        assert len(tmp_vp.get("verifiableCredential")) == 6
+
+    def test_validate_patch_catch_errors(self, profile):
+        dif_pres_exch_handler = DIFPresExchHandler(profile)
+        _filter = Filter(_type="string", fmt="date")
+        _to_check = "test123"
+        assert not dif_pres_exch_handler.validate_patch(
+            to_check=_to_check, _filter=_filter
+        )
+        _to_check = 123
+        assert not dif_pres_exch_handler.validate_patch(
+            to_check=_to_check, _filter=_filter
+        )

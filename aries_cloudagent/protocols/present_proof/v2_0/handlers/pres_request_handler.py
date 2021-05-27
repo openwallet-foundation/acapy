@@ -50,7 +50,7 @@ class V20PresRequestHandler(BaseHandler):
                     {"thread_id": context.message._thread_id},
                     {"connection_id": context.connection_record.connection_id},
                 )  # holder initiated via proposal
-            pres_ex_record.pres_request = context.message.serialize()
+            pres_ex_record.pres_request = context.message
         except StorageNotFoundError:
             # verifier sent this request free of any proposal
             pres_ex_record = V20PresExRecord(
@@ -58,7 +58,7 @@ class V20PresRequestHandler(BaseHandler):
                 thread_id=context.message._thread_id,
                 initiator=V20PresExRecord.INITIATOR_EXTERNAL,
                 role=V20PresExRecord.ROLE_PROVER,
-                pres_request=context.message.serialize(),
+                pres_request=context.message,
                 auto_present=context.settings.get(
                     "debug.auto_respond_presentation_request"
                 ),
@@ -97,11 +97,12 @@ class V20PresRequestHandler(BaseHandler):
             ) as err:
                 self._logger.exception(err)
                 if pres_ex_record:
-                    await pres_ex_record.save_error_state(
-                        context.session(),
-                        state=V20PresExRecord.STATE_ABANDONED,
-                        reason=err.message,
-                    )
+                    async with context.session() as session:
+                        await pres_ex_record.save_error_state(
+                            session,
+                            state=V20PresExRecord.STATE_ABANDONED,
+                            reason=err.message,
+                        )
             except StorageError as err:
                 self._logger.exception(err)  # may be logging to wire, not dead disk
             trace_event(

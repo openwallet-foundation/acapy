@@ -26,8 +26,6 @@ from ...message_types import (
 )
 from ...messages.pres import V20Pres
 from ...messages.pres_format import V20PresFormat
-from ...messages.pres_proposal import V20PresProposal
-from ...messages.pres_request import V20PresRequest
 from ...models.pres_exchange import V20PresExRecord
 
 from ..handler import V20PresFormatHandler, V20PresFormatError
@@ -113,9 +111,9 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
             A tuple (updated presentation exchange record, presentation request message)
 
         """
-        indy_proof_request = V20PresProposal.deserialize(
-            pres_ex_record.pres_proposal
-        ).attachment(IndyPresExchangeHandler.format)
+        indy_proof_request = pres_ex_record.pres_proposal.attachment(
+            IndyPresExchangeHandler.format
+        )
         indy_proof_request["name"] = request_data.get("name") or "proof-request"
         indy_proof_request["version"] = request_data.get("version") or "1.0"
         indy_proof_request["nonce"] = (
@@ -132,7 +130,7 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
         requested_credentials = {}
         if request_data == {}:
             try:
-                proof_request = V20PresRequest.deserialize(pres_ex_record.pres_request)
+                proof_request = pres_ex_record.pres_request
                 indy_proof_request = proof_request.attachment(
                     IndyPresExchangeHandler.format
                 )
@@ -168,9 +166,9 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
 
         def _check_proof_vs_proposal():
             """Check for bait and switch in presented values vs. proposal request."""
-            proof_req = V20PresRequest.deserialize(
-                pres_ex_record.pres_request
-            ).attachment(IndyPresExchangeHandler.format)
+            proof_req = pres_ex_record.pres_request.attachment(
+                IndyPresExchangeHandler.format
+            )
 
             # revealed attrs
             for reft, attr_spec in proof["requested_proof"]["revealed_attrs"].items():
@@ -301,11 +299,9 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
             presentation exchange record, updated
 
         """
-        pres_request_msg = V20PresRequest.deserialize(pres_ex_record.pres_request)
+        pres_request_msg = pres_ex_record.pres_request
         indy_proof_request = pres_request_msg.attachment(IndyPresExchangeHandler.format)
-        indy_proof = V20Pres.deserialize(pres_ex_record.pres).attachment(
-            IndyPresExchangeHandler.format
-        )
+        indy_proof = pres_ex_record.pres.attachment(IndyPresExchangeHandler.format)
         indy_handler = IndyPresExchHandler(self._profile)
         (
             schemas,

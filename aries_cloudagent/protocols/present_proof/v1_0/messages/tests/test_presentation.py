@@ -12,7 +12,6 @@ from ...message_types import ATTACH_DECO_IDS, PRESENTATION
 
 from ..presentation import Presentation, PresentationSchema
 
-
 INDY_PROOF = json.loads(
     """{
         "proof": {

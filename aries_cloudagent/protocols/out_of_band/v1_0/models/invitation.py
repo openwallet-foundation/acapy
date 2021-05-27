@@ -4,7 +4,6 @@ from typing import Any, Mapping, Union
 
 from marshmallow import fields
 
-from .....messaging.models import to_serial
 from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
 from .....messaging.valid import UUIDFour
 
@@ -45,7 +44,7 @@ class InvitationRecord(BaseExchangeRecord):
         self._id = invitation_id
         self.state = state
         self.invi_msg_id = invi_msg_id
-        self.invitation = to_serial(invitation)
+        self._invitation = InvitationMessage.serde(invitation)
         self.invitation_url = invitation_url
         self.trace = trace
 
@@ -55,37 +54,33 @@ class InvitationRecord(BaseExchangeRecord):
         return self._id
 
     @property
+    def invitation(self) -> InvitationMessage:
+        """Accessor; get deserialized view."""
+        return None if self._invitation is None else self._invitation.de
+
+    @invitation.setter
+    def invitation(self, value):
+        """Setter; store de/serialized views."""
+        self._invitation = InvitationMessage.serde(value)
+
+    @property
     def record_value(self) -> dict:
         """Accessor for the JSON record value generated for this invitation."""
         return {
-            prop: getattr(self, prop)
-            for prop in (
-                "invitation",
-                "invitation_url",
-                "state",
-                "trace",
-            )
-        }
-
-    def serialize(self, as_string=False) -> Mapping:
-        """
-        Create a JSON-compatible representation of the model instance.
-
-        Args:
-            as_string: return a string of JSON instead of a mapping
-
-        """
-        copy = InvitationRecord(
-            invitation_id=self.invitation_id,
             **{
-                k: v
-                for k, v in vars(self).items()
-                if k not in ["_id", "_last_state", "invitation"]
+                prop: getattr(self, prop)
+                for prop in (
+                    "invitation_url",
+                    "state",
+                    "trace",
+                )
             },
-        )
-        copy.invitation = InvitationMessage.deserialize(self.invitation, none2none=True)
-
-        return super(self.__class__, copy).serialize(as_string)
+            **{
+                prop: getattr(self, f"_{prop}").ser
+                for prop in ("invitation",)
+                if getattr(self, prop) is not None
+            },
+        }
 
     def __eq__(self, other: Any) -> bool:
         """Comparison between records."""

@@ -436,11 +436,11 @@ class TestPresRequestHandler(AsyncTestCase):
                     format_=V20PresFormat.Format.DIF.aries,
                 )
             ],
-            proposals_attach=[AttachDecorator.data_json(DIF_PROP_REQ, ident="indy")],
+            proposals_attach=[AttachDecorator.data_json(DIF_PROP_REQ, ident="dif")],
         )
 
         px_rec_instance = test_module.V20PresExRecord(
-            pres_proposal=pres_proposal.serialize(),
+            pres_proposal=pres_proposal,
             auto_present=True,
         )
         with async_mock.patch.object(

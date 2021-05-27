@@ -36,8 +36,6 @@ from ...message_types import (
     PRES_20_PROPOSAL,
 )
 from ...messages.pres_format import V20PresFormat
-from ...messages.pres_proposal import V20PresProposal
-from ...messages.pres_request import V20PresRequest
 from ...messages.pres import V20Pres
 from ...models.pres_exchange import V20PresExRecord
 
@@ -148,9 +146,9 @@ class DIFPresFormatHandler(V20PresFormatHandler):
             A tuple (updated presentation exchange record, presentation request message)
 
         """
-        dif_proof_request = V20PresProposal.deserialize(
-            pres_ex_record.pres_proposal
-        ).attachment(DIFPresFormatHandler.format)
+        dif_proof_request = pres_ex_record.pres_proposal.attachment(
+            DIFPresFormatHandler.format
+        )
 
         return self.get_format_data(PRES_20_REQUEST, dif_proof_request)
 
@@ -160,9 +158,9 @@ class DIFPresFormatHandler(V20PresFormatHandler):
         request_data: dict = {},
     ) -> Tuple[V20PresFormat, AttachDecorator]:
         """Create a presentation."""
-        proof_request = V20PresRequest.deserialize(
-            pres_ex_record.pres_request
-        ).attachment(DIFPresFormatHandler.format)
+        proof_request = pres_ex_record.pres_request.attachment(
+            DIFPresFormatHandler.format
+        )
         pres_definition = None
 
         challenge = None
@@ -260,12 +258,10 @@ class DIFPresFormatHandler(V20PresFormatHandler):
         """
         async with self._profile.session() as session:
             wallet = session.inject(BaseWallet)
-            dif_proof = V20Pres.deserialize(pres_ex_record.pres).attachment(
+            dif_proof = pres_ex_record.pres.attachment(DIFPresFormatHandler.format)
+            pres_request = pres_ex_record.pres_request.attachment(
                 DIFPresFormatHandler.format
             )
-            pres_request = V20PresRequest.deserialize(
-                pres_ex_record.pres_request
-            ).attachment(DIFPresFormatHandler.format)
             if "options" in pres_request:
                 challenge = pres_request.get("options").get("challenge")
             else:

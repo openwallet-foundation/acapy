@@ -64,12 +64,11 @@ class V20PresManager:
             thread_id=pres_proposal_message._thread_id,
             initiator=V20PresExRecord.INITIATOR_SELF,
             role=V20PresExRecord.ROLE_PROVER,
+            state=V20PresExRecord.STATE_PROPOSAL_SENT,
+            pres_proposal=pres_proposal_message,
             auto_present=auto_present,
             trace=(pres_proposal_message._trace is not None),
         )
-
-        pres_ex_record.pres_proposal = pres_proposal_message.serialize()
-        pres_ex_record.state = V20PresExRecord.STATE_PROPOSAL_SENT
 
         async with self._profile.session() as session:
             await pres_ex_record.save(
@@ -93,48 +92,16 @@ class V20PresManager:
             thread_id=message._thread_id,
             initiator=V20PresExRecord.INITIATOR_EXTERNAL,
             role=V20PresExRecord.ROLE_VERIFIER,
+            state=V20PresExRecord.STATE_PROPOSAL_RECEIVED,
+            pres_proposal=message,
             trace=(message._trace is not None),
         )
-
-        pres_ex_record.pres_proposal = message.serialize()
-        pres_ex_record.state = V20PresExRecord.STATE_PROPOSAL_RECEIVED
 
         async with self._profile.session() as session:
             await pres_ex_record.save(
                 session, reason="receive v2.0 presentation request"
             )
 
-        return pres_ex_record
-
-    async def create_exchange_for_request(
-        self, connection_id: str, pres_request_message: V20PresRequest
-    ):
-        """
-        Create a presentation exchange record for input presentation request.
-
-        Args:
-            connection_id: connection identifier
-            pres_request_message: presentation request to use in creating
-                exchange record, extracting indy proof request and thread id
-
-        Returns:
-            Presentation exchange record, updated
-
-        """
-        pres_ex_record = V20PresExRecord(
-            connection_id=connection_id,
-            thread_id=pres_request_message._thread_id,
-            initiator=V20PresExRecord.INITIATOR_SELF,
-            role=V20PresExRecord.ROLE_VERIFIER,
-            trace=(pres_request_message._trace is not None),
-        )
-
-        pres_ex_record.pres_request = pres_request_message.serialize()
-        pres_ex_record.state = V20PresExRecord.STATE_REQUEST_SENT
-        async with self._profile.session() as session:
-            await pres_ex_record.save(
-                session, reason="create (free) v2.0 presentation request"
-            )
         return pres_ex_record
 
     async def create_bound_request(
@@ -155,7 +122,7 @@ class V20PresManager:
             A tuple (updated presentation exchange record, presentation request message)
 
         """
-        proof_proposal = V20PresProposal.deserialize(pres_ex_record.pres_proposal)
+        proof_proposal = pres_ex_record.pres_proposal
         input_formats = proof_proposal.formats
         request_formats = []
         for format in input_formats:
@@ -185,13 +152,44 @@ class V20PresManager:
 
         pres_ex_record.thread_id = pres_request_message._thread_id
         pres_ex_record.state = V20PresExRecord.STATE_REQUEST_SENT
-        pres_ex_record.pres_request = pres_request_message.serialize()
+        pres_ex_record.pres_request = pres_request_message
         async with self._profile.session() as session:
             await pres_ex_record.save(
                 session, reason="create (bound) v2.0 presentation request"
             )
 
         return pres_ex_record, pres_request_message
+
+    async def create_exchange_for_request(
+        self, connection_id: str, pres_request_message: V20PresRequest
+    ):
+        """
+        Create a presentation exchange record for input presentation request.
+
+        Args:
+            connection_id: connection identifier
+            pres_request_message: presentation request to use in creating
+                exchange record, extracting indy proof request and thread id
+
+        Returns:
+            Presentation exchange record, updated
+
+        """
+        pres_ex_record = V20PresExRecord(
+            connection_id=connection_id,
+            thread_id=pres_request_message._thread_id,
+            initiator=V20PresExRecord.INITIATOR_SELF,
+            role=V20PresExRecord.ROLE_VERIFIER,
+            state=V20PresExRecord.STATE_REQUEST_SENT,
+            pres_request=pres_request_message,
+            trace=(pres_request_message._trace is not None),
+        )
+        async with self._profile.session() as session:
+            await pres_ex_record.save(
+                session, reason="create (free) v2.0 presentation request"
+            )
+
+        return pres_ex_record
 
     async def receive_pres_request(self, pres_ex_record: V20PresExRecord):
         """
@@ -254,7 +252,7 @@ class V20PresManager:
             A tuple (updated presentation exchange record, presentation message)
 
         """
-        proof_request = V20PresRequest.deserialize(pres_ex_record.pres_request)
+        proof_request = pres_ex_record.pres_request
         input_formats = proof_request.formats
         pres_formats = []
         for format in input_formats:
@@ -287,7 +285,7 @@ class V20PresManager:
         pres_ex_record.pres = V20Pres(
             formats=[format for (format, _) in pres_formats],
             presentations_attach=[attach for (_, attach) in pres_formats],
-        ).serialize()
+        )
         async with self._profile.session() as session:
             await pres_ex_record.save(session, reason="create v2.0 presentation")
         return pres_ex_record, pres_message
@@ -328,7 +326,7 @@ class V20PresManager:
                     message,
                     pres_ex_record,
                 )
-        pres_ex_record.pres = message.serialize()
+        pres_ex_record.pres = message
         pres_ex_record.state = V20PresExRecord.STATE_PRESENTATION_RECEIVED
 
         async with self._profile.session() as session:
@@ -348,7 +346,7 @@ class V20PresManager:
             presentation exchange record, updated
 
         """
-        pres_request_msg = V20PresRequest.deserialize(pres_ex_record.pres_request)
+        pres_request_msg = pres_ex_record.pres_request
         input_formats = pres_request_msg.formats
         for format in input_formats:
             pres_exch_format = V20PresFormat.Format.get(format.format)

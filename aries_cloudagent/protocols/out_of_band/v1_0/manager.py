@@ -349,7 +349,7 @@ class OutOfBandManager(BaseConnectionManager):
         return InvitationRecord(  # for return via admin API, not storage
             state=InvitationRecord.STATE_INITIAL,
             invi_msg_id=invi_msg._id,
-            invitation=invi_msg.serialize(),
+            invitation=invi_msg,
             invitation_url=invi_url,
         )
 

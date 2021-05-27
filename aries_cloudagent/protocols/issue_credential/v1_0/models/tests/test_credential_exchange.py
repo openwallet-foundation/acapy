@@ -60,7 +60,7 @@ class TestV10CredentialExchange(TestCase):
                 error_msg=None,
                 trace=False,
             )
-            assert type(cx_rec.credential_proposal_dict) == dict
+            assert type(cx_rec.credential_proposal_dict) == CredentialProposal
             ser = cx_rec.serialize()
             deser = V10CredentialExchange.deserialize(ser)
-            assert type(deser.credential_proposal_dict) == dict
+            assert type(deser.credential_proposal_dict) == CredentialProposal

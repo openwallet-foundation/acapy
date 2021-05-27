@@ -1470,12 +1470,17 @@ class TestPresentProofRoutes(AsyncTestCase):
 
             mock_pres_mgr_inst = async_mock.MagicMock(
                 create_pres=async_mock.CoroutineMock(
-                    side_effect=test_module.LedgerError()
+                    side_effect=[
+                        test_module.LedgerError(),
+                        test_module.StorageError(),
+                    ]
                 )
             )
             mock_pres_mgr_cls.return_value = mock_pres_mgr_inst
 
-            with self.assertRaises(test_module.web.HTTPBadRequest):
+            with self.assertRaises(test_module.web.HTTPBadRequest):  # ledger error
+                await test_module.present_proof_send_presentation(self.request)
+            with self.assertRaises(test_module.web.HTTPBadRequest):  # storage error
                 await test_module.present_proof_send_presentation(self.request)
 
     async def test_present_proof_verify_presentation(self):
@@ -1667,12 +1672,17 @@ class TestPresentProofRoutes(AsyncTestCase):
 
             mock_pres_mgr_inst = async_mock.MagicMock(
                 verify_pres=async_mock.CoroutineMock(
-                    side_effect=test_module.LedgerError()
+                    side_effect=[
+                        test_module.LedgerError(),
+                        test_module.StorageError(),
+                    ]
                 )
             )
             mock_pres_mgr_cls.return_value = mock_pres_mgr_inst
 
-            with self.assertRaises(test_module.web.HTTPBadRequest):
+            with self.assertRaises(test_module.web.HTTPBadRequest):  # ledger error
+                await test_module.present_proof_verify_presentation(self.request)
+            with self.assertRaises(test_module.web.HTTPBadRequest):  # storage error
                 await test_module.present_proof_verify_presentation(self.request)
 
     async def test_present_proof_problem_report(self):

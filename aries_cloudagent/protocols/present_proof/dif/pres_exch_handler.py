@@ -11,7 +11,9 @@ returns VerifiablePresentation
 import pytz
 import re
 
+from datetime import datetime
 from dateutil.parser import parse as dateutil_parser
+from dateutil.parser import ParserError
 from jsonpath_ng import parse
 from pyld import jsonld
 from pyld.jsonld import JsonLdProcessor
@@ -571,6 +573,9 @@ class DIFPresExchHandler:
             if len(match) == 0:
                 continue
             for match_item in match:
+                # No filter in constraint
+                if not field._filter:
+                    return True
                 if self.validate_patch(match_item.value, field._filter):
                     return True
         return False
@@ -589,12 +594,28 @@ class DIFPresExchHandler:
             bool
 
         """
-        return_val = None
+        return_val = False
         if _filter._type:
-            if _filter._type == "number":
-                return_val = self.process_numeric_val(to_check, _filter)
-            elif _filter._type == "string":
-                return_val = self.process_string_val(to_check, _filter)
+            if self.check_filter_only_type_enforced(_filter):
+                if _filter._type == "number":
+                    if isinstance(to_check, (int, float)):
+                        return True
+                elif _filter._type == "string":
+                    if isinstance(to_check, str):
+                        if _filter.fmt == "date" or _filter.fmt == "date-time":
+                            try:
+                                to_compare_date = dateutil_parser(to_check)
+                                if isinstance(to_compare_date, datetime):
+                                    return True
+                            except (ParserError, TypeError):
+                                return False
+                        else:
+                            return True
+            else:
+                if _filter._type == "number":
+                    return_val = self.process_numeric_val(to_check, _filter)
+                elif _filter._type == "string":
+                    return_val = self.process_string_val(to_check, _filter)
         else:
             if _filter.enums:
                 return_val = self.enum_check(val=to_check, _filter=_filter)
@@ -603,8 +624,32 @@ class DIFPresExchHandler:
 
         if _filter._not:
             return not return_val
+        return return_val
+
+    def check_filter_only_type_enforced(self, _filter: Filter) -> bool:
+        """
+        Check if only type is specified in filter.
+
+        Args:
+            _filter: Filter
+        Return:
+            bool
+
+        """
+        if (
+            _filter.pattern is None
+            and _filter.minimum is None
+            and _filter.maximum is None
+            and _filter.min_length is None
+            and _filter.max_length is None
+            and _filter.exclusive_min is None
+            and _filter.exclusive_max is None
+            and _filter.const is None
+            and _filter.enums is None
+        ):
+            return True
         else:
-            return return_val
+            return False
 
     def process_numeric_val(self, val: any, _filter: Filter) -> bool:
         """
@@ -655,18 +700,14 @@ class DIFPresExchHandler:
             return self.pattern_check(val, _filter)
         elif _filter.enums:
             return self.enum_check(val, _filter)
-        elif _filter.exclusive_max:
-            if _filter.fmt:
-                return self.exclusive_maximum_check(val, _filter)
-        elif _filter.exclusive_min:
-            if _filter.fmt:
-                return self.exclusive_minimum_check(val, _filter)
-        elif _filter.minimum:
-            if _filter.fmt:
-                return self.minimum_check(val, _filter)
-        elif _filter.maximum:
-            if _filter.fmt:
-                return self.maximum_check(val, _filter)
+        elif _filter.exclusive_max and _filter.fmt:
+            return self.exclusive_maximum_check(val, _filter)
+        elif _filter.exclusive_min and _filter.fmt:
+            return self.exclusive_minimum_check(val, _filter)
+        elif _filter.minimum and _filter.fmt:
+            return self.minimum_check(val, _filter)
+        elif _filter.maximum and _filter.fmt:
+            return self.maximum_check(val, _filter)
         elif _filter.const:
             return self.const_check(val, _filter)
         else:

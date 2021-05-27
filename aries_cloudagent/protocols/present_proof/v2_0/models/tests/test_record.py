@@ -72,43 +72,6 @@ class BasexRecordImplSchema(BaseExchangeSchema):
 
 class TestRecord(UnitTestCase):
     def test_record(self):
-        record = V20PresExRecord(
-            pres_ex_id="pxid",
-            thread_id="thid",
-            connection_id="conn_id",
-            initiator="init",
-            role="role",
-            state="state",
-            pres_proposal={"pres": "prop"},
-            pres_request={"pres": "req"},
-            pres={"pres": "pres"},
-            verified="false",
-            auto_present=True,
-            error_msg="error",
-        )
-
-        assert record.pres_ex_id == "pxid"
-
-        assert record.record_value == {
-            "connection_id": "conn_id",
-            "initiator": "init",
-            "role": "role",
-            "state": "state",
-            "pres_proposal": {"pres": "prop"},
-            "pres_request": {"pres": "req"},
-            "pres": {"pres": "pres"},
-            "verified": "false",
-            "auto_present": True,
-            "error_msg": "error",
-            "trace": False,
-        }
-
-        bx_record = BasexRecordImpl()
-        assert record != bx_record
-
-    def test_serde(self):
-        """Test de/serialization."""
-
         pres_proposal = V20PresProposal(
             comment="Hello World",
             formats=[
@@ -123,24 +86,32 @@ class TestRecord(UnitTestCase):
                 AttachDecorator.data_base64(INDY_PROOF_REQ, ident="indy")
             ],
         )
-        for proposal_arg in [pres_proposal, pres_proposal.serialize()]:
-            px_rec = V20PresExRecord(
-                pres_ex_id="dummy",
-                connection_id="0000...",
-                thread_id="dummy-thid",
-                initiator=V20PresExRecord.INITIATOR_SELF,
-                role=V20PresExRecord.ROLE_PROVER,
-                state=V20PresExRecord.STATE_PROPOSAL_SENT,
-                pres_proposal=proposal_arg,
-                pres_request=None,
-                pres=None,
-                verified=None,
-                auto_present=True,
-                error_msg=None,
-                trace=False,
-            )
+        record = V20PresExRecord(
+            pres_ex_id="pxid",
+            thread_id="thid",
+            connection_id="conn_id",
+            initiator="init",
+            role="role",
+            state="state",
+            verified="false",
+            auto_present=True,
+            error_msg="error",
+        )
+        record.pres_proposal = pres_proposal  # cover setter
 
-            assert type(px_rec.pres_proposal) == dict
-            ser = px_rec.serialize()
-            deser = V20PresExRecord.deserialize(ser)
-            assert type(deser.pres_proposal) == dict
+        assert record.pres_ex_id == "pxid"
+
+        assert record.record_value == {
+            "connection_id": "conn_id",
+            "initiator": "init",
+            "role": "role",
+            "state": "state",
+            "pres_proposal": pres_proposal.serialize(),
+            "verified": "false",
+            "auto_present": True,
+            "error_msg": "error",
+            "trace": False,
+        }
+
+        bx_record = BasexRecordImpl()
+        assert record != bx_record

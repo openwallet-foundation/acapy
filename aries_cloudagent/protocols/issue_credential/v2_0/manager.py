@@ -2,7 +2,7 @@
 
 import logging
 
-from typing import Mapping, Tuple, cast
+from typing import Mapping, Tuple
 
 from ....core.error import BaseError
 from ....core.profile import Profile
@@ -73,7 +73,7 @@ class V20CredManager:
             connection_id=connection_id,
             initiator=V20CredExRecord.INITIATOR_SELF,
             role=V20CredExRecord.ROLE_ISSUER,
-            cred_proposal=cred_proposal.serialize(),
+            cred_proposal=cred_proposal,
             auto_issue=True,
             auto_remove=auto_remove,
             trace=(cred_proposal._trace is not None),
@@ -136,7 +136,7 @@ class V20CredManager:
         )
 
         cred_ex_record.thread_id = cred_proposal_message._thread_id
-        cred_ex_record.cred_proposal = cred_proposal_message.serialize()
+        cred_ex_record.cred_proposal = cred_proposal_message
 
         cred_proposal_message.assign_trace_decorator(self._profile.settings, trace)
 
@@ -181,7 +181,7 @@ class V20CredManager:
                 self.profile
             ).receive_proposal(cred_ex_record, cred_proposal_message)
 
-        cred_ex_record.cred_proposal = cred_proposal_message.serialize()
+        cred_ex_record.cred_proposal = cred_proposal_message
         cred_ex_record.state = V20CredExRecord.STATE_PROPOSAL_RECEIVED
 
         async with self._profile.session() as session:
@@ -213,9 +213,7 @@ class V20CredManager:
         """
 
         cred_proposal_message = (
-            counter_proposal
-            if counter_proposal
-            else V20CredProposal.deserialize(cred_ex_record.cred_proposal)
+            counter_proposal if counter_proposal else cred_ex_record.cred_proposal
         )
         cred_proposal_message.assign_trace_decorator(
             self._profile.settings, cred_ex_record.trace
@@ -252,9 +250,9 @@ class V20CredManager:
         cred_ex_record.thread_id = cred_offer_message._thread_id
         cred_ex_record.state = V20CredExRecord.STATE_OFFER_SENT
         cred_ex_record.cred_proposal = (  # any counter replaces original
-            cred_proposal_message.serialize()
+            cred_proposal_message
         )
-        cred_ex_record.cred_offer = cred_offer_message.serialize()
+        cred_ex_record.cred_offer = cred_offer_message
 
         async with self._profile.session() as session:
             await cred_ex_record.save(session, reason="create v2.0 credential offer")
@@ -308,7 +306,7 @@ class V20CredManager:
                         cred_ex_record, cred_offer_message
                     )
 
-            cred_ex_record.cred_offer = cred_offer_message.serialize()
+            cred_ex_record.cred_offer = cred_offer_message
             cred_ex_record.state = V20CredExRecord.STATE_OFFER_RECEIVED
 
             await cred_ex_record.save(session, reason="receive v2.0 credential offer")
@@ -345,13 +343,13 @@ class V20CredManager:
                     f"(must be {V20CredExRecord.STATE_OFFER_RECEIVED})"
                 )
 
-            cred_offer = V20CredOffer.deserialize(cred_ex_record.cred_offer)
+            cred_offer = cred_ex_record.cred_offer
 
             input_formats = cred_offer.formats
         # start with request (not allowed for indy -> checked in indy format handler)
         # use proposal formats
         else:
-            cred_proposal = V20CredProposal.deserialize(cred_ex_record.cred_proposal)
+            cred_proposal = cred_ex_record.cred_proposal
             input_formats = cred_proposal.formats
 
         request_formats = []
@@ -384,7 +382,7 @@ class V20CredManager:
 
         cred_ex_record.thread_id = cred_request_message._thread_id
         cred_ex_record.state = V20CredExRecord.STATE_REQUEST_SENT
-        cred_ex_record.cred_request = cred_request_message.serialize()
+        cred_ex_record.cred_request = cred_request_message
 
         async with self._profile.session() as session:
             await cred_ex_record.save(session, reason="create v2.0 credential request")
@@ -434,7 +432,7 @@ class V20CredManager:
                         cred_ex_record, cred_request_message
                     )
 
-            cred_ex_record.cred_request = cred_request_message.serialize()
+            cred_ex_record.cred_request = cred_request_message
             cred_ex_record.state = V20CredExRecord.STATE_REQUEST_RECEIVED
 
             await cred_ex_record.save(session, reason="receive v2.0 credential request")
@@ -473,10 +471,10 @@ class V20CredManager:
             )
 
         replacement_id = None
-        input_formats = V20CredRequest.deserialize(cred_ex_record.cred_request).formats
+        input_formats = cred_ex_record.cred_request.formats
 
         if cred_ex_record.cred_offer:
-            cred_offer_message = V20CredOffer.deserialize(cred_ex_record.cred_offer)
+            cred_offer_message = cred_ex_record.cred_offer
             replacement_id = cred_offer_message.replacement_id
 
         # Format specific issue_credential handler
@@ -504,7 +502,7 @@ class V20CredManager:
         )
 
         cred_ex_record.state = V20CredExRecord.STATE_ISSUED
-        cred_ex_record.cred_issue = cred_issue_message.serialize()
+        cred_ex_record.cred_issue = cred_issue_message
         async with self._profile.session() as session:
             # FIXME - re-fetch record to check state, apply transactional update
             await cred_ex_record.save(session, reason="v2.0 issue credential")
@@ -540,10 +538,7 @@ class V20CredManager:
                 )
             )
 
-            cred_request_message = cast(
-                V20CredRequest, V20CredRequest.deserialize(cred_ex_record.cred_request)
-            )
-
+            cred_request_message = cred_ex_record.cred_request
             req_formats = [
                 V20CredFormat.Format.get(fmt.format)
                 for fmt in cred_request_message.formats
@@ -572,7 +567,7 @@ class V20CredManager:
             if len(handled_formats) == 0:
                 raise V20CredManagerError("No supported credential formats received.")
 
-            cred_ex_record.cred_issue = cred_issue_message.serialize()
+            cred_ex_record.cred_issue = cred_issue_message
             cred_ex_record.state = V20CredExRecord.STATE_CREDENTIAL_RECEIVED
 
             await cred_ex_record.save(session, reason="receive v2.0 credential issue")
@@ -600,7 +595,7 @@ class V20CredManager:
             )
 
         # Format specific store_credential handler
-        for format in V20CredIssue.deserialize(cred_ex_record.cred_issue).formats:
+        for format in cred_ex_record.cred_issue.formats:
             cred_format = V20CredFormat.Format.get(format.format)
 
             if cred_format:
@@ -622,7 +617,7 @@ class V20CredManager:
         Delete cred ex record if set to auto-remove.
 
         Returns:
-            cred ack message for tracing
+            Tuple: cred ex record, cred ack message for tracing
 
         """
         cred_ack_message = V20CredAck()
@@ -657,7 +652,7 @@ class V20CredManager:
                 cred_ex_record.thread_id,
             )
 
-        return cred_ack_message
+        return cred_ex_record, cred_ack_message
 
     async def receive_credential_ack(
         self, cred_ack_message: V20CredAck, connection_id: str
