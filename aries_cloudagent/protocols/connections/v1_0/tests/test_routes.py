@@ -245,6 +245,9 @@ class TestConnectionRoutes(AsyncTestCase):
                 await test_module.connections_metadata(self.request)
 
     async def test_connections_metadata_set(self):
+
+        async def aux(*args, **kwargs):
+            return None
         self.request.match_info = {"conn_id": "dummy"}
         mock_conn_rec = async_mock.MagicMock()
         self.request.json = async_mock.CoroutineMock(
@@ -263,6 +266,7 @@ class TestConnectionRoutes(AsyncTestCase):
             mock_conn_rec_retrieve_by_id.return_value = mock_conn_rec
             mock_metadata_get_all.return_value = {"hello": "world"}
 
+            mock_conn_rec.save.side_effect = aux
             await test_module.connections_metadata_set(self.request)
             mock_metadata_set.assert_called_once()
             mock_response.assert_called_once_with({"results": {"hello": "world"}})

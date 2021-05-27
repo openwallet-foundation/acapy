@@ -451,6 +451,8 @@ async def connections_metadata_set(request: web.BaseRequest):
         for key, value in body.get("metadata", {}).items():
             await record.metadata_set(session, key, value)
         result = await record.metadata_get_all(session)
+        record.metadata = result
+        await record.save(session)
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
     except BaseModelError as err:
