@@ -739,7 +739,7 @@ class DIFPresExchHandler:
                 if self.is_numeric(val):
                     return val > _filter.exclusive_min
             return False
-        except (TypeError, ValueError):
+        except (TypeError, ValueError, ParserError):
             return False
 
     def exclusive_maximum_check(self, val: any, _filter: Filter) -> bool:
@@ -768,7 +768,7 @@ class DIFPresExchHandler:
                 if self.is_numeric(val):
                     return val < _filter.exclusive_max
             return False
-        except (TypeError, ValueError):
+        except (TypeError, ValueError, ParserError):
             return False
 
     def maximum_check(self, val: any, _filter: Filter) -> bool:
@@ -797,7 +797,7 @@ class DIFPresExchHandler:
                 if self.is_numeric(val):
                     return val <= _filter.maximum
             return False
-        except (TypeError, ValueError):
+        except (TypeError, ValueError, ParserError):
             return False
 
     def minimum_check(self, val: any, _filter: Filter) -> bool:
@@ -826,7 +826,7 @@ class DIFPresExchHandler:
                 if self.is_numeric(val):
                     return val >= _filter.minimum
             return False
-        except (TypeError, ValueError):
+        except (TypeError, ValueError, ParserError):
             return False
 
     def length_check(self, val: any, _filter: Filter) -> bool:
@@ -842,17 +842,20 @@ class DIFPresExchHandler:
             bool
 
         """
-        given_len = len(str(val))
-        if _filter.max_length and _filter.min_length:
-            if given_len <= _filter.max_length and given_len >= _filter.min_length:
-                return True
-        elif _filter.max_length and not _filter.min_length:
-            if given_len <= _filter.max_length:
-                return True
-        elif not _filter.max_length and _filter.min_length:
-            if given_len >= _filter.min_length:
-                return True
-        return False
+        try:
+            given_len = len(str(val))
+            if _filter.max_length and _filter.min_length:
+                if given_len <= _filter.max_length and given_len >= _filter.min_length:
+                    return True
+            elif _filter.max_length and not _filter.min_length:
+                if given_len <= _filter.max_length:
+                    return True
+            elif not _filter.max_length and _filter.min_length:
+                if given_len >= _filter.min_length:
+                    return True
+            return False
+        except (TypeError, ValueError):
+            return False
 
     def pattern_check(self, val: any, _filter: Filter) -> bool:
         """
@@ -867,9 +870,12 @@ class DIFPresExchHandler:
             bool
 
         """
-        if _filter.pattern:
-            return bool(re.search(pattern=_filter.pattern, string=str(val)))
-        return False
+        try:
+            if _filter.pattern:
+                return bool(re.search(pattern=_filter.pattern, string=str(val)))
+            return False
+        except (TypeError, ValueError):
+            return False
 
     def const_check(self, val: any, _filter: Filter) -> bool:
         """
@@ -884,9 +890,12 @@ class DIFPresExchHandler:
             bool
 
         """
-        if val == _filter.const:
-            return True
-        return False
+        try:
+            if val == _filter.const:
+                return True
+            return False
+        except (TypeError, ValueError):
+            return False
 
     def enum_check(self, val: any, _filter: Filter) -> bool:
         """
@@ -901,9 +910,12 @@ class DIFPresExchHandler:
             bool
 
         """
-        if val in _filter.enums:
-            return True
-        return False
+        try:
+            if val in _filter.enums:
+                return True
+            return False
+        except (TypeError, ValueError):
+            return False
 
     async def subject_is_issuer(self, credential: VCRecord) -> bool:
         """
