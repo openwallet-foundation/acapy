@@ -558,6 +558,11 @@ class V20PresManager:
                 req_pred = Predicate.get(proof_req_pred_spec["p_type"])
                 req_value = proof_req_pred_spec["p_value"]
                 req_restrictions = proof_req_pred_spec.get("restrictions", {})
+                for req_restriction in req_restrictions:
+                    for k in [k for k in req_restriction]:  # cannot modify en passant
+                        if k.startswith("attr::"):
+                            req_restriction.pop(k)  # let indy-sdk reject mismatch here
+
                 sub_proof_index = pred_spec["sub_proof_index"]
                 for ge_proof in proof["proof"]["proofs"][sub_proof_index][
                     "primary_proof"
