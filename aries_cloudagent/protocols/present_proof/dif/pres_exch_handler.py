@@ -448,9 +448,6 @@ class DIFPresExchHandler:
         if type(issuer) is dict:
             issuer = issuer.get("id")
 
-        # types
-        types = [_type for _type in cred_dict.get("type")]
-
         # subjects
         subjects = cred_dict.get("credentialSubject")
         if type(subjects) is dict:
@@ -477,21 +474,15 @@ class DIFPresExchHandler:
             expanded[0],
             "@type",
         )
-        cred_tags = {
-            f"xpnd:type:{expanded_type}": "1"
-            for expanded_type in types
-            if expanded_type is not None
-        }
         return VCRecord(
             contexts=contexts,
-            types=types,
+            expanded_types=types,
             issuer_id=issuer,
             subject_ids=subject_ids,
             proof_types=proof_types,
             given_id=given_id,
             cred_value=cred_dict,
             schema_ids=schema_ids,
-            cred_tags=cred_tags,
         )
 
     def reveal_doc(self, credential_dict: dict, constraints: Constraints):
@@ -842,20 +833,17 @@ class DIFPresExchHandler:
             bool
 
         """
-        try:
-            given_len = len(str(val))
-            if _filter.max_length and _filter.min_length:
-                if given_len <= _filter.max_length and given_len >= _filter.min_length:
-                    return True
-            elif _filter.max_length and not _filter.min_length:
-                if given_len <= _filter.max_length:
-                    return True
-            elif not _filter.max_length and _filter.min_length:
-                if given_len >= _filter.min_length:
-                    return True
-            return False
-        except (TypeError, ValueError):
-            return False
+        given_len = len(str(val))
+        if _filter.max_length and _filter.min_length:
+            if given_len <= _filter.max_length and given_len >= _filter.min_length:
+                return True
+        elif _filter.max_length and not _filter.min_length:
+            if given_len <= _filter.max_length:
+                return True
+        elif not _filter.max_length and _filter.min_length:
+            if given_len >= _filter.min_length:
+                return True
+        return False
 
     def pattern_check(self, val: any, _filter: Filter) -> bool:
         """
@@ -870,12 +858,9 @@ class DIFPresExchHandler:
             bool
 
         """
-        try:
-            if _filter.pattern:
-                return bool(re.search(pattern=_filter.pattern, string=str(val)))
-            return False
-        except (TypeError, ValueError):
-            return False
+        if _filter.pattern:
+            return bool(re.search(pattern=_filter.pattern, string=str(val)))
+        return False
 
     def const_check(self, val: any, _filter: Filter) -> bool:
         """
@@ -890,12 +875,9 @@ class DIFPresExchHandler:
             bool
 
         """
-        try:
-            if val == _filter.const:
-                return True
-            return False
-        except (TypeError, ValueError):
-            return False
+        if val == _filter.const:
+            return True
+        return False
 
     def enum_check(self, val: any, _filter: Filter) -> bool:
         """
@@ -910,12 +892,9 @@ class DIFPresExchHandler:
             bool
 
         """
-        try:
-            if val in _filter.enums:
-                return True
-            return False
-        except (TypeError, ValueError):
-            return False
+        if val in _filter.enums:
+            return True
+        return False
 
     async def subject_is_issuer(self, credential: VCRecord) -> bool:
         """
@@ -985,9 +964,8 @@ class DIFPresExchHandler:
         for cred_schema_id in credential.schema_ids:
             if cred_schema_id == schema_id:
                 return True
-        expanded_schema_id = "xpnd:type:" + schema_id
-        for cred_tag in credential.cred_tags.keys():
-            if cred_tag == expanded_schema_id:
+        for cred_expd_type in credential.expanded_types:
+            if cred_expd_type == schema_id:
                 return True
         return False
 

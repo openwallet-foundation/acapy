@@ -878,13 +878,12 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
                 document_loader=custom_document_loader,
                 purpose=mock_get_proof_purpose.return_value,
             )
-            cred_tags = {
-                "xpnd:type:https://www.w3.org/2018/credentials#VerifiableCredential": "1"
-            }
             self.holder.store_credential.assert_called_once_with(
                 VCRecord(
                     contexts=LD_PROOF_VC["@context"],
-                    types=LD_PROOF_VC["type"],
+                    expanded_types=[
+                        "https://www.w3.org/2018/credentials#VerifiableCredential"
+                    ],
                     issuer_id=LD_PROOF_VC["issuer"],
                     subject_ids=[],
                     schema_ids=[],  # Schemas not supported yet
@@ -892,7 +891,6 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
                     cred_value=LD_PROOF_VC,
                     given_id=None,
                     record_id=cred_id,
-                    cred_tags=cred_tags,
                 )
             )
 

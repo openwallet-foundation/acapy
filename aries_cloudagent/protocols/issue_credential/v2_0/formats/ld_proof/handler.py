@@ -507,16 +507,11 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
             expanded[0],
             "@type",
         )
-        cred_tags = {
-            f"xpnd:type:{expanded_type}": "1"
-            for expanded_type in types
-            if expanded_type is not None
-        }
 
         # create VC record for storage
         vc_record = VCRecord(
             contexts=credential.context_urls,
-            types=credential.type,
+            expanded_types=types,
             issuer_id=credential.issuer_id,
             subject_ids=credential.credential_subject_ids,
             schema_ids=[],  # Schemas not supported yet
@@ -524,8 +519,7 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
             cred_value=credential.serialize(),
             given_id=credential.id,
             record_id=cred_id,
-            # cred_tags=None,  # Tags should be derived from credential values
-            cred_tags=cred_tags,
+            cred_tags=None,  # Tags should be derived from credential values
         )
 
         # Create detail record with cred_id_stored

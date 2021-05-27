@@ -1755,11 +1755,11 @@ class TestPresExchHandler:
             VCRecord(
                 contexts=[
                     "https://www.w3.org/2018/credentials/v1",
-                    "https://www.w3.org/2018/credentials/v1/examples",
+                    "https://www.w3.org/2018/credentials/examples/v1",
                 ],
-                types=[
-                    "VerifiableCredential",
-                    "AlumniCredential",
+                expanded_types=[
+                    "https://www.w3.org/2018/credentials#VerifiableCredential",
+                    "https://example.org/examples#UniversityDegreeCredential",
                 ],
                 issuer_id="https://example.edu/issuers/565049",
                 subject_ids=["did:example:ebfeb1f712ebc6f1c276e12ec21"],
@@ -1772,11 +1772,11 @@ class TestPresExchHandler:
             VCRecord(
                 contexts=[
                     "https://www.w3.org/2018/credentials/v1",
-                    "https://www.w3.org/2018/credentials/v1/examples",
+                    "https://www.w3.org/2018/credentials/examples/v1",
                 ],
-                types=[
-                    "VerifiableCredential",
-                    "AlumniCredential",
+                expanded_types=[
+                    "https://www.w3.org/2018/credentials#VerifiableCredential",
+                    "https://example.org/examples#UniversityDegreeCredential",
                 ],
                 issuer_id="https://example.edu/issuers/565049",
                 subject_ids=["did:example:ebfeb1f712ebc6f1c276e12ec31"],
@@ -1794,11 +1794,11 @@ class TestPresExchHandler:
             VCRecord(
                 contexts=[
                     "https://www.w3.org/2018/credentials/v1",
-                    "https://www.w3.org/2018/credentials/v1/examples",
+                    "https://www.w3.org/2018/credentials/examples/v1",
                 ],
-                types=[
-                    "VerifiableCredential",
-                    "AlumniCredential",
+                expanded_types=[
+                    "https://www.w3.org/2018/credentials#VerifiableCredential",
+                    "https://example.org/examples#UniversityDegreeCredential",
                 ],
                 issuer_id="https://example.edu/issuers/565049",
                 subject_ids=["did:example:ebfeb1f712ebc6f1c276e12ec21"],
@@ -1811,11 +1811,11 @@ class TestPresExchHandler:
             VCRecord(
                 contexts=[
                     "https://www.w3.org/2018/credentials/v1",
-                    "https://www.w3.org/2018/credentials/v1/examples",
+                    "https://www.w3.org/2018/credentials/examples/v1",
                 ],
-                types=[
-                    "VerifiableCredential",
-                    "AlumniCredential",
+                expanded_types=[
+                    "https://www.w3.org/2018/credentials#VerifiableCredential",
+                    "https://example.org/examples#UniversityDegreeCredential",
                 ],
                 issuer_id="https://example.edu/issuers/565049",
                 subject_ids=[
@@ -1892,11 +1892,11 @@ class TestPresExchHandler:
             VCRecord(
                 contexts=[
                     "https://www.w3.org/2018/credentials/v1",
-                    "https://www.w3.org/2018/credentials/v1/examples",
+                    "https://www.w3.org/2018/credentials/examples/v1",
                 ],
-                types=[
-                    "VerifiableCredential",
-                    "AlumniCredential",
+                expanded_types=[
+                    "https://www.w3.org/2018/credentials#VerifiableCredential",
+                    "https://example.org/examples#UniversityDegreeCredential",
                 ],
                 issuer_id="https://example.edu/issuers/565049",
                 subject_ids=["did:sov:LjgpST2rjsoxYegQDRm7EL"],
@@ -1909,11 +1909,11 @@ class TestPresExchHandler:
             VCRecord(
                 contexts=[
                     "https://www.w3.org/2018/credentials/v1",
-                    "https://www.w3.org/2018/credentials/v1/examples",
+                    "https://www.w3.org/2018/credentials/examples/v1",
                 ],
-                types=[
-                    "VerifiableCredential",
-                    "AlumniCredential",
+                expanded_types=[
+                    "https://www.w3.org/2018/credentials#VerifiableCredential",
+                    "https://example.org/examples#UniversityDegreeCredential",
                 ],
                 issuer_id="https://example.edu/issuers/565049",
                 subject_ids=[
@@ -1957,11 +1957,11 @@ class TestPresExchHandler:
             VCRecord(
                 contexts=[
                     "https://www.w3.org/2018/credentials/v1",
-                    "https://www.w3.org/2018/credentials/v1/examples",
+                    "https://www.w3.org/2018/credentials/examples/v1",
                 ],
-                types=[
-                    "VerifiableCredential",
-                    "AlumniCredential",
+                expanded_types=[
+                    "https://www.w3.org/2018/credentials#VerifiableCredential",
+                    "https://example.org/examples#UniversityDegreeCredential",
                 ],
                 issuer_id="https://example.edu/issuers/565049",
                 subject_ids=["did:sov:LjgpST2rjsoxYegQDRm7EL"],
@@ -1974,11 +1974,11 @@ class TestPresExchHandler:
             VCRecord(
                 contexts=[
                     "https://www.w3.org/2018/credentials/v1",
-                    "https://www.w3.org/2018/credentials/v1/examples",
+                    "https://www.w3.org/2018/credentials/examples/v1",
                 ],
-                types=[
-                    "VerifiableCredential",
-                    "AlumniCredential",
+                expanded_types=[
+                    "https://www.w3.org/2018/credentials#VerifiableCredential",
+                    "https://example.org/examples#UniversityDegreeCredential",
                 ],
                 issuer_id="https://example.edu/issuers/565049",
                 subject_ids=[
@@ -2023,11 +2023,11 @@ class TestPresExchHandler:
             VCRecord(
                 contexts=[
                     "https://www.w3.org/2018/credentials/v1",
-                    "https://www.w3.org/2018/credentials/v1/examples",
+                    "https://www.w3.org/2018/credentials/examples/v1",
                 ],
-                types=[
-                    "VerifiableCredential",
-                    "AlumniCredential",
+                expanded_types=[
+                    "https://www.w3.org/2018/credentials#VerifiableCredential",
+                    "https://example.org/examples#UniversityDegreeCredential",
                 ],
                 issuer_id="https://example.edu/issuers/565049",
                 subject_ids=[
@@ -2042,11 +2042,11 @@ class TestPresExchHandler:
             VCRecord(
                 contexts=[
                     "https://www.w3.org/2018/credentials/v1",
-                    "https://www.w3.org/2018/credentials/v1/examples",
+                    "https://www.w3.org/2018/credentials/examples/v1",
                 ],
-                types=[
-                    "VerifiableCredential",
-                    "AlumniCredential",
+                expanded_types=[
+                    "https://www.w3.org/2018/credentials#VerifiableCredential",
+                    "https://example.org/examples#UniversityDegreeCredential",
                 ],
                 issuer_id="https://example.edu/issuers/565049",
                 subject_ids=[
@@ -2092,11 +2092,11 @@ class TestPresExchHandler:
             VCRecord(
                 contexts=[
                     "https://www.w3.org/2018/credentials/v1",
-                    "https://www.w3.org/2018/credentials/v1/examples",
+                    "https://www.w3.org/2018/credentials/examples/v1",
                 ],
-                types=[
-                    "VerifiableCredential",
-                    "AlumniCredential",
+                expanded_types=[
+                    "https://www.w3.org/2018/credentials#VerifiableCredential",
+                    "https://example.org/examples#UniversityDegreeCredential",
                 ],
                 issuer_id="https://example.edu/issuers/565049",
                 subject_ids=[
@@ -2111,11 +2111,11 @@ class TestPresExchHandler:
             VCRecord(
                 contexts=[
                     "https://www.w3.org/2018/credentials/v1",
-                    "https://www.w3.org/2018/credentials/v1/examples",
+                    "https://www.w3.org/2018/credentials/examples/v1",
                 ],
-                types=[
-                    "VerifiableCredential",
-                    "AlumniCredential",
+                expanded_types=[
+                    "https://www.w3.org/2018/credentials#VerifiableCredential",
+                    "https://example.org/examples#UniversityDegreeCredential",
                 ],
                 issuer_id="https://example.edu/issuers/565049",
                 subject_ids=[

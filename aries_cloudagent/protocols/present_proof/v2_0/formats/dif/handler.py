@@ -185,7 +185,6 @@ class DIFPresFormatHandler(V20PresFormatHandler):
         input_descriptors = pres_definition.input_descriptors
         try:
             holder = self._profile.inject(VCHolder)
-            tag_query = None
             expanded_types = []
             schema_ids = []
             for input_descriptor in input_descriptors:
@@ -200,12 +199,10 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                             schema_ids.append(uri)
             if len(schema_ids) == 0:
                 schema_ids = None
-            if len(expanded_types) > 0:
-                tag_query = {}
-                for expanded_type in expanded_types:
-                    tag_query[f"xpnd:type:{expanded_type}"] = "1"
+            if len(expanded_types) == 0:
+                expanded_types = None
             search = holder.search_credentials(
-                tag_query=tag_query,
+                types=expanded_types,
                 schema_ids=schema_ids,
             )
             # Defaults to page_size but would like to include all

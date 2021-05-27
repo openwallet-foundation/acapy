@@ -17,9 +17,6 @@ def create_vcrecord(cred_dict: dict):
     if type(issuer) is dict:
         issuer = issuer.get("id")
 
-    # types
-    types = [_type for _type in cred_dict.get("type")]
-
     # subjects
     subjects = cred_dict.get("credentialSubject")
     if type(subjects) is dict:
@@ -46,21 +43,15 @@ def create_vcrecord(cred_dict: dict):
         expanded[0],
         "@type",
     )
-    cred_tags = {
-        f"xpnd:type:{expanded_type}": "1"
-        for expanded_type in types
-        if expanded_type is not None
-    }
     return VCRecord(
         contexts=contexts,
-        types=types,
+        expanded_types=types,
         issuer_id=issuer,
         subject_ids=subject_ids,
         proof_types=proof_types,
         given_id=given_id,
         cred_value=cred_dict,
         schema_ids=schema_ids,
-        cred_tags=cred_tags,
     )
 
 

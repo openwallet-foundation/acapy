@@ -489,7 +489,6 @@ async def present_proof_credentials_list(request: web.BaseRequest):
             input_descriptors = []
             for input_desc_dict in input_descriptors_list:
                 input_descriptors.append(InputDescriptors.deserialize(input_desc_dict))
-            tag_query = None
             expanded_types = []
             schema_ids = []
             for input_descriptor in input_descriptors:
@@ -504,12 +503,10 @@ async def present_proof_credentials_list(request: web.BaseRequest):
                             schema_ids.append(uri)
             if len(schema_ids) == 0:
                 schema_ids = None
-            if len(expanded_types) > 0:
-                tag_query = {}
-                for expanded_type in expanded_types:
-                    tag_query[f"xpnd:type:{expanded_type}"] = "1"
+            if len(expanded_types) == 0:
+                expanded_types = None
             search = dif_holder.search_credentials(
-                tag_query=tag_query,
+                types=expanded_types,
                 schema_ids=schema_ids,
             )
             dif_credentials = await search.fetch(count)
