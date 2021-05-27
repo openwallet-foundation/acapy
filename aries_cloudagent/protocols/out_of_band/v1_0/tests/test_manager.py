@@ -774,8 +774,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 handshake_protocols=[
                     pfx.qualify(HSProto.RFC23.name) for pfx in DIDCommPrefix
                 ],
-                service_dids=[TestConfig.test_target_did],
-                service_blocks=[],
+                services=[TestConfig.test_target_did],
                 requests_attach=[AttachDecorator.deserialize(dif_req_attach_v2)],
             )
 
@@ -941,8 +940,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 handshake_protocols=[
                     pfx.qualify(HSProto.RFC23.name) for pfx in DIDCommPrefix
                 ],
-                service_dids=[TestConfig.test_target_did],
-                service_blocks=[],
+                services=[TestConfig.test_target_did],
                 requests_attach=[AttachDecorator.deserialize(dif_req_attach_v2)],
             )
 
