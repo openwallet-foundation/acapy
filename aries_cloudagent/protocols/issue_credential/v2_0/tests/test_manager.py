@@ -1266,26 +1266,6 @@ class TestV20CredManager(AsyncTestCase):
             ]
             await self.manager.delete_cred_ex_record("dummy")
 
-    async def test_create_problem_report(self):
-        connection_id = "connection-id"
-        stored_exchange = V20CredExRecord(
-            cred_ex_id="dummy-cxid",
-            conn_id=connection_id,
-            initiator=V20CredExRecord.INITIATOR_SELF,
-            role=V20CredExRecord.ROLE_ISSUER,
-            state=V20CredExRecord.STATE_REQUEST_RECEIVED,
-            thread_id="dummy-thid",
-        )
-
-        with async_mock.patch.object(V20CredExRecord, "save", autospec=True) as save_ex:
-            report = await self.manager.create_problem_report(
-                stored_exchange,
-                "The front fell off",
-            )
-
-        assert stored_exchange.state is None
-        assert report._thread_id == stored_exchange.thread_id
-
     async def test_receive_problem_report(self):
         connection_id = "connection-id"
         stored_exchange = V20CredExRecord(

@@ -1193,6 +1193,79 @@ class TestV20PresManager(AsyncTestCase):
             save_ex.assert_called_once()
             assert px_rec_out.state == (V20PresExRecord.STATE_PRESENTATION_RECEIVED)
 
+    async def test_receive_pres_receive_pred_value_mismatch_punt_to_indy(self):
+        connection_record = async_mock.MagicMock(connection_id=CONN_ID)
+        pres_proposal = V20PresProposal(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy",
+                    format_=ATTACHMENT_FORMAT[PRES_20_PROPOSAL][
+                        V20PresFormat.Format.INDY.api
+                    ],
+                )
+            ],
+            proposals_attach=[
+                AttachDecorator.data_base64(INDY_PROOF_REQ_NAME, ident="indy")
+            ],
+        )
+        indy_proof_req = deepcopy(INDY_PROOF_REQ_NAME)
+        indy_proof_req["requested_predicates"]["0_highscore_GE_uuid"]["restrictions"][
+            0
+        ]["attr::player::value"] = "impostor"
+        pres_request = V20PresRequest(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy",
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.INDY.api
+                    ],
+                )
+            ],
+            request_presentations_attach=[
+                AttachDecorator.data_base64(indy_proof_req, ident="indy")
+            ],
+        )
+        pres = V20Pres(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy",
+                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.INDY.api],
+                )
+            ],
+            presentations_attach=[
+                AttachDecorator.data_base64(INDY_PROOF, ident="indy")
+            ],
+        )
+
+        px_rec_dummy = V20PresExRecord(
+            pres_proposal=pres_proposal.serialize(),
+            pres_request=pres_request.serialize(),
+        )
+
+        # cover by_format property
+        by_format = px_rec_dummy.by_format
+
+        assert by_format.get("pres_proposal").get("indy") == INDY_PROOF_REQ_NAME
+        assert by_format.get("pres_request").get("indy") == indy_proof_req
+
+        with async_mock.patch.object(
+            V20PresExRecord, "save", autospec=True
+        ) as save_ex, async_mock.patch.object(
+            V20PresExRecord, "retrieve_by_tag_filter", autospec=True
+        ) as retrieve_ex, async_mock.patch.object(
+            self.profile,
+            "session",
+            async_mock.MagicMock(return_value=self.profile.session()),
+        ) as session:
+            retrieve_ex.side_effect = [
+                StorageNotFoundError("no such record"),  # cover out-of-band
+                px_rec_dummy,
+            ]
+            px_rec_out = await self.manager.receive_pres(pres, connection_record)
+            assert retrieve_ex.call_count == 2
+            save_ex.assert_called_once()
+            assert px_rec_out.state == (V20PresExRecord.STATE_PRESENTATION_RECEIVED)
+
     async def test_receive_pres_bait_and_switch_attr_name(self):
         connection_record = async_mock.MagicMock(connection_id=CONN_ID)
         indy_proof_req = deepcopy(INDY_PROOF_REQ_NAME)
@@ -1726,26 +1799,6 @@ class TestV20PresManager(AsyncTestCase):
             save_ex.assert_called_once()
 
             assert px_rec_out.state == V20PresExRecord.STATE_DONE
-
-    async def test_create_problem_report(self):
-        connection_id = "connection-id"
-        stored_exchange = V20PresExRecord(
-            pres_ex_id="dummy-pxid",
-            connection_id=connection_id,
-            initiator=V20PresExRecord.INITIATOR_SELF,
-            role=V20PresExRecord.ROLE_VERIFIER,
-            state=V20PresExRecord.STATE_PROPOSAL_RECEIVED,
-            thread_id="dummy-thid",
-        )
-
-        with async_mock.patch.object(V20PresExRecord, "save", autospec=True) as save_ex:
-            report = await self.manager.create_problem_report(
-                stored_exchange,
-                "The front fell off",
-            )
-
-        assert stored_exchange.state == V20PresExRecord.STATE_ABANDONED
-        assert report._thread_id == stored_exchange.thread_id
 
     async def test_receive_problem_report(self):
         connection_id = "connection-id"

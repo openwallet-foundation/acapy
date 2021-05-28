@@ -331,18 +331,18 @@ class TestPresRequestHandler(AsyncTestCase):
             )
 
             mock_pres_mgr.return_value.create_pres = async_mock.CoroutineMock(
-                side_effect=[
-                    test_module.IndyHolderError(),
-                    test_module.StorageError(),
-                ]
+                side_effect=test_module.IndyHolderError()
             )
 
             request_context.connection_ready = True
             handler = test_module.V20PresRequestHandler()
             responder = MockResponder()
 
-            await handler.handle(request_context, responder)
-            mock_px_rec.save_error_state.assert_called_once()
+            with async_mock.patch.object(
+                handler._logger, "exception", async_mock.MagicMock()
+            ) as mock_log_exc:
+                await handler.handle(request_context, responder)
+                mock_log_exc.assert_called_once()
 
     async def test_called_auto_present_indy(self):
         request_context = RequestContext.test_context()
@@ -597,64 +597,6 @@ class TestPresRequestHandler(AsyncTestCase):
         mock_pres_mgr.return_value.receive_pres_request.assert_called_once_with(
             mock_px_rec
         )
-
-    async def test_called_auto_present_storage_not_found(self):
-        request_context = RequestContext.test_context()
-        request_context.connection_record = async_mock.MagicMock()
-        request_context.connection_record.connection_id = "dummy"
-        request_context.message = V20PresRequest()
-        request_context.message.attachment = async_mock.MagicMock(
-            return_value=INDY_PROOF_REQ
-        )
-        request_context.message_receipt = MessageReceipt()
-        pres_proposal = V20PresProposal(
-            formats=[
-                V20PresFormat(
-                    attach_id="indy",
-                    format_=V20PresFormat.Format.INDY.aries,
-                )
-            ],
-            proposals_attach=[
-                AttachDecorator.data_base64(INDY_PROOF_REQ, ident="indy")
-            ],
-        )
-        mock_px_rec = async_mock.MagicMock(
-            pres_proposal=pres_proposal.serialize(),
-            auto_present=True,
-        )
-        handler = test_module.V20PresRequestHandler()
-
-        with async_mock.patch.object(
-            test_module, "V20PresManager", autospec=True
-        ) as mock_pres_mgr, async_mock.patch.object(
-            test_module, "V20PresExRecord", autospec=True
-        ) as mock_pres_ex_rec_cls, async_mock.patch.object(
-            test_indy_handler, "IndyHolder", autospec=True
-        ) as mock_holder, async_mock.patch.object(
-            handler._logger, "exception", async_mock.MagicMock()
-        ) as mock_exc_logger:
-
-            mock_holder.get_credentials_for_presentation_request_by_referent = (
-                async_mock.CoroutineMock(return_value=[])
-            )
-            request_context.inject = async_mock.MagicMock(return_value=mock_holder)
-
-            mock_pres_ex_rec_cls.return_value = mock_px_rec
-            mock_pres_ex_rec_cls.retrieve_by_tag_filter = async_mock.CoroutineMock(
-                return_value=mock_px_rec
-            )
-            mock_pres_mgr.return_value.receive_pres_request = async_mock.CoroutineMock(
-                return_value=mock_px_rec
-            )
-
-            mock_pres_mgr.return_value.create_pres = async_mock.CoroutineMock(
-                side_effect=test_module.StorageError
-            )
-            request_context.connection_ready = True
-            responder = MockResponder()
-
-            await handler.handle(request_context, responder)
-            mock_exc_logger.assert_called_once()
 
     async def test_called_auto_present_pred_single_match(self):
         request_context = RequestContext.test_context()

@@ -519,8 +519,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         with async_mock.patch.object(
             InMemoryWallet, "get_public_did", autospec=True
         ) as mock_wallet_get_public_did, async_mock.patch.object(
-            test_module.V20CredOffer, "deserialize", autospec=True
-        ) as mock_v20_cred_offer_deser, async_mock.patch.object(
             test_module.V10CredentialExchange,
             "retrieve_by_id",
             async_mock.CoroutineMock(),
@@ -536,10 +534,14 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 method=DIDMethod.SOV,
                 key_type=KeyType.ED25519,
             )
-            mock_v20_cred_offer_deser.return_value = async_mock.MagicMock(
-                attachment=async_mock.MagicMock(return_value={"cred": "attachment"})
-            )
             mock_retrieve_cxid_v1.side_effect = test_module.StorageNotFoundError()
+            mock_retrieve_cxid_v2.return_value = async_mock.MagicMock(
+                cred_offer=async_mock.MagicMock(
+                    offer=async_mock.MagicMock(
+                        return_value=json.dumps({"cred": "offer"})
+                    )
+                )
+            )
             invi_rec = await self.manager.create_invitation(
                 my_endpoint=TestConfig.test_endpoint,
                 public=False,
@@ -602,7 +604,11 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             )
             mock_retrieve_pxid_1.side_effect = StorageNotFoundError()
             mock_retrieve_pxid_2.return_value = async_mock.MagicMock(
-                pres_request=TestConfig.PRES_REQ_V2.serialize()
+                pres_request=async_mock.MagicMock(
+                    attachment=async_mock.MagicMock(
+                        return_value=TestConfig.PRES_REQ_V2.serialize()
+                    )
+                )
             )
             invi_rec = await self.manager.create_invitation(
                 my_endpoint=TestConfig.test_endpoint,
@@ -2476,18 +2482,13 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             PresentationManager,
             "create_presentation",
             autospec=True,
-        ) as pres_mgr_create_presentation, async_mock.patch.object(
-            PresentationProposal,
-            "deserialize",
-            autospec=True,
-        ) as present_proposal_deserialize:
+        ) as pres_mgr_create_presentation:
             oob_mgr_find_existing_conn.return_value = test_exist_conn
             pres_mgr_receive_request.return_value = exchange_rec
             pres_mgr_create_presentation.return_value = (
                 exchange_rec,
                 Presentation(comment="this is test"),
             )
-            present_proposal_deserialize.return_value = PresentationProposal()
             holder = async_mock.MagicMock(IndyHolder, autospec=True)
             get_creds = async_mock.CoroutineMock(return_value=())
             holder.get_credentials_for_presentation_request_by_referent = get_creds

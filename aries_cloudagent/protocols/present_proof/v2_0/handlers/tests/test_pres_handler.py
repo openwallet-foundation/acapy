@@ -56,3 +56,34 @@ class TestV20PresHandler(AsyncTestCase):
             request_context.message, request_context.connection_record
         )
         assert not responder.messages
+
+    async def test_called_auto_verify_x(self):
+        request_context = RequestContext.test_context()
+        request_context.message_receipt = MessageReceipt()
+        request_context.settings["debug.auto_verify_presentation"] = True
+
+        with async_mock.patch.object(
+            test_module, "V20PresManager", autospec=True
+        ) as mock_pres_mgr:
+            mock_pres_mgr.return_value = async_mock.MagicMock(
+                receive_pres=async_mock.CoroutineMock(
+                    return_value=async_mock.MagicMock(
+                        save_error_state=async_mock.CoroutineMock()
+                    )
+                ),
+                verify_pres=async_mock.CoroutineMock(
+                    side_effect=test_module.LedgerError()
+                ),
+            )
+
+            request_context.message = V20Pres()
+            request_context.connection_ready = True
+            request_context.connection_record = async_mock.MagicMock()
+            handler = test_module.V20PresHandler()
+            responder = MockResponder()
+
+            with async_mock.patch.object(
+                handler._logger, "exception", async_mock.MagicMock()
+            ) as mock_log_exc:
+                await handler.handle(request_context, responder)
+                mock_log_exc.assert_called_once()

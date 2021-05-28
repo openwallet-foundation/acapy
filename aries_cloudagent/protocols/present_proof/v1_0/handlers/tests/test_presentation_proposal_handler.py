@@ -90,10 +90,7 @@ class TestPresentationProposalHandler(AsyncTestCase):
                 )
             )
             mock_pres_mgr.return_value.create_bound_request = async_mock.CoroutineMock(
-                side_effect=[
-                    test_module.LedgerError(),
-                    test_module.StorageError(),
-                ]
+                side_effect=test_module.LedgerError()
             )
 
             request_context.message = PresentationProposal()
@@ -102,11 +99,10 @@ class TestPresentationProposalHandler(AsyncTestCase):
             responder = MockResponder()
 
             with async_mock.patch.object(
-                responder, "send_reply", async_mock.CoroutineMock()
-            ) as mock_send_reply:
-                await handler.handle(request_context, responder)  # ledger error
-                await handler.handle(request_context, responder)  # storage error
-                mock_send_reply.assert_not_called()
+                handler._logger, "exception", async_mock.MagicMock()
+            ) as mock_log_exc:
+                await handler.handle(request_context, responder)
+                mock_log_exc.assert_called_once()
 
     async def test_called_not_ready(self):
         request_context = RequestContext.test_context()

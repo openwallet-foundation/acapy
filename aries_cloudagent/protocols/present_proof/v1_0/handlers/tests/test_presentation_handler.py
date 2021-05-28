@@ -65,22 +65,25 @@ class TestPresentationHandler(AsyncTestCase):
         with async_mock.patch.object(
             test_module, "PresentationManager", autospec=True
         ) as mock_pres_mgr:
-            mock_pres_mgr.return_value.receive_presentation = async_mock.CoroutineMock(
-                return_value=async_mock.MagicMock(
-                    save_error_state=async_mock.CoroutineMock()
-                )
+            mock_pres_mgr.return_value = async_mock.MagicMock(
+                receive_presentation=async_mock.CoroutineMock(
+                    return_value=async_mock.MagicMock(
+                        save_error_state=async_mock.CoroutineMock()
+                    )
+                ),
+                verify_presentation=async_mock.CoroutineMock(
+                    side_effect=test_module.LedgerError()
+                ),
             )
-            mock_pres_mgr.return_value.verify_presentation = async_mock.CoroutineMock(
-                side_effect=[
-                    test_module.LedgerError(),
-                    test_module.StorageError(),
-                ]
-            )
+
             request_context.message = Presentation()
             request_context.connection_ready = True
             request_context.connection_record = async_mock.MagicMock()
             handler = test_module.PresentationHandler()
             responder = MockResponder()
 
-            await handler.handle(request_context, responder)  # ledger error
-            await handler.handle(request_context, responder)  # storage error
+            with async_mock.patch.object(
+                handler._logger, "exception", async_mock.MagicMock()
+            ) as mock_log_exc:
+                await handler.handle(request_context, responder)
+                mock_log_exc.assert_called_once()

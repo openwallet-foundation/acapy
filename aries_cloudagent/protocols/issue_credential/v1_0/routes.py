@@ -35,8 +35,7 @@ from ....wallet.error import WalletError
 from ....utils.outofband import serialize_outofband
 from ....utils.tracing import trace_event, get_timer, AdminAPIMessageTracingSchema
 
-from ...problem_report.v1_0 import internal_error
-
+from . import problem_report_for_record, report_problem
 from .manager import CredentialManager, CredentialManagerError
 from .message_types import SPEC_URI
 from .messages.credential_problem_report import ProblemReportReason
@@ -352,14 +351,16 @@ async def credential_exchange_retrieve(request: web.BaseRequest):
             )
         result = cred_ex_record.serialize()
     except StorageNotFoundError as err:
+        # no such cred ex record: not protocol error, user fat-fingered id
         raise web.HTTPNotFound(reason=err.roll_up) from err
     except (BaseModelError, StorageError) as err:
-        await internal_error(
+        # present but broken or hopeless: protocol error
+        await report_problem(
             err,
+            ProblemReportReason.ISSUANCE_ABANDONED.value,
             web.HTTPBadRequest,
             cred_ex_record,
             outbound_handler,
-            code=ProblemReportReason.ISSUANCE_ABANDONED.value,
         )
 
     return web.json_response(result)
@@ -515,13 +516,16 @@ async def credential_exchange_send(request: web.BaseRequest):
         )
         result = cred_ex_record.serialize()
 
-    except (StorageError, BaseModelError, CredentialManagerError) as err:
-        await internal_error(
+    except (BaseModelError, CredentialManagerError, LedgerError, StorageError) as err:
+        if cred_ex_record:
+            async with context.session() as session:
+                await cred_ex_record.save_error_state(session, reason=err.roll_up)
+        await report_problem(
             err,
+            ProblemReportReason.ISSUANCE_ABANDONED.value,
             web.HTTPBadRequest,
             cred_ex_record or connection_record,
             outbound_handler,
-            code=ProblemReportReason.ISSUANCE_ABANDONED.value,
         )
 
     await outbound_handler(
@@ -591,12 +595,15 @@ async def credential_exchange_send_proposal(request: web.BaseRequest):
         result = cred_ex_record.serialize()
 
     except (BaseModelError, StorageError) as err:
-        await internal_error(
+        if cred_ex_record:
+            async with context.session() as session:
+                await cred_ex_record.save_error_state(session, reason=err.roll_up)
+        await report_problem(
             err,
+            ProblemReportReason.ISSUANCE_ABANDONED.value,
             web.HTTPBadRequest,
             cred_ex_record or connection_record,
             outbound_handler,
-            code=ProblemReportReason.ISSUANCE_ABANDONED.value,
         )
 
     await outbound_handler(
@@ -758,12 +765,15 @@ async def credential_exchange_create_free_offer(request: web.BaseRequest):
         LedgerError,
         StorageError,
     ) as err:
-        await internal_error(
+        if cred_ex_record:
+            async with context.session() as session:
+                await cred_ex_record.save_error_state(session, reason=err.roll_up)
+        await report_problem(
             err,
+            ProblemReportReason.ISSUANCE_ABANDONED.value,
             web.HTTPBadRequest,
             cred_ex_record or connection_record,
             outbound_handler,
-            code=ProblemReportReason.ISSUANCE_ABANDONED.value,
         )
 
     response = {"record": result, "oob_url": oob_url}
@@ -821,7 +831,7 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
             if not connection_record.is_ready:
                 raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
 
-        (cred_ex_record, credential_offer_message,) = await _create_free_offer(
+        cred_ex_record, credential_offer_message = await _create_free_offer(
             context.profile,
             cred_def_id,
             connection_id,
@@ -839,12 +849,15 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
         CredentialManagerError,
         LedgerError,
     ) as err:
-        await internal_error(
+        if cred_ex_record:
+            async with context.session() as session:
+                await cred_ex_record.save_error_state(session, reason=err.roll_up)
+        await report_problem(
             err,
+            ProblemReportReason.ISSUANCE_ABANDONED.value,
             web.HTTPBadRequest,
             cred_ex_record or connection_record,
             outbound_handler,
-            code=ProblemReportReason.ISSUANCE_ABANDONED.value,
         )
 
     await outbound_handler(credential_offer_message, connection_id=connection_id)
@@ -935,14 +948,15 @@ async def credential_exchange_send_bound_offer(request: web.BaseRequest):
         LedgerError,
         StorageError,
     ) as err:
-        async with context.session() as session:
-            await cred_ex_record.save_error_state(session, reason=err.message)
-        await internal_error(
+        if cred_ex_record:
+            async with context.session() as session:
+                await cred_ex_record.save_error_state(session, reason=err.roll_up)
+        await report_problem(
             err,
+            ProblemReportReason.ISSUANCE_ABANDONED.value,
             web.HTTPBadRequest,
             cred_ex_record,
             outbound_handler,
-            code=ProblemReportReason.ISSUANCE_ABANDONED.value,
         )
 
     await outbound_handler(credential_offer_message, connection_id=connection_id)
@@ -1017,14 +1031,15 @@ async def credential_exchange_send_request(request: web.BaseRequest):
         LedgerError,
         StorageError,
     ) as err:
-        async with context.session() as session:
-            await cred_ex_record.save_error_state(session, reason=err.message)
-        await internal_error(
+        if cred_ex_record:
+            async with context.session() as session:
+                await cred_ex_record.save_error_state(session, reason=err.roll_up)
+        await report_problem(
             err,
+            ProblemReportReason.ISSUANCE_ABANDONED.value,
             web.HTTPBadRequest,
             cred_ex_record,
             outbound_handler,
-            code=ProblemReportReason.ISSUANCE_ABANDONED.value,
         )
 
     await outbound_handler(credential_request_message, connection_id=connection_id)
@@ -1098,14 +1113,15 @@ async def credential_exchange_issue(request: web.BaseRequest):
         LedgerError,
         StorageError,
     ) as err:
-        async with context.session() as session:
-            await cred_ex_record.save_error_state(session, reason=err.message)
-        await internal_error(
+        if cred_ex_record:
+            async with context.session() as session:
+                await cred_ex_record.save_error_state(session, reason=err.roll_up)
+        await report_problem(
             err,
+            ProblemReportReason.ISSUANCE_ABANDONED.value,
             web.HTTPBadRequest,
             cred_ex_record,
             outbound_handler,
-            code=ProblemReportReason.ISSUANCE_ABANDONED.value,
         )
 
     await outbound_handler(credential_issue_message, connection_id=connection_id)
@@ -1173,6 +1189,23 @@ async def credential_exchange_store(request: web.BaseRequest):
             credential_id,
         )
 
+    except (
+        CredentialManagerError,
+        IndyHolderError,
+        StorageError,
+    ) as err:  # treat failure to store as mangled on receipt hence protocol error
+        if cred_ex_record:
+            async with context.session() as session:
+                await cred_ex_record.save_error_state(session, reason=err.roll_up)
+        await report_problem(
+            err,
+            ProblemReportReason.ISSUANCE_ABANDONED.value,
+            web.HTTPBadRequest,
+            cred_ex_record,
+            outbound_handler,
+        )
+
+    try:  # protocol owes an ack
         (
             cred_ex_record,
             credential_ack_message,
@@ -1182,17 +1215,10 @@ async def credential_exchange_store(request: web.BaseRequest):
     except (
         BaseModelError,
         CredentialManagerError,
-        IndyHolderError,
         StorageError,
     ) as err:
-        # protocol finished OK: do not set cred ex record state null
-        await internal_error(
-            err,
-            web.HTTPBadRequest,
-            cred_ex_record,
-            outbound_handler,
-            code=ProblemReportReason.ISSUANCE_ABANDONED.value,
-        )
+        # protocol finished OK: do not send problem report nor set record state error
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     trace_event(
         context.settings,
@@ -1224,34 +1250,22 @@ async def credential_exchange_problem_report(request: web.BaseRequest):
 
     credential_exchange_id = request.match_info["cred_ex_id"]
     body = await request.json()
-
-    credential_manager = CredentialManager(context.profile)
+    description = body["description"]
 
     try:
         async with context.session() as session:
             cred_ex_record = await V10CredentialExchange.retrieve_by_id(
                 session, credential_exchange_id
             )
-        report = await credential_manager.create_problem_report(
-            cred_ex_record,
-            body["description"],
-        )
-    except StorageNotFoundError as err:
-        await internal_error(
-            err,
-            web.HTTPNotFound,
-            None,
-            outbound_handler,
-            code=ProblemReportReason.ISSUANCE_ABANDONED.value,
-        )
+            report = problem_report_for_record(cred_ex_record, description)
+            await cred_ex_record.save_error_state(
+                session,
+                reason=f"created problem report: {description}",
+            )
+    except StorageNotFoundError as err:  # other party does not care about meta-problems
+        raise web.HTTPNotFound(reason=err.roll_up) from err
     except StorageError as err:
-        await internal_error(
-            err,
-            web.HTTPBadRequest,
-            cred_ex_record,
-            outbound_handler,
-            code=ProblemReportReason.ISSUANCE_ABANDONED.value,
-        )
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     await outbound_handler(report, connection_id=cred_ex_record.connection_id)
 
@@ -1273,7 +1287,6 @@ async def credential_exchange_remove(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
-    outbound_handler = request["outbound_message_router"]
 
     credential_exchange_id = request.match_info["cred_ex_id"]
     cred_ex_record = None
@@ -1283,22 +1296,10 @@ async def credential_exchange_remove(request: web.BaseRequest):
                 session, credential_exchange_id
             )
             await cred_ex_record.delete_record(session)
-    except StorageNotFoundError as err:
-        await internal_error(
-            err,
-            web.HTTPNotFound,
-            cred_ex_record,
-            outbound_handler,
-            code=ProblemReportReason.ISSUANCE_ABANDONED.value,
-        )
-    except StorageError as err:
-        await internal_error(
-            err,
-            web.HTTPBadRequest,
-            cred_ex_record,
-            outbound_handler,
-            code=ProblemReportReason.ISSUANCE_ABANDONED.value,
-        )
+    except StorageNotFoundError as err:  # not a protocol error
+        raise web.HTTPNotFound(reason=err.roll_up) from err
+    except StorageError as err:  # not a protocol error
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     return web.json_response({})
 

@@ -2,13 +2,16 @@
 
 from .....indy.holder import IndyHolderError
 from .....messaging.base_handler import BaseHandler, HandlerException
+from .....messaging.models.base import BaseModelError
 from .....messaging.request_context import RequestContext
 from .....messaging.responder import BaseResponder
 from .....storage.error import StorageError
 from .....utils.tracing import trace_event, get_timer
 
+from .. import problem_report_for_record
 from ..manager import CredentialManager, CredentialManagerError
 from ..messages.credential_issue import CredentialIssue
+from ..messages.credential_problem_report import ProblemReportReason
 
 
 class CredentialIssueHandler(BaseHandler):
@@ -52,9 +55,26 @@ class CredentialIssueHandler(BaseHandler):
                 cred_ex_record = await credential_manager.store_credential(
                     cred_ex_record
                 )
-            except (CredentialManagerError, IndyHolderError, StorageError) as err:
-                # protocol finished OK: do not set cred ex record state null
+            except (
+                BaseModelError,
+                CredentialManagerError,
+                IndyHolderError,
+                StorageError,
+            ) as err:
+                # treat failure to store as mangled on receipt hence protocol error
                 self._logger.exception(err)
+                if cred_ex_record:
+                    async with context.session() as session:
+                        await cred_ex_record.save_error_state(
+                            session,
+                            reason=err.roll_up,  # us: be specific
+                        )
+                    await responder.send_reply(
+                        problem_report_for_record(
+                            cred_ex_record,
+                            ProblemReportReason.ISSUANCE_ABANDONED.value,  # them: vague
+                        )
+                    )
 
             credential_ack_message = await credential_manager.send_credential_ack(
                 cred_ex_record
