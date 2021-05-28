@@ -604,11 +604,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             )
             mock_retrieve_pxid_1.side_effect = StorageNotFoundError()
             mock_retrieve_pxid_2.return_value = async_mock.MagicMock(
-                pres_request=async_mock.MagicMock(
-                    attachment=async_mock.MagicMock(
-                        return_value=TestConfig.PRES_REQ_V2.serialize()
-                    )
-                )
+                pres_request=TestConfig.PRES_REQ_V2
             )
             invi_rec = await self.manager.create_invitation(
                 my_endpoint=TestConfig.test_endpoint,

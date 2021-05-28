@@ -192,7 +192,7 @@ class OutOfBandManager(BaseConnectionManager):
                     )
                     message_attachments.append(
                         InvitationMessage.wrap_message(
-                            pres_ex_rec.pres_request.attachment()
+                            pres_ex_rec.pres_request.serialize()
                         )
                     )
             else:
