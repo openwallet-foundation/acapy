@@ -446,7 +446,10 @@ class DIFPresExchHandler:
         contexts = [ctx for ctx in cred_dict.get("@context") if type(ctx) is str]
         if "@graph" in cred_dict:
             for enclosed_data in cred_dict.get("@graph"):
-                if enclosed_data["id"] == "urn:bnid:_:c14n0":
+                if (
+                    enclosed_data["id"].startswith("urn:")
+                    and "credentialSubject" in enclosed_data
+                ):
                     cred_dict.update(enclosed_data)
                     del cred_dict["@graph"]
                     break
