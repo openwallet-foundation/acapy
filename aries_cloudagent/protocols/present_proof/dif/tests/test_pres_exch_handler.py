@@ -15,6 +15,7 @@ from .....wallet.did_method import DIDMethod
 from .....wallet.error import WalletNotFoundError
 from .....vc.ld_proofs import (
     BbsBlsSignatureProof2020,
+    BbsBlsSignature2020,
 )
 from .....vc.ld_proofs.document_loader import DocumentLoader
 from .....vc.ld_proofs.error import LinkedDataProofException
@@ -1749,6 +1750,26 @@ class TestPresExchHandler:
         )
         assert len(tmp_vp.get("verifiableCredential")) == 6
 
+    @pytest.mark.asyncio
+    @pytest.mark.ursa_bbs_signatures
+    async def test_sign_pres_bbsbls(self, profile, setup_tuple):
+        dif_pres_exch_handler = DIFPresExchHandler(
+            profile, proof_type=BbsBlsSignature2020.signature_type
+        )
+        cred_list, pd_list = setup_tuple
+        tmp_pd = pd_list[3]
+        tmp_creds = []
+        for cred in deepcopy(cred_list):
+            cred.subject_ids = []
+            tmp_creds.append(cred)
+
+        tmp_vp = await dif_pres_exch_handler.create_vp(
+            credentials=tmp_creds,
+            pd=tmp_pd[0],
+            challenge="1f44d55f-f161-4938-a659-f8026467f126",
+        )
+        assert len(tmp_vp.get("verifiableCredential")) == 6
+
     def test_get_derive_key_credential_subject_id(self, profile):
         dif_pres_exch_handler = DIFPresExchHandler(profile)
         VC_RECORDS_A = [
@@ -1831,51 +1852,80 @@ class TestPresExchHandler:
         ]
         dif_pres_exch_handler.get_derive_key_credential_subject_id(VC_RECORDS_B)
 
-    @pytest.mark.asyncio
-    async def test_filter_constraint_no_derive_key(self, profile):
+    def test_create_vc_record_with_graph_struct(self, profile):
         dif_pres_exch_handler = DIFPresExchHandler(profile)
-        test_cred = {
+        test_credential_dict_a = {
             "@context": [
                 "https://www.w3.org/2018/credentials/v1",
                 "https://w3id.org/citizenship/v1",
                 "https://w3id.org/security/bbs/v1",
             ],
-            "id": "https://issuer.oidp.uscis.gov/credentials/83627465",
-            "type": ["VerifiableCredential", "PermanentResidentCard"],
-            "issuer": "did:example:489398593",
-            "identifier": "83627465",
-            "name": "Permanent Resident Card",
-            "description": "Government of Example Permanent Resident Card.",
-            "issuanceDate": "2019-12-03T12:19:52Z",
-            "expirationDate": "2029-12-03T12:19:52Z",
-            "credentialSubject": {"test": 2},
+            "@graph": [
+                {
+                    "id": "did:key:zUC79Dfc18UM9HWQKmqonstuwcP4Fu3V9Zy7aNrcFU6K34WzkBesnm9LhaVxMtrqy2qrgkRyKVoFXsE1BJFAgrzhavrYBQ69AWTcgmBFQ1VauGGCJJKvDaaWfRqgtM3DQzx1TpM",
+                    "type": "PermanentResident",
+                    "https://www.w3.org/2018/credentials#credentialSubject": "",
+                    "https://www.w3.org/2018/credentials#issuanceDate": "",
+                    "https://www.w3.org/2018/credentials#issuer": "",
+                },
+                {
+                    "id": "urn:bnid:_:c14n0",
+                    "type": ["PermanentResident", "VerifiableCredential"],
+                    "credentialSubject": {
+                        "id": "did:key:zUC79Dfc18UM9HWQKmqonstuwcP4Fu3V9Zy7aNrcFU6K34WzkBesnm9LhaVxMtrqy2qrgkRyKVoFXsE1BJFAgrzhavrYBQ69AWTcgmBFQ1VauGGCJJKvDaaWfRqgtM3DQzx1TpM",
+                        "type": "PermanentResident",
+                        "familyName": "SMITH",
+                    },
+                    "issuanceDate": "2020-01-01T12:00:00Z",
+                    "issuer": "did:key:zUC7GLSYyPCryDnWzBgrSu4x44NH7bqEvY8dVPdWii1zdi3GTT9wsmTavEUfgd6VZ6wuz6yx7EDvT23DcxRT5oPBjEt3LYYAi1ph63NWxoGLCjwcP8XAHWRTCR1TKyVak4eLsjD",
+                },
+            ],
             "proof": {
-                "type": "BbsBlsSignature2020",
-                "created": "2020-10-16T23:59:31Z",
+                "type": "BbsBlsSignatureProof2020",
+                "nonce": "4xEz2oZQdiyDI5WE5snXQnvQQSfBZMyrmc9PtjDRTdnzV0GdT9tDgEJhFhseP5fJTeY=",
+                "proofValue": "AA99L7TriEaSJ3iTDZJhrwHz/pkPLYPFFtJQuiUy/IHLIuhcdkSPhKtXGDfe6pmng+nE9pc969b6qghh/T1RjEBF7B+J9uBaWyEz0C57OV22ts+ejB/Cn4/I/jyqryzmpSzF8IvwhhtaRl31JVxnBd7bmfLZAX6FW+ZxopSepH/2sxZKpfV2Ntafx0qNfMRmt8sMrwAAAHSW5bC0H37sdQRCvwhuSwKm9xAq81saAPnUR393bspYzkC0OUNaRzsN4W/oF7db250AAAACXRj8cmq12t5N0iklCp7s2ujTP5Yemp0qERGsDaeNb0Fh6tGzhP5QJHbiNY8i/scBIMN4bN0nX2HM2grkRKMxErOO0sirH6MMz90XFOs2pxJxh33MZ0Qp0CTff6YT/Cjd0FO4SBs4ZuUzdeoRI6FSoAAAAAZIlySGrOeIFVheqXONHu9WcwNnGi48KjL/EjLcDqJgCymARUsEW5XjNJSysUqFiibm221yYMaAskdQDHdoh0q5CtV8UeDCunycGMiphhIhcP9xtWW1+WY0gif0qxRMxNs4IpcJ7TtXse7zOysQrU0iXMLwA96yzGk722QZKnXXPEZMSduj+YPfMJnDR67uxJYUGx+ci8dqmEmFfNEzeq/DTKpJwbbNbeLVnd4GKHQB2WZwRfYwNYt2U+c/xCuxvew=",
+                "verificationMethod": "did:key:zUC7GLSYyPCryDnWzBgrSu4x44NH7bqEvY8dVPdWii1zdi3GTT9wsmTavEUfgd6VZ6wuz6yx7EDvT23DcxRT5oPBjEt3LYYAi1ph63NWxoGLCjwcP8XAHWRTCR1TKyVak4eLsjD#zUC7GLSYyPCryDnWzBgrSu4x44NH7bqEvY8dVPdWii1zdi3GTT9wsmTavEUfgd6VZ6wuz6yx7EDvT23DcxRT5oPBjEt3LYYAi1ph63NWxoGLCjwcP8XAHWRTCR1TKyVak4eLsjD",
                 "proofPurpose": "assertionMethod",
-                "proofValue": "kAkloZSlK79ARnlx54tPqmQyy6G7/36xU/LZgrdVmCqqI9M0muKLxkaHNsgVDBBvYp85VT3uouLFSXPMr7Stjgq62+OCunba7bNdGfhM/FUsx9zpfRtw7jeE182CN1cZakOoSVsQz61c16zQikXM3w==",
-                "verificationMethod": "did:example:489398593#test",
+                "created": "2021-06-01T08:32:11.935336",
             },
         }
-        test_constraint = {
-            "limit_disclosure": "required",
-            "fields": [
-                {
-                    "path": [
-                        "$.credentialSubject.test",
-                        "$.vc.credentialSubject.test",
-                        "$.test",
-                    ],
-                    "purpose": "The claim must be from one of the specified issuers",
-                    "filter": {"type": "number", "exclusiveMaximum": 2.5},
-                }
+        test_credential_dict_b = {
+            "@context": [
+                "https://www.w3.org/2018/credentials/v1",
+                "https://w3id.org/citizenship/v1",
+                "https://w3id.org/security/bbs/v1",
             ],
+            "@graph": [
+                {
+                    "id": "urn:bnid:_:c14n1",
+                    "type": "PermanentResident",
+                    "https://www.w3.org/2018/credentials#credentialSubject": "",
+                    "https://www.w3.org/2018/credentials#issuanceDate": "",
+                    "https://www.w3.org/2018/credentials#issuer": "",
+                },
+                {
+                    "id": "urn:bnid:_:c14n0",
+                    "type": ["PermanentResident", "VerifiableCredential"],
+                    "credentialSubject": None,
+                    "issuanceDate": "2020-01-01T12:00:00Z",
+                    "issuer": "did:key:zUC7GLSYyPCryDnWzBgrSu4x44NH7bqEvY8dVPdWii1zdi3GTT9wsmTavEUfgd6VZ6wuz6yx7EDvT23DcxRT5oPBjEt3LYYAi1ph63NWxoGLCjwcP8XAHWRTCR1TKyVak4eLsjD",
+                },
+            ],
+            "proof": {
+                "type": "BbsBlsSignatureProof2020",
+                "nonce": "4xEz2oZQdiyDI5WE5snXQnvQQSfBZMyrmc9PtjDRTdnzV0GdT9tDgEJhFhseP5fJTeY=",
+                "proofValue": "AA99L7TriEaSJ3iTDZJhrwHz/pkPLYPFFtJQuiUy/IHLIuhcdkSPhKtXGDfe6pmng+nE9pc969b6qghh/T1RjEBF7B+J9uBaWyEz0C57OV22ts+ejB/Cn4/I/jyqryzmpSzF8IvwhhtaRl31JVxnBd7bmfLZAX6FW+ZxopSepH/2sxZKpfV2Ntafx0qNfMRmt8sMrwAAAHSW5bC0H37sdQRCvwhuSwKm9xAq81saAPnUR393bspYzkC0OUNaRzsN4W/oF7db250AAAACXRj8cmq12t5N0iklCp7s2ujTP5Yemp0qERGsDaeNb0Fh6tGzhP5QJHbiNY8i/scBIMN4bN0nX2HM2grkRKMxErOO0sirH6MMz90XFOs2pxJxh33MZ0Qp0CTff6YT/Cjd0FO4SBs4ZuUzdeoRI6FSoAAAAAZIlySGrOeIFVheqXONHu9WcwNnGi48KjL/EjLcDqJgCymARUsEW5XjNJSysUqFiibm221yYMaAskdQDHdoh0q5CtV8UeDCunycGMiphhIhcP9xtWW1+WY0gif0qxRMxNs4IpcJ7TtXse7zOysQrU0iXMLwA96yzGk722QZKnXXPEZMSduj+YPfMJnDR67uxJYUGx+ci8dqmEmFfNEzeq/DTKpJwbbNbeLVnd4GKHQB2WZwRfYwNYt2U+c/xCuxvew=",
+                "verificationMethod": "did:key:zUC7GLSYyPCryDnWzBgrSu4x44NH7bqEvY8dVPdWii1zdi3GTT9wsmTavEUfgd6VZ6wuz6yx7EDvT23DcxRT5oPBjEt3LYYAi1ph63NWxoGLCjwcP8XAHWRTCR1TKyVak4eLsjD#zUC7GLSYyPCryDnWzBgrSu4x44NH7bqEvY8dVPdWii1zdi3GTT9wsmTavEUfgd6VZ6wuz6yx7EDvT23DcxRT5oPBjEt3LYYAi1ph63NWxoGLCjwcP8XAHWRTCR1TKyVak4eLsjD",
+                "proofPurpose": "assertionMethod",
+                "created": "2021-06-01T08:32:11.935336",
+            },
         }
-        with pytest.raises(DIFPresExchError):
-            await dif_pres_exch_handler.filter_constraints(
-                credentials=[dif_pres_exch_handler.create_vcrecord(test_cred)],
-                constraints=Constraints.deserialize(test_constraint),
-            )
+        assert isinstance(
+            dif_pres_exch_handler.create_vcrecord(test_credential_dict_a), VCRecord
+        )
+        assert isinstance(
+            dif_pres_exch_handler.create_vcrecord(test_credential_dict_b), VCRecord
+        )
 
     @pytest.mark.asyncio
     async def test_get_did_info_for_did(self, profile):
@@ -2167,7 +2217,11 @@ class TestPresExchHandler:
                 key_type=KeyType.BLS12381G2,
             )
             mock_did_info.return_value = did_info
-            vp = await dif_pres_exch_handler.create_vp(VC_RECORDS, pd=pd_list[0][0])
+            vp = await dif_pres_exch_handler.create_vp(
+                VC_RECORDS,
+                pd=pd_list[0][0],
+                challenge="3fa85f64-5717-4562-b3fc-2c963f66afa7",
+            )
             assert vp["test"] == "1"
             assert (
                 vp["presentation_submission"]["definition_id"]

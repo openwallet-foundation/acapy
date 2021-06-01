@@ -123,10 +123,13 @@ class DIFPresExchHandler:
         self,
         *,
         wallet: BaseWallet,
-        issuer_id: str,
+        issuer_id: str = None,
     ):
         """Get signature suite for deriving credentials."""
-        did_info = await self._did_info_for_did(issuer_id)
+        if issuer_id:
+            did_info = await self._did_info_for_did(issuer_id)
+        else:
+            did_info = None
 
         # Get signature class based on proof type
         SignatureClass = self.DERIVED_PROOF_TYPE_SIGNATURE_SUITE_MAPPING[
@@ -416,59 +419,60 @@ class DIFPresExchHandler:
                     credential_dict=credential_dict, constraints=constraints
                 )
                 derive_key = self.get_derive_key_credential_subject_id([credential])
-                if not derive_key:
-                    raise DIFPresExchError(
-                        "Applicable credential to derive"
-                        " does not contain credentialSubject.id"
+                async with self.profile.session() as session:
+                    wallet = session.inject(BaseWallet)
+                    derive_suite = await self._get_derive_suite(
+                        wallet=wallet,
+                        issuer_id=derive_key,
                     )
-                else:
-                    async with self.profile.session() as session:
-                        wallet = session.inject(BaseWallet)
-                        derive_suite = await self._get_derive_suite(
-                            wallet=wallet,
-                            issuer_id=derive_key,
-                        )
-                        signed_new_credential_dict = await derive_credential(
-                            credential=credential_dict,
-                            reveal_document=new_credential_dict,
-                            suite=derive_suite,
-                            document_loader=document_loader,
-                        )
-                        credential = self.create_vcrecord(signed_new_credential_dict)
+                    signed_new_credential_dict = await derive_credential(
+                        credential=credential_dict,
+                        reveal_document=new_credential_dict,
+                        suite=derive_suite,
+                        document_loader=document_loader,
+                    )
+                    credential = self.create_vcrecord(signed_new_credential_dict)
             result.append(credential)
         return result
 
     def create_vcrecord(self, cred_dict: dict) -> VCRecord:
         """Return VCRecord from a credential dict."""
-        given_id = cred_dict.get("id")
-        contexts = [ctx for ctx in cred_dict.get("@context") if type(ctx) is str]
-
-        # issuer
-        issuer = cred_dict.get("issuer")
-        if type(issuer) is dict:
-            issuer = issuer.get("id")
-
-        # subjects
-        subjects = cred_dict.get("credentialSubject")
-        if type(subjects) is dict:
-            subjects = [subjects]
-        subject_ids = [subject.get("id") for subject in subjects if subject.get("id")]
-
-        # Schemas
-        schemas = cred_dict.get("credentialSchema", [])
-        if type(schemas) is dict:
-            schemas = [schemas]
-        schema_ids = [schema.get("id") for schema in schemas]
-
-        # Proofs (this can be done easier if we use the expanded version)
         proofs = cred_dict.get("proof") or []
         proof_types = None
         if type(proofs) is dict:
             proofs = [proofs]
         if proofs:
             proof_types = [proof.get("type") for proof in proofs]
+        contexts = [ctx for ctx in cred_dict.get("@context") if type(ctx) is str]
+        if "@graph" in cred_dict:
+            for enclosed_data in cred_dict.get("@graph"):
+                if enclosed_data["id"] == "urn:bnid:_:c14n0":
+                    cred_dict.update(enclosed_data)
+                    del cred_dict["@graph"]
+                    break
+        given_id = cred_dict.get("id")
+        # issuer
+        issuer = cred_dict.get("issuer")
+        if type(issuer) is dict:
+            issuer = issuer.get("id")
 
-        # Saving expanded type as a cred_tag
+        # subjects
+        subject_ids = None
+        subjects = cred_dict.get("credentialSubject")
+        if subjects:
+            if type(subjects) is dict:
+                subjects = [subjects]
+            subject_ids = [
+                subject.get("id") for subject in subjects if ("id" in subject)
+            ]
+        else:
+            cred_dict["credentialSubject"] = {}
+
+        # Schemas
+        schemas = cred_dict.get("credentialSchema", [])
+        if type(schemas) is dict:
+            schemas = [schemas]
+        schema_ids = [schema.get("id") for schema in schemas]
         expanded = jsonld.expand(cred_dict)
         types = JsonLdProcessor.get_values(
             expanded[0],
@@ -1134,10 +1138,14 @@ class DIFPresExchHandler:
             if not issuer_id and len(filtered_creds_list) == 0:
                 vp = await create_presentation(credentials=applicable_creds_list)
                 vp["presentation_submission"] = submission_property.serialize()
+                if self.proof_type is BbsBlsSignature2020.signature_type:
+                    vp["@context"].append("https://w3id.org/security/bbs/v1")
                 return vp
             else:
                 vp = await create_presentation(credentials=filtered_creds_list)
                 vp["presentation_submission"] = submission_property.serialize()
+                if self.proof_type is BbsBlsSignature2020.signature_type:
+                    vp["@context"].append("https://w3id.org/security/bbs/v1")
             async with self.profile.session() as session:
                 wallet = session.inject(BaseWallet)
                 issue_suite = await self._get_issue_suite(
@@ -1154,6 +1162,8 @@ class DIFPresExchHandler:
         else:
             vp = await create_presentation(credentials=applicable_creds_list)
             vp["presentation_submission"] = submission_property.serialize()
+            if self.proof_type is BbsBlsSignature2020.signature_type:
+                vp["@context"].append("https://w3id.org/security/bbs/v1")
             if self.pres_signing_did:
                 async with self.profile.session() as session:
                     wallet = session.inject(BaseWallet)
