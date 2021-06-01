@@ -173,6 +173,34 @@ class TestArgParse(AsyncTestCase):
         assert settings.get("external_plugins") == ["foo"]
         assert settings.get("storage_type") == "bar"
 
+    async def test_plugin_config_file(self):
+        """Test file argument parsing."""
+
+        parser = argparse.create_argument_parser()
+        group = argparse.GeneralGroup()
+        group.add_arguments(parser)
+
+        with async_mock.patch.object(parser, "exit") as exit_parser:
+            parser.parse_args(["-h"])
+            exit_parser.assert_called_once()
+
+        result = parser.parse_args(
+            [
+                "--endpoint",
+                "localhost",
+                "--plugin-config",
+                "./aries_cloudagent/config/tests/test_plugins_config.yaml"
+            ]
+        )
+
+        assert result.plugin_config == "./aries_cloudagent/config/tests/test_plugins_config.yaml"
+
+        settings = group.get_settings(result)
+
+        assert settings.get("external_plugins") == ["mock_resolver"]
+        assert settings.get("plugins_config").get("mock_resolver") ==\
+               {"methods": ["sov", "btcr"]}
+
     async def test_transport_settings_file(self):
         """Test file argument parsing."""
 

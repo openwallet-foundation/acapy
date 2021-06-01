@@ -3,6 +3,7 @@
 import abc
 from os import environ
 
+import yaml
 from configargparse import ArgumentParser, Namespace, YAMLConfigFileParser
 from typing import Type
 
@@ -477,6 +478,20 @@ class GeneralGroup(ArgumentGroup):
                 "instances of this parameter can be specified."
             ),
         )
+
+        parser.add_argument(
+            "--plugin-config",
+            dest="plugin_config",
+            type=str,
+            required=False,
+            metavar="<module>",
+            env_var="ACAPY_PLUGIN_CONFIG",
+            help=(
+                "Load <module> as external plugin module config. Multiple "
+                "instances of this parameter can be specified."
+            ),
+        )
+
         parser.add_argument(
             "--storage-type",
             type=str,
@@ -545,6 +560,21 @@ class GeneralGroup(ArgumentGroup):
         settings = {}
         if args.external_plugins:
             settings["external_plugins"] = args.external_plugins
+
+        if args.plugin_config:
+            with open(args.plugin_config, 'r') as stream:
+                plugins_conf = yaml.safe_load(stream)
+
+            if not settings.get("external_plugins"):
+                settings["external_plugins"] = []
+
+            settings["plugins_config"] = {}
+            for plugin in plugins_conf.get("plugins"):
+                plug_dir = plugin.get("local_directory")
+                plug_conf = plugin.get("config")
+                settings["external_plugins"].append(plug_dir)
+                settings["plugins_config"][plug_dir] = plug_conf
+
         if args.storage_type:
             settings["storage_type"] = args.storage_type
 
