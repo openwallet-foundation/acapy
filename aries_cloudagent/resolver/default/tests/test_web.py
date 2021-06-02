@@ -9,11 +9,6 @@ def resolver():
     yield WebDIDResolver()
 
 
-@pytest.fixture
-def profile():
-    yield None
-
-
 def test_transformation_domain_only(resolver):
     did = "did:web:example.com"
     url = resolver._WebDIDResolver__transform_to_url(did)
