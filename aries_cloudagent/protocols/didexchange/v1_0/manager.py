@@ -144,8 +144,7 @@ class DIDXManager(BaseConnectionManager):
             responder = self._session.inject(BaseResponder, required=False)
             if responder:
                 await responder.send_reply(
-                    request,
-                    connection_id=conn_rec.connection_id,
+                    request, connection_id=conn_rec.connection_id,
                 )
 
                 conn_rec.state = ConnRecord.State.REQUEST.rfc23
@@ -177,13 +176,15 @@ class DIDXManager(BaseConnectionManager):
             The new `ConnRecord` instance
 
         """
-
+        my_public_info = None
         if use_public_did:
             wallet = self._session.inject(BaseWallet)
             my_public_info = await wallet.get_public_did()
 
         conn_rec = ConnRecord(
-            my_did=my_public_info.did if my_public_info else None,  # create-request will fill in on local DID creation
+            my_did=my_public_info.did
+            if my_public_info
+            else None,  # create-request will fill in on local DID creation
             their_did=their_public_did,
             their_label=None,
             their_role=ConnRecord.Role.RESPONDER.rfc23,
@@ -234,9 +235,7 @@ class DIDXManager(BaseConnectionManager):
         mediation_mgr = MediationManager(self._session.profile)
         keylist_updates = None
         mediation_record = await mediation_record_if_id(
-            self._session,
-            mediation_id,
-            or_default=True,
+            self._session, mediation_id, or_default=True,
         )
         base_mediation_record = None
 
@@ -252,8 +251,7 @@ class DIDXManager(BaseConnectionManager):
         else:
             # Create new DID for connection
             my_info = await wallet.create_local_did(
-                method=DIDMethod.SOV,
-                key_type=KeyType.ED25519,
+                method=DIDMethod.SOV, key_type=KeyType.ED25519,
             )
             conn_rec.my_did = my_info.did
             keylist_updates = await mediation_mgr.add_key(
@@ -286,9 +284,7 @@ class DIDXManager(BaseConnectionManager):
         if not my_label:
             my_label = self._session.settings.get("default_label")
         request = DIDXRequest(
-            label=my_label,
-            did=conn_rec.my_did,
-            did_doc_attach=attach,
+            label=my_label, did=conn_rec.my_did, did_doc_attach=attach,
         )
         request.assign_thread_id(thid=request._id, pthid=pthid)
 
@@ -383,8 +379,7 @@ class DIDXManager(BaseConnectionManager):
             if conn_rec.is_multiuse_invitation:
                 wallet = self._session.inject(BaseWallet)
                 my_info = await wallet.create_local_did(
-                    method=DIDMethod.SOV,
-                    key_type=KeyType.ED25519,
+                    method=DIDMethod.SOV, key_type=KeyType.ED25519,
                 )
                 keylist_updates = await mediation_mgr.add_key(
                     my_info.verkey, keylist_updates
@@ -457,8 +452,7 @@ class DIDXManager(BaseConnectionManager):
         else:
             # request is against implicit invitation on public DID
             my_info = await wallet.create_local_did(
-                method=DIDMethod.SOV,
-                key_type=KeyType.ED25519,
+                method=DIDMethod.SOV, key_type=KeyType.ED25519,
             )
 
             keylist_updates = await mediation_mgr.add_key(
@@ -509,9 +503,7 @@ class DIDXManager(BaseConnectionManager):
 
         if auto_accept:
             response = await self.create_response(
-                conn_rec,
-                my_endpoint,
-                mediation_id=mediation_id,
+                conn_rec, my_endpoint, mediation_id=mediation_id,
             )
             responder = self._session.inject(BaseResponder, required=False)
             if responder:
@@ -526,10 +518,7 @@ class DIDXManager(BaseConnectionManager):
         return conn_rec
 
     async def create_response(
-        self,
-        conn_rec: ConnRecord,
-        my_endpoint: str = None,
-        mediation_id: str = None,
+        self, conn_rec: ConnRecord, my_endpoint: str = None, mediation_id: str = None,
     ) -> DIDXResponse:
         """
         Create a connection response for a received connection request.
@@ -572,8 +561,7 @@ class DIDXManager(BaseConnectionManager):
             my_info = await wallet.get_local_did(conn_rec.my_did)
         else:
             my_info = await wallet.create_local_did(
-                method=DIDMethod.SOV,
-                key_type=KeyType.ED25519,
+                method=DIDMethod.SOV, key_type=KeyType.ED25519,
             )
             conn_rec.my_did = my_info.did
             keylist_updates = await mediation_mgr.add_key(
@@ -636,9 +624,7 @@ class DIDXManager(BaseConnectionManager):
         return response
 
     async def accept_response(
-        self,
-        response: DIDXResponse,
-        receipt: MessageReceipt,
+        self, response: DIDXResponse, receipt: MessageReceipt,
     ) -> ConnRecord:
         """
         Accept a connection response under RFC 23 (DID exchange).
@@ -735,9 +721,7 @@ class DIDXManager(BaseConnectionManager):
         return conn_rec
 
     async def accept_complete(
-        self,
-        complete: DIDXComplete,
-        receipt: MessageReceipt,
+        self, complete: DIDXComplete, receipt: MessageReceipt,
     ) -> ConnRecord:
         """
         Accept a connection complete message under RFC 23 (DID exchange).
@@ -776,9 +760,7 @@ class DIDXManager(BaseConnectionManager):
         return conn_rec
 
     async def verify_diddoc(
-        self,
-        wallet: BaseWallet,
-        attached: AttachDecorator,
+        self, wallet: BaseWallet, attached: AttachDecorator,
     ) -> DIDDoc:
         """Verify DIDDoc attachment and return signed data."""
         signed_diddoc_bytes = attached.data.signed
