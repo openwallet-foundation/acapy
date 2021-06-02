@@ -1,6 +1,5 @@
 """Classes to manage connection establishment under RFC 23 (DID exchange)."""
 
-from aries_cloudagent.wallet.error import WalletError
 import json
 import logging
 
@@ -15,6 +14,7 @@ from ....messaging.responder import BaseResponder
 from ....storage.error import StorageNotFoundError
 from ....transport.inbound.receipt import MessageReceipt
 from ....wallet.base import BaseWallet
+from ....wallet.error import WalletError
 from ....wallet.key_type import KeyType
 from ....wallet.did_method import DIDMethod
 from ....wallet.did_posture import DIDPosture
