@@ -90,7 +90,8 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
         self.context = self.session.context
 
         self.did_info = await self.session.wallet.create_local_did(
-            method=DIDMethod.SOV, key_type=KeyType.ED25519,
+            method=DIDMethod.SOV,
+            key_type=KeyType.ED25519,
         )
 
         self.ledger = async_mock.create_autospec(BaseLedger)
@@ -118,7 +119,8 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
 
     async def test_verify_diddoc(self):
         did_doc = self.make_did_doc(
-            TestConfig.test_target_did, TestConfig.test_target_verkey,
+            TestConfig.test_target_did,
+            TestConfig.test_target_verkey,
         )
         did_doc_attach = AttachDecorator.data_base64(did_doc.serialize())
         with self.assertRaises(DIDXManagerError):
@@ -150,7 +152,8 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
         ) as mock_get_default_mediator:
             mock_get_default_mediator.return_value = mediation_record
             invi_rec = await self.oob_manager.create_invitation(
-                my_endpoint="testendpoint", hs_protos=[HSProto.RFC23],
+                my_endpoint="testendpoint",
+                hs_protos=[HSProto.RFC23],
             )
             invi_msg = invi_rec.invitation
             mock_attach_deco.data_base64 = async_mock.MagicMock(
@@ -175,11 +178,13 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
         ) as mock_get_default_mediator:
             mock_get_default_mediator.return_value = mediation_record
             invi_rec = await self.oob_manager.create_invitation(
-                my_endpoint="testendpoint", hs_protos=[HSProto.RFC23],
+                my_endpoint="testendpoint",
+                hs_protos=[HSProto.RFC23],
             )
 
             invitee_record = await self.manager.receive_invitation(
-                invi_rec.invitation, auto_accept=False,
+                invi_rec.invitation,
+                auto_accept=False,
             )
             assert invitee_record.state == ConnRecord.State.INVITATION.rfc23
 
@@ -401,7 +406,8 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             )
 
             didx_req = await self.manager.create_request(
-                mock_conn_rec, my_endpoint="http://testendpoint.com/endpoint",
+                mock_conn_rec,
+                my_endpoint="http://testendpoint.com/endpoint",
             )
             assert didx_req
 
@@ -549,15 +555,18 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
 
     async def test_receive_request_with_mediator_without_multi_use_multitenant(self):
         multiuse_info = await self.session.wallet.create_local_did(
-            method=DIDMethod.SOV, key_type=KeyType.ED25519,
+            method=DIDMethod.SOV,
+            key_type=KeyType.ED25519,
         )
         did_doc_dict = self.make_did_doc(
-            did=TestConfig.test_target_did, verkey=TestConfig.test_target_verkey,
+            did=TestConfig.test_target_did,
+            verkey=TestConfig.test_target_verkey,
         ).serialize()
         del did_doc_dict["authentication"]
         del did_doc_dict["service"]
         new_info = await self.session.wallet.create_local_did(
-            method=DIDMethod.SOV, key_type=KeyType.ED25519,
+            method=DIDMethod.SOV,
+            key_type=KeyType.ED25519,
         )
 
         mock_request = async_mock.MagicMock()
@@ -634,15 +643,18 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
         self,
     ):
         multiuse_info = await self.session.wallet.create_local_did(
-            method=DIDMethod.SOV, key_type=KeyType.ED25519,
+            method=DIDMethod.SOV,
+            key_type=KeyType.ED25519,
         )
         did_doc_dict = self.make_did_doc(
-            did=TestConfig.test_target_did, verkey=TestConfig.test_target_verkey,
+            did=TestConfig.test_target_did,
+            verkey=TestConfig.test_target_verkey,
         ).serialize()
         del did_doc_dict["authentication"]
         del did_doc_dict["service"]
         new_info = await self.session.wallet.create_local_did(
-            method=DIDMethod.SOV, key_type=KeyType.ED25519,
+            method=DIDMethod.SOV,
+            key_type=KeyType.ED25519,
         )
 
         mock_request = async_mock.MagicMock()
@@ -1127,10 +1139,12 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
 
     async def test_receive_request_multiuse_multitenant(self):
         multiuse_info = await self.session.wallet.create_local_did(
-            method=DIDMethod.SOV, key_type=KeyType.ED25519,
+            method=DIDMethod.SOV,
+            key_type=KeyType.ED25519,
         )
         new_info = await self.session.wallet.create_local_did(
-            method=DIDMethod.SOV, key_type=KeyType.ED25519,
+            method=DIDMethod.SOV,
+            key_type=KeyType.ED25519,
         )
 
         mock_request = async_mock.MagicMock(
@@ -1197,7 +1211,8 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
 
     async def test_receive_request_implicit_multitenant(self):
         new_info = await self.session.wallet.create_local_did(
-            method=DIDMethod.SOV, key_type=KeyType.ED25519,
+            method=DIDMethod.SOV,
+            key_type=KeyType.ED25519,
         )
 
         mock_request = async_mock.MagicMock(
@@ -1459,7 +1474,10 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
         )
 
         self.manager.session.context.update_settings(
-            {"multitenant.enabled": True, "wallet.id": "test_wallet",}
+            {
+                "multitenant.enabled": True,
+                "wallet.id": "test_wallet",
+            }
         )
 
         with async_mock.patch.object(
@@ -1556,7 +1574,8 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
         )
 
         receipt = MessageReceipt(
-            recipient_did=TestConfig.test_did, recipient_did_public=True,
+            recipient_did=TestConfig.test_did,
+            recipient_did_public=True,
         )
 
         with async_mock.patch.object(
@@ -1589,7 +1608,8 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 connection_id="test-conn-id",
             )
             mock_conn_retrieve_by_id.return_value = async_mock.MagicMock(
-                their_did=TestConfig.test_target_did, save=async_mock.CoroutineMock(),
+                their_did=TestConfig.test_target_did,
+                save=async_mock.CoroutineMock(),
             )
 
             conn_rec = await self.manager.accept_response(mock_response, receipt)
@@ -1784,7 +1804,8 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 save=async_mock.CoroutineMock(),
             )
             mock_conn_retrieve_by_id.return_value = async_mock.MagicMock(
-                their_did=TestConfig.test_target_did, save=async_mock.CoroutineMock(),
+                their_did=TestConfig.test_target_did,
+                save=async_mock.CoroutineMock(),
             )
 
             with self.assertRaises(DIDXManagerError):
@@ -1829,7 +1850,8 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
         )
 
         did_doc = self.make_did_doc(
-            did=TestConfig.test_target_did, verkey=TestConfig.test_target_verkey,
+            did=TestConfig.test_target_did,
+            verkey=TestConfig.test_target_verkey,
         )
         for i in range(2):  # first cover store-record, then update-value
             await self.manager.store_did_document(did_doc)
@@ -2015,10 +2037,12 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
 
     async def test_diddoc_connection_targets_diddoc(self):
         did_doc = self.make_did_doc(
-            TestConfig.test_target_did, TestConfig.test_target_verkey,
+            TestConfig.test_target_did,
+            TestConfig.test_target_verkey,
         )
         targets = self.manager.diddoc_connection_targets(
-            did_doc, TestConfig.test_verkey,
+            did_doc,
+            TestConfig.test_verkey,
         )
         assert isinstance(targets[0], ConnectionTarget)
 
