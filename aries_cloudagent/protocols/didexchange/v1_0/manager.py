@@ -1,5 +1,6 @@
 """Classes to manage connection establishment under RFC 23 (DID exchange)."""
 
+from aries_cloudagent.wallet.error import WalletError
 import json
 import logging
 
@@ -180,6 +181,8 @@ class DIDXManager(BaseConnectionManager):
         if use_public_did:
             wallet = self._session.inject(BaseWallet)
             my_public_info = await wallet.get_public_did()
+            if not my_public_info:
+                raise WalletError("No public DID configured")
 
         conn_rec = ConnRecord(
             my_did=my_public_info.did

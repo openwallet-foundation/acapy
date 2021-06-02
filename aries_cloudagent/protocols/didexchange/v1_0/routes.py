@@ -183,7 +183,7 @@ async def didx_create_request_implicit(request: web.BaseRequest):
     my_label = request.query.get("my_label") or None
     my_endpoint = request.query.get("my_endpoint") or None
     mediation_id = request.query.get("mediation_id") or None
-    use_public_did = request.query.get("use_public_did") or False
+    use_public_did = json.loads(request.query.get("use_public_did", "null"))
 
     didx_mgr = DIDXManager(session)
     try:
