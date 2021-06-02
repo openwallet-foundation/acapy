@@ -1,6 +1,5 @@
 """Web DID Resolver."""
 
-import json
 from typing import Sequence, Pattern
 import aiohttp
 import urllib.parse
@@ -14,7 +13,7 @@ from ..base import (
     ResolverType,
 )
 from ...messaging.valid import DIDWeb
-from pydid import DID, DIDDocument, DIDDocumentError
+from pydid import DID, DIDDocument
 
 
 class WebDIDResolver(BaseDIDResolver):
