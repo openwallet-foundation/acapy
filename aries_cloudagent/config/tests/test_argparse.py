@@ -186,17 +186,21 @@ class TestArgParse(AsyncTestCase):
                 "--endpoint",
                 "localhost",
                 "--plugin-config",
-                "./aries_cloudagent/config/tests/test_plugins_config.yaml"
+                "./aries_cloudagent/config/tests/test_plugins_config.yaml",
             ]
         )
 
-        assert result.plugin_config == "./aries_cloudagent/config/tests/test_plugins_config.yaml"
+        assert (
+            result.plugin_config
+            == "./aries_cloudagent/config/tests/test_plugins_config.yaml"
+        )
 
         settings = group.get_settings(result)
 
         assert settings.get("external_plugins") == ["mock_resolver"]
-        assert settings.get("plugins_config").get("mock_resolver") ==\
-               {"methods": ["sov", "btcr"]}
+        assert settings.get("plugins_config").get("mock_resolver") == {
+            "methods": ["sov", "btcr"]
+        }
 
     async def test_wrong_plugin_config_file(self):
         """Test file argument parsing."""
@@ -209,7 +213,7 @@ class TestArgParse(AsyncTestCase):
                 "--endpoint",
                 "localhost",
                 "--plugin-config",
-                "./aries_cloudagent/config/tests/test_wrong_plugins_config.yaml"
+                "./aries_cloudagent/config/tests/test_wrong_plugins_config.yaml",
             ]
         )
         assert result.external_plugins == None
