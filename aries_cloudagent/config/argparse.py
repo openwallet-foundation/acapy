@@ -484,11 +484,9 @@ class GeneralGroup(ArgumentGroup):
             dest="plugin_config",
             type=str,
             required=False,
-            metavar="<module>",
             env_var="ACAPY_PLUGIN_CONFIG",
             help=(
-                "Load <module> as external plugin module config. Multiple "
-                "instances of this parameter can be specified."
+                "Load YAML file path that defines external plugin setup."
             ),
         )
 
@@ -569,9 +567,13 @@ class GeneralGroup(ArgumentGroup):
                 settings["external_plugins"] = []
 
             settings["plugins_config"] = {}
-            for plugin in plugins_conf.get("plugins"):
+            for plugin in plugins_conf.get("plugins", []):
                 plug_dir = plugin.get("local_directory")
-                plug_conf = plugin.get("config")
+                if not plug_dir:
+                    raise ArgsParseError(f"plugin {plugin.get('plugin_name','')} in "
+                                         f"plugin-config file has not "
+                                         f"'local_directory' key")
+                plug_conf = plugin.get("config", {})
                 settings["external_plugins"].append(plug_dir)
                 settings["plugins_config"][plug_dir] = plug_conf
 

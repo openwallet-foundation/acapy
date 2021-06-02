@@ -1,0 +1,8 @@
+plugins:
+  - plugin_name: Mock Resolver
+    # Missing local directory
+    # local_directory: mock_resolver
+    config:
+      methods:
+       - "sov"
+       - "btcr"
