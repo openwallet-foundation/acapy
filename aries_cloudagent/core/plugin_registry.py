@@ -197,8 +197,9 @@ class PluginRegistry:
         """Call plugin setup methods on the current context."""
         for key, plugin in self._plugins.items():
             if hasattr(plugin, "setup"):
-                plugin_conf = plugins_config.get(key, {})
-                await plugin.setup(context, **plugin_conf)
+                plugin_conf = plugins_config.get(key)
+                context.update_settings({"plugin_conf": plugin_conf})
+                await plugin.setup(context)
             else:
                 await self.load_protocols(context, plugin)
 

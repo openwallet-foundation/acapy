@@ -565,17 +565,10 @@ class GeneralGroup(ArgumentGroup):
                 settings["external_plugins"] = []
 
             settings["plugins_config"] = {}
-            for plugin in plugins_conf.get("plugins", []):
-                plug_dir = plugin.get("local_directory")
-                if not plug_dir:
-                    raise ArgsParseError(
-                        f"plugin {plugin.get('plugin_name','')} in "
-                        f"plugin-config file has not "
-                        f"'local_directory' key"
-                    )
-                plug_conf = plugin.get("config", {})
-                settings["external_plugins"].append(plug_dir)
-                settings["plugins_config"][plug_dir] = plug_conf
+            for plugin, conf in plugins_conf.items():
+
+                settings["external_plugins"].append(plugin)
+                settings["plugins_config"][plugin] = conf
 
         if args.storage_type:
             settings["storage_type"] = args.storage_type

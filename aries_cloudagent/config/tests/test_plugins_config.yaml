@@ -1,7 +1,4 @@
-plugins:
-  - plugin_name: Mock Resolver
-    local_directory: mock_resolver
-    config:
-      methods:
+mock_resolver:
+  methods:
        - "sov"
        - "btcr"
