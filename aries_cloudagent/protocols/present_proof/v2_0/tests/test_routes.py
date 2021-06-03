@@ -11,6 +11,7 @@ from .....indy.verifier import IndyVerifier
 from .....ledger.base import BaseLedger
 from .....storage.error import StorageNotFoundError
 from .....storage.vc_holder.base import VCHolder
+from .....storage.vc_holder.vc_record import VCRecord
 
 from .. import routes as test_module
 from ..messages.pres_format import V20PresFormat
@@ -387,7 +388,10 @@ class TestPresentProofRoutes(AsyncTestCase):
         }
         self.request.query = {"extra_query": {}}
 
-        returned_credentials = [{"name": "Credential1"}, {"name": "Credential2"}]
+        returned_credentials = [
+            async_mock.MagicMock(cred_value={"name": "Credential1"}),
+            async_mock.MagicMock(cred_value={"name": "Credential2"}),
+        ]
         self.profile.context.injector.bind_instance(
             IndyHolder,
             async_mock.MagicMock(
@@ -445,7 +449,9 @@ class TestPresentProofRoutes(AsyncTestCase):
             mock_pres_ex_rec_cls.retrieve_by_id.return_value = record
 
             await test_module.present_proof_credentials_list(self.request)
-            mock_response.assert_called_once_with(returned_credentials)
+            mock_response.assert_called_once_with(
+                [{"name": "Credential1"}, {"name": "Credential2"}]
+            )
 
     async def test_present_proof_credentials_list_dif_error(self):
         self.request.match_info = {

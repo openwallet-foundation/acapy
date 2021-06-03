@@ -35,6 +35,9 @@ from ....vc.ld_proofs import (
     WalletKeyPair,
     DocumentLoader,
 )
+from ....vc.ld_proofs.constants import (
+    SECURITY_CONTEXT_BBS_URL,
+)
 
 from .pres_exch import (
     PresentationDefinition,
@@ -123,14 +126,8 @@ class DIFPresExchHandler:
         self,
         *,
         wallet: BaseWallet,
-        issuer_id: str = None,
     ):
         """Get signature suite for deriving credentials."""
-        if issuer_id:
-            did_info = await self._did_info_for_did(issuer_id)
-        else:
-            did_info = None
-
         # Get signature class based on proof type
         SignatureClass = self.DERIVED_PROOF_TYPE_SIGNATURE_SUITE_MAPPING[
             "BbsBlsSignatureProof2020"
@@ -141,7 +138,6 @@ class DIFPresExchHandler:
             key_pair=WalletKeyPair(
                 wallet=wallet,
                 key_type=self.DERIVE_SIGNATURE_SUITE_KEY_TYPE_MAPPING[SignatureClass],
-                public_key_base58=did_info.verkey if did_info else None,
             ),
         )
 
@@ -182,23 +178,6 @@ class DIFPresExchHandler:
 
             # All other methods we can just query
             return await wallet.get_local_did(did)
-
-    def get_derive_key_credential_subject_id(
-        self, applicable_creds: Sequence[VCRecord]
-    ) -> Optional[str]:
-        """Get the issuer_id for derive suite from enclosed credentials subject_ids."""
-        issuer_id = None
-        for cred in applicable_creds:
-            if len(cred.subject_ids) > 0:
-                if not issuer_id:
-                    issuer_id = next(iter(cred.subject_ids))
-                else:
-                    if issuer_id not in cred.subject_ids:
-                        raise DIFPresExchError(
-                            "Applicable credentials have different credentialSubject.id, "
-                            "multiple proofs are not supported currently"
-                        )
-        return issuer_id
 
     async def get_sign_key_credential_subject_id(
         self, applicable_creds: Sequence[VCRecord]
@@ -418,12 +397,10 @@ class DIFPresExchHandler:
                 new_credential_dict = self.reveal_doc(
                     credential_dict=credential_dict, constraints=constraints
                 )
-                derive_key = self.get_derive_key_credential_subject_id([credential])
                 async with self.profile.session() as session:
                     wallet = session.inject(BaseWallet)
                     derive_suite = await self._get_derive_suite(
                         wallet=wallet,
-                        issuer_id=derive_key,
                     )
                     signed_new_credential_dict = await derive_credential(
                         credential=credential_dict,
@@ -498,6 +475,7 @@ class DIFPresExchHandler:
             "@context": credential_dict.get("@context"),
             "type": credential_dict.get("type"),
             "@explicit": True,
+            "@requireAll": True,
             "issuanceDate": credential_dict.get("issuanceDate"),
             "issuer": credential_dict.get("issuer"),
         }
@@ -521,6 +499,7 @@ class DIFPresExchHandler:
                         else:
                             explicit_key_path = explicit_key_path + "." + key
                         unflatten_dict[explicit_key_path + ".@explicit"] = True
+                        unflatten_dict[explicit_key_path + ".@requireAll"] = True
         derived = self.new_credential_builder(derived, unflatten_dict)
         # Fix issue related to credentialSubject type property
         if "credentialSubject" in derived.keys():
@@ -1142,13 +1121,13 @@ class DIFPresExchHandler:
                 vp = await create_presentation(credentials=applicable_creds_list)
                 vp["presentation_submission"] = submission_property.serialize()
                 if self.proof_type is BbsBlsSignature2020.signature_type:
-                    vp["@context"].append("https://w3id.org/security/bbs/v1")
+                    vp["@context"].append(SECURITY_CONTEXT_BBS_URL)
                 return vp
             else:
                 vp = await create_presentation(credentials=filtered_creds_list)
                 vp["presentation_submission"] = submission_property.serialize()
                 if self.proof_type is BbsBlsSignature2020.signature_type:
-                    vp["@context"].append("https://w3id.org/security/bbs/v1")
+                    vp["@context"].append(SECURITY_CONTEXT_BBS_URL)
             async with self.profile.session() as session:
                 wallet = session.inject(BaseWallet)
                 issue_suite = await self._get_issue_suite(
@@ -1166,7 +1145,7 @@ class DIFPresExchHandler:
             vp = await create_presentation(credentials=applicable_creds_list)
             vp["presentation_submission"] = submission_property.serialize()
             if self.proof_type is BbsBlsSignature2020.signature_type:
-                vp["@context"].append("https://w3id.org/security/bbs/v1")
+                vp["@context"].append(SECURITY_CONTEXT_BBS_URL)
             if self.pres_signing_did:
                 async with self.profile.session() as session:
                     wallet = session.inject(BaseWallet)

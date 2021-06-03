@@ -484,6 +484,7 @@ async def present_proof_credentials_list(request: web.BaseRequest):
 
     dif_holder = context.profile.inject(VCHolder)
     dif_credentials = []
+    dif_cred_value_list = []
     # DIF
     try:
         dif_pres_request = pres_ex_record.by_format["pres_request"].get(
@@ -517,20 +518,20 @@ async def present_proof_credentials_list(request: web.BaseRequest):
                 schema_ids=schema_ids,
             )
             dif_credentials = await search.fetch(count)
+            for record in dif_credentials:
+                dif_cred_value_list.append(record.cred_value)
     except StorageNotFoundError as err:
-        raise web.HTTPBadRequest(reason=err.roll_up) from err
-
-    credentials = indy_credentials + dif_credentials
-    pres_ex_record.log_state(
-        "Retrieved presentation credentials",
-        {
-            "presentation_exchange_id": pres_ex_id,
-            "referents": pres_referents,
-            "extra_query": extra_query,
-            "credentials": credentials,
-        },
-        settings=context.settings,
-    )
+        if pres_ex_record:
+            async with context.session() as session:
+                await pres_ex_record.save_error_state(session, reason=err.roll_up)
+        await report_problem(
+            err,
+            ProblemReportReason.ABANDONED.value,
+            web.HTTPBadRequest,
+            pres_ex_record,
+            outbound_handler,
+        )
+    credentials = indy_credentials + dif_cred_value_list
     return web.json_response(credentials)
 
 

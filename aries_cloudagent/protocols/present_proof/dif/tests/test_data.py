@@ -55,6 +55,67 @@ def create_vcrecord(cred_dict: dict):
     )
 
 
+bbs_bls_missing_credsubjectid = [
+    create_vcrecord(
+        {
+            "@context": [
+                "https://www.w3.org/2018/credentials/v1",
+                "https://w3id.org/citizenship/v1",
+                "https://w3id.org/security/bbs/v1",
+            ],
+            "type": ["VerifiableCredential", "PermanentResident"],
+            "issuer": "did:key:zUC72Q7XD4PE4CrMiDVXuvZng3sBvMmaGgNeTUJuzavH2BS7ThbHL9FhsZM9QYY5fqAQ4MB8M9oudz3tfuaX36Ajr97QRW7LBt6WWmrtESe6Bs5NYzFtLWEmeVtvRYVAgjFcJSa",
+            "issuanceDate": "2020-01-01T12:00:00Z",
+            "credentialSubject": {
+                "type": ["PermanentResident", "Person"],
+                "givenName": "ALICE",
+                "familyName": "SMITH",
+                "gender": "Female",
+                "birthCountry": "Bahamas",
+                "birthDate": "1958-07-17",
+            },
+            "proof": {
+                "type": "BbsBlsSignature2020",
+                "verificationMethod": "did:key:zUC72Q7XD4PE4CrMiDVXuvZng3sBvMmaGgNeTUJuzavH2BS7ThbHL9FhsZM9QYY5fqAQ4MB8M9oudz3tfuaX36Ajr97QRW7LBt6WWmrtESe6Bs5NYzFtLWEmeVtvRYVAgjFcJSa#zUC72Q7XD4PE4CrMiDVXuvZng3sBvMmaGgNeTUJuzavH2BS7ThbHL9FhsZM9QYY5fqAQ4MB8M9oudz3tfuaX36Ajr97QRW7LBt6WWmrtESe6Bs5NYzFtLWEmeVtvRYVAgjFcJSa",
+                "created": "2019-12-11T03:50:55",
+                "proofPurpose": "assertionMethod",
+                "proofValue": "g5slOEAiwjToXFQ+4qq08FyfizVnZGhi1R949Gwcu55ly8G7FYVbSIpTeAoTzT5NMtwRAx/nz5vof2kXNqKik4hG8zY6c7kMINpqbdRxj05gsBCaowKbqXXCPX9DxUtc1/rZu32EXckg8s56efXvLA==",
+            },
+        }
+    )
+]
+
+bbs_bls_credsubjectid = [
+    create_vcrecord(
+        {
+            "@context": [
+                "https://www.w3.org/2018/credentials/v1",
+                "https://w3id.org/citizenship/v1",
+                "https://w3id.org/security/bbs/v1",
+            ],
+            "type": ["VerifiableCredential", "PermanentResident"],
+            "issuer": "did:key:zUC72Q7XD4PE4CrMiDVXuvZng3sBvMmaGgNeTUJuzavH2BS7ThbHL9FhsZM9QYY5fqAQ4MB8M9oudz3tfuaX36Ajr97QRW7LBt6WWmrtESe6Bs5NYzFtLWEmeVtvRYVAgjFcJSa",
+            "issuanceDate": "2020-01-01T12:00:00Z",
+            "credentialSubject": {
+                "id": "did:sov:WgWxqztrNooG92RXvxSTWv",
+                "type": ["PermanentResident", "Person"],
+                "givenName": "ALICE",
+                "familyName": "SMITH",
+                "gender": "Female",
+                "birthCountry": "Bahamas",
+                "birthDate": "1958-07-17",
+            },
+            "proof": {
+                "type": "BbsBlsSignature2020",
+                "verificationMethod": "did:key:zUC72Q7XD4PE4CrMiDVXuvZng3sBvMmaGgNeTUJuzavH2BS7ThbHL9FhsZM9QYY5fqAQ4MB8M9oudz3tfuaX36Ajr97QRW7LBt6WWmrtESe6Bs5NYzFtLWEmeVtvRYVAgjFcJSa#zUC72Q7XD4PE4CrMiDVXuvZng3sBvMmaGgNeTUJuzavH2BS7ThbHL9FhsZM9QYY5fqAQ4MB8M9oudz3tfuaX36Ajr97QRW7LBt6WWmrtESe6Bs5NYzFtLWEmeVtvRYVAgjFcJSa",
+                "created": "2019-12-11T03:50:55",
+                "proofPurpose": "assertionMethod",
+                "proofValue": "gei9SNwGzxGUo9cGeZ3feaKkA69eJnUVg5JFOOzfUSN3mNq5Ya3GIvV0NaCKvTnPZctAtvtzsPlul2uXkdo4FvuSxhstuI2Sg06mgl5tsLVdGNw+wkBBv0whAGRJ7BfU7r0J9wrRkhT9RG6oY30TTg==",
+            },
+        }
+    )
+]
+
 bbs_bls_number_filter_creds = [
     create_vcrecord(
         {
@@ -321,9 +382,9 @@ cred_list = [
         "proof": {
             "type": "BbsBlsSignature2020",
             "verificationMethod": "did:key:zUC72Q7XD4PE4CrMiDVXuvZng3sBvMmaGgNeTUJuzavH2BS7ThbHL9FhsZM9QYY5fqAQ4MB8M9oudz3tfuaX36Ajr97QRW7LBt6WWmrtESe6Bs5NYzFtLWEmeVtvRYVAgjFcJSa#zUC72Q7XD4PE4CrMiDVXuvZng3sBvMmaGgNeTUJuzavH2BS7ThbHL9FhsZM9QYY5fqAQ4MB8M9oudz3tfuaX36Ajr97QRW7LBt6WWmrtESe6Bs5NYzFtLWEmeVtvRYVAgjFcJSa",
-            "created": "2021-05-07T08:28:37.647315",
+            "created": "2019-12-11T03:50:55",
             "proofPurpose": "assertionMethod",
-            "proofValue": "re8gFWszv8pNA0yAzzR34QGKMUiw+EO/slTqR0L4IJAHWbI4sc5EKCKQamllwAuAAvQ3gVVUbUwrPO5BnyMS+jsenHGTY56uJLFwndZx9X8HZKfKZZAYOdgEl4Ts3GDC3GXidtvR+r+TywI7Qp804Q==",
+            "proofValue": "ssut7SPH6KiY44z5w9N/dD+L8KxS7pXF5irVyty0IlafX7hn5AZNd1rb7fhzVz6wZo9nK/nu/bYs9zhuJggTbuQNPWyOWiFmd3uSxr+CrTYUZ/u31s7gaqEYv4pUBoKgMx6WKkOApELtOI4e0PFddA==",
         },
     },
     {
@@ -357,9 +418,9 @@ cred_list = [
         "proof": {
             "type": "BbsBlsSignature2020",
             "verificationMethod": "did:key:zUC72Q7XD4PE4CrMiDVXuvZng3sBvMmaGgNeTUJuzavH2BS7ThbHL9FhsZM9QYY5fqAQ4MB8M9oudz3tfuaX36Ajr97QRW7LBt6WWmrtESe6Bs5NYzFtLWEmeVtvRYVAgjFcJSa#zUC72Q7XD4PE4CrMiDVXuvZng3sBvMmaGgNeTUJuzavH2BS7ThbHL9FhsZM9QYY5fqAQ4MB8M9oudz3tfuaX36Ajr97QRW7LBt6WWmrtESe6Bs5NYzFtLWEmeVtvRYVAgjFcJSa",
-            "created": "2021-05-07T08:12:24.052700",
+            "created": "2019-12-11T03:50:55",
             "proofPurpose": "assertionMethod",
-            "proofValue": "sql6nyas1aGxCLIKwTCO4Ny7758vhcoLSkQ/3/YbNLn4p4yF86dCswkFGn6IhkcrPO4yVhYCkWEaRuk8afaAbLZNoXEPFV/co2l9+dvwLplECaLnoQnl8GCeYfmtHBYW3G9stq/q02nHSejO//3OcQ==",
+            "proofValue": "tnRgimJXy8mP7Amk8dPiJnJc+WhAFiYPF8hpRlqOPsSom4cF1VAxaiAN2o3io1kYajUtmXAJLxNNLOZkXDBblcqZAu5mHKEPWc/nctu3vNs4gs5f7tWZX7lm6JK71pLJq8lWbyIufIm/BnCjeIll5g==",
         },
     },
     {
@@ -393,9 +454,9 @@ cred_list = [
         "proof": {
             "type": "BbsBlsSignature2020",
             "verificationMethod": "did:key:zUC72Q7XD4PE4CrMiDVXuvZng3sBvMmaGgNeTUJuzavH2BS7ThbHL9FhsZM9QYY5fqAQ4MB8M9oudz3tfuaX36Ajr97QRW7LBt6WWmrtESe6Bs5NYzFtLWEmeVtvRYVAgjFcJSa#zUC72Q7XD4PE4CrMiDVXuvZng3sBvMmaGgNeTUJuzavH2BS7ThbHL9FhsZM9QYY5fqAQ4MB8M9oudz3tfuaX36Ajr97QRW7LBt6WWmrtESe6Bs5NYzFtLWEmeVtvRYVAgjFcJSa",
-            "created": "2021-05-07T08:09:57.710637",
+            "created": "2019-12-11T03:50:55",
             "proofPurpose": "assertionMethod",
-            "proofValue": "hCvSng48xE7k19ShyCbaN+dO82ggwGRVRstr74+zeW1WKtX5xg6n0uS0A+h3QcBwQit6tputniZnUklmgoWPyxwQTaFBTD2nT8EthvKZRhBgxpha1KyZfCIZwvQCZtxfQI7jhen3lzXTeqZRvca80Q==",
+            "proofValue": "l1sdjvIhlkAPb+Y1vUYgIVH9YhiWSFjJFOL1ntzN9jXvOqv7/RMFhoAxg0BTYU1ITHK5l/6Q5lwmtkKxJMt/Z+QPZ8yWDIwqX8kVXFxKo9st8T45ChYiizc75E+Rd7Z5qIidmuulyPvpHlpgHYLZsQ==",
         },
     },
     {
@@ -429,9 +490,9 @@ cred_list = [
         "proof": {
             "type": "BbsBlsSignature2020",
             "verificationMethod": "did:key:zUC72Q7XD4PE4CrMiDVXuvZng3sBvMmaGgNeTUJuzavH2BS7ThbHL9FhsZM9QYY5fqAQ4MB8M9oudz3tfuaX36Ajr97QRW7LBt6WWmrtESe6Bs5NYzFtLWEmeVtvRYVAgjFcJSa#zUC72Q7XD4PE4CrMiDVXuvZng3sBvMmaGgNeTUJuzavH2BS7ThbHL9FhsZM9QYY5fqAQ4MB8M9oudz3tfuaX36Ajr97QRW7LBt6WWmrtESe6Bs5NYzFtLWEmeVtvRYVAgjFcJSa",
-            "created": "2021-05-07T08:35:00.285059",
+            "created": "2019-12-11T03:50:55",
             "proofPurpose": "assertionMethod",
-            "proofValue": "s4kVzMqvC7neR2wsgfgdqxCVejotdsh8Y+0qUfcjPDd3wjU0cVaQExjgz7N8LjQhVZ4iOScUTcLT1u32t4Fpd1H5Xj6h5+OE8TlessDy2hQlsxd0O0vrBn/CmihWagJAWfgYbU1D+eNjj2mbbHWRiQ==",
+            "proofValue": "rtG10rBsv8zXHBGWqHTeGyH9Y3oMa6xHjBvsJ5YHeocUBxOCge2WEs1tr60hjI4SEpi3JHSJOfd1wJEvfvMg/x6YnTZoA2UXiHBu/6vANx43EfTgbq4YDrrf1aTtQgpZDp/J4GaKoeUshuPXyf8LyA==",
         },
     },
     {
@@ -465,9 +526,9 @@ cred_list = [
         "proof": {
             "type": "BbsBlsSignature2020",
             "verificationMethod": "did:key:zUC72Q7XD4PE4CrMiDVXuvZng3sBvMmaGgNeTUJuzavH2BS7ThbHL9FhsZM9QYY5fqAQ4MB8M9oudz3tfuaX36Ajr97QRW7LBt6WWmrtESe6Bs5NYzFtLWEmeVtvRYVAgjFcJSa#zUC72Q7XD4PE4CrMiDVXuvZng3sBvMmaGgNeTUJuzavH2BS7ThbHL9FhsZM9QYY5fqAQ4MB8M9oudz3tfuaX36Ajr97QRW7LBt6WWmrtESe6Bs5NYzFtLWEmeVtvRYVAgjFcJSa",
-            "created": "2021-05-07T08:36:41.396448",
+            "created": "2019-12-11T03:50:55",
             "proofPurpose": "assertionMethod",
-            "proofValue": "iYXNfJTcVP1Z/UC7LSSVN3R1UhKIC2Yjh+X8xLjYvkbeGslPL9JeyXQOI6TpgMS/Tai51ImUouKhtZcuA9l4IOZ4Cslp1UJn5h7nJOMGTXxR7wq9+aPV+Nv9X4aR830Pcy2GiAVOlPWRSc3rE9clKg==",
+            "proofValue": "pvo7gqDgu9mMjcZafvS8gRz0mIRfFnRCNmp39cZ/92R3UDG5bmxPhh4nG2k1kjaza8wFfaqjaBxsonV+FkQUMzUWbZkn2vstEcGCJllDHFBQiDcf8MVCiCcbGBLpU9MXjnyzhwA5AteG9a2YcvRh/w==",
         },
     },
     {
@@ -501,9 +562,9 @@ cred_list = [
         "proof": {
             "type": "BbsBlsSignature2020",
             "verificationMethod": "did:key:zUC72Q7XD4PE4CrMiDVXuvZng3sBvMmaGgNeTUJuzavH2BS7ThbHL9FhsZM9QYY5fqAQ4MB8M9oudz3tfuaX36Ajr97QRW7LBt6WWmrtESe6Bs5NYzFtLWEmeVtvRYVAgjFcJSa#zUC72Q7XD4PE4CrMiDVXuvZng3sBvMmaGgNeTUJuzavH2BS7ThbHL9FhsZM9QYY5fqAQ4MB8M9oudz3tfuaX36Ajr97QRW7LBt6WWmrtESe6Bs5NYzFtLWEmeVtvRYVAgjFcJSa",
-            "created": "2021-05-07T08:38:35.919533",
+            "created": "2019-12-11T03:50:55",
             "proofPurpose": "assertionMethod",
-            "proofValue": "qvnii1PSorn/FEMnhvhDwehtgWdPPU6F8xQ1b4WtdnBYRoCLe3Lqni9An6+zKHGENlCYn8XdU16ah8nDNETDhXYpN9i9TJuMjAl2Xjh3EX9jysLAWCYThObcFtiPGrYubGfboHeKasfq4x+ETzj7vA==",
+            "proofValue": "pVuvbBfGnVbwwht1s4qZSCoLlZ8nwqvsmNKR+1VTesA+7tXPriJCdlnNFDL0Gkh5TV5E0NOS8WNttE5Uhhqakmjcs7L4hIr4PoVtCLFAF1tce8n4Z/5PKD7IuGIdCDbn77fjQffu2Cs+JDBVVcQRBA==",
         },
     },
 ]

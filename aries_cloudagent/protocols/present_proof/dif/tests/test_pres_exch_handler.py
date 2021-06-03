@@ -19,6 +19,7 @@ from .....vc.ld_proofs import (
 )
 from .....vc.ld_proofs.document_loader import DocumentLoader
 from .....vc.ld_proofs.error import LinkedDataProofException
+from .....vc.ld_proofs.constants import SECURITY_CONTEXT_BBS_URL
 from .....vc.tests.document_loader import custom_document_loader
 from .....vc.tests.data import (
     BBS_SIGNED_VC_MATTR,
@@ -38,7 +39,13 @@ from ..pres_exch_handler import (
     DIFPresExchError,
 )
 
-from .test_data import get_test_data, edd_jsonld_creds, bbs_bls_number_filter_creds
+from .test_data import (
+    get_test_data,
+    edd_jsonld_creds,
+    bbs_bls_number_filter_creds,
+    bbs_bls_missing_credsubjectid,
+    bbs_bls_credsubjectid,
+)
 
 
 @pytest.yield_fixture(scope="class")
@@ -573,7 +580,24 @@ class TestPresExchHandler:
         tmp_reveal_doc = dif_pres_exch_handler.reveal_doc(
             credential_dict=test_credential, constraints=test_constraint
         )
-        assert tmp_reveal_doc == BBS_NESTED_VC_REVEAL_DOCUMENT_MATTR
+        expected_reveal_doc = {
+            "@context": [
+                "https://www.w3.org/2018/credentials/v1",
+                "https://www.w3.org/2018/credentials/examples/v1",
+                "https://w3id.org/security/bbs/v1",
+            ],
+            "issuer": {},
+            "issuanceDate": {},
+            "type": ["VerifiableCredential", "UniversityDegreeCredential"],
+            "@explicit": True,
+            "@requireAll": True,
+            "credentialSubject": {
+                "@explicit": True,
+                "@requireAll": True,
+                "degree": {"@explicit": True, "@requireAll": True, "name": {}},
+            },
+        }
+        assert tmp_reveal_doc == expected_reveal_doc
 
     @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
@@ -1770,88 +1794,6 @@ class TestPresExchHandler:
         )
         assert len(tmp_vp.get("verifiableCredential")) == 6
 
-    def test_get_derive_key_credential_subject_id(self, profile):
-        dif_pres_exch_handler = DIFPresExchHandler(profile)
-        VC_RECORDS_A = [
-            VCRecord(
-                contexts=[
-                    "https://www.w3.org/2018/credentials/v1",
-                    "https://www.w3.org/2018/credentials/examples/v1",
-                ],
-                expanded_types=[
-                    "https://www.w3.org/2018/credentials#VerifiableCredential",
-                    "https://example.org/examples#UniversityDegreeCredential",
-                ],
-                issuer_id="https://example.edu/issuers/565049",
-                subject_ids=["did:example:ebfeb1f712ebc6f1c276e12ec21"],
-                proof_types=["Ed25519Signature2018"],
-                schema_ids=["https://example.org/examples/degree.json"],
-                cred_value={"...": "..."},
-                given_id="http://example.edu/credentials/3732",
-                cred_tags={"some": "tag"},
-            ),
-            VCRecord(
-                contexts=[
-                    "https://www.w3.org/2018/credentials/v1",
-                    "https://www.w3.org/2018/credentials/examples/v1",
-                ],
-                expanded_types=[
-                    "https://www.w3.org/2018/credentials#VerifiableCredential",
-                    "https://example.org/examples#UniversityDegreeCredential",
-                ],
-                issuer_id="https://example.edu/issuers/565049",
-                subject_ids=["did:example:ebfeb1f712ebc6f1c276e12ec31"],
-                proof_types=["Ed25519Signature2018"],
-                schema_ids=["https://example.org/examples/degree.json"],
-                cred_value={"...": "..."},
-                given_id="http://example.edu/credentials/3732",
-                cred_tags={"some": "tag"},
-            ),
-        ]
-        with pytest.raises(DIFPresExchError):
-            dif_pres_exch_handler.get_derive_key_credential_subject_id(VC_RECORDS_A)
-
-        VC_RECORDS_B = [
-            VCRecord(
-                contexts=[
-                    "https://www.w3.org/2018/credentials/v1",
-                    "https://www.w3.org/2018/credentials/examples/v1",
-                ],
-                expanded_types=[
-                    "https://www.w3.org/2018/credentials#VerifiableCredential",
-                    "https://example.org/examples#UniversityDegreeCredential",
-                ],
-                issuer_id="https://example.edu/issuers/565049",
-                subject_ids=["did:example:ebfeb1f712ebc6f1c276e12ec21"],
-                proof_types=["Ed25519Signature2018"],
-                schema_ids=["https://example.org/examples/degree.json"],
-                cred_value={"...": "..."},
-                given_id="http://example.edu/credentials/3732",
-                cred_tags={"some": "tag"},
-            ),
-            VCRecord(
-                contexts=[
-                    "https://www.w3.org/2018/credentials/v1",
-                    "https://www.w3.org/2018/credentials/examples/v1",
-                ],
-                expanded_types=[
-                    "https://www.w3.org/2018/credentials#VerifiableCredential",
-                    "https://example.org/examples#UniversityDegreeCredential",
-                ],
-                issuer_id="https://example.edu/issuers/565049",
-                subject_ids=[
-                    "did:example:ebfeb1f712ebc6f1c276e12ec31",
-                    "did:example:ebfeb1f712ebc6f1c276e12ec21",
-                ],
-                proof_types=["Ed25519Signature2018"],
-                schema_ids=["https://example.org/examples/degree.json"],
-                cred_value={"...": "..."},
-                given_id="http://example.edu/credentials/3732",
-                cred_tags={"some": "tag"},
-            ),
-        ]
-        dif_pres_exch_handler.get_derive_key_credential_subject_id(VC_RECORDS_B)
-
     def test_create_vc_record_with_graph_struct(self, profile):
         dif_pres_exch_handler = DIFPresExchHandler(profile)
         test_credential_dict_a = {
@@ -2229,6 +2171,123 @@ class TestPresExchHandler:
             )
 
     @pytest.mark.asyncio
+    async def test_create_vp_with_bbs_suite(self, profile, setup_tuple):
+        dif_pres_exch_handler = DIFPresExchHandler(
+            profile, proof_type=BbsBlsSignature2020.signature_type
+        )
+        cred_list, pd_list = setup_tuple
+        with async_mock.patch.object(
+            DIFPresExchHandler,
+            "_did_info_for_did",
+            async_mock.CoroutineMock(),
+        ) as mock_did_info, async_mock.patch.object(
+            DIFPresExchHandler,
+            "make_requirement",
+            async_mock.CoroutineMock(),
+        ) as mock_make_req, async_mock.patch.object(
+            DIFPresExchHandler,
+            "apply_requirements",
+            async_mock.CoroutineMock(),
+        ) as mock_apply_req, async_mock.patch.object(
+            DIFPresExchHandler,
+            "merge",
+            async_mock.CoroutineMock(),
+        ) as mock_merge, async_mock.patch.object(
+            DIFPresExchHandler,
+            "check_sign_pres",
+            async_mock.CoroutineMock(),
+        ) as mock_check_sign_pres, async_mock.patch.object(
+            test_module,
+            "create_presentation",
+            async_mock.CoroutineMock(),
+        ) as mock_create_vp, async_mock.patch.object(
+            test_module,
+            "sign_presentation",
+            async_mock.CoroutineMock(),
+        ) as mock_sign_vp:
+            mock_make_req.return_value = async_mock.MagicMock()
+            mock_apply_req.return_value = async_mock.MagicMock()
+            mock_merge.return_value = (cred_list, {})
+            mock_check_sign_pres.return_value = True
+            mock_create_vp.return_value = {"test": "1", "@context": ["test"]}
+            mock_sign_vp.return_value = {
+                "test": "1",
+                "@context": ["test", SECURITY_CONTEXT_BBS_URL],
+            }
+            did_info = DIDInfo(
+                did="did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
+                verkey="verkey",
+                metadata={},
+                method=DIDMethod.KEY,
+                key_type=KeyType.BLS12381G2,
+            )
+            mock_did_info.return_value = did_info
+            vp = await dif_pres_exch_handler.create_vp(
+                cred_list,
+                pd=pd_list[0][0],
+                challenge="3fa85f64-5717-4562-b3fc-2c963f66afa7",
+            )
+            assert vp["test"] == "1"
+            assert SECURITY_CONTEXT_BBS_URL in vp["@context"]
+
+    @pytest.mark.asyncio
+    async def test_create_vp_no_issuer_with_bbs_suite(self, profile, setup_tuple):
+        dif_pres_exch_handler = DIFPresExchHandler(
+            profile, proof_type=BbsBlsSignature2020.signature_type
+        )
+        cred_list, pd_list = setup_tuple
+        with async_mock.patch.object(
+            DIFPresExchHandler,
+            "_did_info_for_did",
+            async_mock.CoroutineMock(),
+        ) as mock_did_info, async_mock.patch.object(
+            DIFPresExchHandler,
+            "make_requirement",
+            async_mock.CoroutineMock(),
+        ) as mock_make_req, async_mock.patch.object(
+            DIFPresExchHandler,
+            "apply_requirements",
+            async_mock.CoroutineMock(),
+        ) as mock_apply_req, async_mock.patch.object(
+            DIFPresExchHandler,
+            "merge",
+            async_mock.CoroutineMock(),
+        ) as mock_merge, async_mock.patch.object(
+            DIFPresExchHandler,
+            "check_sign_pres",
+            async_mock.CoroutineMock(),
+        ) as mock_check_sign_pres, async_mock.patch.object(
+            test_module,
+            "create_presentation",
+            async_mock.CoroutineMock(),
+        ) as mock_create_vp, async_mock.patch.object(
+            DIFPresExchHandler,
+            "get_sign_key_credential_subject_id",
+            async_mock.CoroutineMock(),
+        ) as mock_sign_key_cred_subject:
+            mock_make_req.return_value = async_mock.MagicMock()
+            mock_apply_req.return_value = async_mock.MagicMock()
+            mock_merge.return_value = (cred_list, {})
+            mock_check_sign_pres.return_value = True
+            mock_create_vp.return_value = {"test": "1", "@context": ["test"]}
+            mock_sign_key_cred_subject.return_value = (None, [])
+            did_info = DIDInfo(
+                did="did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
+                verkey="verkey",
+                metadata={},
+                method=DIDMethod.KEY,
+                key_type=KeyType.BLS12381G2,
+            )
+            mock_did_info.return_value = did_info
+            vp = await dif_pres_exch_handler.create_vp(
+                cred_list,
+                pd=pd_list[0][0],
+                challenge="3fa85f64-5717-4562-b3fc-2c963f66afa7",
+            )
+            assert vp["test"] == "1"
+            assert SECURITY_CONTEXT_BBS_URL in vp["@context"]
+
+    @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
     async def test_no_filter(self, setup_tuple, profile):
         cred_list, pd_list = setup_tuple
@@ -2450,4 +2509,113 @@ class TestPresExchHandler:
         _to_check = 123
         assert not dif_pres_exch_handler.validate_patch(
             to_check=_to_check, _filter=_filter
+        )
+
+    @pytest.mark.asyncio
+    @pytest.mark.ursa_bbs_signatures
+    async def test_derive_cred_missing_credsubjectid(self, profile):
+        dif_pres_exch_handler = DIFPresExchHandler(profile)
+        test_pd = """
+        {
+            "id":"32f54163-7166-48f1-93d8-ff217bdb0654",
+            "input_descriptors":[
+                {
+                    "id":"citizenship_input_1",
+                    "name":"EU Driver's License",
+                    "schema":[
+                        {
+                            "uri":"https://www.w3.org/2018/credentials#VerifiableCredential"
+                        },
+                        {
+                            "uri":"https://w3id.org/citizenship#PermanentResident"
+                        }
+                    ],
+                    "constraints":{
+                        "limit_disclosure": "required",
+                        "fields":[
+                            {
+                                "path":[
+                                    "$.credentialSubject.familyName"
+                                ],
+                                "purpose":"The claim must be from one of the specified issuers",
+                                "filter":{
+                                    "const": "SMITH"
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+        """
+        tmp_pd = PresentationDefinition.deserialize(test_pd)
+        tmp_vp = await dif_pres_exch_handler.create_vp(
+            credentials=bbs_bls_missing_credsubjectid,
+            pd=tmp_pd,
+            challenge="1f44d55f-f161-4938-a659-f8026467f126",
+        )
+        assert len(tmp_vp["verifiableCredential"]) == 1
+        assert "id" not in tmp_vp.get("verifiableCredential")[0].get(
+            "credentialSubject"
+        )
+        assert (
+            tmp_vp.get("verifiableCredential")[0]
+            .get("credentialSubject")
+            .get("familyName")
+            == "SMITH"
+        )
+
+    @pytest.mark.asyncio
+    @pytest.mark.ursa_bbs_signatures
+    async def test_derive_cred_credsubjectid(self, profile):
+        dif_pres_exch_handler = DIFPresExchHandler(profile)
+        test_pd = """
+        {
+            "id":"32f54163-7166-48f1-93d8-ff217bdb0654",
+            "input_descriptors":[
+                {
+                    "id":"citizenship_input_1",
+                    "name":"EU Driver's License",
+                    "schema":[
+                        {
+                            "uri":"https://www.w3.org/2018/credentials#VerifiableCredential"
+                        },
+                        {
+                            "uri":"https://w3id.org/citizenship#PermanentResident"
+                        }
+                    ],
+                    "constraints":{
+                        "limit_disclosure": "required",
+                        "fields":[
+                            {
+                                "path":[
+                                    "$.credentialSubject.familyName"
+                                ],
+                                "purpose":"The claim must be from one of the specified issuers",
+                                "filter":{
+                                    "const": "SMITH"
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+        """
+        tmp_pd = PresentationDefinition.deserialize(test_pd)
+        tmp_vp = await dif_pres_exch_handler.create_vp(
+            credentials=bbs_bls_credsubjectid,
+            pd=tmp_pd,
+            challenge="1f44d55f-f161-4938-a659-f8026467f126",
+        )
+        assert len(tmp_vp["verifiableCredential"]) == 1
+        assert "givenName" not in tmp_vp.get("verifiableCredential")[0].get(
+            "credentialSubject"
+        )
+        assert "id" in tmp_vp.get("verifiableCredential")[0].get("credentialSubject")
+        assert (
+            tmp_vp.get("verifiableCredential")[0]
+            .get("credentialSubject")
+            .get("familyName")
+            == "SMITH"
         )
