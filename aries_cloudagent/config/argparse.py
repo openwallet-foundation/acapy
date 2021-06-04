@@ -480,12 +480,16 @@ class GeneralGroup(ArgumentGroup):
         )
 
         parser.add_argument(
-            "--plugin-config",
-            dest="plugin_config",
+            "--plugins-config",
+            dest="plugins_config",
             type=str,
             required=False,
-            env_var="ACAPY_PLUGIN_CONFIG",
-            help=("Load YAML file path that defines external plugin setup."),
+            env_var="ACAPY_PLUGINS_CONFIG",
+            help="Load YAML file path that defines external plugins configuration. "
+                 "The plugin should be loaded first by --plugin arg. "
+                 "Then the config file must be a key-value mapping. "
+                 "The key is the plugin argument and "
+                 "the value of the specific configuration for that plugin.",
         )
 
         parser.add_argument(
@@ -557,18 +561,18 @@ class GeneralGroup(ArgumentGroup):
         if args.external_plugins:
             settings["external_plugins"] = args.external_plugins
 
-        if args.plugin_config:
-            with open(args.plugin_config, "r") as stream:
-                plugins_conf = yaml.safe_load(stream)
+            if args.plugins_config:
+                with open(args.plugins_config, "r") as stream:
+                    plugins_conf = yaml.safe_load(stream)
 
-            if not settings.get("external_plugins"):
-                settings["external_plugins"] = []
+                plugins_config = {}
+                for plugin, conf in plugins_conf.items():
 
-            settings["plugins_config"] = {}
-            for plugin, conf in plugins_conf.items():
+                    if plugin in settings["external_plugins"]:
+                        plugins_config[plugin] = conf
 
-                settings["external_plugins"].append(plugin)
-                settings["plugins_config"][plugin] = conf
+                if plugins_config:
+                    settings["plugins_config"] = plugins_config
 
         if args.storage_type:
             settings["storage_type"] = args.storage_type

@@ -133,5 +133,4 @@ class DefaultContextBuilder(ContextBuilder):
             plugin_registry.register_plugin(plugin_path)
 
         # Register message protocols
-        plugins_config = self.settings.get("plugins_config", {})
-        await plugin_registry.init_context(context, plugins_config)
+        await plugin_registry.init_context(context)

@@ -185,13 +185,15 @@ class TestArgParse(AsyncTestCase):
             [
                 "--endpoint",
                 "localhost",
-                "--plugin-config",
+                "--plugin",
+                "mock_resolver",
+                "--plugins-config",
                 "./aries_cloudagent/config/tests/test_plugins_config.yaml",
             ]
         )
 
         assert (
-            result.plugin_config
+            result.plugins_config
             == "./aries_cloudagent/config/tests/test_plugins_config.yaml"
         )
 
