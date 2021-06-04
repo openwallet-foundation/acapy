@@ -4,8 +4,7 @@ import asyncio
 import json
 import logging
 import tempfile
-
-from datetime import datetime, date
+from datetime import date, datetime
 from hashlib import sha256
 from os import path
 from time import time
@@ -13,11 +12,11 @@ from typing import Sequence, Tuple
 
 import indy.ledger
 import indy.pool
-from indy.error import IndyError, ErrorCode
+from indy.error import ErrorCode, IndyError
 
-from ..config.base import BaseInjector, BaseProvider, BaseSettings
 from ..cache.base import BaseCache
-from ..indy.issuer import IndyIssuer, IndyIssuerError, DEFAULT_CRED_DEF_TAG
+from ..config.base import BaseInjector, BaseProvider, BaseSettings
+from ..indy.issuer import DEFAULT_CRED_DEF_TAG, IndyIssuer, IndyIssuerError
 from ..indy.sdk.error import IndyErrorHandler
 from ..messaging.credential_definitions.util import CRED_DEF_SENT_RECORD_TYPE
 from ..messaging.schemas.util import SCHEMA_SENT_RECORD_TYPE
@@ -25,11 +24,10 @@ from ..storage.base import StorageRecord
 from ..storage.indy import IndySdkStorage
 from ..utils import sentinel
 from ..wallet.did_info import DIDInfo
+from ..wallet.did_posture import DIDPosture
 from ..wallet.error import WalletNotFoundError
 from ..wallet.indy import IndySdkWallet
 from ..wallet.util import full_verkey
-from ..wallet.did_posture import DIDPosture
-
 from .base import BaseLedger, Role
 from .endpoint_type import EndpointType
 from .error import (
@@ -1247,7 +1245,13 @@ class IndySdkLedger(BaseLedger):
             assert found_id == revoc_reg_id
         return json.loads(found_delta_json), delta_timestamp
 
-    async def send_revoc_reg_def(self, revoc_reg_def: dict, issuer_did: str = None):
+    async def send_revoc_reg_def(
+        self,
+        revoc_reg_def: dict,
+        issuer_did: str = None,
+        write_ledger: bool = True,
+        endorser_did: str = None,
+    ):
         """Publish a revocation registry definition to the ledger."""
         # NOTE - issuer DID could be extracted from the revoc_reg_def ID
         if issuer_did:
@@ -1262,7 +1266,16 @@ class IndySdkLedger(BaseLedger):
             request_json = await indy.ledger.build_revoc_reg_def_request(
                 did_info.did, json.dumps(revoc_reg_def)
             )
-        await self._submit(request_json, True, True, did_info)
+
+        if endorser_did and not write_ledger:
+            request_json = await indy.ledger.append_request_endorser(
+                request_json, endorser_did
+            )
+        resp = await self._submit(
+            request_json, True, sign_did=did_info, write_ledger=write_ledger
+        )
+
+        return {"result": resp}
 
     async def send_revoc_reg_entry(
         self,

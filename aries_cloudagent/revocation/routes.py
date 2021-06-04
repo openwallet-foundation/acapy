@@ -1,7 +1,7 @@
 """Revocation registry admin routes."""
 
+import json
 import logging
-
 from asyncio import shield
 
 from aiohttp import web
@@ -12,15 +12,19 @@ from aiohttp_apispec import (
     request_schema,
     response_schema,
 )
-
+from aries_cloudagent.protocols.endorse_transaction.v1_0.manager import (
+    TransactionManager,
+)
 from marshmallow import fields, validate, validates_schema
 from marshmallow.exceptions import ValidationError
 
 from ..admin.request_context import AdminRequestContext
-from ..indy.util import tails_path
+from ..connections.models.conn_record import ConnRecord
 from ..indy.issuer import IndyIssuerError
+from ..indy.util import tails_path
 from ..ledger.error import LedgerError
 from ..messaging.credential_definitions.util import CRED_DEF_SENT_RECORD_TYPE
+from ..messaging.models.base import BaseModelError
 from ..messaging.models.openapi import OpenAPISchema
 from ..messaging.valid import (
     INDY_CRED_DEF_ID,
@@ -29,11 +33,14 @@ from ..messaging.valid import (
     INDY_REV_REG_SIZE,
     UUID4,
     WHOLE_NUM,
+    UUIDFour,
+)
+from ..protocols.endorse_transaction.v1_0.models.transaction_record import (
+    TransactionRecordSchema,
 )
 from ..storage.base import BaseStorage
 from ..storage.error import StorageError, StorageNotFoundError
 from ..tails.base import BaseTailsServer
-
 from .error import RevocationError, RevocationNotSupportedError
 from .indy import IndyRevocation
 from .manager import RevocationManager, RevocationManagerError
@@ -68,6 +75,21 @@ class RevRegResultSchema(OpenAPISchema):
     """Result schema for revocation registry creation request."""
 
     result = fields.Nested(IssuerRevRegRecordSchema())
+
+
+class TxnOrRevRegResultSchema(OpenAPISchema):
+    """Result schema for credential definition send request."""
+
+    sent = fields.Nested(
+        RevRegResultSchema(),
+        required=False,
+        definition="Content sent",
+    )
+    txn = fields.Nested(
+        TransactionRecordSchema(),
+        required=False,
+        description="Credential definition transaction to endorse",
+    )
 
 
 class CredRevRecordQueryStringSchema(OpenAPISchema):
@@ -242,6 +264,23 @@ class RevocationCredDefIdMatchInfoSchema(OpenAPISchema):
         description="Credential definition identifier",
         required=True,
         **INDY_CRED_DEF_ID,
+    )
+
+
+class CreateRevRegTxnForEndorserOptionSchema(OpenAPISchema):
+    """Class for user to input whether to create a transaction for endorser or not."""
+
+    create_transaction_for_endorser = fields.Boolean(
+        description="Create Transaction For Endorser's signature",
+        required=False,
+    )
+
+
+class RevRegConnIdMatchInfoSchema(OpenAPISchema):
+    """Path parameters and validators for request taking connection id."""
+
+    conn_id = fields.Str(
+        description="Connection identifier", required=False, example=UUIDFour.EXAMPLE
     )
 
 
@@ -627,7 +666,9 @@ async def upload_tails_file(request: web.BaseRequest):
     summary="Send revocation registry definition to ledger",
 )
 @match_info_schema(RevRegIdMatchInfoSchema())
-@response_schema(RevRegResultSchema(), 200, description="")
+@querystring_schema(CreateRevRegTxnForEndorserOptionSchema())
+@querystring_schema(RevRegConnIdMatchInfoSchema())
+@response_schema(TxnOrRevRegResultSchema(), 200, description="")
 async def send_rev_reg_def(request: web.BaseRequest):
     """
     Request handler to send revocation registry definition by reg reg id to ledger.
@@ -641,19 +682,69 @@ async def send_rev_reg_def(request: web.BaseRequest):
     """
     context: AdminRequestContext = request["context"]
     rev_reg_id = request.match_info["rev_reg_id"]
+    create_transaction_for_endorser = json.loads(
+        request.query.get("create_transaction_for_endorser", "false")
+    )
+    write_ledger = not create_transaction_for_endorser
+    endorser_did = None
+    connection_id = request.query.get("conn_id")
+
+    if not write_ledger:
+
+        try:
+            async with context.session() as session:
+                connection_record = await ConnRecord.retrieve_by_id(
+                    session, connection_id
+                )
+        except StorageNotFoundError as err:
+            raise web.HTTPNotFound(reason=err.roll_up) from err
+        except BaseModelError as err:
+            raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+        session = await context.session()
+        endorser_info = await connection_record.metadata_get(session, "endorser_info")
+        if not endorser_info:
+            raise web.HTTPForbidden(
+                reason="Endorser Info is not set up in "
+                "connection metadata for this connection record"
+            )
+        if "endorser_did" not in endorser_info.keys():
+            raise web.HTTPForbidden(
+                reason=' "endorser_did" is not set in "endorser_info"'
+                " in connection metadata for this connection record"
+            )
+        endorser_did = endorser_info["endorser_did"]
 
     try:
         revoc = IndyRevocation(context.profile)
         rev_reg = await revoc.get_issuer_rev_reg_record(rev_reg_id)
 
-        await rev_reg.send_def(context.profile)
+        rev_reg_resp = await rev_reg.send_def(
+            context.profile,
+            write_ledger=write_ledger,
+            endorser_did=endorser_did,
+        )
         LOGGER.debug("published rev reg definition: %s", rev_reg_id)
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
     except RevocationError as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-    return web.json_response({"result": rev_reg.serialize()})
+    if not create_transaction_for_endorser:
+        return web.json_response({"result": rev_reg.serialize()})
+
+    else:
+        session = await context.session()
+
+        transaction_mgr = TransactionManager(session)
+        try:
+            transaction = await transaction_mgr.create_record(
+                messages_attach=rev_reg_resp["result"], connection_id=connection_id
+            )
+        except StorageError as err:
+            raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+        return web.json_response({"txn": transaction.serialize()})
 
 
 @docs(
@@ -661,6 +752,8 @@ async def send_rev_reg_def(request: web.BaseRequest):
     summary="Send revocation registry entry to ledger",
 )
 @match_info_schema(RevRegIdMatchInfoSchema())
+@querystring_schema(CreateRevRegTxnForEndorserOptionSchema())
+@querystring_schema(RevRegConnIdMatchInfoSchema())
 @response_schema(RevRegResultSchema(), 200, description="")
 async def send_rev_reg_entry(request: web.BaseRequest):
     """
@@ -674,7 +767,39 @@ async def send_rev_reg_entry(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
+    create_transaction_for_endorser = json.loads(
+        request.query.get("create_transaction_for_endorser", "false")
+    )
+    write_ledger = not create_transaction_for_endorser
+    endorser_did = None
+    connection_id = request.query.get("conn_id")
     rev_reg_id = request.match_info["rev_reg_id"]
+
+    if not write_ledger:
+
+        try:
+            async with context.session() as session:
+                connection_record = await ConnRecord.retrieve_by_id(
+                    session, connection_id
+                )
+        except StorageNotFoundError as err:
+            raise web.HTTPNotFound(reason=err.roll_up) from err
+        except BaseModelError as err:
+            raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+        session = await context.session()
+        endorser_info = await connection_record.metadata_get(session, "endorser_info")
+        if not endorser_info:
+            raise web.HTTPForbidden(
+                reason="Endorser Info is not set up in "
+                "connection metadata for this connection record"
+            )
+        if "endorser_did" not in endorser_info.keys():
+            raise web.HTTPForbidden(
+                reason=' "endorser_did" is not set in "endorser_info"'
+                " in connection metadata for this connection record"
+            )
+        endorser_did = endorser_info["endorser_did"]
 
     try:
         revoc = IndyRevocation(context.profile)
