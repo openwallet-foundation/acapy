@@ -1283,6 +1283,8 @@ class IndySdkLedger(BaseLedger):
         revoc_def_type: str,
         revoc_reg_entry: dict,
         issuer_did: str = None,
+        write_ledger: bool = True,
+        endorser_did: str = None,
     ):
         """Publish a revocation registry entry to the ledger."""
         if issuer_did:
@@ -1297,4 +1299,13 @@ class IndySdkLedger(BaseLedger):
             request_json = await indy.ledger.build_revoc_reg_entry_request(
                 did_info.did, revoc_reg_id, revoc_def_type, json.dumps(revoc_reg_entry)
             )
-        await self._submit(request_json, True, True, did_info)
+
+        if endorser_did and not write_ledger:
+            request_json = await indy.ledger.append_request_endorser(
+                request_json, endorser_did
+            )
+        resp = await self._submit(
+            request_json, True, sign_did=did_info, write_ledger=write_ledger
+        )
+
+        return {"result": resp}

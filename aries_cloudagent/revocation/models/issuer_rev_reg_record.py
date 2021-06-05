@@ -287,7 +287,12 @@ class IssuerRevRegRecord(BaseRecord):
 
         return rev_reg_res
 
-    async def send_entry(self, profile: Profile):
+    async def send_entry(
+        self,
+        profile: Profile,
+        write_ledger: bool = True,
+        endorser_did: str = None,
+    ):
         """Send a registry entry to the ledger."""
         if not (
             self.revoc_reg_id
@@ -312,11 +317,13 @@ class IssuerRevRegRecord(BaseRecord):
 
         ledger = profile.inject(BaseLedger)
         async with ledger:
-            await ledger.send_revoc_reg_entry(
+            rev_entry_res = await ledger.send_revoc_reg_entry(
                 self.revoc_reg_id,
                 self.revoc_def_type,
                 self._revoc_reg_entry.ser,
                 self.issuer_did,
+                write_ledger=write_ledger,
+                endorser_did=endorser_did,
             )
         if self.state == IssuerRevRegRecord.STATE_POSTED:
             self.state = IssuerRevRegRecord.STATE_ACTIVE  # initial entry activates
@@ -324,6 +331,8 @@ class IssuerRevRegRecord(BaseRecord):
                 await self.save(
                     session, reason="Published initial revocation registry entry"
                 )
+
+        return rev_entry_res
 
     async def mark_pending(self, session: ProfileSession, cred_rev_id: str) -> None:
         """Mark a credential revocation id as revoked pending publication to ledger.

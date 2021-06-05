@@ -804,7 +804,11 @@ async def send_rev_reg_entry(request: web.BaseRequest):
     try:
         revoc = IndyRevocation(context.profile)
         rev_reg = await revoc.get_issuer_rev_reg_record(rev_reg_id)
-        await rev_reg.send_entry(context.profile)
+        rev_entry_resp = await rev_reg.send_entry(
+            context.profile,
+            write_ledger=write_ledger,
+            endorser_did=endorser_did,
+        )
         LOGGER.debug("published registry entry: %s", rev_reg_id)
 
     except StorageNotFoundError as err:
@@ -813,7 +817,21 @@ async def send_rev_reg_entry(request: web.BaseRequest):
     except RevocationError as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-    return web.json_response({"result": rev_reg.serialize()})
+    if not create_transaction_for_endorser:
+        return web.json_response({"result": rev_reg.serialize()})
+
+    else:
+        session = await context.session()
+
+        transaction_mgr = TransactionManager(session)
+        try:
+            transaction = await transaction_mgr.create_record(
+                messages_attach=rev_entry_resp["result"], connection_id=connection_id
+            )
+        except StorageError as err:
+            raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+        return web.json_response({"txn": transaction.serialize()})
 
 
 @docs(
