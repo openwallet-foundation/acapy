@@ -7,7 +7,12 @@ For Connection, DIDExchange and OutOfBand Manager.
 import logging
 from typing import List, Sequence, Tuple
 
-from pydid import DIDDocument as ResolvedDocument, DIDCommService, VerificationMethod
+from pydid import (
+    BaseDIDDocument as ResolvedDocument,
+    DIDCommService,
+    VerificationMethod,
+)
+import pydid
 from pydid.verification_method import Ed25519VerificationKey2018
 
 from ..core.error import BaseError
@@ -222,7 +227,8 @@ class BaseConnectionManager:
 
         resolver = self._session.inject(DIDResolver)
         try:
-            doc: ResolvedDocument = await resolver.resolve(self._session.profile, did)
+            doc_dict: dict = await resolver.resolve(self._session.profile, did)
+            doc: ResolvedDocument = pydid.deserialize_document(doc_dict, strict=True)
         except ResolverError as error:
             raise BaseConnectionManagerError(
                 "Failed to resolve public DID in invitation"
