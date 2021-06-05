@@ -105,6 +105,8 @@ class DIDResolver:
         # TODO Use cached DID Docs when possible
         try:
             parsed = DIDUrl.parse(did_url)
+            if not parsed.did:
+                raise ValueError("Invalid DID URL")
             doc = await self.resolve(profile, parsed.did)
             return doc.dereference(parsed)
         except DIDError as err:
