@@ -1,11 +1,13 @@
 """Record for out of band invitations."""
 
-from typing import Any
+from typing import Any, Mapping, Union
 
 from marshmallow import fields
 
 from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
 from .....messaging.valid import UUIDFour
+
+from ..messages.invitation import InvitationMessage, InvitationMessageSchema
 
 
 class InvitationRecord(BaseExchangeRecord):
@@ -31,9 +33,9 @@ class InvitationRecord(BaseExchangeRecord):
         invitation_id: str = None,
         state: str = None,
         invi_msg_id: str = None,
-        invitation: dict = None,  # serialized invitation message
+        invitation: Union[InvitationMessage, Mapping] = None,  # invitation message
         invitation_url: str = None,
-        public_did: str = None,  # public DID in invitation; none if peer DID
+        public_did: str = None,  # backward-compat: BaseRecord.from_storage()
         trace: bool = False,
         **kwargs,
     ):
@@ -42,7 +44,7 @@ class InvitationRecord(BaseExchangeRecord):
         self._id = invitation_id
         self.state = state
         self.invi_msg_id = invi_msg_id
-        self.invitation = invitation
+        self._invitation = InvitationMessage.serde(invitation)
         self.invitation_url = invitation_url
         self.trace = trace
 
@@ -52,16 +54,32 @@ class InvitationRecord(BaseExchangeRecord):
         return self._id
 
     @property
+    def invitation(self) -> InvitationMessage:
+        """Accessor; get deserialized view."""
+        return None if self._invitation is None else self._invitation.de
+
+    @invitation.setter
+    def invitation(self, value):
+        """Setter; store de/serialized views."""
+        self._invitation = InvitationMessage.serde(value)
+
+    @property
     def record_value(self) -> dict:
         """Accessor for the JSON record value generated for this invitation."""
         return {
-            prop: getattr(self, prop)
-            for prop in (
-                "invitation",
-                "invitation_url",
-                "state",
-                "trace",
-            )
+            **{
+                prop: getattr(self, prop)
+                for prop in (
+                    "invitation_url",
+                    "state",
+                    "trace",
+                )
+            },
+            **{
+                prop: getattr(self, f"_{prop}").ser
+                for prop in ("invitation",)
+                if getattr(self, prop) is not None
+            },
         }
 
     def __eq__(self, other: Any) -> bool:
@@ -92,9 +110,10 @@ class InvitationRecordSchema(BaseExchangeSchema):
         description="Invitation message identifier",
         example=UUIDFour.EXAMPLE,
     )
-    invitation = fields.Dict(
+    invitation = fields.Nested(
+        InvitationMessageSchema(),
         required=False,
-        description="Out of band invitation object",
+        description="Out of band invitation message",
     )
     invitation_url = fields.Str(
         required=False,

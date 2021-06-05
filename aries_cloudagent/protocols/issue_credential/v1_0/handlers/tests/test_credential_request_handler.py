@@ -82,6 +82,47 @@ class TestCredentialRequestHandler(AsyncTestCase):
         assert result == "credential_issue_message"
         assert target == {}
 
+    async def test_called_auto_issue_x(self):
+        request_context = RequestContext.test_context()
+        request_context.message_receipt = MessageReceipt()
+        request_context.connection_record = async_mock.MagicMock()
+
+        ATTR_DICT = {"test": "123", "hello": "world"}
+        cred_ex_rec = V10CredentialExchange(
+            credential_proposal_dict={
+                "credential_proposal": CredentialPreview(
+                    attributes=(CredAttrSpec.list_plain(ATTR_DICT))
+                ).serialize(),
+                "cred_def_id": CD_ID,
+            },
+        )
+
+        with async_mock.patch.object(
+            test_module, "CredentialManager", autospec=True
+        ) as mock_cred_mgr, async_mock.patch.object(
+            cred_ex_rec, "save_error_state", async_mock.CoroutineMock()
+        ):
+            mock_cred_mgr.return_value.receive_request = async_mock.CoroutineMock(
+                return_value=cred_ex_rec
+            )
+            mock_cred_mgr.return_value.receive_request.return_value.auto_issue = True
+            mock_cred_mgr.return_value.issue_credential = async_mock.CoroutineMock(
+                side_effect=test_module.IndyIssuerError()
+            )
+
+            request_context.message = CredentialRequest()
+            request_context.connection_ready = True
+            handler = test_module.CredentialRequestHandler()
+            responder = MockResponder()
+
+            with async_mock.patch.object(
+                responder, "send_reply", async_mock.CoroutineMock()
+            ) as mock_send_reply, async_mock.patch.object(
+                handler._logger, "exception", async_mock.MagicMock()
+            ) as mock_log_exc:
+                await handler.handle(request_context, responder)
+                mock_log_exc.assert_called_once()
+
     async def test_called_auto_issue_no_preview(self):
         request_context = RequestContext.test_context()
         request_context.message_receipt = MessageReceipt()

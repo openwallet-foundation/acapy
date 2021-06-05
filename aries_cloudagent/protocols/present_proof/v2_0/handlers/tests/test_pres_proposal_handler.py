@@ -1,4 +1,5 @@
 import pytest
+
 from asynctest import mock as async_mock, TestCase as AsyncTestCase
 
 from ......messaging.request_context import RequestContext
@@ -6,6 +7,7 @@ from ......messaging.responder import MockResponder
 from ......transport.inbound.receipt import MessageReceipt
 
 from ...messages.pres_proposal import V20PresProposal
+
 from .. import pres_proposal_handler as test_module
 
 
@@ -71,6 +73,36 @@ class TestV20PresProposalHandler(AsyncTestCase):
         (result, target) = messages[0]
         assert result == "presentation_request_message"
         assert target == {}
+
+    async def test_called_auto_request_x(self):
+        request_context = RequestContext.test_context()
+        request_context.message = async_mock.MagicMock()
+        request_context.message.comment = "hello world"
+        request_context.message_receipt = MessageReceipt()
+        request_context.settings["debug.auto_respond_presentation_proposal"] = True
+
+        with async_mock.patch.object(
+            test_module, "V20PresManager", autospec=True
+        ) as mock_pres_mgr:
+            mock_pres_mgr.return_value.receive_pres_proposal = async_mock.CoroutineMock(
+                return_value=async_mock.MagicMock(
+                    save_error_state=async_mock.CoroutineMock()
+                )
+            )
+            mock_pres_mgr.return_value.create_bound_request = async_mock.CoroutineMock(
+                side_effect=test_module.LedgerError()
+            )
+
+            request_context.message = V20PresProposal()
+            request_context.connection_ready = True
+            handler = test_module.V20PresProposalHandler()
+            responder = MockResponder()
+
+            with async_mock.patch.object(
+                handler._logger, "exception", async_mock.MagicMock()
+            ) as mock_log_exc:
+                await handler.handle(request_context, responder)
+                mock_log_exc.assert_called_once()
 
     async def test_called_not_ready(self):
         request_context = RequestContext.test_context()

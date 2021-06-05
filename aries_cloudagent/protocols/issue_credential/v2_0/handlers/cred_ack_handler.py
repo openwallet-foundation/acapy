@@ -1,16 +1,12 @@
 """Credential ack message handler."""
 
-from .....messaging.base_handler import (
-    BaseHandler,
-    BaseResponder,
-    HandlerException,
-    RequestContext,
-)
+from .....messaging.base_handler import BaseHandler, HandlerException
+from .....messaging.request_context import RequestContext
+from .....messaging.responder import BaseResponder
+from .....utils.tracing import trace_event, get_timer
 
 from ..manager import V20CredManager
 from ..messages.cred_ack import V20CredAck
-
-from .....utils.tracing import trace_event, get_timer
 
 
 class V20CredAckHandler(BaseHandler):

@@ -1,20 +1,26 @@
-"""Aries#0036 v1.0 credential exchange information with non-secrets storage."""
+"""Aries#0453 v2.0 credential exchange information with non-secrets storage."""
 
-from typing import Any, Mapping
+import logging
 
-from marshmallow import fields, validate
+from typing import Any, Mapping, Union
+
+from marshmallow import fields, Schema, validate
 
 from .....core.profile import ProfileSession
 from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
 from .....messaging.valid import UUIDFour
+from .....storage.base import StorageError
 
 from ..messages.cred_format import V20CredFormat
-from ..messages.cred_issue import V20CredIssue
-from ..messages.cred_proposal import V20CredProposal
-from ..messages.cred_offer import V20CredOffer
-from ..messages.cred_request import V20CredRequest
+from ..messages.cred_issue import V20CredIssue, V20CredIssueSchema
+from ..messages.cred_proposal import V20CredProposal, V20CredProposalSchema
+from ..messages.cred_offer import V20CredOffer, V20CredOfferSchema
+from ..messages.cred_request import V20CredRequest, V20CredRequestSchema
+from ..messages.inner.cred_preview import V20CredPreviewSchema
 
 from . import UNENCRYPTED_TAGS
+
+LOGGER = logging.getLogger(__name__)
 
 
 class V20CredExRecord(BaseExchangeRecord):
@@ -55,18 +61,18 @@ class V20CredExRecord(BaseExchangeRecord):
         initiator: str = None,
         role: str = None,
         state: str = None,
-        cred_proposal: Mapping = None,  # serialized cred proposal message
-        cred_offer: Mapping = None,  # serialized cred offer message
-        cred_request: Mapping = None,  # serialized cred request message
-        cred_issue: Mapping = None,  # serialized cred issue message
+        cred_proposal: Union[Mapping, V20CredProposal] = None,  # aries message
+        cred_offer: Union[Mapping, V20CredOffer] = None,  # aries message
+        cred_request: Union[Mapping, V20CredRequest] = None,  # aries message
+        cred_issue: Union[Mapping, V20CredIssue] = None,  # aries message
         auto_offer: bool = False,
         auto_issue: bool = False,
         auto_remove: bool = True,
         error_msg: str = None,
-        trace: bool = False,
-        cred_id_stored: str = None,  # for backward compatibility to restore from storage
-        conn_id: str = None,  # for backward compatibility to restore from storage
-        by_format: Mapping = None,  # formalism for base_record.from_storage()
+        trace: bool = False,  # backward compat: BaseRecord.from_storage()
+        cred_id_stored: str = None,  # backward compat: BaseRecord.from_storage()
+        conn_id: str = None,  # backward compat: BaseRecord.from_storage()
+        by_format: Mapping = None,  # backward compat: BaseRecord.from_storage()
         **kwargs,
     ):
         """Initialize a new V20CredExRecord."""
@@ -78,16 +84,14 @@ class V20CredExRecord(BaseExchangeRecord):
         self.initiator = initiator
         self.role = role
         self.state = state
-        self.cred_proposal = cred_proposal
-        self.cred_offer = cred_offer
-        self.cred_request = cred_request
-        self.cred_issue = cred_issue
-        self.cred_id_stored = cred_id_stored
+        self._cred_proposal = V20CredProposal.serde(cred_proposal)
+        self._cred_offer = V20CredOffer.serde(cred_offer)
+        self._cred_request = V20CredRequest.serde(cred_request)
+        self._cred_issue = V20CredIssue.serde(cred_issue)
         self.auto_offer = auto_offer
         self.auto_issue = auto_issue
         self.auto_remove = auto_remove
         self.error_msg = error_msg
-        self.trace = trace
 
     @property
     def cred_ex_id(self) -> str:
@@ -96,33 +100,113 @@ class V20CredExRecord(BaseExchangeRecord):
 
     @property
     def cred_preview(self) -> Mapping:
-        """Credential preview from credential proposal."""
-        return (
-            self.cred_proposal and self.cred_proposal.get("credential_preview") or None
-        )
+        """Credential preview (deserialized view) from credential proposal."""
+        return self.cred_proposal and self.cred_proposal.credential_preview or None
+
+    @property
+    def cred_proposal(self) -> V20CredProposal:
+        """Accessor; get deserialized view."""
+        return None if self._cred_proposal is None else self._cred_proposal.de
+
+    @cred_proposal.setter
+    def cred_proposal(self, value):
+        """Setter; store de/serialized views."""
+        self._cred_proposal = V20CredProposal.serde(value)
+
+    @property
+    def cred_offer(self) -> V20CredOffer:
+        """Accessor; get deserialized view."""
+        return None if self._cred_offer is None else self._cred_offer.de
+
+    @cred_offer.setter
+    def cred_offer(self, value):
+        """Setter; store de/serialized views."""
+        self._cred_offer = V20CredOffer.serde(value)
+
+    @property
+    def cred_request(self) -> V20CredRequest:
+        """Accessor; get deserialized view."""
+        return None if self._cred_request is None else self._cred_request.de
+
+    @cred_request.setter
+    def cred_request(self, value):
+        """Setter; store de/serialized views."""
+        self._cred_request = V20CredRequest.serde(value)
+
+    @property
+    def cred_issue(self) -> V20CredIssue:
+        """Accessor; get deserialized view."""
+        return None if self._cred_issue is None else self._cred_issue.de
+
+    @cred_issue.setter
+    def cred_issue(self, value):
+        """Setter; store de/serialized views."""
+        self._cred_issue = V20CredIssue.serde(value)
+
+    async def save_error_state(
+        self,
+        session: ProfileSession,
+        *,
+        reason: str = None,
+        log_params: Mapping[str, Any] = None,
+        log_override: bool = False,
+    ):
+        """
+        Save record error state if need be; log and swallow any storage error.
+
+        Args:
+            session: The profile session to use
+            reason: A reason to add to the log
+            log_params: Additional parameters to log
+            override: Override configured logging regimen, print to stderr instead
+        """
+
+        if self._last_state is None:  # already done
+            return
+
+        self.state = None
+        if reason:
+            self.error_msg = reason
+
+        try:
+            await self.save(
+                session,
+                reason=reason,
+                log_params=log_params,
+                log_override=log_override,
+            )
+        except StorageError as err:
+            LOGGER.exception(err)
 
     @property
     def record_value(self) -> Mapping:
         """Accessor for the JSON record value generated for this credential exchange."""
         return {
-            prop: getattr(self, prop)
-            for prop in (
-                "connection_id",
-                "parent_thread_id",
-                "initiator",
-                "role",
-                "state",
-                "cred_proposal",
-                "cred_offer",
-                "cred_request",
-                "cred_issue",
-                "cred_id_stored",
-                "auto_offer",
-                "auto_issue",
-                "auto_remove",
-                "error_msg",
-                "trace",
-            )
+            **{
+                prop: getattr(self, prop)
+                for prop in (
+                    "connection_id",
+                    "parent_thread_id",
+                    "initiator",
+                    "role",
+                    "state",
+                    "auto_offer",
+                    "auto_issue",
+                    "auto_remove",
+                    "error_msg",
+                    "trace",
+                )
+            },
+            **{
+                prop: getattr(self, f"_{prop}").ser
+                for prop in (
+                    "cred_proposal",
+                    "cred_offer",
+                    "cred_request",
+                    "cred_issue",
+                )
+                if getattr(self, prop) is not None
+            },
         }
 
     @classmethod
@@ -153,9 +237,8 @@ class V20CredExRecord(BaseExchangeRecord):
             "cred_request": V20CredRequest,
             "cred_issue": V20CredIssue,
         }.items():
-            mapping = getattr(self, item)
-            if mapping:
-                msg = cls.deserialize(mapping)
+            msg = getattr(self, item)
+            if msg:
                 result.update(
                     {
                         item: {
@@ -232,24 +315,42 @@ class V20CredExRecordSchema(BaseExchangeSchema):
             ]
         ),
     )
-    cred_preview = fields.Dict(
+    cred_preview = fields.Nested(
+        V20CredPreviewSchema(),
         required=False,
         dump_only=True,
-        description="Serialized credential preview from credential proposal",
+        description="Credential preview from credential proposal",
     )
-    cred_proposal = fields.Dict(
-        required=False, description="Serialized credential proposal message"
+    cred_proposal = fields.Nested(
+        V20CredProposalSchema(),
+        required=False,
+        description="Credential proposal message",
     )
-    cred_offer = fields.Dict(
-        required=False, description="Serialized credential offer message"
+    cred_offer = fields.Nested(
+        V20CredOfferSchema(),
+        required=False,
+        description="Credential offer message",
     )
-    cred_request = fields.Dict(
-        required=False, description="Serialized credential request message"
+    cred_request = fields.Nested(
+        V20CredRequestSchema(),
+        required=False,
+        description="Serialized credential request message",
     )
-    cred_issue = fields.Dict(
-        required=False, description="Serialized credential issue message"
+    cred_issue = fields.Nested(
+        V20CredIssueSchema(),
+        required=False,
+        description="Serialized credential issue message",
     )
-    by_format = fields.Dict(
+    by_format = fields.Nested(
+        Schema.from_dict(
+            {
+                "cred_proposal": fields.Dict(required=False),
+                "cred_offer": fields.Dict(required=False),
+                "cred_request": fields.Dict(required=False),
+                "cred_issue": fields.Dict(required=False),
+            },
+            name="V20CredExRecordByFormatSchema",
+        ),
         required=False,
         description=(
             "Attachment content by format for proposal, offer, request, and issue"
@@ -278,9 +379,4 @@ class V20CredExRecordSchema(BaseExchangeSchema):
         required=False,
         description="Error message",
         example="The front fell off",
-    )
-    cred_id_stored = fields.Str(
-        required=False,
-        description="Credential identifier stored in wallet",
-        example=UUIDFour.EXAMPLE,
     )

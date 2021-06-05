@@ -1,13 +1,11 @@
-from asynctest import (
-    mock as async_mock,
-    TestCase as AsyncTestCase,
-)
+from asynctest import mock as async_mock, TestCase as AsyncTestCase
 
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
 from ......transport.inbound.receipt import MessageReceipt
 
 from ...messages.cred_ack import V20CredAck
+
 from .. import cred_ack_handler as test_module
 
 

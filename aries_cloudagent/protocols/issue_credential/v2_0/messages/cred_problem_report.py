@@ -9,7 +9,7 @@ from ....problem_report.v1_0.message import ProblemReport, ProblemReportSchema
 from ..message_types import CRED_20_PROBLEM_REPORT, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = (
-    f"{PROTOCOL_PACKAGE}.handlers.problem_report_handler.ProblemReportHandler"
+    f"{PROTOCOL_PACKAGE}.handlers.cred_problem_report_handler.CredProblemReportHandler"
 )
 
 

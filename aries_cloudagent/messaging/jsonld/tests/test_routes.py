@@ -14,15 +14,16 @@ from ....config.base import InjectionError
 from ....resolver.base import DIDMethodNotSupported, DIDNotFound, ResolverError
 from ....resolver.did_resolver import DIDResolver
 from ....resolver.tests import DOC
+from ....vc.ld_proofs.document_loader import DocumentLoader
 from ....wallet.base import BaseWallet
 from ....wallet.did_method import DIDMethod
 from ....wallet.error import WalletError
-from ....wallet.key_type import KeyType
 from ..error import (
     BadJWSHeaderError,
     DroppedAttributeError,
     MissingVerificationMethodError,
 )
+from .document_loader import custom_document_loader
 
 
 @pytest.fixture
@@ -231,6 +232,9 @@ def test_post_process_routes():
 class TestJSONLDRoutes(AsyncTestCase):
     async def setUp(self):
         self.context = AdminRequestContext.test_context()
+        self.context.profile.context.injector.bind_instance(
+            DocumentLoader, custom_document_loader
+        )
         self.did_info = await (await self.context.session()).wallet.create_local_did(
             DIDMethod.SOV, KeyType.ED25519
         )

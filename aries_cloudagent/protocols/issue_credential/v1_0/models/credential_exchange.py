@@ -1,15 +1,26 @@
 """Aries#0036 v1.0 credential exchange information with non-secrets storage."""
 
-from os import environ
-from typing import Any
+import logging
+
+from typing import Any, Mapping, Union
 
 from marshmallow import fields, validate
 
 from .....core.profile import ProfileSession
+from .....indy.sdk.models.cred import IndyCredential, IndyCredentialSchema
+from .....indy.sdk.models.cred_abstract import IndyCredAbstract, IndyCredAbstractSchema
+from .....indy.sdk.models.cred_precis import IndyCredInfo, IndyCredInfoSchema
+from .....indy.sdk.models.cred_request import IndyCredRequest, IndyCredRequestSchema
 from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
 from .....messaging.valid import INDY_CRED_DEF_ID, INDY_SCHEMA_ID, UUIDFour
+from .....storage.base import StorageError
 
-unencrypted_tags = environ.get("EXCH_UNENCRYPTED_TAGS", "False").upper() == "TRUE"
+from ..messages.credential_proposal import CredentialProposal, CredentialProposalSchema
+from ..messages.credential_offer import CredentialOffer, CredentialOfferSchema
+
+from . import UNENCRYPTED_TAGS
+
+LOGGER = logging.getLogger(__name__)
 
 
 class V10CredentialExchange(BaseExchangeRecord):
@@ -23,7 +34,7 @@ class V10CredentialExchange(BaseExchangeRecord):
     RECORD_TYPE = "credential_exchange_v10"
     RECORD_ID_NAME = "credential_exchange_id"
     RECORD_TOPIC = "issue_credential"
-    TAG_NAMES = {"~thread_id"} if unencrypted_tags else {"thread_id"}
+    TAG_NAMES = {"~thread_id"} if UNENCRYPTED_TAGS else {"thread_id"}
 
     INITIATOR_SELF = "self"
     INITIATOR_EXTERNAL = "external"
@@ -52,21 +63,23 @@ class V10CredentialExchange(BaseExchangeRecord):
         state: str = None,
         credential_definition_id: str = None,
         schema_id: str = None,
-        credential_proposal_dict: dict = None,  # serialized credential proposal message
-        credential_offer_dict: dict = None,  # serialized credential offer message
-        credential_offer: dict = None,  # indy credential offer
-        credential_request: dict = None,  # indy credential request
-        credential_request_metadata: dict = None,
+        credential_proposal_dict: Union[
+            Mapping, CredentialProposal
+        ] = None,  # aries message: ..._dict for historic compat on all aries msgs
+        credential_offer_dict: Union[Mapping, CredentialOffer] = None,  # aries message
+        credential_offer: Union[Mapping, IndyCredAbstract] = None,  # indy artifact
+        credential_request: [Mapping, IndyCredRequest] = None,  # indy artifact
+        credential_request_metadata: Mapping = None,
         credential_id: str = None,
-        raw_credential: dict = None,  # indy credential as received
-        credential: dict = None,  # indy credential as stored
+        raw_credential: Union[Mapping, IndyCredential] = None,  # indy cred as received
+        credential: Union[Mapping, IndyCredInfo] = None,  # indy cred as stored
         revoc_reg_id: str = None,
         revocation_id: str = None,
         auto_offer: bool = False,
         auto_issue: bool = False,
         auto_remove: bool = True,
         error_msg: str = None,
-        trace: bool = False,
+        trace: bool = False,  # backward-compat: BaseRecord.from_storage()
         **kwargs,
     ):
         """Initialize a new V10CredentialExchange."""
@@ -80,21 +93,22 @@ class V10CredentialExchange(BaseExchangeRecord):
         self.state = state
         self.credential_definition_id = credential_definition_id
         self.schema_id = schema_id
-        self.credential_proposal_dict = credential_proposal_dict
-        self.credential_offer_dict = credential_offer_dict
-        self.credential_offer = credential_offer
-        self.credential_request = credential_request
+        self._credential_proposal_dict = CredentialProposal.serde(
+            credential_proposal_dict
+        )
+        self._credential_offer_dict = CredentialOffer.serde(credential_offer_dict)
+        self._credential_offer = IndyCredAbstract.serde(credential_offer)
+        self._credential_request = IndyCredRequest.serde(credential_request)
         self.credential_request_metadata = credential_request_metadata
         self.credential_id = credential_id
-        self.raw_credential = raw_credential
-        self.credential = credential
+        self._raw_credential = IndyCredential.serde(raw_credential)
+        self._credential = IndyCredInfo.serde(credential)
         self.revoc_reg_id = revoc_reg_id
         self.revocation_id = revocation_id
         self.auto_offer = auto_offer
         self.auto_issue = auto_issue
         self.auto_remove = auto_remove
         self.error_msg = error_msg
-        self.trace = trace
 
     @property
     def credential_exchange_id(self) -> str:
@@ -102,34 +116,145 @@ class V10CredentialExchange(BaseExchangeRecord):
         return self._id
 
     @property
-    def record_value(self) -> dict:
-        """Accessor for the JSON record value generated for this credential exchange."""
-        return {
-            prop: getattr(self, prop)
-            for prop in (
-                "connection_id",
-                "credential_proposal_dict",
-                "credential_offer_dict",
-                "credential_offer",
-                "credential_request",
-                "credential_request_metadata",
-                "error_msg",
-                "auto_offer",
-                "auto_issue",
-                "auto_remove",
-                "raw_credential",
-                "credential",
-                "parent_thread_id",
-                "initiator",
-                "credential_definition_id",
-                "schema_id",
-                "credential_id",
-                "revoc_reg_id",
-                "revocation_id",
-                "role",
-                "state",
-                "trace",
+    def credential_proposal_dict(self) -> CredentialProposal:
+        """Accessor; get deserialized view."""
+        return (
+            None
+            if self._credential_proposal_dict is None
+            else self._credential_proposal_dict.de
+        )
+
+    @credential_proposal_dict.setter
+    def credential_proposal_dict(self, value):
+        """Setter; store de/serialized views."""
+        self._credential_proposal_dict = CredentialProposal.serde(value)
+
+    @property
+    def credential_offer_dict(self) -> CredentialOffer:
+        """Accessor; get deserialized view."""
+        return (
+            None
+            if self._credential_offer_dict is None
+            else self._credential_offer_dict.de
+        )
+
+    @credential_offer_dict.setter
+    def credential_offer_dict(self, value):
+        """Setter; store de/serialized views."""
+        self._credential_offer_dict = CredentialOffer.serde(value)
+
+    @property
+    def credential_offer(self) -> IndyCredAbstract:
+        """Accessor; get deserialized view."""
+        return None if self._credential_offer is None else self._credential_offer.de
+
+    @credential_offer.setter
+    def credential_offer(self, value):
+        """Setter; store de/serialized views."""
+        self._credential_offer = IndyCredAbstract.serde(value)
+
+    @property
+    def credential_request(self) -> IndyCredRequest:
+        """Accessor; get deserialized view."""
+        return None if self._credential_request is None else self._credential_request.de
+
+    @credential_request.setter
+    def credential_request(self, value):
+        """Setter; store de/serialized views."""
+        self._credential_request = IndyCredRequest.serde(value)
+
+    @property
+    def raw_credential(self) -> IndyCredential:
+        """Accessor; get deserialized view."""
+        return None if self._raw_credential is None else self._raw_credential.de
+
+    @raw_credential.setter
+    def raw_credential(self, value):
+        """Setter; store de/serialized views."""
+        self._raw_credential = IndyCredential.serde(value)
+
+    @property
+    def credential(self) -> IndyCredInfo:
+        """Accessor; get deserialized view."""
+        return None if self._credential is None else self._credential.de
+
+    @credential.setter
+    def credential(self, value):
+        """Setter; store de/serialized views."""
+        self._credential = IndyCredInfo.serde(value)
+
+    async def save_error_state(
+        self,
+        session: ProfileSession,
+        *,
+        reason: str = None,
+        log_params: Mapping[str, Any] = None,
+        log_override: bool = False,
+    ):
+        """
+        Save record error state if need be; log and swallow any storage error.
+
+        Args:
+            session: The profile session to use
+            reason: A reason to add to the log
+            log_params: Additional parameters to log
+            override: Override configured logging regimen, print to stderr instead
+        """
+
+        if self._last_state is None:  # already done
+            return
+
+        self.state = None
+        if reason:
+            self.error_msg = reason
+
+        try:
+            await self.save(
+                session,
+                reason=reason,
+                log_params=log_params,
+                log_override=log_override,
             )
+        except StorageError as err:
+            LOGGER.exception(err)
+
+    @property
+    def record_value(self) -> dict:
+        """Accessor for the JSON record value generated for this invitation."""
+        return {
+            **{
+                prop: getattr(self, prop)
+                for prop in (
+                    "connection_id",
+                    "credential_request_metadata",
+                    "error_msg",
+                    "auto_offer",
+                    "auto_issue",
+                    "auto_remove",
+                    "parent_thread_id",
+                    "initiator",
+                    "credential_definition_id",
+                    "schema_id",
+                    "credential_id",
+                    "revoc_reg_id",
+                    "revocation_id",
+                    "role",
+                    "state",
+                    "trace",
+                )
+            },
+            **{
+                prop: getattr(self, f"_{prop}").ser
+                for prop in (
+                    "credential_proposal_dict",
+                    "credential_offer_dict",
+                    "credential_offer",
+                    "credential_request",
+                    "raw_credential",
+                    "credential",
+                )
+                if getattr(self, prop) is not None
+            },
         }
 
     @classmethod
@@ -202,17 +327,25 @@ class V10CredentialExchangeSchema(BaseExchangeSchema):
     schema_id = fields.Str(
         required=False, description="Schema identifier", **INDY_SCHEMA_ID
     )
-    credential_proposal_dict = fields.Dict(
-        required=False, description="Serialized credential proposal message"
+    credential_proposal_dict = fields.Nested(
+        CredentialProposalSchema(),
+        required=False,
+        description="Credential proposal message",
     )
-    credential_offer_dict = fields.Dict(
-        required=False, description="Serialized credential offer message"
+    credential_offer_dict = fields.Nested(
+        CredentialOfferSchema(),
+        required=False,
+        description="Credential offer message",
     )
-    credential_offer = fields.Dict(
-        required=False, description="(Indy) credential offer"
+    credential_offer = fields.Nested(
+        IndyCredAbstractSchema(),
+        required=False,
+        description="(Indy) credential offer",
     )
-    credential_request = fields.Dict(
-        required=False, description="(Indy) credential request"
+    credential_request = fields.Nested(
+        IndyCredRequestSchema(),
+        required=False,
+        description="(Indy) credential request",
     )
     credential_request_metadata = fields.Dict(
         required=False, description="(Indy) credential request metadata"
@@ -220,11 +353,16 @@ class V10CredentialExchangeSchema(BaseExchangeSchema):
     credential_id = fields.Str(
         required=False, description="Credential identifier", example=UUIDFour.EXAMPLE
     )
-    raw_credential = fields.Dict(
+    raw_credential = fields.Nested(
+        IndyCredentialSchema(),
         required=False,
         description="Credential as received, prior to storage in holder wallet",
     )
-    credential = fields.Dict(required=False, description="Credential as stored")
+    credential = fields.Nested(
+        IndyCredInfoSchema(),
+        required=False,
+        description="Credential as stored",
+    )
     auto_offer = fields.Bool(
         required=False,
         description="Holder choice to accept offer in this credential exchange",

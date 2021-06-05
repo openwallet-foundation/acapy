@@ -1,21 +1,30 @@
+import json
 import uuid
 
 from aiohttp import web
-from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
+from asynctest import TestCase as AsyncTestCase
 
 from .....cache.base import BaseCache
 from .....cache.in_memory import InMemoryCache
 from .....connections.models.conn_record import ConnRecord
 from .....core.in_memory import InMemoryProfile
+from .....ledger.base import BaseLedger
 from .....storage.error import StorageNotFoundError
 
 from ..manager import TransactionManager, TransactionManagerError
-from ..models.transaction_record import TransactionRecord
 from ..messages.messages_attach import MessagesAttach
+from ..messages.transaction_acknowledgement import TransactionAcknowledgement
+from ..messages.transaction_request import TransactionRequest
+from ..models.transaction_record import TransactionRecord
 from ..transaction_jobs import TransactionJob
 
-from ..messages.transaction_request import TransactionRequest
+
+TEST_DID = "LjgpST2rjsoxYegQDRm7EL"
+SCHEMA_NAME = "bc-reg"
+SCHEMA_TXN = 12
+SCHEMA_ID = f"{TEST_DID}:2:{SCHEMA_NAME}:1.0"
+CRED_DEF_ID = f"{TEST_DID}:3:CL:12:tag1"
 
 
 class TestTransactionManager(AsyncTestCase):
@@ -96,6 +105,9 @@ class TestTransactionManager(AsyncTestCase):
         self.test_endorser_did = "DJGEjaMunDtFtBVrn1qJMT"
         self.test_endorser_verkey = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
         self.test_refuser_did = "AGDEjaMunDtFtBVrn1qPKQ"
+
+        self.ledger = async_mock.create_autospec(BaseLedger)
+        self.session.context.injector.bind_instance(BaseLedger, self.ledger)
 
         self.manager = TransactionManager(self.session)
 
@@ -363,15 +375,45 @@ class TestTransactionManager(AsyncTestCase):
             messages_attach=self.test_messages_attach,
             connection_id=self.test_connection_id,
         )
+
+        self.ledger.get_indy_storage = async_mock.MagicMock(
+            return_value=async_mock.MagicMock(add_record=async_mock.CoroutineMock())
+        )
+        self.ledger.txn_submit = async_mock.CoroutineMock(
+            return_value=json.dumps(
+                {
+                    "result": {
+                        "txn": {"type": "101", "metadata": {"from": TEST_DID}},
+                        "txnMetadata": {"txnId": SCHEMA_ID},
+                    }
+                }
+            )
+        )
+
         with async_mock.patch.object(
             TransactionRecord, "save", autospec=True
-        ) as save_record:
-            transaction_record = await self.manager.complete_transaction(
-                transaction_record
+        ) as save_record, async_mock.patch.object(
+            ConnRecord, "retrieve_by_id"
+        ) as mock_conn_rec_retrieve:
+
+            mock_conn_rec_retrieve.return_value = async_mock.MagicMock(
+                metadata_get=async_mock.CoroutineMock(
+                    return_value={
+                        "transaction_their_job": (
+                            TransactionJob.TRANSACTION_ENDORSER.name
+                        ),
+                        "transaction_my_job": (TransactionJob.TRANSACTION_AUTHOR.name),
+                    }
+                )
             )
+
+            (
+                transaction_record,
+                transaction_acknowledgement_message,
+            ) = await self.manager.complete_transaction(transaction_record)
             save_record.assert_called_once()
 
-        assert transaction_record.state == TransactionRecord.STATE_TRANSACTION_COMPLETED
+        assert transaction_record.state == TransactionRecord.STATE_TRANSACTION_ACKED
 
     async def test_create_refuse_response_bad_state(self):
         transaction_record = await self.manager.create_record(
@@ -661,5 +703,5 @@ class TestTransactionManager(AsyncTestCase):
         ) as mock_retrieve:
             mock_retrieve.side_effect = StorageNotFoundError()
 
-            with self.assertRaises(web.HTTPNotFound):
+            with self.assertRaises(TransactionManagerError):
                 await self.manager.set_transaction_their_job(mock_job, mock_receipt)

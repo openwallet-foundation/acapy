@@ -1,14 +1,30 @@
 """Aries#0037 v1.0 presentation exchange information with non-secrets storage."""
 
-from os import environ
-from typing import Any
+import logging
+
+from typing import Any, Mapping, Union
 
 from marshmallow import fields, validate
 
+from .....core.profile import ProfileSession
+from .....indy.sdk.models.proof import IndyProof, IndyProofSchema
+from .....indy.sdk.models.proof_request import IndyProofRequest, IndyProofRequestSchema
 from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
 from .....messaging.valid import UUIDFour
+from .....storage.base import StorageError
 
-unencrypted_tags = environ.get("EXCH_UNENCRYPTED_TAGS", "False").upper() == "TRUE"
+from ..messages.presentation_proposal import (
+    PresentationProposal,
+    PresentationProposalSchema,
+)
+from ..messages.presentation_request import (
+    PresentationRequest,
+    PresentationRequestSchema,
+)
+
+from . import UNENCRYPTED_TAGS
+
+LOGGER = logging.getLogger(__name__)
 
 
 class V10PresentationExchange(BaseExchangeRecord):
@@ -22,7 +38,7 @@ class V10PresentationExchange(BaseExchangeRecord):
     RECORD_TYPE = "presentation_exchange_v10"
     RECORD_ID_NAME = "presentation_exchange_id"
     RECORD_TOPIC = "present_proof"
-    TAG_NAMES = {"~thread_id"} if unencrypted_tags else {"thread_id"}
+    TAG_NAMES = {"~thread_id"} if UNENCRYPTED_TAGS else {"thread_id"}
 
     INITIATOR_SELF = "self"
     INITIATOR_EXTERNAL = "external"
@@ -48,15 +64,19 @@ class V10PresentationExchange(BaseExchangeRecord):
         initiator: str = None,
         role: str = None,
         state: str = None,
-        presentation_proposal_dict: dict = None,  # serialized pres proposal message
-        presentation_request: dict = None,  # indy proof req
-        presentation_request_dict: dict = None,  # serialized pres request message
-        presentation: dict = None,  # indy proof
+        presentation_proposal_dict: Union[
+            PresentationProposal, Mapping
+        ] = None,  # aries message: ..._dict for historic compat on all aries msgs
+        presentation_request: Union[IndyProofRequest, Mapping] = None,  # indy proof req
+        presentation_request_dict: Union[
+            PresentationRequest, Mapping
+        ] = None,  # aries message
+        presentation: Union[IndyProof, Mapping] = None,  # indy proof
         verified: str = None,
         auto_present: bool = False,
         error_msg: str = None,
-        trace: bool = False,
-        **kwargs
+        trace: bool = False,  # backward compat: BaseRecord.from_storage()
+        **kwargs,
     ):
         """Initialize a new PresentationExchange."""
         super().__init__(presentation_exchange_id, state, trace=trace, **kwargs)
@@ -65,14 +85,17 @@ class V10PresentationExchange(BaseExchangeRecord):
         self.initiator = initiator
         self.role = role
         self.state = state
-        self.presentation_proposal_dict = presentation_proposal_dict
-        self.presentation_request = presentation_request  # indy proof req
-        self.presentation_request_dict = presentation_request_dict
-        self.presentation = presentation  # indy proof
+        self._presentation_proposal_dict = PresentationProposal.serde(
+            presentation_proposal_dict
+        )
+        self._presentation_request = IndyProofRequest.serde(presentation_request)
+        self._presentation_request_dict = PresentationRequest.serde(
+            presentation_request_dict
+        )
+        self._presentation = IndyProof.serde(presentation)
         self.verified = verified
         self.auto_present = auto_present
         self.error_msg = error_msg
-        self.trace = trace
 
     @property
     def presentation_exchange_id(self) -> str:
@@ -80,25 +103,121 @@ class V10PresentationExchange(BaseExchangeRecord):
         return self._id
 
     @property
-    def record_value(self) -> dict:
-        """Accessor for JSON record value generated for this presentation exchange."""
-        return {
-            prop: getattr(self, prop)
-            for prop in (
-                "connection_id",
-                "initiator",
-                "presentation_proposal_dict",
-                "presentation_request",
-                "presentation_request_dict",
-                "presentation",
-                "role",
-                "state",
-                "auto_present",
-                "error_msg",
-                "verified",
-                "trace",
+    def presentation_proposal_dict(self) -> PresentationProposal:
+        """Accessor; get deserialized view."""
+        return (
+            None
+            if self._presentation_proposal_dict is None
+            else self._presentation_proposal_dict.de
+        )
+
+    @presentation_proposal_dict.setter
+    def presentation_proposal_dict(self, value):
+        """Setter; store de/serialized views."""
+        self._presentation_proposal_dict = PresentationProposal.serde(value)
+
+    @property
+    def presentation_request(self) -> IndyProofRequest:
+        """Accessor; get deserialized view."""
+        return (
+            None
+            if self._presentation_request is None
+            else self._presentation_request.de
+        )
+
+    @presentation_request.setter
+    def presentation_request(self, value):
+        """Setter; store de/serialized views."""
+        self._presentation_request = IndyProofRequest.serde(value)
+
+    @property
+    def presentation_request_dict(self) -> PresentationRequest:
+        """Accessor; get deserialized view."""
+        return (
+            None
+            if self._presentation_request_dict is None
+            else self._presentation_request_dict.de
+        )
+
+    @presentation_request_dict.setter
+    def presentation_request_dict(self, value):
+        """Setter; store de/serialized views."""
+        self._presentation_request_dict = PresentationRequest.serde(value)
+
+    @property
+    def presentation(self) -> IndyProof:
+        """Accessor; get deserialized view."""
+        return None if self._presentation is None else self._presentation.de
+
+    @presentation.setter
+    def presentation(self, value):
+        """Setter; store de/serialized views."""
+        self._presentation = IndyProof.serde(value)
+
+    async def save_error_state(
+        self,
+        session: ProfileSession,
+        *,
+        reason: str = None,
+        log_params: Mapping[str, Any] = None,
+        log_override: bool = False,
+    ):
+        """
+        Save record error state if need be; log and swallow any storage error.
+
+        Args:
+            session: The profile session to use
+            reason: A reason to add to the log
+            log_params: Additional parameters to log
+            override: Override configured logging regimen, print to stderr instead
+        """
+
+        if self._last_state is None:  # already done
+            return
+
+        self.state = None
+        if reason:
+            self.error_msg = reason
+
+        try:
+            await self.save(
+                session,
+                reason=reason,
+                log_params=log_params,
+                log_override=log_override,
             )
+        except StorageError as err:
+            LOGGER.exception(err)
+
+    @property
+    def record_value(self) -> Mapping:
+        """Accessor for the JSON record value generated for this credential exchange."""
+        retval = {
+            **{
+                prop: getattr(self, prop)
+                for prop in (
+                    "connection_id",
+                    "initiator",
+                    "role",
+                    "state",
+                    "auto_present",
+                    "error_msg",
+                    "verified",
+                    "trace",
+                )
+            },
+            **{
+                prop: getattr(self, f"_{prop}").ser
+                for prop in (
+                    "presentation_proposal_dict",
+                    "presentation_request",
+                    "presentation_request_dict",
+                    "presentation",
+                )
+                if getattr(self, prop) is not None
+            },
         }
+        return retval
 
     def __eq__(self, other: Any) -> bool:
         """Comparison between records."""
@@ -145,18 +264,25 @@ class V10PresentationExchangeSchema(BaseExchangeSchema):
         description="Present-proof exchange state",
         example=V10PresentationExchange.STATE_VERIFIED,
     )
-    presentation_proposal_dict = fields.Dict(
-        required=False, description="Serialized presentation proposal message"
+    presentation_proposal_dict = fields.Nested(
+        PresentationProposalSchema(),
+        required=False,
+        description="Presentation proposal message",
     )
-    presentation_request = fields.Dict(
+    presentation_request = fields.Nested(
+        IndyProofRequestSchema(),
         required=False,
         description="(Indy) presentation request (also known as proof request)",
     )
-    presentation_request_dict = fields.Dict(
-        required=False, description="Serialized presentation request message"
+    presentation_request_dict = fields.Nested(
+        PresentationRequestSchema(),
+        required=False,
+        description="Presentation request message",
     )
-    presentation = fields.Dict(
-        required=False, description="(Indy) presentation (also known as proof)"
+    presentation = fields.Nested(
+        IndyProofSchema(),
+        required=False,
+        description="(Indy) presentation (also known as proof)",
     )
     verified = fields.Str(  # tag: must be a string
         required=False,

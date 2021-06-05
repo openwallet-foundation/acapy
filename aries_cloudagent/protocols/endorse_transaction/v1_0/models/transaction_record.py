@@ -2,14 +2,12 @@
 
 from marshmallow import fields
 
+from .....core.profile import ProfileSession
 from .....messaging.models.base_record import (
     BaseExchangeRecord,
     BaseExchangeSchema,
 )
-
 from .....messaging.valid import UUIDFour
-
-from .....core.profile import ProfileSession
 
 
 class TransactionRecord(BaseExchangeRecord):
@@ -51,7 +49,7 @@ class TransactionRecord(BaseExchangeRecord):
     STATE_TRANSACTION_RESENT = "transaction_resent"
     STATE_TRANSACTION_RESENT_RECEIEVED = "transaction_resent_received"
     STATE_TRANSACTION_CANCELLED = "transaction_cancelled"
-    STATE_TRANSACTION_COMPLETED = "transaction_completed"
+    STATE_TRANSACTION_ACKED = "transaction_acked"
 
     def __init__(
         self,
@@ -59,14 +57,15 @@ class TransactionRecord(BaseExchangeRecord):
         transaction_id: str = None,
         _type: str = None,
         comment: str = None,
-        signature_request: list = [],
-        signature_response: list = [],
-        timing: dict = {},
-        formats: list = [],
-        messages_attach: list = [],
+        signature_request: list = None,
+        signature_response: list = None,
+        timing: dict = None,
+        formats: list = None,
+        messages_attach: list = None,
         thread_id: str = None,
         connection_id: str = None,
         state: str = None,
+        endorser_write_txn: bool = None,
         **kwargs,
     ):
         """Initialize a new TransactionRecord."""
@@ -74,13 +73,19 @@ class TransactionRecord(BaseExchangeRecord):
         super().__init__(transaction_id, state or self.STATE_INIT, **kwargs)
         self._type = _type
         self.comment = comment
-        self.signature_request = signature_request
-        self.signature_response = signature_response
-        self.timing = timing
-        self.formats = formats
-        self.messages_attach = messages_attach
+        self.signature_request = signature_request or []
+        self.signature_response = signature_response or []
+        self.timing = timing or {}
+        self.formats = formats or []
+        self.messages_attach = messages_attach or []
         self.thread_id = thread_id
         self.connection_id = connection_id
+        self.endorser_write_txn = endorser_write_txn
+
+    @property
+    def transaction_id(self) -> str:
+        """Accessor for the ID associated with this record."""
+        return self._id
 
     @property
     def record_value(self) -> dict:
@@ -97,6 +102,7 @@ class TransactionRecord(BaseExchangeRecord):
                 "thread_id",
                 "connection_id",
                 "state",
+                "endorser_write_txn",
             )
         }
 
@@ -127,16 +133,14 @@ class TransactionRecordSchema(BaseExchangeSchema):
 
         model_class = "TransactionRecord"
 
-    _id = fields.Str(
+    transaction_id = fields.Str(
         required=False, description="Transaction identifier", example=UUIDFour.EXAMPLE
     )
-
     _type = fields.Str(
         required=False,
         description="Transaction type",
         example="101",
     )
-
     signature_request = fields.List(
         fields.Dict(
             example={
@@ -149,7 +153,6 @@ class TransactionRecordSchema(BaseExchangeSchema):
         ),
         required=False,
     )
-
     signature_response = fields.List(
         fields.Dict(
             example={
@@ -161,21 +164,20 @@ class TransactionRecordSchema(BaseExchangeSchema):
         ),
         required=False,
     )
-
     timing = fields.Dict(
         example={"expires_time": "2020-12-13T17:29:06+0000"}, required=False
     )
-
     formats = fields.List(
         fields.Dict(
+            keys=fields.Str(),
+            values=fields.Str(),
             example={
                 "attach_id": UUIDFour.EXAMPLE,
                 "format": TransactionRecord.FORMAT_VERSION,
-            }
+            },
         ),
         required=False,
     )
-
     messages_attach = fields.List(
         fields.Dict(
             example={
@@ -216,4 +218,9 @@ class TransactionRecordSchema(BaseExchangeSchema):
         required=False,
         description="The connection identifier for thie particular transaction record",
         example=UUIDFour.EXAMPLE,
+    )
+    endorser_write_txn = fields.Boolean(
+        description="If True, Endorser will write the transaction after endorsing it",
+        required=False,
+        example=True,
     )

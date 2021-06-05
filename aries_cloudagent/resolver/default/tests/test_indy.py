@@ -1,18 +1,21 @@
 """Test IndyDIDResolver."""
 
 import pytest
+
 from asynctest import mock as async_mock
 
 from ....core.in_memory import InMemoryProfile
 from ....core.profile import Profile
 from ....ledger.base import BaseLedger
 from ....ledger.error import LedgerError
+from ....messaging.valid import IndyDID
+
 from ...base import DIDNotFound, ResolverError
 from .. import indy as test_module
 from ..indy import IndyDIDResolver
 
 # pylint: disable=W0621
-TEST_DID0 = "did:sov:123"
+TEST_DID0 = "did:sov:WgWxqztrNooG92RXvxSTWv"
 
 
 @pytest.fixture
@@ -40,20 +43,28 @@ def profile(ledger):
     yield profile
 
 
-def test_supported_methods(resolver: IndyDIDResolver):
+@pytest.mark.asyncio
+async def test_supported_methods(profile, resolver: IndyDIDResolver):
     """Test the supported_methods."""
     assert resolver.supported_methods == ["sov"]
-    assert resolver.supports("sov")
+    assert await resolver.supports(profile, TEST_DID0)
 
 
 @pytest.mark.asyncio
-async def test_resolve(resolver: IndyDIDResolver, profile: Profile):
+async def test_supported_did_regex(profile, resolver: IndyDIDResolver):
+    """Test the supported_did_regex."""
+    assert resolver.supported_did_regex == IndyDID.PATTERN
+    assert await resolver.supports(profile, TEST_DID0)
+
+
+@pytest.mark.asyncio
+async def test_resolve(profile: Profile, resolver: IndyDIDResolver):
     """Test resolve method."""
     assert await resolver.resolve(profile, TEST_DID0)
 
 
 @pytest.mark.asyncio
-async def test_resolve_x_no_ledger(resolver: IndyDIDResolver, profile: Profile):
+async def test_resolve_x_no_ledger(profile: Profile, resolver: IndyDIDResolver):
     """Test resolve method with no ledger."""
     profile.context.injector.clear_binding(BaseLedger)
     with pytest.raises(ResolverError):

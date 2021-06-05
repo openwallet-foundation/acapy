@@ -12,6 +12,7 @@ from ....connections.util import mediation_record_if_id
 from ....core.error import BaseError
 from ....core.profile import ProfileSession
 from ....indy.holder import IndyHolder
+from ....indy.sdk.models.xform import indy_proof_req_preview2indy_requested_creds
 from ....messaging.responder import BaseResponder
 from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....multitenant.manager import MultitenantManager
@@ -28,9 +29,7 @@ from ...connections.v1_0.messages.connection_invitation import ConnectionInvitat
 from ...didcomm_prefix import DIDCommPrefix
 from ...didexchange.v1_0.manager import DIDXManager
 from ...issue_credential.v1_0.models.credential_exchange import V10CredentialExchange
-from ...issue_credential.v2_0.messages.cred_offer import V20CredOffer
 from ...issue_credential.v2_0.models.cred_ex_record import V20CredExRecord
-from ...present_proof.indy.xform import indy_proof_req_preview2indy_requested_creds
 from ...present_proof.v1_0.manager import PresentationManager
 from ...present_proof.v1_0.message_types import PRESENTATION_REQUEST
 from ...present_proof.v1_0.models.presentation_exchange import V10PresentationExchange
@@ -175,9 +174,7 @@ class OutOfBandManager(BaseConnectionManager):
                         a_id,
                     )
                     message_attachments.append(
-                        InvitationMessage.wrap_message(
-                            V20CredOffer.deserialize(cred_ex_rec.cred_offer).offer()
-                        )
+                        InvitationMessage.wrap_message(cred_ex_rec.cred_offer.offer())
                     )
             elif a_type == "present-proof":
                 try:
@@ -197,9 +194,7 @@ class OutOfBandManager(BaseConnectionManager):
                     )
                     message_attachments.append(
                         InvitationMessage.wrap_message(
-                            V20PresRequest.deserialize(
-                                pres_ex_rec.pres_request
-                            ).attachment()
+                            pres_ex_rec.pres_request.attachment()
                         )
                     )
             else:
@@ -348,7 +343,7 @@ class OutOfBandManager(BaseConnectionManager):
         return InvitationRecord(  # for return via admin API, not storage
             state=InvitationRecord.STATE_INITIAL,
             invi_msg_id=invi_msg._id,
-            invitation=invi_msg.serialize(),
+            invitation=invi_msg,
             invitation_url=invi_url,
         )
 
@@ -381,7 +376,7 @@ class OutOfBandManager(BaseConnectionManager):
                 mediation_id = None
 
         # There must be exactly 1 service entry
-        if len(invi_msg.service_blocks) + len(invi_msg.service_dids) != 1:
+        if len(invi_msg.services) != 1:
             raise OutOfBandManagerError("service array must have exactly one element")
 
         if not (invi_msg.requests_attach or invi_msg.handshake_protocols):
@@ -389,15 +384,16 @@ class OutOfBandManager(BaseConnectionManager):
                 "Invitation must specify handshake_protocols, requests_attach, or both"
             )
         # Get the single service item
-        if len(invi_msg.service_blocks) >= 1:
-            service = invi_msg.service_blocks[0]
+        oob_service_item = invi_msg.services[0]
+        if isinstance(oob_service_item, ServiceMessage):
+            service = oob_service_item
             public_did = None
         else:
             # If it's in the did format, we need to convert to a full service block
             # An existing connection can only be reused based on a public DID
             # in an out-of-band message (RFC 0434).
 
-            service_did = invi_msg.service_dids[0]
+            service_did = oob_service_item
 
             # TODO: resolve_invitation should resolve key_info objects
             # or something else that includes the key type. We now assume

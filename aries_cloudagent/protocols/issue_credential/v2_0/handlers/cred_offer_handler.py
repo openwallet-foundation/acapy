@@ -1,16 +1,18 @@
 """Credential offer message handler."""
 
-from .....messaging.base_handler import (
-    BaseHandler,
-    BaseResponder,
-    HandlerException,
-    RequestContext,
-)
-
-from ..manager import V20CredManager
-from ..messages.cred_offer import V20CredOffer
-
+from .....indy.holder import IndyHolderError
+from .....ledger.error import LedgerError
+from .....messaging.base_handler import BaseHandler, HandlerException
+from .....messaging.models.base import BaseModelError
+from .....messaging.request_context import RequestContext
+from .....messaging.responder import BaseResponder
+from .....storage.error import StorageError
 from .....utils.tracing import trace_event, get_timer
+
+from .. import problem_report_for_record
+from ..manager import V20CredManager, V20CredManagerError
+from ..messages.cred_offer import V20CredOffer
+from ..messages.cred_problem_report import ProblemReportReason
 
 
 class V20CredOfferHandler(BaseHandler):
@@ -40,7 +42,7 @@ class V20CredOfferHandler(BaseHandler):
         cred_manager = V20CredManager(context.profile)
         cred_ex_record = await cred_manager.receive_offer(
             context.message, context.connection_record.connection_id
-        )
+        )  # mgr only finds, saves record: on exception, saving state null is hopeless
 
         r_time = trace_event(
             context.settings,
@@ -51,11 +53,33 @@ class V20CredOfferHandler(BaseHandler):
 
         # If auto respond is turned on, automatically reply with credential request
         if context.settings.get("debug.auto_respond_credential_offer"):
-            (_, cred_request_message) = await cred_manager.create_request(
-                cred_ex_record=cred_ex_record,
-                holder_did=context.connection_record.my_did,
-            )
-            await responder.send_reply(cred_request_message)
+            cred_request_message = None
+            try:
+                (_, cred_request_message) = await cred_manager.create_request(
+                    cred_ex_record=cred_ex_record,
+                    holder_did=context.connection_record.my_did,
+                )
+                await responder.send_reply(cred_request_message)
+            except (
+                BaseModelError,
+                IndyHolderError,
+                LedgerError,
+                StorageError,
+                V20CredManagerError,
+            ) as err:
+                self._logger.exception(err)
+                if cred_ex_record:
+                    async with context.session() as session:
+                        await cred_ex_record.save_error_state(
+                            session,
+                            reason=err.roll_up,  # us: be specific
+                        )
+                    await responder.send_reply(
+                        problem_report_for_record(
+                            cred_ex_record,
+                            ProblemReportReason.ISSUANCE_ABANDONED.value,  # them: vague
+                        )
+                    )
 
             trace_event(
                 context.settings,

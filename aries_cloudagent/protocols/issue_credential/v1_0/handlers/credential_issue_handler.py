@@ -1,12 +1,17 @@
 """Credential issue message handler."""
 
-from .....messaging.base_handler import BaseHandler, BaseResponder, HandlerException
+from .....indy.holder import IndyHolderError
+from .....messaging.base_handler import BaseHandler, HandlerException
+from .....messaging.models.base import BaseModelError
 from .....messaging.request_context import RequestContext
-
-from ..manager import CredentialManager
-from ..messages.credential_issue import CredentialIssue
-
+from .....messaging.responder import BaseResponder
+from .....storage.error import StorageError
 from .....utils.tracing import trace_event, get_timer
+
+from .. import problem_report_for_record
+from ..manager import CredentialManager, CredentialManagerError
+from ..messages.credential_issue import CredentialIssue
+from ..messages.credential_problem_report import ProblemReportReason
 
 
 class CredentialIssueHandler(BaseHandler):
@@ -35,7 +40,7 @@ class CredentialIssueHandler(BaseHandler):
         credential_manager = CredentialManager(context.profile)
         cred_ex_record = await credential_manager.receive_credential(
             context.message, context.connection_record.connection_id
-        )
+        )  # mgr only finds, saves record: on exception, saving state null is hopeless
 
         r_time = trace_event(
             context.settings,
@@ -46,13 +51,34 @@ class CredentialIssueHandler(BaseHandler):
 
         # Automatically move to next state if flag is set
         if context.settings.get("debug.auto_store_credential"):
-            (
-                cred_ex_record,
-                credential_ack_message,
-            ) = await credential_manager.store_credential(cred_ex_record)
+            try:
+                cred_ex_record = await credential_manager.store_credential(
+                    cred_ex_record
+                )
+            except (
+                BaseModelError,
+                CredentialManagerError,
+                IndyHolderError,
+                StorageError,
+            ) as err:
+                # treat failure to store as mangled on receipt hence protocol error
+                self._logger.exception(err)
+                if cred_ex_record:
+                    async with context.session() as session:
+                        await cred_ex_record.save_error_state(
+                            session,
+                            reason=err.roll_up,  # us: be specific
+                        )
+                    await responder.send_reply(
+                        problem_report_for_record(
+                            cred_ex_record,
+                            ProblemReportReason.ISSUANCE_ABANDONED.value,  # them: vague
+                        )
+                    )
 
-            # Ack issuer that holder stored credential
-            await responder.send_reply(credential_ack_message)
+            credential_ack_message = await credential_manager.send_credential_ack(
+                cred_ex_record
+            )
 
             trace_event(
                 context.settings,

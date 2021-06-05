@@ -18,9 +18,14 @@ from .error import (
 )
 
 
-def _canonize(data):
+def _canonize(data, document_loader=None):
     return jsonld.normalize(
-        data, {"algorithm": "URDNA2015", "format": "application/n-quads"}
+        data,
+        {
+            "algorithm": "URDNA2015",
+            "format": "application/n-quads",
+            **{opt: document_loader for opt in ["documentLoader"] if document_loader},
+        },
     )
 
 
@@ -28,18 +33,18 @@ def _sha256(data):
     return hashlib.sha256(data.encode("utf-8")).hexdigest()
 
 
-def _canonize_signature_options(signatureOptions):
+def _canonize_signature_options(signatureOptions, document_loader=None):
     _signatureOptions = {**signatureOptions, "@context": "https://w3id.org/security/v2"}
     _signatureOptions.pop("jws", None)
     _signatureOptions.pop("signatureValue", None)
     _signatureOptions.pop("proofValue", None)
-    return _canonize(_signatureOptions)
+    return _canonize(_signatureOptions, document_loader)
 
 
-def _canonize_document(doc):
+def _canonize_document(doc, document_loader=None):
     _doc = {**doc}
     _doc.pop("proof", None)
-    return _canonize(_doc)
+    return _canonize(_doc, document_loader)
 
 
 def _created_at():
@@ -49,16 +54,13 @@ def _created_at():
     return stamp.strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
-def create_verify_data(data, signature_options):
-    """Encapsulate the process of constructing the string used during sign and verify."""
+def create_verify_data(data, signature_options, document_loader=None):
+    """Encapsulate process of constructing string used during sign and verify."""
 
-    type_ = signature_options.get("type", "Ed25519Signature2018")
-    if type_ and type_ != "Ed25519Signature2018":
+    signature_options["type"] = signature_options.get("type", "Ed25519Signature2018")
+    type_ = signature_options.get("type")
+    if type_ != "Ed25519Signature2018":
         raise SignatureTypeError(f"invalid signature type {type_}.")
-
-    signature_options["verificationMethod"] = signature_options.get(
-        "creator", signature_options.get("verificationMethod")
-    )
 
     if not signature_options.get("verificationMethod"):
         raise MissingVerificationMethodError(
@@ -66,16 +68,36 @@ def create_verify_data(data, signature_options):
         )
 
     signature_options["created"] = signature_options.get("created", _created_at())
-    [expanded] = jsonld.expand(data)
+    [expanded] = jsonld.expand(
+        data,
+        options={
+            **{opt: document_loader for opt in ["documentLoader"] if document_loader}
+        },
+    )
     framed = jsonld.compact(
-        expanded, "https://w3id.org/security/v2", {"skipExpansion": True}
+        expanded,
+        "https://w3id.org/security/v2",
+        options={
+            "skipExpansion": True,
+            **{opt: document_loader for opt in ["documentLoader"] if document_loader},
+        },
     )
 
     # Detect any dropped attributes during the expand/contract step.
     if len(data) > len(framed):
         # > check indicates dropped attrs < is a different error
         # attempt to collect error report data
-        for_diff = jsonld.compact(expanded, data.get("@context"))
+        for_diff = jsonld.compact(
+            expanded,
+            data.get("@context"),
+            options={
+                **{
+                    opt: document_loader
+                    for opt in ["documentLoader"]
+                    if document_loader
+                }
+            },
+        )
         dropped = set(data.keys()) - set(for_diff.keys())
         raise DroppedAttributeError(
             f"{dropped} attributes dropped. "
@@ -91,7 +113,17 @@ def create_verify_data(data, signature_options):
         data_attribute = data.get(mapping[0], {})
         frame_attribute = framed.get(mapping[1], {})
         if len(data_attribute) > len(frame_attribute):
-            for_diff = jsonld.compact(expanded, data_context)
+            for_diff = jsonld.compact(
+                expanded,
+                data_context,
+                options={
+                    **{
+                        opt: document_loader
+                        for opt in ["documentLoader"]
+                        if document_loader
+                    }
+                },
+            )
             for_diff_attribute = for_diff.get(mapping[1], {})
             dropped = set(data_attribute.keys()) - set(for_diff_attribute.keys())
             raise DroppedAttributeError(
@@ -99,9 +131,11 @@ def create_verify_data(data, signature_options):
                 "Provide definitions in context to correct."
             )
 
-    canonized_signature_options = _canonize_signature_options(signature_options)
+    canonized_signature_options = _canonize_signature_options(
+        signature_options, document_loader
+    )
     hash_of_canonized_signature_options = _sha256(canonized_signature_options)
-    canonized_document = _canonize_document(framed)
+    canonized_document = _canonize_document(framed, document_loader)
     hash_of_canonized_document = _sha256(canonized_document)
 
     return (framed, hash_of_canonized_signature_options + hash_of_canonized_document)

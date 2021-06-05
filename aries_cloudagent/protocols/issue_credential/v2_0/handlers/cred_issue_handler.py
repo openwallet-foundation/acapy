@@ -1,16 +1,17 @@
 """Credential issue message handler."""
 
-from .....messaging.base_handler import (
-    BaseHandler,
-    BaseResponder,
-    HandlerException,
-    RequestContext,
-)
-
-from ..manager import V20CredManager
-from ..messages.cred_issue import V20CredIssue
-
+from .....indy.holder import IndyHolderError
+from .....messaging.base_handler import BaseHandler, HandlerException
+from .....messaging.models.base import BaseModelError
+from .....messaging.request_context import RequestContext
+from .....messaging.responder import BaseResponder
+from .....storage.error import StorageError
 from .....utils.tracing import trace_event, get_timer
+
+from .. import problem_report_for_record
+from ..manager import V20CredManager, V20CredManagerError
+from ..messages.cred_issue import V20CredIssue
+from ..messages.cred_problem_report import ProblemReportReason
 
 
 class V20CredIssueHandler(BaseHandler):
@@ -40,7 +41,7 @@ class V20CredIssueHandler(BaseHandler):
         cred_manager = V20CredManager(context.profile)
         cred_ex_record = await cred_manager.receive_credential(
             context.message, context.connection_record.connection_id
-        )
+        )  # mgr only finds, saves record: on exception, saving null state is hopeless
 
         r_time = trace_event(
             context.settings,
@@ -51,16 +52,30 @@ class V20CredIssueHandler(BaseHandler):
 
         # Automatically move to next state if flag is set
         if context.settings.get("debug.auto_store_credential"):
-            (
-                cred_ex_record,
-                cred_ack_message,
-            ) = await cred_manager.store_credential(cred_ex_record)
+            try:
+                cred_ex_record = await cred_manager.store_credential(cred_ex_record)
+            except (
+                BaseModelError,
+                IndyHolderError,
+                StorageError,
+                V20CredManagerError,
+            ) as err:
+                # treat failure to store as mangled on receipt hence protocol error
+                self._logger.exception(err)
+                if cred_ex_record:
+                    async with context.session() as session:
+                        await cred_ex_record.save_error_state(
+                            session,
+                            reason=err.roll_up,  # us: be specific
+                        )
+                    await responder.send_reply(
+                        problem_report_for_record(
+                            cred_ex_record,
+                            ProblemReportReason.ISSUANCE_ABANDONED.value,  # them: vague
+                        )
+                    )
 
-            if cred_ex_record.auto_remove:
-                await cred_manager.delete_cred_ex_record(cred_ex_record.cred_ex_id)
-
-            # Ack issuer that holder stored credential
-            await responder.send_reply(cred_ack_message)
+            cred_ack_message = await cred_manager.send_cred_ack(cred_ex_record)
 
             trace_event(
                 context.settings,

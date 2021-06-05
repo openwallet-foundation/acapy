@@ -1,4 +1,5 @@
 """Endorse Transaction handling admin routes."""
+
 import json
 
 from aiohttp import web
@@ -11,19 +12,15 @@ from aiohttp_apispec import (
 )
 from asyncio import shield
 from marshmallow import fields, validate
-from time import time
 
 from ....admin.request_context import AdminRequestContext
 from ....connections.models.conn_record import ConnRecord
 from ....indy.issuer import IndyIssuerError
 from ....ledger.base import BaseLedger
 from ....ledger.error import LedgerError
-from ....messaging.credential_definitions.util import CRED_DEF_SENT_RECORD_TYPE
-from ....messaging.models.openapi import OpenAPISchema
-from ....messaging.schemas.util import SCHEMA_SENT_RECORD_TYPE
-from ....messaging.valid import UUIDFour
 from ....messaging.models.base import BaseModelError
-from ....storage.base import StorageRecord
+from ....messaging.models.openapi import OpenAPISchema
+from ....messaging.valid import UUIDFour
 from ....storage.error import StorageError, StorageNotFoundError
 from ....wallet.base import BaseWallet
 
@@ -84,7 +81,7 @@ class TransactionJobsSchema(OpenAPISchema):
     )
 
 
-class ConnIdMatchInfoSchema(OpenAPISchema):
+class TransactionConnIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking connection id."""
 
     conn_id = fields.Str(
@@ -97,6 +94,15 @@ class DateSchema(OpenAPISchema):
 
     expires_time = fields.DateTime(
         description="Expiry Date", required=True, example="2021-03-29T05:22:19Z"
+    )
+
+
+class EndorserWriteLedgerTransactionSchema(OpenAPISchema):
+    """Sets endorser_write_txn. Option for the endorser to write the transaction."""
+
+    endorser_write_txn = fields.Boolean(
+        description="Endorser will write the transaction after endorsing it",
+        required=False,
     )
 
 
@@ -126,10 +132,8 @@ async def transactions_list(request: web.BaseRequest):
 
     Args:
         request: aiohttp request object
-
     Returns:
         The transaction list response
-
     """
 
     context: AdminRequestContext = request["context"]
@@ -158,10 +162,8 @@ async def transactions_retrieve(request: web.BaseRequest):
 
     Args:
         request: aiohttp request object
-
     Returns:
         The transaction record response
-
     """
 
     context: AdminRequestContext = request["context"]
@@ -186,6 +188,7 @@ async def transactions_retrieve(request: web.BaseRequest):
     summary="For author to send a transaction request",
 )
 @querystring_schema(TranIdMatchInfoSchema())
+@querystring_schema(EndorserWriteLedgerTransactionSchema())
 @request_schema(DateSchema())
 @response_schema(TransactionRecordSchema(), 200)
 async def transaction_create_request(request: web.BaseRequest):
@@ -194,15 +197,14 @@ async def transaction_create_request(request: web.BaseRequest):
 
     Args:
         request: aiohttp request object
-
     Returns:
         The transaction record
-
     """
 
     context: AdminRequestContext = request["context"]
     outbound_handler = request["outbound_message_router"]
     transaction_id = request.query.get("tran_id")
+    endorser_write_txn = json.loads(request.query.get("endorser_write_txn", "false"))
 
     body = await request.json()
     expires_time = body.get("expires_time")
@@ -246,11 +248,17 @@ async def transaction_create_request(request: web.BaseRequest):
     if jobs["transaction_my_job"] != TransactionJob.TRANSACTION_AUTHOR.name:
         raise web.HTTPForbidden(reason="Only a TRANSACTION_AUTHOR can create a request")
 
+    if jobs["transaction_their_job"] != TransactionJob.TRANSACTION_ENDORSER.name:
+        raise web.HTTPForbidden(
+            reason="A request can only be created to a TRANSACTION_ENDORSER"
+        )
+
     transaction_mgr = TransactionManager(session)
     try:
         transaction_record, transaction_request = await transaction_mgr.create_request(
             transaction=transaction_record,
             expires_time=expires_time,
+            endorser_write_txn=endorser_write_txn,
         )
     except (StorageError, TransactionManagerError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
@@ -276,10 +284,8 @@ async def endorse_transaction_response(request: web.BaseRequest):
 
     Args:
         request: aiohttp request object
-
     Returns:
         The updated transaction record details
-
     """
 
     context: AdminRequestContext = request["context"]
@@ -380,10 +386,8 @@ async def refuse_transaction_response(request: web.BaseRequest):
 
     Args:
         request: aiohttp request object
-
     Returns:
         The updated transaction record details
-
     """
 
     context: AdminRequestContext = request["context"]
@@ -461,10 +465,8 @@ async def cancel_transaction(request: web.BaseRequest):
 
     Args:
         request: aiohttp request object
-
     Returns:
         The updated transaction record details
-
     """
 
     context: AdminRequestContext = request["context"]
@@ -528,10 +530,8 @@ async def transaction_resend(request: web.BaseRequest):
 
     Args:
         request: aiohttp request object
-
     Returns:
         The updated transaction record details
-
     """
 
     context: AdminRequestContext = request["context"]
@@ -588,7 +588,7 @@ async def transaction_resend(request: web.BaseRequest):
     summary="Set transaction jobs",
 )
 @querystring_schema(AssignTransactionJobsSchema())
-@match_info_schema(ConnIdMatchInfoSchema())
+@match_info_schema(TransactionConnIdMatchInfoSchema())
 @response_schema(TransactionJobsSchema(), 200)
 async def set_endorser_role(request: web.BaseRequest):
     """
@@ -596,10 +596,8 @@ async def set_endorser_role(request: web.BaseRequest):
 
     Args:
         request: aiohttp request object
-
     Returns:
         The assigned transaction jobs
-
     """
 
     context: AdminRequestContext = request["context"]
@@ -630,7 +628,7 @@ async def set_endorser_role(request: web.BaseRequest):
     summary="Set Endorser Info",
 )
 @querystring_schema(EndorserInfoSchema())
-@match_info_schema(ConnIdMatchInfoSchema())
+@match_info_schema(TransactionConnIdMatchInfoSchema())
 @response_schema(EndorserInfoSchema(), 200)
 async def set_endorser_info(request: web.BaseRequest):
     """
@@ -638,10 +636,8 @@ async def set_endorser_info(request: web.BaseRequest):
 
     Args:
         request: aiohttp request object
-
     Returns:
         The assigned endorser information
-
     """
 
     context: AdminRequestContext = request["context"]
@@ -671,23 +667,12 @@ async def set_endorser_info(request: web.BaseRequest):
                 " in connection metadata for this connection record"
             )
         )
-    if "transaction_their_job" not in jobs.keys():
-        raise web.HTTPForbidden(
-            reason=(
-                'Ask the other agent to set up "transaction_my_job" in '
-                '"transaction_jobs" in connection metadata for their connection record'
-            )
-        )
     if jobs["transaction_my_job"] != TransactionJob.TRANSACTION_AUTHOR.name:
         raise web.HTTPForbidden(
             reason=(
                 "Only a TRANSACTION_AUTHOR can add endorser_info "
                 "to metadata of its connection record"
             )
-        )
-    if jobs["transaction_their_job"] != TransactionJob.TRANSACTION_ENDORSER.name:
-        raise web.HTTPForbidden(
-            reason="The Other agent should have job TRANSACTION_ENDORSER"
         )
     value = await record.metadata_get(session, "endorser_info")
     if value:
@@ -704,7 +689,7 @@ async def set_endorser_info(request: web.BaseRequest):
 
 @docs(
     tags=["endorse-transaction"],
-    summary="For Author to write an endorsed transaction to the ledger",
+    summary="For Author / Endorser to write an endorsed transaction to the ledger",
 )
 @match_info_schema(TranIdMatchInfoSchema())
 @response_schema(TransactionRecordSchema(), 200)
@@ -714,13 +699,12 @@ async def transaction_write(request: web.BaseRequest):
 
     Args:
         request: aiohttp request object
-
     Returns:
         The returned ledger response
-
     """
 
     context: AdminRequestContext = request["context"]
+    outbound_handler = request["outbound_message_router"]
 
     transaction_id = request.match_info["tran_id"]
     try:
@@ -728,114 +712,31 @@ async def transaction_write(request: web.BaseRequest):
             transaction = await TransactionRecord.retrieve_by_id(
                 session, transaction_id
             )
-            connection_record = await ConnRecord.retrieve_by_id(
-                session, transaction.connection_id
-            )
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
     except BaseModelError as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-    session = await context.session()
-    jobs = await connection_record.metadata_get(session, "transaction_jobs")
-    if not jobs:
-        raise web.HTTPForbidden(
-            reason=(
-                "The transaction related jobs are not set up in "
-                "connection metadata for this connection record"
-            )
-        )
-    if jobs["transaction_my_job"] != TransactionJob.TRANSACTION_AUTHOR.name:
-        raise web.HTTPForbidden(
-            reason="Only a TRANSACTION_AUTHOR can write a transaction to the ledger"
-        )
-
     if transaction.state != TransactionRecord.STATE_TRANSACTION_ENDORSED:
         raise web.HTTPForbidden(
-            reason="Only an endorsed transaction can be written to the ledger"
+            reason=" The transaction cannot be written to the ledger as it is in state: "
+            + transaction.state
         )
-
-    ledger_transaction = transaction.messages_attach[0]["data"]["json"]
-
-    ledger = context.inject(BaseLedger, required=False)
-    if not ledger:
-        reason = "No ledger available"
-        if not context.settings.get_value("wallet.type"):
-            reason += ": missing wallet-type?"
-        raise web.HTTPForbidden(reason=reason)
-
-    async with ledger:
-        try:
-            ledger_response_json = await shield(
-                ledger.txn_submit(ledger_transaction, sign=False, taa_accept=False)
-            )
-        except (IndyIssuerError, LedgerError) as err:
-            raise web.HTTPBadRequest(reason=err.roll_up) from err
-
-    ledger_response = json.loads(ledger_response_json)
-
-    # write the wallet non-secrets record
-    # TODO refactor this code (duplicated from ledger.indy.py)
-    if ledger_response["result"]["txn"]["type"] == "101":
-        # schema transaction
-        schema_id = ledger_response["result"]["txnMetadata"]["txnId"]
-        schema_id_parts = schema_id.split(":")
-        public_did = ledger_response["result"]["txn"]["metadata"]["from"]
-        schema_tags = {
-            "schema_id": schema_id,
-            "schema_issuer_did": public_did,
-            "schema_name": schema_id_parts[-2],
-            "schema_version": schema_id_parts[-1],
-            "epoch": str(int(time())),
-        }
-        record = StorageRecord(SCHEMA_SENT_RECORD_TYPE, schema_id, schema_tags)
-        # TODO refactor this code?
-        async with ledger:
-            storage = ledger.get_indy_storage()
-            await storage.add_record(record)
-
-    elif ledger_response["result"]["txn"]["type"] == "102":
-        # cred def transaction
-        async with ledger:
-            try:
-                schema_seq_no = str(ledger_response["result"]["txn"]["data"]["ref"])
-                schema_response = await shield(ledger.get_schema(schema_seq_no))
-            except (IndyIssuerError, LedgerError) as err:
-                raise web.HTTPBadRequest(reason=err.roll_up) from err
-
-        schema_id = schema_response["id"]
-        schema_id_parts = schema_id.split(":")
-        public_did = ledger_response["result"]["txn"]["metadata"]["from"]
-        credential_definition_id = ledger_response["result"]["txnMetadata"]["txnId"]
-        cred_def_tags = {
-            "schema_id": schema_id,
-            "schema_issuer_did": schema_id_parts[0],
-            "schema_name": schema_id_parts[-2],
-            "schema_version": schema_id_parts[-1],
-            "issuer_did": public_did,
-            "cred_def_id": credential_definition_id,
-            "epoch": str(int(time())),
-        }
-        record = StorageRecord(
-            CRED_DEF_SENT_RECORD_TYPE, credential_definition_id, cred_def_tags
-        )
-        # TODO refactor this code?
-        async with ledger:
-            storage = ledger.get_indy_storage()
-            await storage.add_record(record)
-
-    else:
-        # TODO unknown ledger transaction type, just ignore for now ...
-        pass
 
     # update the final transaction status
+    session = await context.session()
     transaction_mgr = TransactionManager(session)
     try:
-        tx_completed = await transaction_mgr.complete_transaction(
-            transaction=transaction
-        )
+        (
+            tx_completed,
+            transaction_acknowledgement_message,
+        ) = await transaction_mgr.complete_transaction(transaction=transaction)
     except StorageError as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+    await outbound_handler(
+        transaction_acknowledgement_message, connection_id=transaction.connection_id
+    )
 
     return web.json_response(tx_completed.serialize())
 

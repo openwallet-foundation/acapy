@@ -37,7 +37,7 @@ DOC = {
             "priority": 0,
             "recipientKeys": ["did:example:1234abcd#4"],
             "routingKeys": ["did:example:1234abcd#6"],
-            "serviceEndpoint": "https://example.com",
+            "serviceEndpoint": "http://example.com",
         }
     ],
 }

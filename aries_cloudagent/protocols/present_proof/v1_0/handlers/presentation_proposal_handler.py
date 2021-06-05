@@ -1,10 +1,16 @@
 """Presentation proposal message handler."""
 
-from .....messaging.base_handler import BaseHandler, BaseResponder, HandlerException
+from .....ledger.error import LedgerError
+from .....messaging.base_handler import BaseHandler, HandlerException
+from .....messaging.models.base import BaseModelError
 from .....messaging.request_context import RequestContext
+from .....messaging.responder import BaseResponder
+from .....storage.error import StorageError
 from .....utils.tracing import trace_event, get_timer
 
+from .. import problem_report_for_record
 from ..manager import PresentationManager
+from ..messages.presentation_problem_report import ProblemReportReason
 from ..messages.presentation_proposal import PresentationProposal
 
 
@@ -39,7 +45,7 @@ class PresentationProposalHandler(BaseHandler):
         presentation_manager = PresentationManager(context.profile)
         presentation_exchange_record = await presentation_manager.receive_proposal(
             context.message, context.connection_record
-        )
+        )  # mgr only creates, saves record: on exception, saving state null is hopeless
 
         r_time = trace_event(
             context.settings,
@@ -50,15 +56,30 @@ class PresentationProposalHandler(BaseHandler):
 
         # If auto_respond_presentation_proposal is set, reply with proof req
         if context.settings.get("debug.auto_respond_presentation_proposal"):
-            (
-                presentation_exchange_record,
-                presentation_request_message,
-            ) = await presentation_manager.create_bound_request(
-                presentation_exchange_record=presentation_exchange_record,
-                comment=context.message.comment,
-            )
-
-            await responder.send_reply(presentation_request_message)
+            presentation_request_message = None
+            try:
+                (
+                    presentation_exchange_record,
+                    presentation_request_message,
+                ) = await presentation_manager.create_bound_request(
+                    presentation_exchange_record=presentation_exchange_record,
+                    comment=context.message.comment,
+                )
+                await responder.send_reply(presentation_request_message)
+            except (BaseModelError, LedgerError, StorageError) as err:
+                self._logger.exception(err)
+                if presentation_exchange_record:
+                    async with context.session() as session:
+                        await presentation_exchange_record.save_error_state(
+                            session,
+                            reason=err.roll_up,  # us: be specific
+                        )
+                    await responder.send_reply(
+                        problem_report_for_record(
+                            presentation_exchange_record,
+                            ProblemReportReason.ABANDONED.value,  # them: be vague
+                        )
+                    )
 
             trace_event(
                 context.settings,

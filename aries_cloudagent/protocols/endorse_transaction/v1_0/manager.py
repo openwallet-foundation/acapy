@@ -1,23 +1,33 @@
 """Class to manage transactions."""
 
-from aiohttp import web
+import json
 import logging
 import uuid
 
-from .models.transaction_record import TransactionRecord
-from .messages.transaction_request import TransactionRequest
-from .messages.endorsed_transaction_response import EndorsedTransactionResponse
-from .messages.refused_transaction_response import RefusedTransactionResponse
-from .messages.cancel_transaction import CancelTransaction
-from .messages.transaction_resend import TransactionResend
-from .messages.transaction_job_to_send import TransactionJobToSend
+from asyncio import shield
+from time import time
 
 from ....connections.models.conn_record import ConnRecord
-from ....transport.inbound.receipt import MessageReceipt
-from ....storage.error import StorageNotFoundError
-
 from ....core.error import BaseError
 from ....core.profile import ProfileSession
+from ....indy.issuer import IndyIssuerError
+from ....ledger.base import BaseLedger
+from ....ledger.error import LedgerError
+from ....messaging.credential_definitions.util import CRED_DEF_SENT_RECORD_TYPE
+from ....messaging.schemas.util import SCHEMA_SENT_RECORD_TYPE
+from ....storage.base import StorageRecord
+from ....storage.error import StorageNotFoundError
+from ....transport.inbound.receipt import MessageReceipt
+
+from .messages.cancel_transaction import CancelTransaction
+from .messages.endorsed_transaction_response import EndorsedTransactionResponse
+from .messages.refused_transaction_response import RefusedTransactionResponse
+from .messages.transaction_acknowledgement import TransactionAcknowledgement
+from .messages.transaction_job_to_send import TransactionJobToSend
+from .messages.transaction_request import TransactionRequest
+from .messages.transaction_resend import TransactionResend
+from .models.transaction_record import TransactionRecord
+from .transaction_jobs import TransactionJob
 
 
 class TransactionManagerError(BaseError):
@@ -53,8 +63,8 @@ class TransactionManager:
         Create a new Transaction Record.
 
         Args:
+            messages_attach: messages to attach, JSON-dumped
             connection_id: The connection_id of the ConnRecord between author and endorser
-            transaction_message: The actual data in the transaction payload
 
         Returns:
             The transaction Record
@@ -95,6 +105,7 @@ class TransactionManager:
         signature: str = None,
         signed_request: dict = None,
         expires_time: str = None,
+        endorser_write_txn: bool = None,
     ):
         """
         Create a new Transaction Request.
@@ -129,6 +140,7 @@ class TransactionManager:
 
         timing = {"expires_time": expires_time}
         transaction.timing = timing
+        transaction.endorser_write_txn = endorser_write_txn
 
         profile_session = await self.session
         async with profile_session.profile.session() as session:
@@ -139,6 +151,7 @@ class TransactionManager:
             signature_request=transaction.signature_request[0],
             timing=transaction.timing,
             messages_attach=transaction.messages_attach[0],
+            endorser_write_txn=endorser_write_txn,
         )
 
         return transaction, transaction_request
@@ -171,6 +184,7 @@ class TransactionManager:
         transaction.thread_id = request.transaction_id
         transaction.connection_id = connection_id
         transaction.state = TransactionRecord.STATE_REQUEST_RECEIVED
+        transaction.endorser_write_txn = request.endorser_write_txn
 
         profile_session = await self.session
         async with profile_session.profile.session() as session:
@@ -236,6 +250,19 @@ class TransactionManager:
         async with profile_session.profile.session() as session:
             await transaction.save(session, reason="Created an endorsed response")
 
+        if transaction.endorser_write_txn:
+            ledger_response = await self.complete_transaction(transaction)
+            endorsed_transaction_response = EndorsedTransactionResponse(
+                transaction_id=transaction.thread_id,
+                thread_id=transaction._id,
+                signature_response=signature_response,
+                state=TransactionRecord.STATE_TRANSACTION_ACKED,
+                endorser_did=endorser_did,
+                ledger_response=ledger_response,
+            )
+
+            return transaction, endorsed_transaction_response
+
         endorsed_transaction_response = EndorsedTransactionResponse(
             transaction_id=transaction.thread_id,
             thread_id=transaction._id,
@@ -277,13 +304,16 @@ class TransactionManager:
         async with profile_session.profile.session() as session:
             await transaction.save(session, reason="Received an endorsed response")
 
+        if transaction.endorser_write_txn:
+            await self.store_record_in_wallet(response.ledger_response)
+
         return transaction
 
     async def complete_transaction(self, transaction: TransactionRecord):
         """
         Complete a transaction.
 
-        This is the final state after the received ledger transaction
+        This is the final state where the received ledger transaction
         is written to the ledger.
 
         Args:
@@ -293,11 +323,110 @@ class TransactionManager:
             The updated transaction
 
         """
+        ledger_transaction = transaction.messages_attach[0]["data"]["json"]
 
-        transaction.state = TransactionRecord.STATE_TRANSACTION_COMPLETED
+        ledger = self._session.inject(BaseLedger)
+        if not ledger:
+            reason = "No ledger available"
+            if not self._session.context.settings.get_value("wallet.type"):
+                reason += ": missing wallet-type?"
+            raise TransactionManagerError(reason)
+
+        async with ledger:
+            try:
+                ledger_response_json = await shield(
+                    ledger.txn_submit(ledger_transaction, sign=False, taa_accept=False)
+                )
+            except (IndyIssuerError, LedgerError) as err:
+                raise TransactionManagerError(err.roll_up) from err
+
+        ledger_response = json.loads(ledger_response_json)
+
         profile_session = await self.session
+        transaction.state = TransactionRecord.STATE_TRANSACTION_ACKED
+
         async with profile_session.profile.session() as session:
             await transaction.save(session, reason="Completed transaction")
+
+        if transaction.endorser_write_txn:
+            return ledger_response
+
+        connection_id = transaction.connection_id
+
+        async with profile_session.profile.session() as session:
+            connection_record = await ConnRecord.retrieve_by_id(session, connection_id)
+        jobs = await connection_record.metadata_get(self._session, "transaction_jobs")
+        if not jobs:
+            raise TransactionManagerError(
+                "The transaction related jobs are not set up in "
+                "connection metadata for this connection record"
+            )
+        if "transaction_my_job" not in jobs.keys():
+            raise TransactionManagerError(
+                'The "transaction_my_job" is not set in "transaction_jobs"'
+                " in connection metadata for this connection record"
+            )
+        if jobs["transaction_my_job"] == TransactionJob.TRANSACTION_AUTHOR.name:
+            await self.store_record_in_wallet(ledger_response)
+            transaction_acknowledgement_message = TransactionAcknowledgement(
+                thread_id=transaction._id
+            )
+
+        elif jobs["transaction_my_job"] == TransactionJob.TRANSACTION_ENDORSER.name:
+            transaction_acknowledgement_message = TransactionAcknowledgement(
+                thread_id=transaction._id, ledger_response=ledger_response
+            )
+
+        return transaction, transaction_acknowledgement_message
+
+    async def receive_transaction_acknowledgement(
+        self, response: TransactionAcknowledgement, connection_id: str
+    ):
+        """
+        Update the transaction record after receiving the transaction acknowledgement.
+
+        Args:
+            response: The transaction acknowledgement
+            connection_id: The connection_id related to this Transaction Record
+        """
+
+        profile_session = await self.session
+        async with profile_session.profile.session() as session:
+            transaction = await TransactionRecord.retrieve_by_connection_and_thread(
+                session, connection_id, response.thread_id
+            )
+
+        if transaction.state != TransactionRecord.STATE_TRANSACTION_ENDORSED:
+            raise TransactionManagerError(
+                "Only an endorsed transaction can be written to the ledger."
+            )
+
+        transaction.state = TransactionRecord.STATE_TRANSACTION_ACKED
+        async with profile_session.profile.session() as session:
+            await transaction.save(session, reason="Received a transaction ack")
+
+        connection_id = transaction.connection_id
+
+        try:
+            async with profile_session.profile.session() as session:
+                connection_record = await ConnRecord.retrieve_by_id(
+                    session, connection_id
+                )
+        except StorageNotFoundError as err:
+            raise TransactionManagerError(err.roll_up) from err
+        jobs = await connection_record.metadata_get(self._session, "transaction_jobs")
+        if not jobs:
+            raise TransactionManagerError(
+                "The transaction related jobs are not set up in "
+                "connection metadata for this connection record"
+            )
+        if "transaction_my_job" not in jobs.keys():
+            raise TransactionManagerError(
+                'The "transaction_my_job" is not set in "transaction_jobs"'
+                " in connection metadata for this connection record"
+            )
+        if jobs["transaction_my_job"] == TransactionJob.TRANSACTION_AUTHOR.name:
+            await self.store_record_in_wallet(response.ledger_response)
 
         return transaction
 
@@ -531,7 +660,7 @@ class TransactionManager:
                 self._session, receipt.sender_did, receipt.recipient_did
             )
         except StorageNotFoundError as err:
-            raise web.HTTPNotFound(reason=err.roll_up) from err
+            raise TransactionManagerError(err.roll_up) from err
 
         value = await connection.metadata_get(self._session, "transaction_jobs")
         if value:
@@ -541,3 +670,73 @@ class TransactionManager:
         await connection.metadata_set(
             self._session, key="transaction_jobs", value=value
         )
+
+    async def store_record_in_wallet(self, ledger_response: dict = None):
+        """
+        Store record in wallet.
+
+        Args:
+            transaction: The transaction from which the schema/cred_def
+                         would be stored in wallet.
+        """
+
+        ledger = self._session.inject(BaseLedger)
+        if not ledger:
+            reason = "No ledger available"
+            if not self._session.context.settings.get_value("wallet.type"):
+                reason += ": missing wallet-type?"
+            raise TransactionManagerError(reason)
+
+        # write the wallet non-secrets record
+        # TODO refactor this code (duplicated from ledger.indy.py)
+        if ledger_response["result"]["txn"]["type"] == "101":
+            # schema transaction
+            schema_id = ledger_response["result"]["txnMetadata"]["txnId"]
+            schema_id_parts = schema_id.split(":")
+            public_did = ledger_response["result"]["txn"]["metadata"]["from"]
+            schema_tags = {
+                "schema_id": schema_id,
+                "schema_issuer_did": public_did,
+                "schema_name": schema_id_parts[-2],
+                "schema_version": schema_id_parts[-1],
+                "epoch": str(int(time())),
+            }
+            record = StorageRecord(SCHEMA_SENT_RECORD_TYPE, schema_id, schema_tags)
+            # TODO refactor this code?
+            async with ledger:
+                storage = ledger.get_indy_storage()
+                await storage.add_record(record)
+
+        elif ledger_response["result"]["txn"]["type"] == "102":
+            # cred def transaction
+            async with ledger:
+                try:
+                    schema_seq_no = str(ledger_response["result"]["txn"]["data"]["ref"])
+                    schema_response = await shield(ledger.get_schema(schema_seq_no))
+                except (IndyIssuerError, LedgerError) as err:
+                    raise TransactionManagerError(err.roll_up) from err
+
+            schema_id = schema_response["id"]
+            schema_id_parts = schema_id.split(":")
+            public_did = ledger_response["result"]["txn"]["metadata"]["from"]
+            credential_definition_id = ledger_response["result"]["txnMetadata"]["txnId"]
+            cred_def_tags = {
+                "schema_id": schema_id,
+                "schema_issuer_did": schema_id_parts[0],
+                "schema_name": schema_id_parts[-2],
+                "schema_version": schema_id_parts[-1],
+                "issuer_did": public_did,
+                "cred_def_id": credential_definition_id,
+                "epoch": str(int(time())),
+            }
+            record = StorageRecord(
+                CRED_DEF_SENT_RECORD_TYPE, credential_definition_id, cred_def_tags
+            )
+            # TODO refactor this code?
+            async with ledger:
+                storage = ledger.get_indy_storage()
+                await storage.add_record(record)
+
+        else:
+            # TODO unknown ledger transaction type, just ignore for now ...
+            pass

@@ -1,20 +1,21 @@
 """Presentation request message handler."""
 
-from .....indy.holder import IndyHolder
-from .....messaging.base_handler import (
-    BaseHandler,
-    BaseResponder,
-    HandlerException,
-    RequestContext,
-)
-from .....storage.error import StorageNotFoundError
+from .....indy.holder import IndyHolder, IndyHolderError
+from .....indy.sdk.models.xform import indy_proof_req_preview2indy_requested_creds
+from .....ledger.error import LedgerError
+from .....messaging.base_handler import BaseHandler, HandlerException
+from .....messaging.models.base import BaseModelError
+from .....messaging.request_context import RequestContext
+from .....messaging.responder import BaseResponder
+from .....storage.error import StorageError, StorageNotFoundError
 from .....utils.tracing import trace_event, get_timer
+from .....wallet.error import WalletNotFoundError
 
-from ...indy.xform import indy_proof_req_preview2indy_requested_creds
-
+from .. import problem_report_for_record
 from ..manager import V20PresManager
 from ..messages.pres_format import V20PresFormat
 from ..messages.pres_request import V20PresRequest
+from ..messages.pres_problem_report import ProblemReportReason
 from ..models.pres_exchange import V20PresExRecord
 
 
@@ -67,7 +68,9 @@ class V20PresRequestHandler(BaseHandler):
                 trace=(context.message._trace is not None),
             )
 
-        pres_ex_record = await pres_manager.receive_pres_request(pres_ex_record)
+        pres_ex_record = await pres_manager.receive_pres_request(
+            pres_ex_record
+        )  # mgr only saves record: on exception, saving state err is hopeless
 
         r_time = trace_event(
             context.settings,
@@ -88,18 +91,39 @@ class V20PresRequestHandler(BaseHandler):
                 )
             except ValueError as err:
                 self._logger.warning(f"{err}")
-                return
+                return  # not a protocol error: prover could still build proof manually
 
-            (pres_ex_record, pres_message) = await pres_manager.create_pres(
-                pres_ex_record=pres_ex_record,
-                requested_credentials=req_creds,
-                comment=(
-                    "auto-presented for proof request nonce "
-                    f"{indy_proof_request['nonce']}"
-                ),
-            )
-
-            await responder.send_reply(pres_message)
+            pres_message = None
+            try:
+                (pres_ex_record, pres_message) = await pres_manager.create_pres(
+                    pres_ex_record=pres_ex_record,
+                    requested_credentials=req_creds,
+                    comment=(
+                        "auto-presented for proof request nonce "
+                        f"{indy_proof_request['nonce']}"
+                    ),
+                )
+                await responder.send_reply(pres_message)
+            except (
+                BaseModelError,
+                IndyHolderError,
+                LedgerError,
+                StorageError,
+                WalletNotFoundError,
+            ) as err:
+                self._logger.exception(err)
+                if pres_ex_record:
+                    async with context.session() as session:
+                        await pres_ex_record.save_error_state(
+                            session,
+                            reason=err.roll_up,  # us: be specific
+                        )
+                    await responder.send_reply(
+                        problem_report_for_record(
+                            pres_ex_record,
+                            ProblemReportReason.ABANDONED.value,  # them: be vague
+                        )
+                    )
 
             trace_event(
                 context.settings,

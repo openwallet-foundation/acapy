@@ -1,8 +1,11 @@
 """Base classes for Models and Schemas."""
+
 import logging
-from abc import ABC
 import json
-from typing import Union
+
+from abc import ABC
+from collections import namedtuple
+from typing import Mapping, Union
 
 from marshmallow import Schema, post_dump, pre_load, post_load, ValidationError, EXCLUDE
 
@@ -10,6 +13,8 @@ from ...core.error import BaseError
 from ...utils.classloader import ClassLoader
 
 LOGGER = logging.getLogger(__name__)
+
+SerDe = namedtuple("SerDe", "ser de")
 
 
 def resolve_class(the_cls, relative_cls: type = None):
@@ -111,17 +116,22 @@ class BaseModel(ABC):
         return self._get_schema_class()
 
     @classmethod
-    def deserialize(cls, obj, unknown: str = None):
+    def deserialize(cls, obj, unknown: str = None, none2none: str = False):
         """
         Convert from JSON representation to a model instance.
 
         Args:
             obj: The dict to load into a model instance
+            unknown: Behaviour for unknown attributes
+            none2none: Deserialize None to None
 
         Returns:
             A model instance for this data
 
         """
+        if obj is None and none2none:
+            return None
+
         schema = cls._get_schema_class()(unknown=unknown or EXCLUDE)
         try:
             return schema.loads(obj) if isinstance(obj, str) else schema.load(obj)
@@ -156,6 +166,18 @@ class BaseModel(ABC):
             raise BaseModelError(
                 f"{self.__class__.__name__} schema validation failed"
             ) from err
+
+    @classmethod
+    def serde(cls, obj: Union["BaseModel", Mapping]) -> SerDe:
+        """Return serialized, deserialized representations of input object."""
+
+        return (
+            SerDe(obj.serialize(), obj)
+            if isinstance(obj, BaseModel)
+            else None
+            if obj is None
+            else SerDe(obj, cls.deserialize(obj))
+        )
 
     def validate(self, unknown: str = None):
         """Validate a constructed model."""
@@ -310,12 +332,3 @@ class BaseModelSchema(Schema):
         """
         skip_vals = resolve_meta_property(self, "skip_values", [])
         return {key: value for key, value in data.items() if value not in skip_vals}
-
-
-class OpenAPISchema(Schema):
-    """Schema for OpenAPI artifacts: excluding unknown fields, not raising exception."""
-
-    class Meta:
-        """BaseModelSchema metadata."""
-
-        unknown = EXCLUDE

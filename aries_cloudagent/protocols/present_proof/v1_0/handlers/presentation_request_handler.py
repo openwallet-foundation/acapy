@@ -1,16 +1,20 @@
 """Presentation request message handler."""
 
-from .....indy.holder import IndyHolder
-from .....messaging.base_handler import BaseHandler, BaseResponder, HandlerException
+from .....indy.holder import IndyHolder, IndyHolderError
+from .....indy.sdk.models.xform import indy_proof_req_preview2indy_requested_creds
+from .....ledger.error import LedgerError
+from .....messaging.base_handler import BaseHandler, HandlerException
+from .....messaging.models.base import BaseModelError
 from .....messaging.request_context import RequestContext
-from .....storage.error import StorageNotFoundError
+from .....messaging.responder import BaseResponder
+from .....storage.error import StorageError, StorageNotFoundError
 from .....utils.tracing import trace_event, get_timer
+from .....wallet.error import WalletNotFoundError
 
-from ...indy.xform import indy_proof_req_preview2indy_requested_creds
-
+from .. import problem_report_for_record
 from ..manager import PresentationManager
-from ..messages.presentation_proposal import PresentationProposal
 from ..messages.presentation_request import PresentationRequest
+from ..messages.presentation_problem_report import ProblemReportReason
 from ..models.presentation_exchange import V10PresentationExchange
 
 
@@ -70,7 +74,7 @@ class PresentationRequestHandler(BaseHandler):
         presentation_exchange_record.presentation_request = indy_proof_request
         presentation_exchange_record = await presentation_manager.receive_request(
             presentation_exchange_record
-        )
+        )  # mgr only saves record: on exception, saving state null is hopeless
 
         r_time = trace_event(
             context.settings,
@@ -83,7 +87,7 @@ class PresentationRequestHandler(BaseHandler):
         if presentation_exchange_record.auto_present:
             presentation_preview = None
             if presentation_exchange_record.presentation_proposal_dict:
-                exchange_pres_proposal = PresentationProposal.deserialize(
+                exchange_pres_proposal = (
                     presentation_exchange_record.presentation_proposal_dict
                 )
                 presentation_preview = exchange_pres_proposal.presentation_proposal
@@ -96,20 +100,41 @@ class PresentationRequestHandler(BaseHandler):
                 )
             except ValueError as err:
                 self._logger.warning(f"{err}")
-                return
+                return  # not a protocol error: prover could still build proof manually
 
-            (
-                presentation_exchange_record,
-                presentation_message,
-            ) = await presentation_manager.create_presentation(
-                presentation_exchange_record=presentation_exchange_record,
-                requested_credentials=req_creds,
-                comment="auto-presented for proof request nonce={}".format(
-                    indy_proof_request["nonce"]
-                ),
-            )
-
-            await responder.send_reply(presentation_message)
+            presentation_message = None
+            try:
+                (
+                    presentation_exchange_record,
+                    presentation_message,
+                ) = await presentation_manager.create_presentation(
+                    presentation_exchange_record=presentation_exchange_record,
+                    requested_credentials=req_creds,
+                    comment="auto-presented for proof request nonce={}".format(
+                        indy_proof_request["nonce"]
+                    ),
+                )
+                await responder.send_reply(presentation_message)
+            except (
+                BaseModelError,
+                IndyHolderError,
+                LedgerError,
+                StorageError,
+                WalletNotFoundError,
+            ) as err:
+                self._logger.exception(err)
+                if presentation_exchange_record:
+                    async with context.session() as session:
+                        await presentation_exchange_record.save_error_state(
+                            session,
+                            reason=err.roll_up,  # us: be specific
+                        )
+                    await responder.send_reply(
+                        problem_report_for_record(
+                            presentation_exchange_record,
+                            ProblemReportReason.ABANDONED.value,  # them: be vague
+                        )
+                    )
 
             trace_event(
                 context.settings,
