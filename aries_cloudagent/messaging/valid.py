@@ -237,6 +237,20 @@ class DIDKey(Regexp):
         )
 
 
+class DIDWeb(Regexp):
+    """Validate value against did:web specification."""
+
+    EXAMPLE = "did:web:example.com"
+    PATTERN = re.compile(r"^(did:web:)?([a-zA-Z0-9%._-]*:)*[a-zA-Z0-9%._-]+$")
+
+    def __init__(self):
+        """Initializer."""
+
+        super().__init__(
+            DIDWeb.PATTERN, error="Value {input} is not in W3C did:web format"
+        )
+
+
 class DIDPosture(OneOf):
     """Validate value against defined DID postures."""
 
