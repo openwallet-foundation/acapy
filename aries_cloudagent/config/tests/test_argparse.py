@@ -185,22 +185,19 @@ class TestArgParse(AsyncTestCase):
             [
                 "--endpoint",
                 "localhost",
-                "--plugin",
-                "mock_resolver",
-                "--plugins-config",
+                "--plugin-config",
                 "./aries_cloudagent/config/tests/test_plugins_config.yaml",
             ]
         )
 
         assert (
-            result.plugins_config
+            result.plugin_config
             == "./aries_cloudagent/config/tests/test_plugins_config.yaml"
         )
 
         settings = group.get_settings(result)
 
-        assert settings.get("external_plugins") == ["mock_resolver"]
-        assert settings.get("plugins_config").get("mock_resolver") == {
+        assert settings.get("plugin_config").get("mock_resolver") == {
             "methods": ["sov", "btcr"]
         }
 

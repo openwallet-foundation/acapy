@@ -195,13 +195,9 @@ class PluginRegistry:
 
     async def init_context(self, context: InjectionContext):
         """Call plugin setup methods on the current context."""
-        plugins_config = context.settings.get("plugins_config", {})
-        context.update_settings({"plugins_config": None})
-        for key, plugin in self._plugins.items():
+        for plugin in self._plugins.values():
             if hasattr(plugin, "setup"):
-                context.update_settings({"plugin_config": plugins_config.get(key)})
                 await plugin.setup(context)
-                context.update_settings({"plugin_config": None})
             else:
                 await self.load_protocols(context, plugin)
 
