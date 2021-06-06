@@ -55,7 +55,66 @@ def create_vcrecord(cred_dict: dict):
     )
 
 
-bbs_bls_missing_credsubjectid = [
+bbs_signed_nested_cred_no_credsubjectid = create_vcrecord(
+    {
+        "@context": [
+            "https://www.w3.org/2018/credentials/v1",
+            "https://www.w3.org/2018/credentials/examples/v1",
+            "https://w3id.org/security/bbs/v1",
+        ],
+        "id": "https://example.gov/credentials/3732",
+        "type": ["VerifiableCredential", "UniversityDegreeCredential"],
+        "issuer": "did:key:zUC72Q7XD4PE4CrMiDVXuvZng3sBvMmaGgNeTUJuzavH2BS7ThbHL9FhsZM9QYY5fqAQ4MB8M9oudz3tfuaX36Ajr97QRW7LBt6WWmrtESe6Bs5NYzFtLWEmeVtvRYVAgjFcJSa",
+        "issuanceDate": "2020-03-10T04:24:12.164Z",
+        "credentialSubject": {
+            "degree": {
+                "type": "BachelorDegree",
+                "name": "Bachelor of Science and Arts",
+                "degreeType": "Underwater Basket Weaving",
+            },
+            "college": "Contoso University",
+        },
+        "proof": {
+            "type": "BbsBlsSignature2020",
+            "verificationMethod": "did:key:zUC72Q7XD4PE4CrMiDVXuvZng3sBvMmaGgNeTUJuzavH2BS7ThbHL9FhsZM9QYY5fqAQ4MB8M9oudz3tfuaX36Ajr97QRW7LBt6WWmrtESe6Bs5NYzFtLWEmeVtvRYVAgjFcJSa#zUC72Q7XD4PE4CrMiDVXuvZng3sBvMmaGgNeTUJuzavH2BS7ThbHL9FhsZM9QYY5fqAQ4MB8M9oudz3tfuaX36Ajr97QRW7LBt6WWmrtESe6Bs5NYzFtLWEmeVtvRYVAgjFcJSa",
+            "created": "2019-12-11T03:50:55",
+            "proofPurpose": "assertionMethod",
+            "proofValue": "iRArJRSvmIwx5YH2HXg5OJD+0v5sD1HoqhBsiJiw59t3Eb6nSntyOnENEnqnpzQwCjtbvOsU18eBlVi2/ign1u1ysz0iOLxSRHvIKtDDpr1dTDwQCbuZo2gUnY+8Dy+xEst8MDtcXwzNQW8Y3l1XzA==",
+        },
+    }
+)
+
+bbs_signed_nested_cred_credsubjectid = create_vcrecord(
+    {
+        "@context": [
+            "https://www.w3.org/2018/credentials/v1",
+            "https://www.w3.org/2018/credentials/examples/v1",
+            "https://w3id.org/security/bbs/v1",
+        ],
+        "id": "https://example.gov/credentials/3732",
+        "type": ["VerifiableCredential", "UniversityDegreeCredential"],
+        "issuer": "did:key:zUC72Q7XD4PE4CrMiDVXuvZng3sBvMmaGgNeTUJuzavH2BS7ThbHL9FhsZM9QYY5fqAQ4MB8M9oudz3tfuaX36Ajr97QRW7LBt6WWmrtESe6Bs5NYzFtLWEmeVtvRYVAgjFcJSa",
+        "issuanceDate": "2020-03-10T04:24:12.164Z",
+        "credentialSubject": {
+            "id": "did:sov:WgWxqztrNooG92RXvxSTWv",
+            "degree": {
+                "type": "BachelorDegree",
+                "name": "Bachelor of Science and Arts",
+                "degreeType": "Underwater Basket Weaving",
+            },
+            "college": "Contoso University",
+        },
+        "proof": {
+            "type": "BbsBlsSignature2020",
+            "verificationMethod": "did:key:zUC72Q7XD4PE4CrMiDVXuvZng3sBvMmaGgNeTUJuzavH2BS7ThbHL9FhsZM9QYY5fqAQ4MB8M9oudz3tfuaX36Ajr97QRW7LBt6WWmrtESe6Bs5NYzFtLWEmeVtvRYVAgjFcJSa#zUC72Q7XD4PE4CrMiDVXuvZng3sBvMmaGgNeTUJuzavH2BS7ThbHL9FhsZM9QYY5fqAQ4MB8M9oudz3tfuaX36Ajr97QRW7LBt6WWmrtESe6Bs5NYzFtLWEmeVtvRYVAgjFcJSa",
+            "created": "2019-12-11T03:50:55",
+            "proofPurpose": "assertionMethod",
+            "proofValue": "iGAQ4bOxuqkoCbX3RoxTqFkJsoqPcEeRN2vqIzd/zWLS+VHCwYkQHu/TeMOrit4eb6eugbJFUBaoenZyy2VU/7Rsj614sNzumJFuJ6ZaDTlv0k70CkO9GheQTc+Gwv749Y3JzPJ0dwYGUzzcyytFCQ==",
+        },
+    }
+)
+
+bbs_signed_cred_no_credsubjectid = [
     create_vcrecord(
         {
             "@context": [
@@ -63,14 +122,24 @@ bbs_bls_missing_credsubjectid = [
                 "https://w3id.org/citizenship/v1",
                 "https://w3id.org/security/bbs/v1",
             ],
-            "type": ["VerifiableCredential", "PermanentResident"],
+            "id": "https://issuer.oidp.uscis.gov/credentials/83627465",
+            "type": ["VerifiableCredential", "PermanentResidentCard"],
             "issuer": "did:key:zUC72Q7XD4PE4CrMiDVXuvZng3sBvMmaGgNeTUJuzavH2BS7ThbHL9FhsZM9QYY5fqAQ4MB8M9oudz3tfuaX36Ajr97QRW7LBt6WWmrtESe6Bs5NYzFtLWEmeVtvRYVAgjFcJSa",
-            "issuanceDate": "2020-01-01T12:00:00Z",
+            "identifier": "83627465",
+            "name": "Permanent Resident Card",
+            "description": "Government of Example Permanent Resident Card.",
+            "issuanceDate": "2019-12-03T12:19:52Z",
+            "expirationDate": "2029-12-03T12:19:52Z",
             "credentialSubject": {
                 "type": ["PermanentResident", "Person"],
-                "givenName": "ALICE",
+                "givenName": "JOHN",
                 "familyName": "SMITH",
-                "gender": "Female",
+                "gender": "Male",
+                "image": "data:image/png;base64,iVBORw0KGgokJggg==",
+                "residentSince": "2015-01-01",
+                "lprCategory": "C09",
+                "lprNumber": "999-999-999",
+                "commuterClassification": "C1",
                 "birthCountry": "Bahamas",
                 "birthDate": "1958-07-17",
             },
@@ -79,42 +148,77 @@ bbs_bls_missing_credsubjectid = [
                 "verificationMethod": "did:key:zUC72Q7XD4PE4CrMiDVXuvZng3sBvMmaGgNeTUJuzavH2BS7ThbHL9FhsZM9QYY5fqAQ4MB8M9oudz3tfuaX36Ajr97QRW7LBt6WWmrtESe6Bs5NYzFtLWEmeVtvRYVAgjFcJSa#zUC72Q7XD4PE4CrMiDVXuvZng3sBvMmaGgNeTUJuzavH2BS7ThbHL9FhsZM9QYY5fqAQ4MB8M9oudz3tfuaX36Ajr97QRW7LBt6WWmrtESe6Bs5NYzFtLWEmeVtvRYVAgjFcJSa",
                 "created": "2019-12-11T03:50:55",
                 "proofPurpose": "assertionMethod",
-                "proofValue": "g5slOEAiwjToXFQ+4qq08FyfizVnZGhi1R949Gwcu55ly8G7FYVbSIpTeAoTzT5NMtwRAx/nz5vof2kXNqKik4hG8zY6c7kMINpqbdRxj05gsBCaowKbqXXCPX9DxUtc1/rZu32EXckg8s56efXvLA==",
+                "proofValue": "hG9cNGyjjAgPkDmtNv/+28ciBZFUVcAG2gfvLBlTWeFyYJu6DARo16RwQAoSnrgVRQn3n7KCSdnSrPb3op1+vSTu2vo+LF3GfSfqlei44bwA+c2FBIRk7S3FKY6Lm5mqOtC2Q4LStC9HtaOj8vQhgA==",
             },
         }
-    )
+    ),
+    create_vcrecord(
+        {
+            "@context": [
+                "https://www.w3.org/2018/credentials/v1",
+                "https://w3id.org/citizenship/v1",
+                "https://w3id.org/security/bbs/v1",
+            ],
+            "credentialSubject": {
+                "birthCountry": "Bahamas",
+                "birthDate": "1958-07-17",
+                "familyName": "SMITH",
+                "gender": "Female",
+                "givenName": "ALICE",
+                "type": ["PermanentResident", "Person"],
+            },
+            "issuanceDate": "2020-01-01T12:00:00Z",
+            "issuer": "did:key:zUC72Q7XD4PE4CrMiDVXuvZng3sBvMmaGgNeTUJuzavH2BS7ThbHL9FhsZM9QYY5fqAQ4MB8M9oudz3tfuaX36Ajr97QRW7LBt6WWmrtESe6Bs5NYzFtLWEmeVtvRYVAgjFcJSa",
+            "type": ["VerifiableCredential", "PermanentResident"],
+            "proof": {
+                "type": "BbsBlsSignature2020",
+                "verificationMethod": "did:key:zUC72Q7XD4PE4CrMiDVXuvZng3sBvMmaGgNeTUJuzavH2BS7ThbHL9FhsZM9QYY5fqAQ4MB8M9oudz3tfuaX36Ajr97QRW7LBt6WWmrtESe6Bs5NYzFtLWEmeVtvRYVAgjFcJSa#zUC72Q7XD4PE4CrMiDVXuvZng3sBvMmaGgNeTUJuzavH2BS7ThbHL9FhsZM9QYY5fqAQ4MB8M9oudz3tfuaX36Ajr97QRW7LBt6WWmrtESe6Bs5NYzFtLWEmeVtvRYVAgjFcJSa",
+                "created": "2019-12-11T03:50:55",
+                "proofPurpose": "assertionMethod",
+                "proofValue": "oKppLylWqjGz634baApvju2XgEJNrG2Q5nUwxn48cAk0WNPIT0n8VC3a8XEXknU7clv0fYyBmuNZ56h11IR7I/KGKaIDZDtz/b2rv6oq2VQhSbcSdBWEI0t329zRGXV5P4Yr1k/8SRQgbwhkGlikQw==",
+            },
+        }
+    ),
 ]
 
-bbs_bls_credsubjectid = [
-    create_vcrecord(
-        {
-            "@context": [
-                "https://www.w3.org/2018/credentials/v1",
-                "https://w3id.org/citizenship/v1",
-                "https://w3id.org/security/bbs/v1",
-            ],
-            "type": ["VerifiableCredential", "PermanentResident"],
-            "issuer": "did:key:zUC72Q7XD4PE4CrMiDVXuvZng3sBvMmaGgNeTUJuzavH2BS7ThbHL9FhsZM9QYY5fqAQ4MB8M9oudz3tfuaX36Ajr97QRW7LBt6WWmrtESe6Bs5NYzFtLWEmeVtvRYVAgjFcJSa",
-            "issuanceDate": "2020-01-01T12:00:00Z",
-            "credentialSubject": {
-                "id": "did:sov:WgWxqztrNooG92RXvxSTWv",
-                "type": ["PermanentResident", "Person"],
-                "givenName": "ALICE",
-                "familyName": "SMITH",
-                "gender": "Female",
-                "birthCountry": "Bahamas",
-                "birthDate": "1958-07-17",
-            },
-            "proof": {
-                "type": "BbsBlsSignature2020",
-                "verificationMethod": "did:key:zUC72Q7XD4PE4CrMiDVXuvZng3sBvMmaGgNeTUJuzavH2BS7ThbHL9FhsZM9QYY5fqAQ4MB8M9oudz3tfuaX36Ajr97QRW7LBt6WWmrtESe6Bs5NYzFtLWEmeVtvRYVAgjFcJSa#zUC72Q7XD4PE4CrMiDVXuvZng3sBvMmaGgNeTUJuzavH2BS7ThbHL9FhsZM9QYY5fqAQ4MB8M9oudz3tfuaX36Ajr97QRW7LBt6WWmrtESe6Bs5NYzFtLWEmeVtvRYVAgjFcJSa",
-                "created": "2019-12-11T03:50:55",
-                "proofPurpose": "assertionMethod",
-                "proofValue": "gei9SNwGzxGUo9cGeZ3feaKkA69eJnUVg5JFOOzfUSN3mNq5Ya3GIvV0NaCKvTnPZctAtvtzsPlul2uXkdo4FvuSxhstuI2Sg06mgl5tsLVdGNw+wkBBv0whAGRJ7BfU7r0J9wrRkhT9RG6oY30TTg==",
-            },
-        }
-    )
-]
+bbs_signed_cred_credsubjectid = create_vcrecord(
+    {
+        "@context": [
+            "https://www.w3.org/2018/credentials/v1",
+            "https://w3id.org/citizenship/v1",
+            "https://w3id.org/security/bbs/v1",
+        ],
+        "id": "https://issuer.oidp.uscis.gov/credentials/83627465",
+        "type": ["VerifiableCredential", "PermanentResidentCard"],
+        "issuer": "did:key:zUC72Q7XD4PE4CrMiDVXuvZng3sBvMmaGgNeTUJuzavH2BS7ThbHL9FhsZM9QYY5fqAQ4MB8M9oudz3tfuaX36Ajr97QRW7LBt6WWmrtESe6Bs5NYzFtLWEmeVtvRYVAgjFcJSa",
+        "identifier": "83627465",
+        "name": "Permanent Resident Card",
+        "description": "Government of Example Permanent Resident Card.",
+        "issuanceDate": "2019-12-03T12:19:52Z",
+        "expirationDate": "2029-12-03T12:19:52Z",
+        "credentialSubject": {
+            "id": "did:sov:WgWxqztrNooG92RXvxSTWv",
+            "type": ["PermanentResident", "Person"],
+            "givenName": "JOHN",
+            "familyName": "SMITH",
+            "gender": "Male",
+            "image": "data:image/png;base64,iVBORw0KGgokJggg==",
+            "residentSince": "2015-01-01",
+            "lprCategory": "C09",
+            "lprNumber": "999-999-999",
+            "commuterClassification": "C1",
+            "birthCountry": "Bahamas",
+            "birthDate": "1958-07-17",
+        },
+        "proof": {
+            "type": "BbsBlsSignature2020",
+            "verificationMethod": "did:key:zUC72Q7XD4PE4CrMiDVXuvZng3sBvMmaGgNeTUJuzavH2BS7ThbHL9FhsZM9QYY5fqAQ4MB8M9oudz3tfuaX36Ajr97QRW7LBt6WWmrtESe6Bs5NYzFtLWEmeVtvRYVAgjFcJSa#zUC72Q7XD4PE4CrMiDVXuvZng3sBvMmaGgNeTUJuzavH2BS7ThbHL9FhsZM9QYY5fqAQ4MB8M9oudz3tfuaX36Ajr97QRW7LBt6WWmrtESe6Bs5NYzFtLWEmeVtvRYVAgjFcJSa",
+            "created": "2019-12-11T03:50:55",
+            "proofPurpose": "assertionMethod",
+            "proofValue": "s++A89p+SvIHvY9pnIKIPsLjrLGGk2cs+LfpTWCsE0S1Y5Rg1h9OA5c84Vzqlc3kGfM3zdYpHrO9v0/vBFLQ3HV9wH7xgmD9MPVN+klsaQJdobRpJMjlBni7/QA2/+0szT2P1FJ537lGjyuRboVWng==",
+        },
+    }
+)
 
 bbs_bls_number_filter_creds = [
     create_vcrecord(

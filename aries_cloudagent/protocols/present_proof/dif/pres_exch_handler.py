@@ -193,11 +193,12 @@ class DIFPresExchHandler:
             if len(cred.subject_ids) > 0:
                 if not issuer_id:
                     for cred_subject_id in cred.subject_ids:
-                        did_info = await self._did_info_for_did(cred_subject_id)
-                        if did_info.key_type == reqd_key_type:
-                            issuer_id = cred_subject_id
-                            filtered_creds_list.append(cred.cred_value)
-                            break
+                        if not cred_subject_id.startswith("urn:"):
+                            did_info = await self._did_info_for_did(cred_subject_id)
+                            if did_info.key_type == reqd_key_type:
+                                issuer_id = cred_subject_id
+                                filtered_creds_list.append(cred.cred_value)
+                                break
                 else:
                     if issuer_id in cred.subject_ids:
                         filtered_creds_list.append(cred.cred_value)
@@ -207,19 +208,6 @@ class DIFPresExchHandler:
                             "multiple proofs are not supported currently"
                         )
         return (issuer_id, filtered_creds_list)
-
-    # def decide_signing_vp_from_creds(
-    #     self, applicable_creds: Sequence[VCRecord]
-    # ) -> bool:
-    #     """Whether to sign VP."""
-    #     for cred in applicable_creds:
-    #         cred_proofs = cred.proof_types
-    #         for proof_type in cred_proofs:
-    #             if proof_type == BbsBlsSignatureProof2020.signature_type:
-    #                 return False
-    #     # Don't sign VP as enclosed credentials with proof type
-    #     # BbsBlsSignatureProof2020 as it will contain the proofs
-    #     return True
 
     async def to_requirement(
         self, sr: SubmissionRequirements, descriptors: Sequence[InputDescriptors]
@@ -476,8 +464,8 @@ class DIFPresExchHandler:
             "type": credential_dict.get("type"),
             "@explicit": True,
             "@requireAll": True,
-            "issuanceDate": credential_dict.get("issuanceDate"),
-            "issuer": credential_dict.get("issuer"),
+            "issuanceDate": {},
+            "issuer": {},
         }
         unflatten_dict = {}
         for field in constraints._fields:
@@ -1166,7 +1154,9 @@ class DIFPresExchHandler:
     def check_sign_pres(self, creds: Sequence[VCRecord]) -> bool:
         """Check if applicable creds have CredentialSubject.id set."""
         for cred in creds:
-            if len(cred.subject_ids) > 0:
+            if len(cred.subject_ids) > 0 and not next(
+                iter(cred.subject_ids)
+            ).startswith("urn:"):
                 return True
         return False
 

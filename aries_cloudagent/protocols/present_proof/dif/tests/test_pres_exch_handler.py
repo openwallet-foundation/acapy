@@ -43,8 +43,10 @@ from .test_data import (
     get_test_data,
     edd_jsonld_creds,
     bbs_bls_number_filter_creds,
-    bbs_bls_missing_credsubjectid,
-    bbs_bls_credsubjectid,
+    bbs_signed_nested_cred_no_credsubjectid,
+    bbs_signed_nested_cred_credsubjectid,
+    bbs_signed_cred_no_credsubjectid,
+    bbs_signed_cred_credsubjectid,
 )
 
 
@@ -2550,20 +2552,14 @@ class TestPresExchHandler:
         """
         tmp_pd = PresentationDefinition.deserialize(test_pd)
         tmp_vp = await dif_pres_exch_handler.create_vp(
-            credentials=bbs_bls_missing_credsubjectid,
+            credentials=bbs_signed_cred_no_credsubjectid,
             pd=tmp_pd,
             challenge="1f44d55f-f161-4938-a659-f8026467f126",
         )
-        assert len(tmp_vp["verifiableCredential"]) == 1
-        assert "id" not in tmp_vp.get("verifiableCredential")[0].get(
-            "credentialSubject"
-        )
-        assert (
-            tmp_vp.get("verifiableCredential")[0]
-            .get("credentialSubject")
-            .get("familyName")
-            == "SMITH"
-        )
+        assert len(tmp_vp["verifiableCredential"]) == 2
+        for tmp_vc in tmp_vp.get("verifiableCredential"):
+            assert tmp_vc.get("credentialSubject").get("id").startswith("urn:")
+            assert tmp_vc.get("credentialSubject").get("familyName") == "SMITH"
 
     @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
@@ -2604,7 +2600,7 @@ class TestPresExchHandler:
         """
         tmp_pd = PresentationDefinition.deserialize(test_pd)
         tmp_vp = await dif_pres_exch_handler.create_vp(
-            credentials=bbs_bls_credsubjectid,
+            credentials=[bbs_signed_cred_credsubjectid],
             pd=tmp_pd,
             challenge="1f44d55f-f161-4938-a659-f8026467f126",
         )
@@ -2612,10 +2608,178 @@ class TestPresExchHandler:
         assert "givenName" not in tmp_vp.get("verifiableCredential")[0].get(
             "credentialSubject"
         )
-        assert "id" in tmp_vp.get("verifiableCredential")[0].get("credentialSubject")
+        assert (
+            tmp_vp.get("verifiableCredential")[0].get("credentialSubject").get("id")
+            == "did:sov:WgWxqztrNooG92RXvxSTWv"
+        )
         assert (
             tmp_vp.get("verifiableCredential")[0]
             .get("credentialSubject")
             .get("familyName")
             == "SMITH"
+        )
+
+    @pytest.mark.asyncio
+    @pytest.mark.ursa_bbs_signatures
+    async def test_derive_nested_cred_missing_credsubjectid_a(self, profile):
+        dif_pres_exch_handler = DIFPresExchHandler(profile)
+        test_pd = """
+        {
+            "id":"32f54163-7166-48f1-93d8-ff217bdb0654",
+            "input_descriptors":[
+                {
+                    "id":"degree_input_1",
+                    "schema":[
+                        {
+                            "uri":"https://www.w3.org/2018/credentials#VerifiableCredential"
+                        },
+                        {
+                            "uri":"https://example.org/examples#UniversityDegreeCredential"
+                        }
+                    ],
+                    "constraints":{
+                        "limit_disclosure": "required",
+                        "fields":[
+                            {
+                                "path":[
+                                    "$.credentialSubject.degree.name"
+                                ],
+                                "filter":{
+                                    "const": "Bachelor of Science and Arts"
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+        """
+        tmp_pd = PresentationDefinition.deserialize(test_pd)
+        tmp_vp = await dif_pres_exch_handler.create_vp(
+            credentials=[bbs_signed_nested_cred_no_credsubjectid],
+            pd=tmp_pd,
+            challenge="1f44d55f-f161-4938-a659-f8026467f126",
+        )
+        assert len(tmp_vp["verifiableCredential"]) == 1
+        assert (
+            tmp_vp.get("verifiableCredential")[0]
+            .get("credentialSubject")
+            .get("id")
+            .startswith("urn:")
+        )
+        assert (
+            tmp_vp.get("verifiableCredential")[0]
+            .get("credentialSubject")
+            .get("degree")
+            .get("name")
+            == "Bachelor of Science and Arts"
+        )
+
+    @pytest.mark.asyncio
+    @pytest.mark.ursa_bbs_signatures
+    async def test_derive_nested_cred_missing_credsubjectid_b(self, profile):
+        dif_pres_exch_handler = DIFPresExchHandler(profile)
+        test_pd = """
+        {
+            "id":"32f54163-7166-48f1-93d8-ff217bdb0654",
+            "input_descriptors":[
+                {
+                    "id":"degree_input_1",
+                    "schema":[
+                        {
+                            "uri":"https://www.w3.org/2018/credentials#VerifiableCredential"
+                        },
+                        {
+                            "uri":"https://example.org/examples#UniversityDegreeCredential"
+                        }
+                    ],
+                    "constraints":{
+                        "limit_disclosure": "required",
+                        "fields":[
+                            {
+                                "path":[
+                                    "$.credentialSubject.college"
+                                ],
+                                "filter":{
+                                    "const": "Contoso University"
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+        """
+        tmp_pd = PresentationDefinition.deserialize(test_pd)
+        tmp_vp = await dif_pres_exch_handler.create_vp(
+            credentials=[bbs_signed_nested_cred_no_credsubjectid],
+            pd=tmp_pd,
+            challenge="1f44d55f-f161-4938-a659-f8026467f126",
+        )
+        assert len(tmp_vp["verifiableCredential"]) == 1
+        assert (
+            tmp_vp.get("verifiableCredential")[0]
+            .get("credentialSubject")
+            .get("id")
+            .startswith("urn:")
+        )
+        assert (
+            tmp_vp.get("verifiableCredential")[0]
+            .get("credentialSubject")
+            .get("college")
+            == "Contoso University"
+        )
+
+    @pytest.mark.asyncio
+    @pytest.mark.ursa_bbs_signatures
+    async def test_derive_nested_cred_credsubjectid(self, profile):
+        dif_pres_exch_handler = DIFPresExchHandler(profile)
+        test_pd = """
+        {
+            "id":"32f54163-7166-48f1-93d8-ff217bdb0654",
+            "input_descriptors":[
+                {
+                    "id":"degree_input_1",
+                    "schema":[
+                        {
+                            "uri":"https://www.w3.org/2018/credentials#VerifiableCredential"
+                        },
+                        {
+                            "uri":"https://example.org/examples#UniversityDegreeCredential"
+                        }
+                    ],
+                    "constraints":{
+                        "limit_disclosure": "required",
+                        "fields":[
+                            {
+                                "path":[
+                                    "$.credentialSubject.degree.name"
+                                ],
+                                "filter":{
+                                    "const": "Bachelor of Science and Arts"
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+        """
+        tmp_pd = PresentationDefinition.deserialize(test_pd)
+        tmp_vp = await dif_pres_exch_handler.create_vp(
+            credentials=[bbs_signed_nested_cred_credsubjectid],
+            pd=tmp_pd,
+            challenge="1f44d55f-f161-4938-a659-f8026467f126",
+        )
+        assert len(tmp_vp["verifiableCredential"]) == 1
+        assert (
+            tmp_vp.get("verifiableCredential")[0].get("credentialSubject").get("id")
+            == "did:sov:WgWxqztrNooG92RXvxSTWv"
+        )
+        assert (
+            tmp_vp.get("verifiableCredential")[0]
+            .get("credentialSubject")
+            .get("degree")
+            .get("name")
+            == "Bachelor of Science and Arts"
         )
