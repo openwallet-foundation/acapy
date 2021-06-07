@@ -7,7 +7,13 @@ For Connection, DIDExchange and OutOfBand Manager.
 import logging
 from typing import List, Sequence, Tuple
 
-from pydid import DIDCommService, DIDDocument as ResolvedDocument, VerificationMethod
+from pydid import (
+    BaseDIDDocument as ResolvedDocument,
+    DIDCommService,
+    VerificationMethod,
+)
+import pydid
+from pydid.verification_method import Ed25519VerificationKey2018
 
 from ..core.error import BaseError
 from ..core.profile import ProfileSession
@@ -39,7 +45,7 @@ class BaseConnectionManager:
 
     RECORD_TYPE_DID_DOC = "did_doc"
     RECORD_TYPE_DID_KEY = "did_key"
-    SUPPORTED_KEY_TYPES = (PublicKeyType.ED25519_SIG_2018.ver_type,)
+    SUPPORTED_KEY_TYPES = (Ed25519VerificationKey2018,)
 
     def __init__(self, session: ProfileSession):
         """
@@ -221,7 +227,8 @@ class BaseConnectionManager:
 
         resolver = self._session.inject(DIDResolver)
         try:
-            doc: ResolvedDocument = await resolver.resolve(self._session.profile, did)
+            doc_dict: dict = await resolver.resolve(self._session.profile, did)
+            doc: ResolvedDocument = pydid.deserialize_document(doc_dict, strict=True)
         except ResolverError as error:
             raise BaseConnectionManagerError(
                 "Failed to resolve public DID in invitation"
@@ -244,7 +251,7 @@ class BaseConnectionManager:
 
         first_didcomm_service, *_ = didcomm_services
 
-        endpoint = first_didcomm_service.endpoint
+        endpoint = first_didcomm_service.service_endpoint
         recipient_keys: List[VerificationMethod] = [
             doc.dereference(url) for url in first_didcomm_service.recipient_keys
         ]
@@ -253,9 +260,9 @@ class BaseConnectionManager:
         ]
 
         for key in [*recipient_keys, *routing_keys]:
-            if key.suite.type not in self.SUPPORTED_KEY_TYPES:
+            if not isinstance(key, self.SUPPORTED_KEY_TYPES):
                 raise BaseConnectionManagerError(
-                    f"Key type {key.suite.type} is not supported"
+                    f"Key type {key.type} is not supported"
                 )
 
         return (
