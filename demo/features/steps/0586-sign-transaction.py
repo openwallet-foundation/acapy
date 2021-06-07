@@ -199,7 +199,12 @@ def step_impl(context, agent_name, schema_name):
     created_txn = agent_container_POST(
         agent["agent"],
         "/credential-definitions",
-        data={"schema_id": schema_id, "tag": "test_cred_def_with_endorsement"},
+        data={
+            "schema_id": schema_id,
+            "tag": "test_cred_def_with_endorsement",
+            "support_revocation": True,
+            "revocation_registry_size": 1000
+        },
         params={"conn_id": connection_id, "create_transaction_for_endorser": "true"},
     )
 

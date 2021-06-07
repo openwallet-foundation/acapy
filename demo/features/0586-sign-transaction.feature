@@ -73,9 +73,9 @@ Feature: RFC 0586 Aries sign (endorse) transactions functions
       And "Bob" has written the credential definition for <Schema_name> to the ledger
 
       Examples:
-         | Acme_capabilities                       | Bob_capabilities             | Schema_name    |
-         | --revocation                            |                              | driverslicense |
-#         | --revocation --did-exchange             | --did-exchange               | driverslicense |
-#         | --revocation --mediation                | --mediation                  | driverslicense |
-#         | --revocation --multitenant              | --multitenant                | driverslicense |
-#         | --revocation --mediation --multitenant  | --mediation --multitenant    | driverslicense |
+         | Acme_capabilities                                   | Bob_capabilities             | Schema_name    |
+         | --revocation --public-did                           |                              | driverslicense |
+#         | --revocation --public-did --did-exchange             | --did-exchange               | driverslicense |
+#         | --revocation --public-did --mediation                | --mediation                  | driverslicense |
+#         | --revocation --public-did --multitenant              | --multitenant                | driverslicense |
+#         | --revocation --public-did --mediation --multitenant  | --mediation --multitenant    | driverslicense |
