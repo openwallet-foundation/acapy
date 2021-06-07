@@ -25,9 +25,6 @@ from ....core.error import BaseError
 from ....core.profile import Profile
 from ....did.did_key import DIDKey
 from ....storage.vc_holder.vc_record import VCRecord
-from ....wallet.base import BaseWallet, DIDInfo
-from ....wallet.key_type import KeyType
-from ....vc.vc_ld.prove import sign_presentation, create_presentation, derive_credential
 from ....vc.ld_proofs import (
     Ed25519Signature2018,
     BbsBlsSignature2020,
@@ -37,7 +34,11 @@ from ....vc.ld_proofs import (
 )
 from ....vc.ld_proofs.constants import (
     SECURITY_CONTEXT_BBS_URL,
+    EXPANDED_TYPE_CREDENTIALS_CONTEXT_V1_VC_TYPE,
 )
+from ....vc.vc_ld.prove import sign_presentation, create_presentation, derive_credential
+from ....wallet.base import BaseWallet, DIDInfo
+from ....wallet.key_type import KeyType
 
 from .pres_exch import (
     PresentationDefinition,
@@ -366,9 +367,8 @@ class DIFPresExchHandler:
 
         result = []
         for credential in credentials:
-            if (
-                constraints.subject_issuer == "required"
-                and not await self.subject_is_issuer(credential=credential)
+            if constraints.subject_issuer == "required" and not self.subject_is_issuer(
+                credential=credential
             ):
                 continue
 
@@ -870,7 +870,7 @@ class DIFPresExchHandler:
             return True
         return False
 
-    async def subject_is_issuer(self, credential: VCRecord) -> bool:
+    def subject_is_issuer(self, credential: VCRecord) -> bool:
         """
         subject_is_issuer check.
 
@@ -909,20 +909,23 @@ class DIFPresExchHandler:
         for credential in credentials:
             applicable = False
             for schema in schemas:
-                applicable = await self.credential_match_schema(
+                applicable = self.credential_match_schema(
                     credential=credential, schema_id=schema.uri
                 )
                 if schema.required and not applicable:
                     break
                 if applicable:
-                    break
+                    if schema.uri in [
+                        EXPANDED_TYPE_CREDENTIALS_CONTEXT_V1_VC_TYPE,
+                    ]:
+                        continue
+                    else:
+                        break
             if applicable:
                 result.append(credential)
         return result
 
-    async def credential_match_schema(
-        self, credential: VCRecord, schema_id: str
-    ) -> bool:
+    def credential_match_schema(self, credential: VCRecord, schema_id: str) -> bool:
         """
         Credential matching by schema.
 
@@ -935,12 +938,10 @@ class DIFPresExchHandler:
         Return:
             bool
         """
-        for cred_schema_id in credential.schema_ids:
-            if cred_schema_id == schema_id:
-                return True
-        for cred_expd_type in credential.expanded_types:
-            if cred_expd_type == schema_id:
-                return True
+        if schema_id in credential.schema_ids:
+            return True
+        if schema_id in credential.expanded_types:
+            return True
         return False
 
     async def apply_requirements(

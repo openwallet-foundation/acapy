@@ -3,12 +3,13 @@
 import logging
 
 from marshmallow import RAISE
-from typing import Mapping, Tuple
+from typing import Mapping, Tuple, Sequence
 from uuid import uuid4
 
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......storage.error import StorageNotFoundError
 from ......storage.vc_holder.base import VCHolder
+from ......storage.vc_holder.vc_record import VCRecord
 from ......vc.ld_proofs import (
     DocumentLoader,
     Ed25519Signature2018,
@@ -16,6 +17,7 @@ from ......vc.ld_proofs import (
     BbsBlsSignatureProof2020,
     WalletKeyPair,
 )
+from ......vc.ld_proofs.constants import EXPANDED_TYPE_CREDENTIALS_CONTEXT_V1_VC_TYPE
 from ......vc.vc_ld.verify import verify_presentation
 from ......wallet.base import BaseWallet
 from ......wallet.key_type import KeyType
@@ -39,7 +41,7 @@ from ...messages.pres_format import V20PresFormat
 from ...messages.pres import V20Pres
 from ...models.pres_exchange import V20PresExRecord
 
-from ..handler import V20PresFormatHandler, V20PresFormatError
+from ..handler import V20PresFormatHandler, V20PresFormatHandlerError
 
 LOGGER = logging.getLogger(__name__)
 
@@ -185,32 +187,59 @@ class DIFPresFormatHandler(V20PresFormatHandler):
         input_descriptors = pres_definition.input_descriptors
         try:
             holder = self._profile.inject(VCHolder)
-            expanded_types = []
-            schema_ids = []
+            record_ids = set()
+            credentials_list = []
             for input_descriptor in input_descriptors:
+                expanded_types = set()
+                schema_ids = set()
                 for schema in input_descriptor.schemas:
                     uri = schema.uri
                     required = schema.required or True
                     if required:
                         # JSONLD Expanded URLs
                         if "#" in uri:
-                            expanded_types.append(uri)
+                            expanded_types.add(uri)
                         else:
-                            schema_ids.append(uri)
-            if len(schema_ids) == 0:
-                schema_ids = None
-            if len(expanded_types) == 0:
-                expanded_types = None
-            search = holder.search_credentials(
-                types=expanded_types,
-                schema_ids=schema_ids,
-            )
-            # Defaults to page_size but would like to include all
-            # For now, setting to 1000
-            max_results = 1000
-            records = await search.fetch(max_results)
+                            schema_ids.add(uri)
+                if len(schema_ids) == 0:
+                    schema_ids_list = None
+                else:
+                    schema_ids_list = list(schema_ids)
+                if len(expanded_types) == 0:
+                    expanded_types_list = None
+                else:
+                    expanded_types_list = list(expanded_types)
+                    # Raise Exception if expanded type extracted from
+                    # CREDENTIALS_CONTEXT_V1_URL and
+                    # VERIFIABLE_CREDENTIAL_TYPE is the only schema.uri
+                    # specified in the presentation_definition.
+                    if len(expanded_types_list) == 1:
+                        if expanded_types_list[0] in [
+                            EXPANDED_TYPE_CREDENTIALS_CONTEXT_V1_VC_TYPE
+                        ]:
+                            raise V20PresFormatHandlerError(
+                                "Only expanded type extracted from "
+                                "CREDENTIALS_CONTEXT_V1_URL and "
+                                "VERIFIABLE_CREDENTIAL_TYPE included "
+                                "as the schema.uri"
+                            )
+                search = holder.search_credentials(
+                    types=expanded_types_list,
+                    schema_ids=schema_ids_list,
+                )
+                # Defaults to page_size but would like to include all
+                # For now, setting to 1000
+                max_results = 1000
+                records = await search.fetch(max_results)
+                # Avoiding addition of duplicate records
+                (
+                    vcrecord_list,
+                    vcrecord_ids_set,
+                ) = await self.process_vcrecords_return_list(records, record_ids)
+                record_ids = vcrecord_ids_set
+                credentials_list = credentials_list + vcrecord_list
         except StorageNotFoundError as err:
-            raise V20PresFormatError(err)
+            raise V20PresFormatHandlerError(err)
         # Selecting suite from claim_format
         claim_format = pres_definition.fmt
         proof_type = None
@@ -232,9 +261,20 @@ class DIFPresFormatHandler(V20PresFormatHandler):
             challenge=challenge,
             domain=domain,
             pd=pres_definition,
-            credentials=records,
+            credentials=credentials_list,
         )
         return self.get_format_data(PRES_20, pres)
+
+    async def process_vcrecords_return_list(
+        self, vc_records: Sequence[VCRecord], record_ids: set
+    ) -> Tuple[Sequence[VCRecord], set]:
+        """Return list of non-duplicate VCRecords."""
+        to_add = []
+        for vc_record in vc_records:
+            if vc_record.record_id not in record_ids:
+                to_add.append(vc_record)
+                record_ids.add(vc_record.record_id)
+        return (to_add, record_ids)
 
     async def receive_pres(
         self, message: V20Pres, pres_ex_record: V20PresExRecord
@@ -262,11 +302,11 @@ class DIFPresFormatHandler(V20PresFormatHandler):
             if "options" in pres_request:
                 challenge = pres_request.get("options").get("challenge")
             else:
-                raise V20PresFormatError(
+                raise V20PresFormatHandlerError(
                     "No options [challenge] set for the presentation request"
                 )
             if not challenge:
-                raise V20PresFormatError(
+                raise V20PresFormatHandlerError(
                     "No challenge is set for the presentation request"
                 )
             pres_ver_result = await verify_presentation(

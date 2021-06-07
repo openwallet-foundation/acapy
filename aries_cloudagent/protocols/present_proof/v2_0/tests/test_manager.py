@@ -22,7 +22,7 @@ from .....storage.error import StorageNotFoundError
 from ...indy import pres_exch_handler as test_indy_util_module
 
 from .. import manager as test_module
-from ..formats.handler import V20PresFormatError
+from ..formats.handler import V20PresFormatHandlerError
 from ..formats.indy import handler as test_indy_handler
 from ..manager import V20PresManager, V20PresManagerError
 from ..message_types import (
@@ -1118,7 +1118,9 @@ class TestV20PresManager(AsyncTestCase):
                 return_value=mock_attach_decorator
             )
             request_data = {}
-            with self.assertRaises(test_indy_handler.V20PresFormatError) as context:
+            with self.assertRaises(
+                test_indy_handler.V20PresFormatHandlerError
+            ) as context:
                 (px_rec_out, pres_msg) = await self.manager.create_pres(
                     px_rec_in, request_data
                 )
@@ -1322,7 +1324,7 @@ class TestV20PresManager(AsyncTestCase):
             V20PresExRecord, "retrieve_by_tag_filter", autospec=True
         ) as retrieve_ex:
             retrieve_ex.return_value = px_rec_dummy
-            with self.assertRaises(V20PresFormatError) as context:
+            with self.assertRaises(V20PresFormatHandlerError) as context:
                 await self.manager.receive_pres(pres_x, connection_record)
             assert "does not satisfy proof request restrictions" in str(
                 context.exception
@@ -1378,7 +1380,7 @@ class TestV20PresManager(AsyncTestCase):
             V20PresExRecord, "retrieve_by_tag_filter", autospec=True
         ) as retrieve_ex:
             retrieve_ex.return_value = px_rec_dummy
-            with self.assertRaises(V20PresFormatError) as context:
+            with self.assertRaises(V20PresFormatHandlerError) as context:
                 await self.manager.receive_pres(pres_x, connection_record)
             assert "Presentation referent" in str(context.exception)
 
@@ -1437,7 +1439,7 @@ class TestV20PresManager(AsyncTestCase):
             V20PresExRecord, "retrieve_by_tag_filter", autospec=True
         ) as retrieve_ex:
             retrieve_ex.return_value = px_rec_dummy
-            with self.assertRaises(V20PresFormatError) as context:
+            with self.assertRaises(V20PresFormatHandlerError) as context:
                 await self.manager.receive_pres(pres_x, connection_record)
             assert "does not satisfy proof request restrictions " in str(
                 context.exception
@@ -1493,7 +1495,7 @@ class TestV20PresManager(AsyncTestCase):
             V20PresExRecord, "retrieve_by_tag_filter", autospec=True
         ) as retrieve_ex:
             retrieve_ex.return_value = px_rec_dummy
-            with self.assertRaises(V20PresFormatError) as context:
+            with self.assertRaises(V20PresFormatHandlerError) as context:
                 await self.manager.receive_pres(pres_x, connection_record)
             assert "Presentation referent" in str(context.exception)
 
@@ -1550,7 +1552,7 @@ class TestV20PresManager(AsyncTestCase):
             V20PresExRecord, "retrieve_by_tag_filter", autospec=True
         ) as retrieve_ex:
             retrieve_ex.return_value = px_rec_dummy
-            with self.assertRaises(V20PresFormatError) as context:
+            with self.assertRaises(V20PresFormatHandlerError) as context:
                 await self.manager.receive_pres(pres_x, connection_record)
             assert "not in proposal request" in str(context.exception)
 
@@ -1608,7 +1610,7 @@ class TestV20PresManager(AsyncTestCase):
             V20PresExRecord, "retrieve_by_tag_filter", autospec=True
         ) as retrieve_ex:
             retrieve_ex.return_value = px_rec_dummy
-            with self.assertRaises(V20PresFormatError) as context:
+            with self.assertRaises(V20PresFormatHandlerError) as context:
                 await self.manager.receive_pres(pres_x, connection_record)
             assert "shenanigans not in presentation" in str(context.exception)
 
@@ -1666,7 +1668,7 @@ class TestV20PresManager(AsyncTestCase):
             V20PresExRecord, "retrieve_by_tag_filter", autospec=True
         ) as retrieve_ex:
             retrieve_ex.return_value = px_rec_dummy
-            with self.assertRaises(V20PresFormatError) as context:
+            with self.assertRaises(V20PresFormatHandlerError) as context:
                 await self.manager.receive_pres(pres_x, connection_record)
             assert "highScore mismatches proposal request" in str(context.exception)
 
@@ -1724,7 +1726,7 @@ class TestV20PresManager(AsyncTestCase):
             V20PresExRecord, "retrieve_by_tag_filter", autospec=True
         ) as retrieve_ex:
             retrieve_ex.return_value = px_rec_dummy
-            with self.assertRaises(V20PresFormatError) as context:
+            with self.assertRaises(V20PresFormatHandlerError) as context:
                 await self.manager.receive_pres(pres_x, connection_record)
             assert "does not satisfy proof request restrictions " in str(
                 context.exception

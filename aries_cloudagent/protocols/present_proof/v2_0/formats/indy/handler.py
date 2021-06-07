@@ -28,7 +28,7 @@ from ...messages.pres import V20Pres
 from ...messages.pres_format import V20PresFormat
 from ...models.pres_exchange import V20PresExRecord
 
-from ..handler import V20PresFormatHandler, V20PresFormatError
+from ..handler import V20PresFormatHandler, V20PresFormatHandlerError
 
 LOGGER = logging.getLogger(__name__)
 
@@ -143,7 +143,9 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
                 )
             except ValueError as err:
                 LOGGER.warning(f"{err}")
-                raise V20PresFormatError(f"No matching Indy credentials found: {err}")
+                raise V20PresFormatHandlerError(
+                    f"No matching Indy credentials found: {err}"
+                )
         else:
             if IndyPresExchangeHandler.format.api in request_data:
                 indy_spec = request_data.get(IndyPresExchangeHandler.format.api)
@@ -174,7 +176,7 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
             for reft, attr_spec in proof["requested_proof"]["revealed_attrs"].items():
                 proof_req_attr_spec = proof_req["requested_attributes"].get(reft)
                 if not proof_req_attr_spec:
-                    raise V20PresFormatError(
+                    raise V20PresFormatHandlerError(
                         f"Presentation referent {reft} not in proposal request"
                     )
                 req_restrictions = proof_req_attr_spec.get("restrictions", {})
@@ -195,7 +197,7 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
                 }
 
                 if not any(r.items() <= criteria.items() for r in req_restrictions):
-                    raise V20PresFormatError(
+                    raise V20PresFormatHandlerError(
                         f"Presented attribute {reft} does not satisfy proof request "
                         f"restrictions {req_restrictions}"
                     )
@@ -206,7 +208,7 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
             ):
                 proof_req_attr_spec = proof_req["requested_attributes"].get(reft)
                 if not proof_req_attr_spec:
-                    raise V20PresFormatError(
+                    raise V20PresFormatHandlerError(
                         f"Presentation referent {reft} not in proposal request"
                     )
                 req_restrictions = proof_req_attr_spec.get("restrictions", {})
@@ -230,7 +232,7 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
                 }
 
                 if not any(r.items() <= criteria.items() for r in req_restrictions):
-                    raise V20PresFormatError(
+                    raise V20PresFormatHandlerError(
                         f"Presented attr group {reft} does not satisfy proof request "
                         f"restrictions {req_restrictions}"
                     )
@@ -239,7 +241,7 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
             for reft, pred_spec in proof["requested_proof"]["predicates"].items():
                 proof_req_pred_spec = proof_req["requested_predicates"].get(reft)
                 if not proof_req_pred_spec:
-                    raise V20PresFormatError(
+                    raise V20PresFormatHandlerError(
                         f"Presentation referent {reft} not in proposal request"
                     )
                 req_name = proof_req_pred_spec["name"]
@@ -261,13 +263,13 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
                         Predicate.get(proof_pred_spec["p_type"]) is req_pred
                         and proof_pred_spec["value"] == req_value
                     ):
-                        raise V20PresFormatError(
+                        raise V20PresFormatHandlerError(
                             f"Presentation predicate on {req_name} "
                             "mismatches proposal request"
                         )
                     break
                 else:
-                    raise V20PresFormatError(
+                    raise V20PresFormatHandlerError(
                         f"Proposed request predicate on {req_name} not in presentation"
                     )
 
@@ -283,7 +285,7 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
                 }
 
                 if not any(r.items() <= criteria.items() for r in req_restrictions):
-                    raise V20PresFormatError(
+                    raise V20PresFormatHandlerError(
                         f"Presented predicate {reft} does not satisfy proof request "
                         f"restrictions {req_restrictions}"
                     )

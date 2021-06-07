@@ -6,6 +6,7 @@ from marshmallow import ValidationError
 from .......core.in_memory import InMemoryProfile
 from .......messaging.decorators.attach_decorator import AttachDecorator
 from .......storage.vc_holder.base import VCHolder
+from .......storage.vc_holder.vc_record import VCRecord
 from .......vc.ld_proofs import (
     DocumentLoader,
     Ed25519Signature2018,
@@ -30,7 +31,7 @@ from ....messages.pres_request import V20PresRequest
 from ....messages.pres_format import V20PresFormat
 from ....models.pres_exchange import V20PresExRecord
 
-from ...handler import V20PresFormatError
+from ...handler import V20PresFormatHandlerError
 
 from .. import handler as test_module
 from ..handler import DIFPresFormatHandler
@@ -97,7 +98,8 @@ DIF_PRES_REQUEST_B = {
                 "name": "EU Driver's License",
                 "group": ["A"],
                 "schema": [
-                    {"uri": "https://www.w3.org/2018/credentials#VerifiableCredential"}
+                    {"uri": "https://www.w3.org/2018/credentials#VerifiableCredential"},
+                    {"uri": "https://w3id.org/citizenship#PermanentResidentCard"},
                 ],
                 "constraints": {
                     "limit_disclosure": "required",
@@ -124,7 +126,8 @@ DIF_PRES_PROPOSAL = {
             "name": "EU Driver's License",
             "group": ["A"],
             "schema": [
-                {"uri": "https://www.w3.org/2018/credentials#VerifiableCredential"}
+                {"uri": "https://www.w3.org/2018/credentials#VerifiableCredential"},
+                {"uri": "https://w3id.org/citizenship#PermanentResidentCard"},
             ],
             "constraints": {
                 "fields": [
@@ -524,7 +527,7 @@ class TestDIFFormatHandler(AsyncTestCase):
                 )
             ),
         )
-        with self.assertRaises(V20PresFormatError):
+        with self.assertRaises(V20PresFormatHandlerError):
             await self.handler.create_pres(record)
 
     async def test_create_pres_pd_claim_format_ed255(self):
@@ -699,7 +702,7 @@ class TestDIFFormatHandler(AsyncTestCase):
             error_msg="error",
         )
 
-        with self.assertRaises(V20PresFormatError):
+        with self.assertRaises(V20PresFormatHandlerError):
             await self.handler.verify_pres(record)
 
     async def test_verify_pres_invalid_challenge(self):
@@ -741,5 +744,91 @@ class TestDIFFormatHandler(AsyncTestCase):
             error_msg="error",
         )
 
-        with self.assertRaises(V20PresFormatError):
+        with self.assertRaises(V20PresFormatHandlerError):
             await self.handler.verify_pres(record)
+
+    async def test_create_pres_cred_v1_context_schema_uri(self):
+        test_pd = deepcopy(DIF_PRES_REQUEST_B)
+        test_pd["presentation_definition"]["input_descriptors"][0]["schema"].pop(1)
+        dif_pres_request = V20PresRequest(
+            formats=[
+                V20PresFormat(
+                    attach_id="dif",
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.DIF.api
+                    ],
+                )
+            ],
+            request_presentations_attach=[
+                AttachDecorator.data_json(test_pd, ident="dif")
+            ],
+        )
+        record = V20PresExRecord(
+            pres_ex_id="pxid",
+            thread_id="thid",
+            connection_id="conn_id",
+            initiator="init",
+            role="role",
+            state="state",
+            pres_request=dif_pres_request,
+            verified="false",
+            auto_present=True,
+            error_msg="error",
+        )
+
+        with self.assertRaises(V20PresFormatHandlerError):
+            await self.handler.create_pres(record)
+
+    async def test_process_vcrecords_return_list(self):
+        cred_list = [
+            VCRecord(
+                contexts=[
+                    "https://www.w3.org/2018/credentials/v1",
+                    "https://www.w3.org/2018/credentials/examples/v1",
+                ],
+                expanded_types=[
+                    "https://www.w3.org/2018/credentials#VerifiableCredential",
+                    "https://example.org/examples#UniversityDegreeCredential",
+                ],
+                issuer_id="https://example.edu/issuers/565049",
+                subject_ids=[
+                    "did:sov:LjgpST2rjsoxYegQDRm7EL",
+                    "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
+                ],
+                proof_types=["BbsBlsSignature2020"],
+                schema_ids=["https://example.org/examples/degree.json"],
+                cred_value={"...": "..."},
+                given_id="http://example.edu/credentials/3732",
+                cred_tags={"some": "tag"},
+                record_id="test1",
+            ),
+            VCRecord(
+                contexts=[
+                    "https://www.w3.org/2018/credentials/v1",
+                    "https://www.w3.org/2018/credentials/examples/v1",
+                ],
+                expanded_types=[
+                    "https://www.w3.org/2018/credentials#VerifiableCredential",
+                    "https://example.org/examples#UniversityDegreeCredential",
+                ],
+                issuer_id="https://example.edu/issuers/565049",
+                subject_ids=[
+                    "did:sov:LjgpST2rjsoxYegQDRm7EL",
+                    "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
+                ],
+                proof_types=["BbsBlsSignature2020"],
+                schema_ids=["https://example.org/examples/degree.json"],
+                cred_value={"...": "..."},
+                given_id="http://example.edu/credentials/3732",
+                cred_tags={"some": "tag"},
+                record_id="test2",
+            ),
+        ]
+        record_ids = {"test1"}
+        (
+            returned_cred_list,
+            returned_record_ids,
+        ) = await self.handler.process_vcrecords_return_list(cred_list, record_ids)
+        assert len(returned_cred_list) == 1
+        assert len(returned_record_ids) == 2
+        assert returned_cred_list[0].record_id == "test2"

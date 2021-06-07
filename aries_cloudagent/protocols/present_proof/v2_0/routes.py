@@ -2,7 +2,7 @@
 
 import json
 
-from typing import Mapping
+from typing import Mapping, Sequence, Tuple
 
 from aiohttp import web
 from aiohttp_apispec import (
@@ -34,7 +34,9 @@ from ....messaging.valid import (
 )
 from ....storage.error import StorageError, StorageNotFoundError
 from ....storage.vc_holder.base import VCHolder
+from ....storage.vc_holder.vc_record import VCRecord
 from ....utils.tracing import trace_event, get_timer, AdminAPIMessageTracingSchema
+from ....vc.ld_proofs.constants import EXPANDED_TYPE_CREDENTIALS_CONTEXT_V1_VC_TYPE
 from ....wallet.error import WalletNotFoundError
 
 from ..dif.pres_exch import InputDescriptors
@@ -45,7 +47,7 @@ from ..dif.pres_request_schema import (
 )
 
 from . import problem_report_for_record, report_problem
-from .formats.handler import V20PresFormatError
+from .formats.handler import V20PresFormatHandlerError
 from .manager import V20PresManager
 from .message_types import (
     ATTACHMENT_FORMAT,
@@ -497,30 +499,58 @@ async def present_proof_credentials_list(request: web.BaseRequest):
             input_descriptors = []
             for input_desc_dict in input_descriptors_list:
                 input_descriptors.append(InputDescriptors.deserialize(input_desc_dict))
-            expanded_types = []
-            schema_ids = []
+            record_ids = set()
             for input_descriptor in input_descriptors:
+                expanded_types = set()
+                schema_ids = set()
                 for schema in input_descriptor.schemas:
                     uri = schema.uri
                     required = schema.required or True
                     if required:
                         # JSONLD Expanded URLs
                         if "#" in uri:
-                            expanded_types.append(uri)
+                            expanded_types.add(uri)
                         else:
-                            schema_ids.append(uri)
-            if len(schema_ids) == 0:
-                schema_ids = None
-            if len(expanded_types) == 0:
-                expanded_types = None
-            search = dif_holder.search_credentials(
-                types=expanded_types,
-                schema_ids=schema_ids,
-            )
-            dif_credentials = await search.fetch(count)
-            for record in dif_credentials:
-                dif_cred_value_list.append(record.cred_value)
-    except StorageNotFoundError as err:
+                            schema_ids.add(uri)
+                if len(schema_ids) == 0:
+                    schema_ids_list = None
+                else:
+                    schema_ids_list = list(schema_ids)
+                if len(expanded_types) == 0:
+                    expanded_types_list = None
+                else:
+                    expanded_types_list = list(expanded_types)
+                    # Raise Exception if expanded type extracted from
+                    # CREDENTIALS_CONTEXT_V1_URL and
+                    # VERIFIABLE_CREDENTIAL_TYPE is the only schema.uri
+                    # specified in the presentation_definition.
+                    if len(expanded_types_list) == 1:
+                        if expanded_types_list[0] in [
+                            EXPANDED_TYPE_CREDENTIALS_CONTEXT_V1_VC_TYPE
+                        ]:
+                            raise V20PresFormatHandlerError(
+                                "Only expanded type extracted from "
+                                "CREDENTIALS_CONTEXT_V1_URL "
+                                "and VERIFIABLE_CREDENTIAL_TYPE "
+                                "included as the schema.uri"
+                            )
+                search = dif_holder.search_credentials(
+                    types=expanded_types_list,
+                    schema_ids=schema_ids_list,
+                )
+                records = await search.fetch(count)
+                # Avoiding addition of duplicate records
+                vcrecord_list, vcrecord_ids_set = await process_vcrecords_return_list(
+                    records, record_ids
+                )
+                record_ids = vcrecord_ids_set
+                dif_credentials = dif_credentials + vcrecord_list
+            for dif_credential in dif_credentials:
+                dif_cred_value_list.append(dif_credential.cred_value)
+    except (
+        StorageNotFoundError,
+        V20PresFormatHandlerError,
+    ) as err:
         if pres_ex_record:
             async with context.session() as session:
                 await pres_ex_record.save_error_state(session, reason=err.roll_up)
@@ -533,6 +563,18 @@ async def present_proof_credentials_list(request: web.BaseRequest):
         )
     credentials = indy_credentials + dif_cred_value_list
     return web.json_response(credentials)
+
+
+async def process_vcrecords_return_list(
+    vc_records: Sequence[VCRecord], record_ids: set
+) -> Tuple[Sequence[VCRecord], set]:
+    """Return list of non-duplicate VCRecords."""
+    to_add = []
+    for vc_record in vc_records:
+        if vc_record.record_id not in record_ids:
+            to_add.append(vc_record)
+            record_ids.add(vc_record.record_id)
+    return (to_add, record_ids)
 
 
 @docs(tags=["present-proof v2.0"], summary="Sends a presentation proposal")
@@ -907,7 +949,7 @@ async def present_proof_send_presentation(request: web.BaseRequest):
         BaseModelError,
         IndyHolderError,
         LedgerError,
-        V20PresFormatError,
+        V20PresFormatHandlerError,
         StorageError,
         WalletNotFoundError,
     ) as err:

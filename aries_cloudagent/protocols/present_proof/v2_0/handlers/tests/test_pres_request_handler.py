@@ -585,7 +585,7 @@ class TestPresRequestHandler(AsyncTestCase):
             )
 
             mock_pres_mgr.return_value.create_pres = async_mock.CoroutineMock(
-                side_effect=test_indy_handler.V20PresFormatError
+                side_effect=test_indy_handler.V20PresFormatHandlerError
             )
             request_context.connection_ready = True
             handler = test_module.V20PresRequestHandler()

@@ -43,8 +43,6 @@ from .test_data import (
     get_test_data,
     edd_jsonld_creds,
     bbs_bls_number_filter_creds,
-    bbs_signed_nested_cred_no_credsubjectid,
-    bbs_signed_nested_cred_credsubjectid,
     bbs_signed_cred_no_credsubjectid,
     bbs_signed_cred_credsubjectid,
 )
@@ -1487,13 +1485,12 @@ class TestPresExchHandler:
             == 0
         )
 
-    @pytest.mark.asyncio
-    async def test_cred_schema_match(self, setup_tuple, profile):
+    def test_cred_schema_match_a(self, setup_tuple, profile):
         cred_list, pd_list = setup_tuple
         dif_pres_exch_handler = DIFPresExchHandler(profile)
         tmp_cred = deepcopy(cred_list[0])
         assert (
-            await dif_pres_exch_handler.credential_match_schema(
+            dif_pres_exch_handler.credential_match_schema(
                 tmp_cred, "https://www.w3.org/2018/credentials#VerifiableCredential"
             )
             is True
@@ -1531,17 +1528,16 @@ class TestPresExchHandler:
             test_nested_result, {}
         )
 
-    @pytest.mark.asyncio
-    async def test_subject_is_issuer(self, setup_tuple, profile):
+    def test_subject_is_issuer(self, setup_tuple, profile):
         cred_list, pd_list = setup_tuple
         dif_pres_exch_handler = DIFPresExchHandler(profile)
         tmp_cred = deepcopy(cred_list[0])
         tmp_cred.issuer_id = "4fc82e63-f897-4dad-99cc-f698dff6c425"
         tmp_cred.subject_ids.add("4fc82e63-f897-4dad-99cc-f698dff6c425")
         assert tmp_cred.subject_ids is not None
-        assert await dif_pres_exch_handler.subject_is_issuer(tmp_cred) is True
+        assert dif_pres_exch_handler.subject_is_issuer(tmp_cred) is True
         tmp_cred.issuer_id = "19b823fb-55ef-49f4-8caf-2a26b8b9286f"
-        assert await dif_pres_exch_handler.subject_is_issuer(tmp_cred) is False
+        assert dif_pres_exch_handler.subject_is_issuer(tmp_cred) is False
 
     @pytest.mark.asyncio
     def test_is_numeric(self, profile):
@@ -1714,8 +1710,7 @@ class TestPresExchHandler:
             val="test", _filter=Filter()
         )
 
-    @pytest.mark.asyncio
-    async def test_credential_schema_match(self, profile):
+    def test_cred_schema_match_b(self, profile):
         dif_pres_exch_handler = DIFPresExchHandler(profile)
         test_cred_dict = {
             "@context": [
@@ -1739,7 +1734,7 @@ class TestPresExchHandler:
             },
         }
         test_cred = dif_pres_exch_handler.create_vcrecord(test_cred_dict)
-        assert await dif_pres_exch_handler.credential_match_schema(
+        assert dif_pres_exch_handler.credential_match_schema(
             test_cred, "https://example.org/examples/degree.json"
         )
 
@@ -2529,7 +2524,7 @@ class TestPresExchHandler:
                             "uri":"https://www.w3.org/2018/credentials#VerifiableCredential"
                         },
                         {
-                            "uri":"https://w3id.org/citizenship#PermanentResident"
+                            "uri":"https://w3id.org/citizenship#PermanentResidentCard"
                         }
                     ],
                     "constraints":{
@@ -2577,7 +2572,7 @@ class TestPresExchHandler:
                             "uri":"https://www.w3.org/2018/credentials#VerifiableCredential"
                         },
                         {
-                            "uri":"https://w3id.org/citizenship#PermanentResident"
+                            "uri":"https://w3id.org/citizenship#PermanentResidentCard"
                         }
                     ],
                     "constraints":{
@@ -2600,7 +2595,7 @@ class TestPresExchHandler:
         """
         tmp_pd = PresentationDefinition.deserialize(test_pd)
         tmp_vp = await dif_pres_exch_handler.create_vp(
-            credentials=[bbs_signed_cred_credsubjectid],
+            credentials=bbs_signed_cred_credsubjectid,
             pd=tmp_pd,
             challenge="1f44d55f-f161-4938-a659-f8026467f126",
         )
@@ -2656,7 +2651,7 @@ class TestPresExchHandler:
         """
         tmp_pd = PresentationDefinition.deserialize(test_pd)
         tmp_vp = await dif_pres_exch_handler.create_vp(
-            credentials=[bbs_signed_nested_cred_no_credsubjectid],
+            credentials=bbs_signed_cred_no_credsubjectid,
             pd=tmp_pd,
             challenge="1f44d55f-f161-4938-a659-f8026467f126",
         )
@@ -2712,7 +2707,7 @@ class TestPresExchHandler:
         """
         tmp_pd = PresentationDefinition.deserialize(test_pd)
         tmp_vp = await dif_pres_exch_handler.create_vp(
-            credentials=[bbs_signed_nested_cred_no_credsubjectid],
+            credentials=bbs_signed_cred_no_credsubjectid,
             pd=tmp_pd,
             challenge="1f44d55f-f161-4938-a659-f8026467f126",
         )
@@ -2767,7 +2762,7 @@ class TestPresExchHandler:
         """
         tmp_pd = PresentationDefinition.deserialize(test_pd)
         tmp_vp = await dif_pres_exch_handler.create_vp(
-            credentials=[bbs_signed_nested_cred_credsubjectid],
+            credentials=bbs_signed_cred_credsubjectid,
             pd=tmp_pd,
             challenge="1f44d55f-f161-4938-a659-f8026467f126",
         )

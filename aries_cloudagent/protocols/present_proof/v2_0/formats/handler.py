@@ -17,7 +17,7 @@ LOGGER = logging.getLogger(__name__)
 PresFormatAttachment = Tuple[V20PresFormat, AttachDecorator]
 
 
-class V20PresFormatError(BaseError):
+class V20PresFormatHandlerError(BaseError):
     """Presentation exchange format error under present-proof protocol v2.0."""
 
 

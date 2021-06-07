@@ -11,7 +11,7 @@ from .....utils.tracing import trace_event, get_timer
 from .....wallet.error import WalletNotFoundError
 
 from .. import problem_report_for_record
-from ..formats.handler import V20PresFormatError
+from ..formats.handler import V20PresFormatHandlerError
 from ..manager import V20PresManager
 from ..messages.pres_request import V20PresRequest
 from ..messages.pres_problem_report import ProblemReportReason
@@ -97,7 +97,7 @@ class V20PresRequestHandler(BaseHandler):
                 LedgerError,
                 StorageError,
                 WalletNotFoundError,
-                V20PresFormatError,
+                V20PresFormatHandlerError,
             ) as err:
                 self._logger.exception(err)
                 if pres_ex_record:
