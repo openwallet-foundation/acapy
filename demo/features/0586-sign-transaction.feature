@@ -69,13 +69,17 @@ Feature: RFC 0586 Aries sign (endorse) transactions functions
       And "Bob" authors a credential definition transaction with <Schema_name>
       And "Bob" requests endorsement for the transaction
       And "Acme" endorses the transaction
-      Then "Bob" can write the transaction to the ledger
+      And "Bob" can write the transaction to the ledger
       And "Bob" has written the credential definition for <Schema_name> to the ledger
+      And "Acme" has an issued <Schema_name> credential <Credential_data> from "Bob"
+      # TODO support for revocation
+      #Then "Bob" revokes the credential
+      And "Acme" has the credential issued
 
       Examples:
-         | Acme_capabilities                                   | Bob_capabilities             | Schema_name    |
-         | --revocation --public-did                           |                              | driverslicense |
-#         | --revocation --public-did --did-exchange             | --did-exchange               | driverslicense |
-#         | --revocation --public-did --mediation                | --mediation                  | driverslicense |
-#         | --revocation --public-did --multitenant              | --multitenant                | driverslicense |
-#         | --revocation --public-did --mediation --multitenant  | --mediation --multitenant    | driverslicense |
+         | Acme_capabilities                                   | Bob_capabilities                          | Schema_name    | Credential_data          |
+         | --revocation --public-did                           | --revocation                              | driverslicense | Data_DL_NormalizedValues |
+#         | --revocation --public-did --did-exchange             | --revocation --did-exchange               | driverslicense | Data_DL_NormalizedValues |
+#         | --revocation --public-did --mediation                | --revocation --mediation                  | driverslicense | Data_DL_NormalizedValues |
+#         | --revocation --public-did --multitenant              | --revocation --multitenant                | driverslicense | Data_DL_NormalizedValues |
+#         | --revocation --public-did --mediation --multitenant  | --revocation --mediation --multitenant    | driverslicense | Data_DL_NormalizedValues |

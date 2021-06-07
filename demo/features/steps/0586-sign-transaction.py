@@ -181,6 +181,8 @@ def step_impl(context, agent_name, schema_name):
     schema_id = schemas["schema_ids"][0]
     schema = agent_container_GET(agent["agent"], "/schemas/" + schema_id)
 
+    context.schema_name = schema_name
+
     # TODO assert goodness
 
 
@@ -202,8 +204,9 @@ def step_impl(context, agent_name, schema_name):
         data={
             "schema_id": schema_id,
             "tag": "test_cred_def_with_endorsement",
-            "support_revocation": True,
-            "revocation_registry_size": 1000
+            # TODO add for revocation
+            #"support_revocation": True,
+            #"revocation_registry_size": 1000
         },
         params={"conn_id": connection_id, "create_transaction_for_endorser": "true"},
     )
@@ -228,6 +231,25 @@ def step_impl(context, agent_name, schema_name):
     cred_def_id = cred_defs["credential_definition_ids"][0]
     cred_def = agent_container_GET(agent["agent"], "/credential-definitions/" + cred_def_id)
 
+    context.cred_def_id = cred_def_id
+
     # TODO assert goodness
 
+
+@when(
+    '"{holder}" has an issued {schema_name} credential {credential_data} from "{issuer}"'
+)
+def step_impl(context, holder, schema_name, credential_data, issuer):
+    context.execute_steps(
+        u'''
+        When "'''
+        + issuer
+        + """" offers a credential with data """
+        + credential_data
+        + '''
+        Then "'''
+        + holder
+        + """" has the credential issued
+    """
+    )
 
