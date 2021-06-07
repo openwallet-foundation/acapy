@@ -533,6 +533,11 @@ class DIFPresExchHandler:
         """
         credential_dict = credential.cred_value
         for path in field.paths:
+            if "$.proof." in path:
+                raise DIFPresExchError(
+                    "JSON Path expression matching on proof object "
+                    "is not currently supported"
+                )
             jsonpath = parse(path)
             match = jsonpath.find(credential_dict)
             if len(match) == 0:

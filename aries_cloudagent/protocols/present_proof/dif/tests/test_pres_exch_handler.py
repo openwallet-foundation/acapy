@@ -33,6 +33,7 @@ from ..pres_exch import (
     Filter,
     SchemaInputDescriptor,
     Constraints,
+    DIFField,
 )
 from ..pres_exch_handler import (
     DIFPresExchHandler,
@@ -2778,3 +2779,31 @@ class TestPresExchHandler:
             .get("name")
             == "Bachelor of Science and Arts"
         )
+
+    @pytest.mark.asyncio
+    async def test_filter_by_field_path_match_on_proof(self, profile):
+        dif_pres_exch_handler = DIFPresExchHandler(profile)
+        field = DIFField(paths=["$.proof.proofPurpose"])
+        cred = VCRecord(
+            contexts=[
+                "https://www.w3.org/2018/credentials/v1",
+                "https://www.w3.org/2018/credentials/examples/v1",
+            ],
+            expanded_types=[
+                "https://www.w3.org/2018/credentials#VerifiableCredential",
+                "https://example.org/examples#UniversityDegreeCredential",
+            ],
+            issuer_id="https://example.edu/issuers/565049",
+            subject_ids=[
+                "did:sov:LjgpST2rjsoxYegQDRm7EL",
+                "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
+            ],
+            proof_types=["BbsBlsSignature2020"],
+            schema_ids=["https://example.org/examples/degree.json"],
+            cred_value={"...": "..."},
+            given_id="http://example.edu/credentials/3732",
+            cred_tags={"some": "tag"},
+            record_id="test1",
+        )
+        with pytest.raises(DIFPresExchError):
+            await dif_pres_exch_handler.filter_by_field(field, cred)
