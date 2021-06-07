@@ -6,14 +6,7 @@ import re
 from typing import NamedTuple, Pattern, Sequence, Union
 import warnings
 
-from pydid import DID, DIDDocument
-from pydid.options import (
-    doc_allow_public_key,
-    doc_insert_missing_ids,
-    vm_allow_controller_list,
-    vm_allow_missing_controller,
-    vm_allow_type_list,
-)
+from pydid import DID
 
 from ..config.injection_context import InjectionContext
 from ..core.error import BaseError
@@ -55,7 +48,7 @@ class ResolutionMetadata(NamedTuple):
 class ResolutionResult:
     """Resolution Class to pack the DID Doc and the resolution information."""
 
-    def __init__(self, did_document: DIDDocument, metadata: ResolutionMetadata):
+    def __init__(self, did_document: dict, metadata: ResolutionMetadata):
         """Initialize Resolution.
 
         Args:
@@ -68,7 +61,7 @@ class ResolutionResult:
     def serialize(self) -> dict:
         """Return serialized resolution result."""
         return {
-            "did_document": self.did_document.serialize(),
+            "did_document": self.did_document,
             "metadata": self.metadata.serialize(),
         }
 
@@ -137,7 +130,7 @@ class BaseDIDResolver(ABC):
 
         return bool(supported_did_regex.match(did))
 
-    async def resolve(self, profile: Profile, did: Union[str, DID]) -> DIDDocument:
+    async def resolve(self, profile: Profile, did: Union[str, DID]) -> dict:
         """Resolve a DID using this resolver."""
         if isinstance(did, DID):
             did = str(did)
@@ -148,17 +141,7 @@ class BaseDIDResolver(ABC):
                 f"{self.__class__.__name__} does not support DID method for: {did}"
             )
 
-        doc_dict = await self._resolve(profile, did)
-        return DIDDocument.deserialize(
-            doc_dict,
-            options={
-                doc_insert_missing_ids,
-                doc_allow_public_key,
-                vm_allow_controller_list,
-                vm_allow_missing_controller,
-                vm_allow_type_list,
-            },
-        )
+        return await self._resolve(profile, did)
 
     @abstractmethod
     async def _resolve(self, profile: Profile, did: str) -> dict:

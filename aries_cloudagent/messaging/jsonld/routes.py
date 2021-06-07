@@ -3,7 +3,7 @@
 from aiohttp import web
 from aiohttp_apispec import docs, request_schema, response_schema
 from marshmallow import INCLUDE, Schema, fields
-from pydid.doc.verification_method import VerificationMethod
+from pydid import VerificationMethod
 
 from ...admin.request_context import AdminRequestContext
 from ...config.base import InjectionError

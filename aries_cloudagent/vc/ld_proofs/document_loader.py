@@ -45,7 +45,7 @@ class DocumentLoader:
             "contentType": "application/ld+json",
             "contextUrl": None,
             "documentUrl": did,
-            "document": did_document.serialize(),
+            "document": did_document,
         }
 
         return document
