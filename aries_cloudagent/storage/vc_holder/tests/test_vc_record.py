@@ -108,8 +108,8 @@ CONTEXTS = [
     "https://www.w3.org/2018/credentials/examples/v1",
 ]
 TYPES = [
-    "https://www.w3.org/2018/credentials/v1/VerifiableCredential",
-    "https://www.w3.org/2018/credentials/examples/v1/UniversityDegreeCredential",
+    "https://www.w3.org/2018/credentials#VerifiableCredential",
+    "https://example.org/examples#UniversityDegreeCredential",
 ]
 ISSUER_ID = "https://example.edu/issuers/14"
 SUBJECT_IDS = ["did:example:ebfeb1f712ebc6f1c276e12ec21"]
@@ -123,7 +123,7 @@ CRED_VALUE = {"...": "..."}
 def test_record() -> VCRecord:
     return VCRecord(
         contexts=CONTEXTS,
-        types=TYPES,
+        expanded_types=TYPES,
         schema_ids=SCHEMA_IDS,
         issuer_id=ISSUER_ID,
         subject_ids=SUBJECT_IDS,
@@ -139,7 +139,7 @@ class TestVCRecord(AsyncTestCase):
         record = test_record()
 
         assert record.contexts == set(CONTEXTS)
-        assert record.types == set(TYPES)
+        assert record.expanded_types == set(TYPES)
         assert record.schema_ids == set(SCHEMA_IDS)
         assert record.subject_ids == set(SUBJECT_IDS)
         assert record.proof_types == set(PROOF_TYPES)

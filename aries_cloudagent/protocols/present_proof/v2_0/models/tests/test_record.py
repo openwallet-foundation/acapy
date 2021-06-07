@@ -1,7 +1,7 @@
 from asynctest import mock as async_mock, TestCase as AsyncTestCase
 
 from ......core.in_memory import InMemoryProfile
-from ......indy.sdk.models.pres_preview import (
+from ......indy.models.pres_preview import (
     IndyPresAttrSpec,
     IndyPresPredSpec,
     IndyPresPreview,

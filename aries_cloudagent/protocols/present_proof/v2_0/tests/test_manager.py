@@ -7,25 +7,23 @@ from asynctest import mock as async_mock, TestCase as AsyncTestCase
 
 from .....core.in_memory import InMemoryProfile
 from .....indy.holder import IndyHolder
-from .....indy.sdk.holder import IndySdkHolder
-from .....indy.issuer import IndyIssuer
-from .....indy.sdk.models.pres_preview import (
+from .....indy.models.xform import indy_proof_req_preview2indy_requested_creds
+from .....indy.models.pres_preview import (
     IndyPresAttrSpec,
     IndyPresPreview,
     IndyPresPredSpec,
 )
+from .....indy.verifier import IndyVerifier
 from .....ledger.base import BaseLedger
 from .....messaging.decorators.attach_decorator import AttachDecorator
-from .....messaging.request_context import RequestContext
 from .....messaging.responder import BaseResponder, MockResponder
 from .....storage.error import StorageNotFoundError
-from .....indy.sdk.models.xform import indy_proof_req_preview2indy_requested_creds
-from .....indy.sdk.verifier import IndySdkVerifier
-from .....indy.verifier import IndyVerifier
 
-from ....didcomm_prefix import DIDCommPrefix
+from ...indy import pres_exch_handler as test_indy_util_module
 
 from .. import manager as test_module
+from ..formats.handler import V20PresFormatHandlerError
+from ..formats.indy import handler as test_indy_handler
 from ..manager import V20PresManager, V20PresManagerError
 from ..message_types import (
     ATTACHMENT_FORMAT,
@@ -34,13 +32,11 @@ from ..message_types import (
     PRES_20,
 )
 from ..messages.pres import V20Pres
-from ..messages.pres_ack import V20PresAck
 from ..messages.pres_format import V20PresFormat
 from ..messages.pres_problem_report import V20PresProblemReport
 from ..messages.pres_proposal import V20PresProposal
 from ..messages.pres_request import V20PresRequest
 from ..models.pres_exchange import V20PresExRecord
-
 
 CONN_ID = "connection_id"
 ISSUER_DID = "NcYxiDXkpYi6ov5FcYDi1e"
@@ -502,7 +498,11 @@ class TestV20PresManager(AsyncTestCase):
                 assert diff[i] == diff[j] if i == j else diff[i] != diff[j]
 
     async def test_create_exchange_for_proposal(self):
-        proposal = V20PresProposal()
+        proposal = V20PresProposal(
+            formats=[
+                V20PresFormat(attach_id="indy", format_=V20PresFormat.Format.INDY.aries)
+            ]
+        )
 
         with async_mock.patch.object(
             V20PresExRecord, "save", autospec=True
@@ -521,8 +521,11 @@ class TestV20PresManager(AsyncTestCase):
 
     async def test_receive_proposal(self):
         connection_record = async_mock.MagicMock(connection_id=CONN_ID)
-        proposal = V20PresProposal()
-
+        proposal = V20PresProposal(
+            formats=[
+                V20PresFormat(attach_id="indy", format_=V20PresFormat.Format.INDY.aries)
+            ]
+        )
         with async_mock.patch.object(V20PresExRecord, "save", autospec=True) as save_ex:
             px_rec = await self.manager.receive_pres_proposal(
                 proposal,
@@ -553,15 +556,52 @@ class TestV20PresManager(AsyncTestCase):
             role=V20PresExRecord.ROLE_VERIFIER,
         )
         px_rec.save = async_mock.CoroutineMock()
+        request_data = {
+            "name": PROOF_REQ_NAME,
+            "version": PROOF_REQ_VERSION,
+            "nonce": PROOF_REQ_NONCE,
+        }
         (ret_px_rec, pres_req_msg) = await self.manager.create_bound_request(
             pres_ex_record=px_rec,
-            name=PROOF_REQ_NAME,
-            version=PROOF_REQ_VERSION,
-            nonce=PROOF_REQ_NONCE,
+            request_data=request_data,
             comment=comment,
         )
         assert ret_px_rec is px_rec
         px_rec.save.assert_called_once()
+
+    async def test_create_bound_request_no_format(self):
+        px_rec = V20PresExRecord(
+            pres_proposal=V20PresProposal(
+                formats=[],
+                proposals_attach=[],
+            ).serialize(),
+            role=V20PresExRecord.ROLE_VERIFIER,
+        )
+        with self.assertRaises(V20PresManagerError) as context:
+            await self.manager.create_bound_request(
+                pres_ex_record=px_rec,
+                request_data={},
+                comment="test",
+            )
+        assert "No supported formats" in str(context.exception)
+
+    async def test_create_pres_no_format(self):
+        px_rec = V20PresExRecord(
+            pres_proposal=V20PresProposal(
+                formats=[],
+                proposals_attach=[],
+            ).serialize(),
+            pres_request=V20PresRequest(
+                formats=[], request_presentations_attach=[]
+            ).serialize(),
+        )
+        with self.assertRaises(V20PresManagerError) as context:
+            await self.manager.create_pres(
+                pres_ex_record=px_rec,
+                request_data={},
+                comment="test",
+            )
+        assert "No supported formats" in str(context.exception)
 
     async def test_create_exchange_for_request(self):
         pres_req = V20PresRequest(
@@ -599,7 +639,7 @@ class TestV20PresManager(AsyncTestCase):
 
             assert px_rec_out.state == V20PresExRecord.STATE_REQUEST_RECEIVED
 
-    async def test_create_pres(self):
+    async def test_create_pres_indy(self):
         pres_request = V20PresRequest(
             formats=[
                 V20PresFormat(
@@ -622,9 +662,9 @@ class TestV20PresManager(AsyncTestCase):
         with async_mock.patch.object(
             V20PresExRecord, "save", autospec=True
         ) as save_ex, async_mock.patch.object(
-            test_module, "AttachDecorator", autospec=True
+            test_indy_handler, "AttachDecorator", autospec=True
         ) as mock_attach_decorator, async_mock.patch.object(
-            test_module, "RevocationRegistry", autospec=True
+            test_indy_util_module, "RevocationRegistry", autospec=True
         ) as mock_rr:
             mock_rr.from_definition = async_mock.MagicMock(return_value=more_magic_rr)
 
@@ -635,12 +675,13 @@ class TestV20PresManager(AsyncTestCase):
             req_creds = await indy_proof_req_preview2indy_requested_creds(
                 INDY_PROOF_REQ_NAME, preview=None, holder=self.holder
             )
+            request_data = {"indy": req_creds}
             assert not req_creds["self_attested_attributes"]
             assert len(req_creds["requested_attributes"]) == 2
             assert len(req_creds["requested_predicates"]) == 1
 
             (px_rec_out, pres_msg) = await self.manager.create_pres(
-                px_rec_in, req_creds
+                px_rec_in, request_data
             )
             save_ex.assert_called_once()
             assert px_rec_out.state == V20PresExRecord.STATE_PRESENTATION_SENT
@@ -671,9 +712,9 @@ class TestV20PresManager(AsyncTestCase):
         with async_mock.patch.object(
             V20PresExRecord, "save", autospec=True
         ) as save_ex, async_mock.patch.object(
-            test_module, "AttachDecorator", autospec=True
+            test_indy_handler, "AttachDecorator", autospec=True
         ) as mock_attach_decorator, async_mock.patch.object(
-            test_module, "RevocationRegistry", autospec=True
+            test_indy_util_module, "RevocationRegistry", autospec=True
         ) as mock_rr:
             mock_rr.from_definition = async_mock.MagicMock(return_value=more_magic_rr)
 
@@ -684,12 +725,13 @@ class TestV20PresManager(AsyncTestCase):
             req_creds = await indy_proof_req_preview2indy_requested_creds(
                 indy_proof_req_vcx, preview=None, holder=self.holder
             )
+            request_data = {"indy": req_creds}
             assert not req_creds["self_attested_attributes"]
             assert len(req_creds["requested_attributes"]) == 2
             assert len(req_creds["requested_predicates"]) == 1
 
             (px_rec_out, pres_msg) = await self.manager.create_pres(
-                px_rec_in, req_creds
+                px_rec_in, request_data
             )
             save_ex.assert_called_once()
             assert px_rec_out.state == V20PresExRecord.STATE_PRESENTATION_SENT
@@ -718,9 +760,9 @@ class TestV20PresManager(AsyncTestCase):
         with async_mock.patch.object(
             V20PresExRecord, "save", autospec=True
         ) as save_ex, async_mock.patch.object(
-            test_module, "AttachDecorator", autospec=True
+            test_indy_handler, "AttachDecorator", autospec=True
         ) as mock_attach_decorator, async_mock.patch.object(
-            test_module, "RevocationRegistry", autospec=True
+            test_indy_util_module, "RevocationRegistry", autospec=True
         ) as mock_rr:
             mock_rr.from_definition = async_mock.MagicMock(return_value=more_magic_rr)
 
@@ -731,12 +773,14 @@ class TestV20PresManager(AsyncTestCase):
             req_creds = await indy_proof_req_preview2indy_requested_creds(
                 INDY_PROOF_REQ_SELFIE, preview=None, holder=self.holder
             )
+            request_data = {"indy": req_creds}
+
             assert len(req_creds["self_attested_attributes"]) == 3
             assert not req_creds["requested_attributes"]
             assert not req_creds["requested_predicates"]
 
             (px_rec_out, pres_msg) = await self.manager.create_pres(
-                px_rec_in, req_creds
+                px_rec_in, request_data
             )
             save_ex.assert_called_once()
             assert px_rec_out.state == V20PresExRecord.STATE_PRESENTATION_SENT
@@ -798,9 +842,9 @@ class TestV20PresManager(AsyncTestCase):
         with async_mock.patch.object(
             V20PresExRecord, "save", autospec=True
         ) as save_ex, async_mock.patch.object(
-            test_module, "AttachDecorator", autospec=True
+            test_indy_handler, "AttachDecorator", autospec=True
         ) as mock_attach_decorator, async_mock.patch.object(
-            test_module.LOGGER, "info", async_mock.MagicMock()
+            test_indy_util_module.LOGGER, "info", async_mock.MagicMock()
         ) as mock_log_info:
             mock_attach_decorator.data_base64 = async_mock.MagicMock(
                 return_value=mock_attach_decorator
@@ -809,9 +853,16 @@ class TestV20PresManager(AsyncTestCase):
             req_creds = await indy_proof_req_preview2indy_requested_creds(
                 INDY_PROOF_REQ_NAME, preview=None, holder=self.holder
             )
+            request_data = {
+                "indy": {
+                    "self_attested_attributes": req_creds["self_attested_attributes"],
+                    "requested_attributes": req_creds["requested_attributes"],
+                    "requested_predicates": req_creds["requested_predicates"],
+                }
+            }
 
             (px_rec_out, pres_msg) = await self.manager.create_pres(
-                px_rec_in, req_creds
+                px_rec_in, request_data
             )
             save_ex.assert_called_once()
             assert px_rec_out.state == V20PresExRecord.STATE_PRESENTATION_SENT
@@ -819,7 +870,14 @@ class TestV20PresManager(AsyncTestCase):
             # exercise superfluous timestamp removal
             for pred_reft_spec in req_creds["requested_predicates"].values():
                 pred_reft_spec["timestamp"] = 1234567890
-            await self.manager.create_pres(px_rec_in, req_creds)
+            request_data = {
+                "indy": {
+                    "self_attested_attributes": req_creds["self_attested_attributes"],
+                    "requested_attributes": req_creds["requested_attributes"],
+                    "requested_predicates": req_creds["requested_predicates"],
+                }
+            }
+            await self.manager.create_pres(px_rec_in, request_data)
             mock_log_info.assert_called_once()
 
     async def test_create_pres_bad_revoc_state(self):
@@ -866,7 +924,9 @@ class TestV20PresManager(AsyncTestCase):
         )
         self.holder.create_presentation = async_mock.CoroutineMock(return_value="{}")
         self.holder.create_revocation_state = async_mock.CoroutineMock(
-            side_effect=test_module.IndyHolderError("Problem", {"message": "Nope"})
+            side_effect=test_indy_util_module.IndyHolderError(
+                "Problem", {"message": "Nope"}
+            )
         )
         self.profile.context.injector.bind_instance(IndyHolder, self.holder)
 
@@ -878,22 +938,20 @@ class TestV20PresManager(AsyncTestCase):
         with async_mock.patch.object(
             V20PresExRecord, "save", autospec=True
         ) as save_ex, async_mock.patch.object(
-            test_module, "AttachDecorator", autospec=True
+            test_indy_handler, "AttachDecorator", autospec=True
         ) as mock_attach_decorator, async_mock.patch.object(
-            test_module, "RevocationRegistry", autospec=True
-        ) as mock_rr:
+            test_indy_util_module, "RevocationRegistry", autospec=True
+        ) as mock_rr, async_mock.patch.object(
+            test_indy_util_module.LOGGER, "error", async_mock.MagicMock()
+        ) as mock_log_error:
             mock_rr.from_definition = async_mock.MagicMock(return_value=more_magic_rr)
 
             mock_attach_decorator.data_base64 = async_mock.MagicMock(
                 return_value=mock_attach_decorator
             )
-
-            req_creds = await indy_proof_req_preview2indy_requested_creds(
-                INDY_PROOF_REQ_NAME, preview=None, holder=self.holder
-            )
-
-            with self.assertRaises(test_module.IndyHolderError):
-                await self.manager.create_pres(px_rec_in, req_creds)
+            request_data = {}
+            with self.assertRaises(test_indy_util_module.IndyHolderError):
+                await self.manager.create_pres(px_rec_in, request_data)
 
     async def test_create_pres_multi_matching_proposal_creds_names(self):
         pres_request = V20PresRequest(
@@ -970,9 +1028,9 @@ class TestV20PresManager(AsyncTestCase):
         with async_mock.patch.object(
             V20PresExRecord, "save", autospec=True
         ) as save_ex, async_mock.patch.object(
-            test_module, "AttachDecorator", autospec=True
+            test_indy_handler, "AttachDecorator", autospec=True
         ) as mock_attach_decorator, async_mock.patch.object(
-            test_module, "RevocationRegistry", autospec=True
+            test_indy_util_module, "RevocationRegistry", autospec=True
         ) as mock_rr:
             mock_rr.from_definition = async_mock.MagicMock(return_value=more_magic_rr)
 
@@ -986,9 +1044,9 @@ class TestV20PresManager(AsyncTestCase):
             assert not req_creds["self_attested_attributes"]
             assert len(req_creds["requested_attributes"]) == 1
             assert len(req_creds["requested_predicates"]) == 1
-
+            request_data = {"indy": req_creds}
             (px_rec_out, pres_msg) = await self.manager.create_pres(
-                px_rec_in, req_creds
+                px_rec_in, request_data
             )
             save_ex.assert_called_once()
             assert px_rec_out.state == V20PresExRecord.STATE_PRESENTATION_SENT
@@ -1029,6 +1087,44 @@ class TestV20PresManager(AsyncTestCase):
             )
         )
         self.holder.get_credentials_for_presentation_request_by_referent = get_creds
+        await indy_proof_req_preview2indy_requested_creds(
+            INDY_PROOF_REQ_NAMES, preview=None, holder=self.holder
+        )
+
+    async def test_no_matching_creds_indy_handler(self):
+        pres_request = V20PresRequest(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy",
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.INDY.api
+                    ],
+                )
+            ],
+            request_presentations_attach=[
+                AttachDecorator.data_base64(INDY_PROOF_REQ_NAMES, ident="indy")
+            ],
+        )
+        px_rec_in = V20PresExRecord(pres_request=pres_request.serialize())
+        get_creds = async_mock.CoroutineMock(return_value=())
+        self.holder.get_credentials_for_presentation_request_by_referent = get_creds
+
+        with async_mock.patch.object(
+            V20PresExRecord, "save", autospec=True
+        ) as save_ex, async_mock.patch.object(
+            test_indy_handler, "AttachDecorator", autospec=True
+        ) as mock_attach_decorator:
+            mock_attach_decorator.data_base64 = async_mock.MagicMock(
+                return_value=mock_attach_decorator
+            )
+            request_data = {}
+            with self.assertRaises(
+                test_indy_handler.V20PresFormatHandlerError
+            ) as context:
+                (px_rec_out, pres_msg) = await self.manager.create_pres(
+                    px_rec_in, request_data
+                )
+            assert "No matching Indy" in str(context.exception)
 
     async def test_receive_pres(self):
         connection_record = async_mock.MagicMock(connection_id=CONN_ID)
@@ -1228,7 +1324,7 @@ class TestV20PresManager(AsyncTestCase):
             V20PresExRecord, "retrieve_by_tag_filter", autospec=True
         ) as retrieve_ex:
             retrieve_ex.return_value = px_rec_dummy
-            with self.assertRaises(V20PresManagerError) as context:
+            with self.assertRaises(V20PresFormatHandlerError) as context:
                 await self.manager.receive_pres(pres_x, connection_record)
             assert "does not satisfy proof request restrictions" in str(
                 context.exception
@@ -1284,7 +1380,7 @@ class TestV20PresManager(AsyncTestCase):
             V20PresExRecord, "retrieve_by_tag_filter", autospec=True
         ) as retrieve_ex:
             retrieve_ex.return_value = px_rec_dummy
-            with self.assertRaises(V20PresManagerError) as context:
+            with self.assertRaises(V20PresFormatHandlerError) as context:
                 await self.manager.receive_pres(pres_x, connection_record)
             assert "Presentation referent" in str(context.exception)
 
@@ -1343,7 +1439,7 @@ class TestV20PresManager(AsyncTestCase):
             V20PresExRecord, "retrieve_by_tag_filter", autospec=True
         ) as retrieve_ex:
             retrieve_ex.return_value = px_rec_dummy
-            with self.assertRaises(V20PresManagerError) as context:
+            with self.assertRaises(V20PresFormatHandlerError) as context:
                 await self.manager.receive_pres(pres_x, connection_record)
             assert "does not satisfy proof request restrictions " in str(
                 context.exception
@@ -1399,7 +1495,7 @@ class TestV20PresManager(AsyncTestCase):
             V20PresExRecord, "retrieve_by_tag_filter", autospec=True
         ) as retrieve_ex:
             retrieve_ex.return_value = px_rec_dummy
-            with self.assertRaises(V20PresManagerError) as context:
+            with self.assertRaises(V20PresFormatHandlerError) as context:
                 await self.manager.receive_pres(pres_x, connection_record)
             assert "Presentation referent" in str(context.exception)
 
@@ -1456,7 +1552,7 @@ class TestV20PresManager(AsyncTestCase):
             V20PresExRecord, "retrieve_by_tag_filter", autospec=True
         ) as retrieve_ex:
             retrieve_ex.return_value = px_rec_dummy
-            with self.assertRaises(V20PresManagerError) as context:
+            with self.assertRaises(V20PresFormatHandlerError) as context:
                 await self.manager.receive_pres(pres_x, connection_record)
             assert "not in proposal request" in str(context.exception)
 
@@ -1514,7 +1610,7 @@ class TestV20PresManager(AsyncTestCase):
             V20PresExRecord, "retrieve_by_tag_filter", autospec=True
         ) as retrieve_ex:
             retrieve_ex.return_value = px_rec_dummy
-            with self.assertRaises(V20PresManagerError) as context:
+            with self.assertRaises(V20PresFormatHandlerError) as context:
                 await self.manager.receive_pres(pres_x, connection_record)
             assert "shenanigans not in presentation" in str(context.exception)
 
@@ -1572,7 +1668,7 @@ class TestV20PresManager(AsyncTestCase):
             V20PresExRecord, "retrieve_by_tag_filter", autospec=True
         ) as retrieve_ex:
             retrieve_ex.return_value = px_rec_dummy
-            with self.assertRaises(V20PresManagerError) as context:
+            with self.assertRaises(V20PresFormatHandlerError) as context:
                 await self.manager.receive_pres(pres_x, connection_record)
             assert "highScore mismatches proposal request" in str(context.exception)
 
@@ -1630,7 +1726,7 @@ class TestV20PresManager(AsyncTestCase):
             V20PresExRecord, "retrieve_by_tag_filter", autospec=True
         ) as retrieve_ex:
             retrieve_ex.return_value = px_rec_dummy
-            with self.assertRaises(V20PresManagerError) as context:
+            with self.assertRaises(V20PresFormatHandlerError) as context:
                 await self.manager.receive_pres(pres_x, connection_record)
             assert "does not satisfy proof request restrictions " in str(
                 context.exception
@@ -1663,8 +1759,8 @@ class TestV20PresManager(AsyncTestCase):
             ],
         )
         px_rec_in = V20PresExRecord(
-            pres_request=pres_request.serialize(),
-            pres=pres.serialize(),
+            pres_request=pres_request,
+            pres=pres,
         )
 
         with async_mock.patch.object(V20PresExRecord, "save", autospec=True) as save_ex:

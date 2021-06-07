@@ -4,15 +4,15 @@ from typing import Mapping, Sequence
 
 from marshmallow import EXCLUDE, fields, validate
 
-from ....messaging.models.base import BaseModel, BaseModelSchema
-from ....messaging.valid import (
+from ...messaging.models.base import BaseModel, BaseModelSchema
+from ...messaging.valid import (
     INDY_CRED_DEF_ID,
     INDY_REV_REG_ID,
     INDY_SCHEMA_ID,
     INT_EPOCH,
     NUM_STR_WHOLE,
 )
-from ....utils.tracing import AdminAPIMessageTracingSchema
+from ...utils.tracing import AdminAPIMessageTracingSchema
 
 from .predicate import Predicate
 from .requested_creds import (

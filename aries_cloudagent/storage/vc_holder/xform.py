@@ -38,7 +38,7 @@ def storage_to_vc_record(record: StorageRecord) -> VCRecord:
             cred_tags[tagname] = tagval
     return VCRecord(
         contexts=contexts,
-        types=types,
+        expanded_types=types,
         schema_ids=schema_ids,
         issuer_id=issuer_id,
         subject_ids=subject_ids,
@@ -55,7 +55,7 @@ def vc_to_storage_record(cred: VCRecord) -> StorageRecord:
     tags = {}
     for ctx_val in cred.contexts:
         tags[f"ctxt:{ctx_val}"] = "1"
-    for type_val in cred.types:
+    for type_val in cred.expanded_types:
         tags[f"type:{type_val}"] = "1"
     for schema_val in cred.schema_ids:
         tags[f"schm:{schema_val}"] = "1"

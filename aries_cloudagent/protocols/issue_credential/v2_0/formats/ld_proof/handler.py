@@ -6,7 +6,11 @@ from typing import Mapping
 
 from marshmallow import EXCLUDE, INCLUDE
 
+from pyld import jsonld
+from pyld.jsonld import JsonLdProcessor
+
 from ......did.did_key import DIDKey
+from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......storage.vc_holder.base import VCHolder
 from ......storage.vc_holder.vc_record import VCRecord
 from ......vc.vc_ld import (
@@ -27,11 +31,12 @@ from ......vc.ld_proofs import (
     WalletKeyPair,
 )
 from ......vc.ld_proofs.constants import SECURITY_CONTEXT_BBS_URL
-from ......wallet.key_type import KeyType
-from ......wallet.error import WalletNotFoundError
 from ......wallet.base import BaseWallet, DIDInfo
+from ......wallet.error import WalletNotFoundError
+from ......wallet.key_type import KeyType
 
 from ...message_types import (
+    ATTACHMENT_FORMAT,
     CRED_20_ISSUE,
     CRED_20_OFFER,
     CRED_20_PROPOSAL,
@@ -112,6 +117,61 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
 
         # Validate, throw if not valid
         Schema(unknown=EXCLUDE).load(attachment_data)
+
+    async def get_detail_record(self, cred_ex_id: str) -> V20CredExRecordLDProof:
+        """Retrieve credential exchange detail record by cred_ex_id."""
+
+        async with self.profile.session() as session:
+            records = await LDProofCredFormatHandler.format.detail.query_by_cred_ex_id(
+                session, cred_ex_id
+            )
+
+            if len(records) > 1:
+                LOGGER.warning(
+                    "Cred ex id %s has %d %s detail records: should be 1",
+                    cred_ex_id,
+                    len(records),
+                    LDProofCredFormatHandler.format.api,
+                )
+            return records[0] if records else None
+
+    def get_format_identifier(self, message_type: str) -> str:
+        """Get attachment format identifier for format and message combination.
+
+        Args:
+            message_type (str): Message type for which to return the format identifier
+
+        Returns:
+            str: Issue credential attachment format identifier
+
+        """
+        return ATTACHMENT_FORMAT[message_type][LDProofCredFormatHandler.format.api]
+
+    def get_format_data(self, message_type: str, data: dict) -> CredFormatAttachment:
+        """Get credential format and attachment objects for use in cred ex messages.
+
+        Returns a tuple of both credential format and attachment decorator for use
+        in credential exchange messages. It looks up the correct format identifier and
+        encodes the data as a base64 attachment.
+
+        Args:
+            message_type (str): The message type for which to return the cred format.
+                Should be one of the message types defined in the message types file
+            data (dict): The data to include in the attach decorator
+
+        Returns:
+            CredFormatAttachment: Credential format and attachment data objects
+
+        """
+        return (
+            V20CredFormat(
+                attach_id=LDProofCredFormatHandler.format.api,
+                format_=self.get_format_identifier(message_type),
+            ),
+            AttachDecorator.data_base64(
+                data, ident=LDProofCredFormatHandler.format.api
+            ),
+        )
 
     async def _assert_can_issue_with_id_and_proof_type(
         self, issuer_id: str, proof_type: str
@@ -328,7 +388,9 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
 
         # Parse proposal. Data is stored in proposal if we received a proposal
         # but also when we create an offer (manager does some weird stuff)
-        offer_data = cred_ex_record.cred_proposal.attachment(self.format)
+        offer_data = cred_ex_record.cred_proposal.attachment(
+            LDProofCredFormatHandler.format
+        )
         detail = LDProofVCDetail.deserialize(offer_data)
         detail = await self._prepare_detail(detail)
 
@@ -349,11 +411,15 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
     ) -> CredFormatAttachment:
         """Create linked data proof credential request."""
         if cred_ex_record.cred_offer:
-            request_data = cred_ex_record.cred_offer.attachment(self.format)
+            request_data = cred_ex_record.cred_offer.attachment(
+                LDProofCredFormatHandler.format
+            )
         # API data is stored in proposal (when starting from request)
         # It is a bit of a strage flow IMO.
         elif cred_ex_record.cred_proposal:
-            request_data = cred_ex_record.cred_proposal.attachment(self.format)
+            request_data = cred_ex_record.cred_proposal.attachment(
+                LDProofCredFormatHandler.format
+            )
         else:
             raise V20CredFormatError(
                 "Cannot create linked data proof request without offer or input data"
@@ -378,7 +444,9 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
                 "Cannot issue credential without credential request"
             )
 
-        detail_dict = cred_ex_record.cred_request.attachment(self.format)
+        detail_dict = cred_ex_record.cred_request.attachment(
+            LDProofCredFormatHandler.format
+        )
         detail = LDProofVCDetail.deserialize(detail_dict)
         detail = await self._prepare_detail(detail)
 
@@ -405,8 +473,10 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
         self, cred_ex_record: V20CredExRecord, cred_issue_message: V20CredIssue
     ) -> None:
         """Receive linked data proof credential."""
-        cred_dict = cred_issue_message.attachment(self.format)
-        detail_dict = cred_ex_record.cred_request.attachment(self.format)
+        cred_dict = cred_issue_message.attachment(LDProofCredFormatHandler.format)
+        detail_dict = cred_ex_record.cred_request.attachment(
+            LDProofCredFormatHandler.format
+        )
 
         vc = VerifiableCredential.deserialize(cred_dict, unknown=INCLUDE)
         detail = LDProofVCDetail.deserialize(detail_dict)
@@ -472,7 +542,9 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
     ) -> None:
         """Store linked data proof credential."""
         # Get attachment data
-        cred_dict: dict = cred_ex_record.cred_issue.attachment(self.format)
+        cred_dict: dict = cred_ex_record.cred_issue.attachment(
+            LDProofCredFormatHandler.format
+        )
 
         # Deserialize objects
         credential = VerifiableCredential.deserialize(cred_dict, unknown=INCLUDE)
@@ -498,10 +570,17 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
         if not result.verified:
             raise V20CredFormatError(f"Received invalid credential: {result}")
 
+        # Saving expanded type as a cred_tag
+        expanded = jsonld.expand(cred_dict)
+        types = JsonLdProcessor.get_values(
+            expanded[0],
+            "@type",
+        )
+
         # create VC record for storage
         vc_record = VCRecord(
             contexts=credential.context_urls,
-            types=credential.type,
+            expanded_types=types,
             issuer_id=credential.issuer_id,
             subject_ids=credential.credential_subject_ids,
             schema_ids=[],  # Schemas not supported yet

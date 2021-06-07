@@ -5,11 +5,11 @@ from time import time
 from asynctest import mock as async_mock, TestCase as AsyncTestCase
 
 from .....core.in_memory import InMemoryProfile
-from .....indy.holder import IndyHolder
+from .....indy.holder import IndyHolder, IndyHolderError
 from .....indy.issuer import IndyIssuer
 from .....indy.sdk.holder import IndySdkHolder
-from .....indy.sdk.models.xform import indy_proof_req_preview2indy_requested_creds
-from .....indy.sdk.models.pres_preview import (
+from .....indy.models.xform import indy_proof_req_preview2indy_requested_creds
+from .....indy.models.pres_preview import (
     IndyPresAttrSpec,
     IndyPresPreview,
     IndyPresPredSpec,
@@ -23,6 +23,8 @@ from .....messaging.responder import BaseResponder, MockResponder
 from .....storage.error import StorageNotFoundError
 
 from ....didcomm_prefix import DIDCommPrefix
+
+from ...indy import pres_exch_handler as test_indy_util_module
 
 from .. import manager as test_module
 from ..manager import PresentationManager, PresentationManagerError
@@ -448,7 +450,7 @@ class TestPresentationManager(AsyncTestCase):
         ) as save_ex, async_mock.patch.object(
             test_module, "AttachDecorator", autospec=True
         ) as mock_attach_decorator, async_mock.patch.object(
-            test_module, "RevocationRegistry", autospec=True
+            test_indy_util_module, "RevocationRegistry", autospec=True
         ) as mock_rr:
             mock_rr.from_definition = async_mock.MagicMock(return_value=more_magic_rr)
 
@@ -491,7 +493,7 @@ class TestPresentationManager(AsyncTestCase):
         ) as save_ex, async_mock.patch.object(
             test_module, "AttachDecorator", autospec=True
         ) as mock_attach_decorator, async_mock.patch.object(
-            test_module, "RevocationRegistry", autospec=True
+            test_indy_util_module, "RevocationRegistry", autospec=True
         ) as mock_rr:
             mock_rr.from_definition = async_mock.MagicMock(return_value=more_magic_rr)
 
@@ -552,7 +554,7 @@ class TestPresentationManager(AsyncTestCase):
         ) as save_ex, async_mock.patch.object(
             test_module, "AttachDecorator", autospec=True
         ) as mock_attach_decorator, async_mock.patch.object(
-            test_module, "RevocationRegistry", autospec=True
+            test_indy_util_module, "RevocationRegistry", autospec=True
         ) as mock_rr:
             mock_rr.from_definition = async_mock.MagicMock(return_value=more_magic_rr)
 
@@ -627,7 +629,7 @@ class TestPresentationManager(AsyncTestCase):
         ) as save_ex, async_mock.patch.object(
             test_module, "AttachDecorator", autospec=True
         ) as mock_attach_decorator, async_mock.patch.object(
-            test_module.LOGGER, "info", async_mock.MagicMock()
+            test_indy_util_module.LOGGER, "info", async_mock.MagicMock()
         ) as mock_log_info:
             mock_attach_decorator.data_base64 = async_mock.MagicMock(
                 return_value=mock_attach_decorator
@@ -688,7 +690,7 @@ class TestPresentationManager(AsyncTestCase):
         )
         self.holder.create_presentation = async_mock.CoroutineMock(return_value="{}")
         self.holder.create_revocation_state = async_mock.CoroutineMock(
-            side_effect=test_module.IndyHolderError("Problem", {"message": "Nope"})
+            side_effect=IndyHolderError("Problem", {"message": "Nope"})
         )
         self.profile.context.injector.bind_instance(IndyHolder, self.holder)
 
@@ -702,7 +704,7 @@ class TestPresentationManager(AsyncTestCase):
         ) as save_ex, async_mock.patch.object(
             test_module, "AttachDecorator", autospec=True
         ) as mock_attach_decorator, async_mock.patch.object(
-            test_module, "RevocationRegistry", autospec=True
+            test_indy_util_module, "RevocationRegistry", autospec=True
         ) as mock_rr:
             mock_rr.from_definition = async_mock.MagicMock(return_value=more_magic_rr)
 
@@ -714,7 +716,7 @@ class TestPresentationManager(AsyncTestCase):
                 indy_proof_req, holder=self.holder
             )
 
-            with self.assertRaises(test_module.IndyHolderError):
+            with self.assertRaises(IndyHolderError):
                 await self.manager.create_presentation(exchange_in, req_creds)
 
     async def test_create_presentation_multi_matching_proposal_creds_names(self):
@@ -789,7 +791,7 @@ class TestPresentationManager(AsyncTestCase):
         ) as save_ex, async_mock.patch.object(
             test_module, "AttachDecorator", autospec=True
         ) as mock_attach_decorator, async_mock.patch.object(
-            test_module, "RevocationRegistry", autospec=True
+            test_indy_util_module, "RevocationRegistry", autospec=True
         ) as mock_rr:
             mock_rr.from_definition = async_mock.MagicMock(return_value=more_magic_rr)
 

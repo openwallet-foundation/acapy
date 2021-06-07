@@ -2,7 +2,7 @@
 
 import json
 
-from typing import Mapping
+from typing import Mapping, Sequence, Tuple
 
 from aiohttp import web
 from aiohttp_apispec import (
@@ -17,9 +17,9 @@ from marshmallow import fields, validate, validates_schema, ValidationError
 from ....admin.request_context import AdminRequestContext
 from ....connections.models.conn_record import ConnRecord
 from ....indy.holder import IndyHolder, IndyHolderError
-from ....indy.sdk.models.cred_precis import IndyCredPrecisSchema
-from ....indy.sdk.models.proof import IndyPresSpecSchema
-from ....indy.sdk.models.proof_request import IndyProofRequestSchema
+from ....indy.models.cred_precis import IndyCredPrecisSchema
+from ....indy.models.proof import IndyPresSpecSchema
+from ....indy.models.proof_request import IndyProofRequestSchema
 from ....indy.util import generate_pr_nonce
 from ....ledger.error import LedgerError
 from ....messaging.decorators.attach_decorator import AttachDecorator
@@ -33,10 +33,21 @@ from ....messaging.valid import (
     UUID4,
 )
 from ....storage.error import StorageError, StorageNotFoundError
+from ....storage.vc_holder.base import VCHolder
+from ....storage.vc_holder.vc_record import VCRecord
 from ....utils.tracing import trace_event, get_timer, AdminAPIMessageTracingSchema
+from ....vc.ld_proofs.constants import EXPANDED_TYPE_CREDENTIALS_CONTEXT_V1_VC_TYPE
 from ....wallet.error import WalletNotFoundError
 
+from ..dif.pres_exch import InputDescriptors
+from ..dif.pres_proposal_schema import DIFProofProposalSchema
+from ..dif.pres_request_schema import (
+    DIFProofRequestSchema,
+    DIFPresSpecSchema,
+)
+
 from . import problem_report_for_record, report_problem
+from .formats.handler import V20PresFormatHandlerError
 from .manager import V20PresManager
 from .message_types import (
     ATTACHMENT_FORMAT,
@@ -101,33 +112,6 @@ class V20PresExRecordListSchema(OpenAPISchema):
     )
 
 
-class DIFPresProposalSchema(OpenAPISchema):
-    """DIF presentation proposal schema placeholder."""
-
-    some_dif = fields.Str(
-        description="Placeholder for W3C/DIF/JSON-LD presentation proposal format",
-        required=False,
-    )
-
-
-class DIFPresRequestSchema(OpenAPISchema):
-    """DIF presentation request schema placeholder."""
-
-    some_dif = fields.Str(
-        description="Placeholder for W3C/DIF/JSON-LD presentation request format",
-        required=False,
-    )
-
-
-class DIFPresSpecSchema(OpenAPISchema):
-    """DIF presentation schema specification placeholder."""
-
-    some_dif = fields.Str(
-        description="Placeholder for W3C/DIF/JSON-LD presentation format",
-        required=False,
-    )
-
-
 class V20PresProposalByFormatSchema(OpenAPISchema):
     """Schema for presentation proposal per format."""
 
@@ -137,7 +121,7 @@ class V20PresProposalByFormatSchema(OpenAPISchema):
         description="Presentation proposal for indy",
     )
     dif = fields.Nested(
-        DIFPresProposalSchema,
+        DIFProofProposalSchema,
         required=False,
         description="Presentation proposal for DIF",
     )
@@ -197,7 +181,7 @@ class V20PresRequestByFormatSchema(OpenAPISchema):
         description="Presentation request for indy",
     )
     dif = fields.Nested(
-        DIFPresRequestSchema,
+        DIFProofRequestSchema,
         required=False,
         description="Presentation request for DIF",
     )
@@ -251,7 +235,10 @@ class V20PresSpecByFormatRequestSchema(AdminAPIMessageTracingSchema):
     dif = fields.Nested(
         DIFPresSpecSchema,
         required=False,
-        description="Presentation specification for DIF",
+        description=(
+            "Optional Presentation specification for DIF, "
+            "overrides the PresentionExchange record's PresRequest"
+        ),
     )
 
     @validates_schema
@@ -322,7 +309,14 @@ async def _add_nonce(indy_proof_request: Mapping) -> Mapping:
 
 def _formats_attach(by_format: Mapping, msg_type: str, spec: str) -> Mapping:
     """Break out formats and proposals/requests/presentations for v2.0 messages."""
-
+    attach = []
+    for (fmt_api, item_by_fmt) in by_format.items():
+        if fmt_api == V20PresFormat.Format.INDY.api:
+            attach.append(
+                AttachDecorator.data_base64(mapping=item_by_fmt, ident=fmt_api)
+            )
+        elif fmt_api == V20PresFormat.Format.DIF.api:
+            attach.append(AttachDecorator.data_json(mapping=item_by_fmt, ident=fmt_api))
     return {
         "formats": [
             V20PresFormat(
@@ -331,10 +325,7 @@ def _formats_attach(by_format: Mapping, msg_type: str, spec: str) -> Mapping:
             )
             for fmt_api in by_format
         ],
-        f"{spec}_attach": [
-            AttachDecorator.data_base64(mapping=item_by_fmt, ident=fmt_api)
-            for (fmt_api, item_by_fmt) in by_format.items()
-        ],
+        f"{spec}_attach": attach,
     }
 
 
@@ -464,19 +455,23 @@ async def present_proof_credentials_list(request: web.BaseRequest):
     start = int(start) if isinstance(start, str) else 0
     count = int(count) if isinstance(count, str) else 10
 
-    holder = context.profile.inject(IndyHolder)
+    indy_holder = context.profile.inject(IndyHolder)
+    indy_credentials = []
+    # INDY
     try:
-        # TODO: allow for choice of format from those specified in pres req
-        pres_request = pres_ex_record.by_format["pres_request"].get(
+        indy_pres_request = pres_ex_record.by_format["pres_request"].get(
             V20PresFormat.Format.INDY.api
         )
-        credentials = await holder.get_credentials_for_presentation_request_by_referent(
-            pres_request,
-            pres_referents,
-            start,
-            count,
-            extra_query,
-        )
+        if indy_pres_request:
+            indy_credentials = (
+                await indy_holder.get_credentials_for_presentation_request_by_referent(
+                    indy_pres_request,
+                    pres_referents,
+                    start,
+                    count,
+                    extra_query,
+                )
+            )
     except IndyHolderError as err:
         if pres_ex_record:
             async with context.session() as session:
@@ -489,17 +484,97 @@ async def present_proof_credentials_list(request: web.BaseRequest):
             outbound_handler,
         )
 
-    pres_ex_record.log_state(
-        "Retrieved presentation credentials",
-        {
-            "presentation_exchange_id": pres_ex_id,
-            "referents": pres_referents,
-            "extra_query": extra_query,
-            "credentials": credentials,
-        },
-        settings=context.settings,
-    )
+    dif_holder = context.profile.inject(VCHolder)
+    dif_credentials = []
+    dif_cred_value_list = []
+    # DIF
+    try:
+        dif_pres_request = pres_ex_record.by_format["pres_request"].get(
+            V20PresFormat.Format.DIF.api
+        )
+        if dif_pres_request:
+            input_descriptors_list = dif_pres_request.get(
+                "presentation_definition"
+            ).get("input_descriptors")
+            input_descriptors = []
+            for input_desc_dict in input_descriptors_list:
+                input_descriptors.append(InputDescriptors.deserialize(input_desc_dict))
+            record_ids = set()
+            for input_descriptor in input_descriptors:
+                expanded_types = set()
+                schema_ids = set()
+                for schema in input_descriptor.schemas:
+                    uri = schema.uri
+                    required = schema.required or True
+                    if required:
+                        # JSONLD Expanded URLs
+                        if "#" in uri:
+                            expanded_types.add(uri)
+                        else:
+                            schema_ids.add(uri)
+                if len(schema_ids) == 0:
+                    schema_ids_list = None
+                else:
+                    schema_ids_list = list(schema_ids)
+                if len(expanded_types) == 0:
+                    expanded_types_list = None
+                else:
+                    expanded_types_list = list(expanded_types)
+                    # Raise Exception if expanded type extracted from
+                    # CREDENTIALS_CONTEXT_V1_URL and
+                    # VERIFIABLE_CREDENTIAL_TYPE is the only schema.uri
+                    # specified in the presentation_definition.
+                    if len(expanded_types_list) == 1:
+                        if expanded_types_list[0] in [
+                            EXPANDED_TYPE_CREDENTIALS_CONTEXT_V1_VC_TYPE
+                        ]:
+                            raise V20PresFormatHandlerError(
+                                "Only expanded type extracted from "
+                                "CREDENTIALS_CONTEXT_V1_URL "
+                                "and VERIFIABLE_CREDENTIAL_TYPE "
+                                "included as the schema.uri"
+                            )
+                search = dif_holder.search_credentials(
+                    types=expanded_types_list,
+                    schema_ids=schema_ids_list,
+                )
+                records = await search.fetch(count)
+                # Avoiding addition of duplicate records
+                vcrecord_list, vcrecord_ids_set = await process_vcrecords_return_list(
+                    records, record_ids
+                )
+                record_ids = vcrecord_ids_set
+                dif_credentials = dif_credentials + vcrecord_list
+            for dif_credential in dif_credentials:
+                dif_cred_value_list.append(dif_credential.cred_value)
+    except (
+        StorageNotFoundError,
+        V20PresFormatHandlerError,
+    ) as err:
+        if pres_ex_record:
+            async with context.session() as session:
+                await pres_ex_record.save_error_state(session, reason=err.roll_up)
+        await report_problem(
+            err,
+            ProblemReportReason.ABANDONED.value,
+            web.HTTPBadRequest,
+            pres_ex_record,
+            outbound_handler,
+        )
+    credentials = indy_credentials + dif_cred_value_list
     return web.json_response(credentials)
+
+
+async def process_vcrecords_return_list(
+    vc_records: Sequence[VCRecord], record_ids: set
+) -> Tuple[Sequence[VCRecord], set]:
+    """Return list of non-duplicate VCRecords."""
+    to_add = []
+    for vc_record in vc_records:
+        if vc_record.record_id not in record_ids:
+            to_add.append(vc_record)
+            record_ids.add(vc_record.record_id)
+    return (to_add, record_ids)
 
 
 @docs(tags=["present-proof v2.0"], summary="Sends a presentation proposal")
@@ -834,8 +909,8 @@ async def present_proof_send_presentation(request: web.BaseRequest):
     outbound_handler = request["outbound_message_router"]
     pres_ex_id = request.match_info["pres_ex_id"]
     body = await request.json()
-    fmt = V20PresFormat.Format.get([f for f in body][0])  # "indy" xor "dif"
-
+    fmt = V20PresFormat.Format.get([f for f in body][0]).api  # "indy" xor "dif"
+    comment = body.get("comment")
     pres_ex_record = None
     async with context.session() as session:
         try:
@@ -863,22 +938,18 @@ async def present_proof_send_presentation(request: web.BaseRequest):
 
     pres_manager = V20PresManager(context.profile)
     try:
-        indy_spec = body.get(V20PresFormat.Format.INDY.api)  # TODO: accommodate DIF
+        request_data = {fmt: body.get(fmt)}
         pres_ex_record, pres_message = await pres_manager.create_pres(
             pres_ex_record,
-            {
-                "self_attested_attributes": indy_spec["self_attested_attributes"],
-                "requested_attributes": indy_spec["requested_attributes"],
-                "requested_predicates": indy_spec["requested_predicates"],
-            },
-            comment=body.get("comment"),
-            format_=fmt,
+            request_data=request_data,
+            comment=comment,
         )
         result = pres_ex_record.serialize()
     except (
         BaseModelError,
         IndyHolderError,
         LedgerError,
+        V20PresFormatHandlerError,
         StorageError,
         WalletNotFoundError,
     ) as err:

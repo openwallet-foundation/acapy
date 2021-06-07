@@ -17,7 +17,7 @@ from marshmallow import fields
 
 from ...admin.request_context import AdminRequestContext
 from ...indy.issuer import IndyIssuer
-from ...indy.sdk.models.cred_def import CredentialDefinitionSchema
+from ...indy.models.cred_def import CredentialDefinitionSchema
 from ...ledger.base import BaseLedger
 from ...ledger.error import LedgerError
 from ...protocols.endorse_transaction.v1_0.manager import TransactionManager

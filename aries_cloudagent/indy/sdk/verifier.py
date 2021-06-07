@@ -9,7 +9,7 @@ from typing import Mapping
 import indy.anoncreds
 from indy.error import IndyError
 
-from ...indy.sdk.models.xform import indy_proof_req2non_revoc_intervals
+from ...indy.models.xform import indy_proof_req2non_revoc_intervals
 from ...ledger.indy import IndySdkLedger
 from ...messaging.util import canon, encode
 

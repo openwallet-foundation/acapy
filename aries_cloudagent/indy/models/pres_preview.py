@@ -6,14 +6,14 @@ from typing import Mapping, Sequence
 
 from marshmallow import EXCLUDE, fields
 
-from ....ledger.indy import IndySdkLedger
-from ....messaging.models.base import BaseModel, BaseModelSchema
-from ....messaging.util import canon
-from ....messaging.valid import INDY_CRED_DEF_ID, INDY_PREDICATE
-from ....protocols.didcomm_prefix import DIDCommPrefix
-from ....wallet.util import b64_to_str
+from ...ledger.indy import IndySdkLedger
+from ...messaging.models.base import BaseModel, BaseModelSchema
+from ...messaging.util import canon
+from ...messaging.valid import INDY_CRED_DEF_ID, INDY_PREDICATE
+from ...protocols.didcomm_prefix import DIDCommPrefix
+from ...wallet.util import b64_to_str
 
-from ...util import generate_pr_nonce
+from ..util import generate_pr_nonce
 
 from .non_rev_interval import IndyNonRevocationInterval
 from .predicate import Predicate

@@ -8,8 +8,8 @@ from unittest import TestCase
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
-from .....messaging.util import canon
-from .....protocols.didcomm_prefix import DIDCommPrefix
+from ....messaging.util import canon
+from ....protocols.didcomm_prefix import DIDCommPrefix
 
 
 from ..non_rev_interval import IndyNonRevocationInterval
