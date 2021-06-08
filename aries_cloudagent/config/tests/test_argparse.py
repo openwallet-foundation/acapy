@@ -3,6 +3,7 @@ from configargparse import ArgumentTypeError
 from asynctest import TestCase as AsyncTestCase, mock as async_mock
 
 from .. import argparse
+from ..error import ArgsParseError
 from ..util import BoundedInt, ByteSize
 
 
@@ -172,6 +173,33 @@ class TestArgParse(AsyncTestCase):
 
         assert settings.get("external_plugins") == ["foo"]
         assert settings.get("storage_type") == "bar"
+
+    async def test_plugin_config_file(self):
+        """Test file argument parsing."""
+
+        parser = argparse.create_argument_parser()
+        group = argparse.GeneralGroup()
+        group.add_arguments(parser)
+
+        result = parser.parse_args(
+            [
+                "--endpoint",
+                "localhost",
+                "--plugin-config",
+                "./aries_cloudagent/config/tests/test_plugins_config.yaml",
+            ]
+        )
+
+        assert (
+            result.plugin_config
+            == "./aries_cloudagent/config/tests/test_plugins_config.yaml"
+        )
+
+        settings = group.get_settings(result)
+
+        assert settings.get("plugin_config").get("mock_resolver") == {
+            "methods": ["sov", "btcr"]
+        }
 
     async def test_transport_settings_file(self):
         """Test file argument parsing."""
