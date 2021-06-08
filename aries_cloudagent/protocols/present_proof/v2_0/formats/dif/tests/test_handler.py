@@ -447,6 +447,74 @@ class TestDIFFormatHandler(AsyncTestCase):
             )
             assert output[1].data.json_ == DIF_PRES
 
+    async def test_create_pres_prover_proof_spec_with_record_ids(self):
+        dif_pres_spec = deepcopy(DIF_PRES_REQUEST_A)
+        dif_pres_spec["issuer_id"] = "test123"
+        dif_pres_spec["record_ids"] = ["test1"]
+        cred = VCRecord(
+            contexts=[
+                "https://www.w3.org/2018/credentials/v1",
+                "https://www.w3.org/2018/credentials/examples/v1",
+            ],
+            expanded_types=[
+                "https://www.w3.org/2018/credentials#VerifiableCredential",
+                "https://example.org/examples#UniversityDegreeCredential",
+            ],
+            issuer_id="https://example.edu/issuers/565049",
+            subject_ids=[
+                "did:sov:LjgpST2rjsoxYegQDRm7EL",
+                "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
+            ],
+            proof_types=["BbsBlsSignature2020"],
+            schema_ids=["https://example.org/examples/degree.json"],
+            cred_value={"...": "..."},
+            given_id="http://example.edu/credentials/3732",
+            cred_tags={"some": "tag"},
+            record_id="test1",
+        )
+        dif_pres_request = V20PresRequest(
+            formats=[
+                V20PresFormat(
+                    attach_id="dif",
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.DIF.api
+                    ],
+                )
+            ],
+            request_presentations_attach=[
+                AttachDecorator.data_json(DIF_PRES_REQUEST_B, ident="dif")
+            ],
+        )
+        record = V20PresExRecord(
+            pres_ex_id="pxid",
+            thread_id="thid",
+            connection_id="conn_id",
+            initiator="init",
+            role="role",
+            state="state",
+            pres_request=dif_pres_request,
+            verified="false",
+            auto_present=True,
+            error_msg="error",
+        )
+        request_data = {}
+        request_data["dif"] = dif_pres_spec
+
+        self.context.injector.bind_instance(
+            VCHolder,
+            async_mock.MagicMock(
+                retrieve_credential_by_id=async_mock.CoroutineMock(return_value=cred)
+            ),
+        )
+
+        with async_mock.patch.object(
+            DIFPresExchHandler,
+            "create_vp",
+            async_mock.CoroutineMock(),
+        ) as mock_create_vp:
+            mock_create_vp.return_value = DIF_PRES
+            output = await self.handler.create_pres(record, request_data)
+
     async def test_create_pres_no_challenge(self):
         dif_pres_req = deepcopy(DIF_PRES_REQUEST_B)
         del dif_pres_req["options"]["challenge"]

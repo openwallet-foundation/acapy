@@ -31,6 +31,16 @@ class DIFPresSpecSchema(OpenAPISchema):
         ),
         required=False,
     )
+    record_ids = fields.List(
+        fields.Str(description="Record identifier"),
+        description=(
+            (
+                "List of record_id to fetch stored "
+                "W3C credentials for presentation exchange"
+            )
+        ),
+        required=False,
+    )
     presentation_definition = fields.Nested(
         PresentationDefinitionSchema(),
         required=False,

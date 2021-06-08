@@ -164,7 +164,7 @@ class DIFPresFormatHandler(V20PresFormatHandler):
             DIFPresFormatHandler.format
         )
         pres_definition = None
-
+        limit_record_ids = None
         challenge = None
         domain = None
         if request_data != {} and DIFPresFormatHandler.format.api in request_data:
@@ -173,6 +173,7 @@ class DIFPresFormatHandler(V20PresFormatHandler):
             # Overriding with prover provided pres_spec
             pres_definition = pres_spec_payload.get("presentation_definition")
             issuer_id = pres_spec_payload.get("issuer_id")
+            limit_record_ids = pres_spec_payload.get("record_ids")
         if not pres_definition:
             if "options" in proof_request:
                 challenge = proof_request.get("options").get("challenge")
@@ -189,48 +190,60 @@ class DIFPresFormatHandler(V20PresFormatHandler):
             holder = self._profile.inject(VCHolder)
             record_ids = set()
             credentials_list = []
-            for input_descriptor in input_descriptors:
-                expanded_types = set()
-                schema_ids = set()
-                for schema in input_descriptor.schemas:
-                    uri = schema.uri
-                    required = schema.required or True
-                    if required:
-                        # JSONLD Expanded URLs
-                        if "#" in uri:
-                            expanded_types.add(uri)
-                        else:
-                            schema_ids.add(uri)
-                if len(schema_ids) == 0:
-                    schema_ids_list = None
-                else:
-                    schema_ids_list = list(schema_ids)
-                if len(expanded_types) == 0:
-                    expanded_types_list = None
-                else:
-                    expanded_types_list = list(expanded_types)
-                    # Raise Exception if expanded type extracted from
-                    # CREDENTIALS_CONTEXT_V1_URL and
-                    # VERIFIABLE_CREDENTIAL_TYPE is the only schema.uri
-                    # specified in the presentation_definition.
-                    if len(expanded_types_list) == 1:
-                        if expanded_types_list[0] in [
-                            EXPANDED_TYPE_CREDENTIALS_CONTEXT_V1_VC_TYPE
-                        ]:
-                            raise V20PresFormatHandlerError(
-                                "Only expanded type extracted from "
-                                "CREDENTIALS_CONTEXT_V1_URL and "
-                                "VERIFIABLE_CREDENTIAL_TYPE included "
-                                "as the schema.uri"
-                            )
-                search = holder.search_credentials(
-                    types=expanded_types_list,
-                    schema_ids=schema_ids_list,
-                )
-                # Defaults to page_size but would like to include all
-                # For now, setting to 1000
-                max_results = 1000
-                records = await search.fetch(max_results)
+            if not limit_record_ids:
+                for input_descriptor in input_descriptors:
+                    expanded_types = set()
+                    schema_ids = set()
+                    for schema in input_descriptor.schemas:
+                        uri = schema.uri
+                        required = schema.required or True
+                        if required:
+                            # JSONLD Expanded URLs
+                            if "#" in uri:
+                                expanded_types.add(uri)
+                            else:
+                                schema_ids.add(uri)
+                    if len(schema_ids) == 0:
+                        schema_ids_list = None
+                    else:
+                        schema_ids_list = list(schema_ids)
+                    if len(expanded_types) == 0:
+                        expanded_types_list = None
+                    else:
+                        expanded_types_list = list(expanded_types)
+                        # Raise Exception if expanded type extracted from
+                        # CREDENTIALS_CONTEXT_V1_URL and
+                        # VERIFIABLE_CREDENTIAL_TYPE is the only schema.uri
+                        # specified in the presentation_definition.
+                        if len(expanded_types_list) == 1:
+                            if expanded_types_list[0] in [
+                                EXPANDED_TYPE_CREDENTIALS_CONTEXT_V1_VC_TYPE
+                            ]:
+                                raise V20PresFormatHandlerError(
+                                    "Only expanded type extracted from "
+                                    "CREDENTIALS_CONTEXT_V1_URL and "
+                                    "VERIFIABLE_CREDENTIAL_TYPE included "
+                                    "as the schema.uri"
+                                )
+                    search = holder.search_credentials(
+                        types=expanded_types_list,
+                        schema_ids=schema_ids_list,
+                    )
+                    # Defaults to page_size but would like to include all
+                    # For now, setting to 1000
+                    max_results = 1000
+                    records = await search.fetch(max_results)
+                    # Avoiding addition of duplicate records
+                    (
+                        vcrecord_list,
+                        vcrecord_ids_set,
+                    ) = await self.process_vcrecords_return_list(records, record_ids)
+                    record_ids = vcrecord_ids_set
+                    credentials_list = credentials_list + vcrecord_list
+            else:
+                records = []
+                for record_id in limit_record_ids:
+                    records.append(await holder.retrieve_credential_by_id(record_id))
                 # Avoiding addition of duplicate records
                 (
                     vcrecord_list,
