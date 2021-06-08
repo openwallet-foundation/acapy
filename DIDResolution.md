@@ -173,7 +173,7 @@ The following is a fully functional Dockerfile encapsulating this setup:
 ```dockerfile=
 # TODO replace the following two lines with ACA-Py 0.7.0 when released
 FROM bcgovimages/von-image:py36-1.16-0
-RUN pip3 install git+https://github.com/hyperledger/aries-cloudagent-python@faab0345a3e7d189ef777d63dfa97e59883e875d
+RUN pip3 install git+https://github.com/hyperledger/aries-cloudagent-python@2ff1ddba897d26a7deb761924018145162cc867c
 RUN pip3 install git+https://github.com/dbluhm/acapy-resolver-github
 
 CMD ["aca-py", "start", "-it", "http", "0.0.0.0", "3000", "-ot", "http", "-e", "http://localhost:3000", "--admin", "0.0.0.0", "3001", "--admin-insecure-mode", "--no-ledger", "--plugin", "acapy_resolver_github"]
