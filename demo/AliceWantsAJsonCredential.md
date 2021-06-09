@@ -275,43 +275,240 @@ You can include more complex schemas, for example to use the schema.org [Person]
 
 The recommended approach to defining credentials is to define a credential-specific vocaublary (or make use of existing ones).  (Note that these can include references to `https://schema.org`, you just shouldn't uste this directly in your credential.)
 
-The following examples use the W3C citizenship and vaccination contexts:
+
+### Credential Issue Example
+
+The following example uses the W3C citizenship context to issue a PermanentResident credential (replace the `connection_id`, `issuer` and `credentialSubject.id` with your local values):
 
 ```
 {
-  "connection_id": "ad35a4d8-c84b-4a4f-a83f-1afbf134b8b9",
-  "filter": {
-    "ld_proof": {
-      "credential": {
-        "@context": [
-          "https://www.w3.org/2018/credentials/v1",
-          "https://w3id.org/citizenship/v1"
-        ],
-        "type": ["VerifiableCredential", "PermanentResidentCard"],
-        "issuer": "did:key:zUC71pj2gpDLfcZ9DE1bMtjZGWCSLhkQsUCaKjqXtCftGkz27894pEX9VvGNiFsaV67gqv2TEPQ2aDaDDdTDNp42LfDdK1LaWSBCfzsQEyaiR1zjZm1RtoRu1ZM6v6vz4TiqDgU",
-        "issuanceDate": "2020-01-01T12:00:00Z",
-        "credentialSubject": {
-            "id": "did:key:b34ca6cd37bbf23",
-            "type": ["PermanentResident", "Person"],
-            "givenName": "JOHN",
-            "familyName": "SMITH",
-            "gender": "Male",
-            "image": "data:image/png;base64,iVBORw0KGgo...kJggg==",
-            "residentSince": "2015-01-01",
-            "lprCategory": "C09",
-            "lprNumber": "999-999-999",
-            "commuterClassification": "C1",
-            "birthCountry": "Bahamas",
-            "birthDate": "1958-07-17"
+    "connection_id": "41acd909-9f45-4c69-8641-8146e0444a57",
+    "filter": {
+        "ld_proof": {
+            "credential": {
+                "@context": [
+                    "https://www.w3.org/2018/credentials/v1",
+                    "https://w3id.org/citizenship/v1"
+                ],
+                "type": [
+                    "VerifiableCredential",
+                    "PermanentResident"
+                ],
+                "id": "https://credential.example.com/residents/1234567890",
+                "issuer": "did:key:zUC7Dus47jW5Avcne8LLsUvJSdwspmErgehxMWqZZy8eSSNoHZ4x8wgs77sAmQtCADED5RQP1WWhvt7KFNm6GGMxdSGpKu3PX6R9a61G9VoVsiFoRf1yoK6pzhq9jtFP3e2SmU9",
+                "issuanceDate": "2020-01-01T12:00:00Z",
+                "credentialSubject": {
+                    "type": [
+                        "PermanentResident"
+                    ],
+                    "id": "did:key:zUC7CXi82AXbkv4SvhxDxoufrLwQSAo79qbKiw7omCQ3c4TyciDdb9s3GTCbMvsDruSLZX6HNsjGxAr2SMLCNCCBRN5scukiZ4JV9FDPg5gccdqE9nfCU2zUcdyqRiUVnn9ZH83",
+                    "givenName": "ALICE",
+                    "familyName": "SMITH",
+                    "gender": "Female",
+                    "birthCountry": "Bahamas",
+                    "birthDate": "1958-07-17"
+                }
+            },
+            "options": {
+                "proofType": "BbsBlsSignature2020"
+            }
+        }
+    }
+}
+```
+
+Copy and paste this content into Faber's `/issue-credential-2.0/send-offer` endpoint, and it will kick off the exchange process to issue a W3C credential to Alice.
+
+In Alice's swagger page, submit the `/credentials/records/w3c` endpoint to see the issued credential.
+
+
+### Request Presentation Example
+
+To request a proof, submit the following (with appropriate `connection_id`) to Faber's `/request-presentation-2.0/request-proof` endpoint:
+
+```
+{
+    "comment": "string",
+    "connection_id": "41acd909-9f45-4c69-8641-8146e0444a57",
+    "presentation_request": {
+        "dif": {
+            "options": {
+                "challenge": "3fa85f64-5717-4562-b3fc-2c963f66afa7",
+                "domain": "4jt78h47fh47"
+            },
+            "presentation_definition": {
+                "id": "32f54163-7166-48f1-93d8-ff217bdb0654",
+                "format": {
+                    "ldp_vp": {
+                        "proof_type": [
+                            "BbsBlsSignature2020"
+                        ]
+                    }
+                },
+                "input_descriptors": [
+                    {
+                        "id": "citizenship_input_1",
+                        "name": "EU Driver's License",
+                        "schema": [
+                            {
+                                "uri": "https://www.w3.org/2018/credentials#VerifiableCredential"
+                            },
+                            {
+                                "uri": "https://w3id.org/citizenship#PermanentResident"
+                            }
+                        ],
+                        "constraints": {
+                            "limit_disclosure": "required",
+                            "fields": [
+                                {
+                                    "path": [
+                                        "$.credentialSubject.familyName"
+                                    ],
+                                    "purpose": "The claim must be from one of the specified issuers",
+                                    "filter": {
+                                        "const": "SMITH"
+                                    }
+                                },
+                                {
+                                    "path": [
+                                        "$.credentialSubject.givenName"
+                                    ],
+                                    "purpose": "The claim must be from one of the specified issuers"
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        }
+    }
+}
+```
+
+There are several ways that Alice can prespond with a presentation.  The simplest will just tell aca-py to put the presentation together and send it to Faber - submit the following to Alice's `/request-presentation-2.0/{pres_ex_id}/send-presentation`:
+
+```
+{
+  "dif": {
+  }
+}
+```
+
+There are two ways that Alice can provide some constraints to tell aca-py which credential(s) to include in the presentation.
+
+Firstly, Alice can include the received presentation request in the body to the `/send-presentation` endpoint, and can include additional constraints on the fields:
+
+```
+{
+  "dif": {
+    "issuer_id": "did:key:zUC7Dus47jW5Avcne8LLsUvJSdwspmErgehxMWqZZy8eSSNoHZ4x8wgs77sAmQtCADED5RQP1WWhvt7KFNm6GGMxdSGpKu3PX6R9a61G9VoVsiFoRf1yoK6pzhq9jtFP3e2SmU9",
+    "presentation_definition": {
+      "format": {
+        "ldp_vp": {
+          "proof_type": [
+            "BbsBlsSignature2020"
+          ]
         }
       },
-      "options": {
-        "proofType": "BbsBlsSignature2020"
-      }
+      "id": "32f54163-7166-48f1-93d8-ff217bdb0654",
+      "input_descriptors": [
+        {
+          "id": "citizenship_input_1",
+          "name": "Some kind of citizenship check",
+          "schema": [
+            {
+              "uri": "https://www.w3.org/2018/credentials#VerifiableCredential"
+            },
+            {
+              "uri": "https://w3id.org/citizenship#PermanentResident"
+            }
+          ],
+          "constraints": {
+            "limit_disclosure": "required",
+            "fields": [
+              {
+                "path": [
+                  "$.credentialSubject.familyName"
+                ],
+                "purpose": "The claim must be from one of the specified issuers",
+                "filter": {
+                  "const": "SMITH"
+                }
+              },
+              {
+                  "path": [
+                      "$.id"
+                  ],
+                  "purpose": "Specify the id of the credential to present",
+                  "filter": {
+                      "const": "https://credential.example.com/residents/1234567890"
+                  }
+              }
+            ]
+          }
+        }
+      ]
     }
   }
 }
 ```
+
+Note the additional constraint on `"path": [ "$.id" ]` - this restricts the presented credential to the one with the matching `credential.id`.  Any credential attributes can be used, however this presumes that the issued credentials contain a uniquely identifying attribute.
+
+Another option is for Alice to specify the credential `record_id` - this is an internal value within aca-py:
+
+```
+{
+  "dif": {
+    "issuer_id": "did:key:zUC7Dus47jW5Avcne8LLsUvJSdwspmErgehxMWqZZy8eSSNoHZ4x8wgs77sAmQtCADED5RQP1WWhvt7KFNm6GGMxdSGpKu3PX6R9a61G9VoVsiFoRf1yoK6pzhq9jtFP3e2SmU9",
+    "presentation_definition": {
+      "format": {
+        "ldp_vp": {
+          "proof_type": [
+            "BbsBlsSignature2020"
+          ]
+        }
+      },
+      "id": "32f54163-7166-48f1-93d8-ff217bdb0654",
+      "input_descriptors": [
+        {
+          "id": "citizenship_input_1",
+          "name": "Some kind of citizenship check",
+          "schema": [
+            {
+              "uri": "https://www.w3.org/2018/credentials#VerifiableCredential"
+            },
+            {
+              "uri": "https://w3id.org/citizenship#PermanentResident"
+            }
+          ],
+          "constraints": {
+            "limit_disclosure": "required",
+            "fields": [
+              {
+                "path": [
+                  "$.credentialSubject.familyName"
+                ],
+                "purpose": "The claim must be from one of the specified issuers",
+                "filter": {
+                  "const": "SMITH"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "record_ids": [
+      "1496316f972e40cf9b46b35971182337"
+    ]
+  }
+}
+```
+
+### Another Credential Issue Example
+
+TBD the following credential is based on the W3C Vaccination schema:
 
 ```
 {
