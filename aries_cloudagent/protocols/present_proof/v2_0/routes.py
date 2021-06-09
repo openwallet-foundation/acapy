@@ -561,7 +561,7 @@ async def present_proof_credentials_list(request: web.BaseRequest):
             pres_ex_record,
             outbound_handler,
         )
-    credentials = indy_credentials + dif_cred_value_list
+    credentials = list(indy_credentials) + dif_cred_value_list
     return web.json_response(credentials)
 
 
