@@ -546,7 +546,9 @@ async def present_proof_credentials_list(request: web.BaseRequest):
                 record_ids = vcrecord_ids_set
                 dif_credentials = dif_credentials + vcrecord_list
             for dif_credential in dif_credentials:
-                dif_cred_value_list.append(dif_credential.cred_value)
+                cred_value = dif_credential.cred_value
+                cred_value["record_id"] = dif_credential.record_id
+                dif_cred_value_list.append(cred_value)
     except (
         StorageNotFoundError,
         V20PresFormatHandlerError,
