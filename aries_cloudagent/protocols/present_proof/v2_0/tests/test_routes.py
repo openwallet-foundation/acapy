@@ -454,7 +454,7 @@ class TestPresentProofRoutes(AsyncTestCase):
             mock_response.assert_called_once_with(
                 [
                     {"name": "Credential1", "record_id": ANY},
-                    {"name": "Credential2", "record_id": ANY}
+                    {"name": "Credential2", "record_id": ANY},
                 ]
             )
 
@@ -590,7 +590,7 @@ class TestPresentProofRoutes(AsyncTestCase):
             mock_response.assert_called_once_with(
                 [
                     {"name": "Credential1", "record_id": ANY},
-                    {"name": "Credential2", "record_id": ANY}
+                    {"name": "Credential2", "record_id": ANY},
                 ]
             )
 
