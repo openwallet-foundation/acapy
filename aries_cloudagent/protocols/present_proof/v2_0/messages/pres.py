@@ -1,10 +1,8 @@
 """A (proof) presentation content message."""
 
+from marshmallow import EXCLUDE, fields, validates_schema, ValidationError
 from typing import Sequence
 
-from marshmallow import EXCLUDE, fields, RAISE, validates_schema, ValidationError
-
-from .....indy.sdk.models.proof import IndyProofSchema
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 from .....messaging.decorators.attach_decorator import (
     AttachDecorator,
@@ -118,5 +116,6 @@ class V20PresSchema(AgentMessageSchema):
 
         for fmt in formats:
             atch = get_attach_by_id(fmt.attach_id)
-            if V20PresFormat.Format.get(fmt.format) is V20PresFormat.Format.INDY:
-                IndyProofSchema(unknown=RAISE).load(atch.content)
+            pres_format = V20PresFormat.Format.get(fmt.format)
+            if pres_format:
+                pres_format.validate_fields(PRES_20, atch.content)

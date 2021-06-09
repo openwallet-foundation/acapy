@@ -4,9 +4,9 @@ from typing import Mapping
 
 from marshmallow import EXCLUDE, fields
 
-from ....messaging.models.base import BaseModel, BaseModelSchema
-from ....messaging.models.openapi import OpenAPISchema
-from ....messaging.valid import (
+from ...messaging.models.base import BaseModel, BaseModelSchema
+from ...messaging.models.openapi import OpenAPISchema
+from ...messaging.valid import (
     INDY_CRED_DEF_ID,
     INDY_CRED_REV_ID,
     INDY_REV_REG_ID,

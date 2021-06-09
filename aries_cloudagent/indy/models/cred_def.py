@@ -2,8 +2,8 @@
 
 from marshmallow import fields, Schema
 
-from ....messaging.models.openapi import OpenAPISchema
-from ....messaging.valid import INDY_CRED_DEF_ID, INDY_VERSION, NUM_STR_WHOLE
+from ...messaging.models.openapi import OpenAPISchema
+from ...messaging.valid import INDY_CRED_DEF_ID, INDY_VERSION, NUM_STR_WHOLE
 
 
 class CredDefValuePrimarySchema(OpenAPISchema):

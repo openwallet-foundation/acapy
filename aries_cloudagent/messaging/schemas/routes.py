@@ -18,7 +18,7 @@ from marshmallow.validate import Regexp
 
 from ...admin.request_context import AdminRequestContext
 from ...indy.issuer import IndyIssuer, IndyIssuerError
-from ...indy.sdk.models.schema import SchemaSchema
+from ...indy.models.schema import SchemaSchema
 from ...ledger.base import BaseLedger
 from ...ledger.error import LedgerError
 from ...protocols.endorse_transaction.v1_0.manager import TransactionManager

@@ -32,6 +32,19 @@ class StrOrDictField(Field):
             raise ValidationError("Field should be str or dict")
 
 
+class StrOrNumberField(Field):
+    """String or Number field for Marshmallow."""
+
+    def _serialize(self, value, attr, obj, **kwargs):
+        return value
+
+    def _deserialize(self, value, attr, data, **kwargs):
+        if isinstance(value, (str, float, int)):
+            return value
+        else:
+            raise ValidationError("Field should be str or int or float")
+
+
 class DictOrDictListField(Field):
     """Dict or Dict List field for Marshmallow."""
 
