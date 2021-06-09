@@ -62,6 +62,14 @@ elif RUN_MODE == "pwd":
     DEFAULT_EXTERNAL_HOST = os.getenv("DOCKERHOST") or "host.docker.internal"
     DEFAULT_PYTHON_PATH = "."
 
+CRED_FORMAT_INDY = "indy"
+CRED_FORMAT_JSON_LD = "json-ld"
+DID_METHOD_SOV = "sov"
+DID_METHOD_KEY = "key"
+KEY_TYPE_ED255 = "ed25519"
+KEY_TYPE_BLS = "bls12381g2"
+SIG_TYPE_BLS = "BbsBlsSignature2020"
+
 
 class repr_json:
     def __init__(self, val):
@@ -110,7 +118,7 @@ class DemoAgent:
         internal_host: str = None,
         external_host: str = None,
         genesis_data: str = None,
-        seed: str = "random",
+        seed: str = None,
         label: str = None,
         color: str = None,
         prefix: str = None,
@@ -354,30 +362,38 @@ class DemoAgent:
         did: str = None,
         verkey: str = None,
         role: str = "TRUST_ANCHOR",
+        cred_type: str = CRED_FORMAT_INDY,
     ):
-        self.log(f"Registering {self.ident} ...")
-        if not ledger_url:
-            ledger_url = LEDGER_URL
-        if not ledger_url:
-            ledger_url = f"http://{self.external_host}:9000"
-        data = {"alias": alias or self.ident, "role": role}
-        if did and verkey:
-            data["did"] = did
-            data["verkey"] = verkey
+        if cred_type == CRED_FORMAT_INDY:
+            # if registering a did for issuing indy credentials, publish the did on the ledger
+            self.log(f"Registering {self.ident} ...")
+            if not ledger_url:
+                ledger_url = LEDGER_URL
+            if not ledger_url:
+                ledger_url = f"http://{self.external_host}:9000"
+            data = {"alias": alias or self.ident, "role": role}
+            if did and verkey:
+                data["did"] = did
+                data["verkey"] = verkey
+            else:
+                data["seed"] = self.seed
+            async with self.client_session.post(
+                ledger_url + "/register", json=data
+            ) as resp:
+                if resp.status != 200:
+                    raise Exception(f"Error registering DID, response code {resp.status}")
+                nym_info = await resp.json()
+                self.did = nym_info["did"]
+                self.log(f"nym_info: {nym_info}")
+                if self.multitenant:
+                    if not self.agency_wallet_did:
+                        self.agency_wallet_did = self.did
+            self.log(f"Registered DID: {self.did}")
+        elif cred_type == CRED_FORMAT_JSON_LD:
+            # TODO register a did:key with appropriate signature type
+            pass
         else:
-            data["seed"] = self.seed
-        async with self.client_session.post(
-            ledger_url + "/register", json=data
-        ) as resp:
-            if resp.status != 200:
-                raise Exception(f"Error registering DID, response code {resp.status}")
-            nym_info = await resp.json()
-            self.did = nym_info["did"]
-            self.log(f"nym_info: {nym_info}")
-            if self.multitenant:
-                if not self.agency_wallet_did:
-                    self.agency_wallet_did = self.did
-        self.log(f"Registered DID: {self.did}")
+            raise Exception("Invalid credential type:" + cred_type)
 
     async def register_or_switch_wallet(
         self,
@@ -385,6 +401,7 @@ class DemoAgent:
         public_did=False,
         webhook_port: int = None,
         mediator_agent=None,
+        cred_type: str = CRED_FORMAT_INDY,
     ):
         if webhook_port is not None:
             await self.listen_webhooks(webhook_port)
@@ -438,13 +455,29 @@ class DemoAgent:
         self.log("New wallet params:", new_wallet)
         self.managed_wallet_params = new_wallet
         if public_did:
-            # assign public did
-            new_did = await self.admin_POST("/wallet/did/create")
-            self.did = new_did["result"]["did"]
-            await self.register_did(
-                did=new_did["result"]["did"], verkey=new_did["result"]["verkey"]
-            )
-            await self.admin_POST("/wallet/did/public?did=" + self.did)
+            if cred_type == CRED_FORMAT_INDY:
+                # assign public did
+                new_did = await self.admin_POST("/wallet/did/create")
+                self.did = new_did["result"]["did"]
+                await self.register_did(
+                    did=new_did["result"]["did"], verkey=new_did["result"]["verkey"]
+                )
+                await self.admin_POST("/wallet/did/public?did=" + self.did)
+            elif cred_type == CRED_FORMAT_JSON_LD:
+                # create did of appropriate type
+                data = {
+                    "method": DID_METHOD_KEY,
+                    "options": {
+                        "key_type": KEY_TYPE_BLS
+                    }
+                }
+                new_did = await self.admin_POST("/wallet/did/create", data=data)
+                self.did = new_did["result"]["did"]
+
+                # TODO currenty did:key is not registered as a public did
+            else:
+                # todo ignore for now
+                pass
 
         # if mediation, mediate the wallet connections
         if mediator_agent:

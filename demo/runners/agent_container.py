@@ -18,6 +18,13 @@ from runners.support.agent import (  # noqa:E402
     default_genesis_txns,
     start_mediator_agent,
     connect_wallet_to_mediator,
+    CRED_FORMAT_INDY,
+    CRED_FORMAT_JSON_LD,
+    DID_METHOD_SOV,
+    DID_METHOD_KEY,
+    KEY_TYPE_ED255,
+    KEY_TYPE_BLS,
+    SIG_TYPE_BLS
 )
 from runners.support.utils import (  # noqa:E402
     log_json,
@@ -46,6 +53,7 @@ class AriesAgent(DemoAgent):
         admin_port: int,
         prefix: str = "Aries",
         no_auto: bool = False,
+        seed: str = None,
         **kwargs,
     ):
         super().__init__(
@@ -53,6 +61,7 @@ class AriesAgent(DemoAgent):
             http_port,
             admin_port,
             prefix=prefix,
+            seed=seed,
             extra_args=(
                 []
                 if no_auto
@@ -325,6 +334,7 @@ class AgentContainer:
         no_auto: bool = False,
         revocation: bool = False,
         tails_server_base_url: str = None,
+        cred_type: str = CRED_FORMAT_INDY,
         show_timing: bool = False,
         multitenant: bool = False,
         mediation: bool = False,
@@ -341,6 +351,7 @@ class AgentContainer:
         self.no_auto = no_auto
         self.revocation = revocation
         self.tails_server_base_url = tails_server_base_url
+        self.cred_type = cred_type
         self.show_timing = show_timing
         self.multitenant = multitenant
         self.mediation = mediation
@@ -389,14 +400,27 @@ class AgentContainer:
 
         await self.agent.listen_webhooks(self.start_port + 2)
 
-        if self.public_did:
-            await self.agent.register_did()
+        if self.public_did and self.cred_type != CRED_FORMAT_JSON_LD:
+            await self.agent.register_did(cred_type=self.cred_type)
+            log_msg("Created public DID")
 
         with log_timer("Startup duration:"):
             await self.agent.start_process()
 
         log_msg("Admin URL is at:", self.agent.admin_url)
         log_msg("Endpoint URL is at:", self.agent.endpoint)
+
+        if self.public_did and self.cred_type == CRED_FORMAT_JSON_LD:
+            # create did of appropriate type
+            data = {
+                "method": DID_METHOD_KEY,
+                "options": {
+                    "key_type": KEY_TYPE_BLS
+                }
+            }
+            new_did = await self.agent.admin_POST("/wallet/did/create", data=data)
+            self.agent.did = new_did["result"]["did"]
+            log_msg("Created DID key")
 
         if self.mediation:
             self.mediator_agent = await start_mediator_agent(
@@ -435,10 +459,18 @@ class AgentContainer:
     ):
         if not self.public_did:
             raise Exception("Can't create a schema/cred def without a public DID :-(")
-        self.cred_def_id = await self.agent.create_schema_and_cred_def(
-            schema_name, schema_attrs, self.revocation, version=version
-        )
-        return self.cred_def_id
+        if self.cred_type == CRED_FORMAT_INDY:
+            # need to redister schema and cred def on the ledger
+            self.cred_def_id = await self.agent.create_schema_and_cred_def(
+                schema_name, schema_attrs, self.revocation, version=version
+            )
+            return self.cred_def_id
+        elif self.cred_type == CRED_FORMAT_JSON_LD:
+            # TODO no schema/cred def required
+            pass
+            return None
+        else:
+            raise Exception("Invalid credential type:" + self.cred_type)
 
     async def issue_credential(
         self,
@@ -447,23 +479,32 @@ class AgentContainer:
     ):
         log_status("#13 Issue credential offer to X")
 
-        cred_preview = {
-            "@type": CRED_PREVIEW_TYPE,
-            "attributes": cred_attrs,
-        }
-        offer_request = {
-            "connection_id": self.agent.connection_id,
-            "comment": f"Offer on cred def id {cred_def_id}",
-            "auto_remove": False,
-            "credential_preview": cred_preview,
-            "filter": {"indy": {"cred_def_id": cred_def_id}},
-            "trace": self.exchange_tracing,
-        }
-        cred_exchange = await self.agent.admin_POST(
-            "/issue-credential-2.0/send-offer", offer_request
-        )
+        if self.cred_type == CRED_FORMAT_INDY:
+            cred_preview = {
+                "@type": CRED_PREVIEW_TYPE,
+                "attributes": cred_attrs,
+            }
+            offer_request = {
+                "connection_id": self.agent.connection_id,
+                "comment": f"Offer on cred def id {cred_def_id}",
+                "auto_remove": False,
+                "credential_preview": cred_preview,
+                "filter": {"indy": {"cred_def_id": cred_def_id}},
+                "trace": self.exchange_tracing,
+            }
+            cred_exchange = await self.agent.admin_POST(
+                "/issue-credential-2.0/send-offer", offer_request
+            )
 
-        return cred_exchange
+            return cred_exchange
+
+        elif self.cred_type == CRED_FORMAT_JSON_LD:
+            # TODO create and send the json-ld credential offer
+            pass
+            return None
+
+        else:
+            raise Exception("Invalid credential type:" + self.cred_type)
 
     async def receive_credential(
         self,
@@ -501,29 +542,38 @@ class AgentContainer:
     async def request_proof(self, proof_request):
         log_status("#20 Request proof of degree from alice")
 
-        indy_proof_request = {
-            "name": proof_request["name"]
-            if "name" in proof_request
-            else "Proof of stuff",
-            "version": proof_request["version"]
-            if "version" in proof_request
-            else "1.0",
-            "requested_attributes": proof_request["requested_attributes"],
-            "requested_predicates": proof_request["requested_predicates"],
-        }
+        if self.cred_type == CRED_FORMAT_INDY:
+            indy_proof_request = {
+                "name": proof_request["name"]
+                if "name" in proof_request
+                else "Proof of stuff",
+                "version": proof_request["version"]
+                if "version" in proof_request
+                else "1.0",
+                "requested_attributes": proof_request["requested_attributes"],
+                "requested_predicates": proof_request["requested_predicates"],
+            }
 
-        if self.revocation:
-            indy_proof_request["non_revoked"] = {"to": int(time.time())}
-        proof_request_web_request = {
-            "connection_id": self.agent.connection_id,
-            "proof_request": indy_proof_request,
-            "trace": self.exchange_tracing,
-        }
-        proof_exchange = await self.agent.admin_POST(
-            "/present-proof/send-request", proof_request_web_request
-        )
+            if self.revocation:
+                indy_proof_request["non_revoked"] = {"to": int(time.time())}
+            proof_request_web_request = {
+                "connection_id": self.agent.connection_id,
+                "proof_request": indy_proof_request,
+                "trace": self.exchange_tracing,
+            }
+            proof_exchange = await self.agent.admin_POST(
+                "/present-proof/send-request", proof_request_web_request
+            )
 
-        return proof_exchange
+            return proof_exchange
+
+        elif self.cred_type == CRED_FORMAT_JSON_LD:
+            # TODO create and send the json-ld proof request
+            pass
+            return None
+
+        else:
+            raise Exception("Invalid credential type:" + self.cred_type)
 
     async def verify_proof(self, proof_request):
         await asyncio.sleep(1.0)
@@ -534,9 +584,18 @@ class AgentContainer:
             print("No proof received")
             return None
 
-        # return verified status
-        print("Received proof:", self.agent.last_proof_received["verified"])
-        return self.agent.last_proof_received["verified"]
+        if self.cred_type == CRED_FORMAT_INDY:
+            # return verified status
+            print("Received proof:", self.agent.last_proof_received["verified"])
+            return self.agent.last_proof_received["verified"]
+
+        elif self.cred_type == CRED_FORMAT_JSON_LD:
+            # TODO create and send the json-ld proof request
+            pass
+            return None
+
+        else:
+            raise Exception("Invalid credential type:" + self.cred_type)
 
     async def terminate(self):
         """Shut down any running agents."""
@@ -576,6 +635,7 @@ class AgentContainer:
             did=did,
             verkey=verkey,
             role=role,
+            cred_type=self.cred_type,
         )
 
     async def admin_GET(self, path, text=False, params=None) -> dict:
@@ -670,7 +730,14 @@ def arg_parser(ident: str = None, port: int = 8020):
             "--tails-server-base-url",
             type=str,
             metavar=("<tails-server-base-url>"),
-            help="Tals server base url",
+            help="Tails server base url",
+        )
+        parser.add_argument(
+            "--cred-type",
+            type=str,
+            default=CRED_FORMAT_INDY,
+            metavar=("<cred-type>"),
+            help="Credential type (indy, json-ld)",
         )
     parser.add_argument(
         "--timing", action="store_true", help="Enable timing information"
@@ -738,6 +805,12 @@ async def create_agent_with_args(args, ident: str = None):
         sys.exit(1)
 
     agent_ident = ident if ident else (args.ident if "ident" in args else "Aries")
+    if "cred_type" in args and args.cred_type != CRED_FORMAT_INDY:
+        public_did = None
+    elif "cred_type" in args and args.cred_type == CRED_FORMAT_INDY:
+        public_did = True
+    else:
+        public_did = args.public_did if "public_did" in args else None
     agent = AgentContainer(
         genesis,
         agent_ident + ".agent",
@@ -748,10 +821,11 @@ async def create_agent_with_args(args, ident: str = None):
         show_timing=args.timing,
         multitenant=args.multitenant,
         mediation=args.mediation,
+        cred_type=args.cred_type if "cred_type" in args else None,
         use_did_exchange=args.did_exchange if "did_exchange" in args else False,
         wallet_type=args.wallet_type,
-        public_did=args.public_did if "public_did" in args else None,
-        seed="random" if ("public_did" in args and args.public_did) else None,
+        public_did=public_did,
+        seed="random" if public_did else None,
         arg_file=arg_file,
     )
 
