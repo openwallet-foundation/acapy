@@ -24,7 +24,7 @@ from runners.support.agent import (  # noqa:E402
     DID_METHOD_KEY,
     KEY_TYPE_ED255,
     KEY_TYPE_BLS,
-    SIG_TYPE_BLS
+    SIG_TYPE_BLS,
 )
 from runners.support.utils import (  # noqa:E402
     log_json,
@@ -412,12 +412,7 @@ class AgentContainer:
 
         if self.public_did and self.cred_type == CRED_FORMAT_JSON_LD:
             # create did of appropriate type
-            data = {
-                "method": DID_METHOD_KEY,
-                "options": {
-                    "key_type": KEY_TYPE_BLS
-                }
-            }
+            data = {"method": DID_METHOD_KEY, "options": {"key_type": KEY_TYPE_BLS}}
             new_did = await self.agent.admin_POST("/wallet/did/create", data=data)
             self.agent.did = new_did["result"]["did"]
             log_msg("Created DID key")

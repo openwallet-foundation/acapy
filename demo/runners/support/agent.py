@@ -381,7 +381,9 @@ class DemoAgent:
                 ledger_url + "/register", json=data
             ) as resp:
                 if resp.status != 200:
-                    raise Exception(f"Error registering DID, response code {resp.status}")
+                    raise Exception(
+                        f"Error registering DID, response code {resp.status}"
+                    )
                 nym_info = await resp.json()
                 self.did = nym_info["did"]
                 self.log(f"nym_info: {nym_info}")
@@ -465,12 +467,7 @@ class DemoAgent:
                 await self.admin_POST("/wallet/did/public?did=" + self.did)
             elif cred_type == CRED_FORMAT_JSON_LD:
                 # create did of appropriate type
-                data = {
-                    "method": DID_METHOD_KEY,
-                    "options": {
-                        "key_type": KEY_TYPE_BLS
-                    }
-                }
+                data = {"method": DID_METHOD_KEY, "options": {"key_type": KEY_TYPE_BLS}}
                 new_did = await self.admin_POST("/wallet/did/create", data=data)
                 self.did = new_did["result"]["did"]
 

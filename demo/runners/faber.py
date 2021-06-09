@@ -28,7 +28,7 @@ from runners.support.agent import (  # noqa:E402
     DID_METHOD_KEY,
     KEY_TYPE_ED255,
     KEY_TYPE_BLS,
-    SIG_TYPE_BLS
+    SIG_TYPE_BLS,
 )
 from runners.support.utils import (  # noqa:E402
     log_msg,
@@ -186,9 +186,7 @@ async def main(args):
             )
         elif faber_agent.cred_type == CRED_FORMAT_JSON_LD:
             faber_agent.public_did = True
-            await faber_agent.initialize(
-                the_agent=agent
-            )
+            await faber_agent.initialize(the_agent=agent)
         else:
             raise Exception("Invalid credential type:" + faber_agent.cred_type)
 
@@ -291,36 +289,34 @@ async def main(args):
                                 "credential": {
                                     "@context": [
                                         "https://www.w3.org/2018/credentials/v1",
-                                        "https://w3id.org/citizenship/v1"
+                                        "https://w3id.org/citizenship/v1",
                                     ],
                                     "type": [
                                         "VerifiableCredential",
-                                        "PermanentResident"
+                                        "PermanentResident",
                                     ],
                                     "id": "https://credential.example.com/residents/1234567890",
                                     "issuer": faber_agent.agent.did,
                                     "issuanceDate": "2020-01-01T12:00:00Z",
                                     "credentialSubject": {
-                                        "type": [
-                                            "PermanentResident"
-                                        ],
-                                        #"id": "<need did:key of holder>",
+                                        "type": ["PermanentResident"],
+                                        # "id": "<need did:key of holder>",
                                         "givenName": "ALICE",
                                         "familyName": "SMITH",
                                         "gender": "Female",
                                         "birthCountry": "Bahamas",
-                                        "birthDate": "1958-07-17"
-                                    }
+                                        "birthDate": "1958-07-17",
+                                    },
                                 },
-                                "options": {
-                                    "proofType": SIG_TYPE_BLS
-                                }
+                                "options": {"proofType": SIG_TYPE_BLS},
                             }
-                        }
+                        },
                     }
 
                 else:
-                    raise Exception("Error invalid credential type:" + faber_agent.cred_type)
+                    raise Exception(
+                        "Error invalid credential type:" + faber_agent.cred_type
+                    )
 
                 await faber_agent.agent.admin_POST(
                     "/issue-credential-2.0/send-offer", offer_request
@@ -372,7 +368,8 @@ async def main(args):
                         "name": "Proof of Education",
                         "version": "1.0",
                         "requested_attributes": {
-                            f"0_{req_attr['name']}_uuid": req_attr for req_attr in req_attrs
+                            f"0_{req_attr['name']}_uuid": req_attr
+                            for req_attr in req_attrs
                         },
                         "requested_predicates": {
                             f"0_{req_pred['name']}_GE_uuid": req_pred
@@ -396,16 +393,12 @@ async def main(args):
                             "dif": {
                                 "options": {
                                     "challenge": "3fa85f64-5717-4562-b3fc-2c963f66afa7",
-                                    "domain": "4jt78h47fh47"
+                                    "domain": "4jt78h47fh47",
                                 },
                                 "presentation_definition": {
                                     "id": "32f54163-7166-48f1-93d8-ff217bdb0654",
                                     "format": {
-                                        "ldp_vp": {
-                                            "proof_type": [
-                                                SIG_TYPE_BLS
-                                            ]
-                                        }
+                                        "ldp_vp": {"proof_type": [SIG_TYPE_BLS]}
                                     },
                                     "input_descriptors": [
                                         {
@@ -417,7 +410,7 @@ async def main(args):
                                                 },
                                                 {
                                                     "uri": "https://w3id.org/citizenship#PermanentResident"
-                                                }
+                                                },
                                             ],
                                             "constraints": {
                                                 "limit_disclosure": "required",
@@ -427,27 +420,27 @@ async def main(args):
                                                             "$.credentialSubject.familyName"
                                                         ],
                                                         "purpose": "The claim must be from one of the specified person",
-                                                        "filter": {
-                                                            "const": "SMITH"
-                                                        }
+                                                        "filter": {"const": "SMITH"},
                                                     },
                                                     {
                                                         "path": [
                                                             "$.credentialSubject.givenName"
                                                         ],
-                                                        "purpose": "The claim must be from one of the specified person"
-                                                    }
-                                                ]
-                                            }
+                                                        "purpose": "The claim must be from one of the specified person",
+                                                    },
+                                                ],
+                                            },
                                         }
-                                    ]
-                                }
+                                    ],
+                                },
                             }
-                        }
+                        },
                     }
 
                 else:
-                    raise Exception("Error invalid credential type:" + faber_agent.cred_type)
+                    raise Exception(
+                        "Error invalid credential type:" + faber_agent.cred_type
+                    )
 
                 await agent.admin_POST(
                     "/present-proof-2.0/send-request", proof_request_web_request

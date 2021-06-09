@@ -159,7 +159,9 @@ class AliceAgent(AriesAgent):
                     for referent in pres_request_indy["requested_attributes"]:
                         if referent in creds_by_reft:
                             revealed[referent] = {
-                                "cred_id": creds_by_reft[referent]["cred_info"]["referent"],
+                                "cred_id": creds_by_reft[referent]["cred_info"][
+                                    "referent"
+                                ],
                                 "revealed": True,
                             }
                         else:
@@ -168,7 +170,9 @@ class AliceAgent(AriesAgent):
                     for referent in pres_request_indy["requested_predicates"]:
                         if referent in creds_by_reft:
                             predicates[referent] = {
-                                "cred_id": creds_by_reft[referent]["cred_info"]["referent"]
+                                "cred_id": creds_by_reft[referent]["cred_info"][
+                                    "referent"
+                                ]
                             }
 
                     log_status("#25 Generate the proof")
@@ -202,7 +206,9 @@ class AliceAgent(AriesAgent):
                     request = {
                         "dif": pres_request_dif,
                     }
-                    request["dif"]["record_ids"] = [record_id,]
+                    request["dif"]["record_ids"] = [
+                        record_id,
+                    ]
 
                     # note that the holder/prover can also/or specify constraints by adding filters, for example:
                     #
