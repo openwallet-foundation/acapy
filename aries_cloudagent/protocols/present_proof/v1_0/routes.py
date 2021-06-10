@@ -15,10 +15,10 @@ from marshmallow import fields, validate
 from ....admin.request_context import AdminRequestContext
 from ....connections.models.conn_record import ConnRecord
 from ....indy.holder import IndyHolder, IndyHolderError
-from ....indy.sdk.models.cred_precis import IndyCredPrecisSchema
-from ....indy.sdk.models.proof import IndyPresSpecSchema
-from ....indy.sdk.models.proof_request import IndyProofRequestSchema
-from ....indy.sdk.models.pres_preview import IndyPresPreview, IndyPresPreviewSchema
+from ....indy.models.cred_precis import IndyCredPrecisSchema
+from ....indy.models.proof import IndyPresSpecSchema
+from ....indy.models.proof_request import IndyProofRequestSchema
+from ....indy.models.pres_preview import IndyPresPreview, IndyPresPreviewSchema
 from ....indy.util import generate_pr_nonce
 from ....ledger.error import LedgerError
 from ....messaging.decorators.attach_decorator import AttachDecorator

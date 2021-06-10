@@ -1,6 +1,6 @@
 """Utilities to deal with indy."""
 
-from ....indy.holder import IndyHolder
+from ...indy.holder import IndyHolder
 
 from .pres_preview import IndyPresPreview
 

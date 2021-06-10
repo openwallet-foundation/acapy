@@ -11,17 +11,17 @@ from ....connections.models.conn_record import ConnRecord
 from ....connections.util import mediation_record_if_id
 from ....core.error import BaseError
 from ....core.profile import ProfileSession
+from ....did.did_key import DIDKey
 from ....indy.holder import IndyHolder
-from ....indy.sdk.models.xform import indy_proof_req_preview2indy_requested_creds
-from ....messaging.responder import BaseResponder
+from ....indy.models.xform import indy_proof_req_preview2indy_requested_creds
 from ....messaging.decorators.attach_decorator import AttachDecorator
+from ....messaging.responder import BaseResponder
 from ....multitenant.manager import MultitenantManager
 from ....storage.error import StorageNotFoundError
 from ....transport.inbound.receipt import MessageReceipt
 from ....wallet.base import BaseWallet
 from ....wallet.util import b64_to_bytes
 from ....wallet.key_type import KeyType
-from ....did.did_key import DIDKey
 
 from ...coordinate_mediation.v1_0.manager import MediationManager
 from ...connections.v1_0.manager import ConnectionManager
@@ -35,8 +35,6 @@ from ...present_proof.v1_0.message_types import PRESENTATION_REQUEST
 from ...present_proof.v1_0.models.presentation_exchange import V10PresentationExchange
 from ...present_proof.v2_0.manager import V20PresManager
 from ...present_proof.v2_0.message_types import PRES_20_REQUEST
-from ...present_proof.v2_0.messages.pres_format import V20PresFormat
-from ...present_proof.v2_0.messages.pres_request import V20PresRequest
 from ...present_proof.v2_0.models.pres_exchange import V20PresExRecord
 
 from .messages.invitation import HSProto, InvitationMessage
@@ -194,7 +192,7 @@ class OutOfBandManager(BaseConnectionManager):
                     )
                     message_attachments.append(
                         InvitationMessage.wrap_message(
-                            pres_ex_rec.pres_request.attachment()
+                            pres_ex_rec.pres_request.serialize()
                         )
                     )
             else:
@@ -702,30 +700,11 @@ class OutOfBandManager(BaseConnectionManager):
 
         pres_ex_record = await pres_mgr.receive_pres_request(pres_ex_record)
         if pres_ex_record.auto_present:
-            indy_proof_request = V20PresRequest.deserialize(
-                pres_request_msg
-            ).attachment(
-                V20PresFormat.Format.INDY
-            )  # assumption will change for DIF
-            try:
-                req_creds = await indy_proof_req_preview2indy_requested_creds(
-                    indy_proof_req=indy_proof_request,
-                    preview=None,
-                    holder=self._session.inject(IndyHolder),
-                )
-            except ValueError as err:
-                self._logger.warning(f"{err}")
-                raise OutOfBandManagerError(
-                    f"Cannot auto-respond to presentation request attachment: {err}"
-                )
-
             (pres_ex_record, pres_msg) = await pres_mgr.create_pres(
                 pres_ex_record=pres_ex_record,
-                requested_credentials=req_creds,
                 comment=(
-                    "auto-presented for proof request nonce={}".format(
-                        indy_proof_request["nonce"]
-                    )
+                    f"auto-presented for proof requests"
+                    f", pres_ex_record: {pres_ex_record.pres_ex_id}"
                 ),
             )
             responder = self._session.inject(BaseResponder, required=False)
@@ -739,7 +718,7 @@ class OutOfBandManager(BaseConnectionManager):
         else:
             raise OutOfBandManagerError(
                 (
-                    "Configuration sets auto_present false: cannot "
+                    "Configuration set auto_present false: cannot "
                     "respond automatically to presentation requests"
                 )
             )

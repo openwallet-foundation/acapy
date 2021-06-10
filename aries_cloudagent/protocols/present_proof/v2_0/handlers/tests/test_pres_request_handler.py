@@ -1,13 +1,13 @@
 from asynctest import mock as async_mock, TestCase as AsyncTestCase
+from copy import deepcopy
 
-from ......indy.sdk.models.pres_preview import IndyPresAttrSpec, IndyPresPreview
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
 from ......storage.error import StorageNotFoundError
 from ......transport.inbound.receipt import MessageReceipt
 
-from .....didcomm_prefix import DIDCommPrefix
+from ...formats.indy import handler as test_indy_handler
 
 from ...messages.pres_format import V20PresFormat
 from ...messages.pres_proposal import V20PresProposal
@@ -58,6 +58,123 @@ INDY_PROOF_REQ_PRED = {
             ],
         }
     },
+}
+DIF_PROOF_REQ = {
+    "options": {
+        "challenge": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+        "domain": "4jt78h47fh47",
+    },
+    "presentation_definition": {
+        "id": "32f54163-7166-48f1-93d8-ff217bdb0653",
+        "submission_requirements": [
+            {
+                "name": "Citizenship Information",
+                "rule": "pick",
+                "count": 1,
+                "from_nested": [
+                    {
+                        "name": "United States Citizenship Proofs",
+                        "purpose": "We need you to prove you are a US citizen.",
+                        "rule": "all",
+                        "from": "A",
+                    },
+                    {
+                        "name": "European Union Citizenship Proofs",
+                        "purpose": "We need you to prove you are a citizen of a EU country.",
+                        "rule": "all",
+                        "from": "B",
+                    },
+                ],
+            }
+        ],
+        "input_descriptors": [
+            {
+                "id": "citizenship_input_1",
+                "name": "EU Driver's License",
+                "group": ["A"],
+                "schema": [
+                    {"uri": "https://www.w3.org/2018/credentials#VerifiableCredential"}
+                ],
+                "constraints": {
+                    "fields": [
+                        {
+                            "path": ["$.issuer.id", "$.issuer", "$.vc.issuer.id"],
+                            "purpose": "The claim must be from one of the specified issuers",
+                            "filter": {
+                                "type": "string",
+                                "enum": ["did:sov:4cLztgZYocjqTdAZM93t27"],
+                            },
+                        }
+                    ]
+                },
+            },
+            {
+                "id": "citizenship_input_2",
+                "name": "US Passport",
+                "group": ["B"],
+                "schema": [
+                    {"uri": "https://www.w3.org/2018/credentials#VerifiableCredential"}
+                ],
+                "constraints": {
+                    "fields": [
+                        {
+                            "path": ["$.issuanceDate", "$.vc.issuanceDate"],
+                            "filter": {
+                                "type": "string",
+                                "format": "date",
+                                "maximum": "2009-5-16",
+                            },
+                        }
+                    ]
+                },
+            },
+        ],
+    },
+}
+
+DIF_PROP_REQ = {
+    "input_descriptors": [
+        {
+            "id": "citizenship_input_1",
+            "name": "EU Driver's License",
+            "group": ["A"],
+            "schema": [
+                {"uri": "https://www.w3.org/2018/credentials#VerifiableCredential"}
+            ],
+            "constraints": {
+                "fields": [
+                    {
+                        "path": ["$.issuer.id", "$.issuer", "$.vc.issuer.id"],
+                        "purpose": "The claim must be from one of the specified issuers",
+                        "filter": {
+                            "type": "string",
+                            "enum": ["did:sov:4cLztgZYocjqTdAZM93t27"],
+                        },
+                    }
+                ]
+            },
+        },
+        {
+            "id": "citizenship_input_2",
+            "name": "US Passport",
+            "group": ["B"],
+            "schema": [
+                {"uri": "https://www.w3.org/2018/credentials#VerifiableCredential"}
+            ],
+            "constraints": {
+                "fields": [
+                    {
+                        "path": ["$.issuanceDate", "$.vc.issuanceDate"],
+                        "filter": {
+                            "type": "string",
+                            "format": "date",
+                            "maximum": "2009-5-16",
+                        },
+                    }
+                ]
+            },
+        },
+    ]
 }
 
 
@@ -163,73 +280,6 @@ class TestPresRequestHandler(AsyncTestCase):
         )
         assert not responder.messages
 
-    async def test_called_auto_present(self):
-        request_context = RequestContext.test_context()
-        request_context.connection_record = async_mock.MagicMock()
-        request_context.connection_record.connection_id = "dummy"
-        request_context.message = V20PresRequest()
-        request_context.message.attachment = async_mock.MagicMock(
-            return_value=INDY_PROOF_REQ
-        )
-        request_context.message_receipt = MessageReceipt()
-
-        pres_proposal = V20PresProposal(
-            formats=[
-                V20PresFormat(
-                    attach_id="indy",
-                    format_=V20PresFormat.Format.INDY.aries,
-                )
-            ],
-            proposals_attach=[
-                AttachDecorator.data_base64(INDY_PROOF_REQ, ident="indy")
-            ],
-        )
-        px_rec_instance = test_module.V20PresExRecord(
-            pres_proposal=pres_proposal.serialize(),
-            auto_present=True,
-        )
-
-        with async_mock.patch.object(
-            test_module, "V20PresManager", autospec=True
-        ) as mock_pres_mgr, async_mock.patch.object(
-            test_module, "V20PresExRecord", autospec=True
-        ) as mock_pres_ex_rec_cls, async_mock.patch.object(
-            test_module, "IndyHolder", autospec=True
-        ) as mock_holder:
-
-            mock_holder.get_credentials_for_presentation_request_by_referent = (
-                async_mock.CoroutineMock(
-                    return_value=[{"cred_info": {"referent": "dummy"}}]
-                )
-            )
-            request_context.inject = async_mock.MagicMock(return_value=mock_holder)
-
-            mock_pres_ex_rec_cls.return_value = px_rec_instance
-            mock_pres_ex_rec_cls.retrieve_by_tag_filter = async_mock.CoroutineMock(
-                return_value=px_rec_instance
-            )
-            mock_pres_mgr.return_value.receive_pres_request = async_mock.CoroutineMock(
-                return_value=px_rec_instance
-            )
-
-            mock_pres_mgr.return_value.create_pres = async_mock.CoroutineMock(
-                return_value=(px_rec_instance, "pres message")
-            )
-            request_context.connection_ready = True
-            handler = test_module.V20PresRequestHandler()
-            responder = MockResponder()
-            await handler.handle(request_context, responder)
-            mock_pres_mgr.return_value.create_pres.assert_called_once()
-
-        mock_pres_mgr.return_value.receive_pres_request.assert_called_once_with(
-            px_rec_instance
-        )
-        messages = responder.messages
-        assert len(messages) == 1
-        (result, target) = messages[0]
-        assert result == "pres message"
-        assert target == {}
-
     async def test_called_auto_present_x(self):
         request_context = RequestContext.test_context()
         request_context.connection_record = async_mock.MagicMock()
@@ -262,7 +312,7 @@ class TestPresRequestHandler(AsyncTestCase):
         ) as mock_pres_mgr, async_mock.patch.object(
             test_module, "V20PresExRecord", autospec=True
         ) as mock_pres_ex_rec_cls, async_mock.patch.object(
-            test_module, "IndyHolder", autospec=True
+            test_indy_handler, "IndyHolder", autospec=True
         ) as mock_holder:
 
             mock_holder.get_credentials_for_presentation_request_by_referent = (
@@ -294,11 +344,149 @@ class TestPresRequestHandler(AsyncTestCase):
                 await handler.handle(request_context, responder)
                 mock_log_exc.assert_called_once()
 
-    async def test_called_auto_present_no_preview(self):
+    async def test_called_auto_present_indy(self):
         request_context = RequestContext.test_context()
         request_context.connection_record = async_mock.MagicMock()
         request_context.connection_record.connection_id = "dummy"
         request_context.message = V20PresRequest()
+        request_context.message.attachment = async_mock.MagicMock(
+            return_value=INDY_PROOF_REQ
+        )
+        request_context.message_receipt = MessageReceipt()
+
+        pres_proposal = V20PresProposal(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy",
+                    format_=V20PresFormat.Format.INDY.aries,
+                )
+            ],
+            proposals_attach=[
+                AttachDecorator.data_base64(INDY_PROOF_REQ, ident="indy")
+            ],
+        )
+        mock_px_rec = test_module.V20PresExRecord(
+            pres_proposal=pres_proposal.serialize(),
+            auto_present=True,
+        )
+
+        with async_mock.patch.object(
+            test_module, "V20PresManager", autospec=True
+        ) as mock_pres_mgr, async_mock.patch.object(
+            test_module, "V20PresExRecord", autospec=True
+        ) as mock_pres_ex_rec_cls, async_mock.patch.object(
+            test_indy_handler, "IndyHolder", autospec=True
+        ) as mock_holder:
+
+            mock_holder.get_credentials_for_presentation_request_by_referent = (
+                async_mock.CoroutineMock(
+                    return_value=[{"cred_info": {"referent": "dummy"}}]
+                )
+            )
+            request_context.inject = async_mock.MagicMock(return_value=mock_holder)
+
+            mock_pres_ex_rec_cls.return_value = mock_px_rec
+            mock_pres_ex_rec_cls.retrieve_by_tag_filter = async_mock.CoroutineMock(
+                return_value=mock_px_rec
+            )
+            mock_pres_mgr.return_value.receive_pres_request = async_mock.CoroutineMock(
+                return_value=mock_px_rec
+            )
+
+            mock_pres_mgr.return_value.create_pres = async_mock.CoroutineMock(
+                return_value=(mock_px_rec, "pres message")
+            )
+
+            request_context.connection_ready = True
+            handler = test_module.V20PresRequestHandler()
+            responder = MockResponder()
+
+            await handler.handle(request_context, responder)
+            mock_pres_mgr.return_value.create_pres.assert_called_once()
+
+        mock_pres_mgr.return_value.receive_pres_request.assert_called_once_with(
+            mock_px_rec
+        )
+        messages = responder.messages
+        assert len(messages) == 1
+        (result, target) = messages[0]
+        assert result == "pres message"
+        assert target == {}
+
+    async def test_called_auto_present_dif(self):
+        request_context = RequestContext.test_context()
+        request_context.connection_record = async_mock.MagicMock()
+        request_context.connection_record.connection_id = "dummy"
+        request_context.message = V20PresRequest(
+            formats=[
+                V20PresFormat(
+                    attach_id="dif",
+                    format_=V20PresFormat.Format.DIF.aries,
+                )
+            ]
+        )
+        request_context.message.attachment = async_mock.MagicMock(
+            return_value=DIF_PROOF_REQ
+        )
+        request_context.message_receipt = MessageReceipt()
+        pres_proposal = V20PresProposal(
+            formats=[
+                V20PresFormat(
+                    attach_id="dif",
+                    format_=V20PresFormat.Format.DIF.aries,
+                )
+            ],
+            proposals_attach=[AttachDecorator.data_json(DIF_PROP_REQ, ident="dif")],
+        )
+
+        px_rec_instance = test_module.V20PresExRecord(
+            pres_proposal=pres_proposal,
+            auto_present=True,
+        )
+        with async_mock.patch.object(
+            test_module, "V20PresManager", autospec=True
+        ) as mock_pres_mgr, async_mock.patch.object(
+            test_module, "V20PresExRecord", autospec=True
+        ) as mock_pres_ex_rec_cls:
+
+            mock_pres_ex_rec_cls.return_value = px_rec_instance
+            mock_pres_ex_rec_cls.retrieve_by_tag_filter = async_mock.CoroutineMock(
+                return_value=px_rec_instance
+            )
+            mock_pres_mgr.return_value.receive_pres_request = async_mock.CoroutineMock(
+                return_value=px_rec_instance
+            )
+
+            mock_pres_mgr.return_value.create_pres = async_mock.CoroutineMock(
+                return_value=(px_rec_instance, "pres message")
+            )
+            request_context.connection_ready = True
+            handler_inst = test_module.V20PresRequestHandler()
+            responder = MockResponder()
+            await handler_inst.handle(request_context, responder)
+            mock_pres_mgr.return_value.create_pres.assert_called_once()
+
+        mock_pres_mgr.return_value.receive_pres_request.assert_called_once_with(
+            px_rec_instance
+        )
+        messages = responder.messages
+        assert len(messages) == 1
+        (result, target) = messages[0]
+        assert result == "pres message"
+        assert target == {}
+
+    async def test_called_auto_present_no_preview(self):
+        request_context = RequestContext.test_context()
+        request_context.connection_record = async_mock.MagicMock()
+        request_context.connection_record.connection_id = "dummy"
+        request_context.message = V20PresRequest(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy",
+                    format_=V20PresFormat.Format.INDY.aries,
+                )
+            ]
+        )
         request_context.message.attachment = async_mock.MagicMock(
             return_value=INDY_PROOF_REQ
         )
@@ -310,7 +498,7 @@ class TestPresRequestHandler(AsyncTestCase):
         ) as mock_pres_mgr, async_mock.patch.object(
             test_module, "V20PresExRecord", autospec=True
         ) as mock_pres_ex_rec_cls, async_mock.patch.object(
-            test_module, "IndyHolder", autospec=True
+            test_indy_handler, "IndyHolder", autospec=True
         ) as mock_holder:
 
             mock_holder.get_credentials_for_presentation_request_by_referent = (
@@ -355,17 +543,32 @@ class TestPresRequestHandler(AsyncTestCase):
         request_context.connection_record.connection_id = "dummy"
         request_context.message = V20PresRequest()
         request_context.message.attachment = async_mock.MagicMock(
-            return_value=INDY_PROOF_REQ_PRED
+            return_value=INDY_PROOF_REQ
         )
         request_context.message_receipt = MessageReceipt()
-        px_rec_instance = test_module.V20PresExRecord(auto_present=True)
+        pres_proposal = V20PresProposal(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy",
+                    format_=V20PresFormat.Format.INDY.aries,
+                )
+            ],
+            proposals_attach=[
+                AttachDecorator.data_base64(INDY_PROOF_REQ, ident="indy")
+            ],
+        )
+        mock_px_rec = async_mock.MagicMock(
+            pres_proposal=pres_proposal.serialize(),
+            auto_present=True,
+            save_error_state=async_mock.CoroutineMock(),
+        )
 
         with async_mock.patch.object(
             test_module, "V20PresManager", autospec=True
         ) as mock_pres_mgr, async_mock.patch.object(
             test_module, "V20PresExRecord", autospec=True
         ) as mock_pres_ex_rec_cls, async_mock.patch.object(
-            test_module, "IndyHolder", autospec=True
+            test_indy_handler, "IndyHolder", autospec=True
         ) as mock_holder:
 
             mock_holder.get_credentials_for_presentation_request_by_referent = (
@@ -373,33 +576,40 @@ class TestPresRequestHandler(AsyncTestCase):
             )
             request_context.inject = async_mock.MagicMock(return_value=mock_holder)
 
-            mock_pres_ex_rec_cls.return_value = px_rec_instance
+            mock_pres_ex_rec_cls.return_value = mock_px_rec
             mock_pres_ex_rec_cls.retrieve_by_tag_filter = async_mock.CoroutineMock(
-                return_value=px_rec_instance
+                return_value=mock_px_rec
             )
             mock_pres_mgr.return_value.receive_pres_request = async_mock.CoroutineMock(
-                return_value=px_rec_instance
+                return_value=mock_px_rec
             )
 
             mock_pres_mgr.return_value.create_pres = async_mock.CoroutineMock(
-                return_value=(px_rec_instance, "pres message")
+                side_effect=test_indy_handler.V20PresFormatHandlerError
             )
             request_context.connection_ready = True
             handler = test_module.V20PresRequestHandler()
             responder = MockResponder()
+
             await handler.handle(request_context, responder)
-            mock_pres_mgr.return_value.create_pres.assert_not_called()
+            mock_px_rec.save_error_state.assert_called_once()
 
         mock_pres_mgr.return_value.receive_pres_request.assert_called_once_with(
-            px_rec_instance
+            mock_px_rec
         )
-        assert not responder.messages
 
     async def test_called_auto_present_pred_single_match(self):
         request_context = RequestContext.test_context()
         request_context.connection_record = async_mock.MagicMock()
         request_context.connection_record.connection_id = "dummy"
-        request_context.message = V20PresRequest()
+        request_context.message = V20PresRequest(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy",
+                    format_=V20PresFormat.Format.INDY.aries,
+                )
+            ]
+        )
         request_context.message.attachment = async_mock.MagicMock(
             return_value=INDY_PROOF_REQ_PRED
         )
@@ -411,7 +621,7 @@ class TestPresRequestHandler(AsyncTestCase):
         ) as mock_pres_mgr, async_mock.patch.object(
             test_module, "V20PresExRecord", autospec=True
         ) as mock_pres_ex_rec_cls, async_mock.patch.object(
-            test_module, "IndyHolder", autospec=True
+            test_indy_handler, "IndyHolder", autospec=True
         ) as mock_holder:
 
             mock_holder.get_credentials_for_presentation_request_by_referent = (
@@ -451,7 +661,14 @@ class TestPresRequestHandler(AsyncTestCase):
         request_context = RequestContext.test_context()
         request_context.connection_record = async_mock.MagicMock()
         request_context.connection_record.connection_id = "dummy"
-        request_context.message = V20PresRequest()
+        request_context.message = V20PresRequest(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy",
+                    format_=V20PresFormat.Format.INDY.aries,
+                )
+            ]
+        )
         request_context.message.attachment = async_mock.MagicMock(
             return_value=INDY_PROOF_REQ_PRED
         )
@@ -463,7 +680,7 @@ class TestPresRequestHandler(AsyncTestCase):
         ) as mock_pres_mgr, async_mock.patch.object(
             test_module, "V20PresExRecord", autospec=True
         ) as mock_pres_ex_rec_cls, async_mock.patch.object(
-            test_module, "IndyHolder", autospec=True
+            test_indy_handler, "IndyHolder", autospec=True
         ) as mock_holder:
 
             mock_holder.get_credentials_for_presentation_request_by_referent = (
@@ -506,7 +723,14 @@ class TestPresRequestHandler(AsyncTestCase):
         request_context = RequestContext.test_context()
         request_context.connection_record = async_mock.MagicMock()
         request_context.connection_record.connection_id = "dummy"
-        request_context.message = V20PresRequest()
+        request_context.message = V20PresRequest(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy",
+                    format_=V20PresFormat.Format.INDY.aries,
+                )
+            ]
+        )
         request_context.message.attachment = async_mock.MagicMock(
             return_value=INDY_PROOF_REQ
         )
@@ -532,7 +756,7 @@ class TestPresRequestHandler(AsyncTestCase):
         ) as mock_pres_mgr, async_mock.patch.object(
             test_module, "V20PresExRecord", autospec=True
         ) as mock_pres_ex_rec_cls, async_mock.patch.object(
-            test_module, "IndyHolder", autospec=True
+            test_indy_handler, "IndyHolder", autospec=True
         ) as mock_holder:
 
             mock_holder.get_credentials_for_presentation_request_by_referent = (
