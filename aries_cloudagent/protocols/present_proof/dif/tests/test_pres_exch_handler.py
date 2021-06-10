@@ -1711,30 +1711,11 @@ class TestPresExchHandler:
             val="test", _filter=Filter()
         )
 
-    def test_cred_schema_match_b(self, profile):
+    def test_cred_schema_match_b(self, profile, setup_tuple):
         dif_pres_exch_handler = DIFPresExchHandler(profile)
-        test_cred_dict = {
-            "@context": [
-                "https://www.w3.org/2018/credentials/v1",
-                "https://www.w3.org/2018/credentials/examples/v1",
-            ],
-            "id": "http://example.edu/credentials/3732",
-            "type": ["VerifiableCredential", "UniversityDegreeCredential"],
-            "issuer": {"id": "https://example.edu/issuers/14"},
-            "issuanceDate": "2010-01-01T19:23:24Z",
-            "credentialSubject": {
-                "id": "did:example:b34ca6cd37bbf23",
-                "degree": {
-                    "type": "BachelorDegree",
-                    "name": "Bachelor of Science and Arts",
-                },
-            },
-            "credentialSchema": {
-                "id": "https://example.org/examples/degree.json",
-                "type": "JsonSchemaValidator2018",
-            },
-        }
-        test_cred = dif_pres_exch_handler.create_vcrecord(test_cred_dict)
+        cred_list, pd_list = setup_tuple
+        test_cred = deepcopy(cred_list[0])
+        test_cred.schema_ids = ["https://example.org/examples/degree.json"]
         assert dif_pres_exch_handler.credential_match_schema(
             test_cred, "https://example.org/examples/degree.json"
         )
@@ -2807,3 +2788,138 @@ class TestPresExchHandler:
         )
         with pytest.raises(DIFPresExchError):
             await dif_pres_exch_handler.filter_by_field(field, cred)
+
+    @pytest.mark.asyncio
+    async def test_filter_creds_record_id(self, profile):
+        dif_pres_exch_handler = DIFPresExchHandler(profile)
+        cred_list = [
+            VCRecord(
+                contexts=[
+                    "https://www.w3.org/2018/credentials/v1",
+                    "https://www.w3.org/2018/credentials/examples/v1",
+                ],
+                expanded_types=[
+                    "https://www.w3.org/2018/credentials#VerifiableCredential",
+                    "https://example.org/examples#UniversityDegreeCredential",
+                ],
+                issuer_id="https://example.edu/issuers/565049",
+                subject_ids=[
+                    "did:sov:LjgpST2rjsoxYegQDRm7EL",
+                    "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
+                ],
+                proof_types=["BbsBlsSignature2020"],
+                schema_ids=["https://example.org/examples/degree.json"],
+                cred_value={"...": "..."},
+                given_id="http://example.edu/credentials/3732",
+                cred_tags={"some": "tag"},
+                record_id="test1",
+            ),
+            VCRecord(
+                contexts=[
+                    "https://www.w3.org/2018/credentials/v1",
+                    "https://www.w3.org/2018/credentials/examples/v1",
+                ],
+                expanded_types=[
+                    "https://www.w3.org/2018/credentials#VerifiableCredential",
+                    "https://example.org/examples#UniversityDegreeCredential",
+                ],
+                issuer_id="https://example.edu/issuers/565049",
+                subject_ids=[
+                    "did:sov:LjgpST2rjsoxYegQDRm7EL",
+                    "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
+                ],
+                proof_types=["BbsBlsSignature2020"],
+                schema_ids=["https://example.org/examples/degree.json"],
+                cred_value={"...": "..."},
+                given_id="http://example.edu/credentials/3732",
+                cred_tags={"some": "tag"},
+                record_id="test2",
+            ),
+            VCRecord(
+                contexts=[
+                    "https://www.w3.org/2018/credentials/v1",
+                    "https://www.w3.org/2018/credentials/examples/v1",
+                ],
+                expanded_types=[
+                    "https://www.w3.org/2018/credentials#VerifiableCredential",
+                    "https://example.org/examples#UniversityDegreeCredential",
+                ],
+                issuer_id="https://example.edu/issuers/565049",
+                subject_ids=[
+                    "did:sov:LjgpST2rjsoxYegQDRm7EL",
+                    "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
+                ],
+                proof_types=["BbsBlsSignature2020"],
+                schema_ids=["https://example.org/examples/degree.json"],
+                cred_value={"...": "..."},
+                given_id="http://example.edu/credentials/3732",
+                cred_tags={"some": "tag"},
+                record_id="test3",
+            ),
+        ]
+        record_id_list = ["test1", "test2"]
+        filtered_cred_list = await dif_pres_exch_handler.filter_creds_record_id(
+            cred_list, record_id_list
+        )
+        assert len(filtered_cred_list) == 2
+        assert filtered_cred_list[0].record_id in record_id_list
+        assert filtered_cred_list[1].record_id in record_id_list
+
+    @pytest.mark.asyncio
+    async def test_create_vp_record_ids(self, profile, setup_tuple):
+        dif_pres_exch_handler = DIFPresExchHandler(profile)
+        test_pd_filter_with_only_num_type = """
+            {
+                "id":"32f54163-7166-48f1-93d8-ff217bdb0653",
+                "submission_requirements":[
+                    {
+                        "name": "European Union Citizenship Proofs",
+                        "rule": "pick",
+                        "min": 1,
+                        "from": "A"
+                    }
+                ],
+                "input_descriptors":[
+                    {
+                    "id":"citizenship_input_1",
+                    "name":"EU Driver's License",
+                    "group":[
+                        "A"
+                    ],
+                    "schema":[
+                        {
+                            "uri":"https://www.w3.org/2018/credentials#VerifiableCredential"
+                        }
+                    ],
+                    "constraints":{
+                        "fields":[
+                            {
+                                "path":[
+                                    "$.credentialSubject.test",
+                                    "$.vc.credentialSubject.test",
+                                    "$.test"
+                                ],
+                                "filter":{  
+                                    "type": "number"
+                                }
+                            }
+                        ]
+                    }
+                    }
+                ]
+            }
+        """
+        records_filter = {"citizenship_input_1": ["test1", "test2"]}
+        cred_list = deepcopy(bbs_bls_number_filter_creds)
+        cred_list[0].record_id = "test1"
+        cred_list[1].record_id = "test2"
+        cred_list[2].record_id = "test3"
+
+        tmp_pd = PresentationDefinition.deserialize(test_pd_filter_with_only_num_type)
+        tmp_vp = await dif_pres_exch_handler.create_vp(
+            credentials=cred_list,
+            pd=tmp_pd,
+            challenge="1f44d55f-f161-4938-a659-f8026467f126",
+            records_filter=records_filter,
+        )
+        assert len(tmp_vp.get("verifiableCredential")) == 2

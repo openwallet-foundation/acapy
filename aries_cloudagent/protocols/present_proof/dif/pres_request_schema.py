@@ -31,13 +31,16 @@ class DIFPresSpecSchema(OpenAPISchema):
         ),
         required=False,
     )
-    record_ids = fields.List(
-        fields.Str(description="Record identifier"),
+    record_ids = fields.Dict(
         description=(
             (
-                "List of record_id to fetch stored "
-                "W3C credentials for presentation exchange"
+                "Mapping of input_descriptor id to list "
+                "of stored W3C credential record_id"
             )
+        ),
+        example=(
+            '{ "<input descriptor id_1>": ["<record id>", ...], '
+            '"<input descriptor id_2>": ["<record id>", ...]}'
         ),
         required=False,
     )
