@@ -911,7 +911,19 @@ async def present_proof_send_presentation(request: web.BaseRequest):
     outbound_handler = request["outbound_message_router"]
     pres_ex_id = request.match_info["pres_ex_id"]
     body = await request.json()
-    fmt = V20PresFormat.Format.get([f for f in body][0]).api  # "indy" xor "dif"
+    if "dif" in body:
+        fmt = V20PresFormat.Format.get("dif").api
+    elif "indy" in body:
+        fmt = V20PresFormat.Format.get("indy").api
+    else:
+        raise web.HTTPBadRequest(
+            reason=(
+                "No presentation format specification provided, "
+                "either dif or indy must be included. "
+                "In case of DIF, if no additional specification "
+                'needs to be provided then include "dif": {}'
+            )
+        )
     comment = body.get("comment")
     pres_ex_record = None
     async with context.session() as session:

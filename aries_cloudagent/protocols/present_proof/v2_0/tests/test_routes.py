@@ -1960,3 +1960,11 @@ class TestPresentProofRoutes(AsyncTestCase):
         assert len(returned_cred_list) == 1
         assert len(returned_record_ids) == 2
         assert returned_cred_list[0].record_id == "test2"
+
+    async def test_send_presentation_no_specification(self):
+        self.request.json = async_mock.CoroutineMock(return_value={"comment": "test"})
+        self.request.match_info = {
+            "pres_ex_id": "dummy",
+        }
+        with self.assertRaises(test_module.web.HTTPBadRequest):
+            await test_module.present_proof_send_presentation(self.request)
