@@ -241,7 +241,7 @@ class DIDWeb(Regexp):
     """Validate value against did:web specification."""
 
     EXAMPLE = "did:web:example.com"
-    PATTERN = re.compile(r"^(did:web:)?([a-zA-Z0-9%._-]*:)*[a-zA-Z0-9%._-]+$")
+    PATTERN = re.compile(r"^(did:web:)([a-zA-Z0-9%._-]*:)*[a-zA-Z0-9%._-]+$")
 
     def __init__(self):
         """Initializer."""
