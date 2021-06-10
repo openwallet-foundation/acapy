@@ -471,7 +471,7 @@ class DemoAgent:
                 new_did = await self.admin_POST("/wallet/did/create", data=data)
                 self.did = new_did["result"]["did"]
 
-                # TODO currenty did:key is not registered as a public did
+                # did:key is not registered as a public did
             else:
                 # todo ignore for now
                 pass

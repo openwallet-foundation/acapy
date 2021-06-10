@@ -15,17 +15,21 @@ git clone https://github.com/hyperledger/aries-cloudagent-python.git
 cd aries-cloudagent-python/demo
 ```
 
-Open up a second shell (so you have 2 shells open in the `demo` directory) and in each shell:
+Open up a second shell (so you have 2 shells open in the `demo` directory) and in one shell:
 
 ```bash
-./run_demo faber --did-exchange`
+./run_demo faber --did-exchange --aip 20
 ```
 
+... and in the other:
+
 ```bash
-./run_demo alice`
+./run_demo alice
 ```
 
 Note that you start the `faber` agent with AIP2.0 options.
+
+(Alternately you can run run Alice and Faber agents locally, see the `./faber-local.sh` and `./alice-local.sh` scripts in the `demo` directory.)
 
 Copy the "invitation" json text from the Faber shell and paste into the Alice shell to establish a connection between the two agents.
 

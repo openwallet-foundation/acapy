@@ -300,7 +300,7 @@ async def main(args):
                                     "issuanceDate": "2020-01-01T12:00:00Z",
                                     "credentialSubject": {
                                         "type": ["PermanentResident"],
-                                        # "id": "<need did:key of holder>",
+                                        # "id": "<TODO need did:key of holder>",
                                         "givenName": "ALICE",
                                         "familyName": "SMITH",
                                         "gender": "Female",

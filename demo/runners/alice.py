@@ -204,14 +204,20 @@ class AliceAgent(AriesAgent):
 
                     log_status("#25 Generate the proof")
                     request = {
-                        "dif": pres_request_dif,
+                        "dif": {},
                     }
-                    request["dif"]["record_ids"] = [
-                        record_id,
-                    ]
+                    # specify the record id for each input_descriptor id:
+                    request["dif"]["record_ids"] = {}
+                    for input_descriptor in pres_request_dif["presentation_definition"]["input_descriptors"]:
+                        request["dif"]["record_ids"][input_descriptor["id"]] = [ record_id, ]
+                    log_msg("presenting ld-presentation:", request)
 
-                    # note that the holder/prover can also/or specify constraints by adding filters, for example:
+                    # NOTE that the holder/prover can also/or specify constraints by including the whole proof request 
+                    # and constraining the presented credentials by adding filters, for example:
                     #
+                    # request = {
+                    #     "dif": pres_request_dif,
+                    # }
                     # request["dif"]["presentation_definition"]["input_descriptors"]["constraints"]["fields"].append(
                     #      {
                     #          "path": [
@@ -232,7 +238,7 @@ class AliceAgent(AriesAgent):
             else:
                 raise Exception("Invalid presentation request received")
 
-            log_status("#26 Send the proof to X")
+            log_status("#26 Send the proof to X:")
             await self.admin_POST(
                 f"/present-proof-2.0/records/{pres_ex_id}/send-presentation",
                 request,
