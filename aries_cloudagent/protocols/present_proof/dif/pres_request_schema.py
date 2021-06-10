@@ -39,8 +39,10 @@ class DIFPresSpecSchema(OpenAPISchema):
             )
         ),
         example=(
-            '{ "<input descriptor id_1>": ["<record id>", ...], '
-            '"<input descriptor id_2>": ["<record id>", ...]}'
+            {
+                "<input descriptor id_1>": ["<record id_1>", "<record id_2>"],
+                "<input descriptor id_2>": ["<record id>"],
+            }
         ),
         required=False,
     )
