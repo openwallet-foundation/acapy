@@ -2,8 +2,8 @@
 
 from marshmallow import fields
 
-from ....messaging.models.openapi import OpenAPISchema
-from ....messaging.valid import INT_EPOCH
+from ...messaging.models.openapi import OpenAPISchema
+from ...messaging.valid import INT_EPOCH
 
 
 class IndyRequestedCredsRequestedAttrSchema(OpenAPISchema):

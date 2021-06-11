@@ -32,6 +32,19 @@ class StrOrDictField(Field):
             raise ValidationError("Field should be str or dict")
 
 
+class StrOrNumberField(Field):
+    """String or Number field for Marshmallow."""
+
+    def _serialize(self, value, attr, obj, **kwargs):
+        return value
+
+    def _deserialize(self, value, attr, data, **kwargs):
+        if isinstance(value, (str, float, int)):
+            return value
+        else:
+            raise ValidationError("Field should be str or int or float")
+
+
 class DictOrDictListField(Field):
     """Dict or Dict List field for Marshmallow."""
 
@@ -221,6 +234,20 @@ class DIDKey(Regexp):
 
         super().__init__(
             DIDKey.PATTERN, error="Value {input} is not in W3C did:key format"
+        )
+
+
+class DIDWeb(Regexp):
+    """Validate value against did:web specification."""
+
+    EXAMPLE = "did:web:example.com"
+    PATTERN = re.compile(r"^(did:web:)([a-zA-Z0-9%._-]*:)*[a-zA-Z0-9%._-]+$")
+
+    def __init__(self):
+        """Initializer."""
+
+        super().__init__(
+            DIDWeb.PATTERN, error="Value {input} is not in W3C did:web format"
         )
 
 
