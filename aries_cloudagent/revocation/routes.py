@@ -88,7 +88,7 @@ class TxnOrRevRegResultSchema(OpenAPISchema):
     txn = fields.Nested(
         TransactionRecordSchema(),
         required=False,
-        description="Credential definition transaction to endorse",
+        description="Revocation registry definition transaction to endorse",
     )
 
 
@@ -152,6 +152,21 @@ class PublishRevocationsSchema(OpenAPISchema):
             )
         ),
         description="Credential revocation ids by revocation registry id",
+    )
+
+
+class TxnOrPublishRevocationsResultSchema(OpenAPISchema):
+    """Result schema for credential definition send request."""
+
+    sent = fields.Nested(
+        PublishRevocationsSchema(),
+        required=False,
+        definition="Content sent",
+    )
+    txn = fields.Nested(
+        TransactionRecordSchema(),
+        required=False,
+        description="Revocation registry revocations transaction to endorse",
     )
 
 
@@ -330,7 +345,9 @@ async def revoke(request: web.BaseRequest):
 
 @docs(tags=["revocation"], summary="Publish pending revocations to ledger")
 @request_schema(PublishRevocationsSchema())
-@response_schema(PublishRevocationsSchema(), 200, description="")
+@querystring_schema(CreateRevRegTxnForEndorserOptionSchema())
+@querystring_schema(RevRegConnIdMatchInfoSchema())
+@response_schema(TxnOrPublishRevocationsResultSchema(), 200, description="")
 async def publish_revocations(request: web.BaseRequest):
     """
     Request handler for publishing pending revocations to the ledger.
@@ -345,14 +362,65 @@ async def publish_revocations(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     body = await request.json()
     rrid2crid = body.get("rrid2crid")
+    create_transaction_for_endorser = json.loads(
+        request.query.get("create_transaction_for_endorser", "false")
+    )
+    write_ledger = not create_transaction_for_endorser
+    endorser_did = None
+    connection_id = request.query.get("conn_id")
 
     rev_manager = RevocationManager(context.profile)
 
+    if not write_ledger:
+
+        try:
+            async with context.session() as session:
+                connection_record = await ConnRecord.retrieve_by_id(
+                    session, connection_id
+                )
+        except StorageNotFoundError as err:
+            raise web.HTTPNotFound(reason=err.roll_up) from err
+        except BaseModelError as err:
+            raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+        session = await context.session()
+        endorser_info = await connection_record.metadata_get(session, "endorser_info")
+        if not endorser_info:
+            raise web.HTTPForbidden(
+                reason="Endorser Info is not set up in "
+                "connection metadata for this connection record"
+            )
+        if "endorser_did" not in endorser_info.keys():
+            raise web.HTTPForbidden(
+                reason=' "endorser_did" is not set in "endorser_info"'
+                " in connection metadata for this connection record"
+            )
+        endorser_did = endorser_info["endorser_did"]
+
     try:
-        results = await rev_manager.publish_pending_revocations(rrid2crid)
+        results = await rev_manager.publish_pending_revocations(
+            rrid2crid,
+            write_ledger=write_ledger,
+            endorser_did=endorser_did,
+        )
     except (RevocationError, StorageError, IndyIssuerError, LedgerError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
-    return web.json_response({"rrid2crid": results})
+
+    if not create_transaction_for_endorser:
+        return web.json_response({"rrid2crid": results})
+
+    else:
+        session = await context.session()
+
+        transaction_mgr = TransactionManager(session)
+        try:
+            transaction = await transaction_mgr.create_record(
+                messages_attach=rev_reg_resp["result"], connection_id=connection_id
+            )
+        except StorageError as err:
+            raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+        return web.json_response({"txn": transaction.serialize()})
 
 
 @docs(tags=["revocation"], summary="Clear pending revocations")
