@@ -1,18 +1,19 @@
 import json
 import time
-
-from bdd_support.agent_backchannel_client import (
-    agent_container_register_did,
-    agent_container_GET,
-    agent_container_POST,
-    read_schema_data,
-    async_sleep,
-    read_json_data,
-)
-from behave import given, when, then
-from runners.agent_container import AgentContainer
 from time import sleep
 
+from bdd_support.agent_backchannel_client import (
+    agent_container_GET,
+    agent_container_PATCH,
+    agent_container_POST,
+    agent_container_PUT,
+    agent_container_register_did,
+    async_sleep,
+    read_json_data,
+    read_schema_data,
+)
+from behave import given, then, when
+from runners.agent_container import AgentContainer
 
 # This step is defined in another feature file
 # Given "Acme" and "Bob" have an existing connection
@@ -204,9 +205,8 @@ def step_impl(context, agent_name, schema_name):
         data={
             "schema_id": schema_id,
             "tag": "test_cred_def_with_endorsement",
-            # TODO add for revocation
-            #"support_revocation": True,
-            #"revocation_registry_size": 1000
+            "support_revocation": True,
+            "revocation_registry_size": 1000,
         },
         params={"conn_id": connection_id, "create_transaction_for_endorser": "true"},
     )
@@ -218,8 +218,12 @@ def step_impl(context, agent_name, schema_name):
     context.txn_ids["AUTHOR"] = created_txn["txn"]["transaction_id"]
 
 
-@when('"{agent_name}" has written the credential definition for {schema_name} to the ledger')
-@then('"{agent_name}" has written the credential definition for {schema_name} to the ledger')
+@when(
+    '"{agent_name}" has written the credential definition for {schema_name} to the ledger'
+)
+@then(
+    '"{agent_name}" has written the credential definition for {schema_name} to the ledger'
+)
 def step_impl(context, agent_name, schema_name):
     agent = context.active_agents[agent_name]
 
@@ -229,7 +233,9 @@ def step_impl(context, agent_name, schema_name):
     assert len(cred_defs["credential_definition_ids"]) == 1
 
     cred_def_id = cred_defs["credential_definition_ids"][0]
-    cred_def = agent_container_GET(agent["agent"], "/credential-definitions/" + cred_def_id)
+    cred_def = agent_container_GET(
+        agent["agent"], "/credential-definitions/" + cred_def_id
+    )
 
     context.cred_def_id = cred_def_id
 
@@ -237,11 +243,131 @@ def step_impl(context, agent_name, schema_name):
 
 
 @when(
+    '"{agent_name}" authors a revocation registry definition transaction for the credential definition matching {schema_name}'
+)
+@then(
+    '"{agent_name}" authors a revocation registry definition transaction for the credential definition matching {schema_name}'
+)
+def step_impl(context, agent_name, schema_name):
+    agent = context.active_agents[agent_name]
+
+    connection_id = agent["agent"].agent.connection_id
+
+    # generate revocation registry transaction
+    rev_reg = agent_container_POST(
+        agent["agent"],
+        "/revocation/create-registry",
+        data={"credential_definition_id": context.cred_def_id, "max_cred_num": 1000},
+        params={},
+    )
+    rev_reg_id = rev_reg["result"]["revoc_reg_id"]
+    assert rev_reg_id is not None
+
+    # update revocation registry
+    agent_container_PATCH(
+        agent["agent"],
+        f"/revocation/registry/{rev_reg_id}",
+        data={
+            "tails_public_uri": f"http://host.docker.internal:6543/revocation/registry/{rev_reg_id}/tails-file"
+        },
+        params={},
+    )
+
+    # create rev_reg transaction
+    created_txn = agent_container_POST(
+        agent["agent"],
+        f"/revocation/registry/{rev_reg_id}/definition",
+        data={},
+        params={
+            "conn_id": connection_id,
+            "create_transaction_for_endorser": "true",
+        },
+    )
+    assert created_txn["txn"]["state"] == "transaction_created"
+    if not "txn_ids" in context:
+        context.txn_ids = {}
+    context.txn_ids["AUTHOR"] = created_txn["txn"]["transaction_id"]
+
+
+@when('"{agent_name}" has written the revocation registry definition to the ledger')
+@then('"{agent_name}" has written the revocation registry definition to the ledger')
+def step_impl(context, agent_name):
+    agent = context.active_agents[agent_name]
+
+    rev_regs = agent_container_GET(
+        agent["agent"],
+        "/revocation/registries/created",
+        params={
+            "cred_def_id": context.cred_def_id,
+        },
+    )
+    assert len(rev_regs["rev_reg_ids"]) == 1
+
+    rev_reg_id = rev_regs["rev_reg_ids"][0]
+
+    context.rev_reg_id = rev_reg_id
+
+
+@when(
+    '"{agent_name}" has activated the tails file, and uploaded it to the tails server'
+)
+@then(
+    '"{agent_name}" has has activated the tails file, and uploaded it to the tails server'
+)
+def step_impl(context, agent_name):
+    agent = context.active_agents[agent_name]
+
+    # activate rev_reg
+    agent_container_PATCH(
+        agent["agent"],
+        f"/revocation/registry/{context.rev_reg_id}/set-state",
+        data={},
+        params={"state": "active"},
+    )
+
+    # upload rev_reg
+    agent_container_PUT(
+        agent["agent"],
+        f"/revocation/registry/{context.rev_reg_id}/tails-file",
+        data={},
+        params={},
+    )
+
+
+@when(
+    '"{agent_name}" authors a revocation registry entry transaction for the credential definition matching {schema_name}'
+)
+@then(
+    '"{agent_name}" authors a revocation registry entry transaction for the credential definition matching {schema_name}'
+)
+def step_impl(context, agent_name, schema_name):
+    agent = context.active_agents[agent_name]
+
+    connection_id = agent["agent"].agent.connection_id
+
+    # generate revocation registry entry transaction
+    # create rev_reg transaction
+    created_txn = agent_container_POST(
+        agent["agent"],
+        f"/revocation/registry/{context.rev_reg_id}/entry",
+        data={},
+        params={
+            "conn_id": connection_id,
+            "create_transaction_for_endorser": "true",
+        },
+    )
+    assert created_txn["txn"]["state"] == "transaction_created"
+    if not "txn_ids" in context:
+        context.txn_ids = {}
+    context.txn_ids["AUTHOR"] = created_txn["txn"]["transaction_id"]
+
+
+@when(
     '"{holder}" has an issued {schema_name} credential {credential_data} from "{issuer}"'
 )
 def step_impl(context, holder, schema_name, credential_data, issuer):
     context.execute_steps(
-        u'''
+        '''
         When "'''
         + issuer
         + """" offers a credential with data """
@@ -253,3 +379,5 @@ def step_impl(context, holder, schema_name, credential_data, issuer):
     """
     )
 
+
+# TODO: add revoking a credential

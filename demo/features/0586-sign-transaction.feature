@@ -71,10 +71,20 @@ Feature: RFC 0586 Aries sign (endorse) transactions functions
       And "Acme" endorses the transaction
       And "Bob" can write the transaction to the ledger
       And "Bob" has written the credential definition for <Schema_name> to the ledger
-      And "Acme" has an issued <Schema_name> credential <Credential_data> from "Bob"
+      And "Bob" authors a revocation registry definition transaction for the credential definition matching <Schema_name>
+      And "Bob" requests endorsement for the transaction
+      And "Acme" endorses the transaction
+      And "Bob" can write the transaction to the ledger
+      And "Bob" has written the revocation registry definition to the ledger
+      And "Bob" has activated the tails file, and uploaded it to the tails server
+      And "Bob" authors a revocation registry entry transaction for the credential definition matching <Schema_name>
+      And "Bob" requests endorsement for the transaction
+      And "Acme" endorses the transaction
+      And "Bob" can write the transaction to the ledger
+      # And "Acme" has an issued <Schema_name> credential <Credential_data> from "Bob"
       # TODO support for revocation
       #Then "Bob" revokes the credential
-      And "Acme" has the credential issued
+      # And "Acme" has the credential issued
 
       Examples:
          | Acme_capabilities                                   | Bob_capabilities                          | Schema_name    | Credential_data          |

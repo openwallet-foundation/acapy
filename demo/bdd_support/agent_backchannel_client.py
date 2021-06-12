@@ -250,3 +250,33 @@ def agent_container_POST(
         text=text,
         params=params,
     )
+
+def agent_container_PATCH(
+    the_container: AgentContainer,
+    path: str,
+    data: dict = None,
+    text: bool = False,
+    params: dict = None,
+) -> dict:
+    return run_coroutine_with_kwargs(
+        the_container.admin_PATCH,
+        path,
+        data=data,
+        text=text,
+        params=params,
+    )
+
+def agent_container_PUT(
+    the_container: AgentContainer,
+    path: str,
+    data: dict = None,
+    text: bool = False,
+    params: dict = None,
+) -> dict:
+    return run_coroutine_with_kwargs(
+        the_container.admin_PUT,
+        path,
+        data=data,
+        text=text,
+        params=params,
+    )
