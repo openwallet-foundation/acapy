@@ -398,7 +398,7 @@ async def publish_revocations(request: web.BaseRequest):
         endorser_did = endorser_info["endorser_did"]
 
     try:
-        results = await rev_manager.publish_pending_revocations(
+        rev_reg_resp = await rev_manager.publish_pending_revocations(
             rrid2crid,
             write_ledger=write_ledger,
             endorser_did=endorser_did,
@@ -407,7 +407,7 @@ async def publish_revocations(request: web.BaseRequest):
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     if not create_transaction_for_endorser:
-        return web.json_response({"rrid2crid": results})
+        return web.json_response({"rrid2crid": rev_reg_resp})
 
     else:
         session = await context.session()

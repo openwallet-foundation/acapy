@@ -160,9 +160,12 @@ class RevocationManager:
                     crids,
                 )
                 issuer_rr_rec.revoc_reg_entry = json.loads(delta_json)
-                await issuer_rr_rec.send_entry(
+                send_entry_result = await issuer_rr_rec.send_entry(
                     self._profile, write_ledger=write_ledger, endorser_did=endorser_did
                 )
+                if endorser_did and not write_ledger:
+                    return  send_entry_result
+                
                 published = [crid for crid in crids if crid not in failed_crids]
                 result[issuer_rr_rec.revoc_reg_id] = published
                 async with self._profile.session() as session:
