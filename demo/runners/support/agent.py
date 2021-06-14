@@ -129,6 +129,7 @@ class DemoAgent:
         revocation: bool = False,
         multitenant: bool = False,
         mediation: bool = False,
+        aip: int = 10,
         arg_file: str = None,
         extra_args=None,
         **params,
@@ -155,6 +156,7 @@ class DemoAgent:
         self.mediation = mediation
         self.mediator_connection_id = None
         self.mediator_request_id = None
+        self.aip = aip
         self.arg_file = arg_file
 
         self.admin_url = f"http://{self.internal_host}:{admin_port}"

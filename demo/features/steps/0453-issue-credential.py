@@ -120,29 +120,6 @@ def step_impl(context, holder):
     assert False
 
 
-@given(
-    '"{holder}" has an issued {schema_name} credential {credential_data} from "{issuer}"'
-)
-def step_impl(context, holder, schema_name, credential_data, issuer):
-    context.execute_steps(
-        u'''
-        Given "'''
-        + issuer
-        + """" is ready to issue a credential for """
-        + schema_name
-        + '''
-        When "'''
-        + issuer
-        + """" offers a credential with data """
-        + credential_data
-        + '''
-        Then "'''
-        + holder
-        + """" has the credential issued
-    """
-    )
-
-
 @given('"{issuer}" is ready to issue a json-ld credential for {schema_name}')
 def step_impl(context, issuer, schema_name):
     # create a "did:key" to use as issuer
@@ -239,4 +216,56 @@ def step_impl(context, holder):
             return
 
     assert False
+
+
+@given(
+    '"{holder}" has an issued json-ld {schema_name} credential {credential_data} from "{issuer}"'
+)
+def step_impl(context, holder, schema_name, credential_data, issuer):
+    context.execute_steps(
+        u'''
+        Given "'''
+        + issuer
+        + """" is ready to issue a json-ld credential for """
+        + schema_name
+        + '''
+        And "'''
+        + holder
+        + """" is ready to receive a json-ld credential """
+        + '''
+        When "'''
+        + issuer
+        + '''" offers "'''
+        + holder
+        + '''" a json-ld credential with data '''
+        + credential_data
+        + '''
+        Then "'''
+        + holder
+        + """" has the json-ld credential issued
+    """
+    )
+
+
+@given(
+    '"{holder}" has an issued {schema_name} credential {credential_data} from "{issuer}"'
+)
+def step_impl(context, holder, schema_name, credential_data, issuer):
+    context.execute_steps(
+        u'''
+        Given "'''
+        + issuer
+        + """" is ready to issue a credential for """
+        + schema_name
+        + '''
+        When "'''
+        + issuer
+        + """" offers a credential with data """
+        + credential_data
+        + '''
+        Then "'''
+        + holder
+        + """" has the credential issued
+    """
+    )
 
