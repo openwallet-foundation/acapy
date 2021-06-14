@@ -82,13 +82,12 @@ Feature: RFC 0586 Aries sign (endorse) transactions functions
       And "Acme" endorses the transaction
       And "Bob" can write the transaction to the ledger
       And "Acme" has an issued <Schema_name> credential <Credential_data> from "Bob"
-      # And "Bob" revokes the credential
-      # And "Bob" authors a revocation entry transaction
-      # And "Bob" requests endorsement for the transaction
-      # And "Acme" endorses the transaction
-      # And "Bob" can write the transaction to the ledger
-      # And "Bob" has written the revocation entry to the ledger
-      # Then "Acme" can verify the credential from "Bob" was revoked
+      And "Bob" revokes the credential without publishing the entry
+      And "Bob" authors a revocation registry entry publishing transaction
+      And "Bob" requests endorsement for the transaction
+      And "Acme" endorses the transaction
+      And "Bob" can write the transaction to the ledger
+      Then "Acme" can verify the credential from "Bob" was revoked
 
       Examples:
          | Acme_capabilities                                   | Bob_capabilities                          | Schema_name    | Credential_data          |
