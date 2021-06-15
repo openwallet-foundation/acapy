@@ -2957,8 +2957,8 @@ class TestIndySdkLedger(AsyncTestCase):
             mock_submit.assert_called_once_with(
                 mock_indy_build_rrdef_req.return_value,
                 True,
-                True,
-                TestIndySdkLedger.test_did_info,
+                sign_did=TestIndySdkLedger.test_did_info,
+                write_ledger=True,
             )
 
     @async_mock.patch("aries_cloudagent.ledger.indy.IndySdkLedgerPool.context_open")
@@ -2990,8 +2990,8 @@ class TestIndySdkLedger(AsyncTestCase):
             mock_submit.assert_called_once_with(
                 mock_indy_build_rrdef_req.return_value,
                 True,
-                True,
-                TestIndySdkLedger.test_did_info,
+                sign_did=TestIndySdkLedger.test_did_info,
+                write_ledger=True,
             )
 
     @async_mock.patch("aries_cloudagent.ledger.indy.IndySdkLedgerPool.context_open")
@@ -3045,8 +3045,8 @@ class TestIndySdkLedger(AsyncTestCase):
             mock_submit.assert_called_once_with(
                 mock_indy_build_rre_req.return_value,
                 True,
-                True,
-                TestIndySdkLedger.test_did_info,
+                sign_did=TestIndySdkLedger.test_did_info,
+                write_ledger=True,
             )
 
     @async_mock.patch("aries_cloudagent.ledger.indy.IndySdkLedgerPool.context_open")
@@ -3080,8 +3080,8 @@ class TestIndySdkLedger(AsyncTestCase):
             mock_submit.assert_called_once_with(
                 mock_indy_build_rre_req.return_value,
                 True,
-                True,
-                TestIndySdkLedger.test_did_info,
+                sign_did=TestIndySdkLedger.test_did_info,
+                write_ledger=True,
             )
 
     @async_mock.patch("aries_cloudagent.ledger.indy.IndySdkLedgerPool.context_open")
