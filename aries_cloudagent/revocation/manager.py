@@ -8,10 +8,9 @@ from ..core.error import BaseError
 from ..core.profile import Profile
 from ..indy.issuer import IndyIssuer
 from ..storage.error import StorageNotFoundError
-
 from .indy import IndyRevocation
-from .models.issuer_rev_reg_record import IssuerRevRegRecord
 from .models.issuer_cred_rev_record import IssuerCredRevRecord
+from .models.issuer_rev_reg_record import IssuerRevRegRecord
 
 
 class RevocationManagerError(BaseError):
@@ -164,8 +163,8 @@ class RevocationManager:
                     self._profile, write_ledger=write_ledger, endorser_did=endorser_did
                 )
                 if endorser_did and not write_ledger:
-                    return  send_entry_result
-                
+                    return send_entry_result
+
                 published = [crid for crid in crids if crid not in failed_crids]
                 result[issuer_rr_rec.revoc_reg_id] = published
                 async with self._profile.session() as session:
