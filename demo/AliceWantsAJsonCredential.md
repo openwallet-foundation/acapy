@@ -18,7 +18,7 @@ cd aries-cloudagent-python/demo
 Open up a second shell (so you have 2 shells open in the `demo` directory) and in one shell:
 
 ```bash
-./run_demo faber --did-exchange --aip 20
+./run_demo faber --did-exchange --aip 20 --cred-type json-ld
 ```
 
 ... and in the other:
@@ -27,7 +27,7 @@ Open up a second shell (so you have 2 shells open in the `demo` directory) and i
 ./run_demo alice
 ```
 
-Note that you start the `faber` agent with AIP2.0 options.
+Note that you start the `faber` agent with AIP2.0 options.  (When you specify `--cred-type json-ld` faber will set aip to `20` automatically, so the `--aip` option is not strictly required.)
 
 (Alternately you can run run Alice and Faber agents locally, see the `./faber-local.sh` and `./alice-local.sh` scripts in the `demo` directory.)
 
