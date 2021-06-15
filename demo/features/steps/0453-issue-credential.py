@@ -237,7 +237,7 @@ def step_impl(context, holder, schema_name, credential_data, issuer):
         + issuer
         + '''" offers "'''
         + holder
-        + '''" a json-ld credential with data '''
+        + """" a json-ld credential with data """
         + credential_data
         + '''
         Then "'''
@@ -268,4 +268,3 @@ def step_impl(context, holder, schema_name, credential_data, issuer):
         + """" has the credential issued
     """
     )
-

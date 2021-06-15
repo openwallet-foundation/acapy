@@ -75,7 +75,9 @@ def step_impl(context, verifier):
     assert False
 
 
-@when('"{verifier}" sends a request for json-ld proof presentation {request_for_proof} to "{prover}"')
+@when(
+    '"{verifier}" sends a request for json-ld proof presentation {request_for_proof} to "{prover}"'
+)
 def step_impl(context, verifier, request_for_proof, prover):
     agent = context.active_agents[verifier]
     prover_agent = context.active_agents[prover]
@@ -91,9 +93,7 @@ def step_impl(context, verifier, request_for_proof, prover):
                 },
                 "presentation_definition": {
                     "id": "32f54163-7166-48f1-93d8-ff217bdb0654",
-                    "format": {
-                        "ldp_vp": {"proof_type": [SIG_TYPE_BLS]}
-                    },
+                    "format": {"ldp_vp": {"proof_type": [SIG_TYPE_BLS]}},
                     "input_descriptors": [
                         {
                             "id": "citizenship_input_1",
@@ -110,25 +110,21 @@ def step_impl(context, verifier, request_for_proof, prover):
                                 "limit_disclosure": "required",
                                 "fields": [
                                     {
-                                        "path": [
-                                            "$.credentialSubject.familyName"
-                                        ],
+                                        "path": ["$.credentialSubject.familyName"],
                                         "purpose": "The claim must be from one of the specified person",
                                         "filter": {"const": "SMITH"},
                                     },
                                     {
-                                        "path": [
-                                            "$.credentialSubject.givenName"
-                                        ],
+                                        "path": ["$.credentialSubject.givenName"],
                                         "purpose": "The claim must be from one of the specified person",
-                                    }
-                                ]
-                            }
+                                    },
+                                ],
+                            },
                         }
-                    ]
-                }
+                    ],
+                },
             }
-        }
+        },
     }
 
     proof_exchange = agent_container_POST(
@@ -146,4 +142,3 @@ def step_impl(context, verifier):
     agent = context.active_agents[verifier]
 
     pass
-
