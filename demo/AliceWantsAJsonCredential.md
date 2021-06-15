@@ -503,9 +503,9 @@ Another option is for Alice to specify the credential `record_id` - this is an i
         }
       ]
     },
-    "record_ids": [
-      "1496316f972e40cf9b46b35971182337"
-    ]
+    "record_ids": {
+      "citizenship_input_1": [ "1496316f972e40cf9b46b35971182337" ]
+    }
   }
 }
 ```
