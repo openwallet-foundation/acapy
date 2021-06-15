@@ -131,7 +131,7 @@ class RevocationManager:
                     - all pending revocations from all revocation registry tagged 0
                     - pending ["1", "2"] from revocation registry tagged 1
                     - no pending revocations from any other revocation registries.
-            write_ledger: wether to write the transaction to the ledger, or prepare a 
+            write_ledger: wether to write the transaction to the ledger, or prepare a
                 transaction to be endorsed
             endorser_did: the did of the endorser, if endorsing the transaction
 
