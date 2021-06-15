@@ -6,7 +6,7 @@ from typing import Mapping, Sequence
 
 from marshmallow import EXCLUDE, fields
 
-from ...ledger.indy import IndySdkLedger
+from ...ledger.base import BaseLedger
 from ...messaging.models.base import BaseModel, BaseModelSchema
 from ...messaging.util import canon
 from ...messaging.valid import INDY_CRED_DEF_ID, INDY_PREDICATE
@@ -294,7 +294,7 @@ class IndyPresPreview(BaseModel):
         name: str = None,
         version: str = None,
         nonce: str = None,
-        ledger: IndySdkLedger = None,
+        ledger: BaseLedger = None,
         non_revoc_intervals: Mapping[str, IndyNonRevocationInterval] = None,
     ) -> dict:
         """

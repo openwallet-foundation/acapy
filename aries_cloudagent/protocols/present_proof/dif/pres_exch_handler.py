@@ -949,8 +949,21 @@ class DIFPresExchHandler:
             return True
         return False
 
+    async def filter_creds_record_id(
+        self, credentials: Sequence[VCRecord], records_list: Sequence[str]
+    ) -> Sequence[VCRecord]:
+        """Return filtered list of credentials using records_list."""
+        filtered_cred = []
+        for credential in credentials:
+            if credential.record_id in records_list:
+                filtered_cred.append(credential)
+        return filtered_cred
+
     async def apply_requirements(
-        self, req: Requirement, credentials: Sequence[VCRecord]
+        self,
+        req: Requirement,
+        credentials: Sequence[VCRecord],
+        records_filter: dict = None,
     ) -> dict:
         """
         Apply Requirement.
@@ -970,9 +983,18 @@ class DIFPresExchHandler:
             # Filter credentials to apply filtering
             # upon by matching each credentialSchema.id
             # or expanded types on each InputDescriptor's schema URIs
-            filtered_by_schema = await self.filter_schema(
-                credentials=credentials, schemas=descriptor.schemas
-            )
+            if records_filter and (descriptor.id in records_filter):
+                filtered_creds_by_descriptor_id = await self.filter_creds_record_id(
+                    credentials, records_filter.get(descriptor.id)
+                )
+                filtered_by_schema = await self.filter_schema(
+                    credentials=filtered_creds_by_descriptor_id,
+                    schemas=descriptor.schemas,
+                )
+            else:
+                filtered_by_schema = await self.filter_schema(
+                    credentials=credentials, schemas=descriptor.schemas
+                )
             # Filter credentials based upon path expressions specified in constraints
             filtered = await self.filter_constraints(
                 constraints=descriptor.constraint,
@@ -992,7 +1014,9 @@ class DIFPresExchHandler:
         # recursion logic for nested requirements
         for requirement in req.nested_req:
             # recursive call
-            result = await self.apply_requirements(requirement, credentials)
+            result = await self.apply_requirements(
+                requirement, credentials, records_filter
+            )
             if result == {}:
                 continue
             # given_id_descriptors maps applicable credentials
@@ -1081,6 +1105,7 @@ class DIFPresExchHandler:
         pd: PresentationDefinition,
         challenge: str = None,
         domain: str = None,
+        records_filter: dict = None,
     ) -> dict:
         """
         Create VerifiablePresentation.
@@ -1095,7 +1120,9 @@ class DIFPresExchHandler:
         req = await self.make_requirement(
             srs=pd.submission_requirements, descriptors=pd.input_descriptors
         )
-        result = await self.apply_requirements(req=req, credentials=credentials)
+        result = await self.apply_requirements(
+            req=req, credentials=credentials, records_filter=records_filter
+        )
         applicable_creds, descriptor_maps = await self.merge(result)
         applicable_creds_list = []
         for credential in applicable_creds:
