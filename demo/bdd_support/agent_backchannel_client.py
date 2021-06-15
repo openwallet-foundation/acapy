@@ -251,6 +251,7 @@ def agent_container_POST(
         params=params,
     )
 
+
 def agent_container_PATCH(
     the_container: AgentContainer,
     path: str,
@@ -265,6 +266,7 @@ def agent_container_PATCH(
         text=text,
         params=params,
     )
+
 
 def agent_container_PUT(
     the_container: AgentContainer,

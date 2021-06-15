@@ -743,7 +743,7 @@ class DemoAgent:
         except ClientError as e:
             self.log(f"Error during PATCH {path}: {str(e)}")
             raise
-    
+
     async def admin_PUT(
         self, path, data=None, text=False, params=None
     ) -> ClientResponse:
