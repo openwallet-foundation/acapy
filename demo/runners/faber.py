@@ -200,7 +200,9 @@ async def main(args):
                         "@type": CRED_PREVIEW_TYPE,
                         "attributes": [
                             {"name": n, "value": v}
-                            for (n, v) in faber_agent.agent.cred_attrs[faber_agent.cred_def_id].items()
+                            for (n, v) in faber_agent.agent.cred_attrs[
+                                faber_agent.cred_def_id
+                            ].items()
                         ],
                     }
                     offer_request = {
@@ -211,7 +213,9 @@ async def main(args):
                         "credential_preview": cred_preview,
                         "trace": exchange_tracing,
                     }
-                    await faber_agent.agent.admin_POST("/issue-credential/send-offer", offer_request)
+                    await faber_agent.agent.admin_POST(
+                        "/issue-credential/send-offer", offer_request
+                    )
 
                 elif faber_agent.aip == 20:
                     if faber_agent.cred_type == CRED_FORMAT_INDY:
@@ -237,7 +241,9 @@ async def main(args):
                             "comment": f"Offer on cred def id {faber_agent.cred_def_id}",
                             "auto_remove": False,
                             "credential_preview": cred_preview,
-                            "filter": {"indy": {"cred_def_id": faber_agent.cred_def_id}},
+                            "filter": {
+                                "indy": {"cred_def_id": faber_agent.cred_def_id}
+                            },
                             "trace": exchange_tracing,
                         }
 
@@ -283,9 +289,7 @@ async def main(args):
                     )
 
                 else:
-                    raise Exception(
-                        f"Error invalid AIP level: {faber_agent.aip}"
-                    )
+                    raise Exception(f"Error invalid AIP level: {faber_agent.aip}")
 
             elif option == "2":
                 log_status("#20 Request proof of degree from alice")
@@ -333,7 +337,8 @@ async def main(args):
                         "name": "Proof of Education",
                         "version": "1.0",
                         "requested_attributes": {
-                            f"0_{req_attr['name']}_uuid": req_attr for req_attr in req_attrs
+                            f"0_{req_attr['name']}_uuid": req_attr
+                            for req_attr in req_attrs
                         },
                         "requested_predicates": {
                             f"0_{req_pred['name']}_GE_uuid": req_pred
@@ -369,7 +374,9 @@ async def main(args):
                             req_attrs.append(
                                 {
                                     "name": "degree",
-                                    "restrictions": [{"schema_name": faber_schema_name}],
+                                    "restrictions": [
+                                        {"schema_name": faber_schema_name}
+                                    ],
                                     "non_revoked": {"to": int(time.time() - 1)},
                                 },
                             )
@@ -377,7 +384,9 @@ async def main(args):
                             req_attrs.append(
                                 {
                                     "name": "degree",
-                                    "restrictions": [{"schema_name": faber_schema_name}],
+                                    "restrictions": [
+                                        {"schema_name": faber_schema_name}
+                                    ],
                                 }
                             )
                         if SELF_ATTESTED:
@@ -450,21 +459,23 @@ async def main(args):
                                                                 "$.credentialSubject.familyName"
                                                             ],
                                                             "purpose": "The claim must be from one of the specified person",
-                                                            "filter": {"const": "SMITH"},
+                                                            "filter": {
+                                                                "const": "SMITH"
+                                                            },
                                                         },
                                                         {
                                                             "path": [
                                                                 "$.credentialSubject.givenName"
                                                             ],
                                                             "purpose": "The claim must be from one of the specified person",
-                                                        }
-                                                    ]
-                                                }
+                                                        },
+                                                    ],
+                                                },
                                             }
-                                        ]
-                                    }
+                                        ],
+                                    },
                                 }
-                            }
+                            },
                         }
 
                     else:
@@ -477,9 +488,7 @@ async def main(args):
                     )
 
                 else:
-                    raise Exception(
-                        f"Error invalid AIP level: {faber_agent.aip}"
-                    )
+                    raise Exception(f"Error invalid AIP level: {faber_agent.aip}")
 
             elif option == "3":
                 msg = await prompt("Enter message: ")

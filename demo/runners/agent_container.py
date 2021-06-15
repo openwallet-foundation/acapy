@@ -317,9 +317,7 @@ class AriesAgent(DemoAgent):
     async def handle_present_proof_v2_0(self, message):
         state = message["state"]
         pres_ex_id = message["pres_ex_id"]
-        self.log(
-            f"Presentation: state = {state}, pres_ex_id = {pres_ex_id}"
-        )
+        self.log(f"Presentation: state = {state}, pres_ex_id = {pres_ex_id}")
 
         if state == "request-received":
             # prover role
@@ -407,11 +405,15 @@ class AriesAgent(DemoAgent):
                     }
                     # specify the record id for each input_descriptor id:
                     request["dif"]["record_ids"] = {}
-                    for input_descriptor in pres_request_dif["presentation_definition"]["input_descriptors"]:
-                        request["dif"]["record_ids"][input_descriptor["id"]] = [ record_id, ]
+                    for input_descriptor in pres_request_dif["presentation_definition"][
+                        "input_descriptors"
+                    ]:
+                        request["dif"]["record_ids"][input_descriptor["id"]] = [
+                            record_id,
+                        ]
                     log_msg("presenting ld-presentation:", request)
 
-                    # NOTE that the holder/prover can also/or specify constraints by including the whole proof request 
+                    # NOTE that the holder/prover can also/or specify constraints by including the whole proof request
                     # and constraining the presented credentials by adding filters, for example:
                     #
                     # request = {
@@ -757,7 +759,9 @@ class AgentContainer:
                 indy_proof_request["non_revoked"] = {"to": int(time.time())}
             proof_request_web_request = {
                 "connection_id": self.agent.connection_id,
-                "proof_request": indy_proof_request,
+                "presentation_request": {
+                    "indy": indy_proof_request,
+                },
                 "trace": self.exchange_tracing,
             }
             proof_exchange = await self.agent.admin_POST(
@@ -1011,13 +1015,14 @@ async def create_agent_with_args(args, ident: str = None):
         sys.exit(1)
 
     agent_ident = ident if ident else (args.ident if "ident" in args else "Aries")
-    
+
     if "aip" in args:
         aip = int(args.aip)
-        if not aip in [10,20,]:
-            raise Exception(
-                "Invalid value for aip, should be 10 or 20"
-            )
+        if not aip in [
+            10,
+            20,
+        ]:
+            raise Exception("Invalid value for aip, should be 10 or 20")
     else:
         aip = 20
 
@@ -1030,7 +1035,9 @@ async def create_agent_with_args(args, ident: str = None):
         public_did = args.public_did if "public_did" in args else None
 
     cred_type = args.cred_type if "cred_type" in args else None
-    log_msg(f"Initializing demo agent {agent_ident} with AIP {aip} and credential type {cred_type}")
+    log_msg(
+        f"Initializing demo agent {agent_ident} with AIP {aip} and credential type {cred_type}"
+    )
 
     agent = AgentContainer(
         genesis,

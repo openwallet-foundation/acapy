@@ -54,7 +54,7 @@ Feature: RFC 0454 Aries agent present proof
       Examples:
          | issuer | Acme_capabilities                                         | Bob_capabilities          | Schema_name       | Credential_data   | Proof_request     |
          | Acme   | --public-did --cred-type json-ld                          |                           | driverslicense_v2 | Data_DL_MaxValues | DL_age_over_19_v2 |
-         # | Faber  | --public-did --cred-type json-ld --did-exchange            | --did-exchange            | driverslicense_v2 | Data_DL_MaxValues | DL_age_over_19_v2 |
+         | Faber  | --public-did --cred-type json-ld --did-exchange           | --did-exchange            | driverslicense_v2 | Data_DL_MaxValues | DL_age_over_19_v2 |
 
 
    @T002-RFC0454 @GHA

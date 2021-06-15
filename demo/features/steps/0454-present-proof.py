@@ -53,7 +53,7 @@ def step_impl(context, verifier):
     for i in range(10):
         async_sleep(1.0)
         verified = aries_container_verify_proof(agent["agent"], proof_request)
-        if verified is not None and verified == "True":
+        if verified is not None and verified.lower() == "true":
             return
 
     assert False
@@ -69,7 +69,7 @@ def step_impl(context, verifier):
     for i in range(10):
         async_sleep(1.0)
         verified = aries_container_verify_proof(agent["agent"], proof_request)
-        if verified is not None and verified == "False":
+        if verified is not None and verified.lower() == "false":
             return
 
     assert False

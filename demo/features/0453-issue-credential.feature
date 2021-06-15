@@ -34,9 +34,9 @@ Feature: RFC 0453 Aries agent issue credential
     Examples:
        | Acme_capabilities                                   | Bob_capabilities          | Schema_name    | Credential_data          |
        | --public-did --cred-type json-ld                    |                           | driverslicense | Data_DL_NormalizedValues |
-       # | --public-did --cred-type json-ld --did-exchange     | --did-exchange            | driverslicense | Data_DL_NormalizedValues |
-       # | --public-did --cred-type json-ld --mediation        | --mediation               | driverslicense | Data_DL_NormalizedValues |
-       # | --public-did --cred-type json-ld --multitenant      | --multitenant             | driverslicense | Data_DL_NormalizedValues |
+       | --public-did --cred-type json-ld --did-exchange     | --did-exchange            | driverslicense | Data_DL_NormalizedValues |
+       | --public-did --cred-type json-ld --mediation        | --mediation               | driverslicense | Data_DL_NormalizedValues |
+       | --public-did --cred-type json-ld --multitenant      | --multitenant             | driverslicense | Data_DL_NormalizedValues |
 
 
   @T004-RFC0453 @GHA
