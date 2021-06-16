@@ -532,7 +532,10 @@ class TestPresentProofRoutes(AsyncTestCase):
 
             await test_module.present_proof_credentials_list(self.request)
             mock_response.assert_called_once_with(
-                [{"name": "Credential1"}, {"name": "Credential2"}]
+                [
+                    {"name": "Credential1", "record_id": ANY},
+                    {"name": "Credential2", "record_id": ANY},
+                ]
             )
 
     async def test_present_proof_credentials_single_ldp_vp_claim_format(self):
@@ -609,7 +612,10 @@ class TestPresentProofRoutes(AsyncTestCase):
 
             await test_module.present_proof_credentials_list(self.request)
             mock_response.assert_called_once_with(
-                [{"name": "Credential1"}, {"name": "Credential2"}]
+                [
+                    {"name": "Credential1", "record_id": ANY},
+                    {"name": "Credential2", "record_id": ANY},
+                ]
             )
 
     async def test_present_proof_credentials_single_ldp_vp_error(self):
