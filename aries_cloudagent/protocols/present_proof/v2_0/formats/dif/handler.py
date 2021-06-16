@@ -17,7 +17,6 @@ from ......vc.ld_proofs import (
     BbsBlsSignatureProof2020,
     WalletKeyPair,
 )
-from ......vc.ld_proofs.constants import EXPANDED_TYPE_CREDENTIALS_CONTEXT_V1_VC_TYPE
 from ......vc.vc_ld.verify import verify_presentation
 from ......wallet.base import BaseWallet
 from ......wallet.key_type import KeyType
@@ -186,47 +185,88 @@ class DIFPresFormatHandler(V20PresFormatHandler):
             challenge = str(uuid4())
 
         input_descriptors = pres_definition.input_descriptors
+        claim_fmt = pres_definition.fmt
         try:
             holder = self._profile.inject(VCHolder)
             record_ids = set()
             credentials_list = []
             for input_descriptor in input_descriptors:
-                expanded_types = set()
-                schema_ids = set()
+                tag_query_or_list = []
+                tag_query = {}
+                proof_type = None
+                limit_disclosure = input_descriptor.constraint.limit_disclosure and (
+                    input_descriptor.constraint.limit_disclosure == "required"
+                )
                 for schema in input_descriptor.schemas:
                     uri = schema.uri
-                    required = schema.required or True
+                    if schema.required is None:
+                        required = True
+                    else:
+                        required = schema.required
                     if required:
-                        # JSONLD Expanded URLs
-                        if "#" in uri:
-                            expanded_types.add(uri)
-                        else:
-                            schema_ids.add(uri)
-                if len(schema_ids) == 0:
-                    schema_ids_list = None
+                        tag_query_or_list.append({f"type:{uri}": "1"})
+                        tag_query_or_list.append({f"schm:{uri}": "1"})
+                if len(tag_query_or_list) == 0:
+                    tag_query = None
                 else:
-                    schema_ids_list = list(schema_ids)
-                if len(expanded_types) == 0:
-                    expanded_types_list = None
-                else:
-                    expanded_types_list = list(expanded_types)
-                    # Raise Exception if expanded type extracted from
-                    # CREDENTIALS_CONTEXT_V1_URL and
-                    # VERIFIABLE_CREDENTIAL_TYPE is the only schema.uri
-                    # specified in the presentation_definition.
-                    if len(expanded_types_list) == 1:
-                        if expanded_types_list[0] in [
-                            EXPANDED_TYPE_CREDENTIALS_CONTEXT_V1_VC_TYPE
-                        ]:
-                            raise V20PresFormatHandlerError(
-                                "Only expanded type extracted from "
-                                "CREDENTIALS_CONTEXT_V1_URL and "
-                                "VERIFIABLE_CREDENTIAL_TYPE included "
-                                "as the schema.uri"
-                            )
+                    tag_query["$or"] = tag_query_or_list
+                if limit_disclosure:
+                    proof_type = [BbsBlsSignature2020.signature_type]
+                if claim_fmt:
+                    if claim_fmt.ldp_vp:
+                        if "proof_type" in claim_fmt.ldp_vp:
+                            proof_types = claim_fmt.ldp_vp.get("proof_type")
+                            if limit_disclosure and (
+                                BbsBlsSignature2020.signature_type not in proof_types
+                            ):
+                                raise V20PresFormatHandlerError(
+                                    "Verifier submitted presentation request with "
+                                    "limit_disclosure [selective disclosure] "
+                                    "option but verifier does not support "
+                                    "BbsBlsSignature2020 format"
+                                )
+                            elif (
+                                len(proof_types) == 1
+                                and (
+                                    BbsBlsSignature2020.signature_type
+                                    not in proof_types
+                                )
+                                and (
+                                    Ed25519Signature2018.signature_type
+                                    not in proof_types
+                                )
+                            ):
+                                raise V20PresFormatHandlerError(
+                                    "Only BbsBlsSignature2020 and/or "
+                                    "Ed25519Signature2018 signature types "
+                                    "are supported"
+                                )
+                            elif (
+                                len(proof_types) >= 2
+                                and (
+                                    BbsBlsSignature2020.signature_type
+                                    not in proof_types
+                                )
+                                and (
+                                    Ed25519Signature2018.signature_type
+                                    not in proof_types
+                                )
+                            ):
+                                raise V20PresFormatHandlerError(
+                                    "Only BbsBlsSignature2020 and "
+                                    "Ed25519Signature2018 signature types "
+                                    "are supported"
+                                )
+                            elif len(proof_types) == 1:
+                                proof_type = [proof_types[0]]
+                    else:
+                        raise V20PresFormatHandlerError(
+                            "Currently, only ldp_vp with "
+                            "BbsBlsSignature2020 and Ed25519Signature2018"
+                            " signature types are supported"
+                        )
                 search = holder.search_credentials(
-                    types=expanded_types_list,
-                    schema_ids=schema_ids_list,
+                    tag_query=tag_query, proof_types=proof_type
                 )
                 # Defaults to page_size but would like to include all
                 # For now, setting to 1000

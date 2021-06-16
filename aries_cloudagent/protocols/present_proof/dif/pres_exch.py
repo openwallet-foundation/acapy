@@ -178,7 +178,7 @@ class SchemaInputDescriptor(BaseModel):
         self,
         *,
         uri: str = None,
-        required: bool = False,
+        required: bool = None,
     ):
         """Initialize InputDescriptors."""
         self.uri = uri
