@@ -599,6 +599,28 @@ class AgentContainer:
         """
         return await self.agent.admin_POST(path, data=data, text=text, params=params)
 
+    async def admin_PATCH(self, path, data=None, text=False, params=None) -> dict:
+        """
+        Execute an admin PATCH request in the context of the current wallet.
+
+        path = /path/of/request
+        data = payload to post with the request
+        text = True if the expected response is text, False if json data
+        params = any additional parameters to pass with the request
+        """
+        return await self.agent.admin_PATCH(path, data=data, text=text, params=params)
+
+    async def admin_PUT(self, path, data=None, text=False, params=None) -> dict:
+        """
+        Execute an admin PUT request in the context of the current wallet.
+
+        path = /path/of/request
+        data = payload to post with the request
+        text = True if the expected response is text, False if json data
+        params = any additional parameters to pass with the request
+        """
+        return await self.agent.admin_PUT(path, data=data, text=text, params=params)
+
     async def agency_admin_GET(self, path, text=False, params=None) -> dict:
         """
         Execute an agency GET request in the context of the base wallet (multitenant only).

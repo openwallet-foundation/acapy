@@ -3,6 +3,7 @@ from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 from marshmallow import ValidationError
 from time import time
+from unittest.mock import ANY
 
 from .....admin.request_context import AdminRequestContext
 from .....indy.holder import IndyHolder
@@ -451,7 +452,10 @@ class TestPresentProofRoutes(AsyncTestCase):
 
             await test_module.present_proof_credentials_list(self.request)
             mock_response.assert_called_once_with(
-                [{"name": "Credential1"}, {"name": "Credential2"}]
+                [
+                    {"name": "Credential1", "record_id": ANY},
+                    {"name": "Credential2", "record_id": ANY},
+                ]
             )
 
     async def test_present_proof_credentials_dif_no_tag_query(self):
@@ -929,7 +933,10 @@ class TestPresentProofRoutes(AsyncTestCase):
             mock_pres_ex_rec_cls.retrieve_by_id.return_value = record
             await test_module.present_proof_credentials_list(self.request)
             mock_response.assert_called_once_with(
-                [{"name": "Credential1"}, {"name": "Credential2"}]
+                [
+                    {"name": "Credential1", "record_id": ANY},
+                    {"name": "Credential2", "record_id": ANY},
+                ]
             )
 
     async def test_present_proof_credentials_list_dif_error(self):
