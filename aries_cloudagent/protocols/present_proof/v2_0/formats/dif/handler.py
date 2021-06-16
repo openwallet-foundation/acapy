@@ -186,6 +186,7 @@ class DIFPresFormatHandler(V20PresFormatHandler):
 
         input_descriptors = pres_definition.input_descriptors
         claim_fmt = pres_definition.fmt
+        dif_handler_proof_type = None
         try:
             holder = self._profile.inject(VCHolder)
             record_ids = set()
@@ -212,6 +213,7 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                     tag_query["$or"] = tag_query_or_list
                 if limit_disclosure:
                     proof_type = [BbsBlsSignature2020.signature_type]
+                    dif_handler_proof_type = BbsBlsSignature2020.signature_type
                 if claim_fmt:
                     if claim_fmt.ldp_vp:
                         if "proof_type" in claim_fmt.ldp_vp:
@@ -257,8 +259,30 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                                     "Ed25519Signature2018 signature types "
                                     "are supported"
                                 )
-                            elif len(proof_types) == 1:
-                                proof_type = [proof_types[0]]
+                            else:
+                                for proof_format in proof_types:
+                                    if (
+                                        proof_format
+                                        == Ed25519Signature2018.signature_type
+                                    ):
+                                        proof_type = [
+                                            Ed25519Signature2018.signature_type
+                                        ]
+                                        dif_handler_proof_type = (
+                                            Ed25519Signature2018.signature_type
+                                        )
+                                        break
+                                    elif (
+                                        proof_format
+                                        == BbsBlsSignature2020.signature_type
+                                    ):
+                                        proof_type = [
+                                            BbsBlsSignature2020.signature_type
+                                        ]
+                                        dif_handler_proof_type = (
+                                            BbsBlsSignature2020.signature_type
+                                        )
+                                        break
                     else:
                         raise V20PresFormatHandlerError(
                             "Currently, only ldp_vp with "
@@ -281,21 +305,9 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                 credentials_list = credentials_list + vcrecord_list
         except StorageNotFoundError as err:
             raise V20PresFormatHandlerError(err)
-        # Selecting suite from claim_format
-        claim_format = pres_definition.fmt
-        proof_type = None
-        if claim_format:
-            if claim_format.ldp_vp:
-                for proof_req in claim_format.ldp_vp.get("proof_type"):
-                    if proof_req == Ed25519Signature2018.signature_type:
-                        proof_type = Ed25519Signature2018.signature_type
-                        break
-                    elif proof_req == BbsBlsSignature2020.signature_type:
-                        proof_type = BbsBlsSignature2020.signature_type
-                        break
 
         dif_handler = DIFPresExchHandler(
-            self._profile, pres_signing_did=issuer_id, proof_type=proof_type
+            self._profile, pres_signing_did=issuer_id, proof_type=dif_handler_proof_type
         )
 
         pres = await dif_handler.create_vp(
