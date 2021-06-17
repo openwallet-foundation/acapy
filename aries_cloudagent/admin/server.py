@@ -29,7 +29,6 @@ from ..messaging.responder import BaseResponder
 from ..multitenant.manager import MultitenantManager, MultitenantManagerError
 from ..storage.error import StorageNotFoundError
 from ..transport.outbound.message import OutboundMessage
-from ..transport.outbound.status import OutboundSendStatus
 from ..transport.queue.basic import BasicMessageQueue
 from ..utils.stats import Collector
 from ..utils.task_queue import TaskQueue
@@ -117,14 +116,14 @@ class AdminResponder(BaseResponder):
         self._profile = profile
         self._send = send
 
-    async def send_outbound(self, message: OutboundMessage) -> OutboundSendStatus:
+    async def send_outbound(self, message: OutboundMessage):
         """
         Send outbound message.
 
         Args:
             message: The `OutboundMessage` to be sent
         """
-        return await self._send(self._profile, message)
+        await self._send(self._profile, message)
 
     async def send_webhook(self, topic: str, payload: dict):
         """
