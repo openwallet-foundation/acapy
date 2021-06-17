@@ -377,3 +377,18 @@ class TestConnRecord(AsyncTestCase):
         )
         await record.save(self.session)
         assert await record.metadata_get_all(self.session) == {}
+
+    async def test_delete_conn_record_deletes_metadata(self):
+        record = ConnRecord(
+            my_did=self.test_did,
+        )
+        await record.save(self.session)
+        await record.metadata_set(self.session, "key", {"test": "value"})
+        await record.delete_record(self.session)
+        storage = self.session.inject(BaseStorage)
+        assert (
+            await storage.find_all_records(
+                ConnRecord.RECORD_TYPE_METADATA, {"connection_id": record.connection_id}
+            )
+            == []
+        )
