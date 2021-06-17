@@ -744,6 +744,15 @@ class DemoAgent:
             self.log(f"Error during PATCH {path}: {str(e)}")
             raise
 
+    async def admin_PUT(
+        self, path, data=None, text=False, params=None
+    ) -> ClientResponse:
+        try:
+            return await self.admin_request("PUT", path, data, text, params)
+        except ClientError as e:
+            self.log(f"Error during PUT {path}: {str(e)}")
+            raise
+
     async def admin_GET_FILE(self, path, params=None) -> bytes:
         try:
             params = {k: v for (k, v) in (params or {}).items() if v is not None}

@@ -409,6 +409,23 @@ class ConnRecord(BaseRecord):
         cache_key = f"connection_target::{self.connection_id}"
         await self.clear_cached_key(session, cache_key)
 
+    async def delete_record(self, session: ProfileSession):
+        """Perform connection record deletion actions.
+
+        Args:
+            session (ProfileSession): session
+
+        """
+        await super().delete_record(session)
+
+        # Delete metadata
+        if self.connection_id:
+            storage = session.inject(BaseStorage)
+            await storage.delete_all_records(
+                self.RECORD_TYPE_METADATA,
+                {"connection_id": self.connection_id},
+            )
+
     async def metadata_get(
         self, session: ProfileSession, key: str, default: Any = None
     ) -> Any:

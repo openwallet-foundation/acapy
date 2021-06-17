@@ -11,9 +11,9 @@ from marshmallow import (
     ValidationError,
 )
 
-from ....messaging.models.base import BaseModel, BaseModelSchema
-from ....messaging.models.openapi import OpenAPISchema
-from ....messaging.valid import (
+from ...messaging.models.base import BaseModel, BaseModelSchema
+from ...messaging.models.openapi import OpenAPISchema
+from ...messaging.valid import (
     INDY_CRED_DEF_ID,
     INDY_PREDICATE,
     INDY_VERSION,

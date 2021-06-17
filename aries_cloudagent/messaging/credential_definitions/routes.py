@@ -17,7 +17,7 @@ from marshmallow import fields
 
 from ...admin.request_context import AdminRequestContext
 from ...indy.issuer import IndyIssuer
-from ...indy.sdk.models.cred_def import CredentialDefinitionSchema
+from ...indy.models.cred_def import CredentialDefinitionSchema
 from ...ledger.base import BaseLedger
 from ...ledger.error import LedgerError
 from ...protocols.endorse_transaction.v1_0.manager import TransactionManager
@@ -214,7 +214,7 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
         raise web.HTTPBadRequest(reason=e.message) from e
 
     # If revocation is requested and cred def is novel, create revocation registry
-    if support_revocation and novel:
+    if support_revocation and novel and write_ledger:
         profile = context.profile
         tails_base_url = profile.settings.get("tails_server_base_url")
         if not tails_base_url:

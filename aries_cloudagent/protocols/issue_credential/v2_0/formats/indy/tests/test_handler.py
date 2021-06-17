@@ -35,8 +35,11 @@ from ....message_types import (
     CRED_20_REQUEST,
     CRED_20_ISSUE,
 )
-from ..handler import IndyCredFormatHandler
+
 from ...handler import LOGGER, V20CredFormatError
+
+from ..handler import IndyCredFormatHandler
+from ..handler import LOGGER as INDY_LOGGER
 
 TEST_DID = "LjgpST2rjsoxYegQDRm7EL"
 SCHEMA_NAME = "bc-reg"
@@ -276,7 +279,7 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
         await details_indy[1].save(self.session)  # exercise logger warning on get()
 
         with async_mock.patch.object(
-            LOGGER, "warning", async_mock.MagicMock()
+            INDY_LOGGER, "warning", async_mock.MagicMock()
         ) as mock_warning:
             assert await self.handler.get_detail_record(cred_ex_id) in details_indy
             mock_warning.assert_called_once()
