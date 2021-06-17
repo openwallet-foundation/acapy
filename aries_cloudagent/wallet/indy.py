@@ -1,6 +1,5 @@
 """Indy implementation of BaseWallet interface."""
 
-from aries_cloudagent.storage.record import StorageRecord
 import json
 
 from typing import List, Sequence, Tuple, Union
@@ -20,6 +19,7 @@ from ..ledger.endpoint_type import EndpointType
 from ..ledger.error import LedgerConfigError
 from ..storage.indy import IndySdkStorage
 from ..storage.error import StorageDuplicateError, StorageNotFoundError
+from ..storage.record import StorageRecord
 
 from .base import BaseWallet
 from .crypto import (
