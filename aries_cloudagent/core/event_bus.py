@@ -3,7 +3,17 @@
 import logging
 
 from itertools import chain
-from typing import TYPE_CHECKING, Any, Callable, Dict, Pattern, Sequence
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Optional,
+    Pattern,
+    Sequence,
+    TYPE_CHECKING,
+    Generic,
+    TypeVar,
+)
 
 if TYPE_CHECKING:  # To avoid circular import error
     from .profile import Profile
@@ -11,10 +21,13 @@ if TYPE_CHECKING:  # To avoid circular import error
 LOGGER = logging.getLogger(__name__)
 
 
-class Event:
-    """A simple event object."""
+PayloadType = TypeVar("PayloadType")
 
-    def __init__(self, topic: str, payload: Any = None):
+
+class BaseEvent(Generic[PayloadType]):
+    """Base event."""
+
+    def __init__(self, topic: str, payload: PayloadType):
         """Create a new event."""
         self._topic = topic
         self._payload = payload
@@ -25,7 +38,7 @@ class Event:
         return self._topic
 
     @property
-    def payload(self):
+    def payload(self) -> Optional[PayloadType]:
         """Return this event's payload."""
         return self._payload
 
@@ -40,6 +53,14 @@ class Event:
         return "<Event topic={}, payload={}>".format(self._topic, self._payload)
 
 
+class Event(BaseEvent[Any]):
+    """A simple event object."""
+
+    def __init__(self, topic: str, payload: Any = None):
+        """Create a new event."""
+        super().__init__(topic, payload)
+
+
 class EventBus:
     """A simple event bus implementation."""
 
@@ -47,7 +68,7 @@ class EventBus:
         """Initialize Event Bus."""
         self.topic_patterns_to_subscribers: Dict[Pattern, Sequence[Callable]] = {}
 
-    async def notify(self, profile: "Profile", event: Event):
+    async def notify(self, profile: "Profile", event: BaseEvent):
         """Notify subscribers of event.
 
         Args:
