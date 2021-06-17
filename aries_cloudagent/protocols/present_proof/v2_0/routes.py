@@ -574,8 +574,24 @@ async def present_proof_credentials_list(request: web.BaseRequest):
                                         "are supported"
                                     )
                                 )
-                            elif len(proof_types) == 1:
-                                proof_type = [proof_types[0]]
+                            else:
+                                for proof_format in proof_types:
+                                    if (
+                                        proof_format
+                                        == Ed25519Signature2018.signature_type
+                                    ):
+                                        proof_type = [
+                                            Ed25519Signature2018.signature_type
+                                        ]
+                                        break
+                                    elif (
+                                        proof_format
+                                        == BbsBlsSignature2020.signature_type
+                                    ):
+                                        proof_type = [
+                                            BbsBlsSignature2020.signature_type
+                                        ]
+                                        break
                     else:
                         raise web.HTTPBadRequest(
                             reason=(
