@@ -502,13 +502,13 @@ async def present_proof_credentials_list(request: web.BaseRequest):
                 input_descriptors.append(InputDescriptors.deserialize(input_desc_dict))
             record_ids = set()
             for input_descriptor in input_descriptors:
-                tag_query_or_list = []
-                tag_query = {}
+                tag_query = {"$and": []}
                 proof_type = None
                 limit_disclosure = input_descriptor.constraint.limit_disclosure and (
                     input_descriptor.constraint.limit_disclosure == "required"
                 )
                 for schema in input_descriptor.schemas:
+                    tag_query_or_list = []
                     uri = schema.uri
                     if schema.required is None:
                         required = True
@@ -517,10 +517,9 @@ async def present_proof_credentials_list(request: web.BaseRequest):
                     if required:
                         tag_query_or_list.append({f"type:{uri}": "1"})
                         tag_query_or_list.append({f"schm:{uri}": "1"})
-                if len(tag_query_or_list) == 0:
+                        tag_query["$and"].append({"$or": tag_query_or_list})
+                if len(tag_query["$and"]) == 0:
                     tag_query = None
-                else:
-                    tag_query["$or"] = tag_query_or_list
                 if limit_disclosure:
                     proof_type = [BbsBlsSignature2020.signature_type]
                 if claim_fmt:
