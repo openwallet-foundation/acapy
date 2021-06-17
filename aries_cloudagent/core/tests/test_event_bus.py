@@ -27,7 +27,7 @@ def event():
     yield event
 
 
-class TestProcessor:
+class MockProcessor:
     def __init__(self):
         self.context = None
         self.event = None
@@ -39,7 +39,7 @@ class TestProcessor:
 
 @pytest.fixture
 def processor():
-    yield TestProcessor()
+    yield MockProcessor()
 
 
 def test_event(event):
@@ -77,7 +77,7 @@ def test_unsub_unsubbed_processor(event_bus: EventBus, processor):
     """Test unsubscribing an unsubscribed processor does not error."""
     event_bus.unsubscribe(re.compile(".*"), processor)
     event_bus.subscribe(re.compile(".*"), processor)
-    another_processor = TestProcessor()
+    another_processor = MockProcessor()
     event_bus.unsubscribe(re.compile(".*"), another_processor)
 
 
@@ -101,7 +101,7 @@ async def test_sub_notify_error_logged_and_exec_continues(
     def _raise_exception(context, event):
         raise Exception()
 
-    processor = TestProcessor()
+    processor = MockProcessor()
     bad_processor = _raise_exception
     event_bus.subscribe(re.compile(".*"), bad_processor)
     event_bus.subscribe(re.compile(".*"), processor)
@@ -147,7 +147,7 @@ async def test_sub_notify_no_match(event_bus: EventBus, context, event, processo
 @pytest.mark.asyncio
 async def test_sub_notify_only_one(event_bus: EventBus, context, event, processor):
     """Test only one subscriber is called when pattern matches only one."""
-    processor1 = TestProcessor()
+    processor1 = MockProcessor()
     event_bus.subscribe(re.compile(".*"), processor)
     event_bus.subscribe(re.compile("^$"), processor1)
     await event_bus.notify(context, event)
@@ -160,7 +160,7 @@ async def test_sub_notify_only_one(event_bus: EventBus, context, event, processo
 @pytest.mark.asyncio
 async def test_sub_notify_both(event_bus: EventBus, context, event, processor):
     """Test both subscribers are called when pattern matches both."""
-    processor1 = TestProcessor()
+    processor1 = MockProcessor()
     event_bus.subscribe(re.compile(".*"), processor)
     event_bus.subscribe(re.compile("anything"), processor1)
     await event_bus.notify(context, event)
