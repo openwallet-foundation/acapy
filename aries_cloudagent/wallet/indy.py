@@ -1,5 +1,6 @@
 """Indy implementation of BaseWallet interface."""
 
+from aries_cloudagent.storage.record import StorageRecord
 import json
 
 from typing import List, Sequence, Tuple, Union
@@ -11,13 +12,15 @@ import indy.wallet
 
 from indy.error import IndyError, ErrorCode
 
+from ..did.did_key import DIDKey
 from ..indy.sdk.error import IndyErrorHandler
 from ..indy.sdk.wallet_setup import IndyOpenWallet
 from ..ledger.base import BaseLedger
 from ..ledger.endpoint_type import EndpointType
 from ..ledger.error import LedgerConfigError
+from ..storage.indy import IndySdkStorage
+from ..storage.error import StorageDuplicateError, StorageNotFoundError
 
-from ..did.did_key import DIDKey
 from .base import BaseWallet
 from .crypto import (
     create_keypair,
@@ -25,14 +28,16 @@ from .crypto import (
     validate_seed,
     verify_signed_message,
 )
-from .key_type import KeyType
-from .did_method import DIDMethod
-from .key_pair import KeyPairStorageManager
-from ..storage.indy import IndySdkStorage
-from ..storage.error import StorageDuplicateError, StorageNotFoundError
 from .did_info import DIDInfo, KeyInfo
+from .did_method import DIDMethod
 from .error import WalletError, WalletDuplicateError, WalletNotFoundError
+from .key_pair import KeyPairStorageManager
+from .key_type import KeyType
 from .util import b58_to_bytes, bytes_to_b58, bytes_to_b64
+
+
+RECORD_TYPE_CONFIG = "config"
+RECORD_NAME_PUBLIC_DID = "default_public_did"
 
 
 class IndySdkWallet(BaseWallet):
@@ -604,6 +609,89 @@ class IndySdkWallet(BaseWallet):
                 verkey=did_info.verkey, metadata=metadata
             )
 
+    async def get_public_did(self) -> DIDInfo:
+        """
+        Retrieve the public DID.
+
+        Returns:
+            The currently public `DIDInfo`, if any
+
+        """
+
+        public_did = None
+        public_info = None
+        storage = IndySdkStorage(self.opened)
+        try:
+            public = await storage.get_record(
+                RECORD_TYPE_CONFIG, RECORD_NAME_PUBLIC_DID
+            )
+        except StorageNotFoundError:
+            # populate public DID record
+            # this should only happen once, for an upgraded wallet
+            # the 'public' metadata flag is no longer used
+            dids = await self.get_local_dids()
+            for info in dids:
+                if info.metadata.get("public"):
+                    public_did = info.did
+                    public_info = info
+                    break
+            try:
+                # even if public is not set, store a record
+                # to avoid repeated queries
+                await storage.add_record(
+                    StorageRecord(
+                        type=RECORD_TYPE_CONFIG,
+                        id=RECORD_NAME_PUBLIC_DID,
+                        value=json.dumps({"did": public_did}),
+                    )
+                )
+            except StorageDuplicateError:
+                # another process stored the record first
+                pass
+        else:
+            public_did = json.loads(public.value)["did"]
+            if public_did:
+                try:
+                    public_info = await self.get_local_did(public_did)
+                except WalletNotFoundError:
+                    pass
+
+        return public_info
+
+    async def set_public_did(self, did: Union[str, DIDInfo]) -> DIDInfo:
+        """
+        Assign the public DID.
+
+        Returns:
+            The updated `DIDInfo`
+
+        """
+
+        if isinstance(did, str):
+            # will raise an exception if not found
+            info = await self.get_local_did(did)
+        else:
+            info = did
+
+        if info.method != DIDMethod.SOV:
+            raise WalletError("Setting public DID is only allowed for did:sov DIDs")
+
+        public = await self.get_public_did()
+        if not public or public.did != info.did:
+            storage = IndySdkStorage(self.opened)
+            await storage.update_record(
+                StorageRecord(
+                    type=RECORD_TYPE_CONFIG,
+                    id=RECORD_NAME_PUBLIC_DID,
+                    value="{}",
+                ),
+                value=json.dumps({"did": info.did}),
+                tags=None,
+            )
+            public = info
+
+        return public
+
     async def set_did_endpoint(
         self,
         did: str,
@@ -624,7 +712,7 @@ class IndySdkWallet(BaseWallet):
         """
         did_info = await self.get_local_did(did)
         if did_info.method != DIDMethod.SOV:
-            raise WalletError("Setting did endpoint is only allowed for did:sov dids")
+            raise WalletError("Setting DID endpoint is only allowed for did:sov DIDs")
 
         metadata = {**did_info.metadata}
         if not endpoint_type:
