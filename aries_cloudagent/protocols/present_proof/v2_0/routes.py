@@ -36,10 +36,10 @@ from ....storage.error import StorageError, StorageNotFoundError
 from ....storage.vc_holder.base import VCHolder
 from ....storage.vc_holder.vc_record import VCRecord
 from ....utils.tracing import trace_event, get_timer, AdminAPIMessageTracingSchema
-from ....vc.ld_proofs.constants import EXPANDED_TYPE_CREDENTIALS_CONTEXT_V1_VC_TYPE
+from ....vc.ld_proofs import BbsBlsSignature2020, Ed25519Signature2018
 from ....wallet.error import WalletNotFoundError
 
-from ..dif.pres_exch import InputDescriptors
+from ..dif.pres_exch import InputDescriptors, ClaimFormat
 from ..dif.pres_proposal_schema import DIFProofProposalSchema
 from ..dif.pres_request_schema import (
     DIFProofRequestSchema,
@@ -496,47 +496,113 @@ async def present_proof_credentials_list(request: web.BaseRequest):
             input_descriptors_list = dif_pres_request.get(
                 "presentation_definition"
             ).get("input_descriptors")
+            claim_fmt = dif_pres_request.get("presentation_definition").get("format")
             input_descriptors = []
             for input_desc_dict in input_descriptors_list:
                 input_descriptors.append(InputDescriptors.deserialize(input_desc_dict))
             record_ids = set()
             for input_descriptor in input_descriptors:
-                expanded_types = set()
-                schema_ids = set()
+                tag_query = {"$and": []}
+                proof_type = None
+                limit_disclosure = input_descriptor.constraint.limit_disclosure and (
+                    input_descriptor.constraint.limit_disclosure == "required"
+                )
                 for schema in input_descriptor.schemas:
+                    tag_query_or_list = []
                     uri = schema.uri
-                    required = schema.required or True
+                    if schema.required is None:
+                        required = True
+                    else:
+                        required = schema.required
                     if required:
-                        # JSONLD Expanded URLs
-                        if "#" in uri:
-                            expanded_types.add(uri)
-                        else:
-                            schema_ids.add(uri)
-                if len(schema_ids) == 0:
-                    schema_ids_list = None
-                else:
-                    schema_ids_list = list(schema_ids)
-                if len(expanded_types) == 0:
-                    expanded_types_list = None
-                else:
-                    expanded_types_list = list(expanded_types)
-                    # Raise Exception if expanded type extracted from
-                    # CREDENTIALS_CONTEXT_V1_URL and
-                    # VERIFIABLE_CREDENTIAL_TYPE is the only schema.uri
-                    # specified in the presentation_definition.
-                    if len(expanded_types_list) == 1:
-                        if expanded_types_list[0] in [
-                            EXPANDED_TYPE_CREDENTIALS_CONTEXT_V1_VC_TYPE
-                        ]:
-                            raise V20PresFormatHandlerError(
-                                "Only expanded type extracted from "
-                                "CREDENTIALS_CONTEXT_V1_URL "
-                                "and VERIFIABLE_CREDENTIAL_TYPE "
-                                "included as the schema.uri"
+                        tag_query_or_list.append({f"type:{uri}": "1"})
+                        tag_query_or_list.append({f"schm:{uri}": "1"})
+                        tag_query["$and"].append({"$or": tag_query_or_list})
+                if len(tag_query["$and"]) == 0:
+                    tag_query = None
+                if limit_disclosure:
+                    proof_type = [BbsBlsSignature2020.signature_type]
+                if claim_fmt:
+                    claim_fmt = ClaimFormat.deserialize(claim_fmt)
+                    if claim_fmt.ldp_vp:
+                        if "proof_type" in claim_fmt.ldp_vp:
+                            proof_types = claim_fmt.ldp_vp.get("proof_type")
+                            if limit_disclosure and (
+                                BbsBlsSignature2020.signature_type not in proof_types
+                            ):
+                                raise web.HTTPBadRequest(
+                                    reason=(
+                                        "Verifier submitted presentation request with "
+                                        "limit_disclosure [selective disclosure] "
+                                        "option but verifier does not support "
+                                        "BbsBlsSignature2020 format"
+                                    )
+                                )
+                            elif (
+                                len(proof_types) == 1
+                                and (
+                                    BbsBlsSignature2020.signature_type
+                                    not in proof_types
+                                )
+                                and (
+                                    Ed25519Signature2018.signature_type
+                                    not in proof_types
+                                )
+                            ):
+                                raise web.HTTPBadRequest(
+                                    reason=(
+                                        "Only BbsBlsSignature2020 and/or "
+                                        "Ed25519Signature2018 signature types "
+                                        "are supported"
+                                    )
+                                )
+                            elif (
+                                len(proof_types) >= 2
+                                and (
+                                    BbsBlsSignature2020.signature_type
+                                    not in proof_types
+                                )
+                                and (
+                                    Ed25519Signature2018.signature_type
+                                    not in proof_types
+                                )
+                            ):
+                                raise web.HTTPBadRequest(
+                                    reason=(
+                                        "Only BbsBlsSignature2020 and "
+                                        "Ed25519Signature2018 signature types "
+                                        "are supported"
+                                    )
+                                )
+                            else:
+                                for proof_format in proof_types:
+                                    if (
+                                        proof_format
+                                        == Ed25519Signature2018.signature_type
+                                    ):
+                                        proof_type = [
+                                            Ed25519Signature2018.signature_type
+                                        ]
+                                        break
+                                    elif (
+                                        proof_format
+                                        == BbsBlsSignature2020.signature_type
+                                    ):
+                                        proof_type = [
+                                            BbsBlsSignature2020.signature_type
+                                        ]
+                                        break
+                    else:
+                        raise web.HTTPBadRequest(
+                            reason=(
+                                "Currently, only ldp_vp with "
+                                "BbsBlsSignature2020 and Ed25519Signature2018"
+                                " signature types are supported"
                             )
+                        )
                 search = dif_holder.search_credentials(
-                    types=expanded_types_list,
-                    schema_ids=schema_ids_list,
+                    tag_query=tag_query,
+                    proof_types=proof_type,
                 )
                 records = await search.fetch(count)
                 # Avoiding addition of duplicate records
