@@ -177,7 +177,8 @@ def step_impl(context, issuer, holder, credential_data):
                     "issuanceDate": "2020-01-01T12:00:00Z",
                     "credentialSubject": {
                         "type": ["PermanentResident"],
-                        "id": holder_agent["agent"].agent.did,
+                        # let the holder set this
+                        #"id": holder_agent["agent"].agent.did,
                         "givenName": "ALICE",
                         "familyName": "SMITH",
                         "gender": "Female",

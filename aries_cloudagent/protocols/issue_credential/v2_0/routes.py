@@ -257,6 +257,12 @@ class V20CredRequestFreeSchema(AdminAPIMessageTracingSchema):
         required=False,
         example=False,
     )
+    holder_did = fields.Str(
+        description="Holder DID to substitute for the credentialSubject.id",
+        required=False,
+        allow_none=True,
+        example="did:key:ahsdkjahsdkjhaskjdhakjshdkajhsdkjahs",
+    )
 
 
 class V20CredSendRequestSchema(V20IssueCredSchemaCore):
@@ -323,6 +329,17 @@ class V20CreateFreeOfferResultSchema(OpenAPISchema):
     oob_url = fields.Str(
         description="Out-of-band URL",
         **ENDPOINT,
+    )
+
+
+class V20CredRequestRequestSchema(OpenAPISchema):
+    """Request schema for sending credential request message."""
+
+    holder_did = fields.Str(
+        description="Holder DID to substitute for the credentialSubject.id",
+        required=False,
+        allow_none=True,
+        example="did:key:ahsdkjahsdkjhaskjdhakjshdkajhsdkjahs",
     )
 
 
@@ -1126,6 +1143,7 @@ async def credential_exchange_send_free_request(request: web.BaseRequest):
         raise web.HTTPBadRequest(reason="Missing filter")
     auto_remove = body.get("auto_remove")
     trace_msg = body.get("trace")
+    holder_did = body.get("holder_did")
 
     conn_record = None
     cred_ex_record = None
@@ -1158,7 +1176,7 @@ async def credential_exchange_send_free_request(request: web.BaseRequest):
 
         cred_ex_record, cred_request_message = await cred_manager.create_request(
             cred_ex_record=cred_ex_record,
-            holder_did=conn_record.my_did,
+            holder_did=holder_did,
             comment=comment,
         )
 
@@ -1199,6 +1217,7 @@ async def credential_exchange_send_free_request(request: web.BaseRequest):
     summary="Send issuer a credential request",
 )
 @match_info_schema(V20CredExIdMatchInfoSchema())
+@request_schema(V20CredRequestRequestSchema())
 @response_schema(V20CredExRecordSchema(), 200, description="")
 async def credential_exchange_send_bound_request(request: web.BaseRequest):
     """
@@ -1215,6 +1234,12 @@ async def credential_exchange_send_bound_request(request: web.BaseRequest):
 
     context: AdminRequestContext = request["context"]
     outbound_handler = request["outbound_message_router"]
+
+    try:
+        body = await request.json() or {}
+        holder_did = body.get("holder_did")
+    except JSONDecodeError:
+        holder_did = None
 
     cred_ex_id = request.match_info["cred_ex_id"]
 
@@ -1238,7 +1263,7 @@ async def credential_exchange_send_bound_request(request: web.BaseRequest):
         cred_manager = V20CredManager(context.profile)
         cred_ex_record, cred_request_message = await cred_manager.create_request(
             cred_ex_record,
-            conn_record.my_did,
+            holder_did if holder_did else conn_record.my_did,
         )
 
         result = cred_ex_record.serialize()

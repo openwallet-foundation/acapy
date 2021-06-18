@@ -198,9 +198,19 @@ class AriesAgent(DemoAgent):
             )
         elif state == "offer-received":
             log_status("#15 After receiving credential offer, send credential request")
-            await self.admin_POST(
-                f"/issue-credential-2.0/records/{cred_ex_id}/send-request"
-            )
+            if message["by_format"]["cred_offer"].get("indy"):
+                await self.admin_POST(
+                    f"/issue-credential-2.0/records/{cred_ex_id}/send-request"
+                )
+            elif message["by_format"]["cred_offer"].get("ld_proof"):
+                holder_did = await self.admin_POST(
+                    f"/wallet/did/create",
+                    {"method": "key", "options": {"key_type": "bls12381g2"}},
+                )
+                data = {"holder_did": holder_did["result"]["did"]}
+                await self.admin_POST(
+                    f"/issue-credential-2.0/records/{cred_ex_id}/send-request", data
+                )
         elif state == "done":
             pass
             # Logic moved to detail record specific handler
