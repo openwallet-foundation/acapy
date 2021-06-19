@@ -1,10 +1,7 @@
 import pytest
 
 from ....core.in_memory import InMemoryProfile
-from ...error import (
-    StorageDuplicateError,
-    StorageNotFoundError,
-)
+from ...error import StorageDuplicateError, StorageNotFoundError, StorageSearchError
 
 from ..base import VCHolder
 from ..vc_record import VCRecord
@@ -53,7 +50,7 @@ class TestInMemoryVCHolder:
     async def test_tag_query(self, holder: VCHolder):
         assert holder._tag_query is None
         holder.set_tag_query_to_dict()
-        assert holder._tag_query == {"$all_of": []}
+        assert holder._tag_query == {"$and": []}
         holder.build_tag_query(
             "https://www.w3.org/2018/credentials#VerifiableCredential"
         )
@@ -61,9 +58,9 @@ class TestInMemoryVCHolder:
             "https://example.org/examples#UniversityDegreeCredential"
         )
         assert holder._tag_query == {
-            "$all_of": [
+            "$and": [
                 {
-                    "$exist": [
+                    "$or": [
                         {
                             "type:https://www.w3.org/2018/credentials#VerifiableCredential": "1"
                         },
@@ -73,7 +70,7 @@ class TestInMemoryVCHolder:
                     ]
                 },
                 {
-                    "$exist": [
+                    "$or": [
                         {
                             "type:https://example.org/examples#UniversityDegreeCredential": "1"
                         },
@@ -93,6 +90,31 @@ class TestInMemoryVCHolder:
 
         holder.set_tag_query_to_none()
         assert holder._tag_query is None
+
+    @pytest.mark.asyncio
+    async def test_tag_query_invalid_and_operator(self, holder: VCHolder):
+        holder._tag_query = {"$and": "test"}
+        record = test_record()
+        await holder.store_credential(record)
+        with pytest.raises(StorageSearchError):
+            search = holder.search_credentials()
+            rows = await search.fetch()
+
+    @pytest.mark.asyncio
+    async def test_tag_query_valid_and_operator(self, holder: VCHolder):
+        holder.set_tag_query_to_dict()
+        holder.build_tag_query(
+            "https://www.w3.org/2018/credentials#VerifiableCredential"
+        )
+        holder.build_tag_query(
+            "https://example.org/examples#UniversityDegreeCredential2"
+        )
+        record = test_record()
+        await holder.store_credential(record)
+
+        search = holder.search_credentials()
+        rows = await search.fetch()
+        assert rows == []
 
     @pytest.mark.asyncio
     async def test_store_retrieve(self, holder: VCHolder):
