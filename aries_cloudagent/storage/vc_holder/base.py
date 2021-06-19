@@ -52,6 +52,24 @@ class VCHolder(ABC):
         """
 
     @abstractmethod
+    def set_tag_query_to_dict(self):
+        """Set tag_query to dict based upon specific backend."""
+
+    @abstractmethod
+    def set_tag_query_to_none(self):
+        """Set tag_query to None."""
+        self._tag_query = None
+
+    @abstractmethod
+    def build_tag_query(self, uri: str):
+        """
+        Build backend-specific tag_query.
+
+        Args:
+            uri: Schema uri to build a backend specific WQL query
+        """
+
+    @abstractmethod
     def search_credentials(
         self,
         contexts: Sequence[str] = None,

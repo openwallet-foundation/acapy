@@ -18,6 +18,22 @@ class IndySdkVCHolder(VCHolder):
         """Initialize the Indy-SDK VC holder instance."""
         self._wallet = wallet
         self._store = IndySdkStorage(wallet)
+        self._tag_query = None
+
+    def set_tag_query_to_dict(self):
+        """Set tag_query to dict [indy-backend]."""
+        self._tag_query = {"$and": []}
+
+    def set_tag_query_to_none(self):
+        """Set tag_query to None."""
+        self._tag_query = None
+
+    def build_tag_query(self, uri: str):
+        """Build indy-specific tag_query."""
+        tag_query_or_list = []
+        tag_query_or_list.append({f"type:{uri}": "1"})
+        tag_query_or_list.append({f"schm:{uri}": "1"})
+        self._tag_query["$and"].append({"$or": tag_query_or_list})
 
     async def store_credential(self, cred: VCRecord):
         """
@@ -113,6 +129,8 @@ class IndySdkVCHolder(VCHolder):
             query["given_id"] = given_id
         if tag_query:
             query.update(tag_query)
+        if self._tag_query:
+            query.update(self._tag_query)
         search = self._store.search_records(VC_CRED_RECORD_TYPE, query)
         return IndySdkVCRecordSearch(search)
 

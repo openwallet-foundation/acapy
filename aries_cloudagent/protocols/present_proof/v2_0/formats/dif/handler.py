@@ -189,27 +189,26 @@ class DIFPresFormatHandler(V20PresFormatHandler):
         dif_handler_proof_type = None
         try:
             holder = self._profile.inject(VCHolder)
+            holder.set_tag_query_to_dict()
             record_ids = set()
             credentials_list = []
             for input_descriptor in input_descriptors:
-                tag_query = {"$and": []}
                 proof_type = None
                 limit_disclosure = input_descriptor.constraint.limit_disclosure and (
                     input_descriptor.constraint.limit_disclosure == "required"
                 )
+                tag_query_included = False
                 for schema in input_descriptor.schemas:
-                    tag_query_or_list = []
                     uri = schema.uri
                     if schema.required is None:
                         required = True
                     else:
                         required = schema.required
                     if required:
-                        tag_query_or_list.append({f"type:{uri}": "1"})
-                        tag_query_or_list.append({f"schm:{uri}": "1"})
-                        tag_query["$and"].append({"$or": tag_query_or_list})
-                if len(tag_query["$and"]) == 0:
-                    tag_query = None
+                        holder.build_tag_query(uri)
+                        tag_query_included = True
+                if not tag_query_included:
+                    holder.set_tag_query_to_none()
                 if limit_disclosure:
                     proof_type = [BbsBlsSignature2020.signature_type]
                     dif_handler_proof_type = BbsBlsSignature2020.signature_type
@@ -288,9 +287,7 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                             "BbsBlsSignature2020 and Ed25519Signature2018"
                             " signature types are supported"
                         )
-                search = holder.search_credentials(
-                    tag_query=tag_query, proof_types=proof_type
-                )
+                search = holder.search_credentials(proof_types=proof_type)
                 # Defaults to page_size but would like to include all
                 # For now, setting to 1000
                 max_results = 1000

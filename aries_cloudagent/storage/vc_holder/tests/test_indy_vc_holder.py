@@ -7,8 +7,18 @@ from ....ledger.indy import IndySdkLedgerPool
 from ....wallet.indy import IndySdkWallet
 
 from ..base import VCHolder
+from ..vc_record import VCRecord
 
 from . import test_in_memory_vc_holder as in_memory
+
+
+VC_CONTEXT = "https://www.w3.org/2018/credentials/v1"
+VC_TYPE = "https://www.w3.org/2018/credentials#VerifiableCredential"
+VC_SUBJECT_ID = "did:example:ebfeb1f712ebc6f1c276e12ec21"
+VC_PROOF_TYPE = "Ed25519Signature2018"
+VC_ISSUER_ID = "https://example.edu/issuers/14"
+VC_SCHEMA_ID = "https://example.org/examples/degree.json"
+VC_GIVEN_ID = "http://example.edu/credentials/3732"
 
 
 async def make_profile():
@@ -35,7 +45,70 @@ async def holder():
     await profile.close()
 
 
+def test_record() -> VCRecord:
+    return VCRecord(
+        contexts=[
+            VC_CONTEXT,
+            "https://www.w3.org/2018/credentials/examples/v1",
+        ],
+        expanded_types=[
+            VC_TYPE,
+            "https://example.org/examples#UniversityDegreeCredential",
+        ],
+        schema_ids=[VC_SCHEMA_ID],
+        issuer_id=VC_ISSUER_ID,
+        subject_ids=[VC_SUBJECT_ID],
+        proof_types=[VC_PROOF_TYPE],
+        given_id=VC_GIVEN_ID,
+        cred_tags={"tag": "value"},
+        cred_value={"...": "..."},
+    )
+
+
 @pytest.mark.indy
 class TestIndySdkVCHolder(in_memory.TestInMemoryVCHolder):
     # run same test suite with different holder fixture
-    pass
+    @pytest.mark.asyncio
+    async def test_tag_query(self, holder: VCHolder):
+        assert holder._tag_query is None
+        holder.set_tag_query_to_dict()
+        assert holder._tag_query == {"$and": []}
+        holder.build_tag_query(
+            "https://www.w3.org/2018/credentials#VerifiableCredential"
+        )
+        holder.build_tag_query(
+            "https://example.org/examples#UniversityDegreeCredential"
+        )
+        assert holder._tag_query == {
+            "$and": [
+                {
+                    "$or": [
+                        {
+                            "type:https://www.w3.org/2018/credentials#VerifiableCredential": "1"
+                        },
+                        {
+                            "schm:https://www.w3.org/2018/credentials#VerifiableCredential": "1"
+                        },
+                    ]
+                },
+                {
+                    "$or": [
+                        {
+                            "type:https://example.org/examples#UniversityDegreeCredential": "1"
+                        },
+                        {
+                            "schm:https://example.org/examples#UniversityDegreeCredential": "1"
+                        },
+                    ]
+                },
+            ]
+        }
+        record = test_record()
+        await holder.store_credential(record)
+
+        search = holder.search_credentials()
+        rows = await search.fetch()
+        assert rows == [record]
+
+        holder.set_tag_query_to_none()
+        assert holder._tag_query is None

@@ -50,6 +50,51 @@ class TestInMemoryVCHolder:
         assert holder.__class__.__name__ in str(holder)
 
     @pytest.mark.asyncio
+    async def test_tag_query(self, holder: VCHolder):
+        assert holder._tag_query is None
+        holder.set_tag_query_to_dict()
+        assert holder._tag_query == {"$all_of": []}
+        holder.build_tag_query(
+            "https://www.w3.org/2018/credentials#VerifiableCredential"
+        )
+        holder.build_tag_query(
+            "https://example.org/examples#UniversityDegreeCredential"
+        )
+        assert holder._tag_query == {
+            "$all_of": [
+                {
+                    "$exist": [
+                        {
+                            "type:https://www.w3.org/2018/credentials#VerifiableCredential": "1"
+                        },
+                        {
+                            "schm:https://www.w3.org/2018/credentials#VerifiableCredential": "1"
+                        },
+                    ]
+                },
+                {
+                    "$exist": [
+                        {
+                            "type:https://example.org/examples#UniversityDegreeCredential": "1"
+                        },
+                        {
+                            "schm:https://example.org/examples#UniversityDegreeCredential": "1"
+                        },
+                    ]
+                },
+            ]
+        }
+        record = test_record()
+        await holder.store_credential(record)
+
+        search = holder.search_credentials()
+        rows = await search.fetch()
+        assert rows == [record]
+
+        holder.set_tag_query_to_none()
+        assert holder._tag_query is None
+
+    @pytest.mark.asyncio
     async def test_store_retrieve(self, holder: VCHolder):
         record = test_record()
         await holder.store_credential(record)

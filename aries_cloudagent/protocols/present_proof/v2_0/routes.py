@@ -497,29 +497,28 @@ async def present_proof_credentials_list(request: web.BaseRequest):
                 "presentation_definition"
             ).get("input_descriptors")
             claim_fmt = dif_pres_request.get("presentation_definition").get("format")
+            dif_holder.set_tag_query_to_dict()
             input_descriptors = []
             for input_desc_dict in input_descriptors_list:
                 input_descriptors.append(InputDescriptors.deserialize(input_desc_dict))
             record_ids = set()
             for input_descriptor in input_descriptors:
-                tag_query = {"$and": []}
+                tag_query_included = False
                 proof_type = None
                 limit_disclosure = input_descriptor.constraint.limit_disclosure and (
                     input_descriptor.constraint.limit_disclosure == "required"
                 )
                 for schema in input_descriptor.schemas:
-                    tag_query_or_list = []
                     uri = schema.uri
                     if schema.required is None:
                         required = True
                     else:
                         required = schema.required
                     if required:
-                        tag_query_or_list.append({f"type:{uri}": "1"})
-                        tag_query_or_list.append({f"schm:{uri}": "1"})
-                        tag_query["$and"].append({"$or": tag_query_or_list})
-                if len(tag_query["$and"]) == 0:
-                    tag_query = None
+                        dif_holder.build_tag_query(uri)
+                        tag_query_included = True
+                if not tag_query_included:
+                    dif_holder.set_tag_query_to_none()
                 if limit_disclosure:
                     proof_type = [BbsBlsSignature2020.signature_type]
                 if claim_fmt:
@@ -601,7 +600,6 @@ async def present_proof_credentials_list(request: web.BaseRequest):
                             )
                         )
                 search = dif_holder.search_credentials(
-                    tag_query=tag_query,
                     proof_types=proof_type,
                 )
                 records = await search.fetch(count)
