@@ -18,22 +18,22 @@ class InMemoryVCHolder(VCHolder):
         """Initialize the in-memory VC holder instance."""
         self._profile = profile
         self._store = InMemoryStorage(profile)
-        self._tag_query = None
+        self.type_or_schema_query = None
 
-    def set_tag_query_to_dict(self):
-        """Set tag_query to dict [in-memory backend]."""
-        self._tag_query = {"$and": []}
+    def set_type_or_schema_query_to_dict(self):
+        """Set type_or_schema_query to dict [in-memory backend]."""
+        self.type_or_schema_query = {"$and": []}
 
-    def set_tag_query_to_none(self):
-        """Set tag_query to None."""
-        self._tag_query = None
+    def set_type_or_schema_query_to_none(self):
+        """Set type_or_schema_query to None."""
+        self.type_or_schema_query = None
 
-    def build_tag_query(self, uri: str):
-        """Build in-memory backend specific tag_query."""
-        tag_query_or_list = []
-        tag_query_or_list.append({f"type:{uri}": "1"})
-        tag_query_or_list.append({f"schm:{uri}": "1"})
-        self._tag_query["$and"].append({"$or": tag_query_or_list})
+    def build_type_or_schema_query(self, uri: str):
+        """Build in-memory backend specific type_or_schema_query."""
+        tag_or_list = []
+        tag_or_list.append({f"type:{uri}": "1"})
+        tag_or_list.append({f"schm:{uri}": "1"})
+        self.type_or_schema_query["$and"].append({"$or": tag_or_list})
 
     async def store_credential(self, cred: VCRecord):
         """
@@ -129,9 +129,9 @@ class InMemoryVCHolder(VCHolder):
             query["given_id"] = given_id
         if tag_query:
             query.update(tag_query)
-        if self._tag_query:
-            query.update(self._tag_query)
-            self.set_tag_query_to_none()
+        if self.type_or_schema_query:
+            query.update(self.type_or_schema_query)
+            self.set_type_or_schema_query_to_none()
         search = self._store.search_records(VC_CRED_RECORD_TYPE, query)
         return InMemoryVCRecordSearch(search)
 

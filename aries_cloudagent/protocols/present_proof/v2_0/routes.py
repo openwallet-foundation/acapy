@@ -497,7 +497,7 @@ async def present_proof_credentials_list(request: web.BaseRequest):
                 "presentation_definition"
             ).get("input_descriptors")
             claim_fmt = dif_pres_request.get("presentation_definition").get("format")
-            dif_holder.set_tag_query_to_dict()
+            dif_holder.set_type_or_schema_query_to_dict()
             input_descriptors = []
             for input_desc_dict in input_descriptors_list:
                 input_descriptors.append(InputDescriptors.deserialize(input_desc_dict))
@@ -515,10 +515,10 @@ async def present_proof_credentials_list(request: web.BaseRequest):
                     else:
                         required = schema.required
                     if required:
-                        dif_holder.build_tag_query(uri)
+                        dif_holder.build_type_or_schema_query(uri)
                         tag_query_included = True
                 if not tag_query_included:
-                    dif_holder.set_tag_query_to_none()
+                    dif_holder.set_type_or_schema_query_to_none()
                 if limit_disclosure:
                     proof_type = [BbsBlsSignature2020.signature_type]
                 if claim_fmt:

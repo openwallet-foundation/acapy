@@ -48,16 +48,16 @@ class TestInMemoryVCHolder:
 
     @pytest.mark.asyncio
     async def test_tag_query(self, holder: VCHolder):
-        assert holder._tag_query is None
-        holder.set_tag_query_to_dict()
-        assert holder._tag_query == {"$and": []}
-        holder.build_tag_query(
+        assert holder.type_or_schema_query is None
+        holder.set_type_or_schema_query_to_dict()
+        assert holder.type_or_schema_query == {"$and": []}
+        holder.build_type_or_schema_query(
             "https://www.w3.org/2018/credentials#VerifiableCredential"
         )
-        holder.build_tag_query(
+        holder.build_type_or_schema_query(
             "https://example.org/examples#UniversityDegreeCredential"
         )
-        assert holder._tag_query == {
+        assert holder.type_or_schema_query == {
             "$and": [
                 {
                     "$or": [
@@ -88,12 +88,12 @@ class TestInMemoryVCHolder:
         rows = await search.fetch()
         assert rows == [record]
 
-        holder.set_tag_query_to_none()
-        assert holder._tag_query is None
+        holder.set_type_or_schema_query_to_none()
+        assert holder.type_or_schema_query is None
 
     @pytest.mark.asyncio
     async def test_tag_query_invalid_and_operator(self, holder: VCHolder):
-        holder._tag_query = {"$and": "test"}
+        holder.type_or_schema_query = {"$and": "test"}
         record = test_record()
         await holder.store_credential(record)
         with pytest.raises(StorageSearchError):
@@ -102,11 +102,11 @@ class TestInMemoryVCHolder:
 
     @pytest.mark.asyncio
     async def test_tag_query_valid_and_operator(self, holder: VCHolder):
-        holder.set_tag_query_to_dict()
-        holder.build_tag_query(
+        holder.set_type_or_schema_query_to_dict()
+        holder.build_type_or_schema_query(
             "https://www.w3.org/2018/credentials#VerifiableCredential"
         )
-        holder.build_tag_query(
+        holder.build_type_or_schema_query(
             "https://example.org/examples#UniversityDegreeCredential2"
         )
         record = test_record()

@@ -52,18 +52,17 @@ class VCHolder(ABC):
         """
 
     @abstractmethod
-    def set_tag_query_to_dict(self):
-        """Set tag_query to dict based upon specific backend."""
+    def set_type_or_schema_query_to_dict(self):
+        """Set type_or_schema_query to dict."""
 
     @abstractmethod
-    def set_tag_query_to_none(self):
-        """Set tag_query to None."""
-        self._tag_query = None
+    def set_type_or_schema_query_to_none(self):
+        """Set type_or_schema_query to None."""
 
     @abstractmethod
-    def build_tag_query(self, uri: str):
+    def build_type_or_schema_query(self, uri: str):
         """
-        Build backend-specific tag_query.
+        Build backend-specific type_or_schema_query.
 
         Args:
             uri: Schema uri to build a backend specific WQL query

@@ -189,7 +189,7 @@ class DIFPresFormatHandler(V20PresFormatHandler):
         dif_handler_proof_type = None
         try:
             holder = self._profile.inject(VCHolder)
-            holder.set_tag_query_to_dict()
+            holder.set_type_or_schema_query_to_dict()
             record_ids = set()
             credentials_list = []
             for input_descriptor in input_descriptors:
@@ -205,10 +205,10 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                     else:
                         required = schema.required
                     if required:
-                        holder.build_tag_query(uri)
+                        holder.build_type_or_schema_query(uri)
                         tag_query_included = True
                 if not tag_query_included:
-                    holder.set_tag_query_to_none()
+                    holder.set_type_or_schema_query_to_none()
                 if limit_disclosure:
                     proof_type = [BbsBlsSignature2020.signature_type]
                     dif_handler_proof_type = BbsBlsSignature2020.signature_type
