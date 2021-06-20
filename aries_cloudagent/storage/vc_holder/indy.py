@@ -131,6 +131,7 @@ class IndySdkVCHolder(VCHolder):
             query.update(tag_query)
         if self._tag_query:
             query.update(self._tag_query)
+            self.set_tag_query_to_none()
         search = self._store.search_records(VC_CRED_RECORD_TYPE, query)
         return IndySdkVCRecordSearch(search)
 
