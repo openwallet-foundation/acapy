@@ -22,11 +22,11 @@ class InMemoryVCHolder(VCHolder):
     def build_type_or_schema_query(self, uri_list: Sequence[str]) -> dict:
         """Build and return in-memory backend specific type_or_schema_query."""
         type_or_schema_query = {"$and": []}
-        tag_or_list = []
         for uri in uri_list:
+            tag_or_list = []
             tag_or_list.append({f"type:{uri}": "1"})
             tag_or_list.append({f"schm:{uri}": "1"})
-        type_or_schema_query["$and"].append({"$or": tag_or_list})
+            type_or_schema_query["$and"].append({"$or": tag_or_list})
         return type_or_schema_query
 
     async def store_credential(self, cred: VCRecord):
