@@ -18,22 +18,16 @@ class InMemoryVCHolder(VCHolder):
         """Initialize the in-memory VC holder instance."""
         self._profile = profile
         self._store = InMemoryStorage(profile)
-        self.type_or_schema_query = None
 
-    def set_type_or_schema_query_to_dict(self):
-        """Set type_or_schema_query to dict [in-memory backend]."""
-        self.type_or_schema_query = {"$and": []}
-
-    def set_type_or_schema_query_to_none(self):
-        """Set type_or_schema_query to None."""
-        self.type_or_schema_query = None
-
-    def build_type_or_schema_query(self, uri: str):
-        """Build in-memory backend specific type_or_schema_query."""
+    def build_type_or_schema_query(self, uri_list: Sequence[str]) -> dict:
+        """Build and return in-memory backend specific type_or_schema_query."""
+        type_or_schema_query = {"$and": []}
         tag_or_list = []
-        tag_or_list.append({f"type:{uri}": "1"})
-        tag_or_list.append({f"schm:{uri}": "1"})
-        self.type_or_schema_query["$and"].append({"$or": tag_or_list})
+        for uri in uri_list:
+            tag_or_list.append({f"type:{uri}": "1"})
+            tag_or_list.append({f"schm:{uri}": "1"})
+        type_or_schema_query["$and"].append({"$or": tag_or_list})
+        return type_or_schema_query
 
     async def store_credential(self, cred: VCRecord):
         """
@@ -92,6 +86,7 @@ class InMemoryVCHolder(VCHolder):
         proof_types: Sequence[str] = None,
         given_id: str = None,
         tag_query: Mapping = None,
+        pd_uri_list: Sequence[str] = None,
     ) -> "VCRecordSearch":
         """
         Start a new VC record search.
@@ -129,9 +124,8 @@ class InMemoryVCHolder(VCHolder):
             query["given_id"] = given_id
         if tag_query:
             query.update(tag_query)
-        if self.type_or_schema_query:
-            query.update(self.type_or_schema_query)
-            self.set_type_or_schema_query_to_none()
+        if pd_uri_list:
+            query.update(self.build_type_or_schema_query(pd_uri_list))
         search = self._store.search_records(VC_CRED_RECORD_TYPE, query)
         return InMemoryVCRecordSearch(search)
 

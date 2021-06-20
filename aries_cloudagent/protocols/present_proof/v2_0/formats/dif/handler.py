@@ -189,7 +189,6 @@ class DIFPresFormatHandler(V20PresFormatHandler):
         dif_handler_proof_type = None
         try:
             holder = self._profile.inject(VCHolder)
-            holder.set_type_or_schema_query_to_dict()
             record_ids = set()
             credentials_list = []
             for input_descriptor in input_descriptors:
@@ -197,7 +196,7 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                 limit_disclosure = input_descriptor.constraint.limit_disclosure and (
                     input_descriptor.constraint.limit_disclosure == "required"
                 )
-                tag_query_included = False
+                uri_list = []
                 for schema in input_descriptor.schemas:
                     uri = schema.uri
                     if schema.required is None:
@@ -205,10 +204,9 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                     else:
                         required = schema.required
                     if required:
-                        holder.build_type_or_schema_query(uri)
-                        tag_query_included = True
-                if not tag_query_included:
-                    holder.set_type_or_schema_query_to_none()
+                        uri_list.append(uri)
+                if len(uri_list) == 0:
+                    uri_list = None
                 if limit_disclosure:
                     proof_type = [BbsBlsSignature2020.signature_type]
                     dif_handler_proof_type = BbsBlsSignature2020.signature_type
@@ -287,7 +285,9 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                             "BbsBlsSignature2020 and Ed25519Signature2018"
                             " signature types are supported"
                         )
-                search = holder.search_credentials(proof_types=proof_type)
+                search = holder.search_credentials(
+                    proof_types=proof_type, pd_uri_list=uri_list
+                )
                 # Defaults to page_size but would like to include all
                 # For now, setting to 1000
                 max_results = 1000

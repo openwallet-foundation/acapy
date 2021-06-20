@@ -48,16 +48,12 @@ class TestInMemoryVCHolder:
 
     @pytest.mark.asyncio
     async def test_tag_query(self, holder: VCHolder):
-        assert holder.type_or_schema_query is None
-        holder.set_type_or_schema_query_to_dict()
-        assert holder.type_or_schema_query == {"$and": []}
-        holder.build_type_or_schema_query(
-            "https://www.w3.org/2018/credentials#VerifiableCredential"
-        )
-        holder.build_type_or_schema_query(
-            "https://example.org/examples#UniversityDegreeCredential"
-        )
-        assert holder.type_or_schema_query == {
+        test_uri_list = [
+            "https://www.w3.org/2018/credentials#VerifiableCredential",
+            "https://example.org/examples#UniversityDegreeCredential",
+        ]
+        test_query = holder.build_type_or_schema_query(test_uri_list)
+        assert test_query == {
             "$and": [
                 {
                     "$or": [
@@ -84,35 +80,20 @@ class TestInMemoryVCHolder:
         record = test_record()
         await holder.store_credential(record)
 
-        search = holder.search_credentials()
+        search = holder.search_credentials(pd_uri_list=test_uri_list)
         rows = await search.fetch()
         assert rows == [record]
 
-        holder.set_type_or_schema_query_to_none()
-        assert holder.type_or_schema_query is None
-
-    @pytest.mark.asyncio
-    async def test_tag_query_invalid_and_operator(self, holder: VCHolder):
-        holder.type_or_schema_query = {"$and": "test"}
-        record = test_record()
-        await holder.store_credential(record)
-        with pytest.raises(StorageSearchError):
-            search = holder.search_credentials()
-            rows = await search.fetch()
-
     @pytest.mark.asyncio
     async def test_tag_query_valid_and_operator(self, holder: VCHolder):
-        holder.set_type_or_schema_query_to_dict()
-        holder.build_type_or_schema_query(
-            "https://www.w3.org/2018/credentials#VerifiableCredential"
-        )
-        holder.build_type_or_schema_query(
-            "https://example.org/examples#UniversityDegreeCredential2"
-        )
+        test_uri_list = [
+            "https://www.w3.org/2018/credentials#VerifiableCredential",
+            "https://example.org/examples#UniversityDegreeCredential2",
+        ]
         record = test_record()
         await holder.store_credential(record)
 
-        search = holder.search_credentials()
+        search = holder.search_credentials(pd_uri_list=test_uri_list)
         rows = await search.fetch()
         assert rows == []
 
