@@ -419,6 +419,8 @@ class DIFPresExchHandler:
                     del cred_dict["@graph"]
                     break
         given_id = cred_dict.get("id")
+        if given_id and self.check_if_cred_id_derived(given_id):
+            given_id = str(uuid4())
         # issuer
         issuer = cred_dict.get("issuer")
         if type(issuer) is dict:
@@ -1010,7 +1012,7 @@ class DIFPresExchHandler:
             return {}
 
         nested_result = []
-        given_id_descriptors = {}
+        cred_uid_descriptors = {}
         # recursion logic for nested requirements
         for requirement in req.nested_req:
             # recursive call
@@ -1019,7 +1021,7 @@ class DIFPresExchHandler:
             )
             if result == {}:
                 continue
-            # given_id_descriptors maps applicable credentials
+            # cred_uid_descriptors maps applicable credentials
             # to their respective descriptor.
             # Structure: {cred.given_id: {
             #           desc_id_1: {}
@@ -1030,22 +1032,27 @@ class DIFPresExchHandler:
             for descriptor_id in result.keys():
                 credential_list = result.get(descriptor_id)
                 for credential in credential_list:
-                    if credential.given_id not in given_id_descriptors:
-                        given_id_descriptors[credential.given_id] = {}
-                    given_id_descriptors[credential.given_id][descriptor_id] = {}
+                    if credential.given_id:
+                        if credential.given_id not in cred_uid_descriptors:
+                            cred_uid_descriptors[credential.given_id] = {}
+                        cred_uid_descriptors[credential.given_id][descriptor_id] = {}
+                    else:
+                        if credential.record_id not in cred_uid_descriptors:
+                            cred_uid_descriptors[credential.record_id] = {}
+                        cred_uid_descriptors[credential.record_id][descriptor_id] = {}
 
             if len(result.keys()) != 0:
                 nested_result.append(result)
 
         exclude = {}
-        for given_id in given_id_descriptors.keys():
+        for uid in cred_uid_descriptors.keys():
             # Check if number of applicable credentials
             # does not meet requirement specification
-            if not self.is_len_applicable(req, len(given_id_descriptors[given_id])):
-                for descriptor_id in given_id_descriptors[given_id]:
+            if not self.is_len_applicable(req, len(cred_uid_descriptors[uid])):
+                for descriptor_id in cred_uid_descriptors[uid]:
                     # Add to exclude dict
-                    # with cred.given_id + descriptor_id as key
-                    exclude[descriptor_id + given_id] = {}
+                    # with cred_uid + descriptor_id as key
+                    exclude[descriptor_id + uid] = {}
         # merging credentials and excluding credentials that don't satisfy the requirement
         return await self.merge_nested_results(
             nested_result=nested_result, exclude=exclude
@@ -1082,20 +1089,32 @@ class DIFPresExchHandler:
         for res in nested_result:
             for key in res.keys():
                 credentials = res[key]
-                given_id_dict = {}
+                uid_dict = {}
                 merged_credentials = []
 
                 if key in result:
                     for credential in result[key]:
-                        if credential.given_id not in given_id_dict:
+                        if credential.given_id and credential.given_id not in uid_dict:
                             merged_credentials.append(credential)
-                            given_id_dict[credential.given_id] = {}
+                            uid_dict[credential.given_id] = {}
+                        elif (
+                            not credential.given_id
+                            and credential.record_id not in uid_dict
+                        ):
+                            merged_credentials.append(credential)
+                            uid_dict[credential.record_id] = {}
 
                 for credential in credentials:
-                    if credential.given_id not in given_id_dict:
+                    if credential.given_id and credential.given_id not in uid_dict:
                         if (key + (credential.given_id)) not in exclude:
                             merged_credentials.append(credential)
-                            given_id_dict[credential.given_id] = {}
+                            uid_dict[credential.given_id] = {}
+                    elif (
+                        not credential.given_id and credential.record_id not in uid_dict
+                    ):
+                        if (key + (credential.record_id)) not in exclude:
+                            merged_credentials.append(credential)
+                            uid_dict[credential.record_id] = {}
                 result[key] = merged_credentials
         return result
 
@@ -1187,10 +1206,16 @@ class DIFPresExchHandler:
     def check_sign_pres(self, creds: Sequence[VCRecord]) -> bool:
         """Check if applicable creds have CredentialSubject.id set."""
         for cred in creds:
-            if len(cred.subject_ids) > 0 and not next(
-                iter(cred.subject_ids)
-            ).startswith("urn:"):
+            if len(cred.subject_ids) > 0 and not self.check_if_cred_id_derived(
+                next(iter(cred.subject_ids))
+            ):
                 return True
+        return False
+
+    def check_if_cred_id_derived(self, id: str) -> bool:
+        """Check if credential or credentialSubjet id is derived."""
+        if id.startswith("urn:") and "c14" in id:
+            return True
         return False
 
     async def merge(
@@ -1218,19 +1243,32 @@ class DIFPresExchHandler:
         for desc_id in sorted_desc_keys:
             credentials = dict_descriptor_creds.get(desc_id)
             for cred in credentials:
-                if cred.given_id not in dict_of_creds:
-                    result.append(cred)
-                    dict_of_creds[cred.given_id] = len(descriptors)
-
-                if f"{cred.given_id}-{cred.given_id}" not in dict_of_descriptors:
-                    descriptor_map = InputDescriptorMapping(
-                        id=desc_id,
-                        fmt="ldp_vp",
-                        path=(
-                            f"$.verifiableCredential[{dict_of_creds[cred.given_id]}]"
-                        ),
-                    )
-                    descriptors.append(descriptor_map)
+                if cred.given_id:
+                    if cred.given_id not in dict_of_creds:
+                        result.append(cred)
+                        dict_of_creds[cred.given_id] = len(descriptors)
+                    if f"{cred.given_id}-{cred.given_id}" not in dict_of_descriptors:
+                        descriptor_map = InputDescriptorMapping(
+                            id=desc_id,
+                            fmt="ldp_vp",
+                            path=(
+                                f"$.verifiableCredential[{dict_of_creds[cred.given_id]}]"
+                            ),
+                        )
+                        descriptors.append(descriptor_map)
+                else:
+                    if cred.record_id not in dict_of_creds:
+                        result.append(cred)
+                        dict_of_creds[cred.record_id] = len(descriptors)
+                    if f"{cred.record_id}-{cred.record_id}" not in dict_of_descriptors:
+                        descriptor_map = InputDescriptorMapping(
+                            id=desc_id,
+                            fmt="ldp_vp",
+                            path=(
+                                f"$.verifiableCredential[{dict_of_creds[cred.record_id]}]"
+                            ),
+                        )
+                        descriptors.append(descriptor_map)
 
         descriptors = sorted(descriptors, key=lambda i: i.id)
         return (result, descriptors)
