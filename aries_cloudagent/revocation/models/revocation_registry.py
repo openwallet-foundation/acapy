@@ -191,8 +191,8 @@ class RevocationRegistry:
             try:
                 os.remove(tails_file_path)
                 tails_file_dir.rmdir()
-            except OSError:
-                LOGGER.warning(f"Could not delete invalid tails file: {OSError}")
+            except OSError as err:
+                LOGGER.warning(f"Could not delete invalid tails file: {err}")
 
             raise RevocationError(
                 "The hash of the downloaded tails file does not match."
