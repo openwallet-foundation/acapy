@@ -330,6 +330,15 @@ class DIFPresFormatHandler(V20PresFormatHandler):
         self, message: V20Pres, pres_ex_record: V20PresExRecord
     ) -> None:
         """Receive a presentation, from message in context on manager creation."""
+        dif_handler = DIFPresExchHandler(self._profile)
+        dif_proof = message.attachment(DIFPresFormatHandler.format)
+        proof_request = pres_ex_record.pres_request.attachment(
+            DIFPresFormatHandler.format
+        )
+        pres_definition = PresentationDefinition.deserialize(
+            proof_request.get("presentation_definition")
+        )
+        await dif_handler.verify_received_pres(pd=pres_definition, pres=dif_proof)
 
     async def verify_pres(self, pres_ex_record: V20PresExRecord) -> V20PresExRecord:
         """

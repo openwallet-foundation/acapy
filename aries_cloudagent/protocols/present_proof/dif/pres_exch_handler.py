@@ -1214,7 +1214,7 @@ class DIFPresExchHandler:
 
     def check_if_cred_id_derived(self, id: str) -> bool:
         """Check if credential or credentialSubjet id is derived."""
-        if id.startswith("urn:") and "c14" in id:
+        if id.startswith("urn:bnid:_:c14n"):
             return True
         return False
 
@@ -1272,3 +1272,114 @@ class DIFPresExchHandler:
 
         descriptors = sorted(descriptors, key=lambda i: i.id)
         return (result, descriptors)
+
+    async def verify_received_pres(
+        self,
+        pd: PresentationDefinition,
+        pres: dict,
+    ):
+        """
+        Verify credentials received in presentation.
+
+        Args:
+            pres: received VerifiablePresentation
+            pd: PresentationDefinition
+        """
+        descriptor_map_list = pres.get("presentation_submission").get("descriptor_map")
+        input_descriptors = pd.input_descriptors
+        inp_desc_id_contraint_map = {}
+        for input_descriptor in input_descriptors:
+            inp_desc_id_contraint_map[input_descriptor.id] = input_descriptor.constraint
+        for desc_map_item in descriptor_map_list:
+            desc_map_item_id = desc_map_item.get("id")
+            constraint = inp_desc_id_contraint_map.get(desc_map_item_id)
+            desc_map_item_path = desc_map_item.get("path")
+            jsonpath = parse(desc_map_item_path)
+            match = jsonpath.find(pres)
+            if len(match) == 0:
+                raise DIFPresExchError(
+                    f"{desc_map_item_path} path in descriptor_map not applicable"
+                )
+            for match_item in match:
+                if not await self.apply_constraint_received_cred(
+                    constraint, match_item.value
+                ):
+                    raise DIFPresExchError(
+                        f"Constraint specified for {desc_map_item_id} does not "
+                        f"apply to the enclosed credential in {desc_map_item_path}"
+                    )
+
+    async def apply_constraint_received_cred(
+        self, constraint: Constraints, cred_dict: dict
+    ) -> bool:
+        """Evaluate constraint from the request against received credential."""
+        fields = constraint._fields
+        field_paths = []
+        credential = self.create_vcrecord(cred_dict)
+        for field in fields:
+            field_paths = field_paths + field.paths
+            if not await self.filter_by_field(field, credential):
+                return False
+        # Selective Disclosure check
+        if constraint.limit_disclosure == "required":
+            field_paths = set([path.replace("$.", "") for path in field_paths])
+            mandatory_paths = {
+                "@context",
+                "type",
+                "issuanceDate",
+                "issuer",
+                "proof",
+                "credentialSubject",
+                "id",
+            }
+            to_remove_from_field_paths = set()
+            nested_field_paths = {"credentialSubject": {"id", "type"}}
+            for field_path in field_paths:
+                if field_path.count(".") >= 1:
+                    split_field_path = field_path.split(".")
+                    key = ".".join(split_field_path[:-1])
+                    value = split_field_path[-1]
+                    nested_field_paths = self.build_nested_paths_dict(
+                        key, value, nested_field_paths
+                    )
+                    to_remove_from_field_paths.add(field_path)
+            for to_remove_path in to_remove_from_field_paths:
+                field_paths.remove(to_remove_path)
+
+            field_paths = set.union(mandatory_paths, field_paths)
+
+            for attrs in cred_dict.keys():
+                if attrs not in field_paths:
+                    return False
+            for nested_attr_key in nested_field_paths:
+                nested_attr_values = nested_field_paths[nested_attr_key]
+                split_nested_attr_key = nested_attr_key.split(".")
+                extracted_dict = self.nested_get(cred_dict, split_nested_attr_key)
+                for attrs in extracted_dict.keys():
+                    if attrs not in nested_attr_values:
+                        return False
+        return True
+
+    def nested_get(self, input_dict: dict, nested_key: Sequence[str]) -> dict:
+        """Return internal dict from nested input_dict given list of nested_key."""
+        internal_dict_value = input_dict
+        for k in nested_key:
+            internal_dict_value = internal_dict_value.get(k, None)
+        return internal_dict_value
+
+    def build_nested_paths_dict(
+        self, key: str, value: str, nested_field_paths: dict
+    ) -> dict:
+        """Build and return nested_field_paths dict."""
+        if key in nested_field_paths.keys():
+            nested_field_paths[key].add(value)
+        else:
+            nested_field_paths[key] = {value}
+        split_key = key.split(".")
+        if len(split_key) > 1:
+            nested_field_paths.update(
+                self.build_nested_paths_dict(
+                    ".".join(split_key[:-1]), split_key[-1], nested_field_paths
+                )
+            )
+        return nested_field_paths
