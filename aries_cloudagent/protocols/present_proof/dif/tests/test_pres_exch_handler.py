@@ -3,6 +3,7 @@ import pytest
 
 from asynctest import mock as async_mock
 from copy import deepcopy
+from uuid import uuid4
 
 from .....core.in_memory import InMemoryProfile
 from .....did.did_key import DIDKey
@@ -46,6 +47,7 @@ from .test_data import (
     bbs_bls_number_filter_creds,
     bbs_signed_cred_no_credsubjectid,
     bbs_signed_cred_credsubjectid,
+    creds_with_no_id,
 )
 
 
@@ -1529,6 +1531,35 @@ class TestPresExchHandler:
             test_nested_result, {}
         )
 
+    @pytest.mark.asyncio
+    async def test_merge_nested_cred_no_id(self, profile):
+        dif_pres_exch_handler = DIFPresExchHandler(profile)
+        cred_list = deepcopy(creds_with_no_id)
+        cred_list[0].record_id = str(uuid4())
+        cred_list[1].record_id = str(uuid4())
+        test_nested_result = []
+        test_dict_1 = {}
+        test_dict_1["citizenship_input_1"] = [
+            cred_list[0],
+            cred_list[1],
+        ]
+        test_dict_2 = {}
+        test_dict_2["citizenship_input_2"] = [
+            cred_list[0],
+        ]
+        test_dict_3 = {}
+        test_dict_3["citizenship_input_2"] = [
+            cred_list[0],
+            cred_list[1],
+        ]
+        test_nested_result.append(test_dict_1)
+        test_nested_result.append(test_dict_2)
+        test_nested_result.append(test_dict_3)
+
+        tmp_result = await dif_pres_exch_handler.merge_nested_results(
+            test_nested_result, {}
+        )
+
     def test_subject_is_issuer(self, setup_tuple, profile):
         cred_list, pd_list = setup_tuple
         dif_pres_exch_handler = DIFPresExchHandler(profile)
@@ -2866,7 +2897,7 @@ class TestPresExchHandler:
         assert filtered_cred_list[1].record_id in record_id_list
 
     @pytest.mark.asyncio
-    async def test_create_vp_record_ids(self, profile, setup_tuple):
+    async def test_create_vp_record_ids(self, profile):
         dif_pres_exch_handler = DIFPresExchHandler(profile)
         test_pd_filter_with_only_num_type = """
             {
@@ -2923,3 +2954,52 @@ class TestPresExchHandler:
             records_filter=records_filter,
         )
         assert len(tmp_vp.get("verifiableCredential")) == 2
+
+    @pytest.mark.asyncio
+    @pytest.mark.ursa_bbs_signatures
+    async def test_multiple_applicable_creds_with_no_id(self, profile, setup_tuple):
+        dif_pres_exch_handler = DIFPresExchHandler(profile)
+        test_creds = deepcopy(creds_with_no_id)
+        test_creds[0].record_id = str(uuid4())
+        test_creds[1].record_id = str(uuid4())
+        cred_list, pd_list = setup_tuple
+
+        tmp_pd = pd_list[6]
+        tmp_vp = await dif_pres_exch_handler.create_vp(
+            credentials=test_creds,
+            pd=tmp_pd[0],
+            challenge="1f44d55f-f161-4938-a659-f8026467f126",
+        )
+        assert len(tmp_vp["verifiableCredential"]) == 2
+        assert (
+            tmp_vp.get("verifiableCredential")[0]
+            .get("credentialSubject")
+            .get("givenName")
+            == "TEST"
+        )
+        assert (
+            tmp_vp.get("verifiableCredential")[1]
+            .get("credentialSubject")
+            .get("givenName")
+            == "TEST"
+        )
+
+        tmp_pd = pd_list[1]
+        tmp_vp = await dif_pres_exch_handler.create_vp(
+            credentials=test_creds,
+            pd=tmp_pd[0],
+            challenge="1f44d55f-f161-4938-a659-f8026467f126",
+        )
+        assert len(tmp_vp["verifiableCredential"]) == 2
+        assert (
+            tmp_vp.get("verifiableCredential")[0]
+            .get("credentialSubject")
+            .get("givenName")
+            == "TEST"
+        )
+        assert (
+            tmp_vp.get("verifiableCredential")[1]
+            .get("credentialSubject")
+            .get("givenName")
+            == "TEST"
+        )
