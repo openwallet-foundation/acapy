@@ -208,6 +208,14 @@ def tag_query_match(tags: dict, tag_query: dict) -> bool:
                     if tag_query_match(tags, opt):
                         chk = True
                         break
+            elif k == "$and":
+                if not isinstance(v, list):
+                    raise StorageSearchError("Expected list for $and filter value")
+                chk = False
+                for opt in v:
+                    if not tag_query_match(tags, opt):
+                        return False
+                chk = True
             elif k == "$not":
                 if not isinstance(v, dict):
                     raise StorageSearchError("Expected dict for $not filter value")

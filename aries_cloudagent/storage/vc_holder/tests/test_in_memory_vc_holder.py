@@ -1,10 +1,7 @@
 import pytest
 
 from ....core.in_memory import InMemoryProfile
-from ...error import (
-    StorageDuplicateError,
-    StorageNotFoundError,
-)
+from ...error import StorageDuplicateError, StorageNotFoundError, StorageSearchError
 
 from ..base import VCHolder
 from ..vc_record import VCRecord
@@ -48,6 +45,57 @@ def test_record() -> VCRecord:
 class TestInMemoryVCHolder:
     def test_repr(self, holder):
         assert holder.__class__.__name__ in str(holder)
+
+    @pytest.mark.asyncio
+    async def test_tag_query(self, holder: VCHolder):
+        test_uri_list = [
+            "https://www.w3.org/2018/credentials#VerifiableCredential",
+            "https://example.org/examples#UniversityDegreeCredential",
+        ]
+        test_query = holder.build_type_or_schema_query(test_uri_list)
+        assert test_query == {
+            "$and": [
+                {
+                    "$or": [
+                        {
+                            "type:https://www.w3.org/2018/credentials#VerifiableCredential": "1"
+                        },
+                        {
+                            "schm:https://www.w3.org/2018/credentials#VerifiableCredential": "1"
+                        },
+                    ]
+                },
+                {
+                    "$or": [
+                        {
+                            "type:https://example.org/examples#UniversityDegreeCredential": "1"
+                        },
+                        {
+                            "schm:https://example.org/examples#UniversityDegreeCredential": "1"
+                        },
+                    ]
+                },
+            ]
+        }
+        record = test_record()
+        await holder.store_credential(record)
+
+        search = holder.search_credentials(pd_uri_list=test_uri_list)
+        rows = await search.fetch()
+        assert rows == [record]
+
+    @pytest.mark.asyncio
+    async def test_tag_query_valid_and_operator(self, holder: VCHolder):
+        test_uri_list = [
+            "https://www.w3.org/2018/credentials#VerifiableCredential",
+            "https://example.org/examples#UniversityDegreeCredential2",
+        ]
+        record = test_record()
+        await holder.store_credential(record)
+
+        search = holder.search_credentials(pd_uri_list=test_uri_list)
+        rows = await search.fetch()
+        assert rows == []
 
     @pytest.mark.asyncio
     async def test_store_retrieve(self, holder: VCHolder):
