@@ -19,6 +19,7 @@ WEBHOOK_TARGET=""
 if [ -z "$DOCKER_NET" ]; then
   DOCKER_NET="bridge"
 fi
+DOCKER_VOL=""
 
 for i in "$@"
 do
@@ -82,6 +83,7 @@ do
       echo "For example, to create the directory and then set the permissions use: 'mkdir ../logs; chmod uga+rws ../logs'"
       exit 1
     fi
+    DOCKER_VOL="${DOCKER_VOL} -v /$(pwd)/../logs:/home/indy/logs"
     continue
   ;;
   --bg)
@@ -243,6 +245,6 @@ DOCKER=${DOCKER:-docker}
 $DOCKER run --name $AGENT --rm -it ${DOCKER_OPTS} \
   --network=${DOCKER_NET} \
   -p 0.0.0.0:$AGENT_PORT_RANGE:$AGENT_PORT_RANGE \
-  -v "/$(pwd)/../logs:/home/indy/logs" \
+  ${DOCKER_VOL} \
   $DOCKER_ENV \
   faber-alice-demo $AGENT_MODULE --port $AGENT_PORT $ARGS
