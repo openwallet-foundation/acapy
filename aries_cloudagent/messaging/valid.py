@@ -665,6 +665,11 @@ class CredentialType(Validator):
         length = len(value)
         if length < 1 or CredentialType.CREDENTIAL_TYPE not in value:
             raise ValidationError(f"type must include {CredentialType.CREDENTIAL_TYPE}")
+        if length == 1:
+            raise ValidationError(
+                "type must include additional, more narrow,"
+                " types (e.g. UniversityDegreeCredential)"
+            )
 
         return value
 

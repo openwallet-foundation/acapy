@@ -504,9 +504,11 @@ class TestValid(TestCase):
         with self.assertRaises(ValidationError):
             CREDENTIAL_TYPE["validate"](["WrongType", "AnotherWrongType"])
 
+        with self.assertRaises(ValidationError):
+            CREDENTIAL_TYPE["validate"](["VerifiableCredential"])
+
         CREDENTIAL_TYPE["validate"](["VerifiableCredential", "AnotherType"])
         CREDENTIAL_TYPE["validate"](["SomeType", "AnotherType", "VerifiableCredential"])
-        CREDENTIAL_TYPE["validate"](["VerifiableCredential"])
 
     def test_credential_context(self):
         with self.assertRaises(ValidationError):
