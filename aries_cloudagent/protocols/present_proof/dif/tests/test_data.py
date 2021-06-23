@@ -49,6 +49,87 @@ def create_vcrecord(cred_dict: dict, expanded_types: list):
     )
 
 
+creds_with_no_id = [
+    create_vcrecord(
+        {
+            "@context": [
+                "https://www.w3.org/2018/credentials/v1",
+                "https://w3id.org/citizenship/v1",
+                "https://w3id.org/security/bbs/v1",
+            ],
+            "type": ["VerifiableCredential", "PermanentResidentCard"],
+            "issuer": "did:key:zUC72Q7XD4PE4CrMiDVXuvZng3sBvMmaGgNeTUJuzavH2BS7ThbHL9FhsZM9QYY5fqAQ4MB8M9oudz3tfuaX36Ajr97QRW7LBt6WWmrtESe6Bs5NYzFtLWEmeVtvRYVAgjFcJSa",
+            "name": "Permanent Resident Card",
+            "description": "Government of Example Permanent Resident Card.",
+            "issuanceDate": "2010-01-01T19:53:24Z",
+            "expirationDate": "2029-12-03T12:19:52Z",
+            "credentialSubject": {
+                "type": ["PermanentResident", "Person"],
+                "givenName": "TEST",
+                "familyName": "SMITH",
+                "gender": "Male",
+                "image": "data:image/png;base64,iVBORw0KGgokJggg==",
+                "residentSince": "2015-01-01",
+                "lprCategory": "C09",
+                "lprNumber": "999-999-999",
+                "commuterClassification": "C1",
+                "birthCountry": "Bahamas",
+                "birthDate": "1958-07-17",
+            },
+            "proof": {
+                "type": "BbsBlsSignature2020",
+                "verificationMethod": "did:key:zUC72Q7XD4PE4CrMiDVXuvZng3sBvMmaGgNeTUJuzavH2BS7ThbHL9FhsZM9QYY5fqAQ4MB8M9oudz3tfuaX36Ajr97QRW7LBt6WWmrtESe6Bs5NYzFtLWEmeVtvRYVAgjFcJSa#zUC72Q7XD4PE4CrMiDVXuvZng3sBvMmaGgNeTUJuzavH2BS7ThbHL9FhsZM9QYY5fqAQ4MB8M9oudz3tfuaX36Ajr97QRW7LBt6WWmrtESe6Bs5NYzFtLWEmeVtvRYVAgjFcJSa",
+                "created": "2019-12-11T03:50:55",
+                "proofPurpose": "assertionMethod",
+                "proofValue": "mMEjznbr4lN5xQT0OuLJ94pKSSBEwBxKNHBPxfjwhRq2NnDaTH/mb+PdPnmfUgKvA8h5hI9Ho3qfY8TWmJtLsYSmJFZoG/FARQuwJJbTW/tVZoA2FVVKZGEsGt2MHsr1z/W30cXnmRyQzgqh4lnhQg==",
+            },
+        },
+        [
+            "https://www.w3.org/2018/credentials#VerifiableCredential",
+            "https://w3id.org/citizenship#PermanentResidentCard",
+        ],
+    ),
+    create_vcrecord(
+        {
+            "@context": [
+                "https://www.w3.org/2018/credentials/v1",
+                "https://w3id.org/citizenship/v1",
+                "https://w3id.org/security/bbs/v1",
+            ],
+            "type": ["VerifiableCredential", "PermanentResidentCard"],
+            "issuer": "did:key:zUC72Q7XD4PE4CrMiDVXuvZng3sBvMmaGgNeTUJuzavH2BS7ThbHL9FhsZM9QYY5fqAQ4MB8M9oudz3tfuaX36Ajr97QRW7LBt6WWmrtESe6Bs5NYzFtLWEmeVtvRYVAgjFcJSa",
+            "name": "Permanent Resident Card",
+            "description": "Government of Example Permanent Resident Card.",
+            "issuanceDate": "2010-01-01T19:53:24Z",
+            "expirationDate": "2029-12-03T12:19:52Z",
+            "credentialSubject": {
+                "type": ["PermanentResident", "Person"],
+                "givenName": "TEST",
+                "familyName": "SMITH",
+                "gender": "Male",
+                "image": "data:image/png;base64,iVBORw0KGgokJggg==",
+                "residentSince": "2015-01-01",
+                "lprCategory": "C09",
+                "lprNumber": "999-999-999",
+                "commuterClassification": "C1",
+                "birthCountry": "Bahamas",
+                "birthDate": "1958-07-17",
+            },
+            "proof": {
+                "type": "BbsBlsSignature2020",
+                "verificationMethod": "did:key:zUC72Q7XD4PE4CrMiDVXuvZng3sBvMmaGgNeTUJuzavH2BS7ThbHL9FhsZM9QYY5fqAQ4MB8M9oudz3tfuaX36Ajr97QRW7LBt6WWmrtESe6Bs5NYzFtLWEmeVtvRYVAgjFcJSa#zUC72Q7XD4PE4CrMiDVXuvZng3sBvMmaGgNeTUJuzavH2BS7ThbHL9FhsZM9QYY5fqAQ4MB8M9oudz3tfuaX36Ajr97QRW7LBt6WWmrtESe6Bs5NYzFtLWEmeVtvRYVAgjFcJSa",
+                "created": "2019-12-11T03:50:55",
+                "proofPurpose": "assertionMethod",
+                "proofValue": "rf5LlOFiB5oAl/hSEeaN/H3vx+3AXVpL4O4abtLmYb1aUF+WBOX3HBx5SrTkcwUgJBAPNoFX9l2PVDjTGy/eCjDerDG0DN5ZR+YwjebcZeclzE3Yv2hsnan1M/OTAc9GTNWE3p9lXbRxHNvwTXX6ug==",
+            },
+        },
+        [
+            "https://www.w3.org/2018/credentials#VerifiableCredential",
+            "https://w3id.org/citizenship#PermanentResidentCard",
+        ],
+    ),
+]
+
 bbs_signed_cred_no_credsubjectid = [
     create_vcrecord(
         {
@@ -492,7 +573,7 @@ edd_jsonld_creds = [
     ),
 ]
 
-cred_list = [
+CRED_LIST = [
     {
         "@context": [
             "https://www.w3.org/2018/credentials/v1",
@@ -1275,7 +1356,7 @@ pres_exch_datetime_maximum_met = """
 
 def get_test_data():
     vc_record_list = []
-    for cred in cred_list:
+    for cred in CRED_LIST:
         vc_record_list.append(
             create_vcrecord(
                 cred,

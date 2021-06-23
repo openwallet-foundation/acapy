@@ -17,7 +17,7 @@ from .......vc.tests.document_loader import custom_document_loader
 from .......vc.vc_ld.validation_result import PresentationVerificationResult
 from .......wallet.base import BaseWallet
 
-from .....dif.pres_exch_handler import DIFPresExchHandler
+from .....dif.pres_exch_handler import DIFPresExchHandler, DIFPresExchError
 
 from ....message_types import (
     ATTACHMENT_FORMAT,
@@ -613,6 +613,9 @@ class TestDIFFormatHandler(AsyncTestCase):
         test_pd["presentation_definition"]["format"] = {
             "ldp_vp": {"proof_type": ["Ed25519Signature2018"]}
         }
+        del test_pd["presentation_definition"]["input_descriptors"][0]["constraints"][
+            "limit_disclosure"
+        ]
         dif_pres_request = V20PresRequest(
             formats=[
                 V20PresFormat(
@@ -825,9 +828,168 @@ class TestDIFFormatHandler(AsyncTestCase):
         with self.assertRaises(V20PresFormatHandlerError):
             await self.handler.verify_pres(record)
 
-    async def test_create_pres_cred_v1_context_schema_uri(self):
+    async def test_create_pres_cred_limit_disclosure_no_bbs(self):
         test_pd = deepcopy(DIF_PRES_REQUEST_B)
-        test_pd["presentation_definition"]["input_descriptors"][0]["schema"].pop(1)
+        test_pd["presentation_definition"]["format"] = {
+            "ldp_vp": {"proof_type": ["Ed25519Signature2018"]}
+        }
+        dif_pres_request = V20PresRequest(
+            formats=[
+                V20PresFormat(
+                    attach_id="dif",
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.DIF.api
+                    ],
+                )
+            ],
+            request_presentations_attach=[
+                AttachDecorator.data_json(test_pd, ident="dif")
+            ],
+        )
+        record = V20PresExRecord(
+            pres_ex_id="pxid",
+            thread_id="thid",
+            connection_id="conn_id",
+            initiator="init",
+            role="role",
+            state="state",
+            pres_request=dif_pres_request,
+            verified="false",
+            auto_present=True,
+            error_msg="error",
+        )
+
+        with self.assertRaises(V20PresFormatHandlerError):
+            await self.handler.create_pres(record)
+
+    async def test_create_pres_cred_claim_format_single_ldp_vp_error(self):
+        test_pd = deepcopy(DIF_PRES_REQUEST_B)
+        test_pd["presentation_definition"]["format"] = {
+            "ldp_vp": {"proof_type": ["test"]}
+        }
+        del test_pd["presentation_definition"]["input_descriptors"][0]["constraints"][
+            "limit_disclosure"
+        ]
+        dif_pres_request = V20PresRequest(
+            formats=[
+                V20PresFormat(
+                    attach_id="dif",
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.DIF.api
+                    ],
+                )
+            ],
+            request_presentations_attach=[
+                AttachDecorator.data_json(test_pd, ident="dif")
+            ],
+        )
+        record = V20PresExRecord(
+            pres_ex_id="pxid",
+            thread_id="thid",
+            connection_id="conn_id",
+            initiator="init",
+            role="role",
+            state="state",
+            pres_request=dif_pres_request,
+            verified="false",
+            auto_present=True,
+            error_msg="error",
+        )
+
+        with self.assertRaises(V20PresFormatHandlerError):
+            await self.handler.create_pres(record)
+
+    async def test_create_pres_cred_claim_format_double_ldp_vp_error(self):
+        test_pd = deepcopy(DIF_PRES_REQUEST_B)
+        test_pd["presentation_definition"]["format"] = {
+            "ldp_vp": {"proof_type": ["test1", "test2"]}
+        }
+        del test_pd["presentation_definition"]["input_descriptors"][0]["constraints"][
+            "limit_disclosure"
+        ]
+        dif_pres_request = V20PresRequest(
+            formats=[
+                V20PresFormat(
+                    attach_id="dif",
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.DIF.api
+                    ],
+                )
+            ],
+            request_presentations_attach=[
+                AttachDecorator.data_json(test_pd, ident="dif")
+            ],
+        )
+        record = V20PresExRecord(
+            pres_ex_id="pxid",
+            thread_id="thid",
+            connection_id="conn_id",
+            initiator="init",
+            role="role",
+            state="state",
+            pres_request=dif_pres_request,
+            verified="false",
+            auto_present=True,
+            error_msg="error",
+        )
+
+        with self.assertRaises(V20PresFormatHandlerError):
+            await self.handler.create_pres(record)
+
+    async def test_create_pres_cred_no_tag_query(self):
+        test_pd = deepcopy(DIF_PRES_REQUEST_B)
+        test_pd["presentation_definition"]["input_descriptors"][0]["schema"][0][
+            "required"
+        ] = False
+        test_pd["presentation_definition"]["input_descriptors"][0]["schema"][1][
+            "required"
+        ] = False
+        dif_pres_request = V20PresRequest(
+            formats=[
+                V20PresFormat(
+                    attach_id="dif",
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.DIF.api
+                    ],
+                )
+            ],
+            request_presentations_attach=[
+                AttachDecorator.data_json(test_pd, ident="dif")
+            ],
+        )
+        record = V20PresExRecord(
+            pres_ex_id="pxid",
+            thread_id="thid",
+            connection_id="conn_id",
+            initiator="init",
+            role="role",
+            state="state",
+            pres_request=dif_pres_request,
+            verified="false",
+            auto_present=True,
+            error_msg="error",
+        )
+
+        with async_mock.patch.object(
+            DIFPresExchHandler,
+            "create_vp",
+            async_mock.CoroutineMock(),
+        ) as mock_create_vp:
+            mock_create_vp.return_value = DIF_PRES
+            output = await self.handler.create_pres(record, {})
+            assert isinstance(output[0], V20PresFormat) and isinstance(
+                output[1], AttachDecorator
+            )
+            assert output[1].data.json_ == DIF_PRES
+
+    async def test_create_pres_cred_claim_format_no_ldp_vp(self):
+        test_pd = deepcopy(DIF_PRES_REQUEST_B)
+        test_pd["presentation_definition"]["format"] = {
+            "ldp_vc": {"proof_type": ["test"]}
+        }
+        del test_pd["presentation_definition"]["input_descriptors"][0]["constraints"][
+            "limit_disclosure"
+        ]
         dif_pres_request = V20PresRequest(
             formats=[
                 V20PresFormat(
@@ -910,3 +1072,414 @@ class TestDIFFormatHandler(AsyncTestCase):
         assert len(returned_cred_list) == 1
         assert len(returned_record_ids) == 2
         assert returned_cred_list[0].record_id == "test2"
+
+    async def test_verify_received_pres_a(self):
+        dif_pres = V20Pres(
+            formats=[
+                V20PresFormat(
+                    attach_id="dif",
+                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.DIF.api],
+                )
+            ],
+            presentations_attach=[
+                AttachDecorator.data_json(
+                    mapping=DIF_PRES,
+                    ident="dif",
+                )
+            ],
+        )
+        dif_pres_request = V20PresRequest(
+            formats=[
+                V20PresFormat(
+                    attach_id="dif",
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.DIF.api
+                    ],
+                )
+            ],
+            request_presentations_attach=[
+                AttachDecorator.data_json(DIF_PRES_REQUEST_B, ident="dif")
+            ],
+        )
+        record = V20PresExRecord(
+            pres_ex_id="pxid",
+            thread_id="thid",
+            connection_id="conn_id",
+            initiator="init",
+            role="role",
+            state="state",
+            pres_request=dif_pres_request,
+            pres=dif_pres,
+            verified="false",
+            auto_present=True,
+            error_msg="error",
+        )
+        await self.handler.receive_pres(message=dif_pres, pres_ex_record=record)
+
+    async def test_verify_received_pres_b(self):
+        dif_proof = deepcopy(DIF_PRES)
+        dif_proof["verifiableCredential"][0]["credentialSubject"]["givenName"] = {
+            "test": "JOHN"
+        }
+        dif_pres = V20Pres(
+            formats=[
+                V20PresFormat(
+                    attach_id="dif",
+                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.DIF.api],
+                )
+            ],
+            presentations_attach=[
+                AttachDecorator.data_json(
+                    mapping=dif_proof,
+                    ident="dif",
+                )
+            ],
+        )
+
+        dif_proof_req = deepcopy(DIF_PRES_REQUEST_B)
+        dif_proof_req["presentation_definition"]["input_descriptors"][0]["constraints"][
+            "fields"
+        ][0]["path"] = ["$.credentialSubject.givenName.test"]
+        dif_pres_request = V20PresRequest(
+            formats=[
+                V20PresFormat(
+                    attach_id="dif",
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.DIF.api
+                    ],
+                )
+            ],
+            request_presentations_attach=[
+                AttachDecorator.data_json(dif_proof_req, ident="dif")
+            ],
+        )
+        record = V20PresExRecord(
+            pres_ex_id="pxid",
+            thread_id="thid",
+            connection_id="conn_id",
+            initiator="init",
+            role="role",
+            state="state",
+            pres_request=dif_pres_request,
+            pres=dif_pres,
+            verified="false",
+            auto_present=True,
+            error_msg="error",
+        )
+        await self.handler.receive_pres(message=dif_pres, pres_ex_record=record)
+
+    async def test_verify_received_pres_c(self):
+        dif_proof = deepcopy(DIF_PRES)
+        dif_proof["verifiableCredential"][0]["credentialSubject"]["givenName"] = {
+            "test": "JOHN"
+        }
+        dif_proof["verifiableCredential"][0]["credentialSubject"]["test"] = {
+            "test1": {"test2": "TEST"}
+        }
+        dif_pres = V20Pres(
+            formats=[
+                V20PresFormat(
+                    attach_id="dif",
+                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.DIF.api],
+                )
+            ],
+            presentations_attach=[
+                AttachDecorator.data_json(
+                    mapping=dif_proof,
+                    ident="dif",
+                )
+            ],
+        )
+
+        dif_proof_req = deepcopy(DIF_PRES_REQUEST_B)
+        dif_proof_req["presentation_definition"]["input_descriptors"][0][
+            "constraints"
+        ] = {
+            "limit_disclosure": "required",
+            "fields": [
+                {
+                    "path": ["$.credentialSubject.givenName.test"],
+                    "filter": {
+                        "type": "string",
+                        "enum": ["JOHN", "CAI"],
+                    },
+                },
+                {
+                    "path": ["$.credentialSubject.test.test1.test2"],
+                    "filter": {
+                        "type": "string",
+                        "enum": ["TEST"],
+                    },
+                },
+            ],
+        }
+        dif_pres_request = V20PresRequest(
+            formats=[
+                V20PresFormat(
+                    attach_id="dif",
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.DIF.api
+                    ],
+                )
+            ],
+            request_presentations_attach=[
+                AttachDecorator.data_json(dif_proof_req, ident="dif")
+            ],
+        )
+        record = V20PresExRecord(
+            pres_ex_id="pxid",
+            thread_id="thid",
+            connection_id="conn_id",
+            initiator="init",
+            role="role",
+            state="state",
+            pres_request=dif_pres_request,
+            pres=dif_pres,
+            verified="false",
+            auto_present=True,
+            error_msg="error",
+        )
+        await self.handler.receive_pres(message=dif_pres, pres_ex_record=record)
+
+    async def test_verify_received_pres_invalid_jsonpath(self):
+        dif_proof = deepcopy(DIF_PRES)
+        dif_proof["presentation_submission"]["descriptor_map"][0][
+            "path"
+        ] = "$.verifiableCredential[1]"
+        dif_pres = V20Pres(
+            formats=[
+                V20PresFormat(
+                    attach_id="dif",
+                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.DIF.api],
+                )
+            ],
+            presentations_attach=[
+                AttachDecorator.data_json(
+                    mapping=dif_proof,
+                    ident="dif",
+                )
+            ],
+        )
+
+        dif_pres_request = V20PresRequest(
+            formats=[
+                V20PresFormat(
+                    attach_id="dif",
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.DIF.api
+                    ],
+                )
+            ],
+            request_presentations_attach=[
+                AttachDecorator.data_json(DIF_PRES_REQUEST_B, ident="dif")
+            ],
+        )
+        record = V20PresExRecord(
+            pres_ex_id="pxid",
+            thread_id="thid",
+            connection_id="conn_id",
+            initiator="init",
+            role="role",
+            state="state",
+            pres_request=dif_pres_request,
+            pres=dif_pres,
+            verified="false",
+            auto_present=True,
+            error_msg="error",
+        )
+        with self.assertRaises(DIFPresExchError):
+            await self.handler.receive_pres(message=dif_pres, pres_ex_record=record)
+
+    async def test_verify_received_pres_no_match_a(self):
+        dif_proof_req = deepcopy(DIF_PRES_REQUEST_B)
+        dif_proof_req["presentation_definition"]["input_descriptors"][0]["constraints"][
+            "fields"
+        ][0]["path"] = ["$.credentialSubject.givenName2"]
+
+        dif_pres = V20Pres(
+            formats=[
+                V20PresFormat(
+                    attach_id="dif",
+                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.DIF.api],
+                )
+            ],
+            presentations_attach=[
+                AttachDecorator.data_json(
+                    mapping=DIF_PRES,
+                    ident="dif",
+                )
+            ],
+        )
+
+        dif_pres_request = V20PresRequest(
+            formats=[
+                V20PresFormat(
+                    attach_id="dif",
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.DIF.api
+                    ],
+                )
+            ],
+            request_presentations_attach=[
+                AttachDecorator.data_json(dif_proof_req, ident="dif")
+            ],
+        )
+        record = V20PresExRecord(
+            pres_ex_id="pxid",
+            thread_id="thid",
+            connection_id="conn_id",
+            initiator="init",
+            role="role",
+            state="state",
+            pres_request=dif_pres_request,
+            pres=dif_pres,
+            verified="false",
+            auto_present=True,
+            error_msg="error",
+        )
+        with self.assertRaises(DIFPresExchError):
+            await self.handler.receive_pres(message=dif_pres, pres_ex_record=record)
+
+    async def test_verify_received_pres_no_match_b(self):
+        dif_proof_req = deepcopy(DIF_PRES_REQUEST_B)
+        dif_proof_req["presentation_definition"]["input_descriptors"][0]["constraints"][
+            "fields"
+        ][0]["filter"]["enum"] = ["Test"]
+
+        dif_pres = V20Pres(
+            formats=[
+                V20PresFormat(
+                    attach_id="dif",
+                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.DIF.api],
+                )
+            ],
+            presentations_attach=[
+                AttachDecorator.data_json(
+                    mapping=DIF_PRES,
+                    ident="dif",
+                )
+            ],
+        )
+
+        dif_pres_request = V20PresRequest(
+            formats=[
+                V20PresFormat(
+                    attach_id="dif",
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.DIF.api
+                    ],
+                )
+            ],
+            request_presentations_attach=[
+                AttachDecorator.data_json(dif_proof_req, ident="dif")
+            ],
+        )
+        record = V20PresExRecord(
+            pres_ex_id="pxid",
+            thread_id="thid",
+            connection_id="conn_id",
+            initiator="init",
+            role="role",
+            state="state",
+            pres_request=dif_pres_request,
+            pres=dif_pres,
+            verified="false",
+            auto_present=True,
+            error_msg="error",
+        )
+        with self.assertRaises(DIFPresExchError):
+            await self.handler.receive_pres(message=dif_pres, pres_ex_record=record)
+
+    async def test_verify_received_pres_limit_disclosure_fail_a(self):
+        dif_proof = deepcopy(DIF_PRES)
+        dif_proof["verifiableCredential"][0]["expirationDate"] = "Test"
+        dif_pres = V20Pres(
+            formats=[
+                V20PresFormat(
+                    attach_id="dif",
+                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.DIF.api],
+                )
+            ],
+            presentations_attach=[
+                AttachDecorator.data_json(
+                    mapping=dif_proof,
+                    ident="dif",
+                )
+            ],
+        )
+
+        dif_pres_request = V20PresRequest(
+            formats=[
+                V20PresFormat(
+                    attach_id="dif",
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.DIF.api
+                    ],
+                )
+            ],
+            request_presentations_attach=[
+                AttachDecorator.data_json(DIF_PRES_REQUEST_B, ident="dif")
+            ],
+        )
+        record = V20PresExRecord(
+            pres_ex_id="pxid",
+            thread_id="thid",
+            connection_id="conn_id",
+            initiator="init",
+            role="role",
+            state="state",
+            pres_request=dif_pres_request,
+            pres=dif_pres,
+            verified="false",
+            auto_present=True,
+            error_msg="error",
+        )
+        with self.assertRaises(DIFPresExchError):
+            await self.handler.receive_pres(message=dif_pres, pres_ex_record=record)
+
+    async def test_verify_received_pres_limit_disclosure_fail_b(self):
+        dif_proof = deepcopy(DIF_PRES)
+        dif_proof["verifiableCredential"][0]["credentialSubject"]["test"] = "Test"
+        dif_pres = V20Pres(
+            formats=[
+                V20PresFormat(
+                    attach_id="dif",
+                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.DIF.api],
+                )
+            ],
+            presentations_attach=[
+                AttachDecorator.data_json(
+                    mapping=dif_proof,
+                    ident="dif",
+                )
+            ],
+        )
+
+        dif_pres_request = V20PresRequest(
+            formats=[
+                V20PresFormat(
+                    attach_id="dif",
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.DIF.api
+                    ],
+                )
+            ],
+            request_presentations_attach=[
+                AttachDecorator.data_json(DIF_PRES_REQUEST_B, ident="dif")
+            ],
+        )
+        record = V20PresExRecord(
+            pres_ex_id="pxid",
+            thread_id="thid",
+            connection_id="conn_id",
+            initiator="init",
+            role="role",
+            state="state",
+            pres_request=dif_pres_request,
+            pres=dif_pres,
+            verified="false",
+            auto_present=True,
+            error_msg="error",
+        )
+        with self.assertRaises(DIFPresExchError):
+            await self.handler.receive_pres(message=dif_pres, pres_ex_record=record)

@@ -182,7 +182,7 @@ class OutOfBandManager(BaseConnectionManager):
                     )
                     message_attachments.append(
                         InvitationMessage.wrap_message(
-                            pres_ex_rec.presentation_request_dict
+                            pres_ex_rec.presentation_request_dict.serialize()
                         )
                     )
                 except StorageNotFoundError:

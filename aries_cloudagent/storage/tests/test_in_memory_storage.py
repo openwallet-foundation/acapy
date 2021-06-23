@@ -265,6 +265,10 @@ class TestInMemoryTagQuery:
         assert "Expected dict for $not filter value" in str(excinfo.value)
 
         with pytest.raises(StorageSearchError) as excinfo:
+            tag_query_match(TAGS, {"$and": {"z": "-1"}})
+        assert "Expected list for $and filter value" in str(excinfo.value)
+
+        with pytest.raises(StorageSearchError) as excinfo:
             tag_query_match(TAGS, {"$near": {"z": "-1"}})
         assert "Unexpected filter operator" in str(excinfo.value)
 

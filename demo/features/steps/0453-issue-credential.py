@@ -14,6 +14,15 @@ from bdd_support.agent_backchannel_client import (
     async_sleep,
 )
 from runners.agent_container import AgentContainer
+from runners.support.agent import (
+    CRED_FORMAT_INDY,
+    CRED_FORMAT_JSON_LD,
+    DID_METHOD_SOV,
+    DID_METHOD_KEY,
+    KEY_TYPE_ED255,
+    KEY_TYPE_BLS,
+    SIG_TYPE_BLS,
+)
 
 
 # This step is defined in another feature file
@@ -109,6 +118,134 @@ def step_impl(context, holder):
             return
 
     assert False
+
+
+@given('"{issuer}" is ready to issue a json-ld credential for {schema_name}')
+def step_impl(context, issuer, schema_name):
+    # create a "did:key" to use as issuer
+    agent = context.active_agents[issuer]
+
+    data = {"method": DID_METHOD_KEY, "options": {"key_type": KEY_TYPE_BLS}}
+    new_did = agent_container_POST(
+        agent["agent"],
+        "/wallet/did/create",
+        data=data,
+    )
+    agent["agent"].agent.did = new_did["result"]["did"]
+    # TODO test for goodness
+    pass
+
+
+@given('"{holder}" is ready to receive a json-ld credential')
+def step_impl(context, holder):
+    # create a "did:key" to use as holder identity
+    agent = context.active_agents[holder]
+
+    data = {"method": DID_METHOD_KEY, "options": {"key_type": KEY_TYPE_BLS}}
+    new_did = agent_container_POST(
+        agent["agent"],
+        "/wallet/did/create",
+        data=data,
+    )
+    agent["agent"].agent.did = new_did["result"]["did"]
+
+    # TODO test for goodness
+    pass
+
+
+@when('"{issuer}" offers "{holder}" a json-ld credential with data {credential_data}')
+def step_impl(context, issuer, holder, credential_data):
+    # initiate a cred exchange with a json-ld credential
+    agent = context.active_agents[issuer]
+    holder_agent = context.active_agents[holder]
+
+    offer_request = {
+        "connection_id": agent["agent"].agent.connection_id,
+        "filter": {
+            "ld_proof": {
+                "credential": {
+                    "@context": [
+                        "https://www.w3.org/2018/credentials/v1",
+                        "https://w3id.org/citizenship/v1",
+                    ],
+                    "type": [
+                        "VerifiableCredential",
+                        "PermanentResident",
+                    ],
+                    "id": "https://credential.example.com/residents/1234567890",
+                    "issuer": agent["agent"].agent.did,
+                    "issuanceDate": "2020-01-01T12:00:00Z",
+                    "credentialSubject": {
+                        "type": ["PermanentResident"],
+                        # let the holder set this
+                        # "id": holder_agent["agent"].agent.did,
+                        "givenName": "ALICE",
+                        "familyName": "SMITH",
+                        "gender": "Female",
+                        "birthCountry": "Bahamas",
+                        "birthDate": "1958-07-17",
+                    },
+                },
+                "options": {"proofType": SIG_TYPE_BLS},
+            }
+        },
+    }
+
+    agent_container_POST(
+        agent["agent"],
+        "/issue-credential-2.0/send-offer",
+        offer_request,
+    )
+
+    # TODO test for goodness
+    pass
+
+
+@then('"{holder}" has the json-ld credential issued')
+def step_impl(context, holder):
+    # verify the holder has a w3c credential
+    agent = context.active_agents[holder]
+
+    for i in range(10):
+        async_sleep(1.0)
+        w3c_creds = agent_container_POST(
+            agent["agent"],
+            "/credentials/w3c",
+            {},
+        )
+        if 0 < len(w3c_creds["results"]):
+            return
+
+    assert False
+
+
+@given(
+    '"{holder}" has an issued json-ld {schema_name} credential {credential_data} from "{issuer}"'
+)
+def step_impl(context, holder, schema_name, credential_data, issuer):
+    context.execute_steps(
+        u'''
+        Given "'''
+        + issuer
+        + """" is ready to issue a json-ld credential for """
+        + schema_name
+        + '''
+        And "'''
+        + holder
+        + """" is ready to receive a json-ld credential """
+        + '''
+        When "'''
+        + issuer
+        + '''" offers "'''
+        + holder
+        + """" a json-ld credential with data """
+        + credential_data
+        + '''
+        Then "'''
+        + holder
+        + """" has the json-ld credential issued
+    """
+    )
 
 
 @given(

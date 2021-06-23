@@ -569,7 +569,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 key_type=KeyType.ED25519,
             )
             mock_retrieve_pxid.return_value = async_mock.MagicMock(
-                presentation_request_dict={"pres": "req"}
+                presentation_request_dict=self.PRES_REQ_V1
             )
             invi_rec = await self.manager.create_invitation(
                 my_endpoint=TestConfig.test_endpoint,

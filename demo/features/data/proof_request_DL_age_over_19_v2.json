@@ -1,0 +1,29 @@
+{
+   "presentation_proposal": {
+      "requested_attributes": {
+         "address_attrs": {
+            "name": "address",
+            "restrictions": [
+               {
+                  "schema_name": "Schema_DriversLicense_v2",
+                  "schema_version": "1.0.1"
+               }
+            ]
+         }
+      },
+      "requested_predicates": {
+         "age": {
+            "name": "age",
+            "p_type": ">",
+            "p_value": 19,
+            "restrictions": [
+               {
+                  "schema_name": "Schema_DriversLicense_v2",
+                  "schema_version": "1.0.1"
+               }
+            ]
+         }
+      },
+      "version": "0.1.0"
+   }
+}
