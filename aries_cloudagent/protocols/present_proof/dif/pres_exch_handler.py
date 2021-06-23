@@ -1032,14 +1032,9 @@ class DIFPresExchHandler:
             for descriptor_id in result.keys():
                 credential_list = result.get(descriptor_id)
                 for credential in credential_list:
-                    if credential.given_id:
-                        if credential.given_id not in cred_uid_descriptors:
-                            cred_uid_descriptors[credential.given_id] = {}
-                        cred_uid_descriptors[credential.given_id][descriptor_id] = {}
-                    else:
-                        if credential.record_id not in cred_uid_descriptors:
-                            cred_uid_descriptors[credential.record_id] = {}
-                        cred_uid_descriptors[credential.record_id][descriptor_id] = {}
+                    cred_id = credential.given_id or credential.record_id
+                    if cred_id:
+                        cred_uid_descriptors.setdefault(cred_id, {})[descriptor_id] = {}
 
             if len(result.keys()) != 0:
                 nested_result.append(result)
@@ -1094,27 +1089,17 @@ class DIFPresExchHandler:
 
                 if key in result:
                     for credential in result[key]:
-                        if credential.given_id and credential.given_id not in uid_dict:
+                        cred_id = credential.given_id or credential.record_id
+                        if cred_id and cred_id not in uid_dict:
                             merged_credentials.append(credential)
-                            uid_dict[credential.given_id] = {}
-                        elif (
-                            not credential.given_id
-                            and credential.record_id not in uid_dict
-                        ):
-                            merged_credentials.append(credential)
-                            uid_dict[credential.record_id] = {}
+                            uid_dict[cred_id] = {}
 
                 for credential in credentials:
-                    if credential.given_id and credential.given_id not in uid_dict:
-                        if (key + (credential.given_id)) not in exclude:
+                    cred_id = credential.given_id or credential.record_id
+                    if cred_id and cred_id not in uid_dict:
+                        if (key + cred_id) not in exclude:
                             merged_credentials.append(credential)
-                            uid_dict[credential.given_id] = {}
-                    elif (
-                        not credential.given_id and credential.record_id not in uid_dict
-                    ):
-                        if (key + (credential.record_id)) not in exclude:
-                            merged_credentials.append(credential)
-                            uid_dict[credential.record_id] = {}
+                            uid_dict[cred_id] = {}
                 result[key] = merged_credentials
         return result
 
@@ -1243,30 +1228,16 @@ class DIFPresExchHandler:
         for desc_id in sorted_desc_keys:
             credentials = dict_descriptor_creds.get(desc_id)
             for cred in credentials:
-                if cred.given_id:
-                    if cred.given_id not in dict_of_creds:
+                cred_id = cred.given_id or cred.record_id
+                if cred_id:
+                    if cred_id not in dict_of_creds:
                         result.append(cred)
-                        dict_of_creds[cred.given_id] = len(descriptors)
-                    if f"{cred.given_id}-{cred.given_id}" not in dict_of_descriptors:
+                        dict_of_creds[cred_id] = len(descriptors)
+                    if f"{cred_id}-{cred_id}" not in dict_of_descriptors:
                         descriptor_map = InputDescriptorMapping(
                             id=desc_id,
                             fmt="ldp_vp",
-                            path=(
-                                f"$.verifiableCredential[{dict_of_creds[cred.given_id]}]"
-                            ),
-                        )
-                        descriptors.append(descriptor_map)
-                else:
-                    if cred.record_id not in dict_of_creds:
-                        result.append(cred)
-                        dict_of_creds[cred.record_id] = len(descriptors)
-                    if f"{cred.record_id}-{cred.record_id}" not in dict_of_descriptors:
-                        descriptor_map = InputDescriptorMapping(
-                            id=desc_id,
-                            fmt="ldp_vp",
-                            path=(
-                                f"$.verifiableCredential[{dict_of_creds[cred.record_id]}]"
-                            ),
+                            path=(f"$.verifiableCredential[{dict_of_creds[cred_id]}]"),
                         )
                         descriptors.append(descriptor_map)
 
