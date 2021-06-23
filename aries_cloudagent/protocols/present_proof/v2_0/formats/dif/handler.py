@@ -192,24 +192,21 @@ class DIFPresFormatHandler(V20PresFormatHandler):
             record_ids = set()
             credentials_list = []
             for input_descriptor in input_descriptors:
-                tag_query = {"$and": []}
                 proof_type = None
                 limit_disclosure = input_descriptor.constraint.limit_disclosure and (
                     input_descriptor.constraint.limit_disclosure == "required"
                 )
+                uri_list = []
                 for schema in input_descriptor.schemas:
-                    tag_query_or_list = []
                     uri = schema.uri
                     if schema.required is None:
                         required = True
                     else:
                         required = schema.required
                     if required:
-                        tag_query_or_list.append({f"type:{uri}": "1"})
-                        tag_query_or_list.append({f"schm:{uri}": "1"})
-                        tag_query["$and"].append({"$or": tag_query_or_list})
-                if len(tag_query["$and"]) == 0:
-                    tag_query = None
+                        uri_list.append(uri)
+                if len(uri_list) == 0:
+                    uri_list = None
                 if limit_disclosure:
                     proof_type = [BbsBlsSignature2020.signature_type]
                     dif_handler_proof_type = BbsBlsSignature2020.signature_type
@@ -289,7 +286,7 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                             " signature types are supported"
                         )
                 search = holder.search_credentials(
-                    tag_query=tag_query, proof_types=proof_type
+                    proof_types=proof_type, pd_uri_list=uri_list
                 )
                 # Defaults to page_size but would like to include all
                 # For now, setting to 1000
@@ -333,6 +330,15 @@ class DIFPresFormatHandler(V20PresFormatHandler):
         self, message: V20Pres, pres_ex_record: V20PresExRecord
     ) -> None:
         """Receive a presentation, from message in context on manager creation."""
+        dif_handler = DIFPresExchHandler(self._profile)
+        dif_proof = message.attachment(DIFPresFormatHandler.format)
+        proof_request = pres_ex_record.pres_request.attachment(
+            DIFPresFormatHandler.format
+        )
+        pres_definition = PresentationDefinition.deserialize(
+            proof_request.get("presentation_definition")
+        )
+        await dif_handler.verify_received_pres(pd=pres_definition, pres=dif_proof)
 
     async def verify_pres(self, pres_ex_record: V20PresExRecord) -> V20PresExRecord:
         """

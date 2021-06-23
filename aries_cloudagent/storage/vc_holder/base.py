@@ -52,6 +52,15 @@ class VCHolder(ABC):
         """
 
     @abstractmethod
+    def build_type_or_schema_query(self, uri_list: Sequence[str]) -> dict:
+        """
+        Build and return backend-specific type_or_schema_query.
+
+        Args:
+            uri_list: List of schema uri from input_descriptor
+        """
+
+    @abstractmethod
     def search_credentials(
         self,
         contexts: Sequence[str] = None,

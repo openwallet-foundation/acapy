@@ -19,6 +19,16 @@ class IndySdkVCHolder(VCHolder):
         self._wallet = wallet
         self._store = IndySdkStorage(wallet)
 
+    def build_type_or_schema_query(self, uri_list: Sequence[str]) -> dict:
+        """Build and return indy-specific type_or_schema_query."""
+        type_or_schema_query = {"$and": []}
+        for uri in uri_list:
+            tag_or_list = []
+            tag_or_list.append({f"type:{uri}": "1"})
+            tag_or_list.append({f"schm:{uri}": "1"})
+            type_or_schema_query["$and"].append({"$or": tag_or_list})
+        return type_or_schema_query
+
     async def store_credential(self, cred: VCRecord):
         """
         Add a new VC record to the store.
@@ -76,6 +86,7 @@ class IndySdkVCHolder(VCHolder):
         proof_types: Sequence[str] = None,
         given_id: str = None,
         tag_query: Mapping = None,
+        pd_uri_list: Sequence[str] = None,
     ) -> "VCRecordSearch":
         """
         Start a new VC record search.
@@ -113,6 +124,8 @@ class IndySdkVCHolder(VCHolder):
             query["given_id"] = given_id
         if tag_query:
             query.update(tag_query)
+        if pd_uri_list:
+            query.update(self.build_type_or_schema_query(pd_uri_list))
         search = self._store.search_records(VC_CRED_RECORD_TYPE, query)
         return IndySdkVCRecordSearch(search)
 
