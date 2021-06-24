@@ -7,7 +7,14 @@ from pyld import jsonld
 from .document_loader import DocumentLoaderMethod
 
 
-def diff_dict_keys(full: dict, with_missing: dict, prefix: str = None) -> Sequence[str]:
+def diff_dict_keys(
+    full: dict,
+    with_missing: dict,
+    prefix: str = None,
+    *,
+    document_loader: DocumentLoaderMethod,
+    context,
+) -> Sequence[str]:
     """Get the difference in dict keys between full and with_missing.
 
     Checks recursively
@@ -39,6 +46,7 @@ def diff_dict_keys(full: dict, with_missing: dict, prefix: str = None) -> Sequen
 
     # Loop trough all key/value pairs of the full document
     for key, value in full.items():
+        key_in_with_missing = key
 
         # skip json-ld keywords
         if jsonld._is_keyword(key):
@@ -47,15 +55,50 @@ def diff_dict_keys(full: dict, with_missing: dict, prefix: str = None) -> Sequen
         _prefix = f"{prefix}.{key}" if prefix else key
         # If the key is not present in the with_missing dict, add it to the list
         if key not in with_missing:
-            missing.append(_prefix)
+            # The key could change for compaction. We check for the expanded version
+            doc = {"@context": context, key: value}
+
+            if full.get("type"):
+                doc["type"] = full.get("type")
+            elif full.get("@type"):
+                doc["@type"] = full.get("@type")
+
+            expanded = jsonld.expand(
+                doc,
+                {"documentLoader": document_loader},
+            )
+
+            if len(expanded) > 0:
+                expanded = expanded[0]
+                expanded.pop("@context", None)
+                expanded.pop("@type", None)
+
+                if len(expanded) == 1 and list(expanded.keys())[0] in with_missing:
+                    key_in_with_missing = list(expanded.keys())[0]
+                else:
+                    missing.append(_prefix)
+                    continue
+            else:
+                missing.append(_prefix)
+                continue
 
         # If the key is present, but is a dict itself, recursively check nested keys
-        elif isinstance(value, dict):
-            missing.extend(diff_dict_keys(value, with_missing.get(key), prefix=_prefix))
+        if isinstance(value, dict):
+            missing.extend(
+                diff_dict_keys(
+                    value,
+                    with_missing.get(key_in_with_missing),
+                    prefix=_prefix,
+                    document_loader=document_loader,
+                    context=context,
+                )
+            )
 
         # If the key is present, but is a list, recursively check nested keys for entries
         elif isinstance(value, list):
-            value, value_with_missing = _normalize(value, with_missing.get(key))
+            value, value_with_missing = _normalize(
+                value, with_missing.get(key_in_with_missing)
+            )
 
             for i in range(len(value)):
                 nested_value = value[i]
@@ -69,7 +112,11 @@ def diff_dict_keys(full: dict, with_missing: dict, prefix: str = None) -> Sequen
                     )
                     missing.extend(
                         diff_dict_keys(
-                            nested_value, nested_with_missing, prefix=__prefix
+                            nested_value,
+                            nested_with_missing,
+                            prefix=__prefix,
+                            document_loader=document_loader,
+                            context=context,
                         )
                     )
 
@@ -93,6 +140,8 @@ def get_properties_without_context(
         {"documentLoader": document_loader},
     )
 
-    missing = diff_dict_keys(document, compact)
+    missing = diff_dict_keys(
+        document, compact, document_loader=document_loader, context=document["@context"]
+    )
 
     return missing
