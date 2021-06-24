@@ -1,4 +1,3 @@
-import argparse
 import asyncio
 import base64
 import binascii
@@ -8,8 +7,6 @@ import os
 import sys
 from urllib.parse import urlparse
 
-from aiohttp import ClientError
-
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from runners.agent_container import (  # noqa:E402
@@ -17,14 +14,7 @@ from runners.agent_container import (  # noqa:E402
     create_agent_with_args,
     AriesAgent,
 )
-from runners.support.agent import (  # noqa:E402
-    DemoAgent,
-    default_genesis_txns,
-    start_mediator_agent,
-    connect_wallet_to_mediator,
-)
 from runners.support.utils import (  # noqa:E402
-    log_json,
     log_msg,
     log_status,
     log_timer,
