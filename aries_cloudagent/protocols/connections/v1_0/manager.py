@@ -314,6 +314,7 @@ class ConnectionManager(BaseConnectionManager):
         connection = ConnRecord(
             invitation_key=invitation.recipient_keys and invitation.recipient_keys[0],
             their_label=invitation.label,
+            invitation_msg_id=invitation._id,
             their_role=ConnRecord.Role.RESPONDER.rfc160,
             state=ConnRecord.State.INVITATION.rfc160,
             accept=accept,
