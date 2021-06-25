@@ -47,43 +47,6 @@ RECORD_NAME_PUBLIC_DID = "default_public_did"
 LOGGER = logging.getLogger(__name__)
 
 
-def create_keypair(key_type: KeyType, seed: Union[str, bytes] = None) -> Key:
-    if key_type == KeyType.ED25519:
-        alg = KeyAlg.ED25519
-    # elif key_type == KeyType.BLS12381G1:
-    #     alg = KeyAlg.BLS12_381_G1
-    elif key_type == KeyType.BLS12381G2:
-        alg = KeyAlg.BLS12_381_G2
-    # elif key_type == KeyType.BLS12381G1G2:
-    #     alg = KeyAlg.BLS12_381_G1G2
-    else:
-        raise WalletError(f"Unsupported key algorithm: {key_type}")
-    if seed:
-        try:
-            if key_type == KeyType.ED25519:
-                # not a seed - it is the secret key
-                seed = validate_seed(seed)
-                return Key.from_secret_bytes(alg, seed)
-            else:
-                return Key.from_seed(alg, seed)
-        except AskarError as err:
-            if err.code == AskarErrorCode.INPUT:
-                raise WalletError("Invalid seed for key generation") from None
-    else:
-        return Key.generate(alg)
-
-
-def _load_did_entry(entry: Entry) -> DIDInfo:
-    did_info = entry.value_json
-    return DIDInfo(
-        did=did_info["did"],
-        verkey=did_info["verkey"],
-        metadata=did_info.get("metadata"),
-        method=DIDMethod.from_method(did_info.get("method", "sov")),
-        key_type=KeyType.from_key_type(did_info.get("verkey_type", "ed25519")),
-    )
-
-
 class AskarWallet(BaseWallet):
     """Aries-Askar wallet implementation."""
 
@@ -123,7 +86,7 @@ class AskarWallet(BaseWallet):
         if metadata is None:
             metadata = {}
         try:
-            keypair = create_keypair(key_type, seed)
+            keypair = _create_keypair(key_type, seed)
             verkey = bytes_to_b58(keypair.get_public_bytes())
             await self._session.handle.insert_key(
                 verkey, keypair, metadata=json.dumps(metadata)
@@ -232,7 +195,7 @@ class AskarWallet(BaseWallet):
             )
 
         try:
-            keypair = create_keypair(key_type, seed)
+            keypair = _create_keypair(key_type, seed)
             verkey_bytes = keypair.get_public_bytes()
             verkey = bytes_to_b58(verkey_bytes)
 
@@ -519,7 +482,7 @@ class AskarWallet(BaseWallet):
             )
 
         # create a new key to be rotated to (only did:sov/ED25519 supported for now)
-        keypair = create_keypair(KeyType.ED25519, next_seed)
+        keypair = _create_keypair(KeyType.ED25519, next_seed)
         verkey = bytes_to_b58(keypair.get_public_bytes())
         try:
             await self._session.handle.insert_key(
@@ -700,7 +663,7 @@ class AskarWallet(BaseWallet):
             else:
                 from_key = None
             return await asyncio.get_event_loop().run_in_executor(
-                None, pack_message, to_verkeys, from_key, message
+                None, _pack_message, to_verkeys, from_key, message
             )
         except AskarError as err:
             raise WalletError("Exception when packing message") from err
@@ -727,15 +690,55 @@ class AskarWallet(BaseWallet):
                 unpacked_json,
                 recipient,
                 sender,
-            ) = await unpack_message(self._session.handle, enc_message)
+            ) = await _unpack_message(self._session.handle, enc_message)
         except AskarError as err:
             raise WalletError("Exception when unpacking message") from err
         return unpacked_json.decode("utf-8"), sender, recipient
 
 
-def pack_message(
+def _create_keypair(key_type: KeyType, seed: Union[str, bytes] = None) -> Key:
+    """Instantiate a new keypair with an optional seed value."""
+    if key_type == KeyType.ED25519:
+        alg = KeyAlg.ED25519
+    # elif key_type == KeyType.BLS12381G1:
+    #     alg = KeyAlg.BLS12_381_G1
+    elif key_type == KeyType.BLS12381G2:
+        alg = KeyAlg.BLS12_381_G2
+    # elif key_type == KeyType.BLS12381G1G2:
+    #     alg = KeyAlg.BLS12_381_G1G2
+    else:
+        raise WalletError(f"Unsupported key algorithm: {key_type}")
+    if seed:
+        try:
+            if key_type == KeyType.ED25519:
+                # not a seed - it is the secret key
+                seed = validate_seed(seed)
+                return Key.from_secret_bytes(alg, seed)
+            else:
+                return Key.from_seed(alg, seed)
+        except AskarError as err:
+            if err.code == AskarErrorCode.INPUT:
+                raise WalletError("Invalid seed for key generation") from None
+    else:
+        return Key.generate(alg)
+
+
+def _load_did_entry(entry: Entry) -> DIDInfo:
+    """Convert a DID record into the expected DIDInfo format."""
+    did_info = entry.value_json
+    return DIDInfo(
+        did=did_info["did"],
+        verkey=did_info["verkey"],
+        metadata=did_info.get("metadata"),
+        method=DIDMethod.from_method(did_info.get("method", "sov")),
+        key_type=KeyType.from_key_type(did_info.get("verkey_type", "ed25519")),
+    )
+
+
+def _pack_message(
     to_verkeys: Sequence[str], from_key: Optional[Key], message: bytes
 ) -> bytes:
+    """Encode a message using the DIDComm v1 'pack' algorithm."""
     wrapper = JweEnvelope()
     cek = Key.generate(KeyAlg.C20P)
     # avoid converting to bytes object: this way the only copy is zeroed afterward
@@ -788,7 +791,8 @@ def pack_message(
     return wrapper.to_json().encode("utf-8")
 
 
-async def unpack_message(session: Session, enc_message: bytes) -> Tuple[str, str, str]:
+async def _unpack_message(session: Session, enc_message: bytes) -> Tuple[str, str, str]:
+    """Decode a message using the DIDComm v1 'unpack' algorithm."""
     try:
         wrapper = JweEnvelope.from_json(enc_message)
     except ValidationError:
@@ -805,7 +809,7 @@ async def unpack_message(session: Session, enc_message: bytes) -> Tuple[str, str
     for recip_vk in recips:
         recip_key_entry = await session.fetch_key(recip_vk)
         if recip_key_entry:
-            payload_key, sender_vk = extract_payload_key(
+            payload_key, sender_vk = _extract_payload_key(
                 recips[recip_vk], recip_key_entry.key
             )
             break
@@ -827,7 +831,7 @@ async def unpack_message(session: Session, enc_message: bytes) -> Tuple[str, str
     return message, recip_vk, sender_vk
 
 
-def extract_payload_key(sender_cek: dict, recip_secret: Key) -> Tuple[bytes, str]:
+def _extract_payload_key(sender_cek: dict, recip_secret: Key) -> Tuple[bytes, str]:
     """
     Extract the payload key from pack recipient details.
 

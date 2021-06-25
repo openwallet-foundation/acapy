@@ -42,7 +42,8 @@ from .util import TAA_ACCEPTED_RECORD_TYPE
 LOGGER = logging.getLogger(__name__)
 
 
-def normalize_txns(txns: str) -> str:
+def _normalize_txns(txns: str) -> str:
+    """Normalize a set of genesis transactions."""
     lines = StringIO()
     for line in txns.splitlines():
         line = line.strip()
@@ -52,7 +53,8 @@ def normalize_txns(txns: str) -> str:
     return lines.getvalue()
 
 
-def write_safe(path: Path, content: str):
+def _write_safe(path: Path, content: str):
+    """Atomically write to a file path."""
     dir_path = path.parent
     with tempfile.NamedTemporaryFile(dir=dir_path, delete=False) as tmp:
         tmp.write(content.encode("utf-8"))
@@ -60,7 +62,8 @@ def write_safe(path: Path, content: str):
     os.rename(tmp_name, path)
 
 
-def hash_txns(txns: str) -> str:
+def _hash_txns(txns: str) -> str:
+    """Obtain a hash of a set of genesis transactions."""
     return hashlib.sha256(txns.encode("utf-8")).hexdigest()[-16:]
 
 
@@ -105,22 +108,25 @@ class IndyVdrLedgerPool:
 
     @property
     def cfg_path(self) -> Path:
+        """Get the path to the configuration file, ensuring it's created."""
         if not self.cfg_path_cache:
             self.cfg_path_cache = storage_path("vdr", create=True)
         return self.cfg_path_cache
 
     @property
     def genesis_hash(self) -> str:
+        """Get the hash of the configured genesis transactions."""
         if not self.genesis_hash_cache:
-            self.genesis_hash_cache = hash_txns(self.genesis_txns)
+            self.genesis_hash_cache = _hash_txns(self.genesis_txns)
         return self.genesis_hash_cache
 
     @property
     def genesis_txns(self) -> str:
+        """Get the configured genesis transactions."""
         if not self.genesis_txns_cache:
             try:
                 path = self.cfg_path.joinpath(self.name, "genesis")
-                self.genesis_txns_cache = normalize_txns(open(path).read())
+                self.genesis_txns_cache = _normalize_txns(open(path).read())
             except FileNotFoundError:
                 raise LedgerConfigError(
                     "Pool config '%s' not found", self.name
@@ -134,14 +140,14 @@ class IndyVdrLedgerPool:
 
         cfg_pool = self.cfg_path.joinpath(self.name)
         cfg_pool.mkdir(exist_ok=True)
-        genesis = normalize_txns(genesis_transactions)
+        genesis = _normalize_txns(genesis_transactions)
         if not genesis:
             raise LedgerConfigError("Empty genesis transactions")
 
         genesis_path = cfg_pool.joinpath("genesis")
         try:
             cmp_genesis = open(genesis_path).read()
-            if normalize_txns(cmp_genesis) == genesis:
+            if _normalize_txns(cmp_genesis) == genesis:
                 LOGGER.debug(
                     "Pool ledger config '%s' is consistent, skipping write",
                     self.name,
@@ -156,7 +162,7 @@ class IndyVdrLedgerPool:
             pass
 
         try:
-            write_safe(genesis_path, genesis)
+            _write_safe(genesis_path, genesis)
         except OSError as err:
             raise LedgerConfigError("Error writing genesis transactions") from err
         LOGGER.debug("Wrote pool ledger config '%s'", self.name)
@@ -183,10 +189,10 @@ class IndyVdrLedgerPool:
             cached = False
 
         self.handle = await open_pool(transactions=txns)
-        upd_txns = normalize_txns(await self.handle.get_transactions())
+        upd_txns = _normalize_txns(await self.handle.get_transactions())
         if not cached or upd_txns != txns:
             try:
-                write_safe(cache_path, upd_txns)
+                _write_safe(cache_path, upd_txns)
             except OSError:
                 LOGGER.exception("Error writing cached genesis transactions")
 

@@ -202,6 +202,8 @@ class AskarStorage(BaseStorage):
 
 
 class AskarStorageSearch(BaseStorageSearch):
+    """Active instance of an Askar storage search query."""
+
     def __init__(self, profile: AskarProfile):
         """
         Initialize an `AskarStorageSearch` instance.
