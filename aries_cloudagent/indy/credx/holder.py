@@ -438,11 +438,6 @@ class IndyCredxHolder(IndyHolder):
 
         """
 
-        LOGGER.warning("request %r", presentation_request)
-        LOGGER.warning("requested %r", requested_credentials)
-        LOGGER.warning("rev states %r", rev_states)
-        LOGGER.warning("cred defs %r", credential_definitions)
-
         creds = {}
 
         def get_rev_state(cred_id, timestamp):
