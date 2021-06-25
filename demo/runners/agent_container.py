@@ -204,7 +204,7 @@ class AriesAgent(DemoAgent):
                 )
             elif message["by_format"]["cred_offer"].get("ld_proof"):
                 holder_did = await self.admin_POST(
-                    f"/wallet/did/create",
+                    "/wallet/did/create",
                     {"method": "key", "options": {"key_type": "bls12381g2"}},
                 )
                 data = {"holder_did": holder_did["result"]["did"]}
@@ -1050,7 +1050,7 @@ async def create_agent_with_args(args, ident: str = None):
 
     if "aip" in args:
         aip = int(args.aip)
-        if not aip in [
+        if aip not in [
             10,
             20,
         ]:

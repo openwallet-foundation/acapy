@@ -1,13 +1,9 @@
-import argparse
 import asyncio
 import json
 import logging
 import os
-import random
 import sys
 import time
-
-from qrcode import QRCode
 
 from aiohttp import ClientError
 
@@ -19,24 +15,15 @@ from runners.agent_container import (  # noqa:E402
     AriesAgent,
 )
 from runners.support.agent import (  # noqa:E402
-    default_genesis_txns,
-    start_mediator_agent,
-    connect_wallet_to_mediator,
     CRED_FORMAT_INDY,
     CRED_FORMAT_JSON_LD,
-    DID_METHOD_SOV,
-    DID_METHOD_KEY,
-    KEY_TYPE_ED255,
-    KEY_TYPE_BLS,
     SIG_TYPE_BLS,
 )
 from runners.support.utils import (  # noqa:E402
     log_msg,
     log_status,
-    log_timer,
     prompt,
     prompt_loop,
-    require_indy,
 )
 
 
