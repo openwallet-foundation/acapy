@@ -209,7 +209,7 @@ class TestAskarWallet(test_in_memory_wallet.TestInMemoryWallet):
 
 @pytest.mark.askar
 class TestWalletCompat:
-    """ Tests for wallet compatibility."""
+    """Tests for wallet compatibility."""
 
     test_seed = "testseed000000000000000000000001"
     test_did = "55GkHamhTU1ZbTbV2ab9DE"
