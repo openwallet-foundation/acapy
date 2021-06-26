@@ -22,6 +22,7 @@ from ..indy.verifier import IndyVerifier
 from ..ledger.base import BaseLedger
 from ..ledger.indy_vdr import IndyVdrLedger, IndyVdrLedgerPool
 from ..storage.base import BaseStorage, BaseStorageSearch
+from ..storage.vc_holder.base import VCHolder
 from ..wallet.base import BaseWallet
 from ..wallet.crypto import validate_seed
 
@@ -96,6 +97,13 @@ class AskarProfile(Profile):
             IndyIssuer,
             ClassProvider(
                 "aries_cloudagent.indy.credx.issuer.IndyCredxIssuer", ref(self)
+            ),
+        )
+        injector.bind_provider(
+            VCHolder,
+            ClassProvider(
+                "aries_cloudagent.storage.vc_holder.askar.AskarVCHolder",
+                ref(self),
             ),
         )
 
