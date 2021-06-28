@@ -176,7 +176,13 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         """Look up a revocation registry definition by ID."""
 
     @abstractmethod
-    async def send_revoc_reg_def(self, revoc_reg_def: dict, issuer_did: str = None):
+    async def send_revoc_reg_def(
+        self,
+        revoc_reg_def: dict,
+        issuer_did: str = None,
+        write_ledger: bool = True,
+        endorser_did: str = None
+    ):
         """Publish a revocation registry definition to the ledger."""
 
     @abstractmethod
@@ -186,6 +192,8 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         revoc_def_type: str,
         revoc_reg_entry: dict,
         issuer_did: str = None,
+        write_ledger: bool = True,
+        endorser_did: str = None
     ):
         """Publish a revocation registry entry to the ledger."""
 
