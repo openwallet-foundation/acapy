@@ -194,6 +194,14 @@ class ConnectionsListQueryStringSchema(OpenAPISchema):
         ),
         example=ConnRecord.Role.REQUESTER.rfc160,
     )
+    connection_protocol = fields.Str(
+        description="Connection protocol used",
+        required=False,
+        validate=validate.OneOf(
+            [proto.aries_protocol for proto in ConnRecord.Protocol]
+        ),
+        example=ConnRecord.Protocol.RFC_0160.aries_protocol,
+    )
 
 
 class CreateInvitationQueryStringSchema(OpenAPISchema):
@@ -338,6 +346,8 @@ async def connections_list(request: web.BaseRequest):
         post_filter["their_role"] = [
             v for v in ConnRecord.Role.get(request.query["their_role"]).value
         ]
+    if request.query.get("connection_protocol"):
+        post_filter["connection_protocol"] = request.query["connection_protocol"]
 
     session = await context.session()
     try:
