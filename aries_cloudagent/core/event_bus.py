@@ -129,7 +129,11 @@ class EventBus:
 
         async def _handle_single_event(profile, event):
             """Handle the single event."""
-            print("Handling event for wait_for_event", profile, event)
+            LOGGER.debug(
+                "wait_for_event event listener with event %s and profile %s",
+                event,
+                profile,
+            )
             if cond is not None and not cond(event):
                 return
 
