@@ -68,13 +68,14 @@ class AliceAgent(AriesAgent):
         if (
             message["connection_id"] == self.connection_id
             and message["rfc23_state"] == "completed"
-            and not self._connection_ready.done()
+            and (self._connection_ready and not self._connection_ready.done())
         ):
             self.log("Connected")
             self._connection_ready.set_result(True)
 
 
-async def input_invitation(agent):
+async def input_invitation(agent_container):
+    agent_container.agent._connection_ready = asyncio.Future()
     async for details in prompt_loop("Invite details: "):
         b64_invite = None
         try:
@@ -111,7 +112,7 @@ async def input_invitation(agent):
                 log_msg("Invalid invitation:", str(e))
 
     with log_timer("Connect duration:"):
-        connection = await agent.input_invitation(details, wait=True)
+        connection = await agent_container.input_invitation(details, wait=True)
 
 
 async def main(args):
