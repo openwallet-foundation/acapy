@@ -1202,7 +1202,13 @@ class IndyVdrLedger(BaseLedger):
         assert response["data"]["revocRegDefId"] == revoc_reg_id
         return reg_delta, delta_timestamp
 
-    async def send_revoc_reg_def(self, revoc_reg_def: dict, issuer_did: str = None):
+    async def send_revoc_reg_def(
+        self,
+        revoc_reg_def: dict,
+        issuer_did: str = None,
+        write_ledger: bool = True,
+        endorser_did: str = None,
+    ):
         """Publish a revocation registry definition to the ledger."""
         # NOTE - issuer DID could be extracted from the revoc_reg_def ID
         async with self.profile.session() as session:
@@ -1233,6 +1239,8 @@ class IndyVdrLedger(BaseLedger):
         revoc_def_type: str,
         revoc_reg_entry: dict,
         issuer_did: str = None,
+        write_ledger: bool = True,
+        endorser_did: str = None
     ):
         """Publish a revocation registry entry to the ledger."""
         async with self.profile.session() as session:

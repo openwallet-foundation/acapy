@@ -6,6 +6,7 @@ import os
 import random
 import sys
 import time
+import yaml
 
 from qrcode import QRCode
 
@@ -1028,6 +1029,10 @@ async def create_agent_with_args(args, ident: str = None):
         tails_server_base_url = None
 
     arg_file = args.arg_file or os.getenv("ACAPY_ARG_FILE")
+    arg_file_dict = {}
+    if arg_file:
+        with open(arg_file) as f:
+            arg_file_dict = yaml.safe_load(f)
 
     # if we don't have a tails server url then guess it
     if ("revocation" in args and args.revocation) and not tails_server_base_url:
@@ -1083,7 +1088,7 @@ async def create_agent_with_args(args, ident: str = None):
         mediation=args.mediation,
         cred_type=cred_type,
         use_did_exchange=args.did_exchange if "did_exchange" in args else False,
-        wallet_type=args.wallet_type,
+        wallet_type=arg_file_dict.get("wallet-type") or args.wallet_type,
         public_did=public_did,
         seed="random" if public_did else None,
         arg_file=arg_file,
