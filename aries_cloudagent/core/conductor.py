@@ -389,8 +389,7 @@ class Conductor:
             can_respond: If the session supports return routing
 
         """
-        event_bus = profile.inject(EventBus, required=False)
-        assert event_bus
+
         if message.receipt.direct_response_requested and not can_respond:
             LOGGER.warning(
                 "Direct response requested, but not supported by transport: %s",
@@ -482,7 +481,7 @@ class Conductor:
             if self.inbound_transport_manager.return_to_session(outbound):
                 await event_bus.notify(
                     profile,
-                    OutboundStatusEvent(OutboundSendStatus.SENT_TO_SESSION, outbound)
+                    OutboundStatusEvent(OutboundSendStatus.SENT_TO_SESSION, outbound),
                 )
                 return
 
