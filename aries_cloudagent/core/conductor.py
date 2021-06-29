@@ -10,7 +10,6 @@ wallet.
 
 from aries_cloudagent.core.transport_events import (
     OutboundStatusEvent,
-    OutboundStatusEventPayload,
     OutboundMessageEvent,
 )
 import hashlib
