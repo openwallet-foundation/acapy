@@ -27,6 +27,7 @@ from ..config.wallet import wallet_config
 from ..connections.models.conn_record import ConnRecord
 from ..core.profile import Profile
 from ..ledger.error import LedgerConfigError, LedgerTransactionError
+from ..core.event_bus import EventBus
 from ..messaging.responder import BaseResponder
 from ..multitenant.manager import MultitenantManager
 from ..protocols.connections.v1_0.manager import (
@@ -388,7 +389,8 @@ class Conductor:
             can_respond: If the session supports return routing
 
         """
-
+        event_bus = profile.inject(EventBus, required=False)
+        assert event_bus
         if message.receipt.direct_response_requested and not can_respond:
             LOGGER.warning(
                 "Direct response requested, but not supported by transport: %s",
@@ -467,29 +469,28 @@ class Conductor:
             message: An outbound message to be sent
             inbound: The inbound message that produced this response, if available
         """
+        event_bus = profile.inject(EventBus, required=False)
+        assert event_bus
         if not outbound.target and outbound.reply_to_verkey:
             if not outbound.reply_from_verkey and inbound:
                 outbound.reply_from_verkey = inbound.receipt.recipient_verkey
             # return message to an inbound session
             if self.inbound_transport_manager.return_to_session(outbound):
-                await profile.notify(
-                    OutboundStatusEvent.topic_root,
-                    OutboundStatusEventPayload(
-                        OutboundSendStatus.SENT_TO_SESSION, outbound
-                    ),
+                await event_bus.notify(
+                    profile,
+                    OutboundStatusEvent(OutboundSendStatus.SENT_TO_SESSION, outbound),
                 )
 
         if not outbound.to_session_only:
             await self.queue_outbound(profile, outbound, inbound)
         else:
-            await profile.notify(
-                OutboundStatusEvent.topic_root,
-                OutboundStatusEventPayload(OutboundSendStatus.UNDELIVERABLE, outbound),
+            await event_bus.notify(
+                profile, OutboundStatusEvent(OutboundSendStatus.UNDELIVERABLE, outbound)
             )
-        await profile.notify(
-                OutboundMessageEvent.topic,
-                OutboundMessageEvent(outbound),
-            )
+        await event_bus.notify(
+            profile,
+            OutboundMessageEvent(outbound),
+        )
 
     def handle_not_returned(self, profile: Profile, outbound: OutboundMessage):
         """Handle a message that failed delivery via an inbound session."""
@@ -515,6 +516,8 @@ class Conductor:
             message: An outbound message to be sent
             inbound: The inbound message that produced this response, if available
         """
+        event_bus = profile.inject(EventBus, required=False)
+        assert event_bus
         # populate connection target(s)
         if not outbound.target and not outbound.target_list and outbound.connection_id:
             async with profile.session() as session:
@@ -529,11 +532,9 @@ class Conductor:
                     LOGGER.exception(
                         "Error preparing outbound message for transmission"
                     )
-                    await profile.notify(
-                        OutboundStatusEvent.topic_root,
-                        OutboundStatusEventPayload(
-                            OutboundSendStatus.UNDELIVERABLE, outbound
-                        ),
+                    await event_bus.notify(
+                        profile,
+                        OutboundStatusEvent(OutboundSendStatus.UNDELIVERABLE, outbound),
                     )
                 except (LedgerConfigError, LedgerTransactionError) as e:
                     LOGGER.error("Shutdown on ledger error %s", str(e))
@@ -557,6 +558,9 @@ class Conductor:
         outbound: OutboundMessage,
     ):
         """Save the message to an external outbound queue."""
+        event_bus = profile.inject(EventBus, required=False)
+        assert event_bus
+
         async with self.outbound_queue:
             targets = (
                 [outbound.target] if outbound.target else (outbound.target_list or [])
@@ -565,22 +569,23 @@ class Conductor:
                 await self.outbound_queue.enqueue_message(
                     outbound.payload, target.endpoint
                 )
-            await profile.notify(
-                OutboundStatusEvent.topic_root,
-                OutboundStatusEventPayload(
+            await event_bus.notify(
+                profile,
+                OutboundStatusEvent(
                     OutboundSendStatus.SENT_TO_EXTERNAL_QUEUE, outbound
                 ),
             )
 
     async def _queue_internal(self, profile: Profile, outbound: OutboundMessage):
         """Save the message to an internal outbound queue."""
+        event_bus = profile.inject(EventBus, required=False)
+        assert event_bus
+
         try:
             self.outbound_transport_manager.enqueue_message(profile, outbound)
-            await profile.notify(
-                OutboundStatusEvent.topic_root,
-                OutboundStatusEventPayload(
-                    OutboundSendStatus.QUEUED_FOR_DELIVERY, outbound
-                ),
+            await event_bus.notify(
+                profile,
+                OutboundStatusEvent(OutboundSendStatus.QUEUED_FOR_DELIVERY, outbound),
             )
         except OutboundDeliveryError:
             LOGGER.warning("Cannot queue message for delivery, no supported transport")
@@ -588,15 +593,15 @@ class Conductor:
 
     async def handle_not_delivered(self, profile: Profile, outbound: OutboundMessage):
         """Handle a message that failed delivery via outbound transports."""
+        event_bus = profile.inject(EventBus, required=False)
+        assert event_bus
         queued_for_inbound = self.inbound_transport_manager.return_undelivered(outbound)
         status = (
             OutboundSendStatus.WAITING_FOR_PICKUP
             if queued_for_inbound
             else OutboundSendStatus.UNDELIVERABLE
         )
-        await profile.notify(
-            OutboundStatusEvent.topic_root, OutboundStatusEventPayload(status, outbound)
-        )
+        await event_bus.notify(profile, OutboundStatusEvent(status, outbound))
 
     def webhook_router(
         self,
