@@ -11,6 +11,7 @@ wallet.
 from aries_cloudagent.core.transport_events import (
     OutboundStatusEvent,
     OutboundStatusEventPayload,
+    OutboundMessageEvent,
 )
 import hashlib
 import json
@@ -484,6 +485,10 @@ class Conductor:
             await profile.notify(
                 OutboundStatusEvent.topic_root,
                 OutboundStatusEventPayload(OutboundSendStatus.UNDELIVERABLE, outbound),
+            )
+        await profile.notify(
+                OutboundMessageEvent.topic,
+                OutboundMessageEvent(outbound),
             )
 
     def handle_not_returned(self, profile: Profile, outbound: OutboundMessage):
