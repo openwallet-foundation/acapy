@@ -1,9 +1,20 @@
 """A simple event bus."""
 
-import logging
-
+import asyncio
+from contextlib import contextmanager
 from itertools import chain
-from typing import TYPE_CHECKING, Any, Callable, Dict, Pattern, Sequence
+import logging
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    Dict,
+    Iterator,
+    List,
+    Optional,
+    Pattern,
+    TYPE_CHECKING,
+)
 
 if TYPE_CHECKING:  # To avoid circular import error
     from .profile import Profile
@@ -45,7 +56,7 @@ class EventBus:
 
     def __init__(self):
         """Initialize Event Bus."""
-        self.topic_patterns_to_subscribers: Dict[Pattern, Sequence[Callable]] = {}
+        self.topic_patterns_to_subscribers: Dict[Pattern, List[Callable]] = {}
 
     async def notify(self, profile: "Profile", event: Event):
         """Notify subscribers of event.
@@ -105,6 +116,37 @@ class EventBus:
             if not self.topic_patterns_to_subscribers[pattern]:
                 del self.topic_patterns_to_subscribers[pattern]
             LOGGER.debug("Unsubscribed: topic %s, processor %s", pattern, processor)
+
+    @contextmanager
+    def wait_for_event(
+        self,
+        waiting_profile: "Profile",
+        pattern: Pattern,
+        cond: Optional[Callable[[Event], bool]] = None,
+    ) -> Iterator[Awaitable[Event]]:
+        """Capture an event and retrieve its value."""
+        future = asyncio.get_event_loop().create_future()
+
+        async def _handle_single_event(profile, event):
+            """Handle the single event."""
+            LOGGER.debug(
+                "wait_for_event event listener with event %s and profile %s",
+                event,
+                profile,
+            )
+            if cond is not None and not cond(event):
+                return
+
+            if waiting_profile == profile:
+                future.set_result(event)
+                self.unsubscribe(pattern, _handle_single_event)
+
+        self.subscribe(pattern, _handle_single_event)
+
+        yield future
+
+        if not future.done():
+            future.cancel()
 
 
 class MockEventBus(EventBus):
