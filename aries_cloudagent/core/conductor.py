@@ -471,6 +471,8 @@ class Conductor:
 
         if not outbound.to_session_only:
             return await self.queue_outbound(profile, outbound, inbound)
+        else:
+            return OutboundSendStatus.UNDELIVERABLE
 
     def handle_not_returned(self, profile: Profile, outbound: OutboundMessage):
         """Handle a message that failed delivery via an inbound session."""
@@ -510,7 +512,7 @@ class Conductor:
                     LOGGER.exception(
                         "Error preparing outbound message for transmission"
                     )
-                    return
+                    return OutboundSendStatus.UNDELIVERABLE
                 except (LedgerConfigError, LedgerTransactionError) as e:
                     LOGGER.error("Shutdown on ledger error %s", str(e))
                     if self.admin_server:
