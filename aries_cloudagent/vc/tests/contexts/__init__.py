@@ -5,6 +5,7 @@ from .security_v3_unstable import SECURITY_V3_UNSTABLE
 from .bbs_v1 import BBS_V1
 from .credentials_v1 import CREDENTIALS_V1
 from .citizenship_v1 import CITIZENSHIP_V1
+from .vaccination_v1 import VACCINATION_V1
 from .examples_v1 import EXAMPLES_V1
 from .odrl import ODRL
 from .schema_org import SCHEMA_ORG
@@ -18,6 +19,7 @@ __all__ = [
     BBS_V1,
     CREDENTIALS_V1,
     CITIZENSHIP_V1,
+    VACCINATION_V1,
     EXAMPLES_V1,
     ODRL,
     SCHEMA_ORG,

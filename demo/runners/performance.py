@@ -14,12 +14,12 @@ from runners.support.agent import (  # noqa:E402
     start_mediator_agent,
     connect_wallet_to_mediator,
 )
-from runners.support.utils import (
+from runners.support.utils import (  # noqa:E402
     log_msg,
     log_timer,
     progress,
     require_indy,
-)  # noqa:E402
+)
 
 CRED_PREVIEW_TYPE = "https://didcomm.org/issue-credential/2.0/credential-preview"
 LOGGER = logging.getLogger(__name__)
@@ -162,7 +162,7 @@ class AliceAgent(BaseAgent):
 
 class FaberAgent(BaseAgent):
     def __init__(self, port: int, **kwargs):
-        super().__init__("Faber", port, **kwargs)
+        super().__init__("Faber", port, seed="random", **kwargs)
         self.extra_args = [
             "--auto-accept-invites",
             "--auto-accept-requests",
