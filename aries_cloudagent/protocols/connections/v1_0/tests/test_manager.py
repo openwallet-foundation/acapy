@@ -1633,7 +1633,7 @@ class TestConnectionManager(AsyncTestCase):
             mock_wallet_get_local_did_for_verkey.return_value = DIDInfo(
                 self.test_did,
                 self.test_verkey,
-                {"public": True},
+                {"posted": True},
                 method=DIDMethod.SOV,
                 key_type=KeyType.ED25519,
             )
