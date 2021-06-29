@@ -1,5 +1,6 @@
 """A simple event bus."""
 
+from abc import ABC, abstractproperty
 import logging
 
 from itertools import chain
@@ -7,7 +8,6 @@ from typing import (
     Any,
     Callable,
     Dict,
-    Optional,
     Pattern,
     Sequence,
     TYPE_CHECKING,
@@ -24,21 +24,19 @@ LOGGER = logging.getLogger(__name__)
 PayloadType = TypeVar("PayloadType")
 
 
-class BaseEvent(Generic[PayloadType]):
+class BaseEvent(Generic[PayloadType], ABC):
     """Base event."""
 
-    def __init__(self, topic: str, payload: PayloadType):
+    def __init__(self, payload: PayloadType):
         """Create a new event."""
-        self._topic = topic
         self._payload = payload
 
-    @property
-    def topic(self):
+    @abstractproperty
+    def topic(self) -> str:
         """Return this event's topic."""
-        return self._topic
 
     @property
-    def payload(self) -> Optional[PayloadType]:
+    def payload(self) -> PayloadType:
         """Return this event's payload."""
         return self._payload
 
@@ -46,11 +44,11 @@ class BaseEvent(Generic[PayloadType]):
         """Test equality."""
         if not isinstance(other, Event):
             return False
-        return self._topic == other._topic and self._payload == other._payload
+        return self.topic == other.topic and self.payload == other.payload
 
     def __repr__(self):
         """Return debug representation."""
-        return "<Event topic={}, payload={}>".format(self._topic, self._payload)
+        return "<Event topic={}, payload={}>".format(self.topic, self.payload)
 
 
 class Event(BaseEvent[Any]):
@@ -58,7 +56,13 @@ class Event(BaseEvent[Any]):
 
     def __init__(self, topic: str, payload: Any = None):
         """Create a new event."""
-        super().__init__(topic, payload)
+        super().__init__(payload)
+        self._topic = topic
+
+    @property
+    def topic(self):
+        """Return topic."""
+        return self._topic
 
 
 class EventBus:
