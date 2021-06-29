@@ -8,6 +8,10 @@ wallet.
 
 """
 
+from aries_cloudagent.core.transport_events import (
+    OutboundStatusEvent,
+    OutboundStatusEventPayload,
+)
 import hashlib
 import json
 import logging
@@ -453,7 +457,7 @@ class Conductor:
         profile: Profile,
         outbound: OutboundMessage,
         inbound: InboundMessage = None,
-    ) -> OutboundSendStatus:
+    ):
         """
         Route an outbound message.
 
@@ -467,12 +471,20 @@ class Conductor:
                 outbound.reply_from_verkey = inbound.receipt.recipient_verkey
             # return message to an inbound session
             if self.inbound_transport_manager.return_to_session(outbound):
-                return OutboundSendStatus.SENT_TO_SESSION
+                await profile.notify(
+                    OutboundStatusEvent.topic_root,
+                    OutboundStatusEventPayload(
+                        OutboundSendStatus.SENT_TO_SESSION, outbound
+                    ),
+                )
 
         if not outbound.to_session_only:
-            return await self.queue_outbound(profile, outbound, inbound)
+            await self.queue_outbound(profile, outbound, inbound)
         else:
-            return OutboundSendStatus.UNDELIVERABLE
+            await profile.notify(
+                OutboundStatusEvent.topic_root,
+                OutboundStatusEventPayload(OutboundSendStatus.UNDELIVERABLE, outbound),
+            )
 
     def handle_not_returned(self, profile: Profile, outbound: OutboundMessage):
         """Handle a message that failed delivery via an inbound session."""
@@ -489,7 +501,7 @@ class Conductor:
         profile: Profile,
         outbound: OutboundMessage,
         inbound: InboundMessage = None,
-    ) -> OutboundSendStatus:
+    ):
         """
         Queue an outbound message for transport.
 
@@ -512,7 +524,12 @@ class Conductor:
                     LOGGER.exception(
                         "Error preparing outbound message for transmission"
                     )
-                    return OutboundSendStatus.UNDELIVERABLE
+                    await profile.notify(
+                        OutboundStatusEvent.topic_root,
+                        OutboundStatusEventPayload(
+                            OutboundSendStatus.UNDELIVERABLE, outbound
+                        ),
+                    )
                 except (LedgerConfigError, LedgerTransactionError) as e:
                     LOGGER.error("Shutdown on ledger error %s", str(e))
                     if self.admin_server:
@@ -525,15 +542,15 @@ class Conductor:
         # internal queue usually results in the message to be sent over
         # ACA-py `-ot` transport.
         if self.outbound_queue:
-            return await self._queue_external(profile, outbound)
+            await self._queue_external(profile, outbound)
         else:
-            return self._queue_internal(profile, outbound)
+            await self._queue_internal(profile, outbound)
 
     async def _queue_external(
         self,
         profile: Profile,
         outbound: OutboundMessage,
-    ) -> OutboundSendStatus:
+    ):
         """Save the message to an external outbound queue."""
         async with self.outbound_queue:
             targets = (
@@ -543,30 +560,37 @@ class Conductor:
                 await self.outbound_queue.enqueue_message(
                     outbound.payload, target.endpoint
                 )
+            await profile.notify(
+                OutboundStatusEvent.topic_root,
+                OutboundStatusEventPayload(
+                    OutboundSendStatus.SENT_TO_EXTERNAL_QUEUE, outbound
+                ),
+            )
 
-            return OutboundSendStatus.SENT_TO_EXTERNAL_QUEUE
-
-    def _queue_internal(
-        self, profile: Profile, outbound: OutboundMessage
-    ) -> OutboundSendStatus:
+    async def _queue_internal(self, profile: Profile, outbound: OutboundMessage):
         """Save the message to an internal outbound queue."""
         try:
             self.outbound_transport_manager.enqueue_message(profile, outbound)
-            return OutboundSendStatus.QUEUED_FOR_DELIVERY
+            await profile.notify(
+                OutboundStatusEvent.topic_root,
+                OutboundStatusEventPayload(
+                    OutboundSendStatus.QUEUED_FOR_DELIVERY, outbound
+                ),
+            )
         except OutboundDeliveryError:
             LOGGER.warning("Cannot queue message for delivery, no supported transport")
-            return self.handle_not_delivered(profile, outbound)
+            await self.handle_not_delivered(profile, outbound)
 
-    def handle_not_delivered(
-        self, profile: Profile, outbound: OutboundMessage
-    ) -> OutboundSendStatus:
+    async def handle_not_delivered(self, profile: Profile, outbound: OutboundMessage):
         """Handle a message that failed delivery via outbound transports."""
         queued_for_inbound = self.inbound_transport_manager.return_undelivered(outbound)
-
-        return (
+        status = (
             OutboundSendStatus.WAITING_FOR_PICKUP
             if queued_for_inbound
             else OutboundSendStatus.UNDELIVERABLE
+        )
+        await profile.notify(
+            OutboundStatusEvent.topic_root, OutboundStatusEventPayload(status, outbound)
         )
 
     def webhook_router(
