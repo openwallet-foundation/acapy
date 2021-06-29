@@ -29,6 +29,7 @@ class TestConnectionRoutes(AsyncTestCase):
         self.request.query = {
             "invitation_id": "dummy",  # exercise tag filter assignment
             "their_role": ConnRecord.Role.REQUESTER.rfc160,
+            "connection_protocol": ConnRecord.Protocol.RFC_0160.aries_protocol,
         }
 
         STATE_COMPLETED = ConnRecord.State.COMPLETED
