@@ -391,8 +391,32 @@ class TestPresentProofRoutes(AsyncTestCase):
         self.request.query = {"extra_query": {}}
 
         returned_credentials = [
-            async_mock.MagicMock(cred_value={"name": "Credential1"}),
-            async_mock.MagicMock(cred_value={"name": "Credential2"}),
+            async_mock.MagicMock(
+                cred_value={
+                    "@context": [
+                        "https://www.w3.org/2018/credentials/v1",
+                        "https://www.w3.org/2018/credentials/examples/v1",
+                    ],
+                    "id": "http://example.edu/credentials/3732",
+                    "type": ["VerifiableCredential", "UniversityDegreeCredential"],
+                    "issuer": "did:example:489398593",
+                    "issuanceDate": "2010-01-01T19:53:24Z",
+                    "credentialSubject": {},
+                }
+            ),
+            async_mock.MagicMock(
+                cred_value={
+                    "@context": [
+                        "https://www.w3.org/2018/credentials/v1",
+                        "https://www.w3.org/2018/credentials/examples/v1",
+                    ],
+                    "id": "http://example.edu/credentials/3733",
+                    "type": ["VerifiableCredential", "UniversityDegreeCredential"],
+                    "issuer": "did:example:489398593",
+                    "issuanceDate": "2011-01-01T19:53:24Z",
+                    "credentialSubject": {},
+                }
+            ),
         ]
         self.profile.context.injector.bind_instance(
             IndyHolder,
@@ -453,8 +477,30 @@ class TestPresentProofRoutes(AsyncTestCase):
             await test_module.present_proof_credentials_list(self.request)
             mock_response.assert_called_once_with(
                 [
-                    {"name": "Credential1", "record_id": ANY},
-                    {"name": "Credential2", "record_id": ANY},
+                    {
+                        "@context": [
+                            "https://www.w3.org/2018/credentials/v1",
+                            "https://www.w3.org/2018/credentials/examples/v1",
+                        ],
+                        "id": "http://example.edu/credentials/3733",
+                        "type": ["VerifiableCredential", "UniversityDegreeCredential"],
+                        "issuer": "did:example:489398593",
+                        "issuanceDate": "2011-01-01T19:53:24Z",
+                        "credentialSubject": {},
+                        "record_id": ANY,
+                    },
+                    {
+                        "@context": [
+                            "https://www.w3.org/2018/credentials/v1",
+                            "https://www.w3.org/2018/credentials/examples/v1",
+                        ],
+                        "id": "http://example.edu/credentials/3732",
+                        "type": ["VerifiableCredential", "UniversityDegreeCredential"],
+                        "issuer": "did:example:489398593",
+                        "issuanceDate": "2010-01-01T19:53:24Z",
+                        "credentialSubject": {},
+                        "record_id": ANY,
+                    },
                 ]
             )
 
@@ -471,8 +517,32 @@ class TestPresentProofRoutes(AsyncTestCase):
             "required"
         ] = False
         returned_credentials = [
-            async_mock.MagicMock(cred_value={"name": "Credential1"}),
-            async_mock.MagicMock(cred_value={"name": "Credential2"}),
+            async_mock.MagicMock(
+                cred_value={
+                    "@context": [
+                        "https://www.w3.org/2018/credentials/v1",
+                        "https://www.w3.org/2018/credentials/examples/v1",
+                    ],
+                    "id": "http://example.edu/credentials/3732",
+                    "type": ["VerifiableCredential", "UniversityDegreeCredential"],
+                    "issuer": "did:example:489398593",
+                    "issuanceDate": "2010-01-01T19:53:24Z",
+                    "credentialSubject": {},
+                }
+            ),
+            async_mock.MagicMock(
+                cred_value={
+                    "@context": [
+                        "https://www.w3.org/2018/credentials/v1",
+                        "https://www.w3.org/2018/credentials/examples/v1",
+                    ],
+                    "id": "http://example.edu/credentials/3733",
+                    "type": ["VerifiableCredential", "UniversityDegreeCredential"],
+                    "issuer": "did:example:489398593",
+                    "issuanceDate": "2011-01-01T19:53:24Z",
+                    "credentialSubject": {},
+                }
+            ),
         ]
         self.profile.context.injector.bind_instance(
             IndyHolder,
@@ -533,8 +603,30 @@ class TestPresentProofRoutes(AsyncTestCase):
             await test_module.present_proof_credentials_list(self.request)
             mock_response.assert_called_once_with(
                 [
-                    {"name": "Credential1", "record_id": ANY},
-                    {"name": "Credential2", "record_id": ANY},
+                    {
+                        "@context": [
+                            "https://www.w3.org/2018/credentials/v1",
+                            "https://www.w3.org/2018/credentials/examples/v1",
+                        ],
+                        "id": "http://example.edu/credentials/3733",
+                        "type": ["VerifiableCredential", "UniversityDegreeCredential"],
+                        "issuer": "did:example:489398593",
+                        "issuanceDate": "2011-01-01T19:53:24Z",
+                        "credentialSubject": {},
+                        "record_id": ANY,
+                    },
+                    {
+                        "@context": [
+                            "https://www.w3.org/2018/credentials/v1",
+                            "https://www.w3.org/2018/credentials/examples/v1",
+                        ],
+                        "id": "http://example.edu/credentials/3732",
+                        "type": ["VerifiableCredential", "UniversityDegreeCredential"],
+                        "issuer": "did:example:489398593",
+                        "issuanceDate": "2010-01-01T19:53:24Z",
+                        "credentialSubject": {},
+                        "record_id": ANY,
+                    },
                 ]
             )
 
@@ -551,8 +643,32 @@ class TestPresentProofRoutes(AsyncTestCase):
             "limit_disclosure"
         ]
         returned_credentials = [
-            async_mock.MagicMock(cred_value={"name": "Credential1"}),
-            async_mock.MagicMock(cred_value={"name": "Credential2"}),
+            async_mock.MagicMock(
+                cred_value={
+                    "@context": [
+                        "https://www.w3.org/2018/credentials/v1",
+                        "https://www.w3.org/2018/credentials/examples/v1",
+                    ],
+                    "id": "http://example.edu/credentials/3732",
+                    "type": ["VerifiableCredential", "UniversityDegreeCredential"],
+                    "issuer": "did:example:489398593",
+                    "issuanceDate": "2010-01-01T19:53:24Z",
+                    "credentialSubject": {},
+                }
+            ),
+            async_mock.MagicMock(
+                cred_value={
+                    "@context": [
+                        "https://www.w3.org/2018/credentials/v1",
+                        "https://www.w3.org/2018/credentials/examples/v1",
+                    ],
+                    "id": "http://example.edu/credentials/3733",
+                    "type": ["VerifiableCredential", "UniversityDegreeCredential"],
+                    "issuer": "did:example:489398593",
+                    "issuanceDate": "2011-01-01T19:53:24Z",
+                    "credentialSubject": {},
+                }
+            ),
         ]
         self.profile.context.injector.bind_instance(
             IndyHolder,
@@ -613,8 +729,30 @@ class TestPresentProofRoutes(AsyncTestCase):
             await test_module.present_proof_credentials_list(self.request)
             mock_response.assert_called_once_with(
                 [
-                    {"name": "Credential1", "record_id": ANY},
-                    {"name": "Credential2", "record_id": ANY},
+                    {
+                        "@context": [
+                            "https://www.w3.org/2018/credentials/v1",
+                            "https://www.w3.org/2018/credentials/examples/v1",
+                        ],
+                        "id": "http://example.edu/credentials/3733",
+                        "type": ["VerifiableCredential", "UniversityDegreeCredential"],
+                        "issuer": "did:example:489398593",
+                        "issuanceDate": "2011-01-01T19:53:24Z",
+                        "credentialSubject": {},
+                        "record_id": ANY,
+                    },
+                    {
+                        "@context": [
+                            "https://www.w3.org/2018/credentials/v1",
+                            "https://www.w3.org/2018/credentials/examples/v1",
+                        ],
+                        "id": "http://example.edu/credentials/3732",
+                        "type": ["VerifiableCredential", "UniversityDegreeCredential"],
+                        "issuer": "did:example:489398593",
+                        "issuanceDate": "2010-01-01T19:53:24Z",
+                        "credentialSubject": {},
+                        "record_id": ANY,
+                    },
                 ]
             )
 
@@ -631,8 +769,32 @@ class TestPresentProofRoutes(AsyncTestCase):
             "limit_disclosure"
         ]
         returned_credentials = [
-            async_mock.MagicMock(cred_value={"name": "Credential1"}),
-            async_mock.MagicMock(cred_value={"name": "Credential2"}),
+            async_mock.MagicMock(
+                cred_value={
+                    "@context": [
+                        "https://www.w3.org/2018/credentials/v1",
+                        "https://www.w3.org/2018/credentials/examples/v1",
+                    ],
+                    "id": "http://example.edu/credentials/3732",
+                    "type": ["VerifiableCredential", "UniversityDegreeCredential"],
+                    "issuer": "did:example:489398593",
+                    "issuanceDate": "2010-01-01T19:53:24Z",
+                    "credentialSubject": {},
+                }
+            ),
+            async_mock.MagicMock(
+                cred_value={
+                    "@context": [
+                        "https://www.w3.org/2018/credentials/v1",
+                        "https://www.w3.org/2018/credentials/examples/v1",
+                    ],
+                    "id": "http://example.edu/credentials/3733",
+                    "type": ["VerifiableCredential", "UniversityDegreeCredential"],
+                    "issuer": "did:example:489398593",
+                    "issuanceDate": "2011-01-01T19:53:24Z",
+                    "credentialSubject": {},
+                }
+            ),
         ]
         self.profile.context.injector.bind_instance(
             IndyHolder,
@@ -693,8 +855,30 @@ class TestPresentProofRoutes(AsyncTestCase):
             await test_module.present_proof_credentials_list(self.request)
             mock_response.assert_called_once_with(
                 [
-                    {"name": "Credential1", "record_id": ANY},
-                    {"name": "Credential2", "record_id": ANY},
+                    {
+                        "@context": [
+                            "https://www.w3.org/2018/credentials/v1",
+                            "https://www.w3.org/2018/credentials/examples/v1",
+                        ],
+                        "id": "http://example.edu/credentials/3733",
+                        "type": ["VerifiableCredential", "UniversityDegreeCredential"],
+                        "issuer": "did:example:489398593",
+                        "issuanceDate": "2011-01-01T19:53:24Z",
+                        "credentialSubject": {},
+                        "record_id": ANY,
+                    },
+                    {
+                        "@context": [
+                            "https://www.w3.org/2018/credentials/v1",
+                            "https://www.w3.org/2018/credentials/examples/v1",
+                        ],
+                        "id": "http://example.edu/credentials/3732",
+                        "type": ["VerifiableCredential", "UniversityDegreeCredential"],
+                        "issuer": "did:example:489398593",
+                        "issuanceDate": "2010-01-01T19:53:24Z",
+                        "credentialSubject": {},
+                        "record_id": ANY,
+                    },
                 ]
             )
 
@@ -987,8 +1171,32 @@ class TestPresentProofRoutes(AsyncTestCase):
         )
 
         returned_credentials = [
-            async_mock.MagicMock(cred_value={"name": "Credential1"}),
-            async_mock.MagicMock(cred_value={"name": "Credential2"}),
+            async_mock.MagicMock(
+                cred_value={
+                    "@context": [
+                        "https://www.w3.org/2018/credentials/v1",
+                        "https://www.w3.org/2018/credentials/examples/v1",
+                    ],
+                    "id": "http://example.edu/credentials/3732",
+                    "type": ["VerifiableCredential", "UniversityDegreeCredential"],
+                    "issuer": "did:example:489398593",
+                    "issuanceDate": "2010-01-01T19:53:24Z",
+                    "credentialSubject": {},
+                }
+            ),
+            async_mock.MagicMock(
+                cred_value={
+                    "@context": [
+                        "https://www.w3.org/2018/credentials/v1",
+                        "https://www.w3.org/2018/credentials/examples/v1",
+                    ],
+                    "id": "http://example.edu/credentials/3733",
+                    "type": ["VerifiableCredential", "UniversityDegreeCredential"],
+                    "issuer": "did:example:489398593",
+                    "issuanceDate": "2011-01-01T19:53:24Z",
+                    "credentialSubject": {},
+                }
+            ),
         ]
         self.profile.context.injector.bind_instance(
             IndyHolder,
@@ -1020,8 +1228,30 @@ class TestPresentProofRoutes(AsyncTestCase):
             await test_module.present_proof_credentials_list(self.request)
             mock_response.assert_called_once_with(
                 [
-                    {"name": "Credential1", "record_id": ANY},
-                    {"name": "Credential2", "record_id": ANY},
+                    {
+                        "@context": [
+                            "https://www.w3.org/2018/credentials/v1",
+                            "https://www.w3.org/2018/credentials/examples/v1",
+                        ],
+                        "id": "http://example.edu/credentials/3733",
+                        "type": ["VerifiableCredential", "UniversityDegreeCredential"],
+                        "issuer": "did:example:489398593",
+                        "issuanceDate": "2011-01-01T19:53:24Z",
+                        "credentialSubject": {},
+                        "record_id": ANY,
+                    },
+                    {
+                        "@context": [
+                            "https://www.w3.org/2018/credentials/v1",
+                            "https://www.w3.org/2018/credentials/examples/v1",
+                        ],
+                        "id": "http://example.edu/credentials/3732",
+                        "type": ["VerifiableCredential", "UniversityDegreeCredential"],
+                        "issuer": "did:example:489398593",
+                        "issuanceDate": "2010-01-01T19:53:24Z",
+                        "credentialSubject": {},
+                        "record_id": ANY,
+                    },
                 ]
             )
 

@@ -2,8 +2,6 @@
 
 import json
 
-from typing import Mapping, Sequence, Tuple
-
 from aiohttp import web
 from aiohttp_apispec import (
     docs,
@@ -12,7 +10,9 @@ from aiohttp_apispec import (
     request_schema,
     response_schema,
 )
+from dateutil.parser import parse as dateutil_parser
 from marshmallow import fields, validate, validates_schema, ValidationError
+from typing import Mapping, Sequence, Tuple
 
 from ....admin.request_context import AdminRequestContext
 from ....connections.models.conn_record import ConnRecord
@@ -602,6 +602,11 @@ async def present_proof_credentials_list(request: web.BaseRequest):
                     pd_uri_list=uri_list,
                 )
                 records = await search.fetch(count)
+                # sort records by issuanceDate in reverse_order
+                records.sort(
+                    key=lambda v: dateutil_parser(v.cred_value.get("issuanceDate")),
+                    reverse=True,
+                )
                 # Avoiding addition of duplicate records
                 vcrecord_list, vcrecord_ids_set = await process_vcrecords_return_list(
                     records, record_ids

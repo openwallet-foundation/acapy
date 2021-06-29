@@ -1131,6 +1131,17 @@ class DIFPresExchHandler:
         applicable_creds_list = []
         for credential in applicable_creds:
             applicable_creds_list.append(credential.cred_value)
+        if (
+            not self.profile.settings.get("debug.auto_respond_presentation_request")
+            and not records_filter
+            and len(applicable_creds_list) > 1
+        ):
+            raise DIFPresExchError(
+                "Multiple credentials are applicable for presentation_definition "
+                "{pd.id} and --auto-respond-presentation-request setting is not "
+                "enabled. Please specify which credentials should be applied to "
+                "which input_descriptors using record_ids filter."
+            )
         # submission_property
         submission_property = PresentationSubmission(
             id=str(uuid4()), definition_id=pd.id, descriptor_maps=descriptor_maps

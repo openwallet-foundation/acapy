@@ -2,6 +2,7 @@
 
 import logging
 
+from dateutil.parser import parse as dateutil_parser
 from marshmallow import RAISE
 from typing import Mapping, Tuple, Sequence
 from uuid import uuid4
@@ -292,6 +293,11 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                 # For now, setting to 1000
                 max_results = 1000
                 records = await search.fetch(max_results)
+                # sort records by issuanceDate in reverse_order
+                records.sort(
+                    key=lambda v: dateutil_parser(v.cred_value.get("issuanceDate")),
+                    reverse=True,
+                )
                 # Avoiding addition of duplicate records
                 (
                     vcrecord_list,
