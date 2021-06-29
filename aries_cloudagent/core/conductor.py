@@ -551,7 +551,6 @@ class Conductor:
             await self._queue_external(profile, outbound)
         else:
             await self._queue_internal(profile, outbound)
-        return
 
     async def _queue_external(
         self,

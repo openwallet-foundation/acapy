@@ -16,6 +16,7 @@ from ...connections.models.diddoc import (
 )
 from ...core.in_memory import InMemoryProfileManager
 from ...core.profile import ProfileManager
+from ...core.event_bus import EventBus, MockEventBus, Event
 from ...core.protocol_registry import ProtocolRegistry
 from ...protocols.coordinate_mediation.v1_0.models.mediation_record import (
     MediationRecord,
@@ -84,6 +85,7 @@ class StubContextBuilder(ContextBuilder):
         context.injector.bind_instance(ProtocolRegistry, ProtocolRegistry())
         context.injector.bind_instance(BaseWireFormat, self.wire_format)
         context.injector.bind_instance(DIDResolver, DIDResolver(DIDResolverRegistry()))
+        context.injector.bind_instance(MockEventBus, MockEventBus())
         return context
 
 
@@ -376,7 +378,8 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
     async def test_handle_nots(self):
         builder: ContextBuilder = StubContextBuilder(self.test_settings)
         conductor = test_module.Conductor(builder)
-
+        mock_event_bus = MockEventBus()
+        session.profile.context.injector.bind_instance(EventBus, mock_event_bus)
         with async_mock.patch.object(
             test_module, "OutboundTransportManager", async_mock.MagicMock()
         ) as mock_outbound_mgr:
