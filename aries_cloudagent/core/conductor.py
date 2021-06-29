@@ -471,6 +471,10 @@ class Conductor:
         """
         event_bus = profile.inject(EventBus, required=False)
         assert event_bus
+        await event_bus.notify(
+            profile,
+            OutboundMessageEvent(outbound),
+        )
         if not outbound.target and outbound.reply_to_verkey:
             if not outbound.reply_from_verkey and inbound:
                 outbound.reply_from_verkey = inbound.receipt.recipient_verkey
@@ -478,8 +482,9 @@ class Conductor:
             if self.inbound_transport_manager.return_to_session(outbound):
                 await event_bus.notify(
                     profile,
-                    OutboundStatusEvent(OutboundSendStatus.SENT_TO_SESSION, outbound),
+                    OutboundStatusEvent(OutboundSendStatus.SENT_TO_SESSION, outbound)
                 )
+                return
 
         if not outbound.to_session_only:
             await self.queue_outbound(profile, outbound, inbound)
@@ -487,10 +492,6 @@ class Conductor:
             await event_bus.notify(
                 profile, OutboundStatusEvent(OutboundSendStatus.UNDELIVERABLE, outbound)
             )
-        await event_bus.notify(
-            profile,
-            OutboundMessageEvent(outbound),
-        )
 
     def handle_not_returned(self, profile: Profile, outbound: OutboundMessage):
         """Handle a message that failed delivery via an inbound session."""
@@ -536,6 +537,7 @@ class Conductor:
                         profile,
                         OutboundStatusEvent(OutboundSendStatus.UNDELIVERABLE, outbound),
                     )
+                    return
                 except (LedgerConfigError, LedgerTransactionError) as e:
                     LOGGER.error("Shutdown on ledger error %s", str(e))
                     if self.admin_server:
@@ -551,6 +553,7 @@ class Conductor:
             await self._queue_external(profile, outbound)
         else:
             await self._queue_internal(profile, outbound)
+        return
 
     async def _queue_external(
         self,
@@ -580,13 +583,13 @@ class Conductor:
         """Save the message to an internal outbound queue."""
         event_bus = profile.inject(EventBus, required=False)
         assert event_bus
-
         try:
             self.outbound_transport_manager.enqueue_message(profile, outbound)
             await event_bus.notify(
                 profile,
                 OutboundStatusEvent(OutboundSendStatus.QUEUED_FOR_DELIVERY, outbound),
             )
+            return
         except OutboundDeliveryError:
             LOGGER.warning("Cannot queue message for delivery, no supported transport")
             await self.handle_not_delivered(profile, outbound)
