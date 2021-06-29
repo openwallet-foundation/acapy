@@ -201,6 +201,10 @@ class OutOfBandManager(BaseConnectionManager):
         handshake_protocols = [
             DIDCommPrefix.qualify_current(hsp.name) for hsp in hs_protos or []
         ] or None
+        connection_protocol = (
+            hs_protos[0].name if hs_protos and len(hs_protos) >= 1 else None
+        )
+
         if public:
             if not self._session.settings.get("public_invites"):
                 raise OutOfBandManagerError("Public invitations are not enabled")
@@ -231,6 +235,7 @@ class OutOfBandManager(BaseConnectionManager):
                 state=ConnRecord.State.INVITATION.rfc23,
                 accept=ConnRecord.ACCEPT_AUTO if accept else ConnRecord.ACCEPT_MANUAL,
                 alias=alias,
+                connection_protocol=connection_protocol,
             )
 
             await conn_rec.save(self._session, reason="Created new invitation")
@@ -268,6 +273,7 @@ class OutOfBandManager(BaseConnectionManager):
                 accept=ConnRecord.ACCEPT_AUTO if accept else ConnRecord.ACCEPT_MANUAL,
                 invitation_mode=invitation_mode,
                 alias=alias,
+                connection_protocol=connection_protocol,
             )
             await conn_rec.save(self._session, reason="Created new connection")
 

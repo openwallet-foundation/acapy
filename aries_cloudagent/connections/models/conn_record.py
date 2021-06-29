@@ -19,8 +19,10 @@ from ...protocols.connections.v1_0.messages.connection_invitation import (
     ConnectionInvitation,
 )
 from ...protocols.connections.v1_0.messages.connection_request import ConnectionRequest
+from ...protocols.connections.v1_0.message_types import ARIES_PROTOCOL as CONN_PROTO
 from ...protocols.didcomm_prefix import DIDCommPrefix
 from ...protocols.didexchange.v1_0.messages.request import DIDXRequest
+from ...protocols.didexchange.v1_0.message_types import ARIES_PROTOCOL as DIDX_PROTO
 from ...protocols.out_of_band.v1_0.messages.invitation import (
     InvitationMessage as OOBInvitation,
 )
@@ -36,6 +38,28 @@ class ConnRecord(BaseRecord):
         """ConnRecord metadata."""
 
         schema_class = "ConnRecordSchema"
+
+    class Protocol(Enum):
+        """Supported Protocols for Connection."""
+
+        RFC_0160 = CONN_PROTO
+        RFC_0023 = DIDX_PROTO
+
+        @classmethod
+        def get(cls, label: Union[str, "ConnRecord.Protocol"]):
+            """Get aries protocol enum for label."""
+            if isinstance(label, str):
+                for proto in ConnRecord.Protocol:
+                    if label in proto.value:
+                        return proto
+            elif isinstance(label, ConnRecord.Protocol):
+                return label
+            return None
+
+        @property
+        def aries_protocol(self):
+            """Return used connection protocol."""
+            return self.value
 
     class Role(Enum):
         """RFC 160 (inviter, invitee) = RFC 23 (responder, requester)."""
@@ -183,6 +207,7 @@ class ConnRecord(BaseRecord):
         their_public_did: str = None,
         rfc23_state: str = None,  # from state: formalism for base_record.from_storage()
         initiator: str = None,  # for backward compatibility with old ConnectionRecord
+        connection_protocol: Union[str, "ConnRecord.Protocol"] = None,
         **kwargs,
     ):
         """Initialize a new ConnRecord."""
@@ -211,6 +236,13 @@ class ConnRecord(BaseRecord):
         self.invitation_mode = invitation_mode or self.INVITATION_MODE_ONCE
         self.alias = alias
         self.their_public_did = their_public_did
+        self.connection_protocol = (
+            ConnRecord.Protocol.get(connection_protocol).aries_protocol
+            if isinstance(connection_protocol, str)
+            else None
+            if connection_protocol is None
+            else connection_protocol.aries_protocol
+        )
 
     @property
     def connection_id(self) -> str:
@@ -239,6 +271,7 @@ class ConnRecord(BaseRecord):
                 "their_label",
                 "state",
                 "their_public_did",
+                "connection_protocol",
             )
         }
 
@@ -545,6 +578,14 @@ class ConnRecordSchema(BaseRecordSchema):
             [label for role in ConnRecord.Role for label in role.value]
         ),
         example=ConnRecord.Role.REQUESTER.rfc23,
+    )
+    connection_protocol = fields.Str(
+        required=False,
+        description="Connection protocol used",
+        validate=validate.OneOf(
+            [label for proto in ConnRecord.Protocol for label in proto.value]
+        ),
+        example=ConnRecord.Protocol.RFC_0160.aries_protocol,
     )
     rfc23_state = fields.Str(
         dump_only=True,

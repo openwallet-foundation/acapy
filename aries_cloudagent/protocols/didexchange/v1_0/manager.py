@@ -26,6 +26,7 @@ from ...out_of_band.v1_0.messages.invitation import (
 )
 from ...out_of_band.v1_0.messages.service import Service as OOBService
 
+from .message_types import ARIES_PROTOCOL as DIDX_PROTO
 from .messages.complete import DIDXComplete
 from .messages.request import DIDXRequest
 from .messages.response import DIDXResponse
@@ -123,6 +124,7 @@ class DIDXManager(BaseConnectionManager):
             accept=accept,
             alias=alias,
             their_public_did=their_public_did,
+            connection_protocol=DIDX_PROTO,
         )
 
         await conn_rec.save(
@@ -184,6 +186,7 @@ class DIDXManager(BaseConnectionManager):
             accept=None,
             alias=my_label,
             their_public_did=their_public_did,
+            connection_protocol=DIDX_PROTO,
         )
         request = await self.create_request(  # saves and updates conn_rec
             conn_rec=conn_rec,
@@ -387,6 +390,7 @@ class DIDXManager(BaseConnectionManager):
                     state=ConnRecord.State.REQUEST.rfc23,
                     accept=conn_rec.accept,
                     their_role=conn_rec.their_role,
+                    connection_protocol=DIDX_PROTO,
                 )
 
                 await new_conn_rec.save(
@@ -480,6 +484,7 @@ class DIDXManager(BaseConnectionManager):
                 invitation_msg_id=None,
                 request_id=request._id,
                 state=ConnRecord.State.REQUEST.rfc23,
+                connection_protocol=DIDX_PROTO,
             )
             await conn_rec.save(
                 self._session, reason="Received connection request from public DID"
