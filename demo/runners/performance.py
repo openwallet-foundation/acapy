@@ -15,10 +15,10 @@ from runners.support.agent import (  # noqa:E402
     connect_wallet_to_mediator,
 )
 from runners.support.utils import (  # noqa:E402
+    check_requires,
     log_msg,
     log_timer,
     progress,
-    require_indy,
 )
 
 CRED_PREVIEW_TYPE = "https://didcomm.org/issue-credential/2.0/credential-preview"
@@ -658,7 +658,7 @@ if __name__ == "__main__":
     if args.ping:
         action = "ping"
 
-    require_indy()
+    check_requires(args)
 
     try:
         asyncio.get_event_loop().run_until_complete(

@@ -15,12 +15,12 @@ from runners.agent_container import (  # noqa:E402
     AriesAgent,
 )
 from runners.support.utils import (  # noqa:E402
+    check_requires,
     log_msg,
     log_status,
     log_timer,
     prompt,
     prompt_loop,
-    require_indy,
 )
 
 logging.basicConfig(level=logging.WARNING)
@@ -234,7 +234,7 @@ if __name__ == "__main__":
         except ImportError:
             print("pydevd_pycharm library was not found")
 
-    require_indy()
+    check_requires(args)
 
     try:
         asyncio.get_event_loop().run_until_complete(main(args))

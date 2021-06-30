@@ -8,12 +8,12 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # 
 
 from runners.support.agent import DemoAgent, default_genesis_txns  # noqa:E402
 from runners.support.utils import (  # noqa:E402
+    check_requires,
     log_msg,
     log_status,
     log_timer,
     prompt,
     prompt_loop,
-    require_indy,
 )
 
 LOGGER = logging.getLogger(__name__)
@@ -209,7 +209,7 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    require_indy()
+    check_requires(args)
 
     try:
         asyncio.get_event_loop().run_until_complete(main(args.port, args.timing))
