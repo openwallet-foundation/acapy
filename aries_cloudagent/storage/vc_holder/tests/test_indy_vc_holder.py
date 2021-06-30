@@ -68,40 +68,4 @@ def test_record() -> VCRecord:
 @pytest.mark.indy
 class TestIndySdkVCHolder(in_memory.TestInMemoryVCHolder):
     # run same test suite with different holder fixture
-    @pytest.mark.asyncio
-    async def test_tag_query(self, holder: VCHolder):
-        test_uri_list = [
-            "https://www.w3.org/2018/credentials#VerifiableCredential",
-            "https://example.org/examples#UniversityDegreeCredential",
-        ]
-        test_query = holder.build_type_or_schema_query(test_uri_list)
-        assert test_query == {
-            "$and": [
-                {
-                    "$or": [
-                        {
-                            "type:https://www.w3.org/2018/credentials#VerifiableCredential": "1"
-                        },
-                        {
-                            "schm:https://www.w3.org/2018/credentials#VerifiableCredential": "1"
-                        },
-                    ]
-                },
-                {
-                    "$or": [
-                        {
-                            "type:https://example.org/examples#UniversityDegreeCredential": "1"
-                        },
-                        {
-                            "schm:https://example.org/examples#UniversityDegreeCredential": "1"
-                        },
-                    ]
-                },
-            ]
-        }
-        record = test_record()
-        await holder.store_credential(record)
-
-        search = holder.search_credentials(pd_uri_list=test_uri_list)
-        rows = await search.fetch()
-        assert rows == [record]
+    pass
