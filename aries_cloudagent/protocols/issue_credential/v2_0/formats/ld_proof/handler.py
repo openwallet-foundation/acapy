@@ -285,22 +285,22 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
         did_info: DIDInfo = None,
     ):
         """Get signature suite for issuance of verification."""
-        async with self.profile.session() as session:
-            wallet = session.inject(BaseWallet)
+        session = await self.profile.session()
+        wallet = session.inject(BaseWallet)
 
-            # Get signature class based on proof type
-            SignatureClass = PROOF_TYPE_SIGNATURE_SUITE_MAPPING[proof_type]
+        # Get signature class based on proof type
+        SignatureClass = PROOF_TYPE_SIGNATURE_SUITE_MAPPING[proof_type]
 
-            # Generically create signature class
-            return SignatureClass(
-                verification_method=verification_method,
-                proof=proof,
-                key_pair=WalletKeyPair(
-                    wallet=wallet,
-                    key_type=SIGNATURE_SUITE_KEY_TYPE_MAPPING[SignatureClass],
-                    public_key_base58=did_info.verkey if did_info else None,
-                ),
-            )
+        # Generically create signature class
+        return SignatureClass(
+            verification_method=verification_method,
+            proof=proof,
+            key_pair=WalletKeyPair(
+                wallet=wallet,
+                key_type=SIGNATURE_SUITE_KEY_TYPE_MAPPING[SignatureClass],
+                public_key_base58=did_info.verkey if did_info else None,
+            ),
+        )
 
     def _get_verification_method(self, did: str):
         """Get the verification method for a did."""

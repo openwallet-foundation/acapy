@@ -1,17 +1,12 @@
-import json
 import pytest
 
 from asynctest import mock as async_mock, TestCase as AsyncTestCase
-from indy.error import IndyError, ErrorCode
 
 from ...core.in_memory import InMemoryProfile
 from ...ledger.base import BaseLedger
 from ...storage.error import StorageNotFoundError
-from ...wallet.base import BaseWallet
-from ...wallet.indy import IndySdkWallet
 
 from ..error import (
-    RevocationError,
     RevocationNotSupportedError,
     RevocationRegistryBadSizeError,
 )
@@ -23,14 +18,16 @@ from ..models.revocation_registry import RevocationRegistry
 @pytest.mark.indy
 class TestIndyRevocation(AsyncTestCase):
     def setUp(self):
+        self.profile = InMemoryProfile.test_profile()
+        self.context = self.profile.context
+
         Ledger = async_mock.MagicMock(BaseLedger, autospec=True)
         self.ledger = Ledger()
         self.ledger.get_credential_definition = async_mock.CoroutineMock(
             return_value={"value": {"revocation": True}}
         )
         self.ledger.get_revoc_reg_def = async_mock.CoroutineMock()
-
-        self.profile = InMemoryProfile.test_profile(bind={BaseLedger: self.ledger})
+        self.context.injector.bind_instance(BaseLedger, self.ledger)
 
         self.revoc = IndyRevocation(self.profile)
 
@@ -81,6 +78,7 @@ class TestIndyRevocation(AsyncTestCase):
         rec = await self.revoc.init_issuer_registry(CRED_DEF_ID)
         rec.revoc_reg_id = "dummy"
         rec.state = IssuerRevRegRecord.STATE_ACTIVE
+
         async with self.profile.session() as session:
             await rec.save(session)
 
