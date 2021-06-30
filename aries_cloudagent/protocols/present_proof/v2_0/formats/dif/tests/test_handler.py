@@ -461,14 +461,36 @@ class TestDIFFormatHandler(AsyncTestCase):
                     "https://www.w3.org/2018/credentials#VerifiableCredential",
                     "https://example.org/examples#UniversityDegreeCredential",
                 ],
-                issuer_id="https://example.edu/issuers/565049",
+                issuer_id="did:example:489398593",
                 subject_ids=[
-                    "did:sov:LjgpST2rjsoxYegQDRm7EL",
-                    "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
+                    "did:sov:WgWxqztrNooG92RXvxSTWv",
                 ],
-                proof_types=["BbsBlsSignature2020"],
+                proof_types=["Ed25519Signature2018"],
                 schema_ids=["https://example.org/examples/degree.json"],
-                cred_value={"...": "..."},
+                cred_value={
+                    "@context": [
+                        "https://www.w3.org/2018/credentials/v1",
+                        "https://www.w3.org/2018/credentials/examples/v1",
+                    ],
+                    "id": "http://example.edu/credentials/3732",
+                    "type": ["VerifiableCredential", "UniversityDegreeCredential"],
+                    "issuer": "did:example:489398593",
+                    "identifier": "83627467",
+                    "name": "University Degree",
+                    "issuanceDate": "2010-01-01T19:53:24Z",
+                    "credentialSubject": {
+                        "id": "did:sov:WgWxqztrNooG92RXvxSTWv",
+                        "givenName": "Cai",
+                        "familyName": "Leblanc",
+                    },
+                    "proof": {
+                        "type": "Ed25519Signature2018",
+                        "verificationMethod": "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
+                        "created": "2021-05-07T08:50:17.626625",
+                        "proofPurpose": "assertionMethod",
+                        "jws": "eyJhbGciOiAiRWREU0EiLCAiYjY0IjogZmFsc2UsICJjcml0IjogWyJiNjQiXX0..rubQvgig7cN-F6cYn_AJF1BCSaMpkoR517Ot_4pqwdJnQ-JwKXq6d6cNos5JR73E9WkwYISXapY0fYTIG9-fBA",
+                    },
+                },
                 given_id="http://example.edu/credentials/3732",
                 cred_tags={"some": "tag"},
                 record_id="test1",
@@ -524,6 +546,93 @@ class TestDIFFormatHandler(AsyncTestCase):
                 output[1], AttachDecorator
             )
             assert output[1].data.json_ == DIF_PRES
+
+    async def test_sort_vcrecords_catch_parsererror(self):
+        cred_list = [
+            VCRecord(
+                contexts=[
+                    "https://www.w3.org/2018/credentials/v1",
+                    "https://www.w3.org/2018/credentials/examples/v1",
+                ],
+                expanded_types=[
+                    "https://www.w3.org/2018/credentials#VerifiableCredential",
+                    "https://example.org/examples#UniversityDegreeCredential",
+                ],
+                issuer_id="did:example:489398593",
+                subject_ids=[
+                    "did:sov:WgWxqztrNooG92RXvxSTWv",
+                ],
+                proof_types=["Ed25519Signature2018"],
+                schema_ids=["https://example.org/examples/degree.json"],
+                cred_value={
+                    "@context": [
+                        "https://www.w3.org/2018/credentials/v1",
+                        "https://www.w3.org/2018/credentials/examples/v1",
+                    ],
+                    "id": "http://example.edu/credentials/3732",
+                    "type": ["VerifiableCredential", "UniversityDegreeCredential"],
+                    "issuer": "did:example:489398593",
+                    "identifier": "83627467",
+                    "name": "University Degree",
+                    "issuanceDate": "20180-10-29T21:02:19.201+0000",
+                    "credentialSubject": {
+                        "id": "did:sov:WgWxqztrNooG92RXvxSTWv",
+                        "givenName": "Cai",
+                        "familyName": "Leblanc",
+                    },
+                    "proof": {
+                        "type": "Ed25519Signature2018",
+                        "verificationMethod": "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
+                        "created": "2021-05-07T08:50:17.626625",
+                        "proofPurpose": "assertionMethod",
+                        "jws": "eyJhbGciOiAiRWREU0EiLCAiYjY0IjogZmFsc2UsICJjcml0IjogWyJiNjQiXX0..rubQvgig7cN-F6cYn_AJF1BCSaMpkoR517Ot_4pqwdJnQ-JwKXq6d6cNos5JR73E9WkwYISXapY0fYTIG9-fBA",
+                    },
+                },
+                given_id="http://example.edu/credentials/3732",
+                cred_tags={"some": "tag"},
+                record_id="test1",
+            )
+        ]
+        dif_pres_request = V20PresRequest(
+            formats=[
+                V20PresFormat(
+                    attach_id="dif",
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.DIF.api
+                    ],
+                )
+            ],
+            request_presentations_attach=[
+                AttachDecorator.data_json(DIF_PRES_REQUEST_B, ident="dif")
+            ],
+        )
+        record = V20PresExRecord(
+            pres_ex_id="pxid",
+            thread_id="thid",
+            connection_id="conn_id",
+            initiator="init",
+            role="role",
+            state="state",
+            pres_request=dif_pres_request,
+            verified="false",
+            auto_present=True,
+            error_msg="error",
+        )
+        request_data = {"dif": {}}
+
+        self.context.injector.bind_instance(
+            VCHolder,
+            async_mock.MagicMock(
+                search_credentials=async_mock.MagicMock(
+                    return_value=async_mock.MagicMock(
+                        fetch=async_mock.CoroutineMock(return_value=cred_list)
+                    )
+                )
+            ),
+        )
+
+        with self.assertRaises(V20PresFormatHandlerError):
+            await self.handler.create_pres(record, request_data)
 
     async def test_create_pres_no_challenge(self):
         dif_pres_req = deepcopy(DIF_PRES_REQUEST_B)
