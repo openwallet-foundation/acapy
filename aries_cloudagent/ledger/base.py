@@ -181,7 +181,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         revoc_reg_def: dict,
         issuer_did: str = None,
         write_ledger: bool = True,
-        endorser_did: str = None
+        endorser_did: str = None,
     ):
         """Publish a revocation registry definition to the ledger."""
 
@@ -193,7 +193,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         revoc_reg_entry: dict,
         issuer_did: str = None,
         write_ledger: bool = True,
-        endorser_did: str = None
+        endorser_did: str = None,
     ):
         """Publish a revocation registry entry to the ledger."""
 
