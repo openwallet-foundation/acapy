@@ -233,17 +233,30 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
 
             assert conn_rec
 
-    # async def test_create_request_implicit_use_public_did(self):
-    #     # TODO: Fix test. Public DID needs to be available
-    #     conn_rec = await self.manager.create_request_implicit(
-    #         their_public_did=TestConfig.test_target_did,
-    #         my_label=None,
-    #         my_endpoint=None,
-    #         mediation_id=None,
-    #         use_public_did=True,
-    #     )
+    async def test_create_request_implicit_use_public_did(self):
 
-    #     assert conn_rec
+        mediation_record = MediationRecord(
+            role=MediationRecord.ROLE_CLIENT,
+            state=MediationRecord.STATE_GRANTED,
+            connection_id=self.test_mediator_conn_id,
+            routing_keys=self.test_mediator_routing_keys,
+            endpoint=self.test_mediator_endpoint,
+        )
+        await mediation_record.save(self.session)
+
+        info_public = await self.session.wallet.create_public_did(
+            DIDMethod.SOV,
+            KeyType.ED25519,
+        )
+        conn_rec = await self.manager.create_request_implicit(
+            their_public_did=TestConfig.test_target_did,
+            my_label=None,
+            my_endpoint=None,
+            mediation_id=mediation_record._id,
+            use_public_did=True,
+        )
+
+        assert info_public.did == conn_rec.my_did
 
     async def test_create_request_implicit_no_public_did(self):
         with self.assertRaises(WalletError) as context:
