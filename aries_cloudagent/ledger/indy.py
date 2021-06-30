@@ -1209,7 +1209,7 @@ class IndySdkLedger(BaseLedger):
 
     async def get_revoc_reg_delta(
         self, revoc_reg_id: str, fro=0, to=None
-    ) -> (dict, int):
+    ) -> Tuple[dict, int]:
         """
         Look up a revocation registry delta by ID.
 

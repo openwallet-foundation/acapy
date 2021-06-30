@@ -10,8 +10,8 @@ from pydid.verification_method import Ed25519VerificationKey2018
 
 from ...config.injection_context import InjectionContext
 from ...core.profile import Profile
-from ...ledger.indy import IndySdkLedger, EndpointType
 from ...ledger.base import BaseLedger
+from ...ledger.endpoint_type import EndpointType
 from ...ledger.error import LedgerError
 from ...messaging.valid import IndyDID
 
@@ -19,7 +19,7 @@ from ..base import BaseDIDResolver, DIDNotFound, ResolverError, ResolverType
 
 
 class NoIndyLedger(ResolverError):
-    """Raised when there is no indy ledger instance configured."""
+    """Raised when there is no Indy ledger instance configured."""
 
 
 class IndyDIDResolver(BaseDIDResolver):
@@ -51,7 +51,7 @@ class IndyDIDResolver(BaseDIDResolver):
     async def _resolve(self, profile: Profile, did: str) -> dict:
         """Resolve an indy DID."""
         ledger = profile.inject(BaseLedger, required=False)
-        if not ledger or not isinstance(ledger, IndySdkLedger):
+        if not ledger:
             raise NoIndyLedger("No Indy ledger instance is configured.")
 
         try:
