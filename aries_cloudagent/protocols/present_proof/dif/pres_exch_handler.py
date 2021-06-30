@@ -1138,7 +1138,7 @@ class DIFPresExchHandler:
         ):
             raise DIFPresExchError(
                 "Multiple credentials are applicable for presentation_definition "
-                "{pd.id} and --auto-respond-presentation-request setting is not "
+                f"{pd.id} and --auto-respond-presentation-request setting is not "
                 "enabled. Please specify which credentials should be applied to "
                 "which input_descriptors using record_ids filter."
             )
