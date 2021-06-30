@@ -1,6 +1,7 @@
 """Classes for managing a revocation registry."""
-
+import http
 import logging
+import os
 import re
 
 from os.path import join
@@ -169,23 +170,33 @@ class RevocationRegistry:
             tails_file_dir.mkdir(parents=True)
 
         buffer_size = 65536  # should be multiple of 32 bytes for sha256
+        file_hasher = hashlib.sha256()
         with open(tails_file_path, "wb", buffer_size) as tails_file:
-            file_hasher = hashlib.sha256()
-
             with Session() as req_session:
                 try:
                     resp = req_session.get(self._tails_public_uri, stream=True)
+                    # Should this directly raise an Error?
+                    if resp.status_code != http.HTTPStatus.OK:
+                        LOGGER.warning(
+                            f"Unexpected status code for tails file: {resp.status_code}"
+                        )
                     for buf in resp.iter_content(chunk_size=buffer_size):
                         tails_file.write(buf)
                         file_hasher.update(buf)
                 except RequestException as rx:
                     raise RevocationError(f"Error retrieving tails file: {rx}")
 
-            download_tails_hash = base58.b58encode(file_hasher.digest()).decode("utf-8")
-            if download_tails_hash != self.tails_hash:
-                raise RevocationError(
-                    "The hash of the downloaded tails file does not match."
-                )
+        download_tails_hash = base58.b58encode(file_hasher.digest()).decode("utf-8")
+        if download_tails_hash != self.tails_hash:
+            try:
+                os.remove(tails_file_path)
+                tails_file_dir.rmdir()
+            except OSError as err:
+                LOGGER.warning(f"Could not delete invalid tails file: {err}")
+
+            raise RevocationError(
+                "The hash of the downloaded tails file does not match."
+            )
 
         self.tails_local_path = tails_file_path
         return self.tails_local_path
