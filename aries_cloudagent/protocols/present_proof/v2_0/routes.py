@@ -11,6 +11,7 @@ from aiohttp_apispec import (
     response_schema,
 )
 from dateutil.parser import parse as dateutil_parser
+from dateutil.parser import ParserError
 from marshmallow import fields, validate, validates_schema, ValidationError
 from typing import Mapping, Sequence, Tuple
 
@@ -603,10 +604,20 @@ async def present_proof_credentials_list(request: web.BaseRequest):
                 )
                 records = await search.fetch(count)
                 # sort records by issuanceDate in reverse_order
-                records.sort(
-                    key=lambda v: dateutil_parser(v.cred_value.get("issuanceDate")),
-                    reverse=True,
-                )
+                try:
+                    records.sort(
+                        key=lambda v: dateutil_parser(v.cred_value.get("issuanceDate")),
+                        reverse=True,
+                    )
+                except ParserError:
+                    raise web.HTTPBadRequest(
+                        reason=(
+                            "A credential applicable to the "
+                            "presentation_request of pres_ex_id "
+                            f"{pres_ex_id} is not a valid date "
+                            "in RFC3339 format."
+                        )
+                    )
                 # Avoiding addition of duplicate records
                 vcrecord_list, vcrecord_ids_set = await process_vcrecords_return_list(
                     records, record_ids

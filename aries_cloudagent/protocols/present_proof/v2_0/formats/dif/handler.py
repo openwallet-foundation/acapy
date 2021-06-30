@@ -3,6 +3,7 @@
 import logging
 
 from dateutil.parser import parse as dateutil_parser
+from dateutil.parser import ParserError
 from marshmallow import RAISE
 from typing import Mapping, Tuple, Sequence
 from uuid import uuid4
@@ -294,10 +295,18 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                 max_results = 1000
                 records = await search.fetch(max_results)
                 # sort records by issuanceDate in reverse_order
-                records.sort(
-                    key=lambda v: dateutil_parser(v.cred_value.get("issuanceDate")),
-                    reverse=True,
-                )
+                try:
+                    records.sort(
+                        key=lambda v: dateutil_parser(v.cred_value.get("issuanceDate")),
+                        reverse=True,
+                    )
+                except ParserError:
+                    raise V20PresFormatHandlerError(
+                        "A credential applicable to the "
+                        "presentation_request of pres_ex_id "
+                        f"{pres_ex_record._id} is not a valid "
+                        "date in RFC3339 format."
+                    )
                 # Avoiding addition of duplicate records
                 (
                     vcrecord_list,
