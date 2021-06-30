@@ -28,13 +28,11 @@ from runners.support.agent import (  # noqa:E402
     SIG_TYPE_BLS,
 )
 from runners.support.utils import (  # noqa:E402
+    check_requires,
     log_json,
     log_msg,
     log_status,
     log_timer,
-    prompt,
-    prompt_loop,
-    require_indy,
 )
 
 
@@ -1019,7 +1017,7 @@ async def create_agent_with_args(args, ident: str = None):
             "DID-Exchange connection protocol is not (yet) compatible with mediation"
         )
 
-    require_indy()
+    check_requires(args)
 
     if "revocation" in args and args.revocation:
         tails_server_base_url = args.tails_server_base_url or os.getenv(
@@ -1242,7 +1240,7 @@ if __name__ == "__main__":
         except ImportError:
             print("pydevd_pycharm library was not found")
 
-    require_indy()
+    check_requires(args)
 
     tails_server_base_url = args.tails_server_base_url or os.getenv("PUBLIC_TAILS_URL")
 

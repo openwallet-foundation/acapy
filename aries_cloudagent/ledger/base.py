@@ -61,6 +61,14 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         """
 
     @abstractmethod
+    async def get_all_endpoints_for_did(self, did: str) -> dict:
+        """Fetch all endpoints for a ledger DID.
+
+        Args:
+            did: The DID to look up on the ledger or in the cache
+        """
+
+    @abstractmethod
     async def update_endpoint_for_did(
         self,
         did: str,
