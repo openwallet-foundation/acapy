@@ -231,7 +231,7 @@ class DemoAgent:
         }
         schema_response = await self.admin_POST("/schemas", schema_body)
         log_json(json.dumps(schema_response), label="Schema:")
-        schema_id = schema_response["sent"]["schema_id"]
+        schema_id = schema_response["schema_id"]
         log_msg("Schema ID:", schema_id)
         await asyncio.sleep(2.0)
 
@@ -252,7 +252,7 @@ class DemoAgent:
         credential_definition_response = await self.admin_POST(
             "/credential-definitions", credential_definition_body
         )
-        credential_definition_id = credential_definition_response["sent"][
+        credential_definition_id = credential_definition_response[
             "credential_definition_id"
         ]
         log_msg("Cred def ID:", credential_definition_id)
