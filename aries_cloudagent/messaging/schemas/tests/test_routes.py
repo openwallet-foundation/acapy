@@ -63,13 +63,11 @@ class TestSchemaRoutes(AsyncTestCase):
             assert result == mock_response.return_value
             mock_response.assert_called_once_with(
                 {
-                    "sent": {
-                        "schema_id": SCHEMA_ID,
-                        "schema": {
-                            "schema": "def",
-                            "signed_txn": "...",
-                        },
-                    }
+                    "schema_id": SCHEMA_ID,
+                    "schema": {
+                        "schema": "def",
+                        "signed_txn": "...",
+                    },
                 }
             )
 

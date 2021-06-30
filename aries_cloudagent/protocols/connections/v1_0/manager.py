@@ -1063,7 +1063,7 @@ class ConnectionManager(BaseConnectionManager):
                     receipt.recipient_verkey
                 )
                 receipt.recipient_did = my_info.did
-                if "public" in my_info.metadata and my_info.metadata["public"] is True:
+                if "posted" in my_info.metadata and my_info.metadata["posted"] is True:
                     receipt.recipient_did_public = True
             except InjectionError:
                 self._logger.warning(

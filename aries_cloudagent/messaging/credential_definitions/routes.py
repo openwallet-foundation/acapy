@@ -267,7 +267,7 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
             raise web.HTTPBadRequest(reason=e.message) from e
 
     if not create_transaction_for_endorser:
-        return web.json_response({"sent": {"credential_definition_id": cred_def_id}})
+        return web.json_response({"credential_definition_id": cred_def_id})
 
     else:
         session = await context.session()
