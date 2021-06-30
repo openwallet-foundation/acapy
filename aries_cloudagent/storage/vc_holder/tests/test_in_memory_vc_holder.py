@@ -1,7 +1,7 @@
 import pytest
 
 from ....core.in_memory import InMemoryProfile
-from ...error import StorageDuplicateError, StorageNotFoundError, StorageSearchError
+from ...error import StorageDuplicateError, StorageNotFoundError
 
 from ..base import VCHolder
 from ..vc_record import VCRecord

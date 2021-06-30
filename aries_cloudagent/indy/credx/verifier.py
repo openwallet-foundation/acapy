@@ -1,30 +1,30 @@
-"""Indy SDK verifier implementation."""
+"""Indy-Credx verifier implementation."""
 
-import json
+import asyncio
 import logging
 
-import indy.anoncreds
-from indy.error import IndyError
+from indy_credx import Presentation
 
-from ...ledger.indy import IndySdkLedger
+from ...core.profile import Profile
+from ...ledger.base import BaseLedger
 
 from ..verifier import IndyVerifier
 
 LOGGER = logging.getLogger(__name__)
 
 
-class IndySdkVerifier(IndyVerifier):
-    """Indy-SDK verifier implementation."""
+class IndyCredxVerifier(IndyVerifier):
+    """Indy-Credx verifier class."""
 
-    def __init__(self, ledger: IndySdkLedger):
+    def __init__(self, profile: Profile):
         """
-        Initialize an IndyVerifier instance.
+        Initialize an IndyCredxVerifier instance.
 
         Args:
-            ledger: ledger instance
+            profile: an active profile instance
 
         """
-        self.ledger = ledger
+        self.ledger = profile.inject(BaseLedger)
 
     async def verify_presentation(
         self,
@@ -59,15 +59,17 @@ class IndySdkVerifier(IndyVerifier):
             return False
 
         try:
-            verified = await indy.anoncreds.verifier_verify_proof(
-                json.dumps(pres_req),
-                json.dumps(pres),
-                json.dumps(schemas),
-                json.dumps(credential_definitions),
-                json.dumps(rev_reg_defs),
-                json.dumps(rev_reg_entries),
+            presentation = Presentation.load(pres)
+            verified = await asyncio.get_event_loop().run_in_executor(
+                None,
+                presentation.verify,
+                pres_req,
+                schemas.values(),
+                credential_definitions.values(),
+                rev_reg_defs.values(),
+                rev_reg_entries,
             )
-        except IndyError:
+        except Exception:
             LOGGER.exception(
                 f"Validation of presentation on nonce={pres_req['nonce']} "
                 "failed with error"
