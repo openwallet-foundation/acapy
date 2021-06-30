@@ -264,7 +264,9 @@ class OutOfBandManager(BaseConnectionManager):
             # Add mapping for multitenant relay
             if multitenant_mgr and wallet_id:
                 await multitenant_mgr.add_key(wallet_id, connection_key.verkey)
-
+            # Initializing  InvitationMessage here to include
+            # invitation_msg_id in webhook poyload
+            invi_msg = InvitationMessage()
             # Create connection record
             conn_rec = ConnRecord(
                 invitation_key=connection_key.verkey,
@@ -274,6 +276,7 @@ class OutOfBandManager(BaseConnectionManager):
                 invitation_mode=invitation_mode,
                 alias=alias,
                 connection_protocol=connection_protocol,
+                invitation_msg_id=invi_msg._id,
             )
             await conn_rec.save(self._session, reason="Created new connection")
 
@@ -315,29 +318,25 @@ class OutOfBandManager(BaseConnectionManager):
             # Note: Need to split this into two stages to support inbound routing
             # of invitations
             # Would want to reuse create_did_document and convert the result
-            invi_msg = InvitationMessage(
-                label=my_label or self._session.settings.get("default_label"),
-                handshake_protocols=handshake_protocols,
-                requests_attach=message_attachments,
-                services=[
-                    ServiceMessage(
-                        _id="#inline",
-                        _type="did-communication",
-                        recipient_keys=[
-                            DIDKey.from_public_key_b58(
-                                connection_key.verkey, KeyType.ED25519
-                            ).did
-                        ],
-                        service_endpoint=my_endpoint,
-                        routing_keys=routing_keys,
-                    )
-                ],
-            )
+            invi_msg.label = my_label or self._session.settings.get("default_label")
+            invi_msg.handshake_protocols = handshake_protocols
+            invi_msg.requests_attach = message_attachments
+            invi_msg.services = [
+                ServiceMessage(
+                    _id="#inline",
+                    _type="did-communication",
+                    recipient_keys=[
+                        DIDKey.from_public_key_b58(
+                            connection_key.verkey, KeyType.ED25519
+                        ).did
+                    ],
+                    service_endpoint=my_endpoint,
+                    routing_keys=routing_keys,
+                )
+            ]
             invi_url = invi_msg.to_url()
 
             # Update connection record
-            conn_rec.invitation_msg_id = invi_msg._id
-            await conn_rec.save(self._session, reason="Added Invitation")
             await conn_rec.attach_invitation(self._session, invi_msg)
 
             if metadata:
