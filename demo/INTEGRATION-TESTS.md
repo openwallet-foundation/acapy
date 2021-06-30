@@ -92,6 +92,14 @@ ACAPY_ARG_FILE=postgres-indy-args.yml ./run_bdd
 
 ... will apply the parameters in the `postgres-indy-args.yml` file (which just happens to configure a postgres wallet) to *all* agents under test.
 
+Or the following:
+
+```bash
+ACAPY_ARG_FILE=askar-indy-args.yml ./run_bdd
+```
+
+... will run all the tests against an askar wallet (the new shared components, which replace indy-sdk).
+
 Any aca-py arguement can be included in the yml file, and order-of-precidence applies (see [https://pypi.org/project/ConfigArgParse/](https://pypi.org/project/ConfigArgParse/)).
 
 ## Specifying Environment Parameters when Running Integration Tests
