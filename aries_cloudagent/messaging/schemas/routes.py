@@ -212,9 +212,7 @@ async def schemas_send_schema(request: web.BaseRequest):
             raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     if not create_transaction_for_endorser:
-        return web.json_response(
-            {"sent": {"schema_id": schema_id, "schema": schema_def}}
-        )
+        return web.json_response({"schema_id": schema_id, "schema": schema_def})
     else:
         session = await context.session()
 
