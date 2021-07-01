@@ -1,5 +1,7 @@
 """Basic in-memory storage implementation of VC holder interface."""
 
+from dateutil.parser import parse as dateutil_parser
+from dateutil.parser import ParserError
 from typing import Mapping, Sequence
 
 from ...core.in_memory import InMemoryProfile
@@ -150,4 +152,12 @@ class InMemoryVCRecordSearch(VCRecordSearch):
 
         """
         rows = await self._search.fetch(max_count)
-        return [storage_to_vc_record(r) for r in rows]
+        records = [storage_to_vc_record(r) for r in rows]
+        try:
+            records.sort(
+                key=lambda v: dateutil_parser(v.cred_value.get("issuanceDate")),
+                reverse=True,
+            )
+            return records
+        except ParserError:
+            return records
