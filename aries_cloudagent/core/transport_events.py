@@ -13,14 +13,9 @@ class OutboundMessageEvent(BaseEvent[OutboundMessage]):
     topic: str = "acapy::outbound::message"
     topic_re: Pattern = re.compile(topic)
 
-    def __init__(self, payload: OutboundMessage):
-        """Create OutboundMessageEvent."""
-        super().__init__(self.topic, payload)
-
     @property
     def outbound(self) -> OutboundMessage:
         """Alias to payload."""
-        assert self.payload
         return self.payload
 
 
@@ -39,8 +34,12 @@ class OutboundStatusEvent(BaseEvent[OutboundStatusEventPayload]):
 
     def __init__(self, status: OutboundSendStatus, outbound: OutboundMessage):
         """Create OutboundStatusEvent."""
-        payload = OutboundStatusEventPayload(status, outbound)
-        super().__init__(self.topic_root + status.value, payload)
+        super().__init__(OutboundStatusEventPayload(status, outbound))
+
+    @property
+    def topic(self):
+        """Return topic derived from status."""
+        return self.topic_root + self.payload.status.value
 
     @property
     def status(self):
