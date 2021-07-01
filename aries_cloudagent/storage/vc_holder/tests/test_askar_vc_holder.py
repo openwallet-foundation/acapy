@@ -57,30 +57,7 @@ def test_record() -> VCRecord:
         proof_types=[VC_PROOF_TYPE],
         given_id=VC_GIVEN_ID,
         cred_tags={"tag": "value"},
-        cred_value={
-            "@context": [
-                VC_CONTEXT,
-                "https://www.w3.org/2018/credentials/examples/v1",
-            ],
-            "id": VC_GIVEN_ID,
-            "type": ["VerifiableCredential", "UniversityDegreeCredential"],
-            "issuer": VC_ISSUER_ID,
-            "identifier": "83627467",
-            "name": "University Degree",
-            "issuanceDate": "2010-01-01T19:53:24Z",
-            "credentialSubject": {
-                "id": VC_SUBJECT_ID,
-                "givenName": "Cai",
-                "familyName": "Leblanc",
-            },
-            "proof": {
-                "type": "Ed25519Signature2018",
-                "verificationMethod": "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
-                "created": "2021-05-07T08:50:17.626625",
-                "proofPurpose": "assertionMethod",
-                "jws": "eyJhbGciOiAiRWREU0EiLCAiYjY0IjogZmFsc2UsICJjcml0IjogWyJiNjQiXX0..rubQvgig7cN-F6cYn_AJF1BCSaMpkoR517Ot_4pqwdJnQ-JwKXq6d6cNos5JR73E9WkwYISXapY0fYTIG9-fBA",
-            },
-        },
+        cred_value={"...": "..."},
     )
 
 
