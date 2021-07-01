@@ -8,6 +8,10 @@ wallet.
 
 """
 
+from aries_cloudagent.core.transport_events import (
+    OutboundStatusEvent,
+    OutboundMessageEvent,
+)
 import hashlib
 import json
 import logging
@@ -22,6 +26,7 @@ from ..config.wallet import wallet_config
 from ..connections.models.conn_record import ConnRecord
 from ..core.profile import Profile
 from ..ledger.error import LedgerConfigError, LedgerTransactionError
+from ..core.event_bus import EventBus
 from ..messaging.responder import BaseResponder
 from ..multitenant.manager import MultitenantManager
 from ..protocols.connections.v1_0.manager import (
@@ -453,7 +458,7 @@ class Conductor:
         profile: Profile,
         outbound: OutboundMessage,
         inbound: InboundMessage = None,
-    ) -> OutboundSendStatus:
+    ):
         """
         Route an outbound message.
 
@@ -462,15 +467,28 @@ class Conductor:
             message: An outbound message to be sent
             inbound: The inbound message that produced this response, if available
         """
+        event_bus = profile.inject(EventBus)
+        await event_bus.notify(
+            profile,
+            OutboundMessageEvent(outbound),
+        )
         if not outbound.target and outbound.reply_to_verkey:
             if not outbound.reply_from_verkey and inbound:
                 outbound.reply_from_verkey = inbound.receipt.recipient_verkey
             # return message to an inbound session
             if self.inbound_transport_manager.return_to_session(outbound):
-                return OutboundSendStatus.SENT_TO_SESSION
+                await event_bus.notify(
+                    profile,
+                    OutboundStatusEvent(OutboundSendStatus.SENT_TO_SESSION, outbound),
+                )
+                return
 
         if not outbound.to_session_only:
-            return await self.queue_outbound(profile, outbound, inbound)
+            await self.queue_outbound(profile, outbound, inbound)
+        else:
+            await event_bus.notify(
+                profile, OutboundStatusEvent(OutboundSendStatus.UNDELIVERABLE, outbound)
+            )
 
     def handle_not_returned(self, profile: Profile, outbound: OutboundMessage):
         """Handle a message that failed delivery via an inbound session."""
@@ -487,7 +505,7 @@ class Conductor:
         profile: Profile,
         outbound: OutboundMessage,
         inbound: InboundMessage = None,
-    ) -> OutboundSendStatus:
+    ):
         """
         Queue an outbound message for transport.
 
@@ -496,6 +514,7 @@ class Conductor:
             message: An outbound message to be sent
             inbound: The inbound message that produced this response, if available
         """
+        event_bus = profile.inject(EventBus)
         # populate connection target(s)
         if not outbound.target and not outbound.target_list and outbound.connection_id:
             async with profile.session() as session:
@@ -510,6 +529,10 @@ class Conductor:
                     LOGGER.exception(
                         "Error preparing outbound message for transmission"
                     )
+                    await event_bus.notify(
+                        profile,
+                        OutboundStatusEvent(OutboundSendStatus.UNDELIVERABLE, outbound),
+                    )
                     return
                 except (LedgerConfigError, LedgerTransactionError) as e:
                     LOGGER.error("Shutdown on ledger error %s", str(e))
@@ -523,16 +546,18 @@ class Conductor:
         # internal queue usually results in the message to be sent over
         # ACA-py `-ot` transport.
         if self.outbound_queue:
-            return await self._queue_external(profile, outbound)
+            await self._queue_external(profile, outbound)
         else:
-            return self._queue_internal(profile, outbound)
+            await self._queue_internal(profile, outbound)
 
     async def _queue_external(
         self,
         profile: Profile,
         outbound: OutboundMessage,
-    ) -> OutboundSendStatus:
+    ):
         """Save the message to an external outbound queue."""
+        event_bus = profile.inject(EventBus)
+
         async with self.outbound_queue:
             targets = (
                 [outbound.target] if outbound.target else (outbound.target_list or [])
@@ -541,31 +566,37 @@ class Conductor:
                 await self.outbound_queue.enqueue_message(
                     outbound.payload, target.endpoint
                 )
+            await event_bus.notify(
+                profile,
+                OutboundStatusEvent(
+                    OutboundSendStatus.SENT_TO_EXTERNAL_QUEUE, outbound
+                ),
+            )
 
-            return OutboundSendStatus.SENT_TO_EXTERNAL_QUEUE
-
-    def _queue_internal(
-        self, profile: Profile, outbound: OutboundMessage
-    ) -> OutboundSendStatus:
+    async def _queue_internal(self, profile: Profile, outbound: OutboundMessage):
         """Save the message to an internal outbound queue."""
+        event_bus = profile.inject(EventBus)
         try:
             self.outbound_transport_manager.enqueue_message(profile, outbound)
-            return OutboundSendStatus.QUEUED_FOR_DELIVERY
+            await event_bus.notify(
+                profile,
+                OutboundStatusEvent(OutboundSendStatus.QUEUED_FOR_DELIVERY, outbound),
+            )
+            return
         except OutboundDeliveryError:
             LOGGER.warning("Cannot queue message for delivery, no supported transport")
-            return self.handle_not_delivered(profile, outbound)
+            await self.handle_not_delivered(profile, outbound)
 
-    def handle_not_delivered(
-        self, profile: Profile, outbound: OutboundMessage
-    ) -> OutboundSendStatus:
+    async def handle_not_delivered(self, profile: Profile, outbound: OutboundMessage):
         """Handle a message that failed delivery via outbound transports."""
+        event_bus = profile.inject(EventBus)
         queued_for_inbound = self.inbound_transport_manager.return_undelivered(outbound)
-
-        return (
+        status = (
             OutboundSendStatus.WAITING_FOR_PICKUP
             if queued_for_inbound
             else OutboundSendStatus.UNDELIVERABLE
         )
+        await event_bus.notify(profile, OutboundStatusEvent(status, outbound))
 
     def webhook_router(
         self,

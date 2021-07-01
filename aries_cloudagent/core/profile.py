@@ -87,6 +87,7 @@ class Profile(ABC):
         Args:
             cls: The base class to retrieve an instance of
             settings: An optional mapping providing configuration to the provider
+            required: Optional, when true raises error if class not injected
 
         Returns:
             An instance of the base class, or None

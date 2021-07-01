@@ -1,4 +1,5 @@
 from io import StringIO
+from typing import cast
 
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
@@ -8,32 +9,27 @@ from ...config.base_context import ContextBuilder
 from ...config.injection_context import InjectionContext
 from ...connections.models.conn_record import ConnRecord
 from ...connections.models.connection_target import ConnectionTarget
-from ...connections.models.diddoc import (
-    DIDDoc,
-    PublicKey,
-    PublicKeyType,
-    Service,
-)
+from ...connections.models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
+from ...core.event_bus import Event, EventBus, MockEventBus
 from ...core.in_memory import InMemoryProfileManager
 from ...core.profile import ProfileManager
 from ...core.protocol_registry import ProtocolRegistry
+from ...multitenant.manager import MultitenantManager
 from ...protocols.coordinate_mediation.v1_0.models.mediation_record import (
     MediationRecord,
 )
 from ...resolver.did_resolver import DIDResolver, DIDResolverRegistry
-from ...multitenant.manager import MultitenantManager
 from ...transport.inbound.message import InboundMessage
 from ...transport.inbound.receipt import MessageReceipt
 from ...transport.outbound.base import OutboundDeliveryError
 from ...transport.outbound.manager import QueuedOutboundMessage
 from ...transport.outbound.message import OutboundMessage
-from ...transport.wire_format import BaseWireFormat
 from ...transport.pack_format import PackWireFormat
+from ...transport.wire_format import BaseWireFormat
 from ...utils.stats import Collector
 from ...wallet.base import BaseWallet
-from ...wallet.key_type import KeyType
 from ...wallet.did_method import DIDMethod
-
+from ...wallet.key_type import KeyType
 from .. import conductor as test_module
 
 
@@ -84,6 +80,7 @@ class StubContextBuilder(ContextBuilder):
         context.injector.bind_instance(ProtocolRegistry, ProtocolRegistry())
         context.injector.bind_instance(BaseWireFormat, self.wire_format)
         context.injector.bind_instance(DIDResolver, DIDResolver(DIDResolverRegistry()))
+        context.injector.bind_instance(EventBus, MockEventBus())
         return context
 
 
@@ -293,6 +290,14 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             await conductor.outbound_message_router(conductor.context, message)
             mock_return.assert_called_once_with(message)
             mock_queue.assert_not_awaited()
+            mock_event_bus = cast(MockEventBus, conductor.context.inject(EventBus))
+            assert len(mock_event_bus.events) == 2
+            (_, event1) = mock_event_bus.events[0]
+            (_, event2) = mock_event_bus.events[1]
+            # TODO: check type of event instead of topic
+            assert event1.topic == "acapy::outbound::message"
+            assert event2.topic == "acapy::outbound::status::sent_to_session"
+            mock_event_bus.events.clear()
 
     async def test_outbound_message_handler_with_target(self):
         builder: ContextBuilder = StubContextBuilder(self.test_settings)
@@ -315,6 +320,13 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             mock_outbound_mgr.return_value.enqueue_message.assert_called_once_with(
                 conductor.context, message
             )
+            mock_event_bus = cast(MockEventBus, conductor.context.inject(EventBus))
+            assert len(mock_event_bus.events) == 2
+            (_, event1) = mock_event_bus.events[0]
+            (_, event2) = mock_event_bus.events[1]
+            # TODO: check type of event instead of topic
+            assert event1.topic == "acapy::outbound::message"
+            assert event2.topic == "acapy::outbound::status::queued_for_delivery"
 
     async def test_outbound_message_handler_with_connection(self):
         builder: ContextBuilder = StubContextBuilder(self.test_settings)
@@ -345,6 +357,13 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             mock_outbound_mgr.return_value.enqueue_message.assert_called_once_with(
                 conductor.root_profile, message
             )
+            mock_event_bus = cast(MockEventBus, conductor.context.inject(EventBus))
+            assert len(mock_event_bus.events) == 2
+            (_, event1) = mock_event_bus.events[0]
+            (_, event2) = mock_event_bus.events[1]
+            # TODO: check type of event instead of topic
+            assert event1.topic == "acapy::outbound::message"
+            assert event2.topic == "acapy::outbound::status::queued_for_delivery"
 
     async def test_outbound_message_handler_with_verkey_no_target(self):
         builder: ContextBuilder = StubContextBuilder(self.test_settings)
@@ -372,11 +391,17 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             mock_outbound_mgr.return_value.enqueue_message.assert_called_once_with(
                 conductor.context, message
             )
+            mock_event_bus = cast(MockEventBus, conductor.context.inject(EventBus))
+            assert len(mock_event_bus.events) == 2
+            (_, event1) = mock_event_bus.events[0]
+            (_, event2) = mock_event_bus.events[1]
+            # TODO: check type of event instead of topic
+            assert event1.topic == "acapy::outbound::message"
+            assert event2.topic == "acapy::outbound::status::queued_for_delivery"
 
     async def test_handle_nots(self):
         builder: ContextBuilder = StubContextBuilder(self.test_settings)
         conductor = test_module.Conductor(builder)
-
         with async_mock.patch.object(
             test_module, "OutboundTransportManager", async_mock.MagicMock()
         ) as mock_outbound_mgr:
