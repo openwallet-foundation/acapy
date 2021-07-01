@@ -61,6 +61,14 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         """
 
     @abstractmethod
+    async def get_all_endpoints_for_did(self, did: str) -> dict:
+        """Fetch all endpoints for a ledger DID.
+
+        Args:
+            did: The DID to look up on the ledger or in the cache
+        """
+
+    @abstractmethod
     async def update_endpoint_for_did(
         self,
         did: str,
@@ -176,7 +184,13 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         """Look up a revocation registry definition by ID."""
 
     @abstractmethod
-    async def send_revoc_reg_def(self, revoc_reg_def: dict, issuer_did: str = None):
+    async def send_revoc_reg_def(
+        self,
+        revoc_reg_def: dict,
+        issuer_did: str = None,
+        write_ledger: bool = True,
+        endorser_did: str = None,
+    ):
         """Publish a revocation registry definition to the ledger."""
 
     @abstractmethod
@@ -186,6 +200,8 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         revoc_def_type: str,
         revoc_reg_entry: dict,
         issuer_did: str = None,
+        write_ledger: bool = True,
+        endorser_did: str = None,
     ):
         """Publish a revocation registry entry to the ledger."""
 
@@ -228,7 +244,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
     @abstractmethod
     async def get_revoc_reg_delta(
         self, revoc_reg_id: str, timestamp_from=0, timestamp_to=None
-    ) -> (dict, int):
+    ) -> Tuple[dict, int]:
         """Look up a revocation registry delta by ID."""
 
     @abstractmethod
@@ -242,7 +258,9 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         """
 
     @abstractmethod
-    async def get_revoc_reg_entry(self, revoc_reg_id: str, timestamp: int):
+    async def get_revoc_reg_entry(
+        self, revoc_reg_id: str, timestamp: int
+    ) -> Tuple[dict, int]:
         """Get revocation registry entry by revocation registry ID and timestamp."""
 
 

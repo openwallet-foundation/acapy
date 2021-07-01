@@ -14,6 +14,7 @@ from ....messaging.responder import BaseResponder
 from ....storage.error import StorageNotFoundError
 from ....transport.inbound.receipt import MessageReceipt
 from ....wallet.base import BaseWallet
+from ....wallet.error import WalletError
 from ....wallet.key_type import KeyType
 from ....wallet.did_method import DIDMethod
 from ....wallet.did_posture import DIDPosture
@@ -161,6 +162,7 @@ class DIDXManager(BaseConnectionManager):
         my_label: str = None,
         my_endpoint: str = None,
         mediation_id: str = None,
+        use_public_did: bool = False,
     ) -> ConnRecord:
         """
         Create and send a request against a public DID only (no explicit invitation).
@@ -170,14 +172,23 @@ class DIDXManager(BaseConnectionManager):
             my_label: my label for request
             my_endpoint: my endpoint
             mediation_id: record id for mediation with routing_keys, service endpoint
+            use_public_did: use my public DID for this connection
 
         Returns:
             The new `ConnRecord` instance
 
         """
+        my_public_info = None
+        if use_public_did:
+            wallet = self._session.inject(BaseWallet)
+            my_public_info = await wallet.get_public_did()
+            if not my_public_info:
+                raise WalletError("No public DID configured")
 
         conn_rec = ConnRecord(
-            my_did=None,  # create-request will fill in on local DID creation
+            my_did=my_public_info.did
+            if my_public_info
+            else None,  # create-request will fill in on local DID creation
             their_did=their_public_did,
             their_label=None,
             their_role=ConnRecord.Role.RESPONDER.rfc23,

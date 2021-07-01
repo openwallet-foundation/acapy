@@ -66,6 +66,7 @@ def profile():
     context.injector.bind_instance(DIDResolverRegistry, did_resolver_registry)
     context.injector.bind_instance(DIDResolver, DIDResolver(did_resolver_registry))
     context.injector.bind_instance(DocumentLoader, custom_document_loader)
+    context.settings["debug.auto_respond_presentation_request"] = True
     return profile
 
 
@@ -3003,3 +3004,61 @@ class TestPresExchHandler:
             .get("givenName")
             == "TEST"
         )
+
+    @pytest.mark.asyncio
+    @pytest.mark.ursa_bbs_signatures
+    async def test_multiple_applicable_creds_with_no_auto_and_no_record_ids(
+        self, profile, setup_tuple
+    ):
+        cred_list, pd_list = setup_tuple
+        context = profile.context
+        context.settings = {}
+        dif_pres_exch_handler = DIFPresExchHandler(profile)
+        test_pd_max_length = """
+            {
+                "id":"32f54163-7166-48f1-93d8-ff217bdb0653",
+                "submission_requirements":[
+                    {
+                        "name": "European Union Citizenship Proofs",
+                        "rule": "all",
+                        "from": "A"
+                    }
+                ],
+                "input_descriptors":[
+                    {
+                        "id":"citizenship_input_1",
+                        "name":"EU Driver's License",
+                        "group":[
+                            "A"
+                        ],
+                        "schema":[
+                            {
+                                "uri":"https://www.w3.org/2018/credentials#VerifiableCredential"
+                            }
+                        ],
+                        "constraints":{
+                            "fields":[
+                                {
+                                    "path":[
+                                        "$.issuer.id",
+                                        "$.issuer",
+                                        "$.vc.issuer.id"
+                                    ],
+                                    "filter":{
+                                        "type":"string",
+                                        "maxLength": 150
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        """
+        tmp_pd = PresentationDefinition.deserialize(test_pd_max_length)
+        with pytest.raises(DIFPresExchError):
+            tmp_vp = await dif_pres_exch_handler.create_vp(
+                credentials=cred_list,
+                pd=tmp_pd,
+                challenge="1f44d55f-f161-4938-a659-f8026467f126",
+            )

@@ -2,8 +2,6 @@
 
 import json
 
-from typing import Mapping, Sequence, Tuple
-
 from aiohttp import web
 from aiohttp_apispec import (
     docs,
@@ -13,6 +11,7 @@ from aiohttp_apispec import (
     response_schema,
 )
 from marshmallow import fields, validate, validates_schema, ValidationError
+from typing import Mapping, Sequence, Tuple
 
 from ....admin.request_context import AdminRequestContext
 from ....connections.models.conn_record import ConnRecord

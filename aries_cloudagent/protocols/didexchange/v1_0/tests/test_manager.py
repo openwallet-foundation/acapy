@@ -20,23 +20,20 @@ from .....multitenant.manager import MultitenantManager
 from .....storage.error import StorageNotFoundError
 from .....transport.inbound.receipt import MessageReceipt
 from .....wallet.did_info import DIDInfo
+from .....wallet.error import WalletError
 from .....wallet.in_memory import InMemoryWallet
 from .....wallet.did_method import DIDMethod
 from .....wallet.key_type import KeyType
 from .....did.did_key import DIDKey
 
-from .....connections.base_manager import (
-    BaseConnectionManagerError,
-)
+from .....connections.base_manager import BaseConnectionManagerError
 
 from ....coordinate_mediation.v1_0.manager import MediationManager
 from ....coordinate_mediation.v1_0.messages.keylist_update import (
     KeylistUpdate,
     KeylistUpdateRule,
 )
-from ....coordinate_mediation.v1_0.models.mediation_record import (
-    MediationRecord,
-)
+from ....coordinate_mediation.v1_0.models.mediation_record import MediationRecord
 from ....didcomm_prefix import DIDCommPrefix
 from ....out_of_band.v1_0.manager import OutOfBandManager
 from ....out_of_band.v1_0.messages.invitation import HSProto, InvitationMessage
@@ -235,6 +232,43 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             )
 
             assert conn_rec
+
+    async def test_create_request_implicit_use_public_did(self):
+
+        mediation_record = MediationRecord(
+            role=MediationRecord.ROLE_CLIENT,
+            state=MediationRecord.STATE_GRANTED,
+            connection_id=self.test_mediator_conn_id,
+            routing_keys=self.test_mediator_routing_keys,
+            endpoint=self.test_mediator_endpoint,
+        )
+        await mediation_record.save(self.session)
+
+        info_public = await self.session.wallet.create_public_did(
+            DIDMethod.SOV,
+            KeyType.ED25519,
+        )
+        conn_rec = await self.manager.create_request_implicit(
+            their_public_did=TestConfig.test_target_did,
+            my_label=None,
+            my_endpoint=None,
+            mediation_id=mediation_record._id,
+            use_public_did=True,
+        )
+
+        assert info_public.did == conn_rec.my_did
+
+    async def test_create_request_implicit_no_public_did(self):
+        with self.assertRaises(WalletError) as context:
+            await self.manager.create_request_implicit(
+                their_public_did=TestConfig.test_target_did,
+                my_label=None,
+                my_endpoint=None,
+                mediation_id=None,
+                use_public_did=True,
+            )
+
+        assert "No public DID configured" in str(context.exception)
 
     async def test_create_request(self):
         mock_conn_rec = async_mock.MagicMock(
