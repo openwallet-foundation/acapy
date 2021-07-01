@@ -467,8 +467,7 @@ class Conductor:
             message: An outbound message to be sent
             inbound: The inbound message that produced this response, if available
         """
-        event_bus = profile.inject(EventBus, required=False)
-        assert event_bus
+        event_bus = profile.inject(EventBus)
         await event_bus.notify(
             profile,
             OutboundMessageEvent(outbound),
@@ -515,8 +514,7 @@ class Conductor:
             message: An outbound message to be sent
             inbound: The inbound message that produced this response, if available
         """
-        event_bus = profile.inject(EventBus, required=False)
-        assert event_bus
+        event_bus = profile.inject(EventBus)
         # populate connection target(s)
         if not outbound.target and not outbound.target_list and outbound.connection_id:
             async with profile.session() as session:
@@ -558,8 +556,7 @@ class Conductor:
         outbound: OutboundMessage,
     ):
         """Save the message to an external outbound queue."""
-        event_bus = profile.inject(EventBus, required=False)
-        assert event_bus
+        event_bus = profile.inject(EventBus)
 
         async with self.outbound_queue:
             targets = (
@@ -578,8 +575,7 @@ class Conductor:
 
     async def _queue_internal(self, profile: Profile, outbound: OutboundMessage):
         """Save the message to an internal outbound queue."""
-        event_bus = profile.inject(EventBus, required=False)
-        assert event_bus
+        event_bus = profile.inject(EventBus)
         try:
             self.outbound_transport_manager.enqueue_message(profile, outbound)
             await event_bus.notify(
@@ -593,8 +589,7 @@ class Conductor:
 
     async def handle_not_delivered(self, profile: Profile, outbound: OutboundMessage):
         """Handle a message that failed delivery via outbound transports."""
-        event_bus = profile.inject(EventBus, required=False)
-        assert event_bus
+        event_bus = profile.inject(EventBus)
         queued_for_inbound = self.inbound_transport_manager.return_undelivered(outbound)
         status = (
             OutboundSendStatus.WAITING_FOR_PICKUP
