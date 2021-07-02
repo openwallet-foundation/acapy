@@ -39,7 +39,7 @@ def _make_cred_info(cred_id, cred: Credential):
         "schema_id": cred_info["schema_id"],
         "cred_def_id": cred_info["cred_def_id"],
         "rev_reg_id": cred_info["rev_reg_id"],
-        "cred_rev_id": rev_info["i"] if rev_info else None,
+        "cred_rev_id": str(rev_info["i"]) if rev_info else None,
         "attrs": {name: val["raw"] for (name, val) in cred_info["values"].items()},
     }
 
@@ -534,7 +534,7 @@ class IndyCredxHolder(IndyHolder):
                 CredentialRevocationState.create,
                 rev_reg_def,
                 rev_reg_delta,
-                cred_rev_id,
+                int(cred_rev_id),
                 timestamp,
                 tails_file_path,
             )
