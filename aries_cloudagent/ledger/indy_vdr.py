@@ -306,6 +306,7 @@ class IndyVdrLedger(BaseLedger):
         sign: bool = None,
         taa_accept: bool = None,
         sign_did: DIDInfo = sentinel,
+        write_ledger: bool = True,
     ) -> dict:
         """
         Sign and submit request to ledger.
@@ -349,6 +350,9 @@ class IndyVdrLedger(BaseLedger):
                     await wallet.sign_message(request.signature_input, sign_did.verkey)
                 )
                 del wallet
+
+        if not write_ledger:
+            return dict(request)
 
         try:
             request_result = await self.pool.handle.submit_request(request)
@@ -409,8 +413,17 @@ class IndyVdrLedger(BaseLedger):
             except VdrError as err:
                 raise LedgerError("Exception when building schema request") from err
 
+            if endorser_did and not write_ledger:
+                schema_req.set_endorser(endorser_did)
+
             try:
-                resp = await self._submit(schema_req, True, sign_did=public_info)
+                resp = await self._submit(
+                    schema_req, True, sign_did=public_info, write_ledger=write_ledger
+                )
+
+                if not write_ledger:
+                    return schema_id, {"signed_txn": resp}
+
                 try:
                     # parse sequence number out of response
                     seq_no = resp["txnMetadata"]["seqNo"]
@@ -601,8 +614,6 @@ class IndyVdrLedger(BaseLedger):
 
         """
 
-        # FIXME - implement write_ledger, endorser_did
-
         public_info = await self.get_wallet_public_did()
         if not public_info:
             raise BadLedgerRequestError(
@@ -684,7 +695,14 @@ class IndyVdrLedger(BaseLedger):
             except VdrError as err:
                 raise LedgerError("Exception when building cred def request") from err
 
-            await self._submit(cred_def_req, True, sign_did=public_info)
+            if endorser_did and not write_ledger:
+                cred_def_req.set_endorser(endorser_did)
+
+            resp = await self._submit(
+                cred_def_req, True, sign_did=public_info, write_ledger=write_ledger
+            )
+            if not write_ledger:
+                return (credential_definition_id, {"signed_txn": resp}, novel)
 
             # Add non-secrets record
             schema_id_parts = schema_id.split(":")
@@ -1194,10 +1212,11 @@ class IndyVdrLedger(BaseLedger):
             "issued": response_value.get("issued", []),
             "revoked": response_value.get("revoked", []),
         }
-        if "accum_from" in response_value:
-            delta_value["prev_accum"] = response_value["accum_from"]["value"]["accum"]
+        accum_from = response_value.get("accum_from")
+        if accum_from:
+            delta_value["prev_accum"] = accum_from["value"]["accum"]
         reg_delta = {"ver": "1.0", "value": delta_value}
-        # FIXME - why not response["to"] ?
+        # question - why not response["to"] ?
         delta_timestamp = response_value["accum_to"]["txnTime"]
         assert response["data"]["revocRegDefId"] == revoc_reg_id
         return reg_delta, delta_timestamp
