@@ -342,6 +342,11 @@ class IndyVdrLedger(BaseLedger):
             if taa_accept or taa_accept is None:
                 acceptance = await self.get_latest_txn_author_acceptance()
                 if acceptance:
+                    acceptance = {
+                        "taaDigest": acceptance["digest"],
+                        "mechanism": acceptance["mechanism"],
+                        "time": acceptance["time"],
+                    }
                     request.set_txn_author_agreement_acceptance(acceptance)
 
             async with self.profile.session() as session:
@@ -352,7 +357,7 @@ class IndyVdrLedger(BaseLedger):
                 del wallet
 
         if not write_ledger:
-            return dict(request)
+            return json.loads(request.body)
 
         try:
             request_result = await self.pool.handle.submit_request(request)
