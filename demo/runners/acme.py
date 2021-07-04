@@ -68,7 +68,7 @@ class AcmeAgent(AriesAgent):
             self.ident, "handle_connections", message["state"], message["rfc23_state"]
         )
         conn_id = message["connection_id"]
-        if (not self.connection_id) and message["rfc23_state"] == "invitation-received":
+        if (not self.connection_id) and message["rfc23_state"] == "invitation-sent":
             print(self.ident, "set connection id", conn_id)
             self.connection_id = conn_id
         if (
