@@ -151,6 +151,7 @@ async def main(args):
             "    (1) Issue Credential\n"
             "    (2) Send Proof Request\n"
             "    (3) Send Message\n"
+            "    (X) Exit? [1/2/3/X]\n"
         )
         async for option in prompt_loop(options):
             if option is not None:
