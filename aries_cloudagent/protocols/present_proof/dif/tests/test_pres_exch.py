@@ -156,7 +156,7 @@ class TestPresExchSchemas(TestCase):
     def test_is_holder(self):
         test_json = """
             {
-                "field_ids": [
+                "field_id": [
                     "ce66380c-1990-4aec-b8b4-5d532e92a616",
                     "dd69e8a4-4cc0-4540-b34a-b4aa0e0d2214",
                     "d15802b4-eec8-45ef-b78f-e35125ac1bb8",

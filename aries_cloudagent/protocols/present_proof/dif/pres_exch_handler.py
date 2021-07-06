@@ -378,6 +378,9 @@ class DIFPresExchHandler:
             is_holder_field_ids = self.field_ids_for_is_holder(constraints)
             for field in constraints._fields:
                 applicable = await self.filter_by_field(field, credential)
+                # all fields in the constraint should be satisfied
+                if not applicable:
+                    break
                 # is_holder with required directive requested for this field
                 if applicable and field.id and field.id in is_holder_field_ids:
                     # Missing credentialSubject.id - cannot verify that holder of claim
@@ -391,11 +394,8 @@ class DIFPresExchHandler:
                     ):
                         applicable = False
                         break
-                if not applicable:
-                    break
             if not applicable:
                 continue
-
             if constraints.limit_disclosure == "required":
                 credential_dict = credential.cred_value
                 new_credential_dict = self.reveal_doc(

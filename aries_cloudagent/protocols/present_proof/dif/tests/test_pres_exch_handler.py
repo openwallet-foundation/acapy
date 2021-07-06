@@ -49,6 +49,8 @@ from .test_data import (
     bbs_signed_cred_credsubjectid,
     creds_with_no_id,
     is_holder_pd,
+    is_holder_pd_multiple_fields_excluded,
+    is_holder_pd_multiple_fields_included,
 )
 
 
@@ -3070,7 +3072,7 @@ class TestPresExchHandler:
 
     @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
-    async def test_is_holder_valid(self, profile, setup_tuple):
+    async def test_is_holder_valid_a(self, profile, setup_tuple):
         context = profile.context
         context.update_settings({"debug.auto_respond_presentation_request": True})
         dif_pres_exch_handler = DIFPresExchHandler(
@@ -3086,7 +3088,35 @@ class TestPresExchHandler:
 
     @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
-    async def test_is_holder_invalid_a(self, profile, setup_tuple):
+    async def test_is_holder_valid_b(self, profile, setup_tuple):
+        dif_pres_exch_handler = DIFPresExchHandler(
+            profile, proof_type=BbsBlsSignature2020.signature_type
+        )
+        cred_list, pd_list = setup_tuple
+        tmp_vp = await dif_pres_exch_handler.create_vp(
+            credentials=cred_list,
+            pd=is_holder_pd_multiple_fields_included,
+            challenge="1f44d55f-f161-4938-a659-f8026467f126",
+        )
+        assert len(tmp_vp.get("verifiableCredential")) == 6
+
+    @pytest.mark.asyncio
+    @pytest.mark.ursa_bbs_signatures
+    async def test_is_holder_valid_c(self, profile, setup_tuple):
+        dif_pres_exch_handler = DIFPresExchHandler(
+            profile, proof_type=BbsBlsSignature2020.signature_type
+        )
+        cred_list, pd_list = setup_tuple
+        tmp_vp = await dif_pres_exch_handler.create_vp(
+            credentials=cred_list,
+            pd=is_holder_pd_multiple_fields_excluded,
+            challenge="1f44d55f-f161-4938-a659-f8026467f126",
+        )
+        assert len(tmp_vp.get("verifiableCredential")) == 6
+
+    @pytest.mark.asyncio
+    @pytest.mark.ursa_bbs_signatures
+    async def test_is_holder_subject_mismatch(self, profile, setup_tuple):
         dif_pres_exch_handler = DIFPresExchHandler(
             profile, proof_type=BbsBlsSignature2020.signature_type
         )
@@ -3104,7 +3134,7 @@ class TestPresExchHandler:
 
     @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
-    async def test_is_holder_invalid_b(self, profile, setup_tuple):
+    async def test_is_holder_missing_subject(self, profile, setup_tuple):
         dif_pres_exch_handler = DIFPresExchHandler(
             profile, proof_type=BbsBlsSignature2020.signature_type
         )

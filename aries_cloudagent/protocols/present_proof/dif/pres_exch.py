@@ -236,6 +236,7 @@ class DIFHolderSchema(BaseModelSchema):
             **UUID4,
         ),
         required=False,
+        data_key="field_id",
     )
     directive = fields.Str(
         description="Preference",

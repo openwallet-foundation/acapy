@@ -71,7 +71,7 @@ is_holder_pd = PresentationDefinition.deserialize(
                     "is_holder": [
                         {
                             "directive": "required",
-                            "field_ids": ["1f44d55f-f161-4938-a659-f8026467f126"],
+                            "field_id": ["1f44d55f-f161-4938-a659-f8026467f126"],
                         }
                     ],
                     "fields": [
@@ -84,6 +84,111 @@ is_holder_pd = PresentationDefinition.deserialize(
                                 "maximum": "2014-5-16",
                             },
                         }
+                    ],
+                },
+            }
+        ],
+    }
+)
+
+is_holder_pd_multiple_fields_included = PresentationDefinition.deserialize(
+    {
+        "id": "32f54163-7166-48f1-93d8-ff217bdb0653",
+        "submission_requirements": [
+            {
+                "name": "European Union Citizenship Proofs",
+                "rule": "all",
+                "from": "A",
+            }
+        ],
+        "input_descriptors": [
+            {
+                "id": "citizenship_input_1",
+                "group": ["A"],
+                "schema": [
+                    {"uri": "https://www.w3.org/2018/credentials#VerifiableCredential"},
+                    {"uri": "https://w3id.org/citizenship#PermanentResidentCard"},
+                ],
+                "constraints": {
+                    "is_holder": [
+                        {
+                            "directive": "required",
+                            "field_id": [
+                                "1f44d55f-f161-4938-a659-f8026467f126",
+                                "1f44d55f-f161-4938-a659-f8026467f127",
+                            ],
+                        }
+                    ],
+                    "fields": [
+                        {
+                            "id": "1f44d55f-f161-4938-a659-f8026467f126",
+                            "path": ["$.issuanceDate", "$.vc.issuanceDate"],
+                            "filter": {
+                                "type": "string",
+                                "format": "date",
+                                "maximum": "2014-5-16",
+                            },
+                        },
+                        {
+                            "id": "1f44d55f-f161-4938-a659-f8026467f127",
+                            "path": ["$.issuanceDate", "$.vc.issuanceDate"],
+                            "filter": {
+                                "type": "string",
+                                "format": "date",
+                                "minimum": "2005-5-16",
+                            },
+                        },
+                    ],
+                },
+            }
+        ],
+    }
+)
+
+is_holder_pd_multiple_fields_excluded = PresentationDefinition.deserialize(
+    {
+        "id": "32f54163-7166-48f1-93d8-ff217bdb0653",
+        "submission_requirements": [
+            {
+                "name": "European Union Citizenship Proofs",
+                "rule": "all",
+                "from": "A",
+            }
+        ],
+        "input_descriptors": [
+            {
+                "id": "citizenship_input_1",
+                "group": ["A"],
+                "schema": [
+                    {"uri": "https://www.w3.org/2018/credentials#VerifiableCredential"},
+                    {"uri": "https://w3id.org/citizenship#PermanentResidentCard"},
+                ],
+                "constraints": {
+                    "is_holder": [
+                        {
+                            "directive": "required",
+                            "field_id": ["1f44d55f-f161-4938-a659-f8026467f126"],
+                        }
+                    ],
+                    "fields": [
+                        {
+                            "id": "1f44d55f-f161-4938-a659-f8026467f126",
+                            "path": ["$.issuanceDate", "$.vc.issuanceDate"],
+                            "filter": {
+                                "type": "string",
+                                "format": "date",
+                                "maximum": "2014-5-16",
+                            },
+                        },
+                        {
+                            "id": "1f44d55f-f161-4938-a659-f8026467f127",
+                            "path": ["$.issuanceDate", "$.vc.issuanceDate"],
+                            "filter": {
+                                "type": "string",
+                                "format": "date",
+                                "minimum": "2005-5-16",
+                            },
+                        },
                     ],
                 },
             }
