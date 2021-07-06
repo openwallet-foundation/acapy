@@ -233,7 +233,6 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
 
             assert conn_rec
 
-    
     async def test_create_request_implicit_use_public_did(self):
 
         mediation_record = MediationRecord(

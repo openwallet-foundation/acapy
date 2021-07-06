@@ -286,8 +286,8 @@ class DIDXManager(BaseConnectionManager):
             ),
         )
         if (
-            conn_rec.their_public_did is not None and
-            conn_rec.their_public_did.startswith("did:")
+            conn_rec.their_public_did is not None
+            and conn_rec.their_public_did.startswith("did:")
         ):
             qualified_did = conn_rec.their_public_did
         else:
