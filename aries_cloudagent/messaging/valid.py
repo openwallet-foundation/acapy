@@ -223,20 +223,6 @@ class JSONWebToken(Regexp):
         )
 
 
-class GenericDID(Regexp):
-    """Validate value against DID specification."""
-
-    EXAMPLE = "did:indy:idu:WgWxqztrNooG92RXvxSTWv"
-    PATTERN = re.compile(r"^did:([a-z0-9]+):((?:[a-zA-Z0-9._-]*:)*[a-zA-Z0-9._-]+)")
-
-    def __init__(self):
-        """Initializer."""
-
-        super().__init__(
-            GenericDID.PATTERN, error="Value {input} is not in W3C did format"
-        )
-
-
 class DIDKey(Regexp):
     """Validate value against DID key specification."""
 
@@ -755,22 +741,6 @@ class IndyOrKeyDID(Regexp):
         )
 
 
-class IndyOrGenericDID(Regexp):
-    """Indy or Generic DID class."""
-
-    PATTERN = "|".join(x.pattern for x in [GenericDID.PATTERN, IndyDID.PATTERN])
-    EXAMPLE = IndyDID.EXAMPLE
-
-    def __init__(
-        self,
-    ):
-        """Initializer."""
-        super().__init__(
-            IndyOrGenericDID.PATTERN,
-            error="Value {input} is not in generic did or indy did format",
-        )
-
-
 # Instances for marshmallow schema specification
 INT_EPOCH = {"validate": IntEpoch(), "example": IntEpoch.EXAMPLE}
 WHOLE_NUM = {"validate": WholeNumber(), "example": WholeNumber.EXAMPLE}
@@ -783,10 +753,10 @@ NUM_STR_NATURAL = {
 INDY_REV_REG_SIZE = {"validate": IndyRevRegSize(), "example": IndyRevRegSize.EXAMPLE}
 JWS_HEADER_KID = {"validate": JWSHeaderKid(), "example": JWSHeaderKid.EXAMPLE}
 JWT = {"validate": JSONWebToken(), "example": JSONWebToken.EXAMPLE}
-GENERIC_DID = {"validate": GenericDID(), "example": GenericDID.EXAMPLE}
 DID_KEY = {"validate": DIDKey(), "example": DIDKey.EXAMPLE}
 DID_POSTURE = {"validate": DIDPosture(), "example": DIDPosture.EXAMPLE}
 INDY_DID = {"validate": IndyDID(), "example": IndyDID.EXAMPLE}
+GENERIC_DID = {"validate": DIDValidation(), "example": DIDValidation.EXAMPLE}
 INDY_RAW_PUBLIC_KEY = {
     "validate": IndyRawPublicKey(),
     "example": IndyRawPublicKey.EXAMPLE,
@@ -828,8 +798,4 @@ CREDENTIAL_SUBJECT = {
 INDY_OR_KEY_DID = {
     "validate": IndyOrKeyDID(),
     "example": IndyOrKeyDID.EXAMPLE,
-}
-INDY_OR_GENERIC_DID = {
-    "validate": IndyOrGenericDID(),
-    "example": IndyOrGenericDID.EXAMPLE,
 }
